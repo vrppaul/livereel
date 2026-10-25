@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.1
 
 - A face-on camera too far back for the screen to fill the frame along a side sets the screen in the frame's middle along it: framing a wide block near the page's top showed the ground above the screen and none below.
 - `terminal.open(title)` brings the terminal up over the frame along its share of a play, as `terminal.leave()` takes it away; in a cut it is there at once, as before.
