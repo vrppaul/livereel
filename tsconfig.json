@@ -1,0 +1,30 @@
+{
+	// The whole program as the type checker reads it: the package's source and the films. Development runs the source
+	// as it stands (`node -C source`), so every import names a .ts file and every condition reaches src/
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"customConditions": ["source"],
+		"lib": ["ESNext", "DOM", "DOM.Iterable"],
+		"types": ["node"],
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"exactOptionalPropertyTypes": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitOverride": true,
+		"noImplicitReturns": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"verbatimModuleSyntax": true,
+		// Node runs a .ts file by stripping its types: nothing may need turning into other JavaScript
+		"erasableSyntaxOnly": true,
+		"allowImportingTsExtensions": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"forceConsistentCasingInFileNames": true,
+		"skipLibCheck": true,
+		"noEmit": true
+	},
+	"include": ["src/**/*", "examples/**/*", "vitest.config.ts", "knip.ts"]
+}

@@ -32,14 +32,15 @@ caption. Speak in the director's words, which are the tool's:
 
 | Word | In livereel |
 |---|---|
-| framing | `Camera(onto=…, air=…)` — what the frame holds |
-| angle | `Camera(tilt=…, turn=…)` — the screen leans back or swings |
-| camera move | a `Play` of `seconds` with an `ease` |
-| light | `LightOn`, `LightTo`, `LightOff` — one block lit, the rest dimmed |
-| cast | what the page shows, opened and closed by `Act` |
-| action | `Act` — a real click, real keys (`TypeIntoPage`), a command |
-| caption | `CaptionIn`, `CaptionOut` |
-| tempo | how long each `Play` and `hold` lasts |
+| framing | `camera.onto(selector, { air })` — what the frame holds |
+| angle | `camera.to(pose)`, `camera.onto(…, { tilt, turn })` — the screen leans back or swings |
+| camera move | a `play({ seconds, moves, ease })` |
+| light | `light.on`, `light.to`, `light.off` — one block lit, the rest dimmed |
+| cast | what the page shows, opened and closed by `act` |
+| action | `act` — a real click (`cursor.click`), real keys (`page.type`), a command |
+| caption | `caption.show(text)`, `caption.hide()` |
+| entrance | `screen.lowered` in a `cut`, then `screen.rise()`; `ending.show(card)` |
+| tempo | how long each `play` and `hold({ seconds })` lasts |
 
 What reads as made with care:
 
@@ -51,7 +52,7 @@ What reads as made with care:
   about what is lit at that moment, never about something else.
 - **Real UI the whole time**, cropped close to the part that matters. A
   phone shows a whole page too small to read.
-- **People type unevenly**: `keystrokes(text, seed=…, typo_at=…)` with a
+- **People type unevenly**: `keystrokes(text, { seed, slipAt })` with a
   slip now and then; an agent works for a second or two before it answers.
 
 What reads as generated: a zoom on every click, a window floating on a
@@ -60,14 +61,27 @@ on clicks. Leave them out.
 
 ## 3. The film
 
-A film is a Python file that names `PRODUCTION`, a `Production` of
-`livereel.studio`: its `film_format` (frame and screen sizes), `served()`
-(the page's address while it is up: start a server here and stop it after),
-`ready()` (wait for the page's first state) and `steps()`. Read the repository's
-`examples/example_com.py` first: it is the smallest whole film.
+livereel is installed in the project the film lives in, and needs Node 22.20
+or later and ffmpeg on the path. If `node` is missing, tell the user to
+install Node and stop; do not install it yourself. Otherwise:
+
+```bash
+npm i -D livereel      # or pnpm add -D livereel
+npx livereel setup     # the browser films are shot in; it says if ffmpeg is missing
+```
+
+A film is a TypeScript file whose default export is `defineFilm({ format,
+serve, ready, steps })` from `livereel`: the frame and screen sizes, how the
+page is served (`atAddress(url)` for a page someone else serves, or a server
+the film starts and stops), when the page is ready, and its steps. Read the
+repository's `examples/example-com.ts` first: it is a whole film.
 
 - Split the steps into acts, a function each; name every selector at the
   top, by test id or role where the page has them.
+- Write each number as the value of its keyword in place (`seconds`, `air`,
+  `start`, `end`, `seed`, `pace`); any other number is a constant at the top.
+- Two moves of one prop share a step only one after the other: `play`
+  refuses them at once.
 - Prefer the page's own states to anything drawn over it: open a panel with
   its own button, not by hiding parts of the page.
 - A page that refuses frames (`X-Frame-Options`) is shown anyway: livereel
@@ -78,8 +92,8 @@ A film is a Python file that names `PRODUCTION`, a `Production` of
 You cannot watch a video. Look at frames:
 
 ```bash
-uv run livereel shoot film.py --out out --sheet     # the video, and a frame a second side by side
-uv run livereel still film.py --out out --at 12.5   # one still, without the video
+npx livereel shoot film.ts --out out --sheet     # the video, and a frame a second side by side
+npx livereel still film.ts --out out --at 12.5   # one still, without the video
 ```
 
 - After every change, read the contact sheet; read every new shot at full
@@ -93,15 +107,16 @@ uv run livereel still film.py --out out --at 12.5   # one still, without the vid
 ## Traps already met
 
 - A browser places a click wrongly on a screen the camera has scaled: an
-  `Act` lays the screen flat at its own size first. Do clicks in `Act`.
+  `act` lays the screen flat at its own size first. Do clicks in `act`.
 - `backdrop-filter` on a moved screen mirrors what lies under it: the light
   dims and never blurs.
 - The page's own animations are stilled. Where one must show (a spinner of
   the page's own), let it run in real time for that shot: it plays sped up,
   which reads as time-lapse.
 - A long scroll in one frame step shows blank space where the page renders
-  lazily: scroll in a `Play`, a little each frame.
+  lazily: scroll in a `play`, a little each frame.
 - An element the camera frames must be on the page's screen, not scrolled
-  out of it: scroll it in with `ScrollTo` first, then frame it.
-- A box read before a scroll is wrong after it: frame and light a block in
-  the step after the one that scrolls to it.
+  out of it: scroll it in with `page.scrollTo` first, then frame it.
+- A box is read as its move's share begins: a block a scroll in the same
+  step is still moving is read mid-way, so start the light after the
+  scroll's share ends.

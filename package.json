@@ -1,0 +1,97 @@
+{
+	"name": "livereel",
+	"version": "0.1.0",
+	"description": "Film a live web page: a camera, a light, a cursor and captions over it, frame by frame",
+	"license": "MIT",
+	"author": "Pavel Paranin <pavel@paran.in>",
+	"type": "module",
+	"engines": {
+		"node": ">=22.20"
+	},
+	"bin": {
+		"livereel": "./bin/livereel.js"
+	},
+	"files": [
+		"bin",
+		"dist"
+	],
+	"exports": {
+		".": {
+			"source": "./src/index.ts",
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
+	},
+	"imports": {
+		"#domain/*": {
+			"source": "./src/domain/*.ts",
+			"default": "./dist/domain/*.js"
+		},
+		"#props/*": {
+			"source": "./src/props/*.ts",
+			"default": "./dist/props/*.js"
+		},
+		"#scene": {
+			"source": "./src/scene.ts",
+			"default": "./dist/scene.js"
+		},
+		"#direction/*": {
+			"source": "./src/direction/*.ts",
+			"default": "./dist/direction/*.js"
+		},
+		"#page/*": {
+			"source": "./src/page/*.ts",
+			"default": "./dist/page/*.js"
+		},
+		"#studio/*": {
+			"source": "./src/studio/*.ts",
+			"default": "./dist/studio/*.js"
+		},
+		"#adapters/*": {
+			"source": "./src/adapters/*.ts",
+			"default": "./dist/adapters/*.js"
+		},
+		"#cli/*": {
+			"source": "./src/cli/*.ts",
+			"default": "./dist/cli/*.js"
+		},
+		"#stage/*": {
+			"source": "./src/stage/*.ts",
+			"default": "./dist/stage/*.js"
+		},
+		"#built-stage/*": {
+			"source": "./build/stage/*",
+			"default": "./dist/stage/*"
+		}
+	},
+	"scripts": {
+		"livereel": "pnpm build:stage && node -C source src/cli/main.ts",
+		"bundle:stage": "esbuild src/stage/main.ts src/stage/stage.html --bundle --format=iife --conditions=source --loader:.html=copy --log-level=warning",
+		"build:stage": "pnpm bundle:stage --outdir=build/stage",
+		"build": "tsc -p tsconfig.build.json && pnpm bundle:stage --outdir=dist/stage",
+		"prepack": "pnpm build",
+		"postpack": "rm -rf dist",
+		"check": "tsc --noEmit -p .",
+		"lint": "eslint . && stylelint 'src/**/*.css'",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
+		"knip": "knip",
+		"test": "pnpm build:stage && vitest run"
+	},
+	"dependencies": {
+		"playwright-core": "^1.64.1"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"@types/node": "^26.6.5",
+		"esbuild": "^0.28.2",
+		"eslint": "^10.13.0",
+		"knip": "^6.43.0",
+		"prettier": "^3.9.10",
+		"stylelint": "^17.16.0",
+		"stylelint-config-standard": "^40.0.0",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.72.0",
+		"vitest": "^5.0.5"
+	}
+}

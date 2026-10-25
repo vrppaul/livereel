@@ -1,34 +1,32 @@
 ---
 paths:
-  - "src/livereel/*.py"
-  - "src/livereel/moves/*.py"
+  - "src/**/*.ts"
 ---
 
 # The engine and the command line
 
-How a module is built is said in its docstring. The stage has its own rules, `.claude/rules/stage.md`.
+How a module is built is said in its comment at the top. The stage and the props' drawers have their own rules, `.claude/rules/stage.md`.
 
-## Python
+## TypeScript
 
-- Write Python 3.14: type parameter syntax, `match`, `str | None`, `list[X]`.
-- Every function signature carries type hints.
-- All I/O is `async` and awaited: no blocking call. A file written from a coroutine goes through `asyncio.to_thread`.
-- A model is a Pydantic model, never a plain dataclass. A model made from another is made by a method of the model that writes every field out (`Pose.toward`, `Scene.posed`).
-- No model is taken apart into its fields by name: `scripts/check_code_rules.py` refuses `model_copy`, `model_construct`, `model_dump`, `__dict__`, `vars` and `copy.replace`. A model leaves for the stage as JSON (`model_dump_json`).
-- What the page answers with shape is read through a model (`ScrollCourse`, `BOXES_READ`), never used as a raw mapping.
-- An interface is an abstract class (`ABC`), never a `typing.Protocol`; every member is `@abstractmethod`, every implementation marks its methods `@override`.
-- Every `**/__init__.py` is empty.
-- Raise and catch a specific exception, never `Exception`.
+- Strict, with `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`; no `any`. A value read from outside — a file, a page, a command's output — is checked where it enters.
+- Only syntax Node strips (`erasableSyntaxOnly`): no `enum`, no parameter properties; a class writes its fields out.
+- A function an interface asks for is written as a property (`readonly at: (scene: Scene, progress: number) => Scene`), so the compiler holds it to its parameter types; a class implements it with a method.
+- A value made from another is a new value: `withProp(scene, name, state)`, `{ ...light, strength }`. Nothing in a scene is changed in place.
+- A choice between kinds is a union with a `kind`, and a `switch` that names every kind: the compiler refuses a kind left out.
+- Raise a `LivereelError` of the kind whose it is to put right (`src/domain/errors.ts`) where a person reads the message.
 
 ## Time and the frame
 
-- A frame is a moment of the film, `shot / FPS` seconds in, whatever the browser took: nothing reads the wall clock.
-- A move sets its part of the scene from how far along it is, already eased, and from what it read as its step began: never from the frame before.
-- Only an `Act` changes the page itself; a `Play` changes the scene and, for the page's own scroll or keys, does what that frame wants done.
+- A frame is a moment of the film, `shot / FRAMES_PER_SECOND` seconds in, whatever the browser took: nothing reads the wall clock.
+- A move reads what it starts from once, as its share of its step begins, and becomes a change that knows its start and end; its prop at any progress follows from those and the progress alone.
+- Two moves of one prop share a step only one after the other: `play` refuses them at once.
+- Only an act changes the page itself; a play changes the scene and, for the page's own scroll or keys, does what that frame wants done.
 - The page's own motion stays stilled (reduced motion): every move in a film is the film's.
-- The stage is handed numbers and words and decides nothing; a choice about what is shown is made here, in Python.
+- What changes with time of itself — the spinner, the caret — is worked out from the moment in the prop's state module; the stage keeps no time.
+- A function handed to the page runs there alone: it calls nothing of its module.
 
 ## The command line
 
-- A click command takes its options keyword-only (`*`): `scripts/check_code_rules.py` refuses one that takes a value by position.
-- What the command line says goes through `click.echo`; nothing else prints.
+- A command takes its options by name, each command its own, and refuses any other before anything is started.
+- What the command line says goes through `say`; the exit code says whose it is to put right: 2 the command line or film file, 1 the film.

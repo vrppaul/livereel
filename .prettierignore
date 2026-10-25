@@ -1,0 +1,5 @@
+# What is built, and what pnpm writes
+dist/
+pnpm-lock.yaml
+# The instruction files and the skill keep the lines they are written in
+*.md

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>livereel stage</title>
+		<link rel="stylesheet" href="main.css" />
+	</head>
+	<body>
+		<!-- The camera moves the screen; the page sits in the screen's frame, the light and the cursor lie on it -->
+		<div class="stage">
+			<div class="camera" data-prop="camera">
+				<div class="screen" data-prop="screen">
+					<iframe class="page" data-part="page" title="The page being filmed"></iframe>
+					<div class="light" data-prop="light"></div>
+					<svg class="cursor" data-prop="cursor" viewBox="0 0 30 40" aria-hidden="true">
+						<path d="M3 3 L3 31 L10.5 24 L16 36.5 L21 34.5 L15.5 22.5 L25.5 22.5 Z" />
+					</svg>
+				</div>
+			</div>
+		</div>
+		<!-- What stands flat over the frame, whatever the camera does: the caption, the terminal, the ending -->
+		<div class="caption" data-prop="caption">
+			<div class="ground" data-part="ground"></div>
+			<div class="words" data-part="words"></div>
+		</div>
+		<div class="terminal" data-prop="terminal">
+			<div class="window">
+				<div class="bar"><i></i><i></i><i></i><span class="title" data-part="title"></span></div>
+				<div class="log" data-part="log"></div>
+				<div class="line">
+					<span class="prompt">&gt;</span><span data-part="typed"></span><span class="caret" data-part="caret"></span>
+				</div>
+			</div>
+		</div>
+		<div class="ending" data-prop="ending">
+			<div class="name" data-part="name"></div>
+			<div class="what" data-part="what"></div>
+			<div class="command"><span class="prompt">&gt;</span><span data-part="command"></span></div>
+		</div>
+		<script src="main.js"></script>
+	</body>
+</html>

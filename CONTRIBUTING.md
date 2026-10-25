@@ -3,19 +3,19 @@
 ## Setup
 
 ```bash
-uv sync
-uv run playwright install chromium
-uv run pre-commit install --hook-type pre-commit --hook-type commit-msg
+pnpm install
+pnpm livereel setup
+uvx pre-commit install --hook-type pre-commit --hook-type commit-msg
 ```
 
-ffmpeg comes from the system. Node is needed for one hook: Biome, run through `npx`, lints the stage.
+Development runs on Node 24, which runs the source as it stands. ffmpeg comes from the system. pre-commit runs the gates, two of them in Python environments it makes itself.
 
 ## Development
 
 ```bash
-uv run pytest tests                  # unit, the gates' own tests, and a film shot in a real browser
-uv run pre-commit run --all-files    # every gate
-uv run livereel shoot examples/example_com.py --out out/example --sheet
+pnpm test                          # unit, a film shot in a real browser, the command line as a process
+uvx pre-commit run --all-files     # every gate
+pnpm livereel shoot examples/example-com.ts --out out/example --sheet
 ```
 
 The rules every change is held to are in `AGENTS.md`, and those of each area under `.claude/rules/`.
@@ -27,18 +27,19 @@ The rules every change is held to are in `AGENTS.md`, and those of each area und
 
 ## Architecture
 
-`src/livereel/` is layered, each module building only on those after it, which import-linter holds:
+`src/` is layered, each part building only on those after it, which eslint holds (`LAYERS` in `eslint.config.js`):
 
-- `cli` — the command line: shoot a film file, whole or one still.
-- `studio` — a `Production` put on the stage in a browser and shot; the frames made a video.
-- `steps` — what a film is a list of: `Play`, `Cut`, `Act`.
-- `moves` — the parts of a scene that change: camera, light, cursor, captions, the page's scroll and keys, a drawn terminal.
-- `film` — the film being shot: the stage, the page, the scene, which frames are kept.
-- `framing`, `keys` — where the camera stands for a block; how a person types.
-- `scene`, `geometry`, `easing` — what a frame is made of, and how a move speeds up and settles.
+- `cli` — the command line: load a film file, shoot it whole or one still, set a machine up.
+- `adapters` — Chromium with the stage and the filmed page (`browser/`), ffmpeg making the video as frames come (`video/`).
+- `studio` — a take: the steps run frame by frame on the film's clock, the scene held, frames handed to footage.
+- `direction` — what a film is written in: moves, steps (`play`, `cut`, `act`), the film itself.
+- `props/<prop>/` — each drawn part of the scene: its state, its moves, its drawer on the stage and its styles.
+- `page` — the page's own scroll and keys.
+- `scene` — every prop's state at one moment, and what the stage is handed of it.
+- `domain` — time and curves, geometry, the camera's framing, a person's typing, the errors.
 
-`src/livereel/stage/` is the page the film is shot on: the page being filmed sits in its frame, and its script draws each frame from the scene, deciding nothing.
+`src/stage/` is the page the film is shot on: the filmed page sits in its frame, and its script draws each frame from the scene, deciding nothing.
 
 ## Releasing
 
-Not yet published. When it is: bump `version` in `pyproject.toml` and the plugin's, move the changelog's unreleased entries under the version, tag `vX.Y.Z`.
+Not yet published. When it is: bump `version` in `package.json` and in the marketplace's entry, move the changelog's unreleased entries under the version, tag `vX.Y.Z`; `pnpm pack` builds the package into `dist/` and removes it after.

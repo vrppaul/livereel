@@ -1,18 +1,7 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
+# What pnpm installs, the stage built for development, and the package built to be packed
+node_modules/
 build/
 dist/
-wheels/
-*.egg-info
-
-# Virtual environments
-.venv
 
 # What a film is shot into
 out/
-
-# Linting and tests
-.ruff_cache/
-.pytest_cache/
-.import_linter_cache/

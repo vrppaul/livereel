@@ -1,0 +1,87 @@
+// A film shot for real, in a browser, of a page on the disk: the frames it keeps, its one still, keys typed into it
+import { mkdtemp, readdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { expect, test } from 'vitest';
+import { Chromium } from '#adapters/browser/chromium';
+import { StillFootage } from '#adapters/video/still';
+import {
+	type ActContext,
+	type Step,
+	act,
+	atAddress,
+	camera,
+	defineFilm,
+	keystrokes,
+	light,
+	page,
+	play,
+	typing
+} from 'livereel';
+import { shoot } from '#studio/shoot';
+import type { Footage } from '#studio/ports';
+
+const PAGE = new URL('./page.html', import.meta.url).href;
+const SMALL = { frame: { width: 320, height: 320 }, screen: { width: 480, height: 320 } };
+const FIELD = '[data-testid=field]';
+const TYPED = 'hello';
+
+/** Footage that keeps every frame and counts them. */
+class EveryFrameCounted implements Footage {
+	readonly kept: number[] = [];
+
+	expect(): void {}
+
+	keeps(): boolean {
+		return true;
+	}
+
+	keep(shot: number): Promise<void> {
+		this.kept.push(shot);
+		return Promise.resolve();
+	}
+
+	complete(): boolean {
+		return false;
+	}
+}
+
+function filmOf(steps: readonly Step[]) {
+	return defineFilm({
+		format: SMALL,
+		serve: () => Promise.resolve(atAddress(PAGE)),
+		ready: (context) => context.page.locator('h1').waitFor(),
+		steps: () => steps
+	});
+}
+
+async function scratch(): Promise<string> {
+	return mkdtemp(join(tmpdir(), 'livereel-smoke-'));
+}
+
+test('every frame of a film is kept, in order', async () => {
+	const footage = new EveryFrameCounted();
+	const steps = [play({ seconds: 0.2, moves: [camera.onto('h1'), light.on('p')] })];
+	const shot = await shoot(filmOf(steps), { browser: new Chromium(), footage, sharpness: 1 });
+	expect([shot.frames, footage.kept]).toEqual([6, [0, 1, 2, 3, 4, 5]]);
+});
+
+test('a still is the one frame written, and nothing after it is shot', async () => {
+	const directory = await scratch();
+	const footage = new StillFootage(join(directory, 'still.jpg'), 0.1);
+	const shot = await shoot(filmOf([play({ seconds: 0.2 })]), { browser: new Chromium(), footage, sharpness: 1 });
+	expect([await readdir(directory), shot.frames]).toEqual([['still.jpg'], 4]);
+});
+
+test('keys typed into the page reach the field that holds its keyboard', async () => {
+	const values: string[] = [];
+	const steps = [
+		act((context: ActContext) => context.page.locator(FIELD).click()),
+		...typing(page.type(keystrokes(TYPED, { seed: 1, slipAt: 2 }))),
+		act(async (context: ActContext) => {
+			values.push(await context.page.locator(FIELD).inputValue());
+		})
+	];
+	await shoot(filmOf(steps), { browser: new Chromium(), footage: new EveryFrameCounted(), sharpness: 1 });
+	expect(values).toEqual([TYPED]);
+});

@@ -1,0 +1,32 @@
+/* A caption: its words over the frame's foot, on a ground that darkens it */
+.caption {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.caption .ground {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 380px;
+	background: var(--caption-ground);
+}
+
+.caption .words {
+	position: absolute;
+	left: 64px;
+	right: 64px;
+	bottom: 72px;
+	font: 650 56px / 1.12 var(--sans);
+	letter-spacing: -0.025em;
+	color: var(--ink);
+	text-shadow: var(--caption-shadow);
+	text-wrap: balance;
+}
+
+.caption .words span {
+	display: inline-block;
+	margin-right: 0.24em;
+}

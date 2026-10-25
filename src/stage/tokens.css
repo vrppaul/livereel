@@ -1,0 +1,40 @@
+/*
+ * Every colour of the stage, its shadows and its reaches, written once. The other stylesheets name these and write
+ * no colour of their own (stylelint holds them to it).
+ */
+:root {
+	--ground: #0b0e14;
+	--ground-glow: #182033;
+	--ground-light: radial-gradient(120% 90% at 50% 30%, var(--ground-glow), var(--ground));
+	--ink: #f4f6fa;
+	--ink-quiet: #8b95a7;
+	--ink-faint: #5d6678;
+	--agent: #d97757;
+	--done: #7ee2a8;
+	--terminal: #10141c;
+	--terminal-edge: #252d3b;
+	--terminal-shadow: 0 0 0 1px var(--terminal-edge), 0 40px 100px rgb(0 0 0 / 50%);
+	--cursor-fill: #111;
+	--cursor-edge: #fff;
+	--cursor-shadow: drop-shadow(0 3px 4px rgb(0 0 0 / 35%));
+
+	/* What the screen shows until the page draws, and the screen lifted off the ground with a faint edge */
+	--screen-ground: #fff;
+	--screen-shadow: 0 50px 120px rgb(0 0 0 / 55%), 0 0 0 1px rgb(255 255 255 / 7%);
+
+	/* The dark round a block in the light, reaching past any edge of the screen */
+	--light-dark: 0 0 0 4000px rgb(6 9 16);
+	--caption-ground: linear-gradient(to top, rgb(6 9 16 / 85%), rgb(6 9 16 / 0%));
+	--caption-shadow: 0 2px 30px rgb(0 0 0 / 55%);
+	--sans: ui-sans-serif, system-ui, sans-serif;
+	--mono: ui-monospace, 'JetBrains Mono', monospace;
+
+	/* How far the eye stands from the screen: nearer is a stronger angle */
+	--eye-distance: 2000px;
+
+	/* The frame's and the screen's sizes, set by the stage's script as a film begins */
+	--frame-width: 1920px;
+	--frame-height: 1080px;
+	--screen-width: 1920px;
+	--screen-height: 1080px;
+}
