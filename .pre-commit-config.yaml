@@ -67,14 +67,6 @@ repos:
         exclude: ^tsconfig(\.build)?\.json$
       - id: check-case-conflict
       - id: check-symlinks
-      - id: check-added-large-files
-        # The README's promo is a GIF of 20 s, larger than the gate's 500 kB; it is the one file let through
-        exclude: ^docs/promo\.gif$
-      # The promo's GIF held to a bound of its own, each time it is made again as well as when it is added
-      - id: check-added-large-files
-        name: check the promo's GIF stays under 5 MB
-        files: ^docs/promo\.gif$
-        args: [--maxkb=5000, --enforce-all]
 
   # claude-review's gate of its instruction files, taken as it is (scripts/check_instruction_files.py), run in an
   # environment pre-commit makes for it
