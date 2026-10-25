@@ -6,7 +6,8 @@
  * whenever it is shot. A prop's drawer sets the prop's numbers as custom properties of its element, which
  * `stage.css` turns into places, sizes and shades, and writes the prop's words where it has any. The script answers
  * the browser adapter under `window.stage` (`src/adapters/browser/stage.ts`). It is JavaScript the type checker
- * reads, run by the page as it stands: nothing is built.
+ * reads, run by the page as it stands: nothing is built. It is a plain script, not a module, since Chrome loads no
+ * module from a file; nothing else runs in the stage page, so its names stand alone there.
  */
 /** @import { DrawnScene, PropName } from '../src/scene.ts' */
 /** @import { Format } from '../src/domain/geometry.ts' */

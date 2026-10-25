@@ -72,6 +72,11 @@ test("a fault in the film's own code is said as the film's, naming where it was 
 	]);
 });
 
+test('a page that cannot be reached is refused as it is opened, by its address', () => {
+	const ran = livereel('still', 'tests/cli/films/unreachable.ts', '--out', scratch(), '--at', '0');
+	expect([ran.code, ran.said]).toEqual([1, 'livereel still: the page at http://127.0.0.1:9/ could not be reached\n']);
+});
+
 test('a film is not shot where ffmpeg is not on the path', () => {
 	const ran = livereelWith({ PATH: scratch() }, 'shoot', SHORT, '--out', scratch());
 	expect([ran.code, ran.said]).toEqual([1, expect.stringContaining('ffmpeg is not on the path')]);

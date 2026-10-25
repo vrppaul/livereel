@@ -33,7 +33,7 @@ const LINE = 'p[lang=en]';
 
 export default defineFilm({
 	format: { frame: { width: 1080, height: 1080 }, screen: { width: 1440, height: 1080 } },
-	serve: () => Promise.resolve(atAddress('https://example.com/')),
+	serve: () => atAddress('https://example.com/'),
 	ready: (context) => context.page.locator(LINE).waitFor(),
 	steps: () => [
 		play({ seconds: 1.2, moves: [camera.onto(LINE, { air: 120 }), light.on(LINE), caption.show('A page, filmed')] }),

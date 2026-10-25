@@ -52,8 +52,8 @@ async function followTheLink(context: ActContext): Promise<void> {
 	await context.page.waitForLoadState();
 }
 
-function servedElsewhere(): Promise<Serving> {
-	return Promise.resolve(atAddress(ADDRESS));
+function servedElsewhere(): Serving {
+	return atAddress(ADDRESS);
 }
 
 function linkShown(context: ActContext): Promise<void> {

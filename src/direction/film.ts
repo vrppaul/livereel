@@ -17,7 +17,8 @@ export interface Serving extends AsyncDisposable {
 
 export interface Script<Served extends Serving> {
 	readonly format: Format;
-	readonly serve: () => Promise<Served>;
+	/** The page served, or found served elsewhere (`atAddress`), with any handles of the film's own. */
+	readonly serve: () => Served | Promise<Served>;
 	/** Wait until the page stands as the first frame shows it. */
 	readonly ready: (context: ActContext, served: Served) => Promise<void>;
 	readonly steps: (served: Served, whole: Pose) => readonly Step[];
