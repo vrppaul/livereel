@@ -31,7 +31,6 @@ const ENTERS_FROM_BELOW = 220;
 // How long a press goes in, and how long it takes to let go
 const PRESS_SECONDS = 0.09;
 const RELEASE_SECONDS = 0.12;
-const PRESSED = 'the cursor is pressed, but it is not on the screen';
 const HIDDEN: Change = propChange('cursor', () => null);
 
 /** The cursor to a block of the page, from where it is, or from where it enters if it is not yet on the screen. */
@@ -40,11 +39,11 @@ export function to(target: string, script: CursorScript = {}): Move {
 }
 
 export function press(script: TimingScript = {}): Move {
-	return { part: 'cursor', timing: timingOf(script), begin: (beginning) => pressing(beginning, true) };
+	return { part: 'cursor', timing: timingOf(script), begin: pressingIn };
 }
 
 export function release(script: TimingScript = {}): Move {
-	return { part: 'cursor', timing: timingOf(script), begin: (beginning) => pressing(beginning, false) };
+	return { part: 'cursor', timing: timingOf(script), begin: lettingGo };
 }
 
 /** The cursor taken off the screen. */
@@ -68,9 +67,14 @@ async function along(beginning: Beginning, target: string, script: CursorScript)
 	return propChange('cursor', (progress) => ({ ...pointAlong(arc, progress), press: 0 }));
 }
 
-function pressing(beginning: Beginning, down: boolean): Change {
-	const cursor = present(beginning, 'cursor', PRESSED);
-	return propChange('cursor', (progress) => ({ ...cursor, press: down ? progress : 1 - progress }));
+function pressingIn(beginning: Beginning): Change {
+	const cursor = present(beginning, 'cursor', 'the cursor is pressed, but it is not on the screen');
+	return propChange('cursor', (progress) => ({ ...cursor, press: progress }));
+}
+
+function lettingGo(beginning: Beginning): Change {
+	const cursor = present(beginning, 'cursor', 'the cursor is let go, but it is not on the screen');
+	return propChange('cursor', (progress) => ({ ...cursor, press: 1 - progress }));
 }
 
 function restingOn(box: Box): Point {

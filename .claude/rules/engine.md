@@ -12,7 +12,7 @@ How a module is built is said in its comment at the top. The stage has its own r
 - Strict, with `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`; no `any`. A value read from outside — a file, a page, a command's output — is checked where it enters.
 - Only syntax Node strips (`erasableSyntaxOnly`): no `enum`, no parameter properties; a class writes its fields out.
 - A function an interface asks for is written as a property (`readonly begin: (beginning: Beginning) => Change`), so the compiler holds it to its parameter types; a class implements it with a method.
-- A move is a plain object made by a function of its module in `src/moves/`; a class is written only for what keeps state between frames (the keys pressed into the page, the take).
+- A move is a plain object made by a function of its module in `src/moves/`, never a class; what a move keeps between frames (the keys pressed into the page) is a class of its own.
 - A value made from another is a new value: `withProp(scene, name, state)`, `{ ...light, strength }`. Nothing in a scene is changed in place.
 - A choice between kinds is a union with a `kind`, and a `switch` that names every kind: the compiler refuses a kind left out.
 - Raise a `LivereelError` of the kind whose it is to put right (`src/domain/errors.ts`) where a person reads the message.

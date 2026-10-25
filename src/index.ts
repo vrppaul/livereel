@@ -16,7 +16,7 @@ export type { Act, Cut, Play, PlayScript, Step } from './direction/steps.ts';
 export { atAddress, defineFilm } from './direction/film.ts';
 export type { Film, Script, Serving } from './direction/film.ts';
 export type { ActContext } from './direction/page.ts';
-export type { Move } from './direction/move.ts';
+export type { Bounds, Move, TimingScript } from './direction/move.ts';
 export { keystrokes } from './domain/typing.ts';
 export type { Keystroke, Typist } from './domain/typing.ts';
 export { easeInOutCubic, easeInOutSine, easeOutCubic, easeOutQuint, linear } from './domain/time.ts';

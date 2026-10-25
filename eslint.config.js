@@ -125,6 +125,12 @@ const OWN_CLOCK = [
 	'src/studio/**',
 	'stage/*.js'
 ];
+// What only a page has: the parts worked out without a browser name none of it, though the program's types know it
+const PAGE_GLOBALS = ['window', 'document', 'navigator', 'location', 'getComputedStyle'].map((name) => ({
+	name,
+	message: 'This part is worked out without a browser: there is no page here.'
+}));
+const WITHOUT_A_PAGE = OWN_CLOCK.filter((files) => files !== 'stage/*.js');
 // The keywords a film writes its timing, framing and rhythm by, in place: a number stands there and nowhere else but
 // in a constant named at the top of the film
 const SCRIPT_KEYWORDS = [
@@ -214,6 +220,10 @@ export default tseslint.config(
 	{
 		files: OWN_CLOCK,
 		rules: { 'no-restricted-globals': ['error', ...WALL_CLOCK] }
+	},
+	{
+		files: WITHOUT_A_PAGE,
+		rules: { 'no-restricted-globals': ['error', ...WALL_CLOCK, ...PAGE_GLOBALS] }
 	},
 	{
 		// The stage's script: JavaScript whose types JSDoc writes, so the type checker names what is undefined and

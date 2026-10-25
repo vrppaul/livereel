@@ -19,6 +19,10 @@ test('a slip stands and is rubbed out before the right letter', () => {
 	]);
 });
 
+test('a slip on a capital letter types the key beside it as a capital, as a hand on Shift does', () => {
+	expect(keystrokes('Rat', { seed: 1, slipAt: 0 }).map((stroke) => stroke.typed)).toEqual(['T', '', 'R', 'Ra', 'Rat']);
+});
+
 test('a letter with no key beside it is typed without a slip', () => {
 	expect(keystrokes('a1b', { seed: 1, slipAt: 1 }).map((stroke) => stroke.typed)).toEqual(['a', 'a1', 'a1b']);
 });

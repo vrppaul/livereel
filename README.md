@@ -4,8 +4,10 @@ Film a live web page as a directed short: a camera that leans and travels,
 a light on the block that matters, a cursor that moves like a hand, captions
 that come up word by word. The page is real — clicks, typing and its
 server's answers happen in it — and every frame is shot on a clock of the
-film's own, so a slow server costs the film nothing and a film shot twice
-is the same film.
+film's own, so a slow server costs the film nothing, and a film shot twice
+moves its camera, light and captions the same. The page is asked for
+reduced motion; a page that ignores it animates on the wall clock, and
+there two shots differ.
 
 No video editor, no React: a film is a TypeScript file of steps, shot in
 Chromium through Playwright and made a video with ffmpeg as it is shot.

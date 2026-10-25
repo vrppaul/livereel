@@ -80,12 +80,18 @@ export function typingSeconds(strokes: readonly Keystroke[]): number {
 	return strokes.at(LAST)?.at ?? 0;
 }
 
-/** The key beside a letter, where a finger slips to; a key on no row slips nowhere. */
+/** What stands typed `progress` of the way through the typing, from 0 to 1. */
+export function typedAlong(strokes: readonly Keystroke[], progress: number): string {
+	return typedBy(strokes, progress * typingSeconds(strokes));
+}
+
+/** The key beside a letter, where a finger slips to, in the letter's case; a key on no row slips nowhere. */
 function beside(letter: string): string {
 	const key = letter.toLowerCase();
 	const row = KEYBOARD_ROWS.find((keys) => keys.includes(key));
 	if (row === undefined) return letter;
-	return row.charAt((row.indexOf(key) + 1) % row.length);
+	const slipped = row.charAt((row.indexOf(key) + 1) % row.length);
+	return letter === key ? slipped : slipped.toUpperCase();
 }
 
 /** The seeded draws a typing's rhythm is made of. */

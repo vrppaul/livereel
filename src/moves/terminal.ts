@@ -1,6 +1,6 @@
 /** An agent's terminal on the stage: opened, a person typing into it, the agent at work, the terminal giving way. */
 import { linear } from '../domain/time.ts';
-import { type Keystroke, typedBy, typingSeconds } from '../domain/typing.ts';
+import { type Keystroke, typedAlong } from '../domain/typing.ts';
 import {
 	type Beginning,
 	type Change,
@@ -8,7 +8,8 @@ import {
 	type TimingScript,
 	present,
 	propChange,
-	timingOf
+	timingOf,
+	untilTheEnd
 } from '../direction/move.ts';
 import type { Typed } from '../direction/steps.ts';
 import { type Terminal, type TerminalLine, openTerminal } from '../props/terminal.ts';
@@ -28,7 +29,6 @@ interface Work {
 
 // Of the agent's work, the share it only thinks before its first line
 const THINKING_SHARE = 0.22;
-const CLOSED = 'the terminal is used, but none is open';
 
 /** A terminal with its title, nothing in its log yet, nothing typed. */
 export function open(title: string): Move {
@@ -50,13 +50,15 @@ export function submit(): Move {
 	return { part: 'terminal', timing: timingOf({}), begin: submitted };
 }
 
-/** The agent at work: its spinner under the lines it writes, one after another, gone once it is done. */
-export function works(lines: readonly TerminalLine[], thinking: TerminalLine, script: WorkScript = {}): Move {
+/** The agent at work: its spinner and `thinking` under the lines it writes, one after another, gone once it is done. */
+export function works(lines: readonly TerminalLine[], thinking: string, script: WorkScript = {}): Move {
+	const thinkingLine: TerminalLine = { kind: 'thinking', text: thinking };
 	const thinkingShare = script.thinkingShare ?? THINKING_SHARE;
 	return {
 		part: 'terminal',
 		timing: timingOf({ ease: linear, ...script }),
-		begin: (beginning) => working({ terminal: openOn(beginning), lines, thinking, thinkingShare })
+		begin: (beginning) =>
+			working({ terminal: openOn(beginning, 'worked in'), lines, thinking: thinkingLine, thinkingShare })
 	};
 }
 
@@ -71,13 +73,12 @@ function opened(title: string): Change {
 }
 
 function typingInto(beginning: Beginning, strokes: readonly Keystroke[]): Change {
-	const terminal = openOn(beginning);
-	const seconds = typingSeconds(strokes);
-	return propChange('terminal', (progress) => ({ ...terminal, typed: typedBy(strokes, progress * seconds) }));
+	const terminal = openOn(beginning, 'typed into');
+	return propChange('terminal', (progress) => ({ ...terminal, typed: typedAlong(strokes, progress) }));
 }
 
 function submitted(beginning: Beginning): Change {
-	const terminal = openOn(beginning);
+	const terminal = openOn(beginning, 'submitted');
 	const asked: TerminalLine = { kind: 'asked', text: terminal.typed };
 	const after = { ...terminal, lines: [...terminal.lines, asked], typed: '' };
 	return propChange('terminal', () => after);
@@ -88,8 +89,8 @@ function working(work: Work): Change {
 }
 
 function leaving(beginning: Beginning): Change {
-	const terminal = openOn(beginning);
-	return propChange('terminal', (progress) => leftAt(terminal, progress));
+	const terminal = openOn(beginning, 'left');
+	return propChange('terminal', (progress) => untilTheEnd(progress, { ...terminal, leaving: progress }));
 }
 
 /** The lines written by `progress` of the work, after its share of thinking, and the thinking line until the end. */
@@ -100,11 +101,7 @@ function workedAt(work: Work, progress: number): Terminal {
 	return { ...work.terminal, lines: [...work.terminal.lines, ...shown, ...working] };
 }
 
-function leftAt(terminal: Terminal, progress: number): Terminal | null {
-	if (progress >= 1) return null;
-	return { ...terminal, leaving: progress };
-}
-
-function openOn(beginning: Beginning): Terminal {
-	return present(beginning, 'terminal', CLOSED);
+/** The terminal a move finds open; one not open is refused, saying what the move does to it. */
+function openOn(beginning: Beginning, done: string): Terminal {
+	return present(beginning, 'terminal', `the terminal is ${done}, but none is open`);
 }

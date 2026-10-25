@@ -7,9 +7,9 @@ import {
 	type TimingScript,
 	present,
 	propChange,
-	timingOf
+	timingOf,
+	untilTheEnd
 } from '../direction/move.ts';
-import type { Caption } from '../props/caption.ts';
 
 /** A caption coming up word by word; its words come up at an even pace unless the film names a curve. */
 export function show(text: string, script: TimingScript = {}): Move {
@@ -27,10 +27,5 @@ function showing(text: string): Change {
 
 function going(beginning: Beginning): Change {
 	const caption = present(beginning, 'caption', 'a caption is hidden, but none is on the screen');
-	return propChange('caption', (progress) => goneAt(caption, progress));
-}
-
-function goneAt(caption: Caption, progress: number): Caption | null {
-	if (progress >= 1) return null;
-	return { ...caption, gone: progress };
+	return propChange('caption', (progress) => untilTheEnd(progress, { ...caption, gone: progress }));
 }

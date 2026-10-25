@@ -18,8 +18,8 @@ const CUBE = 3;
 const FIFTH_POWER = 5;
 // How steeply the cubic curve that eases both ways starts
 const CUBIC_START = 4;
-// A moment is said to a tenth of a second
-const TENTHS = 1;
+// A moment is said to a tenth of a second: one digit after the point
+const DIGITS_TO_A_TENTH = 1;
 
 export function between(start: number, end: number, progress: number): number {
 	return start + (end - start) * progress;
@@ -62,5 +62,5 @@ export function momentOf(shot: number): number {
 
 /** A moment or a length of the film as a person reads it: seconds, to a tenth. */
 export function secondsSaid(seconds: number): string {
-	return seconds.toFixed(TENTHS);
+	return seconds.toFixed(DIGITS_TO_A_TENTH);
 }

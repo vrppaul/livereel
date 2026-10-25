@@ -5,7 +5,7 @@
  * page renders a little each frame as a person's scroll and typing make it.
  */
 import { between, linear } from '../domain/time.ts';
-import { type Keystroke, typedBy, typingSeconds } from '../domain/typing.ts';
+import { type Keystroke, typedAlong } from '../domain/typing.ts';
 import { type Beginning, type Change, type Move, type TimingScript, timingOf } from '../direction/move.ts';
 import type { FilmedPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import type { Typed } from '../direction/steps.ts';
@@ -64,18 +64,16 @@ function keysInto(page: FilmedPage, strokes: readonly Keystroke[]): Change {
 class KeysPressed {
 	readonly page: FilmedPage;
 	readonly strokes: readonly Keystroke[];
-	readonly seconds: number;
 	// What stands typed in the page so far: the keys are the page's, so what was pressed is kept here
 	private standing = '';
 
 	constructor(page: FilmedPage, strokes: readonly Keystroke[]) {
 		this.page = page;
 		this.strokes = strokes;
-		this.seconds = typingSeconds(strokes);
 	}
 
 	async pressedBy(scene: Scene, progress: number): Promise<Scene> {
-		const wanted = typedBy(this.strokes, progress * this.seconds);
+		const wanted = typedAlong(this.strokes, progress);
 		const kept = sharedStart(wanted, this.standing);
 		for (let rubbed = kept; rubbed < this.standing.length; rubbed += 1) await this.page.press(BACKSPACE);
 		if (wanted.length > kept) await this.page.type(wanted.slice(kept));

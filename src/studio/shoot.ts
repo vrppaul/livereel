@@ -14,7 +14,7 @@ import { openingScene } from '../scene.ts';
 import type { Browser, Footage } from './ports.ts';
 import { Take } from './take.ts';
 
-/** How sharp the frames are shot, and where they go. */
+/** The browser a film is shot in, where its frames go, and how sharp they are shot. */
 export interface Shooting {
 	readonly browser: Browser;
 	readonly footage: Footage;

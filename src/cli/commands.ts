@@ -25,11 +25,13 @@ export interface Command {
 // Sharp enough to zoom into and to angle without the text going soft; a draft is shot at the frame's own size
 const SHARPNESS = 2;
 const DRAFT_SHARPNESS = 1;
-const VIDEO = '.mp4';
-const STILL = '.jpg';
-const SHEET = '-sheet.png';
+// What each file a command writes is named with, after the film file's name
+const VIDEO_SUFFIX = '.mp4';
+const STILL_SUFFIX = '.jpg';
+const SHEET_SUFFIX = '-sheet.png';
 const MILLISECONDS = 1000;
-const OUT = { type: 'string' } as const;
+// An option that takes a value, and one that is given or not
+const VALUE = { type: 'string' } as const;
 const FLAG = { type: 'boolean', default: false } as const;
 
 const SHOOT: Command = {
@@ -38,7 +40,7 @@ const SHOOT: Command = {
 	run: shootCommand
 };
 
-const STILL_COMMAND: Command = {
+const STILL: Command = {
 	summary: 'Shoot one still of a film, without making the video.',
 	usage: 'livereel still FILM_FILE --out DIRECTORY --at SECONDS [--draft]',
 	run: stillCommand
@@ -52,7 +54,7 @@ const SETUP: Command = {
 
 export const COMMANDS: ReadonlyMap<string, Command> = new Map([
 	['shoot', SHOOT],
-	['still', STILL_COMMAND],
+	['still', STILL],
 	['setup', SETUP]
 ]);
 
@@ -63,14 +65,14 @@ export function say(line: string): void {
 
 async function shootCommand(given: readonly string[]): Promise<void> {
 	const { values, positionals } = asUsage(SHOOT, () =>
-		parseArgs({ args: [...given], options: { out: OUT, draft: FLAG, sheet: FLAG }, allowPositionals: true })
+		parseArgs({ args: [...given], options: { out: VALUE, draft: FLAG, sheet: FLAG }, allowPositionals: true })
 	);
 	const file = theFilmFile(positionals, SHOOT);
 	const out = theOut(values.out, SHOOT);
 	await ffmpegNeeded();
 	const film = await loadedFilm(file);
 	await mkdir(out, { recursive: true });
-	const video = join(out, `${nameOf(file)}${VIDEO}`);
+	const video = join(out, `${nameOf(file)}${VIDEO_SUFFIX}`);
 	const started = performance.now();
 	await using footage = new VideoFootage(video, film.format.frame);
 	const shot = await shoot(film, { browser: new Chromium(), footage, sharpness: sharpnessOf(values.draft) });
@@ -82,21 +84,21 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 			`the video done ${secondsBetween(filmed, finished)} s after the last frame`
 	);
 	if (!values.sheet) return;
-	const sheet = join(out, `${nameOf(file)}${SHEET}`);
+	const sheet = join(out, `${nameOf(file)}${SHEET_SUFFIX}`);
 	await contactSheet(video, sheet, shot.seconds);
 	say(sheet);
 }
 
 async function stillCommand(given: readonly string[]): Promise<void> {
-	const { values, positionals } = asUsage(STILL_COMMAND, () =>
-		parseArgs({ args: [...given], options: { out: OUT, draft: FLAG, at: OUT }, allowPositionals: true })
+	const { values, positionals } = asUsage(STILL, () =>
+		parseArgs({ args: [...given], options: { out: VALUE, draft: FLAG, at: VALUE }, allowPositionals: true })
 	);
-	const file = theFilmFile(positionals, STILL_COMMAND);
-	const out = theOut(values.out, STILL_COMMAND);
+	const file = theFilmFile(positionals, STILL);
+	const out = theOut(values.out, STILL);
 	const moment = momentAsked(values.at);
 	const film = await loadedFilm(file);
 	await mkdir(out, { recursive: true });
-	const still = join(out, `${nameOf(file)}-${String(moment)}s${STILL}`);
+	const still = join(out, `${nameOf(file)}-${String(moment)}s${STILL_SUFFIX}`);
 	await rm(still, { force: true });
 	const started = performance.now();
 	const footage = new StillFootage(still, moment);
@@ -134,7 +136,7 @@ function theOut(out: string | undefined, command: Command): string {
 function momentAsked(at: string | undefined): number {
 	const moment = Number(at);
 	if (at === undefined || at.trim() === '' || !Number.isFinite(moment) || moment < 0) {
-		throw new UsageError(`--at is the moment of the still, in seconds from 0\n${STILL_COMMAND.usage}`);
+		throw new UsageError(`--at is the moment of the still, in seconds from 0\n${STILL.usage}`);
 	}
 	return moment;
 }

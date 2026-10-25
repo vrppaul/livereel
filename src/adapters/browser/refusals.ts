@@ -42,21 +42,20 @@ export async function withoutFrameRefusals(route: Route): Promise<void> {
 	}
 	const headers = Object.entries(answer.headers())
 		.map(([name, value]) => [name, framedAnyway(name, value)] as const)
-		.filter(([, value]) => value !== '');
+		.filter((header): header is readonly [string, string] => header[1] !== null);
 	await route.fulfill({ response: answer, headers: Object.fromEntries(headers) });
 }
 
-/** A header as it stands once it no longer refuses a frame: `X-Frame-Options` gone, each CSP less `frame-ancestors`. */
-export function framedAnyway(name: string, value: string): string {
+/**
+ * A header as it stands once it no longer refuses a frame, or none: `X-Frame-Options` goes, each CSP loses
+ * `frame-ancestors`, and a CSP left with nothing goes.
+ */
+export function framedAnyway(name: string, value: string): string | null {
 	switch (name.toLowerCase()) {
 		case FRAME_OPTIONS:
-			return '';
+			return null;
 		case CONTENT_SECURITY_POLICY:
-			return value
-				.split(POLICIES_APART)
-				.map(withoutAncestors)
-				.filter((policy) => policy !== '')
-				.join(POLICIES_JOINED);
+			return policiesLeft(value);
 		default:
 			return value;
 	}
@@ -69,6 +68,15 @@ async function answered(route: Route): Promise<APIResponse | null> {
 		if (fault instanceof Error) return null;
 		throw fault;
 	}
+}
+
+/** A CSP's policies, each less who may frame the page; none where no policy has anything else. */
+function policiesLeft(value: string): string | null {
+	const policies = value
+		.split(POLICIES_APART)
+		.map(withoutAncestors)
+		.filter((policy) => policy !== '');
+	return policies.length === 0 ? null : policies.join(POLICIES_JOINED);
 }
 
 /** One policy less the directive that names who may frame the page; directive names are read in any case. */

@@ -85,9 +85,11 @@ the film starts and stops), when the page is ready, and its steps. Read
 
 ### What a film is written with
 
-Every move takes, last, its timing: `within: { start, end }`, the share of
-its step it runs over (0 to 1, the whole step if left out), and `ease`, its
-own curve where it does not take its step's.
+Every move that runs over time takes, last, its timing: `within: { start,
+end }`, the share of its step it runs over (0 to 1, the whole step if left
+out), and `ease`, its own curve where it does not take its step's.
+`cursor.hide()`, `screen.lower()`, `terminal.open(title)` and
+`terminal.submit()` are made at once and take none: write them in a `cut`.
 
 | Steps | |
 |---|---|
@@ -109,7 +111,7 @@ own curve where it does not take its step's.
 | `caption.show(text)`, `caption.hide()` | words coming up one after another, in place of any shown; going |
 | `terminal.open(title)` | an agent's terminal drawn over the frame, in a `cut` |
 | `terminal.type(strokes)`, `terminal.submit()` | keys typed into it; Enter |
-| `terminal.works(lines, thinking, { thinkingShare })` | the agent's lines written one after another under a thinking line; `TerminalLine` is `{ kind, text }`, its kind `asked`, `work`, `said`, `done` or `thinking` |
+| `terminal.works(lines, thinking, { thinkingShare })` | the agent thinking, its spinner beside the words `thinking`, then its lines written one after another; a line is `{ kind, text }`, its kind `work` (a tool and what it is used on), `said` or `done` |
 | `terminal.leave()` | the terminal giving way |
 | `ending.show(card)` | the last card: `{ name, line, command }` |
 | `page.scrollBy(selector, { pixels })` | a block's own scroll moved so many pixels |
@@ -145,8 +147,8 @@ npx livereel still film.ts --out out --at 12.5   # one still, without the video
 
 - A browser places a click wrongly on a screen the camera has scaled: an
   `act` lays the screen flat at its own size first. Do clicks in `act`.
-- `backdrop-filter` on a moved screen mirrors what lies under it: the light
-  dims and never blurs.
+- The page is asked for the light colour scheme: an app that follows the
+  system's scheme is filmed light.
 - The page is asked for reduced motion, so a page that honours it stands
   still between frames; one that ignores it animates on the wall clock, and
   two shots of it differ. Where the page's own animation must show (a

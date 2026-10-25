@@ -10,7 +10,7 @@ import { once } from 'node:events';
 import { rename, rm } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
 import type { Readable, Writable } from 'node:stream';
-import { EncodingError } from '../../domain/errors.ts';
+import { EncodingError, FilmError } from '../../domain/errors.ts';
 import type { Size } from '../../domain/geometry.ts';
 import { FRAMES_PER_SECOND } from '../../domain/time.ts';
 import type { Footage } from '../../studio/ports.ts';
@@ -36,8 +36,9 @@ const ENCODING = [
 const SHEET_COLUMNS = 6;
 const SHEET_TILE_WIDTH = 360;
 const THE_FIRST_FRAME = ['-frames:v', '1'];
-const WRITING_FAILED = 'EPIPE';
 const STOP = 'SIGKILL';
+// The video's colour is kept once for every two pixels each way, so a frame's sides are even
+const PIXELS_PAIRED = 2;
 // What a video's name carries until it is whole
 const PARTIAL = '.partial';
 
@@ -58,6 +59,7 @@ export class VideoFootage implements Footage, AsyncDisposable {
 	private whole = false;
 
 	constructor(video: string, frame: Size) {
+		refuseOddSides(frame);
 		this.video = video;
 		this.partial = partialOf(video);
 		const scaled = ['-vf', `scale=${frame.width}:${frame.height}:flags=lanczos`];
@@ -67,7 +69,7 @@ export class VideoFootage implements Footage, AsyncDisposable {
 		this.ended = closed(this.encoder);
 		this.encoder.on('error', (fault) => this.said.push(fault.message));
 		this.encoder.stderr.on('data', (chunk: Buffer) => this.said.push(chunk.toString()));
-		this.encoder.stdin.on('error', (fault: NodeJS.ErrnoException) => this.said.push(fault.code ?? WRITING_FAILED));
+		this.encoder.stdin.on('error', (fault) => this.said.push(fault.message));
 	}
 
 	expect(): void {
@@ -119,6 +121,14 @@ export class VideoFootage implements Footage, AsyncDisposable {
 	private refusal(): EncodingError {
 		return new EncodingError(`ffmpeg stopped: ${this.said.join('').trim()}`);
 	}
+}
+
+/** A frame the video cannot hold, refused in the film's terms rather than in ffmpeg's. */
+function refuseOddSides(frame: Size): void {
+	if (frame.width % PIXELS_PAIRED === 0 && frame.height % PIXELS_PAIRED === 0) return;
+	throw new FilmError(
+		`a video is made of frames whose sides are even counts of pixels: ${frame.width} × ${frame.height} is not`
+	);
 }
 
 /** Where a video is written until it is whole: beside it, with the same container's suffix. */

@@ -72,6 +72,36 @@ test("a fault in the film's own code is said as the film's, naming where it was 
 	]);
 });
 
+test('steps livereel refuses as they are written are said in its own words', () => {
+	const ran = livereel('still', 'tests/cli/films/no-time.ts', '--out', scratch(), '--at', '0');
+	expect([ran.code, ran.said]).toEqual([1, expect.stringContaining('livereel still: a step of 0 s cannot be shot')]);
+});
+
+test('a film is shot whole into a video of every frame at 30 a second, and its contact sheet', () => {
+	const out = scratch();
+	const ran = livereel('shoot', SHORT, '--out', out, '--draft', '--sheet');
+	const probed = spawnSync(
+		'ffprobe',
+		[
+			'-v',
+			'error',
+			'-count_frames',
+			'-show_entries',
+			'stream=nb_read_frames,r_frame_rate',
+			'-of',
+			'csv=p=0',
+			join(out, 'short.mp4')
+		],
+		{ encoding: 'utf8' }
+	);
+	expect([ran.code, readdirSync(out), probed.stdout.trim()]).toEqual([0, ['short-sheet.png', 'short.mp4'], '30/1,6']);
+});
+
+test('a command livereel does not have is refused as a wrong command line, naming it', () => {
+	const ran = livereel('film', SHORT);
+	expect([ran.code, ran.said]).toEqual([2, expect.stringContaining('livereel has no command film')]);
+});
+
 test('a page that cannot be reached is refused as it is opened, by its address', () => {
 	const ran = livereel('still', 'tests/cli/films/unreachable.ts', '--out', scratch(), '--at', '0');
 	expect([ran.code, ran.said]).toEqual([1, 'livereel still: the page at http://127.0.0.1:9/ could not be reached\n']);

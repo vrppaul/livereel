@@ -92,6 +92,11 @@ export function propChange<Name extends PropName>(name: Name, stateAt: (progress
 	return (scene, progress) => withProp(scene, name, stateAt(progress));
 }
 
+/** A prop that goes: as it stands while its move goes on, and none once the move ends. */
+export function untilTheEnd<State>(progress: number, state: State): State | null {
+	return progress >= 1 ? null : state;
+}
+
 /** A prop as a move finds it as it begins; one not on the scene is refused, in the move's own words. */
 export function present<Name extends PropName>(
 	beginning: Beginning,

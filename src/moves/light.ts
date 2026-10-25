@@ -7,7 +7,8 @@ import {
 	type TimingScript,
 	present,
 	propChange,
-	timingOf
+	timingOf,
+	untilTheEnd
 } from '../direction/move.ts';
 import { LIGHT_DIM, type Light } from '../props/light.ts';
 
@@ -48,14 +49,9 @@ async function carried(beginning: Beginning, target: string): Promise<Change> {
 
 function fading(beginning: Beginning): Change {
 	const light = present(beginning, 'light', 'the light is put out, but none is on');
-	return propChange('light', (progress) => fadedAt(light, progress));
+	return propChange('light', (progress) => untilTheEnd(progress, { ...light, strength: 1 - progress }));
 }
 
 function carriedAt(start: Light, end: Box, progress: number): Light {
 	return { box: boxToward(start.box, end, progress), strength: 1 - DIP * Math.sin(Math.PI * progress), dim: start.dim };
-}
-
-function fadedAt(light: Light, progress: number): Light | null {
-	if (progress >= 1) return null;
-	return { ...light, strength: 1 - progress };
 }
