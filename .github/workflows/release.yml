@@ -1,8 +1,9 @@
-# A tag `vX.Y.Z` pushed: the package staged on npm and a release made on GitHub. The tag's version is the one in
+# A tag `vX.Y.Z` pushed: the package staged on npm and a draft release made on GitHub. The tag's version is the one in
 # package.json (CONTRIBUTING.md, Releasing). npm trusts this workflow itself (Trusted Publishing, set on the
 # package's page on npm): it is given a short-lived identity, so no token is kept, and the package carries its
 # provenance. The workflow may only stage a version: it goes out once the owner approves it on npm, with 2FA, so
-# code that runs in this job cannot publish on its own
+# code that runs in this job cannot publish on its own. The release on GitHub stays a draft until then, so it never
+# names a version npm does not have
 name: Release
 
 on:
@@ -27,10 +28,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: The tag names the version being published
         run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
-      # npm itself stages the version: it speaks Trusted Publishing, and stages from 11.21, which Node 24's own npm
-      # may predate (11.9 does not); `prepack` builds the package first
+      # npm itself stages the version: it speaks Trusted Publishing, and has `npm stage` from 11.21 (11.9, which came
+      # with Node 24 here, lacks it); `prepack` builds the package first
       - run: npm install --global npm@11.21.1
       - run: npm stage publish --provenance --access public
-      - run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
+      - run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes --draft
         env:
           GH_TOKEN: ${{ github.token }}
