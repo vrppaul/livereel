@@ -4,11 +4,21 @@
  */
 import { basename, dirname, extname, join } from 'node:path';
 
-// What a video's name carries until it is whole
+// What a video's name carries until it is whole, and what the MP4's picture's carries until its sound is laid under it
 const PARTIAL = '.partial';
+const PICTURE = '.picture';
 
 /** Where a video is written until it is whole: beside it, with the same container's suffix. */
 export function partialOf(video: string): string {
+	return beside(video, PARTIAL);
+}
+
+/** Where the MP4's picture is written as its frames come, until its sound is laid under it: beside it. */
+export function pictureOf(video: string): string {
+	return beside(video, PICTURE);
+}
+
+function beside(video: string, mark: string): string {
 	const suffix = extname(video);
-	return join(dirname(video), `${basename(video, suffix)}${PARTIAL}${suffix}`);
+	return join(dirname(video), `${basename(video, suffix)}${mark}${suffix}`);
 }

@@ -6,35 +6,40 @@
  * been set at its end — so a move reads the scene and the page as they stand at its start — then sets at its end
  * every change ended by the frame, and every other at its eased progress. One move at most drives a part at any
  * point, so the order moves are written in matters nowhere. A cut begins its moves and sets each at its end, with
- * no frame between. A frame is drawn only when the footage keeps it. A fault in a step is raised again with the
- * moment and the step it was met at.
+ * no frame between. A sound a move makes is heard as the move is set at or past its point, on the frame being made.
+ * A frame is drawn only when the footage keeps it. A fault in a step is raised again with the moment and the step it
+ * was met at.
  */
 import { flatPose } from '../domain/camera.ts';
 import { TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/geometry.ts';
 import { type Ease, framesOf, momentOf } from '../domain/time.ts';
-import type { Change, Move, Share } from '../direction/move.ts';
+import { type Change, type Move, type Share, soundsOf } from '../direction/move.ts';
+import type { Cue } from '../direction/sound.ts';
 import type { Act, Cut, Play, Step } from '../direction/steps.ts';
 import { type Scene, drawn, posed } from '../scene.ts';
-import type { Footage, Opened } from './ports.ts';
+import type { Footage, Opened, Track } from './ports.ts';
 
-/** A move begun: the share of its step it runs over, its curve, and what it sets. */
+/** A move begun: the share of its step it runs over, its curve, what it sets, and the sounds it has yet to make. */
 interface Running {
 	readonly within: Share;
 	readonly ease: Ease;
 	readonly change: Change;
+	readonly unheard: readonly Cue[];
 }
 
 export class Take {
 	readonly opened: Opened;
 	readonly footage: Footage;
+	readonly track: Track;
 	readonly format: Format;
 	private scene: Scene;
 	private shot = 0;
 
-	constructor(opened: Opened, footage: Footage, format: Format, scene: Scene) {
+	constructor(opened: Opened, footage: Footage, track: Track, format: Format, scene: Scene) {
 		this.opened = opened;
 		this.footage = footage;
+		this.track = track;
 		this.format = format;
 		this.scene = scene;
 	}
@@ -82,13 +87,16 @@ export class Take {
 				running.push(await this.begun(move, step.ease));
 			}
 			running = await this.endedBy(running, progress);
-			for (const current of running) await this.set(current.change, current.ease(current.within.along(progress)));
+			running = await this.setAlong(running, progress);
 			await this.frame();
 		}
 	}
 
 	private async cut(step: Cut): Promise<void> {
-		for (const move of step.moves) await this.set(await this.changeOf(move), 1);
+		for (const move of step.moves) {
+			await this.set(await this.changeOf(move), 1);
+			this.heard(soundsOf(move), 1);
+		}
 	}
 
 	private async act(step: Act): Promise<void> {
@@ -102,12 +110,36 @@ export class Take {
 
 	/** Every running move whose share has ended by a point of the step set at its end, once; those still running. */
 	private async endedBy(running: readonly Running[], point: number): Promise<Running[]> {
-		for (const ending of running.filter((current) => current.within.end <= point)) await this.set(ending.change, 1);
+		for (const ending of running.filter((current) => current.within.end <= point)) await this.setAt(ending, 1);
 		return running.filter((current) => current.within.end > point);
 	}
 
+	/** Every running move set at its eased progress when its step is `progress` along. */
+	private async setAlong(running: readonly Running[], progress: number): Promise<Running[]> {
+		const moved: Running[] = [];
+		for (const current of running) moved.push(await this.setAt(current, current.ease(current.within.along(progress))));
+		return moved;
+	}
+
+	/** A running move set at a progress of its own, every sound it makes by then heard; the move, with those to come. */
+	private async setAt(current: Running, progress: number): Promise<Running> {
+		await this.set(current.change, progress);
+		return { ...current, unheard: this.heard(current.unheard, progress) };
+	}
+
+	/** The sounds due by a progress heard, at the moment of the frame being made; those still to come. */
+	private heard(cues: readonly Cue[], progress: number): readonly Cue[] {
+		for (const cue of cues.filter((due) => due.at <= progress)) this.track.hear(this.moment(), cue.sound);
+		return cues.filter((due) => due.at > progress);
+	}
+
 	private async begun(move: Move, stepEase: Ease): Promise<Running> {
-		return { within: move.timing.within, ease: move.timing.ease ?? stepEase, change: await this.changeOf(move) };
+		return {
+			within: move.timing.within,
+			ease: move.timing.ease ?? stepEase,
+			change: await this.changeOf(move),
+			unheard: soundsOf(move)
+		};
 	}
 
 	private changeOf(move: Move): Change | Promise<Change> {

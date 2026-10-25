@@ -7,7 +7,7 @@
  */
 import { type ChildProcessByStdio, spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { rename, rm } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 import type { Readable, Writable } from 'node:stream';
 import { EncodingError, FilmError } from '../../domain/errors.ts';
 import type { Size } from '../../domain/geometry.ts';
@@ -15,23 +15,22 @@ import { FRAMES_PER_SECOND } from '../../domain/time.ts';
 import type { Footage } from '../../studio/ports.ts';
 import { closed } from '../processes.ts';
 import { FFMPEG, QUIETLY, ffmpeg } from './ffmpeg.ts';
-import { KINDS } from './kinds.ts';
-import { partialOf } from './partial.ts';
+import { KINDS, STARTS_AT_ONCE } from './kinds.ts';
+import { pictureOf } from './partial.ts';
 
 // The frames as they come, JPEG after JPEG on ffmpeg's input
 const FRAMES_IN = ['-f', 'image2pipe', '-c:v', 'mjpeg', '-framerate', String(FRAMES_PER_SECOND), '-i', '-'];
 // H.264 that any player opens, its quality, and how hard the encoder works for it
 const ENCODING = [
 	'-c:v',
-	KINDS.mp4.encoder,
+	KINDS.mp4.picture,
 	'-crf',
 	'17',
 	'-preset',
 	'medium',
 	'-pix_fmt',
 	'yuv420p',
-	'-movflags',
-	'+faststart'
+	...STARTS_AT_ONCE
 ];
 // A contact sheet: a frame a second, this many to a row, each this wide
 const SHEET_COLUMNS = 6;
@@ -44,25 +43,23 @@ const PIXELS_PAIRED = 2;
 type Encoder = ChildProcessByStdio<Writable, null, Readable>;
 
 /**
- * The video is written under a name of its own until it is whole, so a film that fails leaves the last good video
- * where it was. Whatever waits on ffmpeg waits on its end too: a frame handed to an ffmpeg that has stopped is
- * refused at once, with ffmpeg's own words, rather than waiting on a pipe that will never drain.
+ * The MP4's picture is written under a name of its own (`pictureOf`), and the video is put in its place only once
+ * its sound is laid under it (`soundtrack.ts`), so a film that fails leaves the last good video where it was.
+ * Whatever waits on ffmpeg waits on its end too: a frame handed to an ffmpeg that has stopped is refused at once, with
+ * ffmpeg's own words, rather than waiting on a pipe that will never drain.
  */
 export class VideoFootage implements Footage, AsyncDisposable {
-	readonly video: string;
-	readonly partial: string;
+	readonly picture: string;
 	readonly encoder: Encoder;
 	readonly ended: Promise<number | null>;
 	// What ffmpeg said on its way, the reason it gives if it refuses
 	readonly said: string[] = [];
-	private whole = false;
 
 	constructor(video: string, frame: Size) {
 		refuseOddSides(frame);
-		this.video = video;
-		this.partial = partialOf(video);
+		this.picture = pictureOf(video);
 		const scaled = ['-vf', `scale=${frame.width}:${frame.height}:flags=lanczos`];
-		this.encoder = spawn(FFMPEG, [...QUIETLY, ...FRAMES_IN, ...scaled, ...ENCODING, this.partial], {
+		this.encoder = spawn(FFMPEG, [...QUIETLY, ...FRAMES_IN, ...scaled, ...ENCODING, this.picture], {
 			stdio: ['pipe', 'ignore', 'pipe']
 		});
 		this.ended = closed(this.encoder);
@@ -91,26 +88,24 @@ export class VideoFootage implements Footage, AsyncDisposable {
 		return false;
 	}
 
-	/** The last frame given, the video written to its end and put in its place. */
+	/** The last frame given, and the picture written to its end, its sound still to be laid under it. */
 	async finish(): Promise<void> {
 		this.encoder.stdin.end();
 		if ((await this.ended) !== 0) throw this.refusal();
-		await rename(this.partial, this.video);
-		this.whole = true;
 	}
 
 	/**
-	 * A video never made whole — the film failed — is stopped and its part removed. ffmpeg waits on its input and does
-	 * not hear a signal while it does: its input is closed first, so it stops, and the command can end.
+	 * An encoder still running — the film failed — is stopped, and a picture not put in its place is removed. ffmpeg
+	 * waits on its input and does not hear a signal while it does: its input is closed first, so it stops, and the
+	 * command can end.
 	 */
 	async [Symbol.asyncDispose](): Promise<void> {
-		if (this.whole) return;
 		if (!this.stopped()) {
 			this.encoder.stdin.destroy();
 			this.encoder.kill(STOP);
 			await this.ended;
 		}
-		await rm(this.partial, { force: true });
+		await rm(this.picture, { force: true });
 	}
 
 	private stopped(): boolean {

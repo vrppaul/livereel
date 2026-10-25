@@ -2,23 +2,25 @@
  * A film shot in one of its formats: its page served, its steps written and counted, the browser opened, the page
  * made ready, and a take.
  *
- * The film's length is known from its steps before a browser opens, so footage that cannot be met — a still past the
- * end — is refused at once. The browser closes before the page's server stops. What the film's own code does — its
- * server, its steps, its wait for the page — is the film's: a fault there is said as the film's, naming where.
+ * The film's length and its sounds are known from its steps before a browser opens, so footage that cannot be met —
+ * a still past the end — or a sound that cannot be laid is refused at once. The browser closes before the page's
+ * server stops. What the film's own code does — its server, its steps, its wait for the page — is the film's: a fault
+ * there is said as the film's, naming where.
  */
 import { wholePose } from '../domain/camera.ts';
 import { FilmError, LivereelError } from '../domain/errors.ts';
 import { momentOf } from '../domain/time.ts';
 import type { FilmInFormat } from '../direction/film.ts';
-import { framesIn } from '../direction/steps.ts';
+import { framesIn, soundsIn } from '../direction/steps.ts';
 import { openingScene } from '../scene.ts';
-import type { Browser, Footage } from './ports.ts';
+import type { Browser, Footage, Track } from './ports.ts';
 import { Take } from './take.ts';
 
-/** The browser a film is shot in, where its frames go, and how sharp they are shot. */
+/** The browser a film is shot in, where its frames and its sounds go, and how sharp it is shot. */
 export interface Shooting {
 	readonly browser: Browser;
 	readonly footage: Footage;
+	readonly track: Track;
 	readonly sharpness: number;
 }
 
@@ -32,9 +34,10 @@ export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Sho
 	await using served = await filmsOwn('serve', () => film.serve());
 	const steps = await filmsOwn('steps', () => served.steps(wholePose(film.format)));
 	shooting.footage.expect(framesIn(steps));
+	shooting.track.expect(soundsIn(steps));
 	await using opened = await shooting.browser.open(film.format, served.address, shooting.sharpness);
 	await filmsOwn('ready', () => served.ready(opened.act));
-	const take = new Take(opened, shooting.footage, film.format, openingScene(film.format));
+	const take = new Take(opened, shooting.footage, shooting.track, film.format, openingScene(film.format));
 	await take.run(steps);
 	return { frames: take.shots, seconds: momentOf(take.shots) };
 }

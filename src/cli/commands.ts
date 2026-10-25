@@ -12,11 +12,12 @@ import { mkdir, rm } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { UsageError } from '../domain/errors.ts';
-import { secondsSaid } from '../domain/time.ts';
+import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { Film, FilmInFormat } from '../direction/film.ts';
 import { type Shot, shoot } from '../studio/shoot.ts';
 import { Chromium } from '../adapters/browser/chromium.ts';
 import { KINDS, type Kind, type MadeKind, SHOT_INTO, isKind, isMade, madeFrom } from '../adapters/video/kinds.ts';
+import { SILENT, Soundtrack } from '../adapters/video/soundtrack.ts';
 import { StillFootage } from '../adapters/video/still.ts';
 import { VideoFootage, contactSheet } from '../adapters/video/video.ts';
 import { loadedFilm } from './film-file.ts';
@@ -38,7 +39,6 @@ const STILL_SUFFIX = 's.jpg';
 const SHEET_SUFFIX = '-sheet.png';
 // The MP4 the other kinds are made from, where it is not asked for itself
 const SOURCE = '.source';
-const MILLISECONDS = 1000;
 // An option that takes a value, one that is given or not, and the kinds of video asked, an MP4 where none is
 const VALUE = { type: 'string' } as const;
 const FLAG = { type: 'boolean', default: false } as const;
@@ -54,7 +54,9 @@ const LISTED = ', ';
 
 const SHOOT: Command = {
 	summary: 'Shoot a film whole, as a video of each kind asked: an MP4 where none is.',
-	usage: `livereel shoot FILM_FILE --out DIRECTORY [--format NAME] [--as ${KIND_NAMES.join(ONE_OF)}]... [--draft] [--sheet]`,
+	usage:
+		`livereel shoot FILM_FILE --out DIRECTORY [--format NAME] ` +
+		`[--as ${KIND_NAMES.join(ONE_OF)}]... [--draft] [--sheet]`,
 	run: shootCommand
 };
 
@@ -100,7 +102,7 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const kept = kinds.includes(SHOT_INTO);
 	const mp4 = kept ? `${stem}${KINDS.mp4.suffix}` : `${stem}${SOURCE}${KINDS.mp4.suffix}`;
 	try {
-		const shot = await shotInto(mp4, film, values.draft, `${nameOf(file)} in ${film.formatName}`);
+		const shot = await shotInto(mp4, file, film, values.draft);
 		if (kept) say(mp4);
 		for (const kind of kinds.filter(isMade)) await madeAs(kind, mp4, stem);
 		if (values.sheet) await sheetMade(mp4, stem, shot);
@@ -126,7 +128,7 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	await rm(still, { force: true });
 	const started = performance.now();
 	const footage = new StillFootage(still, moment);
-	await shoot(film, { browser: new Chromium(), footage, sharpness: sharpnessOf(values.draft) });
+	await shoot(film, { browser: new Chromium(), footage, track: SILENT, sharpness: sharpnessOf(values.draft) });
 	say(`${still}: shot in ${secondsBetween(started, performance.now())} s`);
 }
 
@@ -136,16 +138,22 @@ async function setupCommand(given: readonly string[]): Promise<void> {
 	say('the browser is installed and ffmpeg is on the path');
 }
 
-/** The film shot whole into its MP4, and the take said: the film and its format, its frames, and the time it took. */
-async function shotInto(mp4: string, film: FilmInFormat, draft: boolean, take: string): Promise<Shot> {
+/**
+ * The film shot whole into its MP4, its sounds laid under it, and the take said: the film and its format, its frames,
+ * and the time it took.
+ */
+async function shotInto(mp4: string, file: string, film: FilmInFormat, draft: boolean): Promise<Shot> {
 	const started = performance.now();
 	await using footage = new VideoFootage(mp4, film.format.frame);
-	const shot = await shoot(film, { browser: new Chromium(), footage, sharpness: sharpnessOf(draft) });
+	const track = new Soundtrack(file, film.sound);
+	const shot = await shoot(film, { browser: new Chromium(), footage, track, sharpness: sharpnessOf(draft) });
 	const filmed = performance.now();
 	await footage.finish();
+	await track.laidUnder(footage.picture, mp4, shot.seconds);
 	say(
-		`${take}: ${shot.frames} frames, ${secondsSaid(shot.seconds)} s; shot in ${secondsBetween(started, filmed)} s, ` +
-			`encoded ${secondsBetween(filmed, performance.now())} s after the last frame`
+		`${nameOf(file)} in ${film.formatName}: ${shot.frames} frames, ${secondsSaid(shot.seconds)} s; ` +
+			`shot in ${secondsBetween(started, filmed)} s, the video made ` +
+			`${secondsBetween(filmed, performance.now())} s after the last frame`
 	);
 	return shot;
 }
@@ -228,5 +236,5 @@ function sharpnessOf(draft: boolean): number {
 }
 
 function secondsBetween(start: number, end: number): string {
-	return secondsSaid((end - start) / MILLISECONDS);
+	return secondsSaid((end - start) / MILLISECONDS_A_SECOND);
 }

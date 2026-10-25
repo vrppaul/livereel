@@ -69,6 +69,15 @@ handed the format's name after the whole screen's pose. `--as webm` and
 `--as gif` make the video as WebM or GIF, each at the film's own frame and
 rate; `--as mp4 --as gif` gives both from one take.
 
+A film is heard too: a click as the cursor presses, a key for every stroke
+typed, a chime as the ending comes up, each on its own frame. These are
+livereel's own, quiet and CC0 ([`sounds/`](sounds/LICENSE.md));
+`defineFilm` takes `sounds: { click, key, ending }`, files of the film's own
+in their place, or `sounds: null` for none, and `music: { file, volume }`,
+a track under the whole film, cut to its length and faded out at its end.
+`sound.play(file)` plays a file of the film's at a moment of a step. A GIF
+holds no sound.
+
 `examples/example-com.ts` is a longer film, in acts, square or wide;
 `examples/livereel-promo.ts`, the film at the top of this page, serves an
 app of its own and clicks it for real.
@@ -90,12 +99,13 @@ and the moves of each part of the scene:
 |---|---|
 | `camera` | `to(pose)`, `onto(selector, { air, zoomAtMost, tilt, turn })` |
 | `light` | `on(selector)`, `to(selector)`, `off()` |
-| `cursor` | `to(selector)`, `click(action)`, `press()`, `release()`, `hide()` |
+| `cursor` | `to(selector)`, `click(action, { sound })`, `press({ sound })`, `release()`, `hide()` |
 | `caption` | `show(text)`, `hide()` |
 | `screen` | `rise()`, `lower()` |
 | `terminal` | `open(title)`, `type(strokes)`, `submit()`, `works(lines, thinking)`, `leave()` |
 | `ending` | `show({ name, line, command })` |
 | `page` | `scrollBy(selector, { pixels })`, `scrollTo(selector, { top })`, `type(strokes)` |
+| `sound` | `play(file)` |
 
 Every move that runs over time takes a share of its step, `within: { start,
 end }`, and a curve of its own, `ease`. `keystrokes(text, { seed, slipAt })`
@@ -117,7 +127,8 @@ checked frame by frame on contact sheets and stills. Install it with
 
 ```
 film.ts ──steps──▶ take ──scene, frame by frame──▶ stage page ──CDP screenshot──▶ ffmpeg ──▶ film-square.mp4 ──▶ .webm, .gif
-                    │                                 │
+                    │  │                              │                              ▲
+                    │  └──sounds, each on its frame──────────────────────────────────┘
                     └──acts, scrolls, keys──▶ your app, live in the stage's frame
 ```
 

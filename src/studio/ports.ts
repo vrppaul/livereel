@@ -1,9 +1,11 @@
 /**
- * What the studio needs of the world to shoot a film: a browser with the stage and the page open, and footage to
- * keep frames in. The adapters answer these; the studio names no browser and no file of its own.
+ * What the studio needs of the world to shoot a film: a browser with the stage and the page open, footage to keep
+ * frames in, and a track to keep sounds in. The adapters answer these; the studio names no browser and no file of its
+ * own.
  */
 import type { Format } from '../domain/geometry.ts';
 import type { ActContext, FilmedPage } from '../direction/page.ts';
+import type { Sound } from '../direction/sound.ts';
 import type { DrawnScene } from '../scene.ts';
 
 /** The page the film is shot on. */
@@ -25,6 +27,13 @@ export interface Footage {
 	readonly keep: (shot: number, image: Uint8Array) => Promise<void>;
 	/** Whether nothing is left to keep once this many frames are shot. */
 	readonly complete: (shot: number) => boolean;
+}
+
+/** Where the sounds a take's moves make go, each at the moment of the frame it is heard on. */
+export interface Track {
+	/** Refuses a sound that cannot be laid — a file that is not there — before anything is shot. */
+	readonly expect: (sounds: readonly Sound[]) => void;
+	readonly hear: (moment: number, sound: Sound) => void;
 }
 
 /** A browser with the stage and the filmed page open in it, for one take. */

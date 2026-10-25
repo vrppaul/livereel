@@ -9,8 +9,10 @@
 import { FilmError } from '../domain/errors.ts';
 import { type Ease, easeInOutSine, framesOf, linear } from '../domain/time.ts';
 import { type Keystroke, typingSeconds } from '../domain/typing.ts';
-import type { Move } from './move.ts';
+import type { PropName } from '../scene.ts';
+import { type Move, type Share, soundsOf } from './move.ts';
 import type { ActContext } from './page.ts';
+import type { Sound } from './sound.ts';
 
 export interface Play {
 	readonly kind: 'play';
@@ -42,6 +44,12 @@ export interface PlayScript {
 /** A move a person types with: how its keys come. */
 export interface Typed {
 	readonly strokes: readonly Keystroke[];
+}
+
+/** The part of the scene a move changes, never none, and the share of its step it changes it over. */
+interface PartTaken {
+	readonly part: PropName | 'page';
+	readonly within: Share;
 }
 
 // A beat after the last key, before the next step
@@ -86,12 +94,36 @@ export function framesIn(steps: readonly Step[]): number {
 	return steps.reduce((frames, step) => frames + (step.kind === 'play' ? framesOf(step.seconds) : 0), 0);
 }
 
+/** Every sound the steps' moves make, known before anything is shot, so a file that is not there is refused at once. */
+export function soundsIn(steps: readonly Step[]): readonly Sound[] {
+	return steps
+		.flatMap(movesOf)
+		.flatMap(soundsOf)
+		.map((cue) => cue.sound);
+}
+
+function movesOf(step: Step): readonly Move[] {
+	switch (step.kind) {
+		case 'play':
+		case 'cut':
+			return step.moves;
+		case 'act':
+			return [];
+	}
+}
+
 /** Two moves of one part at once in one step, refused by naming the part. */
 function refuseClashes(moves: readonly Move[]): void {
-	const clash = moves.find((move, place) => moves.slice(place + 1).some((later) => clashes(move, later)));
+	const taken = moves.flatMap(partTaken);
+	const clash = taken.find((part, place) => taken.slice(place + 1).some((later) => clashes(part, later)));
 	if (clash !== undefined) throw new FilmError(`two moves on the ${clash.part} at once in one step`);
 }
 
-function clashes(move: Move, other: Move): boolean {
-	return move.part === other.part && move.timing.within.overlaps(other.timing.within);
+/** The part a move changes, and the share of its step it takes; a move that only makes a sound takes none. */
+function partTaken(move: Move): PartTaken[] {
+	return move.part === null ? [] : [{ part: move.part, within: move.timing.within }];
+}
+
+function clashes(taken: PartTaken, other: PartTaken): boolean {
+	return taken.part === other.part && taken.within.overlaps(other.within);
 }

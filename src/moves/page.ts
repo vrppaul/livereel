@@ -8,6 +8,7 @@ import { between, linear } from '../domain/time.ts';
 import { type Keystroke, typedAlong } from '../domain/typing.ts';
 import { type Beginning, type Change, type Move, type TimingScript, timingOf } from '../direction/move.ts';
 import type { FilmedPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
+import { keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
 import type { Scene } from '../scene.ts';
 
@@ -35,12 +36,13 @@ export function scrollTo(target: string, script: ScrollToScript): Move {
 	return { part: 'page', timing: timingOf(script), begin: (beginning) => scrolling(beginning, target, aim) };
 }
 
-/** A person typing into whatever holds the page's keyboard: real keys, at the times the strokes have them. */
+/** A person typing into whatever holds the page's keyboard: real keys, each heard, when the strokes have them. */
 export function type(strokes: readonly Keystroke[], script: TimingScript = {}): Move & Typed {
 	return {
 		part: 'page',
 		timing: timingOf({ ease: linear, ...script }),
 		strokes,
+		sounds: keysHeard(strokes),
 		begin: (beginning) => keysInto(beginning.page, strokes)
 	};
 }

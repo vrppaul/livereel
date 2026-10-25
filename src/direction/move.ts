@@ -1,5 +1,5 @@
 /**
- * A move: one prop of the scene, or the page, changing over a share of a step.
+ * A move: one prop of the scene, or the page, changing over a share of a step, and the sounds it makes on its way.
  *
  * A move reads what it starts from once, as its share begins, and becomes a change that knows its start and its end;
  * from then on what it sets at any progress is worked out from those and the progress alone, so a frame is the same
@@ -11,9 +11,15 @@ import type { Format } from '../domain/geometry.ts';
 import type { Ease } from '../domain/time.ts';
 import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';
 import type { FilmedPage } from './page.ts';
+import type { Cue } from './sound.ts';
 
-/** What a move changes: one prop of the scene, or the page itself. Two moves of one part never run at once. */
-type Part = PropName | 'page';
+/**
+ * What a move changes: one prop of the scene, or the page itself; none, for a move that only makes a sound. Two moves
+ * of one part never run at once.
+ */
+type Part = PropName | 'page' | null;
+
+const NO_SOUNDS: readonly Cue[] = [];
 
 /** Where a share of a step starts and ends, each a share of the step from 0 to 1; either may be left to its edge. */
 export interface Bounds {
@@ -80,11 +86,18 @@ export type Change = (scene: Scene, progress: number) => Scene | Promise<Scene>;
 export interface Move {
 	readonly part: Part;
 	readonly timing: Timing;
+	/** The sounds the move makes on its way; a move that makes none has none. */
+	readonly sounds?: readonly Cue[];
 	readonly begin: (beginning: Beginning) => Change | Promise<Change>;
 }
 
 export function timingOf(script: TimingScript): Timing {
 	return { within: Share.of(script.within), ease: script.ease ?? null };
+}
+
+/** The sounds a move makes on its way: none, for a move that names none. */
+export function soundsOf(move: Move): readonly Cue[] {
+	return move.sounds ?? NO_SOUNDS;
 }
 
 /** The change of one prop: its state at each progress, written into the scene. */

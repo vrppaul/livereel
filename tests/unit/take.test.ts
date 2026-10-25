@@ -4,10 +4,17 @@ import { linear } from '../../src/domain/time.ts';
 import { type Bounds, type Change, type Move, timingOf } from '../../src/direction/move.ts';
 import { act, cut, play } from '../../src/direction/steps.ts';
 import { on, to } from '../../src/moves/light.ts';
-import { hide, to as cursorTo } from '../../src/moves/cursor.ts';
+import { click, hide, to as cursorTo } from '../../src/moves/cursor.ts';
+import { show } from '../../src/moves/ending.ts';
+import { type as typeIntoThePage } from '../../src/moves/page.ts';
+import { play as playSound } from '../../src/moves/sound.ts';
+import { open, type } from '../../src/moves/terminal.ts';
+import type { Sound } from '../../src/direction/sound.ts';
+import type { Keystroke } from '../../src/domain/typing.ts';
+import type { EndingCard } from '../../src/props/ending.ts';
 import { type Scene, openingScene } from '../../src/scene.ts';
 import { Take } from '../../src/studio/take.ts';
-import { FootageOf, PageOfBoxes, SMALL, StageThatKeeps, openedOn } from './fakes.ts';
+import { FootageOf, PageOfBoxes, SMALL, StageThatKeeps, TrackThatKeeps, openedOn } from './fakes.ts';
 
 const FIRST = { left: 10, top: 10, width: 100, height: 50 };
 const SECOND = { left: 200, top: 100, width: 80, height: 40 };
@@ -15,6 +22,15 @@ const PAGE = new Map([
 	['#first', FIRST],
 	['#second', SECOND]
 ]);
+const CLICK: Sound = { kind: 'livereel', name: 'click' };
+const KEY: Sound = { kind: 'livereel', name: 'key' };
+const ENDING: Sound = { kind: 'livereel', name: 'ending' };
+const CARD: EndingCard = { name: 'A name', line: 'A line', command: 'a command' };
+// Two letters, the first showing on the third of six frames of typing, the second on the sixth
+const STROKES: readonly Keystroke[] = [
+	{ at: 0.1, typed: 'a' },
+	{ at: 0.2, typed: 'ab' }
+];
 
 /** A move on the screen that writes down every progress it is set at. */
 class Counted implements Move {
@@ -36,9 +52,77 @@ class Counted implements Move {
 	}
 }
 
-function takeOf(footage: FootageOf, stage: StageThatKeeps): Take {
-	return new Take(openedOn(new PageOfBoxes(PAGE), stage), footage, SMALL, openingScene(SMALL));
+function takeOf(footage: FootageOf, stage: StageThatKeeps, track = new TrackThatKeeps()): Take {
+	return new Take(openedOn(new PageOfBoxes(PAGE), stage), footage, track, SMALL, openingScene(SMALL));
 }
+
+test("livereel's sounds are heard as their moves begin: the click as the press goes in, the ending as it comes", async () => {
+	const track = new TrackThatKeeps();
+	// The cursor's way takes frames 0 to 2, the press 3 to 5, letting go 6 to 9, the ending from frame 10
+	const steps = [
+		play({ seconds: 0.1, moves: [cursorTo('#first')] }),
+		...click(() => Promise.resolve()),
+		play({ seconds: 0.1, moves: [show(CARD)] })
+	];
+	await takeOf(new FootageOf([20]), new StageThatKeeps(), track).run(steps);
+	expect(track.heard).toEqual([
+		{ moment: 3 / 30, sound: CLICK },
+		{ moment: 10 / 30, sound: ENDING }
+	]);
+});
+
+test('a click given a file of the film is heard as that file', async () => {
+	const track = new TrackThatKeeps();
+	const steps = [
+		play({ seconds: 0.1, moves: [cursorTo('#first')] }),
+		...click(() => Promise.resolve(), { sound: './pop.wav' })
+	];
+	await takeOf(new FootageOf([20]), new StageThatKeeps(), track).run(steps);
+	expect(track.heard).toEqual([{ moment: 3 / 30, sound: { kind: 'file', path: './pop.wav' } }]);
+});
+
+test('each key typed into the terminal is heard on the frame its letter shows', async () => {
+	const track = new TrackThatKeeps();
+	const stage = new StageThatKeeps();
+	const steps = [cut(open('A terminal')), play({ seconds: 0.2, moves: [type(STROKES)] })];
+	await takeOf(new FootageOf([1, 2, 5]), stage, track).run(steps);
+	expect([track.heard, stage.drawn.map((scene) => scene.terminal?.typed)]).toEqual([
+		[
+			{ moment: 2 / 30, sound: KEY },
+			{ moment: 5 / 30, sound: KEY }
+		],
+		['', 'a', 'ab']
+	]);
+});
+
+test('each key typed into the page is heard on the frame it is pressed', async () => {
+	const track = new TrackThatKeeps();
+	const page = new PageOfBoxes(PAGE);
+	const take = new Take(openedOn(page, new StageThatKeeps()), new FootageOf([9]), track, SMALL, openingScene(SMALL));
+	await take.run([play({ seconds: 0.2, moves: [typeIntoThePage(STROKES)] })]);
+	expect([track.heard, page.typed]).toEqual([
+		[
+			{ moment: 2 / 30, sound: KEY },
+			{ moment: 5 / 30, sound: KEY }
+		],
+		['a', 'b']
+	]);
+});
+
+test("a sound played in a cut is heard at the cut's moment, and one played in a step as its share begins", async () => {
+	const track = new TrackThatKeeps();
+	// Three frames, the cut, then six frames whose second half the second sound begins
+	const steps = [
+		play({ seconds: 0.1 }),
+		cut(playSound('./pop.wav')),
+		play({ seconds: 0.2, moves: [playSound('./whoosh.wav', { within: { start: 0.5 } })] })
+	];
+	await takeOf(new FootageOf([20]), new StageThatKeeps(), track).run(steps);
+	expect(track.heard).toEqual([
+		{ moment: 3 / 30, sound: { kind: 'file', path: './pop.wav' } },
+		{ moment: 5 / 30, sound: { kind: 'file', path: './whoosh.wav' } }
+	]);
+});
 
 test('a move is set along its share, at its end exactly once, and never after', async () => {
 	const counted = new Counted({ end: 0.5 });

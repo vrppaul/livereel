@@ -30,8 +30,8 @@ The rules every change is held to are in `AGENTS.md`, and those of each area und
 `src/` is layered, each part building only on those after it, which eslint holds (`LAYERS` in `eslint.config.js`):
 
 - `cli` — the command line: load a film file, shoot it whole or one still, set a machine up.
-- `adapters` — Chromium with the stage and the filmed page (`browser/`), ffmpeg making the MP4 as frames come and each other kind of video from it (`video/`).
-- `studio` — a take: the steps run frame by frame on the film's clock, the scene held, frames handed to footage.
+- `adapters` — Chromium with the stage and the filmed page (`browser/`), ffmpeg making the MP4's picture as frames come, the sounds laid under it, and each other kind of video made from it (`video/`).
+- `studio` — a take: the steps run frame by frame on the film's clock, the scene held, frames handed to footage and sounds to a track.
 - `moves` — the moves of every prop (`camera.onto`, `light.to`, `cursor.click`) and of the page (`page.scrollTo`), a module each.
 - `direction` — what a film is written in: a move's contract, steps (`play`, `cut`, `act`), the film itself, the page as a move reads it.
 - `scene` — every prop's state at one moment, and what the stage is handed of it.

@@ -8,6 +8,7 @@ import type { AddressInfo } from 'node:net';
 import type { Duplex } from 'node:stream';
 import { expect, test } from 'vitest';
 import { Chromium } from '../../src/adapters/browser/chromium.ts';
+import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { shoot } from '../../src/studio/shoot.ts';
 import type { Footage } from '../../src/studio/ports.ts';
 import { type ActContext, type Serving, act, cursor, defineFilm, page, play } from 'livereel';
@@ -139,6 +140,11 @@ test('an app with a server of its own is filmed: framed, scrolled, answered afte
 			act(whatReachedThePage)
 		]
 	});
-	await shoot(film.inFormat('small'), { browser: new Chromium(), footage: new NoFrames(), sharpness: 1 });
+	await shoot(film.formats.get('small')!, {
+		browser: new Chromium(),
+		footage: new NoFrames(),
+		track: SILENT,
+		sharpness: 1
+	});
 	expect(seen).toEqual([100, ANSWERED, PUSHED, 'yes', '/app/']);
 });

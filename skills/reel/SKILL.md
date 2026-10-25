@@ -94,6 +94,25 @@ and clicks it for real; its server is
   (`Record<keyof typeof FORMATS, Pose>`), picked by the `formatName` that
   `steps` is handed: the compiler refuses a format left out.
 
+### Sound
+
+A film is heard as well as seen: a click as the cursor presses, a key for
+every stroke typed, a soft chime as the ending comes up, each on its own
+frame. These are livereel's own, quiet and CC0. `defineFilm` takes, beside
+the rest, `sounds: { click, key, ending }` (files of the film's own in their
+place, a path from the film's file, any kind ffmpeg reads) or `sounds: null`
+(none of livereel's), and `music: { file, volume }` (a track under the whole
+film, 1 as loud as it is, cut to the film's length and faded out at its
+end).
+
+- Sounds are few and quiet: a click, the keys, the ending. Never a whoosh
+  on a camera move or a sound on every caption: that reads as generated.
+- Music only where the user asks for it, and quiet under the clicks
+  (`volume` about 0.3).
+- `sound.play(file)` in a `play` or a `cut` is a sound of the film's own
+  at a moment, the start of its share; keep it for what the page itself
+  would make sound.
+
 ### What a film is written with
 
 Every move that runs over time takes, last, its timing: `within: { start,
@@ -118,8 +137,8 @@ its end at once.
 | `screen.rise()`, `screen.lower()` | the screen up out of the ground; down in it, in a `cut` |
 | `light.on(selector, { dim })`, `light.to(selector)`, `light.off()` | one block lit, the rest dimmed by `dim`; carried; put out |
 | `cursor.to(selector, { entering, bow })` | along an arc to a block, from `entering` if not yet on the screen |
-| `cursor.press()`, `cursor.release()`, `cursor.hide()` | pressed in, let go, taken off the screen |
-| `cursor.click(action)` | pressed, `act(action)`, let go: the steps of a click |
+| `cursor.press({ sound })`, `cursor.release()`, `cursor.hide()` | pressed in with a click (`sound`, a file of the film's in its place), let go, taken off the screen |
+| `cursor.click(action, { sound })` | pressed with its click, `act(action)`, let go: the steps of a click |
 | `caption.show(text)`, `caption.hide()` | words coming up one after another, in place of any shown; going |
 | `terminal.open(title)` | an agent's terminal coming up over the frame; in a `cut`, there at once |
 | `terminal.type(strokes)`, `terminal.submit()` | keys typed into it; Enter |
@@ -129,6 +148,7 @@ its end at once.
 | `page.scrollBy(selector, { pixels })` | a block's own scroll moved so many pixels |
 | `page.scrollTo(selector, { top })` | the page scrolled until a block stands `top` pixels below the top of what scrolls it |
 | `page.type(strokes)` | real keys typed into whatever holds the page's keyboard |
+| `sound.play(file)` | a file of the film's heard as its share begins; it moves nothing, so it shares a step with anything |
 
 The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
 person types; the curves are `linear`, `easeInOutSine` (a step's own),

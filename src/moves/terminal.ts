@@ -11,6 +11,7 @@ import {
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
+import { keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
 import { type Terminal, type TerminalLine, openTerminal } from '../props/terminal.ts';
 
@@ -35,12 +36,16 @@ export function open(title: string, script: TimingScript = {}): Move {
 	return { part: 'terminal', timing: timingOf(script), begin: () => opening(title) };
 }
 
-/** A person typing into the terminal, key by key, at the times the strokes have them unless the film names a curve. */
+/**
+ * A person typing into the terminal, key by key, each heard, at the times the strokes have them unless the film names
+ * a curve.
+ */
 export function type(strokes: readonly Keystroke[], script: TimingScript = {}): Move & Typed {
 	return {
 		part: 'terminal',
 		timing: timingOf({ ease: linear, ...script }),
 		strokes,
+		sounds: keysHeard(strokes),
 		begin: (beginning) => typingInto(beginning, strokes)
 	};
 }

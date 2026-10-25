@@ -1,9 +1,10 @@
-// Stand-ins for the browser in the unit tests: a page whose blocks stand where a table says, and a stage and footage
-// that keep what they were handed
+// Stand-ins for the browser in the unit tests: a page whose blocks stand where a table says, and a stage, footage and
+// a track that keep what they were handed
 import type { ActContext, FilmedPage, ScrollCourse } from '../../src/direction/page.ts';
+import type { Sound } from '../../src/direction/sound.ts';
 import type { Box, Format } from '../../src/domain/geometry.ts';
 import type { DrawnScene } from '../../src/scene.ts';
-import type { Footage, Opened, Stage } from '../../src/studio/ports.ts';
+import type { Footage, Opened, Stage, Track } from '../../src/studio/ports.ts';
 
 export const SMALL: Format = { frame: { width: 400, height: 400 }, screen: { width: 600, height: 400 } };
 
@@ -79,6 +80,23 @@ export class FootageOf implements Footage {
 
 	complete(shot: number): boolean {
 		return shot > this.last;
+	}
+}
+
+/** A sound heard, at the moment of the frame it was heard on. */
+interface Heard {
+	readonly moment: number;
+	readonly sound: Sound;
+}
+
+/** A track that keeps every sound it hears, with its moment. */
+export class TrackThatKeeps implements Track {
+	readonly heard: Heard[] = [];
+
+	expect(): void {}
+
+	hear(moment: number, sound: Sound): void {
+		this.heard.push({ moment, sound });
 	}
 }
 

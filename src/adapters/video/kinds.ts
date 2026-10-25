@@ -1,5 +1,6 @@
 /**
- * The kinds of video a film is made as, each a record: what it is written as, and the encoder it is made with.
+ * The kinds of video a film is made as, each a record: what it is written as, and the encoders its picture and its
+ * sound are made with.
  *
  * A film's frames are encoded into an MP4 as they are shot (`video.ts`); a WebM or a GIF is made from that MP4 once
  * it is whole, so one take gives every kind asked. Each is the film at its own frame and rate. A GIF's palette is
@@ -12,19 +13,24 @@ import { basename, dirname, extname, join } from 'node:path';
 import { ffmpeg } from './ffmpeg.ts';
 import { partialOf } from './partial.ts';
 
-/** A kind of video: what it is written as, and the encoder of the system's ffmpeg it is made with. */
+/** A kind of video: what it is written as, and the system's ffmpeg's encoders of its picture and its sound. */
 interface KindOfVideo {
 	readonly suffix: string;
-	readonly encoder: string;
+	readonly picture: string;
+	/** None for a kind that holds no sound. */
+	readonly sound: string | null;
 }
 
 export const KINDS = {
-	mp4: { suffix: '.mp4', encoder: 'libx264' },
-	webm: { suffix: '.webm', encoder: 'libvpx-vp9' },
-	gif: { suffix: '.gif', encoder: 'gif' }
+	mp4: { suffix: '.mp4', picture: 'libx264', sound: 'aac' },
+	webm: { suffix: '.webm', picture: 'libvpx-vp9', sound: 'libopus' },
+	gif: { suffix: '.gif', picture: 'gif', sound: null }
 } as const satisfies Readonly<Record<string, KindOfVideo>>;
 
 export type Kind = keyof typeof KINDS;
+
+// An MP4 written with its index at its head, so a player starts it before the whole of it has come
+export const STARTS_AT_ONCE = ['-movflags', '+faststart'];
 
 /** The kind a film's frames are encoded into as they are shot; every other kind is made from it. */
 export const SHOT_INTO = 'mp4' as const satisfies Kind;
@@ -32,8 +38,21 @@ export const SHOT_INTO = 'mp4' as const satisfies Kind;
 export type MadeKind = Exclude<Kind, typeof SHOT_INTO>;
 
 // VP9 as close to the MP4 as matters (SSIM 0.991 against it on the promo, 2.8 MB to its 3.0 MB, 30 s for its 20 s),
-// its rows encoded at once
-const WEBM = ['-c:v', KINDS.webm.encoder, '-crf', '24', '-b:v', '0', '-row-mt', '1', '-cpu-used', '2'];
+// its rows encoded at once; the film's sound, where it has any, in Opus
+const WEBM = [
+	'-c:v',
+	KINDS.webm.picture,
+	'-crf',
+	'24',
+	'-b:v',
+	'0',
+	'-row-mt',
+	'1',
+	'-cpu-used',
+	'2',
+	'-c:a',
+	KINDS.webm.sound
+];
 // A palette of the film's own colours, weighed by what moves between frames; every frame drawn in it, dithered in an
 // even pattern, and only the part that changed written again
 const PALETTE_MADE = 'palettegen=stats_mode=diff';
@@ -46,6 +65,12 @@ export function isKind(name: string): name is Kind {
 
 export function isMade(kind: Kind): kind is MadeKind {
 	return kind !== SHOT_INTO;
+}
+
+/** The encoders a kind is made with: its picture's, and its sound's where it holds sound. */
+export function encodersOf(kind: Kind): readonly string[] {
+	const { picture, sound } = KINDS[kind];
+	return sound === null ? [picture] : [picture, sound];
 }
 
 /** A video of another kind made from the film's MP4, under a name of its own until it is whole. */

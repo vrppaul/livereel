@@ -4,8 +4,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { Chromium } from '../../src/adapters/browser/chromium.ts';
+import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
-import { shoot } from '../../src/studio/shoot.ts';
+import { type Shooting, shoot } from '../../src/studio/shoot.ts';
 import type { Footage } from '../../src/studio/ports.ts';
 import {
 	type ActContext,
@@ -52,7 +53,12 @@ function filmOf(steps: readonly Step[]) {
 		serve: () => Promise.resolve(atAddress(PAGE)),
 		ready: (context) => context.page.locator('h1').waitFor(),
 		steps: () => steps
-	}).inFormat('small');
+	}).formats.get('small')!;
+}
+
+/** A film shot in Chromium at the frame's own size into this footage, its sounds heard by nobody. */
+function shootingInto(footage: Footage): Shooting {
+	return { browser: new Chromium(), footage, track: SILENT, sharpness: 1 };
 }
 
 async function scratch(): Promise<string> {
@@ -62,14 +68,14 @@ async function scratch(): Promise<string> {
 test('every frame of a film is kept, in order', async () => {
 	const footage = new EveryFrameCounted();
 	const steps = [play({ seconds: 0.2, moves: [camera.onto('h1'), light.on('p')] })];
-	const shot = await shoot(filmOf(steps), { browser: new Chromium(), footage, sharpness: 1 });
+	const shot = await shoot(filmOf(steps), shootingInto(footage));
 	expect([shot.frames, footage.kept]).toEqual([6, [0, 1, 2, 3, 4, 5]]);
 });
 
 test('a still is the one frame written, and nothing after it is shot', async () => {
 	const directory = await scratch();
 	const footage = new StillFootage(join(directory, 'still.jpg'), 0.1);
-	const shot = await shoot(filmOf([play({ seconds: 0.2 })]), { browser: new Chromium(), footage, sharpness: 1 });
+	const shot = await shoot(filmOf([play({ seconds: 0.2 })]), shootingInto(footage));
 	expect([await readdir(directory), shot.frames]).toEqual([['still.jpg'], 4]);
 });
 
@@ -82,12 +88,12 @@ test('keys typed into the page reach the field that holds its keyboard', async (
 			values.push(await context.page.locator(FIELD).inputValue());
 		})
 	];
-	await shoot(filmOf(steps), { browser: new Chromium(), footage: new EveryFrameCounted(), sharpness: 1 });
+	await shoot(filmOf(steps), shootingInto(new EveryFrameCounted()));
 	expect(values).toEqual([TYPED]);
 });
 
 test('a scroll of a block the page does not have is refused as its share begins, naming the block', async () => {
 	const steps = [play({ seconds: 0.1, moves: [page.scrollTo('[data-testid=nowhere]', { top: 0 })] })];
-	const shooting = shoot(filmOf(steps), { browser: new Chromium(), footage: new EveryFrameCounted(), sharpness: 1 });
+	const shooting = shoot(filmOf(steps), shootingInto(new EveryFrameCounted()));
 	await expect(shooting).rejects.toThrow('nothing on the page matches [data-testid=nowhere]');
 });

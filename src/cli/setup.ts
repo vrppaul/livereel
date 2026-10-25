@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { SetupError } from '../domain/errors.ts';
 import { closed } from '../adapters/processes.ts';
 import { ffmpegEncoders, ffmpegFound } from '../adapters/video/ffmpeg.ts';
-import { KINDS, type Kind, SHOT_INTO } from '../adapters/video/kinds.ts';
+import { type Kind, SHOT_INTO, encodersOf } from '../adapters/video/kinds.ts';
 
 const PLAYWRIGHT = 'playwright-core';
 const PLAYWRIGHT_MANIFEST = import.meta.resolve(`${PLAYWRIGHT}/package.json`);
@@ -36,11 +36,12 @@ export async function ffmpegNeeded(): Promise<void> {
 /** The encoders of the kinds of video asked, and of the MP4 every other kind is made from, looked for in ffmpeg. */
 export async function encodersNeeded(kinds: readonly Kind[]): Promise<void> {
 	const encoders = await ffmpegEncoders();
-	const lacking = [SHOT_INTO, ...kinds].find((kind) => !encoders.has(KINDS[kind].encoder));
+	const needed = [SHOT_INTO, ...kinds].flatMap((kind) => encodersOf(kind).map((encoder) => ({ kind, encoder })));
+	const lacking = needed.find((each) => !encoders.has(each.encoder));
 	if (lacking === undefined) return;
-	const encoder = KINDS[lacking].encoder;
 	throw new SetupError(
-		`ffmpeg on the path cannot make ${lacking}: it has no ${encoder} encoder; install an ffmpeg built with it`
+		`ffmpeg on the path cannot make ${lacking.kind}: it has no ${lacking.encoder} encoder; ` +
+			'install an ffmpeg built with it'
 	);
 }
 

@@ -1,4 +1,7 @@
-/** The cursor: along a slight arc to a block of the page, as a hand moves it; pressed in and let go; taken away. */
+/**
+ * The cursor: along a slight arc to a block of the page, as a hand moves it; pressed in with a click, and let go;
+ * taken away.
+ */
 import { type Box, type Point, bowedArc, pointAlong } from '../domain/geometry.ts';
 import { easeOutCubic } from '../domain/time.ts';
 import {
@@ -11,6 +14,7 @@ import {
 	timingOf
 } from '../direction/move.ts';
 import type { ActContext } from '../direction/page.ts';
+import { type SoundScript, heardAsItBegins, soundOf } from '../direction/sound.ts';
 import { type Step, act, play } from '../direction/steps.ts';
 
 /** Where a cursor not yet on the screen comes in from, and how far its path bends off the straight line. */
@@ -18,6 +22,9 @@ export interface CursorScript extends TimingScript {
 	readonly entering?: Point;
 	readonly bow?: number;
 }
+
+/** A press's timing, and the file of its click where it is not livereel's own. */
+export interface PressScript extends TimingScript, SoundScript {}
 
 // How far the arc bends off the straight line, as a share of its length
 const BOW = 0.14;
@@ -38,8 +45,14 @@ export function to(target: string, script: CursorScript = {}): Move {
 	return { part: 'cursor', timing: timingOf(script), begin: (beginning) => along(beginning, target, script) };
 }
 
-export function press(script: TimingScript = {}): Move {
-	return { part: 'cursor', timing: timingOf(script), begin: pressingIn };
+/** The cursor pressed in, with a click as it begins: livereel's own, or the file the film gives as `sound`. */
+export function press(script: PressScript = {}): Move {
+	return {
+		part: 'cursor',
+		timing: timingOf(script),
+		sounds: [heardAsItBegins(soundOf(script, 'click'))],
+		begin: pressingIn
+	};
 }
 
 export function release(script: TimingScript = {}): Move {
@@ -51,10 +64,10 @@ export function hide(): Move {
 	return { part: 'cursor', timing: timingOf({}), begin: () => HIDDEN };
 }
 
-/** The cursor pressed in, the page clicked as `action` does it, and the cursor let go. */
-export function click(action: (context: ActContext) => Promise<void>): readonly Step[] {
+/** The cursor pressed in with its click, the page clicked as `action` does it, and the cursor let go. */
+export function click(action: (context: ActContext) => Promise<void>, script: SoundScript = {}): readonly Step[] {
 	return [
-		play({ seconds: PRESS_SECONDS, moves: [press()], ease: easeOutCubic }),
+		play({ seconds: PRESS_SECONDS, moves: [press(script)], ease: easeOutCubic }),
 		act(action),
 		play({ seconds: RELEASE_SECONDS, moves: [release()], ease: easeOutCubic })
 	];

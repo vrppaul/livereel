@@ -11,8 +11,9 @@ const MADE_BEFORE = 'an MP4 made before';
 const NO_FILM = 'tests/cli/films/no-film.ts';
 const THROWS = 'tests/cli/films/throws.ts';
 const AS_A_MODULE = JSON.stringify({ type: 'module' });
-// An ffmpeg that is there, but lists H.264 alone among its encoders, whatever it is asked
-const FFMPEG_OF_H264_ALONE = "#!/bin/sh\necho ' V....D libx264              libx264 H.264'\n";
+// An ffmpeg that is there, but lists the MP4's encoders alone, H.264 and AAC, whatever it is asked
+const FFMPEG_OF_MP4_ALONE =
+	"#!/bin/sh\necho ' V....D libx264              libx264 H.264'\necho ' A....D aac                  AAC'\n";
 const RUNS = 0o755;
 // A command that hangs is stopped and fails its test, rather than holding the whole run
 const A_COMMAND_AT_MOST_MILLISECONDS = 30_000;
@@ -51,10 +52,10 @@ function probed(video: string, entries: string): string {
 	return ran.stdout.trim();
 }
 
-/** A path whose ffmpeg makes H.264 alone. */
-function pathOfAnFfmpegOfH264Alone(): string {
+/** A path whose ffmpeg makes an MP4 alone. */
+function pathOfAnFfmpegOfMp4Alone(): string {
 	const directory = scratch();
-	writeFileSync(join(directory, 'ffmpeg'), FFMPEG_OF_H264_ALONE, { mode: RUNS });
+	writeFileSync(join(directory, 'ffmpeg'), FFMPEG_OF_MP4_ALONE, { mode: RUNS });
 	return directory;
 }
 
@@ -139,7 +140,7 @@ test('a kind of video livereel does not make is refused, naming those it makes',
 
 test("a kind of video the system's ffmpeg cannot make is refused before the film is shot", () => {
 	const out = scratch();
-	const ran = livereelWith({ PATH: pathOfAnFfmpegOfH264Alone() }, 'shoot', SHORT, '--out', out, '--as', 'webm');
+	const ran = livereelWith({ PATH: pathOfAnFfmpegOfMp4Alone() }, 'shoot', SHORT, '--out', out, '--as', 'webm');
 	expect([ran.code, ran.said, readdirSync(out)]).toEqual([
 		1,
 		'livereel shoot: ffmpeg on the path cannot make webm: it has no libvpx-vp9 encoder; install an ffmpeg built with it\n',
@@ -177,6 +178,61 @@ test('a format the film does not have is refused, naming those it has', () => {
 	expect([ran.code, ran.said]).toEqual([
 		2,
 		expect.stringContaining('the film has no format wide: --format names one of small, tall')
+	]);
+});
+
+test("a film's sounds are laid under its video, as long as the film", () => {
+	const out = scratch();
+	const ran = livereel('shoot', 'tests/cli/films/sounds.ts', '--out', out, '--draft');
+	expect([ran.code, probed(join(out, 'sounds-small.mp4'), 'codec_type,duration')]).toEqual([
+		0,
+		'video,0.433333\naudio,0.433000'
+	]);
+});
+
+test("a film with livereel's sounds turned off and no music has no sound", () => {
+	const out = scratch();
+	const ran = livereel('shoot', 'tests/cli/films/silent.ts', '--out', out, '--draft');
+	expect([ran.code, probed(join(out, 'silent-small.mp4'), 'codec_type')]).toEqual([0, 'video']);
+});
+
+test("a film's music is laid under it, cut to the film's length", () => {
+	const out = scratch();
+	const ran = livereel('shoot', 'tests/cli/films/music.ts', '--out', out, '--draft');
+	expect([ran.code, probed(join(out, 'music-small.mp4'), 'codec_type,duration')]).toEqual([
+		0,
+		'video,0.200000\naudio,0.200000'
+	]);
+});
+
+test("a WebM keeps the film's sound, in Opus, and a GIF holds none", () => {
+	const out = scratch();
+	const ran = livereel('shoot', 'tests/cli/films/sounds.ts', '--out', out, '--draft', '--as', 'webm', '--as', 'gif');
+	expect([
+		ran.code,
+		probed(join(out, 'sounds-small.webm'), 'codec_name'),
+		probed(join(out, 'sounds-small.gif'), 'codec_name')
+	]).toEqual([0, 'vp9\nopus', 'gif']);
+});
+
+test('a sound file a film names that is not there is refused before the film is shot, by its path', () => {
+	const out = scratch();
+	const ran = livereel('shoot', 'tests/cli/films/no-sound-file.ts', '--out', out, '--draft');
+	expect([ran.code, ran.said, readdirSync(out)]).toEqual([
+		1,
+		`livereel shoot: the film names a sound that is not a file there: ${join(process.cwd(), 'tests/cli/films/nowhere.wav')}\n`,
+		[]
+	]);
+});
+
+test('a video whose sound cannot be laid leaves the one made before as it was', () => {
+	const out = scratch();
+	writeFileSync(join(out, 'not-a-sound-small.mp4'), MADE_BEFORE);
+	const ran = livereel('shoot', 'tests/cli/films/not-a-sound.ts', '--out', out, '--draft');
+	expect([ran.code, readdirSync(out), readFileSync(join(out, 'not-a-sound-small.mp4'), 'utf8')]).toEqual([
+		1,
+		['not-a-sound-small.mp4'],
+		MADE_BEFORE
 	]);
 });
 

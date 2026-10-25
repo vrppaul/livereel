@@ -11,6 +11,7 @@ import type { Pose } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/geometry.ts';
 import type { ActContext } from './page.ts';
+import type { FilmSound, Music, SoundFiles } from './sound.ts';
 import type { Step } from './steps.ts';
 
 /** A page served for as long as a take lasts, at its address; the film's own handles may come with it. */
@@ -30,6 +31,9 @@ export interface Script<Served extends Serving, Name extends string> {
 	 * from here, so steps that take fewer names than `formats` has are refused by the compiler.
 	 */
 	readonly steps: (served: Served, whole: Pose, formatName: NoInfer<Name>) => readonly Step[];
+	/** Files in place of livereel's sounds, a path each from the film's file; `null` for none of livereel's sounds. */
+	readonly sounds?: SoundFiles | null;
+	readonly music?: Music;
 }
 
 /** A film whose page is served: what the studio shoots. */
@@ -39,10 +43,11 @@ export interface ServedFilm extends AsyncDisposable {
 	readonly steps: (whole: Pose) => readonly Step[];
 }
 
-/** A film in one of its formats. */
+/** A film in one of its formats, and what it says of its sounds. */
 export interface FilmInFormat {
 	readonly formatName: string;
 	readonly format: Format;
+	readonly sound: FilmSound;
 	readonly serve: () => Promise<ServedFilm>;
 }
 
@@ -52,19 +57,28 @@ export interface Film {
 }
 
 const NO_FORMAT = 'a film has a format at least: the frame it is shot in, and the screen its page is laid out on';
+// A film that gives no files in place of livereel's sounds keeps every one of them
+const EVERY_LIVEREEL_SOUND: SoundFiles = {};
 
 export class ScriptedFilm<Served extends Serving, Name extends string> implements Film {
 	readonly script: Script<Served, Name>;
+	readonly sound: FilmSound;
 	readonly formats: ReadonlyMap<string, FilmInFormat>;
 
 	constructor(script: Script<Served, Name>) {
 		this.script = script;
+		this.sound = soundOfFilm(script);
 		this.formats = new Map(namesOf(script.formats).map((name) => [name, this.inFormat(name)]));
 		if (this.formats.size === 0) throw new FilmError(NO_FORMAT);
 	}
 
 	private inFormat(name: Name): FilmInFormat {
-		return { formatName: name, format: this.script.formats[name], serve: () => this.served(name) };
+		return {
+			formatName: name,
+			format: this.script.formats[name],
+			sound: this.sound,
+			serve: () => this.served(name)
+		};
 	}
 
 	private async served(name: Name): Promise<ServedFilm> {
@@ -92,6 +106,18 @@ export function defineFilm<Served extends Serving, Name extends string>(script: 
 
 export function atAddress(address: string): Serving {
 	return new ServedElsewhere(address);
+}
+
+/**
+ * What a film says of its sounds: every one of livereel's where it gives no files in their place, and no music where
+ * it gives none. Music at a volume that is no level — not a number, endless, below none — is refused.
+ */
+function soundOfFilm<Served extends Serving, Name extends string>(script: Script<Served, Name>): FilmSound {
+	const music = script.music ?? null;
+	if (music !== null && !(Number.isFinite(music.volume) && music.volume >= 0)) {
+		throw new FilmError(`the music's volume is ${music.volume}: it is 0 or more, 1 as loud as the file`);
+	}
+	return { livereels: script.sounds === undefined ? EVERY_LIVEREEL_SOUND : script.sounds, music };
 }
 
 /** The names of a film's formats, in the order it gives them. */
