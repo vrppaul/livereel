@@ -1,6 +1,6 @@
 ---
 paths:
-  - "examples/*.ts"
+  - "examples/**"
 ---
 
 # Films
@@ -14,4 +14,5 @@ A film is a TypeScript file whose default export is made by `defineFilm` (`src/d
 - A film is split into acts, a function each, that return their steps; `steps` only puts the acts in order.
 - What changes at once is moves handed to `cut` (`cursor.hide()`, `screen.lower()`); what the page does is a named function handed to `act`.
 - A film that serves its own page starts it in `serve` and stops it as what `serve` gave is disposed, and leaves nothing running when it ends.
-- A film's data — a change, a story, the words typed — lives beside it as data alone.
+- What the filmed page shows and its server answers — a change, a story, a server's reply — lives beside the film as data alone (`examples/livereel-promo/app/`).
+- What the film itself says — its captions, the words typed, an agent's lines in the terminal — is written in the film, not in data beside it, so the film reads whole.
