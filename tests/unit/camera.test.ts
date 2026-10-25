@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { type Pose, covering, onto } from '#domain/camera';
-import type { Format } from '#domain/geometry';
+import { type Pose, covering, onto } from '../../src/domain/camera.ts';
+import type { Format } from '../../src/domain/geometry.ts';
 
 const SQUARE: Format = { frame: { width: 1000, height: 1000 }, screen: { width: 1400, height: 1000 } };
 const FACE_ON: Pose = { focusX: 700, focusY: 500, zoom: 1, tilt: 0, turn: 0 };

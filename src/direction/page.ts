@@ -1,37 +1,31 @@
 /**
  * What moves and acts may ask of the page being filmed, as the browser adapter answers it.
  *
- * A move reads the page through a reader as its share begins and, for the page's own scroll and keys, acts on it
- * through what the reader handed back or through the driver. An act is Playwright code: it is handed the filmed
- * page's frame itself, since anything narrower would be a part of what Playwright already offers.
+ * A move reads the page as its share begins and, for the page's own scroll and keys, acts on it as it goes. An act
+ * is Playwright code: it is handed the filmed page's frame itself, since anything narrower would be a part of what
+ * Playwright already offers.
  */
 import type { Frame } from 'playwright-core';
-import type { Box } from '#domain/geometry';
+import type { Box } from '../domain/geometry.ts';
 
-export interface PageReader {
-	/** Where a block stands on the screen; with `every`, the first that many that match, together. */
-	readonly box: (target: string, every: number) => Promise<Box>;
-	/** A block that scrolls, as it stands now. */
-	readonly scrolling: (target: string) => Promise<Scrolling>;
-	/** The block that scrolls a target, and how far it scrolls to bring the target `top` pixels below its own top. */
-	readonly scrollingTo: (target: string, top: number) => Promise<ScrollCourse>;
-}
+/** How far a scroll goes: so many pixels down the target's own scroll, or until the target stands `top` below the top of what scrolls it. */
+export type ScrollAim =
+	{ readonly kind: 'by'; readonly pixels: number } | { readonly kind: 'to'; readonly top: number };
 
-/** A block that scrolls: where its scroll stands, and the way to set it. */
-export interface Scrolling {
-	readonly top: number;
-	readonly scroll: (top: number) => Promise<void>;
-}
-
-/** Where a scroll starts and ends, and the way to set the block that scrolls. */
+/** Where a scroll starts and ends, as far as the block that scrolls goes, and the way to set it. */
 export interface ScrollCourse {
 	readonly start: number;
 	readonly end: number;
 	readonly scroll: (top: number) => Promise<void>;
 }
 
-/** Keys a person types into whatever holds the page's keyboard. */
-export interface PageDriver {
+/** The filmed page as a move reads it and types into it. */
+export interface FilmedPage {
+	/** Where a block stands on the screen; with `every`, the first that many that match, together. */
+	readonly box: (target: string, every: number) => Promise<Box>;
+	/** The scroll a target takes to reach its aim; a target the page lacks is refused at once. */
+	readonly scrollCourse: (target: string, aim: ScrollAim) => Promise<ScrollCourse>;
+	/** Keys a person types into whatever holds the page's keyboard. */
 	readonly type: (text: string) => Promise<void>;
 	readonly press: (key: string) => Promise<void>;
 }

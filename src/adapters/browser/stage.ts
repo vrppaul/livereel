@@ -1,15 +1,29 @@
 /**
  * The stage page as the studio uses it: a frame drawn, the screen laid flat for an act and stood up again, a frame
- * captured.
+ * captured. `StageApi` is what the stage's script, `stage/stage.js`, answers under `window.stage`.
  *
  * A frame is captured straight from Chrome: Playwright's own screenshot waits on the page and restyles it round every
  * shot, which made a frame three times as slow (350 ms against 110 ms, measured in livereel's Python version).
  */
 import type { CDPSession, Page } from 'playwright-core';
-import type { Format } from '#domain/geometry';
-import type { DrawnScene } from '#scene';
-import type { StageApi } from '#stage/contract';
-import type { Stage } from '#studio/ports';
+import type { Format } from '../../domain/geometry.ts';
+import type { DrawnScene } from '../../scene.ts';
+import type { Stage } from '../../studio/ports.ts';
+
+export interface StageApi {
+	/** The frame the stage fills, and the screen it lays the page out on. */
+	readonly setup: (format: Format) => void;
+	/** The filmed page opened in the screen's frame. */
+	readonly open: (address: string) => void;
+	/** One frame, drawn whole from the scene. */
+	readonly apply: (scene: DrawnScene) => void;
+}
+
+declare global {
+	interface Window {
+		stage: StageApi;
+	}
+}
 
 const JPEG_QUALITY = 92;
 const SCREENSHOT = 'Page.captureScreenshot';
@@ -51,21 +65,18 @@ export class BrowserStage implements Stage {
 	}
 }
 
-// What follows runs in the stage page, each function handed over alone: none may call another of this module
+// What follows runs in the stage page, each function handed over alone
 
 /** The stage set to a format. */
 export function setUpStage(format: Format): void {
-	const stage: StageApi = window.stage;
-	stage.setup(format);
+	window.stage.setup(format);
 }
 
 /** The filmed page opened in the stage's frame. */
 export function openPage(address: string): void {
-	const stage: StageApi = window.stage;
-	stage.open(address);
+	window.stage.open(address);
 }
 
 function applyScene(scene: DrawnScene): void {
-	const stage: StageApi = window.stage;
-	stage.apply(scene);
+	window.stage.apply(scene);
 }

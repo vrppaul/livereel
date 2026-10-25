@@ -1,77 +1,97 @@
 // What the package and its films are held to that the type checker does not hold: which part may build on which,
 // the code rules of claude-review's page (whole-word names, no helper inside a function, no number without a name),
 // and, in a film, a number only as the value of its script's timing. Formatting is Prettier's.
+import { builtinModules } from 'node:module';
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
-// What each part of src/ may build on: nothing reaches up into what is built on it. A prop's folder holds two layers,
-// told apart by the file: its state builds on the domain, its moves on the language films are written in, its
-// drawer on its state and the stage's drawer alone
+// What each part of src/ may build on: nothing reaches up into what is built on it. A part is a folder of src/, or
+// the scene and the package's entry, a file each
 const LAYERS = {
-	domain: ['domain'],
-	'props/*/state': ['domain'],
-	scene: ['domain', 'props/*/state'],
-	direction: ['domain', 'scene', 'direction'],
-	'props/*/moves': ['domain', 'scene', 'direction'],
-	page: ['domain', 'direction'],
-	studio: ['domain', 'scene', 'direction', 'studio'],
-	adapters: ['domain', 'scene', 'direction', 'studio', 'stage/contract', 'adapters'],
+	domain: [],
+	props: ['domain'],
+	scene: ['domain', 'props'],
+	direction: ['domain', 'props', 'scene'],
+	moves: ['domain', 'props', 'scene', 'direction'],
+	studio: ['domain', 'scene', 'direction'],
+	adapters: ['domain', 'scene', 'direction', 'studio'],
 	cli: ['domain', 'direction', 'studio', 'adapters'],
-	'props/*/draw': ['domain', 'props/*/state', 'stage/drawer'],
-	stage: ['domain', 'scene', 'props/*/draw', 'stage']
+	index: ['domain', 'props', 'direction', 'moves']
 };
 const FILES_OF = {
 	domain: ['src/domain/**'],
-	'props/*/state': ['src/props/*/state.ts'],
+	props: ['src/props/**'],
 	scene: ['src/scene.ts'],
 	direction: ['src/direction/**'],
-	'props/*/moves': ['src/props/*/moves.ts'],
-	page: ['src/page/**'],
+	moves: ['src/moves/**'],
 	studio: ['src/studio/**'],
 	adapters: ['src/adapters/**'],
 	cli: ['src/cli/**'],
-	'props/*/draw': ['src/props/*/draw.ts'],
-	stage: ['src/stage/**']
+	index: ['src/index.ts']
 };
-// How each part is named when it is imported, as a regular expression: a pattern of the gitignore kind cannot name
-// these, since it reads a leading `#` as a comment
-const IMPORTED_AS = {
-	domain: '#domain/.+',
-	'props/*/state': '#props/[^/]+/state',
-	scene: '#scene',
-	direction: '#direction/.+',
-	'props/*/moves': '#props/[^/]+/moves',
-	page: '#page/.+',
-	studio: '#studio/.+',
-	adapters: '#adapters/.+',
-	cli: '#cli/.+',
-	'props/*/draw': '#props/[^/]+/draw',
-	'stage/drawer': '#stage/drawer',
-	'stage/contract': '#stage/contract',
-	stage: '#stage/(?!drawer$|contract$).+'
+// How an import from another part names each: a relative path that climbs to src/, then the part's folder or file
+const NAMED_AS = {
+	domain: 'domain/',
+	props: 'props/',
+	scene: 'scene\\.ts$',
+	direction: 'direction/',
+	moves: 'moves/',
+	studio: 'studio/',
+	adapters: 'adapters/',
+	cli: 'cli/',
+	index: 'index\\.ts$'
 };
-// What is worked out without a browser and without Node: none of these imports Playwright or Node's own modules
-const PURE = ['domain', 'props/*/state', 'scene', 'props/*/moves', 'page', 'studio', 'props/*/draw', 'stage'];
-const BROWSER_OR_NODE = ['playwright-core', 'node:.+'];
-// Climbing out of a folder reaches another part without naming it
-const CLIMBING = '\\.\\./.*';
+const CLIMBED_TO_SOURCE = '^\\.{1,2}/(\\.\\./)*';
+// What each part may take of Playwright and of Node's own modules: nothing, so it is worked out without a browser
+// and without Node; their types alone; or anything
+const OUTSIDE = {
+	domain: 'nothing',
+	props: 'nothing',
+	scene: 'nothing',
+	direction: 'types',
+	moves: 'nothing',
+	studio: 'nothing',
+	adapters: 'anything',
+	cli: 'anything',
+	index: 'nothing'
+};
+const PLAYWRIGHT = '^playwright-core(/.*)?$';
+const NODE = `^(node:.+|(${builtinModules.join('|')})(/.*)?)$`;
+// The package names its own parts by path: by its name it would reach the copy a film resolves
+const ITSELF = '^livereel$';
 
-function outOfReach(part) {
-	const unreachable = Object.keys(IMPORTED_AS)
-		.filter((other) => !LAYERS[part].includes(other))
-		.map((other) => IMPORTED_AS[other]);
-	const alternatives = [...unreachable, CLIMBING, ...(PURE.includes(part) ? BROWSER_OR_NODE : [])];
-	return `^(${alternatives.join('|')})$`;
+function layerPatterns(part) {
+	const unreachable = Object.keys(NAMED_AS).filter((other) => other !== part && !LAYERS[part].includes(other));
+	const climbs = {
+		regex: `${CLIMBED_TO_SOURCE}(${unreachable.map((other) => NAMED_AS[other]).join('|')})`,
+		message: `${part} builds only on ${LAYERS[part].join(', ') || 'itself'}`
+	};
+	const itself = { regex: ITSELF, message: 'a part of livereel imports another by its path' };
+	return [climbs, itself, ...outsidePatterns(OUTSIDE[part], part)];
+}
+
+function outsidePatterns(allowed, part) {
+	const message = `${part} is worked out without a browser and without Node`;
+	switch (allowed) {
+		case 'nothing':
+			return [
+				{ regex: PLAYWRIGHT, message },
+				{ regex: NODE, message }
+			];
+		case 'types':
+			return [
+				{ regex: PLAYWRIGHT, message, allowTypeImports: true },
+				{ regex: NODE, message, allowTypeImports: true }
+			];
+		case 'anything':
+			return [];
+	}
+	throw new Error(`no such reach outside the package: ${allowed}`);
 }
 
 const layerRules = Object.keys(LAYERS).map((part) => ({
 	files: FILES_OF[part],
-	rules: {
-		'no-restricted-imports': [
-			'error',
-			{ patterns: [{ regex: outOfReach(part), message: `${part} builds only on ${LAYERS[part].join(', ')}` }] }
-		]
-	}
+	rules: { 'no-restricted-imports': ['error', { patterns: layerPatterns(part) }] }
 }));
 
 // Short words that still say what they mean; anything else that short abbreviates, and `_` says nothing is kept
@@ -86,6 +106,25 @@ const NO_NESTED_HELPERS = {
 		':function :matches(ArrowFunctionExpression[expression=false], FunctionExpression, FunctionDeclaration, ClassDeclaration, ClassExpression)',
 	message: 'A helper with logic is a function of the module, not one inside another.'
 };
+// A module is loaded where it is named, so the layers above see every import: only a film file is loaded by its path
+const NO_LOADING_BY_PATH = {
+	selector: 'ImportExpression',
+	message: 'A module is imported where it is named; only the command line loads a film by its path.'
+};
+// The film's own clock is its frames: what is worked out of a film reads no wall clock and waits on no timer
+const WALL_CLOCK = ['Date', 'performance', 'setTimeout', 'setInterval', 'setImmediate', 'requestAnimationFrame'].map(
+	(name) => ({ name, message: "A frame is a moment of the film's own clock, not of the wall's." })
+);
+// The parts worked out without a browser and without Node, and the stage, which draws what it is handed
+const OWN_CLOCK = [
+	'src/domain/**',
+	'src/props/**',
+	'src/scene.ts',
+	'src/direction/**',
+	'src/moves/**',
+	'src/studio/**',
+	'stage/*.js'
+];
 // The keywords a film writes its timing, framing and rhythm by, in place: a number stands there and nowhere else but
 // in a constant named at the top of the film
 const SCRIPT_KEYWORDS = [
@@ -107,14 +146,16 @@ const SCRIPT_KEYWORDS = [
 ];
 const KEYWORD = `/^(${SCRIPT_KEYWORDS.join('|')})$/`;
 const A_NUMBER = 'Literal[raw=/^[0-9.]/]';
+// A constant named at the top holds its number in its own value, never in a function it holds
+const AT_THE_TOP = `:matches(Program > VariableDeclaration, Program > ExportNamedDeclaration) ${A_NUMBER}:not(:function ${A_NUMBER})`;
 const NUMBERS_ONLY_IN_THE_SCRIPT = {
-	selector: `${A_NUMBER}:not(Property[key.name=${KEYWORD}] > .value, Property[key.name=${KEYWORD}] > UnaryExpression > .argument, Program > VariableDeclaration ${A_NUMBER}, Program > ExportNamedDeclaration ${A_NUMBER})`,
+	selector: `${A_NUMBER}:not(Property[key.name=${KEYWORD}] > .value, Property[key.name=${KEYWORD}] > UnaryExpression > .argument, ${AT_THE_TOP})`,
 	message: "A film's number is the value of a timing keyword in place, or a constant named at the top."
 };
 
 export default tseslint.config(
 	// No linter reads the tests (.claude/rules/tests.md); what is built is not the source
-	{ ignores: ['tests/', 'build/', 'dist/', 'node_modules/'] },
+	{ ignores: ['tests/', 'dist/', 'node_modules/'] },
 	eslint.configs.recommended,
 	...tseslint.configs.strictTypeChecked,
 	{
@@ -122,15 +163,15 @@ export default tseslint.config(
 	},
 	{
 		// The configs and the command's entry are plain JavaScript, outside the TypeScript program, run by Node
-		files: ['**/*.js'],
+		files: ['*.js', 'bin/**/*.js'],
 		...tseslint.configs.disableTypeChecked,
 		languageOptions: { ...tseslint.configs.disableTypeChecked.languageOptions, globals: { process: 'readonly' } }
 	},
 	...layerRules,
 	{
-		files: ['src/**/*.ts', 'examples/**/*.ts'],
+		files: ['src/**/*.ts', 'stage/*.js', 'examples/**/*.ts'],
 		rules: {
-			'id-length': ['error', { min: 3, exceptions: SHORT_WORDS, properties: 'never' }],
+			'id-length': ['error', { min: 3, exceptions: SHORT_WORDS, properties: 'always' }],
 			// id-length passes over type parameters; a type has a name, as a value does
 			'@typescript-eslint/naming-convention': [
 				'error',
@@ -148,12 +189,14 @@ export default tseslint.config(
 		}
 	},
 	{
-		files: ['src/**/*.ts'],
+		files: ['src/**/*.ts', 'stage/*.js'],
 		rules: {
+			'no-restricted-syntax': ['error', NO_NESTED_HELPERS, NO_LOADING_BY_PATH],
 			'@typescript-eslint/no-magic-numbers': [
 				'error',
 				{
-					ignore: [0, 1, -1],
+					// 0 and 1 are the ends of every share and every progress
+					ignore: [0, 1],
 					ignoreArrayIndexes: true,
 					ignoreDefaultValues: true,
 					ignoreEnums: true,
@@ -163,6 +206,20 @@ export default tseslint.config(
 				}
 			]
 		}
+	},
+	{
+		files: ['src/cli/film-file.ts'],
+		rules: { 'no-restricted-syntax': ['error', NO_NESTED_HELPERS] }
+	},
+	{
+		files: OWN_CLOCK,
+		rules: { 'no-restricted-globals': ['error', ...WALL_CLOCK] }
+	},
+	{
+		// The stage's script: JavaScript whose types JSDoc writes, so the type checker names what is undefined and
+		// works out what a function hands back
+		files: ['stage/*.js'],
+		rules: { 'no-undef': 'off', '@typescript-eslint/explicit-function-return-type': 'off' }
 	},
 	{
 		files: ['examples/**/*.ts'],

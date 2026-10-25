@@ -6,14 +6,14 @@
  * terminal's spinner — so the stage draws numbers and words and decides nothing. A prop that may be absent is
  * `null`; the compiler holds every prop to a drawn form here and to a drawer on the stage.
  */
-import type { Format } from '#domain/geometry';
-import { type Pose, wholePose } from '#domain/camera';
-import { type Caption, type DrawnCaption, drawnCaption } from '#props/caption/state';
-import type { Cursor } from '#props/cursor/state';
-import type { Ending } from '#props/ending/state';
-import type { Light } from '#props/light/state';
-import { SCREEN_UP, type Screen } from '#props/screen/state';
-import { type DrawnTerminal, type Terminal, drawnTerminal } from '#props/terminal/state';
+import type { Format } from './domain/geometry.ts';
+import { type Pose, wholePose } from './domain/camera.ts';
+import { type Caption, type DrawnCaption, drawnCaption } from './props/caption.ts';
+import type { Cursor } from './props/cursor.ts';
+import type { Ending } from './props/ending.ts';
+import type { Light } from './props/light.ts';
+import { SCREEN_UP, type Screen } from './props/screen.ts';
+import { type DrawnTerminal, type Terminal, drawnTerminal } from './props/terminal.ts';
 
 export interface PropStates {
 	camera: Pose;
@@ -30,7 +30,7 @@ export type PropName = keyof PropStates;
 export type Scene = { readonly [Name in PropName]: PropStates[Name] };
 
 /** What the stage is handed for each prop: its state, or what is worked out from it to draw. */
-export interface DrawnProps {
+interface DrawnProps {
 	camera: Pose;
 	screen: Screen;
 	light: Light | null;

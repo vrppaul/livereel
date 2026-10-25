@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { keystrokes, typedBy, typingSeconds } from '#domain/typing';
+import { keystrokes, typedBy, typingSeconds } from '../../src/domain/typing.ts';
 
 const TEXT = 'add rate limiting';
 

@@ -13,7 +13,9 @@
 	},
 	"files": [
 		"bin",
-		"dist"
+		"dist",
+		"stage",
+		"examples"
 	],
 	"exports": {
 		".": {
@@ -22,61 +24,17 @@
 			"default": "./dist/index.js"
 		}
 	},
-	"imports": {
-		"#domain/*": {
-			"source": "./src/domain/*.ts",
-			"default": "./dist/domain/*.js"
-		},
-		"#props/*": {
-			"source": "./src/props/*.ts",
-			"default": "./dist/props/*.js"
-		},
-		"#scene": {
-			"source": "./src/scene.ts",
-			"default": "./dist/scene.js"
-		},
-		"#direction/*": {
-			"source": "./src/direction/*.ts",
-			"default": "./dist/direction/*.js"
-		},
-		"#page/*": {
-			"source": "./src/page/*.ts",
-			"default": "./dist/page/*.js"
-		},
-		"#studio/*": {
-			"source": "./src/studio/*.ts",
-			"default": "./dist/studio/*.js"
-		},
-		"#adapters/*": {
-			"source": "./src/adapters/*.ts",
-			"default": "./dist/adapters/*.js"
-		},
-		"#cli/*": {
-			"source": "./src/cli/*.ts",
-			"default": "./dist/cli/*.js"
-		},
-		"#stage/*": {
-			"source": "./src/stage/*.ts",
-			"default": "./dist/stage/*.js"
-		},
-		"#built-stage/*": {
-			"source": "./build/stage/*",
-			"default": "./dist/stage/*"
-		}
-	},
 	"scripts": {
-		"livereel": "pnpm build:stage && node -C source src/cli/main.ts",
-		"bundle:stage": "esbuild src/stage/main.ts src/stage/stage.html --bundle --format=iife --conditions=source --loader:.html=copy --log-level=warning",
-		"build:stage": "pnpm bundle:stage --outdir=build/stage",
-		"build": "tsc -p tsconfig.build.json && pnpm bundle:stage --outdir=dist/stage",
+		"livereel": "node -C source src/cli/main.ts",
+		"build": "tsc -p tsconfig.build.json",
 		"prepack": "pnpm build",
 		"postpack": "rm -rf dist",
 		"check": "tsc --noEmit -p .",
-		"lint": "eslint . && stylelint 'src/**/*.css'",
+		"lint": "eslint . && stylelint 'stage/*.css'",
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
 		"knip": "knip",
-		"test": "pnpm build:stage && vitest run"
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"playwright-core": "^1.64.1"
@@ -84,7 +42,6 @@
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
 		"@types/node": "^26.6.5",
-		"esbuild": "^0.28.2",
 		"eslint": "^10.13.0",
 		"knip": "^6.43.0",
 		"prettier": "^3.9.10",

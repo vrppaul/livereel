@@ -5,12 +5,12 @@
  * The browser is installed by Playwright's own command line, found where Playwright's manifest says it is.
  */
 import { spawn } from 'node:child_process';
-import { closed } from '#adapters/processes';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SetupError } from '#domain/errors';
-import { ffmpegFound } from '#adapters/video/ffmpeg';
+import { SetupError } from '../domain/errors.ts';
+import { closed } from '../adapters/processes.ts';
+import { ffmpegFound } from '../adapters/video/ffmpeg.ts';
 
 const PLAYWRIGHT = 'playwright-core';
 const PLAYWRIGHT_MANIFEST = import.meta.resolve(`${PLAYWRIGHT}/package.json`);

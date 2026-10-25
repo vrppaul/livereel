@@ -2,14 +2,55 @@
  * A move: one prop of the scene, or the page, changing over a share of a step.
  *
  * A move reads what it starts from once, as its share begins, and becomes a change that knows its start and its end;
- * from then on its prop at any progress is worked out from those and the progress alone, so a frame is the same
- * whenever it is shot and nothing is missing "until begun". A prop absent where a move needs it is refused as the
- * move begins, once.
+ * from then on what it sets at any progress is worked out from those and the progress alone, so a frame is the same
+ * whenever it is shot. A move that finds nothing to start from — no light to carry, no block on the page — throws as
+ * it begins, once. A move is a plain object made by a function of its prop's module (`src/moves/`).
  */
-import type { Format } from '#domain/geometry';
-import { type Bounds, type Ease, Share } from '#domain/time';
-import { type PropName, type PropStates, type Scene, withProp } from '#scene';
-import type { PageDriver, PageReader } from './page.ts';
+import { FilmError } from '../domain/errors.ts';
+import type { Format } from '../domain/geometry.ts';
+import type { Ease } from '../domain/time.ts';
+import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';
+import type { FilmedPage } from './page.ts';
+
+/** What a move changes: one prop of the scene, or the page itself. Two moves of one part never run at once. */
+type Part = PropName | 'page';
+
+/** Where a share of a step starts and ends, each a share of the step from 0 to 1; either may be left to its edge. */
+export interface Bounds {
+	readonly start?: number;
+	readonly end?: number;
+}
+
+/** The part of its step a move takes: from `start` to `end`, each a share of the step. */
+export class Share {
+	readonly start: number;
+	readonly end: number;
+
+	private constructor(start: number, end: number) {
+		this.start = start;
+		this.end = end;
+	}
+
+	/** The share between these bounds; one that takes no time, or reaches past its step, is refused. */
+	static of(bounds: Bounds = {}): Share {
+		const start = bounds.start ?? 0;
+		const end = bounds.end ?? 1;
+		if (!(start >= 0 && end <= 1 && start < end)) {
+			throw new FilmError(`a move's share runs from ${start} to ${end} of its step: it must start before it ends`);
+		}
+		return new Share(start, end);
+	}
+
+	/** How far along the move is when its step is `progress` along: none before its start, all after its end. */
+	along(progress: number): number {
+		return Math.min(1, Math.max(0, (progress - this.start) / (this.end - this.start)));
+	}
+
+	/** Whether two shares are taken at once at some moment; one that ends as the other starts is not. */
+	overlaps(other: Share): boolean {
+		return this.start < other.end && other.start < this.end;
+	}
+}
 
 /** The share of its step a move takes, and its own curve where it does not take its step's. */
 export interface Timing {
@@ -23,58 +64,43 @@ export interface TimingScript {
 	readonly ease?: Ease;
 }
 
-/** What a scene move reads as its share begins. */
+/** What a move reads as its share begins. */
 export interface Beginning {
 	readonly scene: Scene;
-	readonly page: PageReader;
+	readonly page: FilmedPage;
 	readonly format: Format;
 }
 
-/** A begun scene move: the scene with its prop set, `progress` of the way along, eased. */
-export interface SceneChange {
-	readonly at: (scene: Scene, progress: number) => Scene;
-}
+/**
+ * A begun move, `progress` of the way along, eased: the scene with its prop set. A move of the page sets the page's
+ * own scroll or keys as it goes, and hands the scene back as it was.
+ */
+export type Change = (scene: Scene, progress: number) => Scene | Promise<Scene>;
 
-export interface SceneMove {
-	readonly kind: 'scene';
-	readonly prop: PropName;
+export interface Move {
+	readonly part: Part;
 	readonly timing: Timing;
-	readonly begin: (beginning: Beginning) => Promise<SceneChange>;
-}
-
-/** A prop's state at any progress, from what its move read and the progress alone. */
-export interface PropMotion<State> {
-	readonly next: (progress: number) => State;
-}
-
-/** A begun page move: the page's own scroll or keys set, `progress` of the way along. */
-export interface PageMotion {
-	readonly at: (page: PageDriver, progress: number) => Promise<void>;
-}
-
-export interface PageMove {
-	readonly kind: 'page';
-	readonly timing: Timing;
-	readonly begin: (page: PageReader) => Promise<PageMotion>;
-}
-
-export type Move = SceneMove | PageMove;
-
-/** The change of one prop: its motion's state written into the scene. */
-export class PropChange<Name extends PropName> implements SceneChange {
-	readonly name: Name;
-	readonly motion: PropMotion<PropStates[Name]>;
-
-	constructor(name: Name, motion: PropMotion<PropStates[Name]>) {
-		this.name = name;
-		this.motion = motion;
-	}
-
-	at(scene: Scene, progress: number): Scene {
-		return withProp(scene, this.name, this.motion.next(progress));
-	}
+	readonly begin: (beginning: Beginning) => Change | Promise<Change>;
 }
 
 export function timingOf(script: TimingScript): Timing {
 	return { within: Share.of(script.within), ease: script.ease ?? null };
+}
+
+/** The change of one prop: its state at each progress, written into the scene. */
+export function propChange<Name extends PropName>(name: Name, stateAt: (progress: number) => PropStates[Name]): Change {
+	return (scene, progress) => withProp(scene, name, stateAt(progress));
+}
+
+/** A prop as a move finds it as it begins; one not on the scene is refused, in the move's own words. */
+export function present<Name extends PropName>(
+	beginning: Beginning,
+	name: Name,
+	refusal: string
+): NonNullable<PropStates[Name]> {
+	return beginning.scene[name] ?? refused(refusal);
+}
+
+function refused(refusal: string): never {
+	throw new FilmError(refusal);
 }

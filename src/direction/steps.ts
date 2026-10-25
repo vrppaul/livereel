@@ -3,14 +3,13 @@
  *
  * A film reads as a script: `play` for what moves, `cut` for what changes at once, `act` for what the page really
  * does — a click, a reply from its server — which takes no time in the film however long the browser takes. Steps
- * are data; the studio runs them. Two moves of one prop may share a step only one after the other: a step that has
+ * are data; the studio runs them. Two moves of one part may share a step only one after the other: a step that has
  * both at once is refused as it is written, before anything is shot.
  */
-import { type Ease, easeInOutSine, framesOf, linear } from '#domain/time';
-import { FilmError } from '#domain/errors';
-import { type Keystroke, typingSeconds } from '#domain/typing';
-import type { Scene } from '#scene';
-import type { Move, SceneMove } from './move.ts';
+import { FilmError } from '../domain/errors.ts';
+import { type Ease, easeInOutSine, framesOf, linear } from '../domain/time.ts';
+import { type Keystroke, typingSeconds } from '../domain/typing.ts';
+import type { Move } from './move.ts';
 import type { ActContext } from './page.ts';
 
 export interface Play {
@@ -20,9 +19,10 @@ export interface Play {
 	readonly ease: Ease;
 }
 
+/** Moves made at once, between two frames: each set at its end as soon as it begins. */
 export interface Cut {
 	readonly kind: 'cut';
-	readonly change: (scene: Scene) => Scene;
+	readonly moves: readonly Move[];
 }
 
 export interface Act {
@@ -49,13 +49,11 @@ const AFTER_TYPING_SECONDS = 0.12;
 
 /** So many seconds of frames, every move eased along them, each over its own share of the step. */
 export function play(script: PlayScript): Play {
-	const moves = script.moves ?? [];
 	if (!(script.seconds > 0 && Number.isFinite(script.seconds))) {
 		throw new FilmError(`a step of ${script.seconds} s cannot be shot: it lasts some seconds, more than none`);
 	}
-	const sceneMoves = moves.filter((move) => move.kind === 'scene');
-	const clash = sceneMoves.find((move, place) => sceneMoves.slice(place + 1).some((later) => clashes(move, later)));
-	if (clash !== undefined) throw new FilmError(`two moves on the ${clash.prop} at once in one step`);
+	const moves = script.moves ?? [];
+	refuseClashes(moves);
 	return { kind: 'play', seconds: script.seconds, moves, ease: script.ease ?? easeInOutSine };
 }
 
@@ -64,9 +62,10 @@ export function hold(script: { readonly seconds: number }): Play {
 	return play({ seconds: script.seconds });
 }
 
-/** The scene changed at once, between two frames. */
-export function cut(change: (scene: Scene) => Scene): Cut {
-	return { kind: 'cut', change };
+/** The scene changed at once, between two frames: a cursor gone, a terminal opened, the camera elsewhere. */
+export function cut(...moves: readonly Move[]): Cut {
+	refuseClashes(moves);
+	return { kind: 'cut', moves };
 }
 
 /** Something done to the page between two frames, to the page as it stands, the camera put aside. */
@@ -87,6 +86,12 @@ export function framesIn(steps: readonly Step[]): number {
 	return steps.reduce((frames, step) => frames + (step.kind === 'play' ? framesOf(step.seconds) : 0), 0);
 }
 
-function clashes(move: SceneMove, other: SceneMove): boolean {
-	return move.prop === other.prop && move.timing.within.overlaps(other.timing.within);
+/** Two moves of one part at once in one step, refused by naming the part. */
+function refuseClashes(moves: readonly Move[]): void {
+	const clash = moves.find((move, place) => moves.slice(place + 1).some((later) => clashes(move, later)));
+	if (clash !== undefined) throw new FilmError(`two moves on the ${clash.part} at once in one step`);
+}
+
+function clashes(move: Move, other: Move): boolean {
+	return move.part === other.part && move.timing.within.overlaps(other.timing.within);
 }

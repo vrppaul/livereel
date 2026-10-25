@@ -9,8 +9,8 @@ import { existsSync, realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve as absolute } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { UsageError } from '#domain/errors';
-import { type Film, ScriptedFilm } from '#direction/film';
+import { UsageError } from '../domain/errors.ts';
+import { type Film, ScriptedFilm } from '../direction/film.ts';
 
 const PACKAGE = 'livereel';
 const MODULE_NOT_FOUND = 'MODULE_NOT_FOUND';

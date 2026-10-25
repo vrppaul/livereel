@@ -4,9 +4,9 @@ import { type Server, createServer, type IncomingMessage, type ServerResponse } 
 import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
 import { expect, test } from 'vitest';
-import { Chromium } from '#adapters/browser/chromium';
-import { shoot } from '#studio/shoot';
-import type { Footage } from '#studio/ports';
+import { Chromium } from '../../src/adapters/browser/chromium.ts';
+import { shoot } from '../../src/studio/shoot.ts';
+import type { Footage } from '../../src/studio/ports.ts';
 import { type ActContext, type Serving, act, cursor, defineFilm, page, play } from 'livereel';
 
 const FAR = '[data-testid=far]';

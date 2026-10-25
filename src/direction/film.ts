@@ -5,8 +5,8 @@
  * sees a film, with that type closed over, so one studio shoots every film. A film is made by `defineFilm`, and the
  * command line knows a film file's default export for one by it.
  */
-import type { Pose } from '#domain/camera';
-import type { Format } from '#domain/geometry';
+import type { Pose } from '../domain/camera.ts';
+import type { Format } from '../domain/geometry.ts';
 import type { ActContext } from './page.ts';
 import type { Step } from './steps.ts';
 

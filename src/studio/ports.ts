@@ -2,9 +2,9 @@
  * What the studio needs of the world to shoot a film: a browser with the stage and the page open, and footage to
  * keep frames in. The adapters answer these; the studio names no browser and no file of its own.
  */
-import type { Format } from '#domain/geometry';
-import type { ActContext, PageDriver, PageReader } from '#direction/page';
-import type { DrawnScene } from '#scene';
+import type { Format } from '../domain/geometry.ts';
+import type { ActContext, FilmedPage } from '../direction/page.ts';
+import type { DrawnScene } from '../scene.ts';
 
 /** The page the film is shot on. */
 export interface Stage {
@@ -30,8 +30,7 @@ export interface Footage {
 /** A browser with the stage and the filmed page open in it, for one take. */
 export interface Opened extends AsyncDisposable {
 	readonly stage: Stage;
-	readonly reader: PageReader;
-	readonly driver: PageDriver;
+	readonly page: FilmedPage;
 	readonly act: ActContext;
 }
 

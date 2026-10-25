@@ -7,11 +7,12 @@
 import { mkdir, rm } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 import { parseArgs } from 'node:util';
-import { UsageError } from '#domain/errors';
-import { Chromium } from '#adapters/browser/chromium';
-import { StillFootage } from '#adapters/video/still';
-import { VideoFootage, contactSheet } from '#adapters/video/video';
-import { shoot } from '#studio/shoot';
+import { UsageError } from '../domain/errors.ts';
+import { secondsSaid } from '../domain/time.ts';
+import { shoot } from '../studio/shoot.ts';
+import { Chromium } from '../adapters/browser/chromium.ts';
+import { StillFootage } from '../adapters/video/still.ts';
+import { VideoFootage, contactSheet } from '../adapters/video/video.ts';
 import { loadedFilm } from './film-file.ts';
 import { ffmpegNeeded, setUp } from './setup.ts';
 
@@ -27,8 +28,6 @@ const DRAFT_SHARPNESS = 1;
 const VIDEO = '.mp4';
 const STILL = '.jpg';
 const SHEET = '-sheet.png';
-// Seconds are said to a tenth
-const SAID_TO = 1;
 const MILLISECONDS = 1000;
 const OUT = { type: 'string' } as const;
 const FLAG = { type: 'boolean', default: false } as const;
@@ -79,7 +78,7 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	await footage.finish();
 	const finished = performance.now();
 	say(
-		`${video}: ${shot.frames} frames, ${shot.seconds.toFixed(SAID_TO)} s; shot in ${secondsBetween(started, filmed)} s, ` +
+		`${video}: ${shot.frames} frames, ${secondsSaid(shot.seconds)} s; shot in ${secondsBetween(started, filmed)} s, ` +
 			`the video done ${secondsBetween(filmed, finished)} s after the last frame`
 	);
 	if (!values.sheet) return;
@@ -149,5 +148,5 @@ function sharpnessOf(draft: boolean): number {
 }
 
 function secondsBetween(start: number, end: number): string {
-	return ((end - start) / MILLISECONDS).toFixed(SAID_TO);
+	return secondsSaid((end - start) / MILLISECONDS);
 }

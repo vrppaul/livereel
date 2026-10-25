@@ -4,11 +4,11 @@
  * The film's length is known from its steps before a browser opens, so footage that cannot be met — a still past the
  * end — is refused at once. The browser closes before the page's server stops.
  */
-import { wholePose } from '#domain/camera';
-import { momentOf } from '#domain/time';
-import type { Film } from '#direction/film';
-import { framesIn } from '#direction/steps';
-import { openingScene } from '#scene';
+import { wholePose } from '../domain/camera.ts';
+import { momentOf } from '../domain/time.ts';
+import type { Film } from '../direction/film.ts';
+import { framesIn } from '../direction/steps.ts';
+import { openingScene } from '../scene.ts';
 import type { Browser, Footage } from './ports.ts';
 import { Take } from './take.ts';
 
@@ -33,5 +33,5 @@ export async function shoot(film: Film, shooting: Shooting): Promise<Shot> {
 	await served.ready(opened.act);
 	const take = new Take(opened, shooting.footage, film.format, openingScene(film.format));
 	await take.run(steps);
-	return { frames: take.shot, seconds: momentOf(take.shot) };
+	return { frames: take.shots, seconds: momentOf(take.shots) };
 }

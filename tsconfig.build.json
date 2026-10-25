@@ -1,7 +1,6 @@
 {
 	// The package as it is published: JavaScript and its declarations in dist/, lowered so Node 22 runs it (Node 22
-	// has no `await using`), every relative `.ts` import written as `.js`. The stage's own script is bundled by
-	// esbuild into dist/stage/ (`pnpm build:stage`); only its contract, which the browser adapter names, comes here
+	// has no `await using`), every relative `.ts` import written as `.js`. The stage is published as it is written
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
 		"target": "ES2022",
@@ -11,6 +10,5 @@
 		"rootDir": "src",
 		"outDir": "dist"
 	},
-	"include": ["src/**/*"],
-	"exclude": ["src/stage/main.ts", "src/stage/drawers.ts", "src/stage/drawer.ts", "src/props/*/draw.ts"]
+	"include": ["src/**/*"]
 }

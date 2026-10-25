@@ -1,13 +1,13 @@
 /**
  * The filmed page as moves read it and type into it: where its blocks stand, its scroll, its keyboard.
  *
- * The functions handed to the page run there, each alone: none may call another of this module. A block that
- * scrolls is kept as a handle for the move that scrolls it, released with the browser.
+ * The functions handed to the page run there, each alone: none may call another of this module. The block a scroll
+ * moves is kept as a handle for the move that scrolls it, released with the browser.
  */
-import type { Frame, Keyboard, Locator } from 'playwright-core';
-import { FilmError } from '#domain/errors';
-import { type Box, boxAround } from '#domain/geometry';
-import type { PageDriver, PageReader, ScrollCourse, Scrolling } from '#direction/page';
+import type { Frame, JSHandle, Keyboard } from 'playwright-core';
+import { FilmError } from '../../domain/errors.ts';
+import { type Box, boxAround } from '../../domain/geometry.ts';
+import type { FilmedPage, ScrollAim, ScrollCourse } from '../../direction/page.ts';
 
 /** Where a target's top is to stand below the top of what scrolls it, handed to the page with the target. */
 interface CourseAsked {
@@ -23,7 +23,7 @@ interface CourseFound {
 // What a block's overflow is when it scrolls of itself
 const SCROLLS = new Set(['auto', 'scroll']);
 
-export class FilmedPage implements PageReader, PageDriver {
+export class PlaywrightPage implements FilmedPage {
 	readonly frame: Frame;
 	readonly keyboard: Keyboard;
 
@@ -38,24 +38,14 @@ export class FilmedPage implements PageReader, PageDriver {
 		return boxAround([first, ...others]);
 	}
 
-	async scrolling(target: string): Promise<Scrolling> {
+	async scrollCourse(target: string, aim: ScrollAim): Promise<ScrollCourse> {
 		const block = await this.found(target);
-		const top = await block.evaluate(scrollTopOf);
-		return { top, scroll: (scrollTop) => block.evaluate(scrollTopSet, scrollTop) };
-	}
-
-	async scrollingTo(target: string, top: number): Promise<ScrollCourse> {
-		const block = await (await this.found(target)).elementHandle();
-		const scroller = await block.evaluateHandle(scrollerOf, [...SCROLLS]);
-		const course = await scroller.evaluate(courseTo, { target: block, top });
-		return { start: course.start, end: course.end, scroll: (scrollTop) => scroller.evaluate(scrollTopSet, scrollTop) };
-	}
-
-	/** The first block a target matches as the page stands, refused at once where none does. */
-	private async found(target: string): Promise<Locator> {
-		const blocks = this.frame.locator(target);
-		if ((await blocks.count()) === 0) throw nothingMatches(target);
-		return blocks.first();
+		switch (aim.kind) {
+			case 'by':
+				return courseOn(block, await block.evaluate(courseBy, aim.pixels));
+			case 'to':
+				return this.courseTo(block, aim.top);
+		}
 	}
 
 	type(text: string): Promise<void> {
@@ -65,10 +55,34 @@ export class FilmedPage implements PageReader, PageDriver {
 	press(key: string): Promise<void> {
 		return this.keyboard.press(key);
 	}
+
+	/** The first block a target matches as the page stands, refused at once where none does. */
+	private async found(target: string): Promise<JSHandle<Element>> {
+		const blocks = this.frame.locator(target);
+		if ((await blocks.count()) === 0) throw nothingMatches(target);
+		return blocks.first().evaluateHandle(itself);
+	}
+
+	/** The nearest block that scrolls the target, scrolled until the target stands `top` below its top. */
+	private async courseTo(block: JSHandle<Element>, top: number): Promise<ScrollCourse> {
+		const scroller = await block.evaluateHandle(scrollerOf, [...SCROLLS]);
+		return courseOn(scroller, await scroller.evaluate(courseTo, { target: block, top }));
+	}
 }
 
 function nothingMatches(target: string): FilmError {
 	return new FilmError(`nothing on the page matches ${target}`);
+}
+
+function courseOn(scroller: JSHandle<Element>, course: CourseFound): ScrollCourse {
+	return { start: course.start, end: course.end, scroll: (top) => scroller.evaluate(scrollTopSet, top) };
+}
+
+// What follows runs in the page, each function handed over alone
+
+/** A block as a handle the page keeps for the move that scrolls it. */
+function itself(block: Element): Element {
+	return block;
 }
 
 function boxesOf(blocks: Element[]): Box[] {
@@ -77,12 +91,14 @@ function boxesOf(blocks: Element[]): Box[] {
 		.map((bounds) => ({ left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height }));
 }
 
-function scrollTopOf(block: Element): number {
-	return block.scrollTop;
-}
-
 function scrollTopSet(block: Element, top: number): void {
 	block.scrollTop = top;
+}
+
+/** A block's own scroll, moved so many pixels as far as it goes either way. */
+function courseBy(block: Element, pixels: number): CourseFound {
+	const furthest = block.scrollHeight - block.clientHeight;
+	return { start: block.scrollTop, end: Math.max(0, Math.min(block.scrollTop + pixels, furthest)) };
 }
 
 /** The nearest block above a target that scrolls of itself, or the page's own scroll. */

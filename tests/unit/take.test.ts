@@ -1,11 +1,12 @@
 import { expect, test } from 'vitest';
-import { TakeError } from '#domain/errors';
-import { type Bounds, linear } from '#domain/time';
-import { type SceneChange, type SceneMove, type Timing, timingOf } from '#direction/move';
-import { act, play } from '#direction/steps';
-import { on, to } from '#props/light/moves';
-import { type Scene, openingScene } from '#scene';
-import { Take } from '#studio/take';
+import { TakeError } from '../../src/domain/errors.ts';
+import { linear } from '../../src/domain/time.ts';
+import { type Bounds, type Change, type Move, timingOf } from '../../src/direction/move.ts';
+import { act, cut, play } from '../../src/direction/steps.ts';
+import { on, to } from '../../src/moves/light.ts';
+import { hide, to as cursorTo } from '../../src/moves/cursor.ts';
+import { type Scene, openingScene } from '../../src/scene.ts';
+import { Take } from '../../src/studio/take.ts';
 import { FootageOf, PageOfBoxes, SMALL, StageThatKeeps, openedOn } from './fakes.ts';
 
 const FIRST = { left: 10, top: 10, width: 100, height: 50 };
@@ -16,18 +17,17 @@ const PAGE = new Map([
 ]);
 
 /** A move on the screen that writes down every progress it is set at. */
-class Counted implements SceneMove {
-	readonly kind = 'scene';
-	readonly prop = 'screen';
-	readonly timing: Timing;
+class Counted implements Move {
+	readonly part = 'screen';
+	readonly timing;
 	readonly progresses: number[] = [];
 
 	constructor(within: Bounds) {
 		this.timing = timingOf({ within, ease: linear });
 	}
 
-	begin(): Promise<SceneChange> {
-		return Promise.resolve({ at: (scene, progress) => this.noted(scene, progress) });
+	begin(): Change {
+		return (scene, progress) => this.noted(scene, progress);
 	}
 
 	noted(scene: Scene, progress: number): Scene {
@@ -61,6 +61,13 @@ test('a move begun at its share reads what an earlier move of the step left', as
 	];
 	await takeOf(new FootageOf([5]), stage).run(steps);
 	expect(stage.drawn.at(-1)?.light?.box).toEqual(SECOND);
+});
+
+test('a cut sets its moves at their end at once, with no frame between', async () => {
+	const stage = new StageThatKeeps();
+	const steps = [play({ seconds: 0.1, moves: [cursorTo('#first')] }), cut(hide()), play({ seconds: 0.1 })];
+	await takeOf(new FootageOf([2, 3]), stage).run(steps);
+	expect([stage.drawn[0]?.cursor === null, stage.drawn[1]?.cursor]).toEqual([false, null]);
 });
 
 test('a frame is drawn only when the footage keeps it', async () => {

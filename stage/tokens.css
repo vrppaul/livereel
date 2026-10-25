@@ -31,10 +31,4 @@
 
 	/* How far the eye stands from the screen: nearer is a stronger angle */
 	--eye-distance: 2000px;
-
-	/* The frame's and the screen's sizes, set by the stage's script as a film begins */
-	--frame-width: 1920px;
-	--frame-height: 1080px;
-	--screen-width: 1920px;
-	--screen-height: 1080px;
 }

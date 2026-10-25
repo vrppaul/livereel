@@ -39,7 +39,7 @@ caption. Speak in the director's words, which are the tool's:
 | cast | what the page shows, opened and closed by `act` |
 | action | `act` — a real click (`cursor.click`), real keys (`page.type`), a command |
 | caption | `caption.show(text)`, `caption.hide()` |
-| entrance | `screen.lowered` in a `cut`, then `screen.rise()`; `ending.show(card)` |
+| entrance | `cut(screen.lower())`, then `screen.rise()` in a `play`; `ending.show(card)` |
 | tempo | how long each `play` and `hold({ seconds })` lasts |
 
 What reads as made with care:

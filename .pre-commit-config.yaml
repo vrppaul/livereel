@@ -20,7 +20,7 @@ repos:
         name: "stylelint (the stage's styles: tokens only, nothing moving of itself)"
         entry: pnpm exec stylelint
         language: system
-        files: ^src/.*\.css$
+        files: ^stage/.*\.css$
       - id: tsc
         name: tsc (the type checker)
         entry: pnpm exec tsc --noEmit -p .
@@ -33,9 +33,11 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-      - id: tests-collect
-        name: vitest (every test module loads)
-        entry: pnpm exec vitest list --filesOnly
+      # The whole suite takes seconds, a film in a browser and the command line included; listing the tests alone
+      # loads no module, so a test that cannot run would pass
+      - id: tests
+        name: vitest (the tests)
+        entry: pnpm exec vitest run
         language: system
         pass_filenames: false
         always_run: true

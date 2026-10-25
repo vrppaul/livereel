@@ -5,7 +5,7 @@
  */
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
-import { EncodingError } from '#domain/errors';
+import { EncodingError } from '../../domain/errors.ts';
 
 export const FFMPEG = 'ffmpeg';
 // What every run says: overwrite what is there, and speak only of errors

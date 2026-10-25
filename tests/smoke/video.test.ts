@@ -3,8 +3,8 @@ import { mkdtemp, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
-import { EncodingError } from '#domain/errors';
-import { VideoFootage } from '#adapters/video/video';
+import { EncodingError } from '../../src/domain/errors.ts';
+import { VideoFootage } from '../../src/adapters/video/video.ts';
 
 const FRAME = { width: 64, height: 64 };
 // More than a pipe holds at once, so the frame waits on ffmpeg to take it

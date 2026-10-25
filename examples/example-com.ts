@@ -6,7 +6,6 @@
 import {
 	type ActContext,
 	type Pose,
-	type Scene,
 	type Serving,
 	type Step,
 	atAddress,
@@ -22,8 +21,7 @@ import {
 	light,
 	lookingAt,
 	play,
-	screen,
-	withProp
+	screen
 } from 'livereel';
 
 const ADDRESS = 'https://example.com/';
@@ -43,16 +41,9 @@ function inLanguage(language: string): string {
 	return `p[lang=${language}]`;
 }
 
-/** The film opens on the ground alone, the screen a little smaller than it will stand. */
-function fromTheGround(scene: Scene): Scene {
-	const whole = scene.camera;
-	return screen.lowered(
-		withProp(scene, 'camera', lookingAt(whole, whole.focusX, whole.focusY, whole.zoom * OPENS_FROM))
-	);
-}
-
-function withoutCursor(scene: Scene): Scene {
-	return withProp(scene, 'cursor', null);
+/** The whole screen from a little further off, as it stands before it comes up. */
+function fromAfar(whole: Pose): Pose {
+	return lookingAt(whole, whole.focusX, whole.focusY, whole.zoom * OPENS_FROM);
 }
 
 async function followTheLink(context: ActContext): Promise<void> {
@@ -82,7 +73,7 @@ function throughTheLanguages(): readonly Step[] {
 
 function steps(_served: Serving, whole: Pose): readonly Step[] {
 	return [
-		cut(fromTheGround),
+		cut(screen.lower(), camera.to(fromAfar(whole))),
 		play({ seconds: 0.9, moves: [screen.rise({ within: { end: 0.7 } }), camera.to(whole)], ease: easeOutCubic }),
 		hold({ seconds: 0.4 }),
 		play({
@@ -121,7 +112,7 @@ function steps(_served: Serving, whole: Pose): readonly Step[] {
 		hold({ seconds: 0.3 }),
 		play({ seconds: 0.25, moves: [light.off()] }),
 		...cursor.click(followTheLink),
-		cut(withoutCursor),
+		cut(cursor.hide()),
 		play({
 			seconds: 1.3,
 			moves: [camera.to(whole), caption.show('and its one link leads somewhere real', { within: { start: 0.3 } })],

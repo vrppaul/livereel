@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { drawnCaption } from '#props/caption/state';
-import { drawnTerminal, openTerminal } from '#props/terminal/state';
+import { drawnCaption } from '../../src/props/caption.ts';
+import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
 
 test("a caption's words come up one after another", () => {
 	const words = drawnCaption({ text: 'one two three four', shown: 0.2, gone: 0 }).words.map((word) => word.appeared);

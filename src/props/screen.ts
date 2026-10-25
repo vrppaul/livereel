@@ -6,3 +6,4 @@ export interface Screen {
 }
 
 export const SCREEN_UP: Screen = { shown: 1 };
+export const SCREEN_DOWN: Screen = { shown: 0 };

@@ -1,9 +1,0 @@
-/* What the camera moves: the screen, laid out at its own size, turned about its top left corner */
-.camera {
-	position: absolute;
-	left: 0;
-	top: 0;
-	width: var(--screen-width);
-	height: var(--screen-height);
-	transform-origin: 0 0;
-}

@@ -1,18 +1,19 @@
 import { describe, expect, test } from 'vitest';
-import { FilmError } from '#domain/errors';
-import { Share, framesOf, shotAt } from '#domain/time';
+import { FilmError } from '../../src/domain/errors.ts';
+import { framesOf, shotAt } from '../../src/domain/time.ts';
+import { Share } from '../../src/direction/move.ts';
 
 describe('the film counts its time in frames', () => {
-	test('a half frame goes to the even count, as the Python films were counted', () => {
-		expect([framesOf(0.35), framesOf(0.25), framesOf(1)]).toEqual([10, 8, 30]);
+	test('so many seconds take the nearest count of frames, a half frame counted whole', () => {
+		expect([framesOf(0.35), framesOf(0.25), framesOf(1)]).toEqual([11, 8, 30]);
 	});
 
 	test('a step of a moment still takes one frame', () => {
 		expect(framesOf(0.001)).toBe(1);
 	});
 
-	test('the frame at a moment is the nearest, a half to the even one', () => {
-		expect([shotAt(0), shotAt(0.1), shotAt(0.35)]).toEqual([0, 3, 10]);
+	test('the frame at a moment is the nearest, a half frame counted whole', () => {
+		expect([shotAt(0), shotAt(0.1), shotAt(0.35)]).toEqual([0, 3, 11]);
 	});
 });
 

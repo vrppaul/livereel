@@ -1,6 +1,5 @@
-# What pnpm installs, the stage built for development, and the package built to be packed
+# What pnpm installs, and the package built to be packed
 node_modules/
-build/
 dist/
 
 # What a film is shot into

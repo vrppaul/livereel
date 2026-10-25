@@ -4,7 +4,7 @@
  * Each word comes up over the share of the whole that `WORDS_AT_ONCE` words take, so several are on their way at a
  * time; the ground under them darkens twice as fast as they come. The stage is handed every word's progress.
  */
-import { easeOutCubic } from '#domain/time';
+import { easeOutCubic } from '../domain/time.ts';
 
 /** Words over the frame: how far they have come up, and how far they have gone, each from 0 to 1. */
 export interface Caption {
@@ -14,7 +14,7 @@ export interface Caption {
 }
 
 /** A word of a caption, and how far it has come up, eased, from 0 to 1. */
-export interface Word {
+interface Word {
 	readonly text: string;
 	readonly appeared: number;
 }

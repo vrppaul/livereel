@@ -1,7 +1,11 @@
 {
-	// The whole program as the type checker reads it: the package's source and the films. Development runs the source
-	// as it stands (`node -C source`), so every import names a .ts file and every condition reaches src/
+	// The whole program as the type checker reads it: the package's source, the stage's script and the films.
+	// Development runs the source as it stands, so every import names a .ts file; a film imports `livereel` itself,
+	// which the `source` condition takes to src/ (`node -C source`)
 	"compilerOptions": {
+		// The stage's script is JavaScript the page runs as it stands, its types written in JSDoc
+		"allowJs": true,
+		"checkJs": true,
 		"target": "ESNext",
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
@@ -26,5 +30,5 @@
 		"skipLibCheck": true,
 		"noEmit": true
 	},
-	"include": ["src/**/*", "examples/**/*", "vitest.config.ts", "knip.ts"]
+	"include": ["src/**/*", "stage/*.js", "examples/**/*", "vitest.config.ts", "knip.ts"]
 }

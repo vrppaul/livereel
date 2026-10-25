@@ -32,13 +32,13 @@ The rules every change is held to are in `AGENTS.md`, and those of each area und
 - `cli` — the command line: load a film file, shoot it whole or one still, set a machine up.
 - `adapters` — Chromium with the stage and the filmed page (`browser/`), ffmpeg making the video as frames come (`video/`).
 - `studio` — a take: the steps run frame by frame on the film's clock, the scene held, frames handed to footage.
-- `direction` — what a film is written in: moves, steps (`play`, `cut`, `act`), the film itself.
-- `props/<prop>/` — each drawn part of the scene: its state, its moves, its drawer on the stage and its styles.
-- `page` — the page's own scroll and keys.
+- `moves` — the moves of every prop (`camera.onto`, `light.to`, `cursor.click`) and of the page (`page.scrollTo`), a module each.
+- `direction` — what a film is written in: a move's contract, steps (`play`, `cut`, `act`), the film itself, the page as a move reads it.
 - `scene` — every prop's state at one moment, and what the stage is handed of it.
+- `props` — each drawn part of the scene: its state, and what is worked out of it to draw.
 - `domain` — time and curves, geometry, the camera's framing, a person's typing, the errors.
 
-`src/stage/` is the page the film is shot on: the filmed page sits in its frame, and its script draws each frame from the scene, deciding nothing.
+`stage/` is the page the film is shot on: the filmed page sits in its frame, and its script draws each frame from the scene, deciding nothing. It is JavaScript the type checker reads, published as it is written.
 
 ## Releasing
 

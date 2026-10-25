@@ -1,5 +1,5 @@
-// The tests run the package's source as it stands, as development does: every `#` import and `livereel` itself
-// resolve to src/ through the `source` condition. A film shot in a browser takes seconds, so a test may too.
+// The tests run the package's source as it stands, as development does: `livereel` itself resolves to src/ through
+// the `source` condition. A film shot in a browser takes seconds, so a test may too.
 import { defineConfig } from 'vitest/config';
 
 const SOURCE = ['source'];

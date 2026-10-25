@@ -4,6 +4,7 @@
  * The command line says each one's message and exits by its kind: a wrong command or film file is the person's
  * typing, a film that cannot be shot is the film's writing, and a machine that lacks a tool is the machine's.
  */
+import { secondsSaid } from './time.ts';
 
 /** Anything livereel refuses or fails at, said in words a person can act on. */
 export class LivereelError extends Error {}
@@ -20,7 +21,7 @@ export class TakeError extends LivereelError {
 	readonly step: number;
 
 	constructor(fault: Error, moment: number, step: number) {
-		super(`at ${moment.toFixed(1)} s, step ${step}: ${fault.message}`, { cause: fault });
+		super(`at ${secondsSaid(moment)} s, step ${step}: ${fault.message}`, { cause: fault });
 		this.moment = moment;
 		this.step = step;
 	}

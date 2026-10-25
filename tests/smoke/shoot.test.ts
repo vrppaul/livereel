@@ -3,8 +3,10 @@ import { mkdtemp, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
-import { Chromium } from '#adapters/browser/chromium';
-import { StillFootage } from '#adapters/video/still';
+import { Chromium } from '../../src/adapters/browser/chromium.ts';
+import { StillFootage } from '../../src/adapters/video/still.ts';
+import { shoot } from '../../src/studio/shoot.ts';
+import type { Footage } from '../../src/studio/ports.ts';
 import {
 	type ActContext,
 	type Step,
@@ -18,8 +20,6 @@ import {
 	play,
 	typing
 } from 'livereel';
-import { shoot } from '#studio/shoot';
-import type { Footage } from '#studio/ports';
 
 const PAGE = new URL('./page.html', import.meta.url).href;
 const SMALL = { frame: { width: 320, height: 320 }, screen: { width: 480, height: 320 } };

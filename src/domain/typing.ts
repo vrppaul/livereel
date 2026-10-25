@@ -42,6 +42,8 @@ const HALF_TURNS = 2;
 const FULL_TURN = HALF_TURNS * Math.PI;
 // A letter as a person types it: what one key gives, an accented letter or an emoji whole
 const LETTERS = new Intl.Segmenter();
+// The last of a list, counted from its end
+const LAST = -1;
 
 /** The text typed by a person; with `slipAt`, a slip on that letter, rubbed out. */
 export function keystrokes(text: string, typist: Typist): readonly Keystroke[] {
@@ -73,8 +75,9 @@ export function typedBy(strokes: readonly Keystroke[], moment: number): string {
 	return strokes.findLast((stroke) => stroke.at <= moment)?.typed ?? '';
 }
 
+/** How long the typing takes: until its last key. */
 export function typingSeconds(strokes: readonly Keystroke[]): number {
-	return strokes.at(-1)?.at ?? 0;
+	return strokes.at(LAST)?.at ?? 0;
 }
 
 /** The key beside a letter, where a finger slips to; a key on no row slips nowhere. */

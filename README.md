@@ -50,7 +50,8 @@ hold({ seconds: 1.3 }),
   sets its prop of the scene over its share of the step: `camera`,
   `screen`, `light`, `cursor`, `caption`, `ending`, a drawn agent's
   `terminal`, and the `page`'s own scroll and keys.
-- `cut(change)` — the scene changed at once.
+- `cut(...moves)` — moves made at once, between two frames:
+  `cut(cursor.hide())`, `cut(terminal.open(title), screen.lower())`.
 - `act(action)` — the page acted on for real, between two frames.
 
 ## For agents

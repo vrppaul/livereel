@@ -1,30 +1,28 @@
 /**
  * What a film imports from livereel: the steps, the moves of every prop and of the page, the film itself, and the
- * values a film is written with. Nothing else of the package is a promise to a film.
+ * values a film is written with. Nothing else of the package is a promise to a film: a film changes the scene only
+ * by moves, in a `play` or at once in a `cut`.
  */
-export * as camera from '#props/camera/moves';
-export * as screen from '#props/screen/moves';
-export * as light from '#props/light/moves';
-export * as cursor from '#props/cursor/moves';
-export * as caption from '#props/caption/moves';
-export * as terminal from '#props/terminal/moves';
-export * as ending from '#props/ending/moves';
-export * as page from '#page/moves';
-export { act, cut, hold, play, typing } from '#direction/steps';
-export type { Act, Cut, Play, PlayScript, Step } from '#direction/steps';
-export { atAddress, defineFilm } from '#direction/film';
-export type { Film, Script, Serving } from '#direction/film';
-export type { ActContext } from '#direction/page';
-export type { Move } from '#direction/move';
-export { keystrokes } from '#domain/typing';
-export type { Keystroke, Typist } from '#domain/typing';
-export { easeInOutCubic, easeInOutSine, easeOutCubic, easeOutQuint, linear } from '#domain/time';
-export type { Ease } from '#domain/time';
-export { lookingAt } from '#domain/camera';
-export type { Pose } from '#domain/camera';
-export type { Format, Point, Size } from '#domain/geometry';
-export { withProp } from '#scene';
-export type { Scene } from '#scene';
-export { openTerminal } from '#props/terminal/state';
-export type { LineKind, Terminal, TerminalLine } from '#props/terminal/state';
-export type { EndingCard } from '#props/ending/state';
+export * as camera from './moves/camera.ts';
+export * as screen from './moves/screen.ts';
+export * as light from './moves/light.ts';
+export * as cursor from './moves/cursor.ts';
+export * as caption from './moves/caption.ts';
+export * as terminal from './moves/terminal.ts';
+export * as ending from './moves/ending.ts';
+export * as page from './moves/page.ts';
+export { act, cut, hold, play, typing } from './direction/steps.ts';
+export type { Act, Cut, Play, PlayScript, Step } from './direction/steps.ts';
+export { atAddress, defineFilm } from './direction/film.ts';
+export type { Film, Script, Serving } from './direction/film.ts';
+export type { ActContext } from './direction/page.ts';
+export type { Move } from './direction/move.ts';
+export { keystrokes } from './domain/typing.ts';
+export type { Keystroke, Typist } from './domain/typing.ts';
+export { easeInOutCubic, easeInOutSine, easeOutCubic, easeOutQuint, linear } from './domain/time.ts';
+export type { Ease } from './domain/time.ts';
+export { lookingAt } from './domain/camera.ts';
+export type { Pose } from './domain/camera.ts';
+export type { Format, Point, Size } from './domain/geometry.ts';
+export type { LineKind, TerminalLine } from './props/terminal.ts';
+export type { EndingCard } from './props/ending.ts';

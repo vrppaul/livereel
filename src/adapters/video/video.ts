@@ -10,11 +10,11 @@ import { once } from 'node:events';
 import { rename, rm } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
 import type { Readable, Writable } from 'node:stream';
-import { EncodingError } from '#domain/errors';
-import type { Size } from '#domain/geometry';
-import { FRAMES_PER_SECOND } from '#domain/time';
-import type { Footage } from '#studio/ports';
-import { closed } from '#adapters/processes';
+import { EncodingError } from '../../domain/errors.ts';
+import type { Size } from '../../domain/geometry.ts';
+import { FRAMES_PER_SECOND } from '../../domain/time.ts';
+import type { Footage } from '../../studio/ports.ts';
+import { closed } from '../processes.ts';
 import { FFMPEG, QUIETLY, ffmpeg } from './ffmpeg.ts';
 
 // The frames as they come, JPEG after JPEG on ffmpeg's input

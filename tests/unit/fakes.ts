@@ -1,13 +1,13 @@
 // Stand-ins for the browser in the unit tests: a page whose blocks stand where a table says, and a stage and footage
 // that keep what they were handed
-import type { ActContext, PageDriver, PageReader, ScrollCourse, Scrolling } from '#direction/page';
-import type { Box, Format } from '#domain/geometry';
-import type { DrawnScene } from '#scene';
-import type { Footage, Opened, Stage } from '#studio/ports';
+import type { ActContext, FilmedPage, ScrollCourse } from '../../src/direction/page.ts';
+import type { Box, Format } from '../../src/domain/geometry.ts';
+import type { DrawnScene } from '../../src/scene.ts';
+import type { Footage, Opened, Stage } from '../../src/studio/ports.ts';
 
 export const SMALL: Format = { frame: { width: 400, height: 400 }, screen: { width: 600, height: 400 } };
 
-export class PageOfBoxes implements PageReader, PageDriver {
+export class PageOfBoxes implements FilmedPage {
 	readonly boxes: ReadonlyMap<string, Box>;
 	readonly typed: string[] = [];
 
@@ -20,11 +20,7 @@ export class PageOfBoxes implements PageReader, PageDriver {
 		return Promise.resolve(this.boxes.get(target)!);
 	}
 
-	scrolling(): Promise<Scrolling> {
-		return Promise.resolve({ top: 0, scroll: () => Promise.resolve() });
-	}
-
-	scrollingTo(): Promise<ScrollCourse> {
+	scrollCourse(): Promise<ScrollCourse> {
 		return Promise.resolve({ start: 0, end: 0, scroll: () => Promise.resolve() });
 	}
 
@@ -92,5 +88,5 @@ const STILL_MOTION = { release: () => Promise.resolve(), still: () => Promise.re
 
 export function openedOn(page: PageOfBoxes, stage: Stage): Opened {
 	const act: ActContext = { page: NO_PAGE, motion: STILL_MOTION };
-	return { stage, reader: page, driver: page, act, [Symbol.asyncDispose]: () => Promise.resolve() };
+	return { stage, page, act, [Symbol.asyncDispose]: () => Promise.resolve() };
 }

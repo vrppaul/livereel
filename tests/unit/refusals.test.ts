@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { framedAnyway } from '#adapters/browser/refusals';
+import { framedAnyway } from '../../src/adapters/browser/refusals.ts';
 
 test('a page that refuses every frame is framed anyway', () => {
 	expect(framedAnyway('X-Frame-Options', 'DENY')).toBe('');

@@ -12,6 +12,6 @@ A film is a TypeScript file whose default export is made by `defineFilm` (`src/d
 - Any other number is a constant named at the top. eslint holds both (`SCRIPT_KEYWORDS` in `eslint.config.js`).
 - Every place on the page a film looks at is a named selector at the top of the file: a test id or a role where the page has one, never a class.
 - A film is split into acts, a function each, that return their steps; `steps` only puts the acts in order.
-- What changes at once is a named function handed to `cut`; what the page does is a named function handed to `act`.
+- What changes at once is moves handed to `cut` (`cursor.hide()`, `screen.lower()`); what the page does is a named function handed to `act`.
 - A film that serves its own page starts it in `serve` and stops it as what `serve` gave is disposed, and leaves nothing running when it ends.
 - A film's data — a change, a story, the words typed — lives beside it as data alone.

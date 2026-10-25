@@ -33,10 +33,11 @@ pnpm livereel still examples/example-com.ts --out out/example --at 6.5  # one st
 
 ## Layers
 
-- `cli` → `adapters` → `studio` → `direction` → `scene` → the props' states → `domain`, the parts of `src/`: each builds only on those after it.
-- The props' moves (`src/props/*/moves.ts`) and the page's (`src/page/moves.ts`) build on `direction`; the props' drawers (`src/props/*/draw.ts`) and the stage on the states alone.
-- What a film is made of is worked out without a browser and without Node: `domain`, the props, `scene`, `studio` and the stage import neither Playwright nor `node:*`.
-- Between parts, an import names a part by its `#` name, which `package.json` maps to the source for development and to the built package. eslint refuses an import against these (`LAYERS` in `eslint.config.js`).
+- `cli` → `adapters` → `studio` → `direction` → `scene` → `props` → `domain`, the parts of `src/`: each builds only on those after it. A part is a folder, or a file of its own (`src/scene.ts`).
+- The moves of every prop and of the page (`src/moves/`) build on `direction`; the package's entry (`src/index.ts`) on the moves and what a film is written with.
+- What a film is made of is worked out without a browser and without Node: `domain`, `props`, `scene`, `moves` and `studio` import neither Playwright nor Node's own modules and read no wall clock; `direction` takes their types alone.
+- A part imports another by its relative path, to its `.ts` file; the package never imports itself by its name. eslint refuses an import against these (`LAYERS` in `eslint.config.js`).
+- The stage, `stage/`, is the page a film is shot on: JavaScript the type checker reads, published and run as it is written.
 
 ## Rules for all code
 
@@ -66,7 +67,7 @@ Every change leaves the repository better than it found it: cleaner, easier to r
 Before you change or review code in an area, read its file whole; a brief to another agent names the files.
 
 - `.claude/rules/engine.md` — anything under `src/` but the stage: TypeScript, the scene, moves and steps, time, the command line.
-- `.claude/rules/stage.md` — the stage, `src/stage/`, and the props' drawers and styles: what it draws and how.
+- `.claude/rules/stage.md` — the stage, `stage/`: what it draws and how.
 - `.claude/rules/films.md` — a film, under `examples/`: how one is written.
 - `.claude/rules/tests.md` — any test, under `tests/`.
 - `.claude/rules/scripts.md` — anything under `scripts/`: the gates of our own.

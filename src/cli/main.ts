@@ -2,7 +2,7 @@
  * The command line: a command by name from the table, run; what it refuses said, and the exit code by whose it is
  * to put right — 2 for a wrong command line or film file, 1 for a film that could not be shot.
  */
-import { LivereelError, UsageError } from '#domain/errors';
+import { LivereelError, UsageError } from '../domain/errors.ts';
 import { COMMANDS, say } from './commands.ts';
 
 const SHOT = 0;
