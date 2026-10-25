@@ -88,8 +88,9 @@ the film starts and stops), when the page is ready, and its steps. Read
 Every move that runs over time takes, last, its timing: `within: { start,
 end }`, the share of its step it runs over (0 to 1, the whole step if left
 out), and `ease`, its own curve where it does not take its step's.
-`cursor.hide()`, `screen.lower()`, `terminal.open(title)` and
-`terminal.submit()` are made at once and take none: write them in a `cut`.
+`cursor.hide()`, `screen.lower()` and `terminal.submit()` are made at once
+and take none: write them in a `cut`. Any other move in a `cut` is set at
+its end at once.
 
 | Steps | |
 |---|---|
@@ -109,7 +110,7 @@ out), and `ease`, its own curve where it does not take its step's.
 | `cursor.press()`, `cursor.release()`, `cursor.hide()` | pressed in, let go, taken off the screen |
 | `cursor.click(action)` | pressed, `act(action)`, let go: the steps of a click |
 | `caption.show(text)`, `caption.hide()` | words coming up one after another, in place of any shown; going |
-| `terminal.open(title)` | an agent's terminal drawn over the frame, in a `cut` |
+| `terminal.open(title)` | an agent's terminal coming up over the frame; in a `cut`, there at once |
 | `terminal.type(strokes)`, `terminal.submit()` | keys typed into it; Enter |
 | `terminal.works(lines, thinking, { thinkingShare })` | the agent thinking, its spinner beside the words `thinking`, then its lines written one after another; a line is `{ kind, text }`, its kind `work` (a tool and what it is used on), `said` or `done` |
 | `terminal.leave()` | the terminal giving way |

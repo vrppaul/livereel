@@ -5,7 +5,7 @@ import { onto } from '../../src/moves/camera.ts';
 import { hide } from '../../src/moves/caption.ts';
 import { press, release, to as cursorTo } from '../../src/moves/cursor.ts';
 import { off, to as lightTo } from '../../src/moves/light.ts';
-import { leave, submit, works } from '../../src/moves/terminal.ts';
+import { leave, open, submit, works } from '../../src/moves/terminal.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
 import { type Scene, openingScene, withProp } from '../../src/scene.ts';
 import { PageOfBoxes, SMALL } from './fakes.ts';
@@ -17,7 +17,7 @@ const TYPED = withProp(openingScene(SMALL), 'terminal', {
 	title: 'A terminal',
 	lines: [],
 	typed: 'add a test',
-	leaving: 0
+	shown: 1
 });
 const READ: TerminalLine = { kind: 'work', text: 'Read app.py' };
 const SAID: TerminalLine = { kind: 'said', text: 'Done.' };
@@ -56,6 +56,13 @@ test('a cursor pressed goes in as the press goes on, and comes back out as it is
 		(await setAt(press(), pointed, 0.4)).cursor?.press,
 		(await setAt(release(), pressed, 0.25)).cursor?.press
 	]).toEqual([0.4, 0.75]);
+});
+
+test('a terminal opened comes up as its move goes on, and one left goes as its move goes on', async () => {
+	expect([
+		(await setAt(open('A terminal'), openingScene(SMALL), 0.25)).terminal?.shown,
+		(await setAt(leave(), TYPED, 0.25)).terminal?.shown
+	]).toEqual([0.25, 0.75]);
 });
 
 test('Enter puts the typed line up into the log, and the line is empty again', async () => {

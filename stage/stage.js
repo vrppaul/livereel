@@ -144,7 +144,7 @@ class TerminalDrawer {
 		}
 		this.title.textContent = terminal.title;
 		this.typed.textContent = terminal.typed;
-		numbered(this.root, { '--leaving': terminal.leaving, '--caret': Number(terminal.caret) });
+		numbered(this.root, { '--shown': terminal.shown, '--caret': Number(terminal.caret) });
 	}
 }
 

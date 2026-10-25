@@ -17,8 +17,8 @@ export interface Terminal {
 	readonly title: string;
 	readonly lines: readonly TerminalLine[];
 	readonly typed: string;
-	// As it gives way to what comes after it: 0 standing, 1 gone
-	readonly leaving: number;
+	// How far it has come up over the frame, or how much of it is left as it gives way: 0 none, 1 standing
+	readonly shown: number;
 }
 
 /** A line as the stage draws it: its kind, what leads it set apart, and the rest. */
@@ -33,7 +33,7 @@ export interface DrawnTerminal {
 	readonly lines: readonly ShownLine[];
 	readonly typed: string;
 	readonly caret: boolean;
-	readonly leaving: number;
+	readonly shown: number;
 }
 
 // What leads a line the person typed, and what parts a tool's name from what it is used on
@@ -46,9 +46,9 @@ const CARET_BLINKS_PER_SECOND = 1.1;
 // A blink is the caret shown, then hidden
 const HALVES_OF_A_BLINK = 2;
 
-/** A terminal with its title, nothing in its log yet, nothing typed. */
+/** A terminal standing with its title, nothing in its log yet, nothing typed. */
 export function openTerminal(title: string): Terminal {
-	return { title, lines: [], typed: '', leaving: 0 };
+	return { title, lines: [], typed: '', shown: 1 };
 }
 
 export function drawnTerminal(terminal: Terminal, moment: number): DrawnTerminal {
@@ -59,7 +59,7 @@ export function drawnTerminal(terminal: Terminal, moment: number): DrawnTerminal
 		lines: terminal.lines.map((line) => shownLine(line, spinner)),
 		typed: terminal.typed,
 		caret: halfBlinks % HALVES_OF_A_BLINK === 0,
-		leaving: terminal.leaving
+		shown: terminal.shown
 	};
 }
 

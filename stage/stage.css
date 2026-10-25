@@ -141,7 +141,7 @@ body {
 	filter: blur(calc((1 - var(--appeared)) * var(--word-blur) + var(--gone) * var(--word-blur-leaving)));
 }
 
-/* The agent's terminal: a window on the ground, its log above the line being typed, shrinking a little as it leaves */
+/* The agent's terminal: a window on the ground, its log above the line being typed, a little smaller while it comes up or goes */
 .terminal {
 	--terminal-shrinks: 0.06;
 
@@ -151,8 +151,8 @@ body {
 	align-items: center;
 	justify-content: center;
 	pointer-events: none;
-	opacity: calc(1 - var(--leaving));
-	transform: scale(calc(1 - var(--terminal-shrinks) * var(--leaving)));
+	opacity: var(--shown);
+	transform: scale(calc(1 - var(--terminal-shrinks) * (1 - var(--shown))));
 }
 
 .terminal .window {

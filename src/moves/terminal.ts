@@ -30,9 +30,9 @@ interface Work {
 // Of the agent's work, the share it only thinks before its first line
 const THINKING_SHARE = 0.22;
 
-/** A terminal with its title, nothing in its log yet, nothing typed. */
-export function open(title: string): Move {
-	return { part: 'terminal', timing: timingOf({}), begin: () => opened(title) };
+/** A terminal with its title coming up over the frame, nothing in its log yet, nothing typed; in a cut, at once. */
+export function open(title: string, script: TimingScript = {}): Move {
+	return { part: 'terminal', timing: timingOf(script), begin: () => opening(title) };
 }
 
 /** A person typing into the terminal, key by key, at the times the strokes have them unless the film names a curve. */
@@ -67,9 +67,9 @@ export function leave(script: TimingScript = {}): Move {
 	return { part: 'terminal', timing: timingOf(script), begin: leaving };
 }
 
-function opened(title: string): Change {
+function opening(title: string): Change {
 	const terminal = openTerminal(title);
-	return propChange('terminal', () => terminal);
+	return propChange('terminal', (progress) => ({ ...terminal, shown: progress }));
 }
 
 function typingInto(beginning: Beginning, strokes: readonly Keystroke[]): Change {
@@ -90,7 +90,7 @@ function working(work: Work): Change {
 
 function leaving(beginning: Beginning): Change {
 	const terminal = openOn(beginning, 'left');
-	return propChange('terminal', (progress) => untilTheEnd(progress, { ...terminal, leaving: progress }));
+	return propChange('terminal', (progress) => untilTheEnd(progress, { ...terminal, shown: 1 - progress }));
 }
 
 /** The lines written by `progress` of the work, after its share of thinking, and the thinking line until the end. */
