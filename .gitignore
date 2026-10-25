@@ -1,0 +1,18 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# What a film is shot into
+out/
+
+# Linting and tests
+.ruff_cache/
+.pytest_cache/
+.import_linter_cache/

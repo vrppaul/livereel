@@ -1,0 +1,129 @@
+# Every hook runs once, before the commit; only the message check runs on the message
+default_stages: [pre-commit]
+
+repos:
+  # The project's own tools, the ones `uv run` and CI use: a mirror pins a release of its own and drifts from it
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff (linter, with bandit's checks)
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+        require_serial: true
+      - id: ruff-format
+        name: ruff (formatter)
+        entry: uv run ruff format
+        language: system
+        types: [python]
+        require_serial: true
+      - id: code-rules
+        name: code rules (nested functions, short names, models by field names, commands by name)
+        entry: uv run python scripts/check_code_rules.py
+        language: system
+        types: [python]
+        exclude: ^tests/
+      - id: typos
+        name: typos
+        entry: uv run typos --force-exclude
+        language: system
+        types: [text]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: debug-statements
+      - id: check-docstring-first
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: check-added-large-files
+      - id: check-ast
+      - id: check-builtin-literals
+
+  # Whole-project checks: each reads every file at once, so each runs once, whatever the commit touches
+  - repo: local
+    hooks:
+      - id: ty
+        name: ty (type checker)
+        entry: uv run ty check src scripts examples
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: tests-collect
+        name: pytest (every test module loads)
+        entry: uv run pytest tests --collect-only -q
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: import-layers
+        name: import-linter (the package's layers)
+        entry: uv run lint-imports
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: vulture
+        name: vulture (code nothing calls)
+        entry: uv run vulture
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: deptry
+        name: deptry (dependencies as declared)
+        entry: uv run deptry src
+        language: system
+        pass_filenames: false
+        always_run: true
+
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.24.1
+    hooks:
+      - id: validate-pyproject
+        name: validate pyproject.toml
+
+  # The stage: its script and its styles, linted and formatted by Biome at the version the command names
+  - repo: local
+    hooks:
+      - id: biome
+        name: biome (the stage's script and styles)
+        entry: npx --yes @biomejs/biome@2.5.15 check --no-errors-on-unmatched
+        language: system
+        files: ^src/livereel/stage/.*\.(js|css)$
+      # Every frame is set by the film: a style that moves the stage of itself would move between two frames
+      - id: stage-still
+        name: the stage moves nothing of itself
+        entry: '\b(transition|animation)(-[a-z-]+)?\s*:|@keyframes|scroll-behavior\s*:\s*smooth'
+        language: pygrep
+        files: ^src/livereel/stage/.*\.css$
+
+  # The skill, and the copy the plugin is installed from
+  - repo: local
+    hooks:
+      - id: skill-copies
+        name: skill copies match
+        entry: cmp skills/reel/SKILL.md plugin/commands/reel.md
+        language: system
+        pass_filenames: false
+        files: ^(skills/reel/SKILL\.md|plugin/commands/reel\.md)$
+
+  - repo: local
+    hooks:
+      - id: instruction-files
+        name: instruction files (their size, the paths they name, how they are reached)
+        entry: uv run python scripts/check_instruction_files.py
+        language: system
+        pass_filenames: false
+        always_run: true
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.0.0
+    hooks:
+      - id: conventional-pre-commit
+        name: conventional-pre-commit
+        stages: [commit-msg]
+        args: [feat, fix, docs, style, refactor, perf, test, build, ci, chore]

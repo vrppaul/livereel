@@ -1,0 +1,188 @@
+[project]
+name = "livereel"
+version = "0.1.0"
+description = "Film a live web page: a camera, a light, a cursor and captions over it, frame by frame"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Pavel Paranin", email = "pavel@paran.in" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "click>=8.5.0",
+    "playwright>=1.64.1",
+    "pydantic>=2.14.1",
+]
+
+[project.scripts]
+livereel = "livereel.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.10.6,<0.11.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "deptry>=0.25.1",
+    "import-linter>=2.15",
+    "pre-commit>=4.7.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.17.2",
+    "ty>=0.0.91",
+    "typos>=1.51.1",
+    "vulture>=2.16",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 120
+# Where the project's own modules are: the package, the scripts, which import each other by path, and the films
+src = ["src", "scripts", "examples"]
+# What is excluded stays excluded when a hook names the file outright
+force-exclude = true
+exclude = [".git", ".venv", "__pycache__", "build", "dist"]
+
+[tool.ruff.lint]
+# No rule of the linter reads the tests (.claude/rules/tests.md)
+exclude = ["tests/**"]
+select = [
+    "E",        # pycodestyle errors
+    "F",        # pyflakes
+    "I",        # isort
+    "UP",       # pyupgrade
+    "B",        # flake8-bugbear; B027 refuses an empty member of an ABC that is not @abstractmethod
+    "C4",       # flake8-comprehensions
+    "N",        # pep8-naming
+    "SIM",      # flake8-simplify
+    "TID",      # tidy imports
+    "W",        # pycodestyle warnings
+    "RUF",      # Ruff-specific rules
+    "ASYNC",    # async anti-patterns
+    "T20",      # no print(): the command line says what it has to through click
+    "RSE",      # unnecessary parens on raise
+    "PERF",     # performance anti-patterns
+    "FURB",     # refurb modernizations
+    "PLC",      # pylint conventions (import-outside-toplevel among them)
+    "PLE",      # pylint errors
+    "PLW",      # pylint warnings
+    "A",        # nothing shadows a builtin
+    "ANN",      # every function says what it takes and gives
+    "BLE",      # no blind `except Exception`
+    "DTZ",      # no naive datetimes
+    "EM",       # an exception's message is named before it is raised
+    "ERA",      # no commented-out code
+    "FLY",      # f-strings over joins of literals
+    "INP",      # no implicit namespace packages
+    "ISC",      # no implicit string concatenation
+    "PGH",      # no blanket noqa or type: ignore
+    "PIE",      # unnecessary pass, spreads and the like
+    "PTH",      # pathlib over os.path
+    "RET",      # returns that say what they return
+    "SLF",      # nothing reaches into another object's private members
+    "TRY",      # exceptions raised and caught as meant
+    "FBT",      # no bare True or False whose meaning only the signature knows
+    "ARG",      # every parameter used: one an interface asks for and the method does not need is an override
+    "C90",      # no function too tangled to follow
+    "PLR0913",  # no function asking for more than five things
+    "PLR2004",  # no number or string in a comparison without a name
+    "S",        # bandit's checks, as the linter runs them
+]
+ignore = [
+    "SIM108",   # ternary operator — if/else often more readable
+]
+
+[tool.ruff.lint.pylint]
+# A string compared outright is as unnamed as a number
+allow-magic-value-types = []
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-first-party = ["livereel"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"typing.Any".msg = "Name the shape: a model, an interface or a type of its own."
+"typing.Protocol".msg = "An interface its implementations inherit is an abstract class: abc.ABC, every member @abstractmethod."
+"typing.cast".msg = "Prove the type instead: narrow it, or validate it with a model."
+
+[tool.ruff.lint.per-file-ignores]
+# Scripts are run by path, not imported from a package, and what they find is their output, printed as a linter
+# prints its findings; so are the films, which the command line loads by path
+"scripts/**" = ["T20", "INP001"]
+"examples/**" = ["INP001"]
+# Data alone: a demo change's files and the story told of it, each text as long as it is
+"examples/claude_review/demo.py" = ["E501"]
+# ffmpeg is started by name from the path, as every tool that makes a video starts it
+"src/livereel/studio.py" = ["S607"]
+
+[tool.importlinter]
+root_package = "livereel"
+# The packages it imports are part of the graph, so a contract can forbid one
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Each part builds only on those after it"
+type = "layers"
+layers = [
+    "livereel.cli",
+    "livereel.studio",
+    "livereel.steps",
+    "livereel.moves",
+    "livereel.film",
+    "livereel.framing | livereel.keys",
+    "livereel.scene",
+    "livereel.geometry",
+    "livereel.easing",
+]
+
+[[tool.importlinter.contracts]]
+name = "What a film is made of is worked out without a browser: the parts under the film import no Playwright"
+type = "forbidden"
+source_modules = ["livereel.framing", "livereel.keys", "livereel.scene", "livereel.geometry", "livereel.easing"]
+forbidden_modules = ["playwright"]
+
+[tool.vulture]
+paths = ["src", "tests", "scripts", "examples"]
+min_confidence = 60
+# Called through what they are decorated as, never by name in this code
+ignore_decorators = ["@override", "@click.*", "@pytest.fixture"]
+ignore_names = [
+    # Pydantic's own setting, and what a film file is loaded for: its production, by name
+    "model_config",
+    "PRODUCTION",
+    # Read by the stage alone, from the scene handed to it as JSON (src/livereel/stage/stage.js)
+    "gone",
+    "strength",
+    "pad",
+    "kind",
+    "lead",
+    "title",
+    "caret",
+    "spinner",
+    "words",
+    "ground",
+    "appeared",
+    # Sent to claude-review as JSON by its film (examples/claude_review/stories.py)
+    "seen_release",
+    "story_introduced",
+    "story_writing",
+]
+
+[tool.typos.files]
+# The tests' spelling is not checked (.claude/rules/tests.md)
+extend-exclude = ["tests/"]
+
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.ty.src]
+# No type check reads the tests (.claude/rules/tests.md)
+exclude = ["tests"]
+
+[tool.ty.terminal]
+# A warning is a finding like any other: it fails the check, in a hook and in CI alike
+error-on-warning = true

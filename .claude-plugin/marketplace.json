@@ -1,0 +1,19 @@
+{
+	"$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+	"name": "livereel-marketplace",
+	"description": "Films of live web pages, directed by Claude Code",
+	"owner": {
+		"name": "Pavel Paranin"
+	},
+	"plugins": [
+		{
+			"name": "livereel",
+			"description": "Direct and shoot a short film of a live web page: a camera, a light, a cursor and captions over it, frame by frame.",
+			"author": {
+				"name": "Pavel Paranin"
+			},
+			"source": "./plugin",
+			"category": "development"
+		}
+	]
+}

@@ -1,0 +1,283 @@
+/*
+ * The stage: the ground the film stands on, the screen the page is shown on, and what lies over them.
+ * Nothing here moves of itself: every frame is set by stage.js from the scene it is handed.
+ */
+:root {
+	--ground: #0b0e14;
+	--ground-glow: #182033;
+	--ink: #f4f6fa;
+	--ink-quiet: #8b95a7;
+	--ink-faint: #5d6678;
+	--agent: #d97757;
+	--done: #7ee2a8;
+	--terminal: #10141c;
+	--terminal-edge: #252d3b;
+	--dimmed: 6 9 16;
+	--cursor-fill: #111;
+	--cursor-edge: #fff;
+	/* What the screen shows until the page draws, the dark things cast shadows in, and the screen's edge */
+	--screen-ground: #fff;
+	--shadow: 0 0 0;
+	--screen-edge: rgb(255 255 255 / 0.07);
+	/* How far the dark round the light reaches: past any edge of the screen */
+	--light-reach: 4000px;
+	--sans: ui-sans-serif, system-ui, sans-serif;
+	--mono: ui-monospace, "JetBrains Mono", monospace;
+	/* How far the eye stands from the screen: nearer is a stronger angle */
+	--eye-distance: 2000px;
+	/* The frame's and the screen's sizes, set by stage.js as the film begins */
+	--frame-width: 1920px;
+	--frame-height: 1080px;
+	--screen-width: 1920px;
+	--screen-height: 1080px;
+}
+
+html,
+body {
+	margin: 0;
+	width: var(--frame-width);
+	height: var(--frame-height);
+	overflow: hidden;
+	background: radial-gradient(120% 90% at 50% 30%, var(--ground-glow), var(--ground));
+}
+
+/* What lies over the page never takes a click meant for it */
+#caption,
+#terminal,
+#ending {
+	pointer-events: none;
+}
+
+#stage {
+	position: absolute;
+	inset: 0;
+	perspective: var(--eye-distance);
+	perspective-origin: 50% 50%;
+	overflow: hidden;
+}
+
+#screen {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: var(--screen-width);
+	height: var(--screen-height);
+	transform-origin: 0 0;
+	border-radius: 16px;
+	overflow: hidden;
+	background: var(--screen-ground);
+	box-shadow:
+		0 50px 120px rgb(var(--shadow) / 0.55),
+		0 0 0 1px var(--screen-edge);
+}
+
+#page {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border: 0;
+}
+
+/* The light: the block stays as it is, everything round it sinks into the dark */
+#light {
+	position: absolute;
+	pointer-events: none;
+	border-radius: 12px;
+	box-shadow: 0 0 0 var(--light-reach) rgb(var(--dimmed) / var(--dim, 0));
+}
+
+#cursor {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 30px;
+	height: 40px;
+	pointer-events: none;
+	transform-origin: 3px 3px;
+	filter: drop-shadow(0 3px 4px rgb(var(--shadow) / 0.35));
+	fill: var(--cursor-fill);
+	stroke: var(--cursor-edge);
+	stroke-width: 2.2;
+	stroke-linejoin: round;
+}
+
+/* A caption: words that rise out of a blur one after another, on a ground that darkens the bottom of the frame */
+#caption {
+	position: absolute;
+	left: 64px;
+	right: 64px;
+	bottom: 72px;
+	font: 650 56px / 1.12 var(--sans);
+	letter-spacing: -0.025em;
+	color: var(--ink);
+	text-shadow: 0 2px 30px rgb(var(--shadow) / 0.55);
+	text-wrap: balance;
+}
+
+#caption span {
+	display: inline-block;
+	margin-right: 0.24em;
+}
+
+#caption-ground {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 380px;
+	background: linear-gradient(to top, rgb(var(--dimmed) / 0.85), rgb(var(--dimmed) / 0));
+	pointer-events: none;
+}
+
+/* The agent's terminal: a window on the ground, its log above the line being typed */
+#terminal {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+#terminal .window {
+	width: 86%;
+	height: 78%;
+	display: flex;
+	flex-direction: column;
+	border-radius: 16px;
+	background: var(--terminal);
+	box-shadow:
+		0 0 0 1px var(--terminal-edge),
+		0 40px 100px rgb(var(--shadow) / 0.5);
+	overflow: hidden;
+	font: 400 25px / 1.5 var(--mono);
+	color: var(--ink);
+}
+
+#terminal .bar {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	padding: 16px 20px;
+	border-bottom: 1px solid var(--terminal-edge);
+	font: 500 17px / 1 var(--sans);
+	color: var(--ink-faint);
+}
+
+#terminal .bar i {
+	width: 13px;
+	height: 13px;
+	border-radius: 50%;
+	background: var(--terminal-edge);
+}
+
+#terminal .bar .title {
+	margin-left: 12px;
+}
+
+#terminal .log {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	gap: 4px;
+	padding: 24px 30px 14px;
+	overflow: hidden;
+}
+
+#terminal .log div {
+	white-space: pre-wrap;
+}
+
+#terminal .asked {
+	color: var(--ink-quiet);
+	margin-bottom: 10px;
+}
+
+/* What leads a line is set apart in weight: a tool's name. A prompt and a spinner stand in the line's own weight */
+#terminal .asked b,
+#terminal .thinking b {
+	font-weight: inherit;
+}
+
+#terminal .work::before {
+	content: "● ";
+	color: var(--done);
+}
+
+#terminal .work b {
+	font-weight: 600;
+}
+
+#terminal .said {
+	margin-top: 10px;
+}
+
+#terminal .said::before {
+	content: "● ";
+	color: var(--ink);
+}
+
+#terminal .done {
+	color: var(--done);
+}
+
+#terminal .thinking {
+	color: var(--agent);
+	margin-top: 10px;
+}
+
+#terminal .line {
+	margin: 0 22px 22px;
+	padding: 14px 18px;
+	border: 1px solid var(--terminal-edge);
+	border-radius: 10px;
+	white-space: pre;
+}
+
+.prompt {
+	color: var(--ink-quiet);
+	margin-right: 0.6em;
+}
+
+.caret {
+	display: inline-block;
+	width: 0.55em;
+	height: 1.05em;
+	vertical-align: -0.18em;
+	background: var(--ink);
+}
+
+/* The ending: the name, what it is, and the command that starts it */
+#ending {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 22px;
+	background: radial-gradient(120% 90% at 50% 30%, var(--ground-glow), var(--ground));
+	color: var(--ink);
+	text-align: center;
+}
+
+#ending .name {
+	font: 700 96px / 1 var(--sans);
+	letter-spacing: -0.035em;
+}
+
+#ending .what {
+	max-width: 18em;
+	font: 400 36px / 1.3 var(--sans);
+	color: var(--ink-quiet);
+	text-wrap: balance;
+}
+
+#ending .command {
+	margin-top: 18px;
+	padding: 16px 28px;
+	border-radius: 12px;
+	border: 1px solid var(--terminal-edge);
+	background: var(--terminal);
+	font: 500 38px / 1 var(--mono);
+}
