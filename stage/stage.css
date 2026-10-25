@@ -189,12 +189,13 @@ body {
 	margin-left: 12px;
 }
 
+/* Every two lines of the log stand as far apart, whatever their kinds: the line the agent ends on takes the thinking line's place, and the log above it does not move */
 .terminal .log {
 	flex: 1;
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-end;
-	gap: 4px;
+	gap: 14px;
 	padding: 24px 30px 14px;
 	overflow: hidden;
 }
@@ -205,7 +206,6 @@ body {
 
 .terminal .asked {
 	color: var(--ink-quiet);
-	margin-bottom: 10px;
 }
 
 /* What leads a line is set apart in weight: a tool's name. A prompt and a spinner stand in the line's own weight */
@@ -223,10 +223,6 @@ body {
 	font-weight: 600;
 }
 
-.terminal .said {
-	margin-top: 10px;
-}
-
 .terminal .said::before {
 	content: '● ';
 	color: var(--ink);
@@ -238,7 +234,6 @@ body {
 
 .terminal .thinking {
 	color: var(--agent);
-	margin-top: 10px;
 }
 
 .terminal .line {
@@ -246,6 +241,10 @@ body {
 	padding: 14px 18px;
 	border: 1px solid var(--terminal-edge);
 	border-radius: 10px;
+}
+
+/* What is typed keeps its spaces as they were typed; the markup round it keeps none of its own */
+.terminal .typed {
 	white-space: pre;
 }
 

@@ -1,20 +1,14 @@
 # TODO
 
-## Publishing
-
-- The repository on GitHub, public, `vrppaul/livereel`, and CI's first run green on it.
-- The repository's `NPM_TOKEN` secret, then the release `v0.1.0` on a tag: the package on npm, the promo's video on the GitHub release.
-
 ## The showcase
 
 - livereel's own promo, `examples/livereel-promo/`, to the storyboard agreed: the film first (a demo app served by the film itself, the camera onto its main number, a real click on Refresh, the camera leaning back over the page), then Claude Code's terminal over it as the reveal, then the ending over the terminal. Its frames checked for a cursor's trail and for flicker.
-- The promo as a GIF at the top of the README, under one named exception to the large-file gate for `docs/`.
+- The promo as a GIF at the top of the README, under one named exception to the large-file gate for `docs/`, and its video on the next release on GitHub.
 
 ## Faults
 
 - A page redirected to keeps the address asked for in the frame, so its relative addresses break: `route.fetch` follows the redirect. Handing the redirect to the frame (`route.continue()`, or `route.fulfill` with the 3xx and an absolute `Location`) left the frame on `chrome-error://chromewebdata/` (measured by adding a `/` → 301 → `/app/` route to `tests/smoke/app.test.ts` and filming `/`; the route was taken out again); why is not measured.
 - A page's own animations that ignore `prefers-reduced-motion` run on the wall clock, so two shots of such a page differ. CDP's virtual time (`Emulation.setVirtualTimePolicy`) holds only part of it, measured on a framed page served from 127.0.0.1: paused, a `setInterval` of 100 ms ticked never in 1 s of wall time and once for each 100 ms of budget, but a CSS animation ran 0.98 s of its 2 s in that second. The page's CSS animations would take the Web Animations API (`document.getAnimations()`, each paused and set to the film's moment) or CDP's `Animation` domain; neither is probed.
-- The terminal's log moves as the agent's work ends on a `work` or `done` line: the thinking line it takes the place of has a margin above it (`stage/stage.css`), those lines none.
 
 ## Films
 
