@@ -10,9 +10,8 @@
 
 ## Films
 
-The next three, agreed with the owner on 2026-10-25, in this order, each a chunk of its own with its own review:
+The next two, agreed with the owner on 2026-10-25, in this order, each a chunk of its own with its own review:
 
-- One film in several formats: the film names its frames (16:9, 1:1, 9:16) and the command picks one (`livereel shoot film.ts --format square`); framings by selector fit any frame, poses given in numbers are the film's to give per format. The video as MP4, WebM or GIF (`--as gif`), the GIF made as `CONTRIBUTING.md` makes the README's, in one command.
 - Sound, laid by ffmpeg after the video, each sound on its own frame since the film keeps its own time: a track under the film (`music: { file, volume }` in `defineFilm`, cut to the film's length, faded out at its end); the moves that make a sound note it as they play (`cursor.click`, the keys typed, the ending), the take keeps each moment and sound, and ffmpeg lays them in. Default sounds ship with the package, CC0 alone (Kenney's interface sounds, say; each file's licence checked before it is added; not Pixabay's, whose licence forbids handing sounds on). A film replaces them or turns them off (`sounds: { click, key, ending }` or `sounds: null`), gives one move its own (`cursor.click(action, { sound })`), or plays any sound at a moment as a move (`sound.play(file, { within })`); a path is from the film's file, any format ffmpeg reads. The skill says sounds are few and quiet: a click, not every camera move.
 - Motion blur for fast moves: where the camera moves fast, four frames shot between two and blended by ffmpeg (`tmix`), the rest shot once; how fast is fast is measured, not guessed.
 - Blocks blurred by a selector, so a film of a real app shows no one's address, key or name.

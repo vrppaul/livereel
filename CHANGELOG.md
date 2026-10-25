@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- A film names its formats, each a frame and the screen its page is laid out on, and is shot in one at a time: `formats: { square: …, wide: … }` in place of `format`, so a film of 0.1 gives its one format a name. `--format` names the format to shoot, and a film of one format needs none; `steps` is handed the format's name after the whole screen's pose, for a pose given in numbers. Every file is named after the film file and the format: `film-square.mp4`, `film-square-sheet.png`, `film-square-6.5s.jpg`.
+- `livereel shoot --as webm` and `--as gif` make the video as a WebM (VP9) or a GIF, each at the film's own frame and rate, from the one take; `--as mp4 --as gif` gives both. A kind the system's ffmpeg cannot make is refused before the film is shot.
 - The package ships its source, `src/`, which its `exports` name under the `source` condition: published by npm, 0.1.1 named `./src/index.ts` without carrying it, as npm does not apply `publishConfig`, which was to leave it out.
 - A film shot without `--draft` is shot at twice the frame's pixels and scaled down, as it was meant to be: livereel captured frames on a CDP session of its own, which saw the page at its own pixels, so a full shoot was as soft as a draft, and a still the same to the byte. Frames are captured by Playwright now. A full shoot takes longer for the pixels (the promo: 151 s against 58 s); a draft is as quick as before.
 

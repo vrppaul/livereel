@@ -8,7 +8,6 @@
 import { type ChildProcessByStdio, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { rename, rm } from 'node:fs/promises';
-import { basename, dirname, extname, join } from 'node:path';
 import type { Readable, Writable } from 'node:stream';
 import { EncodingError, FilmError } from '../../domain/errors.ts';
 import type { Size } from '../../domain/geometry.ts';
@@ -16,13 +15,15 @@ import { FRAMES_PER_SECOND } from '../../domain/time.ts';
 import type { Footage } from '../../studio/ports.ts';
 import { closed } from '../processes.ts';
 import { FFMPEG, QUIETLY, ffmpeg } from './ffmpeg.ts';
+import { KINDS } from './kinds.ts';
+import { partialOf } from './partial.ts';
 
 // The frames as they come, JPEG after JPEG on ffmpeg's input
 const FRAMES_IN = ['-f', 'image2pipe', '-c:v', 'mjpeg', '-framerate', String(FRAMES_PER_SECOND), '-i', '-'];
 // H.264 that any player opens, its quality, and how hard the encoder works for it
 const ENCODING = [
 	'-c:v',
-	'libx264',
+	KINDS.mp4.encoder,
 	'-crf',
 	'17',
 	'-preset',
@@ -39,8 +40,6 @@ const THE_FIRST_FRAME = ['-frames:v', '1'];
 const STOP = 'SIGKILL';
 // The video's colour is kept once for every two pixels each way, so a frame's sides are even
 const PIXELS_PAIRED = 2;
-// What a video's name carries until it is whole
-const PARTIAL = '.partial';
 
 type Encoder = ChildProcessByStdio<Writable, null, Readable>;
 
@@ -129,12 +128,6 @@ function refuseOddSides(frame: Size): void {
 	throw new FilmError(
 		`a video is made of frames whose sides are even counts of pixels: ${frame.width} × ${frame.height} is not`
 	);
-}
-
-/** Where a video is written until it is whole: beside it, with the same container's suffix. */
-function partialOf(video: string): string {
-	const suffix = extname(video);
-	return join(dirname(video), `${basename(video, suffix)}${PARTIAL}${suffix}`);
 }
 
 /** A frame a second of the video, side by side: the whole film at a glance. */

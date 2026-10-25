@@ -9,7 +9,7 @@ import { existsSync, realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve as absolute } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { UsageError } from '../domain/errors.ts';
+import { LivereelError, UsageError } from '../domain/errors.ts';
 import { type Film, ScriptedFilm } from '../direction/film.ts';
 
 const PACKAGE = 'livereel';
@@ -51,14 +51,15 @@ function livereelOf(path: string): string {
 
 /**
  * The film file run as a module. What stops it running — a syntax error, a module it imports that is not there, a
- * project that runs `.ts` files as CommonJS — is the file's, said as Node says it.
+ * project that runs `.ts` files as CommonJS — is the file's, said as Node says it. What livereel refuses as the film
+ * is defined — a film with no format — is said in livereel's own words, as the film's.
  */
 async function imported(file: string, path: string): Promise<unknown> {
 	try {
 		const loaded: unknown = await import(pathToFileURL(path).href);
 		return loaded;
 	} catch (fault) {
-		if (!(fault instanceof Error)) throw fault;
+		if (fault instanceof LivereelError || !(fault instanceof Error)) throw fault;
 		throw new UsageError(`${file} cannot be run: ${fault.message}${AS_A_MODULE}`, { cause: fault });
 	}
 }

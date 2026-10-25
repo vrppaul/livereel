@@ -127,7 +127,7 @@ function askTheServer(context: ActContext): Promise<void> {
 
 test('an app with a server of its own is filmed: framed, scrolled, answered after a click, and pushed to', async () => {
 	const film = defineFilm({
-		format: SMALL,
+		formats: { small: SMALL },
 		serve: served,
 		ready: (context) => context.page.locator(ASK).waitFor(),
 		steps: () => [
@@ -139,6 +139,6 @@ test('an app with a server of its own is filmed: framed, scrolled, answered afte
 			act(whatReachedThePage)
 		]
 	});
-	await shoot(film, { browser: new Chromium(), footage: new NoFrames(), sharpness: 1 });
+	await shoot(film.inFormat('small'), { browser: new Chromium(), footage: new NoFrames(), sharpness: 1 });
 	expect(seen).toEqual([100, ANSWERED, PUSHED, 'yes', '/app/']);
 });

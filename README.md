@@ -35,7 +35,7 @@ the project's `package.json` says `"type": "module"`.
 ```bash
 npm i -D livereel
 npx livereel setup                            # the browser a film is shot in; checks ffmpeg
-npx livereel shoot film.ts --out out --sheet  # out/film.mp4, and a frame a second in out/film-sheet.png
+npx livereel shoot film.ts --out out --sheet  # out/film-square.mp4, and a frame a second in out/film-square-sheet.png
 ```
 
 `film.ts`, a whole film of a page on the web:
@@ -47,7 +47,7 @@ import { atAddress, camera, caption, defineFilm, hold, light, play } from 'liver
 const LINE = 'p[lang=en]';
 
 export default defineFilm({
-	format: { frame: { width: 1080, height: 1080 }, screen: { width: 1440, height: 1080 } },
+	formats: { square: { frame: { width: 1080, height: 1080 }, screen: { width: 1440, height: 1080 } } },
 	serve: () => atAddress('https://example.com/'),
 	ready: (context) => context.page.locator(LINE).waitFor(),
 	steps: () => [
@@ -59,7 +59,17 @@ export default defineFilm({
 
 `npx livereel still film.ts --out out --at 1.0` shoots the one frame at a
 moment, without the video; `--draft` shoots at the frame's own size, quicker
-and softer. `examples/example-com.ts` is a longer film, in acts;
+and softer.
+
+A film may name several formats, `{ square: …, wide: … }`, each a frame and
+the screen its page is laid out on; `--format wide` picks the one to shoot,
+and every file is named after it. A framing by selector fits any frame; a
+pose given in numbers is the film's to give per format, and `steps` is
+handed the format's name after the whole screen's pose. `--as webm` and
+`--as gif` make the video as WebM or GIF, each at the film's own frame and
+rate; `--as mp4 --as gif` gives both from one take.
+
+`examples/example-com.ts` is a longer film, in acts, square or wide;
 `examples/livereel-promo.ts`, the film at the top of this page, serves an
 app of its own and clicks it for real.
 
@@ -106,7 +116,7 @@ checked frame by frame on contact sheets and stills. Install it with
 ## How it works
 
 ```
-film.ts ──steps──▶ take ──scene, frame by frame──▶ stage page ──CDP screenshot──▶ ffmpeg ──▶ film.mp4
+film.ts ──steps──▶ take ──scene, frame by frame──▶ stage page ──CDP screenshot──▶ ffmpeg ──▶ film-square.mp4 ──▶ .webm, .gif
                     │                                 │
                     └──acts, scrolls, keys──▶ your app, live in the stage's frame
 ```

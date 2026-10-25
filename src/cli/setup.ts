@@ -1,6 +1,6 @@
 /**
  * What a machine needs to shoot films: Chromium's headless shell, at the version this livereel's Playwright drives,
- * and ffmpeg on the path, which livereel leaves to the system.
+ * and ffmpeg on the path, which livereel leaves to the system, with the encoders of the kinds of video asked.
  *
  * The browser is installed by Playwright's own command line, found where Playwright's manifest says it is.
  */
@@ -10,7 +10,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SetupError } from '../domain/errors.ts';
 import { closed } from '../adapters/processes.ts';
-import { ffmpegFound } from '../adapters/video/ffmpeg.ts';
+import { ffmpegEncoders, ffmpegFound } from '../adapters/video/ffmpeg.ts';
+import { KINDS, type Kind, SHOT_INTO } from '../adapters/video/kinds.ts';
 
 const PLAYWRIGHT = 'playwright-core';
 const PLAYWRIGHT_MANIFEST = import.meta.resolve(`${PLAYWRIGHT}/package.json`);
@@ -30,6 +31,17 @@ export async function setUp(): Promise<void> {
 /** ffmpeg, which a video is made with, looked for before a film is shot rather than after. */
 export async function ffmpegNeeded(): Promise<void> {
 	if (!(await ffmpegFound())) throw new SetupError(NO_FFMPEG);
+}
+
+/** The encoders of the kinds of video asked, and of the MP4 every other kind is made from, looked for in ffmpeg. */
+export async function encodersNeeded(kinds: readonly Kind[]): Promise<void> {
+	const encoders = await ffmpegEncoders();
+	const lacking = [SHOT_INTO, ...kinds].find((kind) => !encoders.has(KINDS[kind].encoder));
+	if (lacking === undefined) return;
+	const encoder = KINDS[lacking].encoder;
+	throw new SetupError(
+		`ffmpeg on the path cannot make ${lacking}: it has no ${encoder} encoder; install an ffmpeg built with it`
+	);
 }
 
 /** The file Playwright's manifest names as its command. */

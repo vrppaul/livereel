@@ -15,7 +15,7 @@ Development runs on Node 24, which runs the source as it stands. ffmpeg comes fr
 ```bash
 pnpm test                          # unit, a film shot in a real browser, the command line as a process
 uvx pre-commit run --all-files     # every gate
-pnpm livereel shoot examples/example-com.ts --out out/example --sheet
+pnpm livereel shoot examples/example-com.ts --format square --out out/example --sheet
 ```
 
 The rules every change is held to are in `AGENTS.md`, and those of each area under `.claude/rules/`.
@@ -30,7 +30,7 @@ The rules every change is held to are in `AGENTS.md`, and those of each area und
 `src/` is layered, each part building only on those after it, which eslint holds (`LAYERS` in `eslint.config.js`):
 
 - `cli` — the command line: load a film file, shoot it whole or one still, set a machine up.
-- `adapters` — Chromium with the stage and the filmed page (`browser/`), ffmpeg making the video as frames come (`video/`).
+- `adapters` — Chromium with the stage and the filmed page (`browser/`), ffmpeg making the MP4 as frames come and each other kind of video from it (`video/`).
 - `studio` — a take: the steps run frame by frame on the film's clock, the scene held, frames handed to footage.
 - `moves` — the moves of every prop (`camera.onto`, `light.to`, `cursor.click`) and of the page (`page.scrollTo`), a module each.
 - `direction` — what a film is written in: a move's contract, steps (`play`, `cut`, `act`), the film itself, the page as a move reads it.
@@ -42,14 +42,14 @@ The rules every change is held to are in `AGENTS.md`, and those of each area und
 
 ## The promo
 
-The README opens on `docs/promo.gif`, livereel's own promo, `examples/livereel-promo.ts`, shot and made a GIF 960 pixels wide at 24 frames a second, its palette worked out for the film; at that width the terminal's text stays readable:
+The README opens on `docs/promo.gif`, livereel's own promo, `examples/livereel-promo.ts`, shot as its MP4 and its GIF in one take:
 
 ```bash
-pnpm livereel shoot examples/livereel-promo.ts --out out/promo --sheet
-ffmpeg -i out/promo/livereel-promo.mp4 -vf "fps=24,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle" docs/promo.gif
+pnpm livereel shoot examples/livereel-promo.ts --out out/promo --as mp4 --as gif --sheet
+cp out/promo/livereel-promo-wide.gif docs/promo.gif
 ```
 
-The video itself goes on the release on GitHub: `gh release upload vX.Y.Z out/promo/livereel-promo.mp4`.
+The video itself goes on the release on GitHub: `gh release upload vX.Y.Z out/promo/livereel-promo-wide.mp4`.
 
 ## Releasing
 

@@ -1,7 +1,10 @@
 /**
  * example.com, filmed: the page, the line that says what it is for in six languages, and its one link followed.
  *
- *     pnpm livereel shoot examples/example-com.ts --out out/example --sheet
+ *     pnpm livereel shoot examples/example-com.ts --format square --out out/example --sheet
+ *
+ * It is shot square for a feed, or wide for a page or a talk: every framing is by selector, so the one script fits
+ * either frame.
  */
 import {
 	type ActContext,
@@ -25,8 +28,11 @@ import {
 } from 'livereel';
 
 const ADDRESS = 'https://example.com/';
-// A square frame, and the page as a laptop lays it out
-const SQUARE = { frame: { width: 1080, height: 1080 }, screen: { width: 1440, height: 1080 } };
+// A square frame with the page as a laptop lays it out, and a wide frame with the page laid out as wide
+const FORMATS = {
+	square: { frame: { width: 1080, height: 1080 }, screen: { width: 1440, height: 1080 } },
+	wide: { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } }
+};
 const MARK = 'svg';
 const ENGLISH = 'p[lang=en]';
 // The same line in the page's other languages, in the order the page says it
@@ -147,4 +153,4 @@ function steps(_served: Serving, whole: Pose): readonly Step[] {
 	return [...actOpening(whole), ...actLanguages(), ...actTheLink(whole), ...actEnding()];
 }
 
-export default defineFilm({ format: SQUARE, serve: servedElsewhere, ready: linkShown, steps });
+export default defineFilm({ formats: FORMATS, serve: servedElsewhere, ready: linkShown, steps });

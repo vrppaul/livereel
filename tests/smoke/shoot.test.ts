@@ -48,11 +48,11 @@ class EveryFrameCounted implements Footage {
 
 function filmOf(steps: readonly Step[]) {
 	return defineFilm({
-		format: SMALL,
+		formats: { small: SMALL },
 		serve: () => Promise.resolve(atAddress(PAGE)),
 		ready: (context) => context.page.locator('h1').waitFor(),
 		steps: () => steps
-	});
+	}).inFormat('small');
 }
 
 async function scratch(): Promise<string> {

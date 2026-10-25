@@ -16,7 +16,8 @@ built before its story is agreed gets rebuilt.
 Answer these, in a few lines, and get the user's word on them:
 
 - **Who watches**, and where: a README, a feed, a talk. It sets the length
-  and the frame: 16:9 for a page or a talk, square for a feed.
+  and the frame: 16:9 for a page or a talk, square for a feed, 9:16 for
+  stories. A film shown in several places names a format for each.
 - **The problem** the viewer knows from their own work, shown before any
   answer. A viewer who has not felt the problem does not care for the fix.
 - **The turn**: the one moment the product answers it.
@@ -70,10 +71,13 @@ npm i -D livereel      # or pnpm add -D livereel
 npx livereel setup     # the browser films are shot in; it says if ffmpeg is missing
 ```
 
-A film is a TypeScript file whose default export is `defineFilm({ format,
-serve, ready, steps })` from `livereel`: the frame and screen sizes, how the
-page is served (`atAddress(url)` for a page someone else serves, or a server
-the film starts and stops), when the page is ready, and its steps. Read
+A film is a TypeScript file whose default export is `defineFilm({ formats,
+serve, ready, steps })` from `livereel`: its formats by name, each a frame
+and the screen its page is laid out on (`{ square: { frame, screen } }`),
+how the page is served (`atAddress(url)` for a page someone else serves, or
+a server the film starts and stops), when the page is ready, and its steps.
+`steps(served, whole, formatName)` is handed the whole screen's pose and
+the name of the format it is shot in. Read
 `node_modules/livereel/examples/example-com.ts` first: it is a whole film.
 `node_modules/livereel/examples/livereel-promo.ts` serves an app of its own
 and clicks it for real; its server is
@@ -85,6 +89,10 @@ and clicks it for real; its server is
   `start`, `end`, `seed`, `pace`); any other number is a constant at the top.
 - Two moves of one part — a prop, or the page — share a step only one after
   the other: `play` and `cut` refuse them at once.
+- Frame by selector, so one script fits every format. A pose given in
+  numbers is given once per format, in a record of the film's format names
+  (`Record<keyof typeof FORMATS, Pose>`), picked by the `formatName` that
+  `steps` is handed: the compiler refuses a format left out.
 
 ### What a film is written with
 
@@ -135,12 +143,16 @@ person types; the curves are `linear`, `easeInOutSine` (a step's own),
 You cannot watch a video. Look at frames:
 
 ```bash
-npx livereel shoot film.ts --out out --sheet     # the video, and a frame a second side by side
-npx livereel still film.ts --out out --at 12.5   # one still, without the video
+npx livereel shoot film.ts --format square --out out --sheet     # the video, and a frame a second side by side
+npx livereel still film.ts --format square --out out --at 12.5   # one still, without the video
 ```
 
-- After every change, read the contact sheet; read every new shot at full
-  size with `--at`.
+- `--format` names the format to shoot; a film of one format needs none.
+  `--as gif` or `--as webm` makes the video as a GIF or a WebM, and
+  `--as mp4 --as gif` both from one take: shoot the kinds the user asked
+  for once the film is checked.
+- After every change, read the contact sheet of every format; read every
+  new shot at full size with `--at`.
 - Check what the eye checks: is the caption about what is lit, is the text
   readable at this size, does any edge of the screen show where it should
   not, is anything cut off.

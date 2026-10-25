@@ -51,7 +51,7 @@ const WORK: readonly TerminalLine[] = [
 	{ kind: 'work', text: 'Skill reel' },
 	{ kind: 'work', text: 'Write promo.ts' },
 	{ kind: 'work', text: 'Bash npx livereel shoot promo.ts --out out' },
-	{ kind: 'said', text: 'The film is in out/promo.mp4, 20 s.' }
+	{ kind: 'said', text: 'The film is in out/promo-wide.mp4, 20 s.' }
 ];
 const THINKING = 'Working…';
 const ENDING = { name: 'livereel', line: 'Your agent films your live app', command: 'npx livereel' };
@@ -173,4 +173,4 @@ function steps(served: AppServed, whole: Pose): readonly Step[] {
 	];
 }
 
-export default defineFilm({ format: WIDE, serve: servedApp, ready: cardShown, steps });
+export default defineFilm({ formats: { wide: WIDE }, serve: servedApp, ready: cardShown, steps });

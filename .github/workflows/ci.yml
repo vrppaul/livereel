@@ -59,7 +59,7 @@ jobs:
           const HEADING = 'h1';
 
           export default defineFilm({
-          	format: { frame: { width: 640, height: 640 }, screen: { width: 960, height: 640 } },
+          	formats: { square: { frame: { width: 640, height: 640 }, screen: { width: 960, height: 640 } } },
           	serve: () => atAddress(new URL('./page.html', import.meta.url).href),
           	ready: (context) => context.page.locator(HEADING).waitFor(),
           	steps: () => [

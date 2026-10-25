@@ -9,8 +9,8 @@ pnpm install                                              # dependencies
 pnpm livereel setup                                       # the browser films are shot in; ffmpeg is the system's
 pnpm test                                                 # the tests: unit, a film in a browser, the command line
 uvx pre-commit run --all-files                            # every gate a commit runs, over every file
-pnpm livereel shoot examples/example-com.ts --out out/example --sheet   # shoot a film
-pnpm livereel still examples/example-com.ts --out out/example --at 6.5  # one still of it
+pnpm livereel shoot examples/example-com.ts --format square --out out/example --sheet   # shoot a film
+pnpm livereel still examples/example-com.ts --format square --out out/example --at 6.5  # one still of it
 ```
 
 - The gates are one list, `.pre-commit-config.yaml`, each with its command. A hook that cannot run fails: leave one out only on purpose, by naming it in `SKIP`.
