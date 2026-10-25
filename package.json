@@ -32,21 +32,14 @@
 		"bin",
 		"dist",
 		"stage",
-		"examples"
+		"examples",
+		"src"
 	],
 	"exports": {
 		".": {
 			"source": "./src/index.ts",
 			"types": "./dist/index.d.ts",
 			"default": "./dist/index.js"
-		}
-	},
-	"publishConfig": {
-		"exports": {
-			".": {
-				"types": "./dist/index.d.ts",
-				"default": "./dist/index.js"
-			}
 		}
 	},
 	"scripts": {

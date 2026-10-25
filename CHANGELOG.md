@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The package ships its source, `src/`, which its `exports` name under the `source` condition: published by npm, 0.1.1 named `./src/index.ts` without carrying it, as npm does not apply `publishConfig`, which was to leave it out.
 - A film shot without `--draft` is shot at twice the frame's pixels and scaled down, as it was meant to be: livereel captured frames on a CDP session of its own, which saw the page at its own pixels, so a full shoot was as soft as a draft, and a still the same to the byte. Frames are captured by Playwright now. A full shoot takes longer for the pixels (the promo: 151 s against 58 s); a draft is as quick as before.
 
 ## 0.1.1
