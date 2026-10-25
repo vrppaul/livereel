@@ -118,6 +118,12 @@ clock is its frames.
 
 ## Limits
 
+- What livereel films today: public pages, and apps served on your machine
+  that need no sign-in. An app behind a sign-in is not filmed yet: in the
+  stage's frame the page's own requests go without its cookies, so its data
+  does not load. A page that redirects during a film keeps the address it
+  asked for, so its relative addresses break. Both are planned
+  ([`TODO.md`](TODO.md)).
 - Chromium alone, headless.
 - The page is asked for reduced motion and the light colour scheme. A page
   that animates anyway runs those animations on the wall clock, so two shots

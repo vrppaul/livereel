@@ -149,6 +149,13 @@ npx livereel still film.ts --out out --at 12.5   # one still, without the video
 
 ## Traps already met
 
+- An app behind a sign-in cannot be filmed yet: its own requests in the
+  stage's frame go without its cookies, so its data does not load. Ask the
+  user before writing the film whether the pages it shows need a sign-in;
+  if they do, say so and stop, or film a page that needs none.
+- Point the film at the address the page is finally at: a page reached
+  through a redirect keeps the address asked for in the frame, and its
+  styles and links break.
 - A browser places a click wrongly on a screen the camera has scaled: an
   `act` lays the screen flat at its own size first. Do clicks in `act`.
 - The page is asked for the light colour scheme: an app that follows the
