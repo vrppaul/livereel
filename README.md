@@ -5,6 +5,8 @@
 [![Node](https://img.shields.io/node/v/livereel)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
+![livereel's own promo: a live analytics app filmed with a camera, a light, a real click and captions, then the Claude Code terminal that made the film](docs/promo.gif)
+
 Film your live web app as a directed short: a camera that leans and
 travels, a light on the block that matters, a cursor that moves like a
 hand, captions that come up word by word. The app is real — clicks, typing
@@ -57,7 +59,9 @@ export default defineFilm({
 
 `npx livereel still film.ts --out out --at 1.0` shoots the one frame at a
 moment, without the video; `--draft` shoots at the frame's own size, quicker
-and softer. `examples/example-com.ts` is a longer film, in acts.
+and softer. `examples/example-com.ts` is a longer film, in acts;
+`examples/livereel-promo.ts`, the film at the top of this page, serves an
+app of its own and clicks it for real.
 
 ## What a film is written with
 

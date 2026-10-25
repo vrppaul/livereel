@@ -1,10 +1,5 @@
 # TODO
 
-## The showcase
-
-- livereel's own promo, `examples/livereel-promo/`, to the storyboard agreed: the film first (a demo app served by the film itself, the camera onto its main number, a real click on Refresh, the camera leaning back over the page), then Claude Code's terminal over it as the reveal, then the ending over the terminal. Its frames checked for a cursor's trail and for flicker.
-- The promo as a GIF at the top of the README, under one named exception to the large-file gate for `docs/`, and its video on the next release on GitHub.
-
 ## Faults
 
 - A page redirected to keeps the address asked for in the frame, so its relative addresses break: `route.fetch` follows the redirect. Handing the redirect to the frame (`route.continue()`, or `route.fulfill` with the 3xx and an absolute `Location`) left the frame on `chrome-error://chromewebdata/` (measured by adding a `/` → 301 → `/app/` route to `tests/smoke/app.test.ts` and filming `/`; the route was taken out again); why is not measured.

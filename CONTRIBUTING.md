@@ -40,6 +40,17 @@ The rules every change is held to are in `AGENTS.md`, and those of each area und
 
 `stage/` is the page the film is shot on: the filmed page sits in its frame, and its script draws each frame from the scene, deciding nothing. It is JavaScript the type checker reads, published as it is written.
 
+## The promo
+
+The README opens on `docs/promo.gif`, livereel's own promo, `examples/livereel-promo.ts`, shot and made a GIF of 540 pixels at 12 frames a second, its palette worked out for the film:
+
+```bash
+pnpm livereel shoot examples/livereel-promo.ts --out out/promo --sheet
+ffmpeg -i out/promo/livereel-promo.mp4 -vf "fps=12,scale=540:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle" docs/promo.gif
+```
+
+The video itself goes on the release on GitHub: `gh release upload vX.Y.Z out/promo/livereel-promo.mp4`.
+
 ## Releasing
 
 1. Set `version` in `package.json` and in `.claude-plugin/marketplace.json`, and move the changelog's unreleased entries under it, in one commit.
