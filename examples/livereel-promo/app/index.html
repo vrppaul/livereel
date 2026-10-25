@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>Acme Analytics</title>
+		<link rel="stylesheet" href="app.css" />
+	</head>
+	<body>
+		<header>
+			<span class="brand">Acme</span>
+			<h1>Analytics</h1>
+			<button class="refresh" type="button" data-testid="refresh">Refresh</button>
+		</header>
+		<nav>
+			<span aria-current="page">Overview</span>
+			<span>Visitors</span>
+			<span>Sales</span>
+			<span>Settings</span>
+		</nav>
+		<main>
+			<section class="kpis" data-testid="kpis">
+				<div class="card" data-testid="visitors">
+					<div class="label">Visitors today</div>
+					<div class="value" data-testid="visitors-today">12,480</div>
+					<div class="change" data-testid="visitors-change">+4.1% on yesterday</div>
+				</div>
+				<div class="card">
+					<div class="label">Sign-ups</div>
+					<div class="value">318</div>
+					<div class="change">+2.6% on yesterday</div>
+				</div>
+				<div class="card">
+					<div class="label">Revenue</div>
+					<div class="value">$9,204</div>
+					<div class="change">+7.9% on yesterday</div>
+				</div>
+			</section>
+			<section class="card chart">
+				<div class="label">Visitors, last 14 days</div>
+				<div class="bars">
+					<i style="height: 38%"></i>
+					<i style="height: 45%"></i>
+					<i style="height: 41%"></i>
+					<i style="height: 52%"></i>
+					<i style="height: 58%"></i>
+					<i style="height: 49%"></i>
+					<i style="height: 63%"></i>
+					<i style="height: 60%"></i>
+					<i style="height: 71%"></i>
+					<i style="height: 68%"></i>
+					<i style="height: 77%"></i>
+					<i style="height: 74%"></i>
+					<i style="height: 86%"></i>
+					<i style="height: 94%" data-testid="today-bar"></i>
+				</div>
+			</section>
+			<section class="card">
+				<div class="label">Top pages</div>
+				<ol class="pages">
+					<li><span>/pricing</span><span>4,112</span></li>
+					<li><span>/docs/start</span><span>2,940</span></li>
+					<li><span>/blog/launch</span><span>1,806</span></li>
+				</ol>
+			</section>
+		</main>
+		<script>
+			// Refresh asks the server for today's numbers and shows them: the count, how it stands, and today's bar
+			document.querySelector('[data-testid=refresh]').addEventListener('click', async () => {
+				const today = await (await fetch('/api/today')).json();
+				document.querySelector('[data-testid=visitors-today]').textContent = today.visitors;
+				document.querySelector('[data-testid=visitors-change]').textContent = today.change;
+				document.querySelector('[data-testid=today-bar]').style.height = `${today.todayBar}%`;
+			});
+		</script>
+	</body>
+</html>

@@ -31,7 +31,7 @@ test('a face-on camera near a corner moves until no edge of the screen shows', (
 	expect([covered.focusX, covered.focusY]).toEqual([250, 750]);
 });
 
-test('a screen too short to fill the frame stays where the camera put it', () => {
-	const far = { ...FACE_ON, focusY: 900, zoom: 0.5 };
-	expect(covering(far, SQUARE)).toEqual(far);
+test('a screen too short to fill the frame along a side stands in its middle along that side', () => {
+	const covered = covering({ ...FACE_ON, focusX: 200, focusY: 100, zoom: 0.8 }, SQUARE);
+	expect([covered.focusX, covered.focusY]).toEqual([625, 500]);
 });

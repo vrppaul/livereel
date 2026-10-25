@@ -3,7 +3,7 @@
  *
  * Arithmetic on poses and boxes alone, so a film's framing is worked out before a browser is asked anything. A
  * face-on camera never shows the screen's edge: it is moved as little as it takes to keep the screen filling the
- * frame.
+ * frame, and where the screen is too short to fill it, the screen stands in the frame's middle.
  */
 import { type Box, type Format, type Size, middleX, middleY } from './geometry.ts';
 import { between } from './time.ts';
@@ -76,7 +76,7 @@ export function onto(box: Box, around: Pose, frame: Size, framing: Framing): Pos
 
 /**
  * A face-on pose moved as little as it takes for the screen to fill the frame, no edge of it showing; along a side
- * the screen is too short to fill at that zoom, the pose stays as it is.
+ * the screen is too short to fill at that zoom, it stands in the frame's middle, as much ground showing either side.
  */
 export function covering(pose: Pose, format: Format): Pose {
 	const halfWidth = format.frame.width / (HALVES * pose.zoom);
@@ -93,8 +93,8 @@ function facing(screen: Size, zoom: number): Pose {
 	return { focusX: screen.width / HALVES, focusY: screen.height / HALVES, zoom, tilt: 0, turn: 0 };
 }
 
-/** A focus moved so that as much as is seen either side of it stays on the screen, where it can. */
+/** A focus moved so that as much as is seen either side of it stays on the screen; the screen's middle where it cannot. */
 function keptWithin(focus: number, halfSeen: number, length: number): number {
-	if (HALVES * halfSeen > length) return focus;
+	if (HALVES * halfSeen > length) return length / HALVES;
 	return Math.min(Math.max(focus, halfSeen), length - halfSeen);
 }

@@ -75,6 +75,8 @@ serve, ready, steps })` from `livereel`: the frame and screen sizes, how the
 page is served (`atAddress(url)` for a page someone else serves, or a server
 the film starts and stops), when the page is ready, and its steps. Read
 `node_modules/livereel/examples/example-com.ts` first: it is a whole film.
+`examples/livereel-promo.ts` serves an app of its own and clicks it for
+real; its server is `examples/livereel-promo/server.ts`.
 
 - Split the steps into acts, a function each; name every selector at the
   top, by test id or role where the page has them.
