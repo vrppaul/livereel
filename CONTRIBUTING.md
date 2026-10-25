@@ -42,11 +42,11 @@ The rules every change is held to are in `AGENTS.md`, and those of each area und
 
 ## The promo
 
-The README opens on `docs/promo.gif`, livereel's own promo, `examples/livereel-promo.ts`, shot and made a GIF of 540 pixels at 12 frames a second, its palette worked out for the film:
+The README opens on `docs/promo.gif`, livereel's own promo, `examples/livereel-promo.ts`, shot and made a GIF 960 pixels wide at 24 frames a second, its palette worked out for the film; at that width the terminal's text stays readable:
 
 ```bash
 pnpm livereel shoot examples/livereel-promo.ts --out out/promo --sheet
-ffmpeg -i out/promo/livereel-promo.mp4 -vf "fps=12,scale=540:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle" docs/promo.gif
+ffmpeg -i out/promo/livereel-promo.mp4 -vf "fps=24,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle" docs/promo.gif
 ```
 
 The video itself goes on the release on GitHub: `gh release upload vX.Y.Z out/promo/livereel-promo.mp4`.
@@ -54,7 +54,8 @@ The video itself goes on the release on GitHub: `gh release upload vX.Y.Z out/pr
 ## Releasing
 
 1. Set `version` in `package.json` and in `.claude-plugin/marketplace.json`, and move the changelog's unreleased entries under it, in one commit.
-2. Tag it `vX.Y.Z` and push the tag: `.github/workflows/release.yml` checks the tag names the version, publishes the package to npm with its provenance, and makes the release on GitHub. npm trusts the workflow itself (Trusted Publishing on the package's page): no token is kept.
-3. Once the release is made, put the promo's video on it, as "The promo" above says.
+2. Tag it `vX.Y.Z` and push the tag: `.github/workflows/release.yml` checks the tag names the version, stages the package on npm with its provenance, and makes the release on GitHub. npm trusts the workflow itself (Trusted Publishing on the package's page, allowed to stage alone): no token is kept.
+3. Approve the staged version on the package's page on npm, or `npm stage list livereel` and `npm stage approve <stage-id>`, with 2FA: only then is it published.
+4. Put the promo's video on the release, as "The promo" above says.
 
 `pnpm pack` builds the package into `dist/` and removes it after; CI shoots a film with the packed package on Node 22.20 on every push.

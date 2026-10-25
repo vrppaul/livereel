@@ -32,8 +32,8 @@ import {
 } from 'livereel';
 import { type AppServed, servedApp } from './livereel-promo/server.ts';
 
-// A square frame, and the app as a laptop lays it out
-const SQUARE = { frame: { width: 1080, height: 1080 }, screen: { width: 1440, height: 1080 } };
+// A wide frame, as a README or a talk shows it, and the app laid out on a screen of the same size
+const WIDE = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } };
 // The main number's card, the number itself, the button that refreshes it, and the row of cards with that button
 const VISITORS = '[data-testid=visitors]';
 const VISITORS_TODAY = '[data-testid=visitors-today]';
@@ -44,7 +44,7 @@ const TOP_ROW = `${REFRESH}, ${CARDS}`;
 const OPENS_FROM = 0.86;
 // The camera drawn back over the whole page, the screen leaning back and swung to the left, all of it behind where
 // the terminal's window comes up
-const LEANING_BACK: Pose = { focusX: 735, focusY: 560, zoom: 0.62, tilt: 14, turn: -9 };
+const LEANING_BACK: Pose = { focusX: 980, focusY: 560, zoom: 0.7, tilt: 14, turn: -9 };
 const TITLE = 'acme — claude';
 const TASK = 'make a 20-second promo of my app';
 const WORK: readonly TerminalLine[] = [
@@ -173,4 +173,4 @@ function steps(served: AppServed, whole: Pose): readonly Step[] {
 	];
 }
 
-export default defineFilm({ format: SQUARE, serve: servedApp, ready: cardShown, steps });
+export default defineFilm({ format: WIDE, serve: servedApp, ready: cardShown, steps });
