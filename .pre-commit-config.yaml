@@ -33,6 +33,12 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: skill
+        name: the skill (it names every function a film can call)
+        entry: node -C source scripts/check-skill.ts
+        language: system
+        pass_filenames: false
+        always_run: true
       # The whole suite takes seconds, a film in a browser and the command line included; listing the tests alone
       # loads no module, so a test that cannot run would pass
       - id: tests

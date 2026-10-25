@@ -12,12 +12,34 @@ Chromium through Playwright and made a video with ffmpeg as it is shot.
 
 ## Quick start
 
-livereel needs Node 22.20 or later, and ffmpeg on the path.
+livereel is not on npm yet: until it is, install it from a packed copy of
+this repository (`pnpm pack`, then `npm i -D ./livereel-0.1.0.tgz`). It
+needs Node 22.20 or later, and ffmpeg on the path. A film is an ES module:
+the project's `package.json` says `"type": "module"`.
 
 ```bash
 npm i -D livereel
 npx livereel setup                                  # the browser a film is shot in; checks ffmpeg
 npx livereel shoot film.ts --out out --sheet
+```
+
+`film.ts`, a whole film of a page on the web:
+
+```ts
+import { atAddress, camera, caption, defineFilm, hold, light, play } from 'livereel';
+
+// The line that says what the page is for
+const LINE = 'p[lang=en]';
+
+export default defineFilm({
+	format: { frame: { width: 1080, height: 1080 }, screen: { width: 1440, height: 1080 } },
+	serve: () => Promise.resolve(atAddress('https://example.com/')),
+	ready: (context) => context.page.locator(LINE).waitFor(),
+	steps: () => [
+		play({ seconds: 1.2, moves: [camera.onto(LINE, { air: 120 }), light.on(LINE), caption.show('A page, filmed')] }),
+		hold({ seconds: 1.5 })
+	]
+});
 ```
 
 `out/film.mp4` is the film; `out/film-sheet.png` holds a frame a second,
@@ -59,7 +81,8 @@ hold({ seconds: 1.3 }),
 The `reel` skill, `skills/reel/SKILL.md`, teaches an agent to direct a
 film: the story first, then a storyboard, then the steps, checked frame by
 frame. Once the repository is published it installs with `npx skills add`,
-or through the plugin marketplace.
+or as a plugin: `/plugin marketplace add` with the repository, then
+`/plugin install livereel@livereel-marketplace`.
 
 ## Development
 

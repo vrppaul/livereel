@@ -61,6 +61,17 @@ test('a film that uses another copy of livereel is refused, naming where that co
 	expect([ran.code, ran.said]).toEqual([2, expect.stringContaining('node_modules/livereel/index.js')]);
 });
 
+test("a fault in the film's own code is said as the film's, naming where it was met", () => {
+	const unserved = livereel('still', 'tests/cli/films/never-served.ts', '--out', scratch(), '--at', '0');
+	const unready = livereel('still', 'tests/cli/films/never-ready.ts', '--out', scratch(), '--at', '0');
+	expect([unserved.code, unserved.said, unready.code, unready.said]).toEqual([
+		1,
+		"livereel still: the film's serve failed: the port is taken\n",
+		1,
+		"livereel still: the film's ready failed: the page never came\n"
+	]);
+});
+
 test('a film is not shot where ffmpeg is not on the path', () => {
 	const ran = livereelWith({ PATH: scratch() }, 'shoot', SHORT, '--out', scratch());
 	expect([ran.code, ran.said]).toEqual([1, expect.stringContaining('ffmpeg is not on the path')]);

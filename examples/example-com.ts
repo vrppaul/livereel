@@ -60,18 +60,8 @@ function linkShown(context: ActContext): Promise<void> {
 	return context.page.locator(LINK).waitFor();
 }
 
-function throughTheLanguages(): readonly Step[] {
-	return LANGUAGES.flatMap((language) => [
-		play({
-			seconds: 0.6,
-			moves: [light.to(inLanguage(language)), camera.onto(inLanguage(language), { air: 90, zoomAtMost: 2 })],
-			ease: easeInOutCubic
-		}),
-		hold({ seconds: 0.35 })
-	]);
-}
-
-function steps(_served: Serving, whole: Pose): readonly Step[] {
+/** The screen comes up out of the ground, and the camera goes to the page's mark: what this page is. */
+function actOpening(whole: Pose): readonly Step[] {
 	return [
 		cut(screen.lower(), camera.to(fromAfar(whole))),
 		play({ seconds: 0.9, moves: [screen.rise({ within: { end: 0.7 } }), camera.to(whole)], ease: easeOutCubic }),
@@ -84,7 +74,13 @@ function steps(_served: Serving, whole: Pose): readonly Step[] {
 			],
 			ease: easeInOutCubic
 		}),
-		hold({ seconds: 1 }),
+		hold({ seconds: 1 })
+	];
+}
+
+/** The line that says what the page is for, lit; then the same line in each of the page's other languages. */
+function actLanguages(): readonly Step[] {
+	return [
 		play({
 			seconds: 1.1,
 			moves: [
@@ -98,7 +94,25 @@ function steps(_served: Serving, whole: Pose): readonly Step[] {
 		hold({ seconds: 1.3 }),
 		play({ seconds: 0.4, moves: [caption.hide()] }),
 		play({ seconds: 0.4, moves: [caption.show('in six languages')] }),
-		...throughTheLanguages(),
+		...LANGUAGES.flatMap(inTurn)
+	];
+}
+
+/** One language's line lit and framed, and held. */
+function inTurn(language: string): readonly Step[] {
+	return [
+		play({
+			seconds: 0.6,
+			moves: [light.to(inLanguage(language)), camera.onto(inLanguage(language), { air: 90, zoomAtMost: 2 })],
+			ease: easeInOutCubic
+		}),
+		hold({ seconds: 0.35 })
+	];
+}
+
+/** The page's one link, lit, framed and followed for real; the page it leads to, whole. */
+function actTheLink(whole: Pose): readonly Step[] {
+	return [
 		play({
 			seconds: 1,
 			moves: [
@@ -118,10 +132,19 @@ function steps(_served: Serving, whole: Pose): readonly Step[] {
 			moves: [camera.to(whole), caption.show('and its one link leads somewhere real', { within: { start: 0.3 } })],
 			ease: easeInOutCubic
 		}),
-		hold({ seconds: 1.4 }),
+		hold({ seconds: 1.4 })
+	];
+}
+
+function actEnding(): readonly Step[] {
+	return [
 		play({ seconds: 0.9, moves: [caption.hide(), ending.show(ENDING)], ease: easeOutCubic }),
 		hold({ seconds: 1.8 })
 	];
+}
+
+function steps(_served: Serving, whole: Pose): readonly Step[] {
+	return [...actOpening(whole), ...actLanguages(), ...actTheLink(whole), ...actEnding()];
 }
 
 export default defineFilm({ format: SQUARE, serve: servedElsewhere, ready: linkShown, steps });

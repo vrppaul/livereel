@@ -169,7 +169,7 @@ export default tseslint.config(
 	},
 	...layerRules,
 	{
-		files: ['src/**/*.ts', 'stage/*.js', 'examples/**/*.ts'],
+		files: ['src/**/*.ts', 'stage/*.js', 'examples/**/*.ts', 'scripts/*.ts'],
 		rules: {
 			'id-length': ['error', { min: 3, exceptions: SHORT_WORDS, properties: 'always' }],
 			// id-length passes over type parameters; a type has a name, as a value does

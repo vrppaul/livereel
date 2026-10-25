@@ -1,6 +1,6 @@
 ---
 name: reel
-description: Direct and shoot a short film of a live web page with livereel — story first, then a storyboard, then the film as steps, checked frame by frame. Use when the user asks for a promo, a demo or an explainer video of a web app, or a GIF of a feature.
+description: Direct and shoot a short film of a live web page with livereel — story first, then a storyboard, then the film as steps, checked frame by frame. Use when the user asks for a promo, a demo or an explainer video of a web app or of a feature.
 ---
 
 Make a film of a real web page: the page runs live, livereel moves a camera,
@@ -73,15 +73,52 @@ npx livereel setup     # the browser films are shot in; it says if ffmpeg is mis
 A film is a TypeScript file whose default export is `defineFilm({ format,
 serve, ready, steps })` from `livereel`: the frame and screen sizes, how the
 page is served (`atAddress(url)` for a page someone else serves, or a server
-the film starts and stops), when the page is ready, and its steps. Read the
-repository's `examples/example-com.ts` first: it is a whole film.
+the film starts and stops), when the page is ready, and its steps. Read
+`node_modules/livereel/examples/example-com.ts` first: it is a whole film.
 
 - Split the steps into acts, a function each; name every selector at the
   top, by test id or role where the page has them.
 - Write each number as the value of its keyword in place (`seconds`, `air`,
   `start`, `end`, `seed`, `pace`); any other number is a constant at the top.
-- Two moves of one prop share a step only one after the other: `play`
-  refuses them at once.
+- Two moves of one part — a prop, or the page — share a step only one after
+  the other: `play` and `cut` refuse them at once.
+
+### What a film is written with
+
+Every move takes, last, its timing: `within: { start, end }`, the share of
+its step it runs over (0 to 1, the whole step if left out), and `ease`, its
+own curve where it does not take its step's.
+
+| Steps | |
+|---|---|
+| `play({ seconds, moves, ease })` | so many seconds of frames, each move eased over its share |
+| `hold({ seconds })` | so many seconds with nothing moving |
+| `cut(...moves)` | moves made at once, between two frames |
+| `act(action)` | `action(context)` acts on the page for real: `context.page` is Playwright's `Frame`, `context.motion.release()` and `.still()` let the page's own animations run and still them again |
+| `typing(move)` | as long as the keys of `terminal.type` or `page.type` take, and a beat after |
+
+| Moves | |
+|---|---|
+| `camera.to(pose, { tilt, turn })` | to a pose: `whole` from `steps`, or `lookingAt(pose, focusX, focusY, zoom)` |
+| `camera.onto(selector, { every, air, zoomAtMost, tilt, turn })` | frames the first `every` blocks a selector matches, `air` pixels round them |
+| `screen.rise()`, `screen.lower()` | the screen up out of the ground; down in it, in a `cut` |
+| `light.on(selector, { dim })`, `light.to(selector)`, `light.off()` | one block lit, the rest dimmed by `dim`; carried; put out |
+| `cursor.to(selector, { entering, bow })` | along an arc to a block, from `entering` if not yet on the screen |
+| `cursor.press()`, `cursor.release()`, `cursor.hide()` | pressed in, let go, taken off the screen |
+| `cursor.click(action)` | pressed, `act(action)`, let go: the steps of a click |
+| `caption.show(text)`, `caption.hide()` | words coming up one after another, in place of any shown; going |
+| `terminal.open(title)` | an agent's terminal drawn over the frame, in a `cut` |
+| `terminal.type(strokes)`, `terminal.submit()` | keys typed into it; Enter |
+| `terminal.works(lines, thinking, { thinkingShare })` | the agent's lines written one after another under a thinking line; `TerminalLine` is `{ kind, text }`, its kind `asked`, `work`, `said`, `done` or `thinking` |
+| `terminal.leave()` | the terminal giving way |
+| `ending.show(card)` | the last card: `{ name, line, command }` |
+| `page.scrollBy(selector, { pixels })` | a block's own scroll moved so many pixels |
+| `page.scrollTo(selector, { top })` | the page scrolled until a block stands `top` pixels below the top of what scrolls it |
+| `page.type(strokes)` | real keys typed into whatever holds the page's keyboard |
+
+The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
+person types; the curves are `linear`, `easeInOutSine` (a step's own),
+`easeInOutCubic`, `easeOutCubic` and `easeOutQuint`.
 - Prefer the page's own states to anything drawn over it: open a panel with
   its own button, not by hiding parts of the page.
 - A page that refuses frames (`X-Frame-Options`) is shown anyway: livereel
@@ -110,9 +147,11 @@ npx livereel still film.ts --out out --at 12.5   # one still, without the video
   `act` lays the screen flat at its own size first. Do clicks in `act`.
 - `backdrop-filter` on a moved screen mirrors what lies under it: the light
   dims and never blurs.
-- The page's own animations are stilled. Where one must show (a spinner of
-  the page's own), let it run in real time for that shot: it plays sped up,
-  which reads as time-lapse.
+- The page is asked for reduced motion, so a page that honours it stands
+  still between frames; one that ignores it animates on the wall clock, and
+  two shots of it differ. Where the page's own animation must show (a
+  spinner of its own), release it in an `act` and still it after: it plays
+  sped up, which reads as time-lapse.
 - A long scroll in one frame step shows blank space where the page renders
   lazily: scroll in a `play`, a little each frame.
 - An element the camera frames must be on the page's screen, not scrolled

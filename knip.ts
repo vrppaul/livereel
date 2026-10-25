@@ -2,8 +2,8 @@
 import type { KnipConfig } from 'knip';
 
 const config: KnipConfig = {
-	entry: ['examples/*.ts', 'tests/**/*.test.ts', 'tests/cli/films/*.ts', 'stage/stage.js'],
-	project: ['src/**/*.ts', 'stage/*.js', 'examples/**/*.ts', 'bin/**/*.js', 'tests/**/*.ts']
+	entry: ['examples/*.ts', 'scripts/*.ts', 'tests/**/*.test.ts', 'tests/cli/films/*.ts', 'stage/stage.js'],
+	project: ['src/**/*.ts', 'stage/*.js', 'examples/**/*.ts', 'scripts/*.ts', 'bin/**/*.js', 'tests/**/*.ts']
 };
 
 export default config;
