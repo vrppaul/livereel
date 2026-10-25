@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- A film shot without `--draft` is shot at twice the frame's pixels and scaled down, as it was meant to be: livereel captured frames on a CDP session of its own, which saw the page at its own pixels, so a full shoot was as soft as a draft, and a still the same to the byte. Frames are captured by Playwright now. A full shoot takes longer for the pixels (the promo: 151 s against 58 s); a draft is as quick as before.
+
 ## 0.1.1
 
 - A face-on camera too far back for the screen to fill the frame along a side sets the screen in the frame's middle along it: framing a wide block near the page's top showed the ground above the screen and none below.

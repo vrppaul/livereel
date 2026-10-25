@@ -2,10 +2,12 @@
  * The stage page as the studio uses it: a frame drawn, the screen laid flat for an act and stood up again, a frame
  * captured. `StageApi` is what the stage's script, `stage/stage.js`, answers under `window.stage`.
  *
- * A frame is captured straight from Chrome: Playwright's own screenshot waits on the page and restyles it round every
- * shot, which made a frame three times as slow (350 ms against 110 ms, measured in livereel's Python version).
+ * A frame is captured by Playwright at the page's device scale, the film's sharpness. A capture of livereel's own, on
+ * a CDP session apart from Playwright's, came back at the page's own pixels whatever that scale, every full shoot as
+ * soft as a draft; and it was no quicker (measured 2026-10-25 at 1920 × 1080: 33 ms against 35 ms at 1×, 142 ms
+ * against 134 ms at 2×). The page's text caret is kept, as a person sees it typing.
  */
-import type { CDPSession, Page } from 'playwright-core';
+import type { Page } from 'playwright-core';
 import type { Format } from '../../domain/geometry.ts';
 import type { DrawnScene } from '../../scene.ts';
 import type { Stage } from '../../studio/ports.ts';
@@ -26,17 +28,13 @@ declare global {
 }
 
 const JPEG_QUALITY = 92;
-const SCREENSHOT = 'Page.captureScreenshot';
-const BASE_64 = 'base64';
 
 export class BrowserStage implements Stage {
 	readonly page: Page;
-	readonly chrome: CDPSession;
 	readonly format: Format;
 
-	constructor(page: Page, chrome: CDPSession, format: Format) {
+	constructor(page: Page, format: Format) {
 		this.page = page;
-		this.chrome = chrome;
 		this.format = format;
 	}
 
@@ -54,9 +52,8 @@ export class BrowserStage implements Stage {
 		return this.sizedTo(this.format);
 	}
 
-	async capture(): Promise<Uint8Array> {
-		const shot = await this.chrome.send(SCREENSHOT, { format: 'jpeg', quality: JPEG_QUALITY, optimizeForSpeed: true });
-		return Buffer.from(shot.data, BASE_64);
+	capture(): Promise<Uint8Array> {
+		return this.page.screenshot({ type: 'jpeg', quality: JPEG_QUALITY, caret: 'initial' });
 	}
 
 	private async sizedTo(format: Format): Promise<void> {

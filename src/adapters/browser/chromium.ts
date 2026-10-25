@@ -100,8 +100,7 @@ async function openedIn(browser: Playwright, format: Format, address: string, sh
 	]);
 	await filmed.waitForLoadState();
 	if (filmed.url().startsWith(UNREACHED)) throw new FilmError(`the page at ${address} could not be reached`);
-	const chrome = await page.context().newCDPSession(page);
-	return new OpenedChromium(browser, new BrowserStage(page, chrome, format), filmed);
+	return new OpenedChromium(browser, new BrowserStage(page, format), filmed);
 }
 
 /** Whether a page that went somewhere is the one in the stage's frame, not the stage itself. */
