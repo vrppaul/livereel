@@ -4,6 +4,23 @@
 	"description": "Film a live web page: a camera, a light, a cursor and captions over it, frame by frame",
 	"license": "MIT",
 	"author": "Pavel Paranin <pavel@paran.in>",
+	"homepage": "https://github.com/vrppaul/livereel#readme",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/vrppaul/livereel.git"
+	},
+	"bugs": "https://github.com/vrppaul/livereel/issues",
+	"keywords": [
+		"video",
+		"screencast",
+		"demo",
+		"promo",
+		"playwright",
+		"camera",
+		"claude-code",
+		"agent-skills"
+	],
+	"packageManager": "pnpm@10.33.0",
 	"type": "module",
 	"engines": {
 		"node": ">=22.20"

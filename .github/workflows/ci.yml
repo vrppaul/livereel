@@ -1,0 +1,73 @@
+# Every push to main and every pull request: the gates and the tests as a commit runs them, and the package as a
+# user installs it, shooting a film on the oldest Node it promises
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gates:
+    name: Gates and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      # The instruction-files gate runs in Python 3.14, in an environment pre-commit makes for it
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: astral-sh/setup-uv@v6
+      - run: sudo apt-get update && sudo apt-get install --yes ffmpeg
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright-core install --with-deps --only-shell chromium
+      - run: uvx pre-commit run --all-files --show-diff-on-failure
+
+  packed:
+    name: The package on Node 22
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: sudo apt-get update && sudo apt-get install --yes ffmpeg
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm pack --pack-destination "$RUNNER_TEMP"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.20'
+      - name: Shoot a film with the installed package
+        working-directory: ${{ runner.temp }}
+        run: |
+          mkdir project && cd project
+          echo '{ "type": "module" }' > package.json
+          npm install --save-dev ../livereel-*.tgz
+          npx playwright-core install-deps chromium
+          npx livereel setup
+          cp "$GITHUB_WORKSPACE/tests/smoke/page.html" .
+          cat > film.ts <<'FILM'
+          import { atAddress, camera, caption, defineFilm, hold, light, play } from 'livereel';
+
+          const HEADING = 'h1';
+
+          export default defineFilm({
+          	format: { frame: { width: 640, height: 640 }, screen: { width: 960, height: 640 } },
+          	serve: () => atAddress(new URL('./page.html', import.meta.url).href),
+          	ready: (context) => context.page.locator(HEADING).waitFor(),
+          	steps: () => [
+          		play({ seconds: 0.5, moves: [camera.onto(HEADING), light.on(HEADING), caption.show('A heading')] }),
+          		hold({ seconds: 0.3 })
+          	]
+          });
+          FILM
+          npx livereel shoot film.ts --out out --draft --sheet
+          npx livereel still film.ts --out out --at 0.4
+          ls out
