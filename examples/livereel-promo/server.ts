@@ -12,7 +12,7 @@ import type { Serving } from 'livereel';
 import refreshed from './app/refreshed.json' with { type: 'json' };
 
 /** Today's numbers as a refresh brings them: the visitors, how they stand against yesterday, today's bar in percent. */
-export type Refreshed = typeof refreshed;
+type Refreshed = typeof refreshed;
 
 /** What the server answers at an address: the kind of content, and the content. */
 interface Answer {
@@ -33,10 +33,10 @@ export class AppServed implements Serving {
 	readonly address: string;
 	readonly refreshed: Refreshed;
 
-	constructor(server: Server, address: string) {
+	constructor(server: Server, address: string, answered: Refreshed) {
 		this.server = server;
 		this.address = address;
-		this.refreshed = refreshed;
+		this.refreshed = answered;
 	}
 
 	/** The page's open connections closed with the server, so the film leaves nothing running. */
@@ -55,7 +55,7 @@ export async function servedApp(): Promise<AppServed> {
 	]);
 	const server = createServer((request, response) => answer(answers, request, response)).listen(ANY_PORT, HOST);
 	await once(server, 'listening');
-	return new AppServed(server, addressOf(server));
+	return new AppServed(server, addressOf(server), refreshed);
 }
 
 function answer(answers: ReadonlyMap<string, Answer>, request: IncomingMessage, response: ServerResponse): void {

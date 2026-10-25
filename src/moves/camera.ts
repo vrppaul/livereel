@@ -1,8 +1,7 @@
 /**
  * The camera: to a pose, or onto a block of the page, at the angle it stands at or another.
  *
- * A face-on camera never shows the screen's edge: its end is moved as little as it takes to keep the screen filling
- * the frame.
+ * A face-on camera's end is kept on the screen as `covering` in `src/domain/camera.ts` keeps it.
  */
 import { type Pose, angled, covering, isFaceOn, onto as framedOnto, poseToward } from '../domain/camera.ts';
 import type { Format } from '../domain/geometry.ts';

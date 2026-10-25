@@ -38,7 +38,8 @@ const SQUARE = { frame: { width: 1080, height: 1080 }, screen: { width: 1440, he
 const VISITORS = '[data-testid=visitors]';
 const VISITORS_TODAY = '[data-testid=visitors-today]';
 const REFRESH = '[data-testid=refresh]';
-const TOP_ROW = `${REFRESH}, [data-testid=kpis]`;
+const CARDS = '[data-testid=kpis]';
+const TOP_ROW = `${REFRESH}, ${CARDS}`;
 // The screen comes up from a little smaller than the whole of it
 const OPENS_FROM = 0.86;
 // The camera drawn back over the whole page, the screen leaning back and swung to the left, all of it behind where
@@ -85,7 +86,7 @@ function actTheNumber(): readonly Step[] {
 		play({
 			seconds: 2.2,
 			moves: [
-				camera.onto(VISITORS, { air: 80, zoomAtMost: 2.2, within: { end: 0.64 } }),
+				camera.onto(VISITORS, { within: { end: 0.64 } }),
 				caption.show('A camera that moves like a hand', { within: { start: 0.27, end: 0.82 } }),
 				light.on(VISITORS, { within: { start: 0.64 } })
 			],
@@ -113,7 +114,7 @@ function actTheClick(served: AppServed): readonly Step[] {
 			seconds: 1.7,
 			moves: [
 				caption.show('A real click, a real server', { within: { start: 0.17, end: 0.76 } }),
-				camera.onto(VISITORS, { air: 80, zoomAtMost: 2.2, within: { start: 0.35 } }),
+				camera.onto(VISITORS, { within: { start: 0.35 } }),
 				light.on(VISITORS, { within: { start: 0.58 } })
 			],
 			ease: easeInOutCubic

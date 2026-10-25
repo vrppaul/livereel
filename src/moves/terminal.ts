@@ -95,10 +95,10 @@ function leaving(beginning: Beginning): Change {
 
 /** The lines written by `progress` of the work, after its share of thinking, and the thinking line until the end. */
 function workedAt(work: Work, progress: number): Terminal {
-	const written = Math.max(0, (progress - work.thinkingShare) / (1 - work.thinkingShare));
-	const shown = work.lines.slice(0, Math.floor(written * work.lines.length));
+	const writtenShare = Math.max(0, (progress - work.thinkingShare) / (1 - work.thinkingShare));
+	const writtenLines = work.lines.slice(0, Math.floor(writtenShare * work.lines.length));
 	const working = progress < 1 ? [work.thinking] : [];
-	return { ...work.terminal, lines: [...work.terminal.lines, ...shown, ...working] };
+	return { ...work.terminal, lines: [...work.terminal.lines, ...writtenLines, ...working] };
 }
 
 /** The terminal a move finds open; one not open is refused, saying what the move does to it. */

@@ -2,8 +2,9 @@
  * Where the camera looks, and where it stands to frame a block of the page.
  *
  * Arithmetic on poses and boxes alone, so a film's framing is worked out before a browser is asked anything. A
- * face-on camera never shows the screen's edge: it is moved as little as it takes to keep the screen filling the
- * frame, and where the screen is too short to fill it, the screen stands in the frame's middle.
+ * face-on camera is moved as little as it takes to keep the screen filling the frame, no edge of it showing; along
+ * a side the screen is too short to fill at that zoom, the screen stands in the frame's middle, as much ground
+ * showing on either side of it.
  */
 import { type Box, type Format, type Size, middleX, middleY } from './geometry.ts';
 import { between } from './time.ts';
