@@ -19,6 +19,10 @@ test('a slip stands and is rubbed out before the right letter', () => {
 	]);
 });
 
+test('a letter with no key beside it is typed without a slip', () => {
+	expect(keystrokes('a1b', { seed: 1, slipAt: 1 }).map((stroke) => stroke.typed)).toEqual(['a', 'a1', 'a1b']);
+});
+
 test('the same seed types the same, and another seed otherwise', () => {
 	expect(keystrokes(TEXT, { seed: 7 })).toEqual(keystrokes(TEXT, { seed: 7 }));
 	expect(keystrokes(TEXT, { seed: 7 })).not.toEqual(keystrokes(TEXT, { seed: 8 }));

@@ -26,6 +26,7 @@ describe('a share of a step', () => {
 		expect(() => Share.of({ start: 0.5, end: 0.5 })).toThrow(FilmError);
 		expect(() => Share.of({ start: 0.6, end: 0.4 })).toThrow(FilmError);
 		expect(() => Share.of({ end: 1.5 })).toThrow(FilmError);
+		expect(() => Share.of({ end: Number.NaN })).toThrow(FilmError);
 	});
 
 	test('overlaps another only where both run at once, not where one ends as the other starts', () => {

@@ -11,6 +11,15 @@ test("a page's other rules stay: only who may frame it goes", () => {
 	);
 });
 
+test('every policy of a page loses who may frame it, in whatever case it is written', () => {
+	expect(
+		framedAnyway(
+			'content-security-policy',
+			"default-src 'self'; FRAME-ANCESTORS 'none', frame-ancestors 'self'; img-src *"
+		)
+	).toBe("default-src 'self', img-src *");
+});
+
 test('any other header goes by untouched', () => {
 	expect(framedAnyway('Content-Type', 'text/html')).toBe('text/html');
 });

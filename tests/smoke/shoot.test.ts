@@ -85,3 +85,9 @@ test('keys typed into the page reach the field that holds its keyboard', async (
 	await shoot(filmOf(steps), { browser: new Chromium(), footage: new EveryFrameCounted(), sharpness: 1 });
 	expect(values).toEqual([TYPED]);
 });
+
+test('a scroll of a block the page does not have is refused as its share begins, naming the block', async () => {
+	const steps = [play({ seconds: 0.1, moves: [page.scrollTo('[data-testid=nowhere]', { top: 0 })] })];
+	const shooting = shoot(filmOf(steps), { browser: new Chromium(), footage: new EveryFrameCounted(), sharpness: 1 });
+	await expect(shooting).rejects.toThrow('nothing on the page matches [data-testid=nowhere]');
+});

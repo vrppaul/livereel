@@ -21,6 +21,8 @@ test("a film's length is its plays' frames: a cut and an act take none", () => {
 	expect(framesIn(steps)).toBe(40);
 });
 
-test('a step of no time is refused', () => {
+test('a step of no time, or of no length a clock can count, is refused', () => {
 	expect(() => hold({ seconds: 0 })).toThrow(FilmError);
+	expect(() => hold({ seconds: Number.POSITIVE_INFINITY })).toThrow(FilmError);
+	expect(() => hold({ seconds: Number.NaN })).toThrow(FilmError);
 });
