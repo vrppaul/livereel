@@ -43,6 +43,6 @@ The rules every change is held to are in `AGENTS.md`, and those of each area und
 ## Releasing
 
 1. Set `version` in `package.json` and in `.claude-plugin/marketplace.json`, and move the changelog's unreleased entries under it, in one commit.
-2. Tag it `vX.Y.Z` and push the tag: `.github/workflows/release.yml` checks the tag names the version, publishes the package to npm with its provenance (the repository's `NPM_TOKEN` secret), and makes the release on GitHub.
+2. Tag it `vX.Y.Z` and push the tag: `.github/workflows/release.yml` checks the tag names the version, publishes the package to npm with its provenance, and makes the release on GitHub. npm trusts the workflow itself (Trusted Publishing on the package's page): no token is kept.
 
 `pnpm pack` builds the package into `dist/` and removes it after; CI shoots a film with the packed package on Node 22.20 on every push.

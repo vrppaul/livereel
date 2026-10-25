@@ -1,5 +1,7 @@
-# A tag `vX.Y.Z` pushed: the package published to npm with its provenance, and a release on GitHub. The tag's
-# version is the one in package.json (CONTRIBUTING.md, Releasing); NPM_TOKEN is a repository secret
+# A tag `vX.Y.Z` pushed: the package published to npm and a release made on GitHub. The tag's version is the one in
+# package.json (CONTRIBUTING.md, Releasing). npm trusts this workflow itself (Trusted Publishing, set on the
+# package's page on npm): it is given a short-lived identity, so no token is kept, and the package carries its
+# provenance
 name: Release
 
 on:
@@ -24,9 +26,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: The tag names the version being published
         run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
-      - run: pnpm publish --provenance --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # npm itself publishes: it speaks Trusted Publishing; `prepack` builds the package first
+      - run: npm publish --provenance --access public
       - run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
