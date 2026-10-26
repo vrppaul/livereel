@@ -1,7 +1,9 @@
-// A film in its formats: each by its name, and the steps told which one they are shot in; its music's volume
+// A film in its formats: each by its name, and the steps told which one they are shot in; its music's volume, and its
+// blur
 import { expect, test } from 'vitest';
 import { wholePose } from '../../src/domain/camera.ts';
 import { FilmError } from '../../src/domain/errors.ts';
+import type { MotionBlurScript } from '../../src/direction/blur.ts';
 import { atAddress, defineFilm } from '../../src/direction/film.ts';
 import { SMALL } from './fakes.ts';
 
@@ -38,4 +40,32 @@ test('music at a volume that is no level is refused as the film is defined: not 
 	expect(() => filmWithMusicAt(Number.NaN)).toThrow(FilmError);
 	expect(() => filmWithMusicAt(Number.POSITIVE_INFINITY)).toThrow(FilmError);
 	expect(() => filmWithMusicAt(-1)).toThrow(FilmError);
+});
+
+/** The blur a film is shot with, its blur written so. */
+function blurOfFilm(motionBlur: MotionBlurScript) {
+	const film = defineFilm({
+		formats: { small: SMALL },
+		serve: () => atAddress('about:blank'),
+		ready: () => Promise.resolve(),
+		steps: () => [],
+		motionBlur
+	});
+	return film.formats.get('small')!.motionBlur;
+}
+
+test("a blur given one value keeps livereel's other", () => {
+	expect(blurOfFilm({ shutter: 0.5 })).toEqual({ ...blurOfFilm({}), shutter: 0.5 });
+});
+
+test('a blur turned off is no blur', () => {
+	expect(blurOfFilm({ enabled: false })).toBeNull();
+});
+
+test('a blur that cannot be shot is refused as the film is defined: a shutter shut or open past the frame before, too few exposures or a broken count', () => {
+	expect(() => blurOfFilm({ shutter: 0 })).toThrow(FilmError);
+	expect(() => blurOfFilm({ shutter: 1.5 })).toThrow(FilmError);
+	expect(() => blurOfFilm({ shutter: Number.NaN })).toThrow(FilmError);
+	expect(() => blurOfFilm({ exposures: 1 })).toThrow(FilmError);
+	expect(() => blurOfFilm({ exposures: 2.5 })).toThrow(FilmError);
 });

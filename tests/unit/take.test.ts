@@ -1,8 +1,11 @@
 import { expect, test } from 'vitest';
+import type { Pose } from '../../src/domain/camera.ts';
+import type { MotionBlur } from '../../src/domain/shutter.ts';
 import { TakeError } from '../../src/domain/errors.ts';
 import { linear } from '../../src/domain/time.ts';
 import { type Bounds, type Change, type Move, timingOf } from '../../src/direction/move.ts';
-import { act, cut, play } from '../../src/direction/steps.ts';
+import { act, cut, hold, play } from '../../src/direction/steps.ts';
+import { to as cameraTo } from '../../src/moves/camera.ts';
 import { on, to } from '../../src/moves/light.ts';
 import { click, hide, to as cursorTo } from '../../src/moves/cursor.ts';
 import { show } from '../../src/moves/ending.ts';
@@ -31,6 +34,10 @@ const STROKES: readonly Keystroke[] = [
 	{ at: 0.1, typed: 'a' },
 	{ at: 0.2, typed: 'ab' }
 ];
+// A film camera's shutter, open for half the way, of four exposures
+const HALF_OF_FOUR: MotionBlur = { shutter: 0.5, exposures: 4 };
+// The camera close on the screen's right edge: from the whole screen, at two thirds of its size, a fast way
+const CLOSE_AT_THE_RIGHT: Pose = { focusX: 400, focusY: 200, zoom: 1, tilt: 0, turn: 0 };
 
 /** A move on the screen that writes down every progress it is set at. */
 class Counted implements Move {
@@ -53,8 +60,30 @@ class Counted implements Move {
 }
 
 function takeOf(footage: FootageOf, stage: StageThatKeeps, track = new TrackThatKeeps()): Take {
-	return new Take(openedOn(new PageOfBoxes(PAGE), stage), footage, track, SMALL, openingScene(SMALL));
+	const opened = openedOn(new PageOfBoxes(PAGE), stage);
+	return new Take({ opened, footage, track, format: SMALL, opening: openingScene(SMALL), motionBlur: HALF_OF_FOUR });
 }
+
+test('a frame the camera crosses fast is drawn again along its way from the frame before, each kept with its own', async () => {
+	const stage = new StageThatKeeps();
+	const footage = new FootageOf([0, 1, 2]);
+	// Two frames of the camera's way, half of it each, then one with nothing moving
+	const steps = [
+		play({ seconds: 2 / 30, moves: [cameraTo(CLOSE_AT_THE_RIGHT)], ease: linear }),
+		hold({ seconds: 1 / 30 })
+	];
+	await takeOf(footage, stage).run(steps);
+	expect([footage.exposed, stage.drawn.map((scene) => scene.camera.focusX)]).toEqual([
+		[4, 4, 1],
+		[331.25, 337.5, 343.75, 350, 381.25, 387.5, 393.75, 400, 400]
+	]);
+});
+
+test('a cut is not blurred: the frame after it is exposed once, however far it moved the camera', async () => {
+	const footage = new FootageOf([0]);
+	await takeOf(footage, new StageThatKeeps()).run([cut(cameraTo(CLOSE_AT_THE_RIGHT)), hold({ seconds: 1 / 30 })]);
+	expect(footage.exposed).toEqual([1]);
+});
 
 test("livereel's sounds are heard as their moves begin: the click as the press goes in, the ending as it comes", async () => {
 	const track = new TrackThatKeeps();
@@ -98,7 +127,16 @@ test('each key typed into the terminal is heard on the frame its letter shows', 
 test('each key typed into the page is heard on the frame it is pressed', async () => {
 	const track = new TrackThatKeeps();
 	const page = new PageOfBoxes(PAGE);
-	const take = new Take(openedOn(page, new StageThatKeeps()), new FootageOf([9]), track, SMALL, openingScene(SMALL));
+	const opened = openedOn(page, new StageThatKeeps());
+	const footage = new FootageOf([9]);
+	const take = new Take({
+		opened,
+		footage,
+		track,
+		format: SMALL,
+		opening: openingScene(SMALL),
+		motionBlur: HALF_OF_FOUR
+	});
 	await take.run([play({ seconds: 0.2, moves: [typeIntoThePage(STROKES)] })]);
 	expect([track.heard, page.typed]).toEqual([
 		[

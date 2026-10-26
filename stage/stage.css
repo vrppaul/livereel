@@ -1,8 +1,8 @@
 /*
  * The stage: the ground the film stands on, the room the camera moves the screen in, and every prop's look. Nothing
- * here moves of itself: the stage's script sets the frame's and the screen's sizes as a film begins, and each prop's
- * numbers every frame (`--zoom`, `--shown`, `--press`), all as bare numbers; the rules below give them their units
- * and turn them into places, sizes and shades.
+ * here moves of itself: the stage's script sets the frame's and the screen's sizes and the eye's distance as a film
+ * begins, and each prop's numbers every frame (`--zoom`, `--shown`, `--press`), all as bare numbers; the rules below
+ * give them their units and turn them into places, sizes and shades.
  */
 html,
 body {
@@ -21,12 +21,12 @@ body {
 .stage {
 	position: absolute;
 	inset: 0;
-	perspective: var(--eye-distance);
+	perspective: calc(var(--eye-distance) * 1px);
 	perspective-origin: 50% 50%;
 	overflow: hidden;
 }
 
-/* The camera moves the screen, laid out at its own size, about its top left corner: the point looked at to the frame's middle, then angled and brought close */
+/* The camera moves the screen, laid out at its own size, about its top left corner: the point looked at to the frame's middle, then angled and brought close. The engine works out what the camera shows where in the same steps (`src/domain/camera.ts`) */
 .camera {
 	position: absolute;
 	left: 0;

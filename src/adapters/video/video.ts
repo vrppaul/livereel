@@ -2,24 +2,27 @@
  * A film's frames made a video as they are shot, and a contact sheet of the video.
  *
  * Every frame goes into ffmpeg as it is shot, so the video is encoded while the film is shot and no frame is written
- * to the disk; a frame waits only when ffmpeg has not taken the last ones yet. The frames are shot sharper than the
- * frame and scaled down, so text stays crisp when the camera comes close.
+ * to the disk; a frame waits only when ffmpeg has not taken the last ones yet, and a frame of several exposures until
+ * they are blended (`exposures.ts`). The frames are shot sharper than the frame and scaled down, so text stays crisp
+ * when the camera comes close.
  */
 import { type ChildProcessByStdio, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { rm } from 'node:fs/promises';
 import type { Readable, Writable } from 'node:stream';
-import { EncodingError, FilmError } from '../../domain/errors.ts';
+import { FilmError } from '../../domain/errors.ts';
 import type { Size } from '../../domain/geometry.ts';
 import { FRAMES_PER_SECOND } from '../../domain/time.ts';
-import type { Footage } from '../../studio/ports.ts';
+import type { Exposures, Footage } from '../../studio/ports.ts';
 import { closed } from '../processes.ts';
-import { FFMPEG, QUIETLY, ffmpeg } from './ffmpeg.ts';
+import { blended } from './exposures.ts';
+import { FFMPEG, FfmpegWords, JPEGS_PIPED, QUIETLY, ffmpeg } from './ffmpeg.ts';
 import { KINDS, STARTS_AT_ONCE } from './kinds.ts';
 import { pictureOf } from './partial.ts';
+import type { Soundtrack } from './soundtrack.ts';
 
-// The frames as they come, JPEG after JPEG on ffmpeg's input
-const FRAMES_IN = ['-f', 'image2pipe', '-c:v', 'mjpeg', '-framerate', String(FRAMES_PER_SECOND), '-i', '-'];
+// The frames as they come on ffmpeg's input, so many a second
+const FRAMES_IN = [...JPEGS_PIPED, '-framerate', String(FRAMES_PER_SECOND), '-i', '-'];
 // H.264 that any player opens, its quality, and how hard the encoder works for it
 const ENCODING = [
 	'-c:v',
@@ -43,29 +46,28 @@ const PIXELS_PAIRED = 2;
 type Encoder = ChildProcessByStdio<Writable, null, Readable>;
 
 /**
- * The MP4's picture is written under a name of its own (`pictureOf`), and the video is put in its place only once
- * its sound is laid under it (`soundtrack.ts`), so a film that fails leaves the last good video where it was.
- * Whatever waits on ffmpeg waits on its end too: a frame handed to an ffmpeg that has stopped is refused at once, with
- * ffmpeg's own words, rather than waiting on a pipe that will never drain.
+ * The MP4's picture is written under a name of its own (`pictureOf`), and the video is put in its place only as the
+ * footage is finished, its sound laid under it (`soundtrack.ts`), so a film that fails leaves the last good video
+ * where it was. Whatever waits on ffmpeg waits on its end too: a frame handed to an ffmpeg that has stopped is refused
+ * at once, with ffmpeg's own words, rather than waiting on a pipe that will never drain.
  */
 export class VideoFootage implements Footage, AsyncDisposable {
-	readonly picture: string;
 	readonly encoder: Encoder;
 	readonly ended: Promise<number | null>;
-	// What ffmpeg said on its way, the reason it gives if it refuses
-	readonly said: string[] = [];
+	readonly words: FfmpegWords;
+	private readonly video: string;
+	private readonly picture: string;
 
 	constructor(video: string, frame: Size) {
 		refuseOddSides(frame);
+		this.video = video;
 		this.picture = pictureOf(video);
 		const scaled = ['-vf', `scale=${frame.width}:${frame.height}:flags=lanczos`];
 		this.encoder = spawn(FFMPEG, [...QUIETLY, ...FRAMES_IN, ...scaled, ...ENCODING, this.picture], {
 			stdio: ['pipe', 'ignore', 'pipe']
 		});
 		this.ended = closed(this.encoder);
-		this.encoder.on('error', (fault) => this.said.push(fault.message));
-		this.encoder.stderr.on('data', (chunk: Buffer) => this.said.push(chunk.toString()));
-		this.encoder.stdin.on('error', (fault) => this.said.push(fault.message));
+		this.words = new FfmpegWords(this.encoder);
 	}
 
 	expect(): void {
@@ -76,22 +78,23 @@ export class VideoFootage implements Footage, AsyncDisposable {
 		return true;
 	}
 
-	async keep(_shot: number, image: Uint8Array): Promise<void> {
-		if (this.stopped()) throw this.refusal();
-		if (this.encoder.stdin.write(image)) return;
+	async keep(_shot: number, exposures: Exposures): Promise<void> {
+		if (this.stopped()) throw this.words.refusal();
+		if (this.encoder.stdin.write(await blended(exposures))) return;
 		// A pipe whose reader has gone fails rather than drains: ffmpeg's end says why
 		await Promise.race([once(this.encoder.stdin, 'drain').catch(() => undefined), this.ended]);
-		if (this.stopped()) throw this.refusal();
+		if (this.stopped()) throw this.words.refusal();
 	}
 
 	complete(): boolean {
 		return false;
 	}
 
-	/** The last frame given, and the picture written to its end, its sound still to be laid under it. */
-	async finish(): Promise<void> {
+	/** The last frame given, the picture written to its end, and the video put in its place, the track laid under it. */
+	async finish(track: Soundtrack, seconds: number): Promise<void> {
 		this.encoder.stdin.end();
-		if ((await this.ended) !== 0) throw this.refusal();
+		if ((await this.ended) !== 0) throw this.words.refusal();
+		await track.laidUnder(this.picture, this.video, seconds);
 	}
 
 	/**
@@ -110,10 +113,6 @@ export class VideoFootage implements Footage, AsyncDisposable {
 
 	private stopped(): boolean {
 		return this.encoder.exitCode !== null || this.encoder.signalCode !== null || this.encoder.stdin.destroyed;
-	}
-
-	private refusal(): EncodingError {
-		return new EncodingError(`ffmpeg stopped: ${this.said.join('').trim()}`);
 	}
 }
 

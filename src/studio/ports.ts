@@ -1,7 +1,7 @@
 /**
  * What the studio needs of the world to shoot a film: a browser with the stage and the page open, footage to keep
  * frames in, and a track to keep sounds in. The adapters answer these; the studio names no browser and no file of its
- * own.
+ * own, and blends no image.
  */
 import type { Format } from '../domain/geometry.ts';
 import type { ActContext, FilmedPage } from '../direction/page.ts';
@@ -19,12 +19,21 @@ export interface Stage {
 	readonly capture: () => Promise<Uint8Array>;
 }
 
+/**
+ * A frame's images, each a JPEG: its own, and, where the camera crossed it fast, those of earlier poses along the
+ * camera's way there, blended with it into the one image the frame is (`src/domain/shutter.ts`).
+ */
+export interface Exposures {
+	readonly earlier: readonly Uint8Array[];
+	readonly own: Uint8Array;
+}
+
 /** Which frames a take keeps, and where each goes. */
 export interface Footage {
 	/** Refuses a film too short to hold what the footage is to keep: a still past its end. */
 	readonly expect: (frames: number) => void;
 	readonly keeps: (shot: number) => boolean;
-	readonly keep: (shot: number, image: Uint8Array) => Promise<void>;
+	readonly keep: (shot: number, exposures: Exposures) => Promise<void>;
 	/** Whether nothing is left to keep once this many frames are shot. */
 	readonly complete: (shot: number) => boolean;
 }

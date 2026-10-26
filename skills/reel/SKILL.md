@@ -100,8 +100,9 @@ A film is heard as well as seen: a click as the cursor presses, a key for
 every stroke typed, a soft chime as the ending comes up, each on its own
 frame. These are livereel's own, quiet and CC0. `defineFilm` takes, beside
 the rest, `sounds: { click, key, ending }` (files of the film's own in their
-place, a path from the film's file, any kind ffmpeg reads) or `sounds: null`
-(none of livereel's), and `music: { file, volume }` (a track under the whole
+place, a path from the film's file, any kind ffmpeg reads) or
+`sounds: { enabled: false }` (none of livereel's), and
+`music: { file, volume }` (a track under the whole
 film, 1 as loud as it is, cut to the film's length and faded out at its
 end).
 
@@ -176,6 +177,14 @@ npx livereel still film.ts --format square --out out --at 12.5   # one still, wi
 - Check what the eye checks: is the caption about what is lit, is the text
   readable at this size, does any edge of the screen show where it should
   not, is anything cut off.
+- Where the camera moves fast, a frame is blurred along its way, as a film
+  camera blurs it: a still in the middle of a fast move shows the screen
+  smeared, and that is right. Read text where the camera has settled.
+  Leave the blur as livereel sets it unless the user asks for another:
+  `motionBlur: { shutter, exposures }` in `defineFilm`, either or both,
+  `shutter` from just above 0 to 1 (the smear's length), `exposures` 2 or
+  more (its smoothness, and the shoot's time), or
+  `motionBlur: { enabled: false }` for none.
 - Say plainly that you saw frames, not the film: the last look at the
   moving film is the user's.
 

@@ -28,7 +28,4 @@
 	--caption-shadow: 0 2px 30px rgb(0 0 0 / 55%);
 	--sans: ui-sans-serif, system-ui, sans-serif;
 	--mono: ui-monospace, 'JetBrains Mono', monospace;
-
-	/* How far the eye stands from the screen: nearer is a stronger angle */
-	--eye-distance: 2000px;
 }

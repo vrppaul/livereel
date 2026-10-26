@@ -16,12 +16,21 @@ import { openingScene } from '../scene.ts';
 import type { Browser, Footage, Track } from './ports.ts';
 import { Take } from './take.ts';
 
-/** The browser a film is shot in, where its frames and its sounds go, and how sharp it is shot. */
+/**
+ * How finely a film is shot: how many of its frames' pixels are captured for each of the frame's own, and whether a
+ * fast camera is blurred as the film says.
+ */
+export interface Quality {
+	readonly sharpness: number;
+	readonly blurred: boolean;
+}
+
+/** The browser a film is shot in, where its frames and its sounds go, and how finely it is shot. */
 export interface Shooting {
 	readonly browser: Browser;
 	readonly footage: Footage;
 	readonly track: Track;
-	readonly sharpness: number;
+	readonly quality: Quality;
 }
 
 /** What a shot film was: how many frames, and how long. */
@@ -35,9 +44,16 @@ export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Sho
 	const steps = await filmsOwn('steps', () => served.steps(wholePose(film.format)));
 	shooting.footage.expect(framesIn(steps));
 	shooting.track.expect(soundsIn(steps));
-	await using opened = await shooting.browser.open(film.format, served.address, shooting.sharpness);
+	await using opened = await shooting.browser.open(film.format, served.address, shooting.quality.sharpness);
 	await filmsOwn('ready', () => served.ready(opened.act));
-	const take = new Take(opened, shooting.footage, shooting.track, film.format, openingScene(film.format));
+	const take = new Take({
+		opened,
+		footage: shooting.footage,
+		track: shooting.track,
+		format: film.format,
+		opening: openingScene(film.format),
+		motionBlur: shooting.quality.blurred ? film.motionBlur : null
+	});
 	await take.run(steps);
 	return { frames: take.shots, seconds: momentOf(take.shots) };
 }

@@ -144,7 +144,7 @@ test('an app with a server of its own is filmed: framed, scrolled, answered afte
 		browser: new Chromium(),
 		footage: new NoFrames(),
 		track: SILENT,
-		sharpness: 1
+		quality: { sharpness: 1, blurred: false }
 	});
 	expect(seen).toEqual([100, ANSWERED, PUSHED, 'yes', '/app/']);
 });

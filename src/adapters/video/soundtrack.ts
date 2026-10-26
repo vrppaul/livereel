@@ -55,9 +55,11 @@ const AS_THEY_ARE_UNTIL_THE_FIRST_ENDS = 'normalize=0:duration=first';
 const VOLUME = 'volume';
 const FADE_OUT = 'afade=t=out';
 const FILTERS_APART = ';';
-// The track's stream in the graph, the music's, and the MP4 written: the picture copied, the track beside it
+// The track's stream in the graph, the music's, and the MP4 written: the picture copied, the track beside it at a rate
+// at which AAC keeps a click's edge
 const TRACK = '[track]';
 const MUSIC = '[music]';
+const SOUND_BITRATE = '192k';
 const WRITTEN = [
 	'-map',
 	'0:v',
@@ -68,7 +70,7 @@ const WRITTEN = [
 	'-c:a',
 	KINDS.mp4.sound,
 	'-b:a',
-	'192k',
+	SOUND_BITRATE,
 	...STARTS_AT_ONCE
 ];
 // The picture is the first input; the sounds come after it

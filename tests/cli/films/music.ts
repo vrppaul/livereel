@@ -6,6 +6,6 @@ export default defineFilm({
 	serve: () => Promise.resolve(atAddress(new URL('../../smoke/page.html', import.meta.url).href)),
 	ready: (context) => context.page.locator('h1').waitFor(),
 	steps: () => [hold({ seconds: 0.2 })],
-	sounds: null,
+	sounds: { enabled: false },
 	music: { file: '../../../sounds/ending.ogg', volume: 0.5 }
 });

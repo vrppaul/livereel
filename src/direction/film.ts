@@ -10,8 +10,10 @@
 import type { Pose } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/geometry.ts';
+import type { MotionBlur } from '../domain/shutter.ts';
+import { type MotionBlurScript, motionBlurOf } from './blur.ts';
 import type { ActContext } from './page.ts';
-import type { FilmSound, Music, SoundFiles } from './sound.ts';
+import type { FilmSound, LivereelSoundsScript, Music } from './sound.ts';
 import type { Step } from './steps.ts';
 
 /** A page served for as long as a take lasts, at its address; the film's own handles may come with it. */
@@ -31,9 +33,11 @@ export interface Script<Served extends Serving, Name extends string> {
 	 * from here, so steps that take fewer names than `formats` has are refused by the compiler.
 	 */
 	readonly steps: (served: Served, whole: Pose, formatName: NoInfer<Name>) => readonly Step[];
-	/** Files in place of livereel's sounds, a path each from the film's file; `null` for none of livereel's sounds. */
-	readonly sounds?: SoundFiles | null;
+	/** Files in place of livereel's sounds, a path each from the film's file, or `{ enabled: false }` for none. */
+	readonly sounds?: LivereelSoundsScript;
 	readonly music?: Music;
+	/** How a fast camera is blurred, livereel's way save the values given, or `{ enabled: false }` for no blur. */
+	readonly motionBlur?: MotionBlurScript;
 }
 
 /** A film whose page is served: what the studio shoots. */
@@ -43,11 +47,12 @@ export interface ServedFilm extends AsyncDisposable {
 	readonly steps: (whole: Pose) => readonly Step[];
 }
 
-/** A film in one of its formats, and what it says of its sounds. */
+/** A film in one of its formats, and what it says of its sounds and of its blur. */
 export interface FilmInFormat {
 	readonly formatName: string;
 	readonly format: Format;
 	readonly sound: FilmSound;
+	readonly motionBlur: MotionBlur | null;
 	readonly serve: () => Promise<ServedFilm>;
 }
 
@@ -57,17 +62,21 @@ export interface Film {
 }
 
 const NO_FORMAT = 'a film has a format at least: the frame it is shot in, and the screen its page is laid out on';
-// A film that gives no files in place of livereel's sounds keeps every one of them
-const EVERY_LIVEREEL_SOUND: SoundFiles = {};
+// A film that says nothing of livereel's sounds keeps every one of them
+const EVERY_LIVEREEL_SOUND: LivereelSoundsScript = {};
+// A film that says nothing of its blur is blurred as livereel blurs
+const LIVEREELS_BLUR: MotionBlurScript = {};
 
 export class ScriptedFilm<Served extends Serving, Name extends string> implements Film {
 	readonly script: Script<Served, Name>;
 	readonly sound: FilmSound;
+	readonly motionBlur: MotionBlur | null;
 	readonly formats: ReadonlyMap<string, FilmInFormat>;
 
 	constructor(script: Script<Served, Name>) {
 		this.script = script;
 		this.sound = soundOfFilm(script);
+		this.motionBlur = motionBlurOf(script.motionBlur ?? LIVEREELS_BLUR);
 		this.formats = new Map(namesOf(script.formats).map((name) => [name, this.inFormat(name)]));
 		if (this.formats.size === 0) throw new FilmError(NO_FORMAT);
 	}
@@ -77,6 +86,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 			formatName: name,
 			format: this.script.formats[name],
 			sound: this.sound,
+			motionBlur: this.motionBlur,
 			serve: () => this.served(name)
 		};
 	}
@@ -109,18 +119,23 @@ export function atAddress(address: string): Serving {
 }
 
 /**
- * What a film says of its sounds: every one of livereel's where it gives no files in their place, and no music where
- * it gives none. Music at a volume that is no level — not a number, endless, below none — is refused.
+ * What a film says of its sounds: every one of livereel's where it says nothing of them, none where it turns them off,
+ * and no music where it gives none. Music at a volume that is no level — not a number, endless, below none — is
+ * refused.
  */
 function soundOfFilm<Served extends Serving, Name extends string>(script: Script<Served, Name>): FilmSound {
 	const music = script.music ?? null;
 	if (music !== null && !(Number.isFinite(music.volume) && music.volume >= 0)) {
 		throw new FilmError(`the music's volume is ${music.volume}: it is 0 or more, 1 as loud as the file`);
 	}
-	return { livereels: script.sounds === undefined ? EVERY_LIVEREEL_SOUND : script.sounds, music };
+	const sounds = script.sounds ?? EVERY_LIVEREEL_SOUND;
+	return { livereels: sounds.enabled === false ? null : sounds, music };
 }
 
-/** The names of a film's formats, in the order it gives them. */
+/**
+ * The names of a film's formats, in the order it gives them. Every key is one, but `Object.keys` types each as a bare
+ * string: the guard keeps them all and tells the compiler they are the film's names.
+ */
 function namesOf<Name extends string>(formats: Readonly<Record<Name, Format>>): Name[] {
 	return Object.keys(formats).filter((name) => isFormatOf(formats, name));
 }

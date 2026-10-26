@@ -10,9 +10,8 @@
  * module from a file; nothing else runs in the stage page, so its names stand alone there.
  */
 /** @import { DrawnScene, PropName } from '../src/scene.ts' */
-/** @import { Format } from '../src/domain/geometry.ts' */
 /** @import { ShownLine } from '../src/props/terminal.ts' */
-/** @import { StageApi } from '../src/adapters/browser/stage.ts' */
+/** @import { Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
 /** An element of the stage's markup: the cursor is drawn in SVG, the rest in HTML @typedef {HTMLElement | SVGElement} Staged */
@@ -181,13 +180,14 @@ const DRAWERS = {
 };
 const PAGE = partOf(document.body, 'page');
 
-/** @param {Format} format */
-function setup(format) {
+/** @param {Room} room */
+function setup(room) {
 	numbered(document.documentElement, {
-		'--frame-width': format.frame.width,
-		'--frame-height': format.frame.height,
-		'--screen-width': format.screen.width,
-		'--screen-height': format.screen.height
+		'--frame-width': room.format.frame.width,
+		'--frame-height': room.format.frame.height,
+		'--screen-width': room.format.screen.width,
+		'--screen-height': room.format.screen.height,
+		'--eye-distance': room.eyeDistance
 	});
 }
 

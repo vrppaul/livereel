@@ -4,7 +4,7 @@ import type { ActContext, FilmedPage, ScrollCourse } from '../../src/direction/p
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Box, Format } from '../../src/domain/geometry.ts';
 import type { DrawnScene } from '../../src/scene.ts';
-import type { Footage, Opened, Stage, Track } from '../../src/studio/ports.ts';
+import type { Exposures, Footage, Opened, Stage, Track } from '../../src/studio/ports.ts';
 
 export const SMALL: Format = { frame: { width: 400, height: 400 }, screen: { width: 600, height: 400 } };
 
@@ -56,11 +56,12 @@ export class StageThatKeeps implements Stage {
 	}
 }
 
-/** Footage that keeps the shots it is told to keep, up to and including the last. */
+/** Footage that keeps the shots it is told to keep, up to and including the last, and how many images each was. */
 export class FootageOf implements Footage {
 	readonly wanted: ReadonlySet<number>;
 	readonly last: number;
 	readonly kept: number[] = [];
+	readonly exposed: number[] = [];
 
 	constructor(wanted: readonly number[]) {
 		this.wanted = new Set(wanted);
@@ -73,8 +74,9 @@ export class FootageOf implements Footage {
 		return this.wanted.has(shot);
 	}
 
-	keep(shot: number): Promise<void> {
+	keep(shot: number, exposures: Exposures): Promise<void> {
 		this.kept.push(shot);
+		this.exposed.push(exposures.earlier.length + 1);
 		return Promise.resolve();
 	}
 

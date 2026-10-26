@@ -56,9 +56,9 @@ function filmOf(steps: readonly Step[]) {
 	}).formats.get('small')!;
 }
 
-/** A film shot in Chromium at the frame's own size into this footage, its sounds heard by nobody. */
+/** A film shot in Chromium at the frame's own size into this footage, each frame exposed once, its sounds heard by nobody. */
 function shootingInto(footage: Footage): Shooting {
-	return { browser: new Chromium(), footage, track: SILENT, sharpness: 1 };
+	return { browser: new Chromium(), footage, track: SILENT, quality: { sharpness: 1, blurred: false } };
 }
 
 async function scratch(): Promise<string> {

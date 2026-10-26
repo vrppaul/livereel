@@ -4,7 +4,9 @@
  *
  * A move notes the sounds it makes as cues, each at a point of its way; the take hears a cue on the frame the move is
  * set at or past that point, eased, so a key is heard on the frame its letter shows. A film keeps its own time, so a
- * sound heard is laid at its frame's moment however long the browser took. A path is from the film's file.
+ * sound heard is laid at its frame's moment however long the browser took. A sound made in a cut is heard on the
+ * frame after it, so one made in a cut that ends the film comes at its end and is not heard: the track is as long as
+ * the film. A path is from the film's file.
  */
 import { type Keystroke, typingSeconds } from '../domain/typing.ts';
 
@@ -23,6 +25,9 @@ export interface Cue {
 
 /** Files a film gives in place of livereel's sounds, those it gives; the rest stay livereel's. */
 export type SoundFiles = Partial<Readonly<Record<LivereelSound, string>>>;
+
+/** livereel's sounds as a film writes them: `{ enabled: false }` for none, or files in place of those it gives. */
+export type LivereelSoundsScript = { readonly enabled: false } | ({ readonly enabled?: true } & SoundFiles);
 
 /** A track under the whole film, at `volume` (1 as it is), cut to the film's length and faded out at its end. */
 export interface Music {

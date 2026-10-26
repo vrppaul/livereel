@@ -16,7 +16,7 @@ import type { ActContext, PageMotionSwitch } from '../../direction/page.ts';
 import type { Browser, Opened } from '../../studio/ports.ts';
 import { PlaywrightPage } from './page.ts';
 import { isServed, withoutFrameRefusals } from './refusals.ts';
-import { BrowserStage, openPage, setUpStage } from './stage.ts';
+import { BrowserStage, openPage, roomOf, setUpStage } from './stage.ts';
 
 // The package's stage: as far from this module in the source as in the package built from it
 const STAGE = new URL('../../../stage/stage.html', import.meta.url).href;
@@ -93,7 +93,7 @@ async function openedIn(browser: Playwright, format: Format, address: string, sh
 	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: COLOUR_SCHEME });
 	await page.route(isServed, withoutFrameRefusals);
 	await page.goto(STAGE);
-	await page.evaluate(setUpStage, format);
+	await page.evaluate(setUpStage, roomOf(format));
 	const [filmed] = await Promise.all([
 		page.waitForEvent(NAVIGATED, { predicate: isInTheStagesFrame }),
 		page.evaluate(openPage, address)

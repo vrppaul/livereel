@@ -14,7 +14,7 @@ import { parseArgs } from 'node:util';
 import { UsageError } from '../domain/errors.ts';
 import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { Film, FilmInFormat } from '../direction/film.ts';
-import { type Shot, shoot } from '../studio/shoot.ts';
+import { type Quality, type Shot, shoot } from '../studio/shoot.ts';
 import { Chromium } from '../adapters/browser/chromium.ts';
 import { KINDS, type Kind, type MadeKind, SHOT_INTO, isKind, isMade, madeFrom } from '../adapters/video/kinds.ts';
 import { SILENT, Soundtrack } from '../adapters/video/soundtrack.ts';
@@ -29,9 +29,10 @@ export interface Command {
 	readonly run: (given: readonly string[]) => Promise<void>;
 }
 
-// Sharp enough to zoom into and to angle without the text going soft; a draft is shot at the frame's own size
-const SHARPNESS = 2;
-const DRAFT_SHARPNESS = 1;
+// Sharp enough to zoom into and to angle without the text going soft, and a fast camera blurred as the film says; a
+// draft is shot at the frame's own size, every frame exposed once
+const FINEST: Quality = { sharpness: 2, blurred: true };
+const DRAFT: Quality = { sharpness: 1, blurred: false };
 // Every file a command writes is named from the same stem, the film file's name and its format's; a still after its
 // moment, in seconds
 const APART = '-';
@@ -122,13 +123,14 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	const file = theFilmFile(positionals, STILL);
 	const out = theOut(values.out, STILL);
 	const moment = momentAsked(values.at);
+	await ffmpegNeeded();
 	const film = formatAsked(await loadedFilm(file), values.format, STILL);
 	await mkdir(out, { recursive: true });
 	const still = `${stemOf(out, file, film)}${APART}${String(moment)}${STILL_SUFFIX}`;
 	await rm(still, { force: true });
 	const started = performance.now();
 	const footage = new StillFootage(still, moment);
-	await shoot(film, { browser: new Chromium(), footage, track: SILENT, sharpness: sharpnessOf(values.draft) });
+	await shoot(film, { browser: new Chromium(), footage, track: SILENT, quality: qualityOf(values.draft) });
 	say(`${still}: shot in ${secondsBetween(started, performance.now())} s`);
 }
 
@@ -146,10 +148,9 @@ async function shotInto(mp4: string, file: string, film: FilmInFormat, draft: bo
 	const started = performance.now();
 	await using footage = new VideoFootage(mp4, film.format.frame);
 	const track = new Soundtrack(file, film.sound);
-	const shot = await shoot(film, { browser: new Chromium(), footage, track, sharpness: sharpnessOf(draft) });
+	const shot = await shoot(film, { browser: new Chromium(), footage, track, quality: qualityOf(draft) });
 	const filmed = performance.now();
-	await footage.finish();
-	await track.laidUnder(footage.picture, mp4, shot.seconds);
+	await footage.finish(track, shot.seconds);
 	say(
 		`${nameOf(file)} in ${film.formatName}: ${shot.frames} frames, ${secondsSaid(shot.seconds)} s; ` +
 			`shot in ${secondsBetween(started, filmed)} s, the video made ` +
@@ -231,8 +232,8 @@ function nameOf(file: string): string {
 	return basename(file, extname(file));
 }
 
-function sharpnessOf(draft: boolean): number {
-	return draft ? DRAFT_SHARPNESS : SHARPNESS;
+function qualityOf(draft: boolean): Quality {
+	return draft ? DRAFT : FINEST;
 }
 
 function secondsBetween(start: number, end: number): string {

@@ -7,6 +7,7 @@ import { expect, test } from 'vitest';
 
 const SHORT = 'tests/cli/films/short.ts';
 const FORMATS = 'tests/cli/films/formats.ts';
+const FAST = 'tests/cli/films/fast.ts';
 const MADE_BEFORE = 'an MP4 made before';
 const NO_FILM = 'tests/cli/films/no-film.ts';
 const THROWS = 'tests/cli/films/throws.ts';
@@ -254,9 +255,15 @@ test('a page that cannot be reached is refused as it is opened, by its address',
 	expect([ran.code, ran.said]).toEqual([1, 'livereel still: the page at http://127.0.0.1:9/ could not be reached\n']);
 });
 
-test('a film is not shot where ffmpeg is not on the path', () => {
-	const ran = livereelWith({ PATH: scratch() }, 'shoot', SHORT, '--out', scratch());
-	expect([ran.code, ran.said]).toEqual([1, expect.stringContaining('ffmpeg is not on the path')]);
+test('a film is not shot, whole or as a still, where ffmpeg is not on the path', () => {
+	const whole = livereelWith({ PATH: scratch() }, 'shoot', SHORT, '--out', scratch());
+	const still = livereelWith({ PATH: scratch() }, 'still', SHORT, '--out', scratch(), '--at', '0');
+	expect([whole.code, whole.said, still.code, still.said]).toEqual([
+		1,
+		expect.stringContaining('ffmpeg is not on the path'),
+		1,
+		expect.stringContaining('ffmpeg is not on the path')
+	]);
 });
 
 test('a file that exports no film is refused as a wrong command line', () => {
@@ -278,4 +285,10 @@ test('a still is written where it is asked for', () => {
 	const out = scratch();
 	const ran = livereel('still', SHORT, '--out', out, '--at', '0.1', '--draft');
 	expect([ran.code, readdirSync(out)]).toEqual([0, ['short-small-0.1s.jpg']]);
+});
+
+test('a still at a moment the camera crosses fast is shot, its exposures blended', () => {
+	const out = scratch();
+	const ran = livereel('still', FAST, '--out', out, '--at', '0.04');
+	expect([ran.code, readdirSync(out)]).toEqual([0, ['fast-small-0.04s.jpg']]);
 });

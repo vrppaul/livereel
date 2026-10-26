@@ -12,5 +12,5 @@ export default defineFilm({
 		...cursor.click(() => Promise.resolve()),
 		hold({ seconds: 0.1 })
 	],
-	sounds: null
+	sounds: { enabled: false }
 });

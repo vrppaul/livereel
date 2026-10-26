@@ -28,7 +28,10 @@ export async function setUp(): Promise<void> {
 	await ffmpegNeeded();
 }
 
-/** ffmpeg, which a video is made with, looked for before a film is shot rather than after. */
+/**
+ * ffmpeg, which a video is made with and a frame's exposures are blended with, looked for before a film or a still is
+ * shot rather than after.
+ */
 export async function ffmpegNeeded(): Promise<void> {
 	if (!(await ffmpegFound())) throw new SetupError(NO_FFMPEG);
 }

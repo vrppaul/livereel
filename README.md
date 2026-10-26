@@ -21,6 +21,8 @@ comes with a skill that teaches Claude Code to direct one.
 - **The film keeps its own time.** A frame is a moment of the film, however
   long the browser took to draw it: waits, slow answers and loading vanish,
   and the camera moves as smoothly at 30 frames a second as it was written.
+  Where it moves fast, a frame is shot several times along its way and
+  blended, as a film camera's open shutter blurs what moves.
 - **The page is live.** livereel films the app itself, in Chromium, not a
   copy of it: a click is a real click and a reply is the server's.
 - **It is directed, not cut.** The camera frames a block by its selector,
@@ -58,8 +60,8 @@ export default defineFilm({
 ```
 
 `npx livereel still film.ts --out out --at 1.0` shoots the one frame at a
-moment, without the video; `--draft` shoots at the frame's own size, quicker
-and softer.
+moment, without the video; `--draft` shoots at the frame's own size and every
+frame once, quicker and softer, with no blur.
 
 A film may name several formats, `{ square: …, wide: … }`, each a frame and
 the screen its page is laid out on; `--format wide` picks the one to shoot,
@@ -73,10 +75,18 @@ A film is heard too: a click as the cursor presses, a key for every stroke
 typed, a chime as the ending comes up, each on its own frame. These are
 livereel's own, quiet and CC0 ([`sounds/`](sounds/LICENSE.md));
 `defineFilm` takes `sounds: { click, key, ending }`, files of the film's own
-in their place, or `sounds: null` for none, and `music: { file, volume }`,
+in their place, or `sounds: { enabled: false }` for none, and
+`music: { file, volume }`,
 a track under the whole film, cut to its length and faded out at its end.
 `sound.play(file)` plays a file of the film's at a moment of a step. A GIF
 holds no sound.
+
+A frame the camera crosses fast is shot several times along its way from
+the frame before and blended. `defineFilm` takes `motionBlur: { shutter,
+exposures }`, either or both: how much of that way the shutter is open for,
+1 the whole of it as livereel blurs and 0.5 a film camera's half, and how
+many shots a blurred frame is made of, 8 by livereel, more for a smoother
+smear and a longer shoot; `motionBlur: { enabled: false }` for none.
 
 `examples/example-com.ts` is a longer film, in acts, square or wide;
 `examples/livereel-promo.ts`, the film at the top of this page, serves an
@@ -126,9 +136,9 @@ checked frame by frame on contact sheets and stills. Install it with
 ## How it works
 
 ```
-film.ts ──steps──▶ take ──scene, frame by frame──▶ stage page ──CDP screenshot──▶ ffmpeg ──▶ film-square.mp4 ──▶ .webm, .gif
-                    │  │                              │                              ▲
-                    │  └──sounds, each on its frame──────────────────────────────────┘
+film.ts ──steps──▶ take ──scene, frame by frame──▶ stage page ──Playwright screenshot──▶ ffmpeg ──▶ film-square.mp4 ──▶ .webm, .gif
+                    │  │                              │                                     ▲
+                    │  └──sounds, each on its frame─────────────────────────────────────────┘
                     └──acts, scrolls, keys──▶ your app, live in the stage's frame
 ```
 

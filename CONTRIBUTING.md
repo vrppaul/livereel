@@ -30,23 +30,23 @@ The rules every change is held to are in `AGENTS.md`, and those of each area und
 `src/` is layered, each part building only on those after it, which eslint holds (`LAYERS` in `eslint.config.js`):
 
 - `cli` — the command line: load a film file, shoot it whole or one still, set a machine up.
-- `adapters` — Chromium with the stage and the filmed page (`browser/`), ffmpeg making the MP4's picture as frames come, the sounds laid under it, and each other kind of video made from it (`video/`).
-- `studio` — a take: the steps run frame by frame on the film's clock, the scene held, frames handed to footage and sounds to a track.
+- `adapters` — Chromium with the stage and the filmed page (`browser/`), ffmpeg making the MP4's picture as frames come, a frame's exposures blended, the sounds laid under it, and each other kind of video made from it (`video/`).
+- `studio` — a take: the steps run frame by frame on the film's clock, the scene held, frames handed to footage, several exposures of each the camera crosses fast, and sounds to a track.
 - `moves` — the moves of every prop (`camera.onto`, `light.to`, `cursor.click`) and of the page (`page.scrollTo`), a module each.
 - `direction` — what a film is written in: a move's contract, steps (`play`, `cut`, `act`), the film itself, the page as a move reads it.
 - `scene` — every prop's state at one moment, and what the stage is handed of it.
 - `props` — each drawn part of the scene: its state, and what is worked out of it to draw.
-- `domain` — time and curves, geometry, the camera's framing, a person's typing, the errors.
+- `domain` — time and curves, geometry, the camera's framing and what it shows where, the shutter, a person's typing, the errors.
 
 `stage/` is the page the film is shot on: the filmed page sits in its frame, and its script draws each frame from the scene, deciding nothing. It is JavaScript the type checker reads, published as it is written.
 
 ## The promo
 
-The README opens on `docs/promo.gif`, livereel's own promo, `examples/livereel-promo.ts`, shot as its MP4 and its GIF in one take:
+The README opens on `docs/promo.gif`, livereel's own promo, `examples/livereel-promo.ts`, shot and made a GIF 960 pixels wide at 24 frames a second, its palette worked out for the film; at that width the terminal's text stays readable, and the GIF came to 11 MB, against 35 MB for the one `--as gif` makes at the film's own frame and rate (2026-10-25):
 
 ```bash
-pnpm livereel shoot examples/livereel-promo.ts --out out/promo --as mp4 --as gif --sheet
-cp out/promo/livereel-promo-wide.gif docs/promo.gif
+pnpm livereel shoot examples/livereel-promo.ts --out out/promo --sheet
+ffmpeg -i out/promo/livereel-promo-wide.mp4 -vf "fps=24,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle" docs/promo.gif
 ```
 
 The video itself goes on the release on GitHub: `gh release upload vX.Y.Z out/promo/livereel-promo-wide.mp4`.

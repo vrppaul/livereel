@@ -8,13 +8,20 @@
  * against 134 ms at 2×). The page's text caret is kept, as a person sees it typing.
  */
 import type { Page } from 'playwright-core';
+import { EYE_DISTANCE } from '../../domain/camera.ts';
 import type { Format } from '../../domain/geometry.ts';
 import type { DrawnScene } from '../../scene.ts';
 import type { Stage } from '../../studio/ports.ts';
 
+/** The room the stage moves the screen in: the frame it fills, the screen, and how far the eye stands from the frame. */
+export interface Room {
+	readonly format: Format;
+	readonly eyeDistance: number;
+}
+
 export interface StageApi {
-	/** The frame the stage fills, and the screen it lays the page out on. */
-	readonly setup: (format: Format) => void;
+	/** The stage laid out as a room: the screen in the frame, seen from the eye. */
+	readonly setup: (room: Room) => void;
 	/** The filmed page opened in the screen's frame. */
 	readonly open: (address: string) => void;
 	/** One frame, drawn whole from the scene. */
@@ -58,15 +65,20 @@ export class BrowserStage implements Stage {
 
 	private async sizedTo(format: Format): Promise<void> {
 		await this.page.setViewportSize(format.frame);
-		await this.page.evaluate(setUpStage, format);
+		await this.page.evaluate(setUpStage, roomOf(format));
 	}
+}
+
+/** The room of a format, seen from where the engine works out what the camera shows (`src/domain/camera.ts`). */
+export function roomOf(format: Format): Room {
+	return { format, eyeDistance: EYE_DISTANCE };
 }
 
 // What follows runs in the stage page, each function handed over alone
 
-/** The stage set to a format. */
-export function setUpStage(format: Format): void {
-	window.stage.setup(format);
+/** The stage set to a room. */
+export function setUpStage(room: Room): void {
+	window.stage.setup(room);
 }
 
 /** The filmed page opened in the stage's frame. */

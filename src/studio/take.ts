@@ -7,18 +7,20 @@
  * every change ended by the frame, and every other at its eased progress. One move at most drives a part at any
  * point, so the order moves are written in matters nowhere. A cut begins its moves and sets each at its end, with
  * no frame between. A sound a move makes is heard as the move is set at or past its point, on the frame being made.
- * A frame is drawn only when the footage keeps it. A fault in a step is raised again with the moment and the step it
- * was met at.
+ * A frame is drawn only when the footage keeps it, and drawn again where the camera crossed it fast since the frame
+ * before, at poses along the camera's way there, the rest of the scene as it stands: each drawing is an exposure of
+ * the frame (`src/domain/shutter.ts`). A fault in a step is raised again with the moment and the step it was met at.
  */
-import { flatPose } from '../domain/camera.ts';
+import { type Pose, flatPose } from '../domain/camera.ts';
 import { TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/geometry.ts';
+import { type MotionBlur, alsoExposedAt } from '../domain/shutter.ts';
 import { type Ease, framesOf, momentOf } from '../domain/time.ts';
 import { type Change, type Move, type Share, soundsOf } from '../direction/move.ts';
 import type { Cue } from '../direction/sound.ts';
 import type { Act, Cut, Play, Step } from '../direction/steps.ts';
 import { type Scene, drawn, posed } from '../scene.ts';
-import type { Footage, Opened, Track } from './ports.ts';
+import type { Exposures, Footage, Opened, Track } from './ports.ts';
 
 /** A move begun: the share of its step it runs over, its curve, what it sets, and the sounds it has yet to make. */
 interface Running {
@@ -28,20 +30,35 @@ interface Running {
 	readonly unheard: readonly Cue[];
 }
 
+/**
+ * What a take is shot with: the page and the stage opened, where its frames and its sounds go, its format, the scene
+ * it opens on, and how a fast camera is blurred: not at all for a draft, or for a film that wants no blur.
+ */
+export interface TakeSetup {
+	readonly opened: Opened;
+	readonly footage: Footage;
+	readonly track: Track;
+	readonly format: Format;
+	readonly opening: Scene;
+	readonly motionBlur: MotionBlur | null;
+}
+
 export class Take {
 	readonly opened: Opened;
 	readonly footage: Footage;
 	readonly track: Track;
 	readonly format: Format;
+	readonly motionBlur: MotionBlur | null;
 	private scene: Scene;
 	private shot = 0;
 
-	constructor(opened: Opened, footage: Footage, track: Track, format: Format, scene: Scene) {
-		this.opened = opened;
-		this.footage = footage;
-		this.track = track;
-		this.format = format;
-		this.scene = scene;
+	constructor(setup: TakeSetup) {
+		this.opened = setup.opened;
+		this.footage = setup.footage;
+		this.track = setup.track;
+		this.format = setup.format;
+		this.scene = setup.opening;
+		this.motionBlur = setup.motionBlur;
 	}
 
 	/** How many frames are shot so far. */
@@ -79,6 +96,8 @@ export class Take {
 		let running: Running[] = [];
 		for (let index = 1; index <= frames; index += 1) {
 			if (this.finished()) return;
+			// The camera as the frame before showed it, or as the step begins: nothing moves it between frames
+			const posedBefore = this.scene.camera;
 			const progress = index / frames;
 			const due = waiting.filter((move) => move.timing.within.start <= progress).sort(byStart);
 			waiting = waiting.filter((move) => !due.includes(move));
@@ -88,7 +107,7 @@ export class Take {
 			}
 			running = await this.endedBy(running, progress);
 			running = await this.setAlong(running, progress);
-			await this.frame();
+			await this.frame(posedBefore);
 		}
 	}
 
@@ -150,13 +169,25 @@ export class Take {
 		this.scene = await change(this.scene, progress);
 	}
 
-	/** One frame: drawn and kept where the footage keeps it, and counted. */
-	private async frame(): Promise<void> {
-		if (this.footage.keeps(this.shot)) {
-			await this.opened.stage.draw(drawn(this.scene, this.moment()));
-			await this.footage.keep(this.shot, await this.opened.stage.capture());
-		}
+	/** One frame: exposed and kept where the footage keeps it, and counted. */
+	private async frame(posedBefore: Pose): Promise<void> {
+		if (this.footage.keeps(this.shot)) await this.footage.keep(this.shot, await this.exposed(posedBefore));
 		this.shot += 1;
+	}
+
+	/** The frame drawn at each pose the camera is caught at along its way from the frame before, its own last. */
+	private async exposed(posedBefore: Pose): Promise<Exposures> {
+		const earlier: Uint8Array[] = [];
+		for (const pose of alsoExposedAt(posedBefore, this.scene.camera, this.format, this.motionBlur)) {
+			earlier.push(await this.drawnAt(pose));
+		}
+		return { earlier, own: await this.drawnAt(this.scene.camera) };
+	}
+
+	/** The scene as it stands drawn with the camera at a pose, and captured. */
+	private async drawnAt(pose: Pose): Promise<Uint8Array> {
+		await this.opened.stage.draw(drawn(posed(this.scene, pose), this.moment()));
+		return this.opened.stage.capture();
 	}
 
 	private moment(): number {

@@ -17,7 +17,7 @@ export interface Format {
 	readonly screen: Size;
 }
 
-/** A point of the screen: how far from its left edge, and how far down from its top. */
+/** A point of the screen, or of the frame: how far from its left edge, and how far down from its top. */
 export interface Point {
 	readonly left: number;
 	readonly top: number;
@@ -47,6 +47,33 @@ export function middleX(box: Box): number {
 
 export function middleY(box: Box): number {
 	return box.top + box.height / HALVES;
+}
+
+/** The corners of a size laid from its top left: top left, top right, bottom left, bottom right. */
+export function cornersOf(size: Size): readonly Point[] {
+	return [
+		{ left: 0, top: 0 },
+		{ left: size.width, top: 0 },
+		{ left: 0, top: size.height },
+		{ left: size.width, top: size.height }
+	];
+}
+
+/** How far a size's corner stands from the corner across from it. */
+export function diagonalOf(size: Size): number {
+	return Math.hypot(size.width, size.height);
+}
+
+export function distanceBetween(first: Point, second: Point): number {
+	return Math.hypot(first.left - second.left, first.top - second.top);
+}
+
+/** The point of a size laid from its top left nearest to a point: the point itself, where it lies within. */
+export function nearestWithin(point: Point, size: Size): Point {
+	return {
+		left: Math.min(Math.max(point.left, 0), size.width),
+		top: Math.min(Math.max(point.top, 0), size.height)
+	};
 }
 
 /** The smallest box that holds every one of these. */

@@ -9,7 +9,7 @@
 export type Ease = (progress: number) => number;
 
 export const FRAMES_PER_SECOND = 30;
-// What a wall clock's time and ffmpeg's delays are counted in
+// A second in thousandths, the unit timers and delays are counted in
 export const MILLISECONDS_A_SECOND = 1000;
 // The half-way point of a curve that eases both in and out
 const HALF_WAY = 0.5;
