@@ -13,7 +13,7 @@ import type { Format } from '../domain/geometry.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
 import { type MotionBlurScript, motionBlurOf } from './blur.ts';
 import type { ActContext } from './page.ts';
-import type { FilmSound, LivereelSoundsScript, Music } from './sound.ts';
+import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf } from './sound.ts';
 import type { Step } from './steps.ts';
 
 /** A page served for as long as a take lasts, at its address; the film's own handles may come with it. */
@@ -33,7 +33,11 @@ export interface Script<Served extends Serving, Name extends string> {
 	 * from here, so steps that take fewer names than `formats` has are refused by the compiler.
 	 */
 	readonly steps: (served: Served, whole: Pose, formatName: NoInfer<Name>) => readonly Step[];
-	/** Files in place of livereel's sounds, a path each from the film's file, or `{ enabled: false }` for none. */
+	/**
+	 * livereel's sounds: files of the film's in place of those it gives, a path each from the film's file, and its keys
+	 * on one of livereel's keyboards (`membrane` where none is named) or in a file of its own, one or the other; or
+	 * `{ enabled: false }` for none.
+	 */
 	readonly sounds?: LivereelSoundsScript;
 	readonly music?: Music;
 	/** How a fast camera is blurred, livereel's way save the values given, or `{ enabled: false }` for no blur. */
@@ -121,7 +125,7 @@ export function atAddress(address: string): Serving {
 /**
  * What a film says of its sounds: every one of livereel's where it says nothing of them, none where it turns them off,
  * and no music where it gives none. Music at a volume that is no level — not a number, endless, below none — is
- * refused.
+ * refused, as is a keyboard livereel has not.
  */
 function soundOfFilm<Served extends Serving, Name extends string>(script: Script<Served, Name>): FilmSound {
 	const music = script.music ?? null;
@@ -129,7 +133,7 @@ function soundOfFilm<Served extends Serving, Name extends string>(script: Script
 		throw new FilmError(`the music's volume is ${music.volume}: it is 0 or more, 1 as loud as the file`);
 	}
 	const sounds = script.sounds ?? EVERY_LIVEREEL_SOUND;
-	return { livereels: sounds.enabled === false ? null : sounds, music };
+	return { livereels: sounds.enabled === false ? null : livereelSoundsOf(sounds), music };
 }
 
 /**

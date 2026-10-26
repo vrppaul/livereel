@@ -98,16 +98,24 @@ and clicks it for real; its server is
 
 A film is heard as well as seen: a click as the cursor presses, a key for
 every stroke typed, a soft chime as the ending comes up, each on its own
-frame. These are livereel's own, quiet and CC0. `defineFilm` takes, beside
-the rest, `sounds: { click, key, ending }` (files of the film's own in their
-place, a path from the film's file, any kind ffmpeg reads) or
-`sounds: { enabled: false }` (none of livereel's), and
-`music: { file, volume }` (a track under the whole
-film, 1 as loud as it is, cut to the film's length and faded out at its
-end).
+frame. These are livereel's own, quiet and CC0, the keys recorded on real
+keyboards. `defineFilm` takes, beside the rest, `sounds: { keyboard }` (one
+of `membrane`, the one where none is named, `mechanical`,
+`mechanical-bright`, `butterfly`, `laptop`, `clicky`), `sounds: { click,
+key, ending }` (files of the film's own in their place, a path from the
+film's file, any kind ffmpeg reads; a key file in place of a keyboard, not
+beside it) or `sounds: { enabled: false }` (none of livereel's), and
+`music: { file, volume }` (a track under the whole film, 1 as loud as it
+is, cut to the film's length and faded out at its end).
 
 - Sounds are few and quiet: a click, the keys, the ending. Never a whoosh
   on a camera move or a sound on every caption: that reads as generated.
+- Leave the keyboard as livereel sets it unless the user asks for another,
+  and pick it by what the user says: `membrane` is an office keyboard
+  (Cherry KC 1000), `mechanical` a mechanical one (WhiteFox), and
+  `mechanical-bright` a brighter, sharper one; `butterfly` is a MacBook
+  Pro's of 2018, `laptop` another laptop's, `clicky` a loud click with its
+  release.
 - Music only where the user asks for it, and quiet under the clicks
   (`volume` about 0.3).
 - `sound.play(file)` in a `play` or a `cut` is a sound of the film's own

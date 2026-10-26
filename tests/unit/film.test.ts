@@ -1,10 +1,11 @@
-// A film in its formats: each by its name, and the steps told which one they are shot in; its music's volume, and its
-// blur
+// A film in its formats: each by its name, and the steps told which one they are shot in; its music's volume, its
+// keys, and its blur
 import { expect, test } from 'vitest';
 import { wholePose } from '../../src/domain/camera.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import type { MotionBlurScript } from '../../src/direction/blur.ts';
 import { atAddress, defineFilm } from '../../src/direction/film.ts';
+import type { KeyboardSound, LivereelSoundsScript } from '../../src/direction/sound.ts';
 import { SMALL } from './fakes.ts';
 
 const TALL = { frame: { width: 400, height: 600 }, screen: { width: 400, height: 600 } };
@@ -40,6 +41,22 @@ test('music at a volume that is no level is refused as the film is defined: not 
 	expect(() => filmWithMusicAt(Number.NaN)).toThrow(FilmError);
 	expect(() => filmWithMusicAt(Number.POSITIVE_INFINITY)).toThrow(FilmError);
 	expect(() => filmWithMusicAt(-1)).toThrow(FilmError);
+});
+
+/** A film defined with livereel's sounds written so, as a film whose types nobody checked may write them. */
+function filmSounding(sounds: LivereelSoundsScript) {
+	return defineFilm({
+		formats: { small: SMALL },
+		serve: () => atAddress('about:blank'),
+		ready: () => Promise.resolve(),
+		steps: () => [],
+		sounds
+	});
+}
+
+test('keys livereel cannot lay are refused as the film is defined: a keyboard it has not, a file beside a keyboard', () => {
+	expect(() => filmSounding({ keyboard: 'typewriter' as KeyboardSound })).toThrow(FilmError);
+	expect(() => filmSounding({ keyboard: 'laptop', key: './key.wav' } as LivereelSoundsScript)).toThrow(FilmError);
 });
 
 /** The blur a film is shot with, its blur written so. */

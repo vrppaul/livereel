@@ -73,11 +73,15 @@ rate; `--as mp4 --as gif` gives both from one take.
 
 A film is heard too: a click as the cursor presses, a key for every stroke
 typed, a chime as the ending comes up, each on its own frame. These are
-livereel's own, quiet and CC0 ([`sounds/`](sounds/LICENSE.md));
-`defineFilm` takes `sounds: { click, key, ending }`, files of the film's own
-in their place, or `sounds: { enabled: false }` for none, and
-`music: { file, volume }`,
-a track under the whole film, cut to its length and faded out at its end.
+livereel's own, quiet and CC0 ([`sounds/`](sounds/LICENSE.md)), the keys
+recorded on real keyboards, each key one of four strikes in turn.
+`defineFilm` takes `sounds: { keyboard }`, one of `membrane` (where none is
+named), `mechanical`, `mechanical-bright`, `butterfly`, `laptop` and
+`clicky`; `sounds: { click, key, ending }`, files of the film's own in
+their place, a key file in place of a keyboard, not beside it; or
+`sounds: { enabled: false }` for none. `music: { file,
+volume }` is a track under the whole film, cut to its length and faded out
+at its end.
 `sound.play(file)` plays a file of the film's at a moment of a step. A GIF
 holds no sound.
 

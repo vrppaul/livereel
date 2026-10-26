@@ -5,10 +5,12 @@
  * The track is as long as the film: a silence that long comes first and sets the length (the mix ends with its first
  * input), each sound is laid over it from its moment, all are mixed as they are (never scaled down by their count),
  * and the music is cut there too, faded out over the film's last seconds. Each file is read once and split for every
- * moment it is heard at. The picture is copied, not encoded again. Measured on an 18.9 s film: 300 sounds laid in
- * 1.2 s, each on its frame's moment. A film with nothing heard and no music gets no track: its picture is put in the
+ * moment it is heard at. The picture is copied, not encoded again. Measured on an 18.9 s film: 300 keys laid in 3.4 s
+ * on the keyboard livereel names, its strikes a quarter of a second long, against 1.8 s for a click of 15 ms; the
+ * longer the sounds, the longer the mix. A film with nothing heard and no music gets no track: its picture is put in the
  * video's place as it is. livereel's sounds are CC0 (`sounds/LICENSE.md`), quiet in their files; a film's are laid as
- * they are.
+ * they are. A key is one of its keyboard's strikes, each recorded alone, laid in turn, so no two keys running are the
+ * same sound.
  */
 import { statSync } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
@@ -16,7 +18,16 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FilmError } from '../../domain/errors.ts';
 import { MILLISECONDS_A_SECOND } from '../../domain/time.ts';
-import type { FilmSound, LivereelSound, Music, Sound } from '../../direction/sound.ts';
+import type {
+	FilmSound,
+	KeySource,
+	KeyboardSound,
+	LivereelSound,
+	LivereelSounds,
+	Music,
+	Sound,
+	SoundSource
+} from '../../direction/sound.ts';
 import type { Track } from '../../studio/ports.ts';
 import { ffmpeg } from './ffmpeg.ts';
 import { KINDS, STARTS_AT_ONCE } from './kinds.ts';
@@ -38,6 +49,13 @@ interface Layout {
 // livereel's sounds: as far from this module in the source as in the package built from it
 const LIVEREEL_SOUNDS = new URL('../../../sounds/', import.meta.url);
 const LIVEREEL_SUFFIX = '.ogg';
+const OWN_CLICK = `click${LIVEREEL_SUFFIX}`;
+const OWN_ENDING = `ending${LIVEREEL_SUFFIX}`;
+// How many strikes each keyboard has, its keys recorded alone, in a folder of its own and numbered from one
+const STRIKES_A_KEYBOARD = 4;
+const FIRST_STRIKE = 1;
+// The files of livereel's sounds where the film has turned them off: none, so none is heard
+const NONE_OF_LIVEREELS: Readonly<Record<LivereelSound, readonly string[]>> = { click: [], key: [], ending: [] };
 // Every sound in one shape before it is mixed, and the silence the track is laid on, in that shape
 const CHANNELS = 'stereo';
 const SAMPLE_RATE = 48_000;
@@ -83,28 +101,39 @@ export class Soundtrack implements Track {
 	// The folder a film's paths are from: the film file's own
 	readonly from: string;
 	readonly sound: FilmSound;
+	// The files each of livereel's sounds is laid from, in turn, found once for the take
+	private readonly livereelFiles: Readonly<Record<LivereelSound, readonly string[]>>;
 	// Each file heard, and the moments it was heard at, in the order they came
 	private readonly heard = new Map<string, number[]>();
 
 	constructor(filmFile: string, sound: FilmSound) {
 		this.from = dirname(resolve(filmFile));
 		this.sound = sound;
+		this.livereelFiles = sound.livereels === null ? NONE_OF_LIVEREELS : livereelFilesOf(sound.livereels, this.from);
 	}
 
 	/** Every file the film's moves and its music name, refused at once where it is not a file that is there. */
 	expect(sounds: readonly Sound[]): void {
 		const music = this.music();
-		const files = [...sounds.flatMap((sound) => this.fileOf(sound) ?? []), ...(music === null ? [] : [music.file])];
-		const missing = files.find((file) => statSync(file, { throwIfNoEntry: false })?.isFile() !== true);
+		const files = new Set([...sounds.flatMap((sound) => this.filesOf(sound)), ...(music === null ? [] : [music.file])]);
+		const missing = [...files].find((file) => statSync(file, { throwIfNoEntry: false })?.isFile() !== true);
 		if (missing !== undefined) throw new FilmError(`the film names a sound that is not a file there: ${missing}`);
 	}
 
+	/** A sound heard at a moment, from its file; from the next of its files in turn where it has several: a key. */
 	hear(moment: number, sound: Sound): void {
-		const file = this.fileOf(sound);
-		if (file === null) return;
+		const files = this.filesOf(sound);
+		const file = inTurn(files, this.timesHeardFrom(files));
+		// No file: one of livereel's sounds, turned off
+		if (file === undefined) return;
 		const moments = this.heard.get(file) ?? [];
 		moments.push(moment);
 		this.heard.set(file, moments);
+	}
+
+	/** Each file heard, and the moments it was heard at, in the order they first came. */
+	get heardFiles(): readonly HeardFile[] {
+		return [...this.heard].map(([file, moments]) => ({ file, moments }));
 	}
 
 	/**
@@ -112,7 +141,7 @@ export class Soundtrack implements Track {
 	 * place; a picture with nothing to lay under it is put there as it is. The picture is gone either way.
 	 */
 	async laidUnder(picture: string, video: string, seconds: number): Promise<void> {
-		const heard = [...this.heard].map(([file, moments]) => ({ file, moments }));
+		const heard = this.heardFiles;
 		const music = this.music();
 		if (heard.length === 0 && music === null) {
 			await rename(picture, video);
@@ -132,30 +161,67 @@ export class Soundtrack implements Track {
 	/** The film's music, its file found from the film's folder. */
 	private music(): Music | null {
 		const music = this.sound.music;
-		return music === null ? null : { file: this.fromFilm(music.file), volume: music.volume };
+		return music === null ? null : { file: resolve(this.from, music.file), volume: music.volume };
 	}
 
-	/** The file a sound is laid from; none for one of livereel's the film has turned off. */
-	private fileOf(sound: Sound): string | null {
+	/** How many times a sound was heard from any of these files so far: whose turn it is among them. */
+	private timesHeardFrom(files: readonly string[]): number {
+		return files.reduce((times, file) => times + (this.heard.get(file)?.length ?? 0), 0);
+	}
+
+	/** The files a sound is laid from, in turn; none for one of livereel's the film has turned off. */
+	private filesOf(sound: Sound): readonly string[] {
 		switch (sound.kind) {
 			case 'file':
-				return this.fromFilm(sound.path);
+				return [resolve(this.from, sound.path)];
 			case 'livereel':
-				return this.livereelFile(sound.name);
+				return this.livereelFiles[sound.name];
 		}
 	}
+}
 
-	/** The file the film gives in place of one of livereel's sounds, or livereel's own file of it. */
-	private livereelFile(name: LivereelSound): string | null {
-		if (this.sound.livereels === null) return null;
-		const given = this.sound.livereels[name];
-		if (given !== undefined) return this.fromFilm(given);
-		return fileURLToPath(new URL(`${name}${LIVEREEL_SUFFIX}`, LIVEREEL_SOUNDS));
-	}
+/** The files each of livereel's sounds is laid from, a film's own found from its folder. */
+function livereelFilesOf(livereels: LivereelSounds, from: string): Readonly<Record<LivereelSound, readonly string[]>> {
+	return {
+		click: [fileOfSource(livereels.click, OWN_CLICK, from)],
+		key: filesOfKey(livereels.key, from),
+		ending: [fileOfSource(livereels.ending, OWN_ENDING, from)]
+	};
+}
 
-	private fromFilm(path: string): string {
-		return resolve(this.from, path);
+function fileOfSource(source: SoundSource, own: string, from: string): string {
+	switch (source.kind) {
+		case 'livereel':
+			return livereelsOwn(own);
+		case 'file':
+			return resolve(from, source.path);
 	}
+}
+
+/** The key's files: every strike of its keyboard, in its own folder of livereel's sounds, or the film's one file. */
+function filesOfKey(key: KeySource, from: string): readonly string[] {
+	switch (key.kind) {
+		case 'keyboard':
+			return strikesOf(key.keyboard).map(livereelsOwn);
+		case 'file':
+			return [resolve(from, key.path)];
+	}
+}
+
+function strikesOf(keyboard: KeyboardSound): readonly string[] {
+	return Array.from(
+		{ length: STRIKES_A_KEYBOARD },
+		(_strike, place) => `keys/${keyboard}/${FIRST_STRIKE + place}${LIVEREEL_SUFFIX}`
+	);
+}
+
+function livereelsOwn(file: string): string {
+	return fileURLToPath(new URL(file, LIVEREEL_SOUNDS));
+}
+
+/** The file whose turn it is: a sound's files take turns, round again after the last; none where it has none. */
+function inTurn(files: readonly string[], timesHeard: number): string | undefined {
+	return files.length === 0 ? undefined : files[timesHeard % files.length];
 }
 
 /** Where each input stands: the picture, each sound file once, the silence, the music. */
