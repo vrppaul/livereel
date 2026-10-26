@@ -1,11 +1,5 @@
 # TODO
 
-## 0.1.2
-
-The owner's plan for the release, each item begun on the owner's word:
-
-- One of livereel's sounds turned off explicitly, `sounds: { key: { enabled: false } }` and the same for `click` and `ending`, never `null`.
-
 ## Faults
 
 - The filmed page sits in a frame of a `file://` stage, and three faults come of it; whether the page should be a page of its own, the stage drawn over it, is the construction to weigh before mending each:

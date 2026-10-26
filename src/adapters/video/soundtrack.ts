@@ -199,28 +199,33 @@ async function readAsASound(file: string): Promise<void> {
 /** The files each of livereel's sounds is laid from, a film's own found from its folder. */
 function livereelFilesOf(livereels: LivereelSounds, from: string): Readonly<Record<LivereelSound, readonly string[]>> {
 	return {
-		click: [fileOfSource(livereels.click, OWN_CLICK, from)],
+		click: filesOfSource(livereels.click, OWN_CLICK, from),
 		key: filesOfKey(livereels.key, from),
-		ending: [fileOfSource(livereels.ending, OWN_ENDING, from)]
+		ending: filesOfSource(livereels.ending, OWN_ENDING, from)
 	};
 }
 
-function fileOfSource(source: SoundSource, own: string, from: string): string {
+/** A sound's file: livereel's own, or the film's in its place; none for one the film turned off. */
+function filesOfSource(source: SoundSource, own: string, from: string): readonly string[] {
 	switch (source.kind) {
 		case 'livereel':
-			return livereelsOwn(own);
+			return [livereelsOwn(own)];
 		case 'file':
-			return resolve(from, source.path);
+			return [resolve(from, source.path)];
+		case 'off':
+			return [];
 	}
 }
 
-/** The key's files: every strike of its keyboard, in its own folder of livereel's sounds, or the film's one file. */
+/** The key's files: every strike of its keyboard, in its own folder of livereel's sounds, the film's one file, or none. */
 function filesOfKey(key: KeySource, from: string): readonly string[] {
 	switch (key.kind) {
 		case 'keyboard':
 			return strikesOf(key.keyboard).map(livereelsOwn);
 		case 'file':
 			return [resolve(from, key.path)];
+		case 'off':
+			return [];
 	}
 }
 

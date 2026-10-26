@@ -10,6 +10,7 @@
  */
 import { FilmError } from '../domain/errors.ts';
 import { type Keystroke, typingSeconds } from '../domain/typing.ts';
+import type { TurnedOff } from './turned-off.ts';
 
 /** livereel's sounds: the cursor pressed in, a key typed, the ending coming up. */
 export type LivereelSound = 'click' | 'key' | 'ending';
@@ -28,29 +29,34 @@ export interface Cue {
 	readonly sound: Sound;
 }
 
-/** Files a film gives in place of livereel's sounds, those it gives; the rest stay livereel's. */
-export type SoundFiles = Partial<Readonly<Record<LivereelSound, string>>>;
+/** What a film writes in place of one of livereel's sounds: a file of its own, or none, the sound turned off. */
+type SoundInPlace = string | TurnedOff;
+
+/** What a film writes in place of livereel's sounds, those it names; the rest stay livereel's. */
+export type SoundsInPlace = Partial<Readonly<Record<LivereelSound, SoundInPlace>>>;
 
 /**
- * livereel's sounds as a film writes them: `{ enabled: false }` for none; or livereel's, with files of the film's in
- * place of those it gives, and its keys on one of livereel's keyboards or in a file of its own, not both.
+ * livereel's sounds as a film writes them: `{ enabled: false }` for none; or livereel's, with a file of the film's or
+ * none in place of those it names, and its keys on one of livereel's keyboards or something in its place, not both.
  */
 // The keyboard's form comes last: a name livereel has not is then said not to be a `KeyboardSound`
 export type LivereelSoundsScript =
-	| { readonly enabled: false }
-	| ({ readonly enabled?: true; readonly keyboard?: never } & SoundFiles)
-	| ({ readonly enabled?: true; readonly keyboard?: KeyboardSound; readonly key?: never } & Omit<SoundFiles, 'key'>);
+	| TurnedOff
+	| ({ readonly enabled?: true; readonly keyboard?: never } & SoundsInPlace)
+	| ({ readonly enabled?: true; readonly keyboard?: KeyboardSound; readonly key?: never } & Omit<SoundsInPlace, 'key'>);
 
-/** One of livereel's sounds as a film is shot with it: livereel's own, or a file of the film's in its place. */
-export type SoundSource = { readonly kind: 'livereel' } | { readonly kind: 'file'; readonly path: string };
+/** What stands in place of one of livereel's sounds as a film is shot with it: a file of the film's, or nothing. */
+type SourceInPlace = { readonly kind: 'file'; readonly path: string } | { readonly kind: 'off' };
 
-/** livereel's key as a film is shot with it: one of livereel's keyboards, or a file of the film's in its place. */
-export type KeySource =
-	{ readonly kind: 'keyboard'; readonly keyboard: KeyboardSound } | { readonly kind: 'file'; readonly path: string };
+/** One of livereel's sounds as a film is shot with it: livereel's own, or what the film put in its place. */
+export type SoundSource = { readonly kind: 'livereel' } | SourceInPlace;
 
-/** livereel's key as a film whose types nobody checked may hand it: a file of its own, any keyboard's name, or both. */
+/** livereel's key as a film is shot with it: one of livereel's keyboards, or what the film put in its place. */
+export type KeySource = { readonly kind: 'keyboard'; readonly keyboard: KeyboardSound } | SourceInPlace;
+
+/** livereel's key as a film whose types nobody checked may hand it: something in its place, a keyboard's name, or both. */
 interface KeyAsHanded {
-	readonly key?: string | undefined;
+	readonly key?: SoundInPlace | undefined;
 	readonly keyboard?: string | undefined;
 }
 
@@ -83,26 +89,33 @@ const AS_IT_BEGINS = 0;
 // The keyboard a film's keys are heard on where it names none: the one chosen by ear, recorded in a studio key by key
 const LIVEREELS_KEYBOARD: KeyboardSound = 'membrane';
 const LIVEREELS_OWN: SoundSource = { kind: 'livereel' };
-const KEY_FILE_AND_KEYBOARD = 'the film gives a file for its keys and names a keyboard: it gives one or the other';
+const NOTHING_IN_PLACE: SourceInPlace = { kind: 'off' };
+const KEY_AND_KEYBOARD =
+	'the film gives its keys a file or turns them off, and names a keyboard: it does one or the other';
 
 /** livereel's sounds as a film that keeps them writes them: where each one comes from. */
-export function livereelSoundsOf(written: Exclude<LivereelSoundsScript, { enabled: false }>): LivereelSounds {
+export function livereelSoundsOf(written: Exclude<LivereelSoundsScript, TurnedOff>): LivereelSounds {
 	return { click: sourceOf(written.click), key: keyOf(written), ending: sourceOf(written.ending) };
 }
 
-/** One of livereel's sounds: the film's file in its place where it gives one, livereel's own otherwise. */
-function sourceOf(path: string | undefined): SoundSource {
-	return path === undefined ? LIVEREELS_OWN : { kind: 'file', path };
+/** One of livereel's sounds: what the film writes in its place where it names one, livereel's own otherwise. */
+function sourceOf(written: SoundInPlace | undefined): SoundSource {
+	return written === undefined ? LIVEREELS_OWN : inPlaceOf(written);
+}
+
+/** What a film writes in place of one of livereel's sounds: its file, or nothing. */
+function inPlaceOf(written: SoundInPlace): SourceInPlace {
+	return typeof written === 'string' ? { kind: 'file', path: written } : NOTHING_IN_PLACE;
 }
 
 /**
- * livereel's key: the film's file, or one of livereel's keyboards, its own where the film names none. It is read as a
- * film may hand it, as a film runs without its types checked: a file beside a keyboard, or a keyboard livereel has
- * not, is refused.
+ * livereel's key: what the film writes in its place, or one of livereel's keyboards, its own where the film names
+ * none. It is read as a film may hand it, as a film runs without its types checked: a file or nothing beside a
+ * keyboard, or a keyboard livereel has not, is refused.
  */
 function keyOf(written: KeyAsHanded): KeySource {
-	if (written.key !== undefined && written.keyboard !== undefined) throw new FilmError(KEY_FILE_AND_KEYBOARD);
-	if (written.key !== undefined) return { kind: 'file', path: written.key };
+	if (written.key !== undefined && written.keyboard !== undefined) throw new FilmError(KEY_AND_KEYBOARD);
+	if (written.key !== undefined) return inPlaceOf(written.key);
 	const keyboard = written.keyboard ?? LIVEREELS_KEYBOARD;
 	if (!isKeyboardSound(keyboard)) {
 		throw new FilmError(`the film's keyboard is ${keyboard}: livereel's are ${KEYBOARD_SOUNDS.join(', ')}`);

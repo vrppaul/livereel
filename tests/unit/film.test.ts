@@ -54,9 +54,21 @@ function filmSounding(sounds: LivereelSoundsScript) {
 	});
 }
 
-test('keys livereel cannot lay are refused as the film is defined: a keyboard it has not, a file beside a keyboard', () => {
+test('keys livereel cannot lay are refused as the film is defined: a keyboard it has not, a file or none beside a keyboard', () => {
 	expect(() => filmSounding({ keyboard: 'typewriter' as KeyboardSound })).toThrow(FilmError);
 	expect(() => filmSounding({ keyboard: 'laptop', key: './key.wav' } as LivereelSoundsScript)).toThrow(FilmError);
+	expect(() => filmSounding({ keyboard: 'laptop', key: { enabled: false } } as LivereelSoundsScript)).toThrow(
+		FilmError
+	);
+});
+
+test("livereel's sounds a film turns off one by one are off, and the rest stay livereel's", () => {
+	const film = filmSounding({ click: { enabled: false }, key: { enabled: false } });
+	expect(film.formats.get('small')!.sound.livereels).toEqual({
+		click: { kind: 'off' },
+		key: { kind: 'off' },
+		ending: { kind: 'livereel' }
+	});
 });
 
 /** The blur a film is shot with, its blur written so. */

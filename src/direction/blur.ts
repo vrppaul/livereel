@@ -8,11 +8,11 @@
  */
 import { FilmError } from '../domain/errors.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
+import type { TurnedOff } from './turned-off.ts';
 
 /** A film's blur as it writes it: `{ enabled: false }` for none, or livereel's with any value given in its place. */
 export type MotionBlurScript =
-	| { readonly enabled: false }
-	| { readonly enabled?: true; readonly shutter?: number; readonly exposuresAtMost?: number };
+	TurnedOff | { readonly enabled?: true; readonly shutter?: number; readonly exposuresAtMost?: number };
 
 // livereel's blur: the shutter open for the camera's whole way, and at most eight exposures a frame, which keep copies a
 // step apart up to eight steps a frame and bound the cost of faster ones

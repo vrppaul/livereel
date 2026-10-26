@@ -87,8 +87,10 @@ recorded on real keyboards, each key one of four strikes in turn.
 `defineFilm` takes `sounds: { keyboard }`, one of `membrane` (where none is
 named), `mechanical`, `mechanical-bright`, `butterfly`, `laptop` and
 `clicky`; `sounds: { click, key, ending }`, files of the film's own in
-their place, a key file in place of a keyboard, not beside it; or
-`sounds: { enabled: false }` for none. `music: { file,
+their place or `{ enabled: false }` for one turned off, as
+`sounds: { key: { enabled: false } }`, a key file or none in place of a
+keyboard, not beside it; or `sounds: { enabled: false }` for none at all.
+`music: { file,
 volume }` is a track under the whole film, cut to its length and faded out
 at its end.
 `sound.play(file)` plays a file of the film's at a moment of a step. A GIF

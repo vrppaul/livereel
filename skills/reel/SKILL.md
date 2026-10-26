@@ -110,8 +110,10 @@ keyboards. `defineFilm` takes, beside the rest, `sounds: { keyboard }` (one
 of `membrane`, the one where none is named, `mechanical`,
 `mechanical-bright`, `butterfly`, `laptop`, `clicky`), `sounds: { click,
 key, ending }` (files of the film's own in their place, a path from the
-film's file, any kind ffmpeg reads; a key file in place of a keyboard, not
-beside it) or `sounds: { enabled: false }` (none of livereel's), and
+film's file, any kind ffmpeg reads, or `{ enabled: false }` for one turned
+off, as `sounds: { key: { enabled: false } }`; a key file or none in place of
+a keyboard, not beside it) or `sounds: { enabled: false }` (none of
+livereel's), and
 `music: { file, volume }` (a track under the whole film, 1 as loud as it
 is, cut to the film's length and faded out at its end).
 
