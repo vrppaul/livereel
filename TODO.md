@@ -10,7 +10,7 @@
 
 ## Films
 
-- How fast is fast, for the motion blur, measured by the eye: `FAST` in `src/domain/shutter.ts` is a guess, 6 pixels a frame of a 1920 × 1080 frame. Pans of 2 to 32 pixels a frame, shot sharp and blurred with the shutter open for half the way, looked alike to the owner (2026-10-26), so the threshold may stand higher and spare those frames their exposures; what decides it is the speed from which a pan shot sharp is seen to jump.
+- The eye's step, for the motion blur, measured by the eye: `EYE_STEP` in `src/domain/shutter.ts` is a guess, 6 pixels of a 1920 × 1080 frame, which sets both from what smear a frame is blurred and how close its copies stand. Pans of 2 to 32 pixels a frame, shot sharp and blurred with the shutter open for half the way, looked alike to the owner (2026-10-26), so the step may stand higher and spare those frames their exposures; what decides it is the speed from which a pan shot sharp is seen to jump.
 - Blocks blurred by a selector, so a film of a real app shows no one's address, key or name.
 - A theme of the film's own: the fonts and colours of its captions, terminal and ending.
 - The keys pressed shown as a badge (`⌘K`) where a film types a shortcut.

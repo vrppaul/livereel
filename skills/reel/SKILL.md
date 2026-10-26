@@ -189,10 +189,10 @@ npx livereel still film.ts --format square --out out --at 12.5   # one still, wi
   camera blurs it: a still in the middle of a fast move shows the screen
   smeared, and that is right. Read text where the camera has settled.
   Leave the blur as livereel sets it unless the user asks for another:
-  `motionBlur: { shutter, exposures }` in `defineFilm`, either or both,
-  `shutter` from just above 0 to 1 (the smear's length), `exposures` 2 or
-  more (its smoothness, and the shoot's time), or
-  `motionBlur: { enabled: false }` for none.
+  `motionBlur: { shutter, exposuresAtMost }` in `defineFilm`, either or
+  both, `shutter` from just above 0 to 1 (the smear's length),
+  `exposuresAtMost` 2 or more (how smooth the fastest smears are, and the
+  shoot's time), or `motionBlur: { enabled: false }` for none.
 - Say plainly that you saw frames, not the film: the last look at the
   moving film is the user's.
 

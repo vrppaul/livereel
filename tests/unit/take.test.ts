@@ -34,8 +34,8 @@ const STROKES: readonly Keystroke[] = [
 	{ at: 0.1, typed: 'a' },
 	{ at: 0.2, typed: 'ab' }
 ];
-// A film camera's shutter, open for half the way, of four exposures
-const HALF_OF_FOUR: MotionBlur = { shutter: 0.5, exposures: 4 };
+// A film camera's shutter, open for half the way, of four exposures at most
+const HALF_OF_FOUR: MotionBlur = { shutter: 0.5, exposuresAtMost: 4 };
 // The camera close on the screen's right edge: from the whole screen, at two thirds of its size, a fast way
 const CLOSE_AT_THE_RIGHT: Pose = { focusX: 400, focusY: 200, zoom: 1, tilt: 0, turn: 0 };
 

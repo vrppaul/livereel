@@ -86,11 +86,13 @@ at its end.
 holds no sound.
 
 A frame the camera crosses fast is shot several times along its way from
-the frame before and blended. `defineFilm` takes `motionBlur: { shutter,
-exposures }`, either or both: how much of that way the shutter is open for,
-1 the whole of it as livereel blurs and 0.5 a film camera's half, and how
-many shots a blurred frame is made of, 8 by livereel, more for a smoother
-smear and a longer shoot; `motionBlur: { enabled: false }` for none.
+the frame before and blended: as many times as keep the copies a few
+pixels apart, so the faster the move, the more. `defineFilm` takes
+`motionBlur: { shutter, exposuresAtMost }`, either or both: how much of that
+way the shutter is open for, 1 the whole of it as livereel blurs and 0.5 a
+film camera's half, and how many shots the fastest frame is made of, 8 by
+livereel, more for a smoother smear and a longer shoot;
+`motionBlur: { enabled: false }` for none.
 
 `examples/example-com.ts` is a longer film, in acts, square or wide;
 `examples/livereel-promo.ts`, the film at the top of this page, serves an

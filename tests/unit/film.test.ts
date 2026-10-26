@@ -83,6 +83,6 @@ test('a blur that cannot be shot is refused as the film is defined: a shutter sh
 	expect(() => blurOfFilm({ shutter: 0 })).toThrow(FilmError);
 	expect(() => blurOfFilm({ shutter: 1.5 })).toThrow(FilmError);
 	expect(() => blurOfFilm({ shutter: Number.NaN })).toThrow(FilmError);
-	expect(() => blurOfFilm({ exposures: 1 })).toThrow(FilmError);
-	expect(() => blurOfFilm({ exposures: 2.5 })).toThrow(FilmError);
+	expect(() => blurOfFilm({ exposuresAtMost: 1 })).toThrow(FilmError);
+	expect(() => blurOfFilm({ exposuresAtMost: 2.5 })).toThrow(FilmError);
 });
