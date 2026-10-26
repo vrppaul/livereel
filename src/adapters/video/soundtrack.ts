@@ -56,6 +56,8 @@ const STRIKES_A_KEYBOARD = 4;
 const FIRST_STRIKE = 1;
 // The files of livereel's sounds where the film has turned them off: none, so none is heard
 const NONE_OF_LIVEREELS: Readonly<Record<LivereelSound, readonly string[]>> = { click: [], key: [], ending: [] };
+// A file read as ffmpeg will read it to lay it: its first sound's first frame decoded, and nothing written
+const FIRST_SOUND_DECODED = ['-map', '0:a:0', '-frames:a', '1', '-f', 'null', '-'];
 // Every sound in one shape before it is mixed, and the silence the track is laid on, in that shape
 const CHANNELS = 'stereo';
 const SAMPLE_RATE = 48_000;
@@ -95,7 +97,7 @@ const WRITTEN = [
 const FIRST_SOUND = 1;
 
 /** Where the sounds of a take that makes no video go: nowhere. */
-export const SILENT: Track = { expect: () => undefined, hear: () => undefined };
+export const SILENT: Track = { expect: () => Promise.resolve(), hear: () => undefined };
 
 export class Soundtrack implements Track {
 	// The folder a film's paths are from: the film file's own
@@ -112,12 +114,17 @@ export class Soundtrack implements Track {
 		this.livereelFiles = sound.livereels === null ? NONE_OF_LIVEREELS : livereelFilesOf(sound.livereels, this.from);
 	}
 
-	/** Every file the film's moves and its music name, refused at once where it is not a file that is there. */
-	expect(sounds: readonly Sound[]): void {
+	/**
+	 * Every file the film's moves and its music name, refused at once where it is not a file that is there, or one
+	 * ffmpeg reads no sound from: each read in turn, so the first refused is the first named.
+	 */
+	async expect(sounds: readonly Sound[]): Promise<void> {
 		const music = this.music();
-		const files = new Set([...sounds.flatMap((sound) => this.filesOf(sound)), ...(music === null ? [] : [music.file])]);
-		const missing = [...files].find((file) => statSync(file, { throwIfNoEntry: false })?.isFile() !== true);
+		const named = new Set([...sounds.flatMap((sound) => this.filesOf(sound)), ...(music === null ? [] : [music.file])]);
+		const files = [...named];
+		const missing = files.find((file) => statSync(file, { throwIfNoEntry: false })?.isFile() !== true);
 		if (missing !== undefined) throw new FilmError(`the film names a sound that is not a file there: ${missing}`);
+		for (const file of files) await readAsASound(file);
 	}
 
 	/** A sound heard at a moment, from its file; from the next of its files in turn where it has several: a key. */
@@ -177,6 +184,15 @@ export class Soundtrack implements Track {
 			case 'livereel':
 				return this.livereelFiles[sound.name];
 		}
+	}
+}
+
+/** A file read as a sound, refused where ffmpeg reads none from it: it holds none, or none ffmpeg can decode. */
+async function readAsASound(file: string): Promise<void> {
+	try {
+		await ffmpeg('-i', file, ...FIRST_SOUND_DECODED);
+	} catch (fault) {
+		throw new FilmError(`the film names a file ffmpeg reads no sound from: ${file}`, { cause: fault });
 	}
 }
 

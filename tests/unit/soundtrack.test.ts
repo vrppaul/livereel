@@ -18,16 +18,16 @@ const ON_THE_LAPTOP: LivereelSounds = { ...ON_THE_MEMBRANE, key: { kind: 'keyboa
 // Five keys typed, a frame apart, on a keyboard of four strikes
 const KEY_FRAMES = [0, 1, 2, 3, 4];
 
-test("a file in place of livereel's click, and music, that are not there are refused by their path from the film", () => {
+test("a file in place of livereel's click, and music, that are not there are refused by their path from the film", async () => {
 	const replaced = new Soundtrack(FILM, {
 		livereels: { ...ON_THE_MEMBRANE, click: { kind: 'file', path: './nowhere.wav' } },
 		music: null
 	});
 	const music = new Soundtrack(FILM, { livereels: ON_THE_MEMBRANE, music: { file: './nowhere.ogg', volume: 1 } });
-	expect(() => replaced.expect([livereelSound('click')])).toThrow(
+	await expect(replaced.expect([livereelSound('click')])).rejects.toThrow(
 		new FilmError(`the film names a sound that is not a file there: ${join(import.meta.dirname, 'nowhere.wav')}`)
 	);
-	expect(() => music.expect([])).toThrow(
+	await expect(music.expect([])).rejects.toThrow(
 		new FilmError(`the film names a sound that is not a file there: ${join(import.meta.dirname, 'nowhere.ogg')}`)
 	);
 });

@@ -43,7 +43,7 @@ export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Sho
 	await using served = await filmsOwn('serve', () => film.serve());
 	const steps = await filmsOwn('steps', () => served.steps(wholePose(film.format)));
 	shooting.footage.expect(framesIn(steps));
-	shooting.track.expect(soundsIn(steps));
+	await shooting.track.expect(soundsIn(steps));
 	await using opened = await shooting.browser.open(film.format, served.address, shooting.quality.sharpness);
 	await filmsOwn('ready', () => served.ready(opened.act));
 	const take = new Take({

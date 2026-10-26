@@ -1,4 +1,4 @@
-// A film that plays a file that is there but holds no sound: a page, which ffmpeg cannot lay under the video
+// A film that plays a file that is there but holds no sound: a page, which ffmpeg reads no sound from
 import { atAddress, defineFilm, play, sound } from 'livereel';
 
 const PAGE = new URL('../../smoke/page.html', import.meta.url).href;

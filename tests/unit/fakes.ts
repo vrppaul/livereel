@@ -95,7 +95,9 @@ interface Heard {
 export class TrackThatKeeps implements Track {
 	readonly heard: Heard[] = [];
 
-	expect(): void {}
+	expect(): Promise<void> {
+		return Promise.resolve();
+	}
 
 	hear(moment: number, sound: Sound): void {
 		this.heard.push({ moment, sound });

@@ -226,12 +226,13 @@ test('a sound file a film names that is not there is refused before the film is 
 	]);
 });
 
-test('a video whose sound cannot be laid leaves the one made before as it was', () => {
+test('a file a film plays that holds no sound is refused before the film is shot, the video made before left as it was', () => {
 	const out = scratch();
 	writeFileSync(join(out, 'not-a-sound-small.mp4'), MADE_BEFORE);
 	const ran = livereel('shoot', 'tests/cli/films/not-a-sound.ts', '--out', out, '--draft');
-	expect([ran.code, readdirSync(out), readFileSync(join(out, 'not-a-sound-small.mp4'), 'utf8')]).toEqual([
+	expect([ran.code, ran.said, readdirSync(out), readFileSync(join(out, 'not-a-sound-small.mp4'), 'utf8')]).toEqual([
 		1,
+		`livereel shoot: the film names a file ffmpeg reads no sound from: ${join(process.cwd(), 'tests/smoke/page.html')}\n`,
 		['not-a-sound-small.mp4'],
 		MADE_BEFORE
 	]);

@@ -40,8 +40,8 @@ export interface Footage {
 
 /** Where the sounds a take's moves make go, each at the moment of the frame it is heard on. */
 export interface Track {
-	/** Refuses a sound that cannot be laid — a file that is not there — before anything is shot. */
-	readonly expect: (sounds: readonly Sound[]) => void;
+	/** Refuses a sound that cannot be laid — a file that is not there, or holds no sound — before anything is shot. */
+	readonly expect: (sounds: readonly Sound[]) => Promise<void>;
 	readonly hear: (moment: number, sound: Sound) => void;
 }
 
