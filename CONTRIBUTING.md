@@ -42,14 +42,14 @@ The rules every change is held to are in `AGENTS.md`, and those of each area und
 
 ## The promo
 
-The README opens on `docs/promo.gif`, livereel's own promo, `examples/livereel-promo.ts`, shot and made a GIF 960 pixels wide at 24 frames a second, its palette worked out for the film; at that width the terminal's text stays readable, and the GIF came to 11 MB, against 35 MB for the one `--as gif` makes at the film's own frame and rate (2026-10-25):
+The README opens on livereel's own promo, `examples/livereel-promo.ts`, shot wide, as a video with its sound, which GitHub plays where it is uploaded to GitHub: the MP4 is dragged into the README's editor on github.com, which uploads it and writes its `user-attachments` address, and the README names that address alone on its line; the edit in the browser is not saved. Shot square, the promo is for a feed. The two formats shoot at once, each in a process of its own:
 
 ```bash
-pnpm livereel shoot examples/livereel-promo.ts --out out/promo --sheet
-ffmpeg -i out/promo/livereel-promo-wide.mp4 -vf "fps=24,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle" docs/promo.gif
+pnpm livereel shoot examples/livereel-promo.ts --format wide --out out/promo --sheet
+pnpm livereel shoot examples/livereel-promo.ts --format square --out out/promo --sheet
 ```
 
-The video itself goes on the release on GitHub: `gh release upload vX.Y.Z out/promo/livereel-promo-wide.mp4`.
+The video goes on the release on GitHub as well: `gh release upload vX.Y.Z out/promo/livereel-promo-wide.mp4`.
 
 ## Releasing
 

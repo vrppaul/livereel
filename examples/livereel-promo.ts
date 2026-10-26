@@ -1,12 +1,13 @@
 /**
  * livereel's own promo: a film of a live app first, and then the agent who made it.
  *
- *     pnpm livereel shoot examples/livereel-promo.ts --out out/promo --sheet
+ *     pnpm livereel shoot examples/livereel-promo.ts --format wide --out out/promo --sheet
  *
  * Acme's analytics app is served by the film itself (`livereel-promo/`): the camera goes to its main number, a real
  * click on Refresh asks its server for today's count, and the camera leans back over the page. Then Claude Code's
- * terminal comes up over it, drawn on the stage, and is asked for the film just seen; the ending comes up over the
- * terminal, and the app is not shown again.
+ * terminal comes up over it, drawn on the stage, and is asked for the film just seen, which its agent shoots in the
+ * format the film is shot in; the ending comes up over the terminal, and the app is not shown again. It is shot wide
+ * for the README, or square for a feed: every pose is a framing by selector or the whole screen's, moved.
  */
 import {
 	type ActContext,
@@ -32,8 +33,10 @@ import {
 } from 'livereel';
 import { type AppServed, servedApp } from './livereel-promo/server.ts';
 
-// A wide frame, as a README or a talk shows it, and the app laid out on a screen of the same size
+// A wide frame, as a README or a talk shows it, and the app laid out on a screen of the same size; and a square frame
+// for a feed, with the app as a laptop lays it out
 const WIDE = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } };
+const SQUARE = { frame: { width: 1080, height: 1080 }, screen: { width: 1440, height: 1080 } };
 // The main number's card, the number itself, the button that refreshes it, and the row of cards with that button
 const VISITORS = '[data-testid=visitors]';
 const VISITORS_TODAY = '[data-testid=visitors-today]';
@@ -42,23 +45,41 @@ const CARDS = '[data-testid=kpis]';
 const TOP_ROW = `${REFRESH}, ${CARDS}`;
 // The screen comes up from a little smaller than the whole of it
 const OPENS_FROM = 0.86;
-// The camera drawn back over the whole page, the screen leaning back and swung to the left, all of it behind where
-// the terminal's window comes up
-const LEANING_BACK: Pose = { focusX: 980, focusY: 560, zoom: 0.7, tilt: 14, turn: -9 };
+// The camera drawn back over the whole page, a little off its middle, the screen leaning back and swung to the left,
+// all of it behind where the terminal's window comes up
+const LEAN_OFF_THE_MIDDLE = 20;
+const LEAN_FURTHER = 0.7;
+const LEAN_TILT = 14;
+const LEAN_TURN = -9;
 const TITLE = 'acme — claude';
 const TASK = 'make a 20-second promo of my app';
-const WORK: readonly TerminalLine[] = [
-	{ kind: 'work', text: 'Skill reel' },
-	{ kind: 'work', text: 'Write promo.ts' },
-	{ kind: 'work', text: 'Bash npx livereel shoot promo.ts --out out' },
-	{ kind: 'said', text: 'The film is in out/promo-wide.mp4, 20 s.' }
-];
 const THINKING = 'Working…';
 const ENDING = { name: 'livereel', line: 'Your agent films your live app', command: 'npx livereel' };
 
 /** The whole screen from a little further off, as it stands before it comes up. */
 function fromAfar(whole: Pose): Pose {
 	return lookingAt(whole, whole.focusX, whole.focusY, whole.zoom * OPENS_FROM);
+}
+
+/** The whole page from further back, leaning back and swung to the left. */
+function leaningBack(whole: Pose): Pose {
+	return {
+		focusX: whole.focusX + LEAN_OFF_THE_MIDDLE,
+		focusY: whole.focusY + LEAN_OFF_THE_MIDDLE,
+		zoom: whole.zoom * LEAN_FURTHER,
+		tilt: LEAN_TILT,
+		turn: LEAN_TURN
+	};
+}
+
+/** The agent's work: the skill, the film written, and the film shot in this format as an MP4 and a GIF. */
+function workIn(formatName: string): readonly TerminalLine[] {
+	return [
+		{ kind: 'work', text: 'Skill reel' },
+		{ kind: 'work', text: 'Write promo.ts' },
+		{ kind: 'work', text: `Bash npx livereel shoot promo.ts --format ${formatName} --as mp4 --as gif` },
+		{ kind: 'said', text: `Made out/promo-${formatName}.mp4 and .gif, 20 s.` }
+	];
 }
 
 function cardShown(context: ActContext): Promise<void> {
@@ -124,7 +145,7 @@ function actTheClick(served: AppServed): readonly Step[] {
 }
 
 /** The camera leans back over the whole page as the last caption comes. */
-function actTheClock(): readonly Step[] {
+function actTheClock(whole: Pose): readonly Step[] {
 	return [
 		cut(cursor.hide()),
 		play({
@@ -132,7 +153,7 @@ function actTheClock(): readonly Step[] {
 			moves: [
 				caption.hide({ within: { end: 0.2 } }),
 				light.off({ within: { start: 0.05, end: 0.25 } }),
-				camera.to(LEANING_BACK, { within: { start: 0.05 } }),
+				camera.to(leaningBack(whole), { within: { start: 0.05 } }),
 				caption.show("Every frame on the film's own clock", { within: { start: 0.35, end: 0.9 } })
 			],
 			ease: easeInOutCubic
@@ -141,8 +162,8 @@ function actTheClock(): readonly Step[] {
 	];
 }
 
-/** Claude Code's terminal comes up over the film, is asked for it, and its agent makes it. */
-function actTheAgent(): readonly Step[] {
+/** Claude Code's terminal comes up over the film, is asked for it, and its agent makes it in this format. */
+function actTheAgent(formatName: string): readonly Step[] {
 	return [
 		play({
 			seconds: 0.8,
@@ -152,7 +173,7 @@ function actTheAgent(): readonly Step[] {
 		...typing(terminal.type(keystrokes(TASK, { seed: 7, slipAt: 9, pace: 0.35 }))),
 		hold({ seconds: 0.2 }),
 		cut(terminal.submit()),
-		play({ seconds: 2, moves: [terminal.works(WORK, THINKING)] }),
+		play({ seconds: 2, moves: [terminal.works(workIn(formatName), THINKING)] }),
 		hold({ seconds: 0.6 })
 	];
 }
@@ -162,15 +183,15 @@ function actEnding(): readonly Step[] {
 	return [play({ seconds: 0.8, moves: [ending.show(ENDING)], ease: easeOutCubic }), hold({ seconds: 1.6 })];
 }
 
-function steps(served: AppServed, whole: Pose): readonly Step[] {
+function steps(served: AppServed, whole: Pose, formatName: string): readonly Step[] {
 	return [
 		...actOpening(whole),
 		...actTheNumber(),
 		...actTheClick(served),
-		...actTheClock(),
-		...actTheAgent(),
+		...actTheClock(whole),
+		...actTheAgent(formatName),
 		...actEnding()
 	];
 }
 
-export default defineFilm({ formats: { wide: WIDE }, serve: servedApp, ready: cardShown, steps });
+export default defineFilm({ formats: { wide: WIDE, square: SQUARE }, serve: servedApp, ready: cardShown, steps });

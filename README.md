@@ -5,7 +5,7 @@
 [![Node](https://img.shields.io/node/v/livereel)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-![livereel's own promo: a live analytics app filmed with a camera, a light, a real click and captions, then the Claude Code terminal that made the film](docs/promo.gif)
+https://github.com/user-attachments/assets/90a9e558-4e24-42bc-8d82-b0d30c2dc9ac
 
 Film your live web app as a directed short: a camera that leans and
 travels, a light on the block that matters, a cursor that moves like a
