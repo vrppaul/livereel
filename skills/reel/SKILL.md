@@ -71,6 +71,13 @@ npm i -D livereel      # or pnpm add -D livereel
 npx livereel setup     # the browser films are shot in; it says if ffmpeg is missing
 ```
 
+Shoot a film with `--renderer gpu`: its frames are drawn on the graphics
+card, and a full shoot takes about half as long as in software (the promo,
+blurred: 271 s against 495 s). It needs no screen. Where it reaches no
+graphics card, as on a CI runner, the frames are drawn in software all the
+same, but a page that draws with WebGL draws nothing: a canvas left empty on
+the contact sheet says so, and the film is shot again without the flag.
+
 A film is a TypeScript file whose default export is `defineFilm({ formats,
 serve, ready, steps })` from `livereel`: its formats by name, each a frame
 and the screen its page is laid out on (`{ square: { frame, screen } }`),
@@ -172,8 +179,8 @@ person types; the curves are `linear`, `easeInOutSine` (a step's own),
 You cannot watch a video. Look at frames:
 
 ```bash
-npx livereel shoot film.ts --format square --out out --sheet     # the video, and a frame a second side by side
-npx livereel still film.ts --format square --out out --at 12.5   # one still, without the video
+npx livereel shoot film.ts --format square --out out --sheet --renderer gpu   # the video, and a frame a second side by side
+npx livereel still film.ts --format square --out out --at 12.5                 # one still, without the video
 ```
 
 - `--format` names the format to shoot; a film of one format needs none.

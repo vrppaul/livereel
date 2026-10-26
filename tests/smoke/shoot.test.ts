@@ -3,7 +3,7 @@ import { mkdtemp, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
-import { Chromium } from '../../src/adapters/browser/chromium.ts';
+import { Chromium, type Renderer } from '../../src/adapters/browser/chromium.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
@@ -56,26 +56,36 @@ function filmOf(steps: readonly Step[]) {
 	}).formats.get('small')!;
 }
 
-/** A film shot in Chromium at the frame's own size into this footage, each frame exposed once, its sounds heard by nobody. */
-function shootingInto(footage: Footage): Shooting {
-	return { browser: new Chromium(), footage, track: SILENT, quality: { sharpness: 1, blurred: false } };
+/**
+ * A film shot in Chromium, drawn by the renderer, at the frame's own size into this footage, each frame exposed once,
+ * its sounds heard by nobody.
+ */
+function shootingInto(footage: Footage, renderer: Renderer): Shooting {
+	return { browser: new Chromium(renderer), footage, track: SILENT, quality: { sharpness: 1, blurred: false } };
 }
 
 async function scratch(): Promise<string> {
 	return mkdtemp(join(tmpdir(), 'livereel-smoke-'));
 }
 
-test('every frame of a film is kept, in order', async () => {
-	const footage = new EveryFrameCounted();
+test('every frame of a film is kept, in order, drawn in software or on the graphics card', async () => {
+	const inSoftware = new EveryFrameCounted();
+	const onTheCard = new EveryFrameCounted();
 	const steps = [play({ seconds: 0.2, moves: [camera.onto('h1'), light.on('p')] })];
-	const shot = await shoot(filmOf(steps), shootingInto(footage));
-	expect([shot.frames, footage.kept]).toEqual([6, [0, 1, 2, 3, 4, 5]]);
+	const shotInSoftware = await shoot(filmOf(steps), shootingInto(inSoftware, 'software'));
+	const shotOnTheCard = await shoot(filmOf(steps), shootingInto(onTheCard, 'gpu'));
+	expect([shotInSoftware.frames, inSoftware.kept, shotOnTheCard.frames, onTheCard.kept]).toEqual([
+		6,
+		[0, 1, 2, 3, 4, 5],
+		6,
+		[0, 1, 2, 3, 4, 5]
+	]);
 });
 
 test('a still is the one frame written, and nothing after it is shot', async () => {
 	const directory = await scratch();
 	const footage = new StillFootage(join(directory, 'still.jpg'), 0.1);
-	const shot = await shoot(filmOf([play({ seconds: 0.2 })]), shootingInto(footage));
+	const shot = await shoot(filmOf([play({ seconds: 0.2 })]), shootingInto(footage, 'software'));
 	expect([await readdir(directory), shot.frames]).toEqual([['still.jpg'], 4]);
 });
 
@@ -88,12 +98,12 @@ test('keys typed into the page reach the field that holds its keyboard', async (
 			values.push(await context.page.locator(FIELD).inputValue());
 		})
 	];
-	await shoot(filmOf(steps), shootingInto(new EveryFrameCounted()));
+	await shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'));
 	expect(values).toEqual([TYPED]);
 });
 
 test('a scroll of a block the page does not have is refused as its share begins, naming the block', async () => {
 	const steps = [play({ seconds: 0.1, moves: [page.scrollTo('[data-testid=nowhere]', { top: 0 })] })];
-	const shooting = shoot(filmOf(steps), shootingInto(new EveryFrameCounted()));
+	const shooting = shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'));
 	await expect(shooting).rejects.toThrow('nothing on the page matches [data-testid=nowhere]');
 });

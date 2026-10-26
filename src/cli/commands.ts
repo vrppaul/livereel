@@ -15,7 +15,8 @@ import { UsageError } from '../domain/errors.ts';
 import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { Film, FilmInFormat } from '../direction/film.ts';
 import { type Quality, type Shot, shoot } from '../studio/shoot.ts';
-import { Chromium } from '../adapters/browser/chromium.ts';
+import type { Browser } from '../studio/ports.ts';
+import { Chromium, RENDERERS, type Renderer, isRenderer } from '../adapters/browser/chromium.ts';
 import { KINDS, type Kind, type MadeKind, SHOT_INTO, isKind, isMade, madeFrom } from '../adapters/video/kinds.ts';
 import { SILENT, Soundtrack } from '../adapters/video/soundtrack.ts';
 import { StillFootage } from '../adapters/video/still.ts';
@@ -52,18 +53,22 @@ const KIND_NAMES = Object.keys(KINDS);
 // How the usage line offers one value of several, and how a refusal lists the names to choose from
 const ONE_OF = '|';
 const LISTED = ', ';
+// Where a frame is drawn where the command line names nowhere: in software, which asks nothing of the machine's card
+const IN_SOFTWARE: Renderer = 'software';
+const RENDERER_ASKED = { type: 'string', default: IN_SOFTWARE } as const;
+const RENDERER_USAGE = `[--renderer ${RENDERERS.join(ONE_OF)}]`;
 
 const SHOOT: Command = {
 	summary: 'Shoot a film whole, as a video of each kind asked: an MP4 where none is.',
 	usage:
 		`livereel shoot FILM_FILE --out DIRECTORY [--format NAME] ` +
-		`[--as ${KIND_NAMES.join(ONE_OF)}]... [--draft] [--sheet]`,
+		`[--as ${KIND_NAMES.join(ONE_OF)}]... [--draft] [--sheet] ${RENDERER_USAGE}`,
 	run: shootCommand
 };
 
 const STILL: Command = {
 	summary: 'Shoot one still of a film, without making the video.',
-	usage: 'livereel still FILM_FILE --out DIRECTORY --at SECONDS [--format NAME] [--draft]',
+	usage: `livereel still FILM_FILE --out DIRECTORY --at SECONDS [--format NAME] [--draft] ${RENDERER_USAGE}`,
 	run: stillCommand
 };
 
@@ -88,13 +93,14 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const { values, positionals } = asUsage(SHOOT, () =>
 		parseArgs({
 			args: [...given],
-			options: { out: VALUE, format: VALUE, as: KINDS_ASKED, draft: FLAG, sheet: FLAG },
+			options: { out: VALUE, format: VALUE, as: KINDS_ASKED, draft: FLAG, sheet: FLAG, renderer: RENDERER_ASKED },
 			allowPositionals: true
 		})
 	);
 	const file = theFilmFile(positionals, SHOOT);
 	const out = theOut(values.out, SHOOT);
 	const kinds = kindsAsked(values.as);
+	const browser = new Chromium(rendererAsked(values.renderer, SHOOT));
 	await ffmpegNeeded();
 	await encodersNeeded(kinds);
 	const film = formatAsked(await loadedFilm(file), values.format, SHOOT);
@@ -103,7 +109,7 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const kept = kinds.includes(SHOT_INTO);
 	const mp4 = kept ? `${stem}${KINDS.mp4.suffix}` : `${stem}${SOURCE}${KINDS.mp4.suffix}`;
 	try {
-		const shot = await shotInto(mp4, file, film, values.draft);
+		const shot = await shotInto(mp4, file, film, values.draft, browser);
 		if (kept) say(mp4);
 		for (const kind of kinds.filter(isMade)) await madeAs(kind, mp4, stem);
 		if (values.sheet) await sheetMade(mp4, stem, shot);
@@ -116,13 +122,14 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	const { values, positionals } = asUsage(STILL, () =>
 		parseArgs({
 			args: [...given],
-			options: { out: VALUE, format: VALUE, draft: FLAG, at: VALUE },
+			options: { out: VALUE, format: VALUE, draft: FLAG, at: VALUE, renderer: RENDERER_ASKED },
 			allowPositionals: true
 		})
 	);
 	const file = theFilmFile(positionals, STILL);
 	const out = theOut(values.out, STILL);
 	const moment = momentAsked(values.at);
+	const browser = new Chromium(rendererAsked(values.renderer, STILL));
 	await ffmpegNeeded();
 	const film = formatAsked(await loadedFilm(file), values.format, STILL);
 	await mkdir(out, { recursive: true });
@@ -130,7 +137,7 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	await rm(still, { force: true });
 	const started = performance.now();
 	const footage = new StillFootage(still, moment);
-	await shoot(film, { browser: new Chromium(), footage, track: SILENT, quality: qualityOf(values.draft) });
+	await shoot(film, { browser, footage, track: SILENT, quality: qualityOf(values.draft) });
 	say(`${still}: shot in ${secondsBetween(started, performance.now())} s`);
 }
 
@@ -144,11 +151,17 @@ async function setupCommand(given: readonly string[]): Promise<void> {
  * The film shot whole into its MP4, its sounds laid under it, and the take said: the film and its format, its frames,
  * and the time it took.
  */
-async function shotInto(mp4: string, file: string, film: FilmInFormat, draft: boolean): Promise<Shot> {
+async function shotInto(
+	mp4: string,
+	file: string,
+	film: FilmInFormat,
+	draft: boolean,
+	browser: Browser
+): Promise<Shot> {
 	const started = performance.now();
 	await using footage = new VideoFootage(mp4, film.format.frame);
 	const track = new Soundtrack(file, film.sound);
-	const shot = await shoot(film, { browser: new Chromium(), footage, track, quality: qualityOf(draft) });
+	const shot = await shoot(film, { browser, footage, track, quality: qualityOf(draft) });
 	const filmed = performance.now();
 	await footage.finish(track, shot.seconds);
 	say(
@@ -234,6 +247,16 @@ function nameOf(file: string): string {
 
 function qualityOf(draft: boolean): Quality {
 	return draft ? DRAFT : FINEST;
+}
+
+/** Where a frame is drawn, as the command line names it; a renderer livereel has not is refused. */
+function rendererAsked(asked: string, command: Command): Renderer {
+	if (!isRenderer(asked)) {
+		throw new UsageError(
+			`--renderer names where a frame is drawn, ${RENDERERS.join(LISTED)}: not ${asked}\n${command.usage}`
+		);
+	}
+	return asked;
 }
 
 function secondsBetween(start: number, end: number): string {

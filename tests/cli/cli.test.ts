@@ -267,6 +267,13 @@ test('a film is not shot, whole or as a still, where ffmpeg is not on the path',
 	]);
 });
 
+test('a renderer livereel has not is refused as a wrong command line, by both shoot and still, naming those it has', () => {
+	const shot = livereel('shoot', SHORT, '--out', scratch(), '--renderer', 'canvas');
+	const still = livereel('still', SHORT, '--out', scratch(), '--at', '0', '--renderer', 'canvas');
+	const refusal = expect.stringContaining('--renderer names where a frame is drawn, software, gpu: not canvas');
+	expect([shot.code, shot.said, still.code, still.said]).toEqual([2, refusal, 2, refusal]);
+});
+
 test('a file that exports no film is refused as a wrong command line', () => {
 	const ran = livereel('still', NO_FILM, '--out', scratch(), '--at', '0');
 	expect([ran.code, ran.said]).toEqual([2, expect.stringContaining('exports no film')]);

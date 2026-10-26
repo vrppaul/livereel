@@ -45,8 +45,8 @@ The rules every change is held to are in `AGENTS.md`, and those of each area und
 The README opens on livereel's own promo, `examples/livereel-promo.ts`, shot wide, as a video with its sound, which GitHub plays where it is uploaded to GitHub: the MP4 is dragged into the README's editor on github.com, which uploads it and writes its `user-attachments` address, and the README names that address alone on its line; the edit in the browser is not saved. Shot square, the promo is for a feed. The two formats shoot at once, each in a process of its own:
 
 ```bash
-pnpm livereel shoot examples/livereel-promo.ts --format wide --out out/promo --sheet
-pnpm livereel shoot examples/livereel-promo.ts --format square --out out/promo --sheet
+pnpm livereel shoot examples/livereel-promo.ts --format wide --out out/promo --sheet --renderer gpu
+pnpm livereel shoot examples/livereel-promo.ts --format square --out out/promo --sheet --renderer gpu
 ```
 
 The video goes on the release on GitHub as well: `gh release upload vX.Y.Z out/promo/livereel-promo-wide.mp4`.

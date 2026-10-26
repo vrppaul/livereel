@@ -63,6 +63,14 @@ export default defineFilm({
 moment, without the video; `--draft` shoots at the frame's own size and every
 frame once, quicker and softer, with no blur.
 
+`--renderer gpu` draws the frames on the graphics card, where the headless
+browser draws them in software otherwise, and needs no screen: the promo,
+wide and blurred, took 271 s against 495 s, its frames alike. It reaches the
+card through Vulkan on Linux, tried on an Intel card; through Metal on macOS
+and Direct3D 11 on Windows, not tried yet. Where it finds no driver for a
+graphics card, the frames are drawn in software all the same, and on Linux,
+where that was tried, the page has no WebGL.
+
 A film may name several formats, `{ square: …, wide: … }`, each a frame and
 the screen its page is laid out on; `--format wide` picks the one to shoot,
 and every file is named after it. A framing by selector fits any frame; a

@@ -141,7 +141,7 @@ test('an app with a server of its own is filmed: framed, scrolled, answered afte
 		]
 	});
 	await shoot(film.formats.get('small')!, {
-		browser: new Chromium(),
+		browser: new Chromium('software'),
 		footage: new NoFrames(),
 		track: SILENT,
 		quality: { sharpness: 1, blurred: false }
