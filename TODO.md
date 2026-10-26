@@ -4,7 +4,6 @@
 
 The owner's plan for the release, each item begun on the owner's word:
 
-- A test that a frame's exposures are blended, not one of them kept: three black JPEGs and a white one give a grey near 64 of 255 (`src/adapters/video/exposures.ts`); the frame count alone passes a `select` that keeps the first.
 - `--quality draft|finest` in place of the boolean `--draft`, a value naming its kind as `--renderer` and `--as` do.
 - One of livereel's sounds turned off explicitly, `sounds: { key: { enabled: false } }` and the same for `click` and `ending`, never `null`.
 

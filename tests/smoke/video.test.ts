@@ -28,15 +28,15 @@ async function scratch(): Promise<string> {
 	return mkdtemp(join(tmpdir(), 'livereel-video-'));
 }
 
-/** A JPEG of one grey, of a size, as ffmpeg makes it. */
-function jpegOf(size: Size): Uint8Array {
+/** A JPEG of one colour, by ffmpeg's name for it, of a size, as ffmpeg makes it. */
+function jpegOf(size: Size, colour: string): Uint8Array {
 	const made = spawnSync('ffmpeg', [
 		'-loglevel',
 		'error',
 		'-f',
 		'lavfi',
 		'-i',
-		`color=c=gray:s=${size.width}x${size.height}`,
+		`color=c=${colour}:s=${size.width}x${size.height}`,
 		'-frames:v',
 		'1',
 		'-f',
@@ -46,6 +46,16 @@ function jpegOf(size: Size): Uint8Array {
 		'-'
 	]);
 	return made.stdout;
+}
+
+/** The grey of an image's first pixel, 0 for black to 255 for white, as ffmpeg decodes it. */
+function greyOf(jpeg: Uint8Array): number | undefined {
+	const decoded = spawnSync(
+		'ffmpeg',
+		['-loglevel', 'error', '-f', 'image2pipe', '-i', '-', '-f', 'rawvideo', '-pix_fmt', 'gray', '-'],
+		{ input: jpeg }
+	);
+	return decoded.stdout[0];
 }
 
 /** How many frames a video holds, as ffprobe counts them. */
@@ -62,12 +72,20 @@ test('a frame of several exposures is one frame of the video', async () => {
 	const directory = await scratch();
 	const video = join(directory, 'film.mp4');
 	const footage = new VideoFootage(video, FRAME);
-	const image = jpegOf(FRAME);
+	const image = jpegOf(FRAME, 'gray');
 	await footage.keep(0, { earlier: [image, image, image], own: image });
 	await footage.keep(1, { earlier: [], own: image });
 	await footage.finish(new Soundtrack(join(directory, 'film.ts'), SOUNDLESS), momentOf(2));
 	expect(framesOf(video)).toBe('2');
 	await footage[Symbol.asyncDispose]();
+});
+
+test("a frame's exposures are blended, each weighing the same: three black and one white make a quarter of white", async () => {
+	const black = jpegOf(FRAME, 'black');
+	const white = jpegOf(FRAME, 'white');
+	const frame = await blended({ earlier: [black, black, black], own: white });
+	// 255 / 4, within 5 levels of it: a JPEG may round a flat grey; one exposure kept is 0 or 255, two blended 128
+	expect(greyOf(frame)).toBeCloseTo(64, -1);
 });
 
 test("exposures ffmpeg cannot read are refused in ffmpeg's words", async () => {
