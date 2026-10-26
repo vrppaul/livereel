@@ -45,10 +45,6 @@ export const RENDERERS = ['software', 'gpu'] as const;
 
 export type Renderer = (typeof RENDERERS)[number];
 
-export function isRenderer(name: string): name is Renderer {
-	return RENDERERS.some((renderer) => renderer === name);
-}
-
 /** The flags the shell is launched with to draw where the renderer draws, on the system it runs on. */
 export function flagsOf(renderer: Renderer, platform: NodeJS.Platform): readonly string[] {
 	switch (renderer) {

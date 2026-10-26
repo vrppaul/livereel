@@ -14,9 +14,8 @@ import { parseArgs } from 'node:util';
 import { UsageError } from '../domain/errors.ts';
 import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { Film, FilmInFormat } from '../direction/film.ts';
-import { type Quality, type Shot, shoot } from '../studio/shoot.ts';
-import type { Browser } from '../studio/ports.ts';
-import { Chromium, RENDERERS, type Renderer, isRenderer } from '../adapters/browser/chromium.ts';
+import { type Quality, type Shooting, type Shot, shoot } from '../studio/shoot.ts';
+import { Chromium, RENDERERS, type Renderer } from '../adapters/browser/chromium.ts';
 import { KINDS, type Kind, type MadeKind, SHOT_INTO, isKind, isMade, madeFrom } from '../adapters/video/kinds.ts';
 import { SILENT, Soundtrack } from '../adapters/video/soundtrack.ts';
 import { StillFootage } from '../adapters/video/still.ts';
@@ -30,10 +29,17 @@ export interface Command {
 	readonly run: (given: readonly string[]) => Promise<void>;
 }
 
-// Sharp enough to zoom into and to angle without the text going soft, and a fast camera blurred as the film says; a
-// draft is shot at the frame's own size, every frame exposed once
-const FINEST: Quality = { sharpness: 2, blurred: true };
-const DRAFT: Quality = { sharpness: 1, blurred: false };
+/** What a command shoots with, as the command line names it: the browser frames are drawn in, and how finely. */
+type ShotWith = Pick<Shooting, 'browser' | 'quality'>;
+
+// How finely a film is shot, by its name on the command line: a draft at the frame's own size, every frame exposed
+// once; or sharp enough to zoom into and to angle without the text going soft, a fast camera blurred as the film says
+const QUALITY_NAMES = ['draft', 'finest'] as const;
+type QualityName = (typeof QUALITY_NAMES)[number];
+const QUALITIES: Readonly<Record<QualityName, Quality>> = {
+	draft: { sharpness: 1, blurred: false },
+	finest: { sharpness: 2, blurred: true }
+};
 // Every file a command writes is named from the same stem, the film file's name and its format's; a still after its
 // moment, in seconds
 const APART = '-';
@@ -49,26 +55,34 @@ const KINDS_ASKED: { type: 'string'; multiple: true; default: string[] } = {
 	multiple: true,
 	default: [SHOT_INTO]
 };
-const KIND_NAMES = Object.keys(KINDS);
+const KIND_NAMES = Object.keys(KINDS).filter(isKind);
 // How the usage line offers one value of several, and how a refusal lists the names to choose from
 const ONE_OF = '|';
 const LISTED = ', ';
-// Where a frame is drawn where the command line names nowhere: in software, which asks nothing of the machine's card
+// What the command line asks where it names nothing: the finest quality, as a film is meant to be seen; and a frame
+// drawn in software, which asks nothing of the machine's card
+const FINEST: QualityName = 'finest';
 const IN_SOFTWARE: Renderer = 'software';
+const QUALITY_ASKED = { type: 'string', default: FINEST } as const;
 const RENDERER_ASKED = { type: 'string', default: IN_SOFTWARE } as const;
+const QUALITY_USAGE = `[--quality ${QUALITY_NAMES.join(ONE_OF)}]`;
 const RENDERER_USAGE = `[--renderer ${RENDERERS.join(ONE_OF)}]`;
+// What each option names, said where it is given a name it does not take
+const KIND_SAYS = '--as names a kind of video';
+const QUALITY_SAYS = '--quality names how finely a film is shot';
+const RENDERER_SAYS = '--renderer names where a frame is drawn';
 
 const SHOOT: Command = {
 	summary: 'Shoot a film whole, as a video of each kind asked: an MP4 where none is.',
 	usage:
 		`livereel shoot FILM_FILE --out DIRECTORY [--format NAME] ` +
-		`[--as ${KIND_NAMES.join(ONE_OF)}]... [--draft] [--sheet] ${RENDERER_USAGE}`,
+		`[--as ${KIND_NAMES.join(ONE_OF)}]... ${QUALITY_USAGE} [--sheet] ${RENDERER_USAGE}`,
 	run: shootCommand
 };
 
 const STILL: Command = {
 	summary: 'Shoot one still of a film, without making the video.',
-	usage: `livereel still FILM_FILE --out DIRECTORY --at SECONDS [--format NAME] [--draft] ${RENDERER_USAGE}`,
+	usage: `livereel still FILM_FILE --out DIRECTORY --at SECONDS [--format NAME] ${QUALITY_USAGE} ${RENDERER_USAGE}`,
 	run: stillCommand
 };
 
@@ -93,14 +107,21 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const { values, positionals } = asUsage(SHOOT, () =>
 		parseArgs({
 			args: [...given],
-			options: { out: VALUE, format: VALUE, as: KINDS_ASKED, draft: FLAG, sheet: FLAG, renderer: RENDERER_ASKED },
+			options: {
+				out: VALUE,
+				format: VALUE,
+				as: KINDS_ASKED,
+				quality: QUALITY_ASKED,
+				sheet: FLAG,
+				renderer: RENDERER_ASKED
+			},
 			allowPositionals: true
 		})
 	);
 	const file = theFilmFile(positionals, SHOOT);
 	const out = theOut(values.out, SHOOT);
 	const kinds = kindsAsked(values.as);
-	const browser = new Chromium(rendererAsked(values.renderer, SHOOT));
+	const shotWith = shotWithAsked(values, SHOOT);
 	await ffmpegNeeded();
 	await encodersNeeded(kinds);
 	const film = formatAsked(await loadedFilm(file), values.format, SHOOT);
@@ -109,7 +130,7 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const kept = kinds.includes(SHOT_INTO);
 	const mp4 = kept ? `${stem}${KINDS.mp4.suffix}` : `${stem}${SOURCE}${KINDS.mp4.suffix}`;
 	try {
-		const shot = await shotInto(mp4, file, film, values.draft, browser);
+		const shot = await shotInto(mp4, file, film, shotWith);
 		if (kept) say(mp4);
 		for (const kind of kinds.filter(isMade)) await madeAs(kind, mp4, stem);
 		if (values.sheet) await sheetMade(mp4, stem, shot);
@@ -122,14 +143,14 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	const { values, positionals } = asUsage(STILL, () =>
 		parseArgs({
 			args: [...given],
-			options: { out: VALUE, format: VALUE, draft: FLAG, at: VALUE, renderer: RENDERER_ASKED },
+			options: { out: VALUE, format: VALUE, quality: QUALITY_ASKED, at: VALUE, renderer: RENDERER_ASKED },
 			allowPositionals: true
 		})
 	);
 	const file = theFilmFile(positionals, STILL);
 	const out = theOut(values.out, STILL);
 	const moment = momentAsked(values.at);
-	const browser = new Chromium(rendererAsked(values.renderer, STILL));
+	const shotWith = shotWithAsked(values, STILL);
 	await ffmpegNeeded();
 	const film = formatAsked(await loadedFilm(file), values.format, STILL);
 	await mkdir(out, { recursive: true });
@@ -137,7 +158,7 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	await rm(still, { force: true });
 	const started = performance.now();
 	const footage = new StillFootage(still, moment);
-	await shoot(film, { browser, footage, track: SILENT, quality: qualityOf(values.draft) });
+	await shoot(film, { ...shotWith, footage, track: SILENT });
 	say(`${still}: shot in ${secondsBetween(started, performance.now())} s`);
 }
 
@@ -151,17 +172,11 @@ async function setupCommand(given: readonly string[]): Promise<void> {
  * The film shot whole into its MP4, its sounds laid under it, and the take said: the film and its format, its frames,
  * and the time it took.
  */
-async function shotInto(
-	mp4: string,
-	file: string,
-	film: FilmInFormat,
-	draft: boolean,
-	browser: Browser
-): Promise<Shot> {
+async function shotInto(mp4: string, file: string, film: FilmInFormat, shotWith: ShotWith): Promise<Shot> {
 	const started = performance.now();
 	await using footage = new VideoFootage(mp4, film.format.frame);
 	const track = new Soundtrack(file, film.sound);
-	const shot = await shoot(film, { browser, footage, track, quality: qualityOf(draft) });
+	const shot = await shoot(film, { ...shotWith, footage, track });
 	const filmed = performance.now();
 	await footage.finish(track, shot.seconds);
 	say(
@@ -208,11 +223,7 @@ function theOut(out: string | undefined, command: Command): string {
 
 /** The kinds of video asked, each once; one livereel does not make is refused, naming those it does. */
 function kindsAsked(asked: readonly string[]): readonly Kind[] {
-	const unknown = asked.find((name) => !isKind(name));
-	if (unknown !== undefined) {
-		throw new UsageError(`--as names a kind of video, ${KIND_NAMES.join(LISTED)}: not ${unknown}\n${SHOOT.usage}`);
-	}
-	return [...new Set(asked.filter(isKind))];
+	return [...new Set(asked.map((name) => nameAsked(name, KIND_NAMES, KIND_SAYS, SHOOT)))];
 }
 
 /** The film in the format named, or in its one format where none is named; each refusal names the formats it has. */
@@ -245,18 +256,18 @@ function nameOf(file: string): string {
 	return basename(file, extname(file));
 }
 
-function qualityOf(draft: boolean): Quality {
-	return draft ? DRAFT : FINEST;
+/** How finely a film is shot and the browser its frames are drawn in, as the command line names them. */
+function shotWithAsked(asked: { quality: string; renderer: string }, command: Command): ShotWith {
+	const quality = nameAsked(asked.quality, QUALITY_NAMES, QUALITY_SAYS, command);
+	const renderer = nameAsked(asked.renderer, RENDERERS, RENDERER_SAYS, command);
+	return { quality: QUALITIES[quality], browser: new Chromium(renderer) };
 }
 
-/** Where a frame is drawn, as the command line names it; a renderer livereel has not is refused. */
-function rendererAsked(asked: string, command: Command): Renderer {
-	if (!isRenderer(asked)) {
-		throw new UsageError(
-			`--renderer names where a frame is drawn, ${RENDERERS.join(LISTED)}: not ${asked}\n${command.usage}`
-		);
-	}
-	return asked;
+/** The one of an option's names the command line gave it; any other is refused, naming them all. */
+function nameAsked<Name extends string>(asked: string, names: readonly Name[], says: string, command: Command): Name {
+	const named = names.find((name) => name === asked);
+	if (named === undefined) throw new UsageError(`${says}, ${names.join(LISTED)}: not ${asked}\n${command.usage}`);
+	return named;
 }
 
 function secondsBetween(start: number, end: number): string {

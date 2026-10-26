@@ -105,7 +105,7 @@ test('steps livereel refuses as they are written are said in its own words', () 
 
 test('a film is shot whole into a video of every frame at 30 a second, and its contact sheet', () => {
 	const out = scratch();
-	const ran = livereel('shoot', SHORT, '--out', out, '--draft', '--sheet');
+	const ran = livereel('shoot', SHORT, '--out', out, '--quality', 'draft', '--sheet');
 	expect([ran.code, readdirSync(out), probed(join(out, 'short-small.mp4'), 'r_frame_rate,nb_read_frames')]).toEqual([
 		0,
 		['short-small-sheet.png', 'short-small.mp4'],
@@ -115,7 +115,7 @@ test('a film is shot whole into a video of every frame at 30 a second, and its c
 
 test('a film is shot in the format asked, and named after it', () => {
 	const out = scratch();
-	const ran = livereel('shoot', FORMATS, '--out', out, '--draft', '--format', 'tall');
+	const ran = livereel('shoot', FORMATS, '--out', out, '--quality', 'draft', '--format', 'tall');
 	expect([ran.code, readdirSync(out), probed(join(out, 'formats-tall.mp4'), 'width,height')]).toEqual([
 		0,
 		['formats-tall.mp4'],
@@ -125,7 +125,7 @@ test('a film is shot in the format asked, and named after it', () => {
 
 test('a film is made as every kind of video asked, and as no MP4 unless it is asked for', () => {
 	const out = scratch();
-	const ran = livereel('shoot', SHORT, '--out', out, '--draft', '--as', 'webm', '--as', 'gif');
+	const ran = livereel('shoot', SHORT, '--out', out, '--quality', 'draft', '--as', 'webm', '--as', 'gif');
 	expect([
 		ran.code,
 		readdirSync(out),
@@ -151,14 +151,14 @@ test("a kind of video the system's ffmpeg cannot make is refused before the film
 
 test('a film made as an MP4 and a GIF keeps both', () => {
 	const out = scratch();
-	const ran = livereel('shoot', SHORT, '--out', out, '--draft', '--as', 'mp4', '--as', 'gif');
+	const ran = livereel('shoot', SHORT, '--out', out, '--quality', 'draft', '--as', 'mp4', '--as', 'gif');
 	expect([ran.code, readdirSync(out)]).toEqual([0, ['short-small.gif', 'short-small.mp4']]);
 });
 
 test('an MP4 made before is left as it was when another kind alone is asked for', () => {
 	const out = scratch();
 	writeFileSync(join(out, 'short-small.mp4'), MADE_BEFORE);
-	const ran = livereel('shoot', SHORT, '--out', out, '--draft', '--as', 'gif');
+	const ran = livereel('shoot', SHORT, '--out', out, '--quality', 'draft', '--as', 'gif');
 	expect([ran.code, readdirSync(out), readFileSync(join(out, 'short-small.mp4'), 'utf8')]).toEqual([
 		0,
 		['short-small.gif', 'short-small.mp4'],
@@ -184,7 +184,7 @@ test('a format the film does not have is refused, naming those it has', () => {
 
 test("a film's sounds are laid under its video, as long as the film", () => {
 	const out = scratch();
-	const ran = livereel('shoot', 'tests/cli/films/sounds.ts', '--out', out, '--draft');
+	const ran = livereel('shoot', 'tests/cli/films/sounds.ts', '--out', out, '--quality', 'draft');
 	expect([ran.code, probed(join(out, 'sounds-small.mp4'), 'codec_type,duration')]).toEqual([
 		0,
 		'video,0.433333\naudio,0.433000'
@@ -193,13 +193,13 @@ test("a film's sounds are laid under its video, as long as the film", () => {
 
 test("a film with livereel's sounds turned off and no music has no sound", () => {
 	const out = scratch();
-	const ran = livereel('shoot', 'tests/cli/films/silent.ts', '--out', out, '--draft');
+	const ran = livereel('shoot', 'tests/cli/films/silent.ts', '--out', out, '--quality', 'draft');
 	expect([ran.code, probed(join(out, 'silent-small.mp4'), 'codec_type')]).toEqual([0, 'video']);
 });
 
 test("a film's music is laid under it, cut to the film's length", () => {
 	const out = scratch();
-	const ran = livereel('shoot', 'tests/cli/films/music.ts', '--out', out, '--draft');
+	const ran = livereel('shoot', 'tests/cli/films/music.ts', '--out', out, '--quality', 'draft');
 	expect([ran.code, probed(join(out, 'music-small.mp4'), 'codec_type,duration')]).toEqual([
 		0,
 		'video,0.200000\naudio,0.200000'
@@ -208,7 +208,18 @@ test("a film's music is laid under it, cut to the film's length", () => {
 
 test("a WebM keeps the film's sound, in Opus, and a GIF holds none", () => {
 	const out = scratch();
-	const ran = livereel('shoot', 'tests/cli/films/sounds.ts', '--out', out, '--draft', '--as', 'webm', '--as', 'gif');
+	const ran = livereel(
+		'shoot',
+		'tests/cli/films/sounds.ts',
+		'--out',
+		out,
+		'--quality',
+		'draft',
+		'--as',
+		'webm',
+		'--as',
+		'gif'
+	);
 	expect([
 		ran.code,
 		probed(join(out, 'sounds-small.webm'), 'codec_name'),
@@ -218,7 +229,7 @@ test("a WebM keeps the film's sound, in Opus, and a GIF holds none", () => {
 
 test('a sound file a film names that is not there is refused before the film is shot, by its path', () => {
 	const out = scratch();
-	const ran = livereel('shoot', 'tests/cli/films/no-sound-file.ts', '--out', out, '--draft');
+	const ran = livereel('shoot', 'tests/cli/films/no-sound-file.ts', '--out', out, '--quality', 'draft');
 	expect([ran.code, ran.said, readdirSync(out)]).toEqual([
 		1,
 		`livereel shoot: the film names a sound that is not a file there: ${join(process.cwd(), 'tests/cli/films/nowhere.wav')}\n`,
@@ -229,7 +240,7 @@ test('a sound file a film names that is not there is refused before the film is 
 test('a file a film plays that holds no sound is refused before the film is shot, the video made before left as it was', () => {
 	const out = scratch();
 	writeFileSync(join(out, 'not-a-sound-small.mp4'), MADE_BEFORE);
-	const ran = livereel('shoot', 'tests/cli/films/not-a-sound.ts', '--out', out, '--draft');
+	const ran = livereel('shoot', 'tests/cli/films/not-a-sound.ts', '--out', out, '--quality', 'draft');
 	expect([ran.code, ran.said, readdirSync(out), readFileSync(join(out, 'not-a-sound-small.mp4'), 'utf8')]).toEqual([
 		1,
 		`livereel shoot: the film names a file ffmpeg reads no sound from: ${join(process.cwd(), 'tests/smoke/page.html')}\n`,
@@ -274,6 +285,13 @@ test('a renderer livereel has not is refused as a wrong command line, by both sh
 	expect([shot.code, shot.said, still.code, still.said]).toEqual([2, refusal, 2, refusal]);
 });
 
+test('a quality livereel has not is refused as a wrong command line, by both shoot and still, naming those it has', () => {
+	const shot = livereel('shoot', SHORT, '--out', scratch(), '--quality', 'rough');
+	const still = livereel('still', SHORT, '--out', scratch(), '--at', '0', '--quality', 'rough');
+	const refusal = expect.stringContaining('--quality names how finely a film is shot, draft, finest: not rough');
+	expect([shot.code, shot.said, still.code, still.said]).toEqual([2, refusal, 2, refusal]);
+});
+
 test('a file that exports no film is refused as a wrong command line', () => {
 	const ran = livereel('still', NO_FILM, '--out', scratch(), '--at', '0');
 	expect([ran.code, ran.said]).toEqual([2, expect.stringContaining('exports no film')]);
@@ -291,7 +309,7 @@ test("a still past the end of the film is refused with the film's length", () =>
 
 test('a still is written where it is asked for', () => {
 	const out = scratch();
-	const ran = livereel('still', SHORT, '--out', out, '--at', '0.1', '--draft');
+	const ran = livereel('still', SHORT, '--out', out, '--at', '0.1', '--quality', 'draft');
 	expect([ran.code, readdirSync(out)]).toEqual([0, ['short-small-0.1s.jpg']]);
 });
 

@@ -4,7 +4,6 @@
 
 The owner's plan for the release, each item begun on the owner's word:
 
-- `--quality draft|finest` in place of the boolean `--draft`, a value naming its kind as `--renderer` and `--as` do.
 - One of livereel's sounds turned off explicitly, `sounds: { key: { enabled: false } }` and the same for `click` and `ending`, never `null`.
 
 ## Faults

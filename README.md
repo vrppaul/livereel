@@ -60,8 +60,9 @@ export default defineFilm({
 ```
 
 `npx livereel still film.ts --out out --at 1.0` shoots the one frame at a
-moment, without the video; `--draft` shoots at the frame's own size and every
-frame once, quicker and softer, with no blur.
+moment, without the video; `--quality draft` shoots at the frame's own size
+and every frame once, quicker and softer, with no blur, where `finest`, the
+default, shoots at twice the pixels and blurs a fast camera.
 
 `--renderer gpu` draws the frames on the graphics card, where the headless
 browser draws them in software otherwise, and needs no screen: the promo,

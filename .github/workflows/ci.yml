@@ -68,6 +68,6 @@ jobs:
           	]
           });
           FILM
-          npx livereel shoot film.ts --out out --draft --sheet
+          npx livereel shoot film.ts --out out --quality draft --sheet
           npx livereel still film.ts --out out --at 0.4
           ls out
