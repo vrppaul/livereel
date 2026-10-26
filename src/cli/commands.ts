@@ -16,7 +16,7 @@ import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { Film, FilmInFormat } from '../direction/film.ts';
 import { type Quality, type Shooting, type Shot, shoot } from '../studio/shoot.ts';
 import { Chromium, RENDERERS, type Renderer } from '../adapters/browser/chromium.ts';
-import { KINDS, type Kind, type MadeKind, SHOT_INTO, isKind, isMade, madeFrom } from '../adapters/video/kinds.ts';
+import { KINDS, KIND_NAMES, type Kind, type MadeKind, SHOT_INTO, isMade, madeFrom } from '../adapters/video/kinds.ts';
 import { SILENT, Soundtrack } from '../adapters/video/soundtrack.ts';
 import { StillFootage } from '../adapters/video/still.ts';
 import { VideoFootage, contactSheet } from '../adapters/video/video.ts';
@@ -55,7 +55,6 @@ const KINDS_ASKED: { type: 'string'; multiple: true; default: string[] } = {
 	multiple: true,
 	default: [SHOT_INTO]
 };
-const KIND_NAMES = Object.keys(KINDS).filter(isKind);
 // How the usage line offers one value of several, and how a refusal lists the names to choose from
 const ONE_OF = '|';
 const LISTED = ', ';

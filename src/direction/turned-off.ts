@@ -7,3 +7,8 @@
 export interface TurnedOff {
 	readonly enabled: false;
 }
+
+/** Whether what a film hands over, its types checked by nobody, is written as turned off. */
+export function isTurnedOff(written: unknown): written is TurnedOff {
+	return typeof written === 'object' && written !== null && 'enabled' in written && written.enabled === false;
+}

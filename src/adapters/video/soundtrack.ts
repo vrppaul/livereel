@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { FilmError } from '../../domain/errors.ts';
 import { MILLISECONDS_A_SECOND } from '../../domain/time.ts';
 import type {
+	FileOrOff,
 	FilmSound,
 	KeySource,
 	KeyboardSound,
@@ -54,8 +55,6 @@ const OWN_ENDING = `ending${LIVEREEL_SUFFIX}`;
 // How many strikes each keyboard has, its keys recorded alone, in a folder of its own and numbered from one
 const STRIKES_A_KEYBOARD = 4;
 const FIRST_STRIKE = 1;
-// The files of livereel's sounds where the film has turned them off: none, so none is heard
-const NONE_OF_LIVEREELS: Readonly<Record<LivereelSound, readonly string[]>> = { click: [], key: [], ending: [] };
 // A file read as ffmpeg will read it to lay it: its first sound's first frame decoded, and nothing written
 const FIRST_SOUND_DECODED = ['-map', '0:a:0', '-frames:a', '1', '-f', 'null', '-'];
 // Every sound in one shape before it is mixed, and the silence the track is laid on, in that shape
@@ -111,7 +110,7 @@ export class Soundtrack implements Track {
 	constructor(filmFile: string, sound: FilmSound) {
 		this.from = dirname(resolve(filmFile));
 		this.sound = sound;
-		this.livereelFiles = sound.livereels === null ? NONE_OF_LIVEREELS : livereelFilesOf(sound.livereels, this.from);
+		this.livereelFiles = livereelFilesOf(sound.livereels, this.from);
 	}
 
 	/**
@@ -205,25 +204,33 @@ function livereelFilesOf(livereels: LivereelSounds, from: string): Readonly<Reco
 	};
 }
 
-/** A sound's file: livereel's own, or the film's in its place; none for one the film turned off. */
+/** A sound's file: livereel's own, or what the film put in its place. */
 function filesOfSource(source: SoundSource, own: string, from: string): readonly string[] {
 	switch (source.kind) {
 		case 'livereel':
 			return [livereelsOwn(own)];
 		case 'file':
-			return [resolve(from, source.path)];
 		case 'off':
-			return [];
+			return filesInPlaceOf(source, from);
 	}
 }
 
-/** The key's files: every strike of its keyboard, in its own folder of livereel's sounds, the film's one file, or none. */
+/** The key's files: every strike of its keyboard, in its own folder of livereel's sounds, or what the film put in its place. */
 function filesOfKey(key: KeySource, from: string): readonly string[] {
 	switch (key.kind) {
 		case 'keyboard':
 			return strikesOf(key.keyboard).map(livereelsOwn);
 		case 'file':
-			return [resolve(from, key.path)];
+		case 'off':
+			return filesInPlaceOf(key, from);
+	}
+}
+
+/** What the film put in place of one of livereel's sounds: its file, found from the film's folder; none for one off. */
+function filesInPlaceOf(inPlace: FileOrOff, from: string): readonly string[] {
+	switch (inPlace.kind) {
+		case 'file':
+			return [resolve(from, inPlace.path)];
 		case 'off':
 			return [];
 	}

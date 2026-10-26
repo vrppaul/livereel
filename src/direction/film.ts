@@ -133,7 +133,7 @@ function soundOfFilm<Served extends Serving, Name extends string>(script: Script
 		throw new FilmError(`the music's volume is ${music.volume}: it is 0 or more, 1 as loud as the file`);
 	}
 	const sounds = script.sounds ?? EVERY_LIVEREEL_SOUND;
-	return { livereels: sounds.enabled === false ? null : livereelSoundsOf(sounds), music };
+	return { livereels: livereelSoundsOf(sounds), music };
 }
 
 /**

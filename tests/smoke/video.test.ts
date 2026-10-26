@@ -15,8 +15,9 @@ import { Soundtrack } from '../../src/adapters/video/soundtrack.ts';
 import { VideoFootage } from '../../src/adapters/video/video.ts';
 
 const FRAME = { width: 64, height: 64 };
-// A film that makes no sound: its video is its picture
-const SOUNDLESS: FilmSound = { livereels: null, music: null };
+// A film that makes no sound, every one of livereel's off and no music: its video is its picture
+const OFF = { kind: 'off' } as const;
+const SOUNDLESS: FilmSound = { livereels: { click: OFF, key: OFF, ending: OFF }, music: null };
 // A file that is there and holds no sound, and a video of the film made before
 const NOT_A_SOUND = join(import.meta.dirname, 'page.html');
 const MADE_BEFORE = 'an MP4 made before';

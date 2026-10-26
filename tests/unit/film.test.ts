@@ -54,7 +54,7 @@ function filmSounding(sounds: LivereelSoundsScript) {
 	});
 }
 
-test('keys livereel cannot lay are refused as the film is defined: a keyboard it has not, a file or none beside a keyboard', () => {
+test('keys livereel cannot lay are refused as the film is defined: a keyboard it has not, a file or off beside a keyboard', () => {
 	expect(() => filmSounding({ keyboard: 'typewriter' as KeyboardSound })).toThrow(FilmError);
 	expect(() => filmSounding({ keyboard: 'laptop', key: './key.wav' } as LivereelSoundsScript)).toThrow(FilmError);
 	expect(() => filmSounding({ keyboard: 'laptop', key: { enabled: false } } as LivereelSoundsScript)).toThrow(
@@ -62,13 +62,30 @@ test('keys livereel cannot lay are refused as the film is defined: a keyboard it
 	);
 });
 
-test("livereel's sounds a film turns off one by one are off, and the rest stay livereel's", () => {
-	const film = filmSounding({ click: { enabled: false }, key: { enabled: false } });
-	expect(film.formats.get('small')!.sound.livereels).toEqual({
-		click: { kind: 'off' },
-		key: { kind: 'off' },
-		ending: { kind: 'livereel' }
-	});
+test("each of livereel's sounds a film turns off is off, and the rest stay livereel's", () => {
+	const off = { enabled: false } as const;
+	const own = { kind: 'livereel' };
+	const membrane = { kind: 'keyboard', keyboard: 'membrane' };
+	const sounds = [filmSounding({ click: off }), filmSounding({ key: off }), filmSounding({ ending: off })].map(
+		(film) => film.formats.get('small')!.sound.livereels
+	);
+	expect(sounds).toEqual([
+		{ click: { kind: 'off' }, key: membrane, ending: own },
+		{ click: own, key: { kind: 'off' }, ending: own },
+		{ click: own, key: membrane, ending: { kind: 'off' } }
+	]);
+});
+
+test('a sound written as neither a file nor `{ enabled: false }` is refused as the film is defined, by its name', () => {
+	expect(() => filmSounding({ click: null } as unknown as LivereelSoundsScript)).toThrow(
+		new FilmError("the film's click is null: a sound is a file, or { enabled: false } to turn it off")
+	);
+	expect(() => filmSounding({ key: { enabled: true } } as unknown as LivereelSoundsScript)).toThrow(
+		new FilmError('the film\'s key is {"enabled":true}: a sound is a file, or { enabled: false } to turn it off')
+	);
+	expect(() => filmSounding({ ending: 42 } as unknown as LivereelSoundsScript)).toThrow(
+		new FilmError("the film's ending is 42: a sound is a file, or { enabled: false } to turn it off")
+	);
 });
 
 /** The blur a film is shot with, its blur written so. */

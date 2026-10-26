@@ -29,6 +29,12 @@ export const KINDS = {
 
 export type Kind = keyof typeof KINDS;
 
+/**
+ * The kinds' names, in the order the table gives them. Every key is one, but `Object.keys` types each as a bare string:
+ * the guard keeps them all and tells the compiler they are kinds.
+ */
+export const KIND_NAMES: readonly Kind[] = Object.keys(KINDS).filter(isKind);
+
 // An MP4 written with its index at its head, so a player starts it before the whole of it has come
 export const STARTS_AT_ONCE = ['-movflags', '+faststart'];
 
@@ -59,7 +65,7 @@ const PALETTE_MADE = 'palettegen=stats_mode=diff';
 const PALETTE_USED = '[0:v][1:v]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle';
 const PALETTE_SUFFIX = '.palette.png';
 
-export function isKind(name: string): name is Kind {
+function isKind(name: string): name is Kind {
 	return Object.hasOwn(KINDS, name);
 }
 
