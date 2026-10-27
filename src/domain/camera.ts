@@ -24,8 +24,10 @@ import { A_NUMBER, type Kind, OfForm, assertKind, needed } from './handed.ts';
 import { between } from './time.ts';
 
 /**
- * The point of the screen at the frame's middle, how close, and at what angle: `tilt` leans the screen back from its
- * top edge, `turn` swings it about its middle, both in degrees, 0 face-on.
+ * The point of the screen at the frame's middle, how close, and at what angle. `zoom` is the frame's pixels a page's
+ * pixel takes on a frame the stage's look was made on, and in proportion on any other, so a pose shows as much of the
+ * page on a frame of any size. `tilt` leans the screen back from its top edge, `turn` swings it about its middle, both
+ * in degrees, 0 face-on.
  */
 export interface Pose {
 	readonly focusX: number;
@@ -35,7 +37,7 @@ export interface Pose {
 	readonly turn: number;
 }
 
-/** How a block is framed: `air` clear on its every side, the camera no closer than `zoomAtMost`. */
+/** How a block is framed: `air` clear on its every side, in the page's pixels; the camera no closer than `zoomAtMost`. */
 export interface Framing {
 	readonly air: number;
 	readonly zoomAtMost: number;
@@ -65,13 +67,16 @@ const DEGREES_IN_A_HALF_TURN = 180;
 
 /** Face-on, the whole screen as large as the frame holds it. */
 export function wholePose(format: Format): Pose {
-	const zoom = Math.min(format.frame.width / format.screen.width, format.frame.height / format.screen.height);
-	return facing(format.screen, zoom);
+	const held = Math.min(format.frame.width / format.screen.width, format.frame.height / format.screen.height);
+	return facing(format.screen, poseZoomFor(held, format.frame));
 }
 
-/** Face-on at the screen's own size: the pose the page is acted on in, every point of it its own. */
+/**
+ * Face-on at the screen's own size, on a frame the screen's size: the pose the page is acted on in, every point of it
+ * its own.
+ */
 export function flatPose(format: Format): Pose {
-	return facing(format.screen, 1);
+	return facing(format.screen, poseZoomFor(1, format.screen));
 }
 
 export function isFaceOn(pose: Pose): boolean {
@@ -125,7 +130,7 @@ export function onto(box: Box, around: Pose, frame: Size, framing: Framing): Pos
 		frame.width / (box.width + SIDES * framing.air),
 		frame.height / (box.height + SIDES * framing.air)
 	);
-	return focusedAt(around, middleX(box), middleY(box), Math.min(fit, framing.zoomAtMost));
+	return focusedAt(around, middleX(box), middleY(box), Math.min(poseZoomFor(fit, frame), framing.zoomAtMost));
 }
 
 /**
@@ -133,8 +138,9 @@ export function onto(box: Box, around: Pose, frame: Size, framing: Framing): Pos
  * the screen is too short to fill at that zoom, it stands in the frame's middle, as much ground showing either side.
  */
 export function covering(pose: Pose, format: Format): Pose {
-	const halfWidth = format.frame.width / (HALVES * pose.zoom);
-	const halfHeight = format.frame.height / (HALVES * pose.zoom);
+	const frameZoom = frameZoomOf(pose, format.frame);
+	const halfWidth = format.frame.width / (HALVES * frameZoom);
+	const halfHeight = format.frame.height / (HALVES * frameZoom);
 	return focusedAt(
 		pose,
 		keptWithin(pose.focusX, halfWidth, format.screen.width),
@@ -170,9 +176,10 @@ function keptWithin(focus: number, halfSeen: number, length: number): number {
 
 /** Where a point of the screen stands on the frame from a pose: carried into the room, and seen from the eye. */
 export function onTheFrame(pose: Pose, frame: Size, point: Point): Point {
+	const frameZoom = frameZoomOf(pose, frame);
 	const spot = angledAs(pose, {
-		across: pose.zoom * (point.left - pose.focusX),
-		down: pose.zoom * (point.top - pose.focusY),
+		across: frameZoom * (point.left - pose.focusX),
+		down: frameZoom * (point.top - pose.focusY),
 		out: 0
 	});
 	const eyeDistance = eyeDistanceOf(frame);
@@ -201,7 +208,18 @@ export function underTheFrame(pose: Pose, frame: Size, point: Point): Point | nu
 		down: sight.down * reach,
 		out: eyeDistance + sight.out * reach
 	});
-	return { left: pose.focusX + met.across / pose.zoom, top: pose.focusY + met.down / pose.zoom };
+	const frameZoom = frameZoomOf(pose, frame);
+	return { left: pose.focusX + met.across / frameZoom, top: pose.focusY + met.down / frameZoom };
+}
+
+/** The frame's own pixels a page's pixel takes in a pose, on a frame of this size. */
+function frameZoomOf(pose: Pose, frame: Size): number {
+	return pose.zoom * frameScaleOf(frame);
+}
+
+/** The zoom of a pose in which a page's pixel takes so many of the frame's own pixels, on a frame of this size. */
+function poseZoomFor(frameZoom: number, frame: Size): number {
+	return frameZoom / frameScaleOf(frame);
 }
 
 /**

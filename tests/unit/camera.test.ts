@@ -1,28 +1,37 @@
 import { expect, test } from 'vitest';
-import { type Pose, covering, frameShift, onTheFrame, onto, underTheFrame } from '../../src/domain/camera.ts';
-import { type Format, type Point, type Size, distanceBetween } from '../../src/domain/geometry.ts';
+import {
+	type Pose,
+	covering,
+	frameShift,
+	onTheFrame,
+	onto,
+	underTheFrame,
+	wholePose
+} from '../../src/domain/camera.ts';
+import { type Box, type Format, type Point, distanceBetween } from '../../src/domain/geometry.ts';
 
-const SQUARE: Format = { frame: { width: 1000, height: 1000 }, screen: { width: 1400, height: 1000 } };
-const FACE_ON: Pose = { focusX: 700, focusY: 500, zoom: 1, tilt: 0, turn: 0 };
-const LEANING_BACK: Pose = { focusX: 600, focusY: 400, zoom: 0.7, tilt: 14, turn: -9 };
+// A square frame as large as the stage's look was made on, where a zoom counts the frame's own pixels
+const SQUARE: Format = { frame: { width: 1080, height: 1080 }, screen: { width: 1512, height: 1080 } };
+// The same screen in a square frame half as large each way
+const HALF = 0.5;
+const HALF_SQUARE: Format = { frame: { width: 540, height: 540 }, screen: SQUARE.screen };
+const FACE_ON: Pose = { focusX: 756, focusY: 540, zoom: 1, tilt: 0, turn: 0 };
+const LEANING_BACK: Pose = { focusX: 648, focusY: 432, zoom: 0.7, tilt: 14, turn: -9 };
 // The screen seen edge-on: no corner of the frame shows a point of it
 const EDGE_ON: Pose = { ...FACE_ON, turn: 90 };
-// How far a corner of a square frame of 1000 stands from its middle
-const CORNER_FROM_MIDDLE = Math.hypot(500, 500);
-// The screen's corners at half its size in the frame, then at 0.55 of it: each moves 35 across and 25 down
-const SCREEN_CORNER_DRAWN_CLOSER = Math.hypot(35, 25);
+// How far a corner of a square frame of 1080 stands from its middle
+const CORNER_FROM_MIDDLE = Math.hypot(540, 540);
+// The screen's corners at half its size in the frame, then at 0.55 of it: each moves 37.8 across and 27 down
+const SCREEN_CORNER_DRAWN_CLOSER = Math.hypot(37.8, 27);
 // A pan across the screen, in its pixels
 const PANNED_BY = 20;
 // The frame's bottom right corner, and how many decimals of a pixel a point carried there and back keeps
-const FRAME_CORNER: Point = { left: 1000, top: 1000 };
+const FRAME_CORNER: Point = { left: 1080, top: 1080 };
 const DECIMALS = 6;
 const TOP_LEFT: Point = { left: 0, top: 0 };
-const TOP_RIGHT: Point = { left: 1400, top: 0 };
-const BOTTOM_LEFT: Point = { left: 0, top: 1000 };
-const BOTTOM_RIGHT: Point = { left: 1400, top: 1000 };
-// A square frame half as large each way, which the camera half as close fills as the square frame
-const HALF = 0.5;
-const HALF_FRAME: Size = { width: 500, height: 500 };
+const TOP_RIGHT: Point = { left: 1512, top: 0 };
+const BOTTOM_LEFT: Point = { left: 0, top: 1080 };
+const BOTTOM_RIGHT: Point = { left: 1512, top: 1080 };
 
 function widthBetween(pose: Pose, left: Point, right: Point): number {
 	return onTheFrame(pose, SQUARE.frame, right).left - onTheFrame(pose, SQUARE.frame, left).left;
@@ -42,7 +51,7 @@ test('a camera that stands still moves nothing on the frame, at any angle', () =
 
 test('a camera panned face-on moves what the frame shows by its way, as close as it stands', () => {
 	const close = { ...FACE_ON, zoom: 2 };
-	expect(frameShift(close, { ...close, focusX: 710 }, SQUARE)).toBe(20);
+	expect(frameShift(close, { ...close, focusX: 766 }, SQUARE)).toBe(20);
 });
 
 test('a camera panned at an angle moves what the frame shows further than face-on, where the screen leans nearer', () => {
@@ -77,33 +86,52 @@ test('a screen swung by a turn shows its right edge shorter than its left', () =
 	expect(heightBetween(swung, TOP_RIGHT, BOTTOM_RIGHT)).toBeLessThan(heightBetween(swung, TOP_LEFT, BOTTOM_LEFT));
 });
 
-test('a screen at an angle stands as far into a frame half as large, and its corner shows the same point of it', () => {
-	const halfAsClose: Pose = { ...LEANING_BACK, zoom: LEANING_BACK.zoom * HALF };
-	const onTheHalf = onTheFrame(halfAsClose, HALF_FRAME, BOTTOM_RIGHT);
+test('a pose shows the same on a frame half as large: the whole screen, a point of it at an angle, its corner, a face-on edge kept', () => {
+	const onTheHalf = onTheFrame(LEANING_BACK, HALF_SQUARE.frame, BOTTOM_RIGHT);
 	const onTheWhole = onTheFrame(LEANING_BACK, SQUARE.frame, BOTTOM_RIGHT);
-	const halfCorner: Point = { left: HALF_FRAME.width, top: HALF_FRAME.height };
+	const halfCorner: Point = { left: HALF_SQUARE.frame.width, top: HALF_SQUARE.frame.height };
+	const nearTheEdge: Pose = { ...FACE_ON, focusX: 50, zoom: 2 };
 	expect([
+		wholePose(HALF_SQUARE),
 		distanceBetween({ left: onTheHalf.left / HALF, top: onTheHalf.top / HALF }, onTheWhole),
 		distanceBetween(
-			underTheFrame(halfAsClose, HALF_FRAME, halfCorner)!,
+			underTheFrame(LEANING_BACK, HALF_SQUARE.frame, halfCorner)!,
 			underTheFrame(LEANING_BACK, SQUARE.frame, FRAME_CORNER)!
-		)
-	]).toEqual([expect.closeTo(0, DECIMALS), expect.closeTo(0, DECIMALS)]);
+		),
+		covering(nearTheEdge, HALF_SQUARE)
+	]).toEqual([
+		wholePose(SQUARE),
+		expect.closeTo(0, DECIMALS),
+		expect.closeTo(0, DECIMALS),
+		covering(nearTheEdge, SQUARE)
+	]);
 });
 
 test('a block is framed whole with its air round it', () => {
-	const block = { left: 100, top: 200, width: 400, height: 100 };
+	const block: Box = { left: 100, top: 200, width: 440, height: 100 };
 	expect(onto(block, FACE_ON, SQUARE.frame, { air: 50, zoomAtMost: 5 })).toEqual({
 		...FACE_ON,
-		focusX: 300,
+		focusX: 320,
 		focusY: 250,
 		zoom: 2
 	});
 });
 
 test('the camera comes no closer than allowed', () => {
-	const block = { left: 0, top: 0, width: 10, height: 10 };
+	const block: Box = { left: 0, top: 0, width: 10, height: 10 };
 	expect(onto(block, FACE_ON, SQUARE.frame, { air: 0, zoomAtMost: 3 }).zoom).toBe(3);
+});
+
+test('a block is framed alike on a frame half as large: as close as its air lets, and no closer than allowed', () => {
+	const fitted: Box = { left: 100, top: 200, width: 440, height: 100 };
+	const small: Box = { left: 0, top: 0, width: 10, height: 10 };
+	expect([
+		onto(fitted, FACE_ON, HALF_SQUARE.frame, { air: 50, zoomAtMost: 5 }),
+		onto(small, FACE_ON, HALF_SQUARE.frame, { air: 0, zoomAtMost: 3 })
+	]).toEqual([
+		onto(fitted, FACE_ON, SQUARE.frame, { air: 50, zoomAtMost: 5 }),
+		onto(small, FACE_ON, SQUARE.frame, { air: 0, zoomAtMost: 3 })
+	]);
 });
 
 test('a framing keeps the angle it was taken at', () => {
@@ -113,11 +141,11 @@ test('a framing keeps the angle it was taken at', () => {
 });
 
 test('a face-on camera near a corner moves until no edge of the screen shows', () => {
-	const covered = covering({ ...FACE_ON, focusX: 50, focusY: 950, zoom: 2 }, SQUARE);
-	expect([covered.focusX, covered.focusY]).toEqual([250, 750]);
+	const covered = covering({ ...FACE_ON, focusX: 50, focusY: 1030, zoom: 2 }, SQUARE);
+	expect([covered.focusX, covered.focusY]).toEqual([270, 810]);
 });
 
 test('a screen too short to fill the frame along a side stands in its middle along that side', () => {
 	const covered = covering({ ...FACE_ON, focusX: 200, focusY: 100, zoom: 0.8 }, SQUARE);
-	expect([covered.focusX, covered.focusY]).toEqual([625, 500]);
+	expect([covered.focusX, covered.focusY]).toEqual([675, 540]);
 });

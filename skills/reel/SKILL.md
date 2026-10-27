@@ -106,10 +106,7 @@ and clicks it for real; its server is
   `pixels`, `top`); any other number is a constant at the top.
 - Two moves of one part — a prop, or the page — share a step only one after
   the other: `play` and `cut` refuse them at once.
-- Frame by selector, so one script fits every format whose frame is 1080
-  pixels on its shorter side, as 1920 × 1080 and 1080 × 1080 are. On a
-  smaller frame a camera `zoomAtMost` holds back comes closer, on a larger
-  one it stands further off: give `zoomAtMost` per format there. A pose given in
+- Frame by selector, so one script fits every format. A pose given in
   numbers is given once per format, in a record of the film's format names
   (`Record<keyof typeof FORMATS, Pose>`), picked by the `formatName` that
   `steps` is handed: the type checker refuses a format left out. livereel

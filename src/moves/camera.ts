@@ -31,7 +31,10 @@ export interface AngleScript extends TimingScript {
 	readonly turn?: number;
 }
 
-/** How a film frames a block: the first `every` blocks that match, `air` round them, no closer than `zoomAtMost`. */
+/**
+ * How a film frames a block: the first `every` blocks that match, `air` round them in the page's pixels, no closer than
+ * `zoomAtMost`, a zoom as a pose has it (`Pose` in `src/domain/camera.ts`).
+ */
 export interface OntoScript extends AngleScript {
 	readonly every?: number;
 	readonly air?: number;

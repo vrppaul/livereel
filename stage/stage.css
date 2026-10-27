@@ -1,7 +1,7 @@
 /*
  * The stage: the ground the film stands on, the room the camera moves the screen in, and every prop's look. Nothing
  * here moves of itself: the stage's script sets the frame's and the screen's sizes, the eye's distance and how large
- * what stands over the frame is drawn as a film begins, and each prop's numbers every frame (`--zoom`, `--shown`,
+ * it draws on the frame as a film begins, and each prop's numbers every frame (`--zoom`, `--shown`,
  * `--press`), all as bare numbers; the rules below give them their units and turn them into places, sizes and shades.
  */
 html,
@@ -26,7 +26,7 @@ body {
 	overflow: hidden;
 }
 
-/* The camera moves the screen, laid out at its own size, about its top left corner: the point looked at to the frame's middle, then angled and brought close. The engine works out what the camera shows where in the same steps (`src/domain/camera.ts`) */
+/* The camera moves the screen, laid out at its own size, about its top left corner: the point looked at to the frame's middle, then angled and brought close, its zoom counted as on a frame the stage's look was made on. The engine works out what the camera shows where in the same steps (`src/domain/camera.ts`) */
 .camera {
 	position: absolute;
 	left: 0;
@@ -35,7 +35,7 @@ body {
 	height: calc(var(--screen-height) * 1px);
 	transform-origin: 0 0;
 	transform: translate(calc(var(--frame-width) * 1px / 2), calc(var(--frame-height) * 1px / 2))
-		rotateX(calc(var(--tilt) * 1deg)) rotateY(calc(var(--turn) * 1deg)) scale(var(--zoom))
+		rotateX(calc(var(--tilt) * 1deg)) rotateY(calc(var(--turn) * 1deg)) scale(calc(var(--zoom) * var(--frame-scale)))
 		translate(calc(var(--focus-x) * -1px), calc(var(--focus-y) * -1px));
 }
 

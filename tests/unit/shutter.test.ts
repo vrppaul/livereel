@@ -3,9 +3,10 @@ import type { Pose } from '../../src/domain/camera.ts';
 import { type Format, diagonalOf } from '../../src/domain/geometry.ts';
 import { EYE_STEP, type MotionBlur, alsoExposedAt } from '../../src/domain/shutter.ts';
 
-// A screen wider than the frame, so the frame shows it alone however the camera pans here
-const WIDE: Format = { frame: { width: 1000, height: 1000 }, screen: { width: 2000, height: 1000 } };
-const FACE_ON: Pose = { focusX: 600, focusY: 500, zoom: 1, tilt: 0, turn: 0 };
+// A screen wider than the frame, so the frame shows it alone however the camera pans here; the frame as large as the
+// stage's look was made on, where a zoom of 1 takes a page's pixel to the frame's own
+const WIDE: Format = { frame: { width: 1080, height: 1080 }, screen: { width: 2160, height: 1080 } };
+const FACE_ON: Pose = { focusX: 600, focusY: 540, zoom: 1, tilt: 0, turn: 0 };
 // The camera's way from the frame before: far faster than any eye sees as smooth, and a pixel
 const FAST: Pose = { ...FACE_ON, focusX: 800 };
 const SLOW: Pose = { ...FACE_ON, focusX: 601 };

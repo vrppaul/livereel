@@ -161,16 +161,15 @@ and the screen its page is laid out on, and is shot in one at a time. A
 frame's sides are even counts of pixels, as a video holds them.
 
 The stage's look was made on frames 1080 pixels on their shorter side, as
-1920 × 1080 and 1080 × 1080 are. The caption, the terminal and the ending
-keep their share of any frame, and an angle leans as steeply on any: they
-are drawn as on such a frame, and scaled to the one shot. A framing by
-selector fits any frame but where `zoomAtMost` holds the camera back: a
-zoom counts the frame's pixels a page's pixel takes, in a pose as in
-`zoomAtMost`, so there the camera comes closer on a frame smaller than 1080
-on its shorter side and stands further off on a larger one; give
-`zoomAtMost` per format for such frames. A pose given in numbers
-is the film's to give per format, as `steps(served, whole, formatName)` is
-handed the whole screen's pose and the name of the format it is shot in.
+1920 × 1080 and 1080 × 1080 are; on any other frame it is drawn as on such
+a frame and scaled to the one shot. The caption, the terminal and the
+ending keep their share of any frame, and an angle leans as steeply on any.
+A zoom, in a pose as in `zoomAtMost`, is the frame's
+pixels a page's pixel takes on such a frame, so a pose and a framing by
+selector, its `air` in the page's pixels, show as much of the page on a
+frame of any size. A pose given in numbers is the film's to give per
+format, as `steps(served, whole, formatName)` is handed the whole screen's
+pose and the name of the format it is shot in.
 
 ### Where the stage stands
 

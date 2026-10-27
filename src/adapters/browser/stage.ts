@@ -21,7 +21,8 @@ export const STAGE_PAGE = 'stage.html';
 
 /**
  * The room the stage moves the screen in: the frame it fills, the screen, how far the eye stands from the frame, and
- * how large what stands over the frame is drawn on it.
+ * how large the stage draws on it against the frames its look was made on: the camera's zoom, and what stands over the
+ * frame.
  */
 export interface Room {
 	readonly format: Format;

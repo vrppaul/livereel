@@ -1,5 +1,7 @@
 import { expect, test } from 'vitest';
+import { underTheFrame } from '../../src/domain/camera.ts';
 import { FilmError } from '../../src/domain/errors.ts';
+import type { Point } from '../../src/domain/geometry.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
 import { onto } from '../../src/moves/camera.ts';
 import { hide } from '../../src/moves/caption.ts';
@@ -149,7 +151,8 @@ test('a cursor not yet on the screen comes in from below and to the right of whe
 	expect([start!.left > end!.left, start!.top > end!.top]).toEqual([true, true]);
 });
 
-test('a face-on camera onto a block near the screen edge stops short of showing the edge', async () => {
-	const pose = (await setAt(onto('#block', { air: 0, zoomAtMost: 4 }), openingScene(SMALL), 1)).camera;
-	expect(pose.focusX - SMALL.frame.width / (2 * pose.zoom)).toBeGreaterThanOrEqual(0);
+test("a face-on camera onto a block at the screen's foot stops short of showing the edge", async () => {
+	const pose = (await setAt(onto('#half-on', { air: 0, zoomAtMost: 4 }), openingScene(SMALL), 1)).camera;
+	const frameFootMiddle: Point = { left: SMALL.frame.width / 2, top: SMALL.frame.height };
+	expect(underTheFrame(pose, SMALL.frame, frameFootMiddle)!.top).toBeLessThanOrEqual(SMALL.screen.height);
 });

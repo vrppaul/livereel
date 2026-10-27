@@ -37,8 +37,9 @@ const STROKES: readonly Keystroke[] = [
 ];
 // A film camera's shutter, open for half the way, of four exposures at most
 const HALF_OF_FOUR: MotionBlur = { shutter: 0.5, exposuresAtMost: 4 };
-// The camera close on the screen's right edge: from the whole screen, at two thirds of its size, a fast way
-const CLOSE_AT_THE_RIGHT: Pose = { focusX: 400, focusY: 200, zoom: 1, tilt: 0, turn: 0 };
+// The camera close on the screen's right edge, a page's pixel to a frame's pixel, as 2.7 is on a frame of 400 (1080 /
+// 400): from the whole screen, at two thirds of that, a fast way
+const CLOSE_AT_THE_RIGHT: Pose = { focusX: 400, focusY: 200, zoom: 2.7, tilt: 0, turn: 0 };
 // Why a stage's page is gone, as a stage says it
 const GONE = new FilmError('the page at http://app/refusing/ refuses to be framed');
 
