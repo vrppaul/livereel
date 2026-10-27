@@ -8,7 +8,7 @@ pnpm livereel setup
 uvx pre-commit install --hook-type pre-commit --hook-type commit-msg
 ```
 
-Development runs on Node 24, which runs the source as it stands. ffmpeg comes from the system. pre-commit runs the gates, two of them in Python environments it makes itself.
+Development runs on Node 24, which runs the source as it stands. ffmpeg comes from the system, and so does uv, which runs pre-commit (`uvx`). pre-commit runs the gates, and makes Python environments of its own for those that are not the project's commands; the instruction files' gate needs Python 3.14.
 
 ## Development
 
@@ -42,7 +42,7 @@ The rules every change is held to are in `AGENTS.md`, and those of each area und
 
 ## The promo
 
-The README opens on livereel's own promo, `examples/livereel-promo.ts`, shot wide, as a video with its sound, which GitHub plays where it is uploaded to GitHub: the MP4 is dragged into the README's editor on github.com, which uploads it and writes its `user-attachments` address, and the README names that address alone on its line; the edit in the browser is not saved. Shot square, the promo is for a feed. The two formats shoot at once, each in a process of its own:
+The README opens on livereel's own promo, `examples/livereel-promo.ts`, shot wide, as a video with its sound. GitHub plays a video only from its own uploads: drag the MP4 into the README's editor on github.com, which uploads it and writes its `user-attachments` address; put that address alone on its line in the README, and leave the browser's edit unsaved. Shot square, the promo is for a feed. The two formats shoot at once, each in a terminal of its own:
 
 ```bash
 pnpm livereel shoot examples/livereel-promo.ts --format wide --out out/promo --sheet --renderer gpu
@@ -55,7 +55,7 @@ The video goes on the release on GitHub as well: `gh release upload vX.Y.Z out/p
 
 1. Set `version` in `package.json` and in `.claude-plugin/marketplace.json`, and move the changelog's unreleased entries under it, in one commit.
 2. Tag it `vX.Y.Z` and push the tag: `.github/workflows/release.yml` checks the tag names the version, stages the package on npm with its provenance, and makes the release on GitHub as a draft. npm trusts the workflow itself (Trusted Publishing on the package's page, allowed to stage alone): no token is kept.
-3. Approve the staged version on the package's page on npm, or `npm stage list livereel` and `npm stage approve <stage-id>`, with 2FA: only then is it published.
+3. Approve the staged version on the package's page on npm, or `npm stage list livereel` and `npm stage approve <stage-id>` (npm 11.21 or later; `npx npm@11.21.1 stage …` where the system's npm is older), with 2FA: only then is it published.
 4. Put the promo's video on the draft release, as "The promo" above says, and publish the release: `gh release edit vX.Y.Z --draft=false`.
 
-`pnpm pack` builds the package into `dist/` and removes it after; CI shoots a film with the packed package on Node 22.20 on every push.
+`pnpm pack` builds the package into `dist/` and removes it after; CI shoots a film with the packed package on Node 22.20 on every push to main and every pull request.

@@ -13,7 +13,7 @@ import type { Format } from '../domain/geometry.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
 import { type MotionBlurScript, motionBlurOf } from './blur.ts';
 import type { ActContext } from './page.ts';
-import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf } from './sound.ts';
+import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf, musicOf } from './sound.ts';
 import type { Step } from './steps.ts';
 
 /** A page served for as long as a take lasts, at its address; the film's own handles may come with it. */
@@ -66,10 +66,6 @@ export interface Film {
 }
 
 const NO_FORMAT = 'a film has a format at least: the frame it is shot in, and the screen its page is laid out on';
-// A film that says nothing of livereel's sounds keeps every one of them
-const EVERY_LIVEREEL_SOUND: LivereelSoundsScript = {};
-// A film that says nothing of its blur is blurred as livereel blurs
-const LIVEREELS_BLUR: MotionBlurScript = {};
 
 export class ScriptedFilm<Served extends Serving, Name extends string> implements Film {
 	readonly script: Script<Served, Name>;
@@ -79,8 +75,8 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 
 	constructor(script: Script<Served, Name>) {
 		this.script = script;
-		this.sound = soundOfFilm(script);
-		this.motionBlur = motionBlurOf(script.motionBlur ?? LIVEREELS_BLUR);
+		this.sound = { livereels: livereelSoundsOf(script.sounds), music: musicOf(script.music) };
+		this.motionBlur = motionBlurOf(script.motionBlur);
 		this.formats = new Map(namesOf(script.formats).map((name) => [name, this.inFormat(name)]));
 		if (this.formats.size === 0) throw new FilmError(NO_FORMAT);
 	}
@@ -120,20 +116,6 @@ export function defineFilm<Served extends Serving, Name extends string>(script: 
 
 export function atAddress(address: string): Serving {
 	return new ServedElsewhere(address);
-}
-
-/**
- * What a film says of its sounds: every one of livereel's where it says nothing of them, none where it turns them off,
- * and no music where it gives none. Music at a volume that is no level — not a number, endless, below none — is
- * refused, as is a keyboard livereel has not.
- */
-function soundOfFilm<Served extends Serving, Name extends string>(script: Script<Served, Name>): FilmSound {
-	const music = script.music ?? null;
-	if (music !== null && !(Number.isFinite(music.volume) && music.volume >= 0)) {
-		throw new FilmError(`the music's volume is ${music.volume}: it is 0 or more, 1 as loud as the file`);
-	}
-	const sounds = script.sounds ?? EVERY_LIVEREEL_SOUND;
-	return { livereels: livereelSoundsOf(sounds), music };
 }
 
 /**

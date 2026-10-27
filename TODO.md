@@ -8,6 +8,7 @@
   - Chrome's Local Network Access checks are off for the framed page to hear its server's WebSocket (`src/adapters/browser/chromium.ts`).
 - A page's own animations that ignore `prefers-reduced-motion` run on the wall clock, so two shots of such a page differ. Setting each of `document.getAnimations()` to the film's moment every frame was built and taken out (2026-10-25): its `frame.evaluate` each frame met navigations (`examples/example-com.ts` failed 3 of 3, "Execution context was destroyed"), a scroll-driven animation threw on `currentTime`, and it overrode what the page does with its own animations (a rate of 2, `reverse()`, a pause after the film first saw it); `document.getAnimations()` misses shadow roots, and a paused animation sought past its end never resolves `finished`. Chrome's construction for a page on a clock of its own is `HeadlessExperimental.beginFrame` with `frameTimeTicks` in the headless shell, which moves the document's timeline and animation frames together; Playwright makes no page with begin-frame control, so the page would be made through CDP. Not probed. CDP's virtual time (`Emulation.setVirtualTimePolicy`) holds timers, measured on a framed page served from 127.0.0.1: paused, a `setInterval` of 100 ms ticked never in 1 s of wall time and once for each 100 ms of budget, but a CSS animation ran 0.98 s of its 2 s in that second.
 - `--renderer gpu` where Vulkan finds no driver for a graphics card draws in software without a word, and the page gets no WebGL context, which `software` gives it through SwiftShader: a film of a WebGL page would show its canvas empty. Probed on Linux 2026-10-26 by pointing `VK_ICD_FILENAMES` at no driver, and by the reviewer at Mesa's software Vulkan alone (lavapipe, whose llvmpipe Chrome blocklists); a machine with no card at all, as a CI runner, is not probed. What the shell draws with is told without a page by CDP's `SystemInfo.getInfo`: `featureStatus.gpu_compositing` is `enabled` on the card and `disabled_software` otherwise. Whether to refuse the renderer then, or to say it, is the owner's to decide.
+- A film runs with its types unchecked, and livereel checks as they enter only what `defineFilm` reads of the sounds, the blur and the music (`src/direction/handed.ts`). A move's own options are read as given: `cursor.click(action, { sound: null })` or `sound.play('')` reach the shoot, and by the code (not shot) fail there on Node's own error from `resolve`, or as a file not there, not refused by name; `formats: null` throws a TypeError said as "a film is an ES module". Whether every part of a film is checked where it enters, by hand or by a schema read off the types, is the owner's to decide.
 
 ## Films
 
@@ -20,14 +21,13 @@
 - The page in the dark colour scheme where a film asks for it.
 - A player for a person: the film's scene on a scrubber, before anything is shot.
 - A GitHub Action that shoots a project's films again on every release, so the videos in its docs show the app as it is.
-- The camera and the light onto a box given in pixels, for a page whose parts have no selector (a canvas).
 
 ## Integrations
 
 An integration is a module a film imports, built on the seams livereel already has, with no registry or loader: a page served (`serve` hands back a `Serving`), moves (`Move`), acts (`ActContext`). One that needs nothing but `fetch` is a subpath of this package (`livereel/figma`, a line in `exports`); one that needs a heavy dependency, a package of its own.
 
-- The seams a film's integration builds on exported as the package's promise, types and all: `Serving`, `Move`, `Beginning`, `ActContext`, `FilmedPage`.
-- A target given as a box in pixels as well as a selector, for the camera, the light and the cursor (the Films item on a canvas): a Figma prototype or a canvas has no selector.
+- The rest of the seams a film's integration builds on exported as the package's promise: `Beginning` and `FilmedPage`, beside `Serving`, `Move` and `ActContext`, which are.
+- A target given as a box in pixels as well as a selector, for the camera, the light and the cursor: a Figma prototype or a canvas has no selector.
 - The props stay the core's: the scene's set of them is closed (`src/scene.ts`, `DRAWERS` on the stage), which the compiler holds.
 
 ## Figma

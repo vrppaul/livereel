@@ -32,4 +32,5 @@ How a module is built is said in its comment at the top. The stage has its own r
 ## The command line
 
 - A command takes its options by name, each command its own, and refuses any other before anything is started.
-- What the command line says goes through `say`; the exit code says whose it is to put right: 2 the command line or film file, 1 the film.
+- What a command says goes through `say`, to stdout.
+- What a command refuses, `main` writes to stderr; the exit code says whose it is to put right: 2 the command line or film file, 1 the film.

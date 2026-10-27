@@ -38,7 +38,7 @@ caption. Speak in the director's words, which are the tool's:
 | camera move | a `play({ seconds, moves, ease })` |
 | light | `light.on`, `light.to`, `light.off` — one block lit, the rest dimmed |
 | cast | what the page shows, opened and closed by `act` |
-| action | `act` — a real click (`cursor.click`), real keys (`page.type`), a command |
+| action | what the page does for real: a click (`cursor.click`), keys typed into it (`typing(page.type(strokes))`), anything else in an `act` |
 | caption | `caption.show(text)`, `caption.hide()` |
 | entrance | `cut(screen.lower())`, then `screen.rise()` in a `play`; `ending.show(card)` |
 | tempo | how long each `play` and `hold({ seconds })` lasts |
@@ -71,12 +71,19 @@ npm i -D livereel      # or pnpm add -D livereel
 npx livereel setup     # the browser films are shot in; it says if ffmpeg is missing
 ```
 
+If ffmpeg is missing, tell the user to install it and stop. If the browser
+will not start for a system library it lacks, on Linux, tell the user that
+`npx playwright-core install-deps chromium` installs them. A film is an ES
+module: the project's `package.json` says `"type": "module"`, or the film's
+file is named `.mts`.
+
 Shoot a film with `--renderer gpu`: its frames are drawn on the graphics
-card, and a full shoot takes about half as long as in software (the promo,
-blurred: 271 s against 495 s). It needs no screen. Where it reaches no
-graphics card, as on a CI runner, the frames are drawn in software all the
-same, but a page that draws with WebGL draws nothing: a canvas left empty on
-the contact sheet says so, and the film is shot again without the flag.
+card, and it needs no screen. On Linux, where it was tried, a full shoot
+took about half as long as in software (the promo, blurred: 271 s against
+495 s); on macOS and Windows it is not tried yet. Where it finds no driver
+for a graphics card, it draws the frames in software without a word, and on
+Linux the page then has no WebGL: a canvas left empty on the contact sheet
+says so; shoot the film again without the flag.
 
 A film is a TypeScript file whose default export is `defineFilm({ formats,
 serve, ready, steps })` from `livereel`: its formats by name, each a frame
@@ -92,30 +99,43 @@ and clicks it for real; its server is
 
 - Split the steps into acts, a function each; name every selector at the
   top, by test id or role where the page has them.
-- Write each number as the value of its keyword in place (`seconds`, `air`,
-  `start`, `end`, `seed`, `pace`); any other number is a constant at the top.
+- Write a step's timing, framing and rhythm as numbers in place, each the
+  value of its keyword (`seconds`, `start`, `end`, `air`, `zoomAtMost`,
+  `every`, `tilt`, `turn`, `dim`, `thinkingShare`, `seed`, `slipAt`, `pace`,
+  `pixels`, `top`); any other number is a constant at the top.
 - Two moves of one part — a prop, or the page — share a step only one after
   the other: `play` and `cut` refuse them at once.
 - Frame by selector, so one script fits every format. A pose given in
   numbers is given once per format, in a record of the film's format names
   (`Record<keyof typeof FORMATS, Pose>`), picked by the `formatName` that
-  `steps` is handed: the compiler refuses a format left out.
+  `steps` is handed: the type checker refuses a format left out. livereel
+  runs a film with its types stripped, unchecked: check them in the editor
+  or with the project's type checker before shooting.
+- Prefer the page's own states to anything drawn over it: open a panel with
+  its own button, not by hiding parts of the page.
+- A page that refuses frames (`X-Frame-Options`) is shown anyway: livereel
+  takes the refusal off in its own browser.
 
 ### Sound
 
 A film is heard as well as seen: a click as the cursor presses, a key for
 every stroke typed, a soft chime as the ending comes up, each on its own
 frame. These are livereel's own, quiet and CC0, the keys recorded on real
-keyboards. `defineFilm` takes, beside the rest, `sounds: { keyboard }` (one
-of `membrane`, the one where none is named, `mechanical`,
-`mechanical-bright`, `butterfly`, `laptop`, `clicky`), `sounds: { click,
-key, ending }` (files of the film's own in their place, a path from the
-film's file, any kind ffmpeg reads, or `{ enabled: false }` for one turned
-off, as `sounds: { key: { enabled: false } }`; a key file or none in place of
-a keyboard, not beside it) or `sounds: { enabled: false }` (none of
-livereel's), and
-`music: { file, volume }` (a track under the whole film, 1 as loud as it
-is, cut to the film's length and faded out at its end).
+keyboards. `defineFilm` takes, beside the rest:
+
+- `sounds: { keyboard }`, the keyboard the keys are heard on: `membrane`
+  where none is named, `mechanical`, `mechanical-bright`, `butterfly`,
+  `laptop` or `clicky`;
+- `sounds: { click, key, ending }`, any of them: a file of the film's own in
+  its place, a path from the film's file, any kind ffmpeg reads, or
+  `{ enabled: false }` to turn it off, as `sounds: { key: { enabled: false } }`.
+  The click and the ending may stand beside a keyboard; a key given so takes
+  the keyboard's place, and is never named beside it;
+- `sounds: { enabled: false }` for none of livereel's;
+- `music: { file, volume }`, a track under the whole film, `volume` 1 as
+  loud as the file, cut to the film's length and faded out at its end.
+
+How to use them:
 
 - Sounds are few and quiet: a click, the keys, the ending. Never a whoosh
   on a camera move or a sound on every caption: that reads as generated.
@@ -133,9 +153,10 @@ is, cut to the film's length and faded out at its end).
 
 ### What a film is written with
 
-Every move that runs over time takes, last, its timing: `within: { start,
-end }`, the share of its step it runs over (0 to 1, the whole step if left
-out), and `ease`, its own curve where it does not take its step's.
+Every move that runs over time takes its timing as its last argument:
+`within: { start, end }`, the share of its step it runs over (0 to 1, the
+whole step if left out), and `ease`, its own curve where it does not take
+its step's.
 `cursor.hide()`, `screen.lower()` and `terminal.submit()` are made at once
 and take none: write them in a `cut`. Any other move in a `cut` is set at
 its end at once.
@@ -168,13 +189,12 @@ its end at once.
 | `page.type(strokes)` | real keys typed into whatever holds the page's keyboard |
 | `sound.play(file)` | a file of the film's heard as its share begins; it moves nothing, so it shares a step with anything |
 
+`cursor.click` and `typing` give several steps: spread them among the
+others, `...cursor.click(action)`, `...typing(page.type(strokes))`.
+
 The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
 person types; the curves are `linear`, `easeInOutSine` (a step's own),
 `easeInOutCubic`, `easeOutCubic` and `easeOutQuint`.
-- Prefer the page's own states to anything drawn over it: open a panel with
-  its own button, not by hiding parts of the page.
-- A page that refuses frames (`X-Frame-Options`) is shown anyway: livereel
-  takes the refusal off in its own browser.
 
 ## 4. Checking it
 
@@ -185,10 +205,17 @@ npx livereel shoot film.ts --format square --out out --sheet --renderer gpu   # 
 npx livereel still film.ts --format square --out out --at 12.5                 # one still, without the video
 ```
 
+A full shoot takes minutes: the promo, 20 seconds long, took 238 to 271 s
+on the graphics card and 495 s in software. Run it in the background, or
+with a timeout that long; a still takes seconds.
+
 - `--format` names the format to shoot; a film of one format needs none.
   `--as gif` or `--as webm` makes the video as a GIF or a WebM, and
   `--as mp4 --as gif` both from one take: shoot the kinds the user asked
   for once the film is checked.
+- `--quality draft` shoots quicker: at the frame's own size and unblurred.
+  Use it for a first look at the timing; judge the film on sheets and
+  stills shot at the default, `finest`.
 - After every change, read the contact sheet of every format; read every
   new shot at full size with `--at`.
 - Check what the eye checks: is the caption about what is lit, is the text

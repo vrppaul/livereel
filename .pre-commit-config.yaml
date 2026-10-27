@@ -33,9 +33,9 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-      - id: skill
-        name: the skill (it names every function a film can call)
-        entry: node -C source scripts/check-skill.ts
+      - id: film-documents
+        name: the skill and the README (each names every function a film can call)
+        entry: node -C source scripts/check-film-documents.ts
         language: system
         pass_filenames: false
         always_run: true
