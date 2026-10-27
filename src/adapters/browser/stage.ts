@@ -13,17 +13,30 @@ import type { Format } from '../../domain/geometry.ts';
 import type { DrawnScene } from '../../scene.ts';
 import type { Stage } from '../../studio/ports.ts';
 
+// The package's stage, as far from this module in the source as in the package built from it, and its page
+export const STAGE_FOLDER = new URL('../../../stage/', import.meta.url);
+export const STAGE_PAGE = 'stage.html';
+
 /** The room the stage moves the screen in: the frame it fills, the screen, and how far the eye stands from the frame. */
 export interface Room {
 	readonly format: Format;
 	readonly eyeDistance: number;
 }
 
+/**
+ * How the screen's frame opens the filmed page: at its address, and sandboxed inside the app, where the page could
+ * move the stage away whenever it likes, the sandbox's value what the page may still do; none apart from it.
+ */
+export interface Opening {
+	readonly address: string;
+	readonly sandbox: string | null;
+}
+
 export interface StageApi {
 	/** The stage laid out as a room: the screen in the frame, seen from the eye. */
 	readonly setup: (room: Room) => void;
 	/** The filmed page opened in the screen's frame. */
-	readonly open: (address: string) => void;
+	readonly open: (opening: Opening) => void;
 	/** One frame, drawn whole from the scene. */
 	readonly apply: (scene: DrawnScene) => void;
 }
@@ -82,8 +95,8 @@ export function setUpStage(room: Room): void {
 }
 
 /** The filmed page opened in the stage's frame. */
-export function openPage(address: string): void {
-	window.stage.open(address);
+export function openPage(opening: Opening): void {
+	window.stage.open(opening);
 }
 
 function applyScene(scene: DrawnScene): void {

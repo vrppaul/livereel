@@ -1,29 +1,20 @@
 // A film of an app with a server of its own, shot in a browser: the page refusing to be framed, a frame inside it
 // that cannot be reached, an answer from the server after a click, what the server pushes down a WebSocket, and the
 // page's own scroll
-import { createHash } from 'node:crypto';
-import { type Server, createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { once } from 'node:events';
-import type { AddressInfo } from 'node:net';
-import type { Duplex } from 'node:stream';
 import { expect, test } from 'vitest';
 import { Chromium } from '../../src/adapters/browser/chromium.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { shoot } from '../../src/studio/shoot.ts';
-import type { Footage } from '../../src/studio/ports.ts';
+import { NoFrames, PUSHED, type Routes, servedApp } from './app.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
-import { type ActContext, type Serving, act, cursor, defineFilm, page, play } from 'livereel';
+import { type ActContext, act, cursor, defineFilm, page, play } from 'livereel';
 
 const FAR = '[data-testid=far]';
 const ASK = '[data-testid=ask]';
 const ANSWER = '[data-testid=answer]';
 const ANSWERED = 'answered';
 const PUSHED_HERE = '[data-testid=pushed]';
-const PUSHED = 'pushed';
 const SMALL = { frame: { width: 320, height: 320 }, screen: { width: 480, height: 320 } };
-// The WebSocket handshake's fixed key, and the first byte of a whole text message, its length next (under 126)
-const WEBSOCKET_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
-const TEXT_MESSAGE = 0x81;
 
 const APP = `<!doctype html>
 <html lang="en">
@@ -40,8 +31,8 @@ const APP = `<!doctype html>
 	</body>
 </html>`;
 
-const ROUTES: Readonly<Record<string, (response: ServerResponse) => void>> = {
-	'/app/': (response) =>
+const ROUTES: Routes = {
+	'/app/': (_request, response) =>
 		response
 			.writeHead(200, {
 				'Content-Type': 'text/html',
@@ -49,60 +40,10 @@ const ROUTES: Readonly<Record<string, (response: ServerResponse) => void>> = {
 				'Content-Security-Policy': "default-src 'self' 'unsafe-inline' http://127.0.0.1:9; frame-ancestors 'none'"
 			})
 			.end(APP),
-	'/app/style.css': (response) =>
+	'/app/style.css': (_request, response) =>
 		response.writeHead(200, { 'Content-Type': 'text/css' }).end(':root { --loaded: yes; }'),
-	'/answer': (response) => setTimeout(() => response.writeHead(200).end(ANSWERED), 300)
+	'/answer': (_request, response) => setTimeout(() => response.writeHead(200).end(ANSWERED), 300)
 };
-
-function answer(request: IncomingMessage, response: ServerResponse): void {
-	ROUTES[String(request.url)]!(response);
-}
-
-/** The WebSocket the page opens, taken, one message pushed down it, and closed, so the server can stop. */
-function pushOnce(request: IncomingMessage, socket: Duplex): void {
-	const key = String(request.headers['sec-websocket-key']);
-	const accept = createHash('sha1').update(`${key}${WEBSOCKET_GUID}`).digest('base64');
-	socket.write(
-		`HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${accept}\r\n\r\n`
-	);
-	socket.end(Buffer.concat([Buffer.from([TEXT_MESSAGE, PUSHED.length]), Buffer.from(PUSHED)]));
-}
-
-class AppServed implements Serving {
-	readonly server: Server;
-	readonly address: string;
-
-	constructor(server: Server) {
-		this.server = server;
-		this.address = `http://127.0.0.1:${(server.address() as AddressInfo).port}/app/`;
-	}
-
-	async [Symbol.asyncDispose](): Promise<void> {
-		this.server.closeAllConnections();
-		this.server.close();
-		await once(this.server, 'close');
-	}
-}
-
-async function served(): Promise<AppServed> {
-	const server = createServer(answer).on('upgrade', pushOnce).listen(0, '127.0.0.1');
-	await once(server, 'listening');
-	return new AppServed(server);
-}
-
-/** Footage that keeps no frame: the film is shot for what reaches the page. */
-class NoFrames implements Footage {
-	expect(): void {}
-	keeps(): boolean {
-		return false;
-	}
-	keep(): Promise<void> {
-		return Promise.resolve();
-	}
-	complete(): boolean {
-		return false;
-	}
-}
 
 const seen: (number | string | null)[] = [];
 // How long a push may take to reach the page, well past what one takes
@@ -130,7 +71,7 @@ function askTheServer(context: ActContext): Promise<void> {
 test('an app with a server of its own is filmed: framed, scrolled, answered after a click, and pushed to', async () => {
 	const film = defineFilm({
 		formats: { small: SMALL },
-		serve: served,
+		serve: () => servedApp(ROUTES, '/app/'),
 		ready: (context) => context.page.locator(ASK).waitFor(),
 		steps: () => [
 			play({ seconds: 0.2, moves: [page.scrollBy('html', { pixels: 1000 })] }),

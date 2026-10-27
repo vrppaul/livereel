@@ -119,6 +119,11 @@ and clicks it for real; its server is
   its own button, not by hiding parts of the page.
 - A page that refuses frames (`X-Frame-Options`) is shown anyway: livereel
   takes the refusal off in its own browser.
+- An app that signs in: write `stage: 'inside'` in `defineFilm`, and sign
+  in in `ready` or in an act, as a person does, with an account the user
+  gives for the film. The stage then stands on the app's own address. Read
+  what each stage costs in `node_modules/livereel/README.md`, "Where the
+  stage stands", and tell the user before shooting.
 
 ### Sound
 
@@ -238,13 +243,15 @@ with a timeout that long; a still takes seconds.
 
 ## Traps already met
 
-- An app behind a sign-in cannot be filmed yet: its own requests in the
-  stage's frame go without its cookies, so its data does not load. Ask the
-  user before writing the film whether the pages it shows need a sign-in;
-  if they do, say so and stop, or film a page that needs none.
-- Point the film at the address the page is finally at: a page reached
-  through a redirect keeps the address asked for in the frame, and its
-  styles and links break.
+- On the stage apart, an app's own requests go without its cookies, so an
+  app behind a sign-in shows nobody signed in. Ask the user before writing
+  the film whether the pages it shows need a sign-in; if they do, shoot it
+  with `stage: 'inside'` and an account for the film. A session only the
+  user can sign in to (two factors, a sign-in elsewhere) cannot be filmed
+  yet: say so and stop, or film a page that needs none.
+- On the stage apart, point the film at the address the page is finally
+  at: a page reached through a redirect keeps the address asked for in the
+  frame, and its styles and links break.
 - A browser places a click wrongly on a screen the camera has scaled: an
   `act` lays the screen flat at its own size first. Do clicks in `act`.
 - The page is asked for the light colour scheme: an app that follows the

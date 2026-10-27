@@ -56,11 +56,11 @@ async function servedFrom(serving: unknown) {
 
 test('a film in no form of one is refused as it is defined, where it stands: its names, its formats, its functions', () => {
 	expect(() => defineFilm(null as never)).toThrow(
-		new FilmError('the film is null: it is an object of formats, serve, ready, steps, sounds, music, motionBlur')
+		new FilmError('the film is null: it is an object of formats, serve, stage, ready, steps, sounds, music, motionBlur')
 	);
 	expect(() => filmWritten({ motionblur: {} })).toThrow(
 		new FilmError(
-			'the film names motionblur: it names formats, serve, ready, steps, sounds, music, motionBlur, or fewer'
+			'the film names motionblur: it names formats, serve, stage, ready, steps, sounds, music, motionBlur, or fewer'
 		)
 	);
 	expect(() => filmWritten({ formats: null })).toThrow(
@@ -159,7 +159,7 @@ test('keys livereel cannot lay are refused as the film is defined: a keyboard it
 	expect(() => filmSounding({ keyboard: 'typewriter' as KeyboardSound })).toThrow(FilmError);
 	expect(() => filmSounding({ keyboard: null } as unknown as LivereelSoundsScript)).toThrow(
 		new FilmError(
-			"the film's sounds.keyboard is null: livereel's are membrane, mechanical, mechanical-bright, butterfly, laptop, clicky"
+			"the film's sounds.keyboard is null: it is one of livereel's keyboards: membrane, mechanical, mechanical-bright, butterfly, laptop, clicky"
 		)
 	);
 	expect(() => filmSounding({ keyboard: 'laptop', key: './key.wav' } as LivereelSoundsScript)).toThrow(FilmError);
@@ -272,6 +272,18 @@ test("a blur given one value keeps livereel's other", () => {
 
 test('a blur turned off is no blur', () => {
 	expect(blurOfFilm({ enabled: false })).toBeNull();
+});
+
+test('a film is shot on the stage it names, apart where it names none; a stage livereel has not is refused as the film is defined', () => {
+	expect([filmWritten({}), filmWritten({ stage: 'inside' })].map((film) => film.formats.get('small')!.stage)).toEqual([
+		'apart',
+		'inside'
+	]);
+	expect(() => filmWritten({ stage: 'within' })).toThrow(
+		new FilmError(
+			`the film's stage is "within": it is "apart", or "inside" the app's own address for an app that signs in or refuses to be framed`
+		)
+	);
 });
 
 test('a blur that cannot be shot is refused as the film is defined: a shutter shut or open past the frame before, too few exposures or a broken count', () => {

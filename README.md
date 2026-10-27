@@ -159,6 +159,36 @@ give per format, as `steps(served, whole, formatName)` is handed the whole
 screen's pose and the name of the format it is shot in. A frame's sides are
 even counts of pixels, as a video holds them.
 
+### Where the stage stands
+
+Your app sits in a frame of the stage, a page of livereel's own.
+`defineFilm` takes `stage`:
+
+- `apart`, where none is named: the stage is a file of livereel's, and the
+  page is framed in it, the refusal to be framed taken off every page's
+  answer. To the stage the page is a page of another site, so its cookies go
+  with none of its own requests: a sign-in does not hold. A click that moves
+  the top page, as a link to `_top` does, takes the stage away.
+- `inside`, for an app that signs in or refuses to be framed: the stage
+  stands on the app's own address, at `/__livereel__/stage.html`, so the
+  page is of the stage's own site. Its cookies go with each of its
+  requests, a sign-in the film makes in the frame holds (an `act` that fills
+  the form, or an address that signs in and sends the page on), and a
+  redirect lands in the frame. A page that refuses to be framed is shown:
+  livereel's browser takes the refusal off that page's answer alone. The
+  page's address is one a server serves, at http or https.
+
+What `inside` costs:
+
+- The frame is sandboxed short of moving the page it stands in, so a page
+  that breaks out of frames stays in the stage, and a link to `_top` does
+  nothing. What else the sandbox changes for an app is not measured yet.
+- Only the app's own site is signed in: a page of another site the frame
+  goes to gets only its cookies of `SameSite=None`.
+- The app's scripts can reach the stage, which stands on their origin.
+- A page of another site that refuses to be framed, and the app's service
+  worker, are not tried yet.
+
 ### Sound
 
 A film is heard: a click as the cursor presses, a key for every stroke
@@ -214,12 +244,12 @@ clock is its frames.
 
 ## Limits
 
-- What livereel films today: public pages, and apps served on your machine
-  that need no sign-in. An app behind a sign-in is not filmed yet: in the
-  stage's frame the page's own requests go without its cookies, so its data
-  does not load. A page that redirects during a film keeps the address it
-  asked for, so its relative addresses break. Both are planned
-  ([`TODO.md`](TODO.md)).
+- What livereel films: public pages, and apps served on your machine. An
+  app that signs in is filmed with `stage: 'inside'`, signed in by the film
+  itself; a session the person signs in to themselves (two factors, a
+  sign-in elsewhere) is not taken yet ([`TODO.md`](TODO.md)). On the stage
+  apart, a page that redirects during a film keeps the address it asked
+  for, so its relative addresses break; inside, it lands where it is sent.
 - Chromium alone, headless.
 - The page is asked for reduced motion and the light colour scheme. A page
   that animates anyway runs those animations on the wall clock, so two shots

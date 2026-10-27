@@ -101,20 +101,29 @@ export class ListOf<Value> implements Kind<readonly Value[]> {
 	}
 }
 
-/** A kind of one value alone, by its name: a step's `kind`. */
-export class Literal<Name extends string> implements Kind<Name> {
-	readonly name: Name;
+/** A kind of one value of a few, by its name: a line's kind, a keyboard, where the stage stands. */
+export class OneOf<Name extends string> implements Kind<Name> {
+	readonly names: readonly Name[];
+	readonly said: string;
 
-	constructor(name: Name) {
-		this.name = name;
+	constructor(names: readonly Name[], said: string) {
+		this.names = names;
+		this.said = said;
 	}
 
 	is(written: unknown): written is Name {
-		return written === this.name;
+		return this.names.some((name) => name === written);
 	}
 
 	faultOf(written: unknown, place: string): string | undefined {
-		return this.is(written) ? undefined : refusalOf(written, place, JSON.stringify(this.name));
+		return this.is(written) ? undefined : refusalOf(written, place, this.said);
+	}
+}
+
+/** A kind of one value alone, by its name, said as it is written: a step's `kind`. */
+export class Literal<Name extends string> extends OneOf<Name> {
+	constructor(name: Name) {
+		super([name], JSON.stringify(name));
 	}
 }
 

@@ -1,7 +1,8 @@
 /**
  * Chromium with the stage open in it and the filmed page in the stage's frame, for one take.
  *
- * The stage is a file, `stage/stage.html` in the package. Chrome's Local Network Access checks are off in the
+ * The stage stands apart from the app, a file of the package (`stage/stage.html`), or inside it, on the app's own
+ * address, where the film asks for it (`inside.ts`). Chrome's Local Network Access checks are off in the
  * filming browser: with them on, a page served on this machine and framed in the stage still fetches from its
  * server, but nothing its server pushes down a WebSocket reaches it (measured on Chromium 156; held by
  * `tests/smoke/app.test.ts`), and a live app is filmed for what its server says. The page's own motion is stilled,
@@ -19,14 +20,15 @@
 import { type Browser as Playwright, type Frame, type Page, chromium } from 'playwright-core';
 import { FilmError, SetupError } from '../../domain/errors.ts';
 import type { Format } from '../../domain/geometry.ts';
+import type { StagePlace } from '../../direction/film.ts';
 import type { ActContext, PageMotionSwitch } from '../../direction/page.ts';
 import type { Browser, Opened } from '../../studio/ports.ts';
+import { stagedInside } from './inside.ts';
 import { PlaywrightPage } from './page.ts';
 import { isServed, withoutFrameRefusals } from './refusals.ts';
-import { BrowserStage, openPage, roomOf, setUpStage } from './stage.ts';
+import { BrowserStage, type Opening, STAGE_FOLDER, STAGE_PAGE, openPage, roomOf, setUpStage } from './stage.ts';
+import type { Warn } from './warn.ts';
 
-// The package's stage: as far from this module in the source as in the package built from it
-const STAGE = new URL('../../../stage/stage.html', import.meta.url).href;
 const NAVIGATED = 'framenavigated';
 // Where Chrome leaves a frame whose page it could not reach
 const UNREACHED = 'chrome-error:';
@@ -76,9 +78,6 @@ function isSystem(platform: string): platform is System {
 	return Object.hasOwn(CARD_INTERFACES, platform);
 }
 
-/** A line livereel warns of as it goes on: something the person would want to know, which stops nothing. */
-export type Warn = (line: string) => void;
-
 export class Chromium implements Browser {
 	readonly renderer: Renderer;
 	readonly warn: Warn;
@@ -88,11 +87,12 @@ export class Chromium implements Browser {
 		this.warn = warn;
 	}
 
-	async open(format: Format, address: string, sharpness: number): Promise<Opened> {
+	async open(format: Format, address: string, stage: StagePlace, sharpness: number): Promise<Opened> {
 		const browser = await launched(this.renderer);
 		try {
 			await whereItDrawsChecked(this.renderer, browser, this.warn);
-			return await openedIn(browser, format, address, sharpness);
+			const page = await browser.newPage({ viewport: format.frame, deviceScaleFactor: sharpness });
+			return await openedOn(browser, page, format, await staged(page, stage, address, this.warn));
 		} catch (fault) {
 			await browser.close();
 			throw fault;
@@ -185,18 +185,31 @@ async function compositingOf(browser: Playwright): Promise<string | undefined> {
 	}
 }
 
-async function openedIn(browser: Playwright, format: Format, address: string, sharpness: number): Promise<Opened> {
-	const page = await browser.newPage({ viewport: format.frame, deviceScaleFactor: sharpness });
+/**
+ * The stage opened where the film asks for it; how its frame then opens the page. Apart from the app the frame is not
+ * sandboxed, so the page does all it would: Chrome stops a page of another site moving the page it is framed in, but
+ * not on a click, so a click on a link to `_top` takes the stage away (measured 2026-10-27; TODO.md).
+ */
+async function staged(page: Page, stage: StagePlace, address: string, warn: Warn): Promise<Opening> {
+	switch (stage) {
+		case 'apart':
+			await page.route(isServed, withoutFrameRefusals);
+			await page.goto(new URL(STAGE_PAGE, STAGE_FOLDER).href);
+			return { address, sandbox: null };
+		case 'inside':
+			return stagedInside(page, address, warn);
+	}
+}
+
+async function openedOn(browser: Playwright, page: Page, format: Format, opening: Opening): Promise<Opened> {
 	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: COLOUR_SCHEME });
-	await page.route(isServed, withoutFrameRefusals);
-	await page.goto(STAGE);
 	await page.evaluate(setUpStage, roomOf(format));
 	const [filmed] = await Promise.all([
 		page.waitForEvent(NAVIGATED, { predicate: isInTheStagesFrame }),
-		page.evaluate(openPage, address)
+		page.evaluate(openPage, opening)
 	]);
 	await filmed.waitForLoadState();
-	if (filmed.url().startsWith(UNREACHED)) throw new FilmError(`the page at ${address} could not be reached`);
+	if (filmed.url().startsWith(UNREACHED)) throw new FilmError(`the page at ${opening.address} could not be reached`);
 	return new OpenedChromium(browser, new BrowserStage(page, format), filmed);
 }
 

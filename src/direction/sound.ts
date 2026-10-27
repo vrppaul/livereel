@@ -10,7 +10,15 @@
  */
 import { FilmError } from '../domain/errors.ts';
 import { type Keystroke, typingSeconds } from '../domain/typing.ts';
-import { A_PATH, type Handed, assertKind, described, isObjectOfValues, refuseNamesBeyond } from '../domain/handed.ts';
+import {
+	A_PATH,
+	type Handed,
+	OneOf,
+	assertKind,
+	described,
+	isObjectOfValues,
+	refuseNamesBeyond
+} from '../domain/handed.ts';
 import { type TurnedOff, isTurnedOff, turnedOffBy } from './turned-off.ts';
 
 /** livereel's sounds: the cursor pressed in, a key typed, the ending coming up. */
@@ -19,6 +27,7 @@ export type LivereelSound = 'click' | 'key' | 'ending';
 /** livereel's keyboards, each recorded key by key: what a key typed sounds like where the film gives no file for it. */
 const KEYBOARD_SOUNDS = ['membrane', 'mechanical', 'mechanical-bright', 'butterfly', 'laptop', 'clicky'] as const;
 export type KeyboardSound = (typeof KEYBOARD_SOUNDS)[number];
+const A_KEYBOARD = new OneOf(KEYBOARD_SOUNDS, `one of livereel's keyboards: ${KEYBOARD_SOUNDS.join(', ')}`);
 
 /** A sound: one of livereel's, or a file of the film's. */
 export type Sound =
@@ -164,14 +173,8 @@ function keyOf(written: Handed): KeySource {
 
 /** One of livereel's keyboards, as the film names it; one livereel has not is refused, naming those it has. */
 function keyboardOf(written: unknown): KeySource {
-	if (isKeyboardSound(written)) return { kind: 'keyboard', keyboard: written };
-	throw new FilmError(
-		`the film's ${SOUNDS}.keyboard is ${described(written)}: livereel's are ${KEYBOARD_SOUNDS.join(', ')}`
-	);
-}
-
-function isKeyboardSound(name: unknown): name is KeyboardSound {
-	return KEYBOARD_SOUNDS.some((keyboard) => keyboard === name);
+	assertKind(written, A_KEYBOARD, `the film's ${SOUNDS}.keyboard`);
+	return { kind: 'keyboard', keyboard: written };
 }
 
 /** The sound a move makes: the file the film gives for it, or livereel's. */

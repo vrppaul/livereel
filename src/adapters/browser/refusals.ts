@@ -1,11 +1,18 @@
 /**
  * A page shown even where it refuses to be shown in another page's frame.
  *
- * The filming browser alone takes the refusal (`X-Frame-Options`, a CSP's `frame-ancestors`) off every page's answer
- * and lets everything else a page asks for go by untouched: a page on the disk refuses nothing, and only a page — not
- * a script or an image — is ever framed.
+ * The filming browser alone takes the refusal (`X-Frame-Options`, a CSP's `frame-ancestors`) off a page's answer and
+ * lets everything else a page asks for go by untouched: a page on the disk refuses nothing, and only a page — not a
+ * script or an image — is ever framed. On the stage apart from the app, Playwright's route takes it off every page's
+ * answer; on the stage inside the app, CDP's `Fetch` takes it off a page that sends one (`inside.ts`).
  */
 import type { APIResponse, Route } from 'playwright-core';
+
+/** A header of a page's answer, as CDP and Playwright list them. */
+export interface Header {
+	readonly name: string;
+	readonly value: string;
+}
 
 // The ways a page comes from a server, and what a page is among what a page asks for
 const SERVED = new Set(['http:', 'https:']);
@@ -23,6 +30,25 @@ const CONTENT_SECURITY_POLICY = 'content-security-policy';
 /** Whether a request goes to a server. */
 export function isServed(requested: URL): boolean {
 	return SERVED.has(requested.protocol);
+}
+
+/**
+ * The first of a page's headers that refuses to let it be framed, where one does: `X-Frame-Options` whatever it says,
+ * or a CSP that names which pages may frame the page.
+ */
+export function refusalAmong(headers: readonly Header[]): Header | undefined {
+	return headers.find(isRefusal);
+}
+
+function isRefusal(header: Header): boolean {
+	switch (header.name.toLowerCase()) {
+		case FRAME_OPTIONS:
+			return true;
+		case CONTENT_SECURITY_POLICY:
+			return header.value.split(POLICIES_APART).flatMap(directivesOf).some(namesAncestors);
+		default:
+			return false;
+	}
 }
 
 /**
@@ -79,11 +105,22 @@ function policiesLeft(value: string): string | null {
 	return policies.length === 0 ? null : policies.join(POLICIES_JOINED);
 }
 
-/** One policy less the directive that names who may frame the page; directive names are read in any case. */
+/** One policy less the directive that names who may frame the page. */
 function withoutAncestors(policy: string): string {
+	return directivesOf(policy)
+		.filter((directive) => !namesAncestors(directive))
+		.join(DIRECTIVES_JOINED);
+}
+
+/** A policy's directives, each trimmed, none empty. */
+function directivesOf(policy: string): string[] {
 	return policy
 		.split(DIRECTIVES_APART)
 		.map((directive) => directive.trim())
-		.filter((directive) => directive !== '' && !directive.toLowerCase().startsWith(ANCESTORS))
-		.join(DIRECTIVES_JOINED);
+		.filter((directive) => directive !== '');
+}
+
+/** Whether a directive is the one that says which pages may frame the page; directive names are read in any case. */
+function namesAncestors(directive: string): boolean {
+	return directive.toLowerCase().startsWith(ANCESTORS);
 }

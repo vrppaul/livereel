@@ -11,7 +11,7 @@
  */
 /** @import { DrawnScene, PropName } from '../src/scene.ts' */
 /** @import { ShownLine } from '../src/props/terminal.ts' */
-/** @import { Room, StageApi } from '../src/adapters/browser/stage.ts' */
+/** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
 /** An element of the stage's markup: the cursor is drawn in SVG, the rest in HTML @typedef {HTMLElement | SVGElement} Staged */
@@ -191,9 +191,10 @@ function setup(room) {
 	});
 }
 
-/** @param {string} address */
-function open(address) {
-	PAGE.setAttribute('src', address);
+/** The page opened in the screen's frame, the frame sandboxed first where it is to be. @param {Opening} opening */
+function open(opening) {
+	if (opening.sandbox !== null) PAGE.setAttribute('sandbox', opening.sandbox);
+	PAGE.setAttribute('src', opening.address);
 }
 
 /** @param {DrawnScene} scene */
