@@ -13,6 +13,7 @@ import {
 	type TimingScript,
 	present,
 	propChange,
+	shownBox,
 	timingOf
 } from '../direction/move.ts';
 import type { ActContext } from '../direction/page.ts';
@@ -85,7 +86,7 @@ export function click(action: (context: ActContext) => Promise<void>, script: So
 }
 
 async function along(beginning: Beginning, target: string, script: CursorScript): Promise<Change> {
-	const end = restingOn(await beginning.page.box(target, 1));
+	const end = restingOn(await shownBox(beginning, target, 1, 'cursor.to'));
 	const start = beginning.scene.cursor ?? script.entering ?? enteringFor(end);
 	const arc = bowedArc({ left: start.left, top: start.top }, end, script.bow ?? BOW);
 	return propChange('cursor', (progress) => ({ ...pointAlong(arc, progress), press: 0 }));

@@ -3,11 +3,12 @@
  *
  * A move reads what it starts from once, as its share begins, and becomes a change that knows its start and its end;
  * from then on what it sets at any progress is worked out from those and the progress alone, so a frame is the same
- * whenever it is shot. A move that finds nothing to start from — no light to carry, no block on the page — throws as
- * it begins, once. A move is a plain object made by a function of its prop's module (`src/moves/`).
+ * whenever it is shot. A move that finds nothing to start from — no light to carry, no block on the page, a block
+ * scrolled off the screen — throws as it begins, once. A move is a plain object made by a function of its prop's
+ * module (`src/moves/`).
  */
 import { FilmError } from '../domain/errors.ts';
-import type { Format } from '../domain/geometry.ts';
+import { type Box, type Format, liesAboveOrBelow, liesOutside } from '../domain/geometry.ts';
 import {
 	A_NUMBER,
 	type Form,
@@ -30,6 +31,11 @@ import type { Cue } from './sound.ts';
 type Part = PropName | 'page' | null;
 
 const NO_SOUNDS: readonly Cue[] = [];
+// The size of a block the page lays out none of, and how a block off the screen is brought in, above or below it and
+// beside it
+const NO_SIZE = 0;
+const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
+const ACTED_IN = 'bring it in with an act, as no move of livereel scrolls the page sideways';
 
 /** Where a share of a step starts and ends, each a share of the step from 0 to 1; either may be left to its edge. */
 export interface Bounds {
@@ -144,6 +150,29 @@ export function present<Name extends PropName>(
 
 function refused(refusal: string): never {
 	throw new FilmError(refusal);
+}
+
+/**
+ * Where a block a move goes to stands on the page's screen, read as the move begins; the first `every` a target
+ * matches, together. A block with no size, or one standing wholly off the screen, is refused in the move's own words:
+ * the move would go where nothing of the block shows. A block above or below is scrolled in by `page.scrollTo`; one
+ * beside the screen, by an act, as no move of livereel scrolls the page sideways.
+ */
+export async function shownBox(beginning: Beginning, target: string, every: number, move: string): Promise<Box> {
+	const box = await beginning.page.box(target, every);
+	const screen = beginning.format.screen;
+	if (box.width === NO_SIZE && box.height === NO_SIZE) {
+		throw new FilmError(`${move}'s ${target} has no size on the page: it is hidden, or holds others alone`);
+	}
+	if (liesOutside(box, screen)) {
+		const where = `at left ${Math.round(box.left)}, top ${Math.round(box.top)}`;
+		const broughtIn = liesAboveOrBelow(box, screen) ? SCROLLED_IN : ACTED_IN;
+		throw new FilmError(
+			`${move}'s ${target} stands off the page's screen, ${where} of a screen ${screen.width} × ${screen.height}: ` +
+				broughtIn
+		);
+	}
+	return box;
 }
 
 function isMove(written: unknown): written is Move {

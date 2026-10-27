@@ -265,8 +265,6 @@ with a timeout that long; a still takes seconds.
   sped up, which reads as time-lapse.
 - A long scroll in one frame step shows blank space where the page renders
   lazily: scroll in a `play`, a little each frame.
-- An element the camera frames must be on the page's screen, not scrolled
-  out of it: scroll it in with `page.scrollTo` first, then frame it.
 - A box is read as its move's share begins: a block a scroll in the same
   step is still moving is read mid-way, so start the light after the
   scroll's share ends.

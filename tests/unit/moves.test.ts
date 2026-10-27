@@ -4,14 +4,34 @@ import type { Beginning, Move } from '../../src/direction/move.ts';
 import { onto } from '../../src/moves/camera.ts';
 import { hide } from '../../src/moves/caption.ts';
 import { press, release, to as cursorTo } from '../../src/moves/cursor.ts';
-import { off, to as lightTo } from '../../src/moves/light.ts';
+import { off, on as lightOn, to as lightTo } from '../../src/moves/light.ts';
 import { leave, open, submit, works } from '../../src/moves/terminal.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
 import { type Scene, openingScene, withProp } from '../../src/scene.ts';
 import { PageOfBoxes, SMALL } from './fakes.ts';
 
 const BLOCK = { left: 100, top: 100, width: 100, height: 40 };
-const PAGE = new PageOfBoxes(new Map([['#block', BLOCK]]));
+// Blocks off the small format's screen, 600 × 400: below its foot, above its top, beside it to the right and to the
+// left; one only half on it; and one the page lays out at no size, as a hidden block
+const BELOW = { left: 100, top: 900.4, width: 100, height: 40 };
+const ABOVE = { left: 100, top: -3097, width: 100, height: 40 };
+const RIGHT = { left: 1208, top: 100, width: 100, height: 40 };
+const LEFT = { left: -200, top: 100, width: 200, height: 40 };
+const HALF_ON = { left: 100, top: 380, width: 100, height: 40 };
+const HIDDEN = { left: 0, top: 0, width: 0, height: 0 };
+const PAGE = new PageOfBoxes(
+	new Map([
+		['#block', BLOCK],
+		['#below', BELOW],
+		['#above', ABOVE],
+		['#right', RIGHT],
+		['#left', LEFT],
+		['#half-on', HALF_ON],
+		['#hidden', HIDDEN]
+	])
+);
+const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
+const ACTED_IN = 'bring it in with an act, as no move of livereel scrolls the page sideways';
 const LIT = { box: BLOCK, strength: 1, dim: 0.6 };
 const TYPED = withProp(openingScene(SMALL), 'terminal', {
 	title: 'A terminal',
@@ -78,6 +98,49 @@ test('the agent thinks first, writes its lines one after another, and stops thin
 		(await setAt(work, TYPED, 0.75)).terminal?.lines,
 		(await setAt(work, TYPED, 1)).terminal?.lines
 	]).toEqual([[thinking], [READ, thinking], [READ, SAID]]);
+});
+
+/** How a move refuses the block below the screen. */
+function offBelow(move: string): FilmError {
+	return new FilmError(
+		`${move}'s #below stands off the page's screen, at left 100, top 900 of a screen 600 × 400: ${SCROLLED_IN}`
+	);
+}
+
+test('every move that goes to a block refuses one standing off the screen as it begins, saying how to bring it in', async () => {
+	const opening = beginningOf(openingScene(SMALL));
+	await expect(onto('#below').begin(opening)).rejects.toThrow(offBelow('camera.onto'));
+	await expect(lightOn('#below').begin(opening)).rejects.toThrow(offBelow('light.on'));
+	await expect(lightTo('#below').begin(beginningOf(withProp(openingScene(SMALL), 'light', LIT)))).rejects.toThrow(
+		offBelow('light.to')
+	);
+	await expect(cursorTo('#below').begin(opening)).rejects.toThrow(offBelow('cursor.to'));
+});
+
+test('a block off the screen is told by its side: scrolled in above, sideways brought in by an act; one half on it is framed', async () => {
+	const opening = beginningOf(openingScene(SMALL));
+	await expect(onto('#above').begin(opening)).rejects.toThrow(
+		new FilmError(
+			`camera.onto's #above stands off the page's screen, at left 100, top -3097 of a screen 600 × 400: ${SCROLLED_IN}`
+		)
+	);
+	await expect(onto('#right').begin(opening)).rejects.toThrow(
+		new FilmError(
+			`camera.onto's #right stands off the page's screen, at left 1208, top 100 of a screen 600 × 400: ${ACTED_IN}`
+		)
+	);
+	await expect(onto('#left').begin(opening)).rejects.toThrow(
+		new FilmError(
+			`camera.onto's #left stands off the page's screen, at left -200, top 100 of a screen 600 × 400: ${ACTED_IN}`
+		)
+	);
+	await expect(onto('#half-on').begin(opening)).resolves.toBeTypeOf('function');
+});
+
+test('a move to a block the page lays out at no size is refused as it begins, as nothing of it shows', async () => {
+	await expect(onto('#hidden').begin(beginningOf(openingScene(SMALL)))).rejects.toThrow(
+		new FilmError("camera.onto's #hidden has no size on the page: it is hidden, or holds others alone")
+	);
 });
 
 test('a cursor not yet on the screen comes in from below and to the right of where it goes', async () => {

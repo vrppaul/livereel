@@ -9,6 +9,7 @@ import {
 	type TimingScript,
 	present,
 	propChange,
+	shownBox,
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
@@ -45,13 +46,13 @@ export function off(script: TimingScript = {}): Move {
 }
 
 async function rising(beginning: Beginning, target: string, dim: number): Promise<Change> {
-	const box = await beginning.page.box(target, 1);
+	const box = await shownBox(beginning, target, 1, 'light.on');
 	return propChange('light', (progress) => ({ box, strength: progress, dim }));
 }
 
 async function carried(beginning: Beginning, target: string): Promise<Change> {
 	const start = present(beginning, 'light', `the light is carried to ${target}, but none is on`);
-	const end = await beginning.page.box(target, 1);
+	const end = await shownBox(beginning, target, 1, 'light.to');
 	return propChange('light', (progress) => carriedAt(start, end, progress));
 }
 

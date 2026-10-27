@@ -127,16 +127,16 @@ test('an app with a server of its own is filmed apart from it: framed at the add
 		serve: () => servedApp(ROUTES, '/old'),
 		ready: (context) => context.page.locator(ASK).waitFor(),
 		steps: () => [
-			play({ seconds: 0.2, moves: [page.scrollBy('html', { pixels: 1000 })] }),
-			play({ seconds: 0.3, moves: [page.scrollTo(FAR, { top: 100 })] }),
-			act((context) => farTop(context, seen)),
 			play({ seconds: 0.2, moves: [cursor.to(ASK)] }),
 			...cursor.click(askTheServer),
-			act((context) => whatReachedThePage(context, seen))
+			act((context) => whatReachedThePage(context, seen)),
+			play({ seconds: 0.2, moves: [page.scrollBy('html', { pixels: 1000 })] }),
+			play({ seconds: 0.3, moves: [page.scrollTo(FAR, { top: 100 })] }),
+			act((context) => farTop(context, seen))
 		]
 	});
 	await shoot(film.formats.get('small')!, SHOOTING);
-	expect(seen).toEqual([100, ANSWERED, PUSHED, 'yes', '/app/']);
+	expect(seen).toEqual([ANSWERED, PUSHED, 'yes', '/app/', 100]);
 });
 
 test('a page that refuses to be framed is refused on the stage apart as the frame opens it, by its refusal, naming the stage that shows it', async () => {

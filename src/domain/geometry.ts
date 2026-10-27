@@ -98,6 +98,16 @@ export function nearestWithin(point: Point, size: Size): Point {
 	};
 }
 
+/** Whether a box lies wholly outside a size laid from its top left: no part of it within. */
+export function liesOutside(box: Box, size: Size): boolean {
+	return liesAboveOrBelow(box, size) || box.left + box.width <= 0 || box.left >= size.width;
+}
+
+/** Whether a box lies wholly above a size laid from its top left, or wholly below it. */
+export function liesAboveOrBelow(box: Box, size: Size): boolean {
+	return box.top + box.height <= 0 || box.top >= size.height;
+}
+
 /** The smallest box that holds every one of these. */
 export function boxAround(boxes: readonly [Box, ...Box[]]): Box {
 	const left = Math.min(...boxes.map((box) => box.left));
