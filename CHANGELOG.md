@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1
 
 - A film's `sounds`, `motionBlur` or `music` written in none of their forms is refused as the film is defined, where it stands and as it was written (`the film's motionBlur.shutter is null: …`): `null` or a list in place of an object, a name the form has not (`enable` for `enabled`), `enabled` neither `true` nor `false`, a value of the wrong kind (`keyboard: null`). Such a `null` or a misspelt `enable: false` had left livereel's sounds and blur on, and music written as a path alone was refused for its volume.
 - The README and the skill say what they left out: `cursor.click` and `typing` give several steps, spread among the others (`...cursor.click(action)`); every command and option of the command line, in a table; that livereel runs a film with its types unchecked; how long a full shoot takes; that `--renderer gpu` draws in software without a word where it finds no driver. The README names every function a film can call, as the skill does, and the gate that held the skill holds both.
