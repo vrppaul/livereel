@@ -1,7 +1,7 @@
-# A tag `vX.Y.Z` pushed: the package staged on npm and a draft release made on GitHub. The tag's version is the one in
-# package.json (CONTRIBUTING.md, Releasing). npm trusts this workflow itself (Trusted Publishing, set on the
-# package's page on npm): it is given a short-lived identity, so no token is kept, and the package carries its
-# provenance. The workflow may only stage a version: it goes out once the owner approves it on npm, with 2FA, so
+# A tag `vX.Y.Z` pushed: the package staged on npm and a draft release made on GitHub, its notes the version's section
+# of CHANGELOG.md. The tag's version is the one in package.json (CONTRIBUTING.md, Releasing). npm trusts this workflow
+# itself (Trusted Publishing, set on the package's page on npm): it is given a short-lived identity, so no token is
+# kept, and the package carries its provenance. The workflow may only stage a version: it goes out once the owner approves it on npm, with 2FA, so
 # code that runs in this job cannot publish on its own. The release on GitHub stays a draft until then, so it never
 # names a version npm does not have
 name: Release
@@ -28,10 +28,20 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: The tag names the version being published
         run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      # The release's notes are the version's own section of CHANGELOG.md, written outside the checkout; a version the
+      # changelog says nothing of is stopped here, before npm or GitHub has it
+      - name: The changelog says what the version changed
+        run: |
+          awk -v heading="## ${GITHUB_REF_NAME#v}" '$0 == heading { found = 1; next } /^## / { found = 0 } found' \
+            CHANGELOG.md > "$RUNNER_TEMP/release-notes.md"
+          if ! grep -q '[^[:space:]]' "$RUNNER_TEMP/release-notes.md"; then
+            echo "CHANGELOG.md has no section for ${GITHUB_REF_NAME#v}"
+            exit 1
+          fi
       # npm itself stages the version: it speaks Trusted Publishing, and has `npm stage` from 11.21 (11.9, which came
       # with Node 24 here, lacks it); `prepack` builds the package first
       - run: npm install --global npm@11.21.1
       - run: npm stage publish --provenance --access public
-      - run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes --draft
+      - run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/release-notes.md" --draft
         env:
           GH_TOKEN: ${{ github.token }}
