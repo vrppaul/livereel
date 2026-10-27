@@ -4,9 +4,18 @@
  * These change the page, not the scene: each frame sets the page's scroll, or presses the keys due by then, so the
  * page renders a little each frame as a person's scroll and typing make it.
  */
+import {
+	A_NUMBER,
+	A_NUMBER_OR_ENDLESS,
+	A_SELECTOR,
+	type Form,
+	assertKind,
+	assertWritten,
+	needed
+} from '../domain/handed.ts';
 import { between, linear } from '../domain/time.ts';
-import { type Keystroke, typedAlong } from '../domain/typing.ts';
-import { type Beginning, type Change, type Move, type TimingScript, timingOf } from '../direction/move.ts';
+import { A_STROKES, type Keystroke, typedAlong } from '../domain/typing.ts';
+import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import type { FilmedPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import { keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
@@ -23,21 +32,29 @@ export interface ScrollToScript extends TimingScript {
 }
 
 const BACKSPACE = 'Backspace';
+const SCROLL_BY_FORM: Form<ScrollByScript> = { pixels: needed(A_NUMBER_OR_ENDLESS), ...TIMING_FORM };
+const SCROLL_TO_FORM: Form<ScrollToScript> = { top: needed(A_NUMBER), ...TIMING_FORM };
 
 /** A block of the page that scrolls, moved `pixels` down its scroll as far as it goes. */
 export function scrollBy(target: string, script: ScrollByScript): Move {
+	assertKind(target, A_SELECTOR, "page.scrollBy's selector");
+	assertWritten(script, SCROLL_BY_FORM, 'page.scrollBy');
 	const aim: ScrollAim = { kind: 'by', pixels: script.pixels };
 	return { part: 'page', timing: timingOf(script), begin: (beginning) => scrolling(beginning, target, aim) };
 }
 
 /** The page scrolled until a block of it stands `top` pixels below the top of what scrolls it. */
 export function scrollTo(target: string, script: ScrollToScript): Move {
+	assertKind(target, A_SELECTOR, "page.scrollTo's selector");
+	assertWritten(script, SCROLL_TO_FORM, 'page.scrollTo');
 	const aim: ScrollAim = { kind: 'to', top: script.top };
 	return { part: 'page', timing: timingOf(script), begin: (beginning) => scrolling(beginning, target, aim) };
 }
 
 /** A person typing into whatever holds the page's keyboard: real keys, each heard, when the strokes have them. */
 export function type(strokes: readonly Keystroke[], script: TimingScript = {}): Move & Typed {
+	assertKind(strokes, A_STROKES, "page.type's strokes");
+	assertWritten(script, TIMING_FORM, 'page.type');
 	return {
 		part: 'page',
 		timing: timingOf({ ease: linear, ...script }),

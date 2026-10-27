@@ -6,7 +6,7 @@ import { mkdtemp, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
-import { EncodingError, FilmError } from '../../src/domain/errors.ts';
+import { EncodingError } from '../../src/domain/errors.ts';
 import type { Size } from '../../src/domain/geometry.ts';
 import { momentOf } from '../../src/domain/time.ts';
 import { type FilmSound, fileSound } from '../../src/direction/sound.ts';
@@ -116,12 +116,4 @@ test('a video whose sound cannot be laid leaves the one made before as it was, a
 	await expect(footage.finish(track, momentOf(1))).rejects.toThrow(EncodingError);
 	await footage[Symbol.asyncDispose]();
 	expect([await readdir(directory), readFileSync(video, 'utf8')]).toEqual([['film.mp4'], MADE_BEFORE]);
-});
-
-test('a frame with a side of an odd count of pixels is refused before the video is begun, naming the rule', async () => {
-	const directory = await scratch();
-	expect(() => new VideoFootage(join(directory, 'film.mp4'), { width: 321, height: 320 })).toThrow(
-		new FilmError('a video is made of frames whose sides are even counts of pixels: 321 × 320 is not')
-	);
-	expect(await readdir(directory)).toEqual([]);
 });

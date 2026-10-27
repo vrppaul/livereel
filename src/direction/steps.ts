@@ -7,10 +7,24 @@
  * both at once is refused as it is written, before anything is shot.
  */
 import { FilmError } from '../domain/errors.ts';
+import {
+	A_FUNCTION_SAID,
+	type Form,
+	type Kind,
+	Literal,
+	OfForm,
+	Plain,
+	aFunction,
+	assertKind,
+	assertWritten,
+	described,
+	isObjectOfValues,
+	needed
+} from '../domain/handed.ts';
 import { type Ease, easeInOutSine, framesOf, linear } from '../domain/time.ts';
-import { type Keystroke, typingSeconds } from '../domain/typing.ts';
+import { A_STROKES, type Keystroke, typingSeconds } from '../domain/typing.ts';
 import type { PropName } from '../scene.ts';
-import { type Move, type Share, soundsOf } from './move.ts';
+import { A_CURVE, A_MOVE, A_MOVES, type Move, type Share, soundsOf } from './move.ts';
 import type { ActContext } from './page.ts';
 import type { Sound } from './sound.ts';
 
@@ -46,6 +60,11 @@ export interface Typed {
 	readonly strokes: readonly Keystroke[];
 }
 
+/** How long a step holds still. */
+interface HoldScript {
+	readonly seconds: number;
+}
+
 /** The part of the scene a move changes, never none, and the share of its step it changes it over. */
 interface PartTaken {
 	readonly part: PropName | 'page';
@@ -54,35 +73,55 @@ interface PartTaken {
 
 // A beat after the last key, before the next step
 const AFTER_TYPING_SECONDS = 0.12;
+// A step lasts some time, or it shows nothing
+const SOME_SECONDS = new Plain(isSomeSeconds, 'some seconds, more than none');
+const PLAY_FORM: Form<PlayScript> = { seconds: needed(SOME_SECONDS), moves: A_MOVES, ease: A_CURVE };
+const HOLD_FORM: Form<HoldScript> = { seconds: needed(SOME_SECONDS) };
+/** What the page is acted on with, as a film hands it to `act` or `cursor.click`. */
+export const AN_ACTION: Kind<Act['action']> = aFunction<Act['action']>(A_FUNCTION_SAID);
+// A step a film may write out by hand, as the types allow, each kind of step to its form
+const STEP_FORMS: { readonly [Name in Step['kind']]: Kind<Extract<Step, { kind: Name }>> } = {
+	play: new OfForm<Play>(
+		{ kind: needed(new Literal('play')), seconds: needed(SOME_SECONDS), moves: needed(A_MOVES), ease: needed(A_CURVE) },
+		'a play'
+	),
+	cut: new OfForm<Cut>({ kind: needed(new Literal('cut')), moves: needed(A_MOVES) }, 'a cut'),
+	act: new OfForm<Act>({ kind: needed(new Literal('act')), action: needed(AN_ACTION) }, 'an act')
+};
+const A_STEP_SAID = 'a step, as play, hold, cut or act makes one';
+const A_TYPED_MOVE = new Plain(isTypedMove, 'a move that types, as terminal.type or page.type makes one');
+const UNSPREAD = 'spread the steps cursor.click and typing give among the others, as ...cursor.click(action)';
 
 /** So many seconds of frames, every move eased along them, each over its own share of the step. */
 export function play(script: PlayScript): Play {
-	if (!(script.seconds > 0 && Number.isFinite(script.seconds))) {
-		throw new FilmError(`a step of ${script.seconds} s cannot be shot: it lasts some seconds, more than none`);
-	}
+	assertWritten(script, PLAY_FORM, 'play');
 	const moves = script.moves ?? [];
 	refuseClashes(moves);
 	return { kind: 'play', seconds: script.seconds, moves, ease: script.ease ?? easeInOutSine };
 }
 
 /** So many seconds of frames with nothing moving. */
-export function hold(script: { readonly seconds: number }): Play {
+export function hold(script: HoldScript): Play {
+	assertWritten(script, HOLD_FORM, 'hold');
 	return play({ seconds: script.seconds });
 }
 
 /** The scene changed at once, between two frames: a cursor gone, a terminal opened, the camera elsewhere. */
 export function cut(...moves: readonly Move[]): Cut {
+	assertKind(moves, A_MOVES, "cut's moves");
 	refuseClashes(moves);
 	return { kind: 'cut', moves };
 }
 
 /** Something done to the page between two frames, to the page as it stands, the camera put aside. */
 export function act(action: (context: ActContext) => Promise<void>): Act {
+	assertKind(action, AN_ACTION, "act's action");
 	return { kind: 'act', action };
 }
 
 /** As long as the person takes to type, and a beat after the last key. */
 export function typing(move: Move & Typed): readonly Step[] {
+	assertKind(move, A_TYPED_MOVE, "typing's move");
 	return [
 		play({ seconds: typingSeconds(move.strokes), moves: [move], ease: linear }),
 		hold({ seconds: AFTER_TYPING_SECONDS })
@@ -126,4 +165,44 @@ function partTaken(move: Move): PartTaken[] {
 
 function clashes(taken: PartTaken, other: PartTaken): boolean {
 	return taken.part === other.part && taken.within.overlaps(other.within);
+}
+
+/**
+ * The steps a film's `steps` gives, read as a film whose types nobody checked may hand them: a list of steps. The
+ * steps of a click or a typing left in a list of their own, not spread among the others, are refused with how to
+ * spread them; anything else that is no step, by its place.
+ */
+export function stepsOf(written: unknown): readonly Step[] {
+	if (!Array.isArray(written)) {
+		throw new FilmError(`the film's steps are ${described(written)}: they are a list of steps`);
+	}
+	return written.map(stepOf);
+}
+
+/**
+ * One of the steps a film gives: a list there is a click or a typing not spread; a step of a kind livereel has is held
+ * to that kind's form, and its moves to the rule `play` and `cut` hold them to, written by hand as the types allow.
+ */
+function stepOf(written: unknown, place: number): Step {
+	const at = `the film's steps[${place}]`;
+	if (Array.isArray(written)) throw new FilmError(`${at} is a list: ${UNSPREAD}`);
+	if (!isObjectOfValues(written) || !isStepKind(written.kind)) {
+		throw new FilmError(`${at} is ${described(written)}: it is ${A_STEP_SAID}`);
+	}
+	const form: Kind<Step> = STEP_FORMS[written.kind];
+	assertKind(written, form, at);
+	refuseClashes(movesOf(written));
+	return written;
+}
+
+function isStepKind(written: unknown): written is Step['kind'] {
+	return typeof written === 'string' && Object.hasOwn(STEP_FORMS, written);
+}
+
+function isSomeSeconds(written: unknown): written is number {
+	return typeof written === 'number' && written > 0 && Number.isFinite(written);
+}
+
+function isTypedMove(written: unknown): written is Move & Typed {
+	return A_MOVE.is(written) && isObjectOfValues(written) && A_STROKES.is(written.strokes);
 }

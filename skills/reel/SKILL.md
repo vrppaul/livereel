@@ -110,8 +110,11 @@ and clicks it for real; its server is
   numbers is given once per format, in a record of the film's format names
   (`Record<keyof typeof FORMATS, Pose>`), picked by the `formatName` that
   `steps` is handed: the type checker refuses a format left out. livereel
-  runs a film with its types stripped, unchecked: check them in the editor
-  or with the project's type checker before shooting.
+  runs a film with its types stripped, and refuses a value of the wrong
+  kind where it stands, as the film is defined and its steps as it is
+  served; the type checker finds more,
+  so check the types in the editor or with the project's type checker
+  before shooting.
 - Prefer the page's own states to anything drawn over it: open a panel with
   its own button, not by hiding parts of the page.
 - A page that refuses frames (`X-Frame-Options`) is shown anyway: livereel

@@ -19,6 +19,7 @@ import {
 	middleY,
 	nearestWithin
 } from './geometry.ts';
+import { A_NUMBER, type Kind, OfForm, assertKind, needed } from './handed.ts';
 import { between } from './time.ts';
 
 /**
@@ -88,8 +89,29 @@ export function poseToward(start: Pose, end: Pose, progress: number): Pose {
 	};
 }
 
-/** The same angle, looking at another point from another distance. */
+/** A pose as a film hands it, made by livereel or written out whole. */
+export const A_POSE: Kind<Pose> = new OfForm<Pose>(
+	{
+		focusX: needed(A_NUMBER),
+		focusY: needed(A_NUMBER),
+		zoom: needed(A_NUMBER),
+		tilt: needed(A_NUMBER),
+		turn: needed(A_NUMBER)
+	},
+	'a pose: { focusX, focusY, zoom, tilt, turn }, as steps is handed or lookingAt gives'
+);
+
+/** The same angle, looking at another point from another distance, as a film asks for it: what it hands is checked. */
 export function lookingAt(pose: Pose, focusX: number, focusY: number, zoom: number): Pose {
+	assertKind(pose, A_POSE, "lookingAt's pose");
+	assertKind(focusX, A_NUMBER, "lookingAt's focusX");
+	assertKind(focusY, A_NUMBER, "lookingAt's focusY");
+	assertKind(zoom, A_NUMBER, "lookingAt's zoom");
+	return focusedAt(pose, focusX, focusY, zoom);
+}
+
+/** The same angle, looking at another point from another distance. */
+function focusedAt(pose: Pose, focusX: number, focusY: number, zoom: number): Pose {
 	return { focusX, focusY, zoom, tilt: pose.tilt, turn: pose.turn };
 }
 
@@ -104,7 +126,7 @@ export function onto(box: Box, around: Pose, frame: Size, framing: Framing): Pos
 		frame.width / (box.width + SIDES * framing.air),
 		frame.height / (box.height + SIDES * framing.air)
 	);
-	return lookingAt(around, middleX(box), middleY(box), Math.min(fit, framing.zoomAtMost));
+	return focusedAt(around, middleX(box), middleY(box), Math.min(fit, framing.zoomAtMost));
 }
 
 /**
@@ -114,7 +136,7 @@ export function onto(box: Box, around: Pose, frame: Size, framing: Framing): Pos
 export function covering(pose: Pose, format: Format): Pose {
 	const halfWidth = format.frame.width / (HALVES * pose.zoom);
 	const halfHeight = format.frame.height / (HALVES * pose.zoom);
-	return lookingAt(
+	return focusedAt(
 		pose,
 		keptWithin(pose.focusX, halfWidth, format.screen.width),
 		keptWithin(pose.focusY, halfHeight, format.screen.height),

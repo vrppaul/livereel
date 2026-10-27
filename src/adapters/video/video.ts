@@ -10,7 +10,6 @@ import { type ChildProcessByStdio, spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { rm } from 'node:fs/promises';
 import type { Readable, Writable } from 'node:stream';
-import { FilmError } from '../../domain/errors.ts';
 import type { Size } from '../../domain/geometry.ts';
 import { FRAMES_PER_SECOND } from '../../domain/time.ts';
 import type { Exposures, Footage } from '../../studio/ports.ts';
@@ -40,8 +39,6 @@ const SHEET_COLUMNS = 6;
 const SHEET_TILE_WIDTH = 360;
 const THE_FIRST_FRAME = ['-frames:v', '1'];
 const STOP = 'SIGKILL';
-// The video's colour is kept once for every two pixels each way, so a frame's sides are even
-const PIXELS_PAIRED = 2;
 
 type Encoder = ChildProcessByStdio<Writable, null, Readable>;
 
@@ -59,7 +56,6 @@ export class VideoFootage implements Footage, AsyncDisposable {
 	private readonly picture: string;
 
 	constructor(video: string, frame: Size) {
-		refuseOddSides(frame);
 		this.video = video;
 		this.picture = pictureOf(video);
 		const scaled = ['-vf', `scale=${frame.width}:${frame.height}:flags=lanczos`];
@@ -114,14 +110,6 @@ export class VideoFootage implements Footage, AsyncDisposable {
 	private stopped(): boolean {
 		return this.encoder.exitCode !== null || this.encoder.signalCode !== null || this.encoder.stdin.destroyed;
 	}
-}
-
-/** A frame the video cannot hold, refused in the film's terms rather than in ffmpeg's. */
-function refuseOddSides(frame: Size): void {
-	if (frame.width % PIXELS_PAIRED === 0 && frame.height % PIXELS_PAIRED === 0) return;
-	throw new FilmError(
-		`a video is made of frames whose sides are even counts of pixels: ${frame.width} × ${frame.height} is not`
-	);
 }
 
 /** A frame a second of the video, side by side: the whole film at a glance. */

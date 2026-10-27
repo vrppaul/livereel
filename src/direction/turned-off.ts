@@ -3,7 +3,7 @@
  * `null` or an empty value that means it. One form for all, so a film reads the same wherever it turns a thing off.
  */
 import { FilmError } from '../domain/errors.ts';
-import { type Handed, described, isObjectOfValues } from './handed.ts';
+import { type Handed, described, isObjectOfValues } from '../domain/handed.ts';
 
 /** Something livereel does unasked, turned off, as a film writes it. */
 export interface TurnedOff {

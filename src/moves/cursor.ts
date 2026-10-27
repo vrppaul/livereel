@@ -2,12 +2,14 @@
  * The cursor: along a slight arc to a block of the page, as a hand moves it; pressed in with a click, and let go;
  * taken away.
  */
-import { type Box, type Point, bowedArc, pointAlong } from '../domain/geometry.ts';
+import { A_POINT, type Box, type Point, bowedArc, pointAlong } from '../domain/geometry.ts';
+import { A_NUMBER, A_PATH, A_SELECTOR, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { easeOutCubic } from '../domain/time.ts';
 import {
 	type Beginning,
 	type Change,
 	type Move,
+	TIMING_FORM,
 	type TimingScript,
 	present,
 	propChange,
@@ -15,7 +17,7 @@ import {
 } from '../direction/move.ts';
 import type { ActContext } from '../direction/page.ts';
 import { type SoundScript, heardAsItBegins, soundOf } from '../direction/sound.ts';
-import { type Step, act, play } from '../direction/steps.ts';
+import { AN_ACTION, type Step, act, play } from '../direction/steps.ts';
 
 /** Where a cursor not yet on the screen comes in from, and how far its path bends off the straight line. */
 export interface CursorScript extends TimingScript {
@@ -39,14 +41,20 @@ const ENTERS_FROM_BELOW = 220;
 const PRESS_SECONDS = 0.09;
 const RELEASE_SECONDS = 0.12;
 const HIDDEN: Change = propChange('cursor', () => null);
+const CURSOR_FORM: Form<CursorScript> = { entering: A_POINT, bow: A_NUMBER, ...TIMING_FORM };
+const CLICK_FORM: Form<SoundScript> = { sound: A_PATH };
+const PRESS_FORM: Form<PressScript> = { ...CLICK_FORM, ...TIMING_FORM };
 
 /** The cursor to a block of the page, from where it is, or from where it enters if it is not yet on the screen. */
 export function to(target: string, script: CursorScript = {}): Move {
+	assertKind(target, A_SELECTOR, "cursor.to's selector");
+	assertWritten(script, CURSOR_FORM, 'cursor.to');
 	return { part: 'cursor', timing: timingOf(script), begin: (beginning) => along(beginning, target, script) };
 }
 
 /** The cursor pressed in, with a click as it begins: livereel's own, or the file the film gives as `sound`. */
 export function press(script: PressScript = {}): Move {
+	assertWritten(script, PRESS_FORM, 'cursor.press');
 	return {
 		part: 'cursor',
 		timing: timingOf(script),
@@ -56,6 +64,7 @@ export function press(script: PressScript = {}): Move {
 }
 
 export function release(script: TimingScript = {}): Move {
+	assertWritten(script, TIMING_FORM, 'cursor.release');
 	return { part: 'cursor', timing: timingOf(script), begin: lettingGo };
 }
 
@@ -66,6 +75,8 @@ export function hide(): Move {
 
 /** The cursor pressed in with its click, the page clicked as `action` does it, and the cursor let go. */
 export function click(action: (context: ActContext) => Promise<void>, script: SoundScript = {}): readonly Step[] {
+	assertKind(action, AN_ACTION, "cursor.click's action");
+	assertWritten(script, CLICK_FORM, 'cursor.click');
 	return [
 		play({ seconds: PRESS_SECONDS, moves: [press(script)], ease: easeOutCubic }),
 		act(action),

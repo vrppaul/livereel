@@ -8,7 +8,7 @@
  */
 import { FilmError } from '../domain/errors.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
-import { described, isObjectOfValues, refuseNamesBeyond } from './handed.ts';
+import { described, isObjectOfValues, refuseNamesBeyond } from '../domain/handed.ts';
 import { type TurnedOff, turnedOffBy } from './turned-off.ts';
 
 /** A film's blur as it writes it: `{ enabled: false }` for none, or livereel's with any value given in its place. */
@@ -33,7 +33,7 @@ const BLUR_FORMS = 'it is { enabled: false } to turn it off, or an object of shu
 export function motionBlurOf(written: unknown): MotionBlur | null {
 	if (written === undefined) return RECOMMENDED;
 	if (!isObjectOfValues(written)) throw new FilmError(`the film's ${BLUR} is ${described(written)}: ${BLUR_FORMS}`);
-	refuseNamesBeyond(written, BLUR_FORM, BLUR);
+	refuseNamesBeyond(written, BLUR_FORM, `the film's ${BLUR}`);
 	if (turnedOffBy(written, BLUR)) return null;
 	return { shutter: shutterOf(written.shutter), exposuresAtMost: exposuresAtMostOf(written.exposuresAtMost) };
 }

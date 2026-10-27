@@ -8,6 +8,16 @@
  */
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/geometry.ts';
+import {
+	A_NUMBER,
+	type Form,
+	type Kind,
+	ListOf,
+	OfForm,
+	Plain,
+	aFunction,
+	isObjectOfValues
+} from '../domain/handed.ts';
 import type { Ease } from '../domain/time.ts';
 import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';
 import type { FilmedPage } from './page.ts';
@@ -70,6 +80,19 @@ export interface TimingScript {
 	readonly ease?: Ease;
 }
 
+/** A curve as a film hands it: a function, livereel's or its own; what it gives is the film's. */
+export const A_CURVE: Kind<Ease> = aFunction<Ease>('a curve: a function of progress, as easeInOutSine');
+
+/** A move's timing as a film hands it, which every move's options take beside their own. */
+export const TIMING_FORM: Form<TimingScript> = {
+	within: new OfForm<Bounds>({ start: A_NUMBER, end: A_NUMBER }, 'a share of the step: { start, end }'),
+	ease: A_CURVE
+};
+
+/** A move as a film hands it to a step: made by one of livereel's moves, its share of the step read. */
+export const A_MOVE: Kind<Move> = new Plain(isMove, 'a move, as camera.onto or light.on makes one');
+export const A_MOVES: Kind<readonly Move[]> = new ListOf(A_MOVE, 'a list of moves');
+
 /** What a move reads as its share begins. */
 export interface Beginning {
 	readonly scene: Scene;
@@ -121,4 +144,13 @@ export function present<Name extends PropName>(
 
 function refused(refusal: string): never {
 	throw new FilmError(refusal);
+}
+
+function isMove(written: unknown): written is Move {
+	return (
+		isObjectOfValues(written) &&
+		typeof written.begin === 'function' &&
+		isObjectOfValues(written.timing) &&
+		written.timing.within instanceof Share
+	);
 }

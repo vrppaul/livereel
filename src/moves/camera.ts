@@ -3,9 +3,26 @@
  *
  * A face-on camera's end is kept on the screen as `covering` in `src/domain/camera.ts` keeps it.
  */
-import { type Pose, angled, covering, isFaceOn, onto as framedOnto, poseToward } from '../domain/camera.ts';
+import { A_POSE, type Pose, angled, covering, isFaceOn, onto as framedOnto, poseToward } from '../domain/camera.ts';
 import type { Format } from '../domain/geometry.ts';
-import { type Beginning, type Change, type Move, type TimingScript, propChange, timingOf } from '../direction/move.ts';
+import {
+	A_COUNT,
+	A_NUMBER,
+	A_NUMBER_OR_ENDLESS,
+	A_SELECTOR,
+	type Form,
+	assertKind,
+	assertWritten
+} from '../domain/handed.ts';
+import {
+	type Beginning,
+	type Change,
+	type Move,
+	TIMING_FORM,
+	type TimingScript,
+	propChange,
+	timingOf
+} from '../direction/move.ts';
 
 /** An angle of the camera's own: `tilt` and `turn` in degrees; one left out stays as the camera's end has it. */
 export interface AngleScript extends TimingScript {
@@ -23,9 +40,18 @@ export interface OntoScript extends AngleScript {
 // How much of the page shows round a block the camera frames, and how close it may come
 const AIR = 80;
 const ZOOM_AT_MOST = 2.2;
+const ANGLE_FORM: Form<AngleScript> = { tilt: A_NUMBER, turn: A_NUMBER, ...TIMING_FORM };
+const ONTO_FORM: Form<OntoScript> = {
+	every: A_COUNT,
+	air: A_NUMBER,
+	zoomAtMost: A_NUMBER_OR_ENDLESS,
+	...ANGLE_FORM
+};
 
 /** The camera to a pose. */
 export function to(pose: Pose, script: AngleScript = {}): Move {
+	assertKind(pose, A_POSE, "camera.to's pose");
+	assertWritten(script, ANGLE_FORM, 'camera.to');
 	return {
 		part: 'camera',
 		timing: timingOf(script),
@@ -35,6 +61,8 @@ export function to(pose: Pose, script: AngleScript = {}): Move {
 
 /** The camera onto the blocks a target matches, with air round them. */
 export function onto(target: string, script: OntoScript = {}): Move {
+	assertKind(target, A_SELECTOR, "camera.onto's selector");
+	assertWritten(script, ONTO_FORM, 'camera.onto');
 	return { part: 'camera', timing: timingOf(script), begin: (beginning) => framing(beginning, target, script) };
 }
 

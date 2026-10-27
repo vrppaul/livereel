@@ -1,10 +1,12 @@
 /** An agent's terminal on the stage: opened, a person typing into it, the agent at work, the terminal giving way. */
+import { A_NUMBER, A_STRING, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { linear } from '../domain/time.ts';
-import { type Keystroke, typedAlong } from '../domain/typing.ts';
+import { A_STROKES, type Keystroke, typedAlong } from '../domain/typing.ts';
 import {
 	type Beginning,
 	type Change,
 	type Move,
+	TIMING_FORM,
 	type TimingScript,
 	present,
 	propChange,
@@ -13,7 +15,7 @@ import {
 } from '../direction/move.ts';
 import { keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
-import { type Terminal, type TerminalLine, openTerminal } from '../props/terminal.ts';
+import { A_LINES, type Terminal, type TerminalLine, openTerminal } from '../props/terminal.ts';
 
 /** Of the agent's work, the share it only thinks before its first line. */
 export interface WorkScript extends TimingScript {
@@ -30,9 +32,12 @@ interface Work {
 
 // Of the agent's work, the share it only thinks before its first line
 const THINKING_SHARE = 0.22;
+const WORK_FORM: Form<WorkScript> = { thinkingShare: A_NUMBER, ...TIMING_FORM };
 
 /** A terminal with its title coming up over the frame, nothing in its log yet, nothing typed; in a cut, at once. */
 export function open(title: string, script: TimingScript = {}): Move {
+	assertKind(title, A_STRING, "terminal.open's title");
+	assertWritten(script, TIMING_FORM, 'terminal.open');
 	return { part: 'terminal', timing: timingOf(script), begin: () => opening(title) };
 }
 
@@ -41,6 +46,8 @@ export function open(title: string, script: TimingScript = {}): Move {
  * a curve.
  */
 export function type(strokes: readonly Keystroke[], script: TimingScript = {}): Move & Typed {
+	assertKind(strokes, A_STROKES, "terminal.type's strokes");
+	assertWritten(script, TIMING_FORM, 'terminal.type');
 	return {
 		part: 'terminal',
 		timing: timingOf({ ease: linear, ...script }),
@@ -57,6 +64,9 @@ export function submit(): Move {
 
 /** The agent at work: its spinner and `thinking` under the lines it writes, one after another, gone once it is done. */
 export function works(lines: readonly TerminalLine[], thinking: string, script: WorkScript = {}): Move {
+	assertKind(lines, A_LINES, "terminal.works's lines");
+	assertKind(thinking, A_STRING, "terminal.works's thinking");
+	assertWritten(script, WORK_FORM, 'terminal.works');
 	const thinkingLine: TerminalLine = { kind: 'thinking', text: thinking };
 	const thinkingShare = script.thinkingShare ?? THINKING_SHARE;
 	return {
@@ -69,6 +79,7 @@ export function works(lines: readonly TerminalLine[], thinking: string, script: 
 
 /** The terminal giving way to what comes after it; once gone, there is none. */
 export function leave(script: TimingScript = {}): Move {
+	assertWritten(script, TIMING_FORM, 'terminal.leave');
 	return { part: 'terminal', timing: timingOf(script), begin: leaving };
 }
 

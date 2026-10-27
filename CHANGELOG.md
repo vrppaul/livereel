@@ -3,6 +3,11 @@
 ## Unreleased
 
 - `--renderer gpu` that reaches no graphics card warns of it on stderr, as Chrome tells it ("--renderer gpu reached no graphics card (Chrome's compositing is disabled_software)"), and shoots the film in software all the same: it had drawn in software without a word. What 0.2.0 said of WebGL then was wrong: on Linux a page keeps its WebGL where Vulkan finds no driver at all, through SwiftShader, and has none where Vulkan finds only Mesa's software lavapipe (measured 2026-10-27).
+- What a film hands `defineFilm` and every function it calls is checked as the film is defined, and its steps and what its `serve` gives as it is served: a value of the wrong kind, a name the function does not take, or one it needs left out is refused where it stands, down to the item or the name at fault (`camera.onto's air is "80": it is a number`, `page.type's strokes[2]'s typed is undefined`). It had been read as given: `cursor.click(action, { sound: null })` failed at the shoot on Node's own error, `formats: null` was said as a film that is no ES module, and `frame: {}` reached the stage as a zoom of NaN. An endless number stays a number where it means no bound (`zoomAtMost: Infinity`).
+- A frame whose sides are not whole, even counts of pixels is refused as the film is defined, for a still as for a video: `still` shot a 321 × 320 frame. A screen's sides are more than none.
+- The steps of a `cursor.click` or a `typing` left in a list of their own, not spread among the film's steps, are refused with how to spread them; a step written out by hand is held to its kind's form.
+- A sound or music file named by an empty path is refused as the film is defined, as `sound.play('')` is.
+- The hint that a film is an ES module is given only where the film does not parse, not with whatever a film throws as it is run.
 
 ## 0.2.1
 

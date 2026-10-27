@@ -4,14 +4,24 @@
  * What moves of itself in it — the spinner of an agent at work, the caret's blink — is worked out from the film's
  * moment here, so the stage draws a terminal as it is handed and keeps no time of its own.
  */
+import { A_STRING, type Kind, ListOf, OfForm, Plain, needed } from '../domain/handed.ts';
 
 /** What a line of the terminal is: what was asked, a tool at work, what the agent said, a count done, thinking. */
-export type LineKind = 'asked' | 'work' | 'said' | 'done' | 'thinking';
+const LINE_KINDS = ['asked', 'work', 'said', 'done', 'thinking'] as const;
+export type LineKind = (typeof LINE_KINDS)[number];
 
 export interface TerminalLine {
 	readonly kind: LineKind;
 	readonly text: string;
 }
+
+const A_LINE_KIND = new Plain(isLineKind, `one of ${LINE_KINDS.join(', ')}`);
+
+/** The agent's lines as a film hands them to its terminal. */
+export const A_LINES: Kind<readonly TerminalLine[]> = new ListOf(
+	new OfForm<TerminalLine>({ kind: needed(A_LINE_KIND), text: needed(A_STRING) }, 'a line: { kind, text }'),
+	"the agent's lines: { kind, text }"
+);
 
 export interface Terminal {
 	readonly title: string;
@@ -82,4 +92,8 @@ function toolAndUse(line: TerminalLine): ShownLine {
 	const apart = line.text.indexOf(SPACE);
 	if (apart < 0) return { kind: line.kind, lead: line.text, text: '' };
 	return { kind: line.kind, lead: line.text.slice(0, apart), text: line.text.slice(apart + 1) };
+}
+
+function isLineKind(written: unknown): written is LineKind {
+	return LINE_KINDS.some((kind) => kind === written);
 }

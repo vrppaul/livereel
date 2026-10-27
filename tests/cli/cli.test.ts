@@ -1,6 +1,6 @@
 // The command line run as it is run, as a process: what it refuses, and what it writes
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
@@ -82,7 +82,27 @@ test('a film file that is not there is refused as a wrong command line', () => {
 
 test('a film file that fails as it is run is refused as a wrong command line, with what it said', () => {
 	const ran = livereel('still', THROWS, '--out', scratch(), '--at', '0');
-	expect([ran.code, ran.said]).toEqual([2, expect.stringContaining('cannot be run: this film breaks as it is run')]);
+	expect([ran.code, ran.said]).toEqual([2, `livereel still: ${THROWS} cannot be run: this film breaks as it is run\n`]);
+});
+
+/** A project of its own that runs `.ts` files as CommonJS, this livereel installed in it, and a film in it. */
+function projectOfCommonJs(): string {
+	const project = scratch();
+	mkdirSync(join(project, 'node_modules'));
+	symlinkSync(process.cwd(), join(project, 'node_modules', 'livereel'));
+	writeFileSync(join(project, 'package.json'), JSON.stringify({ type: 'commonjs' }));
+	writeFileSync(join(project, 'film.ts'), "import { defineFilm } from 'livereel';\nexport default defineFilm;\n");
+	return join(project, 'film.ts');
+}
+
+test('a film its project runs as CommonJS is refused as a wrong command line, saying a film is an ES module', () => {
+	const ran = livereel('still', projectOfCommonJs(), '--out', scratch(), '--at', '0');
+	expect([ran.code, ran.said]).toEqual([2, expect.stringContaining('(a film is an ES module: ')]);
+});
+
+test('a SyntaxError of a film run as a module is said as Node says it, with no word of modules', () => {
+	const ran = livereel('still', 'tests/cli/films/parse-fails.ts', '--out', scratch(), '--at', '0');
+	expect([ran.code, ran.said]).toEqual([2, expect.not.stringContaining('ES module')]);
 });
 
 test('a film that uses another copy of livereel is refused, naming where that copy is', () => {
@@ -103,7 +123,10 @@ test("a fault in the film's own code is said as the film's, naming where it was 
 
 test('steps livereel refuses as they are written are said in its own words', () => {
 	const ran = livereel('still', 'tests/cli/films/no-time.ts', '--out', scratch(), '--at', '0');
-	expect([ran.code, ran.said]).toEqual([1, expect.stringContaining('livereel still: a step of 0 s cannot be shot')]);
+	expect([ran.code, ran.said]).toEqual([
+		1,
+		"livereel still: hold's seconds is 0: it is some seconds, more than none\n"
+	]);
 });
 
 test('a film is shot whole into a video of every frame at 30 a second, and its contact sheet', () => {

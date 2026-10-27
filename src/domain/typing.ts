@@ -4,6 +4,17 @@
  * Typing at an even pace reads as a machine. The times are drawn from a seed by a generator of livereel's own
  * (mulberry32, its gaps lognormal by Box–Muller), so a film typed twice is typed the same on any Node.
  */
+import {
+	A_NUMBER,
+	A_STRING,
+	type Form,
+	type Kind,
+	ListOf,
+	OfForm,
+	assertKind,
+	assertWritten,
+	needed
+} from './handed.ts';
 
 /** A moment of the typing, in seconds from its start, and what then stands typed. */
 export interface Keystroke {
@@ -17,6 +28,13 @@ export interface Typist {
 	readonly slipAt?: number;
 	readonly pace?: number;
 }
+
+/** Keystrokes as a film hands them to what types them, made by `keystrokes` or written out. */
+export const A_STROKES: Kind<readonly Keystroke[]> = new ListOf(
+	new OfForm<Keystroke>({ at: needed(A_NUMBER), typed: needed(A_STRING) }, 'a keystroke: { at, typed }'),
+	'keystrokes, as keystrokes() gives them'
+);
+const TYPIST_FORM: Form<Typist> = { seed: needed(A_NUMBER), slipAt: A_NUMBER, pace: A_NUMBER };
 
 // The usual time between two keys, how unevenly they come, the start of a word a little slower, a longer breath now
 // and then, and how long a wrong key stands before it is rubbed out
@@ -47,6 +65,8 @@ const LAST = -1;
 
 /** The text typed by a person; with `slipAt`, a slip on that letter, rubbed out. */
 export function keystrokes(text: string, typist: Typist): readonly Keystroke[] {
+	assertKind(text, A_STRING, "keystrokes's text");
+	assertWritten(typist, TYPIST_FORM, 'keystrokes');
 	const chance = new Chance(typist.seed);
 	const pace = typist.pace ?? 1;
 	const strokes: Keystroke[] = [];

@@ -4,6 +4,7 @@
  * The frame is what a film is shot at, the screen what its page is laid out on; a box is where a block of the page
  * stands on that screen, with no camera applied. Every other measure of a film is read off these.
  */
+import { A_NUMBER, type Form, type Kind, OfForm, Plain, needed } from './handed.ts';
 import { between } from './time.ts';
 
 export interface Size {
@@ -22,6 +23,27 @@ export interface Point {
 	readonly left: number;
 	readonly top: number;
 }
+
+// A video keeps its colour once for every two pixels each way, so a frame's sides are even counts of pixels
+const PIXELS_PAIRED = 2;
+const A_FRAME_SIDE = new Plain(isFrameSide, 'a whole, even count of pixels, as a video holds them');
+// A page is laid out on a screen of some size
+const A_SCREEN_SIDE = new Plain(isScreenSide, 'a number of pixels, more than none');
+
+export const A_POINT: Kind<Point> = new OfForm<Point>(
+	{ left: needed(A_NUMBER), top: needed(A_NUMBER) },
+	'a point: { left, top }, each a number'
+);
+
+/** A film's format as it hands it: a frame a video holds, and the screen its page is laid out on. */
+export const FORMAT_FORM: Form<Format> = {
+	frame: needed(
+		new OfForm<Size>({ width: needed(A_FRAME_SIDE), height: needed(A_FRAME_SIDE) }, 'a frame: { width, height }')
+	),
+	screen: needed(
+		new OfForm<Size>({ width: needed(A_SCREEN_SIDE), height: needed(A_SCREEN_SIDE) }, 'a screen: { width, height }')
+	)
+};
 
 /** Where a block of the page stands on the screen: its left and top edges, and how big it is. */
 export interface Box {
@@ -110,4 +132,13 @@ export function pointAlong(arc: Arc, progress: number): Point {
 		left: rest ** HALVES * arc.start.left + pull * arc.bend.left + progress ** HALVES * arc.end.left,
 		top: rest ** HALVES * arc.start.top + pull * arc.bend.top + progress ** HALVES * arc.end.top
 	};
+}
+
+/** Whether a side a film hands over is one a video holds: a whole count of pixels, even. */
+function isFrameSide(written: unknown): written is number {
+	return typeof written === 'number' && Number.isInteger(written) && written > 0 && written % PIXELS_PAIRED === 0;
+}
+
+function isScreenSide(written: unknown): written is number {
+	return typeof written === 'number' && Number.isFinite(written) && written > 0;
 }

@@ -9,12 +9,26 @@
  */
 import type { Pose } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import type { Format } from '../domain/geometry.ts';
+import { FORMAT_FORM, type Format } from '../domain/geometry.ts';
+import {
+	AN_ADDRESS,
+	A_FUNCTION_SAID,
+	type Form,
+	type Kind,
+	Plain,
+	aFunction,
+	anObject,
+	assertKind,
+	assertWritten,
+	described,
+	isObjectOfValues,
+	needed
+} from '../domain/handed.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
 import { type MotionBlurScript, motionBlurOf } from './blur.ts';
 import type { ActContext } from './page.ts';
 import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf, musicOf } from './sound.ts';
-import type { Step } from './steps.ts';
+import { type Step, stepsOf } from './steps.ts';
 
 /** A page served for as long as a take lasts, at its address; the film's own handles may come with it. */
 export interface Serving extends AsyncDisposable {
@@ -66,6 +80,23 @@ export interface Film {
 }
 
 const NO_FORMAT = 'a film has a format at least: the frame it is shot in, and the screen its page is laid out on';
+/** Any film's script, its server and its formats' names aside. */
+type AnyScript = Script<Serving, string>;
+const AN_OBJECT_SAID = 'an object';
+// A film's sounds, music and blur are objects, what is in each read by its own reader, in its own words, first
+const FILM_FORM: Form<AnyScript> = {
+	formats: needed(anObject<AnyScript['formats']>("an object of the film's formats, by name")),
+	serve: needed(aFunction<AnyScript['serve']>(A_FUNCTION_SAID)),
+	ready: needed(aFunction<AnyScript['ready']>(A_FUNCTION_SAID)),
+	steps: needed(aFunction<AnyScript['steps']>(A_FUNCTION_SAID)),
+	sounds: anObject<LivereelSoundsScript>(AN_OBJECT_SAID),
+	music: anObject<Music>(AN_OBJECT_SAID),
+	motionBlur: anObject<MotionBlurScript>(AN_OBJECT_SAID)
+};
+const A_SERVING: Kind<Serving> = new Plain(
+	isServing,
+	'a page served, as atAddress gives one: { address }, disposed of'
+);
 
 export class ScriptedFilm<Served extends Serving, Name extends string> implements Film {
 	readonly script: Script<Served, Name>;
@@ -74,9 +105,13 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 	readonly formats: ReadonlyMap<string, FilmInFormat>;
 
 	constructor(script: Script<Served, Name>) {
+		if (!isObjectOfValues(script)) {
+			throw new FilmError(`the film is ${described(script)}: it is an object of ${Object.keys(FILM_FORM).join(', ')}`);
+		}
 		this.script = script;
 		this.sound = { livereels: livereelSoundsOf(script.sounds), music: musicOf(script.music) };
 		this.motionBlur = motionBlurOf(script.motionBlur);
+		refuseUnlikeAFilm(script);
 		this.formats = new Map(namesOf(script.formats).map((name) => [name, this.inFormat(name)]));
 		if (this.formats.size === 0) throw new FilmError(NO_FORMAT);
 	}
@@ -91,8 +126,18 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 		};
 	}
 
+	/**
+	 * The film served for a take. What `serve` gives in no form of a page served is refused; whatever it started is
+	 * stopped first where it can be, so nothing is left running.
+	 */
 	private async served(name: Name): Promise<ServedFilm> {
-		return servedFilm(this.script, await this.script.serve(), name);
+		const served = await this.script.serve();
+		const fault = A_SERVING.faultOf(served, "what the film's serve gives");
+		if (fault !== undefined) {
+			await disposedIfItCan(served);
+			throw new FilmError(fault);
+		}
+		return servedFilm(this.script, served, name);
 	}
 }
 
@@ -115,7 +160,19 @@ export function defineFilm<Served extends Serving, Name extends string>(script: 
 }
 
 export function atAddress(address: string): Serving {
+	assertKind(address, AN_ADDRESS, "atAddress's address");
 	return new ServedElsewhere(address);
+}
+
+/**
+ * A film's script, as a film whose types nobody checked may hand it, refused by its place where it is in no form of
+ * one: a name a film has not, its formats, each a frame a video holds and a screen, and its functions.
+ */
+function refuseUnlikeAFilm(written: unknown): void {
+	assertWritten(written, FILM_FORM, 'the film');
+	for (const [name, format] of Object.entries(written.formats)) {
+		assertWritten(format, FORMAT_FORM, `the film's ${name} format`);
+	}
 }
 
 /**
@@ -138,7 +195,26 @@ function servedFilm<Served extends Serving, Name extends string>(
 	return {
 		address: served.address,
 		ready: (context) => script.ready(context, served),
-		steps: (whole) => script.steps(served, whole, formatName),
+		steps: (whole) => stepsOf(script.steps(served, whole, formatName)),
 		[Symbol.asyncDispose]: () => served[Symbol.asyncDispose]()
 	};
+}
+
+/** Whether what a film's `serve` gives is a page served: its address, and a way to stop it once the take ends. */
+function isServing(written: unknown): written is Serving {
+	return isDisposable(written) && 'address' in written && AN_ADDRESS.is(written.address);
+}
+
+function isDisposable(written: unknown): written is AsyncDisposable {
+	return (
+		typeof written === 'object' &&
+		written !== null &&
+		Symbol.asyncDispose in written &&
+		typeof written[Symbol.asyncDispose] === 'function'
+	);
+}
+
+/** What a film's `serve` gave, stopped where it says how to be. */
+async function disposedIfItCan(written: unknown): Promise<void> {
+	if (isDisposable(written)) await written[Symbol.asyncDispose]();
 }

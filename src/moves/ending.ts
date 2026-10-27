@@ -1,9 +1,12 @@
 /** The ending card coming up over the frame, with livereel's ending sound as it begins. */
-import { type Change, type Move, type TimingScript, propChange, timingOf } from '../direction/move.ts';
+import { assertKind, assertWritten } from '../domain/handed.ts';
+import { type Change, type Move, TIMING_FORM, type TimingScript, propChange, timingOf } from '../direction/move.ts';
 import { heardAsItBegins, livereelSound } from '../direction/sound.ts';
-import type { EndingCard } from '../props/ending.ts';
+import { A_CARD, type EndingCard } from '../props/ending.ts';
 
 export function show(card: EndingCard, script: TimingScript = {}): Move {
+	assertKind(card, A_CARD, "ending.show's card");
+	assertWritten(script, TIMING_FORM, 'ending.show');
 	return {
 		part: 'ending',
 		timing: timingOf(script),

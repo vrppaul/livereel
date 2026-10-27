@@ -33,8 +33,11 @@ comes with a skill that teaches Claude Code to direct one.
 
 It needs Node 22.20 or later and ffmpeg on the path. A film is an ES module:
 the project's `package.json` says `"type": "module"`, or the film's file is
-named `.mts`. livereel runs a film with its types stripped, unchecked: the
-editor or the project's type checker checks them.
+named `.mts`. livereel runs a film with its types stripped; it checks what
+the film hands each of its functions, as the film is defined and its steps
+as it is served, and refuses a value of the wrong kind where it stands
+(`camera.onto's air is "80": it is a number`). The editor or the project's
+type checker finds more.
 
 ```bash
 npm i -D livereel

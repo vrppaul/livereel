@@ -5,17 +5,21 @@
  * made by another copy is not this copy's film, and its faults are not this copy's errors, so the copy the film's
  * own folder resolves is compared with this one before the film is loaded, and another is refused by its path.
  */
-import { existsSync, realpathSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { resolve as absolute } from 'node:path';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { createRequire, findPackageJSON } from 'node:module';
+import { resolve as absolute, extname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { LivereelError, UsageError } from '../domain/errors.ts';
 import { type Film, ScriptedFilm } from '../direction/film.ts';
 
 const PACKAGE = 'livereel';
 const MODULE_NOT_FOUND = 'MODULE_NOT_FOUND';
-// Said with every film that cannot be run: the one cause Node's own words do not name
+// Said with a film that does not parse where its project runs it as CommonJS, the one cause Node's own words do not
+// name: Node reads the film's `import` as a SyntaxError (measured on Node 24.14); a project that names no type runs
+// it as a module all the same, and an `.mts` file is one whatever its project says
 const AS_A_MODULE = ` (a film is an ES module: its project's package.json says "type": "module", or the file is named .mts)`;
+const COMMON_JS = 'commonjs';
+const MODULE_EXTENSION = '.mts';
 
 /** The film a file names; one that cannot be loaded, uses another livereel, or exports no film, is refused. */
 export async function loadedFilm(file: string): Promise<Film> {
@@ -51,8 +55,9 @@ function livereelOf(path: string): string {
 
 /**
  * The film file run as a module. What stops it running — a syntax error, a module it imports that is not there, a
- * project that runs `.ts` files as CommonJS — is the file's, said as Node says it. What livereel refuses as the film
- * is defined — a film with no format — is said in livereel's own words, as the film's.
+ * project that runs `.ts` files as CommonJS — is the file's, said as Node says it, and a film that does not parse
+ * with how a film is an ES module. What livereel refuses as the film is defined — a film with no format — is said in
+ * livereel's own words, as the film's.
  */
 async function imported(file: string, path: string): Promise<unknown> {
 	try {
@@ -60,11 +65,20 @@ async function imported(file: string, path: string): Promise<unknown> {
 		return loaded;
 	} catch (fault) {
 		if (fault instanceof LivereelError || !(fault instanceof Error)) throw fault;
-		throw new UsageError(`${file} cannot be run: ${fault.message}${AS_A_MODULE}`, { cause: fault });
+		const hint = fault instanceof SyntaxError && runsAsCommonJs(path) ? AS_A_MODULE : '';
+		throw new UsageError(`${file} cannot be run: ${fault.message}${hint}`, { cause: fault });
 	}
 }
 
 function defaultOf(loaded: unknown): unknown {
 	if (typeof loaded !== 'object' || loaded === null || !('default' in loaded)) return undefined;
 	return loaded.default;
+}
+
+/** Whether a film's project runs it as CommonJS: its nearest package.json says so, and the file is no `.mts`. */
+function runsAsCommonJs(path: string): boolean {
+	const manifest = findPackageJSON(pathToFileURL(path));
+	if (manifest === undefined || extname(path) === MODULE_EXTENSION) return false;
+	const read: unknown = JSON.parse(readFileSync(manifest, 'utf8'));
+	return typeof read === 'object' && read !== null && 'type' in read && read.type === COMMON_JS;
 }

@@ -10,7 +10,7 @@
  */
 import { FilmError } from '../domain/errors.ts';
 import { type Keystroke, typingSeconds } from '../domain/typing.ts';
-import { type Handed, described, isObjectOfValues, refuseNamesBeyond } from './handed.ts';
+import { A_PATH, type Handed, assertKind, described, isObjectOfValues, refuseNamesBeyond } from '../domain/handed.ts';
 import { type TurnedOff, isTurnedOff, turnedOffBy } from './turned-off.ts';
 
 /** livereel's sounds: the cursor pressed in, a key typed, the ending coming up. */
@@ -112,7 +112,7 @@ export function livereelSoundsOf(written: unknown): LivereelSounds {
 	if (!isObjectOfValues(written)) {
 		throw new FilmError(`the film's ${SOUNDS} are ${described(written)}: ${SOUNDS_FORMS}`);
 	}
-	refuseNamesBeyond(written, SOUNDS_FORM, SOUNDS);
+	refuseNamesBeyond(written, SOUNDS_FORM, `the film's ${SOUNDS}`);
 	if (turnedOffBy(written, SOUNDS)) return ALL_OFF;
 	return { click: sourceOf(written.click, 'click'), key: keyOf(written), ending: sourceOf(written.ending, 'ending') };
 }
@@ -125,10 +125,8 @@ export function livereelSoundsOf(written: unknown): LivereelSounds {
 export function musicOf(written: unknown): Music | null {
 	if (written === undefined) return null;
 	if (!isObjectOfValues(written)) throw new FilmError(`the film's ${MUSIC} is ${described(written)}: ${MUSIC_FORMS}`);
-	refuseNamesBeyond(written, MUSIC_FORM, MUSIC);
-	if (typeof written.file !== 'string') {
-		throw new FilmError(`the film's ${MUSIC}.file is ${described(written.file)}: it is a path from the film's file`);
-	}
+	refuseNamesBeyond(written, MUSIC_FORM, `the film's ${MUSIC}`);
+	assertKind(written.file, A_PATH, `the film's ${MUSIC}.file`);
 	if (!(typeof written.volume === 'number' && Number.isFinite(written.volume) && written.volume >= SILENT)) {
 		throw new FilmError(
 			`the film's ${MUSIC}.volume is ${described(written.volume)}: it is a number, ${SILENT} or more, 1 as loud as the file`
@@ -147,7 +145,7 @@ function sourceOf(written: unknown, sound: LivereelSound): SoundSource {
  * file, or the sound off; anything else is refused by the sound's name.
  */
 function inPlaceOf(written: unknown, sound: LivereelSound): FileOrOff {
-	if (typeof written === 'string') return { kind: 'file', path: written };
+	if (A_PATH.is(written)) return { kind: 'file', path: written };
 	if (isTurnedOff(written)) return OFF;
 	throw new FilmError(`the film's ${SOUNDS}.${sound} is ${described(written)}: ${FILE_OR_TURNED_OFF}`);
 }

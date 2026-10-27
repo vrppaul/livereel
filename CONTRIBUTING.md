@@ -36,7 +36,7 @@ The rules every change is held to are in `AGENTS.md`, and those of each area und
 - `direction` — what a film is written in: a move's contract, steps (`play`, `cut`, `act`), the film itself, the page as a move reads it.
 - `scene` — every prop's state at one moment, and what the stage is handed of it.
 - `props` — each drawn part of the scene: its state, and what is worked out of it to draw.
-- `domain` — time and curves, geometry, the camera's framing and what it shows where, the shutter, a person's typing, the errors.
+- `domain` — time and curves, geometry, the camera's framing and what it shows where, the shutter, a person's typing, what a film hands over and the kinds it is checked against, the errors.
 
 `stage/` is the page the film is shot on: the filmed page sits in its frame, and its script draws each frame from the scene, deciding nothing. It is JavaScript the type checker reads, published as it is written.
 
