@@ -37,10 +37,21 @@ export class PageOfBoxes implements FilmedPage {
 
 export class StageThatKeeps implements Stage {
 	readonly drawn: DrawnScene[] = [];
+	private lost: Error | undefined = undefined;
 
 	draw(scene: DrawnScene): Promise<void> {
 		this.drawn.push(scene);
 		return Promise.resolve();
+	}
+
+	/** The stage, or the page in its frame, gone from now on, for the reason given. */
+	lose(why: Error): Promise<void> {
+		this.lost = why;
+		return Promise.resolve();
+	}
+
+	absence(): Promise<Error | undefined> {
+		return Promise.resolve(this.lost);
 	}
 
 	layFlat(): Promise<void> {

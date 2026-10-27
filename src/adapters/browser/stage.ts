@@ -5,13 +5,15 @@
  * A frame is captured by Playwright at the page's device scale, the film's sharpness. A capture of livereel's own, on
  * a CDP session apart from Playwright's, came back at the page's own pixels whatever that scale, every full shoot as
  * soft as a draft; and it was no quicker (measured 2026-10-25 at 1920 × 1080: 33 ms against 35 ms at 1×, 142 ms
- * against 134 ms at 2×). The page's text caret is kept, as a person sees it typing.
+ * against 134 ms at 2×). The page's text caret is kept, as a person sees it typing. Whether the stage and its page
+ * are still there, the stage answers from its frame's watch (`watch.ts`).
  */
-import type { Page } from 'playwright-core';
+import type { Frame, Page } from 'playwright-core';
 import { EYE_DISTANCE } from '../../domain/camera.ts';
 import type { Format } from '../../domain/geometry.ts';
 import type { DrawnScene } from '../../scene.ts';
 import type { Stage } from '../../studio/ports.ts';
+import type { FrameWatch } from './watch.ts';
 
 // The package's stage, as far from this module in the source as in the package built from it, and its page
 export const STAGE_FOLDER = new URL('../../../stage/', import.meta.url);
@@ -52,10 +54,14 @@ const JPEG_QUALITY = 92;
 export class BrowserStage implements Stage {
 	readonly page: Page;
 	readonly format: Format;
+	readonly watch: FrameWatch;
+	readonly filmed: Frame;
 
-	constructor(page: Page, format: Format) {
+	constructor(page: Page, format: Format, watch: FrameWatch, filmed: Frame) {
 		this.page = page;
 		this.format = format;
+		this.watch = watch;
+		this.filmed = filmed;
 	}
 
 	draw(scene: DrawnScene): Promise<void> {
@@ -70,6 +76,10 @@ export class BrowserStage implements Stage {
 
 	standUp(): Promise<void> {
 		return this.sizedTo(this.format);
+	}
+
+	absence(): Promise<Error | undefined> {
+		return this.watch.absence(this.filmed);
 	}
 
 	capture(): Promise<Uint8Array> {

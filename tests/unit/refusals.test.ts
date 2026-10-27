@@ -22,7 +22,7 @@ test('any other header goes by untouched', () => {
 	expect(framedAnyway('Content-Type', 'text/html')).toBe('text/html');
 });
 
-test("the header that refuses a page's frame is found among its headers; a page that refuses none has none", () => {
+test("the header that refuses a page's frame is found among its headers, a CSP by its frame-ancestors alone; a page that refuses none has none", () => {
 	const options = { name: 'X-Frame-Options', value: 'SAMEORIGIN' };
 	const ancestors = { name: 'content-security-policy', value: "default-src 'self'; frame-ancestors 'none'" };
 	const policy = { name: 'Content-Security-Policy', value: "default-src 'self';" };
@@ -34,5 +34,5 @@ test("the header that refuses a page's frame is found among its headers; a page 
 			[policy, ancestors],
 			[policy, packed, type]
 		].map(refusalAmong)
-	).toEqual([options, ancestors, undefined]);
+	).toEqual([options, { name: 'content-security-policy', value: "frame-ancestors 'none'" }, undefined]);
 });

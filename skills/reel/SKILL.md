@@ -117,8 +117,9 @@ and clicks it for real; its server is
   before shooting.
 - Prefer the page's own states to anything drawn over it: open a panel with
   its own button, not by hiding parts of the page.
-- A page that refuses frames (`X-Frame-Options`) is shown anyway: livereel
-  takes the refusal off in its own browser.
+- An app whose page refuses frames, which livereel refuses naming the
+  refusal ("refuses to be framed (X-Frame-Options: DENY)"): write
+  `stage: 'inside'` in `defineFilm`, where livereel takes the refusal off.
 - An app that signs in: write `stage: 'inside'` in `defineFilm`, and sign
   in in `ready` or in an act, as a person does, with an account the user
   gives for the film. The stage then stands on the app's own address. Read
@@ -249,9 +250,10 @@ with a timeout that long; a still takes seconds.
   with `stage: 'inside'` and an account for the film. A session only the
   user can sign in to (two factors, a sign-in elsewhere) cannot be filmed
   yet: say so and stop, or film a page that needs none.
-- On the stage apart, point the film at the address the page is finally
-  at: a page reached through a redirect keeps the address asked for in the
-  frame, and its styles and links break.
+- On the stage apart, a click that moves the top page, as a link to `_top`
+  does, takes the stage away, and livereel refuses the film saying so: click
+  such a link on the stage inside the app, where it does nothing, or leave
+  it out.
 - A browser places a click wrongly on a screen the camera has scaled: an
   `act` lays the screen flat at its own size first. Do clicks in `act`.
 - The page is asked for the light colour scheme: an app that follows the

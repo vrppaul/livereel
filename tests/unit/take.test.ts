@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import type { Pose } from '../../src/domain/camera.ts';
 import type { MotionBlur } from '../../src/domain/shutter.ts';
-import { TakeError } from '../../src/domain/errors.ts';
+import { FilmError, TakeError } from '../../src/domain/errors.ts';
 import { linear } from '../../src/domain/time.ts';
 import { type Bounds, type Change, type Move, timingOf } from '../../src/direction/move.ts';
 import { act, cut, hold, play } from '../../src/direction/steps.ts';
@@ -16,6 +16,7 @@ import type { Sound } from '../../src/direction/sound.ts';
 import type { Keystroke } from '../../src/domain/typing.ts';
 import type { EndingCard } from '../../src/props/ending.ts';
 import { type Scene, openingScene } from '../../src/scene.ts';
+import type { Exposures } from '../../src/studio/ports.ts';
 import { Take } from '../../src/studio/take.ts';
 import { FootageOf, PageOfBoxes, SMALL, StageThatKeeps, TrackThatKeeps, openedOn } from './fakes.ts';
 
@@ -38,6 +39,8 @@ const STROKES: readonly Keystroke[] = [
 const HALF_OF_FOUR: MotionBlur = { shutter: 0.5, exposuresAtMost: 4 };
 // The camera close on the screen's right edge: from the whole screen, at two thirds of its size, a fast way
 const CLOSE_AT_THE_RIGHT: Pose = { focusX: 400, focusY: 200, zoom: 1, tilt: 0, turn: 0 };
+// Why a stage's page is gone, as a stage says it
+const GONE = new FilmError('the page at http://app/refusing/ refuses to be framed');
 
 /** A move on the screen that writes down every progress it is set at. */
 class Counted implements Move {
@@ -56,6 +59,28 @@ class Counted implements Move {
 	noted(scene: Scene, progress: number): Scene {
 		this.progresses.push(progress);
 		return scene;
+	}
+}
+
+/** Footage that keeps the frames it is told to, the stage's page going as each is kept: a page gone as it was shot. */
+class KeptAsThePageGoes extends FootageOf {
+	readonly stage: StageThatKeeps;
+
+	constructor(wanted: readonly number[], stage: StageThatKeeps) {
+		super(wanted);
+		this.stage = stage;
+	}
+
+	override async keep(shot: number, exposures: Exposures): Promise<void> {
+		await super.keep(shot, exposures);
+		await this.stage.lose(GONE);
+	}
+}
+
+/** A stage that cannot say whether it is there, as one whose browser is gone. */
+class StageNotAnswering extends StageThatKeeps {
+	override absence(): Promise<Error | undefined> {
+		return Promise.reject(new Error('the browser has been closed'));
 	}
 }
 
@@ -204,4 +229,40 @@ test('a fault in a step is raised with the moment and the step it was met at', a
 	await expect(takeOf(new FootageOf([9]), new StageThatKeeps()).run(steps)).rejects.toThrow(
 		new TakeError(new Error('the page broke'), 0.1, 2)
 	);
+});
+
+test('no frame is shot where the stage or its page is gone: the take is refused by why, at the step that would shoot it', async () => {
+	const stage = new StageThatKeeps();
+	await stage.lose(GONE);
+	await expect(takeOf(new FootageOf([9]), stage).run([play({ seconds: 0.1 })])).rejects.toThrow(
+		new TakeError(GONE, 0, 1)
+	);
+	expect(stage.drawn).toEqual([]);
+});
+
+test('an act that leaves the stage or its page gone is refused by why, though nothing after it is shot', async () => {
+	const stage = new StageThatKeeps();
+	await expect(takeOf(new FootageOf([9]), stage).run([act(() => stage.lose(GONE))])).rejects.toThrow(
+		new TakeError(GONE, 0, 1)
+	);
+});
+
+test('a last frame kept as the stage or its page went is refused by why, at the last step', async () => {
+	const stage = new StageThatKeeps();
+	await expect(takeOf(new KeptAsThePageGoes([2], stage), stage).run([play({ seconds: 0.1 })])).rejects.toThrow(
+		new TakeError(GONE, 0.1, 1)
+	);
+});
+
+test('a fault a step meets where the stage cannot be asked whether it is there is said as met', async () => {
+	const steps = [act(() => Promise.reject(new Error('the page broke')))];
+	await expect(takeOf(new FootageOf([9]), new StageNotAnswering()).run(steps)).rejects.toThrow(
+		new TakeError(new Error('the page broke'), 0, 1)
+	);
+});
+
+test('a fault a step meets where the stage or its page is gone is said by why it is gone', async () => {
+	const stage = new StageThatKeeps();
+	const failing = act(() => stage.lose(GONE).then(() => Promise.reject(new Error('nothing matches h1'))));
+	await expect(takeOf(new FootageOf([9]), stage).run([failing])).rejects.toThrow(new TakeError(GONE, 0, 1));
 });

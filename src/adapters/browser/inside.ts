@@ -9,13 +9,14 @@
  * refusal; every other answer, and every step of a redirect, goes on as it came. The frame is sandboxed short of
  * moving the page it stands in: on one origin a page that breaks out of frames (`top.location = …`) would take the
  * stage with it at any time, where Chrome lets a page of another site do it only on a click. A link to `_top` then
- * does nothing (measured 2026-10-27).
+ * does nothing (measured 2026-10-27). A page answered anew hears its server on this machine only as the browser is
+ * granted `local-network-access` (`chromium.ts`).
  */
 import { readFile, readdir } from 'node:fs/promises';
 import { extname } from 'node:path';
 import type { CDPSession, Page } from 'playwright-core';
 import { FilmError } from '../../domain/errors.ts';
-import { type Header, framedAnyway, isServed, refusalAmong } from './refusals.ts';
+import { type Header, framedAnyway, refusalAmong } from './refusals.ts';
 import { type Opening, STAGE_FOLDER, STAGE_PAGE } from './stage.ts';
 import type { Warn } from './warn.ts';
 
@@ -34,7 +35,9 @@ interface StageFile {
 	readonly body: string;
 }
 
-// Where the stage stands on the app's origin: a path of livereel's own, which no app is expected to serve
+// The ways a page comes from a server, and where the stage stands on the app's origin: a path of livereel's own,
+// which no app is expected to serve
+const SERVED = new Set(['http:', 'https:']);
 const STAGE_PATH = '/__livereel__/';
 const CONTENT_TYPES: ReadonlyMap<string, string> = new Map([
 	['.html', 'text/html; charset=utf-8'],
@@ -86,7 +89,7 @@ export async function stagedInside(page: Page, address: string, warn: Warn): Pro
 /** Where the stage stands for a page: on the page's own origin, at livereel's path; a page no server serves has none. */
 export function stageAddressOf(address: string): string {
 	const served = URL.parse(address);
-	if (served === null || !isServed(served)) {
+	if (served === null || !SERVED.has(served.protocol)) {
 		throw new FilmError(`stage: "inside" stands on the address of a page a server serves: ${address} is none`);
 	}
 	return new URL(`${STAGE_PATH}${STAGE_PAGE}`, served.origin).href;

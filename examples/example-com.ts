@@ -4,7 +4,8 @@
  *     pnpm livereel shoot examples/example-com.ts --format square --out out/example --sheet
  *
  * It is shot square for a feed, or wide for a page or a talk: every framing is by selector, so the one script fits
- * either frame.
+ * either frame. It stands its stage inside example.com: the link leads to IANA's page, which refuses to be framed,
+ * and on the stage apart the film would be refused there.
  */
 import {
 	type ActContext,
@@ -153,4 +154,4 @@ function steps(_served: Serving, whole: Pose): readonly Step[] {
 	return [...actOpening(whole), ...actLanguages(), ...actTheLink(whole), ...actEnding()];
 }
 
-export default defineFilm({ formats: FORMATS, serve: servedElsewhere, ready: linkShown, steps });
+export default defineFilm({ formats: FORMATS, serve: servedElsewhere, stage: 'inside', ready: linkShown, steps });

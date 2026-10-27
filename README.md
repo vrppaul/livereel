@@ -165,10 +165,13 @@ Your app sits in a frame of the stage, a page of livereel's own.
 `defineFilm` takes `stage`:
 
 - `apart`, where none is named: the stage is a file of livereel's, and the
-  page is framed in it, the refusal to be framed taken off every page's
-  answer. To the stage the page is a page of another site, so its cookies go
-  with none of its own requests: a sign-in does not hold. A click that moves
-  the top page, as a link to `_top` does, takes the stage away.
+  page is framed in it as it comes, nothing of its answers touched: a
+  redirect lands in the frame, and a page that refuses to be framed is
+  refused, its refusal named, as the frame opens it or wherever the film
+  meets it after. To the stage the page is a page of another site, so its
+  cookies go with none of its own requests: a sign-in does not hold. A
+  click that moves the top page, as a link to `_top` does, takes the stage
+  away, and the film is refused, saying so.
 - `inside`, for an app that signs in or refuses to be framed: the stage
   stands on the app's own address, at `/__livereel__/stage.html`, so the
   page is of the stage's own site. Its cookies go with each of its
@@ -182,12 +185,14 @@ What `inside` costs:
 
 - The frame is sandboxed short of moving the page it stands in, so a page
   that breaks out of frames stays in the stage, and a link to `_top` does
-  nothing. What else the sandbox changes for an app is not measured yet.
+  nothing. A real app, claude-review, was filmed whole under it; what it
+  changes for a popup, a download or storage access is not tried yet.
 - Only the app's own site is signed in: a page of another site the frame
-  goes to gets only its cookies of `SameSite=None`.
+  goes to gets only its cookies of `SameSite=None`. Such a page is shown
+  even where it refuses to be framed, as IANA's is in
+  `examples/example-com.ts`.
 - The app's scripts can reach the stage, which stands on their origin.
-- A page of another site that refuses to be framed, and the app's service
-  worker, are not tried yet.
+- The app's service worker is not tried yet.
 
 ### Sound
 
@@ -247,16 +252,14 @@ clock is its frames.
 - What livereel films: public pages, and apps served on your machine. An
   app that signs in is filmed with `stage: 'inside'`, signed in by the film
   itself; a session the person signs in to themselves (two factors, a
-  sign-in elsewhere) is not taken yet ([`TODO.md`](TODO.md)). On the stage
-  apart, a page that redirects during a film keeps the address it asked
-  for, so its relative addresses break; inside, it lands where it is sent.
+  sign-in elsewhere) is not taken yet ([`TODO.md`](TODO.md)).
 - Chromium alone, headless.
 - The page is asked for reduced motion and the light colour scheme. A page
   that animates anyway runs those animations on the wall clock, so two shots
   of it differ there.
 - A page that refuses to be framed (`X-Frame-Options`, a CSP's
-  `frame-ancestors`) is shown anyway: the filming browser takes the refusal
-  off, and nothing else.
+  `frame-ancestors`) is shown only on the stage inside the app ("Where the
+  stage stands").
 
 ## Development
 

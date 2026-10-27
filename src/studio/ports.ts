@@ -16,6 +16,11 @@ export interface Stage {
 	readonly layFlat: (scene: DrawnScene) => Promise<void>;
 	/** The stage back at the frame's size, after an act. */
 	readonly standUp: () => Promise<void>;
+	/**
+	 * Why the stage, or the page in its frame, is no longer there, where one is not: a click that took the stage away,
+	 * a page that refuses its frame, one that could not be reached; none where both are.
+	 */
+	readonly absence: () => Promise<Error | undefined>;
 	/** The frame as the stage shows it now, as a JPEG. */
 	readonly capture: () => Promise<Uint8Array>;
 }

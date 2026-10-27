@@ -10,6 +10,9 @@
  * A frame is drawn only when the footage keeps it, and drawn again where the camera crossed it fast since the frame
  * before, at poses along the camera's way there, the rest of the scene as it stands: each drawing is an exposure of
  * the frame (`src/domain/shutter.ts`). A fault in a step is raised again with the moment and the step it was met at.
+ * Before each frame, after each act, and of any fault a step meets, the take asks the stage whether it and its page
+ * are still there: where one is gone, the take is refused by why, in place of what its loss made a step fail at (a
+ * selector that matches nothing on Chrome's error page), and nothing of it is shot.
  */
 import { type Pose, flatPose } from '../domain/camera.ts';
 import { TakeError } from '../domain/errors.ts';
@@ -66,17 +69,44 @@ export class Take {
 		return this.shot;
 	}
 
-	/** Every step in turn, until the steps or the footage run out. */
+	/**
+	 * Every step in turn, until the steps or the footage run out; then the stage asked once more, so a last frame kept
+	 * as its page went is not kept without a word.
+	 */
 	async run(steps: readonly Step[]): Promise<void> {
-		for (const [place, step] of steps.entries()) {
-			if (this.finished()) return;
-			try {
-				await this.step(step);
-			} catch (fault) {
-				if (!(fault instanceof Error)) throw fault;
-				throw new TakeError(fault, this.moment(), place + 1);
-			}
+		let begun = 0;
+		for (const step of steps) {
+			if (this.finished()) break;
+			await this.taken(begun, () => this.step(step));
+			begun += 1;
 		}
+		await this.taken(begun - 1, () => this.refusedWhereGone());
+	}
+
+	/**
+	 * A part of the take, at the step of that place in the film; a fault in it raised with the moment and the step it
+	 * was met at, said by why where it can be.
+	 */
+	private async taken(place: number, work: () => Promise<void>): Promise<void> {
+		try {
+			await work();
+		} catch (fault) {
+			if (!(fault instanceof Error)) throw fault;
+			throw new TakeError(await this.explained(fault), this.moment(), place + 1);
+		}
+	}
+
+	/** A step's fault, or why the stage or its page is gone where one is, which explains it. */
+	private async explained(fault: Error): Promise<Error> {
+		return (await this.absence()) ?? fault;
+	}
+
+	/**
+	 * Why the stage or its page is gone, where one is; none where both are, or where the stage cannot be asked, as when
+	 * the browser itself is gone, so the fault met on the way is the one said.
+	 */
+	private absence(): Promise<Error | undefined> {
+		return this.opened.stage.absence().catch(() => undefined);
 	}
 
 	private step(step: Step): Promise<void> {
@@ -118,11 +148,13 @@ export class Take {
 		}
 	}
 
+	/** An act on the page laid flat; the stage asked before it stands up again, as a stage gone cannot stand up. */
 	private async act(step: Act): Promise<void> {
 		await this.opened.stage.layFlat(drawn(posed(this.scene, flatPose(this.format)), this.moment()));
 		try {
 			await step.action(this.opened.act);
 		} finally {
+			await this.refusedWhereGone();
 			await this.opened.stage.standUp();
 		}
 	}
@@ -169,10 +201,17 @@ export class Take {
 		this.scene = await change(this.scene, progress);
 	}
 
-	/** One frame: exposed and kept where the footage keeps it, and counted. */
+	/** One frame: exposed and kept where the footage keeps it, and counted; refused where the stage or its page is gone. */
 	private async frame(posedBefore: Pose): Promise<void> {
+		await this.refusedWhereGone();
 		if (this.footage.keeps(this.shot)) await this.footage.keep(this.shot, await this.exposed(posedBefore));
 		this.shot += 1;
+	}
+
+	/** The take refused, by why, where the stage or the page in its frame is no longer there. */
+	private async refusedWhereGone(): Promise<void> {
+		const absence = await this.absence();
+		if (absence !== undefined) throw absence;
 	}
 
 	/** The frame drawn at each pose the camera is caught at along its way from the frame before, its own last. */
