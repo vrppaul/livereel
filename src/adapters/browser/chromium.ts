@@ -200,8 +200,10 @@ async function compositingOf(browser: Playwright): Promise<string | undefined> {
 
 /**
  * The stage opened where the film asks for it; how its frame then opens the page. Apart from the app the frame is not
- * sandboxed, so the page does all it would: Chrome stops a page of another site moving the page it is framed in, but
- * not on a click, so a click on a link to `_top` takes the stage away (measured 2026-10-27; TODO.md).
+ * sandboxed, so the page does all it would, and nothing a sandbox changes for an app (a popup, a download, storage)
+ * is a risk of the simple stage: Chrome stops a page of another site moving the page it is framed in, but not on a
+ * click, so a click on a link to `_top` takes the stage away (measured 2026-10-27), and the take is refused, saying
+ * so and naming the stage inside the app, where the frame is sandboxed against it (`watch.ts`).
  */
 async function staged(page: Page, stage: StagePlace, address: string, warn: Warn): Promise<Opening> {
 	switch (stage) {

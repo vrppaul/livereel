@@ -2,7 +2,6 @@
 
 ## Faults
 
-- On the stage apart from the app, a click that moves the top page takes the stage away, and the film is refused, saying so (`src/adapters/browser/watch.ts`): Chrome stops a framed page of another site moving it only without a click. Measured by the reviewer of 2026-10-27 through `Chromium.open`: a click on a link to `_top`, and one on a button that sets `top.location`, each left no stage and no frame. The frame inside the app is sandboxed against it; whether the stage apart sandboxes its frame too, so such a film goes on, at the price of what a sandbox changes for an app, is the owner's to decide.
 - The stage inside the app, not tried yet: what its sandbox changes for an app beyond claude-review's story film, shot whole under it (2026-10-27) — a popup, a download, storage access; the app's service worker.
 - `cursor.to` refuses a block standing wholly off the screen, but rests the cursor 60 % down the block (`restingOn`, `src/moves/cursor.ts`): a block taller than the screen and partly on it can still put the cursor off the screen without a word (the reviewer's reading of 2026-10-27, not run). The rest point's own check, in the words of `shownBox`.
 - `examples/livereel-promo.ts` shot as a draft fails now and then at 7.5 s, step 8, waiting for the count Refresh brings ("12,517"): 2 of 7 draft shoots on f4bba22, and 3 of 3 on c02c26a, before the stage's rework (2026-10-27); a still at 9 s passed both times tried. Cause not found.
