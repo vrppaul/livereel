@@ -104,9 +104,11 @@ Every file is named after the film's file and the format it is shot in.
 browser, and needs no screen: the promo, wide and blurred, took 271 s
 against 495 s, its frames alike. It reaches the card through Vulkan on
 Linux, tried on an Intel card; through Metal on macOS and Direct3D 11 on
-Windows, not tried yet. Where it finds no driver for a graphics card, it
-draws the frames in software without a word, and on Linux, where that was
-tried, the page then has no WebGL.
+Windows, not tried yet. Where it reaches no graphics card, it draws the
+frames in software all the same and warns of it ("--renderer gpu reached no
+graphics card"). On Linux, where that was tried, a page keeps its WebGL
+where Vulkan finds no driver at all, and has none where it finds only
+Mesa's software one, lavapipe.
 
 ## What a film is written with
 

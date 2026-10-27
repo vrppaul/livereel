@@ -16,6 +16,9 @@ const AS_A_MODULE = JSON.stringify({ type: 'module' });
 const FFMPEG_OF_MP4_ALONE =
 	"#!/bin/sh\necho ' V....D libx264              libx264 H.264'\necho ' A....D aac                  AAC'\n";
 const RUNS = 0o755;
+// Vulkan pointed at a driver that is not there, so the graphics card is out of the browser's reach: on Linux alone,
+// where the tests run, and only where the driver files Vulkan reads before these are not named
+const NO_VULKAN_DRIVER = '/nonexistent/vulkan-driver.json';
 // A command that hangs is stopped and fails its test, rather than holding the whole run
 const A_COMMAND_AT_MOST_MILLISECONDS = 30_000;
 
@@ -311,6 +314,17 @@ test('a still is written where it is asked for', () => {
 	const out = scratch();
 	const ran = livereel('still', SHORT, '--out', out, '--at', '0.1', '--quality', 'draft');
 	expect([ran.code, readdirSync(out)]).toEqual([0, ['short-small-0.1s.jpg']]);
+});
+
+test('a film asked onto the graphics card where none is reached, on Linux, is shot in software all the same, and says so', () => {
+	const out = scratch();
+	const environment = { ...process.env, VK_DRIVER_FILES: undefined, VK_ICD_FILENAMES: NO_VULKAN_DRIVER };
+	const ran = livereelWith(environment, 'still', SHORT, '--out', out, '--at', '0.1', '--renderer', 'gpu');
+	expect([ran.code, readdirSync(out), ran.said]).toEqual([
+		0,
+		['short-small-0.1s.jpg'],
+		expect.stringContaining('--renderer gpu reached no graphics card')
+	]);
 });
 
 test('a still at a moment the camera crosses fast is shot, its exposures blended', () => {

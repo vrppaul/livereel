@@ -11,6 +11,7 @@ import { Chromium } from '../../src/adapters/browser/chromium.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { shoot } from '../../src/studio/shoot.ts';
 import type { Footage } from '../../src/studio/ports.ts';
+import { WARNED_TO_NOBODY } from './warned.ts';
 import { type ActContext, type Serving, act, cursor, defineFilm, page, play } from 'livereel';
 
 const FAR = '[data-testid=far]';
@@ -141,7 +142,7 @@ test('an app with a server of its own is filmed: framed, scrolled, answered afte
 		]
 	});
 	await shoot(film.formats.get('small')!, {
-		browser: new Chromium('software'),
+		browser: new Chromium('software', WARNED_TO_NOBODY),
 		footage: new NoFrames(),
 		track: SILENT,
 		quality: { sharpness: 1, blurred: false }

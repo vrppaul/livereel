@@ -102,6 +102,11 @@ export function say(line: string): void {
 	process.stdout.write(`${line}\n`);
 }
 
+/** A line the command warns of as it goes on: on stderr, apart from what it made. */
+function warn(line: string): void {
+	process.stderr.write(`livereel: ${line}\n`);
+}
+
 async function shootCommand(given: readonly string[]): Promise<void> {
 	const { values, positionals } = asUsage(SHOOT, () =>
 		parseArgs({
@@ -259,7 +264,7 @@ function nameOf(file: string): string {
 function shotWithAsked(asked: { quality: string; renderer: string }, command: Command): ShotWith {
 	const quality = nameAsked(asked.quality, QUALITY_NAMES, QUALITY_SAYS, command);
 	const renderer = nameAsked(asked.renderer, RENDERERS, RENDERER_SAYS, command);
-	return { quality: QUALITIES[quality], browser: new Chromium(renderer) };
+	return { quality: QUALITIES[quality], browser: new Chromium(renderer, warn) };
 }
 
 /** The one of an option's names the command line gave it; any other is refused, naming them all. */

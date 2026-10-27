@@ -80,10 +80,11 @@ file is named `.mts`.
 Shoot a film with `--renderer gpu`: its frames are drawn on the graphics
 card, and it needs no screen. On Linux, where it was tried, a full shoot
 took about half as long as in software (the promo, blurred: 271 s against
-495 s); on macOS and Windows it is not tried yet. Where it finds no driver
-for a graphics card, it draws the frames in software without a word, and on
-Linux the page then has no WebGL: a canvas left empty on the contact sheet
-says so; shoot the film again without the flag.
+495 s); on macOS and Windows it is not tried yet. Where it reaches no
+graphics card, it draws the frames in software all the same and warns
+"--renderer gpu reached no graphics card"; a page that draws with WebGL may
+then draw nothing. Where it warns and a canvas on the contact sheet is
+empty, shoot the film again without the flag.
 
 A film is a TypeScript file whose default export is `defineFilm({ formats,
 serve, ready, steps })` from `livereel`: its formats by name, each a frame

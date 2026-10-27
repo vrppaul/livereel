@@ -10,9 +10,11 @@
  * through ANGLE onto the system's own graphics interface; it stays headless, and needs no screen. On Linux, Vulkan
  * reached an Intel Iris Xe with no screen named, and the promo, wide and blurred, took 271 s against 495 s in
  * software, its frames alike (SSIM 0.998 on average, 0.996 at the least; measured 2026-10-26). Metal on macOS and
- * Direct3D 11 on Windows are untried. Where it finds no driver for a graphics card, the shell draws in software all
- * the same, and on Linux, where that was tried, the page has no WebGL. A page that cannot be reached is refused as the
- * frame opens it, by the address the film gave, rather than when the film first waits on it.
+ * Direct3D 11 on Windows are untried. Where it reaches no graphics card, the shell draws in software all the same:
+ * where Vulkan finds no driver at all, through SwiftShader, WebGL drawn; where it finds Mesa's software Vulkan alone
+ * (lavapipe), the page has no WebGL (both measured on Linux 2026-10-27). The person is warned, as Chrome tells it, and
+ * the film is shot. A page that cannot be reached is refused as the frame opens it, by the address the film gave,
+ * rather than when the film first waits on it.
  */
 import { type Browser as Playwright, type Frame, type Page, chromium } from 'playwright-core';
 import { FilmError, SetupError } from '../../domain/errors.ts';
@@ -37,6 +39,12 @@ const COLOUR_SCHEME = 'light';
 // name for the system
 const USE_ANGLE = '--use-angle=';
 const CARD_INTERFACES = { linux: 'vulkan', darwin: 'metal', win32: 'd3d11' } as const;
+// Chrome's compositing as CDP's `SystemInfo.getInfo` reports it, and what it reports on the graphics card: `enabled`
+// with Vulkan on the card, `disabled_software` with no driver for one or with lavapipe alone (measured on Linux
+// 2026-10-26 and 2026-10-27)
+const COMPOSITING = 'gpu_compositing';
+const ON_THE_CARD = 'enabled';
+const UNTOLD = '--renderer gpu: Chrome did not tell whether it reached a graphics card';
 
 type System = keyof typeof CARD_INTERFACES;
 
@@ -68,16 +76,22 @@ function isSystem(platform: string): platform is System {
 	return Object.hasOwn(CARD_INTERFACES, platform);
 }
 
+/** A line livereel warns of as it goes on: something the person would want to know, which stops nothing. */
+export type Warn = (line: string) => void;
+
 export class Chromium implements Browser {
 	readonly renderer: Renderer;
+	readonly warn: Warn;
 
-	constructor(renderer: Renderer) {
+	constructor(renderer: Renderer, warn: Warn) {
 		this.renderer = renderer;
+		this.warn = warn;
 	}
 
 	async open(format: Format, address: string, sharpness: number): Promise<Opened> {
 		const browser = await launched(this.renderer);
 		try {
+			await whereItDrawsChecked(this.renderer, browser, this.warn);
 			return await openedIn(browser, format, address, sharpness);
 		} catch (fault) {
 			await browser.close();
@@ -130,6 +144,44 @@ async function launched(renderer: Renderer): Promise<Playwright> {
 			});
 		}
 		throw fault;
+	}
+}
+
+/**
+ * The launched browser checked for drawing where it was asked to: asked onto the graphics card and reaching none, it
+ * draws in software all the same, and the person is warned, as a page that draws with WebGL may then draw nothing; a
+ * Chrome that does not tell is said as such.
+ */
+async function whereItDrawsChecked(renderer: Renderer, browser: Playwright, warn: Warn): Promise<void> {
+	switch (renderer) {
+		case 'software':
+			return;
+		case 'gpu': {
+			const compositing = await compositingOf(browser);
+			if (compositing === ON_THE_CARD) return;
+			if (compositing === undefined) {
+				warn(UNTOLD);
+				return;
+			}
+			warn(
+				`--renderer gpu reached no graphics card (Chrome's compositing is ${compositing}): the frames are ` +
+					'drawn in software, and a page that draws with WebGL may draw nothing'
+			);
+		}
+	}
+}
+
+/**
+ * How Chrome composites its pages, as it reports it: `enabled` on the graphics card. The call ships with the browser
+ * Playwright pins, so a failure of it is a fault of the setup, and fails the take as one rather than go on unsure.
+ */
+async function compositingOf(browser: Playwright): Promise<string | undefined> {
+	const session = await browser.newBrowserCDPSession();
+	try {
+		const { gpu } = await session.send('SystemInfo.getInfo');
+		return gpu.featureStatus?.[COMPOSITING];
+	} finally {
+		await session.detach();
 	}
 }
 

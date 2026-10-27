@@ -8,6 +8,7 @@ import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
 import type { Footage } from '../../src/studio/ports.ts';
+import { WARNED_TO_NOBODY } from './warned.ts';
 import {
 	type ActContext,
 	type Step,
@@ -61,7 +62,12 @@ function filmOf(steps: readonly Step[]) {
  * its sounds heard by nobody.
  */
 function shootingInto(footage: Footage, renderer: Renderer): Shooting {
-	return { browser: new Chromium(renderer), footage, track: SILENT, quality: { sharpness: 1, blurred: false } };
+	return {
+		browser: new Chromium(renderer, WARNED_TO_NOBODY),
+		footage,
+		track: SILENT,
+		quality: { sharpness: 1, blurred: false }
+	};
 }
 
 async function scratch(): Promise<string> {

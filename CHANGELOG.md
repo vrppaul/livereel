@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- `--renderer gpu` that reaches no graphics card warns of it on stderr, as Chrome tells it ("--renderer gpu reached no graphics card (Chrome's compositing is disabled_software)"), and shoots the film in software all the same: it had drawn in software without a word. What 0.2.0 said of WebGL then was wrong: on Linux a page keeps its WebGL where Vulkan finds no driver at all, through SwiftShader, and has none where Vulkan finds only Mesa's software lavapipe (measured 2026-10-27).
+
 ## 0.2.1
 
 - A film's `sounds`, `motionBlur` or `music` written in none of their forms is refused as the film is defined, where it stands and as it was written (`the film's motionBlur.shutter is null: …`): `null` or a list in place of an object, a name the form has not (`enable` for `enabled`), `enabled` neither `true` nor `false`, a value of the wrong kind (`keyboard: null`). Such a `null` or a misspelt `enable: false` had left livereel's sounds and blur on, and music written as a path alone was refused for its volume.

@@ -109,7 +109,7 @@ test('a video whose sound cannot be laid leaves the one made before as it was, a
 	const video = join(directory, 'film.mp4');
 	writeFileSync(video, MADE_BEFORE);
 	const footage = new VideoFootage(video, FRAME);
-	await footage.keep(0, { earlier: [], own: jpegOf(FRAME) });
+	await footage.keep(0, { earlier: [], own: jpegOf(FRAME, 'gray') });
 	// Heard without being expected, as nothing refused it before the shoot
 	const track = new Soundtrack(join(directory, 'film.ts'), SOUNDLESS);
 	track.hear(0, fileSound(NOT_A_SOUND));
