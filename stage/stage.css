@@ -1,8 +1,8 @@
 /*
  * The stage: the ground the film stands on, the room the camera moves the screen in, and every prop's look. Nothing
- * here moves of itself: the stage's script sets the frame's and the screen's sizes and the eye's distance as a film
- * begins, and each prop's numbers every frame (`--zoom`, `--shown`, `--press`), all as bare numbers; the rules below
- * give them their units and turn them into places, sizes and shades.
+ * here moves of itself: the stage's script sets the frame's and the screen's sizes, the eye's distance and how large
+ * what stands over the frame is drawn as a film begins, and each prop's numbers every frame (`--zoom`, `--shown`,
+ * `--press`), all as bare numbers; the rules below give them their units and turn them into places, sizes and shades.
  */
 html,
 body {
@@ -99,6 +99,14 @@ body {
 	stroke-linejoin: round;
 }
 
+/* What stands flat over the frame is sized in pixels of a frame the stage's look was made on, every length of it scaled to the frame shot, so it covers as much of a small frame as of a large one; the page is clicked through it */
+.over-the-frame {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	zoom: var(--frame-scale);
+}
+
 /* A caption: words that rise out of a blur over the frame's foot, on a ground that darkens it, and sink as they go */
 .caption {
 	--word-rise: 22px;
@@ -108,7 +116,6 @@ body {
 
 	position: absolute;
 	inset: 0;
-	pointer-events: none;
 }
 
 .caption .ground {
@@ -150,7 +157,6 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	pointer-events: none;
 	opacity: var(--shown);
 	transform: scale(calc(1 - var(--terminal-shrinks) * (1 - var(--shown))));
 }
@@ -276,7 +282,6 @@ body {
 	background: var(--ground-light);
 	color: var(--ink);
 	text-align: center;
-	pointer-events: none;
 	opacity: var(--shown);
 }
 

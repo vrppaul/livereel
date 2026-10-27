@@ -2,6 +2,8 @@
 
 ## Faults
 
+- A camera's zoom counts the frame's pixels a page's pixel takes, in a pose and in `zoomAtMost` (2.2 where a film names none), so one script framed by selector frames closer on a frame smaller than 1080 on its shorter side and looser on a larger one: `examples/example-com.ts` shot at 540 × 540 cut its lines at both edges where the square showed them whole, and at 2160 × 2160 showed the whole page (2026-10-27). A zoom measured against the frames the stage's look was made on (`frameScaleOf`, `src/domain/geometry.ts`), as the eye's distance and what stands over the frame are, would fit one script to any frame size; it changes what every film's zoom means.
+- On a system Playwright does not run on (FreeBSD, among those Node knows), livereel stops as it starts on Playwright's own error, `Unsupported platform`, and exits 1 with its stack. With `PLAYWRIGHT_BROWSERS_PATH` set it gets as far as the launch: Playwright's `chromium is not supported on <unknown>`, exit 1 with its stack, or, for `--renderer gpu`, livereel's refusal of the system's graphics card, exit 3, as if the software renderer would do. The system refused once as the machine's, as a Node too old is (`bin/livereel.js`), would say it alike every way. Seen with `process.platform` said to be `freebsd` (2026-10-27).
 - The stage inside the app, not tried yet: what its sandbox changes for an app beyond claude-review's story film, shot whole under it (2026-10-27) — a popup, a download, storage access; the app's service worker.
 - `cursor.to` refuses a block standing wholly off the screen, but rests the cursor 60 % down the block (`restingOn`, `src/moves/cursor.ts`): a block taller than the screen and partly on it can still put the cursor off the screen without a word (the reviewer's reading of 2026-10-27, not run). The rest point's own check, in the words of `shownBox`.
 - `examples/livereel-promo.ts` shot as a draft fails now and then at 7.5 s, step 8, waiting for the count Refresh brings ("12,517"): 2 of 7 draft shoots on f4bba22, and 3 of 3 on c02c26a, before the stage's rework (2026-10-27); a still at 9 s passed both times tried. Cause not found.
@@ -21,9 +23,9 @@
 
 ## Integrations
 
-An integration is a module a film imports, built on the seams livereel already has, with no registry or loader: a page served (`serve` hands back a `Serving`), moves (`Move`), acts (`ActContext`). One that needs nothing but `fetch` is a subpath of this package (`livereel/figma`, a line in `exports`); one that needs a heavy dependency, a package of its own.
+An integration is a module a film imports, with no registry or loader, built on livereel's seams: a page served (`serve` hands back a `Serving`), acts (`ActContext`), and moves of its own, which no film can make yet. One that needs nothing but `fetch` is a subpath of this package (`livereel/figma`, a line in `exports`); one that needs a heavy dependency, a package of its own.
 
-- The rest of the seams a film's integration builds on exported as the package's promise: `Beginning` and `FilmedPage`, beside `Serving`, `Move` and `ActContext`, which are.
+- A move made outside livereel, the seam an integration's moves stand on, exported as the package's promise: `Share` and `timingOf`, `Beginning`, `FilmedPage`, `Change` and the scene a move is handed. Today a step takes only a move livereel made (`Move`, `src/direction/move.ts`).
 - A target given as a box in pixels as well as a selector, for the camera, the light and the cursor: a Figma prototype or a canvas has no selector.
 - The props stay the core's: the scene's set of them is closed (`src/scene.ts`, `DRAWERS` on the stage), which the compiler holds.
 

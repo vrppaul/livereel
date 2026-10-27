@@ -36,4 +36,4 @@ How a module is built is said in its comment at the top. The stage has its own r
 - A command takes its options by name, each command its own, and refuses any other before anything is started.
 - What a command says goes through `say`, to stdout.
 - What a command warns of as it goes on, stopping nothing, goes through `warn`, to stderr; a part below the command line is handed `warn` as a parameter.
-- What a command refuses, `main` writes to stderr; the exit code says whose it is to put right: 2 the command line or film file, 1 the film.
+- What a command refuses, `main` writes to stderr; the exit code says whose it is to put right: 1 the film, 2 the command line or film file, 3 the machine, which lacks what a film is shot with (`SetupError`).

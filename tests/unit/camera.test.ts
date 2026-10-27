@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { type Pose, covering, frameShift, onTheFrame, onto, underTheFrame } from '../../src/domain/camera.ts';
-import { type Format, type Point, distanceBetween } from '../../src/domain/geometry.ts';
+import { type Format, type Point, type Size, distanceBetween } from '../../src/domain/geometry.ts';
 
 const SQUARE: Format = { frame: { width: 1000, height: 1000 }, screen: { width: 1400, height: 1000 } };
 const FACE_ON: Pose = { focusX: 700, focusY: 500, zoom: 1, tilt: 0, turn: 0 };
@@ -20,6 +20,9 @@ const TOP_LEFT: Point = { left: 0, top: 0 };
 const TOP_RIGHT: Point = { left: 1400, top: 0 };
 const BOTTOM_LEFT: Point = { left: 0, top: 1000 };
 const BOTTOM_RIGHT: Point = { left: 1400, top: 1000 };
+// A square frame half as large each way, which the camera half as close fills as the square frame
+const HALF = 0.5;
+const HALF_FRAME: Size = { width: 500, height: 500 };
 
 function widthBetween(pose: Pose, left: Point, right: Point): number {
 	return onTheFrame(pose, SQUARE.frame, right).left - onTheFrame(pose, SQUARE.frame, left).left;
@@ -72,6 +75,20 @@ test('a screen leant back shows its top edge narrower than its bottom', () => {
 test('a screen swung by a turn shows its right edge shorter than its left', () => {
 	const swung = { ...FACE_ON, turn: 20 };
 	expect(heightBetween(swung, TOP_RIGHT, BOTTOM_RIGHT)).toBeLessThan(heightBetween(swung, TOP_LEFT, BOTTOM_LEFT));
+});
+
+test('a screen at an angle stands as far into a frame half as large, and its corner shows the same point of it', () => {
+	const halfAsClose: Pose = { ...LEANING_BACK, zoom: LEANING_BACK.zoom * HALF };
+	const onTheHalf = onTheFrame(halfAsClose, HALF_FRAME, BOTTOM_RIGHT);
+	const onTheWhole = onTheFrame(LEANING_BACK, SQUARE.frame, BOTTOM_RIGHT);
+	const halfCorner: Point = { left: HALF_FRAME.width, top: HALF_FRAME.height };
+	expect([
+		distanceBetween({ left: onTheHalf.left / HALF, top: onTheHalf.top / HALF }, onTheWhole),
+		distanceBetween(
+			underTheFrame(halfAsClose, HALF_FRAME, halfCorner)!,
+			underTheFrame(LEANING_BACK, SQUARE.frame, FRAME_CORNER)!
+		)
+	]).toEqual([expect.closeTo(0, DECIMALS), expect.closeTo(0, DECIMALS)]);
 });
 
 test('a block is framed whole with its air round it', () => {

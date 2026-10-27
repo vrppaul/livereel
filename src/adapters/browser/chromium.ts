@@ -38,8 +38,13 @@ import type { Warn } from './warn.ts';
 const NAVIGATED = 'framenavigated';
 // What the filming browser is granted, so a page hears its server on this machine: why is the module's comment
 const LOCAL_NETWORK = 'local-network-access';
-// What Playwright says when the browser it is asked for was never downloaded
+// What Playwright says where the browser was never downloaded, and what the person is told in its place: Playwright
+// names its own command, not livereel's
 const NO_BROWSER = "Executable doesn't exist";
+const NOT_INSTALLED = 'the browser films are shot in is not installed: run `npx livereel setup`';
+// What Playwright says where the system lacks libraries the browser needs, its words then naming them and how this
+// system installs them, which differs between Linux distributions, Docker and Windows
+const NO_LIBRARIES = 'Host system is missing dependencies';
 const COLOUR_SCHEME = 'light';
 // The flag naming the graphics interface ANGLE draws through, and that interface on each system's card, by Node's
 // name for the system
@@ -151,13 +156,19 @@ async function launched(renderer: Renderer): Promise<Playwright> {
 	try {
 		return await chromium.launch({ args: [...flagsOf(renderer, process.platform)] });
 	} catch (fault) {
-		if (fault instanceof Error && fault.message.includes(NO_BROWSER)) {
-			throw new SetupError('the browser films are shot in is not installed: run `npx livereel setup`', {
-				cause: fault
-			});
-		}
-		throw fault;
+		throw lackOf(fault) ?? fault;
 	}
+}
+
+/**
+ * What this machine lacks for the browser to start, where Playwright's fault says so: in livereel's words for a
+ * browser never downloaded, in Playwright's own for libraries the system lacks; none for any other fault.
+ */
+function lackOf(fault: unknown): SetupError | undefined {
+	if (!(fault instanceof Error)) return undefined;
+	if (fault.message.includes(NO_BROWSER)) return new SetupError(NOT_INSTALLED, { cause: fault });
+	if (fault.message.includes(NO_LIBRARIES)) return new SetupError(fault.message, { cause: fault });
+	return undefined;
 }
 
 /**

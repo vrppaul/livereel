@@ -4,7 +4,7 @@
 import type { KnipConfig } from 'knip';
 
 const config: KnipConfig = {
-	entry: ['examples/*.ts', 'scripts/*.ts', 'tests/**/*.test.ts', 'tests/cli/films/*.ts', 'stage/stage.js'],
+	entry: ['examples/*.ts', 'scripts/check-*.ts', 'tests/**/*.test.ts', 'tests/cli/films/*.ts', 'stage/stage.js'],
 	project: ['src/**/*.ts', 'stage/*.js', 'examples/**/*.ts', 'scripts/*.ts', 'bin/**/*.js', 'tests/**/*.ts'],
 	ignoreBinaries: ['ffmpeg', 'ffprobe']
 };

@@ -9,8 +9,8 @@
  * are still there, the stage answers from its frame's watch (`watch.ts`).
  */
 import type { Frame, Page } from 'playwright-core';
-import { EYE_DISTANCE } from '../../domain/camera.ts';
-import type { Format } from '../../domain/geometry.ts';
+import { eyeDistanceOf } from '../../domain/camera.ts';
+import { type Format, frameScaleOf } from '../../domain/geometry.ts';
 import type { DrawnScene } from '../../scene.ts';
 import type { Stage } from '../../studio/ports.ts';
 import type { FrameWatch } from './watch.ts';
@@ -19,10 +19,14 @@ import type { FrameWatch } from './watch.ts';
 export const STAGE_FOLDER = new URL('../../../stage/', import.meta.url);
 export const STAGE_PAGE = 'stage.html';
 
-/** The room the stage moves the screen in: the frame it fills, the screen, and how far the eye stands from the frame. */
+/**
+ * The room the stage moves the screen in: the frame it fills, the screen, how far the eye stands from the frame, and
+ * how large what stands over the frame is drawn on it.
+ */
 export interface Room {
 	readonly format: Format;
 	readonly eyeDistance: number;
+	readonly frameScale: number;
 }
 
 /**
@@ -94,7 +98,7 @@ export class BrowserStage implements Stage {
 
 /** The room of a format, seen from where the engine works out what the camera shows (`src/domain/camera.ts`). */
 export function roomOf(format: Format): Room {
-	return { format, eyeDistance: EYE_DISTANCE };
+	return { format, eyeDistance: eyeDistanceOf(format.frame), frameScale: frameScaleOf(format.frame) };
 }
 
 // What follows runs in the stage page, each function handed over alone

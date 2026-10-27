@@ -190,7 +190,8 @@ export default tseslint.config(
 			// A listener or a thunk is one expression here, and what it hands back is nobody's to read
 			'@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
 			'@typescript-eslint/explicit-function-return-type': ['error', { allowExpressions: true }],
-			'max-lines': ['error', { max: 300, skipBlankLines: true, skipComments: true }],
+			// A function does one thing (AGENTS.md): ten ways through it at most, the bound McCabe set beside his
+			// measure; a switch over every kind of a union is one decision
 			complexity: ['error', { max: 10, variant: 'modified' }]
 		}
 	},

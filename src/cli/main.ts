@@ -1,13 +1,16 @@
 /**
  * The command line: a command by name from the table, run; what it refuses said, and the exit code by whose it is
- * to put right — 2 for a wrong command line or film file, 1 for a film that could not be shot.
+ * to put right — 1 for a film that could not be shot, 2 for a wrong command line or film file, 3 for a machine that
+ * lacks what a film is shot with.
  */
-import { LivereelError, UsageError } from '../domain/errors.ts';
+import { LivereelError, SetupError, UsageError } from '../domain/errors.ts';
 import { COMMANDS, say } from './commands.ts';
 
 const SHOT = 0;
-const NOT_SHOT = 1;
+const FILMS_FAULT = 1;
 const WRONG_USAGE = 2;
+// The installed command exits so as well, before any of this is loaded, on a Node too old for it (bin/livereel.js)
+const NOT_SET_UP = 3;
 const HELP = new Set(['--help', '-h', 'help']);
 // What the person gave comes after Node itself and the command's file
 const GIVEN_FROM = 2;
@@ -31,8 +34,15 @@ async function main(given: readonly string[]): Promise<number> {
 	} catch (fault) {
 		if (!(fault instanceof LivereelError)) throw fault;
 		process.stderr.write(`livereel ${name}: ${fault.message}\n`);
-		return fault instanceof UsageError ? WRONG_USAGE : NOT_SHOT;
+		return codeOf(fault);
 	}
+}
+
+/** The exit code of a refusal: whose it is to put right. */
+function codeOf(refusal: LivereelError): number {
+	if (refusal instanceof UsageError) return WRONG_USAGE;
+	if (refusal instanceof SetupError) return NOT_SET_UP;
+	return FILMS_FAULT;
 }
 
 function usage(): string {

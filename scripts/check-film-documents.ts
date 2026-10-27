@@ -13,9 +13,9 @@
  */
 import { readFileSync } from 'node:fs';
 import * as livereel from 'livereel';
+import { reported } from './disagreements.ts';
 
 const DOCUMENTS = ['skills/reel/SKILL.md', 'README.md'];
-const DISAGREE = 1;
 // What a document writes as code: a fenced block, or a span between backticks, which may run on to the next line
 const CODE = /```[\s\S]*?```|`[^`]+`/g;
 const SPECIAL = /[.*+?^${}()|[\]\\]/g;
@@ -58,13 +58,11 @@ function disagreementsOf(document: string, exported: readonly string[], props: r
 	const leftOut = exported.filter((name) => !isNamedIn(code, name));
 	const notThere = movesNamedIn(code, props).filter((name) => !exported.includes(name));
 	return [
-		...leftOut.map((name) => `${document} does not name ${name}\n`),
-		...notThere.map((name) => `${document} names ${name}, which livereel does not have\n`)
+		...leftOut.map((name) => `${document} does not name ${name}`),
+		...notThere.map((name) => `${document} names ${name}, which livereel does not have`)
 	];
 }
 
 const exported = callable(livereel);
 const props = propsOf(livereel);
-const disagreements = DOCUMENTS.flatMap((document) => disagreementsOf(document, exported, props));
-for (const line of disagreements) process.stdout.write(line);
-if (disagreements.length > 0) process.exitCode = DISAGREE;
+reported(DOCUMENTS.flatMap((document) => disagreementsOf(document, exported, props)));

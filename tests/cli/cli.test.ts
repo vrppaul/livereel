@@ -21,6 +21,8 @@ const RUNS = 0o755;
 const NO_VULKAN_DRIVER = '/nonexistent/vulkan-driver.json';
 // A command that hangs is stopped and fails its test, rather than holding the whole run
 const A_COMMAND_AT_MOST_MILLISECONDS = 30_000;
+// A Node too old for livereel, stood in for by this one saying it is 20.0 before the installed command runs
+const AN_OLD_NODE = 'data:text/javascript,Object.defineProperty(process.versions,"node",{value:"20.0.0"})';
 
 interface Ran {
 	readonly code: number | null;
@@ -32,7 +34,12 @@ function livereel(...given: string[]): Ran {
 }
 
 function livereelWith(environment: NodeJS.ProcessEnv, ...given: string[]): Ran {
-	const ran = spawnSync(process.execPath, ['-C', 'source', 'src/cli/main.ts', ...given], {
+	return nodeRan(environment, ['-C', 'source', 'src/cli/main.ts', ...given]);
+}
+
+/** Node run on these arguments, as a process: its exit code and all it said. */
+function nodeRan(environment: NodeJS.ProcessEnv, given: readonly string[]): Ran {
+	const ran = spawnSync(process.execPath, [...given], {
 		encoding: 'utf8',
 		env: environment,
 		timeout: A_COMMAND_AT_MOST_MILLISECONDS
@@ -165,11 +172,11 @@ test('a kind of video livereel does not make is refused, naming those it makes',
 	expect([ran.code, ran.said]).toEqual([2, expect.stringContaining('mp4, webm, gif')]);
 });
 
-test("a kind of video the system's ffmpeg cannot make is refused before the film is shot", () => {
+test("a kind of video the system's ffmpeg cannot make is refused before the film is shot, as the machine's", () => {
 	const out = scratch();
 	const ran = livereelWith({ PATH: pathOfAnFfmpegOfMp4Alone() }, 'shoot', SHORT, '--out', out, '--as', 'webm');
 	expect([ran.code, ran.said, readdirSync(out)]).toEqual([
-		1,
+		3,
 		'livereel shoot: ffmpeg on the path cannot make webm: it has no libvpx-vp9 encoder; install an ffmpeg built with it\n',
 		[]
 	]);
@@ -293,14 +300,26 @@ test('a page that cannot be reached is refused as it is opened, by its address',
 	expect([ran.code, ran.said]).toEqual([1, 'livereel still: the page at http://127.0.0.1:9/ could not be reached\n']);
 });
 
-test('a film is not shot, whole or as a still, where ffmpeg is not on the path', () => {
+test("a film is not shot, whole or as a still, where ffmpeg is not on the path, as the machine's", () => {
 	const whole = livereelWith({ PATH: scratch() }, 'shoot', SHORT, '--out', scratch());
 	const still = livereelWith({ PATH: scratch() }, 'still', SHORT, '--out', scratch(), '--at', '0');
 	expect([whole.code, whole.said, still.code, still.said]).toEqual([
-		1,
+		3,
 		expect.stringContaining('ffmpeg is not on the path'),
-		1,
+		3,
 		expect.stringContaining('ffmpeg is not on the path')
+	]);
+});
+
+test("a browser not installed, or a Node too old for livereel, is refused as the machine's, saying how to put it right", () => {
+	const noBrowser = { ...process.env, PLAYWRIGHT_BROWSERS_PATH: scratch() };
+	const unlaunched = livereelWith(noBrowser, 'still', SHORT, '--out', scratch(), '--at', '0');
+	const tooOld = nodeRan(process.env, ['--import', AN_OLD_NODE, 'bin/livereel.js']);
+	expect([unlaunched.code, unlaunched.said, tooOld.code, tooOld.said]).toEqual([
+		3,
+		'livereel still: the browser films are shot in is not installed: run `npx livereel setup`\n',
+		3,
+		'livereel needs Node 22.20 or later; this is Node 20.0.0\n'
 	]);
 });
 

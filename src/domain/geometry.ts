@@ -62,6 +62,14 @@ export interface Arc {
 
 // The middle of a length lies half-way along it
 const HALVES = 2;
+// The shorter side of the frames the stage's look was made on, 1920 × 1080 and 1080 × 1080: what it draws in the
+// frame's own pixels is drawn as on such a frame, and scaled to the frame shot
+const LOOK_MADE_ON = 1080;
+
+/** How large the stage draws on a frame, against the frames its look was made on: by the frame's shorter side. */
+export function frameScaleOf(frame: Size): number {
+	return Math.min(frame.width, frame.height) / LOOK_MADE_ON;
+}
 
 export function middleX(box: Box): number {
 	return box.left + box.width / HALVES;

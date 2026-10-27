@@ -187,7 +187,8 @@ function setup(room) {
 		'--frame-height': room.format.frame.height,
 		'--screen-width': room.format.screen.width,
 		'--screen-height': room.format.screen.height,
-		'--eye-distance': room.eyeDistance
+		'--eye-distance': room.eyeDistance,
+		'--frame-scale': room.frameScale
 	});
 }
 

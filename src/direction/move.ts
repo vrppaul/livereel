@@ -112,6 +112,11 @@ export interface Beginning {
  */
 export type Change = (scene: Scene, progress: number) => Scene | Promise<Scene>;
 
+/**
+ * A move as livereel's moves make one (`camera.onto`, `light.on`). A film names its type, to hand moves on from a
+ * helper of its own, and makes none itself: a step takes only a move whose share is a `Share`, which livereel alone
+ * makes (`A_MOVE`).
+ */
 export interface Move {
 	readonly part: Part;
 	readonly timing: Timing;

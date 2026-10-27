@@ -53,7 +53,7 @@ The video goes on the release on GitHub as well: `gh release upload vX.Y.Z out/p
 
 ## Releasing
 
-1. Set `version` in `package.json` and in `.claude-plugin/marketplace.json`, and move the changelog's unreleased entries under a heading of it, `## X.Y.Z`, in one commit.
+1. Set `version` in `package.json` and in `.claude-plugin/marketplace.json`, and move the changelog's unreleased entries under a heading of it, `## X.Y.Z`, in one commit. A commit where the two versions differ is refused (`scripts/check-versions.ts`).
 2. Tag it `vX.Y.Z` and push the tag: `.github/workflows/release.yml` checks the tag names the version and the changelog has its section, stages the package on npm with its provenance, and makes the release on GitHub as a draft, that section its notes. npm trusts the workflow itself (Trusted Publishing on the package's page, allowed to stage alone): no token is kept.
 3. Approve the staged version on the package's page on npm, or `npm stage list livereel` and `npm stage approve <stage-id>` (npm 11.21 or later; `npx npm@11.21.1 stage …` where the system's npm is older), with 2FA: only then is it published.
 4. Put the promo's video on the draft release, as "The promo" above says, and publish the release: `gh release edit vX.Y.Z --draft=false`.

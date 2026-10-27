@@ -101,7 +101,11 @@ checked frame by frame on contact sheets and stills. Install it with
 | `--renderer software\|gpu` | `shoot`, `still` | where the frames are drawn: in software, the default, or on the graphics card |
 
 Every file is named after the film's file and the format it is shot in.
-`livereel --help` gives each command's usage.
+`livereel --help` gives each command's usage. A command that refuses says
+why on stderr, and exits by whose it is to put right: 1 the film, 2 the
+command line or the film's file, 3 the machine, which lacks what a film is
+shot with, as the browser, ffmpeg or its encoder of the kind asked, or a
+Node new enough.
 
 `--renderer gpu` draws the frames on the graphics card, in the same headless
 browser, and needs no screen: the promo, wide and blurred, took 271 s
@@ -154,10 +158,19 @@ types the way a person does: unevenly, with a slip now and then.
 
 A film names its formats, `formats: { square: …, wide: … }`, each a frame
 and the screen its page is laid out on, and is shot in one at a time. A
-framing by selector fits any frame; a pose given in numbers is the film's to
-give per format, as `steps(served, whole, formatName)` is handed the whole
-screen's pose and the name of the format it is shot in. A frame's sides are
-even counts of pixels, as a video holds them.
+frame's sides are even counts of pixels, as a video holds them.
+
+The stage's look was made on frames 1080 pixels on their shorter side, as
+1920 × 1080 and 1080 × 1080 are. The caption, the terminal and the ending
+keep their share of any frame, and an angle leans as steeply on any: they
+are drawn as on such a frame, and scaled to the one shot. A framing by
+selector fits any frame but where `zoomAtMost` holds the camera back: a
+zoom counts the frame's pixels a page's pixel takes, in a pose as in
+`zoomAtMost`, so there the camera comes closer on a frame smaller than 1080
+on its shorter side and stands further off on a larger one; give
+`zoomAtMost` per format for such frames. A pose given in numbers
+is the film's to give per format, as `steps(served, whole, formatName)` is
+handed the whole screen's pose and the name of the format it is shot in.
 
 ### Where the stage stands
 

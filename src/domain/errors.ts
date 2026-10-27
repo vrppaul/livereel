@@ -27,7 +27,10 @@ export class TakeError extends LivereelError {
 	}
 }
 
-/** What this machine lacks to shoot a film: the browser, or ffmpeg. */
+/**
+ * What this machine lacks to shoot a film as asked: the browser, or the system's libraries it needs; ffmpeg, or its
+ * encoder of the kind of video asked; for `--renderer gpu`, a system livereel knows how to reach the graphics card on.
+ */
 export class SetupError extends LivereelError {}
 
 /** ffmpeg refused to make the video. */

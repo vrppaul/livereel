@@ -15,6 +15,7 @@ import {
 	type Size,
 	cornersOf,
 	distanceBetween,
+	frameScaleOf,
 	middleX,
 	middleY,
 	nearestWithin
@@ -50,11 +51,9 @@ interface Spot {
 	readonly out: number;
 }
 
-/**
- * How far the eye stands out from the frame's middle, in the frame's pixels: nearer is a stronger angle. The stage's
- * perspective is set to it (`setup` in `stage/stage.js`).
- */
-export const EYE_DISTANCE = 2000;
+// How far the eye stands out from the middle of a frame the stage's look was made on, in its pixels: nearer is a
+// stronger angle
+const EYE_DISTANCE = 2000;
 // The middle of a length lies half-way along it, and air stands on both sides of a block
 const HALVES = 2;
 const SIDES = 2;
@@ -176,7 +175,8 @@ export function onTheFrame(pose: Pose, frame: Size, point: Point): Point {
 		down: pose.zoom * (point.top - pose.focusY),
 		out: 0
 	});
-	const larger = EYE_DISTANCE / (EYE_DISTANCE - spot.out);
+	const eyeDistance = eyeDistanceOf(frame);
+	const larger = eyeDistance / (eyeDistance - spot.out);
 	return { left: frame.width / HALVES + spot.across * larger, top: frame.height / HALVES + spot.down * larger };
 }
 
@@ -187,20 +187,30 @@ export function onTheFrame(pose: Pose, frame: Size, point: Point): Point {
  */
 export function underTheFrame(pose: Pose, frame: Size, point: Point): Point | null {
 	const facingNow = angledAs(pose, FACING_OUT);
+	const eyeDistance = eyeDistanceOf(frame);
 	const sight = {
 		across: point.left - frame.width / HALVES,
 		down: point.top - frame.height / HALVES,
-		out: -EYE_DISTANCE
+		out: -eyeDistance
 	};
 	// How far along the sight from the eye the plane is met: at the point itself, where the screen is face-on
-	const reach = (-facingNow.out * EYE_DISTANCE) / dotProduct(facingNow, sight);
+	const reach = (-facingNow.out * eyeDistance) / dotProduct(facingNow, sight);
 	if (!(reach > 0 && Number.isFinite(reach))) return null;
 	const met = angledBack(pose, {
 		across: sight.across * reach,
 		down: sight.down * reach,
-		out: EYE_DISTANCE + sight.out * reach
+		out: eyeDistance + sight.out * reach
 	});
 	return { left: pose.focusX + met.across / pose.zoom, top: pose.focusY + met.down / pose.zoom };
+}
+
+/**
+ * How far the eye stands out from a frame's middle, in its pixels: as far, for its size, as from a frame the stage's
+ * look was made on, so an angle leans as steeply on any frame. The stage's perspective is set to it (`setup` in
+ * `stage/stage.js`).
+ */
+export function eyeDistanceOf(frame: Size): number {
+	return EYE_DISTANCE * frameScaleOf(frame);
 }
 
 /** A spot of the screen's own, at the pose's angle: swung by its turn, then leant back by its tilt. */
