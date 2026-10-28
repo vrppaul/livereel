@@ -2,18 +2,18 @@
 import { assertKind, assertWritten } from '../domain/handed.ts';
 import { linear } from '../domain/time.ts';
 import { type Move, TIMING_FORM, type TimingScript, propChange, timingOf } from '../direction/move.ts';
-import { A_WORDING, type Wording, wordsOf } from '../props/words.ts';
+import { A_WORDING, type Wording, saidOf } from '../props/words.ts';
 import { going } from './words.ts';
 
 /** A caption coming up word by word; its words come up at an even pace unless the film names a curve. */
 export function show(text: Wording, script: TimingScript = {}): Move {
 	assertKind(text, A_WORDING, "caption.show's text");
 	assertWritten(script, TIMING_FORM, 'caption.show');
-	const words = wordsOf(text);
+	const said = saidOf(text);
 	return {
 		part: 'caption',
 		timing: timingOf({ ease: linear, ...script }),
-		begin: () => propChange('caption', (progress) => ({ words, shown: progress, gone: 0 }))
+		begin: () => propChange('caption', (progress) => ({ ...said, shown: progress, gone: 0 }))
 	};
 }
 

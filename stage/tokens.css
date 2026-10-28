@@ -14,6 +14,9 @@
 	--done: #7ee2a8;
 	--terminal: #10141c;
 	--terminal-edge: #252d3b;
+
+	/* What is written in the terminal and in the ending's command, on the terminal's own colour, which no theme sets */
+	--terminal-ink: #f4f6fa;
 	--terminal-shadow: 0 0 0 1px var(--terminal-edge), 0 40px 100px rgb(0 0 0 / 50%);
 	--cursor-fill: #111;
 	--cursor-edge: #fff;

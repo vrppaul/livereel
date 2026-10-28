@@ -2,9 +2,9 @@
  * What the stage draws on one frame: every prop's state at one moment.
  *
  * A scene is plain values, never changed in place: a move's change hands back a scene with its own prop set, and the
- * take keeps the one standing. `drawn` works out everything the stage needs from it — how far each word of a title or
- * a caption has come, the terminal's spinner — so the stage draws numbers and words and decides nothing. A prop that may be absent is
- * `null`; the compiler holds every prop to a drawn form here and to a drawer on the stage.
+ * take keeps the one standing. `drawn` works out everything the stage needs from it — how far each word of a title, a
+ * caption or a callout has come, the terminal's spinner — so the stage draws numbers and words and decides nothing. A
+ * prop that may be absent is `null`; the compiler holds every prop to a drawn form here and to a drawer on the stage.
  */
 import type { Format } from './domain/geometry.ts';
 import { type Pose, wholePose } from './domain/camera.ts';

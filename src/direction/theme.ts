@@ -22,10 +22,12 @@ const LIVEREELS_OWN: Theme = {};
 
 /**
  * A film's theme, read as a film whose types nobody checked may hand it: livereel's own where it writes none; anything
- * but an object of the theme's values, or a value of another kind, refused by where it stands.
+ * but an object of the theme's values, or a value of another kind, refused by where it stands. A ground named without
+ * a glow is a ground of one colour: livereel's glow belongs to livereel's ground alone.
  */
 export function themeOf(written: unknown): Theme {
 	if (written === undefined) return LIVEREELS_OWN;
 	assertWritten(written, THEME_FORM, "the film's theme");
+	if (written.ground !== undefined && written.glow === undefined) return { ...written, glow: written.ground };
 	return written;
 }

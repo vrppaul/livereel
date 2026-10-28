@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
-import { type Piece, drawnWords, wordsOf } from '../../src/props/words.ts';
+import { type Piece, drawnWords, saidOf } from '../../src/props/words.ts';
 
 /** A piece of a word, set in the styles named, in no ink and on no marker of its own. */
 function piece(text: string, ...styles: Piece['styles']): Piece {
@@ -8,28 +8,28 @@ function piece(text: string, ...styles: Piece['styles']): Piece {
 }
 
 test("a caption's words come up one after another", () => {
-	const shown = { words: wordsOf('one two three four'), shown: 0.2, gone: 0 };
+	const shown = { ...saidOf('one two three four'), shown: 0.2, gone: 0 };
 	const words = drawnWords(shown).words.map((word) => word.appeared);
 	expect(words).toEqual([...words].sort((earlier, later) => later - earlier));
 	expect([words[0]! > 0, words.at(-1)]).toEqual([true, 0]);
 });
 
 test('the ground under words goes as they go', () => {
-	expect(drawnWords({ words: wordsOf('Words'), shown: 1, gone: 1 }).ground).toBe(0);
+	expect(drawnWords({ ...saidOf('Words'), shown: 1, gone: 1 }).ground).toBe(0);
 });
 
-test('the space after a word is set as the run it was written in, and the last word ends with none', () => {
-	expect(wordsOf(['Film ', { text: 'your  live', underline: true }, ' app. '])).toEqual([
-		[piece('Film'), piece(' ')],
-		[piece('your', 'underline'), piece(' ', 'underline')],
-		[piece('live', 'underline'), piece(' ')],
-		[piece('app.')]
+test('the space between two words is set as the run it was written in, and none stands before the first or after the last', () => {
+	expect(saidOf([' Film ', { text: 'your  live', underline: true }, ' app. ']).words).toEqual([
+		{ spaceBefore: null, pieces: [piece('Film')] },
+		{ spaceBefore: piece(' '), pieces: [piece('your', 'underline')] },
+		{ spaceBefore: piece(' ', 'underline'), pieces: [piece('live', 'underline')] },
+		{ spaceBefore: piece(' '), pieces: [piece('app.')] }
 	]);
 });
 
 test('a word written across two runs is one word, each part set as its run is', () => {
-	expect(wordsOf(['un', { text: 'missable', italic: true, bold: true }])).toEqual([
-		[piece('un'), piece('missable', 'bold', 'italic')]
+	expect(saidOf(['un', { text: 'missable', italic: true, strike: true }]).words).toEqual([
+		{ spaceBefore: null, pieces: [piece('un'), piece('missable', 'italic', 'strike')] }
 	]);
 });
 

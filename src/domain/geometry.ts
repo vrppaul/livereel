@@ -79,13 +79,13 @@ export function frameScaleOf(frame: Size): number {
 	return Math.min(frame.width, frame.height) / LOOK_MADE_ON;
 }
 
-/** The whole of a size laid from its top left, as a box. */
-export function wholeOf(size: Size): Box {
-	return { left: 0, top: 0, width: size.width, height: size.height };
+/** The part of a frame a camera frames into, in the frame's pixels: a half of it, or the whole where none is named. */
+export function partOfFrame(frame: Size, half: FrameHalf | null): Box {
+	if (half === null) return { left: 0, top: 0, width: frame.width, height: frame.height };
+	return halfOf(frame, half);
 }
 
-/** A half of a frame, as a box of the frame's pixels. */
-export function halfOf(frame: Size, half: FrameHalf): Box {
+function halfOf(frame: Size, half: FrameHalf): Box {
 	const across = frame.width / HALVES;
 	const down = frame.height / HALVES;
 	switch (half) {

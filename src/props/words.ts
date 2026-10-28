@@ -1,13 +1,14 @@
 /**
- * Words that come up one after another over a ground, and go: a caption's, at the frame's foot, and a title's, over
- * the frame or a half of it.
+ * Words that come up one after another over a ground, and go: a caption's, at the frame's foot, a title's, over the
+ * frame or a half of it, and a callout's, on its card.
  *
- * A film writes what is said as plain words, or as runs of them, each set its own way: bold, italic, underlined,
- * struck through, in an ink or on a marker of its own colour. The words are worked out once, as their move is made: a
- * word is a list of pieces, each the part of one run within it, and the space after it is its last piece's end, set
- * as the run it was written in sets it, so an underline or a marker runs on under the space between two words of one
- * run and stops where the run does. Each word comes up over the share of the whole that `WORDS_AT_ONCE` words take,
- * so several are on their way at a time; the ground under them comes up twice as fast as they do. The stage is handed
+ * A film writes what is said as plain words, or as runs of them, each set its own way: italic, underlined, struck
+ * through, in an ink or on a marker of its own colour. The words are worked out once, as their move is made, with a
+ * key the stage knows them by: a word is a list of pieces, each the part of one run within it, after the space before
+ * it, a piece of its own, set as the run it was written in sets it, so an underline or a marker runs on under the
+ * space between two words of one run and stops where the run does; the browser drops a space that ends a line, and
+ * its underline or marker with it. The space comes up with the word after it. Each word comes up over the share of the whole that `WORDS_AT_ONCE` words take, so
+ * several are on their way at a time; the ground under them comes up twice as fast as they do. The stage is handed
  * every word's progress.
  */
 import { A_COLOUR, A_STRING, type Kind, ListOf, OfForm, Plain, needed } from '../domain/handed.ts';
@@ -16,7 +17,6 @@ import { easeOutCubic } from '../domain/time.ts';
 /** A run of words as a film writes it: its text, and each way it is set, on where the film names it. */
 export interface Run {
 	readonly text: string;
-	readonly bold?: true;
 	readonly italic?: true;
 	readonly underline?: true;
 	readonly strike?: true;
@@ -30,11 +30,11 @@ export interface Run {
 export type Wording = string | readonly (string | Run)[];
 
 /** The ways a run is set that the stage names a piece by, each a look of its own in the stage's styles. */
-const STYLES = ['bold', 'italic', 'underline', 'strike'] as const;
+const STYLES = ['italic', 'underline', 'strike'] as const;
 
 type Style = (typeof STYLES)[number];
 
-/** A part of a word set one way: its text, its styles by name, and its ink and marker where its run gives them. */
+/** A part of a word set one way, or a space between two words: its text, its styles by name, its ink and marker. */
 export interface Piece {
 	readonly text: string;
 	readonly styles: readonly Style[];
@@ -42,25 +42,33 @@ export interface Piece {
 	readonly marker: string | null;
 }
 
-/** A word as it is set: its pieces, the space after it, where one follows, the last one's end. */
-export type Word = readonly Piece[];
+/** A word as it is set: the space before it, where a word comes before, and its pieces. */
+export interface Word {
+	readonly spaceBefore: Piece | null;
+	readonly pieces: readonly Piece[];
+}
+
+/** What a film says, worked out once: its words, and the key the stage knows them by, to lay them out anew. */
+export interface Said {
+	readonly words: readonly Word[];
+	readonly key: string;
+}
 
 /** Words over the frame: what they are, how far they have come up, and how far they have gone, each from 0 to 1. */
-export interface ShownWords {
-	readonly words: readonly Word[];
+export interface ShownWords extends Said {
 	readonly shown: number;
 	readonly gone: number;
 }
 
-/** A word as the stage draws it: its pieces, and how far it has come up, eased, from 0 to 1. */
-interface DrawnWord {
-	readonly pieces: Word;
+/** A word as the stage draws it, and how far it has come up, eased, from 0 to 1. */
+interface DrawnWord extends Word {
 	readonly appeared: number;
 }
 
 /** Words as the stage draws them: each word's progress, how far their ground has come up, how far they went. */
 export interface DrawnWords {
 	readonly words: readonly DrawnWord[];
+	readonly key: string;
 	readonly ground: number;
 	readonly gone: number;
 }
@@ -81,14 +89,13 @@ const A_STYLE_ON = new Plain(isOn, 'true, or left out');
 const A_RUN: Kind<Run> = new OfForm<Run>(
 	{
 		text: needed(A_STRING),
-		bold: A_STYLE_ON,
 		italic: A_STYLE_ON,
 		underline: A_STYLE_ON,
 		strike: A_STYLE_ON,
 		ink: A_COLOUR,
 		marker: A_COLOUR
 	},
-	'words: a string, or a run of them set its own way, { text, bold, italic, underline, strike, ink, marker }'
+	'words: a string, or a run of them set its own way, { text, italic, underline, strike, ink, marker }'
 );
 
 /** A kind whose values are strings, or of another kind, whose fault is the one said where a value is neither. */
@@ -113,36 +120,44 @@ export const A_WORDING: Kind<Wording> = new StringOr(
 	new ListOf(new StringOr(A_RUN), 'words: a string, or a list of strings and runs')
 );
 
-/** The words a film says, each a list of pieces, the space after it set as the run it was written in. */
-export function wordsOf(wording: Wording): readonly Word[] {
+/** What a film says, worked out once as its move is made: its words, and the key the stage knows them by. */
+export function saidOf(wording: Wording): Said {
+	const words = wordsOf(wording);
+	return { words, key: JSON.stringify(words) };
+}
+
+/** The words a film says, each a list of pieces after the space before it, set as the run it was written in. */
+function wordsOf(wording: Wording): readonly Word[] {
 	const words: Word[] = [];
-	let word: Piece[] = [];
+	let spaceBefore: Piece | null = null;
+	let pieces: Piece[] = [];
 	let spaceAfter: Piece | null = null;
 	for (const stretch of stretchesOf(wording)) {
 		if (stretch.between) {
-			// The first space after a word is the one it ends with; a space before any word ends none
-			if (spaceAfter === null && word.length > 0) spaceAfter = stretch.piece;
+			// The first space after a word is the one between it and the next; a space before any word is none
+			if (spaceAfter === null && pieces.length > 0) spaceAfter = stretch.piece;
 			continue;
 		}
 		if (spaceAfter !== null) {
-			words.push([...word, spaceAfter]);
-			word = [];
+			words.push({ spaceBefore, pieces });
+			spaceBefore = spaceAfter;
+			pieces = [];
 			spaceAfter = null;
 		}
-		word.push(stretch.piece);
+		pieces.push(stretch.piece);
 	}
-	return word.length > 0 ? [...words, word] : words;
+	return pieces.length > 0 ? [...words, { spaceBefore, pieces }] : words;
 }
 
 export function drawnWords(shown: ShownWords): DrawnWords {
 	const count = shown.words.length;
 	const share = WORDS_AT_ONCE / (count + WORDS_AT_ONCE - 1);
-	const words = shown.words.map((pieces, place) => ({
-		pieces,
+	const words = shown.words.map((word, place) => ({
+		...word,
 		appeared: easeOutCubic(shareOf(shown.shown, (place / count) * (1 - share), share))
 	}));
 	const ground = Math.min(1, shown.shown * GROUND_COMES_FASTER) * (1 - shown.gone);
-	return { words, ground, gone: shown.gone };
+	return { words, key: shown.key, ground, gone: shown.gone };
 }
 
 /** Every run's text, in order, broken into words and the spaces between them, each part set as its run is. */

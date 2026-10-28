@@ -314,6 +314,16 @@ test('a theme in no form of one is refused as the film is defined, where it stan
 	);
 });
 
+test('a ground named without a glow is a ground of one colour, and one named with its glow keeps it', () => {
+	const themes = [{ ground: '#ffffff' }, { ground: '#ffffff', glow: '#eeeeee' }].map(
+		(theme) => filmWritten({ theme }).formats.get('small')!.theme
+	);
+	expect(themes).toEqual([
+		{ ground: '#ffffff', glow: '#ffffff' },
+		{ ground: '#ffffff', glow: '#eeeeee' }
+	]);
+});
+
 test('a blur that cannot be shot is refused as the film is defined: a shutter shut or open past the frame before, too few exposures or a broken count', () => {
 	expect(() => blurOfFilm({ shutter: 0 })).toThrow(FilmError);
 	expect(() => blurOfFilm({ shutter: 1.5 })).toThrow(FilmError);

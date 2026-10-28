@@ -53,8 +53,26 @@ const NOT_INSTALLED = 'the browser films are shot in is not installed: run `npx 
 // What Playwright says where the system lacks libraries the browser needs, its words then naming them and how this
 // system installs them, which differs between Linux distributions, Docker and Windows
 const NO_LIBRARIES = 'Host system is missing dependencies';
-// How far a block the film blurs is blurred, in the page's pixels
-const BLURRED_BY = 12;
+// How a block the film blurs is blurred, whatever the page's own style says: 12 of the page's pixels, as no letter of a
+// line reads through, the camera close or not (looked at 2026-10-28)
+const BLURRING = { property: 'filter', value: 'blur(12px)', priority: 'important' } as const;
+
+// A family any browser has, set after a film's font to see that it stands as a family of its own
+const FALLBACK_FONT = 'monospace';
+
+/** A font a film names, and the fallback set after it. */
+interface FontProbe {
+	readonly font: string;
+	readonly fallback: string;
+}
+
+/** The blocks a film blurs, by selector, and how each is blurred. */
+interface Blurring {
+	readonly selectors: readonly string[];
+	readonly property: string;
+	readonly value: string;
+	readonly priority: string;
+}
 // The flag naming the graphics interface ANGLE draws through, and that interface on each system's card, by Node's
 // name for the system
 const USE_ANGLE = '--use-angle=';
@@ -237,9 +255,11 @@ async function staged(page: Page, stage: StagePlace, address: string, warn: Warn
 }
 
 /**
- * The blocks a film blurs blurred in every document the page opens, by a style sheet each is given as it is made, so
- * a page the film goes on to blurs them too; the stage's own document, at the top, is given none. A selector Chrome
- * cannot read is refused before anything opens: a style sheet would drop it without a word.
+ * The blocks a film blurs blurred in every document the page opens, by a style sheet each is given as it is made, a
+ * rule a selector, so a page the film goes on to blurs them too; the stage's own document, at the top, is given none.
+ * A selector Chrome cannot make a rule of is refused before anything opens, by the same making of a rule, where a
+ * style sheet would drop it without a word. A block in a shadow root, or in a document that sets its own adopted
+ * style sheets in place of all, is not blurred.
  */
 async function blurring(page: Page, blurred: readonly string[]): Promise<void> {
 	if (blurred.length === 0) return;
@@ -247,18 +267,21 @@ async function blurring(page: Page, blurred: readonly string[]): Promise<void> {
 	if (unread !== undefined) {
 		throw new FilmError(`the film's blurred holds ${JSON.stringify(unread)}: it is no selector Chrome reads`);
 	}
-	await page.addInitScript(blurredIn, blurRules(blurred));
+	await page.addInitScript(blurredIn, { selectors: blurred, ...BLURRING });
 }
 
-/** The rules that blur each block a selector names, whatever the page's own style says. */
-function blurRules(blurred: readonly string[]): string {
-	return blurred.map((selector) => `${selector} { filter: blur(${BLURRED_BY}px) !important; }`).join('\n');
-}
-
-/** The stage set up in the film's look and the page opened in its frame, as far as it loads: its frame. */
+/**
+ * The stage set up in the film's look and the page opened in its frame, as far as it loads: its frame. A font the
+ * film names that CSS reads as no list of families a fallback can follow is refused first, as one with a quote left
+ * open, which runs on over the stage's own fallbacks: the stage would fall to the browser's font without a word.
+ */
 async function framed(page: Page, setting: Setting, opening: Opening): Promise<Frame> {
 	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
 	await page.evaluate(setUpStage, roomOf(setting.format));
+	const font = setting.theme.font;
+	if (font !== undefined && !(await page.evaluate(isFollowedByAFallback, { font, fallback: FALLBACK_FONT }))) {
+		throw new FilmError(`the film's theme's font is ${JSON.stringify(font)}: CSS reads no font family there`);
+	}
 	await page.evaluate(dressStage, setting.theme);
 	const [filmed] = await Promise.all([
 		page.waitForEvent(NAVIGATED, { predicate: isInTheStagesFrame }),
@@ -275,11 +298,12 @@ function isInTheStagesFrame(navigated: Frame): boolean {
 
 // What follows runs in the page, each function handed over alone
 
-/** The first of the selectors the browser cannot read; none where it reads them all. */
+/** The first of the selectors the browser cannot make a rule of; none where it makes one of each. */
 function unreadOf(selectors: readonly string[]): string | undefined {
+	const sheet = new CSSStyleSheet();
 	for (const selector of selectors) {
 		try {
-			document.querySelector(selector);
+			sheet.insertRule(`${selector} {}`);
 		} catch {
 			return selector;
 		}
@@ -287,10 +311,20 @@ function unreadOf(selectors: readonly string[]): string | undefined {
 	return undefined;
 }
 
-/** A document's blocks blurred by the rules given, unless it is the stage's own, the page at the top. */
-function blurredIn(rules: string): void {
+/** A document's blocks blurred, a rule a selector, unless it is the stage's own, the page at the top. */
+function blurredIn(blurring: Blurring): void {
 	if (window.top === window) return;
 	const sheet = new CSSStyleSheet();
-	sheet.replaceSync(rules);
+	for (const selector of blurring.selectors) {
+		const rule = sheet.cssRules.item(sheet.insertRule(`${selector} {}`));
+		if (rule instanceof CSSStyleRule) rule.style.setProperty(blurring.property, blurring.value, blurring.priority);
+	}
 	document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+}
+
+/** Whether CSS reads a font a film names as a list of families the fallback can follow, its own family still. */
+function isFollowedByAFallback(probe: FontProbe): boolean {
+	const element = document.createElement('i');
+	element.style.fontFamily = `${probe.font}, ${probe.fallback}`;
+	return element.style.fontFamily.endsWith(`, ${probe.fallback}`);
 }

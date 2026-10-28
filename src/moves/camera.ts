@@ -2,12 +2,11 @@
  * The camera: to a pose, or onto a block of the page in the whole frame or in a half of it, at the angle it stands at
  * or another.
  *
- * A face-on camera's end is kept on the screen as `covering` in `src/domain/camera.ts` keeps it. A block framed in a
- * half is not: the other half is a title's, standing on the ground, and the screen shows as a pane on that ground, its
- * edge in sight where the block lies near it.
+ * A face-on camera's end is kept on the screen as `covering` in `src/domain/camera.ts` keeps it: filling the whole
+ * frame, or the half a block is framed in, no edge of the screen showing there.
  */
 import { A_POSE, type Pose, angled, covering, isFaceOn, onto as framedOnto, poseToward } from '../domain/camera.ts';
-import { A_FRAME_HALF, type Format, type FrameHalf, halfOf, wholeOf } from '../domain/geometry.ts';
+import { A_FRAME_HALF, type Format, type FrameHalf } from '../domain/geometry.ts';
 import {
 	A_COUNT,
 	A_NUMBER,
@@ -47,6 +46,8 @@ export interface OntoScript extends AngleScript {
 
 // How much of the page shows round a block the camera frames, and how close it may come
 const AIR = 80;
+// The camera frames the whole frame where a film names no half of it
+const WHOLE_FRAME = null;
 const ZOOM_AT_MOST = 2.2;
 const ANGLE_FORM: Form<AngleScript> = { tilt: A_NUMBER, turn: A_NUMBER, ...TIMING_FORM };
 const ONTO_FORM: Form<OntoScript> = {
@@ -64,7 +65,8 @@ export function to(pose: Pose, script: AngleScript = {}): Move {
 	return {
 		part: 'camera',
 		timing: timingOf(script),
-		begin: (beginning) => posing(beginning.scene.camera, keptOnTheScreen(angledAs(pose, script), beginning.format))
+		begin: (beginning) =>
+			posing(beginning.scene.camera, keptOnTheScreen(angledAs(pose, script), beginning.format, WHOLE_FRAME))
 	};
 }
 
@@ -78,13 +80,10 @@ export function onto(target: string, script: OntoScript = {}): Move {
 async function framing(beginning: Beginning, target: string, script: OntoScript): Promise<Change> {
 	const box = await shownPart(beginning, target, script.every ?? 1, 'camera.onto');
 	const start = beginning.scene.camera;
-	const frame = beginning.format.frame;
+	const half = script.half ?? WHOLE_FRAME;
 	const framed = { air: script.air ?? AIR, zoomAtMost: script.zoomAtMost ?? ZOOM_AT_MOST };
-	if (script.half === undefined) {
-		const end = angledAs(framedOnto(box, start, frame, framed, wholeOf(frame)), script);
-		return posing(start, keptOnTheScreen(end, beginning.format));
-	}
-	return posing(start, angledAs(framedOnto(box, start, frame, framed, halfOf(frame, script.half)), script));
+	const end = angledAs(framedOnto(box, start, beginning.format.frame, framed, half), script);
+	return posing(start, keptOnTheScreen(end, beginning.format, half));
 }
 
 function posing(start: Pose, end: Pose): Change {
@@ -96,7 +95,7 @@ function angledAs(pose: Pose, angle: AngleScript): Pose {
 	return angled(pose, angle.tilt ?? pose.tilt, angle.turn ?? pose.turn);
 }
 
-/** A pose kept off the screen's edge, where it is face-on. */
-function keptOnTheScreen(pose: Pose, format: Format): Pose {
-	return isFaceOn(pose) ? covering(pose, format) : pose;
+/** A pose kept off the screen's edge in the whole frame or a half of it, where it is face-on. */
+function keptOnTheScreen(pose: Pose, format: Format, half: FrameHalf | null): Pose {
+	return isFaceOn(pose) ? covering(pose, format, half) : pose;
 }

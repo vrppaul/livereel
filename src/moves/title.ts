@@ -7,7 +7,7 @@ import { A_FRAME_HALF, type FrameHalf } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { linear } from '../domain/time.ts';
 import { type Move, TIMING_FORM, type TimingScript, propChange, timingOf } from '../direction/move.ts';
-import { A_WORDING, type Wording, wordsOf } from '../props/words.ts';
+import { A_WORDING, type Wording, saidOf } from '../props/words.ts';
 import { going } from './words.ts';
 
 /** Where a title stands: over a `half` of the frame, or over the whole of it where none is named. */
@@ -21,12 +21,12 @@ const TITLE_FORM: Form<TitleScript> = { half: A_FRAME_HALF, ...TIMING_FORM };
 export function show(text: Wording, script: TitleScript = {}): Move {
 	assertKind(text, A_WORDING, "title.show's text");
 	assertWritten(script, TITLE_FORM, 'title.show');
-	const words = wordsOf(text);
+	const said = saidOf(text);
 	const half = script.half ?? null;
 	return {
 		part: 'title',
 		timing: timingOf({ ease: linear, ...script }),
-		begin: () => propChange('title', (progress) => ({ words, half, shown: progress, gone: 0 }))
+		begin: () => propChange('title', (progress) => ({ ...said, half, shown: progress, gone: 0 }))
 	};
 }
 

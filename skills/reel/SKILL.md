@@ -65,10 +65,12 @@ What reads as made with care:
 - **A callout names one small block** the viewer would not find alone (a
   button, a number), in two to five words, one at a time, and goes before
   the camera moves on; a caption speaks to the viewer, a callout labels.
+  Frame the block with air on the callout's side: the frame's edge cuts a
+  card that reaches past it.
 
 What reads as generated: a zoom on every click, a window floating on a
-wallpaper with nothing said beside it, a glow behind the product, springy
-overshoot, ripples on clicks. Leave them out.
+gradient wallpaper, a glow behind the product, springy overshoot, ripples
+on clicks. Leave them out.
 
 ## 3. The film
 
@@ -192,7 +194,7 @@ its end at once.
 | Moves | |
 |---|---|
 | `camera.to(pose, { tilt, turn })` | to a pose: `whole` from `steps`, or `lookingAt(pose, focusX, focusY, zoom)` |
-| `camera.onto(selector, { every, air, zoomAtMost, half, tilt, turn })` | frames the first `every` blocks a selector matches, `air` pixels round them, in the whole frame or in a `half` of it (`left`, `right`, `top`, `bottom`), where the screen may show as a pane on the ground |
+| `camera.onto(selector, { every, air, zoomAtMost, half, tilt, turn })` | frames the first `every` blocks a selector matches, `air` pixels round them, in the whole frame or in a `half` of it (`left`, `right`, `top`, `bottom`), the screen filling that half |
 | `screen.rise()`, `screen.lower()` | the screen up out of the ground; down in it, in a `cut` |
 | `light.on(selector, { dim })`, `light.to(selector)`, `light.off()` | one block lit, the rest dimmed by `dim`; carried; put out |
 | `cursor.to(selector, { entering, bow })` | along an arc to a block, from `entering` if not yet on the screen |
@@ -214,18 +216,20 @@ its end at once.
 `cursor.click` and `typing` give several steps: spread them among the
 others, `...cursor.click(action)`, `...typing(page.type(strokes))`.
 
-A title's, a caption's or a callout's `text` is a string, or a list of strings and runs
-read one after another: a run is `{ text }` with any of `bold`, `italic`,
-`underline`, `strike` (each `true`), `ink` (its letters' colour) and
+A title's, a caption's or a callout's `text` is a string, or a list of
+strings and runs read one after another: a run is `{ text }` with any of
+`italic`, `underline`, `strike` (each `true`), `ink` (its letters' colour) and
 `marker` (a marker behind it), colours in hex, each a constant at the top:
 `['Your agent ', { text: 'films', italic: true, ink: ACCENT }, ' your app']`.
 Put the spaces in the strings, as the words are read.
 
 `defineFilm` takes `theme: { ground, glow, ink, font }`, any of them, where
 the user names a brand's look: the ground's colour and the colour it
-lightens to toward its top middle, the ink of titles, captions and the
-ending, in hex, and their font, as CSS names a family installed on the
-machine. Leave it out for livereel's own: a dark ground and white ink.
+lightens to toward its top middle (left out, the ground is of one colour),
+the ink of titles, captions, callouts and the ending, in hex, and their
+font, as CSS names a family installed on the machine. The terminal keeps
+its own colours. Leave it out for livereel's own: a dark ground and white
+ink.
 
 The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
 person types; the curves are `linear`, `easeInOutSine` (a step's own),

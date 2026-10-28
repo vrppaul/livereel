@@ -191,23 +191,24 @@ body {
 	zoom: var(--frame-scale);
 }
 
-/* A title's or a caption's word: it rises out of a blur and sinks as it goes, keeping the space after it, set as its run is, so an underline or a marker runs on under it; Chrome leaves a word's last space bare unless told not to */
-.words > span {
+/* A title's, a caption's or a callout's word as it comes up: the space before it, then its own box, which rises out of a blur and sinks as it goes */
+.words .word {
 	display: inline-block;
-	white-space: pre;
-	text-decoration-skip-spaces: none;
 	opacity: calc(var(--appeared) * (1 - var(--gone)));
 	transform: translateY(calc((1 - var(--appeared)) * var(--word-rise) - var(--gone) * var(--word-sink)));
 	filter: blur(calc((1 - var(--appeared)) * var(--word-blur) + var(--gone) * var(--word-blur-leaving)));
 }
 
-/* A piece of a word, set as its run is: in its own ink where the film gives one */
-.words > span > span {
-	color: var(--ink);
+/* The space before a word comes up with it and keeps to its line: the browser drops it where it ends a line, and its underline or marker with it. Chrome leaves a space bare of an underline unless told not to */
+.words .space {
+	text-decoration-skip-spaces: none;
+	opacity: calc(var(--appeared) * (1 - var(--gone)));
 }
 
-.words .bold {
-	font-weight: bolder;
+/* A piece of a word, or a space, set as its run is: in its own ink where the film gives one */
+.words .word > span,
+.words .space {
+	color: var(--ink);
 }
 
 .words .italic {
@@ -232,18 +233,17 @@ body {
 	text-decoration-line: underline line-through;
 }
 
-/* A marker as tall as the line, so it covers none of the line above: an inline piece's ground reaches past its line. Its word stands under the others, so the tails of the letters above it are drawn over it, and the words stand apart from the rest of the stage */
+/* A marker reaches past its line, above and below, as a piece's ground does: a word with one stands under the others, so the letters of the lines beside it are drawn over it, and the words stand apart from the rest of the stage */
 .words {
 	isolation: isolate;
 }
 
-.words > span:has(> .marked) {
+.words > span:has(.marked) {
 	position: relative;
 	z-index: -1;
 }
 
 .words .marked {
-	display: inline-block;
 	background: var(--marker);
 }
 
@@ -378,7 +378,7 @@ body {
 	box-shadow: var(--terminal-shadow);
 	overflow: hidden;
 	font: 400 25px / 1.5 var(--mono);
-	color: var(--ink);
+	color: var(--terminal-ink);
 }
 
 .terminal .bar {
@@ -438,7 +438,7 @@ body {
 
 .terminal .said::before {
 	content: '● ';
-	color: var(--ink);
+	color: var(--terminal-ink);
 }
 
 .terminal .done {
@@ -471,7 +471,7 @@ body {
 	width: 0.55em;
 	height: 1.05em;
 	vertical-align: -0.18em;
-	background: var(--ink);
+	background: var(--terminal-ink);
 	opacity: var(--caret);
 }
 
@@ -515,6 +515,7 @@ body {
 	border: 1px solid var(--terminal-edge);
 	background: var(--terminal);
 	font: 500 38px / 1 var(--mono);
+	color: var(--terminal-ink);
 }
 
 .ending .prompt {

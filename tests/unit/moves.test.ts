@@ -11,7 +11,7 @@ import { press, release, to as cursorTo } from '../../src/moves/cursor.ts';
 import { off, on as lightOn, to as lightTo } from '../../src/moves/light.ts';
 import { leave, open, submit, works } from '../../src/moves/terminal.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
-import { wordsOf } from '../../src/props/words.ts';
+import { saidOf } from '../../src/props/words.ts';
 import { type Scene, openingScene, withProp } from '../../src/scene.ts';
 import { PageOfBoxes, SMALL } from './fakes.ts';
 
@@ -89,11 +89,11 @@ test('the light is carried or put out only where one is on', async () => {
 });
 
 test('what is put away — the light, a callout, a title, a caption, the terminal — is gone at its end', async () => {
-	const words = wordsOf('Words');
+	const said = saidOf('Words');
 	const lit = withProp(openingScene(SMALL), 'light', LIT);
-	const pointed = withProp(openingScene(SMALL), 'callout', { words, box: BLOCK, side: 'above', shown: 1, gone: 0 });
-	const titled = withProp(openingScene(SMALL), 'title', { words, half: 'left', shown: 1, gone: 0 });
-	const captioned = withProp(openingScene(SMALL), 'caption', { words, shown: 1, gone: 0 });
+	const pointed = withProp(openingScene(SMALL), 'callout', { ...said, box: BLOCK, side: 'above', shown: 1, gone: 0 });
+	const titled = withProp(openingScene(SMALL), 'title', { ...said, half: 'left', shown: 1, gone: 0 });
+	const captioned = withProp(openingScene(SMALL), 'caption', { ...said, shown: 1, gone: 0 });
 	expect([
 		(await setAt(off(), lit, 1)).light,
 		(await setAt(callout.hide(), pointed, 1)).callout,

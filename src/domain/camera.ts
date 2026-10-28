@@ -11,6 +11,7 @@
 import {
 	type Box,
 	type Format,
+	type FrameHalf,
 	type Point,
 	type Size,
 	cornersOf,
@@ -18,7 +19,8 @@ import {
 	frameScaleOf,
 	middleX,
 	middleY,
-	nearestWithin
+	nearestWithin,
+	partOfFrame
 } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, assertKind, needed } from './handed.ts';
 import { between } from './time.ts';
@@ -125,34 +127,36 @@ export function angled(pose: Pose, tilt: number, turn: number): Pose {
 }
 
 /**
- * The pose that holds a box with its air on every side in a part of the frame, its middle at that part's middle, at
- * `around`'s angle, no closer than allowed. The frame's middle then shows the point as far from the box's middle as
- * the part's middle stands from the frame's, at that zoom: worked out face-on, as the fit is.
+ * The pose that holds a box with its air on every side in the whole frame or a half of it, its middle at that part's
+ * middle, at `around`'s angle, no closer than allowed. The frame's middle then shows the point as far from the box's
+ * middle as the part's middle stands from the frame's, at that zoom: worked out face-on, as the fit is.
  */
-export function onto(box: Box, around: Pose, frame: Size, framing: Framing, part: Box): Pose {
+export function onto(box: Box, around: Pose, frame: Size, framing: Framing, half: FrameHalf | null): Pose {
+	const part = partOfFrame(frame, half);
 	const fit = Math.min(
 		part.width / (box.width + SIDES * framing.air),
 		part.height / (box.height + SIDES * framing.air)
 	);
 	const centred = focusedAt(around, middleX(box), middleY(box), Math.min(poseZoomFor(fit, frame), framing.zoomAtMost));
-	const frameZoom = frameZoomOf(centred, frame);
-	const focusX = centred.focusX + (frame.width / HALVES - middleX(part)) / frameZoom;
-	const focusY = centred.focusY + (frame.height / HALVES - middleY(part)) / frameZoom;
-	return focusedAt(centred, focusX, focusY, centred.zoom);
+	const offPart = offTheFrameMiddle(centred, frame, part);
+	return focusedAt(centred, centred.focusX - offPart.left, centred.focusY - offPart.top, centred.zoom);
 }
 
 /**
- * A face-on pose moved as little as it takes for the screen to fill the frame, no edge of it showing; along a side
- * the screen is too short to fill at that zoom, it stands in the frame's middle, as much ground showing either side.
+ * A face-on pose moved as little as it takes for the screen to fill the whole frame or a half of it, no edge of it
+ * showing there; along a side the screen is too short to fill at that zoom, it stands in the part's middle, as much
+ * ground showing either side.
  */
-export function covering(pose: Pose, format: Format): Pose {
+export function covering(pose: Pose, format: Format, half: FrameHalf | null): Pose {
+	const part = partOfFrame(format.frame, half);
 	const frameZoom = frameZoomOf(pose, format.frame);
-	const halfWidth = format.frame.width / (HALVES * frameZoom);
-	const halfHeight = format.frame.height / (HALVES * frameZoom);
+	const offPart = offTheFrameMiddle(pose, format.frame, part);
+	const halfWidth = part.width / (HALVES * frameZoom);
+	const halfHeight = part.height / (HALVES * frameZoom);
 	return focusedAt(
 		pose,
-		keptWithin(pose.focusX, halfWidth, format.screen.width),
-		keptWithin(pose.focusY, halfHeight, format.screen.height),
+		keptWithin(pose.focusX + offPart.left, halfWidth, format.screen.width) - offPart.left,
+		keptWithin(pose.focusY + offPart.top, halfHeight, format.screen.height) - offPart.top,
 		pose.zoom
 	);
 }
@@ -174,6 +178,18 @@ export function frameShift(start: Pose, end: Pose, format: Format): number {
 
 function facing(screen: Size, zoom: number): Pose {
 	return { focusX: screen.width / HALVES, focusY: screen.height / HALVES, zoom, tilt: 0, turn: 0 };
+}
+
+/**
+ * How far, in the screen's own pixels, the point a part of the frame shows at its middle stands from the point at the
+ * frame's middle, from a pose seen face-on.
+ */
+function offTheFrameMiddle(pose: Pose, frame: Size, part: Box): Point {
+	const frameZoom = frameZoomOf(pose, frame);
+	return {
+		left: (middleX(part) - frame.width / HALVES) / frameZoom,
+		top: (middleY(part) - frame.height / HALVES) / frameZoom
+	};
 }
 
 /** A focus moved so that as much as is seen either side of it stays on the screen; the screen's middle where it cannot. */

@@ -34,7 +34,7 @@ const A_MOVE = 'a move, as camera.onto or light.on makes one';
 const STROKE = { at: 0, typed: 'l' };
 const HALF = 'a half of the frame: "left", "right", "top" or "bottom"';
 const WORDING = 'words: a string, or a list of strings and runs';
-const RUN = 'words: a string, or a run of them set its own way, { text, bold, italic, underline, strike, ink, marker }';
+const RUN = 'words: a string, or a run of them set its own way, { text, italic, underline, strike, ink, marker }';
 const COLOUR = 'a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa';
 
 test('every function a film calls refuses what it is handed in no form it takes, where it stands', () => {
@@ -95,10 +95,8 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => caption.show([{ text: 'live', italic: false as never }])).toThrow(
 		new FilmError("caption.show's text[0]'s italic is false: it is true, or left out")
 	);
-	expect(() => caption.show([{ text: 'live', bolder: true } as never])).toThrow(
-		new FilmError(
-			"caption.show's text[0] names bolder: it names text, bold, italic, underline, strike, ink, marker, or fewer"
-		)
+	expect(() => caption.show([{ text: 'live', bold: true } as never])).toThrow(
+		new FilmError("caption.show's text[0] names bold: it names text, italic, underline, strike, ink, marker, or fewer")
 	);
 	expect(() => caption.show('Hello', { ease: 2 as never })).toThrow(
 		new FilmError(`caption.show's ease is 2: it is ${CURVE}`)

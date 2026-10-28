@@ -11,7 +11,7 @@
  */
 /** @import { DrawnScene, PropName } from '../src/scene.ts' */
 /** @import { ShownLine } from '../src/props/terminal.ts' */
-/** @import { DrawnWords, Piece } from '../src/props/words.ts' */
+/** @import { DrawnWords, Piece, Word } from '../src/props/words.ts' */
 /** @import { Theme } from '../src/direction/theme.ts' */
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
@@ -31,6 +31,9 @@ const SIDE = 'data-side';
 const INK = '--ink';
 const MARKER = '--marker';
 const MARKED = 'marked';
+// The classes of a word's own box, which rises as it comes up, and of the space before it, which keeps to its line
+const WORD = 'word';
+const SPACE = 'space';
 // The stage's token each value of a film's theme takes the place of
 /** @type {{ readonly [Name in keyof Theme]-?: string }} */
 const TOKENS_THEMED = { ground: '--ground', glow: '--ground-glow', ink: INK, font: '--font' };
@@ -171,21 +174,20 @@ class TitleDrawer {
 	}
 }
 
-/** Words that come up one after another, a caption's or a title's: laid out anew only when they change, each word's progress set every frame. */
+/** Words that come up one after another, a caption's, a title's or a callout's: laid out anew only when they change, each word's progress set every frame. */
 class WordsDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
 		this.root = root;
-		/** The words that stand in the markup, as their pieces say them, so they are laid out anew only when they change @type {string | null} */
+		/** The key of the words that stand in the markup, so they are laid out anew only when they change @type {string | null} */
 		this.standing = null;
 	}
 
 	/** @param {DrawnWords} drawnWords */
 	draw(drawnWords) {
-		const said = JSON.stringify(drawnWords.words.map((word) => word.pieces));
-		if (this.standing !== said) {
-			this.standing = said;
-			this.root.replaceChildren(...drawnWords.words.map((word) => wordElement(word.pieces)));
+		if (this.standing !== drawnWords.key) {
+			this.standing = drawnWords.key;
+			this.root.replaceChildren(...drawnWords.words.map(wordElement));
 		}
 		for (const [place, word] of drawnWords.words.entries()) {
 			const element = this.root.children.item(place);
@@ -327,10 +329,22 @@ function named(element, attribute, name) {
 	else element.setAttribute(attribute, name);
 }
 
-/** A word, a piece of it set each way its run is. @param {readonly Piece[]} pieces */
-function wordElement(pieces) {
+/**
+ * A word as it comes up: the space before it, where one is, and the word's own box, each piece of it set as its run is.
+ * @param {Word} word
+ */
+function wordElement(word) {
 	const element = document.createElement('span');
-	element.append(...pieces.map(pieceElement));
+	if (word.spaceBefore !== null) element.append(classed(pieceElement(word.spaceBefore), SPACE));
+	const box = classed(document.createElement('span'), WORD);
+	box.append(...word.pieces.map(pieceElement));
+	element.append(box);
+	return element;
+}
+
+/** An element with a class of the stage's styles. @param {HTMLElement} element @param {string} name */
+function classed(element, name) {
+	element.classList.add(name);
 	return element;
 }
 

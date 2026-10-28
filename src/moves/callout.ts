@@ -16,7 +16,7 @@ import {
 	timingOf
 } from '../direction/move.ts';
 import { A_BLOCK_SIDE, type BlockSide } from '../props/callout.ts';
-import { A_WORDING, type Word, type Wording, wordsOf } from '../props/words.ts';
+import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
 import { going } from './words.ts';
 
 /** The side of the block a callout stands on: `above` where none is named. */
@@ -34,12 +34,12 @@ export function show(target: string, text: Wording, script: CalloutScript = {}):
 	assertKind(target, A_SELECTOR, "callout.show's selector");
 	assertKind(text, A_WORDING, "callout.show's text");
 	assertWritten(script, CALLOUT_FORM, 'callout.show');
-	const words = wordsOf(text);
+	const said = saidOf(text);
 	const side = script.side ?? SIDE_WHERE_NONE_IS_NAMED;
 	return {
 		part: 'callout',
 		timing: timingOf({ ease: linear, ...script }),
-		begin: (beginning) => pointing(beginning, target, words, side)
+		begin: (beginning) => pointing(beginning, target, said, side)
 	};
 }
 
@@ -49,12 +49,7 @@ export function hide(script: TimingScript = {}): Move {
 	return { part: 'callout', timing: timingOf(script), begin: (beginning) => going('callout', beginning) };
 }
 
-async function pointing(
-	beginning: Beginning,
-	target: string,
-	words: readonly Word[],
-	side: BlockSide
-): Promise<Change> {
+async function pointing(beginning: Beginning, target: string, said: Said, side: BlockSide): Promise<Change> {
 	const box = await shownPart(beginning, target, THE_FIRST, 'callout.show');
-	return propChange('callout', (progress) => ({ words, box, side, shown: progress, gone: 0 }));
+	return propChange('callout', (progress) => ({ ...said, box, side, shown: progress, gone: 0 }));
 }

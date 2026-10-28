@@ -52,8 +52,11 @@ function filmOf(steps: readonly Step[]) {
 	return filmWritten(steps, {});
 }
 
-/** A film of these steps with what else it is written with: how its page is asked to look, what it blurs. */
-function filmWritten(steps: readonly Step[], written: { colourScheme?: 'dark'; blurred?: readonly string[] }) {
+/** A film of these steps with what else it is written with: how its page is asked to look, what it blurs, its font. */
+function filmWritten(
+	steps: readonly Step[],
+	written: { colourScheme?: 'dark'; blurred?: readonly string[]; theme?: { font: string } }
+) {
 	return defineFilm({
 		formats: { small: SMALL },
 		serve: () => Promise.resolve(atAddress(PAGE)),
@@ -137,9 +140,23 @@ test('the page is asked for the colour scheme the film names', async () => {
 	expect(dark).toEqual([true]);
 });
 
-test('a block to blur named by no selector Chrome reads is refused before the film is shot', async () => {
-	const shooting = shoot(filmWritten([], { blurred: ['[['] }), shootingInto(new EveryFrameCounted(), 'software'));
-	await expect(shooting).rejects.toThrow('the film\'s blurred holds "[[": it is no selector Chrome reads');
+test('a block to blur named by no selector Chrome makes a rule of is refused before the film is shot: a broken one, one that opens a comment', async () => {
+	await expect(
+		shoot(filmWritten([], { blurred: ['[['] }), shootingInto(new EveryFrameCounted(), 'software'))
+	).rejects.toThrow('the film\'s blurred holds "[[": it is no selector Chrome reads');
+	await expect(
+		shoot(filmWritten([], { blurred: ['.email /*', '.secret'] }), shootingInto(new EveryFrameCounted(), 'software'))
+	).rejects.toThrow('the film\'s blurred holds ".email /*": it is no selector Chrome reads');
+});
+
+test('a font named in no form CSS reads is refused before the film is shot', async () => {
+	const shooting = shoot(
+		filmWritten([], { theme: { font: "'Inter, sans-serif" } }),
+		shootingInto(new EveryFrameCounted(), 'software')
+	);
+	await expect(shooting).rejects.toThrow(
+		`the film's theme's font is "'Inter, sans-serif": CSS reads no font family there`
+	);
 });
 
 test('a scroll of a block the page does not have is refused as its share begins, naming the block', async () => {

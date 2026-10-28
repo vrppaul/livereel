@@ -168,25 +168,25 @@ play({
 	seconds: 1.6,
 	moves: [
 		camera.onto(CHART, { half: 'right' }),
-		title.show(['A real ', { text: 'click', bold: true, ink: ACCENT }, ', a real server'], { half: 'left' })
+		title.show(['A real ', { text: 'click', ink: ACCENT }, ', a real server'], { half: 'left' })
 	]
 })
 ```
 
-A block framed in a half stands at that half's middle, and the screen is not
-kept filling the frame: where the block lies near the page's edge, the
-screen shows as a pane on the ground. The ground over a half fades out
-across the frame's middle, over whatever of the page reaches under it.
+A block framed in a half stands at that half's middle, and a face-on
+camera keeps the screen filling that half, as it keeps it filling the whole
+frame. The ground over the other half fades out across the frame's middle,
+over whatever of the page reaches under it.
 
 A callout is words on a card beside a block of the page, pointing at it:
 `callout.show(selector, text, { side })`, its `side` `above` (where none is
-named), `below`, `left` or `right` of the block. It lies on the screen, as
-the light does, so the camera carries it with the page; the block is read
-as the callout comes, as the light's is.
+named), `below`, `left` or `right` of the block. The camera carries it with
+the page, as it carries the light, and the screen's edge does not cut it;
+the block is read as the callout comes, as the light's is.
 
-What a title, a caption or a callout says is a string, or a list of strings and runs,
-read one after another. A run is `{ text }` set any of these ways: `bold`,
-`italic`, `underline`, `strike`, each `true`; `ink`, the colour of its
+What a title, a caption or a callout says is a string, or a list of strings
+and runs, read one after another. A run is `{ text }` set any of these
+ways: `italic`, `underline`, `strike`, each `true`; `ink`, the colour of its
 letters; `marker`, the colour of a marker behind it; a colour in hex
 (`#7c5cff`). An underline or a marker runs on under the space between two
 words of one run, and stops where the run does.
@@ -195,11 +195,12 @@ words of one run, and stops where the run does.
 
 `defineFilm` takes `theme: { ground, glow, ink, font }`, any of them: the
 ground's colour at its edges and the colour it lightens to toward its top
-middle (the same colour twice for a ground of one colour), the ink of
-titles, captions and the ending, each in hex, and their font, as CSS names
-a family (`'Inter, sans-serif'`), which falls back to livereel's where the
-system has none. What the film leaves out stays livereel's: a dark ground
-and white ink.
+middle (a ground named without a glow is of one colour), the ink of
+titles, captions, callouts and the ending, each in hex, and their font, as
+CSS names a family (`'Inter, sans-serif'`), which falls back to livereel's
+where the system has none; a font CSS reads as no family is refused before
+anything is shot. What the film leaves out stays livereel's: a dark ground
+and white ink. The terminal keeps its own colours.
 
 ### The page: its colour scheme, and what it blurs
 
@@ -209,7 +210,8 @@ scheme; it is asked for the light one where a film names none. It takes
 an address, a key or a name no film should show: each document the page
 opens is given a style sheet that blurs them, so a page the film goes on to
 blurs them too. A selector Chrome cannot read is refused before anything
-is shot.
+is shot. A block inside a shadow root is not blurred, nor one on a page that
+sets its own adopted style sheets in place of all: check the stills.
 
 ### Formats
 
