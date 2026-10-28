@@ -11,6 +11,8 @@
  */
 /** @import { DrawnScene, PropName } from '../src/scene.ts' */
 /** @import { ShownLine } from '../src/props/terminal.ts' */
+/** @import { DrawnWords, Piece } from '../src/props/words.ts' */
+/** @import { Theme } from '../src/direction/theme.ts' */
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
@@ -20,6 +22,16 @@
 const APART = ' ';
 // The lines of the terminal's log are told apart from each other by this, to know when they changed
 const BETWEEN_LINES = '\n';
+// The attribute that names the half of the frame a title stands over: none, over the whole of it
+const HALF = 'data-half';
+// The ink words are drawn in, the film's or a piece's own, and a piece's marker: the custom properties the stylesheet
+// draws them by; and the class of a marked piece
+const INK = '--ink';
+const MARKER = '--marker';
+const MARKED = 'marked';
+// The stage's token each value of a film's theme takes the place of
+/** @type {{ readonly [Name in keyof Theme]-?: string }} */
+const TOKENS_THEMED = { ground: '--ground', glow: '--ground-glow', ink: INK, font: '--font' };
 
 class CameraDrawer {
 	/** @param {Staged} root */
@@ -92,9 +104,7 @@ class CaptionDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
 		this.root = root;
-		this.words = partOf(root, 'words');
-		/** The text whose words stand in the markup, so they are laid out anew only when the caption changes @type {string | null} */
-		this.standing = null;
+		this.words = new WordsDrawer(partOf(root, 'words'));
 	}
 
 	/** @param {DrawnScene} scene */
@@ -102,18 +112,60 @@ class CaptionDrawer {
 		const caption = scene.caption;
 		shown(this.root, caption !== null);
 		if (caption === null) {
-			this.standing = null;
+			this.words.clear();
 			return;
 		}
-		if (this.standing !== caption.text) {
-			this.standing = caption.text;
-			this.words.replaceChildren(...caption.words.map((word) => wordElement(word.text)));
-		}
 		numbered(this.root, { '--darkened': caption.ground, '--gone': caption.gone });
-		for (const [place, word] of caption.words.entries()) {
-			const element = this.words.children.item(place);
+		this.words.draw(caption);
+	}
+}
+
+class TitleDrawer {
+	/** @param {Staged} root */
+	constructor(root) {
+		this.root = root;
+		this.words = new WordsDrawer(partOf(root, 'words'));
+	}
+
+	/** @param {DrawnScene} scene */
+	draw(scene) {
+		const title = scene.title;
+		shown(this.root, title !== null);
+		if (title === null) {
+			this.words.clear();
+			return;
+		}
+		named(this.root, HALF, title.half);
+		numbered(this.root, { '--grounded': title.ground, '--gone': title.gone });
+		this.words.draw(title);
+	}
+}
+
+/** Words that come up one after another, a caption's or a title's: laid out anew only when they change, each word's progress set every frame. */
+class WordsDrawer {
+	/** @param {Staged} root */
+	constructor(root) {
+		this.root = root;
+		/** The words that stand in the markup, as their pieces say them, so they are laid out anew only when they change @type {string | null} */
+		this.standing = null;
+	}
+
+	/** @param {DrawnWords} drawnWords */
+	draw(drawnWords) {
+		const said = JSON.stringify(drawnWords.words.map((word) => word.pieces));
+		if (this.standing !== said) {
+			this.standing = said;
+			this.root.replaceChildren(...drawnWords.words.map((word) => wordElement(word.pieces)));
+		}
+		for (const [place, word] of drawnWords.words.entries()) {
+			const element = this.root.children.item(place);
 			if (element instanceof HTMLElement) numbered(element, { '--appeared': word.appeared });
 		}
+	}
+
+	/** No words stand in the markup now. */
+	clear() {
+		this.standing = null;
 	}
 }
 
@@ -174,6 +226,7 @@ const DRAWERS = {
 	screen: new ScreenDrawer(propRoot('screen')),
 	light: new LightDrawer(propRoot('light')),
 	cursor: new CursorDrawer(propRoot('cursor')),
+	title: new TitleDrawer(propRoot('title')),
 	caption: new CaptionDrawer(propRoot('caption')),
 	terminal: new TerminalDrawer(propRoot('terminal')),
 	ending: new EndingDrawer(propRoot('ending'))
@@ -190,6 +243,23 @@ function setup(room) {
 		'--eye-distance': room.eyeDistance,
 		'--frame-scale': room.frameScale
 	});
+}
+
+/** The stage in a film's look: the token each value given takes the place of set to it. @param {Theme} theme */
+function dress(theme) {
+	for (const name of Object.keys(TOKENS_THEMED).filter(isThemed)) {
+		const value = theme[name];
+		if (value !== undefined) document.documentElement.style.setProperty(TOKENS_THEMED[name], value);
+	}
+}
+
+/**
+ * Whether a name is one of a theme's. Every key of the tokens themed is one, but `Object.keys` types each as a bare
+ * string: the guard keeps them all and tells the type checker they are the theme's names.
+ * @param {string} name @returns {name is keyof Theme}
+ */
+function isThemed(name) {
+	return Object.hasOwn(TOKENS_THEMED, name);
 }
 
 /** The page opened in the screen's frame, the frame sandboxed first where it is to be. @param {Opening} opening */
@@ -217,10 +287,32 @@ function shown(element, isShown) {
 	element.toggleAttribute('hidden', !isShown);
 }
 
-/** @param {string} text */
-function wordElement(text) {
+/**
+ * An element's attribute set to a name the film gave, or taken off where it gave none.
+ * @param {Staged} element @param {string} attribute @param {string | null} name
+ */
+function named(element, attribute, name) {
+	if (name === null) element.removeAttribute(attribute);
+	else element.setAttribute(attribute, name);
+}
+
+/** A word, a piece of it set each way its run is. @param {readonly Piece[]} pieces */
+function wordElement(pieces) {
 	const element = document.createElement('span');
-	element.textContent = text;
+	element.append(...pieces.map(pieceElement));
+	return element;
+}
+
+/** A piece of a word: its styles its classes, its ink and its marker the colours the stylesheet draws them in. @param {Piece} piece */
+function pieceElement(piece) {
+	const element = document.createElement('span');
+	element.textContent = piece.text;
+	element.classList.add(...piece.styles);
+	if (piece.ink !== null) element.style.setProperty(INK, piece.ink);
+	if (piece.marker !== null) {
+		element.classList.add(MARKED);
+		element.style.setProperty(MARKER, piece.marker);
+	}
 	return element;
 }
 
@@ -256,5 +348,5 @@ function found(element, name) {
 }
 
 /** @type {StageApi} */
-const STAGE = { setup, open, apply };
+const STAGE = { setup, dress, open, apply };
 window.stage = STAGE;

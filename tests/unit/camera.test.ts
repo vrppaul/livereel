@@ -8,7 +8,7 @@ import {
 	underTheFrame,
 	wholePose
 } from '../../src/domain/camera.ts';
-import { type Box, type Format, type Point, distanceBetween } from '../../src/domain/geometry.ts';
+import { type Box, type Format, type Point, distanceBetween, halfOf, wholeOf } from '../../src/domain/geometry.ts';
 
 // A square frame as large as the stage's look was made on, where a zoom counts the frame's own pixels
 const SQUARE: Format = { frame: { width: 1080, height: 1080 }, screen: { width: 1512, height: 1080 } };
@@ -109,7 +109,7 @@ test('a pose shows the same on a frame half as large: the whole screen, a point 
 
 test('a block is framed whole with its air round it', () => {
 	const block: Box = { left: 100, top: 200, width: 440, height: 100 };
-	expect(onto(block, FACE_ON, SQUARE.frame, { air: 50, zoomAtMost: 5 })).toEqual({
+	expect(onto(block, FACE_ON, SQUARE.frame, { air: 50, zoomAtMost: 5 }, wholeOf(SQUARE.frame))).toEqual({
 		...FACE_ON,
 		focusX: 320,
 		focusY: 250,
@@ -117,26 +117,37 @@ test('a block is framed whole with its air round it', () => {
 	});
 });
 
+test("a block framed in a half of the frame stands at the half's middle, as close as its air lets in the half", () => {
+	const block: Box = { left: 100, top: 200, width: 440, height: 100 };
+	const right = halfOf(SQUARE.frame, 'right');
+	const framed = onto(block, FACE_ON, SQUARE.frame, { air: 50, zoomAtMost: 5 }, right);
+	expect([onTheFrame(framed, SQUARE.frame, { left: 320, top: 250 }), framed.zoom]).toEqual([
+		{ left: 810, top: 540 },
+		1
+	]);
+});
+
 test('the camera comes no closer than allowed', () => {
 	const block: Box = { left: 0, top: 0, width: 10, height: 10 };
-	expect(onto(block, FACE_ON, SQUARE.frame, { air: 0, zoomAtMost: 3 }).zoom).toBe(3);
+	expect(onto(block, FACE_ON, SQUARE.frame, { air: 0, zoomAtMost: 3 }, wholeOf(SQUARE.frame)).zoom).toBe(3);
 });
 
 test('a block is framed alike on a frame half as large: as close as its air lets, and no closer than allowed', () => {
 	const fitted: Box = { left: 100, top: 200, width: 440, height: 100 };
 	const small: Box = { left: 0, top: 0, width: 10, height: 10 };
 	expect([
-		onto(fitted, FACE_ON, HALF_SQUARE.frame, { air: 50, zoomAtMost: 5 }),
-		onto(small, FACE_ON, HALF_SQUARE.frame, { air: 0, zoomAtMost: 3 })
+		onto(fitted, FACE_ON, HALF_SQUARE.frame, { air: 50, zoomAtMost: 5 }, wholeOf(HALF_SQUARE.frame)),
+		onto(small, FACE_ON, HALF_SQUARE.frame, { air: 0, zoomAtMost: 3 }, wholeOf(HALF_SQUARE.frame))
 	]).toEqual([
-		onto(fitted, FACE_ON, SQUARE.frame, { air: 50, zoomAtMost: 5 }),
-		onto(small, FACE_ON, SQUARE.frame, { air: 0, zoomAtMost: 3 })
+		onto(fitted, FACE_ON, SQUARE.frame, { air: 50, zoomAtMost: 5 }, wholeOf(SQUARE.frame)),
+		onto(small, FACE_ON, SQUARE.frame, { air: 0, zoomAtMost: 3 }, wholeOf(SQUARE.frame))
 	]);
 });
 
 test('a framing keeps the angle it was taken at', () => {
 	const angled = { ...FACE_ON, tilt: 20, turn: -10 };
-	const framed = onto({ left: 0, top: 0, width: 500, height: 500 }, angled, SQUARE.frame, { air: 0, zoomAtMost: 5 });
+	const block = { left: 0, top: 0, width: 500, height: 500 };
+	const framed = onto(block, angled, SQUARE.frame, { air: 0, zoomAtMost: 5 }, wholeOf(SQUARE.frame));
 	expect([framed.tilt, framed.turn]).toEqual([20, -10]);
 });
 

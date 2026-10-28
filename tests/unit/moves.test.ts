@@ -4,11 +4,13 @@ import { FilmError } from '../../src/domain/errors.ts';
 import type { Point } from '../../src/domain/geometry.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
 import { onto } from '../../src/moves/camera.ts';
-import { hide } from '../../src/moves/caption.ts';
+import * as caption from '../../src/moves/caption.ts';
+import * as title from '../../src/moves/title.ts';
 import { press, release, to as cursorTo } from '../../src/moves/cursor.ts';
 import { off, on as lightOn, to as lightTo } from '../../src/moves/light.ts';
 import { leave, open, submit, works } from '../../src/moves/terminal.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
+import { wordsOf } from '../../src/props/words.ts';
 import { type Scene, openingScene, withProp } from '../../src/scene.ts';
 import { PageOfBoxes, SMALL } from './fakes.ts';
 
@@ -79,14 +81,16 @@ test('the light is carried or put out only where one is on', async () => {
 	await expect(async () => off().begin(unlit)).rejects.toThrow(FilmError);
 });
 
-test('what is put away — the light, a caption, the terminal — is gone at its end', async () => {
+test('what is put away — the light, a title, a caption, the terminal — is gone at its end', async () => {
 	const lit = withProp(openingScene(SMALL), 'light', LIT);
-	const captioned = withProp(openingScene(SMALL), 'caption', { text: 'Words', shown: 1, gone: 0 });
+	const titled = withProp(openingScene(SMALL), 'title', { words: wordsOf('Words'), half: 'left', shown: 1, gone: 0 });
+	const captioned = withProp(openingScene(SMALL), 'caption', { words: wordsOf('Words'), shown: 1, gone: 0 });
 	expect([
 		(await setAt(off(), lit, 1)).light,
-		(await setAt(hide(), captioned, 1)).caption,
+		(await setAt(title.hide(), titled, 1)).title,
+		(await setAt(caption.hide(), captioned, 1)).caption,
 		(await setAt(leave(), TYPED, 1)).terminal
-	]).toEqual([null, null, null]);
+	]).toEqual([null, null, null, null]);
 });
 
 test('a cursor pressed goes in as the press goes on, and comes back out as it is let go', async () => {

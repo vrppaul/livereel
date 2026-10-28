@@ -3,8 +3,7 @@
  * frames in, and a track to keep sounds in. The adapters answer these; the studio names no browser and no file of its
  * own, and blends no image.
  */
-import type { Format } from '../domain/geometry.ts';
-import type { StagePlace } from '../direction/film.ts';
+import type { FilmInFormat } from '../direction/film.ts';
 import type { ActContext, FilmedPage } from '../direction/page.ts';
 import type { Sound } from '../direction/sound.ts';
 import type { DrawnScene } from '../scene.ts';
@@ -58,6 +57,9 @@ export interface Opened extends AsyncDisposable {
 	readonly act: ActContext;
 }
 
+/** What the stage is set as for a take: the film's format, where the stage stands, and the film's look. */
+export type Setting = Pick<FilmInFormat, 'format' | 'stage' | 'theme'>;
+
 export interface Browser {
-	readonly open: (format: Format, address: string, stage: StagePlace, sharpness: number) => Promise<Opened>;
+	readonly open: (setting: Setting, address: string, sharpness: number) => Promise<Opened>;
 }

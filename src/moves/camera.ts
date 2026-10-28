@@ -1,10 +1,13 @@
 /**
- * The camera: to a pose, or onto a block of the page, at the angle it stands at or another.
+ * The camera: to a pose, or onto a block of the page in the whole frame or in a half of it, at the angle it stands at
+ * or another.
  *
- * A face-on camera's end is kept on the screen as `covering` in `src/domain/camera.ts` keeps it.
+ * A face-on camera's end is kept on the screen as `covering` in `src/domain/camera.ts` keeps it. A block framed in a
+ * half is not: the other half is a title's, standing on the ground, and the screen shows as a pane on that ground, its
+ * edge in sight where the block lies near it.
  */
 import { A_POSE, type Pose, angled, covering, isFaceOn, onto as framedOnto, poseToward } from '../domain/camera.ts';
-import type { Format } from '../domain/geometry.ts';
+import { A_FRAME_HALF, type Format, type FrameHalf, halfOf, wholeOf } from '../domain/geometry.ts';
 import {
 	A_COUNT,
 	A_NUMBER,
@@ -33,12 +36,13 @@ export interface AngleScript extends TimingScript {
 
 /**
  * How a film frames a block: the first `every` blocks that match, `air` round them in the page's pixels, no closer than
- * `zoomAtMost`, a zoom as a pose has it (`Pose` in `src/domain/camera.ts`).
+ * `zoomAtMost`, a zoom as a pose has it (`Pose` in `src/domain/camera.ts`), in the whole frame or in a `half` of it.
  */
 export interface OntoScript extends AngleScript {
 	readonly every?: number;
 	readonly air?: number;
 	readonly zoomAtMost?: number;
+	readonly half?: FrameHalf;
 }
 
 // How much of the page shows round a block the camera frames, and how close it may come
@@ -49,6 +53,7 @@ const ONTO_FORM: Form<OntoScript> = {
 	every: A_COUNT,
 	air: A_NUMBER,
 	zoomAtMost: A_NUMBER_OR_ENDLESS,
+	half: A_FRAME_HALF,
 	...ANGLE_FORM
 };
 
@@ -59,11 +64,11 @@ export function to(pose: Pose, script: AngleScript = {}): Move {
 	return {
 		part: 'camera',
 		timing: timingOf(script),
-		begin: (beginning) => posing(beginning.scene.camera, pose, script, beginning.format)
+		begin: (beginning) => posing(beginning.scene.camera, keptOnTheScreen(angledAs(pose, script), beginning.format))
 	};
 }
 
-/** The camera onto the blocks a target matches, with air round them. */
+/** The camera onto the blocks a target matches, with air round them, in the whole frame or in a half of it. */
 export function onto(target: string, script: OntoScript = {}): Move {
 	assertKind(target, A_SELECTOR, "camera.onto's selector");
 	assertWritten(script, ONTO_FORM, 'camera.onto');
@@ -73,13 +78,25 @@ export function onto(target: string, script: OntoScript = {}): Move {
 async function framing(beginning: Beginning, target: string, script: OntoScript): Promise<Change> {
 	const box = await shownPart(beginning, target, script.every ?? 1, 'camera.onto');
 	const start = beginning.scene.camera;
+	const frame = beginning.format.frame;
 	const framed = { air: script.air ?? AIR, zoomAtMost: script.zoomAtMost ?? ZOOM_AT_MOST };
-	return posing(start, framedOnto(box, start, beginning.format.frame, framed), script, beginning.format);
+	if (script.half === undefined) {
+		const end = angledAs(framedOnto(box, start, frame, framed, wholeOf(frame)), script);
+		return posing(start, keptOnTheScreen(end, beginning.format));
+	}
+	return posing(start, angledAs(framedOnto(box, start, frame, framed, halfOf(frame, script.half)), script));
 }
 
-/** From a start to an end set at the angle asked for, kept off the screen's edge when face-on. */
-function posing(start: Pose, end: Pose, angle: AngleScript, format: Format): Change {
-	const atItsAngle = angled(end, angle.tilt ?? end.tilt, angle.turn ?? end.turn);
-	const kept = isFaceOn(atItsAngle) ? covering(atItsAngle, format) : atItsAngle;
-	return propChange('camera', (progress) => poseToward(start, kept, progress));
+function posing(start: Pose, end: Pose): Change {
+	return propChange('camera', (progress) => poseToward(start, end, progress));
+}
+
+/** A pose at the angle a film asks for; an angle it leaves out stays as the pose has it. */
+function angledAs(pose: Pose, angle: AngleScript): Pose {
+	return angled(pose, angle.tilt ?? pose.tilt, angle.turn ?? pose.turn);
+}
+
+/** A pose kept off the screen's edge, where it is face-on. */
+function keptOnTheScreen(pose: Pose, format: Format): Pose {
+	return isFaceOn(pose) ? covering(pose, format) : pose;
 }

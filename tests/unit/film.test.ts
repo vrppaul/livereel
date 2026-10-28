@@ -56,11 +56,13 @@ async function servedFrom(serving: unknown) {
 
 test('a film in no form of one is refused as it is defined, where it stands: its names, its formats, its functions', () => {
 	expect(() => defineFilm(null as never)).toThrow(
-		new FilmError('the film is null: it is an object of formats, serve, stage, ready, steps, sounds, music, motionBlur')
+		new FilmError(
+			'the film is null: it is an object of formats, serve, stage, ready, steps, sounds, music, motionBlur, theme'
+		)
 	);
 	expect(() => filmWritten({ motionblur: {} })).toThrow(
 		new FilmError(
-			'the film names motionblur: it names formats, serve, stage, ready, steps, sounds, music, motionBlur, or fewer'
+			'the film names motionblur: it names formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, or fewer'
 		)
 	);
 	expect(() => filmWritten({ formats: null })).toThrow(
@@ -282,6 +284,23 @@ test('a film is shot on the stage it names, apart where it names none; a stage l
 	expect(() => filmWritten({ stage: 'within' })).toThrow(
 		new FilmError(
 			`the film's stage is "within": it is "apart", or "inside" the app's own address for an app that signs in or refuses to be framed`
+		)
+	);
+});
+
+test('a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, a colour not in hex, a font of no name', () => {
+	expect(() => filmWritten({ theme: null })).toThrow(
+		new FilmError("the film's theme is handed null for an object of ground, glow, ink, font")
+	);
+	expect(() => filmWritten({ theme: { background: '#000' } })).toThrow(
+		new FilmError("the film's theme names background: it names ground, glow, ink, font, or fewer")
+	);
+	expect(() => filmWritten({ theme: { ground: 'navy' } })).toThrow(
+		new FilmError(`the film's theme's ground is "navy": it is a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa`)
+	);
+	expect(() => filmWritten({ theme: { font: '' } })).toThrow(
+		new FilmError(
+			`the film's theme's font is "": it is a font's family, as CSS names one: 'Inter', or 'Inter, sans-serif'`
 		)
 	);
 });

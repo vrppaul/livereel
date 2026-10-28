@@ -107,6 +107,62 @@ body {
 	zoom: var(--frame-scale);
 }
 
+/* A title's or a caption's word: it rises out of a blur and sinks as it goes, keeping the space after it, set as its run is, so an underline or a marker runs on under it; Chrome leaves a word's last space bare unless told not to */
+.words > span {
+	display: inline-block;
+	white-space: pre;
+	text-decoration-skip-spaces: none;
+	opacity: calc(var(--appeared) * (1 - var(--gone)));
+	transform: translateY(calc((1 - var(--appeared)) * var(--word-rise) - var(--gone) * var(--word-sink)));
+	filter: blur(calc((1 - var(--appeared)) * var(--word-blur) + var(--gone) * var(--word-blur-leaving)));
+}
+
+/* A piece of a word, set as its run is: in its own ink where the film gives one */
+.words > span > span {
+	color: var(--ink);
+}
+
+.words .bold {
+	font-weight: bolder;
+}
+
+.words .italic {
+	font-style: italic;
+}
+
+.words .underline,
+.words .strike {
+	text-decoration-thickness: 0.07em;
+	text-underline-offset: 0.12em;
+}
+
+.words .underline {
+	text-decoration-line: underline;
+}
+
+.words .strike {
+	text-decoration-line: line-through;
+}
+
+.words .underline.strike {
+	text-decoration-line: underline line-through;
+}
+
+/* A marker as tall as the line, so it covers none of the line above: an inline piece's ground reaches past its line. Its word stands under the others, so the tails of the letters above it are drawn over it, and the words stand apart from the rest of the stage */
+.words {
+	isolation: isolate;
+}
+
+.words > span:has(> .marked) {
+	position: relative;
+	z-index: -1;
+}
+
+.words .marked {
+	display: inline-block;
+	background: var(--marker);
+}
+
 /* A caption: words that rise out of a blur over the frame's foot, on a ground that darkens it, and sink as they go */
 .caption {
 	--word-rise: 22px;
@@ -140,12 +196,79 @@ body {
 	text-wrap: balance;
 }
 
-.caption .words span {
-	display: inline-block;
-	margin-right: 0.24em;
-	opacity: calc(var(--appeared) * (1 - var(--gone)));
-	transform: translateY(calc((1 - var(--appeared)) * var(--word-rise) - var(--gone) * var(--word-sink)));
-	filter: blur(calc((1 - var(--appeared)) * var(--word-blur) + var(--gone) * var(--word-blur-leaving)));
+/* A title: words over the film's ground, over the whole frame or a half of it, the ground there first */
+.title {
+	--word-rise: 28px;
+	--word-blur: 12px;
+	--word-sink: 12px;
+	--word-blur-leaving: 8px;
+	--title-edge: 160px;
+	--half-edge: 80px;
+	--half-gap: 96px;
+
+	position: absolute;
+	inset: 0;
+}
+
+.title .ground {
+	position: absolute;
+	inset: 0;
+	background: var(--ground-light);
+	opacity: var(--grounded);
+}
+
+.title[data-half='left'] .ground {
+	mask-image: var(--ground-on-the-left);
+}
+
+.title[data-half='right'] .ground {
+	mask-image: var(--ground-on-the-right);
+}
+
+.title[data-half='top'] .ground {
+	mask-image: var(--ground-on-the-top);
+}
+
+.title[data-half='bottom'] .ground {
+	mask-image: var(--ground-on-the-bottom);
+}
+
+/* The words stand in the middle of what they stand over: centred over the whole frame, read from the left over a half beside the screen */
+.title .words {
+	position: absolute;
+	left: var(--title-edge);
+	right: var(--title-edge);
+	top: 50%;
+	transform: translateY(-50%);
+	font: 700 92px / 1.08 var(--sans);
+	letter-spacing: -0.03em;
+	color: var(--ink);
+	text-align: center;
+	text-wrap: balance;
+}
+
+.title[data-half] .words {
+	font-size: 68px;
+}
+
+.title[data-half='left'] .words {
+	left: var(--half-edge);
+	right: calc(50% + var(--half-gap));
+	text-align: left;
+}
+
+.title[data-half='right'] .words {
+	left: calc(50% + var(--half-gap));
+	right: var(--half-edge);
+	text-align: left;
+}
+
+.title[data-half='top'] .words {
+	top: 25%;
+}
+
+.title[data-half='bottom'] .words {
+	top: 75%;
 }
 
 /* The agent's terminal: a window on the ground, its log above the line being typed, a little smaller while it comes up or goes */
@@ -191,7 +314,7 @@ body {
 	background: var(--terminal-edge);
 }
 
-.terminal .bar .title {
+.terminal .bar .heading {
 	margin-left: 12px;
 }
 

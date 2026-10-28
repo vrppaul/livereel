@@ -25,13 +25,21 @@
  */
 import { type Browser as Playwright, type Frame, type Page, chromium } from 'playwright-core';
 import { SetupError } from '../../domain/errors.ts';
-import type { Format } from '../../domain/geometry.ts';
 import type { StagePlace } from '../../direction/film.ts';
 import type { ActContext, PageMotionSwitch } from '../../direction/page.ts';
-import type { Browser, Opened } from '../../studio/ports.ts';
+import type { Browser, Opened, Setting } from '../../studio/ports.ts';
 import { stagedInside } from './inside.ts';
 import { PlaywrightPage } from './page.ts';
-import { BrowserStage, type Opening, STAGE_FOLDER, STAGE_PAGE, openPage, roomOf, setUpStage } from './stage.ts';
+import {
+	BrowserStage,
+	type Opening,
+	STAGE_FOLDER,
+	STAGE_PAGE,
+	dressStage,
+	openPage,
+	roomOf,
+	setUpStage
+} from './stage.ts';
 import { FrameWatch } from './watch.ts';
 import type { Warn } from './warn.ts';
 
@@ -96,21 +104,21 @@ export class Chromium implements Browser {
 		this.warn = warn;
 	}
 
-	async open(format: Format, address: string, stage: StagePlace, sharpness: number): Promise<Opened> {
+	async open(setting: Setting, address: string, sharpness: number): Promise<Opened> {
 		const browser = await launched(this.renderer);
 		try {
 			await whereItDrawsChecked(this.renderer, browser, this.warn);
 			const page = await browser.newPage({
-				viewport: format.frame,
+				viewport: setting.format.frame,
 				deviceScaleFactor: sharpness,
 				permissions: [LOCAL_NETWORK]
 			});
-			const opening = await staged(page, stage, address, this.warn);
-			const watch = new FrameWatch(page, stage, address);
-			const filmed = await framed(page, format, opening);
+			const opening = await staged(page, setting.stage, address, this.warn);
+			const watch = new FrameWatch(page, setting.stage, address);
+			const filmed = await framed(page, setting, opening);
 			const absence = await watch.absence(filmed);
 			if (absence !== undefined) throw absence;
-			return new OpenedChromium(browser, new BrowserStage(page, format, watch, filmed), filmed);
+			return new OpenedChromium(browser, new BrowserStage(page, setting.format, watch, filmed), filmed);
 		} catch (fault) {
 			await browser.close();
 			throw fault;
@@ -226,10 +234,11 @@ async function staged(page: Page, stage: StagePlace, address: string, warn: Warn
 	}
 }
 
-/** The stage set up and the page opened in its frame, as far as it loads: its frame. */
-async function framed(page: Page, format: Format, opening: Opening): Promise<Frame> {
+/** The stage set up in the film's look and the page opened in its frame, as far as it loads: its frame. */
+async function framed(page: Page, setting: Setting, opening: Opening): Promise<Frame> {
 	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: COLOUR_SCHEME });
-	await page.evaluate(setUpStage, roomOf(format));
+	await page.evaluate(setUpStage, roomOf(setting.format));
+	await page.evaluate(dressStage, setting.theme);
 	const [filmed] = await Promise.all([
 		page.waitForEvent(NAVIGATED, { predicate: isInTheStagesFrame }),
 		page.evaluate(openPage, opening)

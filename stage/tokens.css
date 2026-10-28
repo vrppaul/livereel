@@ -1,6 +1,7 @@
 /*
  * Every colour of the stage, its shadows and its reaches, written once. The other stylesheets name these and write
- * no colour of their own (stylelint holds them to it).
+ * no colour of their own (stylelint holds them to it). A film's theme sets the ground, its glow, the ink and the font
+ * in place of these (`dress` in `stage.js`), and what is worked out from them follows.
  */
 :root {
 	--ground: #0b0e14;
@@ -24,8 +25,17 @@
 
 	/* The dark round a block in the light, reaching past any edge of the screen */
 	--light-dark: 0 0 0 4000px rgb(6 9 16);
-	--caption-ground: linear-gradient(to top, rgb(6 9 16 / 85%), rgb(6 9 16 / 0%));
+	--caption-ground: linear-gradient(to top, color-mix(in srgb, var(--ground) 85%, transparent), transparent);
 	--caption-shadow: 0 2px 30px rgb(0 0 0 / 55%);
-	--sans: ui-sans-serif, system-ui, sans-serif;
+
+	/* A title over a half of the frame: the ground over that half, fading out across the frame's middle */
+	--ground-on-the-left: linear-gradient(to right, #000 46%, transparent 54%);
+	--ground-on-the-right: linear-gradient(to left, #000 46%, transparent 54%);
+	--ground-on-the-top: linear-gradient(to bottom, #000 46%, transparent 54%);
+	--ground-on-the-bottom: linear-gradient(to top, #000 46%, transparent 54%);
+
+	/* The film's font, and what stands in for it where the system has none */
+	--font: ui-sans-serif;
+	--sans: var(--font), system-ui, sans-serif;
 	--mono: ui-monospace, 'JetBrains Mono', monospace;
 }

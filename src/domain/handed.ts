@@ -137,6 +137,12 @@ export const A_STRING = new Plain(isString, 'a string');
 export const A_SELECTOR = new Plain(isWords, 'a selector: a string that names blocks of the page');
 export const A_PATH = new Plain(isWords, "a file's path, from the film's file");
 export const AN_ADDRESS = new Plain(isWords, 'an address, a string');
+export const A_FONT_FAMILY = new Plain(isWords, "a font's family, as CSS names one: 'Inter', or 'Inter, sans-serif'");
+/** A colour a film gives its words or its ground, in the one form checked here rather than in a browser: hex. */
+export const A_COLOUR = new Plain(isHexColour, 'a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa');
+
+// A colour in hex, its alpha optional, in short digits or long
+const HEX_COLOUR = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
 /** A kind a film must give, never leave out. */
 export function needed<Value>(kind: Kind<Value>): Needed<Value> {
@@ -299,6 +305,10 @@ function isString(written: unknown): written is string {
 /** Whether what a film hands over is a string with something in it. */
 function isWords(written: unknown): written is string {
 	return isString(written) && written.length > 0;
+}
+
+function isHexColour(written: unknown): written is string {
+	return isString(written) && HEX_COLOUR.test(written);
 }
 
 function isCallable(written: unknown): boolean {

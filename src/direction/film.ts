@@ -30,6 +30,7 @@ import { type MotionBlurScript, motionBlurOf } from './blur.ts';
 import type { ActContext } from './page.ts';
 import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf, musicOf } from './sound.ts';
 import { type Step, stepsOf } from './steps.ts';
+import { type Theme, themeOf } from './theme.ts';
 
 /** A page served for as long as a take lasts, at its address; the film's own handles may come with it. */
 export interface Serving extends AsyncDisposable {
@@ -67,6 +68,8 @@ export interface Script<Served extends Serving, Name extends string> {
 	readonly music?: Music;
 	/** How a fast camera is blurred, livereel's way save the values given, or `{ enabled: false }` for no blur. */
 	readonly motionBlur?: MotionBlurScript;
+	/** The film's own ground, ink and font, livereel's save the values given. */
+	readonly theme?: Theme;
 }
 
 /** A film whose page is served: what the studio shoots. */
@@ -76,11 +79,12 @@ export interface ServedFilm extends AsyncDisposable {
 	readonly steps: (whole: Pose) => readonly Step[];
 }
 
-/** A film in one of its formats, where its stage stands, and what it says of its sounds and of its blur. */
+/** A film in one of its formats, where its stage stands, its look, and what it says of its sounds and of its blur. */
 export interface FilmInFormat {
 	readonly formatName: string;
 	readonly format: Format;
 	readonly stage: StagePlace;
+	readonly theme: Theme;
 	readonly sound: FilmSound;
 	readonly motionBlur: MotionBlur | null;
 	readonly serve: () => Promise<ServedFilm>;
@@ -101,7 +105,7 @@ const A_STAGE = new OneOf(
 	STAGES,
 	`"apart", or "inside" the app's own address for an app that signs in or refuses to be framed`
 );
-// A film's sounds, music and blur are objects, what is in each read by its own reader, in its own words, first
+// A film's sounds, music, blur and theme are objects, what is in each read by its own reader, in its own words, first
 const FILM_FORM: Form<AnyScript> = {
 	formats: needed(anObject<AnyScript['formats']>("an object of the film's formats, by name")),
 	serve: needed(aFunction<AnyScript['serve']>(A_FUNCTION_SAID)),
@@ -110,7 +114,8 @@ const FILM_FORM: Form<AnyScript> = {
 	steps: needed(aFunction<AnyScript['steps']>(A_FUNCTION_SAID)),
 	sounds: anObject<LivereelSoundsScript>(AN_OBJECT_SAID),
 	music: anObject<Music>(AN_OBJECT_SAID),
-	motionBlur: anObject<MotionBlurScript>(AN_OBJECT_SAID)
+	motionBlur: anObject<MotionBlurScript>(AN_OBJECT_SAID),
+	theme: anObject<Theme>(AN_OBJECT_SAID)
 };
 const A_SERVING: Kind<Serving> = new Plain(
 	isServing,
@@ -121,6 +126,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 	readonly script: Script<Served, Name>;
 	readonly sound: FilmSound;
 	readonly motionBlur: MotionBlur | null;
+	readonly theme: Theme;
 	readonly stage: StagePlace;
 	readonly formats: ReadonlyMap<string, FilmInFormat>;
 
@@ -131,6 +137,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 		this.script = script;
 		this.sound = { livereels: livereelSoundsOf(script.sounds), music: musicOf(script.music) };
 		this.motionBlur = motionBlurOf(script.motionBlur);
+		this.theme = themeOf(script.theme);
 		refuseUnlikeAFilm(script);
 		this.stage = script.stage ?? STAGE_WHERE_NONE_IS_NAMED;
 		this.formats = new Map(namesOf(script.formats).map((name) => [name, this.inFormat(name)]));
@@ -142,6 +149,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 			formatName: name,
 			format: this.script.formats[name],
 			stage: this.stage,
+			theme: this.theme,
 			sound: this.sound,
 			motionBlur: this.motionBlur,
 			serve: () => this.served(name)

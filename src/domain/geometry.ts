@@ -2,9 +2,10 @@
  * Sizes, points and boxes, in the page's own CSS pixels.
  *
  * The frame is what a film is shot at, the screen what its page is laid out on; a box is where a block of the page
- * stands on that screen, with no camera applied. Every other measure of a film is read off these.
+ * stands on that screen, with no camera applied, or a part of the frame, as a half of it. Every other measure of a film
+ * is read off these.
  */
-import { A_NUMBER, type Form, type Kind, OfForm, Plain, needed } from './handed.ts';
+import { A_NUMBER, type Form, type Kind, OfForm, OneOf, Plain, needed } from './handed.ts';
 import { between } from './time.ts';
 
 export interface Size {
@@ -45,13 +46,20 @@ export const FORMAT_FORM: Form<Format> = {
 	)
 };
 
-/** Where a block of the page stands on the screen: its left and top edges, and how big it is. */
+/** Where a block of the page stands on the screen, or a part of the frame: its left and top edges, and how big it is. */
 export interface Box {
 	readonly left: number;
 	readonly top: number;
 	readonly width: number;
 	readonly height: number;
 }
+
+/** The halves of a frame, by the side each lies on: where a title stands, and what a camera frames a block into. */
+const FRAME_HALVES = ['left', 'right', 'top', 'bottom'] as const;
+
+export type FrameHalf = (typeof FRAME_HALVES)[number];
+
+export const A_FRAME_HALF = new OneOf(FRAME_HALVES, 'a half of the frame: "left", "right", "top" or "bottom"');
 
 /** A curve from a start to an end, drawn toward its bend: a quadratic Bézier. */
 export interface Arc {
@@ -69,6 +77,27 @@ const LOOK_MADE_ON = 1080;
 /** How large the stage draws on a frame, against the frames its look was made on: by the frame's shorter side. */
 export function frameScaleOf(frame: Size): number {
 	return Math.min(frame.width, frame.height) / LOOK_MADE_ON;
+}
+
+/** The whole of a size laid from its top left, as a box. */
+export function wholeOf(size: Size): Box {
+	return { left: 0, top: 0, width: size.width, height: size.height };
+}
+
+/** A half of a frame, as a box of the frame's pixels. */
+export function halfOf(frame: Size, half: FrameHalf): Box {
+	const across = frame.width / HALVES;
+	const down = frame.height / HALVES;
+	switch (half) {
+		case 'left':
+			return { left: 0, top: 0, width: across, height: frame.height };
+		case 'right':
+			return { left: across, top: 0, width: across, height: frame.height };
+		case 'top':
+			return { left: 0, top: 0, width: frame.width, height: down };
+		case 'bottom':
+			return { left: 0, top: down, width: frame.width, height: down };
+	}
 }
 
 export function middleX(box: Box): number {

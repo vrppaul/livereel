@@ -2,25 +2,27 @@
  * What the stage draws on one frame: every prop's state at one moment.
  *
  * A scene is plain values, never changed in place: a move's change hands back a scene with its own prop set, and the
- * take keeps the one standing. `drawn` works out everything the stage needs from it — a caption's words, the
- * terminal's spinner — so the stage draws numbers and words and decides nothing. A prop that may be absent is
+ * take keeps the one standing. `drawn` works out everything the stage needs from it — how far each word of a title or
+ * a caption has come, the terminal's spinner — so the stage draws numbers and words and decides nothing. A prop that may be absent is
  * `null`; the compiler holds every prop to a drawn form here and to a drawer on the stage.
  */
 import type { Format } from './domain/geometry.ts';
 import { type Pose, wholePose } from './domain/camera.ts';
-import { type Caption, type DrawnCaption, drawnCaption } from './props/caption.ts';
 import type { Cursor } from './props/cursor.ts';
 import type { Ending } from './props/ending.ts';
 import type { Light } from './props/light.ts';
 import { SCREEN_UP, type Screen } from './props/screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './props/terminal.ts';
+import { type DrawnTitle, type Title, drawnTitle } from './props/title.ts';
+import { type DrawnWords, type ShownWords, drawnWords } from './props/words.ts';
 
 export interface PropStates {
 	camera: Pose;
 	screen: Screen;
 	light: Light | null;
 	cursor: Cursor | null;
-	caption: Caption | null;
+	title: Title | null;
+	caption: ShownWords | null;
 	terminal: Terminal | null;
 	ending: Ending | null;
 }
@@ -35,7 +37,8 @@ interface DrawnProps {
 	screen: Screen;
 	light: Light | null;
 	cursor: Cursor | null;
-	caption: DrawnCaption | null;
+	title: DrawnTitle | null;
+	caption: DrawnWords | null;
 	terminal: DrawnTerminal | null;
 	ending: Ending | null;
 }
@@ -49,6 +52,7 @@ export function openingScene(format: Format): Scene {
 		screen: SCREEN_UP,
 		light: null,
 		cursor: null,
+		title: null,
 		caption: null,
 		terminal: null,
 		ending: null
@@ -71,7 +75,8 @@ export function drawn(scene: Scene, moment: number): DrawnScene {
 		screen: scene.screen,
 		light: scene.light,
 		cursor: scene.cursor,
-		caption: scene.caption === null ? null : drawnCaption(scene.caption),
+		title: scene.title === null ? null : drawnTitle(scene.title),
+		caption: scene.caption === null ? null : drawnWords(scene.caption),
 		terminal: scene.terminal === null ? null : drawnTerminal(scene.terminal, moment),
 		ending: scene.ending
 	};

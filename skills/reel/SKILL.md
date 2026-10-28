@@ -40,6 +40,8 @@ caption. Speak in the director's words, which are the tool's:
 | cast | what the page shows, opened and closed by `act` |
 | action | what the page does for real: a click (`cursor.click`), keys typed into it (`typing(page.type(strokes))`), anything else in an `act` |
 | caption | `caption.show(text)`, `caption.hide()` |
+| title card | `title.show(text)` — words over the whole frame, on the film's ground; `title.hide()` |
+| split | `title.show(text, { half: 'left' })` beside `camera.onto(selector, { half: 'right' })` — words on one half, the page framed in the other |
 | entrance | `cut(screen.lower())`, then `screen.rise()` in a `play`; `ending.show(card)` |
 | tempo | how long each `play` and `hold({ seconds })` lasts |
 
@@ -55,10 +57,15 @@ What reads as made with care:
   phone shows a whole page too small to read.
 - **People type unevenly**: `keystrokes(text, { seed, slipAt })` with a
   slip now and then; an agent works for a second or two before it answers.
+- **A title card or a split for the turn, not for every shot**: a title
+  card to open on the problem or close on what the viewer should say, a
+  split where one claim stands beside the block that proves it. One word or
+  phrase set apart (`{ text, italic: true }`, an `ink`, a `marker`) carries
+  the claim; a title in many styles reads as a ransom note.
 
 What reads as generated: a zoom on every click, a window floating on a
-gradient wallpaper, a glow behind the product, springy overshoot, ripples
-on clicks. Leave them out.
+wallpaper with nothing said beside it, a glow behind the product, springy
+overshoot, ripples on clicks. Leave them out.
 
 ## 3. The film
 
@@ -182,13 +189,14 @@ its end at once.
 | Moves | |
 |---|---|
 | `camera.to(pose, { tilt, turn })` | to a pose: `whole` from `steps`, or `lookingAt(pose, focusX, focusY, zoom)` |
-| `camera.onto(selector, { every, air, zoomAtMost, tilt, turn })` | frames the first `every` blocks a selector matches, `air` pixels round them |
+| `camera.onto(selector, { every, air, zoomAtMost, half, tilt, turn })` | frames the first `every` blocks a selector matches, `air` pixels round them, in the whole frame or in a `half` of it (`left`, `right`, `top`, `bottom`), where the screen may show as a pane on the ground |
 | `screen.rise()`, `screen.lower()` | the screen up out of the ground; down in it, in a `cut` |
 | `light.on(selector, { dim })`, `light.to(selector)`, `light.off()` | one block lit, the rest dimmed by `dim`; carried; put out |
 | `cursor.to(selector, { entering, bow })` | along an arc to a block, from `entering` if not yet on the screen |
 | `cursor.press({ sound })`, `cursor.release()`, `cursor.hide()` | pressed in with a click (`sound`, a file of the film's in its place), let go, taken off the screen |
 | `cursor.click(action, { sound })` | pressed with its click, `act(action)`, let go: the steps of a click |
-| `caption.show(text)`, `caption.hide()` | words coming up one after another, in place of any shown; going |
+| `title.show(text, { half })`, `title.hide()` | words coming up one after another on the film's ground, over the whole frame or a `half` of it, in place of any title shown; going, the ground with them |
+| `caption.show(text)`, `caption.hide()` | words coming up one after another at the frame's foot, in place of any shown; going |
 | `terminal.open(title)` | an agent's terminal coming up over the frame; in a `cut`, there at once |
 | `terminal.type(strokes)`, `terminal.submit()` | keys typed into it; Enter |
 | `terminal.works(lines, thinking, { thinkingShare })` | the agent thinking, its spinner beside the words `thinking`, then its lines written one after another; a line is `{ kind, text }`, its kind `work` (a tool and what it is used on), `said` or `done` |
@@ -201,6 +209,19 @@ its end at once.
 
 `cursor.click` and `typing` give several steps: spread them among the
 others, `...cursor.click(action)`, `...typing(page.type(strokes))`.
+
+A title's or a caption's `text` is a string, or a list of strings and runs
+read one after another: a run is `{ text }` with any of `bold`, `italic`,
+`underline`, `strike` (each `true`), `ink` (its letters' colour) and
+`marker` (a marker behind it), colours in hex, each a constant at the top:
+`['Your agent ', { text: 'films', italic: true, ink: ACCENT }, ' your app']`.
+Put the spaces in the strings, as the words are read.
+
+`defineFilm` takes `theme: { ground, glow, ink, font }`, any of them, where
+the user names a brand's look: the ground's colour and the colour it
+lightens to toward its top middle, the ink of titles, captions and the
+ending, in hex, and their font, as CSS names a family installed on the
+machine. Leave it out for livereel's own: a dark ground and white ink.
 
 The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
 person types; the curves are `linear`, `easeInOutSine` (a step's own),

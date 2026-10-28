@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- A title: words that come up one after another on the film's ground, over the whole frame, a screen of words that covers the page (`title.show(text)`), or over a half of it, `left`, `right`, `top` or `bottom`, beside the page (`title.show(text, { half: 'left' })`); `title.hide()` takes them and their ground away. The ground over a half fades out across the frame's middle.
+- `camera.onto(selector, { half })` frames a block in a half of the frame, at that half's middle, as close as its `air` lets in the half. The screen is not kept filling the frame there: where the block lies near the page's edge, the screen shows as a pane on the ground.
+- A title or a caption says a string, or a list of strings and runs read one after another, a run `{ text }` set `bold`, `italic`, `underline` or `strike`, in an `ink` of its own, or on a `marker`, colours in hex: `caption.show(['Your agent ', { text: 'films', italic: true }, ' your app'])`. An underline or a marker runs on under the space between two words of one run, and stops where the run does. A run in no form of one is refused where it stands (`caption.show's text[0]'s ink is "red": it is a colour in hex`).
+- A film's theme: `defineFilm` takes `theme: { ground, glow, ink, font }`, any of them, the ground's colour and the colour it lightens to toward its top middle, the ink of titles, captions and the ending, and their font; what a film leaves out stays livereel's. The darkening under a caption follows the ground's colour.
+
 ## 0.4.0
 
 - Breaking: a machine that lacks what a film is shot with — the browser or the system's libraries it needs, ffmpeg or its encoder of the kind asked, a Node new enough, a system `--renderer gpu` knows how to reach the graphics card on — is refused with exit code 3, apart from a film that cannot be shot (1) and a wrong command line or film file (2). It had exited 1, as the film's fault does; a browser short of the system's libraries is refused in Playwright's own words, which name them, where it had stopped with a stack under them.

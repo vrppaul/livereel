@@ -1,17 +1,21 @@
 /**
- * example.com, filmed: the page, the line that says what it is for in six languages, and its one link followed.
+ * example.com, filmed: a title card, the page, the line that says what it is for in six languages beside the words
+ * that say so, and its one link followed.
  *
  *     pnpm livereel shoot examples/example-com.ts --format square --out out/example --sheet
  *
  * It is shot square for a feed, or wide for a page or a talk: every framing is by selector, so the one script fits
- * either frame. It stands its stage inside example.com: the link leads to IANA's page, which refuses to be framed,
- * and on the stage apart the film would be refused there.
+ * either frame, and the words beside the languages stand to the left of the page in the wide frame and above it in
+ * the square. It stands its stage inside example.com: the link leads to IANA's page, which refuses to be framed, and
+ * on the stage apart the film would be refused there.
  */
 import {
 	type ActContext,
+	type FrameHalf,
 	type Pose,
 	type Serving,
 	type Step,
+	type Wording,
 	atAddress,
 	camera,
 	caption,
@@ -25,7 +29,8 @@ import {
 	light,
 	lookingAt,
 	play,
-	screen
+	screen,
+	title
 } from 'livereel';
 
 const ADDRESS = 'https://example.com/';
@@ -42,7 +47,23 @@ const LINK = 'a';
 const FOLLOWED_TO = '**iana.org/**';
 // The screen comes up from a little smaller than the whole of it
 const OPENS_FROM = 0.86;
+// The word the title card sets apart, and the marker under the count of languages
+const ACCENT = '#ffb86b';
+const MARKER = '#5b47d6';
+const OPENING: Wording = ['The most ', { text: 'famous', italic: true, ink: ACCENT }, ' page on the web'];
+const IN_SIX: Wording = ['It says so in ', { text: 'six languages', marker: MARKER }];
+// Where the words about the languages stand, and the half the page is framed in beside them, in each format
+const SPLITS: Readonly<Record<keyof typeof FORMATS, Split>> = {
+	square: { words: 'top', page: 'bottom' },
+	wide: { words: 'left', page: 'right' }
+};
 const ENDING = { name: 'example.com', line: 'Filmed live, frame by frame', command: 'livereel' };
+
+/** The half of the frame a title stands over, and the half the page is framed in beside it. */
+interface Split {
+	readonly words: FrameHalf;
+	readonly page: FrameHalf;
+}
 
 function inLanguage(language: string): string {
 	return `p[lang=${language}]`;
@@ -67,50 +88,63 @@ function linkShown(context: ActContext): Promise<void> {
 	return context.page.locator(LINK).waitFor();
 }
 
-/** The screen comes up out of the ground, and the camera goes to the page's mark: what this page is. */
+/** A title card says what this page is; it gives way to the screen coming up, and the camera goes to the page's mark. */
 function actOpening(whole: Pose): readonly Step[] {
 	return [
 		cut(screen.lower(), camera.to(fromAfar(whole))),
-		play({ seconds: 0.9, moves: [screen.rise({ within: { end: 0.7 } }), camera.to(whole)], ease: easeOutCubic }),
-		hold({ seconds: 0.4 }),
+		play({ seconds: 1.2, moves: [title.show(OPENING)] }),
+		hold({ seconds: 1.1 }),
 		play({
-			seconds: 1.4,
+			seconds: 1.1,
 			moves: [
-				camera.onto(MARK, { air: 160, zoomAtMost: 2.6 }),
-				caption.show('The most famous page on the web', { within: { start: 0.35 } })
+				title.hide({ within: { end: 0.5 } }),
+				screen.rise({ within: { start: 0.2, end: 0.9 } }),
+				camera.to(whole)
 			],
-			ease: easeInOutCubic
+			ease: easeOutCubic
 		}),
-		hold({ seconds: 1 })
+		hold({ seconds: 0.3 }),
+		play({ seconds: 1.2, moves: [camera.onto(MARK, { air: 160, zoomAtMost: 2.6 })], ease: easeInOutCubic }),
+		hold({ seconds: 0.6 })
 	];
 }
 
-/** The line that says what the page is for, lit; then the same line in each of the page's other languages. */
-function actLanguages(): readonly Step[] {
+/**
+ * The line that says what the page is for, lit; then the words that say it is said in six languages, beside the
+ * same line in each of them.
+ */
+function actLanguages(split: Split): readonly Step[] {
 	return [
 		play({
 			seconds: 1.1,
 			moves: [
 				camera.onto(ENGLISH, { air: 80, zoomAtMost: 2 }),
 				light.on(ENGLISH, { within: { start: 0.3 } }),
-				caption.hide({ within: { end: 0.3 } }),
 				caption.show('It exists to be an example', { within: { start: 0.4 } })
 			],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 1.3 }),
-		play({ seconds: 0.4, moves: [caption.hide()] }),
-		play({ seconds: 0.4, moves: [caption.show('in six languages')] }),
-		...LANGUAGES.flatMap(inTurn)
+		play({
+			seconds: 1,
+			moves: [
+				caption.hide({ within: { end: 0.4 } }),
+				camera.onto(ENGLISH, { half: split.page, air: 60, zoomAtMost: 2 }),
+				title.show(IN_SIX, { half: split.words, within: { start: 0.3 } })
+			],
+			ease: easeInOutCubic
+		}),
+		hold({ seconds: 0.6 }),
+		...LANGUAGES.flatMap((language) => inTurn(language, split.page))
 	];
 }
 
-/** One language's line lit and framed, and held. */
-function inTurn(language: string): readonly Step[] {
+/** One language's line lit and framed in its half, and held. */
+function inTurn(language: string, half: FrameHalf): readonly Step[] {
 	return [
 		play({
 			seconds: 0.6,
-			moves: [light.to(inLanguage(language)), camera.onto(inLanguage(language), { air: 90, zoomAtMost: 2 })],
+			moves: [light.to(inLanguage(language)), camera.onto(inLanguage(language), { half, air: 60, zoomAtMost: 2 })],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 0.35 })
@@ -125,7 +159,7 @@ function actTheLink(whole: Pose): readonly Step[] {
 			moves: [
 				light.to(LINK),
 				camera.onto(LINK, { air: 170, zoomAtMost: 2.2 }),
-				caption.hide({ within: { end: 0.3 } }),
+				title.hide({ within: { end: 0.4 } }),
 				cursor.to(LINK, { within: { start: 0.2 } })
 			],
 			ease: easeInOutCubic
@@ -150,8 +184,8 @@ function actEnding(): readonly Step[] {
 	];
 }
 
-function steps(_served: Serving, whole: Pose): readonly Step[] {
-	return [...actOpening(whole), ...actLanguages(), ...actTheLink(whole), ...actEnding()];
+function steps(_served: Serving, whole: Pose, formatName: keyof typeof FORMATS): readonly Step[] {
+	return [...actOpening(whole), ...actLanguages(SPLITS[formatName]), ...actTheLink(whole), ...actEnding()];
 }
 
 export default defineFilm({ formats: FORMATS, serve: servedElsewhere, stage: 'inside', ready: linkShown, steps });

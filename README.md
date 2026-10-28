@@ -131,10 +131,11 @@ A film is a list of steps:
 
 and the moves of each part of the scene:
 
-- `camera.to(pose, { tilt, turn })`, `camera.onto(selector, { every, air, zoomAtMost, tilt, turn })`
+- `camera.to(pose, { tilt, turn })`, `camera.onto(selector, { every, air, zoomAtMost, half, tilt, turn })`
 - `light.on(selector, { dim })`, `light.to(selector)`, `light.off()`
 - `cursor.to(selector, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
+- `title.show(text, { half })`, `title.hide()`
 - `caption.show(text)`, `caption.hide()`
 - `screen.rise()`, `screen.lower()`
 - `terminal.open(title)`, `terminal.type(strokes)`, `terminal.submit()`,
@@ -153,6 +154,45 @@ takes a share of its step, `within: { start, end }`, and a curve of its own,
 `ease`: `linear`, `easeInOutSine` (a step's own), `easeInOutCubic`,
 `easeOutCubic` or `easeOutQuint`. `keystrokes(text, { seed, slipAt, pace })`
 types the way a person does: unevenly, with a slip now and then.
+
+### Titles, and words set their own way
+
+A title is words that come up one after another over the film's ground:
+over the whole frame, a screen of words that covers the page, or over a
+`half` of it, `left`, `right`, `top` or `bottom`, beside the page the camera
+frames into the other half:
+
+```ts
+play({
+	seconds: 1.6,
+	moves: [
+		camera.onto(CHART, { half: 'right' }),
+		title.show(['A real ', { text: 'click', bold: true, ink: ACCENT }, ', a real server'], { half: 'left' })
+	]
+})
+```
+
+A block framed in a half stands at that half's middle, and the screen is not
+kept filling the frame: where the block lies near the page's edge, the
+screen shows as a pane on the ground. The ground over a half fades out
+across the frame's middle, over whatever of the page reaches under it.
+
+What a title or a caption says is a string, or a list of strings and runs,
+read one after another. A run is `{ text }` set any of these ways: `bold`,
+`italic`, `underline`, `strike`, each `true`; `ink`, the colour of its
+letters; `marker`, the colour of a marker behind it; a colour in hex
+(`#7c5cff`). An underline or a marker runs on under the space between two
+words of one run, and stops where the run does.
+
+### Theme
+
+`defineFilm` takes `theme: { ground, glow, ink, font }`, any of them: the
+ground's colour at its edges and the colour it lightens to toward its top
+middle (the same colour twice for a ground of one colour), the ink of
+titles, captions and the ending, each in hex, and their font, as CSS names
+a family (`'Inter, sans-serif'`), which falls back to livereel's where the
+system has none. What the film leaves out stays livereel's: a dark ground
+and white ink.
 
 ### Formats
 

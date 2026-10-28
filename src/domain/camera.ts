@@ -124,13 +124,21 @@ export function angled(pose: Pose, tilt: number, turn: number): Pose {
 	return { focusX: pose.focusX, focusY: pose.focusY, zoom: pose.zoom, tilt, turn };
 }
 
-/** The pose that holds a box with its air on every side, at `around`'s angle, no closer than allowed. */
-export function onto(box: Box, around: Pose, frame: Size, framing: Framing): Pose {
+/**
+ * The pose that holds a box with its air on every side in a part of the frame, its middle at that part's middle, at
+ * `around`'s angle, no closer than allowed. The frame's middle then shows the point as far from the box's middle as
+ * the part's middle stands from the frame's, at that zoom: worked out face-on, as the fit is.
+ */
+export function onto(box: Box, around: Pose, frame: Size, framing: Framing, part: Box): Pose {
 	const fit = Math.min(
-		frame.width / (box.width + SIDES * framing.air),
-		frame.height / (box.height + SIDES * framing.air)
+		part.width / (box.width + SIDES * framing.air),
+		part.height / (box.height + SIDES * framing.air)
 	);
-	return focusedAt(around, middleX(box), middleY(box), Math.min(poseZoomFor(fit, frame), framing.zoomAtMost));
+	const centred = focusedAt(around, middleX(box), middleY(box), Math.min(poseZoomFor(fit, frame), framing.zoomAtMost));
+	const frameZoom = frameZoomOf(centred, frame);
+	const focusX = centred.focusX + (frame.width / HALVES - middleX(part)) / frameZoom;
+	const focusY = centred.focusY + (frame.height / HALVES - middleY(part)) / frameZoom;
+	return focusedAt(centred, focusX, focusY, centred.zoom);
 }
 
 /**
