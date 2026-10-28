@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 
 - Breaking: a machine that lacks what a film is shot with — the browser or the system's libraries it needs, ffmpeg or its encoder of the kind asked, a Node new enough, a system `--renderer gpu` knows how to reach the graphics card on — is refused with exit code 3, apart from a film that cannot be shot (1) and a wrong command line or film file (2). It had exited 1, as the film's fault does; a browser short of the system's libraries is refused in Playwright's own words, which name them, where it had stopped with a stack under them.
 - The caption, the terminal and the ending keep their share of any frame, and an angle leans as steeply on any: they are drawn as on a frame 1080 pixels on its shorter side, as before, and scaled to the frame shot. They had kept their size in pixels, so the ground under a 540 × 540 frame's caption darkened most of it and a 2160 × 2160 frame's was half the size meant; and the eye had stood 2000 pixels off any frame, so an angle leant flatter on a small frame and steeper on a large one.
