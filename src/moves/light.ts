@@ -1,4 +1,9 @@
-/** The light: a block of the page lit, the light carried from block to block, and put out. */
+/**
+ * The light: a block of the page lit, the light carried from block to block, and put out.
+ *
+ * It lights the whole block, not only what the screen shows of it (`shownPart`), so the light runs off the screen's
+ * edge with a block that reaches past it, which the screen cuts, and does not round off there as if the block ended.
+ */
 import { type Box, boxToward } from '../domain/geometry.ts';
 import { A_NUMBER, A_SELECTOR, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import {

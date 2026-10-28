@@ -116,6 +116,15 @@ export function liesAboveOrBelow(box: Box, size: Size): boolean {
 	return box.top + box.height <= 0 || box.top >= size.height;
 }
 
+/** The part of a box within a size laid from its top left, for a box that does not lie wholly outside it. */
+export function partWithin(box: Box, size: Size): Box {
+	const left = Math.max(box.left, 0);
+	const top = Math.max(box.top, 0);
+	const right = Math.min(box.left + box.width, size.width);
+	const bottom = Math.min(box.top + box.height, size.height);
+	return { left, top, width: right - left, height: bottom - top };
+}
+
 /** The smallest box that holds every one of these. */
 export function boxAround(boxes: readonly [Box, ...Box[]]): Box {
 	const left = Math.min(...boxes.map((box) => box.left));

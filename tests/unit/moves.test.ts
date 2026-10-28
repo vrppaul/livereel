@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { underTheFrame } from '../../src/domain/camera.ts';
+import { type Pose, underTheFrame } from '../../src/domain/camera.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import type { Point } from '../../src/domain/geometry.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
@@ -21,6 +21,16 @@ const RIGHT = { left: 1208, top: 100, width: 100, height: 40 };
 const LEFT = { left: -200, top: 100, width: 200, height: 40 };
 const HALF_ON = { left: 100, top: 380, width: 100, height: 40 };
 const HIDDEN = { left: 0, top: 0, width: 0, height: 0 };
+// Blocks partly on the screen, reaching off it past its top, its foot, its left and its right
+const REACHING_ABOVE = { left: 100, top: -1000, width: 100, height: 1200 };
+const REACHING_BELOW = { left: 100, top: 300, width: 100, height: 2000 };
+const REACHING_LEFT = { left: -500, top: 100, width: 700, height: 40 };
+const REACHING_RIGHT = { left: 580, top: 100, width: 1000, height: 40 };
+// What the screen shows of each of those
+const SHOWN_ABOVE = { left: 100, top: 0, width: 100, height: 200 };
+const SHOWN_BELOW = { left: 100, top: 300, width: 100, height: 100 };
+const SHOWN_LEFT = { left: 0, top: 100, width: 200, height: 40 };
+const SHOWN_RIGHT = { left: 580, top: 100, width: 20, height: 40 };
 const PAGE = new PageOfBoxes(
 	new Map([
 		['#block', BLOCK],
@@ -29,7 +39,15 @@ const PAGE = new PageOfBoxes(
 		['#right', RIGHT],
 		['#left', LEFT],
 		['#half-on', HALF_ON],
-		['#hidden', HIDDEN]
+		['#hidden', HIDDEN],
+		['#reaching-above', REACHING_ABOVE],
+		['#reaching-below', REACHING_BELOW],
+		['#reaching-left', REACHING_LEFT],
+		['#reaching-right', REACHING_RIGHT],
+		['#shown-above', SHOWN_ABOVE],
+		['#shown-below', SHOWN_BELOW],
+		['#shown-left', SHOWN_LEFT],
+		['#shown-right', SHOWN_RIGHT]
 	])
 );
 const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
@@ -149,6 +167,30 @@ test('a cursor not yet on the screen comes in from below and to the right of whe
 	const start = (await setAt(cursorTo('#block'), openingScene(SMALL), 0)).cursor;
 	const end = (await setAt(cursorTo('#block'), openingScene(SMALL), 1)).cursor;
 	expect([start!.left > end!.left, start!.top > end!.top]).toEqual([true, true]);
+});
+
+test('a cursor comes to rest on what the screen shows of a block reaching off it, past any of its sides', async () => {
+	const targets = ['#reaching-above', '#reaching-below', '#reaching-left', '#reaching-right'];
+	const rests = await Promise.all(
+		targets.map(async (target) => (await setAt(cursorTo(target), openingScene(SMALL), 1)).cursor)
+	);
+	expect(rests).toEqual([
+		{ left: 155, top: 120, press: 0 },
+		{ left: 155, top: 360, press: 0 },
+		{ left: 60, top: 124, press: 0 },
+		{ left: 591, top: 124, press: 0 }
+	]);
+});
+
+/** Where the camera ends, onto a block from the opening scene. */
+async function cameraOnto(target: string): Promise<Pose> {
+	return (await setAt(onto(target), openingScene(SMALL), 1)).camera;
+}
+
+test('a camera onto a block reaching off the screen frames what the screen shows of it, past any of its sides', async () => {
+	const reaching = ['#reaching-above', '#reaching-below', '#reaching-left', '#reaching-right'];
+	const shown = ['#shown-above', '#shown-below', '#shown-left', '#shown-right'];
+	expect(await Promise.all(reaching.map(cameraOnto))).toEqual(await Promise.all(shown.map(cameraOnto)));
 });
 
 test("a face-on camera onto a block at the screen's foot stops short of showing the edge", async () => {

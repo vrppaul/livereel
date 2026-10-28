@@ -13,7 +13,7 @@ import {
 	type TimingScript,
 	present,
 	propChange,
-	shownBox,
+	shownPart,
 	timingOf
 } from '../direction/move.ts';
 import type { ActContext } from '../direction/page.ts';
@@ -31,7 +31,8 @@ export interface PressScript extends TimingScript, SoundScript {}
 
 // How far the arc bends off the straight line, as a share of its length
 const BOW = 0.14;
-// Where on a block the cursor comes to rest: a little into it from the left, at most so far, and just under its middle
+// Where the cursor comes to rest on what the screen shows of a block, so it stays on the screen however far the block
+// reaches past it: a little into that part from the left, at most so far, and just under its middle
 const REST_ACROSS = 0.55;
 const REST_ACROSS_AT_MOST = 60;
 const REST_DOWN = 0.6;
@@ -86,7 +87,7 @@ export function click(action: (context: ActContext) => Promise<void>, script: So
 }
 
 async function along(beginning: Beginning, target: string, script: CursorScript): Promise<Change> {
-	const end = restingOn(await shownBox(beginning, target, 1, 'cursor.to'));
+	const end = restingOn(await shownPart(beginning, target, 1, 'cursor.to'));
 	const start = beginning.scene.cursor ?? script.entering ?? enteringFor(end);
 	const arc = bowedArc({ left: start.left, top: start.top }, end, script.bow ?? BOW);
 	return propChange('cursor', (progress) => ({ ...pointAlong(arc, progress), press: 0 }));

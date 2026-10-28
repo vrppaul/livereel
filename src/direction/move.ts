@@ -8,7 +8,7 @@
  * module (`src/moves/`).
  */
 import { FilmError } from '../domain/errors.ts';
-import { type Box, type Format, liesAboveOrBelow, liesOutside } from '../domain/geometry.ts';
+import { type Box, type Format, liesAboveOrBelow, liesOutside, partWithin } from '../domain/geometry.ts';
 import {
 	A_NUMBER,
 	type Form,
@@ -178,6 +178,14 @@ export async function shownBox(beginning: Beginning, target: string, every: numb
 		);
 	}
 	return box;
+}
+
+/**
+ * What the page's screen shows of the blocks a target matches, refused as `shownBox` refuses: the part a camera can
+ * frame and a cursor rest on, as nothing past the screen is drawn.
+ */
+export async function shownPart(beginning: Beginning, target: string, every: number, move: string): Promise<Box> {
+	return partWithin(await shownBox(beginning, target, every, move), beginning.format.screen);
 }
 
 function isMove(written: unknown): written is Move {

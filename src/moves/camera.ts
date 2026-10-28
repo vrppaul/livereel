@@ -21,7 +21,7 @@ import {
 	TIMING_FORM,
 	type TimingScript,
 	propChange,
-	shownBox,
+	shownPart,
 	timingOf
 } from '../direction/move.ts';
 
@@ -71,7 +71,7 @@ export function onto(target: string, script: OntoScript = {}): Move {
 }
 
 async function framing(beginning: Beginning, target: string, script: OntoScript): Promise<Change> {
-	const box = await shownBox(beginning, target, script.every ?? 1, 'camera.onto');
+	const box = await shownPart(beginning, target, script.every ?? 1, 'camera.onto');
 	const start = beginning.scene.camera;
 	const framed = { air: script.air ?? AIR, zoomAtMost: script.zoomAtMost ?? ZOOM_AT_MOST };
 	return posing(start, framedOnto(box, start, beginning.format.frame, framed), script, beginning.format);
