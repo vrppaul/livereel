@@ -8,6 +8,7 @@
  */
 import type { Format } from './domain/geometry.ts';
 import { type Pose, wholePose } from './domain/camera.ts';
+import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
 import type { Cursor } from './props/cursor.ts';
 import type { Ending } from './props/ending.ts';
 import type { Light } from './props/light.ts';
@@ -20,6 +21,7 @@ export interface PropStates {
 	camera: Pose;
 	screen: Screen;
 	light: Light | null;
+	callout: Callout | null;
 	cursor: Cursor | null;
 	title: Title | null;
 	caption: ShownWords | null;
@@ -36,6 +38,7 @@ interface DrawnProps {
 	camera: Pose;
 	screen: Screen;
 	light: Light | null;
+	callout: DrawnCallout | null;
 	cursor: Cursor | null;
 	title: DrawnTitle | null;
 	caption: DrawnWords | null;
@@ -51,6 +54,7 @@ export function openingScene(format: Format): Scene {
 		camera: wholePose(format),
 		screen: SCREEN_UP,
 		light: null,
+		callout: null,
 		cursor: null,
 		title: null,
 		caption: null,
@@ -74,6 +78,7 @@ export function drawn(scene: Scene, moment: number): DrawnScene {
 		camera: scene.camera,
 		screen: scene.screen,
 		light: scene.light,
+		callout: scene.callout === null ? null : drawnCallout(scene.callout),
 		cursor: scene.cursor,
 		title: scene.title === null ? null : drawnTitle(scene.title),
 		caption: scene.caption === null ? null : drawnWords(scene.caption),

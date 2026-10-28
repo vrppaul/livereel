@@ -4,6 +4,7 @@ import { FilmError } from '../../src/domain/errors.ts';
 import type { Point } from '../../src/domain/geometry.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
 import { onto } from '../../src/moves/camera.ts';
+import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
 import * as title from '../../src/moves/title.ts';
 import { press, release, to as cursorTo } from '../../src/moves/cursor.ts';
@@ -75,22 +76,31 @@ async function setAt(move: Move, scene: Scene, progress: number): Promise<Scene>
 	return change(scene, progress);
 }
 
+test('a callout points at what the screen shows of its block, on the side the film names', async () => {
+	const pointing = (await setAt(callout.show('#reaching-below', 'Here', { side: 'below' }), openingScene(SMALL), 1))
+		.callout;
+	expect([pointing?.box, pointing?.side]).toEqual([SHOWN_BELOW, 'below']);
+});
+
 test('the light is carried or put out only where one is on', async () => {
 	const unlit = beginningOf(openingScene(SMALL));
 	await expect(async () => lightTo('#block').begin(unlit)).rejects.toThrow(FilmError);
 	await expect(async () => off().begin(unlit)).rejects.toThrow(FilmError);
 });
 
-test('what is put away — the light, a title, a caption, the terminal — is gone at its end', async () => {
+test('what is put away — the light, a callout, a title, a caption, the terminal — is gone at its end', async () => {
+	const words = wordsOf('Words');
 	const lit = withProp(openingScene(SMALL), 'light', LIT);
-	const titled = withProp(openingScene(SMALL), 'title', { words: wordsOf('Words'), half: 'left', shown: 1, gone: 0 });
-	const captioned = withProp(openingScene(SMALL), 'caption', { words: wordsOf('Words'), shown: 1, gone: 0 });
+	const pointed = withProp(openingScene(SMALL), 'callout', { words, box: BLOCK, side: 'above', shown: 1, gone: 0 });
+	const titled = withProp(openingScene(SMALL), 'title', { words, half: 'left', shown: 1, gone: 0 });
+	const captioned = withProp(openingScene(SMALL), 'caption', { words, shown: 1, gone: 0 });
 	expect([
 		(await setAt(off(), lit, 1)).light,
+		(await setAt(callout.hide(), pointed, 1)).callout,
 		(await setAt(title.hide(), titled, 1)).title,
 		(await setAt(caption.hide(), captioned, 1)).caption,
 		(await setAt(leave(), TYPED, 1)).terminal
-	]).toEqual([null, null, null, null]);
+	]).toEqual([null, null, null, null, null]);
 });
 
 test('a cursor pressed goes in as the press goes on, and comes back out as it is let go', async () => {

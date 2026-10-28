@@ -8,12 +8,15 @@
 		<script defer src="stage.js"></script>
 	</head>
 	<body>
-		<!-- The camera moves the screen; the page sits in the screen's frame, the light and the cursor lie on it -->
+		<!-- The camera moves the screen; the page sits in the screen's frame, the light, a callout and the cursor lie on it -->
 		<div class="stage">
 			<div class="camera" data-prop="camera">
 				<div class="screen" data-prop="screen">
 					<iframe class="page" data-part="page" title="The page being filmed"></iframe>
 					<div class="light" data-prop="light"></div>
+					<div class="callout" data-prop="callout">
+						<div class="card"><div class="words" data-part="words"></div></div>
+					</div>
 					<svg class="cursor" data-prop="cursor" viewBox="0 0 30 40" aria-hidden="true">
 						<path d="M3 3 L3 31 L10.5 24 L16 36.5 L21 34.5 L15.5 22.5 L25.5 22.5 Z" />
 					</svg>

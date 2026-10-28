@@ -22,8 +22,10 @@
 const APART = ' ';
 // The lines of the terminal's log are told apart from each other by this, to know when they changed
 const BETWEEN_LINES = '\n';
-// The attribute that names the half of the frame a title stands over: none, over the whole of it
+// The attribute that names the half of the frame a title stands over: none, over the whole of it; and the one that
+// names the side of its block a callout stands on
 const HALF = 'data-half';
+const SIDE = 'data-side';
 // The ink words are drawn in, the film's or a piece's own, and a piece's marker: the custom properties the stylesheet
 // draws them by; and the class of a marked piece
 const INK = '--ink';
@@ -117,6 +119,34 @@ class CaptionDrawer {
 		}
 		numbered(this.root, { '--darkened': caption.ground, '--gone': caption.gone });
 		this.words.draw(caption);
+	}
+}
+
+class CalloutDrawer {
+	/** @param {Staged} root */
+	constructor(root) {
+		this.root = root;
+		this.words = new WordsDrawer(partOf(root, 'words'));
+	}
+
+	/** @param {DrawnScene} scene */
+	draw(scene) {
+		const callout = scene.callout;
+		shown(this.root, callout !== null);
+		if (callout === null) {
+			this.words.clear();
+			return;
+		}
+		named(this.root, SIDE, callout.side);
+		numbered(this.root, {
+			'--left': callout.box.left,
+			'--top': callout.box.top,
+			'--width': callout.box.width,
+			'--height': callout.box.height,
+			'--grounded': callout.ground,
+			'--gone': callout.gone
+		});
+		this.words.draw(callout);
 	}
 }
 
@@ -225,6 +255,7 @@ const DRAWERS = {
 	camera: new CameraDrawer(propRoot('camera')),
 	screen: new ScreenDrawer(propRoot('screen')),
 	light: new LightDrawer(propRoot('light')),
+	callout: new CalloutDrawer(propRoot('callout')),
 	cursor: new CursorDrawer(propRoot('cursor')),
 	title: new TitleDrawer(propRoot('title')),
 	caption: new CaptionDrawer(propRoot('caption')),

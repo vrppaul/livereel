@@ -5,6 +5,7 @@ import { FilmError } from '../../src/domain/errors.ts';
 import {
 	act,
 	atAddress,
+	callout,
 	camera,
 	caption,
 	cursor,
@@ -104,6 +105,12 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => caption.hide({ within: [] as never })).toThrow(
 		new FilmError(`caption.hide's within is []: it is ${SHARE}`)
+	);
+	expect(() => callout.show(null as never, 'Here')).toThrow(
+		new FilmError(`callout.show's selector is null: it is ${SELECTOR}`)
+	);
+	expect(() => callout.show('#block', 'Here', { side: 'top' as never })).toThrow(
+		new FilmError('callout.show\'s side is "top": it is a side of the block: "above", "below", "left" or "right"')
 	);
 	expect(() => title.show({ text: 'Hello' } as never)).toThrow(
 		new FilmError(`title.show's text is {"text":"Hello"}: it is ${WORDING}`)

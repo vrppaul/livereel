@@ -27,6 +27,7 @@
 	--light-dark: 0 0 0 4000px rgb(6 9 16);
 	--caption-ground: linear-gradient(to top, color-mix(in srgb, var(--ground) 85%, transparent), transparent);
 	--caption-shadow: 0 2px 30px rgb(0 0 0 / 55%);
+	--callout-shadow: 0 12px 32px rgb(0 0 0 / 35%);
 
 	/* A title over a half of the frame: the ground over that half, fading out across the frame's middle */
 	--ground-on-the-left: linear-gradient(to right, #000 46%, transparent 54%);

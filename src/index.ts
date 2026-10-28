@@ -6,6 +6,7 @@
 export * as camera from './moves/camera.ts';
 export * as screen from './moves/screen.ts';
 export * as light from './moves/light.ts';
+export * as callout from './moves/callout.ts';
 export * as cursor from './moves/cursor.ts';
 export * as title from './moves/title.ts';
 export * as caption from './moves/caption.ts';
@@ -31,5 +32,6 @@ export { lookingAt } from './domain/camera.ts';
 export type { Pose } from './domain/camera.ts';
 export type { Format, FrameHalf, Point, Size } from './domain/geometry.ts';
 export type { Run, Wording } from './props/words.ts';
+export type { BlockSide } from './props/callout.ts';
 export type { LineKind, TerminalLine } from './props/terminal.ts';
 export type { EndingCard } from './props/ending.ts';

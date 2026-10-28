@@ -133,6 +133,7 @@ and the moves of each part of the scene:
 
 - `camera.to(pose, { tilt, turn })`, `camera.onto(selector, { every, air, zoomAtMost, half, tilt, turn })`
 - `light.on(selector, { dim })`, `light.to(selector)`, `light.off()`
+- `callout.show(selector, text, { side })`, `callout.hide()`
 - `cursor.to(selector, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
 - `title.show(text, { half })`, `title.hide()`
@@ -177,7 +178,13 @@ kept filling the frame: where the block lies near the page's edge, the
 screen shows as a pane on the ground. The ground over a half fades out
 across the frame's middle, over whatever of the page reaches under it.
 
-What a title or a caption says is a string, or a list of strings and runs,
+A callout is words on a card beside a block of the page, pointing at it:
+`callout.show(selector, text, { side })`, its `side` `above` (where none is
+named), `below`, `left` or `right` of the block. It lies on the screen, as
+the light does, so the camera carries it with the page; the block is read
+as the callout comes, as the light's is.
+
+What a title, a caption or a callout says is a string, or a list of strings and runs,
 read one after another. A run is `{ text }` set any of these ways: `bold`,
 `italic`, `underline`, `strike`, each `true`; `ink`, the colour of its
 letters; `marker`, the colour of a marker behind it; a colour in hex

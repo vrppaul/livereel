@@ -43,7 +43,7 @@ export interface Piece {
 }
 
 /** A word as it is set: its pieces, the space after it, where one follows, the last one's end. */
-type Word = readonly Piece[];
+export type Word = readonly Piece[];
 
 /** Words over the frame: what they are, how far they have come up, and how far they have gone, each from 0 to 1. */
 export interface ShownWords {

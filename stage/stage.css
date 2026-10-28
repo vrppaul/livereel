@@ -78,6 +78,90 @@ body {
 	opacity: var(--dim);
 }
 
+/* A callout: the block it points at, and beside it, on the side named, a card on the film's ground with a point toward the block, its words coming up on it */
+.callout {
+	--word-rise: 8px;
+	--word-blur: 4px;
+	--word-sink: 4px;
+	--word-blur-leaving: 3px;
+	--callout-gap: 16px;
+	--callout-point: 8px;
+
+	position: absolute;
+	left: calc(var(--left) * 1px);
+	top: calc(var(--top) * 1px);
+	width: calc(var(--width) * 1px);
+	height: calc(var(--height) * 1px);
+	pointer-events: none;
+}
+
+.callout .card {
+	position: absolute;
+	width: max-content;
+	max-width: 320px;
+	padding: 10px 16px;
+	border-radius: 10px;
+	background: var(--ground);
+	box-shadow: var(--callout-shadow);
+	font: 600 20px / 1.3 var(--sans);
+	color: var(--ink);
+	opacity: var(--grounded);
+}
+
+/* The point: a square turned half-way under the card's edge that faces the block, its corner toward it */
+.callout .card::after {
+	content: '';
+	position: absolute;
+	width: calc(2 * var(--callout-point));
+	height: calc(2 * var(--callout-point));
+	background: var(--ground);
+	transform: rotate(45deg);
+}
+
+.callout[data-side='above'] .card {
+	left: 50%;
+	bottom: calc(100% + var(--callout-gap));
+	transform: translateX(-50%);
+}
+
+.callout[data-side='above'] .card::after {
+	left: calc(50% - var(--callout-point));
+	bottom: calc(-1 * var(--callout-point));
+}
+
+.callout[data-side='below'] .card {
+	left: 50%;
+	top: calc(100% + var(--callout-gap));
+	transform: translateX(-50%);
+}
+
+.callout[data-side='below'] .card::after {
+	left: calc(50% - var(--callout-point));
+	top: calc(-1 * var(--callout-point));
+}
+
+.callout[data-side='left'] .card {
+	right: calc(100% + var(--callout-gap));
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.callout[data-side='left'] .card::after {
+	right: calc(-1 * var(--callout-point));
+	top: calc(50% - var(--callout-point));
+}
+
+.callout[data-side='right'] .card {
+	left: calc(100% + var(--callout-gap));
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.callout[data-side='right'] .card::after {
+	left: calc(-1 * var(--callout-point));
+	top: calc(50% - var(--callout-point));
+}
+
 /* The pointer, its tip where the scene has it, a little smaller as it is pressed in */
 .cursor {
 	--cursor-tip: 3px;

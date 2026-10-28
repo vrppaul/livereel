@@ -62,6 +62,9 @@ What reads as made with care:
   split where one claim stands beside the block that proves it. One word or
   phrase set apart (`{ text, italic: true }`, an `ink`, a `marker`) carries
   the claim; a title in many styles reads as a ransom note.
+- **A callout names one small block** the viewer would not find alone (a
+  button, a number), in two to five words, one at a time, and goes before
+  the camera moves on; a caption speaks to the viewer, a callout labels.
 
 What reads as generated: a zoom on every click, a window floating on a
 wallpaper with nothing said beside it, a glow behind the product, springy
@@ -195,6 +198,7 @@ its end at once.
 | `cursor.to(selector, { entering, bow })` | along an arc to a block, from `entering` if not yet on the screen |
 | `cursor.press({ sound })`, `cursor.release()`, `cursor.hide()` | pressed in with a click (`sound`, a file of the film's in its place), let go, taken off the screen |
 | `cursor.click(action, { sound })` | pressed with its click, `act(action)`, let go: the steps of a click |
+| `callout.show(selector, text, { side })`, `callout.hide()` | words on a card beside a block, pointing at it, `side` `above` (where none is named), `below`, `left` or `right`; carried with the page |
 | `title.show(text, { half })`, `title.hide()` | words coming up one after another on the film's ground, over the whole frame or a `half` of it, in place of any title shown; going, the ground with them |
 | `caption.show(text)`, `caption.hide()` | words coming up one after another at the frame's foot, in place of any shown; going |
 | `terminal.open(title)` | an agent's terminal coming up over the frame; in a `cut`, there at once |
@@ -210,7 +214,7 @@ its end at once.
 `cursor.click` and `typing` give several steps: spread them among the
 others, `...cursor.click(action)`, `...typing(page.type(strokes))`.
 
-A title's or a caption's `text` is a string, or a list of strings and runs
+A title's, a caption's or a callout's `text` is a string, or a list of strings and runs
 read one after another: a run is `{ text }` with any of `bold`, `italic`,
 `underline`, `strike` (each `true`), `ink` (its letters' colour) and
 `marker` (a marker behind it), colours in hex, each a constant at the top:
