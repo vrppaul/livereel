@@ -57,13 +57,22 @@ async function servedFrom(serving: unknown) {
 test('a film in no form of one is refused as it is defined, where it stands: its names, its formats, its functions', () => {
 	expect(() => defineFilm(null as never)).toThrow(
 		new FilmError(
-			'the film is null: it is an object of formats, serve, stage, ready, steps, sounds, music, motionBlur, theme'
+			'the film is null: it is an object of formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, colourScheme, blurred'
 		)
 	);
 	expect(() => filmWritten({ motionblur: {} })).toThrow(
 		new FilmError(
-			'the film names motionblur: it names formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, or fewer'
+			'the film names motionblur: it names formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, colourScheme, blurred, or fewer'
 		)
+	);
+	expect(() => filmWritten({ colourScheme: 'night' })).toThrow(
+		new FilmError('the film\'s colourScheme is "night": it is "light" or "dark"')
+	);
+	expect(() => filmWritten({ blurred: '.email' })).toThrow(
+		new FilmError('the film\'s blurred is ".email": it is a list of selectors')
+	);
+	expect(() => filmWritten({ blurred: ['.email', ''] })).toThrow(
+		new FilmError('the film\'s blurred[1] is "": it is a selector: a string that names blocks of the page')
 	);
 	expect(() => filmWritten({ formats: null })).toThrow(
 		new FilmError("the film's formats is null: it is an object of the film's formats, by name")

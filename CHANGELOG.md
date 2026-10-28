@@ -6,6 +6,8 @@
 - `camera.onto(selector, { half })` frames a block in a half of the frame, at that half's middle, as close as its `air` lets in the half. The screen is not kept filling the frame there: where the block lies near the page's edge, the screen shows as a pane on the ground.
 - A title or a caption says a string, or a list of strings and runs read one after another, a run `{ text }` set `bold`, `italic`, `underline` or `strike`, in an `ink` of its own, or on a `marker`, colours in hex: `caption.show(['Your agent ', { text: 'films', italic: true }, ' your app'])`. An underline or a marker runs on under the space between two words of one run, and stops where the run does. A run in no form of one is refused where it stands (`caption.show's text[0]'s ink is "red": it is a colour in hex`).
 - A film's theme: `defineFilm` takes `theme: { ground, glow, ink, font }`, any of them, the ground's colour and the colour it lightens to toward its top middle, the ink of titles, captions and the ending, and their font; what a film leaves out stays livereel's. The darkening under a caption follows the ground's colour.
+- `defineFilm` takes `blurred: [selector, …]`: the page blurs those blocks wherever it shows them, a page the film goes on to as well, so a film of a real app shows no one's address, key or name. A selector Chrome cannot read is refused before anything is shot, where a style sheet would have dropped it without a word.
+- `defineFilm` takes `colourScheme: 'dark'`, the scheme the page is asked for; `light` where a film names none, as before.
 
 ## 0.4.0
 

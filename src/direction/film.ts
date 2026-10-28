@@ -13,8 +13,10 @@ import { FORMAT_FORM, type Format } from '../domain/geometry.ts';
 import {
 	AN_ADDRESS,
 	A_FUNCTION_SAID,
+	A_SELECTOR,
 	type Form,
 	type Kind,
+	ListOf,
 	OneOf,
 	Plain,
 	aFunction,
@@ -41,6 +43,11 @@ export interface Serving extends AsyncDisposable {
 const STAGES = ['apart', 'inside'] as const;
 
 export type StagePlace = (typeof STAGES)[number];
+
+// The colour schemes a page may be asked for
+const COLOUR_SCHEMES = ['light', 'dark'] as const;
+
+export type ColourScheme = (typeof COLOUR_SCHEMES)[number];
 
 export interface Script<Served extends Serving, Name extends string> {
 	/** The frames the film is shot in, each with the screen its page is laid out on, by the film's own names. */
@@ -70,6 +77,10 @@ export interface Script<Served extends Serving, Name extends string> {
 	readonly motionBlur?: MotionBlurScript;
 	/** The film's own ground, ink and font, livereel's save the values given. */
 	readonly theme?: Theme;
+	/** The colour scheme the page is asked for: `light`, where none is named, or `dark`. */
+	readonly colourScheme?: ColourScheme;
+	/** The blocks the page blurs wherever it shows them, by selector: an address, a key, a name no film should show. */
+	readonly blurred?: readonly string[];
 }
 
 /** A film whose page is served: what the studio shoots. */
@@ -79,12 +90,17 @@ export interface ServedFilm extends AsyncDisposable {
 	readonly steps: (whole: Pose) => readonly Step[];
 }
 
-/** A film in one of its formats, where its stage stands, its look, and what it says of its sounds and of its blur. */
+/**
+ * A film in one of its formats, where its stage stands, its look, how its page is asked to look and what it blurs, and
+ * what it says of its sounds and of its blur.
+ */
 export interface FilmInFormat {
 	readonly formatName: string;
 	readonly format: Format;
 	readonly stage: StagePlace;
 	readonly theme: Theme;
+	readonly colourScheme: ColourScheme;
+	readonly blurred: readonly string[];
 	readonly sound: FilmSound;
 	readonly motionBlur: MotionBlur | null;
 	readonly serve: () => Promise<ServedFilm>;
@@ -105,6 +121,11 @@ const A_STAGE = new OneOf(
 	STAGES,
 	`"apart", or "inside" the app's own address for an app that signs in or refuses to be framed`
 );
+// The page is asked for the light colour scheme where a film names none, and blurs nothing where it names nothing
+const COLOUR_SCHEME_WHERE_NONE_IS_NAMED: ColourScheme = 'light';
+const NOTHING_BLURRED: readonly string[] = [];
+const A_COLOUR_SCHEME = new OneOf(COLOUR_SCHEMES, '"light" or "dark"');
+const SELECTORS = new ListOf(A_SELECTOR, 'a list of selectors');
 // A film's sounds, music, blur and theme are objects, what is in each read by its own reader, in its own words, first
 const FILM_FORM: Form<AnyScript> = {
 	formats: needed(anObject<AnyScript['formats']>("an object of the film's formats, by name")),
@@ -115,7 +136,9 @@ const FILM_FORM: Form<AnyScript> = {
 	sounds: anObject<LivereelSoundsScript>(AN_OBJECT_SAID),
 	music: anObject<Music>(AN_OBJECT_SAID),
 	motionBlur: anObject<MotionBlurScript>(AN_OBJECT_SAID),
-	theme: anObject<Theme>(AN_OBJECT_SAID)
+	theme: anObject<Theme>(AN_OBJECT_SAID),
+	colourScheme: A_COLOUR_SCHEME,
+	blurred: SELECTORS
 };
 const A_SERVING: Kind<Serving> = new Plain(
 	isServing,
@@ -128,6 +151,8 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 	readonly motionBlur: MotionBlur | null;
 	readonly theme: Theme;
 	readonly stage: StagePlace;
+	readonly colourScheme: ColourScheme;
+	readonly blurred: readonly string[];
 	readonly formats: ReadonlyMap<string, FilmInFormat>;
 
 	constructor(script: Script<Served, Name>) {
@@ -140,6 +165,8 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 		this.theme = themeOf(script.theme);
 		refuseUnlikeAFilm(script);
 		this.stage = script.stage ?? STAGE_WHERE_NONE_IS_NAMED;
+		this.colourScheme = script.colourScheme ?? COLOUR_SCHEME_WHERE_NONE_IS_NAMED;
+		this.blurred = script.blurred ?? NOTHING_BLURRED;
 		this.formats = new Map(namesOf(script.formats).map((name) => [name, this.inFormat(name)]));
 		if (this.formats.size === 0) throw new FilmError(NO_FORMAT);
 	}
@@ -150,6 +177,8 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 			format: this.script.formats[name],
 			stage: this.stage,
 			theme: this.theme,
+			colourScheme: this.colourScheme,
+			blurred: this.blurred,
 			sound: this.sound,
 			motionBlur: this.motionBlur,
 			serve: () => this.served(name)

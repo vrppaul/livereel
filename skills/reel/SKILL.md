@@ -278,7 +278,12 @@ with a timeout that long; a still takes seconds.
 - A browser places a click wrongly on a screen the camera has scaled: an
   `act` lays the screen flat at its own size first. Do clicks in `act`.
 - The page is asked for the light colour scheme: an app that follows the
-  system's scheme is filmed light.
+  system's scheme is filmed light, unless the film writes
+  `colourScheme: 'dark'` in `defineFilm`.
+- A real app shows real people's addresses, keys and names: ask the user
+  what must not be seen, and write `blurred: [selector, …]` in
+  `defineFilm`; the page blurs those blocks wherever it shows them. Check on
+  the stills that nothing private reads.
 - The page is asked for reduced motion, so a page that honours it stands
   still between frames; one that ignores it animates on the wall clock, and
   two shots of it differ. Where the page's own animation must show (a

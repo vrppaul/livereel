@@ -11,12 +11,10 @@
 
 - The eye's step, for the motion blur, measured by the eye: `EYE_STEP` in `src/domain/shutter.ts` is a guess, 6 pixels of a 1920 × 1080 frame, which sets both from what smear a frame is blurred and how close its copies stand. Pans of 2 to 32 pixels a frame, shot sharp and blurred with the shutter open for half the way, looked alike to the owner (2026-10-26), so the step may stand higher and spare those frames their exposures; what decides it is the speed from which a pan shot sharp is seen to jump.
 - A film of a session the person signs in to themselves (two factors, a sign-in elsewhere), on the stage inside the app: `livereel login <address>`, a visible window the person signs in in, as they would, its session — cookies and local storage — saved to a file a film is shot with (Playwright's `storageState`). The person's own running Chrome cannot be borrowed: Chrome 136 and later refuse a debugging port on the everyday profile, and its cookies are encrypted with a key of the system's.
-- Blocks blurred by a selector, so a film of a real app shows no one's address, key or name.
 - The rest of a theme: a ground from an image of the film's, a font from a file of the film's (`theme.font` names one installed on the machine), and the terminal's colours, which stay livereel's.
 - The keys pressed shown as a badge (`⌘K`) where a film types a shortcut.
 - The captions written out as subtitles (SRT) beside the video.
 - Films of a phone: its screen size, taps in place of a cursor.
-- The page in the dark colour scheme where a film asks for it.
 - A player for a person: the film's scene on a scrubber, before anything is shot.
 - A GitHub Action that shoots a project's films again on every release, so the videos in its docs show the app as it is.
 

@@ -194,6 +194,16 @@ a family (`'Inter, sans-serif'`), which falls back to livereel's where the
 system has none. What the film leaves out stays livereel's: a dark ground
 and white ink.
 
+### The page: its colour scheme, and what it blurs
+
+`defineFilm` takes `colourScheme: 'dark'` for a page filmed in its dark
+scheme; it is asked for the light one where a film names none. It takes
+`blurred: [selector, …]` for blocks the page blurs wherever it shows them,
+an address, a key or a name no film should show: each document the page
+opens is given a style sheet that blurs them, so a page the film goes on to
+blurs them too. A selector Chrome cannot read is refused before anything
+is shot.
+
 ### Formats
 
 A film names its formats, `formats: { square: …, wide: … }`, each a frame
@@ -306,9 +316,9 @@ clock is its frames.
   itself; a session the person signs in to themselves (two factors, a
   sign-in elsewhere) is not taken yet ([`TODO.md`](TODO.md)).
 - Chromium alone, headless.
-- The page is asked for reduced motion and the light colour scheme. A page
-  that animates anyway runs those animations on the wall clock, so two shots
-  of it differ there.
+- The page is asked for reduced motion, and for the light colour scheme
+  unless the film names the dark one. A page that animates anyway runs
+  those animations on the wall clock, so two shots of it differ there.
 - A page that refuses to be framed (`X-Frame-Options`, a CSP's
   `frame-ancestors`) is shown only on the stage inside the app ("Where the
   stage stands").

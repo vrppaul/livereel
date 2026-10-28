@@ -49,11 +49,17 @@ class EveryFrameCounted implements Footage {
 }
 
 function filmOf(steps: readonly Step[]) {
+	return filmWritten(steps, {});
+}
+
+/** A film of these steps with what else it is written with: how its page is asked to look, what it blurs. */
+function filmWritten(steps: readonly Step[], written: { colourScheme?: 'dark'; blurred?: readonly string[] }) {
 	return defineFilm({
 		formats: { small: SMALL },
 		serve: () => Promise.resolve(atAddress(PAGE)),
 		ready: (context) => context.page.locator('h1').waitFor(),
-		steps: () => steps
+		steps: () => steps,
+		...written
 	}).formats.get('small')!;
 }
 
@@ -106,6 +112,34 @@ test('keys typed into the page reach the field that holds its keyboard', async (
 	];
 	await shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'));
 	expect(values).toEqual([TYPED]);
+});
+
+test('a block a film blurs is blurred on the page, and a block it does not name is not', async () => {
+	const filters: string[] = [];
+	const steps = [
+		act(async (context: ActContext) => {
+			filters.push(await context.page.locator(FIELD).evaluate((field) => getComputedStyle(field).filter));
+			filters.push(await context.page.locator('h1').evaluate((heading) => getComputedStyle(heading).filter));
+		})
+	];
+	await shoot(filmWritten(steps, { blurred: [FIELD] }), shootingInto(new EveryFrameCounted(), 'software'));
+	expect(filters).toEqual(['blur(12px)', 'none']);
+});
+
+test('the page is asked for the colour scheme the film names', async () => {
+	const dark: boolean[] = [];
+	const steps = [
+		act(async (context: ActContext) => {
+			dark.push(await context.page.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches));
+		})
+	];
+	await shoot(filmWritten(steps, { colourScheme: 'dark' }), shootingInto(new EveryFrameCounted(), 'software'));
+	expect(dark).toEqual([true]);
+});
+
+test('a block to blur named by no selector Chrome reads is refused before the film is shot', async () => {
+	const shooting = shoot(filmWritten([], { blurred: ['[['] }), shootingInto(new EveryFrameCounted(), 'software'));
+	await expect(shooting).rejects.toThrow('the film\'s blurred holds "[[": it is no selector Chrome reads');
 });
 
 test('a scroll of a block the page does not have is refused as its share begins, naming the block', async () => {

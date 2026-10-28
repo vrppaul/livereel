@@ -24,7 +24,7 @@
  * rather than when the film first waits on it.
  */
 import { type Browser as Playwright, type Frame, type Page, chromium } from 'playwright-core';
-import { SetupError } from '../../domain/errors.ts';
+import { FilmError, SetupError } from '../../domain/errors.ts';
 import type { StagePlace } from '../../direction/film.ts';
 import type { ActContext, PageMotionSwitch } from '../../direction/page.ts';
 import type { Browser, Opened, Setting } from '../../studio/ports.ts';
@@ -53,7 +53,8 @@ const NOT_INSTALLED = 'the browser films are shot in is not installed: run `npx 
 // What Playwright says where the system lacks libraries the browser needs, its words then naming them and how this
 // system installs them, which differs between Linux distributions, Docker and Windows
 const NO_LIBRARIES = 'Host system is missing dependencies';
-const COLOUR_SCHEME = 'light';
+// How far a block the film blurs is blurred, in the page's pixels
+const BLURRED_BY = 12;
 // The flag naming the graphics interface ANGLE draws through, and that interface on each system's card, by Node's
 // name for the system
 const USE_ANGLE = '--use-angle=';
@@ -113,6 +114,7 @@ export class Chromium implements Browser {
 				deviceScaleFactor: sharpness,
 				permissions: [LOCAL_NETWORK]
 			});
+			await blurring(page, setting.blurred);
 			const opening = await staged(page, setting.stage, address, this.warn);
 			const watch = new FrameWatch(page, setting.stage, address);
 			const filmed = await framed(page, setting, opening);
@@ -234,9 +236,28 @@ async function staged(page: Page, stage: StagePlace, address: string, warn: Warn
 	}
 }
 
+/**
+ * The blocks a film blurs blurred in every document the page opens, by a style sheet each is given as it is made, so
+ * a page the film goes on to blurs them too; the stage's own document, at the top, is given none. A selector Chrome
+ * cannot read is refused before anything opens: a style sheet would drop it without a word.
+ */
+async function blurring(page: Page, blurred: readonly string[]): Promise<void> {
+	if (blurred.length === 0) return;
+	const unread = await page.evaluate(unreadOf, blurred);
+	if (unread !== undefined) {
+		throw new FilmError(`the film's blurred holds ${JSON.stringify(unread)}: it is no selector Chrome reads`);
+	}
+	await page.addInitScript(blurredIn, blurRules(blurred));
+}
+
+/** The rules that blur each block a selector names, whatever the page's own style says. */
+function blurRules(blurred: readonly string[]): string {
+	return blurred.map((selector) => `${selector} { filter: blur(${BLURRED_BY}px) !important; }`).join('\n');
+}
+
 /** The stage set up in the film's look and the page opened in its frame, as far as it loads: its frame. */
 async function framed(page: Page, setting: Setting, opening: Opening): Promise<Frame> {
-	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: COLOUR_SCHEME });
+	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
 	await page.evaluate(setUpStage, roomOf(setting.format));
 	await page.evaluate(dressStage, setting.theme);
 	const [filmed] = await Promise.all([
@@ -250,4 +271,26 @@ async function framed(page: Page, setting: Setting, opening: Opening): Promise<F
 /** Whether a page that went somewhere is the one in the stage's frame, not the stage itself. */
 function isInTheStagesFrame(navigated: Frame): boolean {
 	return navigated.parentFrame() !== null;
+}
+
+// What follows runs in the page, each function handed over alone
+
+/** The first of the selectors the browser cannot read; none where it reads them all. */
+function unreadOf(selectors: readonly string[]): string | undefined {
+	for (const selector of selectors) {
+		try {
+			document.querySelector(selector);
+		} catch {
+			return selector;
+		}
+	}
+	return undefined;
+}
+
+/** A document's blocks blurred by the rules given, unless it is the stage's own, the page at the top. */
+function blurredIn(rules: string): void {
+	if (window.top === window) return;
+	const sheet = new CSSStyleSheet();
+	sheet.replaceSync(rules);
+	document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
 }
