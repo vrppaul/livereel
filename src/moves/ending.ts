@@ -4,11 +4,10 @@
  * its name and line, and go on to the page once it has gone. A slide moves a whole frame, as words and the window do,
  * so the card and what slides with it move as one sheet.
  */
-import type { Point } from '../domain/geometry.ts';
+import { pointToward } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { frameToward } from '../domain/place.ts';
 import { A_FRAME_SIDE, type FrameSide } from '../domain/split.ts';
-import { between } from '../domain/time.ts';
 import {
 	type Beginning,
 	type Change,
@@ -22,7 +21,7 @@ import {
 } from '../direction/move.ts';
 import { heardAsItBegins, livereelSound } from '../direction/sound.ts';
 import { A_CARD, type EndingCard, IN_PLACE } from '../props/ending.ts';
-import { SLIDE_OUT_FORM, type SlideOutScript } from './words.ts';
+import { SHOWN_WHOLE, SLIDE_OUT_FORM, type SlideOutScript } from './words.ts';
 
 /** The side the card slides in `from`, past the frame's edge, rather than coming up in place. */
 export interface EndingShowScript extends TimingScript {
@@ -30,8 +29,6 @@ export interface EndingShowScript extends TimingScript {
 }
 
 const SHOW_FORM: Form<EndingShowScript> = { from: A_FRAME_SIDE, ...TIMING_FORM };
-// A card that slides comes whole
-const WHOLE = 1;
 
 /** The card coming up in place, or sliding in whole from past a side of the frame. */
 export function show(card: EndingCard, script: EndingShowScript = {}): Move {
@@ -64,7 +61,11 @@ function coming(card: EndingCard): Change {
 /** The card sliding in whole from a frame past its place on a side. */
 function slidingIn(card: EndingCard, from: FrameSide, beginning: Beginning): Change {
 	const start = frameToward(from, beginning.format.frame);
-	return propChange('ending', (progress) => ({ card, shown: WHOLE, shift: shiftToward(start, IN_PLACE, progress) }));
+	return propChange('ending', (progress) => ({
+		card,
+		shown: SHOWN_WHOLE,
+		shift: pointToward(start, IN_PLACE, progress)
+	}));
 }
 
 function going(beginning: Beginning): Change {
@@ -77,11 +78,6 @@ function slidingOut(beginning: Beginning, toward: FrameSide): Change {
 	const ending = present(beginning, 'ending', 'ending.hide() hides what is not on the screen');
 	const end = frameToward(toward, beginning.format.frame);
 	return propChange('ending', (progress) =>
-		untilTheEnd(progress, { ...ending, shift: shiftToward(ending.shift, end, progress) })
+		untilTheEnd(progress, { ...ending, shift: pointToward(ending.shift, end, progress) })
 	);
-}
-
-/** A shift `progress` of the way to another. */
-function shiftToward(start: Point, end: Point, progress: number): Point {
-	return { left: between(start.left, end.left, progress), top: between(start.top, end.top, progress) };
 }

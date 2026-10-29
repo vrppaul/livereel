@@ -6,9 +6,9 @@
  * film's ground. The window moves apart from the camera, so the camera holds what it aims at — a pose, or a block
  * framed with air round it — and comes to it in whatever window stands as each frame is drawn: a block it frames
  * stays framed as the window travels or grows, in the part of the window on the frame where it runs off the frame's
- * edge. An angle leans the view, the screen in it face-on to it. In a window
- * the camera comes as close as it takes for the screen to fill it, so the window shows part of the page and no ground,
- * and moves as little as it takes to keep it so at any angle. In the whole frame face-on it moves as little as it
+ * edge. An angle leans the view, the screen in it face-on to it. In a window the camera comes as close as it takes for
+ * the screen to fill it, so the window shows part of the page and no ground, and moves as little as it takes to keep
+ * it so at any angle. In the whole frame face-on it moves as little as it
  * takes to show no edge of the screen; along a side the screen is too short to fill at that zoom, the screen stands in
  * the frame's middle, as much ground showing on either side of it. An angled camera in the whole frame stands where
  * the film puts it. What the camera shows where is worked out as the stage draws it (`.view` and `.camera` in
@@ -159,6 +159,8 @@ const FLAT = 0;
 const LIFTED = 1;
 // A camera that has come all the way to its aim
 const ARRIVED = 1;
+// The whole of a view, in shares of it
+const WHOLE_SHARE: Box = { left: 0, top: 0, width: 1, height: 1 };
 
 /** The whole frame as the camera's view, edge to edge. */
 export function wholeView(frame: Size): View {
@@ -191,11 +193,30 @@ export function standingAt(pose: Pose): Aiming {
 }
 
 /**
- * The camera as a frame shows it through a view: so far on its way from where it stood to its aim, the aim come to
- * in that view and kept off the screen's edge there.
+ * The camera as a frame shows it through the window where it stands so far: on its way from where it stood to its
+ * aim, the aim come to in that view and kept off the screen's edge there. A block is framed in the part of the window
+ * on the frame, its share of the window going from where the window stood to where it goes as the window does, so a
+ * window sliding whole carries the page with it.
  */
-export function seenThrough(aiming: Aiming, view: View, format: Format): Camera {
-	return { pose: poseToward(aiming.from, aimedIn(aiming.aim, view, format), aiming.progress), view };
+export function seenThrough(aiming: Aiming, window: Placing, format: Format): Camera {
+	const view = viewOf(window);
+	const shownFrom = shownShareOf(window.from, format.frame);
+	const shownTo = shownShareOf(window.to, format.frame);
+	// A window sliding in from off the frame, or out off it, keeps the share it has on the frame at the other end
+	const shown = boxToward(shownFrom ?? shownTo ?? WHOLE_SHARE, shownTo ?? shownFrom ?? WHOLE_SHARE, window.progress);
+	return { pose: poseToward(aiming.from, aimedIn(aiming.aim, view, shown, format), aiming.progress), view };
+}
+
+/** The part of a view on the frame, in shares of the view; none where it is all off the frame. */
+function shownShareOf(view: View, frame: Size): Box | null {
+	if (liesOutside(view.box, frame)) return null;
+	const part = partWithin(view.box, frame);
+	return {
+		left: (part.left - view.box.left) / view.box.width,
+		top: (part.top - view.box.top) / view.box.height,
+		width: part.width / view.box.width,
+		height: part.height / view.box.height
+	};
 }
 
 /** The camera an act is done in: face-on at the screen's own size, on a frame the screen's size. */
@@ -257,22 +278,26 @@ export function keptOnTheScreen(pose: Pose, format: Format, view: View): Pose {
 }
 
 /** The pose an aim comes to in a view, kept off the screen's edge there: the film's own, or a block framed there. */
-function aimedIn(aim: Aim, view: View, format: Format): Pose {
+function aimedIn(aim: Aim, view: View, shownShare: Box, format: Format): Pose {
 	switch (aim.kind) {
 		case 'pose':
 			return keptOnTheScreen(aim.pose, format, view);
 		case 'block':
-			return keptOnTheScreen(framedIn(aim, view, format), format, view);
+			return keptOnTheScreen(framedIn(aim, view, shownShare, format), format, view);
 	}
 }
 
 /**
- * The pose that frames a block in the part of a view on the frame, its middle at that part's middle, worked out
- * face-on: a window running off the frame's edge frames it in what shows of the window; a view all on the frame, or
- * all off it, in the whole view.
+ * The pose that frames a block in a share of a view, the part of it on the frame, its middle at that part's middle,
+ * worked out face-on.
  */
-function framedIn(aim: BlockAim, view: View, format: Format): Pose {
-	const shown = liesOutside(view.box, format.frame) ? view.box : partWithin(view.box, format.frame);
+function framedIn(aim: BlockAim, view: View, shownShare: Box, format: Format): Pose {
+	const shown = {
+		left: view.box.left + shownShare.left * view.box.width,
+		top: view.box.top + shownShare.top * view.box.height,
+		width: shownShare.width * view.box.width,
+		height: shownShare.height * view.box.height
+	};
 	const pose = onto(aim.box, aim.angle, shown, format.frame, aim.framing);
 	const frameZoom = frameZoomOf(pose, format.frame);
 	return focusedAt(

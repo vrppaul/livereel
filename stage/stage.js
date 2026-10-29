@@ -13,8 +13,8 @@
 /** @import { ShownLine } from '../src/props/terminal.ts' */
 /** @import { DrawnPin } from '../src/props/pins.ts' */
 /** @import { DrawnWords, Piece, Word } from '../src/props/words.ts' */
-/** @import { CodeLine, CodePiece, DrawnCode } from '../src/props/code.ts' */
-/** @import { DrawnTitle } from '../src/props/title.ts' */
+/** @import { CodeLine, CodePiece, DrawnCode, DrawnCodePane } from '../src/props/code.ts' */
+/** @import { DrawnTitleWords } from '../src/props/title.ts' */
 /** @import { Box } from '../src/domain/geometry.ts' */
 /** @import { Look } from '../src/props/look.ts' */
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
@@ -318,7 +318,6 @@ class KeysDrawer {
 	}
 }
 
-/** Code in its place: its pane where its box is, and its lines, each line's progress and light set every frame. */
 /** Code: the pane standing, and the one it pushes off past the frame's edge as it slides in. */
 class CodeDrawer {
 	/** @param {Staged} root */
@@ -343,7 +342,7 @@ class CodeLayer {
 		this.lines = new KeyedList(partOf(element, 'lines'), codeLineElement, codeLineNumbers);
 	}
 
-	/** @param {DrawnCode | null} code */
+	/** @param {DrawnCodePane | null} code */
 	draw(code) {
 		shown(this.element, code !== null);
 		if (code === null) {
@@ -384,7 +383,7 @@ class TitleLayer {
 		this.words = new KeyedList(partOf(element, 'words'), wordElement, wordNumbers);
 	}
 
-	/** @param {DrawnTitle | null} title */
+	/** @param {DrawnTitleWords | null} title */
 	draw(title) {
 		shown(this.element, title !== null);
 		if (title === null) {

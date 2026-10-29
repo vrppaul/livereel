@@ -44,8 +44,8 @@ export interface SlideOutScript extends TimingScript {
 export const SLIDE_OUT_FORM: Form<SlideOutScript> = { toward: A_FRAME_SIDE, ...TIMING_FORM };
 // Words not going: neither gone nor on their way out
 export const NOT_GONE = 0;
-// Words come up whole at once where they slide in from a side
-const SHOWN_WHOLE = 1;
+// What slides in from a side, words or the card, comes whole at once
+export const SHOWN_WHOLE = 1;
 
 /** What comes up one after another on the scene going; once gone, there is none. */
 export function going(prop: ComingUpProp, beginning: Beginning): Change {

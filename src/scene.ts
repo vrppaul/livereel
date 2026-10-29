@@ -21,7 +21,6 @@ import {
 	placedIn,
 	seenThrough,
 	standingAt,
-	viewOf,
 	wholePose,
 	wholeView
 } from './domain/camera.ts';
@@ -110,7 +109,7 @@ export function withProp<Name extends PropName>(scene: Scene, name: Name, state:
 
 /** The camera as the scene shows it: what it aims at, come to in the window where it stands so far. */
 export function cameraOf(scene: Scene, format: Format): Camera {
-	return seenThrough(scene.camera, viewOf(scene.window), format);
+	return seenThrough(scene.camera, scene.window, format);
 }
 
 /**

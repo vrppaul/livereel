@@ -223,8 +223,8 @@ test('a title or code shown from a side while one stands in a place pushes it of
 	const pushed = await setAt(title.show('Next', { at: 'right', from: 'right' }), coded, 1);
 	expect([
 		halfWay.title!.box,
-		halfWay.title!.pushedOff?.box,
-		halfWay.code!.pushedOff?.box,
+		halfWay.title!.pushedOff!.box,
+		halfWay.code!.pushedOff!.box,
 		pushed.title!.pushedOff
 	]).toEqual([
 		boxToward(pastTheEdge(right, 'right', SMALL.frame), right, 0.5),
@@ -426,6 +426,29 @@ test('a block the camera frames in a window running off the frame stands at the 
 		left: expect.closeTo(200, 6),
 		top: expect.closeTo(320, 6)
 	});
+});
+
+test('a block framed in a window running off the frame keeps its place in the window as the window slides away', async () => {
+	const offTheFoot = await setAt(
+		windowTo({ left: 0.25, top: 0.6, width: 0.5, height: 0.8 }),
+		openingScene(SMALL, LIVEREELS_LOOK),
+		1
+	);
+	const framed = await setAt(onto('#block', { air: 0, zoomAtMost: 10 }), offTheFoot, 1);
+	const blockMiddle: Point = { left: middleX(BLOCK), top: middleY(BLOCK) };
+	const inTheWindow = (scene: Scene) => {
+		const camera = cameraOf(scene, SMALL);
+		const onFrame = onTheFrame(camera, SMALL.frame, blockMiddle);
+		return { left: onFrame.left - camera.view.box.left, top: onFrame.top - camera.view.box.top };
+	};
+	const halfWay = await setAt(windowHide({ toward: 'left' }), framed, 0.5);
+	expect(inTheWindow(halfWay)).toEqual(inTheWindow(framed));
+});
+
+test('a centred title travelling to a place of another size keeps its middle as it sets off', async () => {
+	const titled = await setAt(title.show('Here', { at: 'top' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const setOff = (await setAt(title.to('left'), titled, 0)).title!.box!;
+	expect(middleX(setOff)).toEqual(middleX(wordsPlaced(SMALL, 'top')));
 });
 
 test('a cursor pressed goes in as the press goes on, and comes back out as it is let go', async () => {

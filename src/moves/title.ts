@@ -2,13 +2,13 @@
  * Titles: words that come up one after another over the whole frame, on the film's ground, or in a place the film
  * names (`src/domain/place.ts`), beside the page's window or alone, in place of any title on the screen, and go. A
  * title in a place moves to another, keeping how it reads, comes in from past a side of the frame, pushing the title
- * standing in a place off past the side across, or leaves past one;
- * a title over the whole frame has no place to move from, and is refused there. Its words wrap and take their size by
- * the width of their place, so a title moving to a place of another size takes that size as it sets off and travels
- * whole: its lines change once, where they would break anew on every frame of the way.
+ * standing in a place off past the side across, or leaves past one; a title over the whole frame has no place to
+ * move from, and is refused there. Its words wrap and take their size by the width of their place, so a title moving
+ * to a place of another size takes that size as it sets off, where it reads from, and travels whole: its lines change
+ * once, where they would break anew on every frame of the way.
  */
 import { FilmError } from '../domain/errors.ts';
-import { type Box, middleY } from '../domain/geometry.ts';
+import type { Box } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import {
 	AN_ALIGNMENT,
@@ -17,7 +17,8 @@ import {
 	type Place,
 	alignmentIn,
 	enteringFrom,
-	wordsPlaced
+	wordsPlaced,
+	wordsResized
 } from '../domain/place.ts';
 import { A_FRAME_SIDE, type FrameSide } from '../domain/split.ts';
 import { linear } from '../domain/time.ts';
@@ -59,8 +60,6 @@ export interface TitleScript extends TimingScript {
 const TITLE_FORM: Form<TitleScript> = { at: A_PLACE, align: AN_ALIGNMENT, from: A_FRAME_SIDE, ...TIMING_FORM };
 // Words over the whole frame on their ground stand centred
 const OVER_THE_WHOLE: Alignment = 'center';
-// The middle of a length lies half-way along it
-const HALVES = 2;
 
 /**
  * A title coming up word by word, over the whole frame its ground first, or in its place, from past a side of the
@@ -144,12 +143,7 @@ function arriving(said: Said, beginning: Beginning, place: Place, from: FrameSid
 function moving(beginning: Beginning, place: Place): Change {
 	const { title, box } = placedTitle(beginning, 'title.to');
 	const end = wordsPlaced(beginning.format, place);
-	return travelling('title', (at) => ({ ...title, box: at }), sizedAs(box, end), end);
-}
-
-/** A box resized to another's size where it stands: from its left edge, and about its middle down, where words stand. */
-function sizedAs(box: Box, size: Box): Box {
-	return { left: box.left, top: middleY(box) - size.height / HALVES, width: size.width, height: size.height };
+	return travelling('title', (at) => ({ ...title, box: at }), wordsResized(box, end, title.align), end);
 }
 
 /** The title in its place sliding out past a side of the frame, whole; once there, none. */

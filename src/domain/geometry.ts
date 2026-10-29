@@ -111,6 +111,21 @@ export function middleY(box: Box): number {
 	return box.top + box.height / HALVES;
 }
 
+/** A box of a size standing about another box's middle. */
+export function resizedAbout(box: Box, size: Size): Box {
+	return {
+		left: middleX(box) - size.width / HALVES,
+		top: middleY(box) - size.height / HALVES,
+		width: size.width,
+		height: size.height
+	};
+}
+
+/** A point `progress` of the way to another. */
+export function pointToward(start: Point, end: Point, progress: number): Point {
+	return { left: between(start.left, end.left, progress), top: between(start.top, end.top, progress) };
+}
+
 /** The corners of a box: top left, top right, bottom left, bottom right. */
 export function cornersOf(box: Box): readonly Point[] {
 	const right = box.left + box.width;

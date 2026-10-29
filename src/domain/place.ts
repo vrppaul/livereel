@@ -14,7 +14,7 @@
  * toward one, travels from or to its box moved a whole frame toward that side. A note's words stand beyond the window
  * on one side of it, where their line meets them.
  */
-import { type Box, type Format, type Point, type Size, boxOf, wholePixels } from './geometry.ts';
+import { type Box, type Format, type Point, type Size, boxOf, resizedAbout, wholePixels } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, OneOf, Plain } from './handed.ts';
 import { FRAME_SIDES, type FrameSide, windowOn, wordsOn, wordsWholeOn } from './split.ts';
 
@@ -140,6 +140,20 @@ export function frameToward(side: FrameSide, frame: Size): Point {
 			return { left: NOT_ALONG, top: -frame.height };
 		case 'bottom':
 			return { left: NOT_ALONG, top: frame.height };
+	}
+}
+
+/**
+ * Words' box resized where they stand: about its middle, and from its left edge where they read from the left, so a
+ * title taking another place's size keeps where it reads from.
+ */
+export function wordsResized(box: Box, size: Size, align: Alignment): Box {
+	const centred = resizedAbout(box, size);
+	switch (align) {
+		case 'start':
+			return { ...centred, left: box.left };
+		case 'center':
+			return centred;
 	}
 }
 

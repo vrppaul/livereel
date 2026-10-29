@@ -9,31 +9,39 @@ import type { Alignment } from '../domain/place.ts';
 import { type DrawnWords, type ShownWords, drawnWords } from './words.ts';
 
 /**
- * A title's words, the place they stand in, in the frame's pixels — none, over the whole frame on its ground — how
- * they read there, and the title it pushes off as it slides in, while it does; none else.
+ * A title's words, the place they stand in, in the frame's pixels — none, over the whole frame on its ground — and how
+ * they read there.
  */
-export interface Title extends ShownWords {
+interface TitleWords extends ShownWords {
 	readonly box: Box | null;
 	readonly align: Alignment;
-	readonly pushedOff: Title | null;
 }
 
-export interface DrawnTitle extends DrawnWords {
+/** A title, and the title it pushes off as it slides in, while it does; none else. */
+export interface Title extends TitleWords {
+	readonly pushedOff: TitleWords | null;
+}
+
+export interface DrawnTitleWords extends DrawnWords {
 	readonly box: Box | null;
 	readonly align: Alignment;
-	readonly pushedOff: DrawnTitle | null;
+}
+
+export interface DrawnTitle extends DrawnTitleWords {
+	readonly pushedOff: DrawnTitleWords | null;
 }
 
 // Words in a place bring no ground of their own
 const NO_GROUND = 0;
 
 export function drawnTitle(title: Title): DrawnTitle {
-	const words = drawnWords(title);
 	return {
-		...words,
-		ground: title.box === null ? words.ground : NO_GROUND,
-		box: title.box,
-		align: title.align,
-		pushedOff: title.pushedOff === null ? null : drawnTitle(title.pushedOff)
+		...drawnTitleWords(title),
+		pushedOff: title.pushedOff === null ? null : drawnTitleWords(title.pushedOff)
 	};
+}
+
+function drawnTitleWords(title: TitleWords): DrawnTitleWords {
+	const words = drawnWords(title);
+	return { ...words, ground: title.box === null ? words.ground : NO_GROUND, box: title.box, align: title.align };
 }

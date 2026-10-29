@@ -1,9 +1,9 @@
 /**
  * Code: a pane of the film's code coming up in a place the film names (`src/domain/place.ts`), beside the page's
  * window or alone, in place of any code shown, from past a side of the frame where the film names one, pushing the
- * code shown off past the side across as it comes; moving to
- * another place; lines of it lit as they run; and going, or leaving past a side. Lines are counted from 1, as an
- * editor counts them, and a light past the last line shown is refused as it begins.
+ * code shown off past the side across as it comes; moving to another place; lines of it lit as they run; and going,
+ * or leaving past a side. Lines are counted from 1, as an editor counts them, and a light past the last line shown is
+ * refused as it begins.
  */
 import { FilmError } from '../domain/errors.ts';
 import type { Box } from '../domain/geometry.ts';

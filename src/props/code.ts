@@ -37,18 +37,19 @@ export interface CodeLine {
 	readonly lit: number;
 }
 
-/**
- * Code: its lines, its place in the frame's pixels, how far it has come up and gone, each from 0 to 1, and the code it
- * pushes off as it slides in, while it does; none else.
- */
-export interface Code {
+/** A pane of code: its lines, its place in the frame's pixels, and how far it has come up and gone, each from 0 to 1. */
+interface CodePane {
 	readonly lines: readonly CodeLine[];
 	readonly key: string;
 	readonly columns: number;
 	readonly box: Box;
 	readonly shown: number;
 	readonly gone: number;
-	readonly pushedOff: Code | null;
+}
+
+/** Code, and the pane it pushes off as it slides in, while it does; none else. */
+export interface Code extends CodePane {
+	readonly pushedOff: CodePane | null;
 }
 
 /** A line as the stage draws it, and how far it has come up, eased, from 0 to 1. */
@@ -61,7 +62,7 @@ interface DrawnLine extends CodeLine {
  * far the lines not lit are dimmed: as far as the light on all its lines comes to, at most whole, so a light moving
  * from one line to another, one going out as the other comes on, keeps the rest dimmed.
  */
-export interface DrawnCode {
+export interface DrawnCodePane {
 	readonly lines: readonly DrawnLine[];
 	readonly key: string;
 	readonly columns: number;
@@ -69,7 +70,10 @@ export interface DrawnCode {
 	readonly ground: number;
 	readonly gone: number;
 	readonly dimmed: number;
-	readonly pushedOff: DrawnCode | null;
+}
+
+export interface DrawnCode extends DrawnCodePane {
+	readonly pushedOff: DrawnCodePane | null;
 }
 
 // The pieces of a line, the first kind that matches at a place winning, a group named by each kind
@@ -94,6 +98,10 @@ export function codeOf(text: string): WrittenCode {
 }
 
 export function drawnCode(code: Code): DrawnCode {
+	return { ...drawnPane(code), pushedOff: code.pushedOff === null ? null : drawnPane(code.pushedOff) };
+}
+
+function drawnPane(code: CodePane): DrawnCodePane {
 	const count = code.lines.length;
 	return {
 		lines: code.lines.map((line, place) => ({ ...line, appeared: appearedOf(code.shown, place, count) })),
@@ -105,8 +113,7 @@ export function drawnCode(code: Code): DrawnCode {
 		dimmed: Math.min(
 			WHOLLY_LIT,
 			code.lines.reduce((light, line) => light + line.lit, NOT_LIT)
-		),
-		pushedOff: code.pushedOff === null ? null : drawnCode(code.pushedOff)
+		)
 	};
 }
 
