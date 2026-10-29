@@ -378,6 +378,20 @@ test('a block the camera frames stands across the middle of whatever window stan
 	).toEqual([windowMiddle, windowMiddle]);
 });
 
+test('a block the camera frames in a window running off the frame stands at the middle of the part of the window on the frame', async () => {
+	const offTheFoot = await setAt(
+		windowTo({ left: 0.25, top: 0.6, width: 0.5, height: 0.8 }),
+		openingScene(SMALL, LIVEREELS_LOOK),
+		1
+	);
+	const framed = await setAt(onto('#block', { air: 0, zoomAtMost: 10 }), offTheFoot, 1);
+	const blockMiddle: Point = { left: middleX(BLOCK), top: middleY(BLOCK) };
+	expect(onTheFrame(cameraOf(framed, SMALL), SMALL.frame, blockMiddle)).toEqual({
+		left: expect.closeTo(200, 6),
+		top: expect.closeTo(320, 6)
+	});
+});
+
 test('a cursor pressed goes in as the press goes on, and comes back out as it is let go', async () => {
 	const pointed = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'cursor', { left: 10, top: 10, press: 0 });
 	const pressed = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'cursor', { left: 10, top: 10, press: 1 });

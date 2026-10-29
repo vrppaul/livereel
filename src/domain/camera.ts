@@ -5,7 +5,8 @@
  * camera's picture shows in a view, the page's window: the whole frame, edge to edge, or a window standing on the
  * film's ground. The window moves apart from the camera, so the camera holds what it aims at — a pose, or a block
  * framed with air round it — and comes to it in whatever window stands as each frame is drawn: a block it frames
- * stays framed as the window travels or grows. An angle leans the view, the screen in it face-on to it. In a window
+ * stays framed as the window travels or grows, in the part of the window on the frame where it runs off the frame's
+ * edge. An angle leans the view, the screen in it face-on to it. In a window
  * the camera comes as close as it takes for the screen to fill it, so the window shows part of the page and no ground,
  * and moves as little as it takes to keep it so at any angle. In the whole frame face-on it moves as little as it
  * takes to show no edge of the screen; along a side the screen is too short to fill at that zoom, the screen stands in
@@ -25,9 +26,11 @@ import {
 	distanceBetween,
 	frameScaleOf,
 	isTheWholeOf,
+	liesOutside,
 	middleX,
 	middleY,
-	nearestWithin
+	nearestWithin,
+	partWithin
 } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, assertKind, needed } from './handed.ts';
 import { between } from './time.ts';
@@ -62,9 +65,19 @@ export interface View {
  * What the camera aims at: a pose the film gives, or a block of the page, as the screen showed it, framed with air
  * round it at an angle, which comes to a pose only in the view it is framed in.
  */
-export type Aim =
-	| { readonly kind: 'pose'; readonly pose: Pose }
-	| { readonly kind: 'block'; readonly box: Box; readonly framing: Framing; readonly angle: Angle };
+export type Aim = PoseAim | BlockAim;
+
+interface PoseAim {
+	readonly kind: 'pose';
+	readonly pose: Pose;
+}
+
+interface BlockAim {
+	readonly kind: 'block';
+	readonly box: Box;
+	readonly framing: Framing;
+	readonly angle: Angle;
+}
 
 /**
  * The camera as a scene holds it: on its way from the pose it stood at, as its move began, to what it aims at,
@@ -249,8 +262,25 @@ function aimedIn(aim: Aim, view: View, format: Format): Pose {
 		case 'pose':
 			return keptOnTheScreen(aim.pose, format, view);
 		case 'block':
-			return keptOnTheScreen(onto(aim.box, aim.angle, view.box, format.frame, aim.framing), format, view);
+			return keptOnTheScreen(framedIn(aim, view, format), format, view);
 	}
+}
+
+/**
+ * The pose that frames a block in the part of a view on the frame, its middle at that part's middle, worked out
+ * face-on: a window running off the frame's edge frames it in what shows of the window; a view all on the frame, or
+ * all off it, in the whole view.
+ */
+function framedIn(aim: BlockAim, view: View, format: Format): Pose {
+	const shown = liesOutside(view.box, format.frame) ? view.box : partWithin(view.box, format.frame);
+	const pose = onto(aim.box, aim.angle, shown, format.frame, aim.framing);
+	const frameZoom = frameZoomOf(pose, format.frame);
+	return focusedAt(
+		pose,
+		pose.focusX - (middleX(shown) - middleX(view.box)) / frameZoom,
+		pose.focusY - (middleY(shown) - middleY(view.box)) / frameZoom,
+		pose.zoom
+	);
 }
 
 /** A pose as close, at least, as it takes for the screen to fill a view of this size along both its sides. */
