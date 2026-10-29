@@ -27,11 +27,16 @@ const EVERY_DIGIT = /./g;
 const THE_DIGIT_TWICE = '$&$&';
 const LONG_WITH_ALPHA = 8;
 const OPAQUE = 255;
+// A channel below 16 is written with a leading zero
+const NO_DIGIT = '0';
+// How far along a colour's way is: not yet on it, and arrived
+const NOT_ON_ITS_WAY = 0;
+const ARRIVED = 1;
 
 /** A colour `progress` of the way from one to another. */
 export function colourToward(start: string, end: string, progress: number): string {
-	if (progress <= 0 || start === end) return start;
-	if (progress >= 1) return end;
+	if (progress <= NOT_ON_ITS_WAY || start === end) return start;
+	if (progress >= ARRIVED) return end;
 	const from = channelsOf(start);
 	const to = channelsOf(end);
 	return hexOf({
@@ -68,5 +73,5 @@ function hexOf(channels: Channels): string {
 }
 
 function twoDigits(channel: number): string {
-	return Math.round(channel).toString(HEX).padStart(DIGITS_OF_A_CHANNEL, '0');
+	return Math.round(channel).toString(HEX).padStart(DIGITS_OF_A_CHANNEL, NO_DIGIT);
 }

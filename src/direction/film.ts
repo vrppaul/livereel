@@ -28,8 +28,8 @@ import {
 	needed
 } from '../domain/handed.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
-import { LIVEREELS_LOOK, type Look, type Theme, lookWith } from '../props/look.ts';
 import { leavesRoom } from '../domain/split.ts';
+import { LIVEREELS_LOOK, type Look, type Theme, lookWith } from '../props/look.ts';
 import { type MotionBlurScript, motionBlurOf } from './blur.ts';
 import type { ActContext } from './page.ts';
 import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf, musicOf } from './sound.ts';

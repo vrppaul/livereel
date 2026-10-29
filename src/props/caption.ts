@@ -14,6 +14,12 @@ export interface DrawnCaption extends DrawnWords {
 // A caption stands at the frame's foot where its format names no place
 const AT_THE_FOOT: CaptionPlace = 'bottom';
 
+/** A caption as the stage draws it, at the edge of the frame its format puts it at. */
 export function drawnCaption(caption: ShownWords, format: Format): DrawnCaption {
 	return { ...drawnWords(caption), at: format.captionAt ?? AT_THE_FOOT };
+}
+
+/** Whether a caption stands at the frame's foot, where keys would stand under it. */
+export function standsAtTheFoot(caption: DrawnCaption): boolean {
+	return caption.at === AT_THE_FOOT;
 }

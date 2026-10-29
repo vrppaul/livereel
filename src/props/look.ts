@@ -7,7 +7,7 @@
  * stage is handed the whole look every frame and sets each value in place of its token (`stage/tokens.css`).
  */
 import { colourToward } from '../domain/colour.ts';
-import { OneOf } from '../domain/handed.ts';
+import { A_COLOUR, A_FONT_FAMILY, A_PIXELS, A_SHARE, type Form, OneOf, Plain } from '../domain/handed.ts';
 import { between } from '../domain/time.ts';
 
 // How words come up: rising out of a blur, rising sharp, or standing where they are as they appear
@@ -15,7 +15,7 @@ const WORDS_MOTIONS = ['soft', 'sharp', 'still'] as const;
 
 type WordsMotion = (typeof WORDS_MOTIONS)[number];
 
-export const A_WORDS_MOTION = new OneOf(WORDS_MOTIONS, 'how words come up: "soft", "sharp" or "still"');
+const A_WORDS_MOTION = new OneOf(WORDS_MOTIONS, 'how words come up: "soft", "sharp" or "still"');
 
 export interface Look {
 	/** The ground's colour, in hex, as it stands at its edges. */
@@ -66,6 +66,43 @@ export interface Look {
 
 /** A film's theme: any values of a look, the rest as they stand. */
 export type Theme = Partial<Look>;
+
+const A_SIZE = new Plain(isSize, 'a number of pixels, more than 0');
+const A_WEIGHT = new Plain(isWeight, 'a weight from 100 to 900');
+const NONE = 0;
+const THINNEST = 100;
+const HEAVIEST = 900;
+
+/** A theme as a film hands it, each value's kind by its name. */
+export const THEME_FORM: Form<Theme> = {
+	ground: A_COLOUR,
+	glow: A_COLOUR,
+	ink: A_COLOUR,
+	quietInk: A_COLOUR,
+	accent: A_COLOUR,
+	accentInk: A_COLOUR,
+	font: A_FONT_FAMILY,
+	mono: A_FONT_FAMILY,
+	titleSize: A_SIZE,
+	captionSize: A_SIZE,
+	windowCorner: A_PIXELS,
+	windowEdge: A_COLOUR,
+	windowShadow: A_SHARE,
+	windowShadowColour: A_COLOUR,
+	terminal: A_COLOUR,
+	terminalInk: A_COLOUR,
+	glowX: A_SHARE,
+	glowY: A_SHARE,
+	titleWeight: A_WEIGHT,
+	captionWeight: A_WEIGHT,
+	noteSize: A_SIZE,
+	calloutSize: A_SIZE,
+	pinSize: A_SIZE,
+	keysSize: A_SIZE,
+	cursorFill: A_COLOUR,
+	cursorEdge: A_COLOUR,
+	wordsMotion: A_WORDS_MOTION
+};
 
 /** livereel's own look: a dark ground lit toward its top middle, light words, an amber accent. */
 export const LIVEREELS_LOOK: Look = {
@@ -144,6 +181,14 @@ export function lookToward(start: Look, end: Look, progress: number): Look {
 		cursorEdge: colourToward(start.cursorEdge, end.cursorEdge, progress),
 		wordsMotion: named.wordsMotion
 	};
+}
+
+function isSize(written: unknown): written is number {
+	return typeof written === 'number' && Number.isFinite(written) && written > NONE;
+}
+
+function isWeight(written: unknown): written is number {
+	return typeof written === 'number' && written >= THINNEST && written <= HEAVIEST;
 }
 
 /** Whether a value of a theme was given, not written as `undefined`. */

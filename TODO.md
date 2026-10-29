@@ -25,7 +25,6 @@
 - Pins lie on the screen, so their marks and labels scale with the camera's zoom: small in a zoomed-out window.
 - Mid-lift at an angle, `.view-shadow` stands on the view's box while the cut is still open, so a faint ring shows apart from the picture for a few frames.
 - Keys' caps take `--terminal`, `--terminal-ink` and `--terminal-edge`: a theme's `terminal` recolours them too, and the theme's doc does not say so.
-- The mono font's refusal (`refusedWhereNoFamily` in `src/adapters/browser/chromium.ts`) has no test, as the film's font has.
 - Written more than once: the act's flat format (`src/studio/take.ts` and `src/adapters/browser/stage.ts`, beside `flatCamera`); the keyed rebuild of a drawer's markup (four drawers in `stage/stage.js`); `THE_FIRST` in three moves. `keptOnTheScreen`'s comment gives "the screen faces the view" as the reason; the reason is that an angled whole-frame view does not cover the frame.
 - From the storyboard board (https://claude.ai/artifact/46tDazJ5nnEmMxxB4QvUWT), not built: one word larger than the frame, line breaks in a title for beats, a strike drawn across as it comes, two windows side by side (the terminal beside the page), text blurred in the terminal, an address bar over the window (it needs the page's address each frame: a change of construction, the owner's word first), a voice with subtitles (a new dependency, the owner's word first).
 

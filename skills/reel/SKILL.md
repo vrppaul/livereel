@@ -211,7 +211,8 @@ its end at once.
 | `pin.show(selector, label)`, `pin.clear()` | a numbered mark on a block, after those laid before, the earlier labels quietened; all taken away |
 | `keys.show(caps)`, `keys.hide()` | the caps of a shortcut at the frame's foot, as `['⌘', 'Enter']` |
 | `title.show(text, { side })`, `title.hide()` | words coming up one after another on the film's ground over the whole frame, or on a `side` of it beside the page's window, in place of any title shown; going, the ground with them |
-| `caption.show(text)`, `caption.hide()` | words coming up one after another at the frame's foot, in place of any shown; going |
+| `caption.show(text)`, `caption.hide()` | words coming up one after another at the frame's foot, or its top in a format with `captionAt: 'top'`, in place of any shown; going |
+| `look.to(theme, { within })` | the film's look moving to any of a theme's values: through the values between in a `play`, at once in a `cut`; one look move a step |
 | `terminal.open(title)` | an agent's terminal coming up over the frame; in a `cut`, there at once |
 | `terminal.type(strokes)`, `terminal.submit()` | keys typed into it; Enter |
 | `terminal.works(lines, thinking, { thinkingShare })` | the agent thinking, its spinner beside the words `thinking`, then its lines written one after another; a line is `{ kind, text }`, its kind `work` (a tool and what it is used on), `said` or `done` |
@@ -233,21 +234,22 @@ strings and runs read one after another: a run is `{ text }` with any of
 Put the spaces in the strings, as the words are read.
 
 `defineFilm` takes a `theme`, any of its values, where the user names a
-brand's look: `ground` and `glow` (left out, the ground is of one colour),
-`ink` and `quietInk`, `accent` and `accentInk` for pins and notes,
-`windowEdge` and `windowShadowColour` with `windowShadow` from 0 to 1 (a dark
-edge on a light ground), `cursorFill` and `cursorEdge`, `titleWeight` and
-`captionWeight`, `glowX` and `glowY`, `noteSize`, `calloutSize`, `pinSize`
-and `keysSize`, and
-`wordsMotion` (`'soft'`, `'sharp'`, `'still'`), `terminal` and
-`terminalInk`, all in hex; `font` and `mono`, as CSS names a family
-installed on the machine; `titleSize`, `captionSize` and `windowCorner`
-in pixels of a 1080 frame. Leave out what the user does not name: livereel's
-own is a dark ground, white ink and an amber accent. `look.to(theme)`
-changes any of these as the film goes: in a `play` through the values
-between (a ground fading light, the glow drifting while the camera moves),
-in a `cut` at once; a font changes half-way through a play. Change the
-look where the story turns, not on every shot.
+brand's look. In hex: `ground` and `glow` (left out, the ground is of one
+colour), `ink` and `quietInk`, `accent` and `accentInk` for pins and notes,
+`windowEdge` and `windowShadowColour` (a dark edge on a light ground),
+`cursorFill` and `cursorEdge`, `terminal` and `terminalInk`. From 0 to 1:
+`windowShadow`, `glowX` and `glowY`. From 100 to 900: `titleWeight` and
+`captionWeight`. In pixels of a 1080 frame: `titleSize`, `captionSize`,
+`noteSize`, `calloutSize`, `pinSize`, `keysSize` and `windowCorner`. As
+CSS names a family installed on the machine: `font` and `mono`. And
+`wordsMotion`: `'soft'`, `'sharp'` or `'still'`. Leave out what the user
+does not name: livereel's own is a dark ground, white ink and an amber
+accent. `look.to(theme)` changes any of these as the film goes: in a
+`play` through the values between (a ground fading light, the glow
+drifting while the camera moves), in a `cut` at once; a font changes
+half-way through a play. A run of cuts a beat apart, each adding one value,
+shows a look built up; fade the ink a little after the ground, or the words
+pass through the ground's own grey.
 
 The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
 person types; the curves are `linear`, `easeInOutSine` (a step's own),

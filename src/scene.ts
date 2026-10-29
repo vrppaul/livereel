@@ -3,9 +3,9 @@
  *
  * A scene is plain values, never changed in place: a move's change hands back a scene with its own prop set, and the
  * take keeps the one standing. The film's look is a prop too, changed by moves as any other. `drawn` works out
- * everything the stage needs from it — how far each word of a title, a
- * caption or a callout has come, the terminal's spinner, where a note's line meets the block it names on the frame —
- * so the stage draws numbers and words and decides nothing. A prop that may be absent is `null`; the compiler holds
+ * everything the stage needs from it — how far each word of a title, a caption or a callout has come, the terminal's
+ * spinner, where a note's line meets the block it names on the frame — so the stage draws numbers and words and
+ * decides nothing. A prop that may be absent is `null`; the compiler holds
  * every prop to a drawn form here and to a drawer on the stage.
  */
 import type { Format } from './domain/geometry.ts';
