@@ -41,7 +41,7 @@ caption. Speak in the director's words, which are the tool's:
 | action | what the page does for real: a click (`cursor.click`), keys typed into it (`typing(page.type(strokes))`), anything else in an `act` |
 | caption | `caption.show(text)`, `caption.hide()` |
 | title card | `title.show(text)` — words over the whole frame, on the film's ground; `title.hide()` |
-| split | `title.show(text, { half: 'left' })` beside `camera.onto(selector, { half: 'right' })` — words on one half, the page framed in the other |
+| split | `title.show(text, { side: 'left' })` beside `camera.onto(selector, { side: 'right' })` — words on one side, the page in a window on the other |
 | entrance | `cut(screen.lower())`, then `screen.rise()` in a `play`; `ending.show(card)` |
 | tempo | how long each `play` and `hold({ seconds })` lasts |
 
@@ -68,9 +68,8 @@ What reads as made with care:
   Frame the block with air on the callout's side: the frame's edge cuts a
   card that reaches past it.
 
-What reads as generated: a zoom on every click, a window floating on a
-gradient wallpaper, a glow behind the product, springy overshoot, ripples
-on clicks. Leave them out.
+What reads as generated: a zoom on every click, a glow behind the product,
+springy overshoot, ripples on clicks. Leave them out.
 
 ## 3. The film
 
@@ -194,14 +193,14 @@ its end at once.
 | Moves | |
 |---|---|
 | `camera.to(pose, { tilt, turn })` | to a pose: `whole` from `steps`, or `lookingAt(pose, focusX, focusY, zoom)` |
-| `camera.onto(selector, { every, air, zoomAtMost, half, tilt, turn })` | frames the first `every` blocks a selector matches, `air` pixels round them, in the whole frame or in a `half` of it (`left`, `right`, `top`, `bottom`), the screen filling that half |
+| `camera.onto(selector, { every, air, zoomAtMost, side, tilt, turn })` | frames the first `every` blocks a selector matches, `air` pixels round them, in the whole frame or in a window on a `side` of it (`left`, `right`, `top`, `bottom`), the screen filling the window; an angle leans the window |
 | `screen.rise()`, `screen.lower()` | the screen up out of the ground; down in it, in a `cut` |
 | `light.on(selector, { dim })`, `light.to(selector)`, `light.off()` | one block lit, the rest dimmed by `dim`; carried; put out |
 | `cursor.to(selector, { entering, bow })` | along an arc to a block, from `entering` if not yet on the screen |
 | `cursor.press({ sound })`, `cursor.release()`, `cursor.hide()` | pressed in with a click (`sound`, a file of the film's in its place), let go, taken off the screen |
 | `cursor.click(action, { sound })` | pressed with its click, `act(action)`, let go: the steps of a click |
 | `callout.show(selector, text, { side })`, `callout.hide()` | words on a card beside a block, pointing at it, `side` `above` (where none is named), `below`, `left` or `right`; carried with the page |
-| `title.show(text, { half })`, `title.hide()` | words coming up one after another on the film's ground, over the whole frame or a `half` of it, in place of any title shown; going, the ground with them |
+| `title.show(text, { side })`, `title.hide()` | words coming up one after another on the film's ground over the whole frame, or on a `side` of it beside the page's window, in place of any title shown; going, the ground with them |
 | `caption.show(text)`, `caption.hide()` | words coming up one after another at the frame's foot, in place of any shown; going |
 | `terminal.open(title)` | an agent's terminal coming up over the frame; in a `cut`, there at once |
 | `terminal.type(strokes)`, `terminal.submit()` | keys typed into it; Enter |

@@ -14,7 +14,7 @@
  * a share of the frame's diagonal, so a move is blurred alike in every format, each watched at the size of the
  * viewer's screen.
  */
-import { type Pose, frameShift, poseToward } from './camera.ts';
+import { type Camera, cameraToward, frameShift } from './camera.ts';
 import { type Format, diagonalOf } from './geometry.ts';
 
 /**
@@ -34,15 +34,15 @@ export const EYE_STEP = 0.0027;
 const ITS_OWN = 1;
 
 /**
- * The poses a frame is exposed at besides its own, the camera's pose on the frame before given: along the share of
- * its way the shutter is open for, as many as keep the copies an eye's step apart, up to the blur's most; none where
- * the smear is no longer than a step, or where the film is not blurred.
+ * The cameras a frame is exposed at besides its own, the camera on the frame before given: along the share of its way
+ * the shutter is open for, as many as keep the copies an eye's step apart, up to the blur's most; none where the
+ * smear is no longer than a step, or where the film is not blurred.
  */
-export function alsoExposedAt(before: Pose, now: Pose, format: Format, blur: MotionBlur | null): readonly Pose[] {
+export function alsoExposedAt(before: Camera, now: Camera, format: Format, blur: MotionBlur | null): readonly Camera[] {
 	if (blur === null) return [];
 	const exposures = exposuresFor(blur.shutter * frameShift(before, now, format), format, blur);
 	return [...Array(exposures - ITS_OWN).keys()].map((place) =>
-		poseToward(now, before, (blur.shutter * (exposures - ITS_OWN - place)) / exposures)
+		cameraToward(now, before, (blur.shutter * (exposures - ITS_OWN - place)) / exposures)
 	);
 }
 

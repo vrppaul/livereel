@@ -26,7 +26,37 @@ body {
 	overflow: hidden;
 }
 
-/* The camera moves the screen, laid out at its own size, about its top left corner: the point looked at to the frame's middle, then angled and brought close, its zoom counted as on a frame the stage's look was made on. The engine works out what the camera shows where in the same steps (`src/domain/camera.ts`) */
+/* The camera's view, and its shadow under it: the whole frame, or a window on the ground, leant back and swung about its middle as the camera angles. The engine works out what the camera shows where in the same steps (`src/domain/camera.ts`) */
+.view,
+.view-shadow {
+	--view-corner: 24px;
+
+	position: absolute;
+	left: calc(var(--view-left) * 1px);
+	top: calc(var(--view-top) * 1px);
+	width: calc(var(--view-width) * 1px);
+	height: calc(var(--view-height) * 1px);
+	transform: rotateX(calc(var(--tilt) * 1deg)) rotateY(calc(var(--turn) * 1deg));
+}
+
+/* Flat on the frame, the view cuts nothing off, so an angled screen shows past the frame's own edges: its cut stands far out. Lifted at all, it is a window and cuts at its edges, its corners rounding as it lifts. The view leaves the frame's edges only once lifted, so the cut closes in where nothing past them shows */
+.view {
+	--view-reach: 4000px;
+	--lifted-at-all: 1000000;
+
+	clip-path: inset(
+		calc((min(var(--lift) * var(--lifted-at-all), 1) - 1) * var(--view-reach)) round
+			calc(var(--lift) * var(--view-corner) * var(--frame-scale))
+	);
+}
+
+.view-shadow {
+	border-radius: calc(var(--view-corner) * var(--frame-scale));
+	box-shadow: var(--view-shadow);
+	opacity: var(--lift);
+}
+
+/* The camera moves the screen, laid out at its own size, about its top left corner: the point looked at to the view's middle, brought close, its zoom counted as on a frame the stage's look was made on */
 .camera {
 	position: absolute;
 	left: 0;
@@ -34,9 +64,8 @@ body {
 	width: calc(var(--screen-width) * 1px);
 	height: calc(var(--screen-height) * 1px);
 	transform-origin: 0 0;
-	transform: translate(calc(var(--frame-width) * 1px / 2), calc(var(--frame-height) * 1px / 2))
-		rotateX(calc(var(--tilt) * 1deg)) rotateY(calc(var(--turn) * 1deg)) scale(calc(var(--zoom) * var(--frame-scale)))
-		translate(calc(var(--focus-x) * -1px), calc(var(--focus-y) * -1px));
+	transform: translate(calc(var(--view-width) * 1px / 2), calc(var(--view-height) * 1px / 2))
+		scale(calc(var(--zoom) * var(--frame-scale))) translate(calc(var(--focus-x) * -1px), calc(var(--focus-y) * -1px));
 }
 
 /* The screen the page is shown on: a rounded pane lifted off the ground, as far up as it has come */
@@ -280,15 +309,13 @@ body {
 	text-wrap: balance;
 }
 
-/* A title: words over the film's ground, over the whole frame or a half of it, the ground there first */
+/* A title: words over the film's ground over the whole frame, the ground there first; or words on a side of the frame, on the ground round the page's window */
 .title {
 	--word-rise: 28px;
 	--word-blur: 12px;
 	--word-sink: 12px;
 	--word-blur-leaving: 8px;
 	--title-edge: 160px;
-	--half-edge: 80px;
-	--half-gap: 96px;
 
 	position: absolute;
 	inset: 0;
@@ -301,23 +328,11 @@ body {
 	opacity: var(--grounded);
 }
 
-.title[data-half='left'] .ground {
-	mask-image: var(--ground-on-the-left);
+.title[data-side] .ground {
+	display: none;
 }
 
-.title[data-half='right'] .ground {
-	mask-image: var(--ground-on-the-right);
-}
-
-.title[data-half='top'] .ground {
-	mask-image: var(--ground-on-the-top);
-}
-
-.title[data-half='bottom'] .ground {
-	mask-image: var(--ground-on-the-bottom);
-}
-
-/* The words stand in the middle of what they stand over: centred over the whole frame, read from the left over a half beside the screen */
+/* The words stand in the middle of what they stand over: centred over the whole frame; beside a window, in the middle of their box down it, read from the left beside the window and centred above or below it. The box is in the frame's pixels, and what stands over the frame in pixels of a frame the stage's look was made on */
 .title .words {
 	position: absolute;
 	left: var(--title-edge);
@@ -331,28 +346,17 @@ body {
 	text-wrap: balance;
 }
 
-.title[data-half] .words {
-	font-size: 68px;
+.title[data-side] .words {
+	left: calc(var(--left) * 1px / var(--frame-scale));
+	right: auto;
+	top: calc((var(--top) + var(--height) / 2) * 1px / var(--frame-scale));
+	width: calc(var(--width) * 1px / var(--frame-scale));
+	font-size: 72px;
 }
 
-.title[data-half='left'] .words {
-	left: var(--half-edge);
-	right: calc(50% + var(--half-gap));
+.title[data-side='left'] .words,
+.title[data-side='right'] .words {
 	text-align: left;
-}
-
-.title[data-half='right'] .words {
-	left: calc(50% + var(--half-gap));
-	right: var(--half-edge);
-	text-align: left;
-}
-
-.title[data-half='top'] .words {
-	top: 25%;
-}
-
-.title[data-half='bottom'] .words {
-	top: 75%;
 }
 
 /* The agent's terminal: a window on the ground, its log above the line being typed, a little smaller while it comes up or goes */

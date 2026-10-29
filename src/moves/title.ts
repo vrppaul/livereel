@@ -1,32 +1,41 @@
 /**
- * Titles: words that come up one after another over the whole frame, or over a half of it, on the film's ground, in
- * place of any title on the screen, and go. Over a half, the camera frames the page into the other one
- * (`camera.onto(selector, { half })`).
+ * Titles: words that come up one after another over the whole frame, on the film's ground, or on a side of it beside
+ * the page's window, in place of any title on the screen, and go. Beside a window, the camera frames the page into a
+ * window on the side across (`camera.onto(selector, { side })`).
  */
-import { A_FRAME_HALF, type FrameHalf } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { A_FRAME_SIDE, type FrameSide, wordsOn } from '../domain/split.ts';
 import { linear } from '../domain/time.ts';
-import { type Move, TIMING_FORM, type TimingScript, propChange, timingOf } from '../direction/move.ts';
-import { A_WORDING, type Wording, saidOf } from '../props/words.ts';
+import {
+	type Beginning,
+	type Change,
+	type Move,
+	TIMING_FORM,
+	type TimingScript,
+	propChange,
+	timingOf
+} from '../direction/move.ts';
+import type { Beside } from '../props/title.ts';
+import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
 import { going } from './words.ts';
 
-/** Where a title stands: over a `half` of the frame, or over the whole of it where none is named. */
+/** Where a title stands: on a `side` of the frame, beside the page's window, or over the whole of it where none is named. */
 export interface TitleScript extends TimingScript {
-	readonly half?: FrameHalf;
+	readonly side?: FrameSide;
 }
 
-const TITLE_FORM: Form<TitleScript> = { half: A_FRAME_HALF, ...TIMING_FORM };
+const TITLE_FORM: Form<TitleScript> = { side: A_FRAME_SIDE, ...TIMING_FORM };
 
 /** A title coming up word by word, its ground first; its words come up at an even pace unless the film names a curve. */
 export function show(text: Wording, script: TitleScript = {}): Move {
 	assertKind(text, A_WORDING, "title.show's text");
 	assertWritten(script, TITLE_FORM, 'title.show');
 	const said = saidOf(text);
-	const half = script.half ?? null;
+	const side = script.side ?? null;
 	return {
 		part: 'title',
 		timing: timingOf({ ease: linear, ...script }),
-		begin: () => propChange('title', (progress) => ({ ...said, half, shown: progress, gone: 0 }))
+		begin: (beginning) => showing(said, besideOn(beginning, side))
 	};
 }
 
@@ -34,4 +43,13 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 export function hide(script: TimingScript = {}): Move {
 	assertWritten(script, TIMING_FORM, 'title.hide');
 	return { part: 'title', timing: timingOf(script), begin: (beginning) => going('title', beginning) };
+}
+
+function showing(said: Said, beside: Beside | null): Change {
+	return propChange('title', (progress) => ({ ...said, beside, shown: progress, gone: 0 }));
+}
+
+/** Where words on a side of the frame stand, in the frame the film is shot at; none over the whole frame. */
+function besideOn(beginning: Beginning, side: FrameSide | null): Beside | null {
+	return side === null ? null : { side, box: wordsOn(beginning.format.frame, side) };
 }

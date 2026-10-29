@@ -131,12 +131,12 @@ A film is a list of steps:
 
 and the moves of each part of the scene:
 
-- `camera.to(pose, { tilt, turn })`, `camera.onto(selector, { every, air, zoomAtMost, half, tilt, turn })`
+- `camera.to(pose, { tilt, turn })`, `camera.onto(selector, { every, air, zoomAtMost, side, tilt, turn })`
 - `light.on(selector, { dim })`, `light.to(selector)`, `light.off()`
 - `callout.show(selector, text, { side })`, `callout.hide()`
 - `cursor.to(selector, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { half })`, `title.hide()`
+- `title.show(text, { side })`, `title.hide()`
 - `caption.show(text)`, `caption.hide()`
 - `screen.rise()`, `screen.lower()`
 - `terminal.open(title)`, `terminal.type(strokes)`, `terminal.submit()`,
@@ -158,25 +158,32 @@ types the way a person does: unevenly, with a slip now and then.
 
 ### Titles, and words set their own way
 
-A title is words that come up one after another over the film's ground:
-over the whole frame, a screen of words that covers the page, or over a
-`half` of it, `left`, `right`, `top` or `bottom`, beside the page the camera
-frames into the other half:
+A title is words that come up one after another: over the film's ground
+across the whole frame, a screen of words that covers the page, or on a
+`side` of it, `left`, `right`, `top` or `bottom`, beside the page's window,
+which the camera frames a block into on the side across:
 
 ```ts
 play({
 	seconds: 1.6,
 	moves: [
-		camera.onto(CHART, { half: 'right' }),
-		title.show(['A real ', { text: 'click', ink: ACCENT }, ', a real server'], { half: 'left' })
+		camera.onto(CHART, { side: 'right' }),
+		title.show(['A real ', { text: 'click', ink: ACCENT }, ', a real server'], { side: 'left', within: { start: 0.5 } })
 	]
 })
 ```
 
-A block framed in a half stands at that half's middle, and a face-on
-camera keeps the screen filling that half, as it keeps it filling the whole
-frame. The ground over the other half fades out across the frame's middle,
-over whatever of the page reaches under it.
+The page draws back off the frame's edges into a window on the ground, its
+corners rounding, its edge and shadow coming up; `camera.onto` without a
+`side`, or `camera.to`, brings it back to fill the frame. The words take
+about a third of the frame, the window the rest, in the screen's shape:
+beside the words it stands whole, and below or above them a window taller
+than its share runs past the frame's edge. Inside the window the camera
+frames as in the whole frame: a block at its middle, as close as its `air`
+lets, the camera keeping the screen filling it; framed closer, the
+window stands still and the page grows in it. An angled camera leans the
+window back or swings it. Start the words once the window has drawn back,
+so they come up on the ground, not over the page.
 
 A callout is words on a card beside a block of the page, pointing at it:
 `callout.show(selector, text, { side })`, its `side` `above` (where none is

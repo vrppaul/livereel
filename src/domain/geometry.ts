@@ -2,10 +2,10 @@
  * Sizes, points and boxes, in the page's own CSS pixels.
  *
  * The frame is what a film is shot at, the screen what its page is laid out on; a box is where a block of the page
- * stands on that screen, with no camera applied, or a part of the frame, as a half of it. Every other measure of a film
- * is read off these.
+ * stands on that screen, with no camera applied, or a part of the frame, as the page's window on it. Every other
+ * measure of a film is read off these.
  */
-import { A_NUMBER, type Form, type Kind, OfForm, OneOf, Plain, needed } from './handed.ts';
+import { A_NUMBER, type Form, type Kind, OfForm, Plain, needed } from './handed.ts';
 import { between } from './time.ts';
 
 export interface Size {
@@ -54,13 +54,6 @@ export interface Box {
 	readonly height: number;
 }
 
-/** The halves of a frame, by the side each lies on: where a title stands, and what a camera frames a block into. */
-const FRAME_HALVES = ['left', 'right', 'top', 'bottom'] as const;
-
-export type FrameHalf = (typeof FRAME_HALVES)[number];
-
-export const A_FRAME_HALF = new OneOf(FRAME_HALVES, 'a half of the frame: "left", "right", "top" or "bottom"');
-
 /** A curve from a start to an end, drawn toward its bend: a quadratic Bézier. */
 export interface Arc {
 	readonly start: Point;
@@ -79,27 +72,6 @@ export function frameScaleOf(frame: Size): number {
 	return Math.min(frame.width, frame.height) / LOOK_MADE_ON;
 }
 
-/** The part of a frame a camera frames into, in the frame's pixels: a half of it, or the whole where none is named. */
-export function partOfFrame(frame: Size, half: FrameHalf | null): Box {
-	if (half === null) return { left: 0, top: 0, width: frame.width, height: frame.height };
-	return halfOf(frame, half);
-}
-
-function halfOf(frame: Size, half: FrameHalf): Box {
-	const across = frame.width / HALVES;
-	const down = frame.height / HALVES;
-	switch (half) {
-		case 'left':
-			return { left: 0, top: 0, width: across, height: frame.height };
-		case 'right':
-			return { left: across, top: 0, width: across, height: frame.height };
-		case 'top':
-			return { left: 0, top: 0, width: frame.width, height: down };
-		case 'bottom':
-			return { left: 0, top: down, width: frame.width, height: down };
-	}
-}
-
 export function middleX(box: Box): number {
 	return box.left + box.width / HALVES;
 }
@@ -108,14 +80,21 @@ export function middleY(box: Box): number {
 	return box.top + box.height / HALVES;
 }
 
-/** The corners of a size laid from its top left: top left, top right, bottom left, bottom right. */
-export function cornersOf(size: Size): readonly Point[] {
+/** The corners of a box: top left, top right, bottom left, bottom right. */
+export function cornersOf(box: Box): readonly Point[] {
+	const right = box.left + box.width;
+	const bottom = box.top + box.height;
 	return [
-		{ left: 0, top: 0 },
-		{ left: size.width, top: 0 },
-		{ left: 0, top: size.height },
-		{ left: size.width, top: size.height }
+		{ left: box.left, top: box.top },
+		{ left: right, top: box.top },
+		{ left: box.left, top: bottom },
+		{ left: right, top: bottom }
 	];
+}
+
+/** A size laid from the top left: the whole of a frame or a screen as a box. */
+export function boxOf(size: Size): Box {
+	return { left: 0, top: 0, width: size.width, height: size.height };
 }
 
 /** How far a size's corner stands from the corner across from it. */

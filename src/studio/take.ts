@@ -14,7 +14,7 @@
  * are still there: where one is gone, the take is refused by why, in place of what its loss made a step fail at (a
  * selector that matches nothing on Chrome's error page), and nothing of it is shot.
  */
-import { type Pose, flatPose } from '../domain/camera.ts';
+import { type Camera, flatCamera } from '../domain/camera.ts';
 import { TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/geometry.ts';
 import { type MotionBlur, alsoExposedAt } from '../domain/shutter.ts';
@@ -127,7 +127,7 @@ export class Take {
 		for (let index = 1; index <= frames; index += 1) {
 			if (this.finished()) return;
 			// The camera as the frame before showed it, or as the step begins: nothing moves it between frames
-			const posedBefore = this.scene.camera;
+			const cameraBefore = this.scene.camera;
 			const progress = index / frames;
 			const due = waiting.filter((move) => move.timing.within.start <= progress).sort(byStart);
 			waiting = waiting.filter((move) => !due.includes(move));
@@ -137,7 +137,7 @@ export class Take {
 			}
 			running = await this.endedBy(running, progress);
 			running = await this.setAlong(running, progress);
-			await this.frame(posedBefore);
+			await this.frame(cameraBefore);
 		}
 	}
 
@@ -150,7 +150,7 @@ export class Take {
 
 	/** An act on the page laid flat; the stage asked before it stands up again, as a stage gone cannot stand up. */
 	private async act(step: Act): Promise<void> {
-		await this.opened.stage.layFlat(drawn(posed(this.scene, flatPose(this.format)), this.moment()));
+		await this.opened.stage.layFlat(drawn(posed(this.scene, flatCamera(this.format)), this.moment()));
 		try {
 			await step.action(this.opened.act);
 		} finally {
@@ -202,9 +202,9 @@ export class Take {
 	}
 
 	/** One frame: exposed and kept where the footage keeps it, and counted; refused where the stage or its page is gone. */
-	private async frame(posedBefore: Pose): Promise<void> {
+	private async frame(cameraBefore: Camera): Promise<void> {
 		await this.refusedWhereGone();
-		if (this.footage.keeps(this.shot)) await this.footage.keep(this.shot, await this.exposed(posedBefore));
+		if (this.footage.keeps(this.shot)) await this.footage.keep(this.shot, await this.exposed(cameraBefore));
 		this.shot += 1;
 	}
 
@@ -214,18 +214,18 @@ export class Take {
 		if (absence !== undefined) throw absence;
 	}
 
-	/** The frame drawn at each pose the camera is caught at along its way from the frame before, its own last. */
-	private async exposed(posedBefore: Pose): Promise<Exposures> {
+	/** The frame drawn at each place the camera is caught at along its way from the frame before, its own last. */
+	private async exposed(cameraBefore: Camera): Promise<Exposures> {
 		const earlier: Uint8Array[] = [];
-		for (const pose of alsoExposedAt(posedBefore, this.scene.camera, this.format, this.motionBlur)) {
-			earlier.push(await this.drawnAt(pose));
+		for (const camera of alsoExposedAt(cameraBefore, this.scene.camera, this.format, this.motionBlur)) {
+			earlier.push(await this.drawnAt(camera));
 		}
 		return { earlier, own: await this.drawnAt(this.scene.camera) };
 	}
 
-	/** The scene as it stands drawn with the camera at a pose, and captured. */
-	private async drawnAt(pose: Pose): Promise<Uint8Array> {
-		await this.opened.stage.draw(drawn(posed(this.scene, pose), this.moment()));
+	/** The scene as it stands drawn by a camera, and captured. */
+	private async drawnAt(camera: Camera): Promise<Uint8Array> {
+		await this.opened.stage.draw(drawn(posed(this.scene, camera), this.moment()));
 		return this.opened.stage.capture();
 	}
 

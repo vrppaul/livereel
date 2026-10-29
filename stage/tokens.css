@@ -32,11 +32,8 @@
 	--caption-shadow: 0 2px 30px rgb(0 0 0 / 55%);
 	--callout-shadow: 0 12px 32px rgb(0 0 0 / 35%);
 
-	/* A title over a half of the frame: the ground over that half, fading out across the frame's middle */
-	--ground-on-the-left: linear-gradient(to right, #000 46%, transparent 54%);
-	--ground-on-the-right: linear-gradient(to left, #000 46%, transparent 54%);
-	--ground-on-the-top: linear-gradient(to bottom, #000 46%, transparent 54%);
-	--ground-on-the-bottom: linear-gradient(to top, #000 46%, transparent 54%);
+	/* The page's window on the ground: a faint edge round it, and its shadow */
+	--view-shadow: 0 0 0 2px rgb(255 255 255 / 10%), 0 60px 140px rgb(0 0 0 / 55%);
 
 	/* The film's font, and what stands in for it where the system has none */
 	--font: ui-sans-serif;

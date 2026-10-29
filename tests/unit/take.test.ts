@@ -99,7 +99,7 @@ test('a frame the camera crosses fast is drawn again along its way from the fram
 		hold({ seconds: 1 / 30 })
 	];
 	await takeOf(footage, stage).run(steps);
-	expect([footage.exposed, stage.drawn.map((scene) => scene.camera.focusX)]).toEqual([
+	expect([footage.exposed, stage.drawn.map((scene) => scene.camera.pose.focusX)]).toEqual([
 		[4, 4, 1],
 		[331.25, 337.5, 343.75, 350, 381.25, 387.5, 393.75, 400, 400]
 	]);

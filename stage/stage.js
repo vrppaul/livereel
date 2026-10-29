@@ -22,9 +22,8 @@
 const APART = ' ';
 // The lines of the terminal's log are told apart from each other by this, to know when they changed
 const BETWEEN_LINES = '\n';
-// The attribute that names the half of the frame a title stands over: none, over the whole of it; and the one that
-// names the side of its block a callout stands on
-const HALF = 'data-half';
+// The attribute that names the side of the frame a title stands on beside a window, none over the whole frame; and
+// the side of its block a callout stands on
 const SIDE = 'data-side';
 // The ink words are drawn in, the film's or a piece's own, and a piece's marker: the custom properties the stylesheet
 // draws them by; and the class of a marked piece
@@ -46,13 +45,19 @@ class CameraDrawer {
 
 	/** @param {DrawnScene} scene */
 	draw(scene) {
-		const pose = scene.camera;
+		const pose = scene.camera.pose;
+		const view = scene.camera.view;
 		numbered(this.root, {
 			'--focus-x': pose.focusX,
 			'--focus-y': pose.focusY,
 			'--zoom': pose.zoom,
 			'--tilt': pose.tilt,
-			'--turn': pose.turn
+			'--turn': pose.turn,
+			'--view-left': view.box.left,
+			'--view-top': view.box.top,
+			'--view-width': view.box.width,
+			'--view-height': view.box.height,
+			'--lift': view.lift
 		});
 	}
 }
@@ -168,7 +173,11 @@ class TitleDrawer {
 			this.words.clear();
 			return;
 		}
-		named(this.root, HALF, title.half);
+		named(this.root, SIDE, title.beside === null ? null : title.beside.side);
+		if (title.beside !== null) {
+			const box = title.beside.box;
+			numbered(this.root, { '--left': box.left, '--top': box.top, '--width': box.width, '--height': box.height });
+		}
 		numbered(this.root, { '--grounded': title.ground, '--gone': title.gone });
 		this.words.draw(title);
 	}

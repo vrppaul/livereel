@@ -11,7 +11,7 @@
  */
 import {
 	type ActContext,
-	type FrameHalf,
+	type FrameSide,
 	type Pose,
 	type Serving,
 	type Step,
@@ -52,17 +52,17 @@ const ACCENT = '#ffb86b';
 const MARKER = '#5b47d6';
 const OPENING: Wording = ['The most ', { text: 'famous', italic: true, ink: ACCENT }, ' page on the web'];
 const IN_SIX: Wording = ['It says so in ', { text: 'six languages', marker: MARKER }];
-// Where the words about the languages stand, and the half the page is framed in beside them, in each format
+// Where the words about the languages stand, and the side the page's window stands on beside them, in each format
 const SPLITS: Readonly<Record<keyof typeof FORMATS, Split>> = {
 	square: { words: 'top', page: 'bottom' },
 	wide: { words: 'left', page: 'right' }
 };
 const ENDING = { name: 'example.com', line: 'Filmed live, frame by frame', command: 'livereel' };
 
-/** The half of the frame a title stands over, and the half the page is framed in beside it. */
+/** The side of the frame a title stands on, and the side the page's window stands on beside it. */
 interface Split {
-	readonly words: FrameHalf;
-	readonly page: FrameHalf;
+	readonly words: FrameSide;
+	readonly page: FrameSide;
 }
 
 function inLanguage(language: string): string {
@@ -129,8 +129,8 @@ function actLanguages(split: Split): readonly Step[] {
 			seconds: 1,
 			moves: [
 				caption.hide({ within: { end: 0.4 } }),
-				camera.onto(ENGLISH, { half: split.page, air: 60, zoomAtMost: 2 }),
-				title.show(IN_SIX, { half: split.words, within: { start: 0.3 } })
+				camera.onto(ENGLISH, { side: split.page, air: 60, zoomAtMost: 2 }),
+				title.show(IN_SIX, { side: split.words, within: { start: 0.5 } })
 			],
 			ease: easeInOutCubic
 		}),
@@ -139,12 +139,12 @@ function actLanguages(split: Split): readonly Step[] {
 	];
 }
 
-/** One language's line lit and framed in its half, and held. */
-function inTurn(language: string, half: FrameHalf): readonly Step[] {
+/** One language's line lit and framed in the window, and held. */
+function inTurn(language: string, side: FrameSide): readonly Step[] {
 	return [
 		play({
 			seconds: 0.6,
-			moves: [light.to(inLanguage(language)), camera.onto(inLanguage(language), { half, air: 60, zoomAtMost: 2 })],
+			moves: [light.to(inLanguage(language)), camera.onto(inLanguage(language), { side, air: 60, zoomAtMost: 2 })],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 0.35 })

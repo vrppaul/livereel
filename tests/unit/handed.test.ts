@@ -32,7 +32,7 @@ const CURVE = 'a curve: a function of progress, as easeInOutSine';
 const SHARE = 'a share of the step: { start, end }';
 const A_MOVE = 'a move, as camera.onto or light.on makes one';
 const STROKE = { at: 0, typed: 'l' };
-const HALF = 'a half of the frame: "left", "right", "top" or "bottom"';
+const SIDE = 'a side of the frame: "left", "right", "top" or "bottom"';
 const WORDING = 'words: a string, or a list of strings and runs';
 const RUN = 'words: a string, or a run of them set its own way, { text, italic, underline, strike, ink, marker }';
 const COLOUR = 'a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa';
@@ -43,16 +43,16 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		new FilmError('camera.onto\'s air is "80": it is a number')
 	);
 	expect(() => camera.onto('#block', { airr: 80 } as never)).toThrow(
-		new FilmError('camera.onto names airr: it names every, air, zoomAtMost, half, tilt, turn, within, ease, or fewer')
+		new FilmError('camera.onto names airr: it names every, air, zoomAtMost, side, tilt, turn, within, ease, or fewer')
 	);
 	expect(() => camera.onto('#block', { every: 1.5 })).toThrow(
 		new FilmError("camera.onto's every is 1.5: it is a whole count, 1 or more")
 	);
-	expect(() => camera.onto('#block', { half: 'middle' as never })).toThrow(
-		new FilmError(`camera.onto's half is "middle": it is ${HALF}`)
+	expect(() => camera.onto('#block', { side: 'middle' as never })).toThrow(
+		new FilmError(`camera.onto's side is "middle": it is ${SIDE}`)
 	);
 	expect(() => camera.onto('#block', 5 as never)).toThrow(
-		new FilmError('camera.onto is handed 5 for an object of every, air, zoomAtMost, half, tilt, turn, within, ease')
+		new FilmError('camera.onto is handed 5 for an object of every, air, zoomAtMost, side, tilt, turn, within, ease')
 	);
 	expect(() => camera.to({ zoom: 1 } as never)).toThrow(
 		new FilmError("camera.to's pose's focusX is undefined: it is a number")
@@ -116,11 +116,11 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => title.show([{ text: 'Hello', marker: '#ffd54' }])).toThrow(
 		new FilmError(`title.show's text[0]'s marker is "#ffd54": it is ${COLOUR}`)
 	);
-	expect(() => title.show('Hello', { half: 'west' as never })).toThrow(
-		new FilmError(`title.show's half is "west": it is ${HALF}`)
+	expect(() => title.show('Hello', { side: 'west' as never })).toThrow(
+		new FilmError(`title.show's side is "west": it is ${SIDE}`)
 	);
-	expect(() => title.hide({ half: 'left' } as never)).toThrow(
-		new FilmError('title.hide names half: it names within, ease, or fewer')
+	expect(() => title.hide({ side: 'left' } as never)).toThrow(
+		new FilmError('title.hide names side: it names within, ease, or fewer')
 	);
 	expect(() => screen.rise({ within: { start: null as never } })).toThrow(
 		new FilmError("screen.rise's within's start is null: it is a number")

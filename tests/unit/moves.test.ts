@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { type Pose, underTheFrame } from '../../src/domain/camera.ts';
+import { type Camera, underTheFrame } from '../../src/domain/camera.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import type { Point } from '../../src/domain/geometry.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
@@ -92,7 +92,7 @@ test('what is put away — the light, a callout, a title, a caption, the termina
 	const said = saidOf('Words');
 	const lit = withProp(openingScene(SMALL), 'light', LIT);
 	const pointed = withProp(openingScene(SMALL), 'callout', { ...said, box: BLOCK, side: 'above', shown: 1, gone: 0 });
-	const titled = withProp(openingScene(SMALL), 'title', { ...said, half: 'left', shown: 1, gone: 0 });
+	const titled = withProp(openingScene(SMALL), 'title', { ...said, beside: null, shown: 1, gone: 0 });
 	const captioned = withProp(openingScene(SMALL), 'caption', { ...said, shown: 1, gone: 0 });
 	expect([
 		(await setAt(off(), lit, 1)).light,
@@ -197,7 +197,7 @@ test('a cursor comes to rest on what the screen shows of a block reaching off it
 });
 
 /** Where the camera ends, onto a block from the opening scene. */
-async function cameraOnto(target: string): Promise<Pose> {
+async function cameraOnto(target: string): Promise<Camera> {
 	return (await setAt(onto(target), openingScene(SMALL), 1)).camera;
 }
 
@@ -207,8 +207,14 @@ test('a camera onto a block reaching off the screen frames what the screen shows
 	expect(await Promise.all(reaching.map(cameraOnto))).toEqual(await Promise.all(shown.map(cameraOnto)));
 });
 
+test('an angled camera frames a block in its window as a face-on one does, the window leant and the screen filling it', async () => {
+	const faceOn = (await setAt(onto('#half-on', { side: 'right' }), openingScene(SMALL), 1)).camera;
+	const angled = (await setAt(onto('#half-on', { side: 'right', tilt: 6, turn: -16 }), openingScene(SMALL), 1)).camera;
+	expect(angled).toEqual({ pose: { ...faceOn.pose, tilt: 6, turn: -16 }, view: faceOn.view });
+});
+
 test("a face-on camera onto a block at the screen's foot stops short of showing the edge", async () => {
-	const pose = (await setAt(onto('#half-on', { air: 0, zoomAtMost: 4 }), openingScene(SMALL), 1)).camera;
+	const camera = (await setAt(onto('#half-on', { air: 0, zoomAtMost: 4 }), openingScene(SMALL), 1)).camera;
 	const frameFootMiddle: Point = { left: SMALL.frame.width / 2, top: SMALL.frame.height };
-	expect(underTheFrame(pose, SMALL.frame, frameFootMiddle)!.top).toBeLessThanOrEqual(SMALL.screen.height);
+	expect(underTheFrame(camera, SMALL.frame, frameFootMiddle)!.top).toBeLessThanOrEqual(SMALL.screen.height);
 });
