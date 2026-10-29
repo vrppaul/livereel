@@ -23,8 +23,9 @@ import {
 } from '../domain/handed.ts';
 import { type Ease, easeInOutSine, framesOf, linear } from '../domain/time.ts';
 import { A_STROKES, type Keystroke, typingSeconds } from '../domain/typing.ts';
+import type { FontNamed } from './theme.ts';
 import type { PropName } from '../scene.ts';
-import { A_CURVE, A_MOVE, A_MOVES, type Move, type Share, soundsOf } from './move.ts';
+import { A_CURVE, A_MOVE, A_MOVES, type Move, type Share, fontsOf, soundsOf } from './move.ts';
 import type { ActContext } from './page.ts';
 import type { Sound } from './sound.ts';
 
@@ -139,6 +140,11 @@ export function soundsIn(steps: readonly Step[]): readonly Sound[] {
 		.flatMap(movesOf)
 		.flatMap(soundsOf)
 		.map((cue) => cue.sound);
+}
+
+/** Every font the steps' moves set, known before anything is shot, so one CSS reads as no family is refused at once. */
+export function fontsIn(steps: readonly Step[]): readonly FontNamed[] {
+	return steps.flatMap(movesOf).flatMap(fontsOf);
 }
 
 function movesOf(step: Step): readonly Move[] {

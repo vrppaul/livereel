@@ -1,33 +1,24 @@
 /*
- * Every colour of the stage, its shadows and its reaches, and the sizes a film may tune, written once. The other
- * stylesheets name these and write no colour of their own (stylelint holds them to it). A film's theme sets any of
- * the ground, its glow, the inks, the accent, the fonts, the sizes of titles and captions, the window's corners and the
- * terminal's colours in place of these (`dress` in `stage.js`), and what is worked out from them follows.
+ * Every colour of the stage, its shadows and its reaches, written once. The other stylesheets name these and write no
+ * colour of their own (stylelint holds them to it). The film's look — the ground, its glow, the inks, the accent, the
+ * fonts, the sizes and weights of words, the window's corners, edge and shadow, the cursor and the terminal — is set
+ * on the root every frame from the scene (`LookDrawer` in `stage.js`, livereel's own in `src/props/look.ts`), so a
+ * film changes it as it goes; what is worked out from it here follows.
  */
 :root {
-	--ground: #0b0e14;
-	--ground-glow: #182033;
-	--glow-x: 0.5;
-	--glow-y: 0.3;
 	--ground-light: radial-gradient(
 		120% 90% at calc(var(--glow-x) * 100%) calc(var(--glow-y) * 100%),
 		var(--ground-glow),
 		var(--ground)
 	);
-	--ink: #f4f6fa;
-	--ink-quiet: #8b95a7;
 	--ink-faint: #5d6678;
 	--agent: #d97757;
 	--done: #7ee2a8;
-	--terminal: #10141c;
 	--terminal-edge: #252d3b;
 
-	/* What is written in the terminal and in the ending's command, on the terminal's own colour, and what stands back there */
-	--terminal-ink: #f4f6fa;
+	/* What stands back in the terminal and in the ending's command, on the terminal's own colour */
 	--terminal-quiet: #8b95a7;
 	--terminal-shadow: 0 0 0 1px var(--terminal-edge), 0 40px 100px rgb(0 0 0 / 50%);
-	--cursor-fill: #111;
-	--cursor-edge: #fff;
 	--cursor-shadow: drop-shadow(0 3px 4px rgb(0 0 0 / 35%));
 
 	/* What the screen shows until the page draws, and the screen lifted off the ground with a faint edge */
@@ -45,12 +36,8 @@
 	--caption-shadow: 0 2px 30px rgb(0 0 0 / 55%);
 	--callout-shadow: 0 12px 32px rgb(0 0 0 / 35%);
 
-	/* The page's window on the ground: how round its corners are, in pixels, the colour of a faint edge round it, and
-	 * its shadow, its colour and how strong it is, from 0 none to 1 livereel's, its colour that strong at its darkest */
-	--window-corner: 24;
-	--window-edge: #ffffff1a;
-	--window-shadow-colour: #000;
-	--window-shadow: 1;
+	/* The page's window on the ground: its edge, and its shadow in the look's colour, as strong as the look has it, from
+	 * 0 none to 1 livereel's, that colour this strong at its darkest */
 	--window-shadow-darkest: 55%;
 	--view-shadow:
 		0 0 0 2px var(--window-edge),
@@ -61,27 +48,13 @@
 				transparent
 			);
 
-	/* The marks' accent, a pin's number on it, and a key's cap standing up off the frame */
-	--accent: #ffb224;
-	--accent-ink: #10141b;
+	/* A key's cap standing up off the frame */
 	--key-shadow: inset 0 -6px 0 var(--terminal-edge), 0 24px 60px rgb(0 0 0 / 35%);
-
-	/* How large and how heavy the letters of what is written over the frame are, in pixels and as CSS weighs a font */
-	--title-size: 92;
-	--title-weight: 700;
-	--caption-size: 56;
-	--caption-weight: 650;
-	--note-size: 44;
-	--callout-size: 20;
-	--pin-text-size: 26;
-	--keys-size: 44;
 
 	/* How far in from the frame's foot, or its top, a caption's words and the keys stand */
 	--frame-edge-room: 72px;
 
-	/* The film's fonts, and what stands in for each where the system has none */
-	--font: ui-sans-serif;
+	/* The look's fonts, and what stands in for each where the system has none */
 	--sans: var(--font), system-ui, sans-serif;
-	--mono-font: ui-monospace;
 	--mono: var(--mono-font), 'JetBrains Mono', monospace;
 }

@@ -2,8 +2,9 @@
  * A film shot in one of its formats: its page served, its steps written and counted, the browser opened, the page
  * made ready, and a take.
  *
- * The film's length and its sounds are known from its steps before a browser opens, so footage that cannot be met —
- * a still past the end — or a sound that cannot be laid is refused at once. The browser closes before the page's
+ * The film's length, its sounds and the fonts its looks set are known from its steps before a browser opens, so
+ * footage that cannot be met — a still past the end — a sound that cannot be laid, or a font CSS reads as no family
+ * is refused before the first frame. The browser closes before the page's
  * server stops. What the film's own code does — its server, its steps, its wait for the page — is the film's: a fault
  * there is said as the film's, naming where.
  */
@@ -11,7 +12,7 @@ import { wholePose } from '../domain/camera.ts';
 import { FilmError, LivereelError } from '../domain/errors.ts';
 import { momentOf } from '../domain/time.ts';
 import type { FilmInFormat } from '../direction/film.ts';
-import { framesIn, soundsIn } from '../direction/steps.ts';
+import { fontsIn, framesIn, soundsIn } from '../direction/steps.ts';
 import { openingScene } from '../scene.ts';
 import type { Browser, Footage, Track } from './ports.ts';
 import { Take } from './take.ts';
@@ -44,14 +45,15 @@ export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Sho
 	const steps = await filmsOwn('steps', () => served.steps(wholePose(film.format)));
 	shooting.footage.expect(framesIn(steps));
 	await shooting.track.expect(soundsIn(steps));
-	await using opened = await shooting.browser.open(film, served.address, shooting.quality.sharpness);
+	const setting = { ...film, fonts: [...film.fonts, ...fontsIn(steps)] };
+	await using opened = await shooting.browser.open(setting, served.address, shooting.quality.sharpness);
 	await filmsOwn('ready', () => served.ready(opened.act));
 	const take = new Take({
 		opened,
 		footage: shooting.footage,
 		track: shooting.track,
 		format: film.format,
-		opening: openingScene(film.format),
+		opening: openingScene(film.format, film.look),
 		motionBlur: shooting.quality.blurred ? film.motionBlur : null
 	});
 	await take.run(steps);

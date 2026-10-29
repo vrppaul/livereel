@@ -1,5 +1,6 @@
 /**
- * A move: one prop of the scene, or the page, changing over a share of a step, and the sounds it makes on its way.
+ * A move: one prop of the scene, or the page, changing over a share of a step, the sounds it makes on its way, and
+ * the fonts it sets.
  *
  * A move reads what it starts from once, as its share begins, and becomes a change that knows its start and its end;
  * from then on what it sets at any progress is worked out from those and the progress alone, so a frame is the same
@@ -20,6 +21,7 @@ import {
 	isObjectOfValues
 } from '../domain/handed.ts';
 import type { Ease } from '../domain/time.ts';
+import type { FontNamed } from './theme.ts';
 import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';
 import type { FilmedPage } from './page.ts';
 import type { Cue } from './sound.ts';
@@ -31,6 +33,7 @@ import type { Cue } from './sound.ts';
 type Part = PropName | 'page' | null;
 
 const NO_SOUNDS: readonly Cue[] = [];
+const NO_FONTS: readonly FontNamed[] = [];
 // The size of a block the page lays out none of, and how a block off the screen is brought in, above or below it and
 // beside it
 const NO_SIZE = 0;
@@ -122,6 +125,8 @@ export interface Move {
 	readonly timing: Timing;
 	/** The sounds the move makes on its way; a move that makes none has none. */
 	readonly sounds?: readonly Cue[];
+	/** The fonts the move sets, which the browser reads before the film is shot; a move that sets none has none. */
+	readonly fonts?: readonly FontNamed[];
 	readonly begin: (beginning: Beginning) => Change | Promise<Change>;
 }
 
@@ -132,6 +137,11 @@ export function timingOf(script: TimingScript): Timing {
 /** The sounds a move makes on its way: none, for a move that names none. */
 export function soundsOf(move: Move): readonly Cue[] {
 	return move.sounds ?? NO_SOUNDS;
+}
+
+/** The fonts a move sets: none, for a move that names none. */
+export function fontsOf(move: Move): readonly FontNamed[] {
+	return move.fonts ?? NO_FONTS;
 }
 
 /** The change of one prop: its state at each progress, written into the scene. */

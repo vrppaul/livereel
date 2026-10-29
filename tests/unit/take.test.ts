@@ -15,6 +15,7 @@ import { open, type } from '../../src/moves/terminal.ts';
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Keystroke } from '../../src/domain/typing.ts';
 import type { EndingCard } from '../../src/props/ending.ts';
+import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { type Scene, openingScene } from '../../src/scene.ts';
 import type { Exposures } from '../../src/studio/ports.ts';
 import { Take } from '../../src/studio/take.ts';
@@ -87,7 +88,14 @@ class StageNotAnswering extends StageThatKeeps {
 
 function takeOf(footage: FootageOf, stage: StageThatKeeps, track = new TrackThatKeeps()): Take {
 	const opened = openedOn(new PageOfBoxes(PAGE), stage);
-	return new Take({ opened, footage, track, format: SMALL, opening: openingScene(SMALL), motionBlur: HALF_OF_FOUR });
+	return new Take({
+		opened,
+		footage,
+		track,
+		format: SMALL,
+		opening: openingScene(SMALL, LIVEREELS_LOOK),
+		motionBlur: HALF_OF_FOUR
+	});
 }
 
 test('a frame the camera crosses fast is drawn again along its way from the frame before, each kept with its own', async () => {
@@ -160,7 +168,7 @@ test('each key typed into the page is heard on the frame it is pressed', async (
 		footage,
 		track,
 		format: SMALL,
-		opening: openingScene(SMALL),
+		opening: openingScene(SMALL, LIVEREELS_LOOK),
 		motionBlur: HALF_OF_FOUR
 	});
 	await take.run([play({ seconds: 0.2, moves: [typeIntoThePage(STROKES)] })]);

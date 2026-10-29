@@ -15,9 +15,11 @@ import {
 	act,
 	atAddress,
 	camera,
+	cut,
 	defineFilm,
 	keystrokes,
 	light,
+	look,
 	page,
 	play,
 	typing
@@ -149,14 +151,19 @@ test('a block to blur named by no selector Chrome makes a rule of is refused bef
 	).rejects.toThrow('the film\'s blurred holds ".email /*": it is no selector Chrome reads');
 });
 
-test('a font named in no form CSS reads is refused before the film is shot', async () => {
-	const shooting = shoot(
+test("a font named in no form CSS reads is refused before the film is shot: in the film's theme, in a look's move", async () => {
+	const themed = shoot(
 		filmWritten([], { theme: { font: "'Inter, sans-serif" } }),
 		shootingInto(new EveryFrameCounted(), 'software')
 	);
-	await expect(shooting).rejects.toThrow(
+	await expect(themed).rejects.toThrow(
 		`the film's theme's font is "'Inter, sans-serif": CSS reads no font family there`
 	);
+	const moved = shoot(
+		filmWritten([cut(look.to({ mono: "'Menlo" }))], {}),
+		shootingInto(new EveryFrameCounted(), 'software')
+	);
+	await expect(moved).rejects.toThrow(`look.to's mono is "'Menlo": CSS reads no font family there`);
 });
 
 test('a scroll of a block the page does not have is refused as its share begins, naming the block', async () => {

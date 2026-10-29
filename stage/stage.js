@@ -13,7 +13,7 @@
 /** @import { ShownLine } from '../src/props/terminal.ts' */
 /** @import { DrawnPin } from '../src/props/pins.ts' */
 /** @import { DrawnWords, Piece, Word } from '../src/props/words.ts' */
-/** @import { Theme } from '../src/direction/theme.ts' */
+/** @import { Look } from '../src/props/look.ts' */
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
@@ -41,10 +41,10 @@ const SPACE = 'space';
 // The class of a pin, and of one whose label a later pin has quietened
 const PIN = 'pin';
 const QUIET = 'quiet';
-// What each value of a film's theme sets on the stage: the token it takes the place of, or, for a value that names a
+// What each value of the film's look sets on the stage: the token it takes the place of, or, for a value that names a
 // way, the attribute the stylesheet reads it by
-/** @type {{ readonly [Name in keyof Theme]-?: { readonly token: string } | { readonly attribute: string } }} */
-const THEMED = {
+/** @type {{ readonly [Name in keyof Look]: { readonly token: string } | { readonly attribute: string } }} */
+const LOOK_SET_AS = {
 	ground: { token: '--ground' },
 	glow: { token: '--ground-glow' },
 	ink: { token: INK },
@@ -73,6 +73,7 @@ const THEMED = {
 	cursorEdge: { token: '--cursor-edge' },
 	wordsMotion: { attribute: 'data-words-motion' }
 };
+const LOOK_NAMES = Object.keys(LOOK_SET_AS).filter(isOfTheLook);
 
 class CameraDrawer {
 	/** @param {Staged} root */
@@ -396,8 +397,27 @@ class EndingDrawer {
 	}
 }
 
+/** The film's look, set on the stage's root, where every rule of the stylesheet reads it. */
+class LookDrawer {
+	/** @param {Staged} root */
+	constructor(root) {
+		this.root = root;
+	}
+
+	/** @param {DrawnScene} scene */
+	draw(scene) {
+		for (const name of LOOK_NAMES) {
+			const value = String(scene.look[name]);
+			const set = LOOK_SET_AS[name];
+			if ('token' in set) this.root.style.setProperty(set.token, value);
+			else this.root.setAttribute(set.attribute, value);
+		}
+	}
+}
+
 /** A drawer for every prop of the scene: the type checker refuses a prop without one. @type {{ readonly [Name in PropName]: Drawer }} */
 const DRAWERS = {
+	look: new LookDrawer(document.documentElement),
 	camera: new CameraDrawer(propRoot('camera')),
 	screen: new ScreenDrawer(propRoot('screen')),
 	light: new LightDrawer(propRoot('light')),
@@ -426,27 +446,12 @@ function setup(room) {
 }
 
 /**
- * The stage in a film's look: the token each value given takes the place of set to it, or, for a value that names a
- * way, its attribute on the stage's root. @param {Theme} theme
+ * Whether a name is one of the look's. Every key of the table is one, but `Object.keys` types each as a bare string:
+ * the guard keeps them all and tells the type checker they are the look's names.
+ * @param {string} name @returns {name is keyof Look}
  */
-function dress(theme) {
-	const root = document.documentElement;
-	for (const name of Object.keys(THEMED).filter(isThemed)) {
-		const value = theme[name];
-		if (value === undefined) continue;
-		const set = THEMED[name];
-		if ('token' in set) root.style.setProperty(set.token, String(value));
-		else root.setAttribute(set.attribute, String(value));
-	}
-}
-
-/**
- * Whether a name is one of a theme's. Every key of the table is one, but `Object.keys` types each as a bare string:
- * the guard keeps them all and tells the type checker they are the theme's names.
- * @param {string} name @returns {name is keyof Theme}
- */
-function isThemed(name) {
-	return Object.hasOwn(THEMED, name);
+function isOfTheLook(name) {
+	return Object.hasOwn(LOOK_SET_AS, name);
 }
 
 /** The page opened in the screen's frame, the frame sandboxed first where it is to be. @param {Opening} opening */
@@ -565,5 +570,5 @@ function found(element, name) {
 }
 
 /** @type {StageApi} */
-const STAGE = { setup, dress, open, apply };
+const STAGE = { setup, open, apply };
 window.stage = STAGE;

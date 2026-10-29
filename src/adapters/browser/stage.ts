@@ -11,7 +11,6 @@
 import type { Frame, Page } from 'playwright-core';
 import { eyeDistanceOf } from '../../domain/camera.ts';
 import { type Format, frameScaleOf } from '../../domain/geometry.ts';
-import type { Theme } from '../../direction/theme.ts';
 import type { DrawnScene } from '../../scene.ts';
 import type { Stage } from '../../studio/ports.ts';
 import type { FrameWatch } from './watch.ts';
@@ -43,8 +42,6 @@ export interface Opening {
 export interface StageApi {
 	/** The stage laid out as a room: the screen in the frame, seen from the eye. */
 	readonly setup: (room: Room) => void;
-	/** The stage in the film's look: each value the film gives in place of the stage's own. */
-	readonly dress: (theme: Theme) => void;
 	/** The filmed page opened in the screen's frame. */
 	readonly open: (opening: Opening) => void;
 	/** One frame, drawn whole from the scene. */
@@ -110,11 +107,6 @@ export function roomOf(format: Format): Room {
 /** The stage set to a room. */
 export function setUpStage(room: Room): void {
 	window.stage.setup(room);
-}
-
-/** The stage in the film's look. */
-export function dressStage(theme: Theme): void {
-	window.stage.dress(theme);
 }
 
 /** The filmed page opened in the stage's frame. */

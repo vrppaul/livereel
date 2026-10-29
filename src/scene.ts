@@ -2,7 +2,8 @@
  * What the stage draws on one frame: every prop's state at one moment.
  *
  * A scene is plain values, never changed in place: a move's change hands back a scene with its own prop set, and the
- * take keeps the one standing. `drawn` works out everything the stage needs from it — how far each word of a title, a
+ * take keeps the one standing. The film's look is a prop too, changed by moves as any other. `drawn` works out
+ * everything the stage needs from it — how far each word of a title, a
  * caption or a callout has come, the terminal's spinner, where a note's line meets the block it names on the frame —
  * so the stage draws numbers and words and decides nothing. A prop that may be absent is `null`; the compiler holds
  * every prop to a drawn form here and to a drawer on the stage.
@@ -15,6 +16,7 @@ import type { Cursor } from './props/cursor.ts';
 import type { Ending } from './props/ending.ts';
 import { type DrawnKeys, type Keys, drawnKeys } from './props/keys.ts';
 import type { Light } from './props/light.ts';
+import type { Look } from './props/look.ts';
 import { type DrawnNote, type Note, drawnNote } from './props/note.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
 import { SCREEN_UP, type Screen } from './props/screen.ts';
@@ -23,6 +25,7 @@ import { type DrawnTitle, type Title, drawnTitle } from './props/title.ts';
 import type { ShownWords } from './props/words.ts';
 
 export interface PropStates {
+	look: Look;
 	camera: Camera;
 	screen: Screen;
 	light: Light | null;
@@ -43,6 +46,7 @@ export type Scene = { readonly [Name in PropName]: PropStates[Name] };
 
 /** What the stage is handed for each prop: its state, or what is worked out from it to draw. */
 interface DrawnProps {
+	look: Look;
 	camera: DrawnCamera;
 	screen: Screen;
 	light: Light | null;
@@ -59,9 +63,10 @@ interface DrawnProps {
 
 export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] };
 
-/** The scene a film opens on: the whole screen, face-on, up, in the whole frame; nothing over it. */
-export function openingScene(format: Format): Scene {
+/** The scene a film opens on, in its look: the whole screen, face-on, up, in the whole frame; nothing over it. */
+export function openingScene(format: Format, look: Look): Scene {
 	return {
+		look,
 		camera: wholeCamera(format),
 		screen: SCREEN_UP,
 		light: null,
@@ -90,6 +95,7 @@ export function posed(scene: Scene, camera: Camera): Scene {
 export function drawn(scene: Scene, moment: number, format: Format): DrawnScene {
 	const caption = scene.caption === null ? null : drawnCaption(scene.caption, format);
 	return {
+		look: scene.look,
 		camera: drawnCamera(scene.camera, format),
 		screen: scene.screen,
 		light: scene.light,

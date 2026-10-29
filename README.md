@@ -224,10 +224,10 @@ letters; `marker`, the colour of a marker behind it; a colour in hex
 (`#7c5cff`). An underline or a marker runs on under the space between two
 words of one run, and stops where the run does.
 
-### Theme
+### Theme and look
 
-`defineFilm` takes a `theme`, any of its values; what the film leaves out
-stays livereel's:
+`defineFilm` takes a `theme`, the look the film opens on, any of its
+values; what the film leaves out stays livereel's:
 
 | Value | What it sets | livereel's |
 |---|---|---|
@@ -252,6 +252,21 @@ stays livereel's:
 Colours are in hex; sizes in pixels of a frame 1080 on its shorter side,
 scaled to the frame shot. A font falls back to livereel's where the system
 has none; one CSS reads as no family is refused before anything is shot.
+
+The look changes as the film goes, by a move like any other:
+`look.to(theme)`, any of the same values. In a `play` it moves there over
+its share of the step: a colour through the colours between, a size, a
+weight, a corner or a shadow through the values between, and a font or
+`wordsMotion`, which have none between, half-way; in a `cut`, at once.
+
+```ts
+play({ seconds: 1.2, moves: [look.to({ ground: '#f5efe6', ink: '#1a1a1a' })] }),  // the ground turns light
+cut(look.to({ font: 'Georgia', windowCorner: 0 })),                               // a serif, square corners, at once
+play({ seconds: 6, moves: [look.to({ glowX: 0.9, glowY: 0.1 }), camera.onto(CHART)] }) // the glow drifts as the camera goes
+```
+
+A ground named without a glow takes its glow with it, as in a theme; what
+a move leaves out stays as the look stands.
 
 ### The page: its colour scheme, and what it blurs
 

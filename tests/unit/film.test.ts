@@ -8,6 +8,7 @@ import type { MotionBlurScript } from '../../src/direction/blur.ts';
 import { atAddress, defineFilm } from '../../src/direction/film.ts';
 import { act } from '../../src/direction/steps.ts';
 import * as camera from '../../src/moves/camera.ts';
+import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import type { KeyboardSound, LivereelSoundsScript, Music } from '../../src/direction/sound.ts';
 import { SMALL } from './fakes.ts';
 
@@ -354,13 +355,13 @@ test("a format's split that leaves the words or the window no room on its frame 
 	expect(() => filmWritten({ formats: { small: { ...SMALL, split: { wordsMargin: 400 } } } })).toThrow(roomless);
 });
 
-test('a ground named without a glow is a ground of one colour, and one named with its glow keeps it', () => {
-	const themes = [{ ground: '#ffffff' }, { ground: '#ffffff', glow: '#eeeeee' }].map(
-		(theme) => filmWritten({ theme }).formats.get('small')!.theme
+test("a film opens on livereel's look with its theme's values; a ground named without a glow is a ground of one colour, and one named with its glow keeps it", () => {
+	const looks = [{ ground: '#ffffff' }, { ground: '#ffffff', glow: '#eeeeee' }].map(
+		(theme) => filmWritten({ theme }).formats.get('small')!.look
 	);
-	expect(themes).toEqual([
-		{ ground: '#ffffff', glow: '#ffffff' },
-		{ ground: '#ffffff', glow: '#eeeeee' }
+	expect(looks).toEqual([
+		{ ...LIVEREELS_LOOK, ground: '#ffffff', glow: '#ffffff' },
+		{ ...LIVEREELS_LOOK, ground: '#ffffff', glow: '#eeeeee' }
 	]);
 });
 

@@ -1,75 +1,13 @@
 /**
- * A film's look of its own, one for every format: the ground its screen stands on and its titles and ending come up
- * on, and its glow, the ink of the words livereel writes over the frame, their font, sizes and weights and how they
- * come up, the accent of its marks, the window's corners, edge and shadow, the cursor, and the agent's terminal. Where
- * things stand on the frame is the format's (`Format` in `src/domain/geometry.ts`). A value the film leaves out stays
- * livereel's, so a film tunes one and keeps the rest; the stage sets each the film gives in place of its own token
- * (`stage/tokens.css`), or, for a value that names a way, as an attribute its stylesheet reads.
+ * A theme as a film writes it: any values of a look (`Look` in `src/props/look.ts`), the look a film opens on in
+ * `defineFilm` and the look it moves to in `look.to`. A value it leaves out stays as the look has it, so a film tunes
+ * one and keeps the rest. Where things stand on the frame is the format's (`Format` in `src/domain/geometry.ts`).
  */
-import {
-	A_COLOUR,
-	A_FONT_FAMILY,
-	A_PIXELS,
-	A_SHARE,
-	type Form,
-	OneOf,
-	Plain,
-	assertWritten
-} from '../domain/handed.ts';
-
-export interface Theme {
-	/** The ground's colour, in hex, as it stands at its edges. */
-	readonly ground?: string;
-	/** The colour the ground lightens to where its glow stands, in hex: the ground's own, for a ground of one colour. */
-	readonly glow?: string;
-	/** The colour of the words of titles, captions, notes and the ending, in hex. */
-	readonly ink?: string;
-	/** The colour of what stands back: a pin's label a later one quietened, the ending's line, in hex. */
-	readonly quietInk?: string;
-	/** The colour of pins' marks and a note's line, and of a pin's number on its mark, in hex. */
-	readonly accent?: string;
-	readonly accentInk?: string;
-	/** The font of titles, captions and the ending, as CSS names a family; where the system has none, livereel's. */
-	readonly font?: string;
-	/** The font of the terminal and the ending's command, as CSS names a family. */
-	readonly mono?: string;
-	/** How far a title's letters stand, and a caption's, in pixels of a frame 1080 on its shorter side. */
-	readonly titleSize?: number;
-	readonly captionSize?: number;
-	/** How round the page's window's corners are, in pixels of a frame 1080 on its shorter side: 0, square. */
-	readonly windowCorner?: number;
-	/** The colour of the faint edge round the page's window, in hex, its own alpha how faint. */
-	readonly windowEdge?: string;
-	/** How strong the window's shadow is, from 0, none, to 1, livereel's; and its colour, in hex. */
-	readonly windowShadow?: number;
-	readonly windowShadowColour?: string;
-	/** The terminal's colour, and the colour of what is written in it, in hex. */
-	readonly terminal?: string;
-	readonly terminalInk?: string;
-	/** Where the ground's glow stands, across and down the frame, each from 0 to 1. */
-	readonly glowX?: number;
-	readonly glowY?: number;
-	/** How heavy a title's letters are, and a caption's, from 100, thinnest, to 900, as CSS weighs a font. */
-	readonly titleWeight?: number;
-	readonly captionWeight?: number;
-	/** How large a note's, a callout's, a pin's and a key's letters are, in pixels of a frame 1080 on its shorter side. */
-	readonly noteSize?: number;
-	readonly calloutSize?: number;
-	readonly pinSize?: number;
-	readonly keysSize?: number;
-	/** The cursor's colour and the colour of its edge, in hex. */
-	readonly cursorFill?: string;
-	readonly cursorEdge?: string;
-	/** How words come up: rising out of a blur, rising sharp, or standing where they are as they appear. */
-	readonly wordsMotion?: WordsMotion;
-}
-
-const WORDS_MOTIONS = ['soft', 'sharp', 'still'] as const;
-type WordsMotion = (typeof WORDS_MOTIONS)[number];
+import { A_COLOUR, A_FONT_FAMILY, A_PIXELS, A_SHARE, type Form, Plain, assertWritten } from '../domain/handed.ts';
+import { A_WORDS_MOTION, type Theme } from '../props/look.ts';
 
 const A_SIZE = new Plain(isSize, 'a number of pixels, more than 0');
 const A_WEIGHT = new Plain(isWeight, 'a weight from 100 to 900');
-const A_WORDS_MOTION = new OneOf(WORDS_MOTIONS, 'how words come up: "soft", "sharp" or "still"');
 const NONE = 0;
 const THINNEST = 100;
 const HEAVIEST = 900;
@@ -102,19 +40,40 @@ const THEME_FORM: Form<Theme> = {
 	cursorEdge: A_COLOUR,
 	wordsMotion: A_WORDS_MOTION
 };
-// A film that names no theme is shot in livereel's own look
+// A film that names no theme opens on livereel's own look
 const LIVEREELS_OWN: Theme = {};
 
-/**
- * A film's theme, read as a film whose types nobody checked may hand it: livereel's own where it writes none; anything
- * but an object of the theme's values, or a value of another kind, refused by where it stands. A ground named without
- * a glow is a ground of one colour: livereel's glow belongs to livereel's ground alone.
- */
+/** A font a film names, and where it names it, so a font CSS reads as no family is refused by its place. */
+export interface FontNamed {
+	readonly place: string;
+	readonly family: string;
+}
+
+/** Where a film's theme stands, as a refusal names it. */
+export const THE_FILMS_THEME = "the film's theme";
+
+/** A film's theme, as `defineFilm` reads it: livereel's own where the film writes none. */
 export function themeOf(written: unknown): Theme {
-	if (written === undefined) return LIVEREELS_OWN;
-	assertWritten(written, THEME_FORM, "the film's theme");
+	return written === undefined ? LIVEREELS_OWN : themeWritten(written, THE_FILMS_THEME);
+}
+
+/**
+ * A theme read as a film whose types nobody checked may hand it: anything but an object of a look's values, or a value
+ * of another kind, refused by where it stands. A ground named without a glow is a ground of one colour: the glow the
+ * look has belongs to the ground it had.
+ */
+export function themeWritten(written: unknown, place: string): Theme {
+	assertWritten(written, THEME_FORM, place);
 	if (written.ground !== undefined && written.glow === undefined) return { ...written, glow: written.ground };
 	return written;
+}
+
+/** The fonts a theme names, each by where it stands: none, where it names none. */
+export function fontsNamedIn(theme: Theme, place: string): readonly FontNamed[] {
+	return [
+		...(theme.font === undefined ? [] : [{ place: `${place}'s font`, family: theme.font }]),
+		...(theme.mono === undefined ? [] : [{ place: `${place}'s mono`, family: theme.mono }])
+	];
 }
 
 function isSize(written: unknown): written is number {

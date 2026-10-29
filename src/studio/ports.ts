@@ -58,10 +58,11 @@ export interface Opened extends AsyncDisposable {
 }
 
 /**
- * What the stage and the page are set as for a take: the film's format, where the stage stands, the film's look, the
- * colour scheme the page is asked for, and the blocks it blurs.
+ * What the stage and the page are set as for a take: the film's format, where the stage stands, the colour scheme the
+ * page is asked for, the blocks it blurs, and every font the film names, in its theme or its looks' moves, which the
+ * browser reads before anything is shot.
  */
-export type Setting = Pick<FilmInFormat, 'format' | 'stage' | 'theme' | 'colourScheme' | 'blurred'>;
+export type Setting = Pick<FilmInFormat, 'format' | 'stage' | 'colourScheme' | 'blurred' | 'fonts'>;
 
 export interface Browser {
 	readonly open: (setting: Setting, address: string, sharpness: number) => Promise<Opened>;

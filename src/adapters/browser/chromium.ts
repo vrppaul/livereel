@@ -27,19 +27,11 @@ import { type Browser as Playwright, type Frame, type Page, chromium } from 'pla
 import { FilmError, SetupError } from '../../domain/errors.ts';
 import type { StagePlace } from '../../direction/film.ts';
 import type { ActContext, PageMotionSwitch } from '../../direction/page.ts';
+import type { FontNamed } from '../../direction/theme.ts';
 import type { Browser, Opened, Setting } from '../../studio/ports.ts';
 import { stagedInside } from './inside.ts';
 import { PlaywrightPage } from './page.ts';
-import {
-	BrowserStage,
-	type Opening,
-	STAGE_FOLDER,
-	STAGE_PAGE,
-	dressStage,
-	openPage,
-	roomOf,
-	setUpStage
-} from './stage.ts';
+import { BrowserStage, type Opening, STAGE_FOLDER, STAGE_PAGE, openPage, roomOf, setUpStage } from './stage.ts';
 import { FrameWatch } from './watch.ts';
 import type { Warn } from './warn.ts';
 
@@ -271,16 +263,15 @@ async function blurring(page: Page, blurred: readonly string[]): Promise<void> {
 }
 
 /**
- * The stage set up in the film's look and the page opened in its frame, as far as it loads: its frame. A font the
- * film names that CSS reads as no list of families a fallback can follow is refused first, as one with a quote left
- * open, which runs on over the stage's own fallbacks: the stage would fall to the browser's font without a word.
+ * The stage set up and the page opened in its frame, as far as it loads: its frame. A font the film names, in its
+ * theme or in a look's move, that CSS reads as no list of families a fallback can follow is refused first, as one with
+ * a quote left open, which runs on over the stage's own fallbacks: the stage would fall to the browser's font without
+ * a word.
  */
 async function framed(page: Page, setting: Setting, opening: Opening): Promise<Frame> {
 	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
 	await page.evaluate(setUpStage, roomOf(setting.format));
-	await refusedWhereNoFamily(page, 'font', setting.theme.font);
-	await refusedWhereNoFamily(page, 'mono', setting.theme.mono);
-	await page.evaluate(dressStage, setting.theme);
+	for (const named of setting.fonts) await refusedWhereNoFamily(page, named);
 	const [filmed] = await Promise.all([
 		page.waitForEvent(NAVIGATED, { predicate: isInTheStagesFrame }),
 		page.evaluate(openPage, opening)
@@ -289,10 +280,10 @@ async function framed(page: Page, setting: Setting, opening: Opening): Promise<F
 	return filmed;
 }
 
-/** A font a theme names refused where CSS reads no list of families a fallback can follow; one left out stands. */
-async function refusedWhereNoFamily(page: Page, name: string, font: string | undefined): Promise<void> {
-	if (font === undefined || (await page.evaluate(isFollowedByAFallback, { font, fallback: FALLBACK_FONT }))) return;
-	throw new FilmError(`the film's theme's ${name} is ${JSON.stringify(font)}: CSS reads no font family there`);
+/** A font a film names refused, by where it names it, where CSS reads no list of families a fallback can follow. */
+async function refusedWhereNoFamily(page: Page, named: FontNamed): Promise<void> {
+	if (await page.evaluate(isFollowedByAFallback, { font: named.family, fallback: FALLBACK_FONT })) return;
+	throw new FilmError(`${named.place} is ${JSON.stringify(named.family)}: CSS reads no font family there`);
 }
 
 /** Whether a page that went somewhere is the one in the stage's frame, not the stage itself. */

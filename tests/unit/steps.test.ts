@@ -1,12 +1,21 @@
 import { expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
 import { keystrokes } from '../../src/domain/typing.ts';
-import { act, cut, framesIn, hold, play } from '../../src/direction/steps.ts';
+import { act, cut, fontsIn, framesIn, hold, play } from '../../src/direction/steps.ts';
 import { hide, show } from '../../src/moves/caption.ts';
 import { hide as cursorGone } from '../../src/moves/cursor.ts';
 import { on } from '../../src/moves/light.ts';
+import { to as lookTo } from '../../src/moves/look.ts';
 import { scrollBy, type } from '../../src/moves/page.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
+
+test("the fonts a film's looks name in its steps are found before it is shot, each by its move, in a play or a cut", () => {
+	const steps = [cut(lookTo({ font: 'Georgia' })), play({ seconds: 1, moves: [lookTo({ mono: 'Menlo' })] })];
+	expect(fontsIn(steps)).toEqual([
+		{ place: "look.to's font", family: 'Georgia' },
+		{ place: "look.to's mono", family: 'Menlo' }
+	]);
+});
 
 test('two moves of one prop at once in one step are refused as the step is written', () => {
 	expect(() =>

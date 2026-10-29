@@ -28,12 +28,13 @@ import {
 	needed
 } from '../domain/handed.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
+import { LIVEREELS_LOOK, type Look, type Theme, lookWith } from '../props/look.ts';
 import { leavesRoom } from '../domain/split.ts';
 import { type MotionBlurScript, motionBlurOf } from './blur.ts';
 import type { ActContext } from './page.ts';
 import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf, musicOf } from './sound.ts';
 import { type Step, stepsOf } from './steps.ts';
-import { type Theme, themeOf } from './theme.ts';
+import { type FontNamed, THE_FILMS_THEME, fontsNamedIn, themeOf } from './theme.ts';
 
 /** A page served for as long as a take lasts, at its address; the film's own handles may come with it. */
 export interface Serving extends AsyncDisposable {
@@ -76,7 +77,7 @@ export interface Script<Served extends Serving, Name extends string> {
 	readonly music?: Music;
 	/** How a fast camera is blurred, livereel's way save the values given, or `{ enabled: false }` for no blur. */
 	readonly motionBlur?: MotionBlurScript;
-	/** The film's own ground, ink and font, livereel's save the values given. */
+	/** The look the film opens on, livereel's save the values given; `look.to` changes it as the film goes. */
 	readonly theme?: Theme;
 	/** The colour scheme the page is asked for: `light`, where none is named, or `dark`. */
 	readonly colourScheme?: ColourScheme;
@@ -92,14 +93,15 @@ export interface ServedFilm extends AsyncDisposable {
 }
 
 /**
- * A film in one of its formats, where its stage stands, its look, how its page is asked to look and what it blurs, and
- * what it says of its sounds and of its blur.
+ * A film in one of its formats, where its stage stands, the look it opens on and the fonts its theme names, how its
+ * page is asked to look and what it blurs, and what it says of its sounds and of its blur.
  */
 export interface FilmInFormat {
 	readonly formatName: string;
 	readonly format: Format;
 	readonly stage: StagePlace;
-	readonly theme: Theme;
+	readonly look: Look;
+	readonly fonts: readonly FontNamed[];
 	readonly colourScheme: ColourScheme;
 	readonly blurred: readonly string[];
 	readonly sound: FilmSound;
@@ -152,7 +154,8 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 	readonly script: Script<Served, Name>;
 	readonly sound: FilmSound;
 	readonly motionBlur: MotionBlur | null;
-	readonly theme: Theme;
+	readonly look: Look;
+	readonly fonts: readonly FontNamed[];
 	readonly stage: StagePlace;
 	readonly colourScheme: ColourScheme;
 	readonly blurred: readonly string[];
@@ -165,7 +168,9 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 		this.script = script;
 		this.sound = { livereels: livereelSoundsOf(script.sounds), music: musicOf(script.music) };
 		this.motionBlur = motionBlurOf(script.motionBlur);
-		this.theme = themeOf(script.theme);
+		const theme = themeOf(script.theme);
+		this.look = lookWith(LIVEREELS_LOOK, theme);
+		this.fonts = fontsNamedIn(theme, THE_FILMS_THEME);
 		refuseUnlikeAFilm(script);
 		this.stage = script.stage ?? STAGE_WHERE_NONE_IS_NAMED;
 		this.colourScheme = script.colourScheme ?? COLOUR_SCHEME_WHERE_NONE_IS_NAMED;
@@ -179,7 +184,8 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 			formatName: name,
 			format: this.script.formats[name],
 			stage: this.stage,
-			theme: this.theme,
+			look: this.look,
+			fonts: this.fonts,
 			colourScheme: this.colourScheme,
 			blurred: this.blurred,
 			sound: this.sound,

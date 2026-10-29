@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import type { Format } from '../../src/domain/geometry.ts';
+import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
 import { type Piece, drawnWords, saidOf } from '../../src/props/words.ts';
 import { drawn, openingScene, withProp } from '../../src/scene.ts';
@@ -8,7 +9,11 @@ import { SMALL } from './fakes.ts';
 // A frame whose captions stand at its top
 const CAPTIONS_AT_THE_TOP: Format = { ...SMALL, captionAt: 'top' };
 // A caption a quarter of the way up: its ground, coming up twice as fast as its words, half of the way
-const CAPTIONED = withProp(openingScene(SMALL), 'caption', { ...saidOf('Words'), shown: 0.25, gone: 0 });
+const CAPTIONED = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'caption', {
+	...saidOf('Words'),
+	shown: 0.25,
+	gone: 0
+});
 
 /** A piece of a word, set in the styles named, in no ink and on no marker of its own. */
 function piece(text: string, ...styles: Piece['styles']): Piece {

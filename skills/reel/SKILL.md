@@ -243,7 +243,11 @@ and `keysSize`, and
 `terminalInk`, all in hex; `font` and `mono`, as CSS names a family
 installed on the machine; `titleSize`, `captionSize` and `windowCorner`
 in pixels of a 1080 frame. Leave out what the user does not name: livereel's
-own is a dark ground, white ink and an amber accent.
+own is a dark ground, white ink and an amber accent. `look.to(theme)`
+changes any of these as the film goes: in a `play` through the values
+between (a ground fading light, the glow drifting while the camera moves),
+in a `cut` at once; a font changes half-way through a play. Change the
+look where the story turns, not on every shot.
 
 The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
 person types; the curves are `linear`, `easeInOutSine` (a step's own),
