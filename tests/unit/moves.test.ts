@@ -184,6 +184,17 @@ test('a title and code move to another place through the boxes between', async (
 	]);
 });
 
+test("a title travelling to a place of another size takes that place's size as it sets off, so its words wrap once, and travels its middle along the way", async () => {
+	const titled = await setAt(title.show('Here', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const [start, end] = [wordsPlaced(SMALL, 'left'), wordsPlaced(SMALL, 'bottom')];
+	const setOff = (await setAt(title.to('bottom'), titled, 0)).title!.box!;
+	const halfWay = (await setAt(title.to('bottom'), titled, 0.5)).title!.box!;
+	expect([setOff, [halfWay.width, halfWay.height, middleY(halfWay)]]).toEqual([
+		{ left: start.left, top: middleY(start) - end.height / 2, width: end.width, height: end.height },
+		[end.width, end.height, (middleY(start) + middleY(end)) / 2]
+	]);
+});
+
 test('a title or code shown from a side slides in whole from a frame past its place, and one hidden toward a side slides out as far, then is gone', async () => {
 	const place = wordsPlaced(SMALL, 'left');
 	const coming = (
