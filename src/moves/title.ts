@@ -3,9 +3,9 @@
  * names (`src/domain/place.ts`), beside the page's window or alone, in place of any title on the screen, and go. A
  * title in a place moves to another, keeping how it reads, comes in from past a side of the frame, pushing the title
  * standing in a place off past the side across, or leaves past one; a title over the whole frame has no place to
- * move from, and is refused there. A title may set its letters' own size, in place of the look's. In a place its words
- * wrap and take their size by the width of their place, no larger than its own, so a title moving to a place of
- * another size takes that size as it sets off, where it reads from, and travels whole: its lines change once, where
+ * move from, and is refused there. A title may set its letters' own size, in place of the look's; one that sets none
+ * takes, in a place, its size by the width of the place, and its words wrap by it there, so a title moving to a place
+ * of another size takes that size as it sets off, where it reads from, and travels whole: its lines change once, where
  * they would break anew on every frame of the way.
  */
 import { FilmError } from '../domain/errors.ts';
@@ -50,9 +50,9 @@ import {
 /**
  * Where a title stands: `at` a place on the frame, or over the whole of it, on its ground, where none is named; how it
  * reads there, `align`, the place's own way where none is named; how large its letters are, `size`, in pixels of a
- * frame 1080 on its shorter side, in place of the look's `titleSize`, and in a place at most, so a long word still
- * stands on a line of its own; and the side it slides in `from`, past the frame's edge, rather than coming up in its
- * place.
+ * frame 1080 on its shorter side, over the whole frame and in a place alike, where none is named the look's
+ * `titleSize`, and in a place a share of it no larger than its width lets a long word stand; and the side it slides in
+ * `from`, past the frame's edge, rather than coming up in its place.
  */
 export interface TitleScript extends TimingScript {
 	readonly at?: Place;
@@ -62,10 +62,7 @@ export interface TitleScript extends TimingScript {
 }
 
 /** A title's words as the film sets them: what they say, how they read, and their own size, none as the look's. */
-interface Setting extends Said {
-	readonly align: Alignment;
-	readonly size: number | null;
-}
+type Setting = Said & Pick<Title, 'align' | 'size'>;
 
 const TITLE_FORM: Form<TitleScript> = {
 	at: A_PLACE,

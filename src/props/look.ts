@@ -59,12 +59,15 @@ export interface Look {
 	/** How strong the shadow of the window and the code's pane is, from 0, none, to 1, livereel's; its colour, in hex. */
 	readonly windowShadow: number;
 	readonly windowShadowColour: string;
-	/** The colour of the terminal and of the code's pane, and of what is written in them, in hex. */
+	/**
+	 * The colour of the terminal, of the code's pane, of the ending's command and of a key's cap, and of what is written
+	 * on them, in hex.
+	 */
 	readonly terminal: string;
 	readonly terminalInk: string;
 	/**
-	 * The colours of the code's pieces by kind, in hex, as an editor colours them on a dark pane: a comment, a string, a
-	 * number, a word the language keeps, a function called, and a key of an object.
+	 * The colours of the code's pieces by kind, in hex: a comment, a string, a number, a word the language keeps, a
+	 * function called, and a key of an object; livereel's are an editor's on a dark pane.
 	 */
 	readonly codeComment: string;
 	readonly codeString: string;
@@ -104,22 +107,29 @@ export interface Look {
 /** A film's theme: any values of a look, the rest as they stand. */
 export type Theme = Partial<Look>;
 
+/** Values of the look on their way: the look they start from, the look they go to, and the names of those that move. */
+export interface LookMoving {
+	readonly start: Look;
+	readonly end: Look;
+	readonly names: readonly (keyof Look)[];
+}
+
 /** A kind of the look's values: what a film may write for one, and the value a share of the way from one to another. */
 class LookKind<Value> implements Kind<Value> {
-	readonly kind: Kind<Value>;
+	readonly accepted: Kind<Value>;
 	readonly toward: (start: Value, end: Value, progress: number) => Value;
 
-	constructor(kind: Kind<Value>, toward: (start: Value, end: Value, progress: number) => Value) {
-		this.kind = kind;
+	constructor(accepted: Kind<Value>, toward: (start: Value, end: Value, progress: number) => Value) {
+		this.accepted = accepted;
 		this.toward = toward;
 	}
 
 	is(written: unknown): written is Value {
-		return this.kind.is(written);
+		return this.accepted.is(written);
 	}
 
 	faultOf(written: unknown, place: string): string | undefined {
-		return this.kind.faultOf(written, place);
+		return this.accepted.faultOf(written, place);
 	}
 }
 
@@ -240,7 +250,7 @@ const HALF_WAY = 0.5;
  * value a film writes is read (`src/domain/handed.ts`), so it does not take the look's value's place.
  */
 export function lookWith(look: Look, theme: Theme): Look {
-	return Object.assign({}, look, Object.fromEntries(Object.entries(theme).filter(isGiven)));
+	return Object.assign({}, look, Object.fromEntries(namedIn(theme).map((name) => [name, theme[name]])));
 }
 
 /** The names of the values a theme gives, not those it writes as `undefined`. */
@@ -249,23 +259,22 @@ export function namedIn(theme: Theme): readonly (keyof Look)[] {
 }
 
 /**
- * The look as it stands, with each value that differs between two looks `progress` of the way from the one to the
- * other, as its kind moves: a colour mixed, a number between, a font or a way of words changed half-way. A value the
- * two share stays as the look stands, so a move of other values at once keeps what it sets.
+ * The look as it stands, with the values named `progress` of the way from one look to another, as each one's kind
+ * moves: a colour mixed, a number between, a font or a way of words changed half-way. Every other value stays as the
+ * look stands, so a move of other values at once keeps what it sets.
  */
-export function lookToward(look: Look, start: Look, end: Look, progress: number): Look {
-	const moving = LOOK_NAMES.filter((name) => start[name] !== end[name]);
+export function lookToward(look: Look, moving: LookMoving, progress: number): Look {
 	return Object.assign(
 		{},
 		look,
-		Object.fromEntries(moving.map((name) => [name, valueToward(name, start, end, progress)]))
+		Object.fromEntries(moving.names.map((name) => [name, valueToward(name, moving, progress)]))
 	);
 }
 
 /** One value of the look `progress` of the way from one look to another, as its kind moves. */
-function valueToward<Name extends keyof Look>(name: Name, start: Look, end: Look, progress: number): Look[Name] {
+function valueToward<Name extends keyof Look>(name: Name, moving: LookMoving, progress: number): Look[Name] {
 	const kind: LookKind<Look[Name]> = LOOK_KINDS[name];
-	return kind.toward(start[name], end[name], progress);
+	return kind.toward(moving.start[name], moving.end[name], progress);
 }
 
 /** A value with none between, at its start for the first half of the way and at its end for the rest. */
@@ -280,9 +289,4 @@ function isWeight(written: unknown): written is number {
 /** Whether a name is one of the look's: every key of its table is, but `Object.keys` types each as a bare string. */
 function isOfTheLook(name: string): name is keyof Look {
 	return Object.hasOwn(LOOK_KINDS, name);
-}
-
-/** Whether a value of a theme was given, not written as `undefined`. */
-function isGiven(entry: readonly [string, unknown]): boolean {
-	return entry[1] !== undefined;
 }

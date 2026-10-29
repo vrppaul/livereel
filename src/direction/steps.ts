@@ -68,12 +68,12 @@ interface HoldScript {
 }
 
 /**
- * The part of the scene a move changes, never none, the values of it the move sets where it sets only some, and the
- * share of its step it changes them over.
+ * The part of the scene a move changes, never none, the names of the values of it the move sets where it sets only
+ * some, and the share of its step it changes them over.
  */
 interface PartTaken {
 	readonly part: PropName | 'page';
-	readonly values: readonly string[] | undefined;
+	readonly valueNames: readonly string[] | undefined;
 	readonly within: Share;
 }
 
@@ -167,13 +167,13 @@ function refuseClashes(moves: readonly Move[]): void {
 	const taken = moves.flatMap(partTaken);
 	const clash = taken
 		.flatMap((part, place) => taken.slice(place + 1).map((later) => clashOf(part, later)))
-		.find(isNamed);
+		.find(isClash);
 	if (clash !== undefined) throw new FilmError(`two moves on the ${clash} at once in one step`);
 }
 
 /** The part a move changes, and the share of its step it takes; a move that only makes a sound takes none. */
 function partTaken(move: Move): PartTaken[] {
-	return move.part === null ? [] : [{ part: move.part, values: move.values, within: move.timing.within }];
+	return move.part === null ? [] : [{ part: move.part, valueNames: move.valueNames, within: move.timing.within }];
 }
 
 /**
@@ -182,13 +182,14 @@ function partTaken(move: Move): PartTaken[] {
  */
 function clashOf(taken: PartTaken, other: PartTaken): string | undefined {
 	if (taken.part !== other.part || !taken.within.overlaps(other.within)) return undefined;
-	const otherValues = other.values;
-	if (taken.values === undefined || otherValues === undefined) return taken.part;
-	const shared = taken.values.find((value) => otherValues.includes(value));
+	const otherNames = other.valueNames;
+	if (taken.valueNames === undefined || otherNames === undefined) return taken.part;
+	const shared = taken.valueNames.find((name) => otherNames.includes(name));
 	return shared === undefined ? undefined : `${taken.part}'s ${shared}`;
 }
 
-function isNamed(clash: string | undefined): clash is string {
+/** Whether two moves changed something at once: what they clashed on is named. */
+function isClash(clash: string | undefined): clash is string {
 	return clash !== undefined;
 }
 

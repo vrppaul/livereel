@@ -211,6 +211,17 @@ test('a title or code shown from a side slides in whole from a frame past its pl
 	]);
 });
 
+test('a title keeps its own size as it travels, as it is pushed off and as it slides out, and a size of none is refused', async () => {
+	const titled = await setAt(title.show('Here', { at: 'left', size: 140 }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const travelling = (await setAt(title.to('right'), titled, 0.5)).title!;
+	const pushing = (await setAt(title.show('Next', { at: 'right', from: 'right' }), titled, 0.5)).title!;
+	const leaving = (await setAt(title.hide({ toward: 'left' }), titled, 0.5)).title!;
+	expect([travelling.size, pushing.pushedOff!.size, pushing.size, leaving.size]).toEqual([140, 140, null, 140]);
+	expect(() => title.show('Here', { size: 0 })).toThrow(
+		new FilmError("title.show's size is 0: it is a number of pixels, more than 0")
+	);
+});
+
 test('a title or code shown from a side while one stands in a place pushes it off past the side across, as one sheet, and it is gone at the end', async () => {
 	const [left, right] = [wordsPlaced(SMALL, 'left'), wordsPlaced(SMALL, 'right')];
 	const titled = await setAt(title.show('Here', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);

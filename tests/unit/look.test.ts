@@ -18,8 +18,9 @@ test("a theme's value written as undefined is left out, as a film whose types no
 test("a look on its way to a theme's values: a colour mixed, a number between, a font changed half-way, what the theme leaves out as the look stands", () => {
 	const end = lookWith(LIVEREELS_LOOK, { ground: '#ffffff', windowShadow: 0, font: 'Georgia' });
 	const standing = lookWith(LIVEREELS_LOOK, { ink: '#000000' });
-	const quarter = lookToward(standing, LIVEREELS_LOOK, end, 0.25);
-	const half = lookToward(standing, LIVEREELS_LOOK, end, 0.5);
+	const moving = { start: LIVEREELS_LOOK, end, names: ['ground', 'windowShadow', 'font'] } as const;
+	const quarter = lookToward(standing, moving, 0.25);
+	const half = lookToward(standing, moving, 0.5);
 	expect([quarter.ground, quarter.windowShadow, quarter.font, half.font, quarter.ink]).toEqual([
 		'#484a4fff',
 		0.75,

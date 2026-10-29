@@ -9,7 +9,7 @@
 import { type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import { fontsNamedIn, themeWritten } from '../direction/theme.ts';
 import { assertWritten } from '../domain/handed.ts';
-import { type Look, type Theme, lookToward, lookWith, namedIn } from '../props/look.ts';
+import { type LookMoving, type Theme, lookToward, lookWith, namedIn } from '../props/look.ts';
 import { withProp } from '../scene.ts';
 
 const PLACE = 'look.to';
@@ -18,16 +18,16 @@ const PLACE = 'look.to';
 export function to(theme: Theme, script: TimingScript = {}): Move {
 	const named = themeWritten(theme, PLACE);
 	assertWritten(script, TIMING_FORM, PLACE);
+	const names = namedIn(named);
 	return {
 		part: 'look',
-		values: namedIn(named),
+		valueNames: names,
 		timing: timingOf(script),
 		fonts: fontsNamedIn(named, PLACE),
-		begin: (beginning) => changing(beginning.scene.look, named)
+		begin: (beginning) => changing({ start: beginning.scene.look, end: lookWith(beginning.scene.look, named), names })
 	};
 }
 
-function changing(start: Look, theme: Theme): Change {
-	const end = lookWith(start, theme);
-	return (scene, progress) => withProp(scene, 'look', lookToward(scene.look, start, end, progress));
+function changing(moving: LookMoving): Change {
+	return (scene, progress) => withProp(scene, 'look', lookToward(scene.look, moving, progress));
 }

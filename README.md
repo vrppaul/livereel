@@ -197,9 +197,10 @@ Words in a place stand in the middle of their box down it, as large as its
 width lets, centred in `whole`, `top` and `bottom` and read from the left
 anywhere else; `align: 'start'` or `'center'` says otherwise. A title's
 letters are as large as the look's `titleSize`, and in a place a share of
-it; `size` sets one title's own, in pixels of a 1080 frame, in a place at
-most, so a long word still stands on a line of its own:
-`title.show('Live', { size: 220 })`.
+it no larger than the place's width lets a long word stand on a line;
+`size` sets one title's own, in pixels of a 1080 frame, over the whole
+frame or in a place alike: `title.show('Live', { at: 'left', size: 220 })`.
+A word larger than its place runs past it, so check it on a still.
 
 Words in a place travel: `title.to(place)` and `code.to(place)` carry them
 to another place through the boxes between, a title reading as it did;
@@ -310,7 +311,7 @@ values; what the film leaves out stays livereel's:
 | `windowCorner` | how round the corners of the page's window and the code's pane are, in pixels; `0`, square | `24` |
 | `windowEdge` | the faint edge round the window and the code's pane, its alpha how faint | `#ffffff1a` |
 | `windowShadow`, `windowShadowColour` | how strong the shadow of the window and the code's pane is, from `0`, none, to `1`, and its colour | `1`, `#000` |
-| `terminal`, `terminalInk` | the colour of the terminal and the code's pane, and what is written in them | `#10141c`, `#f4f6fa` |
+| `terminal`, `terminalInk` | the colour of the terminal, the code's pane, the ending's command and keys' caps, and what is written on them | `#10141c`, `#f4f6fa` |
 | `codeComment`, `codeString`, `codeNumber`, `codeKeyword`, `codeCall`, `codeKey` | the colours of the code's pieces by kind: a comment, a string, a number, a word the language keeps, a function called, a key of an object; livereel's are made for a dark pane | `#8b949e`, `#a5d6ff`, `#79c0ff`, `#ff7b72`, `#d2a8ff`, `#7ee787` |
 | `terminalWidth`, `terminalHeight` | how much of the frame's width and height the terminal takes, each from 0 to 1 | `0.86`, `0.78` |
 | `glowX`, `glowY` | where the ground's glow stands, across and down, each from 0 to 1 | `0.5`, `0.3` |

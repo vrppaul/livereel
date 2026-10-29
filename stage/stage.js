@@ -34,7 +34,7 @@ const SIDE = 'data-side';
 const PLACED = 'data-placed';
 const ALIGN = 'data-align';
 // The custom property a title's own size is set as, where it has one; the stylesheet takes the look's where it has not
-const OWN_SIZE = '--own-size';
+const OWN_SIZE = '--title-own-size';
 // The attribute that names the edge of the frame a caption stands at: its foot, or its top
 const CAPTION_EDGE = 'data-at';
 // The attribute that names which way a note's words run from where its line meets them, or a pin's label from its mark
@@ -409,8 +409,7 @@ class TitleLayer {
 		this.element.toggleAttribute(PLACED, title.box !== null);
 		if (title.box !== null) placed(this.element, title.box);
 		named(this.element, ALIGN, title.align);
-		if (title.size === null) this.element.style.removeProperty(OWN_SIZE);
-		else numbered(this.element, { [OWN_SIZE]: title.size });
+		numberedOrNone(this.element, OWN_SIZE, title.size);
 		numbered(this.element, { '--grounded': title.ground, '--gone': title.gone });
 		this.words.draw(title.key, title.words);
 	}
@@ -607,6 +606,16 @@ function shown(element, isShown) {
 function named(element, attribute, name) {
 	if (name === null) element.removeAttribute(attribute);
 	else element.setAttribute(attribute, name);
+}
+
+/**
+ * An element's custom property set to a number the film gave, or taken off where it gave none, so the stylesheet's
+ * own stands.
+ * @param {Staged} element @param {string} property @param {number | null} number
+ */
+function numberedOrNone(element, property, number) {
+	if (number === null) element.style.removeProperty(property);
+	else element.style.setProperty(property, String(number));
 }
 
 /**

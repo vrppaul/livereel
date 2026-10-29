@@ -70,8 +70,9 @@ const NIGHT: Theme = {
 const SERIF: Theme = { font: 'Georgia, serif', windowCorner: 0, windowShadowColour: '#7c3aed' };
 // The glow drifting up and across while the serif comes in, two moves of the look at once
 const DRIFT: Theme = { glowX: 0.85, glowY: 0.1 };
-// Then, at once, a cyan accent under the line lit, corners rounded again, and the code's pane in an editor's light
-// theme, its colours by kind with it (Solarized light)
+// Then, at once, a cyan accent under the line lit, corners rounded again, and the terminal's colours in an editor's
+// light theme, the code's colours by kind with them (Solarized light): the code's pane, and the closing card's command
+// after it
 const CYAN: Theme = { accent: '#22d3ee' };
 const ROUNDED: Theme = { windowCorner: 40 };
 const SOLARIZED: Theme = {

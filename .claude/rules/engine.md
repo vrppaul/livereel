@@ -23,7 +23,7 @@ How a module is built is said in its comment at the top. The stage has its own r
 
 - A frame is a moment of the film, `shot / FRAMES_PER_SECOND` seconds in, whatever the browser took: nothing reads the wall clock.
 - A move reads what it starts from once, as its share of its step begins, and becomes a change that knows its start and end; its prop at any progress follows from those and the progress alone.
-- Two moves of one part — a prop, or the page — share a step only one after the other: `play` and `cut` refuse them at once.
+- Two moves of one part — a prop, or the page — share a step only one after the other: `play` and `cut` refuse them at once, unless each sets values of the part the other does not (`Move.valueNames`), as two moves of the look may.
 - A move that finds nothing to start from throws as it begins (`present` in `src/direction/move.ts`); nothing checks for it frame by frame.
 - A cut is moves set at their end at once; a film changes the scene by moves alone.
 - Only an act changes the page itself; a play changes the scene and, for the page's own scroll or keys, does what that frame wants done.

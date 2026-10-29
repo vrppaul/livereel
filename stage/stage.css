@@ -479,25 +479,29 @@ body {
 	right: calc(var(--title-margin) * 1px);
 	top: 50%;
 	transform: translateY(-50%);
-	font: var(--title-weight) calc(var(--own-size, var(--title-size)) * 1px) / 1.08 var(--sans);
+	font: var(--title-weight) calc(var(--title-own-size, var(--title-size)) * 1px) / 1.08 var(--sans);
 	letter-spacing: -0.03em;
 	color: var(--ink);
 	text-align: center;
 	text-wrap: balance;
 }
 
-/* In a place the words stand in the middle of their box down it, read from its left or centred across it, as large as its width lets a long word stand on a line of its own, and no larger than the title's own size, or, where it has none, a share of the look's over the whole frame */
+/* In a place the words stand in the middle of their box down it, read from its left or centred across it, as large as the title's own size; where it has none, as large as the box's width lets a long word stand on a line of its own, and no larger than a share of the look's over the whole frame. A title with no size of its own leaves its own letters unset, as a custom property naming one never set is, so the size by the box stands */
 .title[data-placed] .words {
 	--placed-share-of-title: 0.78;
-	--placed-words-at-most: calc(var(--own-size, var(--title-size) * var(--placed-share-of-title)) * 1px);
+	--placed-words-at-most: calc(var(--title-size) * var(--placed-share-of-title) * 1px);
 	--letters-across: 8;
+	--own-letters: calc(var(--title-own-size) * 1px);
 
 	overflow-wrap: break-word;
 	left: calc(var(--left) * 1px / var(--frame-scale));
 	right: auto;
 	top: calc((var(--top) + var(--height) / 2) * 1px / var(--frame-scale));
 	width: calc(var(--width) * 1px / var(--frame-scale));
-	font-size: min(var(--placed-words-at-most), calc(var(--width) * 1px / var(--frame-scale) / var(--letters-across)));
+	font-size: var(
+		--own-letters,
+		min(var(--placed-words-at-most), calc(var(--width) * 1px / var(--frame-scale) / var(--letters-across)))
+	);
 	text-align: start;
 }
 
