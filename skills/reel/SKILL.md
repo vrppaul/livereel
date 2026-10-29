@@ -185,8 +185,8 @@ Every move that runs over time takes its timing as its last argument:
 `within: { start, end }`, the share of its step it runs over (0 to 1, the
 whole step if left out), and `ease`, its own curve where it does not take
 its step's.
-`cursor.hide()`, `screen.lower()` and `terminal.submit()` are made at once
-and take none: write them in a `cut`. Any other move in a `cut` is set at
+`cursor.hide()` and `terminal.submit()` are made at once and take none:
+write them in a `cut`. Any other move in a `cut` is set at
 its end at once.
 
 | Steps | |
@@ -202,7 +202,8 @@ its end at once.
 | `camera.to(pose, { tilt, turn })` | to a pose: `whole` from `steps`, or `lookingAt(pose, focusX, focusY, zoom)` |
 | `camera.onto(selector, { every, air, zoomAtMost, tilt, turn })` | frames the first `every` blocks a selector matches, `air` pixels round them, in whatever window stands, and keeps them framed as the window moves, the screen filling a window; an angle leans the window |
 | `window.to(place)` | the page's window to a place, the frame itself at `whole`, a window on the ground anywhere else: a side's room across from the words' share, or a box in shares; travels apart from the camera, in the same `play` or not |
-| `screen.rise()`, `screen.lower()` | the screen up out of the ground; down in it, in a `cut` |
+| `window.show({ at, from })`, `window.hide({ toward })` | the window sliding in whole from past a side of the frame to its place, or out past one, where it stays; with words sliding the other way in one `play`, a push |
+| `screen.rise()`, `screen.lower()` | the screen up out of the ground from where it stands, or down into it, the window's shadow and edge with it: over a share of a `play`, or at once in a `cut` |
 | `light.on(selector, { dim })`, `light.to(selector)`, `light.off()` | one block lit, the rest dimmed by `dim`; carried; put out |
 | `cursor.to(selector, { entering, bow })` | along an arc to a block, from `entering` if not yet on the screen |
 | `cursor.press({ sound })`, `cursor.release()`, `cursor.hide()` | pressed in with a click (`sound`, a file of the film's in its place), let go, taken off the screen |

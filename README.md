@@ -132,7 +132,7 @@ A film is a list of steps:
 and the moves of each part of the scene:
 
 - `camera.to(pose, { tilt, turn })`, `camera.onto(selector, { every, air, zoomAtMost, tilt, turn })`
-- `window.to(place)`
+- `window.to(place)`, `window.show({ at, from })`, `window.hide({ toward })`
 - `light.on(selector, { dim })`, `light.to(selector)`, `light.off()`
 - `callout.show(selector, text, { side })`, `callout.hide()`
 - `note.show(selector, text, { at })`, `note.hide()`
@@ -211,7 +211,13 @@ on the ground, its corners rounding, its edge and shadow coming up, carries
 it from one place to another, and, `window.to('whole')`, brings it back to
 fill the frame. The window moves apart from the camera: the camera keeps
 what it frames framed in whatever window stands, as the window travels or
-grows, so `window.to` and `camera.onto` share a step in either order. The
+grows, so `window.to` and `camera.onto` share a step in either order.
+`window.show({ at: 'whole', from: 'right' })` slides the window in whole
+from a frame past its place, `window.hide({ toward: 'left' })` slides it
+out as far, where it stays until a move brings it back: with words sliding
+the other way in the same step, a push. `screen.lower()` in a `play` takes
+the screen down into the ground over its share, the window's shadow and
+edge with it; in a `cut`, at once. The
 words take about a third of the frame, set as large as their share lets, or the share
 a format's `split` gives them (see Formats); the window takes the whole
 rest, whatever the page's shape, and shows the part of it the camera

@@ -5,7 +5,8 @@ import { type Point, boxOf, boxToward, frameScaleOf, middleX, middleY } from '..
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
 import { onto } from '../../src/moves/camera.ts';
-import { to as windowTo } from '../../src/moves/window.ts';
+import { hide as windowHide, show as windowShow, to as windowTo } from '../../src/moves/window.ts';
+import { lower, rise } from '../../src/moves/screen.ts';
 import { drawnTitle } from '../../src/props/title.ts';
 import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
@@ -293,6 +294,7 @@ test('while a note stands the window stays beside it: a move of the window is re
 	const windowed = await setAt(windowTo('right'), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const noted = await setAt(note.show('#block', 'Here'), windowed, 1);
 	await expect(async () => windowTo('left').begin(beginningOf(noted))).rejects.toThrow(FilmError);
+	await expect(async () => windowHide({ toward: 'left' }).begin(beginningOf(noted))).rejects.toThrow(FilmError);
 });
 
 test('a note with no window to stand beside, or with its words over the window, is refused as it begins', async () => {
@@ -315,6 +317,26 @@ test('the window moves to a place, lifted off the ground, and back over the whol
 		{ box: boxToward(windowOn(SMALL, 'right'), boxOf(SMALL.frame), 0.5), lift: 0.5 },
 		wholeView(SMALL.frame),
 		wholeView(SMALL.frame)
+	]);
+});
+
+test('the window shown from a side slides in whole from a frame past its place, and one hidden toward a side slides out as far and stays there', async () => {
+	const room = windowOn(SMALL, 'right');
+	const coming = await setAt(windowShow({ at: 'right', from: 'bottom' }), openingScene(SMALL, LIVEREELS_LOOK), 0);
+	const shown = await setAt(windowShow({ at: 'right', from: 'bottom' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const gone = await setAt(windowHide({ toward: 'left' }), shown, 1);
+	expect([coming, shown, gone].map((scene) => cameraOf(scene, SMALL).view)).toEqual([
+		windowView(pastTheEdge(room, 'bottom', SMALL.frame)),
+		windowView(room),
+		windowView(pastTheEdge(room, 'left', SMALL.frame))
+	]);
+});
+
+test('the screen rises and goes down into the ground from where it stands, over its move', async () => {
+	const halfDown = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'screen', { shown: 0.5 });
+	expect([(await setAt(rise(), halfDown, 0.5)).screen, (await setAt(lower(), halfDown, 0.5)).screen]).toEqual([
+		{ shown: 0.75 },
+		{ shown: 0.25 }
 	]);
 });
 

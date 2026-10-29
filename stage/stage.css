@@ -47,10 +47,11 @@ body {
 	);
 }
 
+/* The window's shadow and edge, as far as it stands off the ground and the screen has come up in it */
 .view-shadow {
 	border-radius: calc(var(--lift) * var(--view-corner) * var(--frame-scale));
 	box-shadow: var(--view-shadow);
-	opacity: var(--lift);
+	opacity: calc(var(--lift) * var(--screen-shown));
 }
 
 /* The camera moves the screen, laid out at its own size, about its top left corner: the point looked at to the view's middle, brought close, its zoom counted as on a frame the stage's look was made on */
@@ -73,7 +74,7 @@ body {
 	overflow: hidden;
 	background: var(--screen-ground);
 	box-shadow: var(--screen-shadow);
-	opacity: var(--shown);
+	opacity: var(--screen-shown);
 }
 
 .page {

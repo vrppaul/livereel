@@ -34,6 +34,7 @@ const CURVE = 'a curve: a function of progress, as easeInOutSine';
 const SHARE = 'a share of the step: { start, end }';
 const A_MOVE = 'a move, as camera.onto or light.on makes one';
 const STROKE = { at: 0, typed: 'l' };
+const SIDE = 'a side of the frame: "left", "right", "top" or "bottom"';
 const PLACE =
 	'a place: "whole", "left", "right", "top" or "bottom", or { of, left, top, width, height }, each in shares';
 const WORDING = 'words: a string, or a list of strings and runs';
@@ -53,6 +54,9 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => camera.onto('#block', 5 as never)).toThrow(
 		new FilmError('camera.onto is handed 5 for an object of every, air, zoomAtMost, tilt, turn, within, ease')
+	);
+	expect(() => pageWindow.show({ at: 'right' } as never)).toThrow(
+		new FilmError(`window.show's from is undefined: it is ${SIDE}`)
 	);
 	expect(() => pageWindow.to('middle' as never)).toThrow(
 		new FilmError(`window.to's place is "middle": it is ${PLACE}`)

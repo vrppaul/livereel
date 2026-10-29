@@ -136,7 +136,7 @@ class ScreenDrawer {
 
 	/** @param {DrawnScene} scene */
 	draw(scene) {
-		numbered(this.root, { '--shown': scene.screen.shown });
+		numbered(this.root, { '--screen-shown': scene.screen.shown });
 	}
 }
 
