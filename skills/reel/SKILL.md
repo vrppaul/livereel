@@ -42,6 +42,7 @@ caption. Speak in the director's words, which are the tool's:
 | caption | `caption.show(text)`, `caption.hide()`; at the frame's foot, or its top in a format with `captionAt: 'top'`, which leaves the foot to keys |
 | title card | `title.show(text)` — words over the whole frame, on the film's ground; `title.hide()` |
 | split | `camera.onto(selector, { side: 'right' })` with `title.show(text, { side: 'left', within: { start: 0.5 } })` in one `play` — the page draws back into a window on one side, then the words come up on the ground across from it; name the sides per format from `steps`' format name: words above the window in a square, beside it in a wide frame; a format's `split` sets the words' share and the margins, `{ wordsShare: 0.28 }` for words that ask less room above a square's window |
+| code beside | `code.show(lines, { side: 'left' })` with `camera.onto(selector, { side: 'right' })` — the film's code on one side, the page doing it in the window across; `code.light(n)` as the page does what line `n` says; short lines, or a larger `wordsShare` |
 | entrance | `cut(screen.lower())`, then `screen.rise()` in a `play`; `ending.show(card)` |
 | tempo | how long each `play` and `hold({ seconds })` lasts |
 
@@ -211,13 +212,14 @@ its end at once.
 | `pin.show(selector, label)`, `pin.clear()` | a numbered mark on a block, after those laid before, the earlier labels quietened; all taken away |
 | `keys.show(caps)`, `keys.hide()` | the caps of a shortcut at the frame's foot, as `['⌘', 'Enter']` |
 | `title.show(text, { side })`, `title.hide()` | words coming up one after another on the film's ground over the whole frame, or on a `side` of it beside the page's window, in place of any title shown; going, the ground with them |
+| `code.show(text, { side })`, `code.light(line, { through })`, `code.hide()` | a dark pane of code in the words' box on a `side`, beside the page's window, its lines coming up one after another, coloured as TypeScript; a line lit, counted from 1, or lines `line` through `through`, the rest dimmed; going |
 | `caption.show(text)`, `caption.hide()` | words coming up one after another at the frame's foot, or its top in a format with `captionAt: 'top'`, in place of any shown; going |
 | `look.to(theme, { within })` | the film's look moving to any of a theme's values: through the values between in a `play`, at once in a `cut`; one look move a step |
 | `terminal.open(title)` | an agent's terminal coming up over the frame; in a `cut`, there at once |
 | `terminal.type(strokes)`, `terminal.submit()` | keys typed into it; Enter |
 | `terminal.works(lines, thinking, { thinkingShare })` | the agent thinking, its spinner beside the words `thinking`, then its lines written one after another; a line is `{ kind, text }`, its kind `work` (a tool and what it is used on), `said` or `done` |
 | `terminal.leave()` | the terminal giving way |
-| `ending.show(card)` | the last card: `{ name, line, command }` |
+| `ending.show(card)`, `ending.hide()` | the card: `{ name, line, command }`, last, or first and taken away as the page comes |
 | `page.scrollBy(selector, { pixels })` | a block's own scroll moved so many pixels |
 | `page.scrollTo(selector, { top })` | the page scrolled until a block stands `top` pixels below the top of what scrolls it |
 | `page.type(strokes)` | real keys typed into whatever holds the page's keyboard |
@@ -240,7 +242,7 @@ colour), `ink` and `quietInk`, `accent` and `accentInk` for pins and notes,
 `cursorFill` and `cursorEdge`, `terminal` and `terminalInk`. From 0 to 1:
 `windowShadow`, `glowX` and `glowY`. From 100 to 900: `titleWeight` and
 `captionWeight`. In pixels of a 1080 frame: `titleSize`, `captionSize`,
-`noteSize`, `calloutSize`, `pinSize`, `keysSize` and `windowCorner`. As
+`noteSize`, `calloutSize`, `pinSize`, `keysSize`, `codeSize` and `windowCorner`. As
 CSS names a family installed on the machine: `font` and `mono`. And
 `wordsMotion`: `'soft'`, `'sharp'` or `'still'`. Leave out what the user
 does not name: livereel's own is a dark ground, white ink and an amber

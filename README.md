@@ -140,11 +140,12 @@ and the moves of each part of the scene:
 - `cursor.to(selector, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
 - `title.show(text, { side })`, `title.hide()`
+- `code.show(text, { side })`, `code.light(line, { through })`, `code.hide()`
 - `caption.show(text)`, `caption.hide()`
 - `screen.rise()`, `screen.lower()`
 - `terminal.open(title)`, `terminal.type(strokes)`, `terminal.submit()`,
   `terminal.works(lines, thinking, { thinkingShare })`, `terminal.leave()`
-- `ending.show({ name, line, command })`
+- `ending.show({ name, line, command })`, `ending.hide()`, so a film may open on the card too
 - `page.scrollBy(selector, { pixels })`, `page.scrollTo(selector, { top })`, `page.type(strokes)`
 - `sound.play(file)`
 
@@ -219,6 +220,23 @@ Keys: `keys.show(['⌘', 'Enter'])` sets the caps of a shortcut at the
 frame's foot, as the page is sent it in an act, and they rise clear of a
 caption there as its ground comes up; `keys.hide()` takes them away.
 
+Code is a second screen beside the page's window: `code.show(text, { side })`
+sets a dark pane of code in the words' box on that `side`, its lines coming
+up one after another, coloured as TypeScript is, the indent they share
+dropped. Its letters are as large as `codeSize` lets, smaller where the
+widest line would not fit across, so keep its lines short or give the words
+a larger share (`split: { wordsShare: 0.44 }`). `code.light(2)` lights its
+second line, counted from 1, and dims the rest, `code.light(2, { through: 4 })`
+lines 2 to 4, so a line lights as the page does what it says:
+
+```ts
+play({ seconds: 1.4, moves: [camera.onto(CARDS, { side: 'right' }), code.show(LINES, { side: 'left' })] }),
+play({ seconds: 1, moves: [code.light(1), camera.onto(VISITORS, { side: 'right' })] }),
+play({ seconds: 1, moves: [code.light(2), light.on(VISITORS)] }),
+```
+
+`code.hide()` takes it away; a light past its last line is refused.
+
 What a title, a caption, a callout or a note says is a string, or a list of strings
 and runs, read one after another. A run is `{ text }` set any of these
 ways: `italic`, `underline`, `strike`, each `true`; `ink`, the colour of its
@@ -239,15 +257,15 @@ values; what the film leaves out stays livereel's:
 | `quietInk` | what stands back: a quietened pin's label, the ending's line | `#8b95a7` |
 | `accent`, `accentInk` | pins' marks and a note's line, and a pin's number on its mark | `#ffb224`, `#10141b` |
 | `font` | the font of titles, captions and the ending, as CSS names a family (`'Inter, sans-serif'`) | the system's sans |
-| `mono` | the font of the terminal and the ending's command | the system's monospace |
+| `mono` | the font of the terminal, the code and the ending's command | the system's monospace |
 | `titleSize`, `captionSize` | how large a title's and a caption's letters are, in pixels | `92`, `56` |
-| `windowCorner` | how round the page's window's corners are, in pixels; `0`, square | `24` |
-| `windowEdge` | the faint edge round the window, its alpha how faint | `#ffffff1a` |
-| `windowShadow`, `windowShadowColour` | how strong the window's shadow is, from `0`, none, to `1`, and its colour | `1`, `#000` |
-| `terminal`, `terminalInk` | the terminal's colour, and what is written in it | `#10141c`, `#f4f6fa` |
+| `windowCorner` | how round the corners of the page's window and the code's pane are, in pixels; `0`, square | `24` |
+| `windowEdge` | the faint edge round the window and the code's pane, its alpha how faint | `#ffffff1a` |
+| `windowShadow`, `windowShadowColour` | how strong the shadow of the window and the code's pane is, from `0`, none, to `1`, and its colour | `1`, `#000` |
+| `terminal`, `terminalInk` | the colour of the terminal and the code's pane, and what is written in them | `#10141c`, `#f4f6fa` |
 | `glowX`, `glowY` | where the ground's glow stands, across and down, each from 0 to 1 | `0.5`, `0.3` |
 | `titleWeight`, `captionWeight` | how heavy a title's and a caption's letters are, 100 to 900 | `700`, `650` |
-| `noteSize`, `calloutSize`, `pinSize`, `keysSize` | how large a note's, a callout's, a pin's label's and a key's letters are, in pixels | `44`, `20`, `26`, `44` |
+| `noteSize`, `calloutSize`, `pinSize`, `keysSize`, `codeSize` | how large a note's, a callout's, a pin's label's and a key's letters are, and the code's at most, in pixels | `44`, `20`, `26`, `44`, `26` |
 | `cursorFill`, `cursorEdge` | the cursor's colour and its edge's | `#111`, `#fff` |
 | `wordsMotion` | how words come up: `'soft'`, rising out of a blur; `'sharp'`, rising with no blur; `'still'`, fading up where they stand | `'soft'` |
 

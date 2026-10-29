@@ -8,6 +8,9 @@ import { to as cameraTo, onto } from '../../src/moves/camera.ts';
 import { drawnTitle } from '../../src/props/title.ts';
 import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
+import * as code from '../../src/moves/code.ts';
+import * as ending from '../../src/moves/ending.ts';
+import { drawnCode } from '../../src/props/code.ts';
 import * as keys from '../../src/moves/keys.ts';
 import * as look from '../../src/moves/look.ts';
 import * as note from '../../src/moves/note.ts';
@@ -77,6 +80,7 @@ const TYPED = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'terminal', {
 const READ: TerminalLine = { kind: 'work', text: 'Read app.py' };
 const SAID: TerminalLine = { kind: 'said', text: 'Done.' };
 const THINKING = 'Working…';
+const THREE_LINES = 'play({\n\tmoves: [camera.onto(VISITORS)]\n})';
 
 function beginningOf(scene: Scene): Beginning {
 	return { scene, page: PAGE, format: SMALL };
@@ -113,7 +117,7 @@ test('the light is carried or put out only where one is on', async () => {
 	await expect(async () => off().begin(unlit)).rejects.toThrow(FilmError);
 });
 
-test('what is put away — the light, a callout, pins, a note, a title, a caption, keys, the terminal — is gone at its end', async () => {
+test('what is put away — the light, a callout, pins, a note, a title, a caption, keys, code, the terminal, the ending — is gone at its end', async () => {
 	const said = saidOf('Words');
 	const lit = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'light', LIT);
 	const pointed = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'callout', {
@@ -135,6 +139,12 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 	const titled = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'title', { ...said, beside: null, shown: 1, gone: 0 });
 	const captioned = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'caption', { ...said, shown: 1, gone: 0 });
 	const pressed = await setAt(keys.show(['⌘', 'K']), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const coded = await setAt(code.show('light.on(VISITORS)', { side: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const carded = await setAt(
+		ending.show({ name: 'livereel', line: 'Film your app', command: 'npx livereel' }),
+		openingScene(SMALL, LIVEREELS_LOOK),
+		1
+	);
 	expect([
 		(await setAt(off(), lit, 1)).light,
 		(await setAt(callout.hide(), pointed, 1)).callout,
@@ -143,8 +153,29 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 		(await setAt(title.hide(), titled, 1)).title,
 		(await setAt(caption.hide(), captioned, 1)).caption,
 		(await setAt(keys.hide(), pressed, 1)).keys,
-		(await setAt(leave(), TYPED, 1)).terminal
-	]).toEqual([null, null, null, null, null, null, null, null]);
+		(await setAt(code.hide(), coded, 1)).code,
+		(await setAt(leave(), TYPED, 1)).terminal,
+		(await setAt(ending.hide(), carded, 1)).ending
+	]).toEqual([null, null, null, null, null, null, null, null, null, null]);
+});
+
+test("code stands in the words' box on the side the film names, beside the page's window", async () => {
+	const coded = await setAt(code.show('light.on(VISITORS)', { side: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	expect(coded.code!.beside).toEqual({ side: 'left', box: wordsOn(SMALL, 'left') });
+});
+
+test('the lines lit are the one named and those through the one named, and the rest dim', async () => {
+	const coded = await setAt(code.show(THREE_LINES, { side: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const lit = (await setAt(code.light(2, { through: 3 }), coded, 1)).code!;
+	expect([lit.lines.map((line) => line.lit), drawnCode(lit).dimmed]).toEqual([[0, 1, 1], 1]);
+});
+
+test('lines lit past the last of the code, or with no code shown, are refused as the move begins', async () => {
+	const coded = await setAt(code.show(THREE_LINES, { side: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	await expect(async () => code.light(3, { through: 4 }).begin(beginningOf(coded))).rejects.toThrow(FilmError);
+	await expect(async () => code.light(1).begin(beginningOf(openingScene(SMALL, LIVEREELS_LOOK)))).rejects.toThrow(
+		FilmError
+	);
 });
 
 test("pins are numbered along their path, the labels before the latest quietened, each running toward the view's middle, or over a wide block", async () => {

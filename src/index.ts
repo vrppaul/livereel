@@ -11,6 +11,7 @@ export * as pin from './moves/pins.ts';
 export * as cursor from './moves/cursor.ts';
 export * as note from './moves/note.ts';
 export * as title from './moves/title.ts';
+export * as code from './moves/code.ts';
 export * as caption from './moves/caption.ts';
 export * as keys from './moves/keys.ts';
 export * as look from './moves/look.ts';

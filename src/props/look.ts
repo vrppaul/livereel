@@ -1,10 +1,11 @@
 /**
  * The film's look, a prop like any other: the ground the screen stands on and the titles and ending come up on, and
  * its glow, the ink of the words livereel writes over the frame, their fonts, sizes and weights and how they come up,
- * the accent of the marks, the window's corners, edge and shadow, the cursor, and the agent's terminal. A film opens on
- * livereel's look with its theme's values, and changes it by moves as it goes: in a play, a colour, a size or a shadow
- * moves through the values between, and a font, which has none between, changes half-way; in a cut, at once. The
- * stage is handed the whole look every frame and sets each value in place of its token (`stage/tokens.css`).
+ * the accent of the marks, the window's corners, edge and shadow, which the code's pane takes too, the cursor, and the
+ * dark of the agent's terminal and the code's pane. A film opens on livereel's look with its theme's values, and
+ * changes it by moves as it goes: in a play, a colour, a size or a shadow moves through the values between, and a
+ * font, which has none between, changes half-way; in a cut, at once. The stage is handed the whole look every frame
+ * and sets each value in place of its token (`stage/tokens.css`).
  */
 import { colourToward } from '../domain/colour.ts';
 import { A_COLOUR, A_FONT_FAMILY, A_PIXELS, A_SHARE, type Form, OneOf, Plain } from '../domain/handed.ts';
@@ -31,19 +32,22 @@ export interface Look {
 	readonly accentInk: string;
 	/** The font of titles, captions and the ending, as CSS names a family; where the system has none, livereel's. */
 	readonly font: string;
-	/** The font of the terminal and the ending's command, as CSS names a family. */
+	/** The font of the terminal, the code and the ending's command, as CSS names a family. */
 	readonly mono: string;
 	/** How large a title's letters are, and a caption's, in pixels of a frame 1080 on its shorter side. */
 	readonly titleSize: number;
 	readonly captionSize: number;
-	/** How round the page's window's corners are, in pixels of a frame 1080 on its shorter side: 0, square. */
+	/**
+	 * How round the corners of the page's window and the code's pane are, in pixels of a frame 1080 on its shorter
+	 * side: 0, square.
+	 */
 	readonly windowCorner: number;
-	/** The colour of the faint edge round the page's window, in hex, its own alpha how faint. */
+	/** The colour of the faint edge round the page's window and the code's pane, in hex, its own alpha how faint. */
 	readonly windowEdge: string;
-	/** How strong the window's shadow is, from 0, none, to 1, livereel's; and its colour, in hex. */
+	/** How strong the shadow of the window and the code's pane is, from 0, none, to 1, livereel's; its colour, in hex. */
 	readonly windowShadow: number;
 	readonly windowShadowColour: string;
-	/** The terminal's colour, and the colour of what is written in it, in hex. */
+	/** The colour of the terminal and of the code's pane, and of what is written in them, in hex. */
 	readonly terminal: string;
 	readonly terminalInk: string;
 	/** Where the ground's glow stands, across and down the frame, each from 0 to 1. */
@@ -52,11 +56,15 @@ export interface Look {
 	/** How heavy a title's letters are, and a caption's, from 100, thinnest, to 900, as CSS weighs a font. */
 	readonly titleWeight: number;
 	readonly captionWeight: number;
-	/** How large a note's, a callout's, a pin's and a key's letters are, in pixels of a frame 1080 on its shorter side. */
+	/**
+	 * How large a note's, a callout's, a pin's and a key's letters are, and the code's at most, in pixels of a frame
+	 * 1080 on its shorter side.
+	 */
 	readonly noteSize: number;
 	readonly calloutSize: number;
 	readonly pinSize: number;
 	readonly keysSize: number;
+	readonly codeSize: number;
 	/** The cursor's colour and the colour of its edge, in hex. */
 	readonly cursorFill: string;
 	readonly cursorEdge: string;
@@ -99,6 +107,7 @@ export const THEME_FORM: Form<Theme> = {
 	calloutSize: A_SIZE,
 	pinSize: A_SIZE,
 	keysSize: A_SIZE,
+	codeSize: A_SIZE,
 	cursorFill: A_COLOUR,
 	cursorEdge: A_COLOUR,
 	wordsMotion: A_WORDS_MOTION
@@ -130,6 +139,7 @@ export const LIVEREELS_LOOK: Look = {
 	calloutSize: 20,
 	pinSize: 26,
 	keysSize: 44,
+	codeSize: 26,
 	cursorFill: '#111',
 	cursorEdge: '#fff',
 	wordsMotion: 'soft'
@@ -177,6 +187,7 @@ export function lookToward(start: Look, end: Look, progress: number): Look {
 		calloutSize: between(start.calloutSize, end.calloutSize, progress),
 		pinSize: between(start.pinSize, end.pinSize, progress),
 		keysSize: between(start.keysSize, end.keysSize, progress),
+		codeSize: between(start.codeSize, end.codeSize, progress),
 		cursorFill: colourToward(start.cursorFill, end.cursorFill, progress),
 		cursorEdge: colourToward(start.cursorEdge, end.cursorEdge, progress),
 		wordsMotion: named.wordsMotion

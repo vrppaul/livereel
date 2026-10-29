@@ -151,13 +151,22 @@ function wordsOf(wording: Wording): readonly Word[] {
 
 export function drawnWords(shown: ShownWords): DrawnWords {
 	const count = shown.words.length;
+	const words = shown.words.map((word, place) => ({ ...word, appeared: appearedOf(shown.shown, place, count) }));
+	return { words, key: shown.key, ground: groundOf(shown.shown, shown.gone), gone: shown.gone };
+}
+
+/**
+ * How far one of `count` things that come up one after another, words or lines of code, has come up, eased, the whole
+ * `shown` of the way: each over the share of the whole that `WORDS_AT_ONCE` take, so several are on their way at once.
+ */
+export function appearedOf(shown: number, place: number, count: number): number {
 	const share = WORDS_AT_ONCE / (count + WORDS_AT_ONCE - 1);
-	const words = shown.words.map((word, place) => ({
-		...word,
-		appeared: easeOutCubic(shareOf(shown.shown, (place / count) * (1 - share), share))
-	}));
-	const ground = Math.min(1, shown.shown * GROUND_COMES_FASTER) * (1 - shown.gone);
-	return { words, key: shown.key, ground, gone: shown.gone };
+	return easeOutCubic(shareOf(shown, (place / count) * (1 - share), share));
+}
+
+/** How far the ground under what comes up one after another has come: twice as fast as it does, going as it goes. */
+export function groundOf(shown: number, gone: number): number {
+	return Math.min(1, shown * GROUND_COMES_FASTER) * (1 - gone);
 }
 
 /** Every run's text, in order, broken into words and the spaces between them, each part set as its run is. */

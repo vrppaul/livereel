@@ -505,6 +505,83 @@ body {
 	text-align: left;
 }
 
+/* Code beside the page's window: a pane as wide as the words' box, in its middle down it, dark as the terminal, its corners, edge and shadow the window's. Its ground comes up first, rising a little, then its lines one after another. Its letters are as large as the look has them, smaller where its widest line would not fit across, a monospace letter about 0.6 of its size wide. A line lit stands on a bar of the accent; while one is, the rest dim to a share of their ink */
+.code {
+	--code-across: 32px;
+	--code-down: 26px;
+	--code-rise: 24px;
+	--code-line-rise: 10px;
+	--letter-width: 0.6;
+	--unlit-kept: 0.35;
+
+	position: absolute;
+	inset: 0;
+}
+
+.code .pane {
+	position: absolute;
+	left: calc(var(--left) * 1px / var(--frame-scale));
+	top: calc((var(--top) + var(--height) / 2) * 1px / var(--frame-scale));
+	width: calc(var(--width) * 1px / var(--frame-scale));
+	box-sizing: border-box;
+	padding: var(--code-down) 0;
+	overflow: hidden;
+	border-radius: calc(var(--window-corner) * 1px);
+	background: var(--terminal);
+	box-shadow: var(--view-shadow);
+	opacity: var(--grounded);
+	transform: translateY(calc(-50% + (1 - var(--grounded)) * var(--code-rise)));
+	font: 400
+		min(
+			calc(var(--code-size) * 1px),
+			calc((var(--width) * 1px / var(--frame-scale) - 2 * var(--code-across)) / var(--columns) / var(--letter-width))
+		) /
+		1.6 var(--mono);
+	color: var(--terminal-ink);
+	white-space: pre;
+}
+
+.code .code-line {
+	position: relative;
+	min-height: 1lh;
+	padding: 0 var(--code-across);
+	opacity: calc(var(--appeared) * (1 - var(--dimmed) * (1 - var(--lit)) * (1 - var(--unlit-kept))));
+	transform: translateY(calc((1 - var(--appeared)) * var(--code-line-rise)));
+}
+
+.code .code-line::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	background: var(--code-lit);
+	opacity: var(--lit);
+}
+
+.code-line .comment {
+	color: var(--code-comment);
+}
+
+.code-line .string {
+	color: var(--code-string);
+}
+
+.code-line .number {
+	color: var(--code-number);
+}
+
+.code-line .keyword {
+	color: var(--code-keyword);
+}
+
+.code-line .call {
+	color: var(--code-call);
+}
+
+.code-line .key {
+	color: var(--code-key);
+}
+
 /* The agent's terminal: a window on the ground, its log above the line being typed, a little smaller while it comes up or goes */
 .terminal {
 	--terminal-shrinks: 0.06;

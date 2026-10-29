@@ -51,6 +51,15 @@
 	/* A key's cap standing up off the frame */
 	--key-shadow: inset 0 -6px 0 var(--terminal-edge), 0 24px 60px rgb(0 0 0 / 35%);
 
+	/* The code's pieces by kind, as an editor colours them on a dark pane, and the bar a line lit stands on */
+	--code-comment: #8b949e;
+	--code-string: #a5d6ff;
+	--code-number: #79c0ff;
+	--code-keyword: #ff7b72;
+	--code-call: #d2a8ff;
+	--code-key: #7ee787;
+	--code-lit: color-mix(in srgb, var(--accent) 18%, transparent);
+
 	/* How far in from the frame's foot, or its top, a caption's words and the keys stand */
 	--frame-edge-room: 72px;
 

@@ -13,6 +13,7 @@
 /** @import { ShownLine } from '../src/props/terminal.ts' */
 /** @import { DrawnPin } from '../src/props/pins.ts' */
 /** @import { DrawnWords, Piece, Word } from '../src/props/words.ts' */
+/** @import { CodeLine, CodePiece } from '../src/props/code.ts' */
 /** @import { Look } from '../src/props/look.ts' */
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
@@ -41,6 +42,8 @@ const SPACE = 'space';
 // The class of a pin, and of one whose label a later pin has quietened
 const PIN = 'pin';
 const QUIET = 'quiet';
+// The class of a line of code; each piece of it is classed by its kind
+const CODE_LINE = 'code-line';
 // What each value of the film's look sets on the stage: the token it takes the place of, or, for a value that names a
 // way, the attribute the stylesheet reads it by
 /** @type {{ readonly [Name in keyof Look]: { readonly token: string } | { readonly attribute: string } }} */
@@ -69,6 +72,7 @@ const LOOK_SET_AS = {
 	calloutSize: { token: '--callout-size' },
 	pinSize: { token: '--pin-text-size' },
 	keysSize: { token: '--keys-size' },
+	codeSize: { token: '--code-size' },
 	cursorFill: { token: '--cursor-fill' },
 	cursorEdge: { token: '--cursor-edge' },
 	wordsMotion: { attribute: 'data-words-motion' }
@@ -294,6 +298,45 @@ class KeysDrawer {
 	}
 }
 
+/** Code beside the window: its lines laid out anew only when they change, each line's progress and light set every frame. */
+class CodeDrawer {
+	/** @param {Staged} root */
+	constructor(root) {
+		this.root = root;
+		this.lines = partOf(root, 'lines');
+		/** The key of the lines that stand in the markup @type {string | null} */
+		this.standing = null;
+	}
+
+	/** @param {DrawnScene} scene */
+	draw(scene) {
+		const code = scene.code;
+		shown(this.root, code !== null);
+		if (code === null) {
+			this.standing = null;
+			return;
+		}
+		if (this.standing !== code.key) {
+			this.standing = code.key;
+			this.lines.replaceChildren(...code.lines.map(codeLineElement));
+		}
+		const box = code.beside.box;
+		numbered(this.root, {
+			'--left': box.left,
+			'--top': box.top,
+			'--width': box.width,
+			'--height': box.height,
+			'--columns': code.columns,
+			'--grounded': code.ground,
+			'--dimmed': code.dimmed
+		});
+		for (const [place, line] of code.lines.entries()) {
+			const element = this.lines.children.item(place);
+			if (element instanceof HTMLElement) numbered(element, { '--appeared': line.appeared, '--lit': line.lit });
+		}
+	}
+}
+
 class TitleDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
@@ -426,6 +469,7 @@ const DRAWERS = {
 	cursor: new CursorDrawer(propRoot('cursor')),
 	note: new NoteDrawer(propRoot('note')),
 	title: new TitleDrawer(propRoot('title')),
+	code: new CodeDrawer(propRoot('code')),
 	caption: new CaptionDrawer(propRoot('caption')),
 	keys: new KeysDrawer(propRoot('keys')),
 	terminal: new TerminalDrawer(propRoot('terminal')),
@@ -528,6 +572,21 @@ function pinElement(pin) {
 	const label = document.createElement('span');
 	label.textContent = pin.label;
 	element.append(number, label);
+	return element;
+}
+
+/** A line of code, its pieces in order, each of a kind in an element classed by it. @param {CodeLine} line */
+function codeLineElement(line) {
+	const row = classed(document.createElement('div'), CODE_LINE);
+	row.append(...line.pieces.map(codePieceNode));
+	return row;
+}
+
+/** A piece of code: plain text, or an element its kind names the class of. @param {CodePiece} piece */
+function codePieceNode(piece) {
+	if (piece.kind === null) return piece.text;
+	const element = classed(document.createElement('span'), piece.kind);
+	element.textContent = piece.text;
 	return element;
 }
 

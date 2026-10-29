@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import type { Format } from '../../src/domain/geometry.ts';
+import { codeOf } from '../../src/props/code.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
 import { type Piece, drawnWords, saidOf } from '../../src/props/words.ts';
@@ -59,6 +60,32 @@ test('the space between two words is set as the run it was written in, and none 
 test('a word written across two runs is one word, each part set as its run is', () => {
 	expect(saidOf(['un', { text: 'missable', italic: true, strike: true }]).words).toEqual([
 		{ spaceBefore: null, pieces: [piece('un'), piece('missable', 'italic', 'strike')] }
+	]);
+});
+
+test('code is set as pieces each of its kind, the indent its lines share dropped, a tab as two spaces, its widest line counted', () => {
+	const written = codeOf("\t\tlight.on('#a', { air: 60 }), // lit\n\t\t\tawait shot");
+	expect([written.lines, written.columns]).toEqual([
+		[
+			[
+				{ text: 'light.', kind: null },
+				{ text: 'on', kind: 'call' },
+				{ text: '(', kind: null },
+				{ text: "'#a'", kind: 'string' },
+				{ text: ', { ', kind: null },
+				{ text: 'air', kind: 'key' },
+				{ text: ': ', kind: null },
+				{ text: '60', kind: 'number' },
+				{ text: ' }), ', kind: null },
+				{ text: '// lit', kind: 'comment' }
+			],
+			[
+				{ text: '  ', kind: null },
+				{ text: 'await', kind: 'keyword' },
+				{ text: ' shot', kind: null }
+			]
+		],
+		35
 	]);
 });
 

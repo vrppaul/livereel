@@ -1,20 +1,22 @@
 /**
- * livereel's film for its README: what it is and how, shown as the code that makes it and what that code shoots.
+ * livereel's film for its README: its name and what it is, then what it does from the basics on, each beat shown as
+ * the code that makes it beside what that code shoots.
  *
  *     pnpm livereel shoot examples/livereel-readme.ts --out out/readme --sheet
  *
- * Acme's analytics app is served by the film itself, and beside it a page of this very file's code
- * (`livereel-promo/code.ts`): each region marked `// #region name` below is what the code page shows, and the film
- * goes from those lines, lit, to the app, where the same lines shoot what follows. So the code on the screen is the
- * code that shot it.
+ * Acme's analytics app is served by the film itself and shows in a window on the right; on the left, a pane of this
+ * very file's code. Each region marked `// #region name` below is the code a beat shows (`livereel-promo/code.ts`),
+ * its lines lit as they run, so the code on the screen is the code that shot it.
  */
 import {
 	type ActContext,
-	type Pose,
+	type EndingCard,
+	type Move,
 	type Step,
-	act,
+	type Theme,
 	camera,
 	caption,
+	code,
 	cursor,
 	cut,
 	defineFilm,
@@ -24,131 +26,79 @@ import {
 	hold,
 	light,
 	look,
+	pin,
 	play,
-	screen,
-	title
+	screen
 } from 'livereel';
-import { type AppServed, CODE_PAGE, servedAppWithCode } from './livereel-promo/server.ts';
+import { regionsOf } from './livereel-promo/code.ts';
+import { type AppServed, servedApp } from './livereel-promo/server.ts';
 
-// A wide frame, as a README shows it, and the app laid out on a screen of the same size
-const WIDE = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } };
-// The app's main number, its card and the button that refreshes it, and the row of cards
+// A wide frame, as a README shows it, the code given a little more than livereel's share of it so its lines stand
+// large, and the app laid out on a screen as wide as its window, so the window shows the app across
+const WIDE = {
+	frame: { width: 1920, height: 1080 },
+	screen: { width: 1120, height: 1080 },
+	split: { wordsShare: 0.46 }
+};
+// The app's main number, its card and the button that refreshes it, the row of cards, and the button and the card
 const VISITORS = '[data-testid=visitors]';
 const VISITORS_TODAY = '[data-testid=visitors-today]';
 const REFRESH = '[data-testid=refresh]';
 const CARDS = '[data-testid=kpis]';
-// The code page, and its regions, by the names this file marks them with
-const CODE = '[data-testid=code]';
-const THE_FILM = '[data-testid=code-the-film]';
-const THE_CAMERA = '[data-testid=code-camera]';
-const THE_CLICK = '[data-testid=code-click]';
-const THE_WINDOW = '[data-testid=code-window]';
-const THE_LOOK = '[data-testid=code-look]';
-const ACCENT = '#ffb224';
-// The look the film turns to, value by value: a light ground, a serif, square corners, a violet shadow, a night ground
-const LIGHT_GROUND = '#f5efe6';
-const DARK_INK = '#1a1a1a';
-const SERIF = 'Georgia, serif';
-const SQUARE_CORNERS = 0;
-const VIOLET = '#7c3aed';
-const FAINT_EDGE = '#00000033';
-const NIGHT = '#1e1b4b';
-const LIGHT_INK = '#f5f3ff';
-const ENDING = { name: 'livereel', line: 'Film your live app from code', command: 'npx livereel' };
+const REFRESH_AND_VISITORS = `${REFRESH}, ${VISITORS}`;
+const BOTH = 2;
+const CARD: EndingCard = { name: 'livereel', line: 'Film your live web app from code', command: 'npx livereel' };
+// The looks the film turns to, one after another: paper, a serif with square corners and a violet shadow, then night
+const PAPER: Theme = { ground: '#f5efe6', ink: '#1a1a1a', windowEdge: '#00000033' };
+const SERIF: Theme = { font: 'Georgia, serif', windowCorner: 0, windowShadowColour: '#7c3aed' };
+const NIGHT: Theme = { ground: '#1e1b4b', glow: '#7c3aed', ink: '#f5f3ff', windowEdge: '#ffffff1a' };
+// The code of each beat: the regions this file marks below, their lines counted from 1 as an editor counts them
+const REGIONS = await regionsOf(new URL(import.meta.url));
+const FIRST_LINE = 1;
+const SECOND_LINE = 2;
+const THIRD_LINE = 3;
 
-/** The page in the stage's frame gone to an address of the app's server, once a block of it stands. */
-async function wentTo(context: ActContext, served: AppServed, path: string, shown: string): Promise<void> {
-	await context.page.goto(new URL(path, served.address).href);
-	await context.page.locator(shown).waitFor();
-}
-
-/** Refresh clicked for real, until the page shows the count its server answered with. */
-async function refreshed(context: ActContext, visitors: string): Promise<void> {
+/** Refresh clicked for real, until the page shows the count the app's server answered with. */
+async function refreshed(context: ActContext, served: AppServed): Promise<void> {
 	await context.page.locator(REFRESH).click();
-	await context.page.locator(VISITORS_TODAY, { hasText: visitors }).waitFor();
+	await context.page.locator(VISITORS_TODAY, { hasText: served.refreshed.visitors }).waitFor();
 }
 
-/** From lines of code, lit and named, to the app: the words and the light gone, the camera back over the whole. */
-function fromTheLines(served: AppServed, whole: Pose): readonly Step[] {
-	return [
-		play({
-			seconds: 0.8,
-			moves: [
-				caption.hide({ within: { end: 0.4 } }),
-				light.off({ within: { end: 0.4 } }),
-				camera.to(whole, { within: { start: 0.2 } })
-			],
-			ease: easeInOutCubic
-		}),
-		act((context) => wentTo(context, served, '/', REFRESH))
-	];
+/** The code of a region coming up on the left, beside the page's window on the right. */
+function codeShown(region: string, within: { start: number } = { start: 0 }): Move {
+	return code.show(REGIONS.named(region), { side: 'left', within });
 }
 
-/** From a lit block of the app to the code page: the light gone, the camera back over the whole. */
-function fromTheApp(served: AppServed, whole: Pose): readonly Step[] {
-	return [
-		play({
-			seconds: 0.8,
-			moves: [light.off({ within: { end: 0.4 } }), camera.to(whole, { within: { start: 0.2 } })],
-			ease: easeInOutCubic
-		}),
-		act((context) => wentTo(context, served, CODE_PAGE, CODE))
-	];
-}
-
-/** From lines of code to the next lines on the code page: the words and the light gone as the camera goes on. */
-function nextLines(region: string, words: string): readonly Step[] {
-	return [
-		play({ seconds: 0.5, moves: [caption.hide(), light.off()], ease: easeInOutCubic }),
-		...linesShown(region, words)
-	];
-}
-
-/** Lines of this file on the code page: the camera onto their block, the light on it, and words about them. */
-function linesShown(region: string, words: string): readonly Step[] {
-	return [
-		play({
-			seconds: 1.4,
-			moves: [
-				camera.onto(region, { air: 40, within: { end: 0.7 } }),
-				light.on(region, { within: { start: 0.6 } }),
-				caption.show(words, { within: { start: 0.4 } })
-			],
-			ease: easeInOutCubic
-		}),
-		hold({ seconds: 1.8 })
-	];
-}
-
-/** The claim on the bare ground, and the code page coming up under it as it goes. */
-function actTheClaim(served: AppServed): readonly Step[] {
+/** The card first: the name and the line on the ground, then the app rising into a window as the card goes. */
+function actTheCard(): readonly Step[] {
 	return [
 		cut(screen.lower()),
-		play({
-			seconds: 1.4,
-			moves: [title.show(['Film your live app ', { text: 'from code', italic: true, ink: ACCENT }])]
-		}),
-		hold({ seconds: 1.4 }),
-		act((context) => wentTo(context, served, CODE_PAGE, CODE)),
-		play({ seconds: 1, moves: [title.hide({ within: { end: 0.6 } }), screen.rise()], ease: easeOutCubic })
-	];
-}
-
-/** A film is a file: the line that defines this one. */
-function actTheFile(): readonly Step[] {
-	return linesShown(THE_FILM, 'A film is a file you write');
-}
-
-/** The camera and the light: their lines, then the camera onto the app's main number and the light on it. */
-function actTheCamera(served: AppServed, whole: Pose): readonly Step[] {
-	return [
-		...nextLines(THE_CAMERA, 'A camera and a light, by selector'),
-		...fromTheLines(served, whole),
+		play({ seconds: 1, moves: [ending.show(CARD)], ease: easeOutCubic }),
+		hold({ seconds: 1.8 }),
 		play({
 			seconds: 1.6,
 			moves: [
+				ending.hide({ within: { end: 0.4 } }),
+				screen.rise({ within: { start: 0.2 } }),
+				camera.onto(CARDS, { side: 'right', air: 40, within: { start: 0.2 } })
+			],
+			ease: easeInOutCubic
+		})
+	];
+}
+
+/** The camera onto a block by its selector, and the light on it. */
+function actTheCamera(): readonly Step[] {
+	return [
+		play({ seconds: 0.8, moves: [codeShown('camera')] }),
+		hold({ seconds: 0.6 }),
+		play({
+			seconds: 1.8,
+			moves: [
+				code.light(FIRST_LINE, { within: { end: 0.2 } }),
+				code.light(SECOND_LINE, { within: { start: 0.55, end: 0.7 } }),
 				// #region camera
-				camera.onto(VISITORS, { air: 60 }),
+				camera.onto(VISITORS, { side: 'right', air: 60 }),
 				light.on(VISITORS, { within: { start: 0.6 } })
 				// #endregion
 			],
@@ -158,66 +108,129 @@ function actTheCamera(served: AppServed, whole: Pose): readonly Step[] {
 	];
 }
 
-/** A real click: its lines, then the cursor clicking Refresh, the app's server answering, the number changed. */
-function actTheClick(served: AppServed, whole: Pose): readonly Step[] {
+/** Pins on the path a person takes: the button, then the count it changes. */
+function actThePins(): readonly Step[] {
 	return [
-		...fromTheApp(served, whole),
-		...linesShown(THE_CLICK, 'A real click on your real app'),
-		...fromTheLines(served, whole),
-		play({ seconds: 1.2, moves: [camera.onto(CARDS, { air: 40 }), cursor.to(REFRESH)], ease: easeInOutCubic }),
-		// #region click
-		...cursor.click((context) => refreshed(context, served.refreshed.visitors)),
-		// #endregion
-		play({ seconds: 1.2, moves: [camera.onto(VISITORS, { air: 60 }), light.on(VISITORS)], ease: easeInOutCubic }),
-		hold({ seconds: 1.2 })
-	];
-}
-
-/** The window and the look: their lines, then the page drawn back into a window beside words, its look built up. */
-function actTheWindowAndTheLook(served: AppServed, whole: Pose): readonly Step[] {
-	return [
-		cut(cursor.hide()),
-		...fromTheApp(served, whole),
-		...linesShown(THE_WINDOW, 'Your page in a window, beside words'),
-		...nextLines(THE_LOOK, 'And every value of its look'),
-		...fromTheLines(served, whole),
 		play({
-			seconds: 1.6,
+			seconds: 1.2,
 			moves: [
-				// #region window
-				camera.onto(CARDS, { side: 'right', air: 60 }),
-				title.show(['Every number, ', { text: 'live', italic: true }], { side: 'left', within: { start: 0.5 } })
-				// #endregion
+				code.hide({ within: { end: 0.4 } }),
+				codeShown('pins', { start: 0.4 }),
+				light.off({ within: { end: 0.4 } }),
+				camera.onto(REFRESH_AND_VISITORS, { side: 'right', every: BOTH, air: 60 })
 			],
 			ease: easeInOutCubic
 		}),
-		hold({ seconds: 0.8 }),
-		// #region look
-		cut(look.to({ ground: LIGHT_GROUND, ink: DARK_INK })),
-		hold({ seconds: 0.4 }),
-		cut(look.to({ font: SERIF, windowCorner: SQUARE_CORNERS })),
-		hold({ seconds: 0.4 }),
-		cut(look.to({ windowShadowColour: VIOLET, windowEdge: FAINT_EDGE })),
-		hold({ seconds: 0.4 }),
-		play({ seconds: 1.6, moves: [look.to({ ground: NIGHT, glow: VIOLET, ink: LIGHT_INK })] }),
-		// #endregion
+		play({
+			seconds: 1.6,
+			moves: [
+				code.light(FIRST_LINE, { within: { end: 0.2 } }),
+				code.light(SECOND_LINE, { within: { start: 0.5, end: 0.7 } }),
+				// #region pins
+				pin.show(REFRESH, 'Refresh', { within: { end: 0.4 } }),
+				pin.show(VISITORS_TODAY, 'The count', { within: { start: 0.5 } })
+				// #endregion
+			]
+		}),
 		hold({ seconds: 1 })
 	];
 }
 
-/** The ending over the app. */
-function actEnding(): readonly Step[] {
-	return [play({ seconds: 0.8, moves: [ending.show(ENDING)], ease: easeOutCubic }), hold({ seconds: 2 })];
+/** A real click on the real app: its server answers, and the count changes. */
+function actTheClick(served: AppServed): readonly Step[] {
+	return [
+		play({
+			seconds: 1.2,
+			moves: [
+				code.hide({ within: { end: 0.4 } }),
+				codeShown('click', { start: 0.4 }),
+				pin.clear({ within: { end: 0.4 } }),
+				cursor.to(REFRESH)
+			],
+			ease: easeInOutCubic
+		}),
+		play({ seconds: 0.4, moves: [code.light(FIRST_LINE)] }),
+		// #region click
+		...cursor.click((context) => refreshed(context, served)),
+		// #endregion
+		play({
+			seconds: 1.2,
+			moves: [camera.onto(VISITORS, { side: 'right', air: 60 }), light.on(VISITORS, { within: { start: 0.5 } })],
+			ease: easeInOutCubic
+		}),
+		hold({ seconds: 1.2 })
+	];
 }
 
-function steps(served: AppServed, whole: Pose): readonly Step[] {
+/** Words over the frame, set their own way. */
+function actTheWords(): readonly Step[] {
 	return [
-		...actTheClaim(served),
-		...actTheFile(),
-		...actTheCamera(served, whole),
-		...actTheClick(served, whole),
-		...actTheWindowAndTheLook(served, whole),
-		...actEnding()
+		cut(cursor.hide()),
+		play({
+			seconds: 1,
+			moves: [code.hide({ within: { end: 0.4 } }), codeShown('words', { start: 0.4 }), light.off()],
+			ease: easeInOutCubic
+		}),
+		play({
+			seconds: 1.6,
+			moves: [
+				code.light(FIRST_LINE, { within: { end: 0.2 } }),
+				// #region words
+				caption.show(['Your app, ', { text: 'live', italic: true }])
+				// #endregion
+			]
+		}),
+		hold({ seconds: 1.4 })
+	];
+}
+
+/** The look, value by value: a quick change after another, then a slow one. */
+function actTheLook(): readonly Step[] {
+	return [
+		play({
+			seconds: 1,
+			moves: [code.hide({ within: { end: 0.4 } }), codeShown('look', { start: 0.4 }), caption.hide()],
+			ease: easeInOutCubic
+		}),
+		hold({ seconds: 0.4 }),
+		play({
+			seconds: 3,
+			moves: [
+				code.light(FIRST_LINE, { within: { end: 0.05 } }),
+				code.light(SECOND_LINE, { within: { start: 0.33, end: 0.38 } }),
+				code.light(THIRD_LINE, { within: { start: 0.66, end: 0.71 } }),
+				// #region look
+				look.to(PAPER, { within: { end: 0.05 } }),
+				look.to(SERIF, { within: { start: 0.33, end: 0.38 } }),
+				look.to(NIGHT, { within: { start: 0.66 } })
+				// #endregion
+			]
+		}),
+		hold({ seconds: 1 })
+	];
+}
+
+/** The card again, over the app, the code gone. */
+function actTheEnding(): readonly Step[] {
+	return [
+		play({
+			seconds: 1,
+			moves: [code.hide({ within: { end: 0.5 } }), ending.show(CARD, { within: { start: 0.3 } })],
+			ease: easeOutCubic
+		}),
+		hold({ seconds: 2 })
+	];
+}
+
+function steps(served: AppServed): readonly Step[] {
+	return [
+		...actTheCard(),
+		...actTheCamera(),
+		...actThePins(),
+		...actTheClick(served),
+		...actTheWords(),
+		...actTheLook(),
+		...actTheEnding()
 	];
 }
 
@@ -225,11 +238,9 @@ function appShown(context: ActContext): Promise<void> {
 	return context.page.locator(REFRESH).waitFor();
 }
 
-// #region the-film
 export default defineFilm({
 	formats: { wide: WIDE },
-	serve: () => servedAppWithCode(new URL(import.meta.url)),
+	serve: servedApp,
 	ready: appShown,
 	steps
 });
-// #endregion
