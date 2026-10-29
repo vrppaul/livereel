@@ -295,16 +295,30 @@ test('while a note stands the window stays beside it: a move of the window is re
 	const noted = await setAt(note.show('#block', 'Here'), windowed, 1);
 	await expect(async () => windowTo('left').begin(beginningOf(noted))).rejects.toThrow(FilmError);
 	await expect(async () => windowHide({ toward: 'left' }).begin(beginningOf(noted))).rejects.toThrow(FilmError);
+	await expect(async () => windowShow({ at: 'left', from: 'left' }).begin(beginningOf(noted))).rejects.toThrow(
+		FilmError
+	);
 });
 
-test('a note with no window to stand beside, or with its words over the window, is refused as it begins', async () => {
+test('a note with no window to stand beside, with its words over the window, or beside a window off the frame, is refused as it begins', async () => {
 	const windowed = await setAt(windowTo('right'), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const offTheFrame = await setAt(windowHide({ toward: 'left' }), windowed, 1);
 	await expect(async () =>
 		note.show('#block', 'Here').begin(beginningOf(openingScene(SMALL, LIVEREELS_LOOK)))
 	).rejects.toThrow(FilmError);
 	await expect(async () => note.show('#block', 'Here', { at: 'whole' }).begin(beginningOf(windowed))).rejects.toThrow(
 		FilmError
 	);
+	await expect(async () => note.show('#block', 'Here').begin(beginningOf(offTheFrame))).rejects.toThrow(FilmError);
+});
+
+test('what has nothing to start from is refused as it begins: a screen raised that is up, lowered that is down, a window hidden that is off the frame', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const lowered = await setAt(lower(), opening, 1);
+	const offTheFrame = await setAt(windowHide({ toward: 'left' }), opening, 1);
+	await expect(async () => rise().begin(beginningOf(opening))).rejects.toThrow(FilmError);
+	await expect(async () => lower().begin(beginningOf(lowered))).rejects.toThrow(FilmError);
+	await expect(async () => windowHide({ toward: 'left' }).begin(beginningOf(offTheFrame))).rejects.toThrow(FilmError);
 });
 
 test('the window moves to a place, lifted off the ground, and back over the whole frame, flat on it, however the whole frame is named', async () => {

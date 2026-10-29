@@ -2,11 +2,12 @@
  * Notes: words on the ground beside the page's window, a line drawn from them to a block in it, in place of any note
  * shown, and going. The block is read as the move's share begins, what the screen shows of it, as a callout's is, and
  * the words' place with it: the film's, or the words' share on the side of the frame clearest of the window. The
- * words stand beyond the window on one side of it, where the line meets them; a note whose words would stand over the
- * window, as they do while the page fills the frame, is refused there. While it stands, the window stays where it is
+ * words stand beyond the window on one side of it, where the line meets them; a note beside a window off the frame,
+ * or whose words would stand over the window, as they do while the page fills the frame, is refused there. While it stands, the window stays where it is
  * (`src/moves/window.ts`).
  */
 import { FilmError } from '../domain/errors.ts';
+import { liesOutside } from '../domain/geometry.ts';
 import { A_SELECTOR, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { A_PLACE, type Place, sideBeyond, sideClearestOf, wordsPlaced } from '../domain/place.ts';
 import { linear } from '../domain/time.ts';
@@ -66,6 +67,11 @@ async function naming(beginning: Beginning, target: string, said: Said, at: Plac
 function besideTheWindow(beginning: Beginning, at: Place | null): Beside {
 	// Where the window stands, or goes while it moves
 	const window = beginning.scene.window.to.box;
+	if (liesOutside(window, beginning.format.frame)) {
+		throw new FilmError(
+			"note.show's note stands beside the page's window, but the window is off the frame: bring it in first, with window.show({ at, from })"
+		);
+	}
 	const box = wordsPlaced(beginning.format, at ?? sideClearestOf(beginning.format, window));
 	const side = sideBeyond(box, window);
 	if (side === null) {

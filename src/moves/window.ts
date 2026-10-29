@@ -13,6 +13,7 @@
  */
 import { type View, viewOf, viewOver } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
+import { liesOutside } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten, needed } from '../domain/handed.ts';
 import { A_PLACE, type Place, pastTheEdge, windowPlaced } from '../domain/place.ts';
 import { A_FRAME_SIDE, type FrameSide } from '../domain/split.ts';
@@ -44,11 +45,7 @@ const HIDE_FORM: Form<WindowHideScript> = { toward: needed(A_FRAME_SIDE), ...TIM
 export function to(place: Place, script: TimingScript = {}): Move {
 	assertKind(place, A_PLACE, "window.to's place");
 	assertWritten(script, TIMING_FORM, 'window.to');
-	return {
-		part: 'window',
-		timing: timingOf(script),
-		begin: (beginning) => moving(beginning, viewOf(beginning.scene.window), placed(beginning, place), 'window.to')
-	};
+	return { part: 'window', timing: timingOf(script), begin: (beginning) => travelling(beginning, place) };
 }
 
 /** The window sliding in whole to a place, from a frame past it on a side. */
@@ -63,6 +60,11 @@ export function hide(script: WindowHideScript): Move {
 	return { part: 'window', timing: timingOf(script), begin: (beginning) => leaving(beginning, script.toward) };
 }
 
+/** The window on its way from where it stands to a place. */
+function travelling(beginning: Beginning, place: Place): Change {
+	return moving(beginning, viewOf(beginning.scene.window), placed(beginning, place), 'window.to');
+}
+
 /** The window on its way to its place from a frame past it on a side, lifted as it will stand there. */
 function arriving(beginning: Beginning, script: WindowShowScript): Change {
 	const to = placed(beginning, script.at);
@@ -70,9 +72,15 @@ function arriving(beginning: Beginning, script: WindowShowScript): Change {
 	return moving(beginning, from, to, 'window.show');
 }
 
-/** The window on its way from where it stands to a frame past it on a side, lifted as it stands. */
+/**
+ * The window on its way from where it stands to a frame past it on a side, lifted as it stands; refused where it is
+ * off the frame already, as it would slide on a frame further.
+ */
 function leaving(beginning: Beginning, toward: FrameSide): Change {
 	const from = viewOf(beginning.scene.window);
+	if (liesOutside(from.box, beginning.format.frame)) {
+		throw new FilmError('window.hide hides a window already off the frame: bring it in first, with window.show');
+	}
 	const to = { ...from, box: pastTheEdge(from.box, toward, beginning.format.frame) };
 	return moving(beginning, from, to, 'window.hide');
 }

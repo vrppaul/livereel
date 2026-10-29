@@ -95,7 +95,9 @@ export interface Camera {
 /**
  * Where the camera's picture is cut, in from each edge of its view, in the frame's pixels; past the edge, less than
  * none. Flat on the frame, the cut stands at the screen's edges where they reach past the view's, so an angled screen
- * shows past the frame's own edges; as the view lifts into a window, the cut closes in on its edges.
+ * shows past the frame's own edges; as the view lifts into a window, the cut closes in on its edges. On a side where
+ * the view stands in from the frame's edge, as a flat view sliding in or out does, the cut stands at the view's edge,
+ * so nothing of the picture shows past it there.
  */
 export interface Cut {
 	readonly top: number;
@@ -136,6 +138,8 @@ const SIDES = 2;
 const FACING_OUT: Spot = { across: 0, down: 0, out: 1 };
 // How far the screen moves on a frame that shows none of it
 const NOTHING = 0;
+// Where the frame's left and top edges stand, in its own pixels
+const FRAMES_EDGE = 0;
 const DEGREES_IN_A_HALF_TURN = 180;
 // How far a view stands off the ground: the frame itself, or a window
 const FLAT = 0;
@@ -206,15 +210,25 @@ export function drawnCamera(camera: Camera, format: Format): DrawnCamera {
 	const screenBottom = screenTop + format.screen.height * frameZoom;
 	// How much of the way from the screen's edges to the view's the cut still stands out
 	const open = LIFTED - camera.view.lift;
+	const { frame } = format;
 	return {
 		pose: camera.pose,
 		cut: {
-			top: open * Math.min(NOTHING, screenTop),
-			right: open * Math.min(NOTHING, view.width - screenRight),
-			bottom: open * Math.min(NOTHING, view.height - screenBottom),
-			left: open * Math.min(NOTHING, screenLeft)
+			top: cutPast(screenTop, view.top > FRAMES_EDGE, open),
+			right: cutPast(view.width - screenRight, view.left + view.width < frame.width, open),
+			bottom: cutPast(view.height - screenBottom, view.top + view.height < frame.height, open),
+			left: cutPast(screenLeft, view.left > FRAMES_EDGE, open)
 		}
 	};
+}
+
+/**
+ * Where the picture is cut on one side of its view: as far past the view's edge as the screen reaches, so much of the
+ * way as the cut still stands out, where the view meets the frame's edge there; at the view's edge where it stands in
+ * from the frame's.
+ */
+function cutPast(screenPast: number, standsIn: boolean, open: number): number {
+	return standsIn ? NOTHING : open * Math.min(NOTHING, screenPast);
 }
 
 /**

@@ -232,6 +232,14 @@ test("the picture is cut at the screen's edges flat on the frame, at the view's 
 	]);
 });
 
+test("a flat view slid off the frame's edge is cut at its own edge where it stands in from the frame's, and past it only where it meets or passes the frame's edge", () => {
+	const slidHalfAcross: Camera = {
+		pose: { ...FACE_ON, zoom: 2 },
+		view: { box: { left: 540, top: 0, width: 1080, height: 1080 }, lift: 0 }
+	};
+	expect(drawnCamera(slidHalfAcross, SQUARE).cut).toEqual({ top: -540, right: -972, bottom: -540, left: 0 });
+});
+
 test('a screen too short to fill the frame along a side stands in its middle along that side', () => {
 	const covered = covering({ ...FACE_ON, focusX: 200, focusY: 100, zoom: 0.8 }, SQUARE, SQUARE.frame);
 	expect([covered.focusX, covered.focusY]).toEqual([675, 540]);
