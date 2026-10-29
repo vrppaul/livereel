@@ -140,7 +140,7 @@ and the moves of each part of the scene:
 - `keys.show(caps)`, `keys.hide()`
 - `cursor.to(selector, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { at, align, from })`, `title.to(place)`, `title.hide({ toward })`
+- `title.show(text, { at, align, size, from })`, `title.to(place)`, `title.hide({ toward })`
 - `code.show(text, { at, from })`, `code.to(place)`, `code.light(line, { through })`, `code.hide({ toward })`
 - `caption.show(text)`, `caption.hide()`
 - `screen.rise()`, `screen.lower()`
@@ -195,7 +195,11 @@ code.show(LINES, { at: { of: 'left', top: 0.25, height: 0.75 } }),
 
 Words in a place stand in the middle of their box down it, as large as its
 width lets, centred in `whole`, `top` and `bottom` and read from the left
-anywhere else; `align: 'start'` or `'center'` says otherwise.
+anywhere else; `align: 'start'` or `'center'` says otherwise. A title's
+letters are as large as the look's `titleSize`, and in a place a share of
+it; `size` sets one title's own, in pixels of a 1080 frame, in a place at
+most, so a long word still stands on a line of its own:
+`title.show('Live', { size: 220 })`.
 
 Words in a place travel: `title.to(place)` and `code.to(place)` carry them
 to another place through the boxes between, a title reading as it did;
@@ -301,13 +305,19 @@ values; what the film leaves out stays livereel's:
 | `font` | the font of titles, captions and the ending, as CSS names a family (`'Inter, sans-serif'`) | the system's sans |
 | `mono` | the font of the terminal, the code and the ending's command | the system's monospace |
 | `titleSize`, `captionSize` | how large a title's and a caption's letters are, in pixels | `92`, `56` |
+| `titleMargin` | how far in from the frame's sides a title over the whole frame stands, in pixels | `160` |
+| `captionGroundHeight` | how far from the frame's foot, or its top, the ground under a caption darkens, in pixels | `380` |
 | `windowCorner` | how round the corners of the page's window and the code's pane are, in pixels; `0`, square | `24` |
 | `windowEdge` | the faint edge round the window and the code's pane, its alpha how faint | `#ffffff1a` |
 | `windowShadow`, `windowShadowColour` | how strong the shadow of the window and the code's pane is, from `0`, none, to `1`, and its colour | `1`, `#000` |
 | `terminal`, `terminalInk` | the colour of the terminal and the code's pane, and what is written in them | `#10141c`, `#f4f6fa` |
+| `codeComment`, `codeString`, `codeNumber`, `codeKeyword`, `codeCall`, `codeKey` | the colours of the code's pieces by kind: a comment, a string, a number, a word the language keeps, a function called, a key of an object; livereel's are made for a dark pane | `#8b949e`, `#a5d6ff`, `#79c0ff`, `#ff7b72`, `#d2a8ff`, `#7ee787` |
+| `terminalWidth`, `terminalHeight` | how much of the frame's width and height the terminal takes, each from 0 to 1 | `0.86`, `0.78` |
 | `glowX`, `glowY` | where the ground's glow stands, across and down, each from 0 to 1 | `0.5`, `0.3` |
 | `titleWeight`, `captionWeight` | how heavy a title's and a caption's letters are, 100 to 900 | `700`, `650` |
 | `noteSize`, `calloutSize`, `pinSize`, `keysSize`, `codeSize` | how large a note's, a callout's, a pin's label's and a key's letters are, and the code's at most, in pixels | `44`, `20`, `26`, `44`, `26` |
+| `terminalSize` | how large the terminal's letters are, in pixels | `25` |
+| `endingNameSize`, `endingLineSize`, `endingCommandSize` | how large the ending card's name, line and command are, in pixels | `96`, `36`, `38` |
 | `cursorFill`, `cursorEdge` | the cursor's colour and its edge's | `#111`, `#fff` |
 | `wordsMotion` | how words come up: `'soft'`, rising out of a blur; `'sharp'`, rising with no blur; `'still'`, fading up where they stand | `'soft'` |
 
@@ -328,7 +338,15 @@ play({ seconds: 6, moves: [look.to({ glowX: 0.9, glowY: 0.1 }), camera.onto(CHAR
 ```
 
 A ground named without a glow takes its glow with it, as in a theme; what
-a move leaves out stays as the look stands.
+a move leaves out stays as the look stands. So two moves of the look share
+a step at once where they name no value alike, each moving its own:
+
+```ts
+play({ seconds: 4, moves: [look.to({ glowX: 0.9 }), look.to({ ink: '#1a1a1a' }, { within: { start: 0.5 } })] })
+```
+
+Two that name one value at once are refused, by it: `two moves on the
+look's glow at once in one step`.
 
 ### The page: its colour scheme, and what it blurs
 

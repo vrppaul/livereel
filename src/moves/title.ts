@@ -3,13 +3,14 @@
  * names (`src/domain/place.ts`), beside the page's window or alone, in place of any title on the screen, and go. A
  * title in a place moves to another, keeping how it reads, comes in from past a side of the frame, pushing the title
  * standing in a place off past the side across, or leaves past one; a title over the whole frame has no place to
- * move from, and is refused there. Its words wrap and take their size by the width of their place, so a title moving
- * to a place of another size takes that size as it sets off, where it reads from, and travels whole: its lines change
- * once, where they would break anew on every frame of the way.
+ * move from, and is refused there. A title may set its letters' own size, in place of the look's. In a place its words
+ * wrap and take their size by the width of their place, no larger than its own, so a title moving to a place of
+ * another size takes that size as it sets off, where it reads from, and travels whole: its lines change once, where
+ * they would break anew on every frame of the way.
  */
 import { FilmError } from '../domain/errors.ts';
 import type { Box } from '../domain/geometry.ts';
-import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { A_SIZE, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import {
 	AN_ALIGNMENT,
 	A_PLACE,
@@ -48,16 +49,31 @@ import {
 
 /**
  * Where a title stands: `at` a place on the frame, or over the whole of it, on its ground, where none is named; how it
- * reads there, `align`, the place's own way where none is named; and the side it slides in `from`, past the frame's
- * edge, rather than coming up in its place.
+ * reads there, `align`, the place's own way where none is named; how large its letters are, `size`, in pixels of a
+ * frame 1080 on its shorter side, in place of the look's `titleSize`, and in a place at most, so a long word still
+ * stands on a line of its own; and the side it slides in `from`, past the frame's edge, rather than coming up in its
+ * place.
  */
 export interface TitleScript extends TimingScript {
 	readonly at?: Place;
 	readonly align?: Alignment;
+	readonly size?: number;
 	readonly from?: FrameSide;
 }
 
-const TITLE_FORM: Form<TitleScript> = { at: A_PLACE, align: AN_ALIGNMENT, from: A_FRAME_SIDE, ...TIMING_FORM };
+/** A title's words as the film sets them: what they say, how they read, and their own size, none as the look's. */
+interface Setting extends Said {
+	readonly align: Alignment;
+	readonly size: number | null;
+}
+
+const TITLE_FORM: Form<TitleScript> = {
+	at: A_PLACE,
+	align: AN_ALIGNMENT,
+	size: A_SIZE,
+	from: A_FRAME_SIDE,
+	...TIMING_FORM
+};
 // Words over the whole frame on their ground stand centred
 const OVER_THE_WHOLE: Alignment = 'center';
 
@@ -68,18 +84,21 @@ const OVER_THE_WHOLE: Alignment = 'center';
 export function show(text: Wording, script: TitleScript = {}): Move {
 	assertKind(text, A_WORDING, "title.show's text");
 	assertWritten(script, TITLE_FORM, 'title.show');
-	const said = saidOf(text);
 	const place = script.at ?? null;
 	const from = script.from ?? null;
 	if (place === null && from !== null) {
 		throw new FilmError(`title.show comes in from the ${from} only to a place: name it, as { at: 'left', from }`);
 	}
-	const align = script.align ?? (place === null ? OVER_THE_WHOLE : alignmentIn(place));
+	const setting: Setting = {
+		...saidOf(text),
+		align: script.align ?? (place === null ? OVER_THE_WHOLE : alignmentIn(place)),
+		size: script.size ?? null
+	};
 	const evenly = from === null ? { ease: linear } : {};
 	return {
 		part: 'title',
 		timing: timingOf({ ...evenly, ...script }),
-		begin: (beginning) => (place === null ? overTheWhole(said, align) : arriving(said, beginning, place, from, align))
+		begin: (beginning) => (place === null ? overTheWhole(setting) : arriving(setting, beginning, place, from))
 	};
 }
 
@@ -105,11 +124,10 @@ export function hide(script: SlideOutScript = {}): Move {
 }
 
 /** A title coming up over the whole frame, its ground first. */
-function overTheWhole(said: Said, align: Alignment): Change {
+function overTheWhole(setting: Setting): Change {
 	return propChange('title', (progress) => ({
-		...said,
+		...setting,
 		box: null,
-		align,
 		shown: progress,
 		gone: NOT_GONE,
 		pushedOff: null
@@ -120,16 +138,15 @@ function overTheWhole(said: Said, align: Alignment): Change {
  * A title coming up in its place, travelling in whole from past a side of the frame where one is named, and pushing
  * the title standing in a place off past the side across as it does.
  */
-function arriving(said: Said, beginning: Beginning, place: Place, from: FrameSide | null, align: Alignment): Change {
+function arriving(setting: Setting, beginning: Beginning, place: Place, from: FrameSide | null): Change {
 	const box = wordsPlaced(beginning.format, place);
 	const start = enteringFrom(box, from, beginning.format.frame);
 	const push = pushOf(beginning.scene.title, from, beginning.format.frame);
 	return travelling(
 		'title',
 		(at, progress) => ({
-			...said,
+			...setting,
 			box: at,
-			align,
 			shown: shownComing(from, progress),
 			gone: NOT_GONE,
 			pushedOff: pushedAt(push, progress)

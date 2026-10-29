@@ -68,22 +68,35 @@ const NIGHT: Theme = {
 	windowEdge: '#ffffff1a'
 };
 const SERIF: Theme = { font: 'Georgia, serif', windowCorner: 0, windowShadowColour: '#7c3aed' };
-// Then, at once, a cyan accent under the line lit, and corners rounded again, and more
+// The glow drifting up and across while the serif comes in, two moves of the look at once
+const DRIFT: Theme = { glowX: 0.85, glowY: 0.1 };
+// Then, at once, a cyan accent under the line lit, corners rounded again, and the code's pane in an editor's light
+// theme, its colours by kind with it (Solarized light)
 const CYAN: Theme = { accent: '#22d3ee' };
 const ROUNDED: Theme = { windowCorner: 40 };
+const SOLARIZED: Theme = {
+	terminal: '#fdf6e3',
+	terminalInk: '#073642',
+	codeComment: '#93a1a1',
+	codeString: '#2aa198',
+	codeNumber: '#d33682',
+	codeKeyword: '#859900',
+	codeCall: '#b58900',
+	codeKey: '#268bd2'
+};
 // How a beat's heading and its code share their place down it, the code right under the heading: about the middle
 // of a tall place, from the top of a short one
 const TALL: Stacking = { heading: { top: 0.18, height: 0.22 }, code: { top: 0.42, height: 0.3 } };
 const SHORT: Stacking = { heading: { top: 0, height: 0.3 }, code: { top: 0.34, height: 0.66 } };
-const HIGH: Stacking = { heading: { top: 0, height: 0.2 }, code: { top: 0.26, height: 0.6 } };
+const HIGH: Stacking = { heading: { top: 0, height: 0.16 }, code: { top: 0.2, height: 0.58 } };
 // Where the words of a beat stand: beside the window on either side, above a window that runs off the frame's foot,
 // or on a slide of their own with no window
 const LEFT_OF_THE_WINDOW: Words = { place: 'left', stacking: TALL };
 const RIGHT_OF_THE_WINDOW: Words = { place: 'right', stacking: TALL };
 const ABOVE_THE_WINDOW: Words = { place: { left: 0.06, top: 0.06, width: 0.88, height: 0.32 }, stacking: SHORT };
 const ON_A_SLIDE: Words = { place: { left: 0.18, top: 0.12, width: 0.64, height: 0.62 }, stacking: TALL };
-// The look's slide: the same place, the heading high in it, so its five lines of code stand clear below
-const ON_THE_LOOKS_SLIDE: Words = { place: ON_A_SLIDE.place, stacking: HIGH };
+// The look's slide: taller, the heading high in it, so its seven lines of code stand clear below
+const ON_THE_LOOKS_SLIDE: Words = { place: { left: 0.18, top: 0.06, width: 0.64, height: 0.88 }, stacking: HIGH };
 // The window low on the frame, wider than its room and running off the frame's foot
 const LOW_AND_OFF_THE_FOOT: Place = { left: 0.03, top: 0.42, width: 0.94, height: 0.8 };
 // The lines of code each beat shows, the regions this file marks below, and their places, counted from 1 as an editor
@@ -94,6 +107,10 @@ const SECOND_LINE = 2;
 const THIRD_LINE = 3;
 const FOURTH_LINE = 4;
 const FIFTH_LINE = 5;
+const SIXTH_LINE = 6;
+const SEVENTH_LINE = 7;
+// The comma a move in a list of moves stands before when another follows it
+const AFTER_AN_ITEM = /,$/u;
 
 /** A band down a place: where it starts and how much of it it takes, each a share of the place's height. */
 interface Band {
@@ -136,10 +153,11 @@ function refreshing(served: AppServed): (context: ActContext) => Promise<void> {
 
 /**
  * The lines of regions, one after another, as one piece of code. Each region here is one line, standing as deep in
- * the file as its step does, so each is set at the code's left edge on its own.
+ * the file as its step does, so each is set at the code's left edge on its own, and the comma after a move that has
+ * another after it in its list dropped, so it reads as the move alone.
  */
 function linesOf(regions: readonly string[]): string {
-	return regions.map((region) => regionNamed(REGIONS, region).trim()).join('\n');
+	return regions.map((region) => regionNamed(REGIONS, region).trim().replace(AFTER_AN_ITEM, '')).join('\n');
 }
 
 /** A beat's heading and code coming up in their place, the heading first. */
@@ -316,14 +334,21 @@ function actTheWords(): readonly Step[] {
 	];
 }
 
-/** The look, value by value, on a slide of its own: a change at once, another, then a slow one. */
+/**
+ * The look, value by value, on a slide of its own: a change at once, another, then a slow one with the glow drifting
+ * beside it, then three at once, the last the code's own pane.
+ */
 function actTheLook(): readonly Step[] {
 	return [
 		play({
 			seconds: 1,
 			moves: [
 				caption.hide({ within: { end: 0.4 } }),
-				...beatSwapped('Change the whole look', ['paper', 'night', 'serif', 'cyan', 'rounded'], ON_THE_LOOKS_SLIDE)
+				...beatSwapped(
+					'Change the whole look',
+					['paper', 'night', 'serif', 'drift', 'cyan', 'rounded', 'solarized'],
+					ON_THE_LOOKS_SLIDE
+				)
 			],
 			ease: easeInOutCubic
 		}),
@@ -343,29 +368,39 @@ function actTheLook(): readonly Step[] {
 		),
 		hold({ seconds: 0.9 }),
 		play({
-			seconds: 1.6,
+			seconds: 1.8,
 			moves: [
-				code.light(THIRD_LINE, { within: { end: 0.1 } }),
+				code.light(THIRD_LINE, { through: FOURTH_LINE, within: { end: 0.1 } }),
 				// #region serif
-				look.to(SERIF)
+				look.to(SERIF),
+				// #endregion
+				// #region drift
+				look.to(DRIFT)
 				// #endregion
 			]
 		}),
 		hold({ seconds: 0.6 }),
 		cut(
-			code.light(FOURTH_LINE),
+			code.light(FIFTH_LINE),
 			// #region cyan
 			look.to(CYAN)
 			// #endregion
 		),
 		hold({ seconds: 0.9 }),
 		cut(
-			code.light(FIFTH_LINE),
+			code.light(SIXTH_LINE),
 			// #region rounded
 			look.to(ROUNDED)
 			// #endregion
 		),
-		hold({ seconds: 1.2 })
+		hold({ seconds: 0.9 }),
+		cut(
+			code.light(SEVENTH_LINE),
+			// #region solarized
+			look.to(SOLARIZED)
+			// #endregion
+		),
+		hold({ seconds: 1.4 })
 	];
 }
 

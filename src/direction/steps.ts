@@ -3,8 +3,9 @@
  *
  * A film reads as a script: `play` for what moves, `cut` for what changes at once, `act` for what the page really
  * does — a click, a reply from its server — which takes no time in the film however long the browser takes. Steps
- * are data; the studio runs them. Two moves of one part may share a step only one after the other: a step that has
- * both at once is refused as it is written, before anything is shot.
+ * are data; the studio runs them. Two moves of one part may share a step only one after the other, or at once where
+ * each sets values of it the other does not, as two moves of the look may: a step that has both on one value at once
+ * is refused as it is written, before anything is shot.
  */
 import { FilmError } from '../domain/errors.ts';
 import {
@@ -66,9 +67,13 @@ interface HoldScript {
 	readonly seconds: number;
 }
 
-/** The part of the scene a move changes, never none, and the share of its step it changes it over. */
+/**
+ * The part of the scene a move changes, never none, the values of it the move sets where it sets only some, and the
+ * share of its step it changes them over.
+ */
 interface PartTaken {
 	readonly part: PropName | 'page';
+	readonly values: readonly string[] | undefined;
 	readonly within: Share;
 }
 
@@ -157,20 +162,34 @@ function movesOf(step: Step): readonly Move[] {
 	}
 }
 
-/** Two moves of one part at once in one step, refused by naming the part. */
+/** Two moves of one part at once in one step, refused by naming the part, or the value of it both set. */
 function refuseClashes(moves: readonly Move[]): void {
 	const taken = moves.flatMap(partTaken);
-	const clash = taken.find((part, place) => taken.slice(place + 1).some((later) => clashes(part, later)));
-	if (clash !== undefined) throw new FilmError(`two moves on the ${clash.part} at once in one step`);
+	const clash = taken
+		.flatMap((part, place) => taken.slice(place + 1).map((later) => clashOf(part, later)))
+		.find(isNamed);
+	if (clash !== undefined) throw new FilmError(`two moves on the ${clash} at once in one step`);
 }
 
 /** The part a move changes, and the share of its step it takes; a move that only makes a sound takes none. */
 function partTaken(move: Move): PartTaken[] {
-	return move.part === null ? [] : [{ part: move.part, within: move.timing.within }];
+	return move.part === null ? [] : [{ part: move.part, values: move.values, within: move.timing.within }];
 }
 
-function clashes(taken: PartTaken, other: PartTaken): boolean {
-	return taken.part === other.part && taken.within.overlaps(other.within);
+/**
+ * What two moves change at once, as a refusal names it: their part, or a value of it both set where each sets only
+ * some; none where they change nothing at once.
+ */
+function clashOf(taken: PartTaken, other: PartTaken): string | undefined {
+	if (taken.part !== other.part || !taken.within.overlaps(other.within)) return undefined;
+	const otherValues = other.values;
+	if (taken.values === undefined || otherValues === undefined) return taken.part;
+	const shared = taken.values.find((value) => otherValues.includes(value));
+	return shared === undefined ? undefined : `${taken.part}'s ${shared}`;
+}
+
+function isNamed(clash: string | undefined): clash is string {
+	return clash !== undefined;
 }
 
 /**

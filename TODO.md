@@ -29,7 +29,6 @@
 - Mid-lift at an angle, `.view-shadow` stands on the view's box while the cut is still open, so a faint ring shows apart from the picture for a few frames.
 - Keys' caps take `--terminal`, `--terminal-ink` and `--terminal-edge`: a theme's `terminal` recolours them too, and the theme's doc does not say so.
 - Written more than once: the act's flat format (`src/studio/take.ts` and `src/adapters/browser/stage.ts`, beside `flatCamera`); the keyed rebuild of a drawer's markup, which `KeyedList` in `stage/stage.js` now does for words, code and keys while pins and the terminal's log keep their own; `THE_FIRST` in three moves.
-- The code's colours by kind are tokens (`--code-keyword` … in `stage/tokens.css`), tuned for a dark pane: a theme with a light `terminal` leaves them pale on it. Offered as look values, not answered.
 - A code pane only shrinks its letters to its widest line: code of more lines than its box holds runs off the frame, with no refusal.
 - The square ad with code in it (asked 2026-10-29 08:11, its treatment in that session's words): not started.
 - A window keeps no option to show the whole screen in its shape (as before 2026-10-29): offered as a format's `split` value, not answered.

@@ -212,7 +212,7 @@ its end at once.
 | `note.show(selector, text, { at })`, `note.hide()` | words on the ground beside the page's window, on the side clearest of it or `at` a place beyond it, a line drawn from them to a block in it; only with a window, which stays until `note.hide()` |
 | `pin.show(selector, label)`, `pin.clear()` | a numbered mark on a block, after those laid before, the earlier labels quietened; all taken away |
 | `keys.show(caps)`, `keys.hide()` | the caps of a shortcut at the frame's foot, as `['⌘', 'Enter']` |
-| `title.show(text, { at, align, from })`, `title.to(place)`, `title.hide({ toward })` | words coming up one after another on the film's ground over the whole frame, or `at` a place, in place of any title shown; going, the ground with them. In a place it slides in whole `from` a side, travels `to` another place, slides out `toward` a side: a title shown `from: 'right'` while one stands in a place pushes it off to the left as one sheet, and the window, code or the card slide with it in the same `play`. A place: `whole`, `left`, `right`, `top`, `bottom`, or `{ of, left, top, width, height }` in shares of the frame or of the place `of`, past the frame's edge if it must |
+| `title.show(text, { at, align, size, from })`, `title.to(place)`, `title.hide({ toward })` | words coming up one after another on the film's ground over the whole frame, or `at` a place, in place of any title shown; going, the ground with them. `size` is this title's letters' own, in pixels of a 1080 frame, in place of the look's `titleSize`, in a place at most: one word set large. In a place it slides in whole `from` a side, travels `to` another place, slides out `toward` a side: a title shown `from: 'right'` while one stands in a place pushes it off to the left as one sheet, and the window, code or the card slide with it in the same `play`. A place: `whole`, `left`, `right`, `top`, `bottom`, or `{ of, left, top, width, height }` in shares of the frame or of the place `of`, past the frame's edge if it must |
 | `code.show(text, { at, from })`, `code.to(place)`, `code.light(line, { through })`, `code.hide({ toward })` | a dark pane of code `at` a place, beside the page's window or alone, sliding in `from` past a side of the frame, pushing the code shown off past the side across, or out `toward` one, carried to another place by `to`; its lines coming up one after another, coloured as TypeScript; a line lit, counted from 1, or lines `line` through `through`, the rest dimmed; going |
 | `caption.show(text)`, `caption.hide()` | words coming up one after another at the frame's foot, or its top in a format with `captionAt: 'top'`, in place of any shown; going |
 | `look.to(theme, { within })` | the film's look moving to any of a theme's values: through the values between in a `play`, at once in a `cut`; one look move a step |
@@ -240,19 +240,29 @@ Put the spaces in the strings, as the words are read.
 brand's look. In hex: `ground` and `glow` (left out, the ground is of one
 colour), `ink` and `quietInk`, `accent` and `accentInk` for pins and notes,
 `windowEdge` and `windowShadowColour` (a dark edge on a light ground),
-`cursorFill` and `cursorEdge`, `terminal` and `terminalInk`. From 0 to 1:
-`windowShadow`, `glowX` and `glowY`. From 100 to 900: `titleWeight` and
-`captionWeight`. In pixels of a 1080 frame: `titleSize`, `captionSize`,
-`noteSize`, `calloutSize`, `pinSize`, `keysSize`, `codeSize` and `windowCorner`. As
-CSS names a family installed on the machine: `font` and `mono`. And
+`cursorFill` and `cursorEdge`, `terminal` and `terminalInk`, and the code's
+colours by kind, `codeComment`, `codeString`, `codeNumber`, `codeKeyword`,
+`codeCall` and `codeKey` (made for a dark pane: give them all with a light
+`terminal`). From 0 to 1: `windowShadow`, `glowX` and `glowY`, and
+`terminalWidth` and `terminalHeight`, the frame's share the terminal takes.
+From 100 to 900: `titleWeight` and `captionWeight`. In pixels of a 1080
+frame: `titleSize`, `captionSize`, `noteSize`, `calloutSize`, `pinSize`,
+`keysSize`, `codeSize`, `terminalSize`, `endingNameSize`, `endingLineSize`,
+`endingCommandSize` and `windowCorner`; `titleMargin`, how far in from the
+frame's sides a title over the whole frame stands, and
+`captionGroundHeight`, how far the ground darkens under a caption. As CSS
+names a family installed on the machine: `font` and `mono`. And
 `wordsMotion`: `'soft'`, `'sharp'` or `'still'`. Leave out what the user
 does not name: livereel's own is a dark ground, white ink and an amber
 accent. `look.to(theme)` changes any of these as the film goes: in a
 `play` through the values between (a ground fading light, the glow
 drifting while the camera moves), in a `cut` at once; a font changes
-half-way through a play. A run of cuts a beat apart, each adding one value,
-shows a look built up; fade the ink a little after the ground, or the words
-pass through the ground's own grey.
+half-way through a play. Two moves of the look share a step at once where
+they name no value alike, a ground named alone naming its glow too: the
+glow drifting over a whole play while the ink changes in a share of it. A
+run of cuts a beat apart, each adding one value, shows a look built up;
+fade the ink a little after the ground, or the words pass through the
+ground's own grey.
 
 The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
 person types; the curves are `linear`, `easeInOutSine` (a step's own),

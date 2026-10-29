@@ -6,6 +6,7 @@ import { linear } from '../../src/domain/time.ts';
 import { type Bounds, type Change, type Move, timingOf } from '../../src/direction/move.ts';
 import { act, cut, hold, play } from '../../src/direction/steps.ts';
 import { to as cameraTo } from '../../src/moves/camera.ts';
+import { to as lookTo } from '../../src/moves/look.ts';
 import { on, to } from '../../src/moves/light.ts';
 import { click, hide, to as cursorTo } from '../../src/moves/cursor.ts';
 import { show } from '../../src/moves/ending.ts';
@@ -110,6 +111,24 @@ test('a frame the camera crosses fast is drawn again along its way from the fram
 	expect([footage.exposed, stage.drawn.map((scene) => scene.camera.pose.focusX)]).toEqual([
 		[4, 4, 1],
 		[331.25, 337.5, 343.75, 350, 381.25, 387.5, 393.75, 400, 400]
+	]);
+});
+
+test('two moves of the look at once each move their own values over the frames they share: the glow drifting all the way, the ink changing over the first half', async () => {
+	const stage = new StageThatKeeps();
+	const steps = [
+		play({
+			seconds: 4 / 30,
+			moves: [lookTo({ glowX: 1 }), lookTo({ ink: '#000000' }, { within: { end: 0.5 } })],
+			ease: linear
+		})
+	];
+	await takeOf(new FootageOf([0, 1, 2, 3]), stage).run(steps);
+	expect(stage.drawn.map((scene) => [scene.look.glowX, scene.look.ink])).toEqual([
+		[0.625, '#7a7b7dff'],
+		[0.75, '#000000'],
+		[0.875, '#000000'],
+		[1, '#000000']
 	]);
 });
 

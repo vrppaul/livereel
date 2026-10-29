@@ -4,8 +4,8 @@
  * The take alone holds the scene and the count of frames shot. In a play, each frame begins the moves whose share
  * begins by then, in the order their shares begin, each after every running change whose share ended before it has
  * been set at its end — so a move reads the scene and the page as they stand at its start — then sets at its end
- * every change ended by the frame, and every other at its eased progress. One move at most drives a part at any
- * point, so the order moves are written in matters nowhere. A cut begins its moves and sets each at its end, with
+ * every change ended by the frame, and every other at its eased progress. One move at most drives a part, or a value
+ * of the look, at any point, so the order moves are written in matters nowhere. A cut begins its moves and sets each at its end, with
  * no frame between. A sound a move makes is heard as the move is set at or past its point, on the frame being made.
  * A frame is drawn only when the footage keeps it, and drawn again where the camera or its window crossed it fast
  * since the frame before, at cameras along their way there, the rest of the scene as it stands: each drawing is an

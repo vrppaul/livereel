@@ -142,6 +142,8 @@ export const A_FONT_FAMILY = new Plain(isWords, "a font's family, as CSS names o
 export const A_COLOUR = new Plain(isHexColour, 'a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa');
 /** A length a film sizes or spaces something by, in pixels: none at least. */
 export const A_PIXELS = new Plain(isPixels, 'a number of pixels, 0 or more');
+/** How large letters are, in pixels: more than none, as letters of no size are not there. */
+export const A_SIZE = new Plain(isSize, 'a number of pixels, more than 0');
 /** A share of something a film gives, from none of it to the whole. */
 export const A_SHARE = new Plain(isShare, 'a number from 0 to 1');
 
@@ -307,6 +309,10 @@ function isCount(written: unknown): written is number {
 
 function isPixels(written: unknown): written is number {
 	return isNumber(written) && written >= NONE;
+}
+
+function isSize(written: unknown): written is number {
+	return isNumber(written) && written > NONE;
 }
 
 function isShare(written: unknown): written is number {

@@ -362,7 +362,7 @@ body {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	height: 380px;
+	height: calc(var(--caption-ground-height) * 1px);
 	background: var(--caption-ground);
 	opacity: var(--darkened);
 }
@@ -460,7 +460,6 @@ body {
 	--word-blur: 12px;
 	--word-sink: 12px;
 	--word-blur-leaving: 8px;
-	--title-edge: 160px;
 
 	position: absolute;
 	inset: 0;
@@ -473,24 +472,24 @@ body {
 	opacity: var(--grounded);
 }
 
-/* The words stand in the middle of what they stand over: centred over the whole frame; in a place, in the middle of their box down it, read as the title names (`data-align`). The box is in the frame's pixels, and what stands over the frame in pixels of a frame the stage's look was made on */
+/* The words stand in the middle of what they stand over: centred over the whole frame, the look's margin in from its sides; in a place, in the middle of their box down it, read as the title names (`data-align`). Their letters are as large as the title's own size, the look's where it has none. The box is in the frame's pixels, and what stands over the frame in pixels of a frame the stage's look was made on */
 .title .words {
 	position: absolute;
-	left: var(--title-edge);
-	right: var(--title-edge);
+	left: calc(var(--title-margin) * 1px);
+	right: calc(var(--title-margin) * 1px);
 	top: 50%;
 	transform: translateY(-50%);
-	font: var(--title-weight) calc(var(--title-size) * 1px) / 1.08 var(--sans);
+	font: var(--title-weight) calc(var(--own-size, var(--title-size)) * 1px) / 1.08 var(--sans);
 	letter-spacing: -0.03em;
 	color: var(--ink);
 	text-align: center;
 	text-wrap: balance;
 }
 
-/* In a place the words stand in the middle of their box down it, read from its left or centred across it, as large as its width lets a long word stand on a line of its own, and no larger than a share of a title over the whole frame */
+/* In a place the words stand in the middle of their box down it, read from its left or centred across it, as large as its width lets a long word stand on a line of its own, and no larger than the title's own size, or, where it has none, a share of the look's over the whole frame */
 .title[data-placed] .words {
 	--placed-share-of-title: 0.78;
-	--placed-words-at-most: calc(var(--title-size) * var(--placed-share-of-title) * 1px);
+	--placed-words-at-most: calc(var(--own-size, var(--title-size) * var(--placed-share-of-title)) * 1px);
 	--letters-across: 8;
 
 	overflow-wrap: break-word;
@@ -597,15 +596,15 @@ body {
 }
 
 .terminal .window {
-	width: 86%;
-	height: 78%;
+	width: calc(var(--terminal-width) * 100%);
+	height: calc(var(--terminal-height) * 100%);
 	display: flex;
 	flex-direction: column;
 	border-radius: 16px;
 	background: var(--terminal);
 	box-shadow: var(--terminal-shadow);
 	overflow: hidden;
-	font: 400 25px / 1.5 var(--mono);
+	font: 400 calc(var(--terminal-size) * 1px) / 1.5 var(--mono);
 	color: var(--terminal-ink);
 }
 
@@ -729,13 +728,13 @@ body {
 }
 
 .ending .name {
-	font: 700 96px / 1 var(--sans);
+	font: 700 calc(var(--ending-name-size) * 1px) / 1 var(--sans);
 	letter-spacing: -0.035em;
 }
 
 .ending .what {
 	max-width: 18em;
-	font: 400 36px / 1.3 var(--sans);
+	font: 400 calc(var(--ending-line-size) * 1px) / 1.3 var(--sans);
 	color: var(--ink-quiet);
 	text-wrap: balance;
 }
@@ -746,7 +745,7 @@ body {
 	border-radius: 12px;
 	border: 1px solid var(--terminal-edge);
 	background: var(--terminal);
-	font: 500 38px / 1 var(--mono);
+	font: 500 calc(var(--ending-command-size) * 1px) / 1 var(--mono);
 	color: var(--terminal-ink);
 }
 

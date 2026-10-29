@@ -33,6 +33,8 @@ const SIDE = 'data-side';
 // how it reads there
 const PLACED = 'data-placed';
 const ALIGN = 'data-align';
+// The custom property a title's own size is set as, where it has one; the stylesheet takes the look's where it has not
+const OWN_SIZE = '--own-size';
 // The attribute that names the edge of the frame a caption stands at: its foot, or its top
 const CAPTION_EDGE = 'data-at';
 // The attribute that names which way a note's words run from where its line meets them, or a pin's label from its mark
@@ -64,12 +66,22 @@ const LOOK_SET_AS = {
 	mono: { token: '--mono-font' },
 	titleSize: { token: '--title-size' },
 	captionSize: { token: '--caption-size' },
+	titleMargin: { token: '--title-margin' },
+	captionGroundHeight: { token: '--caption-ground-height' },
 	windowCorner: { token: '--window-corner' },
 	windowEdge: { token: '--window-edge' },
 	windowShadow: { token: '--window-shadow' },
 	windowShadowColour: { token: '--window-shadow-colour' },
 	terminal: { token: '--terminal' },
 	terminalInk: { token: '--terminal-ink' },
+	codeComment: { token: '--code-comment' },
+	codeString: { token: '--code-string' },
+	codeNumber: { token: '--code-number' },
+	codeKeyword: { token: '--code-keyword' },
+	codeCall: { token: '--code-call' },
+	codeKey: { token: '--code-key' },
+	terminalWidth: { token: '--terminal-width' },
+	terminalHeight: { token: '--terminal-height' },
 	glowX: { token: '--glow-x' },
 	glowY: { token: '--glow-y' },
 	titleWeight: { token: '--title-weight' },
@@ -79,6 +91,10 @@ const LOOK_SET_AS = {
 	pinSize: { token: '--pin-text-size' },
 	keysSize: { token: '--keys-size' },
 	codeSize: { token: '--code-size' },
+	terminalSize: { token: '--terminal-size' },
+	endingNameSize: { token: '--ending-name-size' },
+	endingLineSize: { token: '--ending-line-size' },
+	endingCommandSize: { token: '--ending-command-size' },
 	cursorFill: { token: '--cursor-fill' },
 	cursorEdge: { token: '--cursor-edge' },
 	wordsMotion: { attribute: 'data-words-motion' }
@@ -393,6 +409,8 @@ class TitleLayer {
 		this.element.toggleAttribute(PLACED, title.box !== null);
 		if (title.box !== null) placed(this.element, title.box);
 		named(this.element, ALIGN, title.align);
+		if (title.size === null) this.element.style.removeProperty(OWN_SIZE);
+		else numbered(this.element, { [OWN_SIZE]: title.size });
 		numbered(this.element, { '--grounded': title.ground, '--gone': title.gone });
 		this.words.draw(title.key, title.words);
 	}

@@ -1,9 +1,9 @@
 /*
  * Every colour of the stage, its shadows and its reaches, written once. The other stylesheets name these and write no
  * colour of their own (stylelint holds them to it). The film's look — the ground, its glow, the inks, the accent, the
- * fonts, the sizes and weights of words, the window's corners, edge and shadow, the cursor and the terminal — is set
- * on the root every frame from the scene (`LookDrawer` in `stage.js`, livereel's own in `src/props/look.ts`), so a
- * film changes it as it goes; what is worked out from it here follows.
+ * fonts, the sizes and weights of words, the window's corners, edge and shadow, the code's colours, the cursor, the
+ * terminal and the ending — is set on the root every frame from the scene (`LookDrawer` in `stage.js`, livereel's own
+ * in `src/props/look.ts`), so a film changes it as it goes; what is worked out from it here follows.
  */
 :root {
 	--ground-light: radial-gradient(
@@ -51,13 +51,7 @@
 	/* A key's cap standing up off the frame */
 	--key-shadow: inset 0 -6px 0 var(--terminal-edge), 0 24px 60px rgb(0 0 0 / 35%);
 
-	/* The code's pieces by kind, as an editor colours them on a dark pane, and the bar a line lit stands on */
-	--code-comment: #8b949e;
-	--code-string: #a5d6ff;
-	--code-number: #79c0ff;
-	--code-keyword: #ff7b72;
-	--code-call: #d2a8ff;
-	--code-key: #7ee787;
+	/* The bar a line of code lit stands on */
 	--code-lit: color-mix(in srgb, var(--accent) 18%, transparent);
 
 	/* How far in from the frame's foot, or its top, a caption's words and the keys stand */

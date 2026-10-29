@@ -122,6 +122,11 @@ export type Change = (scene: Scene, progress: number) => Scene | Promise<Scene>;
  */
 export interface Move {
 	readonly part: Part;
+	/**
+	 * The values of its part the move sets, where it sets only some, as a move of the look sets those its theme names:
+	 * two moves of one part at once clash only on a value both set. A move that names none sets the whole of its part.
+	 */
+	readonly values?: readonly string[];
 	readonly timing: Timing;
 	/** The sounds the move makes on its way; a move that makes none has none. */
 	readonly sounds?: readonly Cue[];

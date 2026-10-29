@@ -31,6 +31,14 @@ test('two moves of the page at once are refused, as two of one prop are, in a pl
 	expect(() => cut(cursorGone(), cursorGone())).toThrow(new FilmError('two moves on the cursor at once in one step'));
 });
 
+test('two moves of the look at once are refused only on a value both set, named by it: a ground named alone sets its glow', () => {
+	const drifting = lookTo({ glowX: 0.9, glow: '#222222' });
+	expect(() => play({ seconds: 1, moves: [drifting, lookTo({ ground: '#ffffff' })] })).toThrow(
+		new FilmError("two moves on the look's glow at once in one step")
+	);
+	expect(play({ seconds: 1, moves: [drifting, lookTo({ ink: '#000000' })] }).moves.length).toBe(2);
+});
+
 test('moves of one prop one after the other share a step, moves of two props share it at once, and sounds any way', () => {
 	const after = play({ seconds: 1, moves: [hide({ within: { end: 0.3 } }), show('Next', { within: { start: 0.4 } })] });
 	const together = play({ seconds: 1, moves: [show('Words'), on('#block')] });

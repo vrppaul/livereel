@@ -1,10 +1,11 @@
 /**
  * A theme as a film writes it: any values of a look (`Look` in `src/props/look.ts`), the look a film opens on in
  * `defineFilm` and the look it moves to in `look.to`. A value it leaves out stays as the look has it, so a film tunes
- * one and keeps the rest. Where things stand on the frame is the format's (`Format` in `src/domain/geometry.ts`).
+ * one and keeps the rest. Where the words and the page's window stand on the frame is the format's (`Format` in
+ * `src/domain/geometry.ts`).
  */
 import { assertWritten } from '../domain/handed.ts';
-import { THEME_FORM, type Theme } from '../props/look.ts';
+import { LOOK_KINDS, type Theme } from '../props/look.ts';
 
 // A film that names no theme opens on livereel's own look
 const LIVEREELS_OWN: Theme = {};
@@ -29,7 +30,7 @@ export function themeOf(written: unknown): Theme {
  * look has belongs to the ground it had.
  */
 export function themeWritten(written: unknown, place: string): Theme {
-	assertWritten(written, THEME_FORM, place);
+	assertWritten<Theme>(written, LOOK_KINDS, place);
 	if (written.ground !== undefined && written.glow === undefined) return { ...written, glow: written.ground };
 	return written;
 }

@@ -9,12 +9,14 @@ import type { Alignment } from '../domain/place.ts';
 import { type DrawnWords, type ShownWords, drawnWords } from './words.ts';
 
 /**
- * A title's words, the place they stand in, in the frame's pixels — none, over the whole frame on its ground — and how
- * they read there.
+ * A title's words, the place they stand in, in the frame's pixels — none, over the whole frame on its ground — how
+ * they read there, and how large their letters are, in pixels of a frame 1080 on its shorter side: none, as the look
+ * has a title's.
  */
 interface TitleWords extends ShownWords {
 	readonly box: Box | null;
 	readonly align: Alignment;
+	readonly size: number | null;
 }
 
 /** A title, and the title it pushes off as it slides in, while it does; none else. */
@@ -25,6 +27,7 @@ export interface Title extends TitleWords {
 export interface DrawnTitleWords extends DrawnWords {
 	readonly box: Box | null;
 	readonly align: Alignment;
+	readonly size: number | null;
 }
 
 export interface DrawnTitle extends DrawnTitleWords {
@@ -43,5 +46,11 @@ export function drawnTitle(title: Title): DrawnTitle {
 
 function drawnTitleWords(title: TitleWords): DrawnTitleWords {
 	const words = drawnWords(title);
-	return { ...words, ground: title.box === null ? words.ground : NO_GROUND, box: title.box, align: title.align };
+	return {
+		...words,
+		ground: title.box === null ? words.ground : NO_GROUND,
+		box: title.box,
+		align: title.align,
+		size: title.size
+	};
 }
