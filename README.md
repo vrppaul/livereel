@@ -139,8 +139,8 @@ and the moves of each part of the scene:
 - `keys.show(caps)`, `keys.hide()`
 - `cursor.to(selector, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { side })`, `title.hide()`
-- `code.show(text, { side })`, `code.light(line, { through })`, `code.hide()`
+- `title.show(text, { at })`, `title.hide()`
+- `code.show(text, { at })`, `code.light(line, { through })`, `code.hide()`
 - `caption.show(text)`, `caption.hide()`
 - `screen.rise()`, `screen.lower()`
 - `terminal.open(title)`, `terminal.type(strokes)`, `terminal.submit()`,
@@ -163,19 +163,34 @@ types the way a person does: unevenly, with a slip now and then.
 ### Titles, and words set their own way
 
 A title is words that come up one after another: over the film's ground
-across the whole frame, a screen of words that covers the page, or on a
-`side` of it, `left`, `right`, `top` or `bottom`, beside the page's window,
-which the camera frames a block into on the side across:
+across the whole frame, a screen of words that covers the page, or `at` a
+place on the frame, beside the page's window, which the camera frames a
+block into on the side across:
 
 ```ts
 play({
 	seconds: 1.6,
 	moves: [
 		camera.onto(CHART, { side: 'right' }),
-		title.show(['A real ', { text: 'click', ink: ACCENT }, ', a real server'], { side: 'left', within: { start: 0.5 } })
+		title.show(['A real ', { text: 'click', ink: ACCENT }, ', a real server'], { at: 'left', within: { start: 0.5 } })
 	]
 })
 ```
+
+A place is a name, `whole`, `left`, `right`, `top` or `bottom`, or a box in
+shares: of the frame, or of another place it names `of`, its `left` and
+`top` 0 and its `width` and `height` 1 where it leaves them out. A side is
+where words stand beside a window on the side across; `whole` is the frame
+inside the words' margin. A box may reach past the frame. So a heading over
+code, beside a window on the right:
+
+```ts
+title.show('Point the camera', { at: { of: 'left', height: 0.2 } }),
+code.show(LINES, { at: { of: 'left', top: 0.25, height: 0.75 } }),
+```
+
+Words in a place read from the left, in the middle of their box down it,
+as large as its width lets.
 
 The page draws back off the frame's edges into a window on the ground, its
 corners rounding, its edge and shadow coming up; `camera.onto` without a
@@ -221,8 +236,8 @@ Keys: `keys.show(['⌘', 'Enter'])` sets the caps of a shortcut at the
 frame's foot, as the page is sent it in an act, and they rise clear of a
 caption there as its ground comes up; `keys.hide()` takes them away.
 
-Code is a second screen beside the page's window: `code.show(text, { side })`
-sets a dark pane of code in the words' box on that `side`, its lines coming
+Code is a second screen beside the page's window, or alone: `code.show(text, { at })`
+sets a dark pane of code in its place, its lines coming
 up one after another, coloured as TypeScript is, the indent they share
 dropped. Its letters are as large as `codeSize` lets, smaller where the
 widest line would not fit across, so keep its lines short or give the words
@@ -231,7 +246,7 @@ second line, counted from 1, and dims the rest, `code.light(2, { through: 4 })`
 lines 2 to 4, so a line lights as the page does what it says:
 
 ```ts
-play({ seconds: 1.4, moves: [camera.onto(CARDS, { side: 'right' }), code.show(LINES, { side: 'left' })] }),
+play({ seconds: 1.4, moves: [camera.onto(CARDS, { side: 'right' }), code.show(LINES, { at: 'left' })] }),
 play({ seconds: 1, moves: [code.light(1), camera.onto(VISITORS, { side: 'right' })] }),
 play({ seconds: 1, moves: [code.light(2), light.on(VISITORS)] }),
 ```

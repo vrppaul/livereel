@@ -33,6 +33,8 @@ const SHARE = 'a share of the step: { start, end }';
 const A_MOVE = 'a move, as camera.onto or light.on makes one';
 const STROKE = { at: 0, typed: 'l' };
 const SIDE = 'a side of the frame: "left", "right", "top" or "bottom"';
+const PLACE =
+	'a place: "whole", "left", "right", "top" or "bottom", or { of, left, top, width, height }, each in shares';
 const WORDING = 'words: a string, or a list of strings and runs';
 const RUN = 'words: a string, or a run of them set its own way, { text, italic, underline, strike, ink, marker }';
 const COLOUR = 'a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa';
@@ -116,11 +118,11 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => title.show([{ text: 'Hello', marker: '#ffd54' }])).toThrow(
 		new FilmError(`title.show's text[0]'s marker is "#ffd54": it is ${COLOUR}`)
 	);
-	expect(() => title.show('Hello', { side: 'west' as never })).toThrow(
-		new FilmError(`title.show's side is "west": it is ${SIDE}`)
+	expect(() => title.show('Hello', { at: { of: 'west' } as never })).toThrow(
+		new FilmError(`title.show's at's of is "west": it is ${PLACE}`)
 	);
-	expect(() => title.hide({ side: 'left' } as never)).toThrow(
-		new FilmError('title.hide names side: it names within, ease, or fewer')
+	expect(() => title.hide({ at: 'left' } as never)).toThrow(
+		new FilmError('title.hide names at: it names within, ease, or fewer')
 	);
 	expect(() => screen.rise({ within: { start: null as never } })).toThrow(
 		new FilmError("screen.rise's within's start is null: it is a number")

@@ -1,6 +1,6 @@
 /**
- * Code beside the page's window: a pane of the film's code, a second screen, standing in the words' box on a side of
- * the frame while the page shows in the window across, so the viewer reads a line and sees what it does at once.
+ * Code on the frame: a pane of the film's code in a place the film names, beside the page's window, so the viewer
+ * reads a line and sees what it does at once, or alone, about what the frame itself shows.
  *
  * A film hands its code as text. It is worked out once, as its move is made, into lines of pieces, each of a kind the
  * stage colours it by, read as TypeScript is written; the indent its lines share is dropped and a tab set as spaces,
@@ -8,7 +8,7 @@
  * line fits across. The pane comes up its ground first and its lines one after another, as words do
  * (`src/props/words.ts`). A line lit stands on a bar of the accent, and while any is lit the rest dim.
  */
-import type { Beside } from '../domain/split.ts';
+import type { Box } from '../domain/geometry.ts';
 import { appearedOf, groundOf } from './words.ts';
 
 // The kinds of the pieces of a line: a comment to the line's end, a string, a number, a word the language keeps, a
@@ -36,12 +36,12 @@ export interface CodeLine {
 	readonly lit: number;
 }
 
-/** Code beside the window: its lines, where it stands, and how far it has come up and gone, each from 0 to 1. */
+/** Code: its lines, its place in the frame's pixels, and how far it has come up and gone, each from 0 to 1. */
 export interface Code {
 	readonly lines: readonly CodeLine[];
 	readonly key: string;
 	readonly columns: number;
-	readonly beside: Beside;
+	readonly box: Box;
 	readonly shown: number;
 	readonly gone: number;
 }
@@ -60,7 +60,7 @@ export interface DrawnCode {
 	readonly lines: readonly DrawnLine[];
 	readonly key: string;
 	readonly columns: number;
-	readonly beside: Beside;
+	readonly box: Box;
 	readonly ground: number;
 	readonly gone: number;
 	readonly dimmed: number;
@@ -93,7 +93,7 @@ export function drawnCode(code: Code): DrawnCode {
 		lines: code.lines.map((line, place) => ({ ...line, appeared: appearedOf(code.shown, place, count) })),
 		key: code.key,
 		columns: code.columns,
-		beside: code.beside,
+		box: code.box,
 		ground: groundOf(code.shown, code.gone),
 		gone: code.gone,
 		dimmed: Math.min(

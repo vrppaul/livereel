@@ -164,6 +164,16 @@ export function partWithin(box: Box, size: Size): Box {
 	return { left, top, width: right - left, height: bottom - top };
 }
 
+/** A box of the frame on whole pixels, so its edges fall on pixels. */
+export function wholePixels(box: Box): Box {
+	return {
+		left: Math.round(box.left),
+		top: Math.round(box.top),
+		width: Math.round(box.width),
+		height: Math.round(box.height)
+	};
+}
+
 /** The smallest box that holds every one of these. */
 export function boxAround(boxes: readonly [Box, ...Box[]]): Box {
 	const left = Math.min(...boxes.map((box) => box.left));

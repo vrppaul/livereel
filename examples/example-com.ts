@@ -12,6 +12,7 @@
 import {
 	type ActContext,
 	type FrameSide,
+	type Place,
 	type Pose,
 	type Serving,
 	type Step,
@@ -59,9 +60,9 @@ const SPLITS: Readonly<Record<keyof typeof FORMATS, Split>> = {
 };
 const ENDING = { name: 'example.com', line: 'Filmed live, frame by frame', command: 'livereel' };
 
-/** The side of the frame a title stands on, and the side the page's window stands on beside it. */
+/** The place a title stands in, and the side the page's window stands on beside it. */
 interface Split {
-	readonly words: FrameSide;
+	readonly words: Place;
 	readonly page: FrameSide;
 }
 
@@ -130,7 +131,7 @@ function actLanguages(split: Split): readonly Step[] {
 			moves: [
 				caption.hide({ within: { end: 0.4 } }),
 				camera.onto(ENGLISH, { side: split.page, air: 60, zoomAtMost: 2 }),
-				title.show(IN_SIX, { side: split.words, within: { start: 0.5 } })
+				title.show(IN_SIX, { at: split.words, within: { start: 0.5 } })
 			],
 			ease: easeInOutCubic
 		}),

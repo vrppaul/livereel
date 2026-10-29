@@ -1,11 +1,12 @@
 /**
- * Code: a pane of the film's code coming up in the words' box on a side of the frame, beside the page's window on the
- * side across (`camera.onto(selector, { side })`), in place of any code shown; lines of it lit as they run; and going.
- * Lines are counted from 1, as an editor counts them, and a light past the last line shown is refused as it begins.
+ * Code: a pane of the film's code coming up in a place the film names (`src/domain/place.ts`), beside the page's
+ * window or alone, in place of any code shown; lines of it lit as they run; and going. Lines are counted from 1, as an
+ * editor counts them, and a light past the last line shown is refused as it begins.
  */
 import { FilmError } from '../domain/errors.ts';
+import type { Box } from '../domain/geometry.ts';
 import { A_COUNT, A_STRING, type Form, assertKind, assertWritten, needed } from '../domain/handed.ts';
-import { A_FRAME_SIDE, type Beside, type FrameSide, besideOn } from '../domain/split.ts';
+import { A_PLACE, type Place, wordsPlaced } from '../domain/place.ts';
 import { between, linear } from '../domain/time.ts';
 import {
 	type Beginning,
@@ -20,9 +21,9 @@ import {
 import { type CodeLine, NOT_LIT, WHOLLY_LIT, type WrittenCode, codeOf } from '../props/code.ts';
 import { going } from './words.ts';
 
-/** Where code stands: on a `side` of the frame, beside the page's window across from it. */
+/** Where code stands: `at` a place on the frame. */
 export interface CodeScript extends TimingScript {
-	readonly side: FrameSide;
+	readonly at: Place;
 }
 
 /** The last line lit, where the film lights more than one: lines from the one named through this one. */
@@ -30,12 +31,12 @@ export interface LightScript extends TimingScript {
 	readonly through?: number;
 }
 
-const CODE_FORM: Form<CodeScript> = { side: needed(A_FRAME_SIDE), ...TIMING_FORM };
+const CODE_FORM: Form<CodeScript> = { at: needed(A_PLACE), ...TIMING_FORM };
 const LIGHT_FORM: Form<LightScript> = { through: A_COUNT, ...TIMING_FORM };
 // Lines are counted from 1, places in a list from 0
 const FIRST_LINE = 1;
 
-/** Code coming up on a side of the frame, its ground first, then its lines one after another at an even pace. */
+/** Code coming up in its place, its ground first, then its lines one after another at an even pace. */
 export function show(text: string, script: CodeScript): Move {
 	assertKind(text, A_STRING, "code.show's text");
 	assertWritten(script, CODE_FORM, 'code.show');
@@ -43,7 +44,7 @@ export function show(text: string, script: CodeScript): Move {
 	return {
 		part: 'code',
 		timing: timingOf({ ease: linear, ...script }),
-		begin: (beginning) => showing(written, besideOn(beginning.format, script.side))
+		begin: (beginning) => showing(written, wordsPlaced(beginning.format, script.at))
 	};
 }
 
@@ -61,10 +62,10 @@ export function hide(script: TimingScript = {}): Move {
 	return { part: 'code', timing: timingOf(script), begin: (beginning) => going('code', beginning) };
 }
 
-function showing(written: WrittenCode, beside: Beside): Change {
+function showing(written: WrittenCode, box: Box): Change {
 	const lines = written.lines.map((pieces) => ({ pieces, lit: NOT_LIT }));
 	const { key, columns } = written;
-	return propChange('code', (progress) => ({ lines, key, columns, beside, shown: progress, gone: 0 }));
+	return propChange('code', (progress) => ({ lines, key, columns, box, shown: progress, gone: 0 }));
 }
 
 function lighting(beginning: Beginning, first: number, last: number): Change {

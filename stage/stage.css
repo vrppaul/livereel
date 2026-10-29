@@ -486,10 +486,10 @@ body {
 	text-wrap: balance;
 }
 
-/* Beside a window the words are as large as their box's width lets a long word stand on a line of its own, and no larger than a share of a title over the whole frame */
-.title[data-side] .words {
-	--side-share-of-title: 0.78;
-	--side-words-at-most: calc(var(--title-size) * var(--side-share-of-title) * 1px);
+/* In a place the words stand in the middle of their box down it, read from the left, as large as its width lets a long word stand on a line of its own, and no larger than a share of a title over the whole frame */
+.title[data-placed] .words {
+	--placed-share-of-title: 0.78;
+	--placed-words-at-most: calc(var(--title-size) * var(--placed-share-of-title) * 1px);
 	--letters-across: 8;
 
 	overflow-wrap: break-word;
@@ -497,15 +497,11 @@ body {
 	right: auto;
 	top: calc((var(--top) + var(--height) / 2) * 1px / var(--frame-scale));
 	width: calc(var(--width) * 1px / var(--frame-scale));
-	font-size: min(var(--side-words-at-most), calc(var(--width) * 1px / var(--frame-scale) / var(--letters-across)));
-}
-
-.title[data-side='left'] .words,
-.title[data-side='right'] .words {
+	font-size: min(var(--placed-words-at-most), calc(var(--width) * 1px / var(--frame-scale) / var(--letters-across)));
 	text-align: left;
 }
 
-/* Code beside the page's window: a pane as wide as the words' box, in its middle down it, dark as the terminal, its corners, edge and shadow the window's. Its ground comes up first, rising a little, then its lines one after another. Its letters are as large as the look has them, smaller where its widest line would not fit across, a monospace letter about 0.6 of its size wide. A line lit stands on a bar of the accent; while one is, the rest dim to a share of their ink */
+/* Code in its place: a pane as wide as its box, in its middle down it, dark as the terminal, its corners, edge and shadow the window's. Its ground comes up first, rising a little, then its lines one after another. Its letters are as large as the look has them, smaller where its widest line would not fit across, a monospace letter about 0.6 of its size wide. A line lit stands on a bar of the accent; while one is, the rest dim to a share of their ink */
 .code {
 	--code-across: 32px;
 	--code-down: 26px;

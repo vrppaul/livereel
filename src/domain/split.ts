@@ -8,7 +8,7 @@
  * livereel's for what a format leaves out. Lengths are in the frame's pixels, drawn as on a frame the stage's look was
  * made on and scaled to the frame shot, and whole, so the window's edges fall on pixels.
  */
-import { type Box, type Format, type Split, frameScaleOf } from './geometry.ts';
+import { type Box, type Format, type Split, frameScaleOf, wholePixels } from './geometry.ts';
 import { OneOf } from './handed.ts';
 
 /** The sides of the frame: where words stand, or the page's window across from them. */
@@ -31,14 +31,10 @@ const HALVES = 2;
 // The side of the frame across from each: where words stand beside a window on it
 const ACROSS: Readonly<Record<FrameSide, FrameSide>> = { left: 'right', right: 'left', top: 'bottom', bottom: 'top' };
 
-/** Where words stand beside a window on the side of the frame across from them. */
-export function besideOn(format: Format, side: FrameSide): Beside {
-	return { side, box: wordsOn(format, side) };
-}
-
 /** Where words about the page stand beside a window on a side of the frame: on the side across. */
 export function besideTheWindowOn(format: Format, windowSide: FrameSide): Beside {
-	return besideOn(format, ACROSS[windowSide]);
+	const side = ACROSS[windowSide];
+	return { side, box: wordsOn(format, side) };
 }
 
 /** Where the page's window stands on the frame on a side of it, the words on the side across: its whole room. */
@@ -50,9 +46,8 @@ export function windowOn(format: Format, side: FrameSide): Box {
 export function wordsOn(format: Format, side: FrameSide): Box {
 	const { frame } = format;
 	const split = splitOf(format);
-	const scale = frameScaleOf(frame);
-	const margin = split.wordsMargin * scale;
-	const gap = split.wordsGap * scale;
+	const margin = wordsMarginOf(format);
+	const gap = split.wordsGap * frameScaleOf(frame);
 	switch (side) {
 		case 'left':
 		case 'right': {
@@ -67,6 +62,11 @@ export function wordsOn(format: Format, side: FrameSide): Box {
 			return wholePixels({ left: margin, top, width: frame.width - HALVES * margin, height });
 		}
 	}
+}
+
+/** How far words stand in from the frame's edges, in the frame's pixels. */
+export function wordsMarginOf(format: Format): number {
+	return splitOf(format).wordsMargin * frameScaleOf(format.frame);
 }
 
 /** Whether a format's split leaves the words and the window room on every side of its frame. */
@@ -110,13 +110,4 @@ function roomOn(format: Format, side: FrameSide): Box {
 
 function hasArea(box: Box): boolean {
 	return box.width > 0 && box.height > 0;
-}
-
-function wholePixels(box: Box): Box {
-	return {
-		left: Math.round(box.left),
-		top: Math.round(box.top),
-		width: Math.round(box.width),
-		height: Math.round(box.height)
-	};
 }

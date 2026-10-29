@@ -11,6 +11,7 @@ import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
 import * as ending from '../../src/moves/ending.ts';
 import { drawnCode } from '../../src/props/code.ts';
+import { wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
 import * as look from '../../src/moves/look.ts';
 import * as note from '../../src/moves/note.ts';
@@ -136,10 +137,10 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 		shown: 1,
 		gone: 0
 	});
-	const titled = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'title', { ...said, beside: null, shown: 1, gone: 0 });
+	const titled = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'title', { ...said, box: null, shown: 1, gone: 0 });
 	const captioned = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'caption', { ...said, shown: 1, gone: 0 });
 	const pressed = await setAt(keys.show(['⌘', 'K']), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const coded = await setAt(code.show('light.on(VISITORS)', { side: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const coded = await setAt(code.show('light.on(VISITORS)', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const carded = await setAt(
 		ending.show({ name: 'livereel', line: 'Film your app', command: 'npx livereel' }),
 		openingScene(SMALL, LIVEREELS_LOOK),
@@ -159,25 +160,32 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 	]).toEqual([null, null, null, null, null, null, null, null, null, null]);
 });
 
-test("code stands in the words' box on the side the film names, beside the page's window", async () => {
-	const coded = await setAt(code.show('light.on(VISITORS)', { side: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	expect(coded.code!.beside).toEqual({ side: 'left', box: wordsOn(SMALL, 'left') });
+test('code and a title stand in the places the film names, the title then with no ground of its own', async () => {
+	const heading = { of: 'left', height: 0.2 } as const;
+	const below = { of: 'left', top: 0.25, height: 0.75 } as const;
+	const titled = await setAt(title.show('Here', { at: heading }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const coded = (await setAt(code.show('light.on(VISITORS)', { at: below }), titled, 1)).code!;
+	expect([titled.title!.box, drawnTitle(titled.title!).ground, coded.box]).toEqual([
+		wordsPlaced(SMALL, heading),
+		0,
+		wordsPlaced(SMALL, below)
+	]);
 });
 
 test('the lines lit are the one named and those through the one named, and the rest dim', async () => {
-	const coded = await setAt(code.show(THREE_LINES, { side: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const lit = (await setAt(code.light(2, { through: 3 }), coded, 1)).code!;
 	expect([lit.lines.map((line) => line.lit), drawnCode(lit).dimmed]).toEqual([[0, 1, 1], 1]);
 });
 
 test('while the light moves from one line to another, the lines not lit stay dimmed', async () => {
-	const coded = await setAt(code.show(THREE_LINES, { side: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const first = await setAt(code.light(1), coded, 1);
 	expect(drawnCode((await setAt(code.light(2), first, 0.5)).code!).dimmed).toBe(1);
 });
 
 test('lines lit past the last of the code, or with no code shown, are refused as the move begins', async () => {
-	const coded = await setAt(code.show(THREE_LINES, { side: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	await expect(async () => code.light(3, { through: 4 }).begin(beginningOf(coded))).rejects.toThrow(FilmError);
 	await expect(async () => code.light(1).begin(beginningOf(openingScene(SMALL, LIVEREELS_LOOK)))).rejects.toThrow(
 		FilmError
@@ -366,11 +374,6 @@ test("a camera onto a block on a side stands in that side's window, and back in 
 		windowView(windowOn(SMALL, 'right'), 'right'),
 		wholeView(SMALL.frame)
 	]);
-});
-
-test("a title on a side of the frame stands in the words' box there, with no ground of its own", async () => {
-	const titled = (await setAt(title.show('Here', { side: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1)).title!;
-	expect([titled.beside, drawnTitle(titled).ground]).toEqual([{ side: 'left', box: wordsOn(SMALL, 'left') }, 0]);
 });
 
 test("a face-on camera onto a block at the screen's foot stops short of showing the edge", async () => {

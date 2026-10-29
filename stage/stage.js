@@ -14,6 +14,7 @@
 /** @import { DrawnPin } from '../src/props/pins.ts' */
 /** @import { DrawnWords, Piece, Word } from '../src/props/words.ts' */
 /** @import { CodeLine, CodePiece, DrawnCode } from '../src/props/code.ts' */
+/** @import { Box } from '../src/domain/geometry.ts' */
 /** @import { Look } from '../src/props/look.ts' */
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
@@ -24,9 +25,10 @@
 const APART = ' ';
 // The lines of the terminal's log are told apart from each other by this, to know when they changed
 const BETWEEN_LINES = '\n';
-// The attribute that names the side of the frame a title stands on beside a window, none over the whole frame; and
-// the side of its block a callout stands on
+// The attribute that names the side of the frame a note's words stand on, and the side of its block a callout stands on
 const SIDE = 'data-side';
+// The attribute a title stands in a place by, rather than over the whole frame on its ground
+const PLACED = 'data-placed';
 // The attribute that names the edge of the frame a caption stands at: its foot, or its top
 const CAPTION_EDGE = 'data-at';
 // The attribute that names which way a note's words run from where its line meets them, or a pin's label from its mark
@@ -298,7 +300,7 @@ class KeysDrawer {
 	}
 }
 
-/** Code beside the window: its pane where its box is, and its lines, each line's progress and light set every frame. */
+/** Code in its place: its pane where its box is, and its lines, each line's progress and light set every frame. */
 class CodeDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
@@ -316,12 +318,8 @@ class CodeDrawer {
 			return;
 		}
 		this.lines.draw(code.key, code.lines);
-		const box = code.beside.box;
+		placed(this.root, code.box);
 		numbered(this.root, {
-			'--left': box.left,
-			'--top': box.top,
-			'--width': box.width,
-			'--height': box.height,
 			'--columns': code.columns,
 			'--grounded': code.ground,
 			'--dimmed': code.dimmed
@@ -345,11 +343,8 @@ class TitleDrawer {
 			this.words.clear();
 			return;
 		}
-		named(this.root, SIDE, title.beside === null ? null : title.beside.side);
-		if (title.beside !== null) {
-			const box = title.beside.box;
-			numbered(this.root, { '--left': box.left, '--top': box.top, '--width': box.width, '--height': box.height });
-		}
+		this.root.toggleAttribute(PLACED, title.box !== null);
+		if (title.box !== null) placed(this.root, title.box);
 		numbered(this.root, { '--grounded': title.ground, '--gone': title.gone });
 		this.words.draw(title.key, title.words);
 	}
@@ -519,6 +514,14 @@ function apply(scene) {
  */
 function numbered(element, numbers) {
 	for (const [name, value] of Object.entries(numbers)) element.style.setProperty(name, String(value));
+}
+
+/**
+ * An element standing in a place: its box on the frame, in the frame's pixels.
+ * @param {Staged} element @param {Box} box
+ */
+function placed(element, box) {
+	numbered(element, { '--left': box.left, '--top': box.top, '--width': box.width, '--height': box.height });
 }
 
 /** A prop shown, or hidden while it is not on the scene. @param {Staged} element @param {boolean} isShown */

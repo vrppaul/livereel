@@ -75,12 +75,12 @@ function linesOf(regions: readonly string[]): string {
 
 /** The lines of regions coming up on the left, beside the page's window on the right. */
 function codeShown(regions: readonly string[]): Move {
-	return code.show(linesOf(regions), { side: 'left' });
+	return code.show(linesOf(regions), { at: 'left' });
 }
 
 /** The lines of the next beat on the left in place of the last beat's, those going first. */
 function codeSwapped(regions: readonly string[]): readonly Move[] {
-	return [code.hide({ within: { end: 0.4 } }), code.show(linesOf(regions), { side: 'left', within: { start: 0.4 } })];
+	return [code.hide({ within: { end: 0.4 } }), code.show(linesOf(regions), { at: 'left', within: { start: 0.4 } })];
 }
 
 /** The card first: the name and the line on the ground, then the app rising into a window as the card goes. */
