@@ -44,9 +44,10 @@ const WIDE = {
 	screen: { width: 1040, height: 1080 },
 	split: { wordsShare: 0.5 }
 };
-// The app's main number, its card and the button that refreshes it, and the row of cards
+// The app's main number, its card, how it stands against yesterday, the button that refreshes it, and the row of cards
 const VISITORS = '[data-testid=visitors]';
 const VISITORS_TODAY = '[data-testid=visitors-today]';
+const VISITORS_CHANGE = '[data-testid=visitors-change]';
 const REFRESH = '[data-testid=refresh]';
 const CARDS = '[data-testid=kpis]';
 // The button and the count it changes, framed together so the cursor's way to the button stays in the window
@@ -55,19 +56,28 @@ const BOTH = 2;
 const CARD: EndingCard = { name: 'livereel', line: 'Film your live web app from code', command: 'npx livereel' };
 // The film's code is what it shows off, so it stands large enough to read on a README's frame
 const LARGE_CODE: Theme = { codeSize: 40 };
-// The looks the film turns to, one after another: paper, a serif with square corners and a violet shadow, then night
+// The looks the film turns to on a slide of their own: paper and night at once, then, slowly, a serif with square
+// corners and a violet shadow, over a ground that stays, so the words read all the way; night's glow and quieter
+// words stay readable on its ground, where the card ends the film
 const PAPER: Theme = { ground: '#f5efe6', ink: '#1a1a1a', windowEdge: '#00000033' };
+const NIGHT: Theme = {
+	ground: '#1e1b4b',
+	glow: '#312e81',
+	ink: '#f5f3ff',
+	quietInk: '#c7d2fe',
+	windowEdge: '#ffffff1a'
+};
 const SERIF: Theme = { font: 'Georgia, serif', windowCorner: 0, windowShadowColour: '#7c3aed' };
-const NIGHT: Theme = { ground: '#1e1b4b', glow: '#7c3aed', ink: '#f5f3ff', windowEdge: '#ffffff1a' };
-// Where the words of a beat stand: a heading over its code, beside the window on either side, above a window that
-// runs off the frame's foot, or on a slide of their own with no window
-const BESIDE_THE_WINDOW_ON_THE_RIGHT = 'left';
-const BESIDE_THE_WINDOW_ON_THE_LEFT = 'right';
-const ABOVE_THE_WINDOW: Place = { left: 0.06, top: 0.06, width: 0.88, height: 0.32 };
-const ON_A_SLIDE: Place = { left: 0.18, top: 0.12, width: 0.64, height: 0.62 };
-const HEADING_SHARE = 0.22;
-const CODE_TOP = 0.28;
-const CODE_SHARE = 0.72;
+// How a beat's heading and its code share their place down it, the code right under the heading: about the middle
+// of a tall place, from the top of a short one
+const TALL: Stacking = { heading: { top: 0.18, height: 0.22 }, code: { top: 0.42, height: 0.3 } };
+const SHORT: Stacking = { heading: { top: 0, height: 0.3 }, code: { top: 0.34, height: 0.66 } };
+// Where the words of a beat stand: beside the window on either side, above a window that runs off the frame's foot,
+// or on a slide of their own with no window
+const LEFT_OF_THE_WINDOW: Words = { place: 'left', stacking: TALL };
+const RIGHT_OF_THE_WINDOW: Words = { place: 'right', stacking: TALL };
+const ABOVE_THE_WINDOW: Words = { place: { left: 0.06, top: 0.06, width: 0.88, height: 0.32 }, stacking: SHORT };
+const ON_A_SLIDE: Words = { place: { left: 0.18, top: 0.12, width: 0.64, height: 0.62 }, stacking: TALL };
 // The window low on the frame, wider than its room and running off the frame's foot
 const LOW_AND_OFF_THE_FOOT: Place = { left: 0.03, top: 0.42, width: 0.94, height: 0.8 };
 // The lines of code each beat shows, the regions this file marks below, and their places, counted from 1 as an editor
@@ -77,14 +87,32 @@ const FIRST_LINE = 1;
 const SECOND_LINE = 2;
 const THIRD_LINE = 3;
 
-/** Where a beat's heading stands in its words' place: across the top of it. */
-function headingIn(words: Place): Place {
-	return { of: words, height: HEADING_SHARE };
+/** A band down a place: where it starts and how much of it it takes, each a share of the place's height. */
+interface Band {
+	readonly top: number;
+	readonly height: number;
 }
 
-/** Where a beat's code stands in its words' place: under the heading. */
-function codeIn(words: Place): Place {
-	return { of: words, top: CODE_TOP, height: CODE_SHARE };
+/** How a beat's words share their place down it: the heading's band, and the code's under it. */
+interface Stacking {
+	readonly heading: Band;
+	readonly code: Band;
+}
+
+/** Where a beat's words stand: their place, and how the heading and the code share it. */
+interface Words {
+	readonly place: Place;
+	readonly stacking: Stacking;
+}
+
+/** Where a beat's heading stands: its band of the words' place. */
+function headingIn(words: Words): Place {
+	return { of: words.place, ...words.stacking.heading };
+}
+
+/** Where a beat's code stands: its band of the words' place, under the heading. */
+function codeIn(words: Words): Place {
+	return { of: words.place, ...words.stacking.code };
 }
 
 /** Refresh clicked for real, until the page shows the count the app's server answered with. */
@@ -107,21 +135,26 @@ function linesOf(regions: readonly string[]): string {
 }
 
 /** A beat's heading and code coming up in their place, the heading first. */
-function beatShown(heading: string, regions: readonly string[], words: Place): readonly Move[] {
+function beatShown(heading: string, regions: readonly string[], words: Words): readonly Move[] {
 	return [
 		title.show(heading, { at: headingIn(words), within: { start: 0.4 } }),
 		code.show(linesOf(regions), { at: codeIn(words), within: { start: 0.55 } })
 	];
 }
 
+/** A beat's words going where they stand, over the first third of the step. */
+function beatGoing(): readonly Move[] {
+	return [title.hide({ within: { end: 0.35 } }), code.hide({ within: { end: 0.35 } })];
+}
+
 /** The last beat's words going where they stand, and the next beat's coming up in their place. */
-function beatSwapped(heading: string, regions: readonly string[], words: Place): readonly Move[] {
-	return [
-		title.hide({ within: { end: 0.35 } }),
-		code.hide({ within: { end: 0.35 } }),
-		title.show(heading, { at: headingIn(words), within: { start: 0.4 } }),
-		code.show(linesOf(regions), { at: codeIn(words), within: { start: 0.5 } })
-	];
+function beatSwapped(heading: string, regions: readonly string[], words: Words): readonly Move[] {
+	return [...beatGoing(), ...beatShown(heading, regions, words)];
+}
+
+/** A beat's words pushed off past the frame's left edge, over the first half of the step. */
+function wordsPushedOff(): readonly Move[] {
+	return [title.hide({ toward: 'left', within: { end: 0.5 } }), code.hide({ toward: 'left', within: { end: 0.5 } })];
 }
 
 /** The card on the film's ground, then the app sliding in across the whole frame as the card goes. */
@@ -147,7 +180,7 @@ function actTheCamera(): readonly Step[] {
 			moves: [
 				window.to('right'),
 				camera.onto(CARDS, { air: 40 }),
-				...beatShown('Point the camera at any block', ['onto', 'light'], BESIDE_THE_WINDOW_ON_THE_RIGHT)
+				...beatShown('Point the camera at any block', ['onto', 'light'], LEFT_OF_THE_WINDOW)
 			],
 			ease: easeInOutCubic
 		}),
@@ -174,24 +207,26 @@ function actTheCamera(): readonly Step[] {
 	];
 }
 
-/** The window across to the left, the words making room on the right; a real click on the real app. */
+/**
+ * The window across to the left, the last beat's words going as it sets off, and the next coming up on the right once
+ * it has left room there, so none cross the page; a real click on the real app.
+ */
 function actTheClick(served: AppServed): readonly Step[] {
 	return [
 		play({
 			seconds: 1.2,
 			moves: [
 				light.off({ within: { end: 0.3 } }),
+				...beatGoing(),
 				window.to('left'),
-				camera.onto(REFRESH_AND_VISITORS, { every: BOTH }),
-				title.to(headingIn(BESIDE_THE_WINDOW_ON_THE_LEFT)),
-				code.to(codeIn(BESIDE_THE_WINDOW_ON_THE_LEFT))
+				camera.onto(REFRESH_AND_VISITORS, { every: BOTH })
 			],
 			ease: easeInOutCubic
 		}),
 		play({
-			seconds: 0.9,
-			moves: beatSwapped('Click it for real', ['cursor', 'click'], BESIDE_THE_WINDOW_ON_THE_LEFT),
-			ease: easeInOutCubic
+			seconds: 0.8,
+			moves: beatShown('Click it for real', ['cursor', 'click'], RIGHT_OF_THE_WINDOW),
+			ease: easeOutCubic
 		}),
 		play({
 			seconds: 1,
@@ -225,8 +260,8 @@ function actThePins(): readonly Step[] {
 			moves: [
 				light.off({ within: { end: 0.3 } }),
 				window.to(LOW_AND_OFF_THE_FOOT),
-				camera.onto(CARDS, { air: 40 }),
-				...beatSwapped('Mark the path', ['pin-refresh', 'pin-count'], ABOVE_THE_WINDOW)
+				camera.onto(REFRESH_AND_VISITORS, { every: BOTH }),
+				...beatSwapped('Mark the path', ['pin-count', 'pin-change'], ABOVE_THE_WINDOW)
 			],
 			ease: easeInOutCubic
 		}),
@@ -234,8 +269,8 @@ function actThePins(): readonly Step[] {
 			seconds: 0.8,
 			moves: [
 				code.light(FIRST_LINE, { within: { end: 0.2 } }),
-				// #region pin-refresh
-				pin.show(REFRESH, 'Refresh')
+				// #region pin-count
+				pin.show(VISITORS, 'The count')
 				// #endregion
 			]
 		}),
@@ -243,8 +278,8 @@ function actThePins(): readonly Step[] {
 			seconds: 0.8,
 			moves: [
 				code.light(SECOND_LINE, { within: { end: 0.2 } }),
-				// #region pin-count
-				pin.show(VISITORS_TODAY, 'The count')
+				// #region pin-change
+				pin.show(VISITORS_CHANGE, 'Against yesterday')
 				// #endregion
 			]
 		}),
@@ -259,8 +294,7 @@ function actTheWords(): readonly Step[] {
 			seconds: 1.2,
 			moves: [
 				window.hide({ toward: 'left', within: { end: 0.55 } }),
-				title.hide({ toward: 'left', within: { end: 0.5 } }),
-				code.hide({ toward: 'left', within: { end: 0.5 } }),
+				...wordsPushedOff(),
 				title.show('Say it in words', { at: headingIn(ON_A_SLIDE), from: 'right', within: { start: 0.5 } }),
 				code.show(linesOf(['words']), { at: codeIn(ON_A_SLIDE), from: 'right', within: { start: 0.5 } })
 			],
@@ -287,7 +321,7 @@ function actTheLook(): readonly Step[] {
 			seconds: 1,
 			moves: [
 				caption.hide({ within: { end: 0.4 } }),
-				...beatSwapped('Change the whole look', ['paper', 'serif', 'night'], ON_A_SLIDE)
+				...beatSwapped('Change the whole look', ['paper', 'night', 'serif'], ON_A_SLIDE)
 			],
 			ease: easeInOutCubic
 		}),
@@ -301,8 +335,8 @@ function actTheLook(): readonly Step[] {
 		hold({ seconds: 0.9 }),
 		cut(
 			code.light(SECOND_LINE),
-			// #region serif
-			look.to(SERIF)
+			// #region night
+			look.to(NIGHT)
 			// #endregion
 		),
 		hold({ seconds: 0.9 }),
@@ -310,8 +344,8 @@ function actTheLook(): readonly Step[] {
 			seconds: 1.6,
 			moves: [
 				code.light(THIRD_LINE, { within: { end: 0.1 } }),
-				// #region night
-				look.to(NIGHT)
+				// #region serif
+				look.to(SERIF)
 				// #endregion
 			]
 		}),
@@ -324,11 +358,7 @@ function actTheEnding(): readonly Step[] {
 	return [
 		play({
 			seconds: 1.2,
-			moves: [
-				title.hide({ toward: 'left', within: { end: 0.5 } }),
-				code.hide({ toward: 'left', within: { end: 0.5 } }),
-				ending.show(CARD, { within: { start: 0.4 } })
-			],
+			moves: [...wordsPushedOff(), ending.show(CARD, { within: { start: 0.4 } })],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 2.5 })
