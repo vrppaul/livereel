@@ -17,7 +17,7 @@
  */
 import { type Camera, flatCamera } from '../domain/camera.ts';
 import { TakeError } from '../domain/errors.ts';
-import type { Format } from '../domain/geometry.ts';
+import type { Format } from '../domain/format.ts';
 import { type MotionBlur, alsoExposedAt } from '../domain/shutter.ts';
 import { type Ease, framesOf, momentOf } from '../domain/time.ts';
 import { type Change, type Move, type Share, soundsOf } from '../direction/move.ts';

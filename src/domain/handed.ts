@@ -101,6 +101,28 @@ export class ListOf<Value> implements Kind<readonly Value[]> {
 	}
 }
 
+/** A kind whose values are objects of names the film gives, every value of one kind; a fault is named down to it. */
+export class RecordOf<Value> implements Kind<Readonly<Record<string, Value>>> {
+	readonly value: Kind<Value>;
+	readonly said: string;
+
+	constructor(value: Kind<Value>, said: string) {
+		this.value = value;
+		this.said = said;
+	}
+
+	is(written: unknown): written is Readonly<Record<string, Value>> {
+		return this.faultOf(written, '') === undefined;
+	}
+
+	faultOf(written: unknown, place: string): string | undefined {
+		if (!isObjectOfValues(written)) return refusalOf(written, place, this.said);
+		return Object.entries(written)
+			.map(([name, value]) => this.value.faultOf(value, `${place}'s ${name}`))
+			.find(isSaid);
+	}
+}
+
 /** A kind of one value of a few, by its name: a line's kind, a keyboard, where the stage stands. */
 export class OneOf<Name extends string> implements Kind<Name> {
 	readonly names: readonly Name[];

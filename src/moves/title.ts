@@ -9,7 +9,7 @@
  * they would break anew on every frame of the way.
  */
 import { FilmError } from '../domain/errors.ts';
-import type { Box } from '../domain/geometry.ts';
+import { A_FRAME_SIDE, type Box, type FrameSide } from '../domain/geometry.ts';
 import { A_SIZE, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import {
 	AN_ALIGNMENT,
@@ -21,7 +21,6 @@ import {
 	wordsPlaced,
 	wordsResized
 } from '../domain/place.ts';
-import { A_FRAME_SIDE, type FrameSide } from '../domain/split.ts';
 import { linear } from '../domain/time.ts';
 import {
 	type Beginning,
@@ -86,16 +85,12 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 	if (place === null && from !== null) {
 		throw new FilmError(`title.show comes in from the ${from} only to a place: name it, as { at: 'left', from }`);
 	}
-	const setting: Setting = {
-		...saidOf(text),
-		align: script.align ?? (place === null ? OVER_THE_WHOLE : alignmentIn(place)),
-		size: script.size ?? null
-	};
+	const said = saidOf(text);
 	const evenly = from === null ? { ease: linear } : {};
 	return {
 		part: 'title',
 		timing: timingOf({ ...evenly, ...script }),
-		begin: (beginning) => (place === null ? overTheWhole(setting) : arriving(setting, beginning, place, from))
+		begin: (beginning) => coming(said, script, beginning)
 	};
 }
 
@@ -118,6 +113,18 @@ export function hide(script: SlideOutScript = {}): Move {
 		timing: timingOf(script),
 		begin: (beginning) => (toward === null ? going('title', beginning) : leaving(beginning, toward))
 	};
+}
+
+/**
+ * A title coming up as its move begins: over the whole frame, or in its place, read as the film says or in the way of
+ * the place, a format's own read as the place it names.
+ */
+function coming(said: Said, script: TitleScript, beginning: Beginning): Change {
+	const place = script.at ?? null;
+	const size = script.size ?? null;
+	if (place === null) return overTheWhole({ ...said, align: script.align ?? OVER_THE_WHOLE, size });
+	const align = script.align ?? alignmentIn(beginning.format, place);
+	return arriving({ ...said, align, size }, beginning, place, script.from ?? null);
 }
 
 /** A title coming up over the whole frame, its ground first. */

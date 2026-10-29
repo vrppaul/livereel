@@ -9,7 +9,8 @@
  * module (`src/moves/`).
  */
 import { FilmError } from '../domain/errors.ts';
-import { type Box, type Format, liesAboveOrBelow, liesOutside, partWithin } from '../domain/geometry.ts';
+import type { Format } from '../domain/format.ts';
+import { type Box, liesAboveOrBelow, liesOutside, partWithin } from '../domain/geometry.ts';
 import {
 	A_NUMBER,
 	type Form,

@@ -3,10 +3,9 @@
  * and the lines of code, do alike; and what the moves of a title and code in a place do alike as they travel: to
  * another place, in from past a side of the frame, pushing what stands off past the side across, out past one.
  */
-import { type Box, type Size, boxToward } from '../domain/geometry.ts';
+import { A_FRAME_SIDE, type Box, type FrameSide, type Size, boxToward } from '../domain/geometry.ts';
 import { type Form } from '../domain/handed.ts';
 import { acrossFrom, pastTheEdge } from '../domain/place.ts';
-import { A_FRAME_SIDE, type FrameSide } from '../domain/split.ts';
 import {
 	type Beginning,
 	type Change,

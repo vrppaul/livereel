@@ -178,8 +178,8 @@ play({
 })
 ```
 
-A place is a name, `whole`, `left`, `right`, `top` or `bottom`, or a box in
-shares: of the frame edge to edge, or of another place it names `of`, its
+A place is a name, `whole`, `left`, `right`, `top` or `bottom` or one the
+format names (below, "Formats"), or a box in shares: of the frame edge to edge, or of another place it names `of`, its
 `left` and `top` 0 and its `width` and `height` 1 where it leaves them out.
 A name is each one's own: on a side, words take their share of the frame
 and the window the whole room across from the words' share on the other
@@ -397,6 +397,25 @@ before anything is shot.
 A format names where its captions stand, `captionAt: 'top'`, or at the
 frame's foot where it names none: a square may caption its top and a wide
 frame its foot, and a caption at the top leaves the foot to the keys.
+
+A format may name places of its own, `places`, each a place of livereel's,
+another of its own, or a box in either, so one script fits every format: the
+film says `words` and `page`, and each format says where they stand.
+
+```ts
+const FORMATS = {
+	square: { frame, screen, places: { words: 'top', page: 'bottom' } },
+	wide: { frame, screen, places: { words: 'left', page: 'right', heading: { of: 'words', height: 0.2 } } }
+};
+play({ seconds: 1, moves: [window.to('page'), title.show(IN_SIX, { at: 'words' })] })
+```
+
+A name of its own is the place it names, as what stands there reads it:
+`page: 'right'` is the window's room on the right for the window, and the
+words' share there for words, which read centred where it names `top`. A
+name of livereel's taken, a place that names none, or one that stands in
+itself through others is refused before anything is shot; a place a move
+names that its format has not, as the move begins.
 
 ### Where the stage stands
 

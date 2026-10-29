@@ -3,7 +3,7 @@
  * darkens the frame's edge under them. Where it stands is the format's, so one film can caption a square at its top
  * and a wide frame at its foot.
  */
-import type { CaptionPlace, Format } from '../domain/geometry.ts';
+import type { CaptionPlace, Format } from '../domain/format.ts';
 import { type DrawnWords, type ShownWords, drawnWords } from './words.ts';
 
 /** A caption as the stage draws it: its words, and the edge of the frame it stands at. */

@@ -13,10 +13,9 @@
  */
 import { type View, viewOf, viewOver } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import { liesOutside } from '../domain/geometry.ts';
+import { A_FRAME_SIDE, type FrameSide, liesOutside } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten, needed } from '../domain/handed.ts';
 import { A_PLACE, type Place, pastTheEdge, windowPlaced } from '../domain/place.ts';
-import { A_FRAME_SIDE, type FrameSide } from '../domain/split.ts';
 import {
 	type Beginning,
 	type Change,

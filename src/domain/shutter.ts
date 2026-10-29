@@ -15,7 +15,8 @@
  * viewer's screen.
  */
 import { type Camera, cameraToward, frameShift } from './camera.ts';
-import { type Format, diagonalOf } from './geometry.ts';
+import type { Format } from './format.ts';
+import { diagonalOf } from './geometry.ts';
 
 /**
  * How a fast camera is blurred: how much of its way from the frame before the shutter is open for, a share of it (a

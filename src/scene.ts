@@ -10,7 +10,7 @@
  * frame is drawn by such a camera, or by one the take hands it, along the camera's way or for an act. A prop that may
  * be absent is `null`; the compiler holds every prop to a drawn form here and to a drawer on the stage.
  */
-import type { Format } from './domain/geometry.ts';
+import type { Format } from './domain/format.ts';
 import {
 	type Aiming,
 	type Camera,

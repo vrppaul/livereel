@@ -6,10 +6,9 @@
  * refused as it begins.
  */
 import { FilmError } from '../domain/errors.ts';
-import type { Box } from '../domain/geometry.ts';
+import { A_FRAME_SIDE, type Box, type FrameSide } from '../domain/geometry.ts';
 import { A_COUNT, A_STRING, type Form, assertKind, assertWritten, needed } from '../domain/handed.ts';
 import { A_PLACE, type Place, enteringFrom, wordsPlaced } from '../domain/place.ts';
-import { A_FRAME_SIDE, type FrameSide } from '../domain/split.ts';
 import { between, linear } from '../domain/time.ts';
 import {
 	type Beginning,

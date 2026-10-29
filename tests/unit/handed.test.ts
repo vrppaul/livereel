@@ -36,7 +36,7 @@ const A_MOVE = 'a move, as camera.onto or light.on makes one';
 const STROKE = { at: 0, typed: 'l' };
 const SIDE = 'a side of the frame: "left", "right", "top" or "bottom"';
 const PLACE =
-	'a place: "whole", "left", "right", "top" or "bottom", or { of, left, top, width, height }, each in shares';
+	'a place: "whole", "left", "right", "top", "bottom" or a name its format gives, or { of, left, top, width, height }, each in shares';
 const WORDING = 'words: a string, or a list of strings and runs';
 const RUN = 'words: a string, or a run of them set its own way, { text, italic, underline, strike, ink, marker }';
 const COLOUR = 'a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa';
@@ -58,9 +58,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => pageWindow.show({ at: 'right' } as never)).toThrow(
 		new FilmError(`window.show's from is undefined: it is ${SIDE}`)
 	);
-	expect(() => pageWindow.to('middle' as never)).toThrow(
-		new FilmError(`window.to's place is "middle": it is ${PLACE}`)
-	);
+	expect(() => pageWindow.to('')).toThrow(new FilmError(`window.to's place is "": it is ${PLACE}`));
 	expect(() => camera.to({ zoom: 1 } as never)).toThrow(
 		new FilmError("camera.to's pose's focusX is undefined: it is a number")
 	);
@@ -123,8 +121,8 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => title.show([{ text: 'Hello', marker: '#ffd54' }])).toThrow(
 		new FilmError(`title.show's text[0]'s marker is "#ffd54": it is ${COLOUR}`)
 	);
-	expect(() => title.show('Hello', { at: { of: 'west' } as never })).toThrow(
-		new FilmError(`title.show's at's of is "west": it is ${PLACE}`)
+	expect(() => title.show('Hello', { at: { of: 7 } as never })).toThrow(
+		new FilmError(`title.show's at's of is 7: it is ${PLACE}`)
 	);
 	expect(() => code.show('x', { at: { width: 0 } })).toThrow(
 		new FilmError("code.show's at's width is 0: it is a share more than none")

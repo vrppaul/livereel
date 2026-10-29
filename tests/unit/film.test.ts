@@ -355,6 +355,24 @@ test("a format's split that leaves the words or the window no room on its frame 
 	expect(() => filmWritten({ formats: { small: { ...SMALL, split: { wordsMargin: 400 } } } })).toThrow(roomless);
 });
 
+test("a format's own places are refused as the film is defined where they take a name of livereel's, name no place, or name themselves through one another, or are no place", () => {
+	const placed = (places: object) => () => filmWritten({ formats: { small: { ...SMALL, places } } });
+	expect(placed({ left: 'right' })).toThrow(
+		new FilmError(
+			"the film's small format's places name left, a place of livereel's: name the format's own places otherwise"
+		)
+	);
+	expect(placed({ words: 'nowhere' })).toThrow(
+		new FilmError(
+			'the place "nowhere" is none: a place is whole, left, right, top or bottom, or one its format names: words'
+		)
+	);
+	expect(placed({ words: { of: 'page' }, page: { of: 'words' } })).toThrow(
+		new FilmError('the place "words" stands in itself, through page, words: a place stands in another')
+	);
+	expect(placed({ words: 3 })).toThrow(FilmError);
+});
+
 test("a film opens on livereel's look with its theme's values; a ground named without a glow is a ground of one colour, and one named with its glow keeps it", () => {
 	const looks = [{ ground: '#ffffff' }, { ground: '#ffffff', glow: '#eeeeee' }].map(
 		(theme) => filmWritten({ theme }).formats.get('small')!.look

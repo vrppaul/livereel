@@ -4,10 +4,9 @@
  * its name and line, and go on to the page once it has gone. A slide moves a whole frame, as words and the window do,
  * so the card and what slides with it move as one sheet.
  */
-import { pointToward } from '../domain/geometry.ts';
+import { A_FRAME_SIDE, type FrameSide, pointToward } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { frameToward } from '../domain/place.ts';
-import { A_FRAME_SIDE, type FrameSide } from '../domain/split.ts';
 import {
 	type Beginning,
 	type Change,

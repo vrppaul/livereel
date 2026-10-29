@@ -8,15 +8,8 @@
  * livereel's for what a format leaves out. Lengths are in the frame's pixels, drawn as on a frame the stage's look was
  * made on and scaled to the frame shot, and whole, so the window's edges fall on pixels.
  */
-import { type Box, type Format, type Split, frameScaleOf, wholePixels } from './geometry.ts';
-import { OneOf } from './handed.ts';
-
-/** The sides of the frame: where words stand, or the page's window across from them. */
-export const FRAME_SIDES = ['left', 'right', 'top', 'bottom'] as const;
-
-export type FrameSide = (typeof FRAME_SIDES)[number];
-
-export const A_FRAME_SIDE = new OneOf(FRAME_SIDES, 'a side of the frame: "left", "right", "top" or "bottom"');
+import type { Format, Split } from './format.ts';
+import { type Box, FRAME_SIDES, type FrameSide, frameScaleOf, wholePixels } from './geometry.ts';
 
 // livereel's split: the words take a little over a third of the frame from the edge they stand on, and the window
 // stands in from the frame's edges less far than the words do, which keep a gap from it

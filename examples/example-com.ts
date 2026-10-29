@@ -11,7 +11,6 @@
  */
 import {
 	type ActContext,
-	type Place,
 	type Pose,
 	type Serving,
 	type Step,
@@ -35,10 +34,20 @@ import {
 } from 'livereel';
 
 const ADDRESS = 'https://example.com/';
-// A square frame with the page as a laptop lays it out, and a wide frame with the page laid out as wide
+// A square frame with the page as a laptop lays it out, and a wide frame with the page laid out as wide; each names
+// where the words about the languages stand and the page's window beside them: above it in the square, to its left
+// in the wide frame
 const FORMATS = {
-	square: { frame: { width: 1080, height: 1080 }, screen: { width: 1440, height: 1080 } },
-	wide: { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } }
+	square: {
+		frame: { width: 1080, height: 1080 },
+		screen: { width: 1440, height: 1080 },
+		places: { words: 'top', page: 'bottom' }
+	},
+	wide: {
+		frame: { width: 1920, height: 1080 },
+		screen: { width: 1920, height: 1080 },
+		places: { words: 'left', page: 'right' }
+	}
 };
 const MARK = 'svg';
 const ENGLISH = 'p[lang=en]';
@@ -53,18 +62,7 @@ const ACCENT = '#ffb86b';
 const MARKER = '#5b47d6';
 const OPENING: Wording = ['The most ', { text: 'famous', italic: true, ink: ACCENT }, ' page on the web'];
 const IN_SIX: Wording = ['It says so in ', { text: 'six languages', marker: MARKER }];
-// Where the words about the languages stand, and the page's window beside them, in each format
-const SPLITS: Readonly<Record<keyof typeof FORMATS, Split>> = {
-	square: { words: 'top', page: 'bottom' },
-	wide: { words: 'left', page: 'right' }
-};
 const ENDING = { name: 'example.com', line: 'Filmed live, frame by frame', command: 'livereel' };
-
-/** The place a title stands in, and the place of the page's window beside it. */
-interface Split {
-	readonly words: Place;
-	readonly page: Place;
-}
 
 function inLanguage(language: string): string {
 	return `p[lang=${language}]`;
@@ -114,7 +112,7 @@ function actOpening(whole: Pose): readonly Step[] {
  * The line that says what the page is for, lit; then the words that say it is said in six languages, beside the
  * same line in each of them.
  */
-function actLanguages(split: Split): readonly Step[] {
+function actLanguages(): readonly Step[] {
 	return [
 		play({
 			seconds: 1.1,
@@ -130,9 +128,9 @@ function actLanguages(split: Split): readonly Step[] {
 			seconds: 1,
 			moves: [
 				caption.hide({ within: { end: 0.4 } }),
-				window.to(split.page),
+				window.to('page'),
 				camera.onto(ENGLISH, { air: 60, zoomAtMost: 2 }),
-				title.show(IN_SIX, { at: split.words, within: { start: 0.5 } })
+				title.show(IN_SIX, { at: 'words', within: { start: 0.5 } })
 			],
 			ease: easeInOutCubic
 		}),
@@ -187,8 +185,8 @@ function actEnding(): readonly Step[] {
 	];
 }
 
-function steps(_served: Serving, whole: Pose, formatName: keyof typeof FORMATS): readonly Step[] {
-	return [...actOpening(whole), ...actLanguages(SPLITS[formatName]), ...actTheLink(whole), ...actEnding()];
+function steps(_served: Serving, whole: Pose): readonly Step[] {
+	return [...actOpening(whole), ...actLanguages(), ...actTheLink(whole), ...actEnding()];
 }
 
 export default defineFilm({ formats: FORMATS, serve: servedElsewhere, stage: 'inside', ready: linkShown, steps });

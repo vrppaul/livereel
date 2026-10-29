@@ -36,8 +36,8 @@ export { easeInOutCubic, easeInOutSine, easeOutCubic, easeOutQuint, linear } fro
 export type { Ease } from './domain/time.ts';
 export { lookingAt } from './domain/camera.ts';
 export type { Pose } from './domain/camera.ts';
-export type { Format, Point, Size } from './domain/geometry.ts';
-export type { FrameSide } from './domain/split.ts';
+export type { Format } from './domain/format.ts';
+export type { FrameSide, Point, Size } from './domain/geometry.ts';
 export type { Place } from './domain/place.ts';
 export type { Run, Wording } from './props/words.ts';
 export type { BlockSide } from './props/callout.ts';

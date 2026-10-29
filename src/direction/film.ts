@@ -9,7 +9,7 @@
  */
 import type { Pose } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import { FORMAT_FORM, type Format } from '../domain/geometry.ts';
+import { FORMAT_FORM, type Format } from '../domain/format.ts';
 import {
 	AN_ADDRESS,
 	A_FUNCTION_SAID,
@@ -28,6 +28,7 @@ import {
 	needed
 } from '../domain/handed.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
+import { assertOwnPlaces } from '../domain/place.ts';
 import { leavesRoom } from '../domain/split.ts';
 import { LIVEREELS_LOOK, type Look, type Theme, lookWith } from '../props/look.ts';
 import { type MotionBlurScript, motionBlurOf } from './blur.ts';
@@ -234,14 +235,16 @@ export function atAddress(address: string): Serving {
 
 /**
  * A film's script, as a film whose types nobody checked may hand it, refused by its place where it is in no form of
- * one: a name a film has not, its formats, each a frame a video holds, a screen and a split that leaves the words and
- * the window room, and its functions.
+ * one: a name a film has not, its formats, each a frame a video holds, a screen, a split that leaves the words and
+ * the window room, and places of its own that each name a place, and its functions.
  */
 function refuseUnlikeAFilm(written: unknown): void {
 	assertWritten(written, FILM_FORM, 'the film');
 	for (const [name, format] of Object.entries(written.formats)) {
-		assertWritten(format, FORMAT_FORM, `the film's ${name} format`);
-		if (!leavesRoom(format)) throw new FilmError(`the film's ${name} format's split ${LEAVES_NO_ROOM}`);
+		const place = `the film's ${name} format`;
+		assertWritten(format, FORMAT_FORM, place);
+		if (!leavesRoom(format)) throw new FilmError(`${place}'s split ${LEAVES_NO_ROOM}`);
+		assertOwnPlaces(format, place);
 	}
 }
 

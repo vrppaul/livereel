@@ -15,9 +15,9 @@
  * `stage/stage.css`): the screen carried by its focus to the view's middle and brought close, the view swung and leant
  * back about its middle, and seen from the eye before the frame's middle, a nearer point larger.
  */
+import type { Format } from './format.ts';
 import {
 	type Box,
-	type Format,
 	type Point,
 	type Size,
 	boxOf,

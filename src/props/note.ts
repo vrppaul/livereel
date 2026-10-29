@@ -7,8 +7,7 @@
  * far as it lets. The line is drawn first, as the words' ground would come up, and the words come up at its end.
  */
 import { type Camera, onTheFrame } from '../domain/camera.ts';
-import { type Box, type Point, type Size, middleX, middleY } from '../domain/geometry.ts';
-import type { FrameSide } from '../domain/split.ts';
+import { type Box, type FrameSide, type Point, type Size, middleX, middleY } from '../domain/geometry.ts';
 import { type DrawnWords, type ShownWords, drawnWords } from './words.ts';
 
 /** Where a note's words stand: the side of the window they stand beyond, and their box, in the frame's pixels. */

@@ -10,7 +10,8 @@
  */
 import type { Frame, Page } from 'playwright-core';
 import { eyeDistanceOf } from '../../domain/camera.ts';
-import { type Format, frameScaleOf } from '../../domain/geometry.ts';
+import type { Format } from '../../domain/format.ts';
+import { frameScaleOf } from '../../domain/geometry.ts';
 import type { DrawnScene } from '../../scene.ts';
 import type { Stage } from '../../studio/ports.ts';
 import type { FrameWatch } from './watch.ts';
