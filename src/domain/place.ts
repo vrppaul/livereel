@@ -17,9 +17,9 @@
  * A format may name places of its own (`places` in `src/domain/format.ts`), each a place of livereel's, another of its
  * own, or a box in either, so a film names `words` once and each format says where they stand. An own name is the
  * place it names, read as what stands there reads it: `page: 'right'` is the window's room on the right for the window,
- * the words' share there for words. A name that is none of these is refused where it is read, as a move begins; a
- * format's own names are read through once as the film is defined, so one that names none, or stands in itself, is
- * refused before anything is shot.
+ * the words' share there for words. A format's own names are read through as the film is defined, so one that names
+ * none, or stands in itself, is refused by its format; the places a move names, as the steps are made, by the move,
+ * so nothing is shot before either.
  */
 import { FilmError } from './errors.ts';
 import type { Format } from './format.ts';
@@ -52,6 +52,12 @@ interface PlaceWithin {
 /** A place: by a name, livereel's (`PLACE_NAMES`) or one its format gives, or a box in shares. */
 export type Place = string | PlaceWithin;
 
+/** A place a move names, and the move's value that names it, as a refusal says it: "title.show's at". */
+export interface PlaceNamed {
+	readonly place: Place;
+	readonly by: string;
+}
+
 /** How far a box stands beyond a window toward a side of the frame. */
 interface SideGap {
 	readonly side: FrameSide;
@@ -70,8 +76,9 @@ const PLACE_SAID =
 const A_PLACE_NAME = new Plain(isSomeName, PLACE_SAID);
 // How a refusal says livereel's own places
 const LIVEREELS_PLACES_SAID = 'whole, left, right, top or bottom';
-// A format's own names are read through from none
-const NOT_THROUGH_ANY: readonly string[] = [];
+// A format's own names are read through from none, and a list's search that finds nothing says so by this
+const NONE_READ: readonly string[] = [];
+const NOT_FOUND = -1;
 // A box within a place starts at its top left corner and takes the whole of it where a film leaves its values out
 const NONE = 0;
 const WHOLE = 1;
@@ -112,29 +119,47 @@ export const A_PLACE: Kind<Place> = new PlaceKind();
 
 /** Where words stand in a place, in the frame's pixels, whole. */
 export function wordsPlaced(format: Format, place: Place): Box {
-	return wholePixels(placedBox(format, place, wordsNamed, NOT_THROUGH_ANY));
+	return wholePixels(placedBox(format, place, wordsNamed));
 }
 
 /** Where the page's window stands in a place, in the frame's pixels, whole. */
 export function windowPlaced(format: Format, place: Place): Box {
-	return wholePixels(placedBox(format, place, windowNamed, NOT_THROUGH_ANY));
+	return wholePixels(placedBox(format, place, windowNamed));
 }
 
 /**
- * A format's own places, refused where they are refused as the film is defined, by where the format stands: a name of
- * livereel's taken, or a place that names none or stands in itself, for words or the window alike.
+ * A format's own places, refused as the film is defined by where the format stands: a name of livereel's taken, a name
+ * of nothing, a place naming none, or one standing in itself through others.
  */
-export function assertOwnPlaces(format: Format, place: string): void {
-	const ownNames = Object.keys(format.places ?? {});
+export function assertOwnPlaces(format: Format, where: string): void {
+	const ownNames = ownNamesOf(format);
 	const taken = ownNames.find(isPlaceName);
 	if (taken !== undefined) {
 		throw new FilmError(
-			`${place}'s places name ${taken}, a place of livereel's: name the format's own places otherwise`
+			`${where}'s places name ${taken}, a place of livereel's: name the format's own places otherwise`
 		);
 	}
-	for (const name of ownNames) {
-		wordsPlaced(format, name);
-		windowPlaced(format, name);
+	if (ownNames.includes('')) {
+		throw new FilmError(`${where}'s places name one by no name: give each a name with something in it`);
+	}
+	for (const name of ownNames) refuseNamedFrom(format, name, NONE_READ, where);
+}
+
+/** The place a move's value names, for its format to be read for: none where the move names none. */
+export function placesNamed(by: string, place: Place | null): readonly PlaceNamed[] {
+	return place === null ? [] : [{ place, by }];
+}
+
+/**
+ * The places moves name, each refused where it names a place neither livereel nor the format has, by the move and
+ * where the format stands.
+ */
+export function assertPlacesOf(format: Format, named: readonly PlaceNamed[], where: string): void {
+	for (const { place, by } of named) {
+		const unknown = namesIn(place).find((name) => !isPlaceName(name) && !ownNamesOf(format).includes(name));
+		if (unknown !== undefined) {
+			throw new FilmError(`${by} names "${unknown}", no place of ${where}: ${placesSaid(format)}`);
+		}
 	}
 }
 
@@ -160,7 +185,7 @@ export function sideBeyond(box: Box, window: Box): FrameSide | null {
  * in a format's own place, as in the place it names.
  */
 export function alignmentIn(format: Format, place: Place): Alignment {
-	return READ_CENTRED.includes(namedThrough(format, place, NOT_THROUGH_ANY)) ? 'center' : 'start';
+	return READ_CENTRED.includes(namedThrough(format, place)) ? 'center' : 'start';
 }
 
 /** Where a box starts as what stands in it comes up: past the frame's edge on the side it comes in from, or in place. */
@@ -210,49 +235,64 @@ export function acrossFrom(side: FrameSide): FrameSide {
 	return ACROSS[side];
 }
 
-/**
- * The box of a place, its names read as what stands there reads them, a format's own through the place it names; the
- * format's own names read on the way there are those `through`.
- */
-function placedBox(
-	format: Format,
-	place: Place,
-	named: (format: Format, name: PlaceName) => Box,
-	through: readonly string[]
-): Box {
+/** The box of a place, its names read as what stands there reads them, a format's own through the place it names. */
+function placedBox(format: Format, place: Place, named: (format: Format, name: PlaceName) => Box): Box {
 	if (typeof place !== 'string') {
-		return within(place.of === undefined ? boxOf(format.frame) : placedBox(format, place.of, named, through), place);
+		return within(place.of === undefined ? boxOf(format.frame) : placedBox(format, place.of, named), place);
 	}
 	if (isPlaceName(place)) return named(format, place);
-	return placedBox(format, ownPlace(format, place, through), named, [...through, place]);
+	return placedBox(format, ownPlace(format, place), named);
 }
 
 /** A place with a format's own names read through to the place they name at last: livereel's name, or a box. */
-function namedThrough(format: Format, place: Place, through: readonly string[]): Place {
+function namedThrough(format: Format, place: Place): Place {
 	if (typeof place !== 'string' || isPlaceName(place)) return place;
-	return namedThrough(format, ownPlace(format, place, through), [...through, place]);
+	return namedThrough(format, ownPlace(format, place));
 }
 
 /**
- * The place a format's own name names, read after the names `through`: refused where the format names none so, or
- * where the name is one of those, as a place standing in itself.
+ * The place a format's own name names; refused where the format names none so, which a film's places and moves are
+ * read for before anything is shot.
  */
-function ownPlace(format: Format, name: string, through: readonly string[]): Place {
-	if (through.includes(name)) {
-		const way = [...through.slice(1), name].join(', ');
-		throw new FilmError(
-			`the place "${through[0] ?? name}" stands in itself, through ${way}: a place stands in another`
-		);
-	}
+function ownPlace(format: Format, name: string): Place {
 	const places = format.places ?? {};
 	const place = Object.hasOwn(places, name) ? places[name] : undefined;
 	if (place === undefined) throw new FilmError(`the place "${name}" is none: ${placesSaid(format)}`);
 	return place;
 }
 
+/**
+ * A format's own place read through the own names it names, after those `read` on the way to it: refused, by where the
+ * format stands, where it names a place the format has not, or where a name comes again, the place standing in itself.
+ */
+function refuseNamedFrom(format: Format, name: string, read: readonly string[], where: string): void {
+	const again = read.indexOf(name);
+	if (again !== NOT_FOUND) {
+		const loop = [...read.slice(again), name].join(', ');
+		throw new FilmError(`${where}'s place "${name}" stands in itself: ${loop}`);
+	}
+	for (const named of namesIn(ownPlace(format, name)).filter((each) => !isPlaceName(each))) {
+		if (!ownNamesOf(format).includes(named)) {
+			throw new FilmError(`${where}'s place "${name}" names "${named}": ${placesSaid(format)}`);
+		}
+		refuseNamedFrom(format, named, [...read, name], where);
+	}
+}
+
+/** The names a place reads: its own, or those its box stands in, one within another. */
+function namesIn(place: Place): readonly string[] {
+	if (typeof place === 'string') return [place];
+	return place.of === undefined ? [] : namesIn(place.of);
+}
+
+/** The names a format gives places of its own. */
+function ownNamesOf(format: Format): readonly string[] {
+	return Object.keys(format.places ?? {});
+}
+
 /** The places a format has, as a refusal says them: livereel's, and the format's own. */
 function placesSaid(format: Format): string {
-	const ownNames = Object.keys(format.places ?? {});
+	const ownNames = ownNamesOf(format);
 	if (ownNames.length === 0) return `a place is ${LIVEREELS_PLACES_SAID}, and its format names none of its own`;
 	return `a place is ${LIVEREELS_PLACES_SAID}, or one its format names: ${ownNames.join(', ')}`;
 }

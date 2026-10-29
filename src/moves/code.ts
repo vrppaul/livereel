@@ -9,7 +9,7 @@
 import { FilmError } from '../domain/errors.ts';
 import { A_FRAME_SIDE, type Box, type FrameSide } from '../domain/geometry.ts';
 import { A_COUNT, A_STRING, type Form, type Kind, Plain, assertKind, assertWritten, needed } from '../domain/handed.ts';
-import { A_PLACE, type Place, enteringFrom, wordsPlaced } from '../domain/place.ts';
+import { A_PLACE, type Place, enteringFrom, placesNamed, wordsPlaced } from '../domain/place.ts';
 import { between, linear } from '../domain/time.ts';
 import {
 	type Beginning,
@@ -71,6 +71,7 @@ export function show(text: string, script: CodeScript): Move {
 	return {
 		part: 'code',
 		timing: timingOf({ ...evenly, ...script }),
+		places: placesNamed("code.show's at", script.at),
 		begin: (beginning) => showing(written, beginning, wordsPlaced(beginning.format, script.at), from)
 	};
 }
@@ -79,7 +80,12 @@ export function show(text: string, script: CodeScript): Move {
 export function to(place: Place, script: TimingScript = {}): Move {
 	assertKind(place, A_PLACE, "code.to's place");
 	assertWritten(script, TIMING_FORM, 'code.to');
-	return { part: 'code', timing: timingOf(script), begin: (beginning) => moving(beginning, place) };
+	return {
+		part: 'code',
+		timing: timingOf(script),
+		places: placesNamed("code.to's place", place),
+		begin: (beginning) => moving(beginning, place)
+	};
 }
 
 /**

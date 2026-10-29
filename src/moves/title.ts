@@ -18,6 +18,7 @@ import {
 	type Place,
 	alignmentIn,
 	enteringFrom,
+	placesNamed,
 	wordsPlaced,
 	wordsResized
 } from '../domain/place.ts';
@@ -63,6 +64,18 @@ export interface TitleScript extends TimingScript {
 /** A title's words as the film sets them: what they say, how they read, and their own size, none as the look's. */
 type Setting = Said & Pick<Title, 'align' | 'size'>;
 
+/**
+ * A title as `show` reads it: what it says, its place and the side it slides in from, none for either where the film
+ * names none, how it reads, none for the place's own way, and its own size.
+ */
+interface Coming {
+	readonly said: Said;
+	readonly place: Place | null;
+	readonly from: FrameSide | null;
+	readonly align: Alignment | null;
+	readonly size: number | null;
+}
+
 const TITLE_FORM: Form<TitleScript> = {
 	at: A_PLACE,
 	align: AN_ALIGNMENT,
@@ -85,12 +98,19 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 	if (place === null && from !== null) {
 		throw new FilmError(`title.show comes in from the ${from} only to a place: name it, as { at: 'left', from }`);
 	}
-	const said = saidOf(text);
+	const coming: Coming = {
+		said: saidOf(text),
+		place,
+		from,
+		align: script.align ?? null,
+		size: script.size ?? null
+	};
 	const evenly = from === null ? { ease: linear } : {};
 	return {
 		part: 'title',
 		timing: timingOf({ ...evenly, ...script }),
-		begin: (beginning) => coming(said, script, beginning)
+		places: placesNamed("title.show's at", place),
+		begin: (beginning) => comingUp(coming, beginning)
 	};
 }
 
@@ -98,7 +118,12 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 export function to(place: Place, script: TimingScript = {}): Move {
 	assertKind(place, A_PLACE, "title.to's place");
 	assertWritten(script, TIMING_FORM, 'title.to');
-	return { part: 'title', timing: timingOf(script), begin: (beginning) => moving(beginning, place) };
+	return {
+		part: 'title',
+		timing: timingOf(script),
+		places: placesNamed("title.to's place", place),
+		begin: (beginning) => moving(beginning, place)
+	};
 }
 
 /**
@@ -119,12 +144,11 @@ export function hide(script: SlideOutScript = {}): Move {
  * A title coming up as its move begins: over the whole frame, or in its place, read as the film says or in the way of
  * the place, a format's own read as the place it names.
  */
-function coming(said: Said, script: TitleScript, beginning: Beginning): Change {
-	const place = script.at ?? null;
-	const size = script.size ?? null;
-	if (place === null) return overTheWhole({ ...said, align: script.align ?? OVER_THE_WHOLE, size });
-	const align = script.align ?? alignmentIn(beginning.format, place);
-	return arriving({ ...said, align, size }, beginning, place, script.from ?? null);
+function comingUp(coming: Coming, beginning: Beginning): Change {
+	const { said, place, size } = coming;
+	if (place === null) return overTheWhole({ ...said, align: coming.align ?? OVER_THE_WHOLE, size });
+	const align = coming.align ?? alignmentIn(beginning.format, place);
+	return arriving({ ...said, align, size }, beginning, place, coming.from);
 }
 
 /** A title coming up over the whole frame, its ground first. */

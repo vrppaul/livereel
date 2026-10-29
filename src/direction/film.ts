@@ -28,13 +28,13 @@ import {
 	needed
 } from '../domain/handed.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
-import { assertOwnPlaces } from '../domain/place.ts';
+import { assertOwnPlaces, assertPlacesOf } from '../domain/place.ts';
 import { leavesRoom } from '../domain/split.ts';
 import { LIVEREELS_LOOK, type Look, type Theme, lookWith } from '../props/look.ts';
 import { type MotionBlurScript, motionBlurOf } from './blur.ts';
 import type { ActContext } from './page.ts';
 import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf, musicOf } from './sound.ts';
-import { type Step, stepsOf } from './steps.ts';
+import { type Step, placesIn, stepsOf } from './steps.ts';
 import { type FontNamed, THE_FILMS_THEME, fontsNamedIn, themeOf } from './theme.ts';
 
 /** A page served for as long as a take lasts, at its address; the film's own handles may come with it. */
@@ -241,10 +241,10 @@ export function atAddress(address: string): Serving {
 function refuseUnlikeAFilm(written: unknown): void {
 	assertWritten(written, FILM_FORM, 'the film');
 	for (const [name, format] of Object.entries(written.formats)) {
-		const place = `the film's ${name} format`;
-		assertWritten(format, FORMAT_FORM, place);
-		if (!leavesRoom(format)) throw new FilmError(`${place}'s split ${LEAVES_NO_ROOM}`);
-		assertOwnPlaces(format, place);
+		const where = `the film's ${name} format`;
+		assertWritten(format, FORMAT_FORM, where);
+		if (!leavesRoom(format)) throw new FilmError(`${where}'s split ${LEAVES_NO_ROOM}`);
+		assertOwnPlaces(format, where);
 	}
 }
 
@@ -268,9 +268,16 @@ function servedFilm<Served extends Serving, Name extends string>(
 	return {
 		address: served.address,
 		ready: (context) => script.ready(context, served),
-		steps: (whole) => stepsOf(script.steps(served, whole, formatName)),
+		steps: (whole) =>
+			placedSteps(stepsOf(script.steps(served, whole, formatName)), script.formats[formatName], formatName),
 		[Symbol.asyncDispose]: () => served[Symbol.asyncDispose]()
 	};
+}
+
+/** A film's steps in a format, refused where a move names a place the format has not, before anything is shot. */
+function placedSteps(steps: readonly Step[], format: Format, formatName: string): readonly Step[] {
+	assertPlacesOf(format, placesIn(steps), `the film's ${formatName} format`);
+	return steps;
 }
 
 /** Whether what a film's `serve` gives is a page served: its address, and a way to stop it once the take ends. */

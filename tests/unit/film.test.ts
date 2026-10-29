@@ -6,8 +6,9 @@ import { FilmError } from '../../src/domain/errors.ts';
 import { linear } from '../../src/domain/time.ts';
 import type { MotionBlurScript } from '../../src/direction/blur.ts';
 import { atAddress, defineFilm } from '../../src/direction/film.ts';
-import { act } from '../../src/direction/steps.ts';
+import { act, play } from '../../src/direction/steps.ts';
 import * as camera from '../../src/moves/camera.ts';
+import * as title from '../../src/moves/title.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import type { KeyboardSound, LivereelSoundsScript, Music } from '../../src/direction/sound.ts';
 import { SMALL } from './fakes.ts';
@@ -355,22 +356,32 @@ test("a format's split that leaves the words or the window no room on its frame 
 	expect(() => filmWritten({ formats: { small: { ...SMALL, split: { wordsMargin: 400 } } } })).toThrow(roomless);
 });
 
-test("a format's own places are refused as the film is defined where they take a name of livereel's, name no place, or name themselves through one another, or are no place", () => {
+test("a format's own places are refused as the film is defined, by the format, where they take a name of livereel's or none, name no place, or stand in themselves through one another", () => {
 	const placed = (places: object) => () => filmWritten({ formats: { small: { ...SMALL, places } } });
 	expect(placed({ left: 'right' })).toThrow(
 		new FilmError(
 			"the film's small format's places name left, a place of livereel's: name the format's own places otherwise"
 		)
 	);
-	expect(placed({ words: 'nowhere' })).toThrow(
+	expect(placed({ '': 'right' })).toThrow(
+		new FilmError("the film's small format's places name one by no name: give each a name with something in it")
+	);
+	expect(placed({ words: { of: 'nowhere' } })).toThrow(
 		new FilmError(
-			'the place "nowhere" is none: a place is whole, left, right, top or bottom, or one its format names: words'
+			`the film's small format's place "words" names "nowhere": a place is whole, left, right, top or bottom, or one its format names: words`
 		)
 	);
-	expect(placed({ words: { of: 'page' }, page: { of: 'words' } })).toThrow(
-		new FilmError('the place "words" stands in itself, through page, words: a place stands in another')
+	expect(placed({ start: 'heading', heading: 'words', words: { of: 'heading' } })).toThrow(
+		new FilmError(`the film's small format's place "heading" stands in itself: heading, words, heading`)
 	);
-	expect(placed({ words: 3 })).toThrow(FilmError);
+});
+
+test("a place a move names that is none of livereel's nor its format's is refused as the steps are made, by the move and the format, before a frame is shot", async () => {
+	await expect(stepsGiven([play({ seconds: 1, moves: [title.show('Here', { at: { of: 'lft' } })] })])).rejects.toThrow(
+		new FilmError(
+			`title.show's at names "lft", no place of the film's small format: a place is whole, left, right, top or bottom, and its format names none of its own`
+		)
+	);
 });
 
 test("a film opens on livereel's look with its theme's values; a ground named without a glow is a ground of one colour, and one named with its glow keeps it", () => {

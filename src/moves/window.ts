@@ -15,7 +15,7 @@ import { type View, viewOf, viewOver } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import { A_FRAME_SIDE, type FrameSide, liesOutside } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten, needed } from '../domain/handed.ts';
-import { A_PLACE, type Place, pastTheEdge, windowPlaced } from '../domain/place.ts';
+import { A_PLACE, type Place, pastTheEdge, placesNamed, windowPlaced } from '../domain/place.ts';
 import {
 	type Beginning,
 	type Change,
@@ -44,13 +44,23 @@ const HIDE_FORM: Form<WindowHideScript> = { toward: needed(A_FRAME_SIDE), ...TIM
 export function to(place: Place, script: TimingScript = {}): Move {
 	assertKind(place, A_PLACE, "window.to's place");
 	assertWritten(script, TIMING_FORM, 'window.to');
-	return { part: 'window', timing: timingOf(script), begin: (beginning) => travelling(beginning, place) };
+	return {
+		part: 'window',
+		timing: timingOf(script),
+		places: placesNamed("window.to's place", place),
+		begin: (beginning) => travelling(beginning, place)
+	};
 }
 
 /** The window sliding in whole to a place, from a frame past it on a side. */
 export function show(script: WindowShowScript): Move {
 	assertWritten(script, SHOW_FORM, 'window.show');
-	return { part: 'window', timing: timingOf(script), begin: (beginning) => arriving(beginning, script) };
+	return {
+		part: 'window',
+		timing: timingOf(script),
+		places: placesNamed("window.show's at", script.at),
+		begin: (beginning) => arriving(beginning, script)
+	};
 }
 
 /** The window sliding out whole past a side of the frame, a frame away, where it stays. */

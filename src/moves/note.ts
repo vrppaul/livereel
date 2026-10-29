@@ -9,7 +9,7 @@
 import { FilmError } from '../domain/errors.ts';
 import { liesOutside } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
-import { A_PLACE, type Place, sideBeyond, sideClearestOf, wordsPlaced } from '../domain/place.ts';
+import { A_PLACE, type Place, placesNamed, sideBeyond, sideClearestOf, wordsPlaced } from '../domain/place.ts';
 import { linear } from '../domain/time.ts';
 import {
 	A_TARGET,
@@ -49,6 +49,7 @@ export function show(target: Target, text: Wording, script: NoteScript = {}): Mo
 	return {
 		part: 'note',
 		timing: timingOf({ ease: linear, ...script }),
+		places: placesNamed("note.show's at", at),
 		begin: (beginning) => naming(beginning, target, said, at)
 	};
 }

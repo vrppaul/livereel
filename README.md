@@ -183,8 +183,8 @@ play({
 ```
 
 A place is a name, `whole`, `left`, `right`, `top` or `bottom` or one the
-format names (below, "Formats"), or a box in shares: of the frame edge to edge, or of another place it names `of`, its
-`left` and `top` 0 and its `width` and `height` 1 where it leaves them out.
+format names (below, "Formats"), or a box in shares: of the frame edge to
+edge, or of another place it names `of`, its `left` and `top` 0 and its `width` and `height` 1 where it leaves them out.
 A name is each one's own: on a side, words take their share of the frame
 and the window the whole room across from the words' share on the other
 side, so words `at: 'left'` and a window `to('right')` stand clear of each
@@ -242,8 +242,8 @@ the page grows in it. An
 angled camera leans the window back or swings it, the page still filling
 it; in the whole frame an angled camera stands where the film puts it.
 Start the words once the window has drawn back, so they come up on the
-ground, not over the page. A film shot in several formats names the sides
-for each: the `steps` function is handed the format's name.
+ground, not over the page. A film shot in several formats names places of
+its own in each format and writes them once (below, "Formats").
 
 A callout is words on a card beside a block of the page, pointing at it:
 `callout.show(selector, text, { side })`, its `side` `above` (where none is
@@ -411,18 +411,19 @@ film says `words` and `page`, and each format says where they stand.
 
 ```ts
 const FORMATS = {
-	square: { frame, screen, places: { words: 'top', page: 'bottom' } },
+	square: { frame, screen, places: { words: 'top', page: 'bottom', heading: { of: 'words', height: 0.3 } } },
 	wide: { frame, screen, places: { words: 'left', page: 'right', heading: { of: 'words', height: 0.2 } } }
 };
-play({ seconds: 1, moves: [window.to('page'), title.show(IN_SIX, { at: 'words' })] })
+play({ seconds: 1, moves: [window.to('page'), title.show(IN_SIX, { at: 'heading' })] })
 ```
 
 A name of its own is the place it names, as what stands there reads it:
 `page: 'right'` is the window's room on the right for the window, and the
 words' share there for words, which read centred where it names `top`. A
 name of livereel's taken, a place that names none, or one that stands in
-itself through others is refused before anything is shot; a place a move
-names that its format has not, as the move begins.
+itself through others is refused as the film is defined, by its format; a
+place a move names that its format has not, as the steps are made, by the
+move: both before anything is shot.
 
 ### Where the stage stands
 

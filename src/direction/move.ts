@@ -11,6 +11,7 @@
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
 import { A_BOX, type Box, liesAboveOrBelow, liesOutside, partWithin } from '../domain/geometry.ts';
+import type { PlaceNamed } from '../domain/place.ts';
 import {
 	A_NUMBER,
 	A_SELECTOR,
@@ -37,6 +38,7 @@ type Part = PropName | 'page' | null;
 
 const NO_SOUNDS: readonly Cue[] = [];
 const NO_FONTS: readonly FontNamed[] = [];
+const NO_PLACES: readonly PlaceNamed[] = [];
 // The size of a block the page lays out none of, and how a block off the screen is brought in, above or below it and
 // beside it
 const NO_SIZE = 0;
@@ -160,6 +162,8 @@ export interface Move {
 	readonly sounds?: readonly Cue[];
 	/** The fonts the move sets, which the browser reads before the film is shot; a move that sets none has none. */
 	readonly fonts?: readonly FontNamed[];
+	/** The places the move names, which its format is read for before the film is shot; a move that names none has none. */
+	readonly places?: readonly PlaceNamed[];
 	readonly begin: (beginning: Beginning) => Change | Promise<Change>;
 }
 
@@ -175,6 +179,11 @@ export function soundsOf(move: Move): readonly Cue[] {
 /** The fonts a move sets: none, for a move that names none. */
 export function fontsOf(move: Move): readonly FontNamed[] {
 	return move.fonts ?? NO_FONTS;
+}
+
+/** The places a move names: none, for a move that names none. */
+export function placesOf(move: Move): readonly PlaceNamed[] {
+	return move.places ?? NO_PLACES;
 }
 
 /** The change of one prop: its state at each progress, written into the scene. */
