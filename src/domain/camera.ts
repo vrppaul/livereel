@@ -3,13 +3,14 @@
  *
  * Arithmetic on poses and boxes alone, so a film's framing is worked out before a browser is asked anything. The
  * camera's picture shows in its view: the whole frame, edge to edge, or a window standing on the film's ground. An
- * angle leans the view, the screen in it face-on to it. The camera is moved as little as it takes to keep the screen
- * filling a window at any angle, and the whole frame face-on, no edge of it showing; along a side the screen is too
- * short to fill at that zoom, the screen stands in the view's middle, as much ground showing on either side of it. An
- * angled camera in the whole frame stands where the film puts it. What the camera shows where is worked out as the
- * stage draws it (`.view` and `.camera` in
- * `stage/stage.css`): the screen carried by its focus to the view's middle and brought close, the view swung and leant
- * back about its middle, and seen from the eye before the frame's middle, a nearer point larger.
+ * angle leans the view, the screen in it face-on to it. In a window the camera comes as close as it takes for the
+ * screen to fill it, so the window shows part of the page and no ground, and moves as little as it takes to keep it so
+ * at any angle. In the whole frame face-on it moves as little as it takes to show no edge of the screen; along a side
+ * the screen is too short to fill at that zoom, the screen stands in the frame's middle, as much ground showing on
+ * either side of it. An angled camera in the whole frame stands where the film puts it. What the camera shows where
+ * is worked out as the stage draws it (`.view` and `.camera` in `stage/stage.css`): the screen carried by its focus
+ * to the view's middle and brought close, the view swung and leant back about its middle, and seen from the eye before
+ * the frame's middle, a nearer point larger.
  */
 import {
 	type Box,
@@ -165,12 +166,21 @@ export function drawnCamera(camera: Camera, format: Format): DrawnCamera {
 }
 
 /**
- * A pose kept off the screen's edge in a view where the screen faces the view's plane: face-on in the whole frame,
- * and at any angle in a window, which the angle leans with the screen in it.
+ * A pose kept off the screen's edge: in a window at any angle, which the angle leans with the screen in it, as close
+ * as it takes for the screen to fill the window; in the whole frame face-on, as far back as the film puts it. An
+ * angled screen in the whole frame leans off the frame's plane and shows ground round it wherever the camera stands,
+ * so it stands where the film puts it.
  */
 export function keptOnTheScreen(pose: Pose, format: Format, view: View): Pose {
-	const facesTheView = (pose.tilt === 0 && pose.turn === 0) || view.lift > FLAT;
-	return facesTheView ? covering(pose, format, view.box) : pose;
+	if (view.lift > FLAT) return covering(filling(pose, format, view.box), format, view.box);
+	const faceOn = pose.tilt === 0 && pose.turn === 0;
+	return faceOn ? covering(pose, format, view.box) : pose;
+}
+
+/** A pose as close, at least, as it takes for the screen to fill a view of this size along both its sides. */
+function filling(pose: Pose, format: Format, view: Size): Pose {
+	const fills = Math.max(view.width / format.screen.width, view.height / format.screen.height);
+	return focusedAt(pose, pose.focusX, pose.focusY, Math.max(pose.zoom, poseZoomFor(fills, format.frame)));
 }
 
 /** Face-on, the whole screen as large as the frame holds it. */

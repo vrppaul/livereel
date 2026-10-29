@@ -8,11 +8,11 @@ const WIDE: Format = { frame: { width: 1920, height: 1080 }, screen: { width: 19
 const SQUARE: Format = { frame: { width: 1080, height: 1080 }, screen: { width: 1440, height: 1080 } };
 const PHONE: Format = { frame: { width: 1080, height: 1080 }, screen: { width: 390, height: 844 } };
 
-test("a window stands whole in the middle of its room, in the screen's shape, on whole pixels: beside the words, below them, for a phone", () => {
+test("a window takes the whole room across from the words, whatever the screen's shape, on whole pixels: beside the words, below them, for a phone", () => {
 	expect([windowOn(WIDE, 'right'), windowOn(SQUARE, 'bottom'), windowOn(PHONE, 'bottom')]).toEqual([
-		{ left: 691, top: 215, width: 1157, height: 651 },
-		{ left: 127, top: 389, width: 826, height: 619 },
-		{ left: 397, top: 389, width: 286, height: 619 }
+		{ left: 691, top: 72, width: 1157, height: 936 },
+		{ left: 72, top: 389, width: 936, height: 619 },
+		{ left: 72, top: 389, width: 936, height: 619 }
 	]);
 });
 
@@ -21,7 +21,7 @@ test("a format's own split sets the words' share, the margins and the gap; what 
 	const narrower: Format = { ...WIDE, split: { wordsShare: 0.3 } };
 	expect([wordsOn(tuned, 'left'), windowOn(tuned, 'right'), wordsOn(narrower, 'left')]).toEqual([
 		{ left: 60, top: 60, width: 496, height: 960 },
-		{ left: 576, top: 173, width: 1304, height: 734 },
+		{ left: 576, top: 40, width: 1304, height: 1000 },
 		{ left: 96, top: 96, width: 432, height: 888 }
 	]);
 });

@@ -6,6 +6,7 @@ import {
 	covering,
 	drawnCamera,
 	frameShift,
+	keptOnTheScreen,
 	onTheFrame,
 	onto,
 	underTheFrame,
@@ -211,6 +212,15 @@ test('a face-on camera near a corner moves until no edge of the screen shows', (
 test('a face-on camera in a window moves until no edge of the screen shows in the window', () => {
 	const covered = covering({ ...FACE_ON, focusX: -100, focusY: 540, zoom: 1 }, SQUARE, WINDOW);
 	expect(onTheFrame(inTheWindow(covered), SQUARE.frame, { left: 0, top: 540 })).toEqual({ left: 400, top: 700 });
+});
+
+test('a camera in a window comes as close as it takes for the screen to fill it, so the window shows part of the page; the whole frame stands as far back as the film puts it', () => {
+	const drawnBack = { ...FACE_ON, zoom: 0.2 };
+	expect([
+		keptOnTheScreen(drawnBack, SQUARE, windowView(WINDOW, 'right')).zoom,
+		keptOnTheScreen(FACE_ON, SQUARE, windowView(WINDOW, 'right')).zoom,
+		keptOnTheScreen(drawnBack, SQUARE, wholeView(SQUARE.frame)).zoom
+	]).toEqual([WINDOW.width / SQUARE.screen.width, FACE_ON.zoom, drawnBack.zoom]);
 });
 
 test("the picture is cut at the screen's edges flat on the frame, at the view's in a window, and between as it lifts", () => {

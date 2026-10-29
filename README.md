@@ -180,11 +180,13 @@ The page draws back off the frame's edges into a window on the ground, its
 corners rounding, its edge and shadow coming up; `camera.onto` without a
 `side`, or `camera.to`, brings it back to fill the frame. The words take
 about a third of the frame, set as large as their share lets, or the share
-a format's `split` gives them (see Formats); the window stands whole in the
-rest, as large as it holds the screen's shape. Inside
-the window the camera frames as in the whole frame: a block at its middle,
-as close as its `air` lets, the camera keeping the screen filling it;
-framed closer, the window stands still and the page grows in it. An
+a format's `split` gives them (see Formats); the window takes the whole
+rest, whatever the page's shape, and shows the part of it the camera
+frames. Inside the window the camera frames as in the whole frame: a block
+at its middle, as close as its `air` lets, but never so far back that
+ground shows in the window, so a block wider than the window at that
+distance is cut at its edges; framed closer, the window stands still and
+the page grows in it. An
 angled camera leans the window back or swings it, the page still filling
 it; in the whole frame an angled camera stands where the film puts it.
 Start the words once the window has drawn back, so they come up on the

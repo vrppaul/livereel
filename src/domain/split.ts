@@ -1,14 +1,15 @@
 /**
  * How a frame is split between words and the page: the words on one side of it, the page's window on the other.
  *
- * The words take a share of the frame along the split, the window the room across from them, inside the frame's
- * margin. The window keeps the screen's shape, as large as its room holds it and in its middle, so it always stands
- * whole on the frame and a block framed at its middle shows. The share and the margins are the format's own, so a
+ * The words take a share of the frame along the split, the window the whole room across from them, inside the frame's
+ * margin, whatever the screen's shape: it shows the part of the page the camera frames, the screen filling it
+ * (`keptOnTheScreen` in `src/domain/camera.ts`), so it stands whole on the frame and no ground shows inside it. The
+ * share and the margins are the format's own, so a
  * square may give its words less than a wide frame does, and livereel's for what a format leaves out. Lengths are in
  * the frame's pixels, drawn as on a frame the stage's look was made on and scaled to the frame shot, and whole, so the
  * window's edges fall on pixels.
  */
-import { type Box, type Format, type Size, type Split, frameScaleOf } from './geometry.ts';
+import { type Box, type Format, type Split, frameScaleOf } from './geometry.ts';
 import { OneOf } from './handed.ts';
 
 /** The sides of the frame: where words stand, or the page's window across from them. */
@@ -41,9 +42,9 @@ export function besideTheWindowOn(format: Format, windowSide: FrameSide): Beside
 	return besideOn(format, ACROSS[windowSide]);
 }
 
-/** Where the page's window stands on the frame on a side of it, the words on the side across. */
+/** Where the page's window stands on the frame on a side of it, the words on the side across: its whole room. */
 export function windowOn(format: Format, side: FrameSide): Box {
-	return wholePixels(fittedIn(roomOn(format, side), format.screen));
+	return wholePixels(roomOn(format, side));
 }
 
 /** Where words stand on a side of the frame, beside the window on the side across. */
@@ -103,19 +104,6 @@ function roomOn(format: Format, side: FrameSide): Box {
 		case 'bottom':
 			return { left: margin, top: wordsDown, width: wide, height: frame.height - wordsDown - margin };
 	}
-}
-
-/** The largest box of a screen's shape a room holds, in the room's middle. */
-function fittedIn(room: Box, screen: Size): Box {
-	const shape = screen.width / screen.height;
-	const width = Math.min(room.width, room.height * shape);
-	const height = width / shape;
-	return {
-		left: room.left + (room.width - width) / HALVES,
-		top: room.top + (room.height - height) / HALVES,
-		width,
-		height
-	};
 }
 
 function hasArea(box: Box): boolean {
