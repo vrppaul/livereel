@@ -26,6 +26,8 @@ const BETWEEN_LINES = '\n';
 // The attribute that names the side of the frame a title stands on beside a window, none over the whole frame; and
 // the side of its block a callout stands on
 const SIDE = 'data-side';
+// The attribute that names the edge of the frame a caption stands at: its foot, or its top
+const CAPTION_EDGE = 'data-at';
 // The attribute that names which way a note's words run from where its line meets them, or a pin's label from its mark
 const RUNS = 'data-runs';
 // The ink words are drawn in, the film's or a piece's own, and a piece's marker: the custom properties the stylesheet
@@ -69,7 +71,6 @@ const THEMED = {
 	keysSize: { token: '--keys-size' },
 	cursorFill: { token: '--cursor-fill' },
 	cursorEdge: { token: '--cursor-edge' },
-	captionAt: { attribute: 'data-caption-at' },
 	wordsMotion: { attribute: 'data-words-motion' }
 };
 
@@ -166,6 +167,7 @@ class CaptionDrawer {
 			this.words.clear();
 			return;
 		}
+		named(this.root, CAPTION_EDGE, caption.at);
 		numbered(this.root, { '--darkened': caption.ground, '--gone': caption.gone });
 		this.words.draw(caption);
 	}
@@ -287,7 +289,7 @@ class KeysDrawer {
 			this.standing = keys.key;
 			this.root.replaceChildren(...keys.caps.map(capElement));
 		}
-		numbered(this.root, { '--shown': keys.shown });
+		numbered(this.root, { '--shown': keys.shown, '--clearing': keys.clearing });
 	}
 }
 
@@ -423,7 +425,10 @@ function setup(room) {
 	});
 }
 
-/** The stage in a film's look: the token each value given takes the place of set to it. @param {Theme} theme */
+/**
+ * The stage in a film's look: the token each value given takes the place of set to it, or, for a value that names a
+ * way, its attribute on the stage's root. @param {Theme} theme
+ */
 function dress(theme) {
 	const root = document.documentElement;
 	for (const name of Object.keys(THEMED).filter(isThemed)) {

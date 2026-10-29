@@ -5,7 +5,7 @@
  * A camera's end is kept on the screen as `keptOnTheScreen` in `src/domain/camera.ts` keeps it: filling a window at
  * any angle, which an angle leans with the screen in it, and the whole frame face-on. A move into a window, or out of
  * one, carries the view with the pose: the page draws back off the frame's edges into a window on the film's ground,
- * or grows out of it to fill the frame.
+ * or grows out of it to fill the frame. While a note stands beside the window, the camera moves only inside it.
  */
 import {
 	A_POSE,
@@ -19,6 +19,7 @@ import {
 	wholeView,
 	windowView
 } from '../domain/camera.ts';
+import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/geometry.ts';
 import {
 	A_COUNT,
@@ -80,8 +81,9 @@ export function to(pose: Pose, script: AngleScript = {}): Move {
 		timing: timingOf(script),
 		begin: (beginning) =>
 			moving(
-				beginning.scene.camera,
-				standing(angledAs(pose, script), beginning.format, wholeView(beginning.format.frame))
+				beginning,
+				standing(angledAs(pose, script), beginning.format, wholeView(beginning.format.frame)),
+				'camera.to'
 			)
 	};
 }
@@ -95,20 +97,29 @@ export function onto(target: string, script: OntoScript = {}): Move {
 
 async function framing(beginning: Beginning, target: string, script: OntoScript): Promise<Change> {
 	const box = await shownPart(beginning, target, script.every ?? 1, 'camera.onto');
-	const start = beginning.scene.camera;
 	const view = viewOn(beginning.format, script.side ?? null);
 	const airAndReach = { air: script.air ?? AIR, zoomAtMost: script.zoomAtMost ?? ZOOM_AT_MOST };
-	const pose = poseOnto(box, start.pose, view.box, beginning.format.frame, airAndReach);
-	return moving(start, standing(angledAs(pose, script), beginning.format, view));
+	const pose = poseOnto(box, beginning.scene.camera.pose, view.box, beginning.format.frame, airAndReach);
+	return moving(beginning, standing(angledAs(pose, script), beginning.format, view), 'camera.onto');
 }
 
-function moving(start: Camera, end: Camera): Change {
+/**
+ * The camera on its way to its end; refused where the end takes the window from beside a note, whose words stand
+ * across from where the window stood and would be left with nothing beside them.
+ */
+function moving(beginning: Beginning, end: Camera, place: string): Change {
+	const start = beginning.scene.camera;
+	if (beginning.scene.note !== null && end.view.side !== start.view.side) {
+		throw new FilmError(
+			`${place} takes the page's window from beside the note standing there: hide the note first, with note.hide()`
+		);
+	}
 	return propChange('camera', (progress) => cameraToward(start, end, progress));
 }
 
 /** The whole frame as the camera's view, or a window on a side of it. */
 function viewOn(format: Format, side: FrameSide | null): View {
-	return side === null ? wholeView(format.frame) : windowView(windowOn(format, side));
+	return side === null ? wholeView(format.frame) : windowView(windowOn(format, side), side);
 }
 
 /** A camera at a pose in a view, kept off the screen's edge there where the screen faces the view. */

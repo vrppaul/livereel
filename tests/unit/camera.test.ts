@@ -47,7 +47,7 @@ function inTheWhole(pose: Pose, frame: Size = SQUARE.frame): Camera {
 }
 
 function inTheWindow(pose: Pose): Camera {
-	return { pose, view: windowView(WINDOW) };
+	return { pose, view: windowView(WINDOW, 'right') };
 }
 
 /** Where a face-on camera's picture is cut, its view the whole square frame lifted so far. */
@@ -118,8 +118,14 @@ test('a camera drawn closer over a screen smaller than the frame moves the scree
 
 test('a window drawn back off the frame moves what it shows by how far its corners go', () => {
 	const whole = inTheWhole(FACE_ON);
-	const drawnBack: Camera = { pose: FACE_ON, view: windowView({ left: 0, top: 0, width: 1080, height: 1080 }) };
-	const movedAside: Camera = { pose: FACE_ON, view: windowView({ left: 30, top: 40, width: 1080, height: 1080 }) };
+	const drawnBack: Camera = {
+		pose: FACE_ON,
+		view: windowView({ left: 0, top: 0, width: 1080, height: 1080 }, 'right')
+	};
+	const movedAside: Camera = {
+		pose: FACE_ON,
+		view: windowView({ left: 30, top: 40, width: 1080, height: 1080 }, 'right')
+	};
 	expect([frameShift(whole, drawnBack, SQUARE), frameShift(whole, movedAside, SQUARE)]).toEqual([0, 50]);
 });
 

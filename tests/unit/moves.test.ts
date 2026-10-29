@@ -103,7 +103,8 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 	const lit = withProp(openingScene(SMALL), 'light', LIT);
 	const pointed = withProp(openingScene(SMALL), 'callout', { ...said, box: BLOCK, side: 'above', shown: 1, gone: 0 });
 	const pinned = await setAt(pin.show('#block', 'Here'), openingScene(SMALL), 1);
-	const noted = withProp(openingScene(SMALL), 'note', { ...said, box: BLOCK, side: 'left', shown: 1, gone: 0 });
+	const beside = { side: 'left', box: BLOCK } as const;
+	const noted = withProp(openingScene(SMALL), 'note', { ...said, box: BLOCK, beside, shown: 1, gone: 0 });
 	const titled = withProp(openingScene(SMALL), 'title', { ...said, beside: null, shown: 1, gone: 0 });
 	const captioned = withProp(openingScene(SMALL), 'caption', { ...said, shown: 1, gone: 0 });
 	const pressed = await setAt(keys.show(['⌘', 'K']), openingScene(SMALL), 1);
@@ -135,15 +136,40 @@ test("a note's line runs from the block's edge to the words' share across from t
 	// Face-on, a page's pixel to a frame's pixel, in a window whose middle is the frame's: the screen drawn 100 to the left
 	const camera: Camera = {
 		pose: { focusX: 300, focusY: 200, zoom: 1 / frameScaleOf(SMALL.frame), tilt: 0, turn: 0 },
-		view: windowView({ left: 100, top: 100, width: 200, height: 200 })
+		view: windowView({ left: 100, top: 100, width: 200, height: 200 }, 'top')
 	};
-	const drawnOne = drawnNote({ ...saidOf('Here'), box: BLOCK, side: 'bottom', shown: 1, gone: 0 }, camera, SMALL);
+	const beside = { side: 'bottom', box: wordsOn(SMALL, 'bottom') } as const;
+	const drawnOne = drawnNote({ ...saidOf('Here'), box: BLOCK, beside, shown: 1, gone: 0 }, camera, SMALL.frame);
 	expect([drawnOne.from, drawnOne.to, drawnOne.angle, drawnOne.place]).toEqual([
 		{ left: expect.closeTo(50, 6), top: expect.closeTo(140, 6) },
 		{ left: expect.closeTo(50, 6), top: 274 },
 		expect.closeTo(90, 6),
 		wordsOn(SMALL, 'bottom')
 	]);
+});
+
+test("a note's words stand across from the side the camera put the window on, though more ground lies beside it", async () => {
+	// A window on the top side, standing far to the right: the most ground lies to its left
+	const framed = withProp(openingScene(SMALL), 'camera', {
+		pose: openingScene(SMALL).camera.pose,
+		view: windowView({ left: 300, top: 20, width: 80, height: 60 }, 'top')
+	});
+	const noted = (await setAt(note.show('#block', 'Here'), framed, 1)).note!;
+	expect(noted.beside).toEqual({ side: 'bottom', box: wordsOn(SMALL, 'bottom') });
+});
+
+test('a camera move that takes the window from beside a note is refused as it begins: to the other side, to the whole frame', async () => {
+	const inTheWindow = await setAt(onto('#block', { side: 'right' }), openingScene(SMALL), 1);
+	const noted = await setAt(note.show('#block', 'Here'), inTheWindow, 1);
+	await expect(async () => onto('#block', { side: 'left' }).begin(beginningOf(noted))).rejects.toThrow(FilmError);
+	await expect(async () => cameraTo(noted.camera.pose).begin(beginningOf(noted))).rejects.toThrow(FilmError);
+});
+
+test('the camera moves on inside the window a note stands beside', async () => {
+	const inTheWindow = await setAt(onto('#block', { side: 'right' }), openingScene(SMALL), 1);
+	const noted = await setAt(note.show('#block', 'Here'), inTheWindow, 1);
+	const closer = await setAt(onto('#wide', { side: 'right', zoomAtMost: 4 }), noted, 1);
+	expect(closer.camera.view).toEqual(inTheWindow.camera.view);
 });
 
 test('a note with no window to stand beside is refused as it begins', async () => {
@@ -271,7 +297,7 @@ test("a camera onto a block on a side stands in that side's window, and back in 
 	const inTheWindow = await setAt(onto('#block', { side: 'right' }), openingScene(SMALL), 1);
 	const backWhole = await setAt(cameraTo(inTheWindow.camera.pose), inTheWindow, 1);
 	expect([inTheWindow.camera.view, backWhole.camera.view]).toEqual([
-		windowView(windowOn(SMALL, 'right')),
+		windowView(windowOn(SMALL, 'right'), 'right'),
 		wholeView(SMALL.frame)
 	]);
 });

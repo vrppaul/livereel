@@ -76,6 +76,9 @@
 	--pin-text-size: 26;
 	--keys-size: 44;
 
+	/* How far in from the frame's foot, or its top, a caption's words and the keys stand */
+	--frame-edge-room: 72px;
+
 	/* The film's fonts, and what stands in for each where the system has none */
 	--font: ui-sans-serif;
 	--sans: var(--font), system-ui, sans-serif;

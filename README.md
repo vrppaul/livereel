@@ -203,7 +203,10 @@ out to them: `note.show(selector, text)`. It names a block without
 covering the page; the line keeps to the block as the page moves in the
 window, and the words keep to their share, level with the block as far as
 it lets. A note needs a window: one shown while the page fills the frame
-is refused. Hide it before the camera leaves the window.
+is refused. Its words stand across from the side the window stands on,
+so while it stands the camera moves only inside the window: a
+`camera.onto` to another side, or out to the whole frame, and a
+`camera.to`, are refused until `note.hide()` has taken it away.
 
 Pins mark a path: `pin.show(selector, label)` lays a numbered mark on a
 block's top corner, numbered after those laid before, its label running
@@ -211,8 +214,8 @@ out from the block toward the screen's middle; the labels before it
 quieten. `pin.clear()` takes them all away.
 
 Keys: `keys.show(['⌘', 'Enter'])` sets the caps of a shortcut at the
-frame's foot, where a caption stands, as the page is sent it in an act;
-`keys.hide()` takes them away.
+frame's foot, as the page is sent it in an act, and they rise clear of a
+caption there as its ground comes up; `keys.hide()` takes them away.
 
 What a title, a caption, a callout or a note says is a string, or a list of strings
 and runs, read one after another. A run is `{ text }` set any of these
@@ -229,7 +232,7 @@ stays livereel's:
 | Value | What it sets | livereel's |
 |---|---|---|
 | `ground` | the ground's colour at its edges | `#0b0e14` |
-| `glow` | the colour the ground lightens to toward its top middle; a ground named without one is of one colour | `#182033` |
+| `glow` | the colour the ground lightens to toward where `glowX` and `glowY` put it; a ground named without one is of one colour | `#182033` |
 | `ink` | the words of titles, captions, callouts, notes and the ending | `#f4f6fa` |
 | `quietInk` | what stands back: a quietened pin's label, the ending's line | `#8b95a7` |
 | `accent`, `accentInk` | pins' marks and a note's line, and a pin's number on its mark | `#ffb224`, `#10141b` |
@@ -244,7 +247,6 @@ stays livereel's:
 | `titleWeight`, `captionWeight` | how heavy a title's and a caption's letters are, 100 to 900 | `700`, `650` |
 | `noteSize`, `calloutSize`, `pinSize`, `keysSize` | how large a note's, a callout's, a pin's label's and a key's letters are, in pixels | `44`, `20`, `26`, `44` |
 | `cursorFill`, `cursorEdge` | the cursor's colour and its edge's | `#111`, `#fff` |
-| `captionAt` | where captions stand: `'bottom'` or `'top'` | `'bottom'` |
 | `wordsMotion` | how words come up: `'soft'`, rising out of a blur; `'sharp'`, rising with no blur; `'still'`, fading up where they stand | `'soft'` |
 
 Colours are in hex; sizes in pixels of a frame 1080 on its shorter side,
@@ -295,6 +297,10 @@ square's words above the window may take less of it than a wide frame's
 beside it: `square: { frame, screen, split: { wordsShare: 0.28 } }`. A
 split that leaves the words or the window no room on its frame is refused
 before anything is shot.
+
+A format names where its captions stand, `captionAt: 'top'`, or at the
+frame's foot where it names none: a square may caption its top and a wide
+frame its foot, and a caption at the top leaves the foot to the keys.
 
 ### Where the stage stands
 

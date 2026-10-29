@@ -10,16 +10,17 @@
 import type { Format } from './domain/geometry.ts';
 import { type Camera, type DrawnCamera, drawnCamera, wholeCamera } from './domain/camera.ts';
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
+import { type DrawnCaption, drawnCaption } from './props/caption.ts';
 import type { Cursor } from './props/cursor.ts';
 import type { Ending } from './props/ending.ts';
-import type { Keys } from './props/keys.ts';
+import { type DrawnKeys, type Keys, drawnKeys } from './props/keys.ts';
 import type { Light } from './props/light.ts';
 import { type DrawnNote, type Note, drawnNote } from './props/note.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
 import { SCREEN_UP, type Screen } from './props/screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './props/terminal.ts';
 import { type DrawnTitle, type Title, drawnTitle } from './props/title.ts';
-import { type DrawnWords, type ShownWords, drawnWords } from './props/words.ts';
+import type { ShownWords } from './props/words.ts';
 
 export interface PropStates {
 	camera: Camera;
@@ -50,8 +51,8 @@ interface DrawnProps {
 	cursor: Cursor | null;
 	note: DrawnNote | null;
 	title: DrawnTitle | null;
-	caption: DrawnWords | null;
-	keys: Keys | null;
+	caption: DrawnCaption | null;
+	keys: DrawnKeys | null;
 	terminal: DrawnTerminal | null;
 	ending: Ending | null;
 }
@@ -87,6 +88,7 @@ export function posed(scene: Scene, camera: Camera): Scene {
 
 /** The scene as the stage draws it at a moment of the film, in the format it is shot in. */
 export function drawn(scene: Scene, moment: number, format: Format): DrawnScene {
+	const caption = scene.caption === null ? null : drawnCaption(scene.caption, format);
 	return {
 		camera: drawnCamera(scene.camera, format),
 		screen: scene.screen,
@@ -94,10 +96,10 @@ export function drawn(scene: Scene, moment: number, format: Format): DrawnScene 
 		callout: scene.callout === null ? null : drawnCallout(scene.callout),
 		pins: scene.pins === null ? null : drawnPins(scene.pins, scene.camera, format.frame),
 		cursor: scene.cursor,
-		note: scene.note === null ? null : drawnNote(scene.note, scene.camera, format),
+		note: scene.note === null ? null : drawnNote(scene.note, scene.camera, format.frame),
 		title: scene.title === null ? null : drawnTitle(scene.title),
-		caption: scene.caption === null ? null : drawnWords(scene.caption),
-		keys: scene.keys,
+		caption,
+		keys: scene.keys === null ? null : drawnKeys(scene.keys, caption),
 		terminal: scene.terminal === null ? null : drawnTerminal(scene.terminal, moment),
 		ending: scene.ending
 	};

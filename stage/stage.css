@@ -370,7 +370,7 @@ body {
 	position: absolute;
 	left: 64px;
 	right: 64px;
-	bottom: 72px;
+	bottom: var(--frame-edge-room);
 	font: var(--caption-weight) calc(var(--caption-size) * 1px) / 1.12 var(--sans);
 	letter-spacing: -0.025em;
 	color: var(--ink);
@@ -673,26 +673,20 @@ body {
 	margin-right: 0.6em;
 }
 
-/* Keys: the caps of a shortcut at the frame's foot, rising as they come */
+/* Keys: the caps of a shortcut at the frame's foot, rising as they come, and clear above two lines of a caption there as far as the scene has them risen */
 .keys {
 	--keys-rise: 16px;
+	--caption-lines-cleared: 2.4;
 
 	position: absolute;
 	left: 0;
 	right: 0;
-	bottom: 72px;
+	bottom: calc(var(--frame-edge-room) + var(--caption-size) * var(--caption-lines-cleared) * var(--clearing) * 1px);
 	display: flex;
 	justify-content: center;
 	gap: 16px;
 	opacity: var(--shown);
 	transform: translateY(calc((1 - var(--shown)) * var(--keys-rise)));
-}
-
-/* While a caption stands at the frame's foot, the keys stand clear above two lines of it */
-:root:not([data-caption-at='top']) .caption:not([hidden]) ~ .keys {
-	--caption-lines-cleared: 2.4;
-
-	bottom: calc(72px + var(--caption-size) * var(--caption-lines-cleared) * 1px);
 }
 
 /* A cap stands about twice as tall as its letters, and as wide at least */
@@ -714,14 +708,14 @@ body {
 	box-shadow: var(--key-shadow);
 }
 
-/* A film's theme may stand its captions at the frame's top, the ground darkening down from it */
-:root[data-caption-at='top'] .caption .ground {
+/* A format may stand its captions at the frame's top, the ground darkening down from it */
+.caption[data-at='top'] .ground {
 	top: 0;
 	bottom: auto;
 	background: var(--caption-ground-from-top);
 }
 
-:root[data-caption-at='top'] .caption .words {
-	top: 72px;
+.caption[data-at='top'] .words {
+	top: var(--frame-edge-room);
 	bottom: auto;
 }

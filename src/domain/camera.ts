@@ -26,6 +26,7 @@ import {
 	nearestWithin
 } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, assertKind, needed } from './handed.ts';
+import type { FrameSide } from './split.ts';
 import { between } from './time.ts';
 
 /**
@@ -45,10 +46,12 @@ export interface Pose {
 /**
  * Where on the frame the camera's picture shows, in the frame's pixels, and how far it stands off the film's ground:
  * at 0 it is the frame itself, edge to edge; at 1 a window, its corners rounded, its edge and shadow on the ground.
+ * A window stands on a side of the frame, words across from it; the frame itself on none.
  */
 export interface View {
 	readonly box: Box;
 	readonly lift: number;
+	readonly side: FrameSide | null;
 }
 
 /** The camera: how it looks at the screen, and where on the frame its picture shows. */
@@ -107,12 +110,12 @@ const LIFTED = 1;
 
 /** The whole frame as the camera's view, edge to edge. */
 export function wholeView(frame: Size): View {
-	return { box: boxOf(frame), lift: FLAT };
+	return { box: boxOf(frame), lift: FLAT, side: null };
 }
 
-/** A window on the frame as the camera's view, standing on the film's ground. */
-export function windowView(box: Box): View {
-	return { box, lift: LIFTED };
+/** A window on a side of the frame as the camera's view, standing on the film's ground. */
+export function windowView(box: Box, side: FrameSide): View {
+	return { box, lift: LIFTED, side };
 }
 
 /** The camera a film opens on: the whole screen face-on, in the whole frame. */
@@ -125,13 +128,17 @@ export function flatCamera(format: Format): Camera {
 	return { pose: flatPose(format), view: wholeView(format.screen) };
 }
 
-/** A camera `progress` of the way from one to another: its pose, its view's box and how far the view stands off. */
+/**
+ * A camera `progress` of the way from one to another: its pose, its view's box and how far the view stands off; its
+ * view on the side it is on its way to, where words about the page then stand.
+ */
 export function cameraToward(start: Camera, end: Camera, progress: number): Camera {
 	return {
 		pose: poseToward(start.pose, end.pose, progress),
 		view: {
 			box: boxToward(start.view.box, end.view.box, progress),
-			lift: between(start.view.lift, end.view.lift, progress)
+			lift: between(start.view.lift, end.view.lift, progress),
+			side: end.view.side
 		}
 	};
 }

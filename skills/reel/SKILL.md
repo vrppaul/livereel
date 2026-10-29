@@ -39,7 +39,7 @@ caption. Speak in the director's words, which are the tool's:
 | light | `light.on`, `light.to`, `light.off` — one block lit, the rest dimmed |
 | cast | what the page shows, opened and closed by `act` |
 | action | what the page does for real: a click (`cursor.click`), keys typed into it (`typing(page.type(strokes))`), anything else in an `act` |
-| caption | `caption.show(text)`, `caption.hide()` |
+| caption | `caption.show(text)`, `caption.hide()`; at the frame's foot, or its top in a format with `captionAt: 'top'`, which leaves the foot to keys |
 | title card | `title.show(text)` — words over the whole frame, on the film's ground; `title.hide()` |
 | split | `camera.onto(selector, { side: 'right' })` with `title.show(text, { side: 'left', within: { start: 0.5 } })` in one `play` — the page draws back into a window on one side, then the words come up on the ground across from it; name the sides per format from `steps`' format name: words above the window in a square, beside it in a wide frame; a format's `split` sets the words' share and the margins, `{ wordsShare: 0.28 }` for words that ask less room above a square's window |
 | entrance | `cut(screen.lower())`, then `screen.rise()` in a `play`; `ending.show(card)` |
@@ -207,7 +207,7 @@ its end at once.
 | `cursor.press({ sound })`, `cursor.release()`, `cursor.hide()` | pressed in with a click (`sound`, a file of the film's in its place), let go, taken off the screen |
 | `cursor.click(action, { sound })` | pressed with its click, `act(action)`, let go: the steps of a click |
 | `callout.show(selector, text, { side })`, `callout.hide()` | words on a card beside a block, pointing at it, `side` `above` (where none is named), `below`, `left` or `right`; carried with the page |
-| `note.show(selector, text)`, `note.hide()` | words on the ground across from the page's window, a line drawn from them to a block in it; only with a window |
+| `note.show(selector, text)`, `note.hide()` | words on the ground across from the page's window, a line drawn from them to a block in it; only with a window, and the camera stays in that window until `note.hide()` |
 | `pin.show(selector, label)`, `pin.clear()` | a numbered mark on a block, after those laid before, the earlier labels quietened; all taken away |
 | `keys.show(caps)`, `keys.hide()` | the caps of a shortcut at the frame's foot, as `['⌘', 'Enter']` |
 | `title.show(text, { side })`, `title.hide()` | words coming up one after another on the film's ground over the whole frame, or on a `side` of it beside the page's window, in place of any title shown; going, the ground with them |
@@ -238,7 +238,7 @@ brand's look: `ground` and `glow` (left out, the ground is of one colour),
 `windowEdge` and `windowShadowColour` with `windowShadow` from 0 to 1 (a dark
 edge on a light ground), `cursorFill` and `cursorEdge`, `titleWeight` and
 `captionWeight`, `glowX` and `glowY`, `noteSize`, `calloutSize`, `pinSize`
-and `keysSize`, `captionAt` (`'top'` frees the foot for keys) and
+and `keysSize`, and
 `wordsMotion` (`'soft'`, `'sharp'`, `'still'`), `terminal` and
 `terminalInk`, all in hex; `font` and `mono`, as CSS names a family
 installed on the machine; `titleSize`, `captionSize` and `windowCorner`

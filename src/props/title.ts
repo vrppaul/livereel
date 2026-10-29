@@ -3,15 +3,8 @@
  * there; or words on a side of the frame, beside the page's window on the side across, standing on the ground round
  * the window, so they bring no ground of their own.
  */
-import type { Box } from '../domain/geometry.ts';
-import type { FrameSide } from '../domain/split.ts';
+import type { Beside } from '../domain/split.ts';
 import { type DrawnWords, type ShownWords, drawnWords } from './words.ts';
-
-/** Where words beside a window stand: the side of the frame, and their box there, in the frame's pixels. */
-export interface Beside {
-	readonly side: FrameSide;
-	readonly box: Box;
-}
 
 /** A title's words, and where they stand beside a window: none, over the whole frame. */
 export interface Title extends ShownWords {

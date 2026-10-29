@@ -145,6 +145,9 @@ export const A_PIXELS = new Plain(isPixels, 'a number of pixels, 0 or more');
 /** A share of something a film gives, from none of it to the whole. */
 export const A_SHARE = new Plain(isShare, 'a number from 0 to 1');
 
+// None of a length or of a share, and the whole of a share
+const NONE = 0;
+const WHOLE = 1;
 // A colour in hex, its alpha optional, in short digits or long
 const HEX_COLOUR = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 
@@ -303,11 +306,11 @@ function isCount(written: unknown): written is number {
 }
 
 function isPixels(written: unknown): written is number {
-	return isNumber(written) && written >= 0;
+	return isNumber(written) && written >= NONE;
 }
 
 function isShare(written: unknown): written is number {
-	return isNumber(written) && written >= 0 && written <= 1;
+	return isNumber(written) && written >= NONE && written <= WHOLE;
 }
 
 function isString(written: unknown): written is string {

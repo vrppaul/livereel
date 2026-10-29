@@ -1,6 +1,14 @@
 import { expect, test } from 'vitest';
+import type { Format } from '../../src/domain/geometry.ts';
 import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
 import { type Piece, drawnWords, saidOf } from '../../src/props/words.ts';
+import { drawn, openingScene, withProp } from '../../src/scene.ts';
+import { SMALL } from './fakes.ts';
+
+// A frame whose captions stand at its top
+const CAPTIONS_AT_THE_TOP: Format = { ...SMALL, captionAt: 'top' };
+// A caption a quarter of the way up: its ground, coming up twice as fast as its words, half of the way
+const CAPTIONED = withProp(openingScene(SMALL), 'caption', { ...saidOf('Words'), shown: 0.25, gone: 0 });
 
 /** A piece of a word, set in the styles named, in no ink and on no marker of its own. */
 function piece(text: string, ...styles: Piece['styles']): Piece {
@@ -16,6 +24,22 @@ test("a caption's words come up one after another", () => {
 
 test('the ground under words goes as they go', () => {
 	expect(drawnWords({ ...saidOf('Words'), shown: 1, gone: 1 }).ground).toBe(0);
+});
+
+test("a caption stands where its format puts it, at the frame's foot where it names no place", () => {
+	expect([drawn(CAPTIONED, 0, SMALL).caption!.at, drawn(CAPTIONED, 0, CAPTIONS_AT_THE_TOP).caption!.at]).toEqual([
+		'bottom',
+		'top'
+	]);
+});
+
+test("keys rise clear of a caption at the frame's foot as its ground comes up, and stay at the foot with none there", () => {
+	const pressed = withProp(CAPTIONED, 'keys', { caps: ['⌘', 'K'], key: '⌘ K', shown: 1 });
+	expect([
+		drawn(pressed, 0, SMALL).keys!.clearing,
+		drawn(pressed, 0, CAPTIONS_AT_THE_TOP).keys!.clearing,
+		drawn(withProp(pressed, 'caption', null), 0, SMALL).keys!.clearing
+	]).toEqual([0.5, 0, 0]);
 });
 
 test('the space between two words is set as the run it was written in, and none stands before the first or after the last', () => {

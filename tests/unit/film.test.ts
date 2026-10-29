@@ -54,7 +54,7 @@ async function servedFrom(serving: unknown) {
 	return served.address;
 }
 
-test('a film in no form of one is refused as it is defined, where it stands: its names, its formats, its functions', () => {
+test('a film in no form of one is refused as it is defined, where it stands: its names, its formats and where their captions stand, its functions', () => {
 	expect(() => defineFilm(null as never)).toThrow(
 		new FilmError(
 			'the film is null: it is an object of formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, colourScheme, blurred'
@@ -87,6 +87,9 @@ test('a film in no form of one is refused as it is defined, where it stands: its
 	);
 	expect(() => filmWritten({ formats: { small: { frame: SMALL.frame } } })).toThrow(
 		new FilmError("the film's small format's screen is undefined: it is a screen: { width, height }")
+	);
+	expect(() => filmWritten({ formats: { small: { ...SMALL, captionAt: 'middle' } } })).toThrow(
+		new FilmError(`the film's small format's captionAt is "middle": it is where a caption stands: "bottom" or "top"`)
 	);
 	expect(() => filmWritten({ serve: null })).toThrow(new FilmError("the film's serve is null: it is a function"));
 });
@@ -297,9 +300,9 @@ test('a film is shot on the stage it names, apart where it names none; a stage l
 	);
 });
 
-test('a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, a colour not in hex, a font of no name, a size less than none', () => {
+test('a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, pixels less than none, a share past 1, a size of none, a way words come up it has not, a colour not in hex, a font of no name', () => {
 	const names =
-		'ground, glow, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, windowCorner, windowEdge, windowShadow, windowShadowColour, terminal, terminalInk, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, cursorFill, cursorEdge, captionAt, wordsMotion';
+		'ground, glow, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, windowCorner, windowEdge, windowShadow, windowShadowColour, terminal, terminalInk, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, cursorFill, cursorEdge, wordsMotion';
 	expect(() => filmWritten({ theme: null })).toThrow(
 		new FilmError(`the film's theme is handed null for an object of ${names}`)
 	);

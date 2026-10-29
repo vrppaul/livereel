@@ -1,20 +1,21 @@
 /**
  * A note: words on the film's ground in the words' share across from the page's window, and a line drawn from a dot
  * at a block's edge in the window out to them, so they name the block without covering the page. The block is read
- * once, as the note comes, as a callout's is, and the side the words stand on with it: the side of the frame with the
- * most ground beside the window. Where the block stands on the frame is worked out every frame from the camera, so
- * the line keeps to the block as the page moves in the window; the words keep to their share, level with the block
- * as far as it lets. The line is drawn first, as the words' ground would come up, and the words come up at its end.
+ * once, as the note comes, as a callout's is, and where the words stand with it: in the words' share across from the
+ * side the window stands on, which stays while the note does. Where the block stands on the frame is worked out every
+ * frame from the camera, so the line keeps to the block as the page moves in the window; the words keep to their
+ * share, level with the block as far as it lets. The line is drawn first, as the words' ground would come up, and the
+ * words come up at its end.
  */
 import { type Camera, onTheFrame } from '../domain/camera.ts';
-import { type Box, type Format, type Point, type Size, middleX, middleY } from '../domain/geometry.ts';
-import { type FrameSide, wordsOn } from '../domain/split.ts';
+import { type Box, type Point, type Size, middleX, middleY } from '../domain/geometry.ts';
+import type { Beside, FrameSide } from '../domain/split.ts';
 import { type DrawnWords, type ShownWords, drawnWords } from './words.ts';
 
-/** A note's words, the block it names, as the screen showed it, and the side of the frame its words stand on. */
+/** A note's words, the block it names, as the screen showed it, and where its words stand beside the window. */
 export interface Note extends ShownWords {
 	readonly box: Box;
-	readonly side: FrameSide;
+	readonly beside: Beside;
 }
 
 /**
@@ -32,32 +33,15 @@ export interface DrawnNote extends DrawnWords {
 
 const DEGREES_IN_A_HALF_TURN = 180;
 
-/** The ground on a side of the frame beside a window: how far it reaches from the window to the frame's edge. */
-interface Ground {
-	readonly side: FrameSide;
-	readonly reach: number;
-}
-
-/** The side of the frame with the most ground beside a window: where words about the page stand. */
-export function sideBeside(window: Box, frame: Size): FrameSide {
-	const grounds: readonly Ground[] = [
-		{ side: 'left', reach: window.left },
-		{ side: 'right', reach: frame.width - window.left - window.width },
-		{ side: 'top', reach: window.top },
-		{ side: 'bottom', reach: frame.height - window.top - window.height }
-	];
-	return grounds.reduce((widest, ground) => (ground.reach > widest.reach ? ground : widest)).side;
-}
-
-export function drawnNote(note: Note, camera: Camera, format: Format): DrawnNote {
-	const place = wordsOn(format, note.side);
-	const from = onTheFrame(camera, format.frame, edgeFacing(note.box, note.side));
-	const to = meeting(place, from, note.side);
+export function drawnNote(note: Note, camera: Camera, frame: Size): DrawnNote {
+	const { side, box: place } = note.beside;
+	const from = onTheFrame(camera, frame, edgeFacing(note.box, side));
+	const to = meeting(place, from, side);
 	const across = to.left - from.left;
 	const down = to.top - from.top;
 	return {
 		...drawnWords(note),
-		side: note.side,
+		side,
 		place,
 		from,
 		to,

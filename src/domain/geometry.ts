@@ -5,7 +5,7 @@
  * stands on that screen, with no camera applied, or a part of the frame, as the page's window on it. Every other
  * measure of a film is read off these.
  */
-import { A_NUMBER, A_PIXELS, A_SHARE, type Form, type Kind, OfForm, Plain, needed } from './handed.ts';
+import { A_NUMBER, A_PIXELS, A_SHARE, type Form, type Kind, OfForm, OneOf, Plain, needed } from './handed.ts';
 import { between } from './time.ts';
 
 export interface Size {
@@ -14,14 +14,21 @@ export interface Size {
 }
 
 /**
- * What a film is shot at, its frame, what its page is laid out on, its screen, and how the frame is split between
- * words and the page's window: livereel's split where a format gives none, or for what it leaves out.
+ * What a film is shot at, its frame, what its page is laid out on, its screen, how the frame is split between words
+ * and the page's window, and where its captions stand: livereel's split where a format gives none, or for what it
+ * leaves out, and captions at the frame's foot.
  */
 export interface Format {
 	readonly frame: Size;
 	readonly screen: Size;
 	readonly split?: Split;
+	readonly captionAt?: CaptionPlace;
 }
+
+// Where a caption stands on the frame: at its foot, or its top
+const CAPTION_PLACES = ['bottom', 'top'] as const;
+
+export type CaptionPlace = (typeof CAPTION_PLACES)[number];
 
 /**
  * How a frame is split between words and the page's window (`src/domain/split.ts`): the share of the frame the words
@@ -52,7 +59,10 @@ export const A_POINT: Kind<Point> = new OfForm<Point>(
 	'a point: { left, top }, each a number'
 );
 
-/** A film's format as it hands it: a frame a video holds, the screen its page is laid out on, and its split. */
+/**
+ * A film's format as it hands it: a frame a video holds, the screen its page is laid out on, its split, and where its
+ * captions stand.
+ */
 export const FORMAT_FORM: Form<Format> = {
 	frame: needed(
 		new OfForm<Size>({ width: needed(A_FRAME_SIDE), height: needed(A_FRAME_SIDE) }, 'a frame: { width, height }')
@@ -63,7 +73,8 @@ export const FORMAT_FORM: Form<Format> = {
 	split: new OfForm<Split>(
 		{ wordsShare: A_SHARE, windowMargin: A_PIXELS, wordsMargin: A_PIXELS, wordsGap: A_PIXELS },
 		'a split: { wordsShare, windowMargin, wordsMargin, wordsGap }, any of them'
-	)
+	),
+	captionAt: new OneOf(CAPTION_PLACES, 'where a caption stands: "bottom" or "top"')
 };
 
 /** Where a block of the page stands on the screen, or a part of the frame: its left and top edges, and how big it is. */

@@ -1,8 +1,10 @@
 /**
- * A film's look of its own: the ground its screen stands on and its titles and ending come up on, the ink of the words
- * livereel writes over the frame and their font, the accent of its marks, the window's corners, the size of titles
- * and captions, and the agent's terminal. A value the film leaves out stays livereel's, so a film tunes one and keeps
- * the rest; the stage sets each the film gives in place of its own token (`stage/tokens.css`).
+ * A film's look of its own, one for every format: the ground its screen stands on and its titles and ending come up
+ * on, and its glow, the ink of the words livereel writes over the frame, their font, sizes and weights and how they
+ * come up, the accent of its marks, the window's corners, edge and shadow, the cursor, and the agent's terminal. Where
+ * things stand on the frame is the format's (`Format` in `src/domain/geometry.ts`). A value the film leaves out stays
+ * livereel's, so a film tunes one and keeps the rest; the stage sets each the film gives in place of its own token
+ * (`stage/tokens.css`), or, for a value that names a way, as an attribute its stylesheet reads.
  */
 import {
 	A_COLOUR,
@@ -18,7 +20,7 @@ import {
 export interface Theme {
 	/** The ground's colour, in hex, as it stands at its edges. */
 	readonly ground?: string;
-	/** The colour the ground lightens to toward its top middle, in hex: the ground's own, for a ground of one colour. */
+	/** The colour the ground lightens to where its glow stands, in hex: the ground's own, for a ground of one colour. */
 	readonly glow?: string;
 	/** The colour of the words of titles, captions, notes and the ending, in hex. */
 	readonly ink?: string;
@@ -58,20 +60,15 @@ export interface Theme {
 	/** The cursor's colour and the colour of its edge, in hex. */
 	readonly cursorFill?: string;
 	readonly cursorEdge?: string;
-	/** Where a caption stands: at the frame's foot, or its top. */
-	readonly captionAt?: CaptionPlace;
 	/** How words come up: rising out of a blur, rising sharp, or standing where they are as they appear. */
 	readonly wordsMotion?: WordsMotion;
 }
 
-const CAPTION_PLACES = ['bottom', 'top'] as const;
-type CaptionPlace = (typeof CAPTION_PLACES)[number];
 const WORDS_MOTIONS = ['soft', 'sharp', 'still'] as const;
 type WordsMotion = (typeof WORDS_MOTIONS)[number];
 
 const A_SIZE = new Plain(isSize, 'a number of pixels, more than 0');
 const A_WEIGHT = new Plain(isWeight, 'a weight from 100 to 900');
-const A_CAPTION_PLACE = new OneOf(CAPTION_PLACES, 'where a caption stands: "bottom" or "top"');
 const A_WORDS_MOTION = new OneOf(WORDS_MOTIONS, 'how words come up: "soft", "sharp" or "still"');
 const NONE = 0;
 const THINNEST = 100;
@@ -103,7 +100,6 @@ const THEME_FORM: Form<Theme> = {
 	keysSize: A_SIZE,
 	cursorFill: A_COLOUR,
 	cursorEdge: A_COLOUR,
-	captionAt: A_CAPTION_PLACE,
 	wordsMotion: A_WORDS_MOTION
 };
 // A film that names no theme is shot in livereel's own look

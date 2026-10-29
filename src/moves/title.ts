@@ -4,18 +4,9 @@
  * window on the side across (`camera.onto(selector, { side })`).
  */
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
-import { A_FRAME_SIDE, type FrameSide, wordsOn } from '../domain/split.ts';
+import { A_FRAME_SIDE, type Beside, type FrameSide, besideOn } from '../domain/split.ts';
 import { linear } from '../domain/time.ts';
-import {
-	type Beginning,
-	type Change,
-	type Move,
-	TIMING_FORM,
-	type TimingScript,
-	propChange,
-	timingOf
-} from '../direction/move.ts';
-import type { Beside } from '../props/title.ts';
+import { type Change, type Move, TIMING_FORM, type TimingScript, propChange, timingOf } from '../direction/move.ts';
 import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
 import { going } from './words.ts';
 
@@ -38,7 +29,7 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 	return {
 		part: 'title',
 		timing: timingOf({ ease: linear, ...script }),
-		begin: (beginning) => showing(said, besideOn(beginning, side))
+		begin: (beginning) => showing(said, side === null ? null : besideOn(beginning.format, side))
 	};
 }
 
@@ -50,9 +41,4 @@ export function hide(script: TimingScript = {}): Move {
 
 function showing(said: Said, beside: Beside | null): Change {
 	return propChange('title', (progress) => ({ ...said, beside, shown: progress, gone: 0 }));
-}
-
-/** Where words on a side of the frame stand, in the format the film is shot in; none over the whole frame. */
-function besideOn(beginning: Beginning, side: FrameSide | null): Beside | null {
-	return side === null ? null : { side, box: wordsOn(beginning.format, side) };
 }
