@@ -51,7 +51,8 @@ export interface AngleScript extends TimingScript {
 /**
  * How a film frames a block: the first `every` blocks that match, `air` round them in the page's pixels, no closer than
  * `zoomAtMost`, a zoom as a pose has it (`Pose` in `src/domain/camera.ts`), in the whole frame or in a window on a
- * `side` of it.
+ * `side` of it. In a window the page fills it before all else: where the screen would not fill it at `zoomAtMost`,
+ * the camera comes closer, and the window shows part of the page.
  */
 export interface OntoScript extends AngleScript {
 	readonly every?: number;

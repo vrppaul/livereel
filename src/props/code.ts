@@ -53,7 +53,8 @@ interface DrawnLine extends CodeLine {
 
 /**
  * Code as the stage draws it: each line's progress, how far the pane's ground has come up, how far it went, and how
- * far the lines not lit are dimmed: as far as the line lit most is lit.
+ * far the lines not lit are dimmed: as far as the light on all its lines comes to, at most whole, so a light moving
+ * from one line to another, one going out as the other comes on, keeps the rest dimmed.
  */
 export interface DrawnCode {
 	readonly lines: readonly DrawnLine[];
@@ -69,12 +70,13 @@ export interface DrawnCode {
 const PIECES =
 	/(?<comment>\/\/.*$)|(?<string>'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)|(?<number>\b\d+(?:\.\d+)?\b)|(?<keyword>\b(?:const|function|return|import|from|export|default|await|async|readonly)\b)|(?<call>\b[A-Za-z_]\w*(?=\())|(?<key>\b[A-Za-z_]\w*(?=:\s))/gu;
 const NEW_LINE = '\n';
-// A tab is set as two spaces, as the films' own files are indented
+// A tab is set as two spaces, so an indent keeps the pane's narrow width for the code
 const TAB = '\t';
 const TAB_SET_AS = '  ';
 const LINE_START = 0;
-// A line written as it is, lit none
+// A line written as it is, lit none; and one lit whole
 export const NOT_LIT = 0;
+export const WHOLLY_LIT = 1;
 
 /** A film's code, worked out once as its move is made: its lines of pieces, their key and its widest line's length. */
 export function codeOf(text: string): WrittenCode {
@@ -94,7 +96,10 @@ export function drawnCode(code: Code): DrawnCode {
 		beside: code.beside,
 		ground: groundOf(code.shown, code.gone),
 		gone: code.gone,
-		dimmed: Math.max(NOT_LIT, ...code.lines.map((line) => line.lit))
+		dimmed: Math.min(
+			WHOLLY_LIT,
+			code.lines.reduce((light, line) => light + line.lit, NOT_LIT)
+		)
 	};
 }
 

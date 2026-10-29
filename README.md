@@ -185,8 +185,9 @@ a format's `split` gives them (see Formats); the window takes the whole
 rest, whatever the page's shape, and shows the part of it the camera
 frames. Inside the window the camera frames as in the whole frame: a block
 at its middle, as close as its `air` lets, but never so far back that
-ground shows in the window, so a block wider than the window at that
-distance is cut at its edges; framed closer, the window stands still and
+ground shows in the window, closer than `zoomAtMost` where it must, so a
+block wider than the window at that distance is cut at its edges, and a
+phone's page shows a strip of itself; framed closer, the window stands still and
 the page grows in it. An
 angled camera leans the window back or swings it, the page still filling
 it; in the whole frame an angled camera stands where the film puts it.

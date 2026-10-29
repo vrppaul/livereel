@@ -17,7 +17,7 @@ import {
 	propChange,
 	timingOf
 } from '../direction/move.ts';
-import { type CodeLine, NOT_LIT, type WrittenCode, codeOf } from '../props/code.ts';
+import { type CodeLine, NOT_LIT, WHOLLY_LIT, type WrittenCode, codeOf } from '../props/code.ts';
 import { going } from './words.ts';
 
 /** Where code stands: on a `side` of the frame, beside the page's window across from it. */
@@ -32,8 +32,6 @@ export interface LightScript extends TimingScript {
 
 const CODE_FORM: Form<CodeScript> = { side: needed(A_FRAME_SIDE), ...TIMING_FORM };
 const LIGHT_FORM: Form<LightScript> = { through: A_COUNT, ...TIMING_FORM };
-// How far a line named is lit: whole
-const LIT = 1;
 // Lines are counted from 1, places in a list from 0
 const FIRST_LINE = 1;
 
@@ -86,5 +84,5 @@ function lighting(beginning: Beginning, first: number, last: number): Change {
 /** A line `progress` of the way to lit, where it is among those named, or to out. */
 function litToward(line: CodeLine, number: number, first: number, last: number, progress: number): CodeLine {
 	const named = number >= first && number <= last;
-	return { ...line, lit: between(line.lit, named ? LIT : NOT_LIT, progress) };
+	return { ...line, lit: between(line.lit, named ? WHOLLY_LIT : NOT_LIT, progress) };
 }

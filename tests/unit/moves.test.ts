@@ -170,6 +170,12 @@ test('the lines lit are the one named and those through the one named, and the r
 	expect([lit.lines.map((line) => line.lit), drawnCode(lit).dimmed]).toEqual([[0, 1, 1], 1]);
 });
 
+test('while the light moves from one line to another, the lines not lit stay dimmed', async () => {
+	const coded = await setAt(code.show(THREE_LINES, { side: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const first = await setAt(code.light(1), coded, 1);
+	expect(drawnCode((await setAt(code.light(2), first, 0.5)).code!).dimmed).toBe(1);
+});
+
 test('lines lit past the last of the code, or with no code shown, are refused as the move begins', async () => {
 	const coded = await setAt(code.show(THREE_LINES, { side: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	await expect(async () => code.light(3, { through: 4 }).begin(beginningOf(coded))).rejects.toThrow(FilmError);

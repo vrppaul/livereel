@@ -1,12 +1,12 @@
 /**
- * livereel's film for its README: its name and what it is, then what it does from the basics on, each beat shown as
- * the code that makes it beside what that code shoots.
+ * livereel's film for its README: its name and what it is, then what it does from the basics on, each beat named in a
+ * caption and shown as the code that makes it beside what that code shoots.
  *
  *     pnpm livereel shoot examples/livereel-readme.ts --out out/readme --sheet
  *
  * Acme's analytics app is served by the film itself and shows in a window on the right; on the left, a pane of this
- * very file's code. Each region marked `// #region name` below is the code a beat shows (`livereel-promo/code.ts`),
- * its lines lit as they run, so the code on the screen is the code that shot it.
+ * very file's code. Each line a beat shows is a region marked `// #region name` below (`livereel-promo/code.ts`), a
+ * step of its own, lit as that step runs, so the code on the screen is the code that shot it.
  */
 import {
 	type ActContext,
@@ -30,15 +30,15 @@ import {
 	play,
 	screen
 } from 'livereel';
-import { regionsOf } from './livereel-promo/code.ts';
+import { regionNamed, regionsOf } from './livereel-promo/code.ts';
 import { type AppServed, servedApp } from './livereel-promo/server.ts';
 
-// A wide frame, as a README shows it, the code given a little more than livereel's share of it so its lines stand
-// large, and the app laid out on a screen as wide as its window, so the window shows the app across
+// A wide frame, as a README shows it, half of it the code's so its lines stand large, and the app laid out on a
+// screen as wide as its window, so the window shows the app across
 const WIDE = {
 	frame: { width: 1920, height: 1080 },
-	screen: { width: 1120, height: 1080 },
-	split: { wordsShare: 0.46 }
+	screen: { width: 1040, height: 1080 },
+	split: { wordsShare: 0.5 }
 };
 // The app's main number, its card and the button that refreshes it, the row of cards, and the button and the card
 const VISITORS = '[data-testid=visitors]';
@@ -52,7 +52,8 @@ const CARD: EndingCard = { name: 'livereel', line: 'Film your live web app from 
 const PAPER: Theme = { ground: '#f5efe6', ink: '#1a1a1a', windowEdge: '#00000033' };
 const SERIF: Theme = { font: 'Georgia, serif', windowCorner: 0, windowShadowColour: '#7c3aed' };
 const NIGHT: Theme = { ground: '#1e1b4b', glow: '#7c3aed', ink: '#f5f3ff', windowEdge: '#ffffff1a' };
-// The code of each beat: the regions this file marks below, their lines counted from 1 as an editor counts them
+// The lines of code each beat shows, the regions this file marks below, and their places, counted from 1 as an editor
+// counts lines
 const REGIONS = await regionsOf(new URL(import.meta.url));
 const FIRST_LINE = 1;
 const SECOND_LINE = 2;
@@ -64,9 +65,22 @@ async function refreshed(context: ActContext, served: AppServed): Promise<void> 
 	await context.page.locator(VISITORS_TODAY, { hasText: served.refreshed.visitors }).waitFor();
 }
 
-/** The code of a region coming up on the left, beside the page's window on the right. */
-function codeShown(region: string, within: { start: number } = { start: 0 }): Move {
-	return code.show(REGIONS.named(region), { side: 'left', within });
+/**
+ * The lines of regions, one after another, as one piece of code. Each region here is one line, standing as deep in
+ * the file as its step does, so each is set at the code's left edge on its own.
+ */
+function linesOf(regions: readonly string[]): string {
+	return regions.map((region) => regionNamed(REGIONS, region).trim()).join('\n');
+}
+
+/** The lines of regions coming up on the left, beside the page's window on the right. */
+function codeShown(regions: readonly string[]): Move {
+	return code.show(linesOf(regions), { side: 'left' });
+}
+
+/** The lines of the next beat on the left in place of the last beat's, those going first. */
+function codeSwapped(regions: readonly string[]): readonly Move[] {
+	return [code.hide({ within: { end: 0.4 } }), code.show(linesOf(regions), { side: 'left', within: { start: 0.4 } })];
 }
 
 /** The card first: the name and the line on the ground, then the app rising into a window as the card goes. */
@@ -90,19 +104,29 @@ function actTheCard(): readonly Step[] {
 /** The camera onto a block by its selector, and the light on it. */
 function actTheCamera(): readonly Step[] {
 	return [
-		play({ seconds: 0.8, moves: [codeShown('camera')] }),
-		hold({ seconds: 0.6 }),
 		play({
-			seconds: 1.8,
+			seconds: 1,
+			moves: [codeShown(['onto', 'light']), caption.show('A camera and a light, by selector')],
+			ease: easeOutCubic
+		}),
+		play({
+			seconds: 1.4,
 			moves: [
 				code.light(FIRST_LINE, { within: { end: 0.2 } }),
-				code.light(SECOND_LINE, { within: { start: 0.55, end: 0.7 } }),
-				// #region camera
-				camera.onto(VISITORS, { side: 'right', air: 60 }),
-				light.on(VISITORS, { within: { start: 0.6 } })
+				// #region onto
+				camera.onto(VISITORS, { side: 'right' })
 				// #endregion
 			],
 			ease: easeInOutCubic
+		}),
+		play({
+			seconds: 1,
+			moves: [
+				code.light(SECOND_LINE, { within: { end: 0.2 } }),
+				// #region light
+				light.on(VISITORS)
+				// #endregion
+			]
 		}),
 		hold({ seconds: 1.2 })
 	];
@@ -114,21 +138,28 @@ function actThePins(): readonly Step[] {
 		play({
 			seconds: 1.2,
 			moves: [
-				code.hide({ within: { end: 0.4 } }),
-				codeShown('pins', { start: 0.4 }),
+				...codeSwapped(['pin-refresh', 'pin-count']),
+				caption.show('Pins on the path'),
 				light.off({ within: { end: 0.4 } }),
-				camera.onto(REFRESH_AND_VISITORS, { side: 'right', every: BOTH, air: 60 })
+				camera.onto(REFRESH_AND_VISITORS, { side: 'right', every: BOTH })
 			],
 			ease: easeInOutCubic
 		}),
 		play({
-			seconds: 1.6,
+			seconds: 0.8,
 			moves: [
 				code.light(FIRST_LINE, { within: { end: 0.2 } }),
-				code.light(SECOND_LINE, { within: { start: 0.5, end: 0.7 } }),
-				// #region pins
-				pin.show(REFRESH, 'Refresh', { within: { end: 0.4 } }),
-				pin.show(VISITORS_TODAY, 'The count', { within: { start: 0.5 } })
+				// #region pin-refresh
+				pin.show(REFRESH, 'Refresh')
+				// #endregion
+			]
+		}),
+		play({
+			seconds: 0.8,
+			moves: [
+				code.light(SECOND_LINE, { within: { end: 0.2 } }),
+				// #region pin-count
+				pin.show(VISITORS_TODAY, 'The count')
 				// #endregion
 			]
 		}),
@@ -136,47 +167,52 @@ function actThePins(): readonly Step[] {
 	];
 }
 
-/** A real click on the real app: its server answers, and the count changes. */
+/** A real click on the real app: the cursor to the button, the click, its server answering, the count changed. */
 function actTheClick(served: AppServed): readonly Step[] {
 	return [
 		play({
-			seconds: 1.2,
+			seconds: 1,
 			moves: [
-				code.hide({ within: { end: 0.4 } }),
-				codeShown('click', { start: 0.4 }),
-				pin.clear({ within: { end: 0.4 } }),
-				cursor.to(REFRESH)
+				...codeSwapped(['cursor', 'click']),
+				caption.show('A real click, a real server'),
+				pin.clear({ within: { end: 0.4 } })
 			],
 			ease: easeInOutCubic
 		}),
-		play({ seconds: 0.4, moves: [code.light(FIRST_LINE)] }),
+		play({
+			seconds: 1,
+			moves: [
+				code.light(FIRST_LINE, { within: { end: 0.2 } }),
+				// #region cursor
+				cursor.to(REFRESH)
+				// #endregion
+			],
+			ease: easeInOutCubic
+		}),
+		play({ seconds: 0.3, moves: [code.light(SECOND_LINE)] }),
 		// #region click
 		...cursor.click((context) => refreshed(context, served)),
 		// #endregion
 		play({
 			seconds: 1.2,
-			moves: [camera.onto(VISITORS, { side: 'right', air: 60 }), light.on(VISITORS, { within: { start: 0.5 } })],
+			moves: [camera.onto(VISITORS, { side: 'right' }), light.on(VISITORS, { within: { start: 0.5 } })],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 1.2 })
 	];
 }
 
-/** Words over the frame, set their own way. */
+/** Words over the frame, set their own way: the caption that says so. */
 function actTheWords(): readonly Step[] {
 	return [
 		cut(cursor.hide()),
-		play({
-			seconds: 1,
-			moves: [code.hide({ within: { end: 0.4 } }), codeShown('words', { start: 0.4 }), light.off()],
-			ease: easeInOutCubic
-		}),
+		play({ seconds: 1, moves: [...codeSwapped(['words']), caption.hide(), light.off()], ease: easeInOutCubic }),
 		play({
 			seconds: 1.6,
 			moves: [
 				code.light(FIRST_LINE, { within: { end: 0.2 } }),
 				// #region words
-				caption.show(['Your app, ', { text: 'live', italic: true }])
+				caption.show(['Words, set ', { text: 'your way', italic: true }])
 				// #endregion
 			]
 		}),
@@ -184,25 +220,35 @@ function actTheWords(): readonly Step[] {
 	];
 }
 
-/** The look, value by value: a quick change after another, then a slow one. */
+/** The look, value by value: a change at once, another, then a slow one. */
 function actTheLook(): readonly Step[] {
 	return [
 		play({
 			seconds: 1,
-			moves: [code.hide({ within: { end: 0.4 } }), codeShown('look', { start: 0.4 }), caption.hide()],
+			moves: [...codeSwapped(['paper', 'serif', 'night']), caption.show('Every value of the look')],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 0.4 }),
+		cut(
+			code.light(FIRST_LINE),
+			// #region paper
+			look.to(PAPER)
+			// #endregion
+		),
+		hold({ seconds: 0.9 }),
+		cut(
+			code.light(SECOND_LINE),
+			// #region serif
+			look.to(SERIF)
+			// #endregion
+		),
+		hold({ seconds: 0.9 }),
 		play({
-			seconds: 3,
+			seconds: 1.6,
 			moves: [
-				code.light(FIRST_LINE, { within: { end: 0.05 } }),
-				code.light(SECOND_LINE, { within: { start: 0.33, end: 0.38 } }),
-				code.light(THIRD_LINE, { within: { start: 0.66, end: 0.71 } }),
-				// #region look
-				look.to(PAPER, { within: { end: 0.05 } }),
-				look.to(SERIF, { within: { start: 0.33, end: 0.38 } }),
-				look.to(NIGHT, { within: { start: 0.66 } })
+				code.light(THIRD_LINE, { within: { end: 0.1 } }),
+				// #region night
+				look.to(NIGHT)
 				// #endregion
 			]
 		}),
@@ -210,12 +256,16 @@ function actTheLook(): readonly Step[] {
 	];
 }
 
-/** The card again, over the app, the code gone. */
+/** The card again, over the app, the code and the caption gone. */
 function actTheEnding(): readonly Step[] {
 	return [
 		play({
 			seconds: 1,
-			moves: [code.hide({ within: { end: 0.5 } }), ending.show(CARD, { within: { start: 0.3 } })],
+			moves: [
+				code.hide({ within: { end: 0.5 } }),
+				caption.hide({ within: { end: 0.5 } }),
+				ending.show(CARD, { within: { start: 0.3 } })
+			],
 			ease: easeOutCubic
 		}),
 		hold({ seconds: 2 })

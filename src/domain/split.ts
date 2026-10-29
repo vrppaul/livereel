@@ -4,10 +4,9 @@
  * The words take a share of the frame along the split, the window the whole room across from them, inside the frame's
  * margin, whatever the screen's shape: it shows the part of the page the camera frames, the screen filling it
  * (`keptOnTheScreen` in `src/domain/camera.ts`), so it stands whole on the frame and no ground shows inside it. The
- * share and the margins are the format's own, so a
- * square may give its words less than a wide frame does, and livereel's for what a format leaves out. Lengths are in
- * the frame's pixels, drawn as on a frame the stage's look was made on and scaled to the frame shot, and whole, so the
- * window's edges fall on pixels.
+ * share and the margins are the format's own, so a square may give its words less than a wide frame does, and
+ * livereel's for what a format leaves out. Lengths are in the frame's pixels, drawn as on a frame the stage's look was
+ * made on and scaled to the frame shot, and whole, so the window's edges fall on pixels.
  */
 import { type Box, type Format, type Split, frameScaleOf } from './geometry.ts';
 import { OneOf } from './handed.ts';
@@ -85,7 +84,10 @@ function splitOf(format: Format): Required<Split> {
 	};
 }
 
-/** The room a window on a side of the frame may take: across from the words' share, inside the frame's margin. */
+/**
+ * The room across from the words' share on a side of the frame, inside the frame's margin, as it falls: the window,
+ * before it is set on whole pixels; and what must hold some of the frame for a split to leave the window room.
+ */
 function roomOn(format: Format, side: FrameSide): Box {
 	const { frame } = format;
 	const split = splitOf(format);

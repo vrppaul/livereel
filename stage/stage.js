@@ -13,7 +13,7 @@
 /** @import { ShownLine } from '../src/props/terminal.ts' */
 /** @import { DrawnPin } from '../src/props/pins.ts' */
 /** @import { DrawnWords, Piece, Word } from '../src/props/words.ts' */
-/** @import { CodeLine, CodePiece } from '../src/props/code.ts' */
+/** @import { CodeLine, CodePiece, DrawnCode } from '../src/props/code.ts' */
 /** @import { Look } from '../src/props/look.ts' */
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
@@ -161,7 +161,8 @@ class CaptionDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
 		this.root = root;
-		this.words = new WordsDrawer(partOf(root, 'words'));
+		/** @type {KeyedList<DrawnWords['words'][number]>} */
+		this.words = new KeyedList(partOf(root, 'words'), wordElement, wordNumbers);
 	}
 
 	/** @param {DrawnScene} scene */
@@ -174,7 +175,7 @@ class CaptionDrawer {
 		}
 		named(this.root, CAPTION_EDGE, caption.at);
 		numbered(this.root, { '--darkened': caption.ground, '--gone': caption.gone });
-		this.words.draw(caption);
+		this.words.draw(caption.key, caption.words);
 	}
 }
 
@@ -182,7 +183,8 @@ class CalloutDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
 		this.root = root;
-		this.words = new WordsDrawer(partOf(root, 'words'));
+		/** @type {KeyedList<DrawnWords['words'][number]>} */
+		this.words = new KeyedList(partOf(root, 'words'), wordElement, wordNumbers);
 	}
 
 	/** @param {DrawnScene} scene */
@@ -202,7 +204,7 @@ class CalloutDrawer {
 			'--grounded': callout.ground,
 			'--gone': callout.gone
 		});
-		this.words.draw(callout);
+		this.words.draw(callout.key, callout.words);
 	}
 }
 
@@ -247,7 +249,8 @@ class NoteDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
 		this.root = root;
-		this.words = new WordsDrawer(partOf(root, 'words'));
+		/** @type {KeyedList<DrawnWords['words'][number]>} */
+		this.words = new KeyedList(partOf(root, 'words'), wordElement, wordNumbers);
 	}
 
 	/** @param {DrawnScene} scene */
@@ -270,7 +273,7 @@ class NoteDrawer {
 			'--drawn': note.ground,
 			'--gone': note.gone
 		});
-		this.words.draw(note);
+		this.words.draw(note.key, note.words);
 	}
 }
 
@@ -278,8 +281,8 @@ class KeysDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
 		this.root = root;
-		/** The key of the caps that stand in the markup @type {string | null} */
-		this.standing = null;
+		/** @type {KeyedList<string>} */
+		this.caps = new KeyedList(root, capElement, noNumbers);
 	}
 
 	/** @param {DrawnScene} scene */
@@ -287,25 +290,21 @@ class KeysDrawer {
 		const keys = scene.keys;
 		shown(this.root, keys !== null);
 		if (keys === null) {
-			this.standing = null;
+			this.caps.clear();
 			return;
 		}
-		if (this.standing !== keys.key) {
-			this.standing = keys.key;
-			this.root.replaceChildren(...keys.caps.map(capElement));
-		}
+		this.caps.draw(keys.key, keys.caps);
 		numbered(this.root, { '--shown': keys.shown, '--clearing': keys.clearing });
 	}
 }
 
-/** Code beside the window: its lines laid out anew only when they change, each line's progress and light set every frame. */
+/** Code beside the window: its pane where its box is, and its lines, each line's progress and light set every frame. */
 class CodeDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
 		this.root = root;
-		this.lines = partOf(root, 'lines');
-		/** The key of the lines that stand in the markup @type {string | null} */
-		this.standing = null;
+		/** @type {KeyedList<DrawnCode['lines'][number]>} */
+		this.lines = new KeyedList(partOf(root, 'lines'), codeLineElement, codeLineNumbers);
 	}
 
 	/** @param {DrawnScene} scene */
@@ -313,13 +312,10 @@ class CodeDrawer {
 		const code = scene.code;
 		shown(this.root, code !== null);
 		if (code === null) {
-			this.standing = null;
+			this.lines.clear();
 			return;
 		}
-		if (this.standing !== code.key) {
-			this.standing = code.key;
-			this.lines.replaceChildren(...code.lines.map(codeLineElement));
-		}
+		this.lines.draw(code.key, code.lines);
 		const box = code.beside.box;
 		numbered(this.root, {
 			'--left': box.left,
@@ -330,10 +326,6 @@ class CodeDrawer {
 			'--grounded': code.ground,
 			'--dimmed': code.dimmed
 		});
-		for (const [place, line] of code.lines.entries()) {
-			const element = this.lines.children.item(place);
-			if (element instanceof HTMLElement) numbered(element, { '--appeared': line.appeared, '--lit': line.lit });
-		}
 	}
 }
 
@@ -341,7 +333,8 @@ class TitleDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
 		this.root = root;
-		this.words = new WordsDrawer(partOf(root, 'words'));
+		/** @type {KeyedList<DrawnWords['words'][number]>} */
+		this.words = new KeyedList(partOf(root, 'words'), wordElement, wordNumbers);
 	}
 
 	/** @param {DrawnScene} scene */
@@ -358,32 +351,42 @@ class TitleDrawer {
 			numbered(this.root, { '--left': box.left, '--top': box.top, '--width': box.width, '--height': box.height });
 		}
 		numbered(this.root, { '--grounded': title.ground, '--gone': title.gone });
-		this.words.draw(title);
+		this.words.draw(title.key, title.words);
 	}
 }
 
-/** Words that come up one after another, a caption's, a title's or a callout's: laid out anew only when they change, each word's progress set every frame. */
-class WordsDrawer {
-	/** @param {Staged} root */
-	constructor(root) {
+/**
+ * Elements made from a list under a root, a word's, a line of code's or a key's cap each: laid out anew only when the
+ * list's key changes, each element's numbers set every frame.
+ * @template Item
+ */
+class KeyedList {
+	/**
+	 * @param {Staged} root
+	 * @param {(item: Item) => Node} elementOf
+	 * @param {(item: Item) => Readonly<Record<string, number>>} numbersOf
+	 */
+	constructor(root, elementOf, numbersOf) {
 		this.root = root;
-		/** The key of the words that stand in the markup, so they are laid out anew only when they change @type {string | null} */
+		this.elementOf = elementOf;
+		this.numbersOf = numbersOf;
+		/** The key of the list that stands in the markup @type {string | null} */
 		this.standing = null;
 	}
 
-	/** @param {DrawnWords} drawnWords */
-	draw(drawnWords) {
-		if (this.standing !== drawnWords.key) {
-			this.standing = drawnWords.key;
-			this.root.replaceChildren(...drawnWords.words.map(wordElement));
+	/** @param {string} key @param {readonly Item[]} items */
+	draw(key, items) {
+		if (this.standing !== key) {
+			this.standing = key;
+			this.root.replaceChildren(...items.map((item) => this.elementOf(item)));
 		}
-		for (const [place, word] of drawnWords.words.entries()) {
+		for (const [place, item] of items.entries()) {
 			const element = this.root.children.item(place);
-			if (element instanceof HTMLElement) numbered(element, { '--appeared': word.appeared });
+			if (element instanceof HTMLElement) numbered(element, this.numbersOf(item));
 		}
 	}
 
-	/** No words stand in the markup now. */
+	/** Nothing of the list stands in the markup now. */
 	clear() {
 		this.standing = null;
 	}
@@ -573,6 +576,21 @@ function pinElement(pin) {
 	label.textContent = pin.label;
 	element.append(number, label);
 	return element;
+}
+
+/** How far a word has come up. @param {DrawnWords['words'][number]} word */
+function wordNumbers(word) {
+	return { '--appeared': word.appeared };
+}
+
+/** How far a line of code has come up, and how far it is lit. @param {DrawnCode['lines'][number]} line */
+function codeLineNumbers(line) {
+	return { '--appeared': line.appeared, '--lit': line.lit };
+}
+
+/** What an element that moves only with its list is set every frame: nothing. */
+function noNumbers() {
+	return {};
 }
 
 /** A line of code, its pieces in order, each of a kind in an element classed by it. @param {CodeLine} line */

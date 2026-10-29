@@ -1,24 +1,14 @@
 /**
  * The code a film shows of itself: the regions of its own file it marks, `// #region name` to `// #endregion`, so the
- * lines on the screen are the lines that shot it. A film reads its regions once, as it is loaded, and hands one to
- * `code.show`, which sets it as an editor would.
+ * lines on the screen are the lines that shot it. A film reads its regions once, as it is loaded, and hands their
+ * lines to `code.show`, which sets them as an editor would.
  */
 import { readFile } from 'node:fs/promises';
 
-/** The regions a film's file marks, each by its name. */
-export class Regions {
-	readonly texts: ReadonlyMap<string, string>;
-
-	constructor(texts: ReadonlyMap<string, string>) {
-		this.texts = texts;
-	}
-
-	/** A region's lines, as the file has them; a name the file marks no region by is refused. */
-	named(name: string): string {
-		const text = this.texts.get(name);
-		if (text === undefined) throw new Error(`the film marks no region "${name}": mark it with // #region ${name}`);
-		return text;
-	}
+/** A region a film's file marks: its name, and its lines as the file has them. */
+interface Region {
+	readonly name: string;
+	readonly text: string;
 }
 
 // Where a region starts and ends in a film's file, its name after the start
@@ -29,19 +19,31 @@ const NEXT_LINE = 1;
 const NOT_FOUND = -1;
 const THE_BEGINNING = 0;
 
-/** The regions a film's file marks, in the order it gives them. */
-export async function regionsOf(film: URL): Promise<Regions> {
+/** The regions a film's file marks, each by its name. */
+export async function regionsOf(film: URL): Promise<ReadonlyMap<string, string>> {
 	const lines = (await readFile(film, 'utf8')).split('\n');
-	return new Regions(new Map(lines.flatMap((_line, place) => regionAt(lines, place))));
+	const regions = lines.map((line, place) => regionAt(line, lines.slice(place + NEXT_LINE))).filter(isRegion);
+	return new Map(regions.map((region) => [region.name, region.text]));
 }
 
-/** The region a line starts, by its name; none where the line starts none. */
-function regionAt(lines: readonly string[], place: number): [string, string][] {
-	const name = REGION_START.exec(lines[place] ?? '')?.groups?.['name'];
-	return name === undefined ? [] : [[name, linesUntilTheEnd(lines.slice(place + NEXT_LINE)).join('\n')]];
+/** A region's lines, by its name; a name the file marks no region by is refused. */
+export function regionNamed(regions: ReadonlyMap<string, string>, name: string): string {
+	const text = regions.get(name);
+	if (text === undefined) throw new Error(`the film marks no region "${name}": mark it with // #region ${name}`);
+	return text;
+}
+
+/** The region a line starts, its lines those after it up to its end; none where the line starts none. */
+function regionAt(line: string, after: readonly string[]): Region | null {
+	const name = REGION_START.exec(line)?.groups?.['name'];
+	return name === undefined ? null : { name, text: linesUntilTheEnd(after).join('\n') };
 }
 
 function linesUntilTheEnd(lines: readonly string[]): readonly string[] {
 	const end = lines.findIndex((line) => REGION_END.test(line));
 	return end === NOT_FOUND ? lines : lines.slice(THE_BEGINNING, end);
+}
+
+function isRegion(region: Region | null): region is Region {
+	return region !== null;
 }
