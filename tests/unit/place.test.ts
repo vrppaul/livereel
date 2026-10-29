@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import type { Format } from '../../src/domain/geometry.ts';
-import { wordsPlaced } from '../../src/domain/place.ts';
+import { pastTheEdge, wordsPlaced } from '../../src/domain/place.ts';
 import { wordsOn } from '../../src/domain/split.ts';
 
 // A wide frame with its page as wide
@@ -23,5 +23,20 @@ test('a place within another takes its shares of that place, a box within one to
 		{ left: 96, top: 318, width: 547, height: 444 },
 		{ left: 96, top: 540, width: 547, height: 444 },
 		{ left: 960, top: 972, width: 960, height: 540 }
+	]);
+});
+
+test('a box past the edge on a side is the box moved a whole frame toward it, every side alike', () => {
+	const box = { left: 100, top: 50, width: 200, height: 80 };
+	expect(
+		[pastTheEdge(box, 'left', WIDE.frame), pastTheEdge(box, 'right', WIDE.frame)].concat([
+			pastTheEdge(box, 'top', WIDE.frame),
+			pastTheEdge(box, 'bottom', WIDE.frame)
+		])
+	).toEqual([
+		{ ...box, left: -1820 },
+		{ ...box, left: 2020 },
+		{ ...box, top: -1030 },
+		{ ...box, top: 1130 }
 	]);
 });

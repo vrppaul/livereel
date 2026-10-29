@@ -5,9 +5,9 @@
  * editor counts them, and a light past the last line shown is refused as it begins.
  */
 import { FilmError } from '../domain/errors.ts';
-import { type Box, boxToward } from '../domain/geometry.ts';
+import type { Box } from '../domain/geometry.ts';
 import { A_COUNT, A_STRING, type Form, assertKind, assertWritten, needed } from '../domain/handed.ts';
-import { A_PLACE, type Place, enteringFrom, pastTheEdge, shownComing, wordsPlaced } from '../domain/place.ts';
+import { A_PLACE, type Place, enteringFrom, wordsPlaced } from '../domain/place.ts';
 import { A_FRAME_SIDE, type FrameSide } from '../domain/split.ts';
 import { between, linear } from '../domain/time.ts';
 import {
@@ -18,21 +18,23 @@ import {
 	type TimingScript,
 	present,
 	propChange,
-	timingOf,
-	untilTheEnd
+	timingOf
 } from '../direction/move.ts';
 import { type CodeLine, NOT_LIT, WHOLLY_LIT, type WrittenCode, codeOf } from '../props/code.ts';
-import { going } from './words.ts';
+import {
+	NOT_GONE,
+	WORDS_HIDE_FORM,
+	type WordsHideScript,
+	going,
+	leavingToward,
+	shownComing,
+	travelling
+} from './words.ts';
 
-/** Where code stands: `at` a place on the frame; and the side it comes in `from`, past the frame's edge, if any. */
+/** Where code stands: `at` a place on the frame; and the side it slides in `from`, past the frame's edge, if any. */
 export interface CodeScript extends TimingScript {
 	readonly at: Place;
 	readonly from?: FrameSide;
-}
-
-/** The side code slides out `toward`, past the frame's edge, rather than going where it stands. */
-export interface CodeHideScript extends TimingScript {
-	readonly toward?: FrameSide;
 }
 
 /** The last line lit, where the film lights more than one: lines from the one named through this one. */
@@ -41,25 +43,23 @@ export interface LightScript extends TimingScript {
 }
 
 const CODE_FORM: Form<CodeScript> = { at: needed(A_PLACE), from: A_FRAME_SIDE, ...TIMING_FORM };
-const CODE_HIDE_FORM: Form<CodeHideScript> = { toward: A_FRAME_SIDE, ...TIMING_FORM };
 const LIGHT_FORM: Form<LightScript> = { through: A_COUNT, ...TIMING_FORM };
-// Code travelling past the frame's edge stays whole, neither gone nor going
-const NOT_GONE = 0;
 // Lines are counted from 1, places in a list from 0
 const FIRST_LINE = 1;
 
 /**
- * Code coming up in its place, its ground first, then its lines one after another at an even pace; travelling in from
- * past a side of the frame where the film names one.
+ * Code coming up in its place, its ground first, then its lines one after another at an even pace unless the film
+ * names a curve; sliding in whole from past a side of the frame where the film names one.
  */
 export function show(text: string, script: CodeScript): Move {
 	assertKind(text, A_STRING, "code.show's text");
 	assertWritten(script, CODE_FORM, 'code.show');
 	const written = codeOf(text);
 	const from = script.from ?? null;
+	const evenly = from === null ? { ease: linear } : {};
 	return {
 		part: 'code',
-		timing: timingOf({ ease: linear, ...script }),
+		timing: timingOf({ ...evenly, ...script }),
 		begin: (beginning) => showing(written, beginning, wordsPlaced(beginning.format, script.at), from)
 	};
 }
@@ -79,9 +79,9 @@ export function light(line: number, script: LightScript = {}): Move {
 	return { part: 'code', timing: timingOf(script), begin: (beginning) => lighting(beginning, line, through) };
 }
 
-/** The code on the screen going, its pane with it, or leaving past a side of the frame; once gone, there is none. */
-export function hide(script: CodeHideScript = {}): Move {
-	assertWritten(script, CODE_HIDE_FORM, 'code.hide');
+/** The code on the screen going, its pane with it, or sliding out past a side of the frame; once gone, there is none. */
+export function hide(script: WordsHideScript = {}): Move {
+	assertWritten(script, WORDS_HIDE_FORM, 'code.hide');
 	const toward = script.toward ?? null;
 	return {
 		part: 'code',
@@ -94,27 +94,23 @@ function showing(written: WrittenCode, beginning: Beginning, box: Box, from: Fra
 	const lines = written.lines.map((pieces) => ({ pieces, lit: NOT_LIT }));
 	const { key, columns } = written;
 	const start = enteringFrom(box, from, beginning.format.frame);
-	return propChange('code', (progress) => ({
-		lines,
-		key,
-		columns,
-		box: boxToward(start, box, progress),
-		shown: shownComing(from, progress),
-		gone: NOT_GONE
-	}));
+	return travelling(
+		'code',
+		(at, progress) => ({ lines, key, columns, box: at, shown: shownComing(from, progress), gone: NOT_GONE }),
+		start,
+		box
+	);
 }
 
 function moving(beginning: Beginning, place: Place): Change {
-	const code = present(beginning, 'code', 'code.to moves code, but none is on the screen');
-	const end = wordsPlaced(beginning.format, place);
-	return propChange('code', (progress) => ({ ...code, box: boxToward(code.box, end, progress) }));
+	const code = present(beginning, 'code', 'code.to() moves what is not on the screen');
+	return travelling('code', (at) => ({ ...code, box: at }), code.box, wordsPlaced(beginning.format, place));
 }
 
-/** The code in its place travelling past a side of the frame, whole; once there, none. */
+/** The code in its place sliding out past a side of the frame, whole; once there, none. */
 function leaving(beginning: Beginning, toward: FrameSide): Change {
-	const code = present(beginning, 'code', 'code.hide hides what is not on the screen');
-	const end = pastTheEdge(code.box, toward, beginning.format.frame);
-	return propChange('code', (progress) => untilTheEnd(progress, { ...code, box: boxToward(code.box, end, progress) }));
+	const code = present(beginning, 'code', 'code.hide() hides what is not on the screen');
+	return leavingToward('code', (at) => ({ ...code, box: at }), code.box, toward, beginning);
 }
 
 function lighting(beginning: Beginning, first: number, last: number): Change {

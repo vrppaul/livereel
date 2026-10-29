@@ -194,11 +194,13 @@ width lets, centred in `whole`, `top` and `bottom` and read from the left
 anywhere else; `align: 'start'` or `'center'` says otherwise.
 
 Words in a place travel: `title.to(place)` and `code.to(place)` carry them
-to another place through the boxes between, as a window moves across the
-frame; `show(…, { from: 'right' })` slides them in from wholly past that
-edge of the frame, and `hide({ toward: 'left' })` slides them out past it,
-whole, where a plain `hide()` lets them go where they stand. A title over
-the whole frame has no place to travel from, and is refused.
+to another place through the boxes between, a title reading as it did;
+`show(…, { from: 'right' })` slides them in whole from a frame past that
+edge, and `hide({ toward: 'left' })` slides them out as far, whole, where
+a plain `hide()` lets them go where they stand. Everything that slides in
+one step moves a whole frame, so what leaves and what comes move as one
+sheet, a push. A title over the whole frame has no place to travel from,
+and is refused.
 
 The page draws back off the frame's edges into a window on the ground, its
 corners rounding, its edge and shadow coming up; `camera.onto` without a

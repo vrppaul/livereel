@@ -8,8 +8,8 @@
  * 0 and its width and height 1 where it leaves them out, so `{ of: 'left', top: 0.22, height: 0.78 }` is the lower part
  * of the left side. Words read from the left in a place, centred where it stands above, below or over the whole, as a
  * title stood in the split. A place is worked out once, as its move begins, in the frame's pixels, whole, so its
- * edges fall on pixels. What comes in from a side, or leaves toward one, travels from or to its box moved wholly past
- * the frame's edge there.
+ * edges fall on pixels. What comes in from a side, or leaves toward one, travels from or to its box moved a whole
+ * frame toward that side.
  */
 import { type Box, type Format, type Size, boxOf, wholePixels } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, OneOf, Plain } from './handed.ts';
@@ -86,24 +86,19 @@ export function enteringFrom(box: Box, from: FrameSide | null, frame: Size): Box
 }
 
 /**
- * How far what comes into a place has come up, `progress` of the way: whole from the start where it slides in from a
- * side, so it travels as one piece, as far as its move where it comes up in place.
+ * A box moved a whole frame's width across, or its height down, toward a side: past the frame's edge there, and every
+ * box moved so moves as far, so what slides out and what slides in together move as one sheet.
  */
-export function shownComing(from: FrameSide | null, progress: number): number {
-	return from === null ? progress : WHOLE;
-}
-
-/** A box moved across or down until none of it stands on the frame, past its edge on a side. */
 export function pastTheEdge(box: Box, side: FrameSide, frame: Size): Box {
 	switch (side) {
 		case 'left':
-			return { ...box, left: -box.width };
+			return { ...box, left: box.left - frame.width };
 		case 'right':
-			return { ...box, left: frame.width };
+			return { ...box, left: box.left + frame.width };
 		case 'top':
-			return { ...box, top: -box.height };
+			return { ...box, top: box.top - frame.height };
 		case 'bottom':
-			return { ...box, top: frame.height };
+			return { ...box, top: box.top + frame.height };
 	}
 }
 

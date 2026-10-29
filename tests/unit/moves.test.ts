@@ -11,7 +11,7 @@ import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
 import * as ending from '../../src/moves/ending.ts';
 import { drawnCode } from '../../src/props/code.ts';
-import { wordsPlaced } from '../../src/domain/place.ts';
+import { pastTheEdge, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
 import * as look from '../../src/moves/look.ts';
 import * as note from '../../src/moves/note.ts';
@@ -182,22 +182,24 @@ test('a title and code move to another place through the boxes between', async (
 	]);
 });
 
-test('a title shown from a side slides in whole from wholly past the frame there, and one hidden toward a side leaves past it, then is gone', async () => {
+test('a title or code shown from a side slides in whole from a frame past its place, and one hidden toward a side slides out as far, then is gone', async () => {
+	const place = wordsPlaced(SMALL, 'left');
 	const coming = (
 		await setAt(title.show('Here', { at: 'left', from: 'right' }), openingScene(SMALL, LIVEREELS_LOOK), 0)
 	).title!;
-	const titled = await setAt(title.show('Here', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const leaving = await setAt(title.hide({ toward: 'top' }), titled, 0.999);
-	const left = await setAt(title.hide({ toward: 'top' }), titled, 1);
-	expect([
-		coming.box!.left,
-		coming.shown,
-		leaving.title!.box!.top + leaving.title!.box!.height < 1,
-		left.title
-	]).toEqual([SMALL.frame.width, 1, true, null]);
+	const coded = await setAt(code.show('light.on(VISITORS)', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const leaving = (await setAt(code.hide({ toward: 'top' }), coded, 0.5)).code!;
+	const left = await setAt(code.hide({ toward: 'top' }), coded, 1);
+	expect([coming.box, coming.shown, leaving.box, left.code]).toEqual([
+		pastTheEdge(place, 'right', SMALL.frame),
+		1,
+		boxToward(place, pastTheEdge(place, 'top', SMALL.frame), 0.5),
+		null
+	]);
 });
 
-test('a title over the whole frame is refused a move to a place, or toward a side, as it begins', async () => {
+test('a title over the whole frame is refused a move in from a side as it is made, and a move to a place or toward a side as it begins', async () => {
+	expect(() => title.show('Here', { from: 'left' })).toThrow(FilmError);
 	const whole = await setAt(title.show('Here'), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	await expect(async () => title.to('left').begin(beginningOf(whole))).rejects.toThrow(FilmError);
 	await expect(async () => title.hide({ toward: 'left' }).begin(beginningOf(whole))).rejects.toThrow(FilmError);
