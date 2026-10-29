@@ -1,0 +1,77 @@
+/* The code a film shows of itself, as an editor sets it: its regions on a dark page, each piece coloured by its kind */
+:root {
+	--page: #0d1117;
+	--block: #161b22;
+	--edge: #30363d;
+	--ink: #e6edf3;
+	--quiet: #8b949e;
+	--keyword: #ff7b72;
+	--string: #a5d6ff;
+	--number: #79c0ff;
+	--call: #d2a8ff;
+	--key: #7ee787;
+	--mono: ui-monospace, 'JetBrains Mono', monospace;
+}
+
+body {
+	margin: 0;
+	height: 100vh;
+	display: grid;
+	grid-template-rows: 72px 1fr;
+	background: var(--page);
+	color: var(--ink);
+	font: 400 20px / 1.5 var(--mono);
+}
+
+header {
+	display: flex;
+	align-items: center;
+	padding: 0 48px;
+	border-bottom: 1px solid var(--edge);
+	color: var(--quiet);
+	font-size: 20px;
+}
+
+main {
+	display: grid;
+	justify-items: start;
+	align-content: start;
+	gap: 20px;
+	padding: 28px 48px;
+}
+
+.region {
+	padding: 14px 28px;
+	border: 1px solid var(--edge);
+	border-radius: 12px;
+	background: var(--block);
+}
+
+pre {
+	margin: 0;
+	white-space: pre;
+}
+
+.comment {
+	color: var(--quiet);
+}
+
+.string {
+	color: var(--string);
+}
+
+.number {
+	color: var(--number);
+}
+
+.keyword {
+	color: var(--keyword);
+}
+
+.call {
+	color: var(--call);
+}
+
+.key {
+	color: var(--key);
+}

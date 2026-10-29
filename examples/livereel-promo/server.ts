@@ -3,13 +3,15 @@
  * that its Refresh asks the server for.
  *
  * The app is data, `app/`. What the server answers on a refresh, `app/refreshed.json`, comes with what is served, so
- * the film knows what the page shows once its click is answered. The server answers these three addresses alone.
+ * the film knows what the page shows once its click is answered. The server answers these three addresses alone; for
+ * a film that shows its own code, a page of that code as well (`code.ts`).
  */
 import { once } from 'node:events';
 import { readFile } from 'node:fs/promises';
 import { type IncomingMessage, type Server, type ServerResponse, createServer } from 'node:http';
 import type { Serving } from 'livereel';
 import refreshed from './app/refreshed.json' with { type: 'json' };
+import { codePage } from './code.ts';
 
 /** Today's numbers as a refresh brings them: the visitors, how they stand against yesterday, today's bar in percent. */
 type Refreshed = typeof refreshed;
@@ -26,6 +28,8 @@ const HOST = '127.0.0.1';
 const ANY_PORT = 0;
 const ANSWERED = 200;
 const NOT_HERE = 404;
+// Where a film that shows its own code finds it
+export const CODE_PAGE = '/code';
 
 /** The app served, and today's numbers it answers a refresh with. */
 export class AppServed implements Serving {
@@ -48,11 +52,27 @@ export class AppServed implements Serving {
 }
 
 export async function servedApp(): Promise<AppServed> {
-	const answers = new Map<string, Answer>([
+	return servedWith(await appAnswers());
+}
+
+/** The app served with a page of a film's own code beside it, at `CODE_PAGE`: the regions the film's file marks. */
+export async function servedAppWithCode(film: URL): Promise<AppServed> {
+	const code: [string, Answer][] = [
+		[CODE_PAGE, { type: 'text/html', body: await codePage(new URL('code.html', APP), film) }],
+		['/code.css', { type: 'text/css', body: await readFile(new URL('code.css', APP), 'utf8') }]
+	];
+	return servedWith(new Map([...(await appAnswers()), ...code]));
+}
+
+async function appAnswers(): Promise<Map<string, Answer>> {
+	return new Map<string, Answer>([
 		['/', { type: 'text/html', body: await readFile(new URL('index.html', APP), 'utf8') }],
 		['/app.css', { type: 'text/css', body: await readFile(new URL('app.css', APP), 'utf8') }],
 		['/api/today', { type: 'application/json', body: JSON.stringify(refreshed) }]
 	]);
+}
+
+async function servedWith(answers: ReadonlyMap<string, Answer>): Promise<AppServed> {
 	const server = createServer((request, response) => answer(answers, request, response)).listen(ANY_PORT, HOST);
 	await once(server, 'listening');
 	return new AppServed(server, addressOf(server), refreshed);
