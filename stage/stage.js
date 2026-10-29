@@ -40,7 +40,21 @@ const PIN = 'pin';
 const QUIET = 'quiet';
 // The stage's token each value of a film's theme takes the place of
 /** @type {{ readonly [Name in keyof Theme]-?: string }} */
-const TOKENS_THEMED = { ground: '--ground', glow: '--ground-glow', ink: INK, font: '--font' };
+const TOKENS_THEMED = {
+	ground: '--ground',
+	glow: '--ground-glow',
+	ink: INK,
+	quietInk: '--ink-quiet',
+	accent: '--accent',
+	accentInk: '--accent-ink',
+	font: '--font',
+	mono: '--mono-font',
+	titleSize: '--title-size',
+	captionSize: '--caption-size',
+	windowCorner: '--window-corner',
+	terminal: '--terminal',
+	terminalInk: '--terminal-ink'
+};
 
 class CameraDrawer {
 	/** @param {Staged} root */
@@ -395,7 +409,7 @@ function setup(room) {
 function dress(theme) {
 	for (const name of Object.keys(TOKENS_THEMED).filter(isThemed)) {
 		const value = theme[name];
-		if (value !== undefined) document.documentElement.style.setProperty(TOKENS_THEMED[name], value);
+		if (value !== undefined) document.documentElement.style.setProperty(TOKENS_THEMED[name], String(value));
 	}
 }
 

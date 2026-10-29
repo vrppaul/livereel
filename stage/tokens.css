@@ -1,7 +1,8 @@
 /*
- * Every colour of the stage, its shadows and its reaches, written once. The other stylesheets name these and write
- * no colour of their own (stylelint holds them to it). A film's theme sets the ground, its glow, the ink and the font
- * in place of these (`dress` in `stage.js`), and what is worked out from them follows.
+ * Every colour of the stage, its shadows and its reaches, and the sizes a film may tune, written once. The other
+ * stylesheets name these and write no colour of their own (stylelint holds them to it). A film's theme sets any of
+ * the ground, its glow, the inks, the accent, the fonts, the sizes of titles and captions, the window's corners and the
+ * terminal's colours in place of these (`dress` in `stage.js`), and what is worked out from them follows.
  */
 :root {
 	--ground: #0b0e14;
@@ -15,7 +16,7 @@
 	--terminal: #10141c;
 	--terminal-edge: #252d3b;
 
-	/* What is written in the terminal and in the ending's command, on the terminal's own colour, which no theme sets */
+	/* What is written in the terminal and in the ending's command, on the terminal's own colour */
 	--terminal-ink: #f4f6fa;
 	--terminal-shadow: 0 0 0 1px var(--terminal-edge), 0 40px 100px rgb(0 0 0 / 50%);
 	--cursor-fill: #111;
@@ -32,17 +33,22 @@
 	--caption-shadow: 0 2px 30px rgb(0 0 0 / 55%);
 	--callout-shadow: 0 12px 32px rgb(0 0 0 / 35%);
 
-	/* The page's window on the ground: a faint edge round it, and its shadow */
+	/* The page's window on the ground: how round its corners are, in pixels, a faint edge round it, and its shadow */
+	--window-corner: 24;
 	--view-shadow: 0 0 0 2px rgb(255 255 255 / 10%), 0 60px 140px rgb(0 0 0 / 55%);
 
-	/* A pin's mark and its number, a note's line, and a key's cap standing up off the frame */
-	--pin: #ffb224;
-	--pin-ink: #10141b;
-	--note-line: #ffb224;
+	/* The marks' accent, a pin's number on it, and a key's cap standing up off the frame */
+	--accent: #ffb224;
+	--accent-ink: #10141b;
 	--key-shadow: inset 0 -6px 0 var(--terminal-edge), 0 24px 60px rgb(0 0 0 / 35%);
 
-	/* The film's font, and what stands in for it where the system has none */
+	/* How large a title's and a caption's letters are, in pixels */
+	--title-size: 92;
+	--caption-size: 56;
+
+	/* The film's fonts, and what stands in for each where the system has none */
 	--font: ui-sans-serif;
 	--sans: var(--font), system-ui, sans-serif;
-	--mono: ui-monospace, 'JetBrains Mono', monospace;
+	--mono-font: ui-monospace;
+	--mono: var(--mono-font), 'JetBrains Mono', monospace;
 }

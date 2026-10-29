@@ -220,14 +220,25 @@ words of one run, and stops where the run does.
 
 ### Theme
 
-`defineFilm` takes `theme: { ground, glow, ink, font }`, any of them: the
-ground's colour at its edges and the colour it lightens to toward its top
-middle (a ground named without a glow is of one colour), the ink of
-titles, captions, callouts and the ending, each in hex, and their font, as
-CSS names a family (`'Inter, sans-serif'`), which falls back to livereel's
-where the system has none; a font CSS reads as no family is refused before
-anything is shot. What the film leaves out stays livereel's: a dark ground
-and white ink. The terminal keeps its own colours.
+`defineFilm` takes a `theme`, any of its values; what the film leaves out
+stays livereel's:
+
+| Value | What it sets | livereel's |
+|---|---|---|
+| `ground` | the ground's colour at its edges | `#0b0e14` |
+| `glow` | the colour the ground lightens to toward its top middle; a ground named without one is of one colour | `#182033` |
+| `ink` | the words of titles, captions, callouts, notes and the ending | `#f4f6fa` |
+| `quietInk` | what stands back: a quietened pin's label, the ending's line | `#8b95a7` |
+| `accent`, `accentInk` | pins' marks and a note's line, and a pin's number on its mark | `#ffb224`, `#10141b` |
+| `font` | the font of titles, captions and the ending, as CSS names a family (`'Inter, sans-serif'`) | the system's sans |
+| `mono` | the font of the terminal and the ending's command | the system's monospace |
+| `titleSize`, `captionSize` | how large a title's and a caption's letters are, in pixels | `92`, `56` |
+| `windowCorner` | how round the page's window's corners are, in pixels; `0`, square | `24` |
+| `terminal`, `terminalInk` | the terminal's colour, and what is written in it | `#10141c`, `#f4f6fa` |
+
+Colours are in hex; sizes in pixels of a frame 1080 on its shorter side,
+scaled to the frame shot. A font falls back to livereel's where the system
+has none; one CSS reads as no family is refused before anything is shot.
 
 ### The page: its colour scheme, and what it blurs
 

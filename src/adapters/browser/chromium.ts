@@ -278,10 +278,8 @@ async function blurring(page: Page, blurred: readonly string[]): Promise<void> {
 async function framed(page: Page, setting: Setting, opening: Opening): Promise<Frame> {
 	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
 	await page.evaluate(setUpStage, roomOf(setting.format));
-	const font = setting.theme.font;
-	if (font !== undefined && !(await page.evaluate(isFollowedByAFallback, { font, fallback: FALLBACK_FONT }))) {
-		throw new FilmError(`the film's theme's font is ${JSON.stringify(font)}: CSS reads no font family there`);
-	}
+	await refusedWhereNoFamily(page, 'font', setting.theme.font);
+	await refusedWhereNoFamily(page, 'mono', setting.theme.mono);
 	await page.evaluate(dressStage, setting.theme);
 	const [filmed] = await Promise.all([
 		page.waitForEvent(NAVIGATED, { predicate: isInTheStagesFrame }),
@@ -289,6 +287,12 @@ async function framed(page: Page, setting: Setting, opening: Opening): Promise<F
 	]);
 	await filmed.waitForLoadState();
 	return filmed;
+}
+
+/** A font a theme names refused where CSS reads no list of families a fallback can follow; one left out stands. */
+async function refusedWhereNoFamily(page: Page, name: string, font: string | undefined): Promise<void> {
+	if (font === undefined || (await page.evaluate(isFollowedByAFallback, { font, fallback: FALLBACK_FONT }))) return;
+	throw new FilmError(`the film's theme's ${name} is ${JSON.stringify(font)}: CSS reads no font family there`);
 }
 
 /** Whether a page that went somewhere is the one in the stage's frame, not the stage itself. */

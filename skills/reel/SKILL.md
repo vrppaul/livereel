@@ -231,13 +231,13 @@ strings and runs read one after another: a run is `{ text }` with any of
 `['Your agent ', { text: 'films', italic: true, ink: ACCENT }, ' your app']`.
 Put the spaces in the strings, as the words are read.
 
-`defineFilm` takes `theme: { ground, glow, ink, font }`, any of them, where
-the user names a brand's look: the ground's colour and the colour it
-lightens to toward its top middle (left out, the ground is of one colour),
-the ink of titles, captions, callouts and the ending, in hex, and their
-font, as CSS names a family installed on the machine. The terminal keeps
-its own colours. Leave it out for livereel's own: a dark ground and white
-ink.
+`defineFilm` takes a `theme`, any of its values, where the user names a
+brand's look: `ground` and `glow` (left out, the ground is of one colour),
+`ink` and `quietInk`, `accent` and `accentInk` for pins and notes, `terminal` and
+`terminalInk`, all in hex; `font` and `mono`, as CSS names a family
+installed on the machine; `titleSize`, `captionSize` and `windowCorner`
+in pixels of a 1080 frame. Leave out what the user does not name: livereel's
+own is a dark ground, white ink and an amber accent.
 
 The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
 person types; the curves are `linear`, `easeInOutSine` (a step's own),

@@ -29,7 +29,7 @@ body {
 /* The camera's view, and its shadow under it: the whole frame, or a window on the ground, leant back and swung about its middle as the camera angles. The engine works out what the camera shows where in the same steps (`src/domain/camera.ts`) */
 .view,
 .view-shadow {
-	--view-corner: 24px;
+	--view-corner: calc(var(--window-corner) * 1px);
 
 	position: absolute;
 	left: calc(var(--view-left) * 1px);
@@ -226,8 +226,8 @@ body {
 	align-items: center;
 	justify-content: center;
 	border-radius: 50%;
-	background: var(--pin);
-	color: var(--pin-ink);
+	background: var(--accent);
+	color: var(--accent-ink);
 	font-weight: 700;
 	box-shadow: var(--callout-shadow);
 }
@@ -356,7 +356,7 @@ body {
 	left: 64px;
 	right: 64px;
 	bottom: 72px;
-	font: 650 56px / 1.12 var(--sans);
+	font: 650 calc(var(--caption-size) * 1px) / 1.12 var(--sans);
 	letter-spacing: -0.025em;
 	color: var(--ink);
 	text-shadow: var(--caption-shadow);
@@ -384,7 +384,7 @@ body {
 	top: calc(var(--from-top) * 1px / var(--frame-scale) - var(--note-line-width) / 2);
 	width: calc(var(--length) * var(--drawn) * 1px / var(--frame-scale));
 	height: var(--note-line-width);
-	background: var(--note-line);
+	background: var(--accent);
 	transform-origin: 0 50%;
 	transform: rotate(calc(var(--angle) * 1deg));
 }
@@ -397,7 +397,7 @@ body {
 	width: var(--note-dot);
 	height: var(--note-dot);
 	border-radius: 50%;
-	background: var(--note-line);
+	background: var(--accent);
 }
 
 .note-words {
@@ -469,16 +469,17 @@ body {
 	right: var(--title-edge);
 	top: 50%;
 	transform: translateY(-50%);
-	font: 700 92px / 1.08 var(--sans);
+	font: 700 calc(var(--title-size) * 1px) / 1.08 var(--sans);
 	letter-spacing: -0.03em;
 	color: var(--ink);
 	text-align: center;
 	text-wrap: balance;
 }
 
-/* Beside a window the words are as large as their box's width lets a long word stand on a line of its own, and no larger than a title beside a window on a wide frame */
+/* Beside a window the words are as large as their box's width lets a long word stand on a line of its own, and no larger than a share of a title over the whole frame */
 .title[data-side] .words {
-	--side-words-at-most: 72px;
+	--side-share-of-title: 0.78;
+	--side-words-at-most: calc(var(--title-size) * var(--side-share-of-title) * 1px);
 	--letters-across: 8;
 
 	left: calc(var(--left) * 1px / var(--frame-scale));

@@ -297,12 +297,17 @@ test('a film is shot on the stage it names, apart where it names none; a stage l
 	);
 });
 
-test('a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, a colour not in hex, a font of no name', () => {
+test('a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, a colour not in hex, a font of no name, a size less than none', () => {
+	const names =
+		'ground, glow, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, windowCorner, terminal, terminalInk';
 	expect(() => filmWritten({ theme: null })).toThrow(
-		new FilmError("the film's theme is handed null for an object of ground, glow, ink, font")
+		new FilmError(`the film's theme is handed null for an object of ${names}`)
 	);
 	expect(() => filmWritten({ theme: { background: '#000' } })).toThrow(
-		new FilmError("the film's theme names background: it names ground, glow, ink, font, or fewer")
+		new FilmError(`the film's theme names background: it names ${names}, or fewer`)
+	);
+	expect(() => filmWritten({ theme: { windowCorner: -4 } })).toThrow(
+		new FilmError("the film's theme's windowCorner is -4: it is a number of pixels, 0 or more")
 	);
 	expect(() => filmWritten({ theme: { ground: 'navy' } })).toThrow(
 		new FilmError(`the film's theme's ground is "navy": it is a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa`)
