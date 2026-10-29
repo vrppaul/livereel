@@ -4,6 +4,7 @@
  * by moves, in a `play` or at once in a `cut`.
  */
 export * as camera from './moves/camera.ts';
+export * as window from './moves/window.ts';
 export * as screen from './moves/screen.ts';
 export * as light from './moves/light.ts';
 export * as callout from './moves/callout.ts';

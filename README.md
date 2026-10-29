@@ -131,10 +131,11 @@ A film is a list of steps:
 
 and the moves of each part of the scene:
 
-- `camera.to(pose, { tilt, turn })`, `camera.onto(selector, { every, air, zoomAtMost, side, tilt, turn })`
+- `camera.to(pose, { tilt, turn })`, `camera.onto(selector, { every, air, zoomAtMost, tilt, turn })`
+- `window.to(place)`
 - `light.on(selector, { dim })`, `light.to(selector)`, `light.off()`
 - `callout.show(selector, text, { side })`, `callout.hide()`
-- `note.show(selector, text)`, `note.hide()`
+- `note.show(selector, text, { at })`, `note.hide()`
 - `pin.show(selector, label)`, `pin.clear()`
 - `keys.show(caps)`, `keys.hide()`
 - `cursor.to(selector, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
@@ -164,14 +165,14 @@ types the way a person does: unevenly, with a slip now and then.
 
 A title is words that come up one after another: over the film's ground
 across the whole frame, a screen of words that covers the page, or `at` a
-place on the frame, beside the page's window, which the camera frames a
-block into on the side across:
+place on the frame, beside the page's window on the side across:
 
 ```ts
 play({
 	seconds: 1.6,
 	moves: [
-		camera.onto(CHART, { side: 'right' }),
+		window.to('right'),
+		camera.onto(CHART),
 		title.show(['A real ', { text: 'click', ink: ACCENT }, ', a real server'], { at: 'left', within: { start: 0.5 } })
 	]
 })
@@ -180,9 +181,12 @@ play({
 A place is a name, `whole`, `left`, `right`, `top` or `bottom`, or a box in
 shares: of the frame edge to edge, or of another place it names `of`, its
 `left` and `top` 0 and its `width` and `height` 1 where it leaves them out.
-A side is where words stand beside a window on the side across; `whole` is
-the frame inside the margin words keep from its edges. A box may reach past
-the frame. So a heading over code, beside a window on the right:
+A name is each one's own: on a side, words take their share of the frame
+and the window the whole room across from the words' share on the other
+side, so words `at: 'left'` and a window `to('right')` stand clear of each
+other; `whole` is, for words, the frame inside the margin they keep from its
+edges, and for the window the frame itself. A box may reach past the frame.
+So a heading over code, beside a window on the right:
 
 ```ts
 title.show('Point the camera', { at: { of: 'left', height: 0.2 } }),
@@ -202,9 +206,12 @@ one step moves a whole frame, so what leaves and what comes move as one
 sheet, a push. A title over the whole frame has no place to travel from,
 and is refused.
 
-The page draws back off the frame's edges into a window on the ground, its
-corners rounding, its edge and shadow coming up; `camera.onto` without a
-`side`, or `camera.to`, brings it back to fill the frame. The words take
+`window.to(place)` draws the page back off the frame's edges into a window
+on the ground, its corners rounding, its edge and shadow coming up, carries
+it from one place to another, and, `window.to('whole')`, brings it back to
+fill the frame. The window moves apart from the camera: the camera keeps
+what it frames framed in whatever window stands, as the window travels or
+grows, so `window.to` and `camera.onto` share a step in either order. The words take
 about a third of the frame, set as large as their share lets, or the share
 a format's `split` gives them (see Formats); the window takes the whole
 rest, whatever the page's shape, and shows the part of it the camera
@@ -226,16 +233,16 @@ named), `below`, `left` or `right` of the block. The camera carries it with
 the page, as it carries the light, and the screen's edge does not cut it;
 the block is read as the callout comes, as the light's is.
 
-A note is words on the ground across from the page's window, in the
-words' share of the frame, and a line drawn from a dot at a block's edge
-out to them: `note.show(selector, text)`. It names a block without
-covering the page; the line keeps to the block as the page moves in the
-window, and the words keep to their share, level with the block as far as
-it lets. A note needs a window: one shown while the page fills the frame
-is refused. Its words stand across from the side the window stands on,
-so while it stands the camera moves only inside the window: a
-`camera.onto` to another side, or out to the whole frame, and a
-`camera.to`, are refused until `note.hide()` has taken it away.
+A note is words on the ground beside the page's window and a line drawn
+from a dot at a block's edge out to them: `note.show(selector, text)`. Its
+words stand in the words' share on the side of the frame clearest of the
+window, across from a window on a side, or `at` a place the film names
+beyond the window. It names a block without covering the page; the line
+keeps to the block as the camera moves in the window, and the words keep to
+their place, level with the block as far as it lets. A note needs a window
+beside its words: one whose words would stand over the window, as they do
+while the page fills the frame, is refused; and while it stands the window
+stays, a `window.to` refused until `note.hide()` has taken it away.
 
 Pins mark a path: `pin.show(selector, label)` lays a numbered mark on a
 block's top corner, numbered after those laid before, its label running
@@ -256,8 +263,8 @@ second line, counted from 1, and dims the rest, `code.light(2, { through: 4 })`
 lines 2 to 4, so a line lights as the page does what it says:
 
 ```ts
-play({ seconds: 1.4, moves: [camera.onto(CARDS, { side: 'right' }), code.show(LINES, { at: 'left' })] }),
-play({ seconds: 1, moves: [code.light(1), camera.onto(VISITORS, { side: 'right' })] }),
+play({ seconds: 1.4, moves: [window.to('right'), camera.onto(CARDS), code.show(LINES, { at: 'left' })] }),
+play({ seconds: 1, moves: [code.light(1), camera.onto(VISITORS)] }),
 play({ seconds: 1, moves: [code.light(2), light.on(VISITORS)] }),
 ```
 

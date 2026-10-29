@@ -48,7 +48,7 @@ function inTheWhole(pose: Pose, frame: Size = SQUARE.frame): Camera {
 }
 
 function inTheWindow(pose: Pose): Camera {
-	return { pose, view: windowView(WINDOW, 'right') };
+	return { pose, view: windowView(WINDOW) };
 }
 
 /** Where a face-on camera's picture is cut, its view the whole square frame lifted so far. */
@@ -121,11 +121,11 @@ test('a window drawn back off the frame moves what it shows by how far its corne
 	const whole = inTheWhole(FACE_ON);
 	const drawnBack: Camera = {
 		pose: FACE_ON,
-		view: windowView({ left: 0, top: 0, width: 1080, height: 1080 }, 'right')
+		view: windowView({ left: 0, top: 0, width: 1080, height: 1080 })
 	};
 	const movedAside: Camera = {
 		pose: FACE_ON,
-		view: windowView({ left: 30, top: 40, width: 1080, height: 1080 }, 'right')
+		view: windowView({ left: 30, top: 40, width: 1080, height: 1080 })
 	};
 	expect([frameShift(whole, drawnBack, SQUARE), frameShift(whole, movedAside, SQUARE)]).toEqual([0, 50]);
 });
@@ -217,8 +217,8 @@ test('a face-on camera in a window moves until no edge of the screen shows in th
 test('a camera in a window comes as close as it takes for the screen to fill it, so the window shows part of the page; the whole frame stands as far back as the film puts it', () => {
 	const drawnBack = { ...FACE_ON, zoom: 0.2 };
 	expect([
-		keptOnTheScreen(drawnBack, SQUARE, windowView(WINDOW, 'right')).zoom,
-		keptOnTheScreen(FACE_ON, SQUARE, windowView(WINDOW, 'right')).zoom,
+		keptOnTheScreen(drawnBack, SQUARE, windowView(WINDOW)).zoom,
+		keptOnTheScreen(FACE_ON, SQUARE, windowView(WINDOW)).zoom,
 		keptOnTheScreen(drawnBack, SQUARE, wholeView(SQUARE.frame)).zoom
 	]).toEqual([WINDOW.width / SQUARE.screen.width, FACE_ON.zoom, drawnBack.zoom]);
 });

@@ -7,12 +7,12 @@
  * every change ended by the frame, and every other at its eased progress. One move at most drives a part at any
  * point, so the order moves are written in matters nowhere. A cut begins its moves and sets each at its end, with
  * no frame between. A sound a move makes is heard as the move is set at or past its point, on the frame being made.
- * A frame is drawn only when the footage keeps it, and drawn again where the camera crossed it fast since the frame
- * before, at poses along the camera's way there, the rest of the scene as it stands: each drawing is an exposure of
- * the frame (`src/domain/shutter.ts`). A fault in a step is raised again with the moment and the step it was met at.
- * Before each frame, after each act, and of any fault a step meets, the take asks the stage whether it and its page
- * are still there: where one is gone, the take is refused by why, in place of what its loss made a step fail at (a
- * selector that matches nothing on Chrome's error page), and nothing of it is shot.
+ * A frame is drawn only when the footage keeps it, and drawn again where the camera or its window crossed it fast
+ * since the frame before, at cameras along their way there, the rest of the scene as it stands: each drawing is an
+ * exposure of the frame (`src/domain/shutter.ts`). A fault in a step is raised again with the moment and the step it
+ * was met at. Before each frame, after each act, and of any fault a step meets, the take asks the stage whether it
+ * and its page are still there: where one is gone, the take is refused by why, in place of what its loss made a step
+ * fail at (a selector that matches nothing on Chrome's error page), and nothing of it is shot.
  */
 import { type Camera, flatCamera } from '../domain/camera.ts';
 import { TakeError } from '../domain/errors.ts';
@@ -22,7 +22,7 @@ import { type Ease, framesOf, momentOf } from '../domain/time.ts';
 import { type Change, type Move, type Share, soundsOf } from '../direction/move.ts';
 import type { Cue } from '../direction/sound.ts';
 import type { Act, Cut, Play, Step } from '../direction/steps.ts';
-import { type Scene, drawn, posed } from '../scene.ts';
+import { type Scene, cameraOf, drawn } from '../scene.ts';
 import type { Exposures, Footage, Opened, Track } from './ports.ts';
 
 /** A move begun: the share of its step it runs over, its curve, what it sets, and the sounds it has yet to make. */
@@ -127,7 +127,7 @@ export class Take {
 		for (let index = 1; index <= frames; index += 1) {
 			if (this.finished()) return;
 			// The camera as the frame before showed it, or as the step begins: nothing moves it between frames
-			const cameraBefore = this.scene.camera;
+			const cameraBefore = this.camera();
 			const progress = index / frames;
 			const due = waiting.filter((move) => move.timing.within.start <= progress).sort(byStart);
 			waiting = waiting.filter((move) => !due.includes(move));
@@ -151,7 +151,7 @@ export class Take {
 	/** An act on the page laid flat; the stage asked before it stands up again, as a stage gone cannot stand up. */
 	private async act(step: Act): Promise<void> {
 		await this.opened.stage.layFlat(
-			drawn(posed(this.scene, flatCamera(this.format)), this.moment(), { ...this.format, frame: this.format.screen })
+			drawn(this.scene, flatCamera(this.format), this.moment(), { ...this.format, frame: this.format.screen })
 		);
 		try {
 			await step.action(this.opened.act);
@@ -218,17 +218,23 @@ export class Take {
 
 	/** The frame drawn at each place the camera is caught at along its way from the frame before, its own last. */
 	private async exposed(cameraBefore: Camera): Promise<Exposures> {
+		const own = this.camera();
 		const earlier: Uint8Array[] = [];
-		for (const camera of alsoExposedAt(cameraBefore, this.scene.camera, this.format, this.motionBlur)) {
+		for (const camera of alsoExposedAt(cameraBefore, own, this.format, this.motionBlur)) {
 			earlier.push(await this.drawnAt(camera));
 		}
-		return { earlier, own: await this.drawnAt(this.scene.camera) };
+		return { earlier, own: await this.drawnAt(own) };
 	}
 
 	/** The scene as it stands drawn by a camera, and captured. */
 	private async drawnAt(camera: Camera): Promise<Uint8Array> {
-		await this.opened.stage.draw(drawn(posed(this.scene, camera), this.moment(), this.format));
+		await this.opened.stage.draw(drawn(this.scene, camera, this.moment(), this.format));
 		return this.opened.stage.capture();
+	}
+
+	/** The camera as the scene stands: what it aims at, in the window that stands. */
+	private camera(): Camera {
+		return cameraOf(this.scene, this.format);
 	}
 
 	private moment(): number {

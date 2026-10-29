@@ -28,7 +28,8 @@ import {
 	look,
 	pin,
 	play,
-	screen
+	screen,
+	window
 } from 'livereel';
 import { regionNamed, regionsOf } from './livereel-promo/code.ts';
 import { type AppServed, servedApp } from './livereel-promo/server.ts';
@@ -94,7 +95,8 @@ function actTheCard(): readonly Step[] {
 			moves: [
 				ending.hide({ within: { end: 0.4 } }),
 				screen.rise({ within: { start: 0.2 } }),
-				camera.onto(CARDS, { side: 'right', air: 40, within: { start: 0.2 } })
+				window.to('right', { within: { start: 0.2 } }),
+				camera.onto(CARDS, { air: 40, within: { start: 0.2 } })
 			],
 			ease: easeInOutCubic
 		})
@@ -114,7 +116,7 @@ function actTheCamera(): readonly Step[] {
 			moves: [
 				code.light(FIRST_LINE, { within: { end: 0.2 } }),
 				// #region onto
-				camera.onto(VISITORS, { side: 'right' })
+				camera.onto(VISITORS)
 				// #endregion
 			],
 			ease: easeInOutCubic
@@ -141,7 +143,7 @@ function actThePins(): readonly Step[] {
 				...codeSwapped(['pin-refresh', 'pin-count']),
 				caption.show('Pins on the path'),
 				light.off({ within: { end: 0.4 } }),
-				camera.onto(REFRESH_AND_VISITORS, { side: 'right', every: BOTH })
+				camera.onto(REFRESH_AND_VISITORS, { every: BOTH })
 			],
 			ease: easeInOutCubic
 		}),
@@ -195,7 +197,7 @@ function actTheClick(served: AppServed): readonly Step[] {
 		// #endregion
 		play({
 			seconds: 1.2,
-			moves: [camera.onto(VISITORS, { side: 'right' }), light.on(VISITORS, { within: { start: 0.5 } })],
+			moves: [camera.onto(VISITORS), light.on(VISITORS, { within: { start: 0.5 } })],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 1.2 })

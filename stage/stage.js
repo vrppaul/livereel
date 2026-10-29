@@ -92,7 +92,6 @@ class CameraDrawer {
 	/** @param {DrawnScene} scene */
 	draw(scene) {
 		const pose = scene.camera.pose;
-		const view = scene.camera.view;
 		const cut = scene.camera.cut;
 		numbered(this.root, {
 			'--focus-x': pose.focusX,
@@ -100,15 +99,30 @@ class CameraDrawer {
 			'--zoom': pose.zoom,
 			'--tilt': pose.tilt,
 			'--turn': pose.turn,
-			'--view-left': view.box.left,
-			'--view-top': view.box.top,
-			'--view-width': view.box.width,
-			'--view-height': view.box.height,
-			'--lift': view.lift,
 			'--cut-top': cut.top,
 			'--cut-right': cut.right,
 			'--cut-bottom': cut.bottom,
 			'--cut-left': cut.left
+		});
+	}
+}
+
+/** The page's window: where on the frame the camera's picture shows, and how far it stands off the ground. */
+class WindowDrawer {
+	/** @param {Staged} root */
+	constructor(root) {
+		this.root = root;
+	}
+
+	/** @param {DrawnScene} scene */
+	draw(scene) {
+		const view = scene.window;
+		numbered(this.root, {
+			'--view-left': view.box.left,
+			'--view-top': view.box.top,
+			'--view-width': view.box.width,
+			'--view-height': view.box.height,
+			'--lift': view.lift
 		});
 	}
 }
@@ -463,6 +477,7 @@ class LookDrawer {
 const DRAWERS = {
 	look: new LookDrawer(document.documentElement),
 	camera: new CameraDrawer(propRoot('camera')),
+	window: new WindowDrawer(propRoot('window')),
 	screen: new ScreenDrawer(propRoot('screen')),
 	light: new LightDrawer(propRoot('light')),
 	callout: new CalloutDrawer(propRoot('callout')),

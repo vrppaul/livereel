@@ -4,7 +4,7 @@ import { codeOf } from '../../src/props/code.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
 import { type Piece, drawnWords, saidOf } from '../../src/props/words.ts';
-import { drawn, openingScene, withProp } from '../../src/scene.ts';
+import { type DrawnScene, type Scene, cameraOf, drawn, openingScene, withProp } from '../../src/scene.ts';
 import { SMALL } from './fakes.ts';
 
 // A frame whose captions stand at its top
@@ -15,6 +15,11 @@ const CAPTIONED = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'caption', {
 	shown: 0.25,
 	gone: 0
 });
+
+/** A scene drawn as the film opens, in a format, by its own camera. */
+function drawnIn(scene: Scene, format: Format): DrawnScene {
+	return drawn(scene, cameraOf(scene, format), 0, format);
+}
 
 /** A piece of a word, set in the styles named, in no ink and on no marker of its own. */
 function piece(text: string, ...styles: Piece['styles']): Piece {
@@ -33,7 +38,7 @@ test('the ground under words goes as they go', () => {
 });
 
 test("a caption stands where its format puts it, at the frame's foot where it names no place", () => {
-	expect([drawn(CAPTIONED, 0, SMALL).caption!.at, drawn(CAPTIONED, 0, CAPTIONS_AT_THE_TOP).caption!.at]).toEqual([
+	expect([drawnIn(CAPTIONED, SMALL).caption!.at, drawnIn(CAPTIONED, CAPTIONS_AT_THE_TOP).caption!.at]).toEqual([
 		'bottom',
 		'top'
 	]);
@@ -42,9 +47,9 @@ test("a caption stands where its format puts it, at the frame's foot where it na
 test("keys rise clear of a caption at the frame's foot as its ground comes up, and stay at the foot with none there", () => {
 	const pressed = withProp(CAPTIONED, 'keys', { caps: ['⌘', 'K'], key: '⌘ K', shown: 1 });
 	expect([
-		drawn(pressed, 0, SMALL).keys!.clearing,
-		drawn(pressed, 0, CAPTIONS_AT_THE_TOP).keys!.clearing,
-		drawn(withProp(pressed, 'caption', null), 0, SMALL).keys!.clearing
+		drawnIn(pressed, SMALL).keys!.clearing,
+		drawnIn(pressed, CAPTIONS_AT_THE_TOP).keys!.clearing,
+		drawnIn(withProp(pressed, 'caption', null), SMALL).keys!.clearing
 	]).toEqual([0.5, 0, 0]);
 });
 

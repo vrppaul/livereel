@@ -22,7 +22,8 @@ import {
 	sound,
 	terminal,
 	title,
-	typing
+	typing,
+	window as pageWindow
 } from '../../src/index.ts';
 
 const POSE = { focusX: 0, focusY: 0, zoom: 1, tilt: 0, turn: 0 };
@@ -33,7 +34,6 @@ const CURVE = 'a curve: a function of progress, as easeInOutSine';
 const SHARE = 'a share of the step: { start, end }';
 const A_MOVE = 'a move, as camera.onto or light.on makes one';
 const STROKE = { at: 0, typed: 'l' };
-const SIDE = 'a side of the frame: "left", "right", "top" or "bottom"';
 const PLACE =
 	'a place: "whole", "left", "right", "top" or "bottom", or { of, left, top, width, height }, each in shares';
 const WORDING = 'words: a string, or a list of strings and runs';
@@ -46,16 +46,16 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		new FilmError('camera.onto\'s air is "80": it is a number')
 	);
 	expect(() => camera.onto('#block', { airr: 80 } as never)).toThrow(
-		new FilmError('camera.onto names airr: it names every, air, zoomAtMost, side, tilt, turn, within, ease, or fewer')
+		new FilmError('camera.onto names airr: it names every, air, zoomAtMost, tilt, turn, within, ease, or fewer')
 	);
 	expect(() => camera.onto('#block', { every: 1.5 })).toThrow(
 		new FilmError("camera.onto's every is 1.5: it is a whole count, 1 or more")
 	);
-	expect(() => camera.onto('#block', { side: 'middle' as never })).toThrow(
-		new FilmError(`camera.onto's side is "middle": it is ${SIDE}`)
-	);
 	expect(() => camera.onto('#block', 5 as never)).toThrow(
-		new FilmError('camera.onto is handed 5 for an object of every, air, zoomAtMost, side, tilt, turn, within, ease')
+		new FilmError('camera.onto is handed 5 for an object of every, air, zoomAtMost, tilt, turn, within, ease')
+	);
+	expect(() => pageWindow.to('middle' as never)).toThrow(
+		new FilmError(`window.to's place is "middle": it is ${PLACE}`)
 	);
 	expect(() => camera.to({ zoom: 1 } as never)).toThrow(
 		new FilmError("camera.to's pose's focusX is undefined: it is a number")

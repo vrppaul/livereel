@@ -5,11 +5,23 @@
  * take keeps the one standing. The film's look is a prop too, changed by moves as any other. `drawn` works out
  * everything the stage needs from it — how far each word of a title, a caption or a callout and each line of code has
  * come, the terminal's spinner, where a note's line meets the block it names on the frame — so the stage draws numbers
- * and words and decides nothing. A prop that may be absent is `null`; the compiler holds every prop to a drawn form
- * here and to a drawer on the stage.
+ * and words and decides nothing. What the camera shows is worked out from what it aims at and the window that stands
+ * (`cameraOf`), so a camera moving and a window moving in one step make the same frame whichever is set first; a
+ * frame is drawn by such a camera, or by one the take hands it, along the camera's way or for an act. A prop that may
+ * be absent is `null`; the compiler holds every prop to a drawn form here and to a drawer on the stage.
  */
 import type { Format } from './domain/geometry.ts';
-import { type Camera, type DrawnCamera, drawnCamera, wholeCamera } from './domain/camera.ts';
+import {
+	type Aiming,
+	type Camera,
+	type DrawnCamera,
+	type View,
+	drawnCamera,
+	seenThrough,
+	standingAt,
+	wholePose,
+	wholeView
+} from './domain/camera.ts';
 import { type Code, type DrawnCode, drawnCode } from './props/code.ts';
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
 import { type DrawnCaption, drawnCaption } from './props/caption.ts';
@@ -27,7 +39,8 @@ import type { ShownWords } from './props/words.ts';
 
 export interface PropStates {
 	look: Look;
-	camera: Camera;
+	camera: Aiming;
+	window: View;
 	screen: Screen;
 	light: Light | null;
 	callout: Callout | null;
@@ -50,6 +63,7 @@ export type Scene = { readonly [Name in PropName]: PropStates[Name] };
 interface DrawnProps {
 	look: Look;
 	camera: DrawnCamera;
+	window: View;
 	screen: Screen;
 	light: Light | null;
 	callout: DrawnCallout | null;
@@ -70,7 +84,8 @@ export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] };
 export function openingScene(format: Format, look: Look): Scene {
 	return {
 		look,
-		camera: wholeCamera(format),
+		camera: standingAt(wholePose(format)),
+		window: wholeView(format.frame),
 		screen: SCREEN_UP,
 		light: null,
 		callout: null,
@@ -90,23 +105,27 @@ export function withProp<Name extends PropName>(scene: Scene, name: Name, state:
 	return { ...scene, [name]: state };
 }
 
-/** The same scene seen by another camera. */
-export function posed(scene: Scene, camera: Camera): Scene {
-	return withProp(scene, 'camera', camera);
+/** The camera as the scene shows it: what it aims at, come to in the window that stands. */
+export function cameraOf(scene: Scene, format: Format): Camera {
+	return seenThrough(scene.camera, scene.window, format);
 }
 
-/** The scene as the stage draws it at a moment of the film, in the format it is shot in. */
-export function drawn(scene: Scene, moment: number, format: Format): DrawnScene {
+/**
+ * The scene as the stage draws it at a moment of the film, in the format it is shot in, seen by a camera: the scene's
+ * own, or one along its way there.
+ */
+export function drawn(scene: Scene, camera: Camera, moment: number, format: Format): DrawnScene {
 	const caption = scene.caption === null ? null : drawnCaption(scene.caption, format);
 	return {
 		look: scene.look,
-		camera: drawnCamera(scene.camera, format),
+		camera: drawnCamera(camera, format),
+		window: camera.view,
 		screen: scene.screen,
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout),
-		pins: scene.pins === null ? null : drawnPins(scene.pins, scene.camera, format.frame),
+		pins: scene.pins === null ? null : drawnPins(scene.pins, camera, format.frame),
 		cursor: scene.cursor,
-		note: scene.note === null ? null : drawnNote(scene.note, scene.camera, format.frame),
+		note: scene.note === null ? null : drawnNote(scene.note, camera, format.frame),
 		title: scene.title === null ? null : drawnTitle(scene.title),
 		code: scene.code === null ? null : drawnCode(scene.code),
 		caption,

@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import type { Format } from '../../src/domain/geometry.ts';
-import { pastTheEdge, wordsPlaced } from '../../src/domain/place.ts';
-import { wordsOn } from '../../src/domain/split.ts';
+import { pastTheEdge, windowPlaced, wordsPlaced } from '../../src/domain/place.ts';
+import { windowOn, wordsOn } from '../../src/domain/split.ts';
 
 // A wide frame with its page as wide
 const WIDE: Format = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } };
@@ -11,6 +11,18 @@ test("a named place is where words stood on that side of the frame beside a wind
 		wordsOn(WIDE, 'left'),
 		wordsOn(WIDE, 'bottom'),
 		{ left: 96, top: 96, width: 1728, height: 888 }
+	]);
+});
+
+test("a name is the window's own place: the whole room across from the words' share on that side, the frame edge to edge for whole, and a box within either in shares", () => {
+	expect([
+		windowPlaced(WIDE, 'right'),
+		windowPlaced(WIDE, 'whole'),
+		windowPlaced(WIDE, { of: 'right', top: 0.5, height: 0.5 })
+	]).toEqual([
+		windowOn(WIDE, 'right'),
+		{ left: 0, top: 0, width: 1920, height: 1080 },
+		{ left: 691, top: 540, width: 1157, height: 468 }
 	]);
 });
 

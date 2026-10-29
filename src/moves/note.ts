@@ -1,12 +1,14 @@
 /**
- * Notes: words on the ground across from the page's window, a line drawn from them to a block in it, in place of any
- * note shown, and going. The block is read as the move's share begins, what the screen shows of it, as a callout's
- * is; a note with no window to stand beside is refused there. While it stands, the camera keeps the window where it
- * is (`src/moves/camera.ts`).
+ * Notes: words on the ground beside the page's window, a line drawn from them to a block in it, in place of any note
+ * shown, and going. The block is read as the move's share begins, what the screen shows of it, as a callout's is, and
+ * the words' place with it: the film's, or the words' share on the side of the frame clearest of the window. The
+ * words stand beyond the window on one side of it, where the line meets them; a note whose words would stand over the
+ * window, as they do while the page fills the frame, is refused there. While it stands, the window stays where it is
+ * (`src/moves/window.ts`).
  */
 import { FilmError } from '../domain/errors.ts';
-import { assertKind, assertWritten, A_SELECTOR } from '../domain/handed.ts';
-import { besideTheWindowOn } from '../domain/split.ts';
+import { A_SELECTOR, type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { A_PLACE, type Place, sideBeyond, sideClearestOf, wordsPlaced } from '../domain/place.ts';
 import { linear } from '../domain/time.ts';
 import {
 	type Beginning,
@@ -18,22 +20,30 @@ import {
 	shownPart,
 	timingOf
 } from '../direction/move.ts';
+import type { Beside } from '../props/note.ts';
 import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
 import { going } from './words.ts';
 
+/** A note's words stand `at` a place beyond the window, or in the words' share clearest of it where none is named. */
+export interface NoteScript extends TimingScript {
+	readonly at?: Place;
+}
+
+const NOTE_FORM: Form<NoteScript> = { at: A_PLACE, ...TIMING_FORM };
 // A note names one block: the first a selector matches
 const THE_FIRST = 1;
 
-/** A note coming up on the ground across from the window, its line drawn to the block a selector matches, then its words. */
-export function show(target: string, text: Wording, script: TimingScript = {}): Move {
+/** A note coming up on the ground beside the window, its line drawn to the block a selector matches, then its words. */
+export function show(target: string, text: Wording, script: NoteScript = {}): Move {
 	assertKind(target, A_SELECTOR, "note.show's selector");
 	assertKind(text, A_WORDING, "note.show's text");
-	assertWritten(script, TIMING_FORM, 'note.show');
+	assertWritten(script, NOTE_FORM, 'note.show');
 	const said = saidOf(text);
+	const at = script.at ?? null;
 	return {
 		part: 'note',
 		timing: timingOf({ ease: linear, ...script }),
-		begin: (beginning) => naming(beginning, target, said)
+		begin: (beginning) => naming(beginning, target, said, at)
 	};
 }
 
@@ -43,14 +53,24 @@ export function hide(script: TimingScript = {}): Move {
 	return { part: 'note', timing: timingOf(script), begin: (beginning) => going('note', beginning) };
 }
 
-async function naming(beginning: Beginning, target: string, said: Said): Promise<Change> {
-	const windowSide = beginning.scene.camera.view.side;
-	if (windowSide === null) {
+async function naming(beginning: Beginning, target: string, said: Said, at: Place | null): Promise<Change> {
+	const beside = besideTheWindow(beginning, at);
+	const box = await shownPart(beginning, target, THE_FIRST, 'note.show');
+	return propChange('note', (progress) => ({ ...said, box, beside, shown: progress, gone: 0 }));
+}
+
+/**
+ * Where the words stand beside the window: at the film's place, or in the words' share clearest of the window; refused
+ * where they would stand over it.
+ */
+function besideTheWindow(beginning: Beginning, at: Place | null): Beside {
+	const window = beginning.scene.window.box;
+	const box = wordsPlaced(beginning.format, at ?? sideClearestOf(beginning.format, window));
+	const side = sideBeyond(box, window);
+	if (side === null) {
 		throw new FilmError(
-			"note.show's note stands beside the page's window, but the page fills the frame: frame it in a window first, with camera.onto(selector, { side })"
+			"note.show's words stand over the page's window: move the page into a window beside them first, with window.to(place), or name a place clear of it, with { at }"
 		);
 	}
-	const box = await shownPart(beginning, target, THE_FIRST, 'note.show');
-	const beside = besideTheWindowOn(beginning.format, windowSide);
-	return propChange('note', (progress) => ({ ...said, box, beside, shown: progress, gone: 0 }));
+	return { side, box };
 }

@@ -1,16 +1,21 @@
 /**
- * A note: words on the film's ground in the words' share across from the page's window, and a line drawn from a dot
- * at a block's edge in the window out to them, so they name the block without covering the page. The block is read
- * once, as the note comes, as a callout's is, and where the words stand with it: in the words' share across from the
- * side the window stands on, which stays while the note does. Where the block stands on the frame is worked out every
- * frame from the camera, so the line keeps to the block as the page moves in the window; the words keep to their
- * share, level with the block as far as it lets. The line is drawn first, as the words' ground would come up, and the
- * words come up at its end.
+ * A note: words on the film's ground beside the page's window, and a line drawn from a dot at a block's edge in the
+ * window out to them, so they name the block without covering the page. The block is read once, as the note comes, as
+ * a callout's is, and where the words stand with it: in a place beyond the window on one side of it, which stays while
+ * the note does, as the window does. Where the block stands on the frame is worked out every frame from the camera, so
+ * the line keeps to the block as the page moves in the window; the words keep to their place, level with the block as
+ * far as it lets. The line is drawn first, as the words' ground would come up, and the words come up at its end.
  */
 import { type Camera, onTheFrame } from '../domain/camera.ts';
 import { type Box, type Point, type Size, middleX, middleY } from '../domain/geometry.ts';
-import type { Beside, FrameSide } from '../domain/split.ts';
+import type { FrameSide } from '../domain/split.ts';
 import { type DrawnWords, type ShownWords, drawnWords } from './words.ts';
+
+/** Where a note's words stand: the side of the window they stand beyond, and their box, in the frame's pixels. */
+export interface Beside {
+	readonly side: FrameSide;
+	readonly box: Box;
+}
 
 /** A note's words, the block it names, as the screen showed it, and where its words stand beside the window. */
 export interface Note extends ShownWords {

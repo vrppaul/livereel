@@ -12,30 +12,16 @@ import { type Box, type Format, type Split, frameScaleOf, wholePixels } from './
 import { OneOf } from './handed.ts';
 
 /** The sides of the frame: where words stand, or the page's window across from them. */
-const FRAME_SIDES = ['left', 'right', 'top', 'bottom'] as const;
+export const FRAME_SIDES = ['left', 'right', 'top', 'bottom'] as const;
 
 export type FrameSide = (typeof FRAME_SIDES)[number];
 
 export const A_FRAME_SIDE = new OneOf(FRAME_SIDES, 'a side of the frame: "left", "right", "top" or "bottom"');
 
-/** Where words beside a window stand: the side of the frame, and their box there, in the frame's pixels. */
-export interface Beside {
-	readonly side: FrameSide;
-	readonly box: Box;
-}
-
 // livereel's split: the words take a little over a third of the frame from the edge they stand on, and the window
 // stands in from the frame's edges less far than the words do, which keep a gap from it
 const LIVEREELS_SPLIT: Required<Split> = { wordsShare: 0.36, windowMargin: 72, wordsMargin: 96, wordsGap: 48 };
 const HALVES = 2;
-// The side of the frame across from each: where words stand beside a window on it
-const ACROSS: Readonly<Record<FrameSide, FrameSide>> = { left: 'right', right: 'left', top: 'bottom', bottom: 'top' };
-
-/** Where words about the page stand beside a window on a side of the frame: on the side across. */
-export function besideTheWindowOn(format: Format, windowSide: FrameSide): Beside {
-	const side = ACROSS[windowSide];
-	return { side, box: wordsOn(format, side) };
-}
 
 /** Where the page's window stands on the frame on a side of it, the words on the side across: its whole room. */
 export function windowOn(format: Format, side: FrameSide): Box {

@@ -2,15 +2,17 @@
  * Where the camera looks, where it stands to frame a block of the page, and how far what it shows moves as it goes.
  *
  * Arithmetic on poses and boxes alone, so a film's framing is worked out before a browser is asked anything. The
- * camera's picture shows in its view: the whole frame, edge to edge, or a window standing on the film's ground. An
- * angle leans the view, the screen in it face-on to it. In a window the camera comes as close as it takes for the
- * screen to fill it, so the window shows part of the page and no ground, and moves as little as it takes to keep it so
- * at any angle. In the whole frame face-on it moves as little as it takes to show no edge of the screen; along a side
- * the screen is too short to fill at that zoom, the screen stands in the frame's middle, as much ground showing on
- * either side of it. An angled camera in the whole frame stands where the film puts it. What the camera shows where
- * is worked out as the stage draws it (`.view` and `.camera` in `stage/stage.css`): the screen carried by its focus
- * to the view's middle and brought close, the view swung and leant back about its middle, and seen from the eye before
- * the frame's middle, a nearer point larger.
+ * camera's picture shows in a view, the page's window: the whole frame, edge to edge, or a window standing on the
+ * film's ground. The window moves apart from the camera, so the camera holds what it aims at — a pose, or a block
+ * framed with air round it — and comes to it in whatever window stands as each frame is drawn: a block it frames
+ * stays framed as the window travels or grows. An angle leans the view, the screen in it face-on to it. In a window
+ * the camera comes as close as it takes for the screen to fill it, so the window shows part of the page and no ground,
+ * and moves as little as it takes to keep it so at any angle. In the whole frame face-on it moves as little as it
+ * takes to show no edge of the screen; along a side the screen is too short to fill at that zoom, the screen stands in
+ * the frame's middle, as much ground showing on either side of it. An angled camera in the whole frame stands where
+ * the film puts it. What the camera shows where is worked out as the stage draws it (`.view` and `.camera` in
+ * `stage/stage.css`): the screen carried by its focus to the view's middle and brought close, the view swung and leant
+ * back about its middle, and seen from the eye before the frame's middle, a nearer point larger.
  */
 import {
 	type Box,
@@ -27,35 +29,53 @@ import {
 	nearestWithin
 } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, assertKind, needed } from './handed.ts';
-import type { FrameSide } from './split.ts';
 import { between } from './time.ts';
 
-/**
- * The point of the screen at the frame's middle, how close, and at what angle. `zoom` is the frame's pixels a page's
- * pixel takes on a frame the stage's look was made on, and in proportion on any other, so a pose shows as much of the
- * page on a frame of any size. `tilt` leans the screen back from its top edge, `turn` swings it about its middle, both
- * in degrees, 0 face-on.
- */
-export interface Pose {
-	readonly focusX: number;
-	readonly focusY: number;
-	readonly zoom: number;
+/** How the screen leans back from its top edge, `tilt`, and swings about its middle, `turn`: degrees, 0 face-on. */
+export interface Angle {
 	readonly tilt: number;
 	readonly turn: number;
 }
 
 /**
+ * The point of the screen at the frame's middle, how close, and at what angle. `zoom` is the frame's pixels a page's
+ * pixel takes on a frame the stage's look was made on, and in proportion on any other, so a pose shows as much of the
+ * page on a frame of any size.
+ */
+export interface Pose extends Angle {
+	readonly focusX: number;
+	readonly focusY: number;
+	readonly zoom: number;
+}
+
+/**
  * Where on the frame the camera's picture shows, in the frame's pixels, and how far it stands off the film's ground:
  * at 0 it is the frame itself, edge to edge; at 1 a window, its corners rounded, its edge and shadow on the ground.
- * A window stands on a side of the frame, words across from it; the frame itself on none.
  */
 export interface View {
 	readonly box: Box;
 	readonly lift: number;
-	readonly side: FrameSide | null;
 }
 
-/** The camera: how it looks at the screen, and where on the frame its picture shows. */
+/**
+ * What the camera aims at: a pose the film gives, or a block of the page, as the screen showed it, framed with air
+ * round it at an angle, which comes to a pose only in the view it is framed in.
+ */
+export type Aim =
+	| { readonly kind: 'pose'; readonly pose: Pose }
+	| { readonly kind: 'block'; readonly box: Box; readonly framing: Framing; readonly angle: Angle };
+
+/**
+ * The camera as a scene holds it: on its way from the pose it stood at, as its move began, to what it aims at,
+ * `progress` of the way; at 1, there.
+ */
+export interface Aiming {
+	readonly from: Pose;
+	readonly aim: Aim;
+	readonly progress: number;
+}
+
+/** The camera as a frame shows it: how it looks at the screen, and where on the frame its picture shows. */
 export interface Camera {
 	readonly pose: Pose;
 	readonly view: View;
@@ -73,8 +93,9 @@ export interface Cut {
 	readonly left: number;
 }
 
-/** The camera as the stage draws it: where it looks, its view, and where its picture is cut. */
-export interface DrawnCamera extends Camera {
+/** The camera as the stage draws it: where it looks, and where its picture is cut in its view. */
+export interface DrawnCamera {
+	readonly pose: Pose;
 	readonly cut: Cut;
 }
 
@@ -108,20 +129,35 @@ const DEGREES_IN_A_HALF_TURN = 180;
 // How far a view stands off the ground: the frame itself, or a window
 const FLAT = 0;
 const LIFTED = 1;
+// A camera that has come all the way to its aim
+const ARRIVED = 1;
 
 /** The whole frame as the camera's view, edge to edge. */
 export function wholeView(frame: Size): View {
-	return { box: boxOf(frame), lift: FLAT, side: null };
+	return { box: boxOf(frame), lift: FLAT };
 }
 
-/** A window on a side of the frame as the camera's view, standing on the film's ground. */
-export function windowView(box: Box, side: FrameSide): View {
-	return { box, lift: LIFTED, side };
+/** A window as the camera's view, standing on the film's ground. */
+export function windowView(box: Box): View {
+	return { box, lift: LIFTED };
 }
 
-/** The camera a film opens on: the whole screen face-on, in the whole frame. */
-export function wholeCamera(format: Format): Camera {
-	return { pose: wholePose(format), view: wholeView(format.frame) };
+/** A view `progress` of the way to another: its box moved and resized, and lifted or laid down as far. */
+export function viewToward(start: View, end: View, progress: number): View {
+	return { box: boxToward(start.box, end.box, progress), lift: between(start.lift, end.lift, progress) };
+}
+
+/** The camera standing at a pose: there already, aiming at it. */
+export function standingAt(pose: Pose): Aiming {
+	return { from: pose, aim: { kind: 'pose', pose }, progress: ARRIVED };
+}
+
+/**
+ * The camera as a frame shows it through a view: so far on its way from where it stood to its aim, the aim come to
+ * in that view and kept off the screen's edge there.
+ */
+export function seenThrough(aiming: Aiming, view: View, format: Format): Camera {
+	return { pose: poseToward(aiming.from, aimedIn(aiming.aim, view, format), aiming.progress), view };
 }
 
 /** The camera an act is done in: face-on at the screen's own size, on a frame the screen's size. */
@@ -129,19 +165,9 @@ export function flatCamera(format: Format): Camera {
 	return { pose: flatPose(format), view: wholeView(format.screen) };
 }
 
-/**
- * A camera `progress` of the way from one to another: its pose, its view's box and how far the view stands off; its
- * view on the side it is on its way to, where words about the page then stand.
- */
+/** A camera `progress` of the way from one to another: its pose, and its view. */
 export function cameraToward(start: Camera, end: Camera, progress: number): Camera {
-	return {
-		pose: poseToward(start.pose, end.pose, progress),
-		view: {
-			box: boxToward(start.view.box, end.view.box, progress),
-			lift: between(start.view.lift, end.view.lift, progress),
-			side: end.view.side
-		}
-	};
+	return { pose: poseToward(start.pose, end.pose, progress), view: viewToward(start.view, end.view, progress) };
 }
 
 /** The camera as the stage draws it, its cut worked out from where the screen stands in its view. */
@@ -155,7 +181,7 @@ export function drawnCamera(camera: Camera, format: Format): DrawnCamera {
 	// How much of the way from the screen's edges to the view's the cut still stands out
 	const open = LIFTED - camera.view.lift;
 	return {
-		...camera,
+		pose: camera.pose,
 		cut: {
 			top: open * Math.min(NOTHING, screenTop),
 			right: open * Math.min(NOTHING, view.width - screenRight),
@@ -175,6 +201,16 @@ export function keptOnTheScreen(pose: Pose, format: Format, view: View): Pose {
 	if (view.lift > FLAT) return covering(filling(pose, format, view.box), format, view.box);
 	const faceOn = pose.tilt === 0 && pose.turn === 0;
 	return faceOn ? covering(pose, format, view.box) : pose;
+}
+
+/** The pose an aim comes to in a view, kept off the screen's edge there: the film's own, or a block framed there. */
+function aimedIn(aim: Aim, view: View, format: Format): Pose {
+	switch (aim.kind) {
+		case 'pose':
+			return keptOnTheScreen(aim.pose, format, view);
+		case 'block':
+			return keptOnTheScreen(onto(aim.box, aim.angle, view.box, format.frame, aim.framing), format, view);
+	}
 }
 
 /** A pose as close, at least, as it takes for the screen to fill a view of this size along both its sides. */
@@ -228,21 +264,16 @@ export function lookingAt(pose: Pose, focusX: number, focusY: number, zoom: numb
 	return focusedAt(pose, focusX, focusY, zoom);
 }
 
-/** The same angle, looking at another point from another distance. */
-function focusedAt(pose: Pose, focusX: number, focusY: number, zoom: number): Pose {
-	return { focusX, focusY, zoom, tilt: pose.tilt, turn: pose.turn };
-}
-
-/** The same point and distance, at another angle. */
-export function angled(pose: Pose, tilt: number, turn: number): Pose {
-	return { focusX: pose.focusX, focusY: pose.focusY, zoom: pose.zoom, tilt, turn };
+/** At an angle, looking at a point from a distance. */
+function focusedAt(angle: Angle, focusX: number, focusY: number, zoom: number): Pose {
+	return { focusX, focusY, zoom, tilt: angle.tilt, turn: angle.turn };
 }
 
 /**
  * The pose that holds a box with its air on every side in a view of this size, its middle at the view's middle, at
  * `around`'s angle, no closer than allowed: worked out face-on.
  */
-export function onto(box: Box, around: Pose, view: Size, frame: Size, framing: Framing): Pose {
+export function onto(box: Box, around: Angle, view: Size, frame: Size, framing: Framing): Pose {
 	const fit = Math.min(
 		view.width / (box.width + SIDES * framing.air),
 		view.height / (box.height + SIDES * framing.air)

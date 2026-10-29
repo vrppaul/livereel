@@ -11,7 +11,6 @@
  */
 import {
 	type ActContext,
-	type FrameSide,
 	type Place,
 	type Pose,
 	type Serving,
@@ -31,7 +30,8 @@ import {
 	lookingAt,
 	play,
 	screen,
-	title
+	title,
+	window
 } from 'livereel';
 
 const ADDRESS = 'https://example.com/';
@@ -53,17 +53,17 @@ const ACCENT = '#ffb86b';
 const MARKER = '#5b47d6';
 const OPENING: Wording = ['The most ', { text: 'famous', italic: true, ink: ACCENT }, ' page on the web'];
 const IN_SIX: Wording = ['It says so in ', { text: 'six languages', marker: MARKER }];
-// Where the words about the languages stand, and the side the page's window stands on beside them, in each format
+// Where the words about the languages stand, and the page's window beside them, in each format
 const SPLITS: Readonly<Record<keyof typeof FORMATS, Split>> = {
 	square: { words: 'top', page: 'bottom' },
 	wide: { words: 'left', page: 'right' }
 };
 const ENDING = { name: 'example.com', line: 'Filmed live, frame by frame', command: 'livereel' };
 
-/** The place a title stands in, and the side the page's window stands on beside it. */
+/** The place a title stands in, and the place of the page's window beside it. */
 interface Split {
 	readonly words: Place;
-	readonly page: FrameSide;
+	readonly page: Place;
 }
 
 function inLanguage(language: string): string {
@@ -130,22 +130,23 @@ function actLanguages(split: Split): readonly Step[] {
 			seconds: 1,
 			moves: [
 				caption.hide({ within: { end: 0.4 } }),
-				camera.onto(ENGLISH, { side: split.page, air: 60, zoomAtMost: 2 }),
+				window.to(split.page),
+				camera.onto(ENGLISH, { air: 60, zoomAtMost: 2 }),
 				title.show(IN_SIX, { at: split.words, within: { start: 0.5 } })
 			],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 0.6 }),
-		...LANGUAGES.flatMap((language) => inTurn(language, split.page))
+		...LANGUAGES.flatMap(inTurn)
 	];
 }
 
 /** One language's line lit and framed in the window, and held. */
-function inTurn(language: string, side: FrameSide): readonly Step[] {
+function inTurn(language: string): readonly Step[] {
 	return [
 		play({
 			seconds: 0.6,
-			moves: [light.to(inLanguage(language)), camera.onto(inLanguage(language), { side, air: 60, zoomAtMost: 2 })],
+			moves: [light.to(inLanguage(language)), camera.onto(inLanguage(language), { air: 60, zoomAtMost: 2 })],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 0.35 })
@@ -159,6 +160,7 @@ function actTheLink(whole: Pose): readonly Step[] {
 			seconds: 1,
 			moves: [
 				light.to(LINK),
+				window.to('whole'),
 				camera.onto(LINK, { air: 170, zoomAtMost: 2.2 }),
 				title.hide({ within: { end: 0.4 } }),
 				cursor.to(LINK, { within: { start: 0.2 } })

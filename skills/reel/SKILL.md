@@ -41,8 +41,8 @@ caption. Speak in the director's words, which are the tool's:
 | action | what the page does for real: a click (`cursor.click`), keys typed into it (`typing(page.type(strokes))`), anything else in an `act` |
 | caption | `caption.show(text)`, `caption.hide()`; at the frame's foot, or its top in a format with `captionAt: 'top'`, which leaves the foot to keys |
 | title card | `title.show(text)` — words over the whole frame, on the film's ground; `title.hide()` |
-| split | `camera.onto(selector, { side: 'right' })` with `title.show(text, { at: 'left', within: { start: 0.5 } })` in one `play` — the page draws back into a window on one side, then the words come up on the ground across from it; name the sides and places per format from `steps`' format name: words above the window in a square, beside it in a wide frame; a format's `split` sets the words' share and the margins, `{ wordsShare: 0.28 }` for words that ask less room above a square's window |
-| code beside | `code.show(lines, { at: 'left' })` with `camera.onto(selector, { side: 'right' })` — the film's code on one side, the page doing it in the window across; a heading over it in a place of its own (`title.show(text, { at: { of: 'left', height: 0.2 } })`, code `at: { of: 'left', top: 0.25, height: 0.75 }`); `code.light(n)` as the page does what line `n` says; short lines, or a larger `wordsShare` |
+| split | `window.to('right')`, `camera.onto(selector)` and `title.show(text, { at: 'left', within: { start: 0.5 } })` in one `play` — the page draws back into a window on one side, the camera keeping the block framed in it, then the words come up on the ground across from it; `window.to('whole')` brings the page back to fill the frame; name the places per format from `steps`' format name: words above the window in a square, beside it in a wide frame; a format's `split` sets the words' share and the margins, `{ wordsShare: 0.28 }` for words that ask less room above a square's window |
+| code beside | `code.show(lines, { at: 'left' })` with the page's window `to('right')` — the film's code on one side, the page doing it in the window across; a heading over it in a place of its own (`title.show(text, { at: { of: 'left', height: 0.2 } })`, code `at: { of: 'left', top: 0.25, height: 0.75 }`); `code.light(n)` as the page does what line `n` says; short lines, or a larger `wordsShare` |
 | entrance | `cut(screen.lower())`, then `screen.rise()` in a `play`; `ending.show(card)` |
 | tempo | how long each `play` and `hold({ seconds })` lasts |
 
@@ -69,8 +69,7 @@ What reads as made with care:
   Frame the block with air on the callout's side: the frame's edge, or a
   window's, cuts a card that reaches past it. Beside a window, a note says
   the same from the ground across from it and leaves the page whole; show it
-  in place of the split's title, and hide it before the camera leaves the
-  window.
+  in place of the split's title, and hide it before the window moves.
 - **Pins for a path** of three or four steps the viewer will repeat, each
   laid as the camera reaches its block; clear them before the next shot.
 - **Keys for a shortcut** worth learning, while it is pressed in an act,
@@ -201,14 +200,15 @@ its end at once.
 | Moves | |
 |---|---|
 | `camera.to(pose, { tilt, turn })` | to a pose: `whole` from `steps`, or `lookingAt(pose, focusX, focusY, zoom)` |
-| `camera.onto(selector, { every, air, zoomAtMost, side, tilt, turn })` | frames the first `every` blocks a selector matches, `air` pixels round them, in the whole frame or in a window on a `side` of it (`left`, `right`, `top`, `bottom`), the screen filling the window; an angle leans the window |
+| `camera.onto(selector, { every, air, zoomAtMost, tilt, turn })` | frames the first `every` blocks a selector matches, `air` pixels round them, in whatever window stands, and keeps them framed as the window moves, the screen filling a window; an angle leans the window |
+| `window.to(place)` | the page's window to a place, the frame itself at `whole`, a window on the ground anywhere else: a side's room across from the words' share, or a box in shares; travels apart from the camera, in the same `play` or not |
 | `screen.rise()`, `screen.lower()` | the screen up out of the ground; down in it, in a `cut` |
 | `light.on(selector, { dim })`, `light.to(selector)`, `light.off()` | one block lit, the rest dimmed by `dim`; carried; put out |
 | `cursor.to(selector, { entering, bow })` | along an arc to a block, from `entering` if not yet on the screen |
 | `cursor.press({ sound })`, `cursor.release()`, `cursor.hide()` | pressed in with a click (`sound`, a file of the film's in its place), let go, taken off the screen |
 | `cursor.click(action, { sound })` | pressed with its click, `act(action)`, let go: the steps of a click |
 | `callout.show(selector, text, { side })`, `callout.hide()` | words on a card beside a block, pointing at it, `side` `above` (where none is named), `below`, `left` or `right`; carried with the page |
-| `note.show(selector, text)`, `note.hide()` | words on the ground across from the page's window, a line drawn from them to a block in it; only with a window, and the camera stays in that window until `note.hide()` |
+| `note.show(selector, text, { at })`, `note.hide()` | words on the ground beside the page's window, on the side clearest of it or `at` a place beyond it, a line drawn from them to a block in it; only with a window, which stays until `note.hide()` |
 | `pin.show(selector, label)`, `pin.clear()` | a numbered mark on a block, after those laid before, the earlier labels quietened; all taken away |
 | `keys.show(caps)`, `keys.hide()` | the caps of a shortcut at the frame's foot, as `['⌘', 'Enter']` |
 | `title.show(text, { at, align, from })`, `title.to(place)`, `title.hide({ toward })` | words coming up one after another on the film's ground over the whole frame, or `at` a place, in place of any title shown; going, the ground with them. In a place it slides in whole `from` a side, travels `to` another place, slides out `toward` a side: a push is one piece out `toward: 'left'` and the next in `from: 'right'` in one `play`. A place: `whole`, `left`, `right`, `top`, `bottom`, or `{ of, left, top, width, height }` in shares of the frame or of the place `of`, past the frame's edge if it must |
