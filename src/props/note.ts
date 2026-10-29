@@ -1,67 +1,69 @@
 /**
- * A note: words on the film's ground beside the page's window, and a line drawn from them to a block in it, so they
- * name the block without covering the page. The block is read once, as the note comes, as a callout's is; where it
- * stands on the frame is worked out every frame from the camera, so the line keeps to the block as the window moves.
- * The line is drawn first, from the block out, as the words' ground would come up, and the words come up at its end.
+ * A note: words on the film's ground in the words' share across from the page's window, and a line drawn from a dot
+ * at a block's edge in the window out to them, so they name the block without covering the page. The block is read
+ * once, as the note comes, as a callout's is, and the side the words stand on with it: the side of the frame with the
+ * most ground beside the window. Where the block stands on the frame is worked out every frame from the camera, so
+ * the line keeps to the block as the page moves in the window; the words keep to their share, level with the block
+ * as far as it lets. The line is drawn first, as the words' ground would come up, and the words come up at its end.
  */
 import { type Camera, onTheFrame } from '../domain/camera.ts';
-import { type Box, type Point, type Size, frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
-import type { FrameSide } from '../domain/split.ts';
+import { type Box, type Point, type Size, middleX, middleY } from '../domain/geometry.ts';
+import { type FrameSide, wordsOn } from '../domain/split.ts';
 import { type DrawnWords, type ShownWords, drawnWords } from './words.ts';
 
-/** A note's words, the block it names, as the screen showed it, and the side of the window it stands on. */
+/** A note's words, the block it names, as the screen showed it, and the side of the frame its words stand on. */
 export interface Note extends ShownWords {
 	readonly box: Box;
 	readonly side: FrameSide;
 }
 
-/** The ways words run across the frame from where they start. */
-type Run = 'left' | 'right';
-
 /**
- * A note as the stage draws it: where its line starts at the block's edge and where it meets the words, on the frame,
- * how long it is and its angle in degrees, and which way the words run from it: away from the window beside it, and
- * above or below it toward the frame's middle, so they stay on the frame.
+ * A note as the stage draws it: the words' box on the frame, where the line starts at the block's edge and where it
+ * meets the words, how long it is and its angle in degrees.
  */
 export interface DrawnNote extends DrawnWords {
 	readonly side: FrameSide;
+	readonly place: Box;
 	readonly from: Point;
 	readonly to: Point;
 	readonly length: number;
 	readonly angle: number;
-	readonly runs: Run;
 }
 
-// How far the words stand out from the window's edge, in pixels of a frame the stage's look was made on
-const NOTE_GAP = 56;
-const HALVES = 2;
 const DEGREES_IN_A_HALF_TURN = 180;
 
+/** The ground on a side of the frame beside a window: how far it reaches from the window to the frame's edge. */
+interface Ground {
+	readonly side: FrameSide;
+	readonly reach: number;
+}
+
+/** The side of the frame with the most ground beside a window: where words about the page stand. */
+export function sideBeside(window: Box, frame: Size): FrameSide {
+	const grounds: readonly Ground[] = [
+		{ side: 'left', reach: window.left },
+		{ side: 'right', reach: frame.width - window.left - window.width },
+		{ side: 'top', reach: window.top },
+		{ side: 'bottom', reach: frame.height - window.top - window.height }
+	];
+	return grounds.reduce((widest, ground) => (ground.reach > widest.reach ? ground : widest)).side;
+}
+
 export function drawnNote(note: Note, camera: Camera, frame: Size): DrawnNote {
+	const place = wordsOn(frame, note.side);
 	const from = onTheFrame(camera, frame, edgeFacing(note.box, note.side));
-	const to = outside(camera.view.box, from, note.side, NOTE_GAP * frameScaleOf(frame));
+	const to = meeting(place, from, note.side);
 	const across = to.left - from.left;
 	const down = to.top - from.top;
 	return {
 		...drawnWords(note),
 		side: note.side,
+		place,
 		from,
 		to,
 		length: Math.hypot(across, down),
-		angle: (Math.atan2(down, across) * DEGREES_IN_A_HALF_TURN) / Math.PI,
-		runs: runsFrom(to, note.side, frame)
+		angle: (Math.atan2(down, across) * DEGREES_IN_A_HALF_TURN) / Math.PI
 	};
-}
-
-function runsFrom(start: Point, side: FrameSide, frame: Size): Run {
-	switch (side) {
-		case 'left':
-		case 'right':
-			return side;
-		case 'top':
-		case 'bottom':
-			return start.left > frame.width / HALVES ? 'left' : 'right';
-	}
 }
 
 /** The middle of a block's edge that faces a side. */
@@ -78,16 +80,18 @@ function edgeFacing(box: Box, side: FrameSide): Point {
 	}
 }
 
-/** The point a gap out from a view's edge on a side, level with a point on the frame. */
-function outside(view: Box, level: Point, side: FrameSide, gap: number): Point {
+/** Where the line meets the words' box: on its edge toward the window, level with the block as far as the box lets. */
+function meeting(place: Box, level: Point, side: FrameSide): Point {
+	const across = Math.min(Math.max(level.left, place.left), place.left + place.width);
+	const down = Math.min(Math.max(level.top, place.top), place.top + place.height);
 	switch (side) {
 		case 'left':
-			return { left: view.left - gap, top: level.top };
+			return { left: place.left + place.width, top: down };
 		case 'right':
-			return { left: view.left + view.width + gap, top: level.top };
+			return { left: place.left, top: down };
 		case 'top':
-			return { left: level.left, top: view.top - gap };
+			return { left: across, top: place.top + place.height };
 		case 'bottom':
-			return { left: level.left, top: view.top + view.height + gap };
+			return { left: across, top: place.top };
 	}
 }

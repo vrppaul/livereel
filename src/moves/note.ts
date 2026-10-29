@@ -1,9 +1,10 @@
 /**
- * Notes: words on the ground beside the page's window, a line drawn from them to a block in it, in place of any note
- * shown, and going. The block is read as the move's share begins, what the screen shows of it, as a callout's is.
+ * Notes: words on the ground across from the page's window, a line drawn from them to a block in it, in place of any
+ * note shown, and going. The block is read as the move's share begins, what the screen shows of it, as a callout's
+ * is; a note with no window to stand beside is refused there.
  */
-import { A_SELECTOR, type Form, assertKind, assertWritten, needed } from '../domain/handed.ts';
-import { A_FRAME_SIDE, type FrameSide } from '../domain/split.ts';
+import { FilmError } from '../domain/errors.ts';
+import { assertKind, assertWritten, A_SELECTOR } from '../domain/handed.ts';
 import { linear } from '../domain/time.ts';
 import {
 	type Beginning,
@@ -15,28 +16,24 @@ import {
 	shownPart,
 	timingOf
 } from '../direction/move.ts';
+import { sideBeside } from '../props/note.ts';
 import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
 import { going } from './words.ts';
 
-/** The side of the page's window a note stands on. */
-export interface NoteScript extends TimingScript {
-	readonly side: FrameSide;
-}
-
-const NOTE_FORM: Form<NoteScript> = { side: needed(A_FRAME_SIDE), ...TIMING_FORM };
-// A note names one block: the first a selector matches
+// A note names one block: the first a selector matches; it stands beside a window, which the frame itself is not
 const THE_FIRST = 1;
+const FLAT_ON_THE_FRAME = 0;
 
-/** A note coming up beside the window on its side, its line drawn to the block a selector matches, then its words. */
-export function show(target: string, text: Wording, script: NoteScript): Move {
+/** A note coming up on the ground across from the window, its line drawn to the block a selector matches, then its words. */
+export function show(target: string, text: Wording, script: TimingScript = {}): Move {
 	assertKind(target, A_SELECTOR, "note.show's selector");
 	assertKind(text, A_WORDING, "note.show's text");
-	assertWritten(script, NOTE_FORM, 'note.show');
+	assertWritten(script, TIMING_FORM, 'note.show');
 	const said = saidOf(text);
 	return {
 		part: 'note',
 		timing: timingOf({ ease: linear, ...script }),
-		begin: (beginning) => naming(beginning, target, said, script.side)
+		begin: (beginning) => naming(beginning, target, said)
 	};
 }
 
@@ -46,7 +43,14 @@ export function hide(script: TimingScript = {}): Move {
 	return { part: 'note', timing: timingOf(script), begin: (beginning) => going('note', beginning) };
 }
 
-async function naming(beginning: Beginning, target: string, said: Said, side: FrameSide): Promise<Change> {
+async function naming(beginning: Beginning, target: string, said: Said): Promise<Change> {
+	const view = beginning.scene.camera.view;
+	if (view.lift === FLAT_ON_THE_FRAME) {
+		throw new FilmError(
+			"note.show's note stands beside the page's window, but the page fills the frame: frame it in a window first, with camera.onto(selector, { side })"
+		);
+	}
 	const box = await shownPart(beginning, target, THE_FIRST, 'note.show');
+	const side = sideBeside(view.box, beginning.format.frame);
 	return propChange('note', (progress) => ({ ...said, box, side, shown: progress, gone: 0 }));
 }

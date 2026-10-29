@@ -2,7 +2,6 @@
  * Pins: a numbered mark laid on a block of the page, after any laid before, and all of them taken away together. The
  * block is read as the move's share begins, what the screen shows of it, as a callout's is.
  */
-import { middleX } from '../domain/geometry.ts';
 import { A_SELECTOR, A_STRING, assertKind, assertWritten } from '../domain/handed.ts';
 import {
 	type Beginning,
@@ -16,11 +15,10 @@ import {
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
-import { type Run, keyOf } from '../props/pins.ts';
+import { keyOf } from '../props/pins.ts';
 
-// A pin marks one block: the first a selector matches; its label runs toward the screen's middle
+// A pin marks one block: the first a selector matches
 const THE_FIRST = 1;
-const HALVES = 2;
 
 /** A pin coming up on the block a selector matches, numbered after those laid before, with its label. */
 export function show(target: string, label: string, script: TimingScript = {}): Move {
@@ -38,14 +36,9 @@ export function clear(script: TimingScript = {}): Move {
 
 async function laying(beginning: Beginning, target: string, label: string): Promise<Change> {
 	const box = await shownPart(beginning, target, THE_FIRST, 'pin.show');
-	const runs: Run = middleX(box) > beginning.format.screen.width / HALVES ? 'left' : 'right';
 	const before = beginning.scene.pins?.pins ?? [];
-	const key = keyOf([...before, { box, label, runs, shown: 0 }]);
-	return propChange('pins', (progress) => ({
-		pins: [...before, { box, label, runs, shown: progress }],
-		key,
-		gone: 0
-	}));
+	const key = keyOf([...before.map((pin) => pin.label), label]);
+	return propChange('pins', (progress) => ({ pins: [...before, { box, label, shown: progress }], key, gone: 0 }));
 }
 
 function clearing(beginning: Beginning): Change {

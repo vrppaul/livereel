@@ -219,6 +219,11 @@ body {
 	translate: -100% 0;
 }
 
+/* Over a wide block the mark stands on its top left corner and the label runs right, over the block */
+.pin[data-runs='over'] {
+	left: calc(var(--left) * 1px - var(--pin-size) / 2);
+}
+
 .pin b {
 	width: var(--pin-size);
 	height: var(--pin-size);
@@ -410,47 +415,42 @@ body {
 	background: var(--accent);
 }
 
+/* The words fill their share's width, level with where the line meets them, read from the window outward; as large as the share lets a long word stand on a line of its own */
 .note-words {
+	--letters-across: 8;
+
 	position: absolute;
-	left: calc(var(--to-left) * 1px / var(--frame-scale));
+	left: calc(var(--place-left) * 1px / var(--frame-scale));
 	top: calc(var(--to-top) * 1px / var(--frame-scale));
-	width: max-content;
-	max-width: 520px;
-	padding: 0 var(--note-clear);
+	width: calc(var(--place-width) * 1px / var(--frame-scale));
+	box-sizing: border-box;
+	padding-left: var(--note-clear);
 	transform: translateY(-50%);
-	font: 650 calc(var(--note-size) * 1px) / 1.12 var(--sans);
+	font: 650
+		min(calc(var(--note-size) * 1px), calc(var(--place-width) * 1px / var(--frame-scale) / var(--letters-across))) /
+		1.12 var(--sans);
 	letter-spacing: -0.02em;
 	color: var(--ink);
 }
 
-.note[data-runs='left'] .note-words {
+.note[data-side='left'] .note-words {
+	padding: 0 var(--note-clear) 0 0;
 	text-align: right;
 }
 
-.note[data-side='left'] .note-words {
-	transform: translate(-100%, -50%);
-}
-
-/* Above or below the window the words start, or end, where the line meets them, and run toward the frame's middle */
 .note[data-side='top'] .note-words,
 .note[data-side='bottom'] .note-words {
-	padding: var(--note-clear) 0;
+	text-align: center;
 }
 
-.note[data-side='top'][data-runs='right'] .note-words {
+.note[data-side='top'] .note-words {
+	padding: 0 0 var(--note-clear);
 	transform: translateY(-100%);
 }
 
-.note[data-side='top'][data-runs='left'] .note-words {
-	transform: translate(-100%, -100%);
-}
-
-.note[data-side='bottom'][data-runs='right'] .note-words {
+.note[data-side='bottom'] .note-words {
+	padding: var(--note-clear) 0 0;
 	transform: none;
-}
-
-.note[data-side='bottom'][data-runs='left'] .note-words {
-	transform: translateX(-100%);
 }
 
 /* A title: words over the film's ground over the whole frame, the ground there first; or words on a side of the frame, on the ground round the page's window */
@@ -492,6 +492,7 @@ body {
 	--side-words-at-most: calc(var(--title-size) * var(--side-share-of-title) * 1px);
 	--letters-across: 8;
 
+	overflow-wrap: break-word;
 	left: calc(var(--left) * 1px / var(--frame-scale));
 	right: auto;
 	top: calc((var(--top) + var(--height) / 2) * 1px / var(--frame-scale));

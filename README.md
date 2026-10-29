@@ -134,7 +134,7 @@ and the moves of each part of the scene:
 - `camera.to(pose, { tilt, turn })`, `camera.onto(selector, { every, air, zoomAtMost, side, tilt, turn })`
 - `light.on(selector, { dim })`, `light.to(selector)`, `light.off()`
 - `callout.show(selector, text, { side })`, `callout.hide()`
-- `note.show(selector, text, { side })`, `note.hide()`
+- `note.show(selector, text)`, `note.hide()`
 - `pin.show(selector, label)`, `pin.clear()`
 - `keys.show(caps)`, `keys.hide()`
 - `cursor.to(selector, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
@@ -196,11 +196,13 @@ named), `below`, `left` or `right` of the block. The camera carries it with
 the page, as it carries the light, and the screen's edge does not cut it;
 the block is read as the callout comes, as the light's is.
 
-A note is words on the ground beside the page's window, and a line drawn
-from a dot at a block's edge out to them: `note.show(selector, text, { side })`,
-`side` the side of the window it stands on. It names a block without
-covering the page; the line keeps to the block as the window moves, and
-above or below the window the words run toward the frame's middle.
+A note is words on the ground across from the page's window, in the
+words' share of the frame, and a line drawn from a dot at a block's edge
+out to them: `note.show(selector, text)`. It names a block without
+covering the page; the line keeps to the block as the page moves in the
+window, and the words keep to their share, level with the block as far as
+it lets. A note needs a window: one shown while the page fills the frame
+is refused. Hide it before the camera leaves the window.
 
 Pins mark a path: `pin.show(selector, label)` lays a numbered mark on a
 block's top corner, numbered after those laid before, its label running

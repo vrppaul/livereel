@@ -11,6 +11,7 @@
  */
 /** @import { DrawnScene, PropName } from '../src/scene.ts' */
 /** @import { ShownLine } from '../src/props/terminal.ts' */
+/** @import { DrawnPin } from '../src/props/pins.ts' */
 /** @import { DrawnWords, Piece, Word } from '../src/props/words.ts' */
 /** @import { Theme } from '../src/direction/theme.ts' */
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
@@ -230,6 +231,7 @@ class PinsDrawer {
 				'--shown': pin.shown
 			});
 			element.classList.toggle(QUIET, pin.quiet);
+			named(element, RUNS, pin.runs);
 		}
 	}
 }
@@ -250,11 +252,11 @@ class NoteDrawer {
 			return;
 		}
 		named(this.root, SIDE, note.side);
-		named(this.root, RUNS, note.runs);
 		numbered(this.root, {
+			'--place-left': note.place.left,
+			'--place-width': note.place.width,
 			'--from-left': note.from.left,
 			'--from-top': note.from.top,
-			'--to-left': note.to.left,
 			'--to-top': note.to.top,
 			'--length': note.length,
 			'--angle': note.angle,
@@ -508,13 +510,9 @@ function pieceElement(piece) {
 	return element;
 }
 
-/**
- * A pin: its number, and its label beside it, on the side it runs to.
- * @param {{ readonly number: number, readonly label: string, readonly runs: string }} pin
- */
+/** A pin: its number, and its label beside it. @param {DrawnPin} pin */
 function pinElement(pin) {
 	const element = classed(document.createElement('div'), PIN);
-	element.setAttribute(RUNS, pin.runs);
 	const number = document.createElement('b');
 	number.textContent = String(pin.number);
 	const label = document.createElement('span');

@@ -31,6 +31,8 @@ const RIGHT = { left: 1208, top: 100, width: 100, height: 40 };
 const LEFT = { left: -200, top: 100, width: 200, height: 40 };
 const HALF_ON = { left: 100, top: 380, width: 100, height: 40 };
 const HIDDEN = { left: 0, top: 0, width: 0, height: 0 };
+// A block as wide as most of the screen
+const WIDE = { left: 50, top: 300, width: 500, height: 40 };
 // Blocks partly on the screen, reaching off it past its top, its foot, its left and its right
 const REACHING_ABOVE = { left: 100, top: -1000, width: 100, height: 1200 };
 const REACHING_BELOW = { left: 100, top: 300, width: 100, height: 2000 };
@@ -57,7 +59,8 @@ const PAGE = new PageOfBoxes(
 		['#shown-above', SHOWN_ABOVE],
 		['#shown-below', SHOWN_BELOW],
 		['#shown-left', SHOWN_LEFT],
-		['#shown-right', SHOWN_RIGHT]
+		['#shown-right', SHOWN_RIGHT],
+		['#wide', WIDE]
 	])
 );
 const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
@@ -116,29 +119,37 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 	]).toEqual([null, null, null, null, null, null, null, null]);
 });
 
-test("pins are numbered along their path, the labels before the latest quietened, each running toward the screen's middle", async () => {
+test("pins are numbered along their path, the labels before the latest quietened, each running toward the view's middle, or over a wide block", async () => {
 	const first = await setAt(pin.show('#block', 'Open it'), openingScene(SMALL), 1);
 	const both = await setAt(pin.show('#shown-right', 'Send it'), first, 1);
-	const drawnOnes = drawnPins(both.pins!).pins;
+	const all = await setAt(pin.show('#wide', 'Read it'), both, 1);
+	const drawnOnes = drawnPins(all.pins!, all.camera, SMALL.frame).pins;
 	expect(drawnOnes.map((laid) => [laid.number, laid.label, laid.quiet, laid.runs])).toEqual([
 		[1, 'Open it', true, 'right'],
-		[2, 'Send it', false, 'left']
+		[2, 'Send it', true, 'left'],
+		[3, 'Read it', false, 'over']
 	]);
 });
 
-test("a note's line runs from the block's edge facing its side to past the window there, its words toward the frame's middle", () => {
+test("a note's line runs from the block's edge to the words' share across from the window, level with the block", () => {
 	// Face-on, a page's pixel to a frame's pixel, in a window whose middle is the frame's: the screen drawn 100 to the left
 	const camera: Camera = {
 		pose: { focusX: 300, focusY: 200, zoom: 1 / frameScaleOf(SMALL.frame), tilt: 0, turn: 0 },
 		view: windowView({ left: 100, top: 100, width: 200, height: 200 })
 	};
 	const drawnOne = drawnNote({ ...saidOf('Here'), box: BLOCK, side: 'bottom', shown: 1, gone: 0 }, camera, SMALL.frame);
-	expect([drawnOne.from, drawnOne.to, drawnOne.angle, drawnOne.runs]).toEqual([
+	expect([drawnOne.from, drawnOne.to, drawnOne.angle, drawnOne.place]).toEqual([
 		{ left: expect.closeTo(50, 6), top: expect.closeTo(140, 6) },
-		{ left: expect.closeTo(50, 6), top: expect.closeTo(300 + 56 * frameScaleOf(SMALL.frame), 6) },
+		{ left: expect.closeTo(50, 6), top: 274 },
 		expect.closeTo(90, 6),
-		'right'
+		wordsOn(SMALL.frame, 'bottom')
 	]);
+});
+
+test('a note with no window to stand beside is refused as it begins', async () => {
+	await expect(async () => note.show('#block', 'Here').begin(beginningOf(openingScene(SMALL)))).rejects.toThrow(
+		FilmError
+	);
 });
 
 test('a cursor pressed goes in as the press goes on, and comes back out as it is let go', async () => {
