@@ -6,7 +6,8 @@
  * stage colours it by, read as TypeScript is written; the indent its lines share is dropped and a tab set as spaces,
  * so it reads as an editor sets it, and its widest line is counted, so the stage sets its letters no larger than that
  * line fits across. The pane comes up its ground first and its lines one after another, as words do
- * (`src/props/words.ts`). A line lit stands on a bar of the accent, and while any is lit the rest dim.
+ * (`src/props/words.ts`). A line lit stands on a bar of the accent, and while any is lit the rest dim. Code sliding in
+ * from a side pushes the code shown off past the side across, and holds it while it goes, so the stage draws both.
  */
 import type { Box } from '../domain/geometry.ts';
 import { appearedOf, groundOf } from './words.ts';
@@ -36,7 +37,10 @@ export interface CodeLine {
 	readonly lit: number;
 }
 
-/** Code: its lines, its place in the frame's pixels, and how far it has come up and gone, each from 0 to 1. */
+/**
+ * Code: its lines, its place in the frame's pixels, how far it has come up and gone, each from 0 to 1, and the code it
+ * pushes off as it slides in, while it does; none else.
+ */
 export interface Code {
 	readonly lines: readonly CodeLine[];
 	readonly key: string;
@@ -44,6 +48,7 @@ export interface Code {
 	readonly box: Box;
 	readonly shown: number;
 	readonly gone: number;
+	readonly pushedOff: Code | null;
 }
 
 /** A line as the stage draws it, and how far it has come up, eased, from 0 to 1. */
@@ -64,6 +69,7 @@ export interface DrawnCode {
 	readonly ground: number;
 	readonly gone: number;
 	readonly dimmed: number;
+	readonly pushedOff: DrawnCode | null;
 }
 
 // The pieces of a line, the first kind that matches at a place winning, a group named by each kind
@@ -99,7 +105,8 @@ export function drawnCode(code: Code): DrawnCode {
 		dimmed: Math.min(
 			WHOLLY_LIT,
 			code.lines.reduce((light, line) => light + line.lit, NOT_LIT)
-		)
+		),
+		pushedOff: code.pushedOff === null ? null : drawnCode(code.pushedOff)
 	};
 }
 

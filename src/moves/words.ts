@@ -1,11 +1,11 @@
 /**
  * What the moves of what comes up one after another and goes, a caption's, a title's, a callout's and a note's words
  * and the lines of code, do alike; and what the moves of a title and code in a place do alike as they travel: to
- * another place, in from past a side of the frame, out past one.
+ * another place, in from past a side of the frame, pushing what stands off past the side across, out past one.
  */
-import { type Box, boxToward } from '../domain/geometry.ts';
+import { type Box, type Size, boxToward } from '../domain/geometry.ts';
 import { type Form } from '../domain/handed.ts';
-import { pastTheEdge } from '../domain/place.ts';
+import { acrossFrom, pastTheEdge } from '../domain/place.ts';
 import { A_FRAME_SIDE, type FrameSide } from '../domain/split.ts';
 import {
 	type Beginning,
@@ -24,12 +24,24 @@ type ComingUpProp = 'caption' | 'title' | 'callout' | 'note' | 'code';
 /** The props that stand in a place and travel (`src/domain/place.ts`). */
 type PlacedProp = 'title' | 'code';
 
-/** The side words slide out `toward`, past the frame's edge, rather than going where they stand. */
-export interface WordsHideScript extends TimingScript {
+/** Words that stand in a place, or over the whole frame where they have none. */
+interface Placed {
+	readonly box: Box | null;
+}
+
+/** Words pushed off past the frame's edge: as they stood, and the way their box goes. */
+interface Push<Words extends Placed> {
+	readonly words: Words;
+	readonly start: Box;
+	readonly end: Box;
+}
+
+/** The side what goes slides out `toward`, past the frame's edge, rather than going where it stands. */
+export interface SlideOutScript extends TimingScript {
 	readonly toward?: FrameSide;
 }
 
-export const WORDS_HIDE_FORM: Form<WordsHideScript> = { toward: A_FRAME_SIDE, ...TIMING_FORM };
+export const SLIDE_OUT_FORM: Form<SlideOutScript> = { toward: A_FRAME_SIDE, ...TIMING_FORM };
 // Words not going: neither gone nor on their way out
 export const NOT_GONE = 0;
 // Words come up whole at once where they slide in from a side
@@ -57,6 +69,26 @@ export function travelling<Name extends PlacedProp>(
 	end: Box
 ): Change {
 	return propChange(prop, (progress) => stateAt(boxToward(start, end, progress), progress));
+}
+
+/**
+ * What words sliding in from a side push off: the words standing in a place, whole as they stand, and the way from
+ * their box to a frame past it on the side across, so the two move as one sheet; none where nothing stands in a place,
+ * or nothing slides in.
+ */
+export function pushOf<Words extends Placed>(
+	standing: Words | null,
+	from: FrameSide | null,
+	frame: Size
+): Push<Words> | null {
+	if (from === null || standing === null || standing.box === null) return null;
+	return { words: standing, start: standing.box, end: pastTheEdge(standing.box, acrossFrom(from), frame) };
+}
+
+/** The words pushed off, `progress` of their way; once past the edge, none. */
+export function pushedAt<Words extends Placed>(push: Push<Words> | null, progress: number): Words | null {
+	if (push === null) return null;
+	return untilTheEnd(progress, { ...push.words, box: boxToward(push.start, push.end, progress) });
 }
 
 /** A placed prop travelling from its box past a side of the frame, whole; once there, none. */

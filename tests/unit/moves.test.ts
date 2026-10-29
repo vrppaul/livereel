@@ -211,6 +211,42 @@ test('a title or code shown from a side slides in whole from a frame past its pl
 	]);
 });
 
+test('a title or code shown from a side while one stands in a place pushes it off past the side across, as one sheet, and it is gone at the end', async () => {
+	const [left, right] = [wordsPlaced(SMALL, 'left'), wordsPlaced(SMALL, 'right')];
+	const titled = await setAt(title.show('Here', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const coded = await setAt(code.show('light.on(VISITORS)', { at: 'left' }), titled, 1);
+	const halfWay = await setAt(
+		title.show('Next', { at: 'right', from: 'right' }),
+		await setAt(code.show('cursor.to(REFRESH)', { at: 'right', from: 'right' }), coded, 0.5),
+		0.5
+	);
+	const pushed = await setAt(title.show('Next', { at: 'right', from: 'right' }), coded, 1);
+	expect([
+		halfWay.title!.box,
+		halfWay.title!.pushedOff?.box,
+		halfWay.code!.pushedOff?.box,
+		pushed.title!.pushedOff
+	]).toEqual([
+		boxToward(pastTheEdge(right, 'right', SMALL.frame), right, 0.5),
+		boxToward(left, pastTheEdge(left, 'left', SMALL.frame), 0.5),
+		boxToward(left, pastTheEdge(left, 'left', SMALL.frame), 0.5),
+		null
+	]);
+});
+
+test('the ending card slides in whole from past a side of the frame, and out past one, then is gone', async () => {
+	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
+	const coming = await setAt(ending.show(card, { from: 'right' }), openingScene(SMALL, LIVEREELS_LOOK), 0);
+	const shown = await setAt(ending.show(card), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const leaving = await setAt(ending.hide({ toward: 'left' }), shown, 0.5);
+	const gone = await setAt(ending.hide({ toward: 'left' }), shown, 1);
+	expect([coming.ending, leaving.ending, gone.ending]).toEqual([
+		{ card, shown: 1, shift: { left: SMALL.frame.width, top: 0 } },
+		{ card, shown: 1, shift: { left: -SMALL.frame.width / 2, top: 0 } },
+		null
+	]);
+});
+
 test('a title over the whole frame is refused a move in from a side as it is made, and a move to a place or toward a side as it begins', async () => {
 	expect(() => title.show('Here', { from: 'left' })).toThrow(FilmError);
 	const whole = await setAt(title.show('Here'), openingScene(SMALL, LIVEREELS_LOOK), 1);

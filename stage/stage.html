@@ -37,12 +37,24 @@
 				<div class="line"></div>
 				<div class="words note-words" data-part="words"></div>
 			</div>
-			<div class="title" data-prop="title">
-				<div class="ground" data-part="ground"></div>
-				<div class="words" data-part="words"></div>
+			<!-- The title and the code standing, and each one pushed off past the frame's edge while it goes -->
+			<div data-prop="title">
+				<div class="title" data-part="standing">
+					<div class="ground" data-part="ground"></div>
+					<div class="words" data-part="words"></div>
+				</div>
+				<div class="title" data-part="pushed-off">
+					<div class="ground" data-part="ground"></div>
+					<div class="words" data-part="words"></div>
+				</div>
 			</div>
-			<div class="code" data-prop="code">
-				<div class="pane"><div class="lines" data-part="lines"></div></div>
+			<div data-prop="code">
+				<div class="code" data-part="standing">
+					<div class="pane"><div class="lines" data-part="lines"></div></div>
+				</div>
+				<div class="code" data-part="pushed-off">
+					<div class="pane"><div class="lines" data-part="lines"></div></div>
+				</div>
 			</div>
 			<div class="caption" data-prop="caption">
 				<div class="ground" data-part="ground"></div>

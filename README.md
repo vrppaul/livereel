@@ -146,7 +146,7 @@ and the moves of each part of the scene:
 - `screen.rise()`, `screen.lower()`
 - `terminal.open(title)`, `terminal.type(strokes)`, `terminal.submit()`,
   `terminal.works(lines, thinking, { thinkingShare })`, `terminal.leave()`
-- `ending.show({ name, line, command })`, `ending.hide()`, so a film may open on the card too
+- `ending.show({ name, line, command }, { from })`, `ending.hide({ toward })`, so a film may open on the card too
 - `page.scrollBy(selector, { pixels })`, `page.scrollTo(selector, { top })`, `page.type(strokes)`
 - `sound.play(file)`
 
@@ -201,10 +201,13 @@ Words in a place travel: `title.to(place)` and `code.to(place)` carry them
 to another place through the boxes between, a title reading as it did;
 `show(…, { from: 'right' })` slides them in whole from a frame past that
 edge, and `hide({ toward: 'left' })` slides them out as far, whole, where
-a plain `hide()` lets them go where they stand. Everything that slides in
-one step moves a whole frame, so what leaves and what comes move as one
-sheet, a push. A title over the whole frame has no place to travel from,
-and is refused.
+a plain `hide()` lets them go where they stand. A title or code shown
+`from` a side while one stands in a place pushes it off past the side
+across, so the next slide's words push the last one's away. Everything that
+slides in one step moves a whole frame, so what leaves and what comes move
+as one sheet, a push; the ending card slides so too, its ground with it
+(`ending.show(card, { from })`, `ending.hide({ toward })`). A title over
+the whole frame has no place to travel from, and is refused.
 
 `window.to(place)` draws the page back off the frame's edges into a window
 on the ground, its corners rounding, its edge and shadow coming up, carries

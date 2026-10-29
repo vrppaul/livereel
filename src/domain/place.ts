@@ -14,7 +14,7 @@
  * toward one, travels from or to its box moved a whole frame toward that side. A note's words stand beyond the window
  * on one side of it, where their line meets them.
  */
-import { type Box, type Format, type Size, boxOf, wholePixels } from './geometry.ts';
+import { type Box, type Format, type Point, type Size, boxOf, wholePixels } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, OneOf, Plain } from './handed.ts';
 import { FRAME_SIDES, type FrameSide, windowOn, wordsOn, wordsWholeOn } from './split.ts';
 
@@ -51,6 +51,10 @@ const PLACE_SAID =
 // A box within a place starts at its top left corner and takes the whole of it where a film leaves its values out
 const NONE = 0;
 const WHOLE = 1;
+// How far a slide toward a side moves along the frame's other way: not at all
+const NOT_ALONG = 0;
+// The side of the frame across from each
+const ACROSS: Readonly<Record<FrameSide, FrameSide>> = { left: 'right', right: 'left', top: 'bottom', bottom: 'top' };
 const A_LENGTH_SHARE = new Plain(isMoreThanNone, 'a share more than none');
 // The places words read centred in: across the frame, above or below a window
 const READ_CENTRED: readonly Place[] = ['whole', 'top', 'bottom'];
@@ -121,16 +125,27 @@ export function enteringFrom(box: Box, from: FrameSide | null, frame: Size): Box
  * box moved so moves as far, so what slides out and what slides in together move as one sheet.
  */
 export function pastTheEdge(box: Box, side: FrameSide, frame: Size): Box {
+	const shift = frameToward(side, frame);
+	return { ...box, left: box.left + shift.left, top: box.top + shift.top };
+}
+
+/** How far a whole frame lies toward a side: its width across, or its height down, in the frame's pixels. */
+export function frameToward(side: FrameSide, frame: Size): Point {
 	switch (side) {
 		case 'left':
-			return { ...box, left: box.left - frame.width };
+			return { left: -frame.width, top: NOT_ALONG };
 		case 'right':
-			return { ...box, left: box.left + frame.width };
+			return { left: frame.width, top: NOT_ALONG };
 		case 'top':
-			return { ...box, top: box.top - frame.height };
+			return { left: NOT_ALONG, top: -frame.height };
 		case 'bottom':
-			return { ...box, top: box.top + frame.height };
+			return { left: NOT_ALONG, top: frame.height };
 	}
+}
+
+/** The side of the frame across from a side: where what a slide in from it pushes off leaves toward. */
+export function acrossFrom(side: FrameSide): FrameSide {
+	return ACROSS[side];
 }
 
 /** The box of a place, its names read as what stands there reads them. */

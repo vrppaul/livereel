@@ -1,6 +1,7 @@
 /**
  * Code: a pane of the film's code coming up in a place the film names (`src/domain/place.ts`), beside the page's
- * window or alone, in place of any code shown, from past a side of the frame where the film names one; moving to
+ * window or alone, in place of any code shown, from past a side of the frame where the film names one, pushing the
+ * code shown off past the side across as it comes; moving to
  * another place; lines of it lit as they run; and going, or leaving past a side. Lines are counted from 1, as an
  * editor counts them, and a light past the last line shown is refused as it begins.
  */
@@ -23,10 +24,12 @@ import {
 import { type CodeLine, NOT_LIT, WHOLLY_LIT, type WrittenCode, codeOf } from '../props/code.ts';
 import {
 	NOT_GONE,
-	WORDS_HIDE_FORM,
-	type WordsHideScript,
+	SLIDE_OUT_FORM,
+	type SlideOutScript,
 	going,
 	leavingToward,
+	pushOf,
+	pushedAt,
 	shownComing,
 	travelling
 } from './words.ts';
@@ -80,8 +83,8 @@ export function light(line: number, script: LightScript = {}): Move {
 }
 
 /** The code on the screen going, its pane with it, or sliding out past a side of the frame; once gone, there is none. */
-export function hide(script: WordsHideScript = {}): Move {
-	assertWritten(script, WORDS_HIDE_FORM, 'code.hide');
+export function hide(script: SlideOutScript = {}): Move {
+	assertWritten(script, SLIDE_OUT_FORM, 'code.hide');
 	const toward = script.toward ?? null;
 	return {
 		part: 'code',
@@ -90,13 +93,23 @@ export function hide(script: WordsHideScript = {}): Move {
 	};
 }
 
+/** Code coming up in its place, sliding in from a side where one is named and pushing the code shown off as it does. */
 function showing(written: WrittenCode, beginning: Beginning, box: Box, from: FrameSide | null): Change {
 	const lines = written.lines.map((pieces) => ({ pieces, lit: NOT_LIT }));
 	const { key, columns } = written;
 	const start = enteringFrom(box, from, beginning.format.frame);
+	const push = pushOf(beginning.scene.code, from, beginning.format.frame);
 	return travelling(
 		'code',
-		(at, progress) => ({ lines, key, columns, box: at, shown: shownComing(from, progress), gone: NOT_GONE }),
+		(at, progress) => ({
+			lines,
+			key,
+			columns,
+			box: at,
+			shown: shownComing(from, progress),
+			gone: NOT_GONE,
+			pushedOff: pushedAt(push, progress)
+		}),
 		start,
 		box
 	);

@@ -1,7 +1,8 @@
 /**
  * Titles: words that come up one after another over the whole frame, on the film's ground, or in a place the film
  * names (`src/domain/place.ts`), beside the page's window or alone, in place of any title on the screen, and go. A
- * title in a place moves to another, keeping how it reads, comes in from past a side of the frame, or leaves past one;
+ * title in a place moves to another, keeping how it reads, comes in from past a side of the frame, pushing the title
+ * standing in a place off past the side across, or leaves past one;
  * a title over the whole frame has no place to move from, and is refused there. Its words wrap and take their size by
  * the width of their place, so a title moving to a place of another size takes that size as it sets off and travels
  * whole: its lines change once, where they would break anew on every frame of the way.
@@ -34,10 +35,12 @@ import type { Title } from '../props/title.ts';
 import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
 import {
 	NOT_GONE,
-	WORDS_HIDE_FORM,
-	type WordsHideScript,
+	SLIDE_OUT_FORM,
+	type SlideOutScript,
 	going,
 	leavingToward,
+	pushOf,
+	pushedAt,
 	shownComing,
 	travelling
 } from './words.ts';
@@ -92,8 +95,8 @@ export function to(place: Place, script: TimingScript = {}): Move {
  * The title on the screen going, and its ground with it, or sliding out past a side of the frame where the film names
  * one; once gone, there is none.
  */
-export function hide(script: WordsHideScript = {}): Move {
-	assertWritten(script, WORDS_HIDE_FORM, 'title.hide');
+export function hide(script: SlideOutScript = {}): Move {
+	assertWritten(script, SLIDE_OUT_FORM, 'title.hide');
 	const toward = script.toward ?? null;
 	return {
 		part: 'title',
@@ -104,16 +107,34 @@ export function hide(script: WordsHideScript = {}): Move {
 
 /** A title coming up over the whole frame, its ground first. */
 function overTheWhole(said: Said, align: Alignment): Change {
-	return propChange('title', (progress) => ({ ...said, box: null, align, shown: progress, gone: NOT_GONE }));
+	return propChange('title', (progress) => ({
+		...said,
+		box: null,
+		align,
+		shown: progress,
+		gone: NOT_GONE,
+		pushedOff: null
+	}));
 }
 
-/** A title coming up in its place, travelling in whole from past a side of the frame where one is named. */
+/**
+ * A title coming up in its place, travelling in whole from past a side of the frame where one is named, and pushing
+ * the title standing in a place off past the side across as it does.
+ */
 function arriving(said: Said, beginning: Beginning, place: Place, from: FrameSide | null, align: Alignment): Change {
 	const box = wordsPlaced(beginning.format, place);
 	const start = enteringFrom(box, from, beginning.format.frame);
+	const push = pushOf(beginning.scene.title, from, beginning.format.frame);
 	return travelling(
 		'title',
-		(at, progress) => ({ ...said, box: at, align, shown: shownComing(from, progress), gone: NOT_GONE }),
+		(at, progress) => ({
+			...said,
+			box: at,
+			align,
+			shown: shownComing(from, progress),
+			gone: NOT_GONE,
+			pushedOff: pushedAt(push, progress)
+		}),
 		start,
 		box
 	);

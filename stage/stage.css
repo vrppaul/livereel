@@ -703,12 +703,16 @@ body {
 	opacity: var(--caret);
 }
 
-/* The ending: the name, what it is, and the command that starts it, rising into place */
+/* The ending: the name, what it is, and the command that starts it, rising into place; or the whole card, its ground with it, slid from its place across and down, in the frame's pixels */
 .ending {
 	--ending-rise: 24px;
 
 	position: absolute;
 	inset: 0;
+	transform: translate(
+		calc(var(--shift-left) * 1px / var(--frame-scale)),
+		calc(var(--shift-top) * 1px / var(--frame-scale))
+	);
 	display: flex;
 	flex-direction: column;
 	align-items: center;

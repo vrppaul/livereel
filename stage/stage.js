@@ -14,6 +14,7 @@
 /** @import { DrawnPin } from '../src/props/pins.ts' */
 /** @import { DrawnWords, Piece, Word } from '../src/props/words.ts' */
 /** @import { CodeLine, CodePiece, DrawnCode } from '../src/props/code.ts' */
+/** @import { DrawnTitle } from '../src/props/title.ts' */
 /** @import { Box } from '../src/domain/geometry.ts' */
 /** @import { Look } from '../src/props/look.ts' */
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
@@ -318,25 +319,40 @@ class KeysDrawer {
 }
 
 /** Code in its place: its pane where its box is, and its lines, each line's progress and light set every frame. */
+/** Code: the pane standing, and the one it pushes off past the frame's edge as it slides in. */
 class CodeDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
-		this.root = root;
-		/** @type {KeyedList<DrawnCode['lines'][number]>} */
-		this.lines = new KeyedList(partOf(root, 'lines'), codeLineElement, codeLineNumbers);
+		this.standing = new CodeLayer(partOf(root, 'standing'));
+		this.pushedOff = new CodeLayer(partOf(root, 'pushed-off'));
 	}
 
 	/** @param {DrawnScene} scene */
 	draw(scene) {
-		const code = scene.code;
-		shown(this.root, code !== null);
+		this.standing.draw(scene.code);
+		this.pushedOff.draw(scene.code?.pushedOff ?? null);
+	}
+}
+
+/** One pane of code in its place: its lines, each line's progress and light set every frame. */
+class CodeLayer {
+	/** @param {Staged} element */
+	constructor(element) {
+		this.element = element;
+		/** @type {KeyedList<DrawnCode['lines'][number]>} */
+		this.lines = new KeyedList(partOf(element, 'lines'), codeLineElement, codeLineNumbers);
+	}
+
+	/** @param {DrawnCode | null} code */
+	draw(code) {
+		shown(this.element, code !== null);
 		if (code === null) {
 			this.lines.clear();
 			return;
 		}
 		this.lines.draw(code.key, code.lines);
-		placed(this.root, code.box);
-		numbered(this.root, {
+		placed(this.element, code.box);
+		numbered(this.element, {
 			'--columns': code.columns,
 			'--grounded': code.ground,
 			'--dimmed': code.dimmed
@@ -344,26 +360,41 @@ class CodeDrawer {
 	}
 }
 
+/** The title: the one standing, and the one it pushes off past the frame's edge as it slides in. */
 class TitleDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
-		this.root = root;
-		/** @type {KeyedList<DrawnWords['words'][number]>} */
-		this.words = new KeyedList(partOf(root, 'words'), wordElement, wordNumbers);
+		this.standing = new TitleLayer(partOf(root, 'standing'));
+		this.pushedOff = new TitleLayer(partOf(root, 'pushed-off'));
 	}
 
 	/** @param {DrawnScene} scene */
 	draw(scene) {
-		const title = scene.title;
-		shown(this.root, title !== null);
+		this.standing.draw(scene.title);
+		this.pushedOff.draw(scene.title?.pushedOff ?? null);
+	}
+}
+
+/** One title's words, over the whole frame on their ground or in their place. */
+class TitleLayer {
+	/** @param {Staged} element */
+	constructor(element) {
+		this.element = element;
+		/** @type {KeyedList<DrawnWords['words'][number]>} */
+		this.words = new KeyedList(partOf(element, 'words'), wordElement, wordNumbers);
+	}
+
+	/** @param {DrawnTitle | null} title */
+	draw(title) {
+		shown(this.element, title !== null);
 		if (title === null) {
 			this.words.clear();
 			return;
 		}
-		this.root.toggleAttribute(PLACED, title.box !== null);
-		if (title.box !== null) placed(this.root, title.box);
-		named(this.root, ALIGN, title.align);
-		numbered(this.root, { '--grounded': title.ground, '--gone': title.gone });
+		this.element.toggleAttribute(PLACED, title.box !== null);
+		if (title.box !== null) placed(this.element, title.box);
+		named(this.element, ALIGN, title.align);
+		numbered(this.element, { '--grounded': title.ground, '--gone': title.gone });
 		this.words.draw(title.key, title.words);
 	}
 }
@@ -452,7 +483,11 @@ class EndingDrawer {
 		this.name.textContent = ending.card.name;
 		this.what.textContent = ending.card.line;
 		this.command.textContent = ending.card.command;
-		numbered(this.root, { '--shown': ending.shown });
+		numbered(this.root, {
+			'--shown': ending.shown,
+			'--shift-left': ending.shift.left,
+			'--shift-top': ending.shift.top
+		});
 	}
 }
 
