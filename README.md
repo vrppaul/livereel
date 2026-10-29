@@ -134,6 +134,9 @@ and the moves of each part of the scene:
 - `camera.to(pose, { tilt, turn })`, `camera.onto(selector, { every, air, zoomAtMost, side, tilt, turn })`
 - `light.on(selector, { dim })`, `light.to(selector)`, `light.off()`
 - `callout.show(selector, text, { side })`, `callout.hide()`
+- `note.show(selector, text, { side })`, `note.hide()`
+- `pin.show(selector, label)`, `pin.clear()`
+- `keys.show(caps)`, `keys.hide()`
 - `cursor.to(selector, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
 - `title.show(text, { side })`, `title.hide()`
@@ -191,7 +194,22 @@ named), `below`, `left` or `right` of the block. The camera carries it with
 the page, as it carries the light, and the screen's edge does not cut it;
 the block is read as the callout comes, as the light's is.
 
-What a title, a caption or a callout says is a string, or a list of strings
+A note is words on the ground beside the page's window, and a line drawn
+from a dot at a block's edge out to them: `note.show(selector, text, { side })`,
+`side` the side of the window it stands on. It names a block without
+covering the page; the line keeps to the block as the window moves, and
+above or below the window the words run toward the frame's middle.
+
+Pins mark a path: `pin.show(selector, label)` lays a numbered mark on a
+block's top corner, numbered after those laid before, its label running
+out from the block toward the screen's middle; the labels before it
+quieten. `pin.clear()` takes them all away.
+
+Keys: `keys.show(['⌘', 'Enter'])` sets the caps of a shortcut at the
+frame's foot, where a caption stands, as the page is sent it in an act;
+`keys.hide()` takes them away.
+
+What a title, a caption, a callout or a note says is a string, or a list of strings
 and runs, read one after another. A run is `{ text }` set any of these
 ways: `italic`, `underline`, `strike`, each `true`; `ink`, the colour of its
 letters; `marker`, the colour of a marker behind it; a colour in hex

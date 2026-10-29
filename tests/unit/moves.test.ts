@@ -1,12 +1,17 @@
 import { expect, test } from 'vitest';
-import { type Camera, underTheFrame } from '../../src/domain/camera.ts';
+import { type Camera, underTheFrame, windowView } from '../../src/domain/camera.ts';
 import { FilmError } from '../../src/domain/errors.ts';
-import type { Point } from '../../src/domain/geometry.ts';
+import { type Point, frameScaleOf } from '../../src/domain/geometry.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
 import { onto } from '../../src/moves/camera.ts';
 import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
+import * as keys from '../../src/moves/keys.ts';
+import * as note from '../../src/moves/note.ts';
+import * as pin from '../../src/moves/pins.ts';
 import * as title from '../../src/moves/title.ts';
+import { drawnNote } from '../../src/props/note.ts';
+import { drawnPins } from '../../src/props/pins.ts';
 import { press, release, to as cursorTo } from '../../src/moves/cursor.ts';
 import { off, on as lightOn, to as lightTo } from '../../src/moves/light.ts';
 import { leave, open, submit, works } from '../../src/moves/terminal.ts';
@@ -88,19 +93,50 @@ test('the light is carried or put out only where one is on', async () => {
 	await expect(async () => off().begin(unlit)).rejects.toThrow(FilmError);
 });
 
-test('what is put away — the light, a callout, a title, a caption, the terminal — is gone at its end', async () => {
+test('what is put away — the light, a callout, pins, a note, a title, a caption, keys, the terminal — is gone at its end', async () => {
 	const said = saidOf('Words');
 	const lit = withProp(openingScene(SMALL), 'light', LIT);
 	const pointed = withProp(openingScene(SMALL), 'callout', { ...said, box: BLOCK, side: 'above', shown: 1, gone: 0 });
+	const pinned = await setAt(pin.show('#block', 'Here'), openingScene(SMALL), 1);
+	const noted = withProp(openingScene(SMALL), 'note', { ...said, box: BLOCK, side: 'left', shown: 1, gone: 0 });
 	const titled = withProp(openingScene(SMALL), 'title', { ...said, beside: null, shown: 1, gone: 0 });
 	const captioned = withProp(openingScene(SMALL), 'caption', { ...said, shown: 1, gone: 0 });
+	const pressed = await setAt(keys.show(['⌘', 'K']), openingScene(SMALL), 1);
 	expect([
 		(await setAt(off(), lit, 1)).light,
 		(await setAt(callout.hide(), pointed, 1)).callout,
+		(await setAt(pin.clear(), pinned, 1)).pins,
+		(await setAt(note.hide(), noted, 1)).note,
 		(await setAt(title.hide(), titled, 1)).title,
 		(await setAt(caption.hide(), captioned, 1)).caption,
+		(await setAt(keys.hide(), pressed, 1)).keys,
 		(await setAt(leave(), TYPED, 1)).terminal
-	]).toEqual([null, null, null, null, null]);
+	]).toEqual([null, null, null, null, null, null, null, null]);
+});
+
+test("pins are numbered along their path, the labels before the latest quietened, each running toward the screen's middle", async () => {
+	const first = await setAt(pin.show('#block', 'Open it'), openingScene(SMALL), 1);
+	const both = await setAt(pin.show('#shown-right', 'Send it'), first, 1);
+	const drawnOnes = drawnPins(both.pins!).pins;
+	expect(drawnOnes.map((laid) => [laid.number, laid.label, laid.quiet, laid.runs])).toEqual([
+		[1, 'Open it', true, 'right'],
+		[2, 'Send it', false, 'left']
+	]);
+});
+
+test("a note's line runs from the block's edge facing its side to past the window there, its words toward the frame's middle", () => {
+	// Face-on, a page's pixel to a frame's pixel, in a window whose middle is the frame's: the screen drawn 100 to the left
+	const camera: Camera = {
+		pose: { focusX: 300, focusY: 200, zoom: 1 / frameScaleOf(SMALL.frame), tilt: 0, turn: 0 },
+		view: windowView({ left: 100, top: 100, width: 200, height: 200 })
+	};
+	const drawnOne = drawnNote({ ...saidOf('Here'), box: BLOCK, side: 'bottom', shown: 1, gone: 0 }, camera, SMALL.frame);
+	expect([drawnOne.from, drawnOne.to, drawnOne.angle, drawnOne.runs]).toEqual([
+		{ left: expect.closeTo(50, 6), top: expect.closeTo(140, 6) },
+		{ left: expect.closeTo(50, 6), top: expect.closeTo(300 + 56 * frameScaleOf(SMALL.frame), 6) },
+		expect.closeTo(90, 6),
+		'right'
+	]);
 });
 
 test('a cursor pressed goes in as the press goes on, and comes back out as it is let go', async () => {

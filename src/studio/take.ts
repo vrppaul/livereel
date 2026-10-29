@@ -150,7 +150,9 @@ export class Take {
 
 	/** An act on the page laid flat; the stage asked before it stands up again, as a stage gone cannot stand up. */
 	private async act(step: Act): Promise<void> {
-		await this.opened.stage.layFlat(drawn(posed(this.scene, flatCamera(this.format)), this.moment()));
+		await this.opened.stage.layFlat(
+			drawn(posed(this.scene, flatCamera(this.format)), this.moment(), this.format.screen)
+		);
 		try {
 			await step.action(this.opened.act);
 		} finally {
@@ -225,7 +227,7 @@ export class Take {
 
 	/** The scene as it stands drawn by a camera, and captured. */
 	private async drawnAt(camera: Camera): Promise<Uint8Array> {
-		await this.opened.stage.draw(drawn(posed(this.scene, camera), this.moment()));
+		await this.opened.stage.draw(drawn(posed(this.scene, camera), this.moment(), this.format.frame));
 		return this.opened.stage.capture();
 	}
 

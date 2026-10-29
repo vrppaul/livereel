@@ -35,6 +35,12 @@
 	/* The page's window on the ground: a faint edge round it, and its shadow */
 	--view-shadow: 0 0 0 2px rgb(255 255 255 / 10%), 0 60px 140px rgb(0 0 0 / 55%);
 
+	/* A pin's mark and its number, a note's line, and a key's cap standing up off the frame */
+	--pin: #ffb224;
+	--pin-ink: #10141b;
+	--note-line: #ffb224;
+	--key-shadow: inset 0 -6px 0 var(--terminal-edge), 0 24px 60px rgb(0 0 0 / 35%);
+
 	/* The film's font, and what stands in for it where the system has none */
 	--font: ui-sans-serif;
 	--sans: var(--font), system-ui, sans-serif;

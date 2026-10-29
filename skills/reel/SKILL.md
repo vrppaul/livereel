@@ -66,7 +66,13 @@ What reads as made with care:
   button, a number), in two to five words, one at a time, and goes before
   the camera moves on; a caption speaks to the viewer, a callout labels.
   Frame the block with air on the callout's side: the frame's edge cuts a
-  card that reaches past it.
+  card that reaches past it. Beside a window, a note says the same from
+  the ground and leaves the page whole: put it on a side of the window with
+  room, not between the window and the frame's near edge.
+- **Pins for a path** of three or four steps the viewer will repeat, each
+  laid as the camera reaches its block; clear them before the next shot.
+- **Keys for a shortcut** worth learning, while it is pressed in an act,
+  never for text typed; not while a caption stands, as both take the foot.
 
 What reads as generated: a zoom on every click, a glow behind the product,
 springy overshoot, ripples on clicks. Leave them out.
@@ -200,6 +206,9 @@ its end at once.
 | `cursor.press({ sound })`, `cursor.release()`, `cursor.hide()` | pressed in with a click (`sound`, a file of the film's in its place), let go, taken off the screen |
 | `cursor.click(action, { sound })` | pressed with its click, `act(action)`, let go: the steps of a click |
 | `callout.show(selector, text, { side })`, `callout.hide()` | words on a card beside a block, pointing at it, `side` `above` (where none is named), `below`, `left` or `right`; carried with the page |
+| `note.show(selector, text, { side })`, `note.hide()` | words on the ground on a `side` of the page's window, a line drawn from them to a block in it |
+| `pin.show(selector, label)`, `pin.clear()` | a numbered mark on a block, after those laid before, the earlier labels quietened; all taken away |
+| `keys.show(caps)`, `keys.hide()` | the caps of a shortcut at the frame's foot, as `['⌘', 'Enter']` |
 | `title.show(text, { side })`, `title.hide()` | words coming up one after another on the film's ground over the whole frame, or on a `side` of it beside the page's window, in place of any title shown; going, the ground with them |
 | `caption.show(text)`, `caption.hide()` | words coming up one after another at the frame's foot, in place of any shown; going |
 | `terminal.open(title)` | an agent's terminal coming up over the frame; in a `cut`, there at once |

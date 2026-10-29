@@ -25,6 +25,8 @@ const BETWEEN_LINES = '\n';
 // The attribute that names the side of the frame a title stands on beside a window, none over the whole frame; and
 // the side of its block a callout stands on
 const SIDE = 'data-side';
+// The attribute that names which way a note's words run from where its line meets them, or a pin's label from its mark
+const RUNS = 'data-runs';
 // The ink words are drawn in, the film's or a piece's own, and a piece's marker: the custom properties the stylesheet
 // draws them by; and the class of a marked piece
 const INK = '--ink';
@@ -33,6 +35,9 @@ const MARKED = 'marked';
 // The classes of a word's own box, which rises as it comes up, and of the space before it, which keeps to its line
 const WORD = 'word';
 const SPACE = 'space';
+// The class of a pin, and of one whose label a later pin has quietened
+const PIN = 'pin';
+const QUIET = 'quiet';
 // The stage's token each value of a film's theme takes the place of
 /** @type {{ readonly [Name in keyof Theme]-?: string }} */
 const TOKENS_THEMED = { ground: '--ground', glow: '--ground-glow', ink: INK, font: '--font' };
@@ -158,6 +163,97 @@ class CalloutDrawer {
 	}
 }
 
+/** Pins on blocks of the page, numbered along their path: laid out anew only when one is laid, each set every frame. */
+class PinsDrawer {
+	/** @param {Staged} root */
+	constructor(root) {
+		this.root = root;
+		/** The key of the pins that stand in the markup @type {string | null} */
+		this.standing = null;
+	}
+
+	/** @param {DrawnScene} scene */
+	draw(scene) {
+		const pins = scene.pins;
+		shown(this.root, pins !== null);
+		if (pins === null) {
+			this.standing = null;
+			return;
+		}
+		if (this.standing !== pins.key) {
+			this.standing = pins.key;
+			this.root.replaceChildren(...pins.pins.map(pinElement));
+		}
+		numbered(this.root, { '--gone': pins.gone });
+		for (const [place, pin] of pins.pins.entries()) {
+			const element = this.root.children.item(place);
+			if (!(element instanceof HTMLElement)) continue;
+			numbered(element, {
+				'--left': pin.box.left,
+				'--top': pin.box.top,
+				'--width': pin.box.width,
+				'--shown': pin.shown
+			});
+			element.classList.toggle(QUIET, pin.quiet);
+		}
+	}
+}
+
+class NoteDrawer {
+	/** @param {Staged} root */
+	constructor(root) {
+		this.root = root;
+		this.words = new WordsDrawer(partOf(root, 'words'));
+	}
+
+	/** @param {DrawnScene} scene */
+	draw(scene) {
+		const note = scene.note;
+		shown(this.root, note !== null);
+		if (note === null) {
+			this.words.clear();
+			return;
+		}
+		named(this.root, SIDE, note.side);
+		named(this.root, RUNS, note.runs);
+		numbered(this.root, {
+			'--from-left': note.from.left,
+			'--from-top': note.from.top,
+			'--to-left': note.to.left,
+			'--to-top': note.to.top,
+			'--length': note.length,
+			'--angle': note.angle,
+			'--drawn': note.ground,
+			'--gone': note.gone
+		});
+		this.words.draw(note);
+	}
+}
+
+class KeysDrawer {
+	/** @param {Staged} root */
+	constructor(root) {
+		this.root = root;
+		/** The key of the caps that stand in the markup @type {string | null} */
+		this.standing = null;
+	}
+
+	/** @param {DrawnScene} scene */
+	draw(scene) {
+		const keys = scene.keys;
+		shown(this.root, keys !== null);
+		if (keys === null) {
+			this.standing = null;
+			return;
+		}
+		if (this.standing !== keys.key) {
+			this.standing = keys.key;
+			this.root.replaceChildren(...keys.caps.map(capElement));
+		}
+		numbered(this.root, { '--shown': keys.shown });
+	}
+}
+
 class TitleDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
@@ -267,9 +363,12 @@ const DRAWERS = {
 	screen: new ScreenDrawer(propRoot('screen')),
 	light: new LightDrawer(propRoot('light')),
 	callout: new CalloutDrawer(propRoot('callout')),
+	pins: new PinsDrawer(propRoot('pins')),
 	cursor: new CursorDrawer(propRoot('cursor')),
+	note: new NoteDrawer(propRoot('note')),
 	title: new TitleDrawer(propRoot('title')),
 	caption: new CaptionDrawer(propRoot('caption')),
+	keys: new KeysDrawer(propRoot('keys')),
 	terminal: new TerminalDrawer(propRoot('terminal')),
 	ending: new EndingDrawer(propRoot('ending'))
 };
@@ -368,6 +467,28 @@ function pieceElement(piece) {
 		element.style.setProperty(MARKER, piece.marker);
 	}
 	return element;
+}
+
+/**
+ * A pin: its number, and its label beside it, on the side it runs to.
+ * @param {{ readonly number: number, readonly label: string, readonly runs: string }} pin
+ */
+function pinElement(pin) {
+	const element = classed(document.createElement('div'), PIN);
+	element.setAttribute(RUNS, pin.runs);
+	const number = document.createElement('b');
+	number.textContent = String(pin.number);
+	const label = document.createElement('span');
+	label.textContent = pin.label;
+	element.append(number, label);
+	return element;
+}
+
+/** A key's cap, its name on it. @param {string} name */
+function capElement(name) {
+	const cap = document.createElement('kbd');
+	cap.textContent = name;
+	return cap;
 }
 
 /** A line of the log, its kind its class, what leads it set apart. @param {ShownLine} line */

@@ -191,6 +191,63 @@ body {
 	top: calc(50% - var(--callout-point));
 }
 
+/* Pins: a numbered mark on a block's top corner, its label running out from the block beside it, each rising as it comes; a label a later pin has laid after quietens, its number staying */
+.pins {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	opacity: calc(1 - var(--gone));
+}
+
+/* A label that runs right has its mark on the block's top right corner */
+.pin {
+	--pin-size: 48px;
+	--pin-rise: 10px;
+
+	position: absolute;
+	left: calc((var(--left) + var(--width)) * 1px - var(--pin-size) / 2);
+	top: calc(var(--top) * 1px - var(--pin-size) / 2);
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	opacity: var(--shown);
+	transform: translateY(calc((1 - var(--shown)) * var(--pin-rise)));
+	font: 600 26px / 1 var(--sans);
+}
+
+/* A label that runs left has its mark on the block's top left corner */
+.pin[data-runs='left'] {
+	left: calc(var(--left) * 1px + var(--pin-size) / 2);
+	flex-direction: row-reverse;
+	translate: -100% 0;
+}
+
+.pin b {
+	width: var(--pin-size);
+	height: var(--pin-size);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background: var(--pin);
+	color: var(--pin-ink);
+	font-weight: 700;
+	box-shadow: var(--callout-shadow);
+}
+
+.pin span {
+	padding: 10px 16px;
+	border-radius: 10px;
+	background: var(--ground);
+	color: var(--ink);
+	white-space: nowrap;
+	box-shadow: var(--callout-shadow);
+}
+
+.pin.quiet span {
+	color: var(--ink-quiet);
+}
+
 /* The pointer, its tip where the scene has it, a little smaller as it is pressed in */
 .cursor {
 	--cursor-tip: 3px;
@@ -307,6 +364,86 @@ body {
 	color: var(--ink);
 	text-shadow: var(--caption-shadow);
 	text-wrap: balance;
+}
+
+/* A note: words on the ground beside the window, and a line drawn out from a dot at the block's edge to them, all in the frame's pixels */
+.note {
+	--word-rise: 16px;
+	--word-blur: 8px;
+	--word-sink: 8px;
+	--word-blur-leaving: 6px;
+	--note-line-width: 3px;
+	--note-dot: 12px;
+	--note-clear: 16px;
+
+	position: absolute;
+	inset: 0;
+	opacity: calc(1 - var(--gone));
+}
+
+.note .line {
+	position: absolute;
+	left: calc(var(--from-left) * 1px / var(--frame-scale));
+	top: calc(var(--from-top) * 1px / var(--frame-scale) - var(--note-line-width) / 2);
+	width: calc(var(--length) * var(--drawn) * 1px / var(--frame-scale));
+	height: var(--note-line-width);
+	background: var(--note-line);
+	transform-origin: 0 50%;
+	transform: rotate(calc(var(--angle) * 1deg));
+}
+
+.note .line::before {
+	content: '';
+	position: absolute;
+	left: calc(var(--note-dot) / -2);
+	top: calc((var(--note-line-width) - var(--note-dot)) / 2);
+	width: var(--note-dot);
+	height: var(--note-dot);
+	border-radius: 50%;
+	background: var(--note-line);
+}
+
+.note-words {
+	position: absolute;
+	left: calc(var(--to-left) * 1px / var(--frame-scale));
+	top: calc(var(--to-top) * 1px / var(--frame-scale));
+	width: max-content;
+	max-width: 520px;
+	padding: 0 var(--note-clear);
+	transform: translateY(-50%);
+	font: 650 44px / 1.12 var(--sans);
+	letter-spacing: -0.02em;
+	color: var(--ink);
+}
+
+.note[data-runs='left'] .note-words {
+	text-align: right;
+}
+
+.note[data-side='left'] .note-words {
+	transform: translate(-100%, -50%);
+}
+
+/* Above or below the window the words start, or end, where the line meets them, and run toward the frame's middle */
+.note[data-side='top'] .note-words,
+.note[data-side='bottom'] .note-words {
+	padding: var(--note-clear) 0;
+}
+
+.note[data-side='top'][data-runs='right'] .note-words {
+	transform: translateY(-100%);
+}
+
+.note[data-side='top'][data-runs='left'] .note-words {
+	transform: translate(-100%, -100%);
+}
+
+.note[data-side='bottom'][data-runs='right'] .note-words {
+	transform: none;
+}
+
+.note[data-side='bottom'][data-runs='left'] .note-words {
+	transform: translateX(-100%);
 }
 
 /* A title: words over the film's ground over the whole frame, the ground there first; or words on a side of the frame, on the ground round the page's window */
@@ -525,4 +662,34 @@ body {
 .ending .prompt {
 	color: var(--ink-quiet);
 	margin-right: 0.6em;
+}
+
+/* Keys: the caps of a shortcut at the frame's foot, rising as they come */
+.keys {
+	--keys-rise: 16px;
+
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 72px;
+	display: flex;
+	justify-content: center;
+	gap: 16px;
+	opacity: var(--shown);
+	transform: translateY(calc((1 - var(--shown)) * var(--keys-rise)));
+}
+
+.keys kbd {
+	min-width: 96px;
+	height: 96px;
+	box-sizing: border-box;
+	padding: 0 30px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 20px;
+	background: var(--terminal);
+	color: var(--terminal-ink);
+	font: 600 44px / 1 var(--sans);
+	box-shadow: var(--key-shadow);
 }
