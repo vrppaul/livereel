@@ -4,7 +4,7 @@
  * and captions, and the agent's terminal. A value the film leaves out stays livereel's, so a film tunes one and keeps
  * the rest; the stage sets each the film gives in place of its own token (`stage/tokens.css`).
  */
-import { A_COLOUR, A_FONT_FAMILY, type Form, Plain, assertWritten } from '../domain/handed.ts';
+import { A_COLOUR, A_FONT_FAMILY, type Form, OneOf, Plain, assertWritten } from '../domain/handed.ts';
 
 export interface Theme {
 	/** The ground's colour, in hex, as it stands at its edges. */
@@ -35,12 +35,41 @@ export interface Theme {
 	/** The terminal's colour, and the colour of what is written in it, in hex. */
 	readonly terminal?: string;
 	readonly terminalInk?: string;
+	/** Where the ground's glow stands, across and down the frame, each from 0 to 1. */
+	readonly glowX?: number;
+	readonly glowY?: number;
+	/** How heavy a title's letters are, and a caption's, from 100, thinnest, to 900, as CSS weighs a font. */
+	readonly titleWeight?: number;
+	readonly captionWeight?: number;
+	/** How large a note's, a callout's, a pin's and a key's letters are, in pixels of a frame 1080 on its shorter side. */
+	readonly noteSize?: number;
+	readonly calloutSize?: number;
+	readonly pinSize?: number;
+	readonly keysSize?: number;
+	/** The cursor's colour and the colour of its edge, in hex. */
+	readonly cursorFill?: string;
+	readonly cursorEdge?: string;
+	/** Where a caption stands: at the frame's foot, or its top. */
+	readonly captionAt?: CaptionPlace;
+	/** How words come up: rising out of a blur, rising sharp, or standing where they are as they appear. */
+	readonly wordsMotion?: WordsMotion;
 }
 
+const CAPTION_PLACES = ['bottom', 'top'] as const;
+type CaptionPlace = (typeof CAPTION_PLACES)[number];
+const WORDS_MOTIONS = ['soft', 'sharp', 'still'] as const;
+type WordsMotion = (typeof WORDS_MOTIONS)[number];
+
 const A_PIXELS = new Plain(isPixels, 'a number of pixels, 0 or more');
+const A_SIZE = new Plain(isSize, 'a number of pixels, more than 0');
 const A_SHARE = new Plain(isShare, 'a number from 0 to 1');
+const A_WEIGHT = new Plain(isWeight, 'a weight from 100 to 900');
+const A_CAPTION_PLACE = new OneOf(CAPTION_PLACES, 'where a caption stands: "bottom" or "top"');
+const A_WORDS_MOTION = new OneOf(WORDS_MOTIONS, 'how words come up: "soft", "sharp" or "still"');
 const NONE = 0;
 const WHOLE = 1;
+const THINNEST = 100;
+const HEAVIEST = 900;
 const THEME_FORM: Form<Theme> = {
 	ground: A_COLOUR,
 	glow: A_COLOUR,
@@ -50,14 +79,26 @@ const THEME_FORM: Form<Theme> = {
 	accentInk: A_COLOUR,
 	font: A_FONT_FAMILY,
 	mono: A_FONT_FAMILY,
-	titleSize: A_PIXELS,
-	captionSize: A_PIXELS,
+	titleSize: A_SIZE,
+	captionSize: A_SIZE,
 	windowCorner: A_PIXELS,
 	windowEdge: A_COLOUR,
 	windowShadow: A_SHARE,
 	windowShadowColour: A_COLOUR,
 	terminal: A_COLOUR,
-	terminalInk: A_COLOUR
+	terminalInk: A_COLOUR,
+	glowX: A_SHARE,
+	glowY: A_SHARE,
+	titleWeight: A_WEIGHT,
+	captionWeight: A_WEIGHT,
+	noteSize: A_SIZE,
+	calloutSize: A_SIZE,
+	pinSize: A_SIZE,
+	keysSize: A_SIZE,
+	cursorFill: A_COLOUR,
+	cursorEdge: A_COLOUR,
+	captionAt: A_CAPTION_PLACE,
+	wordsMotion: A_WORDS_MOTION
 };
 // A film that names no theme is shot in livereel's own look
 const LIVEREELS_OWN: Theme = {};
@@ -76,6 +117,14 @@ export function themeOf(written: unknown): Theme {
 
 function isPixels(written: unknown): written is number {
 	return typeof written === 'number' && Number.isFinite(written) && written >= NONE;
+}
+
+function isSize(written: unknown): written is number {
+	return typeof written === 'number' && Number.isFinite(written) && written > NONE;
+}
+
+function isWeight(written: unknown): written is number {
+	return typeof written === 'number' && written >= THINNEST && written <= HEAVIEST;
 }
 
 function isShare(written: unknown): written is number {

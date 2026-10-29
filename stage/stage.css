@@ -129,7 +129,7 @@ body {
 	border-radius: 10px;
 	background: var(--ground);
 	box-shadow: var(--callout-shadow);
-	font: 600 20px / 1.3 var(--sans);
+	font: 600 calc(var(--callout-size) * 1px) / 1.3 var(--sans);
 	color: var(--ink);
 	opacity: var(--grounded);
 }
@@ -209,7 +209,7 @@ body {
 	gap: 10px;
 	opacity: var(--shown);
 	transform: translateY(calc((1 - var(--shown)) * var(--pin-rise)));
-	font: 600 26px / 1 var(--sans);
+	font: 600 calc(var(--pin-text-size) * 1px) / 1 var(--sans);
 }
 
 /* A label that runs left has its mark on the block's top left corner */
@@ -280,6 +280,16 @@ body {
 	opacity: calc(var(--appeared) * (1 - var(--gone)));
 	transform: translateY(calc((1 - var(--appeared)) * var(--word-rise) - var(--gone) * var(--word-sink)));
 	filter: blur(calc((1 - var(--appeared)) * var(--word-blur) + var(--gone) * var(--word-blur-leaving)));
+}
+
+/* A film's theme may have words rise sharp, out of no blur, or stand where they are as they fade up */
+:root[data-words-motion='sharp'] .words .word {
+	filter: none;
+}
+
+:root[data-words-motion='still'] .words .word {
+	filter: none;
+	transform: none;
 }
 
 /* The space before a word comes up with it and keeps to its line: the browser drops it where it ends a line, and its underline or marker with it. Chrome leaves a space bare of an underline unless told not to */
@@ -356,7 +366,7 @@ body {
 	left: 64px;
 	right: 64px;
 	bottom: 72px;
-	font: 650 calc(var(--caption-size) * 1px) / 1.12 var(--sans);
+	font: var(--caption-weight) calc(var(--caption-size) * 1px) / 1.12 var(--sans);
 	letter-spacing: -0.025em;
 	color: var(--ink);
 	text-shadow: var(--caption-shadow);
@@ -408,7 +418,7 @@ body {
 	max-width: 520px;
 	padding: 0 var(--note-clear);
 	transform: translateY(-50%);
-	font: 650 44px / 1.12 var(--sans);
+	font: 650 calc(var(--note-size) * 1px) / 1.12 var(--sans);
 	letter-spacing: -0.02em;
 	color: var(--ink);
 }
@@ -469,7 +479,7 @@ body {
 	right: var(--title-edge);
 	top: 50%;
 	transform: translateY(-50%);
-	font: 700 calc(var(--title-size) * 1px) / 1.08 var(--sans);
+	font: var(--title-weight) calc(var(--title-size) * 1px) / 1.08 var(--sans);
 	letter-spacing: -0.03em;
 	color: var(--ink);
 	text-align: center;
@@ -557,7 +567,7 @@ body {
 }
 
 .terminal .asked {
-	color: var(--ink-quiet);
+	color: var(--terminal-quiet);
 }
 
 /* What leads a line is set apart in weight: a tool's name. A prompt and a spinner stand in the line's own weight */
@@ -601,7 +611,7 @@ body {
 }
 
 .terminal .prompt {
-	color: var(--ink-quiet);
+	color: var(--terminal-quiet);
 	margin-right: 0.6em;
 }
 
@@ -658,7 +668,7 @@ body {
 }
 
 .ending .prompt {
-	color: var(--ink-quiet);
+	color: var(--terminal-quiet);
 	margin-right: 0.6em;
 }
 
@@ -677,17 +687,40 @@ body {
 	transform: translateY(calc((1 - var(--shown)) * var(--keys-rise)));
 }
 
+/* While a caption stands at the frame's foot, the keys stand clear above two lines of it */
+:root:not([data-caption-at='top']) .caption:not([hidden]) ~ .keys {
+	--caption-lines-cleared: 2.4;
+
+	bottom: calc(72px + var(--caption-size) * var(--caption-lines-cleared) * 1px);
+}
+
+/* A cap stands about twice as tall as its letters, and as wide at least */
 .keys kbd {
-	min-width: 96px;
-	height: 96px;
+	--cap-to-letters: 2.2;
+	--cap-side: calc(var(--keys-size) * var(--cap-to-letters) * 1px);
+
+	min-width: var(--cap-side);
+	height: var(--cap-side);
 	box-sizing: border-box;
-	padding: 0 30px;
+	padding: 0 calc(var(--cap-side) / 3);
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	border-radius: 20px;
 	background: var(--terminal);
 	color: var(--terminal-ink);
-	font: 600 44px / 1 var(--sans);
+	font: 600 calc(var(--keys-size) * 1px) / 1 var(--sans);
 	box-shadow: var(--key-shadow);
+}
+
+/* A film's theme may stand its captions at the frame's top, the ground darkening down from it */
+:root[data-caption-at='top'] .caption .ground {
+	top: 0;
+	bottom: auto;
+	background: var(--caption-ground-from-top);
+}
+
+:root[data-caption-at='top'] .caption .words {
+	top: 72px;
+	bottom: auto;
 }

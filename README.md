@@ -237,6 +237,12 @@ stays livereel's:
 | `windowEdge` | the faint edge round the window, its alpha how faint | `#ffffff1a` |
 | `windowShadow`, `windowShadowColour` | how strong the window's shadow is, from `0`, none, to `1`, and its colour | `1`, `#000` |
 | `terminal`, `terminalInk` | the terminal's colour, and what is written in it | `#10141c`, `#f4f6fa` |
+| `glowX`, `glowY` | where the ground's glow stands, across and down, each from 0 to 1 | `0.5`, `0.3` |
+| `titleWeight`, `captionWeight` | how heavy a title's and a caption's letters are, 100 to 900 | `700`, `650` |
+| `noteSize`, `calloutSize`, `pinSize`, `keysSize` | how large a note's, a callout's, a pin's label's and a key's letters are, in pixels | `44`, `20`, `26`, `44` |
+| `cursorFill`, `cursorEdge` | the cursor's colour and its edge's | `#111`, `#fff` |
+| `captionAt` | where captions stand: `'bottom'` or `'top'` | `'bottom'` |
+| `wordsMotion` | how words come up: `'soft'`, rising out of a blur; `'sharp'`, rising with no blur; `'still'`, fading up where they stand | `'soft'` |
 
 Colours are in hex; sizes in pixels of a frame 1080 on its shorter side,
 scaled to the frame shot. A font falls back to livereel's where the system

@@ -38,25 +38,38 @@ const SPACE = 'space';
 // The class of a pin, and of one whose label a later pin has quietened
 const PIN = 'pin';
 const QUIET = 'quiet';
-// The stage's token each value of a film's theme takes the place of
-/** @type {{ readonly [Name in keyof Theme]-?: string }} */
-const TOKENS_THEMED = {
-	ground: '--ground',
-	glow: '--ground-glow',
-	ink: INK,
-	quietInk: '--ink-quiet',
-	accent: '--accent',
-	accentInk: '--accent-ink',
-	font: '--font',
-	mono: '--mono-font',
-	titleSize: '--title-size',
-	captionSize: '--caption-size',
-	windowCorner: '--window-corner',
-	windowEdge: '--window-edge',
-	windowShadow: '--window-shadow',
-	windowShadowColour: '--window-shadow-colour',
-	terminal: '--terminal',
-	terminalInk: '--terminal-ink'
+// What each value of a film's theme sets on the stage: the token it takes the place of, or, for a value that names a
+// way, the attribute the stylesheet reads it by
+/** @type {{ readonly [Name in keyof Theme]-?: { readonly token: string } | { readonly attribute: string } }} */
+const THEMED = {
+	ground: { token: '--ground' },
+	glow: { token: '--ground-glow' },
+	ink: { token: INK },
+	quietInk: { token: '--ink-quiet' },
+	accent: { token: '--accent' },
+	accentInk: { token: '--accent-ink' },
+	font: { token: '--font' },
+	mono: { token: '--mono-font' },
+	titleSize: { token: '--title-size' },
+	captionSize: { token: '--caption-size' },
+	windowCorner: { token: '--window-corner' },
+	windowEdge: { token: '--window-edge' },
+	windowShadow: { token: '--window-shadow' },
+	windowShadowColour: { token: '--window-shadow-colour' },
+	terminal: { token: '--terminal' },
+	terminalInk: { token: '--terminal-ink' },
+	glowX: { token: '--glow-x' },
+	glowY: { token: '--glow-y' },
+	titleWeight: { token: '--title-weight' },
+	captionWeight: { token: '--caption-weight' },
+	noteSize: { token: '--note-size' },
+	calloutSize: { token: '--callout-size' },
+	pinSize: { token: '--pin-text-size' },
+	keysSize: { token: '--keys-size' },
+	cursorFill: { token: '--cursor-fill' },
+	cursorEdge: { token: '--cursor-edge' },
+	captionAt: { attribute: 'data-caption-at' },
+	wordsMotion: { attribute: 'data-words-motion' }
 };
 
 class CameraDrawer {
@@ -410,19 +423,23 @@ function setup(room) {
 
 /** The stage in a film's look: the token each value given takes the place of set to it. @param {Theme} theme */
 function dress(theme) {
-	for (const name of Object.keys(TOKENS_THEMED).filter(isThemed)) {
+	const root = document.documentElement;
+	for (const name of Object.keys(THEMED).filter(isThemed)) {
 		const value = theme[name];
-		if (value !== undefined) document.documentElement.style.setProperty(TOKENS_THEMED[name], String(value));
+		if (value === undefined) continue;
+		const set = THEMED[name];
+		if ('token' in set) root.style.setProperty(set.token, String(value));
+		else root.setAttribute(set.attribute, String(value));
 	}
 }
 
 /**
- * Whether a name is one of a theme's. Every key of the tokens themed is one, but `Object.keys` types each as a bare
- * string: the guard keeps them all and tells the type checker they are the theme's names.
+ * Whether a name is one of a theme's. Every key of the table is one, but `Object.keys` types each as a bare string:
+ * the guard keeps them all and tells the type checker they are the theme's names.
  * @param {string} name @returns {name is keyof Theme}
  */
 function isThemed(name) {
-	return Object.hasOwn(TOKENS_THEMED, name);
+	return Object.hasOwn(THEMED, name);
 }
 
 /** The page opened in the screen's frame, the frame sandboxed first where it is to be. @param {Opening} opening */

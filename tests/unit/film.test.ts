@@ -299,7 +299,7 @@ test('a film is shot on the stage it names, apart where it names none; a stage l
 
 test('a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, a colour not in hex, a font of no name, a size less than none', () => {
 	const names =
-		'ground, glow, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, windowCorner, windowEdge, windowShadow, windowShadowColour, terminal, terminalInk';
+		'ground, glow, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, windowCorner, windowEdge, windowShadow, windowShadowColour, terminal, terminalInk, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, cursorFill, cursorEdge, captionAt, wordsMotion';
 	expect(() => filmWritten({ theme: null })).toThrow(
 		new FilmError(`the film's theme is handed null for an object of ${names}`)
 	);
@@ -311,6 +311,12 @@ test('a theme in no form of one is refused as the film is defined, where it stan
 	);
 	expect(() => filmWritten({ theme: { windowShadow: 2 } })).toThrow(
 		new FilmError("the film's theme's windowShadow is 2: it is a number from 0 to 1")
+	);
+	expect(() => filmWritten({ theme: { captionSize: 0 } })).toThrow(
+		new FilmError("the film's theme's captionSize is 0: it is a number of pixels, more than 0")
+	);
+	expect(() => filmWritten({ theme: { wordsMotion: 'bouncy' } })).toThrow(
+		new FilmError(`the film's theme's wordsMotion is "bouncy": it is how words come up: "soft", "sharp" or "still"`)
 	);
 	expect(() => filmWritten({ theme: { ground: 'navy' } })).toThrow(
 		new FilmError(`the film's theme's ground is "navy": it is a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa`)

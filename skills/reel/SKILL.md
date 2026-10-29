@@ -235,7 +235,10 @@ Put the spaces in the strings, as the words are read.
 brand's look: `ground` and `glow` (left out, the ground is of one colour),
 `ink` and `quietInk`, `accent` and `accentInk` for pins and notes,
 `windowEdge` and `windowShadowColour` with `windowShadow` from 0 to 1 (a dark
-edge on a light ground), `terminal` and
+edge on a light ground), `cursorFill` and `cursorEdge`, `titleWeight` and
+`captionWeight`, `glowX` and `glowY`, `noteSize`, `calloutSize`, `pinSize`
+and `keysSize`, `captionAt` (`'top'` frees the foot for keys) and
+`wordsMotion` (`'soft'`, `'sharp'`, `'still'`), `terminal` and
 `terminalInk`, all in hex; `font` and `mono`, as CSS names a family
 installed on the machine; `titleSize`, `captionSize` and `windowCorner`
 in pixels of a 1080 frame. Leave out what the user does not name: livereel's

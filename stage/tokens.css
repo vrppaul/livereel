@@ -7,7 +7,13 @@
 :root {
 	--ground: #0b0e14;
 	--ground-glow: #182033;
-	--ground-light: radial-gradient(120% 90% at 50% 30%, var(--ground-glow), var(--ground));
+	--glow-x: 0.5;
+	--glow-y: 0.3;
+	--ground-light: radial-gradient(
+		120% 90% at calc(var(--glow-x) * 100%) calc(var(--glow-y) * 100%),
+		var(--ground-glow),
+		var(--ground)
+	);
 	--ink: #f4f6fa;
 	--ink-quiet: #8b95a7;
 	--ink-faint: #5d6678;
@@ -16,8 +22,9 @@
 	--terminal: #10141c;
 	--terminal-edge: #252d3b;
 
-	/* What is written in the terminal and in the ending's command, on the terminal's own colour */
+	/* What is written in the terminal and in the ending's command, on the terminal's own colour, and what stands back there */
 	--terminal-ink: #f4f6fa;
+	--terminal-quiet: #8b95a7;
 	--terminal-shadow: 0 0 0 1px var(--terminal-edge), 0 40px 100px rgb(0 0 0 / 50%);
 	--cursor-fill: #111;
 	--cursor-edge: #fff;
@@ -30,6 +37,11 @@
 	/* The dark round a block in the light, reaching past any edge of the screen */
 	--light-dark: 0 0 0 4000px rgb(6 9 16);
 	--caption-ground: linear-gradient(to top, color-mix(in srgb, var(--ground) 85%, transparent), transparent);
+	--caption-ground-from-top: linear-gradient(
+		to bottom,
+		color-mix(in srgb, var(--ground) 85%, transparent),
+		transparent
+	);
 	--caption-shadow: 0 2px 30px rgb(0 0 0 / 55%);
 	--callout-shadow: 0 12px 32px rgb(0 0 0 / 35%);
 
@@ -54,9 +66,15 @@
 	--accent-ink: #10141b;
 	--key-shadow: inset 0 -6px 0 var(--terminal-edge), 0 24px 60px rgb(0 0 0 / 35%);
 
-	/* How large a title's and a caption's letters are, in pixels */
+	/* How large and how heavy the letters of what is written over the frame are, in pixels and as CSS weighs a font */
 	--title-size: 92;
+	--title-weight: 700;
 	--caption-size: 56;
+	--caption-weight: 650;
+	--note-size: 44;
+	--callout-size: 20;
+	--pin-text-size: 26;
+	--keys-size: 44;
 
 	/* The film's fonts, and what stands in for each where the system has none */
 	--font: ui-sans-serif;
