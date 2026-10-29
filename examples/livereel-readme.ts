@@ -68,16 +68,22 @@ const NIGHT: Theme = {
 	windowEdge: '#ffffff1a'
 };
 const SERIF: Theme = { font: 'Georgia, serif', windowCorner: 0, windowShadowColour: '#7c3aed' };
+// Then, at once, a cyan accent under the line lit, and corners rounded again, and more
+const CYAN: Theme = { accent: '#22d3ee' };
+const ROUNDED: Theme = { windowCorner: 40 };
 // How a beat's heading and its code share their place down it, the code right under the heading: about the middle
 // of a tall place, from the top of a short one
 const TALL: Stacking = { heading: { top: 0.18, height: 0.22 }, code: { top: 0.42, height: 0.3 } };
 const SHORT: Stacking = { heading: { top: 0, height: 0.3 }, code: { top: 0.34, height: 0.66 } };
+const HIGH: Stacking = { heading: { top: 0, height: 0.2 }, code: { top: 0.26, height: 0.6 } };
 // Where the words of a beat stand: beside the window on either side, above a window that runs off the frame's foot,
 // or on a slide of their own with no window
 const LEFT_OF_THE_WINDOW: Words = { place: 'left', stacking: TALL };
 const RIGHT_OF_THE_WINDOW: Words = { place: 'right', stacking: TALL };
 const ABOVE_THE_WINDOW: Words = { place: { left: 0.06, top: 0.06, width: 0.88, height: 0.32 }, stacking: SHORT };
 const ON_A_SLIDE: Words = { place: { left: 0.18, top: 0.12, width: 0.64, height: 0.62 }, stacking: TALL };
+// The look's slide: the same place, the heading high in it, so its five lines of code stand clear below
+const ON_THE_LOOKS_SLIDE: Words = { place: ON_A_SLIDE.place, stacking: HIGH };
 // The window low on the frame, wider than its room and running off the frame's foot
 const LOW_AND_OFF_THE_FOOT: Place = { left: 0.03, top: 0.42, width: 0.94, height: 0.8 };
 // The lines of code each beat shows, the regions this file marks below, and their places, counted from 1 as an editor
@@ -86,6 +92,8 @@ const REGIONS = await regionsOf(new URL(import.meta.url));
 const FIRST_LINE = 1;
 const SECOND_LINE = 2;
 const THIRD_LINE = 3;
+const FOURTH_LINE = 4;
+const FIFTH_LINE = 5;
 
 /** A band down a place: where it starts and how much of it it takes, each a share of the place's height. */
 interface Band {
@@ -315,7 +323,7 @@ function actTheLook(): readonly Step[] {
 			seconds: 1,
 			moves: [
 				caption.hide({ within: { end: 0.4 } }),
-				...beatSwapped('Change the whole look', ['paper', 'night', 'serif'], ON_A_SLIDE)
+				...beatSwapped('Change the whole look', ['paper', 'night', 'serif', 'cyan', 'rounded'], ON_THE_LOOKS_SLIDE)
 			],
 			ease: easeInOutCubic
 		}),
@@ -343,7 +351,21 @@ function actTheLook(): readonly Step[] {
 				// #endregion
 			]
 		}),
-		hold({ seconds: 1 })
+		hold({ seconds: 0.6 }),
+		cut(
+			code.light(FOURTH_LINE),
+			// #region cyan
+			look.to(CYAN)
+			// #endregion
+		),
+		hold({ seconds: 0.9 }),
+		cut(
+			code.light(FIFTH_LINE),
+			// #region rounded
+			look.to(ROUNDED)
+			// #endregion
+		),
+		hold({ seconds: 1.2 })
 	];
 }
 
