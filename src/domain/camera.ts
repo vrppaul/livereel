@@ -24,6 +24,7 @@ import {
 	cornersOf,
 	distanceBetween,
 	frameScaleOf,
+	isTheWholeOf,
 	middleX,
 	middleY,
 	nearestWithin
@@ -72,6 +73,16 @@ export type Aim =
 export interface Aiming {
 	readonly from: Pose;
 	readonly aim: Aim;
+	readonly progress: number;
+}
+
+/**
+ * The window as a scene holds it: on its way from the view it stood in, as its move began, to the one it goes to,
+ * `progress` of the way; at 1, there. What stands beside the window reads where it goes.
+ */
+export interface Placing {
+	readonly from: View;
+	readonly to: View;
 	readonly progress: number;
 }
 
@@ -142,9 +153,19 @@ export function windowView(box: Box): View {
 	return { box, lift: LIFTED };
 }
 
-/** A view `progress` of the way to another: its box moved and resized, and lifted or laid down as far. */
-export function viewToward(start: View, end: View, progress: number): View {
-	return { box: boxToward(start.box, end.box, progress), lift: between(start.lift, end.lift, progress) };
+/** The camera's view over a box of the frame: the frame itself, flat, where the box is the whole of it; else a window. */
+export function viewOver(box: Box, frame: Size): View {
+	return isTheWholeOf(box, frame) ? wholeView(frame) : windowView(box);
+}
+
+/** The window standing in a view: there already. */
+export function placedIn(view: View): Placing {
+	return { from: view, to: view, progress: ARRIVED };
+}
+
+/** Where the window stands, so far on its way. */
+export function viewOf(placing: Placing): View {
+	return viewToward(placing.from, placing.to, placing.progress);
 }
 
 /** The camera standing at a pose: there already, aiming at it. */
@@ -163,6 +184,11 @@ export function seenThrough(aiming: Aiming, view: View, format: Format): Camera 
 /** The camera an act is done in: face-on at the screen's own size, on a frame the screen's size. */
 export function flatCamera(format: Format): Camera {
 	return { pose: flatPose(format), view: wholeView(format.screen) };
+}
+
+/** A view `progress` of the way to another: its box moved and resized, and lifted or laid down as far. */
+function viewToward(start: View, end: View, progress: number): View {
+	return { box: boxToward(start.box, end.box, progress), lift: between(start.lift, end.lift, progress) };
 }
 
 /** A camera `progress` of the way from one to another: its pose, and its view. */

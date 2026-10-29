@@ -211,8 +211,8 @@ on the ground, its corners rounding, its edge and shadow coming up, carries
 it from one place to another, and, `window.to('whole')`, brings it back to
 fill the frame. The window moves apart from the camera: the camera keeps
 what it frames framed in whatever window stands, as the window travels or
-grows, so `window.to` and `camera.onto` share a step in either order. The words take
-about a third of the frame, set as large as their share lets, or the share
+grows, so `window.to` and `camera.onto` share a step in either order. The
+words take about a third of the frame, set as large as their share lets, or the share
 a format's `split` gives them (see Formats); the window takes the whole
 rest, whatever the page's shape, and shows the part of it the camera
 frames. Inside the window the camera frames as in the whole frame: a block

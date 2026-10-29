@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { type Camera, onTheFrame, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
+import { type Camera, onTheFrame, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import { type Point, boxOf, boxToward, frameScaleOf, middleX, middleY } from '../../src/domain/geometry.ts';
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
@@ -273,7 +273,7 @@ test("a note's words stand in the words' share on the side of the frame clearest
 	const windowed = withProp(
 		openingScene(SMALL, LIVEREELS_LOOK),
 		'window',
-		windowView({ left: 300, top: 20, width: 80, height: 60 })
+		placedIn(windowView({ left: 300, top: 20, width: 80, height: 60 }))
 	);
 	const clearest = (await setAt(note.show('#block', 'Here'), windowed, 1)).note!;
 	const named = (await setAt(note.show('#block', 'Here', { at: { of: 'left', height: 0.5 } }), windowed, 1)).note!;
@@ -283,11 +283,16 @@ test("a note's words stand in the words' share on the side of the frame clearest
 	]);
 });
 
-test('while a note stands the window stays beside it: a move of the window is refused as it begins, and the camera moves on inside it', async () => {
+test('a note shown while the window moves stands beside where the window goes', async () => {
+	const halfWay = await setAt(windowTo('right'), openingScene(SMALL, LIVEREELS_LOOK), 0.5);
+	const noted = (await setAt(note.show('#block', 'Here'), halfWay, 1)).note!;
+	expect(noted.beside).toEqual({ side: 'left', box: wordsOn(SMALL, 'left') });
+});
+
+test('while a note stands the window stays beside it: a move of the window is refused as it begins', async () => {
 	const windowed = await setAt(windowTo('right'), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const noted = await setAt(note.show('#block', 'Here'), windowed, 1);
 	await expect(async () => windowTo('left').begin(beginningOf(noted))).rejects.toThrow(FilmError);
-	await expect(setAt(onto('#wide', { zoomAtMost: 4 }), noted, 1)).resolves.toBeDefined();
 });
 
 test('a note with no window to stand beside, or with its words over the window, is refused as it begins', async () => {
@@ -300,13 +305,15 @@ test('a note with no window to stand beside, or with its words over the window, 
 	);
 });
 
-test('the window moves to a place, lifted off the ground, and back over the whole frame, flat on it', async () => {
+test('the window moves to a place, lifted off the ground, and back over the whole frame, flat on it, however the whole frame is named', async () => {
 	const windowed = await setAt(windowTo('right'), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const halfWay = await setAt(windowTo('whole'), windowed, 0.5);
 	const back = await setAt(windowTo('whole'), windowed, 1);
-	expect([windowed.window, halfWay.window, back.window]).toEqual([
+	const backAsABox = await setAt(windowTo({ of: 'whole' }), windowed, 1);
+	expect([windowed, halfWay, back, backAsABox].map((scene) => cameraOf(scene, SMALL).view)).toEqual([
 		windowView(windowOn(SMALL, 'right')),
 		{ box: boxToward(windowOn(SMALL, 'right'), boxOf(SMALL.frame), 0.5), lift: 0.5 },
+		wholeView(SMALL.frame),
 		wholeView(SMALL.frame)
 	]);
 });

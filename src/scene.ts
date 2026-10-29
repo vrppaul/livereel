@@ -15,10 +15,13 @@ import {
 	type Aiming,
 	type Camera,
 	type DrawnCamera,
+	type Placing,
 	type View,
 	drawnCamera,
+	placedIn,
 	seenThrough,
 	standingAt,
+	viewOf,
 	wholePose,
 	wholeView
 } from './domain/camera.ts';
@@ -40,7 +43,7 @@ import type { ShownWords } from './props/words.ts';
 export interface PropStates {
 	look: Look;
 	camera: Aiming;
-	window: View;
+	window: Placing;
 	screen: Screen;
 	light: Light | null;
 	callout: Callout | null;
@@ -85,7 +88,7 @@ export function openingScene(format: Format, look: Look): Scene {
 	return {
 		look,
 		camera: standingAt(wholePose(format)),
-		window: wholeView(format.frame),
+		window: placedIn(wholeView(format.frame)),
 		screen: SCREEN_UP,
 		light: null,
 		callout: null,
@@ -105,14 +108,14 @@ export function withProp<Name extends PropName>(scene: Scene, name: Name, state:
 	return { ...scene, [name]: state };
 }
 
-/** The camera as the scene shows it: what it aims at, come to in the window that stands. */
+/** The camera as the scene shows it: what it aims at, come to in the window where it stands so far. */
 export function cameraOf(scene: Scene, format: Format): Camera {
-	return seenThrough(scene.camera, scene.window, format);
+	return seenThrough(scene.camera, viewOf(scene.window), format);
 }
 
 /**
  * The scene as the stage draws it at a moment of the film, in the format it is shot in, seen by a camera: the scene's
- * own, or one along its way there.
+ * own, one along its way there, or the flat one an act is done in.
  */
 export function drawn(scene: Scene, camera: Camera, moment: number, format: Format): DrawnScene {
 	const caption = scene.caption === null ? null : drawnCaption(scene.caption, format);

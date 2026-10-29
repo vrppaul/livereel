@@ -20,7 +20,9 @@
 
 ## Screens: what the window, the marks and the theme left open (2026-10-29)
 
-- A shorthand for a side per format, `side: { square: 'top', wide: 'left' }`, offered, not answered; today a film names sides from `steps`' format name.
+- A shorthand for a place per format, `at: { square: 'top', wide: 'left' }`, offered, not answered; today a film names places from `steps`' format name.
+- A note and a window move that begin on the same frame each read the scene before the other is set: the note stands beside where the window stood, and the window is not refused for the note, so the words may end over the page (seen in a probe of ea3672b's review, as with `camera.onto(…, { side })` before it). Closing it changes what a move reads as it begins: every move begun on a frame set at its start before the next begins.
+- A camera move whose window grows faster than the camera comes in shows ground in the window on the way: its `from` pose stays where it stood in the window it began in, and only its end is kept on the screen in the window as it stands (58 px of a 400 frame in a probe of ea3672b's review; 37 px before it, with the camera and the window on one timing). Keeping the pose on its way on the screen too changes the path of every camera move: to be seen by the owner's eye first.
 - A note's line runs from its block across the page to the window's edge and strikes through the page's text on its way.
 - Pins lie on the screen, so their marks and labels scale with the camera's zoom: small in a zoomed-out window.
 - Mid-lift at an angle, `.view-shadow` stands on the view's box while the cut is still open, so a faint ring shows apart from the picture for a few frames.

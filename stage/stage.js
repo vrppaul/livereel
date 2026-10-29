@@ -25,7 +25,8 @@
 const APART = ' ';
 // The lines of the terminal's log are told apart from each other by this, to know when they changed
 const BETWEEN_LINES = '\n';
-// The attribute that names the side of the frame a note's words stand on, and the side of its block a callout stands on
+// The attribute that names the side of the window a note's words stand beyond, and the side of its block a callout
+// stands on
 const SIDE = 'data-side';
 // The attribute a title stands in a place by, rather than over the whole frame on its ground, and the one that names
 // how it reads there

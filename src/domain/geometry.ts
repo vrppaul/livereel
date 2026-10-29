@@ -145,6 +145,11 @@ export function nearestWithin(point: Point, size: Size): Point {
 	};
 }
 
+/** Whether a box is the whole of a size laid from its top left, edge to edge. */
+export function isTheWholeOf(box: Box, size: Size): boolean {
+	return box.left === 0 && box.top === 0 && box.width === size.width && box.height === size.height;
+}
+
 /** Whether a box lies wholly outside a size laid from its top left: no part of it within. */
 export function liesOutside(box: Box, size: Size): boolean {
 	return liesAboveOrBelow(box, size) || box.left + box.width <= 0 || box.left >= size.width;

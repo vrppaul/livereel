@@ -64,7 +64,8 @@ async function naming(beginning: Beginning, target: string, said: Said, at: Plac
  * where they would stand over it.
  */
 function besideTheWindow(beginning: Beginning, at: Place | null): Beside {
-	const window = beginning.scene.window.box;
+	// Where the window stands, or goes while it moves
+	const window = beginning.scene.window.to.box;
 	const box = wordsPlaced(beginning.format, at ?? sideClearestOf(beginning.format, window));
 	const side = sideBeyond(box, window);
 	if (side === null) {
