@@ -39,19 +39,16 @@ body {
 	transform: rotateX(calc(var(--tilt) * 1deg)) rotateY(calc(var(--turn) * 1deg));
 }
 
-/* Flat on the frame, the view cuts nothing off, so an angled screen shows past the frame's own edges: its cut stands far out. Lifted at all, it is a window and cuts at its edges, its corners rounding as it lifts. The view leaves the frame's edges only once lifted, so the cut closes in where nothing past them shows */
+/* The view's picture cut where the engine says (`drawnCamera`): at the screen's edges flat on the frame, closing in on the view's as it lifts into a window, the corners rounding with it, as its shadow's do */
 .view {
-	--view-reach: 4000px;
-	--lifted-at-all: 1000000;
-
 	clip-path: inset(
-		calc((min(var(--lift) * var(--lifted-at-all), 1) - 1) * var(--view-reach)) round
-			calc(var(--lift) * var(--view-corner) * var(--frame-scale))
+		calc(var(--cut-top) * 1px) calc(var(--cut-right) * 1px) calc(var(--cut-bottom) * 1px) calc(var(--cut-left) * 1px)
+			round calc(var(--lift) * var(--view-corner) * var(--frame-scale))
 	);
 }
 
 .view-shadow {
-	border-radius: calc(var(--view-corner) * var(--frame-scale));
+	border-radius: calc(var(--lift) * var(--view-corner) * var(--frame-scale));
 	box-shadow: var(--view-shadow);
 	opacity: var(--lift);
 }
@@ -465,10 +462,6 @@ body {
 	opacity: var(--grounded);
 }
 
-.title[data-side] .ground {
-	display: none;
-}
-
 /* The words stand in the middle of what they stand over: centred over the whole frame; beside a window, in the middle of their box down it, read from the left beside the window and centred above or below it. The box is in the frame's pixels, and what stands over the frame in pixels of a frame the stage's look was made on */
 .title .words {
 	position: absolute;
@@ -483,12 +476,16 @@ body {
 	text-wrap: balance;
 }
 
+/* Beside a window the words are as large as their box's width lets a long word stand on a line of its own, and no larger than a title beside a window on a wide frame */
 .title[data-side] .words {
+	--side-words-at-most: 72px;
+	--letters-across: 8;
+
 	left: calc(var(--left) * 1px / var(--frame-scale));
 	right: auto;
 	top: calc((var(--top) + var(--height) / 2) * 1px / var(--frame-scale));
 	width: calc(var(--width) * 1px / var(--frame-scale));
-	font-size: 72px;
+	font-size: min(var(--side-words-at-most), calc(var(--width) * 1px / var(--frame-scale) / var(--letters-across)));
 }
 
 .title[data-side='left'] .words,

@@ -3,10 +3,11 @@
  *
  * Arithmetic on poses and boxes alone, so a film's framing is worked out before a browser is asked anything. The
  * camera's picture shows in its view: the whole frame, edge to edge, or a window standing on the film's ground. An
- * angle leans the view, the screen in it face-on to it, so the camera is moved as little as it takes to keep the
- * screen filling its view at any angle, no edge of it showing; along a
- * side the screen is too short to fill at that zoom, the screen stands in the view's middle, as much ground showing on
- * either side of it. What the camera shows where is worked out as the stage draws it (`.view` and `.camera` in
+ * angle leans the view, the screen in it face-on to it. The camera is moved as little as it takes to keep the screen
+ * filling a window at any angle, and the whole frame face-on, no edge of it showing; along a side the screen is too
+ * short to fill at that zoom, the screen stands in the view's middle, as much ground showing on either side of it. An
+ * angled camera in the whole frame stands where the film puts it. What the camera shows where is worked out as the
+ * stage draws it (`.view` and `.camera` in
  * `stage/stage.css`): the screen carried by its focus to the view's middle and brought close, the view swung and leant
  * back about its middle, and seen from the eye before the frame's middle, a nearer point larger.
  */
@@ -54,6 +55,23 @@ export interface View {
 export interface Camera {
 	readonly pose: Pose;
 	readonly view: View;
+}
+
+/**
+ * Where the camera's picture is cut, in from each edge of its view, in the frame's pixels; past the edge, less than
+ * none. Flat on the frame, the cut stands at the screen's edges where they reach past the view's, so an angled screen
+ * shows past the frame's own edges; as the view lifts into a window, the cut closes in on its edges.
+ */
+export interface Cut {
+	readonly top: number;
+	readonly right: number;
+	readonly bottom: number;
+	readonly left: number;
+}
+
+/** The camera as the stage draws it: where it looks, its view, and where its picture is cut. */
+export interface DrawnCamera extends Camera {
+	readonly cut: Cut;
 }
 
 /** How a block is framed: `air` clear on its every side, in the page's pixels; the camera no closer than `zoomAtMost`. */
@@ -107,6 +125,7 @@ export function flatCamera(format: Format): Camera {
 	return { pose: flatPose(format), view: wholeView(format.screen) };
 }
 
+/** A camera `progress` of the way from one to another: its pose, its view's box and how far the view stands off. */
 export function cameraToward(start: Camera, end: Camera, progress: number): Camera {
 	return {
 		pose: poseToward(start.pose, end.pose, progress),
@@ -115,6 +134,36 @@ export function cameraToward(start: Camera, end: Camera, progress: number): Came
 			lift: between(start.view.lift, end.view.lift, progress)
 		}
 	};
+}
+
+/** The camera as the stage draws it, its cut worked out from where the screen stands in its view. */
+export function drawnCamera(camera: Camera, format: Format): DrawnCamera {
+	const view = camera.view.box;
+	const frameZoom = frameZoomOf(camera.pose, format.frame);
+	const screenLeft = view.width / HALVES - camera.pose.focusX * frameZoom;
+	const screenTop = view.height / HALVES - camera.pose.focusY * frameZoom;
+	const screenRight = screenLeft + format.screen.width * frameZoom;
+	const screenBottom = screenTop + format.screen.height * frameZoom;
+	// How much of the way from the screen's edges to the view's the cut still stands out
+	const open = LIFTED - camera.view.lift;
+	return {
+		...camera,
+		cut: {
+			top: open * Math.min(NOTHING, screenTop),
+			right: open * Math.min(NOTHING, view.width - screenRight),
+			bottom: open * Math.min(NOTHING, view.height - screenBottom),
+			left: open * Math.min(NOTHING, screenLeft)
+		}
+	};
+}
+
+/**
+ * A pose kept off the screen's edge in a view where the screen faces the view's plane: face-on in the whole frame,
+ * and at any angle in a window, which the angle leans with the screen in it.
+ */
+export function keptOnTheScreen(pose: Pose, format: Format, view: View): Pose {
+	const facesTheView = (pose.tilt === 0 && pose.turn === 0) || view.lift > FLAT;
+	return facesTheView ? covering(pose, format, view.box) : pose;
 }
 
 /** Face-on, the whole screen as large as the frame holds it. */

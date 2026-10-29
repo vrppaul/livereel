@@ -7,8 +7,8 @@
  * so the stage draws numbers and words and decides nothing. A prop that may be absent is `null`; the compiler holds
  * every prop to a drawn form here and to a drawer on the stage.
  */
-import type { Format, Size } from './domain/geometry.ts';
-import { type Camera, wholeCamera } from './domain/camera.ts';
+import type { Format } from './domain/geometry.ts';
+import { type Camera, type DrawnCamera, drawnCamera, wholeCamera } from './domain/camera.ts';
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
 import type { Cursor } from './props/cursor.ts';
 import type { Ending } from './props/ending.ts';
@@ -42,7 +42,7 @@ export type Scene = { readonly [Name in PropName]: PropStates[Name] };
 
 /** What the stage is handed for each prop: its state, or what is worked out from it to draw. */
 interface DrawnProps {
-	camera: Camera;
+	camera: DrawnCamera;
 	screen: Screen;
 	light: Light | null;
 	callout: DrawnCallout | null;
@@ -85,16 +85,16 @@ export function posed(scene: Scene, camera: Camera): Scene {
 	return withProp(scene, 'camera', camera);
 }
 
-/** The scene as the stage draws it at a moment of the film, on a frame of this size. */
-export function drawn(scene: Scene, moment: number, frame: Size): DrawnScene {
+/** The scene as the stage draws it at a moment of the film, in the format it is shot in. */
+export function drawn(scene: Scene, moment: number, format: Format): DrawnScene {
 	return {
-		camera: scene.camera,
+		camera: drawnCamera(scene.camera, format),
 		screen: scene.screen,
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout),
 		pins: scene.pins === null ? null : drawnPins(scene.pins),
 		cursor: scene.cursor,
-		note: scene.note === null ? null : drawnNote(scene.note, scene.camera, frame),
+		note: scene.note === null ? null : drawnNote(scene.note, scene.camera, format.frame),
 		title: scene.title === null ? null : drawnTitle(scene.title),
 		caption: scene.caption === null ? null : drawnWords(scene.caption),
 		keys: scene.keys,

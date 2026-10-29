@@ -1,9 +1,11 @@
 import { expect, test } from 'vitest';
-import { type Camera, underTheFrame, windowView } from '../../src/domain/camera.ts';
+import { type Camera, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import { type Point, frameScaleOf } from '../../src/domain/geometry.ts';
+import { windowOn, wordsOn } from '../../src/domain/split.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
-import { onto } from '../../src/moves/camera.ts';
+import { to as cameraTo, onto } from '../../src/moves/camera.ts';
+import { drawnTitle } from '../../src/props/title.ts';
 import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
 import * as keys from '../../src/moves/keys.ts';
@@ -247,6 +249,25 @@ test('an angled camera frames a block in its window as a face-on one does, the w
 	const faceOn = (await setAt(onto('#half-on', { side: 'right' }), openingScene(SMALL), 1)).camera;
 	const angled = (await setAt(onto('#half-on', { side: 'right', tilt: 6, turn: -16 }), openingScene(SMALL), 1)).camera;
 	expect(angled).toEqual({ pose: { ...faceOn.pose, tilt: 6, turn: -16 }, view: faceOn.view });
+});
+
+test('an angled camera in the whole frame stands where the film puts it, the screen leant past the frame', async () => {
+	const angled = (await setAt(onto('#block', { turn: -16 }), openingScene(SMALL), 1)).camera;
+	expect([angled.pose.focusX, angled.pose.focusY]).toEqual([150, 120]);
+});
+
+test("a camera onto a block on a side stands in that side's window, and back in the whole frame by camera.to", async () => {
+	const inTheWindow = await setAt(onto('#block', { side: 'right' }), openingScene(SMALL), 1);
+	const backWhole = await setAt(cameraTo(inTheWindow.camera.pose), inTheWindow, 1);
+	expect([inTheWindow.camera.view, backWhole.camera.view]).toEqual([
+		windowView(windowOn(SMALL, 'right')),
+		wholeView(SMALL.frame)
+	]);
+});
+
+test("a title on a side of the frame stands in the words' box there, with no ground of its own", async () => {
+	const titled = (await setAt(title.show('Here', { side: 'left' }), openingScene(SMALL), 1)).title!;
+	expect([titled.beside, drawnTitle(titled).ground]).toEqual([{ side: 'left', box: wordsOn(SMALL.frame, 'left') }, 0]);
 });
 
 test("a face-on camera onto a block at the screen's foot stops short of showing the edge", async () => {

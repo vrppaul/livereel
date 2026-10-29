@@ -26,7 +26,10 @@ export interface TitleScript extends TimingScript {
 
 const TITLE_FORM: Form<TitleScript> = { side: A_FRAME_SIDE, ...TIMING_FORM };
 
-/** A title coming up word by word, its ground first; its words come up at an even pace unless the film names a curve. */
+/**
+ * A title coming up word by word, over the whole frame its ground first; its words come up at an even pace unless the
+ * film names a curve.
+ */
 export function show(text: Wording, script: TitleScript = {}): Move {
 	assertKind(text, A_WORDING, "title.show's text");
 	assertWritten(script, TITLE_FORM, 'title.show');

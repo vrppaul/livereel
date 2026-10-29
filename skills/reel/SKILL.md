@@ -41,7 +41,7 @@ caption. Speak in the director's words, which are the tool's:
 | action | what the page does for real: a click (`cursor.click`), keys typed into it (`typing(page.type(strokes))`), anything else in an `act` |
 | caption | `caption.show(text)`, `caption.hide()` |
 | title card | `title.show(text)` — words over the whole frame, on the film's ground; `title.hide()` |
-| split | `title.show(text, { side: 'left' })` beside `camera.onto(selector, { side: 'right' })` — words on one side, the page in a window on the other |
+| split | `camera.onto(selector, { side: 'right' })` with `title.show(text, { side: 'left', within: { start: 0.5 } })` in one `play` — the page draws back into a window on one side, then the words come up on the ground across from it; name the sides per format from `steps`' format name: words above the window in a square, beside it in a wide frame |
 | entrance | `cut(screen.lower())`, then `screen.rise()` in a `play`; `ending.show(card)` |
 | tempo | how long each `play` and `hold({ seconds })` lasts |
 
@@ -65,8 +65,8 @@ What reads as made with care:
 - **A callout names one small block** the viewer would not find alone (a
   button, a number), in two to five words, one at a time, and goes before
   the camera moves on; a caption speaks to the viewer, a callout labels.
-  Frame the block with air on the callout's side: the frame's edge cuts a
-  card that reaches past it. Beside a window, a note says the same from
+  Frame the block with air on the callout's side: the frame's edge, or a
+  window's, cuts a card that reaches past it. Beside a window, a note says the same from
   the ground and leaves the page whole: put it on a side of the window with
   room, not between the window and the frame's near edge.
 - **Pins for a path** of three or four steps the viewer will repeat, each

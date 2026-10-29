@@ -22,6 +22,10 @@ export interface DrawnTitle extends DrawnWords {
 	readonly beside: Beside | null;
 }
 
+// Words beside a window bring no ground of their own
+const NO_GROUND = 0;
+
 export function drawnTitle(title: Title): DrawnTitle {
-	return { ...drawnWords(title), beside: title.beside };
+	const words = drawnWords(title);
+	return { ...words, ground: title.beside === null ? words.ground : NO_GROUND, beside: title.beside };
 }

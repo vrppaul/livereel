@@ -1,8 +1,10 @@
 import { expect, test } from 'vitest';
 import {
 	type Camera,
+	type Cut,
 	type Pose,
 	covering,
+	drawnCamera,
 	frameShift,
 	onTheFrame,
 	onto,
@@ -46,6 +48,12 @@ function inTheWhole(pose: Pose, frame: Size = SQUARE.frame): Camera {
 
 function inTheWindow(pose: Pose): Camera {
 	return { pose, view: windowView(WINDOW) };
+}
+
+/** Where a face-on camera's picture is cut, its view the whole square frame lifted so far. */
+function cutAt(lift: number): Cut {
+	return drawnCamera({ pose: FACE_ON, view: { box: { left: 0, top: 0, width: 1080, height: 1080 }, lift } }, SQUARE)
+		.cut;
 }
 
 function widthBetween(pose: Pose, left: Point, right: Point): number {
@@ -197,6 +205,15 @@ test('a face-on camera near a corner moves until no edge of the screen shows', (
 test('a face-on camera in a window moves until no edge of the screen shows in the window', () => {
 	const covered = covering({ ...FACE_ON, focusX: -100, focusY: 540, zoom: 1 }, SQUARE, WINDOW);
 	expect(onTheFrame(inTheWindow(covered), SQUARE.frame, { left: 0, top: 540 })).toEqual({ left: 400, top: 700 });
+});
+
+test("the picture is cut at the screen's edges flat on the frame, at the view's in a window, and between as it lifts", () => {
+	const screenPastTheView = -216;
+	expect([cutAt(0), cutAt(0.5), cutAt(1)]).toEqual([
+		{ top: expect.closeTo(0), right: screenPastTheView, bottom: expect.closeTo(0), left: screenPastTheView },
+		{ top: expect.closeTo(0), right: screenPastTheView / 2, bottom: expect.closeTo(0), left: screenPastTheView / 2 },
+		{ top: expect.closeTo(0), right: expect.closeTo(0), bottom: expect.closeTo(0), left: expect.closeTo(0) }
+	]);
 });
 
 test('a screen too short to fill the frame along a side stands in its middle along that side', () => {

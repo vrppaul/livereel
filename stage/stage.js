@@ -52,6 +52,7 @@ class CameraDrawer {
 	draw(scene) {
 		const pose = scene.camera.pose;
 		const view = scene.camera.view;
+		const cut = scene.camera.cut;
 		numbered(this.root, {
 			'--focus-x': pose.focusX,
 			'--focus-y': pose.focusY,
@@ -62,7 +63,11 @@ class CameraDrawer {
 			'--view-top': view.box.top,
 			'--view-width': view.box.width,
 			'--view-height': view.box.height,
-			'--lift': view.lift
+			'--lift': view.lift,
+			'--cut-top': cut.top,
+			'--cut-right': cut.right,
+			'--cut-bottom': cut.bottom,
+			'--cut-left': cut.left
 		});
 	}
 }

@@ -2,10 +2,10 @@
  * The camera: to a pose, or onto a block of the page, in the whole frame or in a window on a side of it, at the angle
  * it stands at or another.
  *
- * A camera's end is kept on the screen as `covering` in `src/domain/camera.ts` keeps it: filling its view, no edge of
- * the screen showing there, at any angle, as an angle leans the view and not the screen in it. A move into a window,
- * or out of one, carries the view with the pose: the page
- * draws back off the frame's edges into a window on the film's ground, or grows out of it to fill the frame.
+ * A camera's end is kept on the screen as `keptOnTheScreen` in `src/domain/camera.ts` keeps it: filling a window at
+ * any angle, which an angle leans with the screen in it, and the whole frame face-on. A move into a window, or out of
+ * one, carries the view with the pose: the page draws back off the frame's edges into a window on the film's ground,
+ * or grows out of it to fill the frame.
  */
 import {
 	A_POSE,
@@ -14,8 +14,8 @@ import {
 	type View,
 	angled,
 	cameraToward,
-	covering,
-	onto as framedOnto,
+	keptOnTheScreen,
+	onto as poseOnto,
 	wholeView,
 	windowView
 } from '../domain/camera.ts';
@@ -81,7 +81,7 @@ export function to(pose: Pose, script: AngleScript = {}): Move {
 		begin: (beginning) =>
 			moving(
 				beginning.scene.camera,
-				framed(angledAs(pose, script), beginning.format, wholeView(beginning.format.frame))
+				standing(angledAs(pose, script), beginning.format, wholeView(beginning.format.frame))
 			)
 	};
 }
@@ -97,9 +97,9 @@ async function framing(beginning: Beginning, target: string, script: OntoScript)
 	const box = await shownPart(beginning, target, script.every ?? 1, 'camera.onto');
 	const start = beginning.scene.camera;
 	const view = viewOn(beginning.format, script.side ?? null);
-	const framedBy = { air: script.air ?? AIR, zoomAtMost: script.zoomAtMost ?? ZOOM_AT_MOST };
-	const pose = framedOnto(box, start.pose, view.box, beginning.format.frame, framedBy);
-	return moving(start, framed(angledAs(pose, script), beginning.format, view));
+	const airAndReach = { air: script.air ?? AIR, zoomAtMost: script.zoomAtMost ?? ZOOM_AT_MOST };
+	const pose = poseOnto(box, start.pose, view.box, beginning.format.frame, airAndReach);
+	return moving(start, standing(angledAs(pose, script), beginning.format, view));
 }
 
 function moving(start: Camera, end: Camera): Change {
@@ -111,12 +111,9 @@ function viewOn(format: Format, side: FrameSide | null): View {
 	return side === null ? wholeView(format.frame) : windowView(windowOn(format, side));
 }
 
-/**
- * A camera at a pose in a view, kept off the screen's edge there: an angle leans the view, and the screen in it stays
- * face-on to it, so it fills the view at any angle.
- */
-function framed(pose: Pose, format: Format, view: View): Camera {
-	return { pose: covering(pose, format, view.box), view };
+/** A camera at a pose in a view, kept off the screen's edge there where the screen faces the view. */
+function standing(pose: Pose, format: Format, view: View): Camera {
+	return { pose: keptOnTheScreen(pose, format, view), view };
 }
 
 /** A pose at the angle a film asks for; an angle it leaves out stays as the pose has it. */

@@ -179,14 +179,16 @@ play({
 The page draws back off the frame's edges into a window on the ground, its
 corners rounding, its edge and shadow coming up; `camera.onto` without a
 `side`, or `camera.to`, brings it back to fill the frame. The words take
-about a third of the frame, the window the rest, in the screen's shape:
-beside the words it stands whole, and below or above them a window taller
-than its share runs past the frame's edge. Inside the window the camera
-frames as in the whole frame: a block at its middle, as close as its `air`
-lets, the camera keeping the screen filling it; framed closer, the
-window stands still and the page grows in it. An angled camera leans the
-window back or swings it. Start the words once the window has drawn back,
-so they come up on the ground, not over the page.
+about a third of the frame, set as large as their share lets; the window
+stands whole in the rest, as large as it holds the screen's shape. Inside
+the window the camera frames as in the whole frame: a block at its middle,
+as close as its `air` lets, the camera keeping the screen filling it;
+framed closer, the window stands still and the page grows in it. An
+angled camera leans the window back or swings it, the page still filling
+it; in the whole frame an angled camera stands where the film puts it.
+Start the words once the window has drawn back, so they come up on the
+ground, not over the page. A film shot in several formats names the sides
+for each: the `steps` function is handed the format's name.
 
 A callout is words on a card beside a block of the page, pointing at it:
 `callout.show(selector, text, { side })`, its `side` `above` (where none is
