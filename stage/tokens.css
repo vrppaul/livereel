@@ -33,9 +33,21 @@
 	--caption-shadow: 0 2px 30px rgb(0 0 0 / 55%);
 	--callout-shadow: 0 12px 32px rgb(0 0 0 / 35%);
 
-	/* The page's window on the ground: how round its corners are, in pixels, a faint edge round it, and its shadow */
+	/* The page's window on the ground: how round its corners are, in pixels, the colour of a faint edge round it, and
+	 * its shadow, its colour and how strong it is, from 0 none to 1 livereel's, its colour that strong at its darkest */
 	--window-corner: 24;
-	--view-shadow: 0 0 0 2px rgb(255 255 255 / 10%), 0 60px 140px rgb(0 0 0 / 55%);
+	--window-edge: #ffffff1a;
+	--window-shadow-colour: #000;
+	--window-shadow: 1;
+	--window-shadow-darkest: 55%;
+	--view-shadow:
+		0 0 0 2px var(--window-edge),
+		0 60px 140px
+			color-mix(
+				in srgb,
+				var(--window-shadow-colour) calc(var(--window-shadow) * var(--window-shadow-darkest)),
+				transparent
+			);
 
 	/* The marks' accent, a pin's number on it, and a key's cap standing up off the frame */
 	--accent: #ffb224;

@@ -234,6 +234,8 @@ stays livereel's:
 | `mono` | the font of the terminal and the ending's command | the system's monospace |
 | `titleSize`, `captionSize` | how large a title's and a caption's letters are, in pixels | `92`, `56` |
 | `windowCorner` | how round the page's window's corners are, in pixels; `0`, square | `24` |
+| `windowEdge` | the faint edge round the window, its alpha how faint | `#ffffff1a` |
+| `windowShadow`, `windowShadowColour` | how strong the window's shadow is, from `0`, none, to `1`, and its colour | `1`, `#000` |
 | `terminal`, `terminalInk` | the terminal's colour, and what is written in it | `#10141c`, `#f4f6fa` |
 
 Colours are in hex; sizes in pixels of a frame 1080 on its shorter side,

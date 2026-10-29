@@ -27,12 +27,20 @@ export interface Theme {
 	readonly captionSize?: number;
 	/** How round the page's window's corners are, in pixels of a frame 1080 on its shorter side: 0, square. */
 	readonly windowCorner?: number;
+	/** The colour of the faint edge round the page's window, in hex, its own alpha how faint. */
+	readonly windowEdge?: string;
+	/** How strong the window's shadow is, from 0, none, to 1, livereel's; and its colour, in hex. */
+	readonly windowShadow?: number;
+	readonly windowShadowColour?: string;
 	/** The terminal's colour, and the colour of what is written in it, in hex. */
 	readonly terminal?: string;
 	readonly terminalInk?: string;
 }
 
 const A_PIXELS = new Plain(isPixels, 'a number of pixels, 0 or more');
+const A_SHARE = new Plain(isShare, 'a number from 0 to 1');
+const NONE = 0;
+const WHOLE = 1;
 const THEME_FORM: Form<Theme> = {
 	ground: A_COLOUR,
 	glow: A_COLOUR,
@@ -45,6 +53,9 @@ const THEME_FORM: Form<Theme> = {
 	titleSize: A_PIXELS,
 	captionSize: A_PIXELS,
 	windowCorner: A_PIXELS,
+	windowEdge: A_COLOUR,
+	windowShadow: A_SHARE,
+	windowShadowColour: A_COLOUR,
 	terminal: A_COLOUR,
 	terminalInk: A_COLOUR
 };
@@ -64,5 +75,9 @@ export function themeOf(written: unknown): Theme {
 }
 
 function isPixels(written: unknown): written is number {
-	return typeof written === 'number' && Number.isFinite(written) && written >= 0;
+	return typeof written === 'number' && Number.isFinite(written) && written >= NONE;
+}
+
+function isShare(written: unknown): written is number {
+	return typeof written === 'number' && written >= NONE && written <= WHOLE;
 }

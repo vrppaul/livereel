@@ -233,7 +233,9 @@ Put the spaces in the strings, as the words are read.
 
 `defineFilm` takes a `theme`, any of its values, where the user names a
 brand's look: `ground` and `glow` (left out, the ground is of one colour),
-`ink` and `quietInk`, `accent` and `accentInk` for pins and notes, `terminal` and
+`ink` and `quietInk`, `accent` and `accentInk` for pins and notes,
+`windowEdge` and `windowShadowColour` with `windowShadow` from 0 to 1 (a dark
+edge on a light ground), `terminal` and
 `terminalInk`, all in hex; `font` and `mono`, as CSS names a family
 installed on the machine; `titleSize`, `captionSize` and `windowCorner`
 in pixels of a 1080 frame. Leave out what the user does not name: livereel's

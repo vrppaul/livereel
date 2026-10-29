@@ -52,6 +52,9 @@ const TOKENS_THEMED = {
 	titleSize: '--title-size',
 	captionSize: '--caption-size',
 	windowCorner: '--window-corner',
+	windowEdge: '--window-edge',
+	windowShadow: '--window-shadow',
+	windowShadowColour: '--window-shadow-colour',
 	terminal: '--terminal',
 	terminalInk: '--terminal-ink'
 };
