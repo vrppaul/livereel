@@ -8,6 +8,7 @@ import {
 	callout,
 	camera,
 	caption,
+	code,
 	cursor,
 	cut,
 	ending,
@@ -120,6 +121,9 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => title.show('Hello', { at: { of: 'west' } as never })).toThrow(
 		new FilmError(`title.show's at's of is "west": it is ${PLACE}`)
+	);
+	expect(() => code.show('x', { at: { width: 0 } })).toThrow(
+		new FilmError("code.show's at's width is 0: it is a share more than none")
 	);
 	expect(() => title.hide({ at: 'left' } as never)).toThrow(
 		new FilmError('title.hide names at: it names within, ease, or fewer')

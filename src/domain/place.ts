@@ -3,14 +3,16 @@
  * frame or of another place, which may reach past the frame's edge.
  *
  * A side is where words stood beside a window on the side across (`wordsOn` in `split.ts`), so a film that names one
- * keeps livereel's split, and the whole frame is the frame inside the words' margin. A box is the film's own: in
- * shares of the place it names `of`, the whole frame where it names none, its left and top 0 and its width and height
- * 1 where it leaves them out, so `{ of: 'left', top: 0.22, height: 0.78 }` is the lower part of the left side. A place
- * is worked out once, as its move begins, in the frame's pixels, whole, so its edges fall on pixels.
+ * keeps livereel's split, and `whole` is the frame inside the margin words keep from its edges. A box is the film's
+ * own, exact: in shares of the place it names `of`, or of the frame edge to edge where it names none, its left and top
+ * 0 and its width and height 1 where it leaves them out, so `{ of: 'left', top: 0.22, height: 0.78 }` is the lower part
+ * of the left side. Words read from the left in a place, centred where it stands above, below or over the whole, as a
+ * title stood in the split. A place is worked out once, as its move begins, in the frame's pixels, whole, so its
+ * edges fall on pixels.
  */
 import { type Box, type Format, boxOf, wholePixels } from './geometry.ts';
-import { A_NUMBER, type Kind, OfForm, OneOf } from './handed.ts';
-import { wordsMarginOf, wordsOn } from './split.ts';
+import { A_NUMBER, type Kind, OfForm, OneOf, Plain } from './handed.ts';
+import { wordsOn, wordsWholeOn } from './split.ts';
 
 const PLACE_NAMES = ['whole', 'left', 'right', 'top', 'bottom'] as const;
 
@@ -27,12 +29,21 @@ interface PlaceWithin {
 
 export type Place = PlaceName | PlaceWithin;
 
+// How words in a place read: from its left, or centred across it
+const ALIGNMENTS = ['start', 'center'] as const;
+
+export type Alignment = (typeof ALIGNMENTS)[number];
+
+export const AN_ALIGNMENT = new OneOf(ALIGNMENTS, 'how words read in their place: "start" or "center"');
+
 const PLACE_SAID =
 	'a place: "whole", "left", "right", "top" or "bottom", or { of, left, top, width, height }, each in shares';
 // A box within a place starts at its top left corner and takes the whole of it where a film leaves its values out
 const NONE = 0;
 const WHOLE = 1;
-const SIDES = 2;
+const A_LENGTH_SHARE = new Plain(isMoreThanNone, 'a share more than none');
+// The places words read centred in: across the frame, above or below a window
+const READ_CENTRED: readonly Place[] = ['whole', 'top', 'bottom'];
 
 /** A place as a film hands it: a name, or a box in shares whose `of` is a place again. */
 class PlaceKind implements Kind<Place> {
@@ -42,7 +53,7 @@ class PlaceKind implements Kind<Place> {
 	constructor() {
 		this.names = new OneOf(PLACE_NAMES, PLACE_SAID);
 		this.within = new OfForm<PlaceWithin>(
-			{ of: this, left: A_NUMBER, top: A_NUMBER, width: A_NUMBER, height: A_NUMBER },
+			{ of: this, left: A_NUMBER, top: A_NUMBER, width: A_LENGTH_SHARE, height: A_LENGTH_SHARE },
 			PLACE_SAID
 		);
 	}
@@ -63,20 +74,14 @@ export function wordsPlaced(format: Format, place: Place): Box {
 	return wholePixels(placedBox(format, place));
 }
 
-function placedBox(format: Format, place: Place): Box {
-	if (typeof place === 'string') return place === 'whole' ? wholeInsideTheMargin(format) : wordsOn(format, place);
-	return within(place.of === undefined ? boxOf(format.frame) : placedBox(format, place.of), place);
+/** How words read in a place where the film names no way: centred above, below or over the whole, else from the left. */
+export function alignmentIn(place: Place): Alignment {
+	return READ_CENTRED.includes(place) ? 'center' : 'start';
 }
 
-/** The frame inside the margin words keep from its edges. */
-function wholeInsideTheMargin(format: Format): Box {
-	const margin = wordsMarginOf(format);
-	return {
-		left: margin,
-		top: margin,
-		width: format.frame.width - SIDES * margin,
-		height: format.frame.height - SIDES * margin
-	};
+function placedBox(format: Format, place: Place): Box {
+	if (typeof place === 'string') return place === 'whole' ? wordsWholeOn(format) : wordsOn(format, place);
+	return within(place.of === undefined ? boxOf(format.frame) : placedBox(format, place.of), place);
 }
 
 /** The part of a box a place takes, its shares of the box's width and height. */
@@ -87,4 +92,8 @@ function within(box: Box, place: PlaceWithin): Box {
 		width: box.width * (place.width ?? WHOLE),
 		height: box.height * (place.height ?? WHOLE)
 	};
+}
+
+function isMoreThanNone(written: unknown): written is number {
+	return typeof written === 'number' && Number.isFinite(written) && written > NONE;
 }

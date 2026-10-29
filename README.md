@@ -139,7 +139,7 @@ and the moves of each part of the scene:
 - `keys.show(caps)`, `keys.hide()`
 - `cursor.to(selector, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { at })`, `title.hide()`
+- `title.show(text, { at, align })`, `title.hide()`
 - `code.show(text, { at })`, `code.light(line, { through })`, `code.hide()`
 - `caption.show(text)`, `caption.hide()`
 - `screen.rise()`, `screen.lower()`
@@ -178,19 +178,20 @@ play({
 ```
 
 A place is a name, `whole`, `left`, `right`, `top` or `bottom`, or a box in
-shares: of the frame, or of another place it names `of`, its `left` and
-`top` 0 and its `width` and `height` 1 where it leaves them out. A side is
-where words stand beside a window on the side across; `whole` is the frame
-inside the words' margin. A box may reach past the frame. So a heading over
-code, beside a window on the right:
+shares: of the frame edge to edge, or of another place it names `of`, its
+`left` and `top` 0 and its `width` and `height` 1 where it leaves them out.
+A side is where words stand beside a window on the side across; `whole` is
+the frame inside the margin words keep from its edges. A box may reach past
+the frame. So a heading over code, beside a window on the right:
 
 ```ts
 title.show('Point the camera', { at: { of: 'left', height: 0.2 } }),
 code.show(LINES, { at: { of: 'left', top: 0.25, height: 0.75 } }),
 ```
 
-Words in a place read from the left, in the middle of their box down it,
-as large as its width lets.
+Words in a place stand in the middle of their box down it, as large as its
+width lets, centred in `whole`, `top` and `bottom` and read from the left
+anywhere else; `align: 'start'` or `'center'` says otherwise.
 
 The page draws back off the frame's edges into a window on the ground, its
 corners rounding, its edge and shadow coming up; `camera.onto` without a

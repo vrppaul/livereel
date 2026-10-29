@@ -14,12 +14,14 @@ test("a named place is where words stood on that side of the frame beside a wind
 	]);
 });
 
-test('a place within another takes its shares of that place, one within none its shares of the frame, and either may reach past the frame', () => {
+test('a place within another takes its shares of that place, a box within one too, one within none its shares of the frame edge to edge, and any may reach past the frame', () => {
 	expect([
 		wordsPlaced(WIDE, { of: 'left', top: 0.25, height: 0.5 }),
+		wordsPlaced(WIDE, { of: { of: 'left', top: 0.25, height: 0.5 }, top: 0.5 }),
 		wordsPlaced(WIDE, { left: 0.5, top: 0.9, width: 0.5, height: 0.5 })
 	]).toEqual([
 		{ left: 96, top: 318, width: 547, height: 444 },
+		{ left: 96, top: 540, width: 547, height: 444 },
 		{ left: 960, top: 972, width: 960, height: 540 }
 	]);
 });

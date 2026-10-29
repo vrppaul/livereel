@@ -46,27 +46,30 @@ export function windowOn(format: Format, side: FrameSide): Box {
 export function wordsOn(format: Format, side: FrameSide): Box {
 	const { frame } = format;
 	const split = splitOf(format);
-	const margin = wordsMarginOf(format);
+	const whole = wordsWholeOn(format);
+	const margin = whole.left;
 	const gap = split.wordsGap * frameScaleOf(frame);
 	switch (side) {
 		case 'left':
 		case 'right': {
 			const width = frame.width * split.wordsShare - margin - gap;
 			const left = side === 'left' ? margin : frame.width - margin - width;
-			return wholePixels({ left, top: margin, width, height: frame.height - HALVES * margin });
+			return wholePixels({ left, top: whole.top, width, height: whole.height });
 		}
 		case 'top':
 		case 'bottom': {
 			const height = frame.height * split.wordsShare - margin - gap;
 			const top = side === 'top' ? margin : frame.height - margin - height;
-			return wholePixels({ left: margin, top, width: frame.width - HALVES * margin, height });
+			return wholePixels({ left: whole.left, top, width: whole.width, height });
 		}
 	}
 }
 
-/** How far words stand in from the frame's edges, in the frame's pixels. */
-export function wordsMarginOf(format: Format): number {
-	return splitOf(format).wordsMargin * frameScaleOf(format.frame);
+/** The frame inside the margin words keep from its edges, in the frame's pixels. */
+export function wordsWholeOn(format: Format): Box {
+	const { frame } = format;
+	const margin = splitOf(format).wordsMargin * frameScaleOf(frame);
+	return { left: margin, top: margin, width: frame.width - HALVES * margin, height: frame.height - HALVES * margin };
 }
 
 /** Whether a format's split leaves the words and the window room on every side of its frame. */

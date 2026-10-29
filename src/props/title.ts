@@ -4,15 +4,21 @@
  * standing on the ground round them, so they bring no ground of their own.
  */
 import type { Box } from '../domain/geometry.ts';
+import type { Alignment } from '../domain/place.ts';
 import { type DrawnWords, type ShownWords, drawnWords } from './words.ts';
 
-/** A title's words, and the place they stand in, in the frame's pixels: none, over the whole frame on its ground. */
+/**
+ * A title's words, the place they stand in, in the frame's pixels — none, over the whole frame on its ground — and
+ * how they read there.
+ */
 export interface Title extends ShownWords {
 	readonly box: Box | null;
+	readonly align: Alignment;
 }
 
 export interface DrawnTitle extends DrawnWords {
 	readonly box: Box | null;
+	readonly align: Alignment;
 }
 
 // Words in a place bring no ground of their own
@@ -20,5 +26,5 @@ const NO_GROUND = 0;
 
 export function drawnTitle(title: Title): DrawnTitle {
 	const words = drawnWords(title);
-	return { ...words, ground: title.box === null ? words.ground : NO_GROUND, box: title.box };
+	return { ...words, ground: title.box === null ? words.ground : NO_GROUND, box: title.box, align: title.align };
 }

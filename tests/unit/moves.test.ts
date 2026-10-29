@@ -172,6 +172,20 @@ test('code and a title stand in the places the film names, the title then with n
 	]);
 });
 
+test('a title in a place reads from the left, centred where it stands above, below or over the whole, unless the film names its way', async () => {
+	const alignOf = async (script: title.TitleScript) =>
+		(await setAt(title.show('Here', script), openingScene(SMALL, LIVEREELS_LOOK), 1)).title!.align;
+	expect(
+		await Promise.all([
+			alignOf({ at: 'left' }),
+			alignOf({ at: { of: 'right', height: 0.2 } }),
+			alignOf({ at: 'top' }),
+			alignOf({ at: 'whole' }),
+			alignOf({ at: 'top', align: 'start' })
+		])
+	).toEqual(['start', 'start', 'center', 'center', 'start']);
+});
+
 test('the lines lit are the one named and those through the one named, and the rest dim', async () => {
 	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const lit = (await setAt(code.light(2, { through: 3 }), coded, 1)).code!;

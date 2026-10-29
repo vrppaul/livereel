@@ -12,7 +12,7 @@ The script is JavaScript with its types in JSDoc, which the type checker reads; 
 - Every prop has its drawer in `DRAWERS` of `stage/stage.js`; the type checker refuses a prop without one.
 - A drawer finds its elements once, by the `data-prop` of its root and the `data-part` of each element under it; the look's drawer draws on the stage's root, where every rule reads it.
 - A drawer sets its prop's numbers, and the colours a film gives, as bare custom properties, and writes its words; the stylesheet gives the numbers their units and makes them places, sizes and shades. The script writes no style.
-- What a drawer is handed by name it names in a class or an attribute: a piece's styles, a title's or a callout's `data-side`.
+- What a drawer is handed by name it names in a class or an attribute: a piece's styles, a callout's `data-side`, a title's `data-align`.
 - Nothing on the stage moves of itself: no transition, animation or keyframes in its styles (stylelint refuses them), no timer or clock in its script (eslint refuses them). Every frame is set whole by `apply`.
 - A colour, a shadow or a gradient is a token; the stylesheet names tokens (stylelint refuses one written elsewhere).
 - A value of the film's look is set on the root every frame (`LookDrawer`); every other token, and what follows from the look, is in `stage/tokens.css`.

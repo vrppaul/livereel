@@ -27,8 +27,10 @@ const APART = ' ';
 const BETWEEN_LINES = '\n';
 // The attribute that names the side of the frame a note's words stand on, and the side of its block a callout stands on
 const SIDE = 'data-side';
-// The attribute a title stands in a place by, rather than over the whole frame on its ground
+// The attribute a title stands in a place by, rather than over the whole frame on its ground, and the one that names
+// how it reads there
 const PLACED = 'data-placed';
+const ALIGN = 'data-align';
 // The attribute that names the edge of the frame a caption stands at: its foot, or its top
 const CAPTION_EDGE = 'data-at';
 // The attribute that names which way a note's words run from where its line meets them, or a pin's label from its mark
@@ -345,6 +347,7 @@ class TitleDrawer {
 		}
 		this.root.toggleAttribute(PLACED, title.box !== null);
 		if (title.box !== null) placed(this.root, title.box);
+		named(this.root, ALIGN, title.align);
 		numbered(this.root, { '--grounded': title.ground, '--gone': title.gone });
 		this.words.draw(title.key, title.words);
 	}
