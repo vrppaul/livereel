@@ -152,12 +152,7 @@ function beatSwapped(heading: string, regions: readonly string[], words: Words):
 	return [...beatGoing(), ...beatShown(heading, regions, words)];
 }
 
-/** A beat's words pushed off past the frame's left edge, over the first half of the step. */
-function wordsPushedOff(): readonly Move[] {
-	return [title.hide({ toward: 'left', within: { end: 0.5 } }), code.hide({ toward: 'left', within: { end: 0.5 } })];
-}
-
-/** The card on the film's ground, then the app sliding in across the whole frame as the card goes. */
+/** The card on the film's ground, then the app pushing it off to the left as it slides in across the whole frame. */
 function actTheCard(): readonly Step[] {
 	return [
 		cut(window.hide({ toward: 'right' }), camera.onto(CARDS, { air: 160 })),
@@ -165,7 +160,7 @@ function actTheCard(): readonly Step[] {
 		hold({ seconds: 1.8 }),
 		play({
 			seconds: 1,
-			moves: [ending.hide({ within: { end: 0.5 } }), window.show({ at: 'whole', from: 'right' })],
+			moves: [ending.hide({ toward: 'left' }), window.show({ at: 'whole', from: 'right' })],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 1 })
@@ -293,10 +288,9 @@ function actTheWords(): readonly Step[] {
 		play({
 			seconds: 1.2,
 			moves: [
-				window.hide({ toward: 'left', within: { end: 0.55 } }),
-				...wordsPushedOff(),
-				title.show('Say it in words', { at: headingIn(ON_A_SLIDE), from: 'right', within: { start: 0.5 } }),
-				code.show(linesOf(['words']), { at: codeIn(ON_A_SLIDE), from: 'right', within: { start: 0.5 } })
+				window.hide({ toward: 'left' }),
+				title.show('Say it in words', { at: headingIn(ON_A_SLIDE), from: 'right' }),
+				code.show(linesOf(['words']), { at: codeIn(ON_A_SLIDE), from: 'right' })
 			],
 			ease: easeInOutCubic
 		}),
@@ -358,7 +352,7 @@ function actTheEnding(): readonly Step[] {
 	return [
 		play({
 			seconds: 1.2,
-			moves: [...wordsPushedOff(), ending.show(CARD, { within: { start: 0.4 } })],
+			moves: [title.hide({ toward: 'left' }), code.hide({ toward: 'left' }), ending.show(CARD, { from: 'right' })],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 2.5 })
