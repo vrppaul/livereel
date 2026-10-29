@@ -139,8 +139,8 @@ and the moves of each part of the scene:
 - `keys.show(caps)`, `keys.hide()`
 - `cursor.to(selector, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { at, align })`, `title.hide()`
-- `code.show(text, { at })`, `code.light(line, { through })`, `code.hide()`
+- `title.show(text, { at, align, from })`, `title.to(place)`, `title.hide({ toward })`
+- `code.show(text, { at, from })`, `code.to(place)`, `code.light(line, { through })`, `code.hide({ toward })`
 - `caption.show(text)`, `caption.hide()`
 - `screen.rise()`, `screen.lower()`
 - `terminal.open(title)`, `terminal.type(strokes)`, `terminal.submit()`,
@@ -192,6 +192,13 @@ code.show(LINES, { at: { of: 'left', top: 0.25, height: 0.75 } }),
 Words in a place stand in the middle of their box down it, as large as its
 width lets, centred in `whole`, `top` and `bottom` and read from the left
 anywhere else; `align: 'start'` or `'center'` says otherwise.
+
+Words in a place travel: `title.to(place)` and `code.to(place)` carry them
+to another place through the boxes between, as a window moves across the
+frame; `show(…, { from: 'right' })` slides them in from wholly past that
+edge of the frame, and `hide({ toward: 'left' })` slides them out past it,
+whole, where a plain `hide()` lets them go where they stand. A title over
+the whole frame has no place to travel from, and is refused.
 
 The page draws back off the frame's edges into a window on the ground, its
 corners rounding, its edge and shadow coming up; `camera.onto` without a

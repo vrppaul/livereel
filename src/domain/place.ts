@@ -8,11 +8,12 @@
  * 0 and its width and height 1 where it leaves them out, so `{ of: 'left', top: 0.22, height: 0.78 }` is the lower part
  * of the left side. Words read from the left in a place, centred where it stands above, below or over the whole, as a
  * title stood in the split. A place is worked out once, as its move begins, in the frame's pixels, whole, so its
- * edges fall on pixels.
+ * edges fall on pixels. What comes in from a side, or leaves toward one, travels from or to its box moved wholly past
+ * the frame's edge there.
  */
-import { type Box, type Format, boxOf, wholePixels } from './geometry.ts';
+import { type Box, type Format, type Size, boxOf, wholePixels } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, OneOf, Plain } from './handed.ts';
-import { wordsOn, wordsWholeOn } from './split.ts';
+import { type FrameSide, wordsOn, wordsWholeOn } from './split.ts';
 
 const PLACE_NAMES = ['whole', 'left', 'right', 'top', 'bottom'] as const;
 
@@ -77,6 +78,33 @@ export function wordsPlaced(format: Format, place: Place): Box {
 /** How words read in a place where the film names no way: centred above, below or over the whole, else from the left. */
 export function alignmentIn(place: Place): Alignment {
 	return READ_CENTRED.includes(place) ? 'center' : 'start';
+}
+
+/** Where a box starts as what stands in it comes up: past the frame's edge on the side it comes in from, or in place. */
+export function enteringFrom(box: Box, from: FrameSide | null, frame: Size): Box {
+	return from === null ? box : pastTheEdge(box, from, frame);
+}
+
+/**
+ * How far what comes into a place has come up, `progress` of the way: whole from the start where it slides in from a
+ * side, so it travels as one piece, as far as its move where it comes up in place.
+ */
+export function shownComing(from: FrameSide | null, progress: number): number {
+	return from === null ? progress : WHOLE;
+}
+
+/** A box moved across or down until none of it stands on the frame, past its edge on a side. */
+export function pastTheEdge(box: Box, side: FrameSide, frame: Size): Box {
+	switch (side) {
+		case 'left':
+			return { ...box, left: -box.width };
+		case 'right':
+			return { ...box, left: frame.width };
+		case 'top':
+			return { ...box, top: -box.height };
+		case 'bottom':
+			return { ...box, top: frame.height };
+	}
 }
 
 function placedBox(format: Format, place: Place): Box {
