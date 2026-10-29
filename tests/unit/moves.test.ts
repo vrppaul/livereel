@@ -291,7 +291,7 @@ test('while the light moves from one line to another, the lines not lit stay dim
 	expect(drawnCode((await setAt(code.light(2), first, 0.5)).code!).dimmed).toBe(1);
 });
 
-test('a line lit by what it says is the first line that says it, through the first after it that says the other, and one no line says is refused', async () => {
+test('a line lit by what it says is the one line that says it, through the one from it on that says the other; words no line from there says, or more than one says, are refused, and a line past the last before any words', async () => {
 	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const said = (await setAt(code.light('camera.onto'), coded, 1)).code!;
 	const through = (await setAt(code.light('moves', { through: '})' }), coded, 1)).code!;
@@ -300,7 +300,16 @@ test('a line lit by what it says is the first line that says it, through the fir
 		[0, 1, 1]
 	]);
 	await expect(async () => code.light('light.on').begin(beginningOf(coded))).rejects.toThrow(
-		new FilmError('code.light lights the line that says "light.on", but no line of the code shown says it')
+		new FilmError('code.light lights the line that says "light.on", but no line from line 1 on says it')
+	);
+	await expect(async () => code.light('camera', { through: 'play' }).begin(beginningOf(coded))).rejects.toThrow(
+		new FilmError('code.light lights the line that says "play", but no line from line 2 on says it')
+	);
+	await expect(async () => code.light('(').begin(beginningOf(coded))).rejects.toThrow(
+		new FilmError('code.light lights the line that says "(", but lines 1, 2 say it: name words one line says')
+	);
+	await expect(async () => code.light(9, { through: '})' }).begin(beginningOf(coded))).rejects.toThrow(
+		new FilmError('code.light lights line 9, but the code shown has 3: name lines from 1 to 3')
 	);
 });
 
@@ -595,8 +604,14 @@ test('a box of the screen stands for a block a page names by no selector: the ca
 	expect(byBox).toEqual(bySelector);
 	await expect(onto(BELOW).begin(beginningOf(opening))).rejects.toThrow(
 		new FilmError(
-			`camera.onto's box {"left":100,"top":900.4,"width":100,"height":40} stands off the page's screen, at left 100, top 900 of a screen 600 × 400: ${SCROLLED_IN}`
+			`camera.onto's box {"left":100,"top":900.4,"width":100,"height":40} stands off the page's screen, at left 100, top 900 of a screen 600 × 400: give a box that stands on it, in the screen's pixels`
 		)
+	);
+	await expect(lightOn(HIDDEN).begin(beginningOf(opening))).rejects.toThrow(
+		new FilmError(`light.on's box {"left":0,"top":0,"width":0,"height":0} has no size: give it a width or a height`)
+	);
+	expect(() => onto(BLOCK, { every: 2 })).toThrow(
+		new FilmError("camera.onto's every counts the blocks a selector matches: a box is one, so leave it out")
 	);
 });
 

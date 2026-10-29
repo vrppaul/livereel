@@ -9,6 +9,7 @@
  * after.
  */
 import { A_POSE, type Aim, type Angle, type Pose } from '../domain/camera.ts';
+import { FilmError } from '../domain/errors.ts';
 import { A_COUNT, A_NUMBER, A_NUMBER_OR_ENDLESS, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import {
 	A_TARGET,
@@ -31,7 +32,7 @@ export interface AngleScript extends TimingScript {
 }
 
 /**
- * How a film frames a block: the first `every` blocks that match, `air` round them in the page's pixels, no closer than
+ * How a film frames a block: the first `every` blocks a selector matches, `air` round them in the page's pixels, no closer than
  * `zoomAtMost`, a zoom as a pose has it (`Pose` in `src/domain/camera.ts`). In a window the page fills it before all
  * else: where the screen would not fill it at `zoomAtMost`, the camera comes closer, and the window shows part of the
  * page.
@@ -47,6 +48,8 @@ const AIR = 80;
 const ZOOM_AT_MOST = 2.2;
 const ANGLE_FORM: Form<AngleScript> = { tilt: A_NUMBER, turn: A_NUMBER, ...TIMING_FORM };
 const ONTO_FORM: Form<OntoScript> = { every: A_COUNT, air: A_NUMBER, zoomAtMost: A_NUMBER_OR_ENDLESS, ...ANGLE_FORM };
+// A box is one, where `every` counts the blocks a selector matches
+const EVERY_OF_A_BOX = "camera.onto's every counts the blocks a selector matches: a box is one, so leave it out";
 
 /** The camera to a pose. */
 export function to(pose: Pose, script: AngleScript = {}): Move {
@@ -60,10 +63,11 @@ export function to(pose: Pose, script: AngleScript = {}): Move {
 export function onto(target: Target, script: OntoScript = {}): Move {
 	assertKind(target, A_TARGET, "camera.onto's target");
 	assertWritten(script, ONTO_FORM, 'camera.onto');
+	if (typeof target !== 'string' && script.every !== undefined) throw new FilmError(EVERY_OF_A_BOX);
 	return { part: 'camera', timing: timingOf(script), begin: (beginning) => framing(beginning, target, script) };
 }
 
-/** The camera on its way to the blocks a target matches, framed at the angle it stands at or the film's. */
+/** The camera on its way to a target, framed at the angle it stands at or the film's. */
 async function framing(beginning: Beginning, target: Target, script: OntoScript): Promise<Change> {
 	const box = await shownPart(beginning, target, script.every ?? 1, 'camera.onto');
 	const from = standing(beginning);

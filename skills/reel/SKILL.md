@@ -125,8 +125,9 @@ and clicks it for real; its server is
 - Two moves of one part — a prop, or the page — share a step only one after
   the other: `play` and `cut` refuse them at once.
 - Frame by selector, so one script fits every format. A pose given in
-  numbers is given once per format, in a record of the film's format names
-  (`Record<keyof typeof FORMATS, Pose>`), picked by the `formatName` that
+  numbers, or a box of the screen for a page with nothing to select, is
+  given once per format, in a record of the film's format names
+  (`Record<keyof typeof FORMATS, Pose>`, or `Box`), picked by the `formatName` that
   `steps` is handed: the type checker refuses a format left out. livereel
   runs a film with its types stripped, and refuses a value of the wrong
   kind where it stands, as the film is defined and its steps as it is
@@ -213,7 +214,7 @@ its end at once.
 | `pin.show(target, label)`, `pin.clear()` | a numbered mark on a block, after those laid before, the earlier labels quietened; all taken away |
 | `keys.show(caps)`, `keys.hide()` | the caps of a shortcut at the frame's foot, as `['⌘', 'Enter']` |
 | `title.show(text, { at, align, size, from })`, `title.to(place)`, `title.hide({ toward })` | words coming up one after another on the film's ground over the whole frame, or `at` a place, in place of any title shown; going, the ground with them. `size` is this title's letters' own, in pixels of a 1080 frame, in place of the look's `titleSize`, over the whole frame or in a place alike: one word set large; a word larger than its place runs past it, so look at it on a still. In a place it slides in whole `from` a side, travels `to` another place, slides out `toward` a side: a title shown `from: 'right'` while one stands in a place pushes it off to the left as one sheet, and the window, code or the card slide with it in the same `play`. A place: `whole`, `left`, `right`, `top`, `bottom`, a name the format gives in its `places`, or `{ of, left, top, width, height }` in shares of the frame or of the place `of`, past the frame's edge if it must |
-| `code.show(text, { at, from })`, `code.to(place)`, `code.light(line, { through })`, `code.hide({ toward })` | a dark pane of code `at` a place, beside the page's window or alone, sliding in `from` past a side of the frame, pushing the code shown off past the side across, or out `toward` one, carried to another place by `to`; its lines coming up one after another, coloured as TypeScript; a line lit by what it says, the first line that says it (`code.light('light.on')`), or by its number from 1, or lines `line` through `through`, the rest dimmed; going |
+| `code.show(text, { at, from })`, `code.to(place)`, `code.light(line, { through })`, `code.hide({ toward })` | a dark pane of code `at` a place, beside the page's window or alone, sliding in `from` past a side of the frame, pushing the code shown off past the side across, or out `toward` one, carried to another place by `to`; its lines coming up one after another, coloured as TypeScript; a line lit by words only it says (`code.light('light.on')`), or by its number from 1, or lines `line` through `through`, the line from it on that says the other, the rest dimmed; going |
 | `caption.show(text)`, `caption.hide()` | words coming up one after another at the frame's foot, or its top in a format with `captionAt: 'top'`, in place of any shown; going |
 | `look.to(theme, { within })` | the film's look moving to any of a theme's values: through the values between in a `play`, at once in a `cut`; two at once in a step where they name no value alike |
 | `terminal.open(title)` | an agent's terminal coming up over the frame; in a `cut`, there at once |

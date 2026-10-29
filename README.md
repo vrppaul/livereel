@@ -277,10 +277,12 @@ up one after another, coloured as TypeScript is, the indent they share
 dropped. Its letters are as large as `codeSize` lets, smaller where the
 widest line would not fit across, so keep its lines short or give the words
 a larger share (`split: { wordsShare: 0.44 }`). `code.light('light.on')`
-lights the first line that says `light.on` and dims the rest, so a line
-lights as the page does what it says; `code.light(2)` lights the second line,
-counted from 1, and `code.light('cursor.to', { through: 'click' })` the lines
-from one through the first after it that says the other:
+lights the line that says `light.on` and dims the rest, so a line lights as
+the page does what it says; `code.light(2)` lights the second line, counted
+from 1, and `code.light('cursor.to', { through: 'click' })` the lines from
+one through the line from it on that says the other. Words no line says, or
+more than one, are refused, so a line added that says them too never takes
+the light without a word:
 
 ```ts
 play({ seconds: 1.4, moves: [window.to('right'), camera.onto(CARDS), code.show(LINES, { at: 'left' })] }),

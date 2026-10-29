@@ -40,9 +40,9 @@ export interface Box {
 }
 
 /** A box as a film hands it: its left and top edges, anywhere, and how big it is, in pixels, none at least. */
-export const A_BOX: Kind<Box> = new OfForm<Box>(
+export const A_BOX: OfForm<Box> = new OfForm<Box>(
 	{ left: needed(A_NUMBER), top: needed(A_NUMBER), width: needed(A_PIXELS), height: needed(A_PIXELS) },
-	'a box: { left, top, width, height }, its size in pixels, 0 or more'
+	"a box of the page's screen: { left, top, width, height }, in its pixels"
 );
 
 /** A curve from a start to an end, drawn toward its bend: a quadratic Bézier. */

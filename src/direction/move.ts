@@ -10,7 +10,7 @@
  */
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
-import { A_BOX, type Box, liesAboveOrBelow, liesOutside, partWithin } from '../domain/geometry.ts';
+import { A_BOX, type Box, type Size, liesAboveOrBelow, liesOutside, partWithin } from '../domain/geometry.ts';
 import type { PlaceNamed } from '../domain/place.ts';
 import {
 	A_NUMBER,
@@ -40,10 +40,13 @@ const NO_SOUNDS: readonly Cue[] = [];
 const NO_FONTS: readonly FontNamed[] = [];
 const NO_PLACES: readonly PlaceNamed[] = [];
 // The size of a block the page lays out none of, and how a block off the screen is brought in, above or below it and
-// beside it
+// beside it; a box the film gives stands where it says, so it is given anew
 const NO_SIZE = 0;
 const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
 const ACTED_IN = 'bring it in with an act, as no move of livereel scrolls the page sideways';
+const GIVEN_ON_IT = "give a box that stands on it, in the screen's pixels";
+const HIDDEN_SAID = 'has no size on the page: it is hidden, or holds others alone';
+const NO_SIZE_GIVEN = 'has no size: give it a width or a height';
 
 /**
  * What a move goes to on the page: the blocks a selector matches, or a box of the page's screen in its own pixels,
@@ -51,8 +54,7 @@ const ACTED_IN = 'bring it in with an act, as no move of livereel scrolls the pa
  */
 export type Target = string | Box;
 
-const TARGET_SAID =
-	'a target: a selector, a string that names blocks of the page, or a box of the screen, { left, top, width, height }';
+const TARGET_SAID = `${A_SELECTOR.said}, or ${A_BOX.said}`;
 
 /** A target as a film hands it: a selector, or a box. */
 class TargetKind implements Kind<Target> {
@@ -220,21 +222,30 @@ export async function shownBox(beginning: Beginning, target: Target, every: numb
 	const screen = beginning.format.screen;
 	const named = `${move}'s ${targetSaid(target)}`;
 	if (box.width === NO_SIZE && box.height === NO_SIZE) {
-		throw new FilmError(`${named} has no size on the page: it is hidden, or holds others alone`);
+		throw new FilmError(`${named} ${typeof target === 'string' ? HIDDEN_SAID : NO_SIZE_GIVEN}`);
 	}
 	if (liesOutside(box, screen)) {
 		const where = `at left ${Math.round(box.left)}, top ${Math.round(box.top)}`;
-		const broughtIn = liesAboveOrBelow(box, screen) ? SCROLLED_IN : ACTED_IN;
 		throw new FilmError(
-			`${named} stands off the page's screen, ${where} of a screen ${screen.width} × ${screen.height}: ${broughtIn}`
+			`${named} stands off the page's screen, ${where} of a screen ${screen.width} × ${screen.height}: ` +
+				broughtInto(target, box, screen)
 		);
 	}
 	return box;
 }
 
 /**
- * What the page's screen shows of the blocks a target matches, refused as `shownBox` refuses: the part a camera can
- * frame and a cursor rest on, as nothing past the screen is drawn.
+ * How what a move goes to comes onto the screen: a block above or below scrolled in, one beside it by an act; a box
+ * the film gives stands where it says, so it is given anew.
+ */
+function broughtInto(target: Target, box: Box, screen: Size): string {
+	if (typeof target !== 'string') return GIVEN_ON_IT;
+	return liesAboveOrBelow(box, screen) ? SCROLLED_IN : ACTED_IN;
+}
+
+/**
+ * What the page's screen shows of a target, the blocks a selector matches or a box, refused as `shownBox` refuses:
+ * the part a camera can frame and a cursor rest on, as nothing past the screen is drawn.
  */
 export async function shownPart(beginning: Beginning, target: Target, every: number, move: string): Promise<Box> {
 	return partWithin(await shownBox(beginning, target, every, move), beginning.format.screen);

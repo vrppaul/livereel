@@ -2,9 +2,9 @@
  * Code: a pane of the film's code coming up in a place the film names (`src/domain/place.ts`), beside the page's
  * window or alone, in place of any code shown, from past a side of the frame where the film names one, pushing the
  * code shown off past the side across as it comes; moving to another place; lines of it lit as they run; and going,
- * or leaving past a side. A line lit is named by its number, counted from 1 as an editor counts them, or by what it
- * says, the first line that says it, so a film's code may change above it and the light still finds its line; a light
- * past the last line shown, or of words no line says, is refused as it begins.
+ * or leaving past a side. A line lit is named by its number, counted from 1 as an editor counts them, or by words
+ * only it says, so lines may be added round it and the light still finds it; a light past the last line shown, or of
+ * words no line or more than one says, is refused as it begins.
  */
 import { FilmError } from '../domain/errors.ts';
 import { A_FRAME_SIDE, type Box, type FrameSide } from '../domain/geometry.ts';
@@ -54,9 +54,8 @@ const A_LINE_NAMED: Kind<LineNamed> = new Plain(
 );
 const CODE_FORM: Form<CodeScript> = { at: needed(A_PLACE), from: A_FRAME_SIDE, ...TIMING_FORM };
 const LIGHT_FORM: Form<LightScript> = { through: A_LINE_NAMED, ...TIMING_FORM };
-// Lines are counted from 1, places in a list from 0; a list's search that finds nothing says so by this
+// Lines are counted from 1, places in a list from 0
 const FIRST_LINE = 1;
-const NOT_FOUND = -1;
 
 /**
  * Code coming up in its place, its ground first, then its lines one after another at an even pace unless the film
@@ -145,9 +144,14 @@ function leaving(beginning: Beginning, toward: FrameSide): Change {
 
 function lighting(beginning: Beginning, firstNamed: LineNamed, lastNamed: LineNamed): Change {
 	const shown = present(beginning, 'code', 'lines of code are lit, but no code is on the screen');
-	const first = numberOf(shown.lines, firstNamed, FIRST_LINE);
-	const last = numberOf(shown.lines, lastNamed, first);
 	const count = shown.lines.length;
+	const first = numberOf(shown.lines, firstNamed, FIRST_LINE);
+	if (first > count) {
+		throw new FilmError(
+			`code.light lights line ${first}, but the code shown has ${count}: name lines from 1 to ${count}`
+		);
+	}
+	const last = numberOf(shown.lines, lastNamed, first);
 	if (last < first || last > count) {
 		throw new FilmError(
 			`code.light lights lines ${first} through ${last}, but the code shown has ${count}: name lines from 1 to ${count}, the last no earlier than the first`
@@ -160,16 +164,22 @@ function lighting(beginning: Beginning, firstNamed: LineNamed, lastNamed: LineNa
 }
 
 /**
- * The number of a line a film names: the number it gives, or that of the first line from `from` on that says the
- * words it gives; words no line from there says are refused.
+ * The number of a line a film names: the number it gives, or that of the one line from `from` on that says the words
+ * it gives. Words no line from there says are refused, and so are words more than one says, so a line said again
+ * above the one meant never takes its light without a word.
  */
 function numberOf(lines: readonly CodeLine[], named: LineNamed, from: number): number {
 	if (typeof named === 'number') return named;
-	const found = lines.findIndex((line, place) => place + FIRST_LINE >= from && textOf(line).includes(named));
-	if (found === NOT_FOUND) {
-		throw new FilmError(`code.light lights the line that says "${named}", but no line of the code shown says it`);
+	const [only, ...others] = lines
+		.map((line, place) => ({ line, number: place + FIRST_LINE }))
+		.filter((numbered) => numbered.number >= from && textOf(numbered.line).includes(named))
+		.map((numbered) => numbered.number);
+	const lit = `code.light lights the line that says "${named}"`;
+	if (only === undefined) throw new FilmError(`${lit}, but no line from line ${from} on says it`);
+	if (others.length > 0) {
+		throw new FilmError(`${lit}, but lines ${[only, ...others].join(', ')} say it: name words one line says`);
 	}
-	return found + FIRST_LINE;
+	return only;
 }
 
 /** What a line of code says, its pieces read one after another. */

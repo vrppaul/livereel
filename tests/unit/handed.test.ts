@@ -30,7 +30,7 @@ const POSE = { focusX: 0, focusY: 0, zoom: 1, tilt: 0, turn: 0 };
 const CARD = { name: 'livereel', line: 'Your agent films your live app', command: 'npx livereel' };
 const SELECTOR = 'a selector: a string that names blocks of the page';
 const TARGET =
-	'a target: a selector, a string that names blocks of the page, or a box of the screen, { left, top, width, height }';
+	"a selector: a string that names blocks of the page, or a box of the page's screen: { left, top, width, height }, in its pixels";
 const FILE = "a file's path, from the film's file";
 const CURVE = 'a curve: a function of progress, as easeInOutSine';
 const SHARE = 'a share of the step: { start, end }';
