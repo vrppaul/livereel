@@ -20,7 +20,6 @@
 
 ## Screens: what the window, the marks and the theme left open (2026-10-29)
 
-- The words' share of the frame (`WORDS_SHARE`, 36%) and the window's margins (`WINDOW_MARGIN`, `WORDS_MARGIN`, `WORDS_GAP` in `src/domain/split.ts`) are one for every format; the owner wants a layout per format ("в квадрате лучше смотрится сверху"). A format carrying them is the place: a theme does not reach the moves that work out windows.
 - A shorthand for a side per format, `side: { square: 'top', wide: 'left' }`, offered, not answered; today a film names sides from `steps`' format name.
 - A note's line runs from its block across the page to the window's edge and strikes through the page's text on its way.
 - Pins lie on the screen, so their marks and labels scale with the camera's zoom: small in a zoomed-out window.

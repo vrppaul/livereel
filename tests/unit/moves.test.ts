@@ -137,12 +137,12 @@ test("a note's line runs from the block's edge to the words' share across from t
 		pose: { focusX: 300, focusY: 200, zoom: 1 / frameScaleOf(SMALL.frame), tilt: 0, turn: 0 },
 		view: windowView({ left: 100, top: 100, width: 200, height: 200 })
 	};
-	const drawnOne = drawnNote({ ...saidOf('Here'), box: BLOCK, side: 'bottom', shown: 1, gone: 0 }, camera, SMALL.frame);
+	const drawnOne = drawnNote({ ...saidOf('Here'), box: BLOCK, side: 'bottom', shown: 1, gone: 0 }, camera, SMALL);
 	expect([drawnOne.from, drawnOne.to, drawnOne.angle, drawnOne.place]).toEqual([
 		{ left: expect.closeTo(50, 6), top: expect.closeTo(140, 6) },
 		{ left: expect.closeTo(50, 6), top: 274 },
 		expect.closeTo(90, 6),
-		wordsOn(SMALL.frame, 'bottom')
+		wordsOn(SMALL, 'bottom')
 	]);
 });
 
@@ -278,7 +278,7 @@ test("a camera onto a block on a side stands in that side's window, and back in 
 
 test("a title on a side of the frame stands in the words' box there, with no ground of its own", async () => {
 	const titled = (await setAt(title.show('Here', { side: 'left' }), openingScene(SMALL), 1)).title!;
-	expect([titled.beside, drawnTitle(titled).ground]).toEqual([{ side: 'left', box: wordsOn(SMALL.frame, 'left') }, 0]);
+	expect([titled.beside, drawnTitle(titled).ground]).toEqual([{ side: 'left', box: wordsOn(SMALL, 'left') }, 0]);
 });
 
 test("a face-on camera onto a block at the screen's foot stops short of showing the edge", async () => {

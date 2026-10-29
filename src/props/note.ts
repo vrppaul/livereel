@@ -7,7 +7,7 @@
  * as far as it lets. The line is drawn first, as the words' ground would come up, and the words come up at its end.
  */
 import { type Camera, onTheFrame } from '../domain/camera.ts';
-import { type Box, type Point, type Size, middleX, middleY } from '../domain/geometry.ts';
+import { type Box, type Format, type Point, type Size, middleX, middleY } from '../domain/geometry.ts';
 import { type FrameSide, wordsOn } from '../domain/split.ts';
 import { type DrawnWords, type ShownWords, drawnWords } from './words.ts';
 
@@ -49,9 +49,9 @@ export function sideBeside(window: Box, frame: Size): FrameSide {
 	return grounds.reduce((widest, ground) => (ground.reach > widest.reach ? ground : widest)).side;
 }
 
-export function drawnNote(note: Note, camera: Camera, frame: Size): DrawnNote {
-	const place = wordsOn(frame, note.side);
-	const from = onTheFrame(camera, frame, edgeFacing(note.box, note.side));
+export function drawnNote(note: Note, camera: Camera, format: Format): DrawnNote {
+	const place = wordsOn(format, note.side);
+	const from = onTheFrame(camera, format.frame, edgeFacing(note.box, note.side));
 	const to = meeting(place, from, note.side);
 	const across = to.left - from.left;
 	const down = to.top - from.top;

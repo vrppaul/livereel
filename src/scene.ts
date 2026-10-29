@@ -94,7 +94,7 @@ export function drawn(scene: Scene, moment: number, format: Format): DrawnScene 
 		callout: scene.callout === null ? null : drawnCallout(scene.callout),
 		pins: scene.pins === null ? null : drawnPins(scene.pins, scene.camera, format.frame),
 		cursor: scene.cursor,
-		note: scene.note === null ? null : drawnNote(scene.note, scene.camera, format.frame),
+		note: scene.note === null ? null : drawnNote(scene.note, scene.camera, format),
 		title: scene.title === null ? null : drawnTitle(scene.title),
 		caption: scene.caption === null ? null : drawnWords(scene.caption),
 		keys: scene.keys,

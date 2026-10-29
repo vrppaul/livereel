@@ -28,6 +28,7 @@ import {
 	needed
 } from '../domain/handed.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
+import { leavesRoom } from '../domain/split.ts';
 import { type MotionBlurScript, motionBlurOf } from './blur.ts';
 import type { ActContext } from './page.ts';
 import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf, musicOf } from './sound.ts';
@@ -112,6 +113,8 @@ export interface Film {
 }
 
 const NO_FORMAT = 'a film has a format at least: the frame it is shot in, and the screen its page is laid out on';
+const LEAVES_NO_ROOM =
+	'leaves the words or the window no room on its frame: a share further from 0 and 1, or narrower margins';
 /** Any film's script, its server and its formats' names aside. */
 type AnyScript = Script<Serving, string>;
 const AN_OBJECT_SAID = 'an object';
@@ -225,12 +228,14 @@ export function atAddress(address: string): Serving {
 
 /**
  * A film's script, as a film whose types nobody checked may hand it, refused by its place where it is in no form of
- * one: a name a film has not, its formats, each a frame a video holds and a screen, and its functions.
+ * one: a name a film has not, its formats, each a frame a video holds, a screen and a split that leaves the words and
+ * the window room, and its functions.
  */
 function refuseUnlikeAFilm(written: unknown): void {
 	assertWritten(written, FILM_FORM, 'the film');
 	for (const [name, format] of Object.entries(written.formats)) {
 		assertWritten(format, FORMAT_FORM, `the film's ${name} format`);
+		if (!leavesRoom(format)) throw new FilmError(`the film's ${name} format's split ${LEAVES_NO_ROOM}`);
 	}
 }
 

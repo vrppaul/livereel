@@ -4,7 +4,16 @@
  * and captions, and the agent's terminal. A value the film leaves out stays livereel's, so a film tunes one and keeps
  * the rest; the stage sets each the film gives in place of its own token (`stage/tokens.css`).
  */
-import { A_COLOUR, A_FONT_FAMILY, type Form, OneOf, Plain, assertWritten } from '../domain/handed.ts';
+import {
+	A_COLOUR,
+	A_FONT_FAMILY,
+	A_PIXELS,
+	A_SHARE,
+	type Form,
+	OneOf,
+	Plain,
+	assertWritten
+} from '../domain/handed.ts';
 
 export interface Theme {
 	/** The ground's colour, in hex, as it stands at its edges. */
@@ -60,14 +69,11 @@ type CaptionPlace = (typeof CAPTION_PLACES)[number];
 const WORDS_MOTIONS = ['soft', 'sharp', 'still'] as const;
 type WordsMotion = (typeof WORDS_MOTIONS)[number];
 
-const A_PIXELS = new Plain(isPixels, 'a number of pixels, 0 or more');
 const A_SIZE = new Plain(isSize, 'a number of pixels, more than 0');
-const A_SHARE = new Plain(isShare, 'a number from 0 to 1');
 const A_WEIGHT = new Plain(isWeight, 'a weight from 100 to 900');
 const A_CAPTION_PLACE = new OneOf(CAPTION_PLACES, 'where a caption stands: "bottom" or "top"');
 const A_WORDS_MOTION = new OneOf(WORDS_MOTIONS, 'how words come up: "soft", "sharp" or "still"');
 const NONE = 0;
-const WHOLE = 1;
 const THINNEST = 100;
 const HEAVIEST = 900;
 const THEME_FORM: Form<Theme> = {
@@ -115,18 +121,10 @@ export function themeOf(written: unknown): Theme {
 	return written;
 }
 
-function isPixels(written: unknown): written is number {
-	return typeof written === 'number' && Number.isFinite(written) && written >= NONE;
-}
-
 function isSize(written: unknown): written is number {
 	return typeof written === 'number' && Number.isFinite(written) && written > NONE;
 }
 
 function isWeight(written: unknown): written is number {
 	return typeof written === 'number' && written >= THINNEST && written <= HEAVIEST;
-}
-
-function isShare(written: unknown): written is number {
-	return typeof written === 'number' && written >= NONE && written <= WHOLE;
 }

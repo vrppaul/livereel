@@ -52,7 +52,7 @@ function showing(said: Said, beside: Beside | null): Change {
 	return propChange('title', (progress) => ({ ...said, beside, shown: progress, gone: 0 }));
 }
 
-/** Where words on a side of the frame stand, in the frame the film is shot at; none over the whole frame. */
+/** Where words on a side of the frame stand, in the format the film is shot in; none over the whole frame. */
 function besideOn(beginning: Beginning, side: FrameSide | null): Beside | null {
-	return side === null ? null : { side, box: wordsOn(beginning.format.frame, side) };
+	return side === null ? null : { side, box: wordsOn(beginning.format, side) };
 }

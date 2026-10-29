@@ -328,6 +328,29 @@ test('a theme in no form of one is refused as the film is defined, where it stan
 	);
 });
 
+test("a format's split in no form of one is refused as the film is defined, where it stands: a name a split has not, a share past 1, a margin less than none", () => {
+	expect(() => filmWritten({ formats: { small: { ...SMALL, split: { gap: 10 } } } })).toThrow(
+		new FilmError(
+			"the film's small format's split names gap: it names wordsShare, windowMargin, wordsMargin, wordsGap, or fewer"
+		)
+	);
+	expect(() => filmWritten({ formats: { small: { ...SMALL, split: { wordsShare: 2 } } } })).toThrow(
+		new FilmError("the film's small format's split's wordsShare is 2: it is a number from 0 to 1")
+	);
+	expect(() => filmWritten({ formats: { small: { ...SMALL, split: { windowMargin: -1 } } } })).toThrow(
+		new FilmError("the film's small format's split's windowMargin is -1: it is a number of pixels, 0 or more")
+	);
+});
+
+test("a format's split that leaves the words or the window no room on its frame is refused as the film is defined: no share, the whole share, margins wider than the share", () => {
+	const roomless = new FilmError(
+		"the film's small format's split leaves the words or the window no room on its frame: a share further from 0 and 1, or narrower margins"
+	);
+	expect(() => filmWritten({ formats: { small: { ...SMALL, split: { wordsShare: 0 } } } })).toThrow(roomless);
+	expect(() => filmWritten({ formats: { small: { ...SMALL, split: { wordsShare: 1 } } } })).toThrow(roomless);
+	expect(() => filmWritten({ formats: { small: { ...SMALL, split: { wordsMargin: 400 } } } })).toThrow(roomless);
+});
+
 test('a ground named without a glow is a ground of one colour, and one named with its glow keeps it', () => {
 	const themes = [{ ground: '#ffffff' }, { ground: '#ffffff', glow: '#eeeeee' }].map(
 		(theme) => filmWritten({ theme }).formats.get('small')!.theme

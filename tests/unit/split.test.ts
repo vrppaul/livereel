@@ -16,10 +16,20 @@ test("a window stands whole in the middle of its room, in the screen's shape, on
 	]);
 });
 
+test("a format's own split sets the words' share, the margins and the gap; what it leaves out stays livereel's", () => {
+	const tuned: Format = { ...WIDE, split: { wordsShare: 0.3, windowMargin: 40, wordsMargin: 60, wordsGap: 20 } };
+	const narrower: Format = { ...WIDE, split: { wordsShare: 0.3 } };
+	expect([wordsOn(tuned, 'left'), windowOn(tuned, 'right'), wordsOn(narrower, 'left')]).toEqual([
+		{ left: 60, top: 60, width: 496, height: 960 },
+		{ left: 576, top: 173, width: 1304, height: 734 },
+		{ left: 96, top: 96, width: 432, height: 888 }
+	]);
+});
+
 test('words stand clear of the window on the side across: beside it, above it', () => {
 	const window = windowOn(WIDE, 'right');
-	const words = wordsOn(WIDE.frame, 'left');
+	const words = wordsOn(WIDE, 'left');
 	const below = windowOn(SQUARE, 'bottom');
-	const above = wordsOn(SQUARE.frame, 'top');
+	const above = wordsOn(SQUARE, 'top');
 	expect([window.left - (words.left + words.width), below.top - (above.top + above.height)]).toEqual([48, 48]);
 });

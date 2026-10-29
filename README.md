@@ -179,8 +179,9 @@ play({
 The page draws back off the frame's edges into a window on the ground, its
 corners rounding, its edge and shadow coming up; `camera.onto` without a
 `side`, or `camera.to`, brings it back to fill the frame. The words take
-about a third of the frame, set as large as their share lets; the window
-stands whole in the rest, as large as it holds the screen's shape. Inside
+about a third of the frame, set as large as their share lets, or the share
+a format's `split` gives them (see Formats); the window stands whole in the
+rest, as large as it holds the screen's shape. Inside
 the window the camera frames as in the whole frame: a block at its middle,
 as close as its `air` lets, the camera keeping the screen filling it;
 framed closer, the window stands still and the page grows in it. An
@@ -277,6 +278,23 @@ selector, its `air` in the page's pixels, show as much of the page on a
 frame of any size. A pose given in numbers is the film's to give per
 format, as `steps(served, whole, formatName)` is handed the whole screen's
 pose and the name of the format it is shot in.
+
+A format may give a `split` of its own, how its frame is split between
+words and the page's window, any of its values; what it leaves out stays
+livereel's:
+
+| Value | What it sets | livereel's |
+|---|---|---|
+| `wordsShare` | the share of the frame the words take, from the edge they stand on, from 0 to 1 | `0.36` |
+| `windowMargin` | how far the window stands in from the frame's edges, in pixels | `72` |
+| `wordsMargin` | how far the words stand in from the frame's edges, in pixels | `96` |
+| `wordsGap` | how far the words keep from the window's room, in pixels | `48` |
+
+Pixels are of a frame 1080 on its shorter side, as the theme's are. A
+square's words above the window may take less of it than a wide frame's
+beside it: `square: { frame, screen, split: { wordsShare: 0.28 } }`. A
+split that leaves the words or the window no room on its frame is refused
+before anything is shot.
 
 ### Where the stage stands
 

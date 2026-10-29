@@ -41,7 +41,7 @@ caption. Speak in the director's words, which are the tool's:
 | action | what the page does for real: a click (`cursor.click`), keys typed into it (`typing(page.type(strokes))`), anything else in an `act` |
 | caption | `caption.show(text)`, `caption.hide()` |
 | title card | `title.show(text)` — words over the whole frame, on the film's ground; `title.hide()` |
-| split | `camera.onto(selector, { side: 'right' })` with `title.show(text, { side: 'left', within: { start: 0.5 } })` in one `play` — the page draws back into a window on one side, then the words come up on the ground across from it; name the sides per format from `steps`' format name: words above the window in a square, beside it in a wide frame |
+| split | `camera.onto(selector, { side: 'right' })` with `title.show(text, { side: 'left', within: { start: 0.5 } })` in one `play` — the page draws back into a window on one side, then the words come up on the ground across from it; name the sides per format from `steps`' format name: words above the window in a square, beside it in a wide frame; a format's `split` sets the words' share and the margins, `{ wordsShare: 0.28 }` for words that ask less room above a square's window |
 | entrance | `cut(screen.lower())`, then `screen.rise()` in a `play`; `ending.show(card)` |
 | tempo | how long each `play` and `hold({ seconds })` lasts |
 
