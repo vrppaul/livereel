@@ -29,6 +29,8 @@ import {
 const POSE = { focusX: 0, focusY: 0, zoom: 1, tilt: 0, turn: 0 };
 const CARD = { name: 'livereel', line: 'Your agent films your live app', command: 'npx livereel' };
 const SELECTOR = 'a selector: a string that names blocks of the page';
+const TARGET =
+	'a target: a selector, a string that names blocks of the page, or a box of the screen, { left, top, width, height }';
 const FILE = "a file's path, from the film's file";
 const CURVE = 'a curve: a function of progress, as easeInOutSine';
 const SHARE = 'a share of the step: { start, end }';
@@ -42,7 +44,10 @@ const RUN = 'words: a string, or a run of them set its own way, { text, italic, 
 const COLOUR = 'a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa';
 
 test('every function a film calls refuses what it is handed in no form it takes, where it stands', () => {
-	expect(() => camera.onto(null as never)).toThrow(new FilmError(`camera.onto's selector is null: it is ${SELECTOR}`));
+	expect(() => camera.onto(null as never)).toThrow(new FilmError(`camera.onto's target is null: it is ${TARGET}`));
+	expect(() => camera.onto({ left: 10 } as never)).toThrow(
+		new FilmError("camera.onto's target's top is undefined: it is a number")
+	);
 	expect(() => camera.onto('#block', { air: '80' as never })).toThrow(
 		new FilmError('camera.onto\'s air is "80": it is a number')
 	);
@@ -65,18 +70,18 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => camera.to(POSE, { tilt: 'up' as never })).toThrow(
 		new FilmError('camera.to\'s tilt is "up": it is a number')
 	);
-	expect(() => light.on(null as never)).toThrow(new FilmError(`light.on's selector is null: it is ${SELECTOR}`));
+	expect(() => light.on(null as never)).toThrow(new FilmError(`light.on's target is null: it is ${TARGET}`));
 	expect(() => light.on('#block', { dim: null as never })).toThrow(
 		new FilmError("light.on's dim is null: it is a number")
 	);
-	expect(() => light.to(5 as never)).toThrow(new FilmError(`light.to's selector is 5: it is ${SELECTOR}`));
+	expect(() => light.to(5 as never)).toThrow(new FilmError(`light.to's target is 5: it is ${TARGET}`));
 	expect(() => light.to('#block', { dim: 0.5 } as never)).toThrow(
 		new FilmError('light.to names dim: it names within, ease, or fewer')
 	);
 	expect(() => light.off({ within: { start: '0' as never } })).toThrow(
 		new FilmError('light.off\'s within\'s start is "0": it is a number')
 	);
-	expect(() => cursor.to(null as never)).toThrow(new FilmError(`cursor.to's selector is null: it is ${SELECTOR}`));
+	expect(() => cursor.to(null as never)).toThrow(new FilmError(`cursor.to's target is null: it is ${TARGET}`));
 	expect(() => cursor.to('#block', { entering: { x: 1 } as never })).toThrow(
 		new FilmError("cursor.to's entering names x: it names left, top, or fewer")
 	);
@@ -110,7 +115,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		new FilmError(`caption.hide's within is []: it is ${SHARE}`)
 	);
 	expect(() => callout.show(null as never, 'Here')).toThrow(
-		new FilmError(`callout.show's selector is null: it is ${SELECTOR}`)
+		new FilmError(`callout.show's target is null: it is ${TARGET}`)
 	);
 	expect(() => callout.show('#block', 'Here', { side: 'top' as never })).toThrow(
 		new FilmError('callout.show\'s side is "top": it is a side of the block: "above", "below", "left" or "right"')

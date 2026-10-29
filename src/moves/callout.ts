@@ -3,13 +3,15 @@
  * block is read as the move's share begins, what the screen shows of it, as the camera and the cursor read it; one the
  * screen shows none of is refused there.
  */
-import { A_SELECTOR, type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { linear } from '../domain/time.ts';
 import {
+	A_TARGET,
 	type Beginning,
 	type Change,
 	type Move,
 	TIMING_FORM,
+	type Target,
 	type TimingScript,
 	propChange,
 	shownPart,
@@ -29,9 +31,12 @@ const SIDE_WHERE_NONE_IS_NAMED: BlockSide = 'above';
 // A callout points at one block: the first a selector matches
 const THE_FIRST = 1;
 
-/** A callout coming up beside the block a selector matches, its card first, then its words one after another. */
-export function show(target: string, text: Wording, script: CalloutScript = {}): Move {
-	assertKind(target, A_SELECTOR, "callout.show's selector");
+/**
+ * A callout coming up beside the block a selector matches, or a box of the screen, its card first, then its words one
+ * after another.
+ */
+export function show(target: Target, text: Wording, script: CalloutScript = {}): Move {
+	assertKind(target, A_TARGET, "callout.show's target");
 	assertKind(text, A_WORDING, "callout.show's text");
 	assertWritten(script, CALLOUT_FORM, 'callout.show');
 	const said = saidOf(text);
@@ -49,7 +54,7 @@ export function hide(script: TimingScript = {}): Move {
 	return { part: 'callout', timing: timingOf(script), begin: (beginning) => going('callout', beginning) };
 }
 
-async function pointing(beginning: Beginning, target: string, said: Said, side: BlockSide): Promise<Change> {
+async function pointing(beginning: Beginning, target: Target, said: Said, side: BlockSide): Promise<Change> {
 	const box = await shownPart(beginning, target, THE_FIRST, 'callout.show');
 	return propChange('callout', (progress) => ({ ...said, box, side, shown: progress, gone: 0 }));
 }

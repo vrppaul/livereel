@@ -38,7 +38,6 @@
 An integration is a module a film imports, with no registry or loader, built on livereel's seams: a page served (`serve` hands back a `Serving`), acts (`ActContext`), and moves of its own, which no film can make yet. One that needs nothing but `fetch` is a subpath of this package (`livereel/figma`, a line in `exports`); one that needs a heavy dependency, a package of its own.
 
 - A move made outside livereel, the seam an integration's moves stand on, exported as the package's promise: `Share` and `timingOf`, `Beginning`, `FilmedPage`, `Change` and the scene a move is handed. Today a step takes only a move livereel made (`Move`, `src/direction/move.ts`).
-- A target given as a box in pixels as well as a selector, for the camera, the light and the cursor: a Figma prototype or a canvas has no selector.
 - The props stay the core's: the scene's set of them is closed (`src/scene.ts`, `DRAWERS` on the stage), which the compiler holds.
 
 ## Figma

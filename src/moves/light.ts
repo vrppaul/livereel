@@ -5,16 +5,19 @@
  * edge with a block that reaches past it, which the screen cuts, and does not round off there as if the block ended.
  */
 import { type Box, boxToward } from '../domain/geometry.ts';
-import { A_NUMBER, A_SELECTOR, type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { A_NUMBER, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import {
+	A_TARGET,
 	type Beginning,
 	type Change,
 	type Move,
 	TIMING_FORM,
+	type Target,
 	type TimingScript,
 	present,
 	propChange,
 	shownBox,
+	targetSaid,
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
@@ -29,17 +32,17 @@ export interface LightScript extends TimingScript {
 const DIP = 0.7;
 const LIGHT_FORM: Form<LightScript> = { dim: A_NUMBER, ...TIMING_FORM };
 
-/** A block lit as the step goes on, the rest dimmed. */
-export function on(target: string, script: LightScript = {}): Move {
-	assertKind(target, A_SELECTOR, "light.on's selector");
+/** A block lit as the step goes on, the rest dimmed: one a selector names, or a box of the screen. */
+export function on(target: Target, script: LightScript = {}): Move {
+	assertKind(target, A_TARGET, "light.on's target");
 	assertWritten(script, LIGHT_FORM, 'light.on');
 	const dim = script.dim ?? LIGHT_DIM;
 	return { part: 'light', timing: timingOf(script), begin: (beginning) => rising(beginning, target, dim) };
 }
 
 /** The light carried from the block it is on to another. */
-export function to(target: string, script: TimingScript = {}): Move {
-	assertKind(target, A_SELECTOR, "light.to's selector");
+export function to(target: Target, script: TimingScript = {}): Move {
+	assertKind(target, A_TARGET, "light.to's target");
 	assertWritten(script, TIMING_FORM, 'light.to');
 	return { part: 'light', timing: timingOf(script), begin: (beginning) => carried(beginning, target) };
 }
@@ -50,13 +53,13 @@ export function off(script: TimingScript = {}): Move {
 	return { part: 'light', timing: timingOf(script), begin: fading };
 }
 
-async function rising(beginning: Beginning, target: string, dim: number): Promise<Change> {
+async function rising(beginning: Beginning, target: Target, dim: number): Promise<Change> {
 	const box = await shownBox(beginning, target, 1, 'light.on');
 	return propChange('light', (progress) => ({ box, strength: progress, dim }));
 }
 
-async function carried(beginning: Beginning, target: string): Promise<Change> {
-	const start = present(beginning, 'light', `the light is carried to ${target}, but none is on`);
+async function carried(beginning: Beginning, target: Target): Promise<Change> {
+	const start = present(beginning, 'light', `the light is carried to ${targetSaid(target)}, but none is on`);
 	const end = await shownBox(beginning, target, 1, 'light.to');
 	return propChange('light', (progress) => carriedAt(start, end, progress));
 }

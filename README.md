@@ -131,14 +131,14 @@ A film is a list of steps:
 
 and the moves of each part of the scene:
 
-- `camera.to(pose, { tilt, turn })`, `camera.onto(selector, { every, air, zoomAtMost, tilt, turn })`
+- `camera.to(pose, { tilt, turn })`, `camera.onto(target, { every, air, zoomAtMost, tilt, turn })`
 - `window.to(place)`, `window.show({ at, from })`, `window.hide({ toward })`
-- `light.on(selector, { dim })`, `light.to(selector)`, `light.off()`
-- `callout.show(selector, text, { side })`, `callout.hide()`
-- `note.show(selector, text, { at })`, `note.hide()`
-- `pin.show(selector, label)`, `pin.clear()`
+- `light.on(target, { dim })`, `light.to(target)`, `light.off()`
+- `callout.show(target, text, { side })`, `callout.hide()`
+- `note.show(target, text, { at })`, `note.hide()`
+- `pin.show(target, label)`, `pin.clear()`
 - `keys.show(caps)`, `keys.hide()`
-- `cursor.to(selector, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
+- `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
 - `title.show(text, { at, align, size, from })`, `title.to(place)`, `title.hide({ toward })`
 - `code.show(text, { at, from })`, `code.to(place)`, `code.light(line, { through })`, `code.hide({ toward })`
@@ -149,6 +149,10 @@ and the moves of each part of the scene:
 - `ending.show({ name, line, command }, { from })`, `ending.hide({ toward })`, so a film may open on the card too
 - `page.scrollBy(selector, { pixels })`, `page.scrollTo(selector, { top })`, `page.type(strokes)`
 - `sound.play(file)`
+
+A target is a selector, the first `every` blocks it matches, or a box of the
+page's screen, `{ left, top, width, height }` in its pixels, for what a page
+draws with nothing to select: a canvas, or a frame exported from a design.
 
 `cursor.click` and `typing` give several steps, spread among the others:
 `...cursor.click(action)`. An act's `action` is handed a `context`, whose
@@ -272,17 +276,20 @@ sets a dark pane of code in its place, its lines coming
 up one after another, coloured as TypeScript is, the indent they share
 dropped. Its letters are as large as `codeSize` lets, smaller where the
 widest line would not fit across, so keep its lines short or give the words
-a larger share (`split: { wordsShare: 0.44 }`). `code.light(2)` lights its
-second line, counted from 1, and dims the rest, `code.light(2, { through: 4 })`
-lines 2 to 4, so a line lights as the page does what it says:
+a larger share (`split: { wordsShare: 0.44 }`). `code.light('light.on')`
+lights the first line that says `light.on` and dims the rest, so a line
+lights as the page does what it says; `code.light(2)` lights the second line,
+counted from 1, and `code.light('cursor.to', { through: 'click' })` the lines
+from one through the first after it that says the other:
 
 ```ts
 play({ seconds: 1.4, moves: [window.to('right'), camera.onto(CARDS), code.show(LINES, { at: 'left' })] }),
-play({ seconds: 1, moves: [code.light(1), camera.onto(VISITORS)] }),
-play({ seconds: 1, moves: [code.light(2), light.on(VISITORS)] }),
+play({ seconds: 1, moves: [code.light('camera.onto'), camera.onto(VISITORS)] }),
+play({ seconds: 1, moves: [code.light('light.on'), light.on(VISITORS)] }),
 ```
 
-`code.hide()` takes it away; a light past its last line is refused.
+`code.hide()` takes it away; a light past its last line, or of words no line
+says, is refused.
 
 What a title, a caption, a callout or a note says is a string, or a list of strings
 and runs, read one after another. A run is `{ text }` set any of these

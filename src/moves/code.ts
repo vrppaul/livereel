@@ -2,12 +2,13 @@
  * Code: a pane of the film's code coming up in a place the film names (`src/domain/place.ts`), beside the page's
  * window or alone, in place of any code shown, from past a side of the frame where the film names one, pushing the
  * code shown off past the side across as it comes; moving to another place; lines of it lit as they run; and going,
- * or leaving past a side. Lines are counted from 1, as an editor counts them, and a light past the last line shown is
- * refused as it begins.
+ * or leaving past a side. A line lit is named by its number, counted from 1 as an editor counts them, or by what it
+ * says, the first line that says it, so a film's code may change above it and the light still finds its line; a light
+ * past the last line shown, or of words no line says, is refused as it begins.
  */
 import { FilmError } from '../domain/errors.ts';
 import { A_FRAME_SIDE, type Box, type FrameSide } from '../domain/geometry.ts';
-import { A_COUNT, A_STRING, type Form, assertKind, assertWritten, needed } from '../domain/handed.ts';
+import { A_COUNT, A_STRING, type Form, type Kind, Plain, assertKind, assertWritten, needed } from '../domain/handed.ts';
 import { A_PLACE, type Place, enteringFrom, wordsPlaced } from '../domain/place.ts';
 import { between, linear } from '../domain/time.ts';
 import {
@@ -39,15 +40,23 @@ export interface CodeScript extends TimingScript {
 	readonly from?: FrameSide;
 }
 
+/** A line of code as a film names it: by its number, from 1, or by words it says. */
+type LineNamed = number | string;
+
 /** The last line lit, where the film lights more than one: lines from the one named through this one. */
 export interface LightScript extends TimingScript {
-	readonly through?: number;
+	readonly through?: LineNamed;
 }
 
+const A_LINE_NAMED: Kind<LineNamed> = new Plain(
+	isLineNamed,
+	'a line: its number, a whole count from 1, or words it says, a string with something in it'
+);
 const CODE_FORM: Form<CodeScript> = { at: needed(A_PLACE), from: A_FRAME_SIDE, ...TIMING_FORM };
-const LIGHT_FORM: Form<LightScript> = { through: A_COUNT, ...TIMING_FORM };
-// Lines are counted from 1, places in a list from 0
+const LIGHT_FORM: Form<LightScript> = { through: A_LINE_NAMED, ...TIMING_FORM };
+// Lines are counted from 1, places in a list from 0; a list's search that finds nothing says so by this
 const FIRST_LINE = 1;
+const NOT_FOUND = -1;
 
 /**
  * Code coming up in its place, its ground first, then its lines one after another at an even pace unless the film
@@ -73,9 +82,12 @@ export function to(place: Place, script: TimingScript = {}): Move {
 	return { part: 'code', timing: timingOf(script), begin: (beginning) => moving(beginning, place) };
 }
 
-/** A line of the code shown lit, or the lines from it through another; the rest dim, and any lit before go out. */
-export function light(line: number, script: LightScript = {}): Move {
-	assertKind(line, A_COUNT, "code.light's line");
+/**
+ * A line of the code shown lit, by its number or by what it says, or the lines from it through another; the rest dim,
+ * and any lit before go out.
+ */
+export function light(line: LineNamed, script: LightScript = {}): Move {
+	assertKind(line, A_LINE_NAMED, "code.light's line");
 	assertWritten(script, LIGHT_FORM, 'code.light');
 	const through = script.through ?? line;
 	return { part: 'code', timing: timingOf(script), begin: (beginning) => lighting(beginning, line, through) };
@@ -125,8 +137,10 @@ function leaving(beginning: Beginning, toward: FrameSide): Change {
 	return leavingToward('code', (at) => ({ ...code, box: at }), code.box, toward, beginning);
 }
 
-function lighting(beginning: Beginning, first: number, last: number): Change {
+function lighting(beginning: Beginning, firstNamed: LineNamed, lastNamed: LineNamed): Change {
 	const shown = present(beginning, 'code', 'lines of code are lit, but no code is on the screen');
+	const first = numberOf(shown.lines, firstNamed, FIRST_LINE);
+	const last = numberOf(shown.lines, lastNamed, first);
 	const count = shown.lines.length;
 	if (last < first || last > count) {
 		throw new FilmError(
@@ -137,6 +151,28 @@ function lighting(beginning: Beginning, first: number, last: number): Change {
 		...shown,
 		lines: shown.lines.map((line, place) => litToward(line, place + FIRST_LINE, first, last, progress))
 	}));
+}
+
+/**
+ * The number of a line a film names: the number it gives, or that of the first line from `from` on that says the
+ * words it gives; words no line from there says are refused.
+ */
+function numberOf(lines: readonly CodeLine[], named: LineNamed, from: number): number {
+	if (typeof named === 'number') return named;
+	const found = lines.findIndex((line, place) => place + FIRST_LINE >= from && textOf(line).includes(named));
+	if (found === NOT_FOUND) {
+		throw new FilmError(`code.light lights the line that says "${named}", but no line of the code shown says it`);
+	}
+	return found + FIRST_LINE;
+}
+
+/** What a line of code says, its pieces read one after another. */
+function textOf(line: CodeLine): string {
+	return line.pieces.map((piece) => piece.text).join('');
+}
+
+function isLineNamed(written: unknown): written is LineNamed {
+	return A_COUNT.is(written) || (typeof written === 'string' && written.length > 0);
 }
 
 /** A line `progress` of the way to lit, where it is among those named, or to out. */

@@ -5,7 +5,7 @@
  * stands on that screen, with no camera applied, or a part of the frame, as the page's window on it. Every other
  * measure of a film is read off these.
  */
-import { A_NUMBER, type Kind, OfForm, OneOf, needed } from './handed.ts';
+import { A_NUMBER, A_PIXELS, type Kind, OfForm, OneOf, needed } from './handed.ts';
 import { between } from './time.ts';
 
 export interface Size {
@@ -38,6 +38,12 @@ export interface Box {
 	readonly width: number;
 	readonly height: number;
 }
+
+/** A box as a film hands it: its left and top edges, anywhere, and how big it is, in pixels, none at least. */
+export const A_BOX: Kind<Box> = new OfForm<Box>(
+	{ left: needed(A_NUMBER), top: needed(A_NUMBER), width: needed(A_PIXELS), height: needed(A_PIXELS) },
+	'a box: { left, top, width, height }, its size in pixels, 0 or more'
+);
 
 /** A curve from a start to an end, drawn toward its bend: a quadratic Bézier. */
 export interface Arc {

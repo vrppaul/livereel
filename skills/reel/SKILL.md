@@ -33,7 +33,7 @@ caption. Speak in the director's words, which are the tool's:
 
 | Word | In livereel |
 |---|---|
-| framing | `camera.onto(selector, { air })` — what the frame holds |
+| framing | `camera.onto(target, { air })` — what the frame holds, a selector's blocks or a box |
 | angle | `camera.to(pose)`, `camera.onto(…, { tilt, turn })` — the screen leans back or swings |
 | camera move | a `play({ seconds, moves, ease })` |
 | light | `light.on`, `light.to`, `light.off` — one block lit, the rest dimmed |
@@ -42,7 +42,7 @@ caption. Speak in the director's words, which are the tool's:
 | caption | `caption.show(text)`, `caption.hide()`; at the frame's foot, or its top in a format with `captionAt: 'top'`, which leaves the foot to keys |
 | title card | `title.show(text)` — words over the whole frame, on the film's ground; `title.hide()` |
 | split | `window.to('right')`, `camera.onto(selector)` and `title.show(text, { at: 'left', within: { start: 0.5 } })` in one `play` — the page draws back into a window on one side, the camera keeping the block framed in it, then the words come up on the ground across from it; `window.to('whole')` brings the page back to fill the frame; a film shot in several formats names places of its own in each format, `places: { words: 'top', page: 'bottom' }` in a square and `{ words: 'left', page: 'right' }` in a wide frame, and writes `at: 'words'` and `window.to('page')` once; a format's `split` sets the words' share and the margins, `{ wordsShare: 0.28 }` for words that ask less room above a square's window |
-| code beside | `code.show(lines, { at: 'left' })` with the page's window `to('right')` — the film's code on one side, the page doing it in the window across; a heading over it in a place of its own (`title.show(text, { at: { of: 'left', height: 0.2 } })`, code `at: { of: 'left', top: 0.25, height: 0.75 }`); `code.light(n)` as the page does what line `n` says; short lines, or a larger `wordsShare` |
+| code beside | `code.show(lines, { at: 'left' })` with the page's window `to('right')` — the film's code on one side, the page doing it in the window across; a heading over it in a place of its own (`title.show(text, { at: { of: 'left', height: 0.2 } })`, code `at: { of: 'left', top: 0.25, height: 0.75 }`); `code.light('light.on')` as the page does what that line says; short lines, or a larger `wordsShare` |
 | entrance | `cut(screen.lower())`, then `screen.rise()` in a `play`; `ending.show(card)` |
 | tempo | how long each `play` and `hold({ seconds })` lasts |
 
@@ -200,20 +200,20 @@ its end at once.
 | Moves | |
 |---|---|
 | `camera.to(pose, { tilt, turn })` | to a pose: `whole` from `steps`, or `lookingAt(pose, focusX, focusY, zoom)` |
-| `camera.onto(selector, { every, air, zoomAtMost, tilt, turn })` | frames the first `every` blocks a selector matches, `air` pixels round them, in whatever window stands, and keeps them framed as the window moves, the screen filling a window; an angle leans the window |
+| `camera.onto(target, { every, air, zoomAtMost, tilt, turn })` | frames the first `every` blocks a selector matches, or a box of the screen, `{ left, top, width, height }` in its pixels, for a canvas or a design's frame with nothing to select, `air` pixels round them, in whatever window stands, and keeps them framed as the window moves, the screen filling a window; an angle leans the window |
 | `window.to(place)` | the page's window to a place, the frame itself at `whole`, a window on the ground anywhere else: a side's room across from the words' share, or a box in shares; travels apart from the camera, in the same `play` or not |
 | `window.show({ at, from })`, `window.hide({ toward })` | the window sliding in whole from past a side of the frame to its place, or out past one, where it stays; with words sliding the other way in one `play`, a push |
 | `screen.rise()`, `screen.lower()` | the screen up out of the ground from where it stands, or down into it, the window's shadow and edge with it: over a share of a `play`, or at once in a `cut` |
-| `light.on(selector, { dim })`, `light.to(selector)`, `light.off()` | one block lit, the rest dimmed by `dim`; carried; put out |
-| `cursor.to(selector, { entering, bow })` | along an arc to a block, from `entering` if not yet on the screen |
+| `light.on(target, { dim })`, `light.to(target)`, `light.off()` | one block lit, the rest dimmed by `dim`; carried; put out |
+| `cursor.to(target, { entering, bow })` | along an arc to a block, from `entering` if not yet on the screen |
 | `cursor.press({ sound })`, `cursor.release()`, `cursor.hide()` | pressed in with a click (`sound`, a file of the film's in its place), let go, taken off the screen |
 | `cursor.click(action, { sound })` | pressed with its click, `act(action)`, let go: the steps of a click |
-| `callout.show(selector, text, { side })`, `callout.hide()` | words on a card beside a block, pointing at it, `side` `above` (where none is named), `below`, `left` or `right`; carried with the page |
-| `note.show(selector, text, { at })`, `note.hide()` | words on the ground beside the page's window, on the side clearest of it or `at` a place beyond it, a line drawn from them to a block in it; only with a window, which stays until `note.hide()` |
-| `pin.show(selector, label)`, `pin.clear()` | a numbered mark on a block, after those laid before, the earlier labels quietened; all taken away |
+| `callout.show(target, text, { side })`, `callout.hide()` | words on a card beside a block, pointing at it, `side` `above` (where none is named), `below`, `left` or `right`; carried with the page |
+| `note.show(target, text, { at })`, `note.hide()` | words on the ground beside the page's window, on the side clearest of it or `at` a place beyond it, a line drawn from them to a block in it; only with a window, which stays until `note.hide()` |
+| `pin.show(target, label)`, `pin.clear()` | a numbered mark on a block, after those laid before, the earlier labels quietened; all taken away |
 | `keys.show(caps)`, `keys.hide()` | the caps of a shortcut at the frame's foot, as `['⌘', 'Enter']` |
 | `title.show(text, { at, align, size, from })`, `title.to(place)`, `title.hide({ toward })` | words coming up one after another on the film's ground over the whole frame, or `at` a place, in place of any title shown; going, the ground with them. `size` is this title's letters' own, in pixels of a 1080 frame, in place of the look's `titleSize`, over the whole frame or in a place alike: one word set large; a word larger than its place runs past it, so look at it on a still. In a place it slides in whole `from` a side, travels `to` another place, slides out `toward` a side: a title shown `from: 'right'` while one stands in a place pushes it off to the left as one sheet, and the window, code or the card slide with it in the same `play`. A place: `whole`, `left`, `right`, `top`, `bottom`, a name the format gives in its `places`, or `{ of, left, top, width, height }` in shares of the frame or of the place `of`, past the frame's edge if it must |
-| `code.show(text, { at, from })`, `code.to(place)`, `code.light(line, { through })`, `code.hide({ toward })` | a dark pane of code `at` a place, beside the page's window or alone, sliding in `from` past a side of the frame, pushing the code shown off past the side across, or out `toward` one, carried to another place by `to`; its lines coming up one after another, coloured as TypeScript; a line lit, counted from 1, or lines `line` through `through`, the rest dimmed; going |
+| `code.show(text, { at, from })`, `code.to(place)`, `code.light(line, { through })`, `code.hide({ toward })` | a dark pane of code `at` a place, beside the page's window or alone, sliding in `from` past a side of the frame, pushing the code shown off past the side across, or out `toward` one, carried to another place by `to`; its lines coming up one after another, coloured as TypeScript; a line lit by what it says, the first line that says it (`code.light('light.on')`), or by its number from 1, or lines `line` through `through`, the rest dimmed; going |
 | `caption.show(text)`, `caption.hide()` | words coming up one after another at the frame's foot, or its top in a format with `captionAt: 'top'`, in place of any shown; going |
 | `look.to(theme, { within })` | the film's look moving to any of a theme's values: through the values between in a `play`, at once in a `cut`; two at once in a step where they name no value alike |
 | `terminal.open(title)` | an agent's terminal coming up over the frame; in a `cut`, there at once |

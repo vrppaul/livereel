@@ -10,15 +10,17 @@
  */
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
-import { type Box, liesAboveOrBelow, liesOutside, partWithin } from '../domain/geometry.ts';
+import { A_BOX, type Box, liesAboveOrBelow, liesOutside, partWithin } from '../domain/geometry.ts';
 import {
 	A_NUMBER,
+	A_SELECTOR,
 	type Form,
 	type Kind,
 	ListOf,
 	OfForm,
 	Plain,
 	aFunction,
+	described,
 	isObjectOfValues
 } from '../domain/handed.ts';
 import type { Ease } from '../domain/time.ts';
@@ -40,6 +42,30 @@ const NO_FONTS: readonly FontNamed[] = [];
 const NO_SIZE = 0;
 const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
 const ACTED_IN = 'bring it in with an act, as no move of livereel scrolls the page sideways';
+
+/**
+ * What a move goes to on the page: the blocks a selector matches, or a box of the page's screen in its own pixels,
+ * for what a page draws with no selector to name it, as a canvas or a frame exported from a design.
+ */
+export type Target = string | Box;
+
+const TARGET_SAID =
+	'a target: a selector, a string that names blocks of the page, or a box of the screen, { left, top, width, height }';
+
+/** A target as a film hands it: a selector, or a box. */
+class TargetKind implements Kind<Target> {
+	is(written: unknown): written is Target {
+		return this.faultOf(written, '') === undefined;
+	}
+
+	faultOf(written: unknown, place: string): string | undefined {
+		if (typeof written === 'string') return A_SELECTOR.faultOf(written, place);
+		if (isObjectOfValues(written)) return A_BOX.faultOf(written, place);
+		return `${place} is ${described(written)}: it is ${TARGET_SAID}`;
+	}
+}
+
+export const A_TARGET: Kind<Target> = new TargetKind();
 
 /** Where a share of a step starts and ends, each a share of the step from 0 to 1; either may be left to its edge. */
 export interface Bounds {
@@ -175,23 +201,23 @@ function refused(refusal: string): never {
 }
 
 /**
- * Where a block a move goes to stands on the page's screen, read as the move begins; the first `every` a target
- * matches, together. A block with no size, or one standing wholly off the screen, is refused in the move's own words:
- * the move would go where nothing of the block shows. A block above or below is scrolled in by `page.scrollTo`; one
- * beside the screen, by an act, as no move of livereel scrolls the page sideways.
+ * Where a block a move goes to stands on the page's screen, read as the move begins: the first `every` a selector
+ * matches, together, or the box a film gives. A block with no size, or one standing wholly off the screen, is refused
+ * in the move's own words: the move would go where nothing of the block shows. A block above or below is scrolled in
+ * by `page.scrollTo`; one beside the screen, by an act, as no move of livereel scrolls the page sideways.
  */
-export async function shownBox(beginning: Beginning, target: string, every: number, move: string): Promise<Box> {
-	const box = await beginning.page.box(target, every);
+export async function shownBox(beginning: Beginning, target: Target, every: number, move: string): Promise<Box> {
+	const box = typeof target === 'string' ? await beginning.page.box(target, every) : target;
 	const screen = beginning.format.screen;
+	const named = `${move}'s ${targetSaid(target)}`;
 	if (box.width === NO_SIZE && box.height === NO_SIZE) {
-		throw new FilmError(`${move}'s ${target} has no size on the page: it is hidden, or holds others alone`);
+		throw new FilmError(`${named} has no size on the page: it is hidden, or holds others alone`);
 	}
 	if (liesOutside(box, screen)) {
 		const where = `at left ${Math.round(box.left)}, top ${Math.round(box.top)}`;
 		const broughtIn = liesAboveOrBelow(box, screen) ? SCROLLED_IN : ACTED_IN;
 		throw new FilmError(
-			`${move}'s ${target} stands off the page's screen, ${where} of a screen ${screen.width} × ${screen.height}: ` +
-				broughtIn
+			`${named} stands off the page's screen, ${where} of a screen ${screen.width} × ${screen.height}: ${broughtIn}`
 		);
 	}
 	return box;
@@ -201,8 +227,13 @@ export async function shownBox(beginning: Beginning, target: string, every: numb
  * What the page's screen shows of the blocks a target matches, refused as `shownBox` refuses: the part a camera can
  * frame and a cursor rest on, as nothing past the screen is drawn.
  */
-export async function shownPart(beginning: Beginning, target: string, every: number, move: string): Promise<Box> {
+export async function shownPart(beginning: Beginning, target: Target, every: number, move: string): Promise<Box> {
 	return partWithin(await shownBox(beginning, target, every, move), beginning.format.screen);
+}
+
+/** A target as a refusal names it: its selector, or the box as the film wrote it. */
+export function targetSaid(target: Target): string {
+	return typeof target === 'string' ? target : `box ${described(target)}`;
 }
 
 function isMove(written: unknown): written is Move {

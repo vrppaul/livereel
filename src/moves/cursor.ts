@@ -3,13 +3,15 @@
  * taken away.
  */
 import { A_POINT, type Box, type Point, bowedArc, pointAlong } from '../domain/geometry.ts';
-import { A_NUMBER, A_PATH, A_SELECTOR, type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { A_NUMBER, A_PATH, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { easeOutCubic } from '../domain/time.ts';
 import {
+	A_TARGET,
 	type Beginning,
 	type Change,
 	type Move,
 	TIMING_FORM,
+	type Target,
 	type TimingScript,
 	present,
 	propChange,
@@ -47,9 +49,12 @@ const CURSOR_FORM: Form<CursorScript> = { entering: A_POINT, bow: A_NUMBER, ...T
 const CLICK_FORM: Form<SoundScript> = { sound: A_PATH };
 const PRESS_FORM: Form<PressScript> = { ...CLICK_FORM, ...TIMING_FORM };
 
-/** The cursor to a block of the page, from where it is, or from where it enters if it is not yet on the screen. */
-export function to(target: string, script: CursorScript = {}): Move {
-	assertKind(target, A_SELECTOR, "cursor.to's selector");
+/**
+ * The cursor to a block of the page, one a selector names or a box of the screen, from where it is, or from where it
+ * enters if it is not yet on the screen.
+ */
+export function to(target: Target, script: CursorScript = {}): Move {
+	assertKind(target, A_TARGET, "cursor.to's target");
 	assertWritten(script, CURSOR_FORM, 'cursor.to');
 	return { part: 'cursor', timing: timingOf(script), begin: (beginning) => along(beginning, target, script) };
 }
@@ -86,7 +91,7 @@ export function click(action: (context: ActContext) => Promise<void>, script: So
 	];
 }
 
-async function along(beginning: Beginning, target: string, script: CursorScript): Promise<Change> {
+async function along(beginning: Beginning, target: Target, script: CursorScript): Promise<Change> {
 	const end = restingOn(await shownPart(beginning, target, 1, 'cursor.to'));
 	const start = beginning.scene.cursor ?? script.entering ?? enteringFor(end);
 	const arc = bowedArc({ left: start.left, top: start.top }, end, script.bow ?? BOW);

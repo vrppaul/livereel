@@ -9,20 +9,14 @@
  * after.
  */
 import { A_POSE, type Aim, type Angle, type Pose } from '../domain/camera.ts';
+import { A_COUNT, A_NUMBER, A_NUMBER_OR_ENDLESS, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import {
-	A_COUNT,
-	A_NUMBER,
-	A_NUMBER_OR_ENDLESS,
-	A_SELECTOR,
-	type Form,
-	assertKind,
-	assertWritten
-} from '../domain/handed.ts';
-import {
+	A_TARGET,
 	type Beginning,
 	type Change,
 	type Move,
 	TIMING_FORM,
+	type Target,
 	type TimingScript,
 	propChange,
 	shownPart,
@@ -62,15 +56,15 @@ export function to(pose: Pose, script: AngleScript = {}): Move {
 	return { part: 'camera', timing: timingOf(script), begin: (beginning) => aimedAt(standing(beginning), aim) };
 }
 
-/** The camera onto the blocks a target matches, with air round them. */
-export function onto(target: string, script: OntoScript = {}): Move {
-	assertKind(target, A_SELECTOR, "camera.onto's selector");
+/** The camera onto the blocks a selector matches, or a box of the screen, with air round them. */
+export function onto(target: Target, script: OntoScript = {}): Move {
+	assertKind(target, A_TARGET, "camera.onto's target");
 	assertWritten(script, ONTO_FORM, 'camera.onto');
 	return { part: 'camera', timing: timingOf(script), begin: (beginning) => framing(beginning, target, script) };
 }
 
 /** The camera on its way to the blocks a target matches, framed at the angle it stands at or the film's. */
-async function framing(beginning: Beginning, target: string, script: OntoScript): Promise<Change> {
+async function framing(beginning: Beginning, target: Target, script: OntoScript): Promise<Change> {
 	const box = await shownPart(beginning, target, script.every ?? 1, 'camera.onto');
 	const from = standing(beginning);
 	const framed = { air: script.air ?? AIR, zoomAtMost: script.zoomAtMost ?? ZOOM_AT_MOST };

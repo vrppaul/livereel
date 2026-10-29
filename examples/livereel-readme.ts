@@ -100,16 +100,8 @@ const ON_A_SLIDE: Words = { place: { left: 0.18, top: 0.12, width: 0.64, height:
 const ON_THE_LOOKS_SLIDE: Words = { place: { left: 0.18, top: 0.06, width: 0.64, height: 0.88 }, stacking: HIGH };
 // The window low on the frame, wider than its room and running off the frame's foot
 const LOW_AND_OFF_THE_FOOT: Place = { left: 0.03, top: 0.42, width: 0.94, height: 0.8 };
-// The lines of code each beat shows, the regions this file marks below, and their places, counted from 1 as an editor
-// counts lines
+// The lines of code each beat shows, the regions this file marks below; each is lit by what it says
 const REGIONS = await regionsOf(new URL(import.meta.url));
-const FIRST_LINE = 1;
-const SECOND_LINE = 2;
-const THIRD_LINE = 3;
-const FOURTH_LINE = 4;
-const FIFTH_LINE = 5;
-const SIXTH_LINE = 6;
-const SEVENTH_LINE = 7;
 // The comma a move in a list of moves stands before when another follows it
 const AFTER_AN_ITEM = /,$/u;
 
@@ -209,7 +201,7 @@ function actTheCamera(): readonly Step[] {
 		play({
 			seconds: 1.4,
 			moves: [
-				code.light(FIRST_LINE, { within: { end: 0.2 } }),
+				code.light('camera.onto', { within: { end: 0.2 } }),
 				// #region onto
 				camera.onto(VISITORS)
 				// #endregion
@@ -219,7 +211,7 @@ function actTheCamera(): readonly Step[] {
 		play({
 			seconds: 1,
 			moves: [
-				code.light(SECOND_LINE, { within: { end: 0.2 } }),
+				code.light('light.on', { within: { end: 0.2 } }),
 				// #region light
 				light.on(VISITORS)
 				// #endregion
@@ -253,14 +245,14 @@ function actTheClick(served: AppServed): readonly Step[] {
 		play({
 			seconds: 1,
 			moves: [
-				code.light(FIRST_LINE, { within: { end: 0.2 } }),
+				code.light('cursor.to', { within: { end: 0.2 } }),
 				// #region cursor
 				cursor.to(REFRESH)
 				// #endregion
 			],
 			ease: easeInOutCubic
 		}),
-		play({ seconds: 0.3, moves: [code.light(SECOND_LINE)] }),
+		play({ seconds: 0.3, moves: [code.light('cursor.click')] }),
 		// #region click
 		...cursor.click(refreshing(served)),
 		// #endregion
@@ -290,7 +282,7 @@ function actThePins(): readonly Step[] {
 		play({
 			seconds: 0.8,
 			moves: [
-				code.light(FIRST_LINE, { within: { end: 0.2 } }),
+				code.light('The count', { within: { end: 0.2 } }),
 				// #region pin-count
 				pin.show(VISITORS, 'The count')
 				// #endregion
@@ -299,7 +291,7 @@ function actThePins(): readonly Step[] {
 		play({
 			seconds: 0.8,
 			moves: [
-				code.light(SECOND_LINE, { within: { end: 0.2 } }),
+				code.light('Against yesterday', { within: { end: 0.2 } }),
 				// #region pin-change
 				pin.show(VISITORS_CHANGE, 'Against yesterday')
 				// #endregion
@@ -325,7 +317,7 @@ function actTheWords(): readonly Step[] {
 		play({
 			seconds: 1.6,
 			moves: [
-				code.light(FIRST_LINE, { within: { end: 0.2 } }),
+				code.light('caption.show', { within: { end: 0.2 } }),
 				// #region words
 				caption.show(['Your app, ', { text: 'live', italic: true }])
 				// #endregion
@@ -355,14 +347,14 @@ function actTheLook(): readonly Step[] {
 		}),
 		hold({ seconds: 0.4 }),
 		cut(
-			code.light(FIRST_LINE),
+			code.light('PAPER'),
 			// #region paper
 			look.to(PAPER)
 			// #endregion
 		),
 		hold({ seconds: 0.9 }),
 		cut(
-			code.light(SECOND_LINE),
+			code.light('NIGHT'),
 			// #region night
 			look.to(NIGHT)
 			// #endregion
@@ -371,7 +363,7 @@ function actTheLook(): readonly Step[] {
 		play({
 			seconds: 1.8,
 			moves: [
-				code.light(THIRD_LINE, { through: FOURTH_LINE, within: { end: 0.1 } }),
+				code.light('SERIF', { through: 'DRIFT', within: { end: 0.1 } }),
 				// #region serif
 				look.to(SERIF),
 				// #endregion
@@ -382,21 +374,21 @@ function actTheLook(): readonly Step[] {
 		}),
 		hold({ seconds: 0.6 }),
 		cut(
-			code.light(FIFTH_LINE),
+			code.light('CYAN'),
 			// #region cyan
 			look.to(CYAN)
 			// #endregion
 		),
 		hold({ seconds: 0.9 }),
 		cut(
-			code.light(SIXTH_LINE),
+			code.light('ROUNDED'),
 			// #region rounded
 			look.to(ROUNDED)
 			// #endregion
 		),
 		hold({ seconds: 0.9 }),
 		cut(
-			code.light(SEVENTH_LINE),
+			code.light('SOLARIZED'),
 			// #region solarized
 			look.to(SOLARIZED)
 			// #endregion

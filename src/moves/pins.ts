@@ -2,12 +2,14 @@
  * Pins: a numbered mark laid on a block of the page, after any laid before, and all of them taken away together. The
  * block is read as the move's share begins, what the screen shows of it, as a callout's is.
  */
-import { A_SELECTOR, A_STRING, assertKind, assertWritten } from '../domain/handed.ts';
+import { A_STRING, assertKind, assertWritten } from '../domain/handed.ts';
 import {
+	A_TARGET,
 	type Beginning,
 	type Change,
 	type Move,
 	TIMING_FORM,
+	type Target,
 	type TimingScript,
 	present,
 	propChange,
@@ -20,9 +22,12 @@ import { keyOf } from '../props/pins.ts';
 // A pin marks one block: the first a selector matches
 const THE_FIRST = 1;
 
-/** A pin coming up on the block a selector matches, numbered after those laid before, with its label. */
-export function show(target: string, label: string, script: TimingScript = {}): Move {
-	assertKind(target, A_SELECTOR, "pin.show's selector");
+/**
+ * A pin coming up on the block a selector matches, or a box of the screen, numbered after those laid before, with its
+ * label.
+ */
+export function show(target: Target, label: string, script: TimingScript = {}): Move {
+	assertKind(target, A_TARGET, "pin.show's target");
 	assertKind(label, A_STRING, "pin.show's label");
 	assertWritten(script, TIMING_FORM, 'pin.show');
 	return { part: 'pins', timing: timingOf(script), begin: (beginning) => laying(beginning, target, label) };
@@ -34,7 +39,7 @@ export function clear(script: TimingScript = {}): Move {
 	return { part: 'pins', timing: timingOf(script), begin: clearing };
 }
 
-async function laying(beginning: Beginning, target: string, label: string): Promise<Change> {
+async function laying(beginning: Beginning, target: Target, label: string): Promise<Change> {
 	const box = await shownPart(beginning, target, THE_FIRST, 'pin.show');
 	const before = beginning.scene.pins?.pins ?? [];
 	const key = keyOf([...before.map((pin) => pin.label), label]);

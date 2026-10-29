@@ -291,6 +291,19 @@ test('while the light moves from one line to another, the lines not lit stay dim
 	expect(drawnCode((await setAt(code.light(2), first, 0.5)).code!).dimmed).toBe(1);
 });
 
+test('a line lit by what it says is the first line that says it, through the first after it that says the other, and one no line says is refused', async () => {
+	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const said = (await setAt(code.light('camera.onto'), coded, 1)).code!;
+	const through = (await setAt(code.light('moves', { through: '})' }), coded, 1)).code!;
+	expect([said.lines.map((line) => line.lit), through.lines.map((line) => line.lit)]).toEqual([
+		[0, 1, 0],
+		[0, 1, 1]
+	]);
+	await expect(async () => code.light('light.on').begin(beginningOf(coded))).rejects.toThrow(
+		new FilmError('code.light lights the line that says "light.on", but no line of the code shown says it')
+	);
+});
+
 test('lines lit past the last of the code, or with no code shown, are refused as the move begins', async () => {
 	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	await expect(async () => code.light(3, { through: 4 }).begin(beginningOf(coded))).rejects.toThrow(FilmError);
@@ -559,6 +572,33 @@ test('a cursor comes to rest on what the screen shows of a block reaching off it
 async function cameraOnto(target: string): Promise<Camera> {
 	return cameraOf(await setAt(onto(target), openingScene(SMALL, LIVEREELS_LOOK), 1), SMALL);
 }
+
+test('a box of the screen stands for a block a page names by no selector: the camera frames it, the light lights it, the cursor rests on it, a pin, a callout and a note go to it, as on the block a selector names there, and one off the screen is refused alike', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const windowed = await setAt(windowTo('right'), opening, 1);
+	const byBox = [
+		cameraOf(await setAt(onto(BLOCK), opening, 1), SMALL),
+		(await setAt(lightOn(BLOCK), opening, 1)).light,
+		(await setAt(cursorTo(BLOCK), opening, 1)).cursor,
+		(await setAt(pin.show(BLOCK, 'Here'), opening, 1)).pins,
+		(await setAt(callout.show(BLOCK, 'Here'), opening, 1)).callout,
+		(await setAt(note.show(BLOCK, 'Here'), windowed, 1)).note
+	];
+	const bySelector = [
+		cameraOf(await setAt(onto('#block'), opening, 1), SMALL),
+		(await setAt(lightOn('#block'), opening, 1)).light,
+		(await setAt(cursorTo('#block'), opening, 1)).cursor,
+		(await setAt(pin.show('#block', 'Here'), opening, 1)).pins,
+		(await setAt(callout.show('#block', 'Here'), opening, 1)).callout,
+		(await setAt(note.show('#block', 'Here'), windowed, 1)).note
+	];
+	expect(byBox).toEqual(bySelector);
+	await expect(onto(BELOW).begin(beginningOf(opening))).rejects.toThrow(
+		new FilmError(
+			`camera.onto's box {"left":100,"top":900.4,"width":100,"height":40} stands off the page's screen, at left 100, top 900 of a screen 600 × 400: ${SCROLLED_IN}`
+		)
+	);
+});
 
 test('a camera onto a block reaching off the screen frames what the screen shows of it, past any of its sides', async () => {
 	const reaching = ['#reaching-above', '#reaching-below', '#reaching-left', '#reaching-right'];
