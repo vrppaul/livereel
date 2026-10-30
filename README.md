@@ -359,7 +359,15 @@ play({ seconds: 4, moves: [look.to({ glowX: 0.9 }), look.to({ ink: '#1a1a1a' }, 
 Two that name one value at once are refused, by it: `two moves on the
 look's glow at once in one step`.
 
-### The page: its colour scheme, and what it blurs
+### The page: whether it changes of itself, its colour scheme, and what it blurs
+
+A page changes only by the film where a film names nothing, `page: 'still'`:
+by its acts, by `page.scrollBy`, `page.scrollTo` and `page.type`, and while an `act` has let
+its own motion go. So a frame the stage draws as it drew the one before, the
+page left alone since, is that frame again, neither drawn nor captured: a
+hold costs next to nothing. `defineFilm` takes `page: 'live'` for a page that
+changes of itself — an animation that ignores reduced motion, a video, a
+canvas, data that comes in — which is then captured every frame.
 
 `defineFilm` takes `colourScheme: 'dark'` for a page filmed in its dark
 scheme; it is asked for the light one where a film names none. It takes
@@ -525,7 +533,8 @@ clock is its frames.
 - Chromium alone, headless.
 - The page is asked for reduced motion, and for the light colour scheme
   unless the film names the dark one. A page that animates anyway runs
-  those animations on the wall clock, so two shots of it differ there.
+  those animations on the wall clock, so two shots of it differ there; on a
+  still page, the default, a hold shows it stopped where it was captured.
 - A page that refuses to be framed (`X-Frame-Options`, a CSP's
   `frame-ancestors`) is shown only on the stage inside the app ("Where the
   stage stands").

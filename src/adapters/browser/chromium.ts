@@ -158,17 +158,20 @@ class OpenedChromium implements Opened {
 
 class PageMotion implements PageMotionSwitch {
 	readonly page: Page;
+	released = false;
 
 	constructor(page: Page) {
 		this.page = page;
 	}
 
-	release(): Promise<void> {
-		return this.page.emulateMedia({ reducedMotion: 'no-preference' });
+	async release(): Promise<void> {
+		await this.page.emulateMedia({ reducedMotion: 'no-preference' });
+		this.released = true;
 	}
 
-	still(): Promise<void> {
-		return this.page.emulateMedia({ reducedMotion: 'reduce' });
+	async still(): Promise<void> {
+		await this.page.emulateMedia({ reducedMotion: 'reduce' });
+		this.released = false;
 	}
 }
 

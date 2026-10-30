@@ -113,6 +113,15 @@ export function cameraOf(scene: Scene, format: Format): Camera {
 }
 
 /**
+ * A drawn scene said whole as one line, alike for two only where the stage draws them alike: a scene is plain values,
+ * so what it says is all the stage is handed. Two scenes alike made by moves that wrote their values in another
+ * order say them apart, and are drawn both: the cost of a frame, never a wrong one.
+ */
+export function drawingOf(scene: DrawnScene): string {
+	return JSON.stringify(scene);
+}
+
+/**
  * The scene as the stage draws it at a moment of the film, in the format it is shot in, seen by a camera: the scene's
  * own, one along its way there, or the flat one an act is done in.
  */

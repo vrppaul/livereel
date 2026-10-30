@@ -32,6 +32,8 @@ export interface FilmedPage {
 
 /** The page's own motion, stilled while a film is shot, let go for a shot that shows it sped up. */
 export interface PageMotionSwitch {
+	/** Whether the page's own motion is let go now, so the page may change of itself from frame to frame. */
+	readonly released: boolean;
 	readonly release: () => Promise<void>;
 	readonly still: () => Promise<void>;
 }

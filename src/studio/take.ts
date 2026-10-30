@@ -10,33 +10,49 @@
  * frame being made.
  * A frame is drawn only when the footage keeps it, and drawn again where the camera or its window crossed it fast
  * since the frame before, at cameras along their way there, the rest of the scene as it stands: each drawing is an
- * exposure of the frame (`src/domain/shutter.ts`). A fault in a step is raised again with the moment and the step it
- * was met at. Before each frame, after each act, and of any fault a step meets, the take asks the stage whether it
- * and its page are still there: where one is gone, the take is refused by why, in place of what its loss made a step
- * fail at (a selector that matches nothing on Chrome's error page), and nothing of it is shot.
+ * exposure of the frame (`src/domain/shutter.ts`). On a still page, a frame the stage would draw as it drew the last
+ * one captured, with nothing done to the page since — no act, no move of the page, its own motion not let go — is
+ * that capture, neither drawn nor captured again: holds are near half a film's frames (16.3 s of the README film's
+ * 36.1), and a capture is near all a frame costs. A live page is captured every frame, as it changes of itself.
+ * A fault in a step is raised again with the moment and the step it was met at. Before each frame, after each act,
+ * and of any fault a step meets, the take asks the stage whether it and its page are still there: where one is gone,
+ * the take is refused by why, in place of what its loss made a step fail at (a selector that matches nothing on
+ * Chrome's error page), and nothing of it is shot.
  */
 import { type Camera, flatCamera } from '../domain/camera.ts';
 import { TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
 import { type MotionBlur, alsoExposedAt } from '../domain/shutter.ts';
 import { type Ease, framesOf, momentOf } from '../domain/time.ts';
-import { type Change, type Move, type Share, soundsOf } from '../direction/move.ts';
+import type { PageLife } from '../direction/film.ts';
+import { type Change, type Move, type Share, movesThePage, soundsOf } from '../direction/move.ts';
 import type { Cue } from '../direction/sound.ts';
 import type { Act, Cut, Play, Step } from '../direction/steps.ts';
-import { type Scene, cameraOf, drawn } from '../scene.ts';
+import { type DrawnScene, type Scene, cameraOf, drawingOf, drawn } from '../scene.ts';
 import type { Exposures, Footage, Opened, Track } from './ports.ts';
 
-/** A move begun: the share of its step it runs over, its curve, what it sets, and the sounds it has yet to make. */
+/**
+ * A move begun: the share of its step it runs over, its curve, what it sets and whether that is the page itself, and
+ * the sounds it has yet to make.
+ */
 interface Running {
 	readonly within: Share;
 	readonly ease: Ease;
 	readonly change: Change;
+	readonly movesThePage: boolean;
 	readonly unheard: readonly Cue[];
+}
+
+/** A frame's own exposure as the stage drew and captured it: the scene said whole, and the image. */
+interface Captured {
+	readonly drawing: string;
+	readonly image: Uint8Array;
 }
 
 /**
  * What a take is shot with: the page and the stage opened, where its frames and its sounds go, its format, the scene
- * it opens on, and how a fast camera is blurred: not at all for a draft, or for a film that wants no blur.
+ * it opens on, how a fast camera is blurred — not at all for a draft, or for a film that wants no blur — and how the
+ * page changes.
  */
 export interface TakeSetup {
 	readonly opened: Opened;
@@ -45,6 +61,7 @@ export interface TakeSetup {
 	readonly format: Format;
 	readonly opening: Scene;
 	readonly motionBlur: MotionBlur | null;
+	readonly page: PageLife;
 }
 
 export class Take {
@@ -53,8 +70,13 @@ export class Take {
 	readonly track: Track;
 	readonly format: Format;
 	readonly motionBlur: MotionBlur | null;
+	// Whether a frame drawn as the last captured may be that capture: only where the page changes by the film alone
+	readonly reusesCaptures: boolean;
 	private scene: Scene;
 	private shot = 0;
+	// The last frame's own exposure captured, none before the first; and whether the page was changed since
+	private lastCaptured: Captured | null = null;
+	private pageChangedSinceCaptured = false;
 
 	constructor(setup: TakeSetup) {
 		this.opened = setup.opened;
@@ -63,6 +85,7 @@ export class Take {
 		this.format = setup.format;
 		this.scene = setup.opening;
 		this.motionBlur = setup.motionBlur;
+		this.reusesCaptures = setup.page === 'still';
 	}
 
 	/** How many frames are shot so far. */
@@ -144,13 +167,14 @@ export class Take {
 
 	private async cut(step: Cut): Promise<void> {
 		for (const move of step.moves) {
-			await this.set(await this.changeOf(move), 1);
+			await this.set(await this.changeOf(move), 1, movesThePage(move));
 			this.heard(soundsOf(move), 1);
 		}
 	}
 
 	/** An act on the page laid flat; the stage asked before it stands up again, as a stage gone cannot stand up. */
 	private async act(step: Act): Promise<void> {
+		this.pageChangedSinceCaptured = true;
 		await this.opened.stage.layFlat(
 			drawn(this.scene, flatCamera(this.format), this.moment(), { ...this.format, frame: this.format.screen })
 		);
@@ -177,7 +201,7 @@ export class Take {
 
 	/** A running move set at a progress of its own, every sound it makes by then heard; the move, with those to come. */
 	private async setAt(current: Running, progress: number): Promise<Running> {
-		await this.set(current.change, progress);
+		await this.set(current.change, progress, current.movesThePage);
 		return { ...current, unheard: this.heard(current.unheard, progress) };
 	}
 
@@ -192,6 +216,7 @@ export class Take {
 			within: move.timing.within,
 			ease: move.timing.ease ?? stepEase,
 			change: await this.changeOf(move),
+			movesThePage: movesThePage(move),
 			unheard: soundsOf(move)
 		};
 	}
@@ -200,8 +225,10 @@ export class Take {
 		return move.begin({ scene: this.scene, page: this.opened.page, format: this.format });
 	}
 
-	private async set(change: Change, progress: number): Promise<void> {
+	/** A change set at a progress; a change of the page itself leaves the last capture behind the page. */
+	private async set(change: Change, progress: number, changesThePage: boolean): Promise<void> {
 		this.scene = await change(this.scene, progress);
+		this.pageChangedSinceCaptured ||= changesThePage;
 	}
 
 	/** One frame: exposed and kept where the footage keeps it, and counted; refused where the stage or its page is gone. */
@@ -217,19 +244,42 @@ export class Take {
 		if (absence !== undefined) throw absence;
 	}
 
-	/** The frame drawn at each place the camera is caught at along its way from the frame before, its own last. */
+	/**
+	 * The frame drawn at each place the camera is caught at along its way from the frame before, its own last; or, a
+	 * frame of one exposure the stage would draw as the last captured, that capture.
+	 */
 	private async exposed(cameraBefore: Camera): Promise<Exposures> {
 		const own = this.camera();
+		const ownDrawn = this.drawnBy(own);
+		const drawing = drawingOf(ownDrawn);
+		const along = alsoExposedAt(cameraBefore, own, this.format, this.motionBlur);
+		const unchanged = this.capturedAs(drawing);
+		if (along.length === 0 && unchanged !== undefined) return { earlier: [], own: unchanged };
 		const earlier: Uint8Array[] = [];
-		for (const camera of alsoExposedAt(cameraBefore, own, this.format, this.motionBlur)) {
-			earlier.push(await this.drawnAt(camera));
-		}
-		return { earlier, own: await this.drawnAt(own) };
+		for (const camera of along) earlier.push(await this.captured(this.drawnBy(camera)));
+		const image = await this.captured(ownDrawn);
+		this.lastCaptured = { drawing, image };
+		this.pageChangedSinceCaptured = false;
+		return { earlier, own: image };
 	}
 
-	/** The scene as it stands drawn by a camera, and captured. */
-	private async drawnAt(camera: Camera): Promise<Uint8Array> {
-		await this.opened.stage.draw(drawn(this.scene, camera, this.moment(), this.format));
+	/**
+	 * The last capture, where it was drawn as this drawing is and the page is as it was then: nothing done to it since,
+	 * its own motion stilled, and changed by the film alone; none elsewhere.
+	 */
+	private capturedAs(drawing: string): Uint8Array | undefined {
+		const pageAsCaptured = this.reusesCaptures && !this.pageChangedSinceCaptured && !this.opened.act.motion.released;
+		return pageAsCaptured && this.lastCaptured?.drawing === drawing ? this.lastCaptured.image : undefined;
+	}
+
+	/** The scene as it stands, drawn by a camera. */
+	private drawnBy(camera: Camera): DrawnScene {
+		return drawn(this.scene, camera, this.moment(), this.format);
+	}
+
+	/** A drawn scene drawn on the stage, and captured. */
+	private async captured(scene: DrawnScene): Promise<Uint8Array> {
+		await this.opened.stage.draw(scene);
 		return this.opened.stage.capture();
 	}
 

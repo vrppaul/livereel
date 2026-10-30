@@ -173,6 +173,11 @@ export function timingOf(script: TimingScript): Timing {
 	return { within: Share.of(script.within), ease: script.ease ?? null };
 }
 
+/** Whether a move changes the page itself, its scroll or its keys, rather than a prop drawn over it. */
+export function movesThePage(move: Move): boolean {
+	return move.part === 'page';
+}
+
 /** The sounds a move makes on its way: none, for a move that names none. */
 export function soundsOf(move: Move): readonly Cue[] {
 	return move.sounds ?? NO_SOUNDS;

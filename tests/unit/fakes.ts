@@ -1,6 +1,6 @@
 // Stand-ins for the browser in the unit tests: a page whose blocks stand where a table says, and a stage, footage and
 // a track that keep what they were handed
-import type { ActContext, FilmedPage, ScrollCourse } from '../../src/direction/page.ts';
+import type { ActContext, FilmedPage, PageMotionSwitch, ScrollCourse } from '../../src/direction/page.ts';
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Box, Format } from '../../src/domain/geometry.ts';
 import type { DrawnScene } from '../../src/scene.ts';
@@ -37,6 +37,7 @@ export class PageOfBoxes implements FilmedPage {
 
 export class StageThatKeeps implements Stage {
 	readonly drawn: DrawnScene[] = [];
+	captured = 0;
 	private lost: Error | undefined = undefined;
 
 	draw(scene: DrawnScene): Promise<void> {
@@ -63,6 +64,7 @@ export class StageThatKeeps implements Stage {
 	}
 
 	capture(): Promise<Uint8Array> {
+		this.captured += 1;
 		return Promise.resolve(new Uint8Array());
 	}
 }
@@ -117,9 +119,23 @@ export class TrackThatKeeps implements Track {
 
 // No unit test acts on a real page: a film's acts are shot in the smoke tests, in a browser
 const NO_PAGE = undefined as never;
-const STILL_MOTION = { release: () => Promise.resolve(), still: () => Promise.resolve() };
+
+/** The page's own motion as a switch that only keeps whether it is let go. */
+class MotionSwitch implements PageMotionSwitch {
+	released = false;
+
+	release(): Promise<void> {
+		this.released = true;
+		return Promise.resolve();
+	}
+
+	still(): Promise<void> {
+		this.released = false;
+		return Promise.resolve();
+	}
+}
 
 export function openedOn(page: PageOfBoxes, stage: Stage): Opened {
-	const act: ActContext = { page: NO_PAGE, motion: STILL_MOTION };
+	const act: ActContext = { page: NO_PAGE, motion: new MotionSwitch() };
 	return { stage, page, act, [Symbol.asyncDispose]: () => Promise.resolve() };
 }

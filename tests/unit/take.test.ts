@@ -19,6 +19,7 @@ import type { EndingCard } from '../../src/props/ending.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { type Scene, openingScene } from '../../src/scene.ts';
 import type { Exposures } from '../../src/studio/ports.ts';
+import type { PageLife } from '../../src/direction/film.ts';
 import { Take } from '../../src/studio/take.ts';
 import { FootageOf, PageOfBoxes, SMALL, StageThatKeeps, TrackThatKeeps, openedOn } from './fakes.ts';
 
@@ -87,7 +88,12 @@ class StageNotAnswering extends StageThatKeeps {
 	}
 }
 
-function takeOf(footage: FootageOf, stage: StageThatKeeps, track = new TrackThatKeeps()): Take {
+function takeOf(
+	footage: FootageOf,
+	stage: StageThatKeeps,
+	track = new TrackThatKeeps(),
+	page: PageLife = 'still'
+): Take {
 	const opened = openedOn(new PageOfBoxes(PAGE), stage);
 	return new Take({
 		opened,
@@ -95,23 +101,61 @@ function takeOf(footage: FootageOf, stage: StageThatKeeps, track = new TrackThat
 		track,
 		format: SMALL,
 		opening: openingScene(SMALL, LIVEREELS_LOOK),
-		motionBlur: HALF_OF_FOUR
+		motionBlur: HALF_OF_FOUR,
+		page
 	});
 }
 
 test('a frame the camera crosses fast is drawn again along its way from the frame before, each kept with its own', async () => {
 	const stage = new StageThatKeeps();
 	const footage = new FootageOf([0, 1, 2]);
-	// Two frames of the camera's way, half of it each, then one with nothing moving
+	// Two frames of the camera's way, half of it each, then one with nothing moving, on a page drawn every frame
 	const steps = [
 		play({ seconds: 2 / 30, moves: [cameraTo(CLOSE_AT_THE_RIGHT)], ease: linear }),
 		hold({ seconds: 1 / 30 })
 	];
-	await takeOf(footage, stage).run(steps);
+	await takeOf(footage, stage, new TrackThatKeeps(), 'live').run(steps);
 	expect([footage.exposed, stage.drawn.map((scene) => scene.camera.pose.focusX)]).toEqual([
 		[4, 4, 1],
 		[331.25, 337.5, 343.75, 350, 381.25, 387.5, 393.75, 400, 400]
 	]);
+});
+
+test('a frame drawn as the one before it on a still page is kept as that one, neither drawn nor captured again', async () => {
+	const stage = new StageThatKeeps();
+	const footage = new FootageOf([0, 1, 2]);
+	await takeOf(footage, stage).run([hold({ seconds: 3 / 30 })]);
+	expect([footage.kept, stage.drawn.length, stage.captured]).toEqual([[0, 1, 2], 1, 1]);
+});
+
+test('a live page is drawn and captured every frame, though nothing in the scene moves', async () => {
+	const stage = new StageThatKeeps();
+	const footage = new FootageOf([0, 1, 2]);
+	await takeOf(footage, stage, new TrackThatKeeps(), 'live').run([hold({ seconds: 3 / 30 })]);
+	expect([footage.kept, stage.drawn.length, stage.captured]).toEqual([[0, 1, 2], 3, 3]);
+});
+
+test("a still page is captured anew after an act, while a move of the page's own runs, and while its own motion is let go", async () => {
+	const stage = new StageThatKeeps();
+	const footage = new FootageOf([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+	const frame = 1 / 30;
+	const steps = [
+		hold({ seconds: frame }),
+		act(() => Promise.resolve()),
+		// Captured after the act, then kept as it is
+		hold({ seconds: 2 * frame }),
+		// Captured on each frame the page is typed into, then kept as it is
+		play({ seconds: 2 * frame, moves: [typeIntoThePage(STROKES)] }),
+		hold({ seconds: frame }),
+		act((context) => context.motion.release()),
+		// Captured on each frame while the page moves of itself
+		hold({ seconds: 2 * frame }),
+		act((context) => context.motion.still()),
+		// Captured after the act, then kept as it is
+		hold({ seconds: 2 * frame })
+	];
+	await takeOf(footage, stage).run(steps);
+	expect([footage.kept.length, stage.captured]).toEqual([10, 1 + 1 + 2 + 2 + 1]);
 });
 
 test('two moves of the look at once each move their own values over the frames they share: the glow drifting all the way, the ink changing over the first half', async () => {
@@ -248,7 +292,7 @@ test('a cut sets its moves at their end at once, with no frame between', async (
 test('a frame is drawn only when the footage keeps it', async () => {
 	const stage = new StageThatKeeps();
 	const footage = new FootageOf([2, 4]);
-	await takeOf(footage, stage).run([play({ seconds: 0.2 })]);
+	await takeOf(footage, stage, new TrackThatKeeps(), 'live').run([play({ seconds: 0.2 })]);
 	expect([stage.drawn.length, footage.kept]).toEqual([2, [2, 4]]);
 });
 

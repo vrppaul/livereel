@@ -52,6 +52,12 @@ const COLOUR_SCHEMES = ['light', 'dark'] as const;
 
 export type ColourScheme = (typeof COLOUR_SCHEMES)[number];
 
+// How the page changes: only by the film's acts and moves of the page, so a frame drawn as the one before is that
+// frame; or of itself too, as an animation, a video or live data does, so it is captured every frame
+const PAGE_LIVES = ['still', 'live'] as const;
+
+export type PageLife = (typeof PAGE_LIVES)[number];
+
 export interface Script<Served extends Serving, Name extends string> {
 	/** The frames the film is shot in, each with the screen its page is laid out on, by the film's own names. */
 	readonly formats: Readonly<Record<Name, Format>>;
@@ -84,6 +90,11 @@ export interface Script<Served extends Serving, Name extends string> {
 	readonly colourScheme?: ColourScheme;
 	/** The blocks the page blurs wherever it shows them, by selector: an address, a key, a name no film should show. */
 	readonly blurred?: readonly string[];
+	/**
+	 * How the page changes: `still`, where none is named, only by the film's acts and moves of the page, so a frame
+	 * like the one before is not captured again; or `live`, of itself too, captured every frame.
+	 */
+	readonly page?: PageLife;
 }
 
 /** A film whose page is served: what the studio shoots. */
@@ -105,6 +116,7 @@ export interface FilmInFormat {
 	readonly fonts: readonly FontNamed[];
 	readonly colourScheme: ColourScheme;
 	readonly blurred: readonly string[];
+	readonly page: PageLife;
 	readonly sound: FilmSound;
 	readonly motionBlur: MotionBlur | null;
 	readonly serve: () => Promise<ServedFilm>;
@@ -131,6 +143,12 @@ const A_STAGE = new OneOf(
 const COLOUR_SCHEME_WHERE_NONE_IS_NAMED: ColourScheme = 'light';
 const NOTHING_BLURRED: readonly string[] = [];
 const A_COLOUR_SCHEME = new OneOf(COLOUR_SCHEMES, '"light" or "dark"');
+// The page changes only by the film where a film names none: what most pages do, and the quicker to shoot
+const PAGE_WHERE_NONE_IS_NAMED: PageLife = 'still';
+const A_PAGE_LIFE = new OneOf(
+	PAGE_LIVES,
+	'"still", changed only by the film, or "live" for a page that changes of itself, as an animation or live data does'
+);
 const SELECTORS = new ListOf(A_SELECTOR, 'a list of selectors');
 // A film's sounds, music, blur and theme are objects, what is in each read by its own reader, in its own words, first
 const FILM_FORM: Form<AnyScript> = {
@@ -144,7 +162,8 @@ const FILM_FORM: Form<AnyScript> = {
 	motionBlur: anObject<MotionBlurScript>(AN_OBJECT_SAID),
 	theme: anObject<Theme>(AN_OBJECT_SAID),
 	colourScheme: A_COLOUR_SCHEME,
-	blurred: SELECTORS
+	blurred: SELECTORS,
+	page: A_PAGE_LIFE
 };
 const A_SERVING: Kind<Serving> = new Plain(
 	isServing,
@@ -160,6 +179,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 	readonly stage: StagePlace;
 	readonly colourScheme: ColourScheme;
 	readonly blurred: readonly string[];
+	readonly page: PageLife;
 	readonly formats: ReadonlyMap<string, FilmInFormat>;
 
 	constructor(script: Script<Served, Name>) {
@@ -176,6 +196,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 		this.stage = script.stage ?? STAGE_WHERE_NONE_IS_NAMED;
 		this.colourScheme = script.colourScheme ?? COLOUR_SCHEME_WHERE_NONE_IS_NAMED;
 		this.blurred = script.blurred ?? NOTHING_BLURRED;
+		this.page = script.page ?? PAGE_WHERE_NONE_IS_NAMED;
 		this.formats = new Map(namesOf(script.formats).map((name) => [name, this.inFormat(name)]));
 		if (this.formats.size === 0) throw new FilmError(NO_FORMAT);
 	}
@@ -189,6 +210,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 			fonts: this.fonts,
 			colourScheme: this.colourScheme,
 			blurred: this.blurred,
+			page: this.page,
 			sound: this.sound,
 			motionBlur: this.motionBlur,
 			serve: () => this.served(name)
