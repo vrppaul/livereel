@@ -6,9 +6,9 @@
  *
  *     pnpm livereel shoot examples/livereel-readme.ts --out out/readme --sheet
  *
- * Acme's analytics app is served by the film itself. Each line of code a beat shows is a region marked
- * `// #region name` below (`livereel-promo/code.ts`), a step of its own, lit as that step runs, so the code on the
- * screen is the code that shot it.
+ * Acme's analytics app is served by the film itself. Each line of code a beat shows is a region of this file marked
+ * `// #region name` below, read by `regionsOf` (`livereel-promo/code.ts`), a step of its own, lit as that step runs,
+ * so the code on the screen is the code that shot it.
  */
 import {
 	type ActContext,
