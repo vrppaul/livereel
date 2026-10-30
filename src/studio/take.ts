@@ -17,9 +17,10 @@
  * out — is seen. Once it stands still, a frame the stage would draw as it drew the last one captured is that capture,
  * neither drawn nor captured again: holds are near half a film's frames, and a capture is near all a frame costs. A
  * picture is taken as sharp as a camera as close as livereel's bound shows it, so it serves every frame after it; on a
- * frame where a move of the page runs or its own motion is let go, as sharp as that frame's cameras show it, as the
- * next frame takes another: the whole screen as sharp as the bound costs about three times what it costs as sharp as
- * the camera showing all of it (253–269 against 81–83 ms, a 1040 × 1080 screen, 2026-10-30). A stage with the page
+ * frame a move of the page runs on past, or while its own motion is let go, as sharp as that frame's cameras show it,
+ * as the next frame takes another: the whole screen as sharp as the bound costs about three times what it costs as
+ * sharp as the camera showing all of it (253–269 against 81–83 ms, a 1040 × 1080 screen, 2026-10-30). A move's last
+ * frame is pictured as sharp as the bound, so the picture after it can come out alike. A stage with the page
  * live in its frame, as it shows a dynamic one, is captured every frame, as the page changes of itself, and is laid
  * flat for an act.
  * A fault in a step is raised again with the moment and the step it was met at. Before each frame, after each act,
@@ -78,12 +79,10 @@ export class Take {
 	private scene: Scene;
 	private shot = 0;
 	// The last frame's own exposure captured, none before the first; and, where the stage shows a picture of the page,
-	// whether the page may have changed since its picture was last taken, as it may before the first, and whether a
-	// move of it did; and whether it stood still as it was, its picture alike to the one before, as a framed page never
-	// is
+	// whether the page may have changed since its picture was last taken, as it may before the first, and whether it
+	// stood still as it was, its picture alike to the one before, as a framed page never is
 	private lastCaptured: Captured | null = null;
 	private pageChangedSinceTaken = true;
-	private pageMovedSinceTaken = false;
 	private pageStandsStill = false;
 
 	constructor(setup: TakeSetup) {
@@ -168,7 +167,10 @@ export class Take {
 			}
 			running = await this.endedBy(running, progress);
 			running = await this.setAlong(running, progress);
-			await this.frame(cameraBefore);
+			await this.frame(
+				cameraBefore,
+				running.some((current) => current.movesThePage)
+			);
 		}
 	}
 
@@ -255,13 +257,17 @@ export class Take {
 	private async set(change: Change, progress: number, changesThePage: boolean): Promise<void> {
 		this.scene = await change(this.scene, progress);
 		this.pageChangedSinceTaken ||= changesThePage;
-		this.pageMovedSinceTaken ||= changesThePage;
 	}
 
-	/** One frame: exposed and kept where the footage keeps it, and counted; refused where the stage or its page is gone. */
-	private async frame(cameraBefore: Camera): Promise<void> {
+	/**
+	 * One frame: exposed and kept where the footage keeps it, and counted; refused where the stage or its page is gone.
+	 * Whether a move of the page runs on past it says whether a picture of the page serves this frame alone.
+	 */
+	private async frame(cameraBefore: Camera, pageMovesOn: boolean): Promise<void> {
 		await this.refusedWhereGone();
-		if (this.footage.keeps(this.shot)) await this.footage.keep(this.shot, await this.exposed(cameraBefore));
+		if (this.footage.keeps(this.shot)) {
+			await this.footage.keep(this.shot, await this.exposed(cameraBefore, pageMovesOn));
+		}
 		this.shot += 1;
 	}
 
@@ -275,12 +281,12 @@ export class Take {
 	 * The frame drawn at each place the camera is caught at along its way from the frame before, its own last; or, a
 	 * frame of one exposure the stage would draw as the last captured, that capture.
 	 */
-	private async exposed(cameraBefore: Camera): Promise<Exposures> {
+	private async exposed(cameraBefore: Camera, pageMovesOn: boolean): Promise<Exposures> {
 		const own = this.camera();
 		const ownDrawn = this.drawnBy(own);
 		const drawing = drawingOf(ownDrawn);
 		const along = alsoExposedAt(cameraBefore, own, this.format, this.motionBlur);
-		await this.pageShown(this.opened.stage, [...along, own]);
+		await this.pageShown(this.opened.stage, this.zoomPictured(own, along, pageMovesOn));
 		const unchanged = this.capturedAs(drawing);
 		if (along.length === 0 && unchanged !== undefined) return { earlier: [], own: unchanged };
 		const earlier: Uint8Array[] = [];
@@ -291,15 +297,22 @@ export class Take {
 	}
 
 	/**
-	 * The page as the stage is to show it to a frame's cameras: live in its frame as it is, or its picture retaken where
-	 * due.
+	 * How close a picture of the page taken for a frame holds it: as close as the frame's cameras come where it serves
+	 * that frame alone, as a move of the page runs on past it or its own motion is let go, so the next frame takes
+	 * another; as close as livereel's bound elsewhere, so it serves every frame after it.
 	 */
-	private async pageShown(stage: Stage, cameras: readonly Camera[]): Promise<void> {
+	private zoomPictured(own: Camera, along: readonly Camera[], pageMovesOn: boolean): number {
+		const servesThisFrameAlone = pageMovesOn || this.opened.act.motion.released;
+		return servesThisFrameAlone ? zoomPicturedFor(own, along) : ZOOM_AT_MOST;
+	}
+
+	/** The page as the stage is to show it: live in its frame as it is, or its picture retaken, where due, at a zoom. */
+	private async pageShown(stage: Stage, zoom: number): Promise<void> {
 		switch (stage.kind) {
 			case 'framed':
 				return;
 			case 'pictured':
-				if (this.pageMayHaveChanged()) await this.pageRetaken(stage, cameras);
+				if (this.pageMayHaveChanged()) await this.pageRetaken(stage, zoom);
 		}
 	}
 
@@ -309,18 +322,14 @@ export class Take {
 	}
 
 	/**
-	 * The page's picture taken anew: as sharp as the frame's cameras show it where the page changes on every frame, by
-	 * a move or of itself, and as sharp as any camera does elsewhere; the page standing still where it came out as the
-	 * last one did with nothing done to the page between them and its own motion stilled.
+	 * The page's picture taken anew, at a zoom; the page standing still where it came out as the last one did with
+	 * nothing done to the page between them and its own motion stilled.
 	 */
-	private async pageRetaken(stage: PicturedStage, cameras: readonly Camera[]): Promise<void> {
+	private async pageRetaken(stage: PicturedStage, zoom: number): Promise<void> {
 		const changedBefore = this.pageChangedSinceTaken;
-		const released = this.opened.act.motion.released;
-		const changingEveryFrame = this.pageMovedSinceTaken || released;
 		this.pageChangedSinceTaken = false;
-		this.pageMovedSinceTaken = false;
-		const alike = await stage.retakePage(changingEveryFrame ? zoomPicturedFor(cameras) : ZOOM_AT_MOST);
-		this.pageStandsStill = alike && !changedBefore && !released;
+		const alike = await stage.retakePage(zoom);
+		this.pageStandsStill = alike && !changedBefore && !this.opened.act.motion.released;
 	}
 
 	/**

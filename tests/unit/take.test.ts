@@ -44,6 +44,10 @@ const ENDING: Sound = { kind: 'livereel', name: 'ending' };
 const CARD: EndingCard = { name: 'A name', line: 'A line', command: 'a command' };
 // A frame as large as the stage's look was made on, whose whole screen a camera shows at a zoom of 1
 const WHOLE_AT_ZOOM_ONE: Format = { frame: { width: 1080, height: 1080 }, screen: { width: 1080, height: 1080 } };
+// Its screen whole, and its middle twice as close; a frame's own exposure, drawn last
+const WHOLE_SCREEN: Pose = { focusX: 540, focusY: 540, zoom: 1, tilt: 0, turn: 0 };
+const TWICE_CLOSE: Pose = { ...WHOLE_SCREEN, zoom: 2 };
+const OWN = -1;
 // Two letters, the first showing on the third of six frames of typing, the second on the sixth
 const STROKES: readonly Keystroke[] = [
 	{ at: 0.1, typed: 'a' },
@@ -196,7 +200,7 @@ test("a static page is taken anew after an act, while a move of the page's own r
 	]);
 });
 
-test("a static page is pictured as close as the frame's camera comes on each frame it changes, typed into or moving of itself, and as close as livereel's bound once that is done", async () => {
+test("a static page is pictured as close as the frame's camera comes on each frame a move of it runs on past, or its own motion is let go, and as close as livereel's bound on every other", async () => {
 	const stage = new PicturedStageThatKeeps();
 	const take = new Take({
 		opened: openedOn(new PageOfBoxes(PAGE), stage),
@@ -216,7 +220,27 @@ test("a static page is pictured as close as the frame's camera comes on each fra
 		hold({ seconds: frame })
 	];
 	await take.run(steps);
-	expect(stage.retakenAt).toEqual([1, 1, 2.2, 1, 1, 2.2]);
+	expect(stage.retakenAt).toEqual([1, 2.2, 2.2, 1, 1, 2.2]);
+});
+
+test("a static page moving under a camera that crosses the frame fast is pictured as close as the frame's closest exposure", async () => {
+	const stage = new PicturedStageThatKeeps();
+	const take = new Take({
+		opened: openedOn(new PageOfBoxes(PAGE), stage),
+		footage: new FootageOf([0]),
+		track: new TrackThatKeeps(),
+		format: WHOLE_AT_ZOOM_ONE,
+		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK),
+		motionBlur: HALF_OF_FOUR
+	});
+	// The camera drawn back from twice close to the whole screen on the first of two frames of typing
+	const steps = [
+		cut(cameraTo(TWICE_CLOSE)),
+		play({ seconds: 2 / 30, moves: [cameraTo(WHOLE_SCREEN, { within: { end: 0.5 } }), typeIntoThePage(STROKES)] })
+	];
+	await take.run(steps);
+	const zooms = stage.drawn.map((scene) => scene.camera.pose.zoom);
+	expect([stage.retakenAt, zooms.at(OWN)! < Math.max(...zooms)]).toEqual([[Math.max(...zooms)], true]);
 });
 
 test('two moves of the look at once each move their own values over the frames they share: the glow drifting all the way, the ink changing over the first half', async () => {

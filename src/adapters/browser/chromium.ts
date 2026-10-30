@@ -219,7 +219,7 @@ async function pictured(
 	const watch = new TabWatch(filmed, address);
 	await reached(filmed, address);
 	const session = await filmed.context().newCDPSession(filmed);
-	const filmedTab = { session, screen: setting.format.screen, pixelsAtZoomOne };
+	const filmedTab = { tab: filmed, session, screen: setting.format.screen, pixelsAtZoomOne };
 	const picturedStage = new PlaywrightPicturedStage(stage, filmedTab, watch);
 	return new OpenedChromium({ browser, filmed }, picturedStage, filmed.mainFrame());
 }

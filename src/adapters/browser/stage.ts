@@ -17,7 +17,9 @@
  * scale of the picture's pixels to the page's, which Chrome draws the page anew at: on a tab at 4.4×, at a scale of 2
  * in 81–83 ms and alike to a picture of a tab at 2× (SSIM 1.0), at 4.4 in 253–269 ms against Playwright's 340–348,
  * alike to its picture (SSIM 1.0); a 1040 × 1080 screen, 2026-10-30. Playwright's own picture takes none but the tab's
- * device scale.
+ * device scale. As Playwright's did, a picture waits for the page's fonts: CDP's does not, and text in a face still
+ * loading, which Chrome hides for up to 3 s, came out missing in two pictures alike, so the page was held standing
+ * still without it (probed 2026-10-30).
  *
  * A frame is captured by Playwright at the page's device scale, the film's sharpness. A capture of livereel's own, on
  * a CDP session apart from Playwright's, came back at the page's own pixels whatever that scale, every full shoot as
@@ -130,6 +132,7 @@ export class PlaywrightFramedStage implements FramedStage {
  * size, a page's pixel taking so many of a picture's for a camera at a zoom of 1.
  */
 export interface FilmedTab {
+	readonly tab: Page;
 	readonly session: CDPSession;
 	readonly screen: Size;
 	readonly pixelsAtZoomOne: number;
@@ -163,9 +166,13 @@ export class PlaywrightPicturedStage implements PicturedStage {
 		return alike;
 	}
 
-	/** The page as its tab shows it now, as a JPEG as sharp as a camera at this zoom shows it, its text caret kept. */
+	/**
+	 * The page as its tab shows it once its fonts have loaded, as a JPEG as sharp as a camera at this zoom shows it, its
+	 * text caret kept.
+	 */
 	private async pictureAt(zoom: number): Promise<Buffer> {
-		const { session, screen, pixelsAtZoomOne } = this.filmedTab;
+		const { tab, session, screen, pixelsAtZoomOne } = this.filmedTab;
+		await tab.evaluate(fontsLoaded);
 		const { cssVisualViewport } = await session.send('Page.getLayoutMetrics');
 		// eslint-disable-next-line id-length -- CDP names the corner a picture is clipped at `x` and `y`
 		const clip = { x: cssVisualViewport.pageX, y: cssVisualViewport.pageY, ...screen, scale: pixelsAtZoomOne * zoom };
@@ -211,6 +218,13 @@ export function openPage(opening: Opening): void {
 
 function pictureShown(picture: string): Promise<void> {
 	return window.stage.show(picture);
+}
+
+// What follows runs in the filmed page's own tab, handed over alone
+
+/** Once the page's fonts have loaded, or failed to. */
+async function fontsLoaded(): Promise<void> {
+	await document.fonts.ready;
 }
 
 function applyScene(scene: DrawnScene): void {

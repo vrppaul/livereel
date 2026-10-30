@@ -250,8 +250,8 @@ test("a picture of the page holds it as close as the closest face-on camera come
 	const closer = inTheWhole({ ...FACE_ON, zoom: 1.5 });
 	const pastTheBound = inTheWhole({ ...FACE_ON, zoom: 3 });
 	expect([
-		zoomPicturedFor([inTheWhole(FACE_ON), closer]),
-		zoomPicturedFor([inTheWhole(FACE_ON), inTheWhole(LEANING_BACK)]),
-		zoomPicturedFor([pastTheBound])
+		zoomPicturedFor(inTheWhole(FACE_ON), [closer]),
+		zoomPicturedFor(inTheWhole(FACE_ON), [inTheWhole(LEANING_BACK)]),
+		zoomPicturedFor(pastTheBound, [])
 	]).toEqual([1.5, 2.2, 2.2]);
 });

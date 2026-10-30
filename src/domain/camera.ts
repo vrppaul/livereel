@@ -280,12 +280,14 @@ export function keptOnTheScreen(pose: Pose, format: Format, view: View): Pose {
 }
 
 /**
- * How close a picture of the page must hold it for these cameras to show it as sharp as it stands, as a pose's zoom
- * has it: as close as the closest of them comes where each is face-on, a page's pixel as large anywhere on the frame;
- * as close as a camera comes where a film names no bound where one is angled, the nearer part of its screen shown
- * larger than its zoom; and never closer than that bound.
+ * How close a picture of the page must hold it, as a pose's zoom has it, for a frame's cameras to show it as sharp as
+ * it stands: its own, and those along its way it is also exposed at. Face-on, a camera shows a page's pixel as large
+ * anywhere on the frame, so the picture holds it as close as the closest of them comes. An angled camera shows the
+ * nearer part of the screen larger than its zoom, so the picture holds it at livereel's bound, `ZOOM_AT_MOST`; no
+ * picture holds it closer than that.
  */
-export function zoomPicturedFor(cameras: readonly Camera[]): number {
+export function zoomPicturedFor(own: Camera, along: readonly Camera[]): number {
+	const cameras = [own, ...along];
 	if (!cameras.every((camera) => isFaceOn(camera.pose))) return ZOOM_AT_MOST;
 	return Math.min(ZOOM_AT_MOST, Math.max(...cameras.map((camera) => camera.pose.zoom)));
 }
