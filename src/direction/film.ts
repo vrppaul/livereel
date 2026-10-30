@@ -84,7 +84,7 @@ export interface Script<Served extends Serving, Name extends string> {
 	 */
 	readonly sounds?: LivereelSoundsScript;
 	readonly music?: Music;
-	/** How a fast camera is blurred, livereel's way save the values given, or `{ enabled: false }` for no blur. */
+	/** How a fast move is blurred, livereel's way save the values given, or `{ enabled: false }` for no blur. */
 	readonly motionBlur?: MotionBlurScript;
 	/** The look the film opens on, livereel's save the values given; `look.to` changes it as the film goes. */
 	readonly theme?: Theme;

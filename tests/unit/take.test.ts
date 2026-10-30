@@ -14,6 +14,7 @@ import { show } from '../../src/moves/ending.ts';
 import { type as typeIntoThePage } from '../../src/moves/page.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import { open, type } from '../../src/moves/terminal.ts';
+import { lean as leanTitle, show as showTitle, to as titleTo } from '../../src/moves/title.ts';
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Keystroke } from '../../src/domain/typing.ts';
 import type { EndingCard } from '../../src/props/ending.ts';
@@ -59,6 +60,9 @@ const HALF_OF_FOUR: MotionBlur = { shutter: 0.5, exposuresAtMost: 4 };
 // The camera close on the screen's right edge, a page's pixel to a frame's pixel, as 2.7 is on a frame of 400 (1080 /
 // 400): from the whole screen, at two thirds of that, a fast way
 const CLOSE_AT_THE_RIGHT: Pose = { focusX: 400, focusY: 200, zoom: 2.7 };
+// The frame's left and right halves, where a title stands
+const LEFT_HALF = { left: 0, top: 0, width: 0.5, height: 1 };
+const RIGHT_HALF = { left: 0.5, top: 0, width: 0.5, height: 1 };
 // Why a stage's page is gone, as a stage says it
 const GONE = new FilmError('the page at http://app/refusing/ refuses to be framed');
 // A picture of the page as it came out against the last: alike, or changed as the page answers the film
@@ -169,6 +173,91 @@ test('a frame the camera crosses fast is drawn at once as every exposure along i
 		3,
 		[331.25, 337.5, 343.75, 350, 381.25, 387.5, 393.75, 400, 400]
 	]);
+});
+
+test('an object sliding fast while the camera stands is drawn again along its own way, each kept with its own: the one sliding in from past the edge, the one it pushes off from where it stood', async () => {
+	const stage = new FramedStageThatKeeps();
+	const footage = new FootageOf([0, 1, 2]);
+	// A title in the frame's left half pushed off by another sliding in from the right over two frames, then one frame
+	// with nothing moving; each drawing lists the lefts of the title standing and of the one pushed off
+	const steps = [
+		cut(showTitle('First', { at: LEFT_HALF })),
+		play({ seconds: 2 / 30, moves: [showTitle('Second', { at: LEFT_HALF, from: 'right' })], ease: linear }),
+		hold({ seconds: 1 / 30 })
+	];
+	await takeOf(footage, stage).run(steps);
+	const lefts = stage.drawn.map((scene) => [...scene.objects, ...scene.leaving].map((object) => object.box.left));
+	expect([footage.exposed, lefts]).toEqual([
+		[4, 4, 1],
+		[[275, -125], [250, -150], [225, -175], [200, -200], [75, -325], [50, -350], [25, -375], [0], [0]]
+	]);
+});
+
+test('a frame two moves of one object meet in is drawn along each in turn: the second, begun later in the frame, not yet in the earlier exposures', async () => {
+	const stage = new FramedStageThatKeeps();
+	const footage = new FootageOf([0, 1]);
+	// A title carried to the frame's right half over the first of two frames, and back over the second; the second
+	// begins on the first frame
+	const steps = [
+		cut(showTitle('Words', { at: LEFT_HALF })),
+		play({
+			seconds: 2 / 30,
+			moves: [titleTo(RIGHT_HALF, { within: { end: 0.5 } }), titleTo(LEFT_HALF, { within: { start: 0.5 } })],
+			ease: linear
+		})
+	];
+	await takeOf(footage, stage).run(steps);
+	expect([footage.exposed, stage.drawn.map((scene) => scene.objects[0]!.box.left)]).toEqual([
+		[4, 4],
+		[125, 150, 175, 200, 75, 50, 25, 0]
+	]);
+});
+
+test("an object sliding fast inside the page's window while the camera stands is drawn again along its way", async () => {
+	const stage = new FramedStageThatKeeps();
+	const footage = new FootageOf([0, 1]);
+	// A title sliding in from the right into the left half of the window, which fills the frame, over two frames
+	const steps = [
+		play({
+			seconds: 2 / 30,
+			moves: [showTitle('Words', { at: LEFT_HALF, inside: 'window', from: 'right' })],
+			ease: linear
+		})
+	];
+	await takeOf(footage, stage).run(steps);
+	expect([footage.exposed, stage.drawn.map((scene) => scene.objects[0]!.box.left)]).toEqual([
+		[4, 4],
+		[275, 250, 225, 200, 75, 50, 25, 0]
+	]);
+});
+
+test('an object leant fast while the camera stands is drawn again along its way, as far leant as it was at each', async () => {
+	const stage = new FramedStageThatKeeps();
+	const footage = new FootageOf([0, 1]);
+	// A title in the frame's left half leant back 60 degrees over two frames
+	const steps = [
+		cut(showTitle('Words', { at: LEFT_HALF })),
+		play({ seconds: 2 / 30, moves: [leanTitle({ tilt: 60 })], ease: linear })
+	];
+	await takeOf(footage, stage).run(steps);
+	expect([footage.exposed, stage.drawn.map((scene) => scene.objects[0]!.angle!.tilt)]).toEqual([
+		[4, 4],
+		[18.75, 22.5, 26.25, 30, 48.75, 52.5, 56.25, 60]
+	]);
+});
+
+test('a frame of a film with no blur is exposed once, however fast the camera crosses it', async () => {
+	const footage = new FootageOf([0]);
+	const take = new Take({
+		opened: openedOn(new PageOfBoxes(PAGE), new PicturedStageThatKeeps()),
+		footage,
+		track: new TrackThatKeeps(),
+		format: SMALL,
+		opening: openingScene(SMALL, LIVEREELS_LOOK),
+		motionBlur: null
+	});
+	await take.run([play({ seconds: 1 / 30, moves: [cameraTo(CLOSE_AT_THE_RIGHT)] })]);
+	expect(footage.exposed).toEqual([1]);
 });
 
 test('a static page whose picture comes out twice alike stands still: each frame drawn as the one before is that frame, the page not taken again', async () => {

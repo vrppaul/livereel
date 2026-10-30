@@ -21,8 +21,9 @@ comes with a skill that teaches Claude Code to direct one.
 - **The film keeps its own time.** A frame is a moment of the film, however
   long the browser took to draw it: waits, slow answers and loading vanish,
   and the camera moves as smoothly at 30 frames a second as it was written.
-  Where it moves fast, a frame is shot several times along its way and
-  blended, as a film camera's open shutter blurs what moves.
+  Where the camera or a title, code or the terminal moves fast, a frame is
+  shot several times along the way and blended, as a film camera's open
+  shutter blurs what moves.
 - **The page is live.** livereel films the app itself, in Chromium, not a
   copy of it: a click is a real click and a reply is the server's.
 - **It is directed, not cut.** The camera frames a block by its selector,
@@ -97,7 +98,7 @@ checked frame by frame on contact sheets and stills. Install it with
 | `--format NAME` | `shoot`, `still` | the format to shoot, of those the film names; a film of one format needs none |
 | `--as mp4\|webm\|gif` | `shoot` | the kind of video, an MP4 where none is named; `--as mp4 --as gif` makes both from one take, each at the film's own frame and rate |
 | `--sheet` | `shoot` | a frame a second side by side: `film-square-sheet.png` |
-| `--quality draft\|finest` | `shoot`, `still` | `finest`, the default, shoots at twice the frame's width and height and blurs a fast camera as the film says; `draft` shoots at the frame's own size, unblurred: quicker and softer |
+| `--quality draft\|finest` | `shoot`, `still` | `finest`, the default, shoots at twice the frame's width and height and blurs a fast move as the film says; `draft` shoots at the frame's own size, unblurred: quicker and softer |
 | `--renderer software\|gpu` | `shoot`, `still` | where the frames are drawn: in software, the default, or on the graphics card |
 | `--profile` | `shoot`, `still` | where the shoot's time went: each part of the browser and the footage the frames waited on, its calls, the time each took and its share, the rest, and the blends of exposures |
 
@@ -110,7 +111,7 @@ Node new enough.
 
 `--renderer gpu` draws the frames on the graphics card, in the same headless
 browser, and needs no screen: the promo, wide and blurred, took 98 s
-against 289 s, a fast camera's blur made at once on the card. It reaches the card through Vulkan on
+against 289 s, a fast move's blur made at once on the card. It reaches the card through Vulkan on
 Linux, tried on an Intel card; through Metal on macOS and Direct3D 11 on
 Windows, not tried yet. Where it reaches no graphics card, it draws the
 frames in software all the same and warns of it ("--renderer gpu reached no
@@ -543,12 +544,15 @@ sound; a GIF holds none.
 
 ### Motion blur
 
-Where the camera moves fast between frames, a frame is shot several times
-along its way from the frame before and blended: as many times as keep the
-copies a few pixels apart, so the faster the move, the more. `defineFilm`
-takes `motionBlur: { shutter, exposuresAtMost }`, either or both:
+Where anything moves fast between frames — the camera, the page's window,
+or a title, code, the terminal or the card as it travels, slides or
+leans — a frame is shot several times along the time from the frame
+before, each as the film stood then, and blended: as many times as keep
+the copies a few pixels apart, so the faster the move, the more.
+`defineFilm` takes `motionBlur: { shutter, exposuresAtMost }`, either or
+both:
 
-- `shutter`, how much of that way the shutter is open for: 0.5, a film
+- `shutter`, how much of that time the shutter is open for: 0.5, a film
   camera's half, where none is given, and 1 the whole of it;
 - `exposuresAtMost`, how many shots the fastest frame is blended from: 16
   where none is given, more for a smoother smear and a longer shoot.

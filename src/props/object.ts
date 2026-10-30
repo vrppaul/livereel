@@ -16,8 +16,8 @@
  * What an object shows sets the layer it is drawn on: a caption stands over every other object, as words said over a
  * film do, and keys over the caption's ground; within a layer the one that came last stands over the rest.
  */
-import { type Angle, isFaceOn } from '../domain/camera.ts';
-import type { Box } from '../domain/geometry.ts';
+import { type Angle, type View, isFaceOn, leantOnTheFrame } from '../domain/camera.ts';
+import { type Box, type Point, type Size, cornersOf, distanceBetween } from '../domain/geometry.ts';
 import { type Kind, OneOf, Plain } from '../domain/handed.ts';
 import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
 import { type Code, type DrawnCode, drawnCode } from './code.ts';
@@ -95,6 +95,44 @@ const LAYER_OF: { readonly [Kind in Content['kind']]: number } = {
 	caption: 1,
 	keys: 2
 };
+// The corners of a box, in shares of it
+const CORNERS = cornersOf({ left: 0, top: 0, width: 1, height: 1 });
+
+/**
+ * How far an object moves on the frame from where it stood to where it stands, the page's window as it stood and as it
+ * stands given: the farthest any corner of its box goes, as the object leans, or as the window it stands inside shows
+ * it, travelling and leaning with it.
+ */
+export function frameShiftOf(
+	start: FrameObject,
+	end: FrameObject,
+	startWindow: View,
+	endWindow: View,
+	frame: Size
+): number {
+	return Math.max(
+		...CORNERS.map((corner) =>
+			distanceBetween(onTheFrameOf(start, startWindow, frame, corner), onTheFrameOf(end, endWindow, frame, corner))
+		)
+	);
+}
+
+/**
+ * Where a point of an object, in shares of its box, stands on the frame: as the object leans about its middle where it
+ * stands on the frame; as the page's window shows its box, in the window's pixels, where it stands inside it.
+ */
+function onTheFrameOf(object: FrameObject, window: View, frame: Size, share: Point): Point {
+	const box = object.box;
+	switch (object.inside) {
+		case 'frame':
+			return leantOnTheFrame(object, frame, { left: share.left * box.width, top: share.top * box.height });
+		case 'window':
+			return leantOnTheFrame(window, frame, {
+				left: box.left + share.left * box.width,
+				top: box.top + share.top * box.height
+			});
+	}
+}
 
 /** An object as the stage draws it at a moment of the film, among what stands round it. */
 export function drawnObject(name: ObjectName, object: FrameObject, moment: number, around: Surroundings): DrawnObject {

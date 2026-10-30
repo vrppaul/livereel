@@ -12,10 +12,11 @@
  * where a note's line meets the block it names on the frame — so the stage draws numbers and words and decides
  * nothing. What the camera shows is worked out from what it aims at and the window that stands (`cameraOf`), so a
  * camera moving and a window moving in one step make the same frame whichever is set first; a frame is drawn by such a
- * camera, or by one the take hands it, along the camera's way or for an act. A prop that may be absent is `null`; the
+ * camera, or by the flat one an act is done in. A prop that may be absent is `null`; the
  * compiler holds every prop to a drawn form here and to a drawer on the stage.
  */
 import type { Format } from './domain/format.ts';
+import type { Size } from './domain/geometry.ts';
 import {
 	type Aiming,
 	type Camera,
@@ -23,6 +24,7 @@ import {
 	type Placing,
 	type View,
 	drawnCamera,
+	frameShift,
 	placedIn,
 	seenThrough,
 	standingAt,
@@ -41,7 +43,8 @@ import {
 	type Objects,
 	type Surroundings,
 	captionAmong,
-	drawnObject
+	drawnObject,
+	frameShiftOf
 } from './props/object.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
 import { SCREEN_UP, type Screen } from './props/screen.ts';
@@ -128,6 +131,39 @@ export function cameraOf(scene: Scene, format: Format): Camera {
 }
 
 /**
+ * How far anything on the frame moves from one scene to another, in the frame's pixels: the farthest the screen goes as
+ * their cameras show it, or a corner of an object of one name in both, standing or pushed off; one that comes or goes
+ * between them moves nowhere.
+ */
+export function frameShiftBetween(start: Scene, end: Scene, format: Format): number {
+	const startCamera = cameraOf(start, format);
+	const endCamera = cameraOf(end, format);
+	const startWindow = startCamera.view;
+	const endWindow = endCamera.view;
+	return Math.max(
+		frameShift(startCamera, endCamera, format),
+		...objectShifts(start.objects, end.objects, startWindow, endWindow, format.frame),
+		...objectShifts(start.leaving, end.leaving, startWindow, endWindow, format.frame)
+	);
+}
+
+/** How far each object of one name in both moves on the frame from one to the other, the window then and now given. */
+function objectShifts(
+	start: Objects,
+	end: Objects,
+	startWindow: View,
+	endWindow: View,
+	frame: Size
+): readonly number[] {
+	const shifts: number[] = [];
+	for (const [name, object] of end) {
+		const before = start.get(name);
+		if (before !== undefined) shifts.push(frameShiftOf(before, object, startWindow, endWindow, frame));
+	}
+	return shifts;
+}
+
+/**
  * A frame's drawn scenes, each an exposure of it, said whole as one line, alike for two only where the stage draws
  * them alike: a scene is plain values, so what it says is all the stage is handed. Two scenes alike made by moves that
  * wrote their values in another order say them apart, and are drawn both: the cost of a frame, never a wrong one.
@@ -138,7 +174,7 @@ export function drawingOf(exposures: readonly DrawnScene[]): string {
 
 /**
  * The scene as the stage draws it at a moment of the film, in the format it is shot in, seen by a camera: the scene's
- * own, one along its way there, or the flat one an act is done in.
+ * own, or the flat one an act is done in.
  */
 export function drawn(scene: Scene, camera: Camera, moment: number, format: Format): DrawnScene {
 	const around: Surroundings = { caption: captionAmong(scene.objects), screen: scene.screen };

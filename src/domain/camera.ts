@@ -59,9 +59,13 @@ export interface Pose {
  * it is the frame itself, edge to edge, at 1 a window, its corners rounded, its edge and shadow on the ground; and how
  * it leans, swung and leant back about its middle.
  */
-export interface View {
-	readonly box: Box;
+export interface View extends Leaning {
 	readonly lift: number;
+}
+
+/** What leans on the frame as the window does: its box, in the frame's pixels, and how it leans about its middle. */
+export interface Leaning {
+	readonly box: Box;
 	readonly angle: Angle;
 }
 
@@ -156,6 +160,8 @@ const HALVES = 2;
 const SIDES = 2;
 // Where the screen faces before the window leans it: straight out at the eye
 const FACING_OUT: Spot = { across: 0, down: 0, out: 1 };
+// How far out of its own plane a point of what leans stands
+const ON_ITS_PLANE = 0;
 // How far the screen moves on a frame that shows none of it
 const NOTHING = 0;
 // Where the frame's left and top edges stand, in its own pixels
@@ -239,23 +245,9 @@ export function flatCamera(format: Format): Camera {
 	return { pose: flatPose(format), view: wholeView(format.screen) };
 }
 
-/** A view `progress` of the way to another: its box moved and resized, lifted or laid down, and leant as far. */
-function viewToward(start: View, end: View, progress: number): View {
-	return {
-		box: boxToward(start.box, end.box, progress),
-		lift: between(start.lift, end.lift, progress),
-		angle: angleToward(start.angle, end.angle, progress)
-	};
-}
-
 /** An angle `progress` of the way to another. */
 export function angleToward(start: Angle, end: Angle, progress: number): Angle {
 	return { tilt: between(start.tilt, end.tilt, progress), turn: between(start.turn, end.turn, progress) };
-}
-
-/** A camera `progress` of the way from one to another: its pose, and its view. */
-export function cameraToward(start: Camera, end: Camera, progress: number): Camera {
-	return { pose: poseToward(start.pose, end.pose, progress), view: viewToward(start.view, end.view, progress) };
 }
 
 /** The camera as the stage draws it, its cut worked out from where the screen stands in its view. */
@@ -430,9 +422,13 @@ function facing(screen: Size, zoom: number): Pose {
 	return { focusX: screen.width / HALVES, focusY: screen.height / HALVES, zoom };
 }
 
-/** Where a view's middle stands in the room: across and down from the frame's middle, on the frame's plane. */
-function viewMiddle(view: View, frame: Size): Spot {
-	return { across: middleX(view.box) - frame.width / HALVES, down: middleY(view.box) - frame.height / HALVES, out: 0 };
+/** Where the middle of what leans stands in the room: across and down from the frame's middle, on the frame's plane. */
+function middleInTheRoom(leaning: Leaning, frame: Size): Spot {
+	return {
+		across: middleX(leaning.box) - frame.width / HALVES,
+		down: middleY(leaning.box) - frame.height / HALVES,
+		out: ON_ITS_PLANE
+	};
 }
 
 /** A focus moved so that as much as is seen either side of it stays on the screen; the screen's middle where it cannot. */
@@ -448,12 +444,33 @@ function keptWithin(focus: number, halfSeen: number, length: number): number {
 export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
 	const pose = camera.pose;
 	const frameZoom = frameZoomOf(pose, frame);
-	const spot = angledAs(camera.view.angle, {
+	return seenFromTheEye(camera.view, frame, {
 		across: frameZoom * (point.left - pose.focusX),
 		down: frameZoom * (point.top - pose.focusY),
-		out: 0
+		out: ON_ITS_PLANE
 	});
-	const middle = viewMiddle(camera.view, frame);
+}
+
+/**
+ * Where a point of what leans stands on the frame, the point in its box's own pixels from the top left corner: carried
+ * into the room about the box's middle as it leans, and seen from the eye, as the stage draws the window and an object
+ * that leans.
+ */
+export function leantOnTheFrame(leaning: Leaning, frame: Size, point: Point): Point {
+	return seenFromTheEye(leaning, frame, {
+		across: point.left - leaning.box.width / HALVES,
+		down: point.top - leaning.box.height / HALVES,
+		out: ON_ITS_PLANE
+	});
+}
+
+/**
+ * Where a spot of what leans, on its own plane from its middle, stands on the frame: leant as it leans, carried to where
+ * its middle stands in the room, and seen from the eye, a nearer spot farther from the frame's middle.
+ */
+function seenFromTheEye(leaning: Leaning, frame: Size, fromItsMiddle: Spot): Point {
+	const spot = angledAs(leaning.angle, fromItsMiddle);
+	const middle = middleInTheRoom(leaning, frame);
 	const eyeDistance = eyeDistanceOf(frame);
 	const larger = eyeDistance / (eyeDistance - spot.out);
 	return {
@@ -470,7 +487,7 @@ export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
 export function underTheFrame(camera: Camera, frame: Size, point: Point): Point | null {
 	const pose = camera.pose;
 	const facingNow = angledAs(camera.view.angle, FACING_OUT);
-	const middle = viewMiddle(camera.view, frame);
+	const middle = middleInTheRoom(camera.view, frame);
 	const eyeDistance = eyeDistanceOf(frame);
 	const sight = {
 		across: point.left - frame.width / HALVES,

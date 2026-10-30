@@ -35,7 +35,7 @@ export interface Command {
 type ShotWith = Pick<Shooting, 'browser' | 'quality'>;
 
 // How finely a film is shot, by its name on the command line: a draft at the frame's own size, every frame exposed
-// once; or sharp enough to zoom into and to angle without the text going soft, a fast camera blurred as the film says
+// once; or sharp enough to zoom into and to angle without the text going soft, a fast move blurred as the film says
 const QUALITY_NAMES = ['draft', 'finest'] as const;
 type QualityName = (typeof QUALITY_NAMES)[number];
 const QUALITIES: Readonly<Record<QualityName, Quality>> = {

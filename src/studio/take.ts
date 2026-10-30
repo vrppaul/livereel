@@ -8,10 +8,13 @@
  * of the look, at any point, so the order moves are written in matters nowhere. A cut begins its moves and sets each
  * at its end, with no frame between. A sound a move makes is heard as the move is set at or past its point, on the
  * frame being made.
- * A frame is drawn only when the footage keeps it, and drawn again where the camera or its window crossed it fast
- * since the frame before, at cameras along their way there, the rest of the scene as it stands: each drawing is an
- * exposure of the frame (`src/domain/shutter.ts`). A stage that draws all of a frame's exposures at once lays them over
- * one another and is captured once, the frame; one that draws fewer is captured at each, the footage blending them: a
+ * A frame is drawn only when the footage keeps it, and drawn again where anything on it moved fast while its shutter
+ * was open — the camera, its window or an object — as the scene stood at moments of that time: the scene the frame
+ * before left, every move begun by then set as far as it had come. Each drawing is an exposure of the frame
+ * (`src/domain/shutter.ts`), so what slides in and what it pushes off are each drawn along their own way. A move's
+ * change follows from its progress alone, so asking it what it set at an earlier moment changes nothing; a move of the
+ * page, which sets the page itself, is never asked. A stage that draws all of a frame's exposures at once lays them
+ * over one another and is captured once, the frame; one that draws fewer is captured at each, the footage blending them: a
  * capture is near all a frame costs. The take does with the page what the stage's kind asks. A stage that shows a
  * picture of the page, as it shows a static one, takes it anew when the take asks: on a frame after an act or a move
  * of the page, and on every frame until two pictures in a row come out alike, nothing done to the page between them
@@ -32,12 +35,12 @@
 import { type Camera, ZOOM_AT_MOST, flatCamera, zoomPicturedFor } from '../domain/camera.ts';
 import { TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
-import { type MotionBlur, alsoExposedAt } from '../domain/shutter.ts';
+import { type MotionBlur, alsoExposedBack } from '../domain/shutter.ts';
 import { type Ease, framesOf, momentOf } from '../domain/time.ts';
 import { type Change, type Move, type Share, movesThePage, soundsOf } from '../direction/move.ts';
 import type { Cue } from '../direction/sound.ts';
 import type { Act, Cut, Play, Step } from '../direction/steps.ts';
-import { type DrawnScene, type Scene, cameraOf, drawingOf, drawn } from '../scene.ts';
+import { type DrawnScene, type Scene, cameraOf, drawingOf, drawn, frameShiftBetween } from '../scene.ts';
 import type { Exposures, Footage, FramedStage, Opened, PicturedStage, Stage, Track } from './ports.ts';
 
 /**
@@ -52,6 +55,24 @@ interface Running {
 	readonly unheard: readonly Cue[];
 }
 
+/**
+ * A frame's time in its play: the scene the frame before left; the moves of the scene that ran over it, those running
+ * as the frame before was shot and those begun since, in the order they began; how far along its step the frame is;
+ * and the share of the step a frame takes.
+ */
+interface FrameTime {
+	readonly before: Scene;
+	readonly moves: readonly Running[];
+	readonly progress: number;
+	readonly frameShare: number;
+}
+
+/** An exposure of a frame: the scene as it stood at a moment of the frame's time, and the camera it shows then. */
+interface Exposure {
+	readonly scene: Scene;
+	readonly camera: Camera;
+}
+
 /** A frame's exposures as the stage drew and captured them at once: the scenes said whole, and the image. */
 interface Captured {
 	readonly drawing: string;
@@ -60,7 +81,7 @@ interface Captured {
 
 /**
  * What a take is shot with: the page and the stage opened, where its frames and its sounds go, its format, the scene
- * it opens on, and how a fast camera is blurred — not at all for a draft, or for a film that wants no blur.
+ * it opens on, and how a fast move is blurred — not at all for a draft, or for a film that wants no blur.
  */
 export interface TakeSetup {
 	readonly opened: Opened;
@@ -157,19 +178,23 @@ export class Take {
 		let running: Running[] = [];
 		for (let index = 1; index <= frames; index += 1) {
 			if (this.finished()) return;
-			// The camera as the frame before showed it, or as the step begins: nothing moves it between frames
-			const cameraBefore = this.camera();
 			const progress = index / frames;
 			const due = waiting.filter((move) => move.timing.within.start <= progress).sort(byStart);
 			waiting = waiting.filter((move) => !due.includes(move));
+			const before = this.scene;
+			// What runs over the frame's time: the moves running as the frame before was shot, and those begun since
+			const ranOver = [...running];
 			for (const move of due) {
 				running = await this.endedBy(running, move.timing.within.start);
-				running.push(await this.begun(move, step.ease));
+				const begun = await this.begun(move, step.ease);
+				running.push(begun);
+				ranOver.push(begun);
 			}
 			running = await this.endedBy(running, progress);
 			running = await this.setAlong(running, progress);
+			const moves = ranOver.filter((current) => !current.movesThePage);
 			await this.frame(
-				cameraBefore,
+				{ before, moves, progress, frameShare: 1 / frames },
 				running.some((current) => current.movesThePage)
 			);
 		}
@@ -224,7 +249,7 @@ export class Take {
 	/** Every running move set at its eased progress when its step is `progress` along. */
 	private async setAlong(running: readonly Running[], progress: number): Promise<Running[]> {
 		const moved: Running[] = [];
-		for (const current of running) moved.push(await this.setAt(current, current.ease(current.within.along(progress))));
+		for (const current of running) moved.push(await this.setAt(current, easedAlong(current, progress)));
 		return moved;
 	}
 
@@ -261,13 +286,13 @@ export class Take {
 	}
 
 	/**
-	 * One frame: exposed and kept where the footage keeps it, and counted; refused where the stage or its page is gone.
-	 * Whether a move of the page runs on past it says whether a picture of the page serves this frame alone.
+	 * One frame: exposed along its time and kept where the footage keeps it, and counted; refused where the stage or its
+	 * page is gone. Whether a move of the page runs on past it says whether a picture of the page serves this frame alone.
 	 */
-	private async frame(cameraBefore: Camera, pageMovesOn: boolean): Promise<void> {
+	private async frame(time: FrameTime, pageMovesOn: boolean): Promise<void> {
 		await this.refusedWhereGone();
 		if (this.footage.keeps(this.shot)) {
-			await this.footage.keep(this.shot, await this.exposed(cameraBefore, pageMovesOn));
+			await this.footage.keep(this.shot, await this.exposed(time, pageMovesOn));
 		}
 		this.shot += 1;
 	}
@@ -279,21 +304,51 @@ export class Take {
 	}
 
 	/**
-	 * The frame drawn at each place the camera is caught at along its way from the frame before, its own last: all at
-	 * once where the stage draws so many at once, captured as the frame; else each captured, for the footage to blend.
+	 * The frame drawn as the scene stood at each moment of its time it is exposed at, its own last: all at once where the
+	 * stage draws so many at once, captured as the frame; else each captured, for the footage to blend.
 	 */
-	private async exposed(cameraBefore: Camera, pageMovesOn: boolean): Promise<Exposures> {
-		const own = this.camera();
-		const along = alsoExposedAt(cameraBefore, own, this.format, this.motionBlur);
-		await this.pageShown(this.opened.stage, this.zoomPictured(own, along, pageMovesOn));
-		const ownDrawn = this.drawnBy(own);
-		const alongDrawn = along.map((camera) => this.drawnBy(camera));
+	private async exposed(time: FrameTime, pageMovesOn: boolean): Promise<Exposures> {
+		const own = this.exposureOf(this.scene);
+		const along = (await this.alsoExposed(time)).map((scene) => this.exposureOf(scene));
+		const alongCameras = along.map((exposure) => exposure.camera);
+		await this.pageShown(this.opened.stage, this.zoomPictured(own.camera, alongCameras, pageMovesOn));
+		const ownDrawn = this.drawnAt(own);
+		const alongDrawn = along.map((exposure) => this.drawnAt(exposure));
 		if (alongDrawn.length < this.opened.stage.exposuresAtOnce) {
 			return { earlier: [], own: await this.capturedAtOnce([...alongDrawn, ownDrawn]) };
 		}
 		const earlier: Uint8Array[] = [];
 		for (const exposure of alongDrawn) earlier.push(await this.captured([exposure]));
 		return { earlier, own: await this.capturedAtOnce([ownDrawn]) };
+	}
+
+	/**
+	 * The scenes a frame is exposed at besides its own, as they stood along its time: as many as the smear while its
+	 * shutter is open takes, the scene as the shutter opened against the scene as it stands; none where the film is not
+	 * blurred.
+	 */
+	private async alsoExposed(time: FrameTime): Promise<readonly Scene[]> {
+		const blur = this.motionBlur;
+		if (blur === null) return [];
+		const smear = frameShiftBetween(await this.sceneBack(time, blur.shutter), this.scene, this.format);
+		const scenes: Scene[] = [];
+		for (const back of alsoExposedBack(smear, this.format.frame, blur)) scenes.push(await this.sceneBack(time, back));
+		return scenes;
+	}
+
+	/**
+	 * The scene as it stood so far back from the frame's moment, a share of the time from the frame before: the scene the
+	 * frame before left, with every move of the frame's time begun by then set as far as it had come, one ended at its
+	 * end, in the order they began, so a move that takes over from another of its part sets what it sets once that one
+	 * is done.
+	 */
+	private async sceneBack(time: FrameTime, back: number): Promise<Scene> {
+		const progress = time.progress - back * time.frameShare;
+		let scene = time.before;
+		for (const ran of time.moves.filter((current) => current.within.start <= progress)) {
+			scene = await ran.change(scene, easedAlong(ran, progress));
+		}
+		return scene;
 	}
 
 	/**
@@ -353,20 +408,20 @@ export class Take {
 		return this.pageStandsStill && this.lastCaptured?.drawing === drawing ? this.lastCaptured.image : undefined;
 	}
 
-	/** The scene as it stands, drawn by a camera. */
-	private drawnBy(camera: Camera): DrawnScene {
-		return drawn(this.scene, camera, this.moment(), this.format);
+	/** An exposure of a scene: the scene, and the camera as it shows it. */
+	private exposureOf(scene: Scene): Exposure {
+		return { scene, camera: cameraOf(scene, this.format) };
+	}
+
+	/** An exposure as the stage draws it at the frame's moment. */
+	private drawnAt(exposure: Exposure): DrawnScene {
+		return drawn(exposure.scene, exposure.camera, this.moment(), this.format);
 	}
 
 	/** A frame's exposures drawn on the stage at once, and captured. */
 	private async captured(exposures: readonly DrawnScene[]): Promise<Uint8Array> {
 		await this.opened.stage.draw(exposures);
 		return this.opened.stage.capture();
-	}
-
-	/** The camera as the scene stands: what it aims at, in the window that stands. */
-	private camera(): Camera {
-		return cameraOf(this.scene, this.format);
 	}
 
 	private moment(): number {
@@ -376,6 +431,11 @@ export class Take {
 	private finished(): boolean {
 		return this.footage.complete(this.shot);
 	}
+}
+
+/** How far along a running move is, eased, when its step is `progress` along. */
+function easedAlong(current: Running, progress: number): number {
+	return current.ease(current.within.along(progress));
 }
 
 function byStart(first: Move, second: Move): number {

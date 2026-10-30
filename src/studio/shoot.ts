@@ -19,7 +19,7 @@ import { Take } from './take.ts';
 
 /**
  * How finely a film is shot: how many of its frames' pixels are captured for each of the frame's own, and whether a
- * fast camera is blurred as the film says.
+ * fast move is blurred as the film says.
  */
 export interface Quality {
 	readonly sharpness: number;

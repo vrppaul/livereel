@@ -1,11 +1,11 @@
 /**
- * How a film's fast camera is blurred, as its author writes it: left out for livereel's blur, turned off, or livereel's
- * blur with any of its values the film gives in their place.
+ * How what moves fast in a film is blurred, as its author writes it: left out for livereel's blur, turned off, or
+ * livereel's blur with any of its values the film gives in their place.
  *
- * livereel opens the shutter for half the camera's way from the frame before, as a film camera does, and blends up to
- * sixteen exposures: the owner's eye took that over the whole way in eight on the promo and the README film, whose
- * smears had shown their copies (2026-10-30). A shutter open for more than the whole way is refused, as the camera's
- * way before the frame before is not known; so is a blur of fewer than two exposures at most, which is the frame alone.
+ * livereel opens the shutter for half the time from the frame before, as a film camera does, and blends up to sixteen
+ * exposures: the owner's eye took that over the whole time in eight on the promo and the README film, whose smears had
+ * shown their copies (2026-10-30). A shutter open for more than the whole time is refused, as what moved before the
+ * frame before is not known; so is a blur of fewer than two exposures at most, which is the frame alone.
  */
 import { FilmError } from '../domain/errors.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
@@ -16,8 +16,8 @@ import { type TurnedOff, turnedOffBy } from './turned-off.ts';
 export type MotionBlurScript =
 	TurnedOff | { readonly enabled?: true; readonly shutter?: number; readonly exposuresAtMost?: number };
 
-// livereel's blur: the shutter open for half the camera's way, and at most sixteen exposures a frame, which keep copies
-// a step apart up to sixteen steps a frame and bound the cost of faster ones
+// livereel's blur: the shutter open for half the time from the frame before, and at most sixteen exposures a frame,
+// which keep copies a step apart up to sixteen steps a frame and bound the cost of faster ones
 const RECOMMENDED: MotionBlur = { shutter: 0.5, exposuresAtMost: 16 };
 const WIDEST_SHUTTER = 1;
 const FEWEST_EXPOSURES = 2;
@@ -39,7 +39,7 @@ export function motionBlurOf(written: unknown): MotionBlur | null {
 	return { shutter: shutterOf(written.shutter), exposuresAtMost: exposuresAtMostOf(written.exposuresAtMost) };
 }
 
-/** The share of the camera's way from the frame before the shutter is open for: livereel's where the film gives none. */
+/** The share of the time from the frame before the shutter is open for: livereel's where the film gives none. */
 function shutterOf(written: unknown): number {
 	if (written === undefined) return RECOMMENDED.shutter;
 	if (typeof written === 'number' && written > 0 && written <= WIDEST_SHUTTER) return written;

@@ -52,9 +52,10 @@ export interface PicturedStage extends DrawingStage {
 }
 
 /**
- * A frame's images, each a JPEG: its own, and, where the camera crossed it fast, those of earlier poses along the
- * camera's way there, blended with it into the one image the frame is (`src/domain/shutter.ts`). Where the stage drew
- * every exposure at once, laid over one another, its own is the whole frame already, and none is earlier.
+ * A frame's images, each a JPEG: its own, and, where anything on it moved fast, those of the scene as it stood at
+ * earlier moments of the frame's time, blended with it into the one image the frame is (`src/domain/shutter.ts`).
+ * Where the stage drew every exposure at once, laid over one another, its own is the whole frame already, and none is
+ * earlier.
  */
 export interface Exposures {
 	readonly earlier: readonly Uint8Array[];
@@ -89,7 +90,7 @@ export interface Opened extends AsyncDisposable {
  * What the stage and the page are set as for a take: the film's format, where the stage stands, the colour scheme the
  * page is asked for, the blocks it blurs, every font the film names, in its theme or its looks' moves, which the
  * browser reads before anything is shot, whether the page changes of itself, which decides how it is shown, and how a
- * fast camera is blurred in the take, which says how many exposures a frame is made of at most.
+ * fast move is blurred in the take, which says how many exposures a frame is made of at most.
  */
 export type Setting = Pick<
 	FilmInFormat,

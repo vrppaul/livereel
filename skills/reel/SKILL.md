@@ -300,9 +300,10 @@ with a timeout that long; a still takes seconds.
 - Check what the eye checks: is the caption about what is lit, is the text
   readable at this size, does any edge of the screen show where it should
   not, is anything cut off.
-- Where the camera moves fast, a frame is blurred along its way, as a film
-  camera blurs it: a still in the middle of a fast move shows the screen
-  smeared, and that is right. Read text where the camera has settled.
+- Where the camera, the window or a title, code, the terminal or the card
+  moves fast, a frame is blurred along its way, as a film camera blurs it:
+  a still in the middle of a fast move or a slide shows it smeared, and
+  that is right. Read text where it has settled.
   Leave the blur as livereel sets it unless the user asks for another:
   `motionBlur: { shutter, exposuresAtMost }` in `defineFilm`, either or
   both, `shutter` from just above 0 to 1 (the smear's length),
