@@ -173,7 +173,7 @@ export class Take {
 		}
 	}
 
-	/** An act on the page as the stage shows it, which leaves the page's picture behind the page. */
+	/** An act on the page as the stage shows it, which, where the stage shows a picture, leaves it behind the page. */
 	private act(step: Act): Promise<void> {
 		this.pageChangedSinceTaken = true;
 		const stage = this.opened.stage;

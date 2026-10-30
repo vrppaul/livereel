@@ -138,7 +138,7 @@ test('a block a film blurs is blurred on the page, and a block it does not name 
 	expect(filters).toEqual(['blur(12px)', 'none', 'blur(12px)', 'none']);
 });
 
-test("the page's text caret stands shown and never blinks, in its own tab or framed live", async () => {
+test("the page's fields are set to a caret that does not blink, in its own tab or framed live", async () => {
 	const caretAnimations: string[] = [];
 	const steps = [
 		act(async (context: ActContext) => {
