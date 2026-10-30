@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
+
+- livereel is published to GitHub Packages as well, as `@vrppaul/livereel`, so the repository lists its package: GitHub's registry takes only a name in its owner's scope. A release published on GitHub publishes it there (`.github/workflows/packages.yml`), after the version is out on npm, where it stays `livereel`.
 
 - A title: words that come up one after another on the film's ground over the whole frame, a screen of words that covers the page (`title.show(text)`), or `at` a place on the frame, beside the page's window or alone (`title.show(text, { at: 'left' })`); `title.hide()` takes them, and the ground they brought, away. A title's letters take the look's `titleSize`, a share of it in a place, or a size of the title's own, `title.show(text, { size })`, over the whole frame or in a place alike.
 - Places: words stand `at` a place and the page's window goes `to` one: a name, `whole` or a side of the frame (where words stand beside a window on the side across), or a box in shares of the frame or of another place, `{ of, left, top, width, height }`, which may reach past the frame's edge; so a heading stands over code beside a window (`{ of: 'left', height: 0.2 }`, `{ of: 'left', top: 0.25, height: 0.75 }`). A title and code take one; a title in a place stands in the middle of its box down it, centred in `whole`, `top` and `bottom` and read from the left elsewhere, or as its `align` says. A box of no width or height is refused.

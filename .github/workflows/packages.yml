@@ -1,0 +1,35 @@
+# A release published on GitHub: the same version published to GitHub Packages, so the repository lists its package.
+# GitHub's npm registry takes only a name in its owner's scope, so the package goes there as @vrppaul/livereel, the
+# name set for this publish alone. It runs once the owner publishes the release, after the version is approved on npm
+# (CONTRIBUTING.md, Releasing), so GitHub never has a version npm has not. The job's own token publishes: none is kept.
+name: Packages
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+          scope: '@vrppaul'
+      - run: pnpm install --frozen-lockfile
+      - name: The release names the version being published
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - name: The package named in its owner's scope, as GitHub's registry takes it
+        run: npm pkg set name="@vrppaul/livereel"
+      # `prepack` builds the package first
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
