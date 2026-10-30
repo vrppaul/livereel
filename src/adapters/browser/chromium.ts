@@ -36,9 +36,9 @@ import type { Browser, Opened, Setting, Stage } from '../../studio/ports.ts';
 import { stagedInside } from './inside.ts';
 import { PlaywrightPage } from './page.ts';
 import {
-	FramedStage,
 	type Opening,
-	PicturedStage,
+	PlaywrightFramedStage,
+	PlaywrightPicturedStage,
 	STAGE_FOLDER,
 	STAGE_PAGE,
 	openPage,
@@ -58,10 +58,16 @@ const NOT_INSTALLED = 'the browser films are shot in is not installed: run `npx 
 // What Playwright says where the system lacks libraries the browser needs, its words then naming them and how this
 // system installs them, which differs between Linux distributions, Docker and Windows
 const NO_LIBRARIES = 'Host system is missing dependencies';
-// How a block the film blurs is blurred, whatever the page's own style says: 12 of the page's pixels, as no letter of a
-// line reads through, the camera close or not (looked at 2026-10-28)
-const BLURRING = { property: 'filter', value: 'blur(12px)', priority: 'important' } as const;
-// Whether the document at the top of a tab is the stage's own, left unblurred, or the filmed page's
+// How a block the film blurs is blurred: 12 of the page's pixels, as no letter of a line reads through, the camera
+// close or not (looked at 2026-10-28)
+const BLURRING = { property: 'filter', value: 'blur(12px)' } as const;
+// The page's text caret stands shown and never blinks on the wall clock, so a hold shows it as it was, and a static
+// page's pictures come out alike once it is typed into: of 12 pictures over 1.5 s after typing, 2 unlike as it blinks,
+// all alike held (measured 2026-10-30 on Chrome 156)
+const STEADY_CARET: Forced = { selector: '*', property: 'caret-animation', value: 'manual' };
+// What the film forces on the page stands whatever the page's own style says
+const OVER_THE_PAGES_OWN = 'important';
+// Whether the document at the top of a tab is the stage's own, left as it is, or the filmed page's
 const THE_STAGE_AT_THE_TOP = true;
 const THE_PAGE_AT_THE_TOP = false;
 
@@ -74,14 +80,19 @@ interface FontProbe {
 	readonly fallback: string;
 }
 
-/**
- * The blocks a film blurs, by selector, and how each is blurred; and whether the document at the top is the stage's
- * own, the page framed in it, and left as it is.
- */
-interface Blurring {
-	readonly selectors: readonly string[];
+/** A property the film forces on the page's blocks a selector matches, and its value. */
+interface Forced {
+	readonly selector: string;
 	readonly property: string;
 	readonly value: string;
+}
+
+/**
+ * What the film forces on the page, and how far over the page's own style; and whether the document at the top is the
+ * stage's own, the page framed in it, and left as it is.
+ */
+interface PageStyle {
+	readonly forced: readonly Forced[];
 	readonly priority: string;
 	readonly stageAtTheTop: boolean;
 }
@@ -203,10 +214,10 @@ async function pictured(
 		permissions: [LOCAL_NETWORK]
 	});
 	await filmed.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
-	await blurring(filmed, setting.blurred, THE_PAGE_AT_THE_TOP);
+	await styled(filmed, setting.blurred, THE_PAGE_AT_THE_TOP);
 	const watch = new TabWatch(filmed, address);
 	await reached(filmed, address);
-	const pictures = new PicturedStage(stage, filmed, watch);
+	const pictures = new PlaywrightPicturedStage(stage, filmed, watch);
 	return new OpenedChromium({ browser, filmed }, pictures, filmed.mainFrame());
 }
 
@@ -218,14 +229,14 @@ async function framedLive(
 	address: string,
 	warn: Warn
 ): Promise<Opened> {
-	await blurring(stage, setting.blurred, THE_STAGE_AT_THE_TOP);
+	await styled(stage, setting.blurred, THE_STAGE_AT_THE_TOP);
 	const opening = await staged(stage, setting.stage, address, warn);
 	const watch = new FrameWatch(stage, setting.stage, address);
 	const filmed = await framed(stage, setting, opening);
 	const absence = await watch.absence(filmed);
 	if (absence !== undefined) throw absence;
 	const tabs = { browser, filmed: stage };
-	return new OpenedChromium(tabs, new FramedStage(stage, setting.format, watch, filmed), filmed);
+	return new OpenedChromium(tabs, new PlaywrightFramedStage(stage, setting.format, watch, filmed), filmed);
 }
 
 /** A page gone to the film's address; one that cannot be reached refused, saying so. */
@@ -349,14 +360,14 @@ async function unreadRefused(page: Page, blurred: readonly string[]): Promise<vo
 }
 
 /**
- * The blocks a film blurs blurred in every document a tab opens, by a style sheet each is given as it is made, a
- * rule a selector, so a page the film goes on to blurs them too; where the stage stands at the top, its own document
- * is given none. A block in a shadow root, or in a document that sets its own adopted style sheets in place of all,
- * is not blurred.
+ * What the film forces on the page — the blocks it blurs blurred, the text caret steady — in every document a tab
+ * opens, by a style sheet each is given as it is made, a rule a selector, so a page the film goes on to has it too;
+ * where the stage stands at the top, its own document is given none. A block in a shadow root, or in a document that
+ * sets its own adopted style sheets in place of all, is given none.
  */
-async function blurring(page: Page, blurred: readonly string[], stageAtTheTop: boolean): Promise<void> {
-	if (blurred.length === 0) return;
-	await page.addInitScript(blurredIn, { selectors: blurred, ...BLURRING, stageAtTheTop });
+async function styled(page: Page, blurred: readonly string[], stageAtTheTop: boolean): Promise<void> {
+	const forced = [STEADY_CARET, ...blurred.map((selector) => ({ selector, ...BLURRING }))];
+	await page.addInitScript(styledIn, { forced, priority: OVER_THE_PAGES_OWN, stageAtTheTop });
 }
 
 /**
@@ -408,13 +419,13 @@ function unreadOf(selectors: readonly string[]): string | undefined {
 	return undefined;
 }
 
-/** A document's blocks blurred, a rule a selector, unless it is the stage's own, at the top of the stage's tab. */
-function blurredIn(blurring: Blurring): void {
-	if (blurring.stageAtTheTop && window.top === window) return;
+/** A document given what the film forces on it, a rule a selector, unless it is the stage's own, at its tab's top. */
+function styledIn(style: PageStyle): void {
+	if (style.stageAtTheTop && window.top === window) return;
 	const sheet = new CSSStyleSheet();
-	for (const selector of blurring.selectors) {
-		const rule = sheet.cssRules.item(sheet.insertRule(`${selector} {}`));
-		if (rule instanceof CSSStyleRule) rule.style.setProperty(blurring.property, blurring.value, blurring.priority);
+	for (const forced of style.forced) {
+		const rule = sheet.cssRules.item(sheet.insertRule(`${forced.selector} {}`));
+		if (rule instanceof CSSStyleRule) rule.style.setProperty(forced.property, forced.value, style.priority);
 	}
 	document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
 }

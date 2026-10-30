@@ -4,7 +4,7 @@ import type { ActContext, FilmedPage, PageMotionSwitch, ScrollCourse } from '../
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Box, Format } from '../../src/domain/geometry.ts';
 import type { DrawnScene } from '../../src/scene.ts';
-import type { Exposures, Footage, Opened, Stage, Track } from '../../src/studio/ports.ts';
+import type { Exposures, Footage, FramedStage, Opened, PicturedStage, Stage, Track } from '../../src/studio/ports.ts';
 
 export const SMALL: Format = { frame: { width: 400, height: 400 }, screen: { width: 600, height: 400 } };
 
@@ -35,10 +35,10 @@ export class PageOfBoxes implements FilmedPage {
 	}
 }
 
-export class StageThatKeeps implements Stage {
+/** A stage of either kind that keeps every scene drawn on it and counts its captures. */
+export abstract class StageThatKeeps {
 	readonly drawn: DrawnScene[] = [];
 	captured = 0;
-	retaken = 0;
 	private lost: Error | undefined = undefined;
 
 	draw(scene: DrawnScene): Promise<void> {
@@ -56,6 +56,16 @@ export class StageThatKeeps implements Stage {
 		return Promise.resolve(this.lost);
 	}
 
+	capture(): Promise<Uint8Array> {
+		this.captured += 1;
+		return Promise.resolve(new Uint8Array());
+	}
+}
+
+/** A stage with the page live in its frame. */
+export class FramedStageThatKeeps extends StageThatKeeps implements FramedStage {
+	readonly kind = 'framed';
+
 	layFlat(): Promise<void> {
 		return Promise.resolve();
 	}
@@ -63,13 +73,13 @@ export class StageThatKeeps implements Stage {
 	standUp(): Promise<void> {
 		return Promise.resolve();
 	}
+}
 
-	capture(): Promise<Uint8Array> {
-		this.captured += 1;
-		return Promise.resolve(new Uint8Array());
-	}
+/** A stage showing a picture of a page that never changes: every picture of it comes out as the last. */
+export class PicturedStageThatKeeps extends StageThatKeeps implements PicturedStage {
+	readonly kind = 'pictured';
+	retaken = 0;
 
-	/** A page that never changes: every picture of it comes out as the last. */
 	retakePage(): Promise<boolean> {
 		this.retaken += 1;
 		return Promise.resolve(true);

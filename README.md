@@ -549,8 +549,8 @@ clock is its frames.
 - The page is asked for reduced motion, and for the light colour scheme
   unless the film names the dark one. A page that animates anyway runs
   those animations on the wall clock, so two shots of it differ there; on a
-  static page, the default, a hold shows it stopped where it was captured,
-  and so does the page's text caret.
+  static page, the default, a hold shows it stopped where it was captured.
+  The page's text caret stands shown and never blinks.
 - A page that refuses to be framed (`X-Frame-Options`, a CSP's
   `frame-ancestors`) is shown as a static page, or as a dynamic one on the
   stage inside the app ("Where the stage stands").

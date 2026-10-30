@@ -10,12 +10,14 @@
  * frame being made.
  * A frame is drawn only when the footage keeps it, and drawn again where the camera or its window crossed it fast
  * since the frame before, at cameras along their way there, the rest of the scene as it stands: each drawing is an
- * exposure of the frame (`src/domain/shutter.ts`). A static page is shown as a picture of it the stage takes when the
- * take asks: on a frame after an act or a move of the page, and on every frame until two pictures in a row come out
- * alike, nothing done to the page between them and its own motion not let go, so what it brings in answer — results,
- * an image, a scroll that eases out — is seen. Once it stands still, a frame the stage would draw as it drew the last
- * one captured is that capture, neither drawn nor captured again: holds are near half a film's frames, and a capture
- * is near all a frame costs. A dynamic page is shown live, and captured every frame, as it changes of itself.
+ * exposure of the frame (`src/domain/shutter.ts`). The take does with the page what the stage's kind asks. A stage
+ * that shows a picture of the page, as it shows a static one, takes it anew when the take asks: on a frame after an act
+ * or a move of the page, and on every frame until two pictures in a row come out alike, nothing done to the page
+ * between them and its own motion not let go, so what it brings in answer — results, an image, a scroll that eases
+ * out — is seen. Once it stands still, a frame the stage would draw as it drew the last one captured is that capture,
+ * neither drawn nor captured again: holds are near half a film's frames, and a capture is near all a frame costs. A
+ * stage with the page live in its frame, as it shows a dynamic one, is captured every frame, as the page changes of
+ * itself, and is laid flat for an act.
  * A fault in a step is raised again with the moment and the step it was met at. Before each frame, after each act,
  * and of any fault a step meets, the take asks the stage whether it and its page are still there: where one is gone,
  * the take is refused by why, in place of what its loss made a step fail at (a selector that matches nothing on
@@ -26,12 +28,11 @@ import { TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
 import { type MotionBlur, alsoExposedAt } from '../domain/shutter.ts';
 import { type Ease, framesOf, momentOf } from '../domain/time.ts';
-import type { PageKind } from '../direction/film.ts';
 import { type Change, type Move, type Share, movesThePage, soundsOf } from '../direction/move.ts';
 import type { Cue } from '../direction/sound.ts';
 import type { Act, Cut, Play, Step } from '../direction/steps.ts';
 import { type DrawnScene, type Scene, cameraOf, drawingOf, drawn } from '../scene.ts';
-import type { Exposures, Footage, Opened, Track } from './ports.ts';
+import type { Exposures, Footage, FramedStage, Opened, PicturedStage, Stage, Track } from './ports.ts';
 
 /**
  * A move begun: the share of its step it runs over, its curve, what it sets and whether that is the page itself, and
@@ -53,8 +54,7 @@ interface Captured {
 
 /**
  * What a take is shot with: the page and the stage opened, where its frames and its sounds go, its format, the scene
- * it opens on, how a fast camera is blurred — not at all for a draft, or for a film that wants no blur — and how the
- * page changes.
+ * it opens on, and how a fast camera is blurred — not at all for a draft, or for a film that wants no blur.
  */
 export interface TakeSetup {
 	readonly opened: Opened;
@@ -63,7 +63,6 @@ export interface TakeSetup {
 	readonly format: Format;
 	readonly opening: Scene;
 	readonly motionBlur: MotionBlur | null;
-	readonly pageKind: PageKind;
 }
 
 export class Take {
@@ -72,14 +71,11 @@ export class Take {
 	readonly track: Track;
 	readonly format: Format;
 	readonly motionBlur: MotionBlur | null;
-	// Whether the page is shown as a picture, retaken as it changes, and a frame drawn as the last captured may be that
-	// capture: only where the page changes by the film alone
-	readonly pictured: boolean;
 	private scene: Scene;
 	private shot = 0;
-	// The last frame's own exposure captured, none before the first; whether the page may have changed since its
-	// picture was last taken, as it may before the first; and whether it stood still as it was, its picture alike to
-	// the one before
+	// The last frame's own exposure captured, none before the first; and, where the stage shows a picture of the page,
+	// whether the page may have changed since its picture was last taken, as it may before the first, and whether it
+	// stood still as it was, its picture alike to the one before, as a framed page never is
 	private lastCaptured: Captured | null = null;
 	private pageChangedSinceTaken = true;
 	private pageStandsStill = false;
@@ -91,7 +87,6 @@ export class Take {
 		this.format = setup.format;
 		this.scene = setup.opening;
 		this.motionBlur = setup.motionBlur;
-		this.pictured = setup.pageKind === 'static';
 	}
 
 	/** How many frames are shot so far. */
@@ -178,17 +173,36 @@ export class Take {
 		}
 	}
 
-	/** An act on the page laid flat; the stage asked before it stands up again, as a stage gone cannot stand up. */
-	private async act(step: Act): Promise<void> {
+	/** An act on the page as the stage shows it, which leaves the page's picture behind the page. */
+	private act(step: Act): Promise<void> {
 		this.pageChangedSinceTaken = true;
-		await this.opened.stage.layFlat(
+		const stage = this.opened.stage;
+		switch (stage.kind) {
+			case 'framed':
+				return this.actedOnFlat(stage, step);
+			case 'pictured':
+				return this.actedOn(step);
+		}
+	}
+
+	/**
+	 * An act on a framed page, its screen laid flat for it, and stood up again once it is done and the stage found still
+	 * there, as a stage gone cannot stand up.
+	 */
+	private async actedOnFlat(stage: FramedStage, step: Act): Promise<void> {
+		await stage.layFlat(
 			drawn(this.scene, flatCamera(this.format), this.moment(), { ...this.format, frame: this.format.screen })
 		);
+		await this.actedOn(step);
+		await stage.standUp();
+	}
+
+	/** An act on the page as it stands; the stage asked once it is done, or has failed. */
+	private async actedOn(step: Act): Promise<void> {
 		try {
 			await step.action(this.opened.act);
 		} finally {
 			await this.refusedWhereGone();
-			await this.opened.stage.standUp();
 		}
 	}
 
@@ -259,7 +273,7 @@ export class Take {
 		const ownDrawn = this.drawnBy(own);
 		const drawing = drawingOf(ownDrawn);
 		const along = alsoExposedAt(cameraBefore, own, this.format, this.motionBlur);
-		if (this.pictured && this.pageMayHaveChanged()) await this.pageRetaken();
+		await this.pageShown(this.opened.stage);
 		const unchanged = this.capturedAs(drawing);
 		if (along.length === 0 && unchanged !== undefined) return { earlier: [], own: unchanged };
 		const earlier: Uint8Array[] = [];
@@ -267,6 +281,16 @@ export class Take {
 		const image = await this.captured(ownDrawn);
 		this.lastCaptured = { drawing, image };
 		return { earlier, own: image };
+	}
+
+	/** The page as the stage is to show it this frame: live in its frame as it is, or its picture retaken where due. */
+	private async pageShown(stage: Stage): Promise<void> {
+		switch (stage.kind) {
+			case 'framed':
+				return;
+			case 'pictured':
+				if (this.pageMayHaveChanged()) await this.pageRetaken(stage);
+		}
 	}
 
 	/** Whether the page may stand otherwise than its picture: changed since, not yet still, or moving of itself. */
@@ -278,20 +302,19 @@ export class Take {
 	 * The page's picture taken anew; the page standing still where it came out as the last one did with nothing done
 	 * to the page between them and its own motion stilled.
 	 */
-	private async pageRetaken(): Promise<void> {
+	private async pageRetaken(stage: PicturedStage): Promise<void> {
 		const changedBefore = this.pageChangedSinceTaken;
 		this.pageChangedSinceTaken = false;
-		const alike = await this.opened.stage.retakePage();
+		const alike = await stage.retakePage();
 		this.pageStandsStill = alike && !changedBefore && !this.opened.act.motion.released;
 	}
 
 	/**
-	 * The last capture, where it was drawn as this drawing is on a pictured page standing still as it was then; none
-	 * elsewhere. A picture taken anew alike to the last shows what that capture showed.
+	 * The last capture, where it was drawn as this drawing is on a page standing still as it was then; none elsewhere.
+	 * A picture taken anew alike to the last shows what that capture showed.
 	 */
 	private capturedAs(drawing: string): Uint8Array | undefined {
-		const pageAsCaptured = this.pictured && this.pageStandsStill;
-		return pageAsCaptured && this.lastCaptured?.drawing === drawing ? this.lastCaptured.image : undefined;
+		return this.pageStandsStill && this.lastCaptured?.drawing === drawing ? this.lastCaptured.image : undefined;
 	}
 
 	/** The scene as it stands, drawn by a camera. */

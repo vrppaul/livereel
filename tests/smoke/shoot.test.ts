@@ -138,6 +138,21 @@ test('a block a film blurs is blurred on the page, and a block it does not name 
 	expect(filters).toEqual(['blur(12px)', 'none', 'blur(12px)', 'none']);
 });
 
+test("the page's text caret stands shown and never blinks, in its own tab or framed live", async () => {
+	const caretAnimations: string[] = [];
+	const steps = [
+		act(async (context: ActContext) => {
+			const field = context.page.locator(FIELD);
+			caretAnimations.push(
+				await field.evaluate((input) => getComputedStyle(input).getPropertyValue('caret-animation'))
+			);
+		})
+	];
+	await shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'));
+	await shoot(filmWritten(steps, { page: 'dynamic' }), shootingInto(new EveryFrameCounted(), 'software'));
+	expect(caretAnimations).toEqual(['manual', 'manual']);
+});
+
 test('the page is asked for the colour scheme the film names, in its own tab or framed live', async () => {
 	const dark: boolean[] = [];
 	const steps = [

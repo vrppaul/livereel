@@ -9,20 +9,14 @@ import type { Sound } from '../direction/sound.ts';
 import type { DrawnScene } from '../scene.ts';
 
 /**
- * The page the film is shot on, and the filmed page on it: live in its frame, as the stage shows a dynamic page, or a
- * picture of it taken in a tab of its own, as it shows a static one.
+ * The page the film is shot on, and the filmed page on it, one of two kinds: live in its frame, as the stage shows a
+ * dynamic page, or a picture of it taken in a tab of its own, as it shows a static one.
  */
-export interface Stage {
+export type Stage = FramedStage | PicturedStage;
+
+/** What a stage of either kind does: a frame drawn and captured, and whether it and its page are still there. */
+interface DrawingStage {
 	readonly draw: (scene: DrawnScene) => Promise<void>;
-	/** The screen made ready for the page to be acted on as it stands: laid flat at its own size where it is framed. */
-	readonly layFlat: (scene: DrawnScene) => Promise<void>;
-	/** The stage back as it was before an act. */
-	readonly standUp: () => Promise<void>;
-	/**
-	 * A picture of the page taken anew and shown, as the page stands now; whether it came out as the last one did. A
-	 * page shown live is never taken, and never said alike.
-	 */
-	readonly retakePage: () => Promise<boolean>;
 	/**
 	 * Why the stage, or the page in its frame, is no longer there, where one is not: a click that took the stage away,
 	 * a page that refuses its frame, one that could not be reached; none where both are.
@@ -30,6 +24,22 @@ export interface Stage {
 	readonly absence: () => Promise<Error | undefined>;
 	/** The frame as the stage shows it now, as a JPEG. */
 	readonly capture: () => Promise<Uint8Array>;
+}
+
+/** The stage with the page live in its frame, which every frame shows as it is. */
+export interface FramedStage extends DrawingStage {
+	readonly kind: 'framed';
+	/** The screen laid flat at its own size, so the page is acted on as it stands. */
+	readonly layFlat: (scene: DrawnScene) => Promise<void>;
+	/** The stage back as it was before an act. */
+	readonly standUp: () => Promise<void>;
+}
+
+/** The stage showing a picture of the page, which stands in a tab of its own and is acted on there. */
+export interface PicturedStage extends DrawingStage {
+	readonly kind: 'pictured';
+	/** A picture of the page taken anew and shown, as the page stands now; whether it came out as the last one did. */
+	readonly retakePage: () => Promise<boolean>;
 }
 
 /**

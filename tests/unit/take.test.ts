@@ -18,10 +18,18 @@ import type { Keystroke } from '../../src/domain/typing.ts';
 import type { EndingCard } from '../../src/props/ending.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { type Scene, openingScene } from '../../src/scene.ts';
-import type { Exposures } from '../../src/studio/ports.ts';
-import type { PageKind } from '../../src/direction/film.ts';
+import type { Exposures, Stage } from '../../src/studio/ports.ts';
 import { Take } from '../../src/studio/take.ts';
-import { FootageOf, PageOfBoxes, SMALL, StageThatKeeps, TrackThatKeeps, openedOn } from './fakes.ts';
+import {
+	FootageOf,
+	FramedStageThatKeeps,
+	PageOfBoxes,
+	PicturedStageThatKeeps,
+	SMALL,
+	type StageThatKeeps,
+	TrackThatKeeps,
+	openedOn
+} from './fakes.ts';
 
 const FIRST = { left: 10, top: 10, width: 100, height: 50 };
 const SECOND = { left: 200, top: 100, width: 80, height: 40 };
@@ -85,14 +93,14 @@ class KeptAsThePageGoes extends FootageOf {
 }
 
 /** A stage that cannot say whether it is there, as one whose browser is gone. */
-class StageNotAnswering extends StageThatKeeps {
+class StageNotAnswering extends PicturedStageThatKeeps {
 	override absence(): Promise<Error | undefined> {
 		return Promise.reject(new Error('the browser has been closed'));
 	}
 }
 
 /** A stage whose page is still answering the film: its pictures come out alike or not as given, one after another. */
-class StageAnswering extends StageThatKeeps {
+class StageAnswering extends PicturedStageThatKeeps {
 	readonly pictures: boolean[];
 
 	/** Whether each picture of the page, one after another, comes out as the last. */
@@ -107,12 +115,7 @@ class StageAnswering extends StageThatKeeps {
 	}
 }
 
-function takeOf(
-	footage: FootageOf,
-	stage: StageThatKeeps,
-	track = new TrackThatKeeps(),
-	pageKind: PageKind = 'static'
-): Take {
+function takeOf(footage: FootageOf, stage: Stage, track = new TrackThatKeeps()): Take {
 	const opened = openedOn(new PageOfBoxes(PAGE), stage);
 	return new Take({
 		opened,
@@ -120,20 +123,19 @@ function takeOf(
 		track,
 		format: SMALL,
 		opening: openingScene(SMALL, LIVEREELS_LOOK),
-		motionBlur: HALF_OF_FOUR,
-		pageKind
+		motionBlur: HALF_OF_FOUR
 	});
 }
 
 test('a frame the camera crosses fast is drawn again along its way from the frame before, each kept with its own', async () => {
-	const stage = new StageThatKeeps();
+	const stage = new FramedStageThatKeeps();
 	const footage = new FootageOf([0, 1, 2]);
 	// Two frames of the camera's way, half of it each, then one with nothing moving, on a page drawn every frame
 	const steps = [
 		play({ seconds: 2 / 30, moves: [cameraTo(CLOSE_AT_THE_RIGHT)], ease: linear }),
 		hold({ seconds: 1 / 30 })
 	];
-	await takeOf(footage, stage, new TrackThatKeeps(), 'dynamic').run(steps);
+	await takeOf(footage, stage).run(steps);
 	expect([footage.exposed, stage.drawn.map((scene) => scene.camera.pose.focusX)]).toEqual([
 		[4, 4, 1],
 		[331.25, 337.5, 343.75, 350, 381.25, 387.5, 393.75, 400, 400]
@@ -141,7 +143,7 @@ test('a frame the camera crosses fast is drawn again along its way from the fram
 });
 
 test('a static page whose picture comes out twice alike stands still: each frame drawn as the one before is that frame, the page not taken again', async () => {
-	const stage = new StageThatKeeps();
+	const stage = new PicturedStageThatKeeps();
 	const footage = new FootageOf([0, 1, 2, 3]);
 	await takeOf(footage, stage).run([hold({ seconds: 4 / 30 })]);
 	expect([footage.kept, stage.drawn.length, stage.captured, stage.retaken]).toEqual([[0, 1, 2, 3], 1, 1, 2]);
@@ -155,14 +157,14 @@ test('a static page still answering is taken and captured every frame until its 
 });
 
 test('a dynamic page is shown live and captured every frame, though nothing in the scene moves', async () => {
-	const stage = new StageThatKeeps();
+	const stage = new FramedStageThatKeeps();
 	const footage = new FootageOf([0, 1, 2]);
-	await takeOf(footage, stage, new TrackThatKeeps(), 'dynamic').run([hold({ seconds: 3 / 30 })]);
-	expect([footage.kept, stage.drawn.length, stage.captured, stage.retaken]).toEqual([[0, 1, 2], 3, 3, 0]);
+	await takeOf(footage, stage).run([hold({ seconds: 3 / 30 })]);
+	expect([footage.kept, stage.drawn.length, stage.captured]).toEqual([[0, 1, 2], 3, 3]);
 });
 
 test("a static page is taken anew after an act, while a move of the page's own runs, and while its own motion is let go", async () => {
-	const stage = new StageThatKeeps();
+	const stage = new PicturedStageThatKeeps();
 	const footage = new FootageOf([...Array(16).keys()]);
 	const frame = 1 / 30;
 	// Each step's pictures taken, then frames captured
@@ -192,7 +194,7 @@ test("a static page is taken anew after an act, while a move of the page's own r
 });
 
 test('two moves of the look at once each move their own values over the frames they share: the glow drifting all the way, the ink changing over the first half', async () => {
-	const stage = new StageThatKeeps();
+	const stage = new PicturedStageThatKeeps();
 	const steps = [
 		play({
 			seconds: 4 / 30,
@@ -211,7 +213,10 @@ test('two moves of the look at once each move their own values over the frames t
 
 test('a cut is not blurred: the frame after it is exposed once, however far it moved the camera', async () => {
 	const footage = new FootageOf([0]);
-	await takeOf(footage, new StageThatKeeps()).run([cut(cameraTo(CLOSE_AT_THE_RIGHT)), hold({ seconds: 1 / 30 })]);
+	await takeOf(footage, new PicturedStageThatKeeps()).run([
+		cut(cameraTo(CLOSE_AT_THE_RIGHT)),
+		hold({ seconds: 1 / 30 })
+	]);
 	expect(footage.exposed).toEqual([1]);
 });
 
@@ -223,7 +228,7 @@ test("livereel's sounds are heard as their moves begin: the click as the press g
 		...click(() => Promise.resolve()),
 		play({ seconds: 0.1, moves: [show(CARD)] })
 	];
-	await takeOf(new FootageOf([20]), new StageThatKeeps(), track).run(steps);
+	await takeOf(new FootageOf([20]), new PicturedStageThatKeeps(), track).run(steps);
 	expect(track.heard).toEqual([
 		{ moment: 3 / 30, sound: CLICK },
 		{ moment: 10 / 30, sound: ENDING }
@@ -236,13 +241,13 @@ test('a click given a file of the film is heard as that file', async () => {
 		play({ seconds: 0.1, moves: [cursorTo('#first')] }),
 		...click(() => Promise.resolve(), { sound: './pop.wav' })
 	];
-	await takeOf(new FootageOf([20]), new StageThatKeeps(), track).run(steps);
+	await takeOf(new FootageOf([20]), new PicturedStageThatKeeps(), track).run(steps);
 	expect(track.heard).toEqual([{ moment: 3 / 30, sound: { kind: 'file', path: './pop.wav' } }]);
 });
 
 test('each key typed into the terminal is heard on the frame its letter shows', async () => {
 	const track = new TrackThatKeeps();
-	const stage = new StageThatKeeps();
+	const stage = new PicturedStageThatKeeps();
 	const steps = [cut(open('A terminal')), play({ seconds: 0.2, moves: [type(STROKES)] })];
 	await takeOf(new FootageOf([1, 2, 5]), stage, track).run(steps);
 	expect([track.heard, stage.drawn.map((scene) => scene.terminal?.typed)]).toEqual([
@@ -257,7 +262,7 @@ test('each key typed into the terminal is heard on the frame its letter shows', 
 test('each key typed into the page is heard on the frame it is pressed', async () => {
 	const track = new TrackThatKeeps();
 	const page = new PageOfBoxes(PAGE);
-	const opened = openedOn(page, new StageThatKeeps());
+	const opened = openedOn(page, new PicturedStageThatKeeps());
 	const footage = new FootageOf([9]);
 	const take = new Take({
 		opened,
@@ -285,7 +290,7 @@ test("a sound played in a cut is heard at the cut's moment, and one played in a 
 		cut(playSound('./pop.wav')),
 		play({ seconds: 0.2, moves: [playSound('./whoosh.wav', { within: { start: 0.5 } })] })
 	];
-	await takeOf(new FootageOf([20]), new StageThatKeeps(), track).run(steps);
+	await takeOf(new FootageOf([20]), new PicturedStageThatKeeps(), track).run(steps);
 	expect(track.heard).toEqual([
 		{ moment: 3 / 30, sound: { kind: 'file', path: './pop.wav' } },
 		{ moment: 5 / 30, sound: { kind: 'file', path: './whoosh.wav' } }
@@ -295,19 +300,19 @@ test("a sound played in a cut is heard at the cut's moment, and one played in a 
 test('a move is set along its share, at its end exactly once, and never after', async () => {
 	const counted = new Counted({ end: 0.5 });
 	// Ten frames, the move over the first half of them
-	await takeOf(new FootageOf([9]), new StageThatKeeps()).run([play({ seconds: 10 / 30, moves: [counted] })]);
+	await takeOf(new FootageOf([9]), new PicturedStageThatKeeps()).run([play({ seconds: 10 / 30, moves: [counted] })]);
 	expect(counted.progresses).toEqual([0.2, 0.4, 0.6, 0.8, 1]);
 });
 
 test('a move begun and ended within one frame is set at its end once', async () => {
 	const counted = new Counted({ start: 0.45, end: 0.5 });
 	// Ten frames: the share begins after the fourth and ends on the fifth
-	await takeOf(new FootageOf([9]), new StageThatKeeps()).run([play({ seconds: 10 / 30, moves: [counted] })]);
+	await takeOf(new FootageOf([9]), new PicturedStageThatKeeps()).run([play({ seconds: 10 / 30, moves: [counted] })]);
 	expect(counted.progresses).toEqual([1]);
 });
 
 test('a move begun at its share reads what an earlier move of the step left', async () => {
-	const stage = new StageThatKeeps();
+	const stage = new PicturedStageThatKeeps();
 	const steps = [
 		play({ seconds: 0.2, moves: [on('#first', { within: { end: 0.5 } }), to('#second', { within: { start: 0.5 } })] })
 	];
@@ -316,28 +321,28 @@ test('a move begun at its share reads what an earlier move of the step left', as
 });
 
 test('a cut sets its moves at their end at once, with no frame between', async () => {
-	const stage = new StageThatKeeps();
+	const stage = new PicturedStageThatKeeps();
 	const steps = [play({ seconds: 0.1, moves: [cursorTo('#first')] }), cut(hide()), play({ seconds: 0.1 })];
 	await takeOf(new FootageOf([2, 3]), stage).run(steps);
 	expect([stage.drawn[0]?.cursor === null, stage.drawn[1]?.cursor]).toEqual([false, null]);
 });
 
 test('a frame is drawn only when the footage keeps it', async () => {
-	const stage = new StageThatKeeps();
+	const stage = new FramedStageThatKeeps();
 	const footage = new FootageOf([2, 4]);
-	await takeOf(footage, stage, new TrackThatKeeps(), 'dynamic').run([play({ seconds: 0.2 })]);
+	await takeOf(footage, stage).run([play({ seconds: 0.2 })]);
 	expect([stage.drawn.length, footage.kept]).toEqual([2, [2, 4]]);
 });
 
 test('a fault in a step is raised with the moment and the step it was met at', async () => {
 	const steps = [play({ seconds: 0.1 }), act(() => Promise.reject(new Error('the page broke')))];
-	await expect(takeOf(new FootageOf([9]), new StageThatKeeps()).run(steps)).rejects.toThrow(
+	await expect(takeOf(new FootageOf([9]), new PicturedStageThatKeeps()).run(steps)).rejects.toThrow(
 		new TakeError(new Error('the page broke'), 0.1, 2)
 	);
 });
 
 test('no frame is shot where the stage or its page is gone: the take is refused by why, at the step that would shoot it', async () => {
-	const stage = new StageThatKeeps();
+	const stage = new PicturedStageThatKeeps();
 	await stage.lose(GONE);
 	await expect(takeOf(new FootageOf([9]), stage).run([play({ seconds: 0.1 })])).rejects.toThrow(
 		new TakeError(GONE, 0, 1)
@@ -346,14 +351,14 @@ test('no frame is shot where the stage or its page is gone: the take is refused 
 });
 
 test('an act that leaves the stage or its page gone is refused by why, though nothing after it is shot', async () => {
-	const stage = new StageThatKeeps();
+	const stage = new PicturedStageThatKeeps();
 	await expect(takeOf(new FootageOf([9]), stage).run([act(() => stage.lose(GONE))])).rejects.toThrow(
 		new TakeError(GONE, 0, 1)
 	);
 });
 
 test('a last frame kept as the stage or its page went is refused by why, at the last step', async () => {
-	const stage = new StageThatKeeps();
+	const stage = new PicturedStageThatKeeps();
 	await expect(takeOf(new KeptAsThePageGoes([2], stage), stage).run([play({ seconds: 0.1 })])).rejects.toThrow(
 		new TakeError(GONE, 0.1, 1)
 	);
@@ -367,7 +372,7 @@ test('a fault a step meets where the stage cannot be asked whether it is there i
 });
 
 test('a fault a step meets where the stage or its page is gone is said by why it is gone', async () => {
-	const stage = new StageThatKeeps();
+	const stage = new PicturedStageThatKeeps();
 	const failing = act(() => stage.lose(GONE).then(() => Promise.reject(new Error('nothing matches h1'))));
 	await expect(takeOf(new FootageOf([9]), stage).run([failing])).rejects.toThrow(new TakeError(GONE, 0, 1));
 });

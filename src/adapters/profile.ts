@@ -14,7 +14,16 @@ import type { Box } from '../domain/geometry.ts';
 import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { ActContext, FilmedPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import type { DrawnScene } from '../scene.ts';
-import type { Browser, Exposures, Footage, Opened, Setting, Stage } from '../studio/ports.ts';
+import type {
+	Browser,
+	Exposures,
+	Footage,
+	FramedStage,
+	Opened,
+	PicturedStage,
+	Setting,
+	Stage
+} from '../studio/ports.ts';
 import type { Blend } from './video/exposures.ts';
 
 /** A reading of the time, in milliseconds, from a moment of its own. */
@@ -188,7 +197,7 @@ class TimedOpened implements Opened {
 	constructor(opened: Opened, timings: Timings) {
 		this.opened = opened;
 		this.timings = timings;
-		this.stage = new TimedStage(opened.stage, timings);
+		this.stage = timedStage(opened.stage, timings);
 		this.page = new TimedPage(opened.page, timings);
 		this.act = opened.act;
 	}
@@ -198,11 +207,22 @@ class TimedOpened implements Opened {
 	}
 }
 
-class TimedStage implements Stage {
-	readonly stage: Stage;
+/** A stage whose every call is timed, of the kind it is. */
+function timedStage(stage: Stage, timings: Timings): Stage {
+	switch (stage.kind) {
+		case 'framed':
+			return new TimedFramedStage(stage, timings);
+		case 'pictured':
+			return new TimedPicturedStage(stage, timings);
+	}
+}
+
+/** What a stage of either kind does, timed. */
+class TimedDrawingStage<Timed extends Stage> {
+	readonly stage: Timed;
 	readonly timings: Timings;
 
-	constructor(stage: Stage, timings: Timings) {
+	constructor(stage: Timed, timings: Timings) {
 		this.stage = stage;
 		this.timings = timings;
 	}
@@ -211,6 +231,18 @@ class TimedStage implements Stage {
 		return this.timings.timed('stage.draw', () => this.stage.draw(scene));
 	}
 
+	absence(): Promise<Error | undefined> {
+		return this.timings.timed('stage.absence', () => this.stage.absence());
+	}
+
+	capture(): Promise<Uint8Array> {
+		return this.timings.timed('stage.capture', () => this.stage.capture());
+	}
+}
+
+class TimedFramedStage extends TimedDrawingStage<FramedStage> implements FramedStage {
+	readonly kind = 'framed';
+
 	layFlat(scene: DrawnScene): Promise<void> {
 		return this.timings.timed('stage.layFlat', () => this.stage.layFlat(scene));
 	}
@@ -218,17 +250,13 @@ class TimedStage implements Stage {
 	standUp(): Promise<void> {
 		return this.timings.timed('stage.standUp', () => this.stage.standUp());
 	}
+}
+
+class TimedPicturedStage extends TimedDrawingStage<PicturedStage> implements PicturedStage {
+	readonly kind = 'pictured';
 
 	retakePage(): Promise<boolean> {
 		return this.timings.timed('stage.retakePage', () => this.stage.retakePage());
-	}
-
-	absence(): Promise<Error | undefined> {
-		return this.timings.timed('stage.absence', () => this.stage.absence());
-	}
-
-	capture(): Promise<Uint8Array> {
-		return this.timings.timed('stage.capture', () => this.stage.capture());
 	}
 }
 
