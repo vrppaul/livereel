@@ -10,6 +10,8 @@
 
 - The caption and the keys are objects too, one of each, over the whole frame where they come up: neither slides nor takes a name, and a move of another kind that would carry or lean one, by its name, is refused as it begins. What an object shows sets the layer it is drawn on: a caption over every other object and the keys over the caption, whenever each came and over one pushed off; within a layer, the one that came last stands over the rest. The keys still rise clear of a caption at the frame's foot as its ground comes up. A name is one object's: a title shown `as: 'caption'` stands in the caption's place, where the two had stood apart.
 
+- A title, code or the terminal stands inside the page's window, as a small window of code over the site's: `title.show`, `code.show` and `terminal.open` take `inside: 'window'`, `code.show(LINES, { at, inside: 'window' })`. Its place is a box in the window's shares, a name of the frame's refused; it is carried and slides as if the window's box were the frame, is cut at the window's edge, travels and leans with the window, and comes up no further than the screen. A move that would lean it alone is refused.
+
 - An ad for a feed, `examples/livereel-ad.ts`, square, 55.7 s, for developers: it opens on a finished frame that serves as the feed's preview and claims nobody filmed it, asks how, answers with a real click, shows the camera's moves shot by shot, the camera keeping the row of cards framed but where the words name another block, the file that shot it and a change made to it, the film's acts, every value of the look, three keyboards, the prompts it took, and ends on the frame it opened on with its words changed. Acme's chart gains a test id.
 
 ## 0.5.0

@@ -6,16 +6,22 @@
  * box and what lights in it are its content's. Each of where it stands, how it leans and what it shows is set by its
  * own moves, so moves of one object that set different values share a step.
  *
+ * An object stands on the frame, or inside the page's window, as a small window of code stands over the site's: its
+ * box is then in the window's pixels, and it travels and leans with the window, comes up no further than the screen,
+ * and is cut at the window's edge, as an element laid in another is on a page. The window is one, and never goes, so
+ * nothing stands inside what may be replaced or put away; an object inside another waits for a film that needs it.
+ *
  * What an object shows sets the layer it is drawn on: a caption stands over every other object, as words said over a
  * film do, and keys over the caption's ground; within a layer the one that came last stands over the rest.
  */
 import { type Angle, isFaceOn } from '../domain/camera.ts';
 import type { Box } from '../domain/geometry.ts';
-import { type Kind, Plain } from '../domain/handed.ts';
+import { type Kind, OneOf, Plain } from '../domain/handed.ts';
 import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
 import { type Code, type DrawnCode, drawnCode } from './code.ts';
 import { type DrawnEnding, type Ending, drawnEnding } from './ending.ts';
 import { type CaptionStanding, type DrawnKeys, type Keys, drawnKeys } from './keys.ts';
+import type { Screen } from './screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './terminal.ts';
 import { type DrawnTitleWords, type TitleWords, drawnTitleWords } from './title.ts';
 
@@ -25,6 +31,21 @@ export type ObjectName = string;
 /** The name a film gives an object: any with something in it. */
 export const AN_OBJECT_NAME: Kind<ObjectName> = new Plain(isSomeName, 'a name, a string with something in it');
 
+/** What an object stands in: the frame, or the page's window. */
+export type Holder = 'frame' | 'window';
+
+/** What a film may stand an object inside: the page's window. */
+export type Inside = Exclude<Holder, 'frame'>;
+
+/** What a film names to stand an object inside: the page's window, by the one name it is known by. */
+export const INSIDE_THE_WINDOW: Kind<Inside> = new OneOf(['window'], `the page's window, "window"`);
+
+/** What stands round an object as it is drawn: the objects standing on the frame, and the screen the window shows. */
+export interface Surroundings {
+	readonly standing: Objects;
+	readonly screen: Screen;
+}
+
 /** What an object shows. */
 export type Content = TitleWords | Code | Terminal | Ending | Caption | Keys;
 
@@ -32,10 +53,11 @@ export type Content = TitleWords | Code | Terminal | Ending | Caption | Keys;
 export type DrawnContent = DrawnTitleWords | DrawnCode | DrawnTerminal | DrawnEnding | DrawnCaption | DrawnKeys;
 
 /**
- * An object: its box in the frame's pixels, how it leans, how far it has come up and how far it has gone, each from 0
- * to 1, and what it shows.
+ * An object: what it stands inside, its box in the pixels of that from its top left corner, how it leans, how far it
+ * has come up and how far it has gone, each from 0 to 1, and what it shows.
  */
 export interface FrameObject {
+	readonly inside: Holder;
 	readonly box: Box;
 	readonly angle: Angle;
 	readonly shown: number;
@@ -47,11 +69,13 @@ export interface FrameObject {
 export type Objects = ReadonlyMap<ObjectName, FrameObject>;
 
 /**
- * An object as the stage draws it: the name it is known by, its box, how it leans — none face-on, which the stage draws
- * with no transform at all — the layer it is drawn on, the higher over the lower, and its content as drawn.
+ * An object as the stage draws it: the name it is known by, what it stands in, its box there, how it leans — none
+ * face-on, which the stage draws with no transform at all — the layer it is drawn on, the higher over the lower, and
+ * its content as drawn.
  */
 export interface DrawnObject {
 	readonly name: ObjectName;
+	readonly inside: Holder;
 	readonly box: Box;
 	readonly angle: Angle | null;
 	readonly layer: number;
@@ -68,11 +92,25 @@ const LAYER_OF: { readonly [Kind in Content['kind']]: number } = {
 	keys: 2
 };
 
-/** An object as the stage draws it at a moment of the film, among the objects standing on the frame. */
-export function drawnObject(name: ObjectName, object: FrameObject, moment: number, standing: Objects): DrawnObject {
+/** An object as the stage draws it at a moment of the film, among what stands round it. */
+export function drawnObject(name: ObjectName, object: FrameObject, moment: number, around: Surroundings): DrawnObject {
 	const angle = isFaceOn(object.angle) ? null : object.angle;
 	const layer = LAYER_OF[object.content.kind];
-	return { name, box: object.box, angle, layer, content: drawnContent(object, moment, standing) };
+	const content = drawnContent(presentIn(object, around.screen), moment, around.standing);
+	return { name, inside: object.inside, box: object.box, angle, layer, content };
+}
+
+/**
+ * An object as far as it has come up within what it stands inside: on the frame as far as its own moves have it, in
+ * the page's window no further than the screen the window shows has come up out of the ground.
+ */
+function presentIn(object: FrameObject, screen: Screen): FrameObject {
+	switch (object.inside) {
+		case 'frame':
+			return object;
+		case 'window':
+			return { ...object, shown: object.shown * screen.shown };
+	}
 }
 
 /**

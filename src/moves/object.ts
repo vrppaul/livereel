@@ -12,7 +12,7 @@
  * a move that brings one or puts it away sets it whole. A move of an object that is not on the screen is refused as it
  * begins.
  */
-import { FACE_ON, angleToward } from '../domain/camera.ts';
+import { FACE_ON, angleToward, viewOf } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
 import { A_FRAME_SIDE, type Box, type FrameSide, type Size, boxToward } from '../domain/geometry.ts';
@@ -24,6 +24,7 @@ import {
 	enteringFrom,
 	pastTheEdge,
 	placesNamed,
+	readsInAnyBox,
 	windowPlaced,
 	wordsPlaced,
 	wordsResized
@@ -40,7 +41,15 @@ import {
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
-import { AN_OBJECT_NAME, type Content, type FrameObject, type ObjectName } from '../props/object.ts';
+import {
+	AN_OBJECT_NAME,
+	type Content,
+	type FrameObject,
+	type Holder,
+	INSIDE_THE_WINDOW,
+	type Inside,
+	type ObjectName
+} from '../props/object.ts';
 import { type Scene, withLeaving, withObject } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
 
@@ -55,6 +64,11 @@ export interface NamedScript {
 /** Which object comes up, and the side of the frame it slides in `from`, past the frame's edge, if any. */
 export interface ShowScript extends TimingScript, NamedScript {
 	readonly from?: FrameSide;
+}
+
+/** What an object comes up standing `inside`: the page's window; none, the frame. */
+export interface NestedScript {
+	readonly inside?: Inside;
 }
 
 /** Which object is carried to another place. */
@@ -82,6 +96,7 @@ interface Push {
 
 export const NAMED_FORM: Form<NamedScript> = { as: AN_OBJECT_NAME };
 export const SHOW_FORM: Form<ShowScript> = { from: A_FRAME_SIDE, ...NAMED_FORM, ...TIMING_FORM };
+export const NESTED_FORM: Form<NestedScript> = { inside: INSIDE_THE_WINDOW };
 const TO_FORM: Form<ToScript> = { ...NAMED_FORM, ...TIMING_FORM };
 const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...TIMING_FORM, ...NAMED_FORM };
 const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { ...LEAN_FORM, ...NAMED_FORM };
@@ -93,6 +108,8 @@ const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
 // An object not going: neither gone nor on its way out; and one sliding in from a side, come up whole from the start
 const NOT_GONE = 0;
 const SHOWN_WHOLE = 1;
+// Where an object stands that a film shows inside nothing
+const ON_THE_FRAME: Holder = 'frame';
 // The curve what an object of each kind shows comes up on in place where the film names none: words and lines of code,
 // one after another, at an even pace; the terminal, the card and keys, fading up whole, on their step's
 const COMES_UP_ON: { readonly [Kind in ObjectKind]: Ease | null } = {
@@ -125,24 +142,27 @@ interface MovableObject extends FrameObject {
  * An object of a kind coming up, face-on, showing what `comingAt` makes of the scene as the move begins: in place of
  * any of its name, on its kind's curve unless the film names one; or sliding in whole from past a side of the frame
  * where the film names one, pushing the one of its name standing off past the side across, so the two move as one
- * sheet. `place` is the place the film names, none where it names none. The script is the kind's own, checked by it.
+ * sheet. `place` is the place the film names, none where it names none. An object shown `inside` the page's window reads
+ * its place, a box in the window's shares, and slides as if the window's box were the frame. The script is the kind's own, checked by it.
  * Every move of an object is handed its kind and its own name, as a refusal says it: `terminal.open`.
  */
 export function objectShow(
 	kind: ObjectKind,
 	move: string,
-	script: ShowScript,
+	script: ShowScript & NestedScript,
 	place: Place | null,
 	comingAt: (beginning: Beginning) => Coming
 ): Move {
 	const name = script.as ?? kind;
+	const inside = script.inside ?? ON_THE_FRAME;
+	refusePlacedInside(inside, place, `${move}'s at`);
 	const from = script.from ?? null;
 	const curve = from === null ? COMES_UP_ON[kind] : null;
 	return {
 		part: objectPart(name),
 		timing: timingOf(curve === null ? script : { ease: curve, ...script }),
 		places: placesNamed(`${move}'s at`, place),
-		begin: (beginning) => appearing(beginning, name, comingAt(beginning), from)
+		begin: (beginning) => appearingIn(beginning, name, inside, from, comingAt)
 	};
 }
 
@@ -192,6 +212,31 @@ function standing(beginning: Beginning, name: ObjectName, move: string): FrameOb
 	const object = beginning.scene.objects.get(name);
 	if (object === undefined) throw new FilmError(`${move} finds no ${name} on the screen`);
 	return object;
+}
+
+/**
+ * A move's beginning as what stands inside a holder sees it: on the frame, as it is; inside the page's window, its
+ * frame the window's box as it stands, so a box in shares of the frame reads as one in shares of the window.
+ */
+function seenFrom(beginning: Beginning, inside: Holder): Beginning {
+	switch (inside) {
+		case 'frame':
+			return beginning;
+		case 'window': {
+			const box = viewOf(beginning.scene.window).box;
+			return { ...beginning, format: { ...beginning.format, frame: { width: box.width, height: box.height } } };
+		}
+	}
+}
+
+/**
+ * Refuses a place inside the page's window that is not a box in its shares, where a move names one: every name of a
+ * place, and every split, is the frame's.
+ */
+function refusePlacedInside(inside: Holder, place: Place | null, where: string): void {
+	if (inside !== ON_THE_FRAME && place !== null && !readsInAnyBox(place)) {
+		throw new FilmError(`${where} inside the window is a box in the window's shares, { left, top, width, height }`);
+	}
 }
 
 /** An object a move carries or leans as it begins; refused where none stands, or it shows what is never moved so. */
@@ -244,14 +289,33 @@ export function showing(name: ObjectName, contentAt: (progress: number) => Conte
 	return writing(name, (progress): Shows => ({ content: contentAt(progress) }));
 }
 
+/** An object coming up in what it stands inside, showing what `comingAt` makes of the scene as seen from there. */
+function appearingIn(
+	beginning: Beginning,
+	name: ObjectName,
+	inside: Holder,
+	from: FrameSide | null,
+	comingAt: (beginning: Beginning) => Coming
+): Change {
+	const within = seenFrom(beginning, inside);
+	return appearing(within, name, inside, comingAt(within), from);
+}
+
 /** An object coming into its box, from a frame past it where it slides in, pushing the one of its name standing. */
-function appearing(beginning: Beginning, name: ObjectName, coming: Coming, from: FrameSide | null): Change {
+function appearing(
+	beginning: Beginning,
+	name: ObjectName,
+	inside: Holder,
+	coming: Coming,
+	from: FrameSide | null
+): Change {
 	const frame = beginning.format.frame;
 	const start = enteringFrom(coming.box, from, frame);
 	const push = pushOf(beginning.scene.objects.get(name), from, frame);
 	return (scene, progress) =>
 		withLeaving(
 			withObject(scene, name, {
+				inside,
 				box: boxToward(start, coming.box, progress),
 				angle: FACE_ON,
 				shown: shownComing(from, progress),
@@ -266,14 +330,22 @@ function appearing(beginning: Beginning, name: ObjectName, coming: Coming, from:
 /** The object on its way to a place, from the box what it shows sets off from. */
 function carried(beginning: Beginning, name: ObjectName, place: Place, move: string): Change {
 	const object = movable(beginning, name, move);
-	const end = placedFor(object.content.kind, beginning.format, place);
+	refusePlacedInside(object.inside, place, `${move}'s place`);
+	const end = placedFor(object.content.kind, seenFrom(beginning, object.inside).format, place);
 	const start = settingOff(object.content, object.box, end);
 	return writing(name, (progress): Carried => ({ box: boxToward(start, end, progress) }));
 }
 
-/** The object's angle on its way from how it leans to the film's. */
+/**
+ * The object's angle on its way from how it leans to the film's; refused inside the page's window, as it leans with
+ * the window, and a lean of its own would only lie flat on the window's.
+ */
 function leaning(beginning: Beginning, name: ObjectName, script: LeanScript, move: string): Change {
-	const from = movable(beginning, name, move).angle;
+	const object = movable(beginning, name, move);
+	if (object.inside !== ON_THE_FRAME) {
+		throw new FilmError(`${move} would lean the ${name} alone: it stands inside the window, and leans as it does`);
+	}
+	const from = object.angle;
 	const to = leantFrom(from, script);
 	return writing(name, (progress): Leant => ({ angle: angleToward(from, to, progress) }));
 }
@@ -287,7 +359,7 @@ function going(beginning: Beginning, name: ObjectName, move: string): Change {
 /** The object sliding out whole past a side of the frame, a frame away; once there, none. */
 function slidingOut(beginning: Beginning, name: ObjectName, toward: FrameSide, move: string): Change {
 	const object = standing(beginning, name, move);
-	const end = pastTheEdge(object.box, toward, beginning.format.frame);
+	const end = pastTheEdge(object.box, toward, seenFrom(beginning, object.inside).format.frame);
 	return (scene, progress) =>
 		withObject(scene, name, untilTheEnd(progress, { ...object, box: boxToward(object.box, end, progress) }));
 }

@@ -22,7 +22,8 @@ import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
 import * as ending from '../../src/moves/ending.ts';
-import { type DrawnObject, drawnObject } from '../../src/props/object.ts';
+import { type DrawnObject, type Surroundings, drawnObject } from '../../src/props/object.ts';
+import { SCREEN_UP } from '../../src/props/screen.ts';
 import { pastTheEdge, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
 import * as look from '../../src/moves/look.ts';
@@ -85,7 +86,10 @@ const PAGE = new PageOfBoxes(
 const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
 const ACTED_IN = 'bring it in with an act, as no move of livereel scrolls the page sideways';
 const LIT = { box: BLOCK, strength: 1, dim: 0.6 };
+// No object standing round one drawn alone, and the screen up
+const NOTHING_AROUND: Surroundings = { standing: new Map(), screen: SCREEN_UP };
 const TYPED = withObject(openingScene(SMALL, LIVEREELS_LOOK), 'terminal', {
+	inside: 'frame',
 	box: BLOCK,
 	angle: FACE_ON,
 	shown: 1,
@@ -98,6 +102,9 @@ const THINKING = 'Working…';
 const THREE_LINES = 'play({\n\tmoves: [camera.onto(VISITORS)]\n})';
 // A frame whose captions stand at its top
 const CAPTIONS_AT_THE_TOP: Format = { ...SMALL, captionAt: 'top' };
+// The lower right quarter of what an object stands in, and the upper left
+const LOWER_RIGHT = { left: 0.5, top: 0.5, width: 0.5, height: 0.5 } as const;
+const UPPER_LEFT = { left: 0, top: 0, width: 0.5, height: 0.5 } as const;
 
 function beginningOf(scene: Scene): Beginning {
 	return beginningIn(scene, SMALL);
@@ -196,11 +203,11 @@ test('code and a title stand in the places the film names, the title then with n
 	const titled = await setAt(title.show('Here', { at: heading }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const coded = await setAt(code.show('light.on(VISITORS)', { at: below }), titled, 1);
 	const shownTitle = coded.objects.get('title')!;
-	expect([shownTitle.box, drawnObject('title', shownTitle).content.ground, coded.objects.get('code')!.box]).toEqual([
-		wordsPlaced(SMALL, heading),
-		0,
-		wordsPlaced(SMALL, below)
-	]);
+	expect([
+		shownTitle.box,
+		drawnObject('title', shownTitle, 0, NOTHING_AROUND).content.ground,
+		coded.objects.get('code')!.box
+	]).toEqual([wordsPlaced(SMALL, heading), 0, wordsPlaced(SMALL, below)]);
 });
 
 test('code and a title card move to another place through the boxes between, growing or shrinking along the way', async () => {
@@ -282,7 +289,7 @@ test('a title over the whole frame stands on its ground over the frame, and slid
 	const leaving = await setAt(title.hide({ toward: 'top' }), shown, 0.5);
 	expect([
 		coming.objects.get('title')!.box,
-		drawnObject('title', shown.objects.get('title')!).content.ground,
+		drawnObject('title', shown.objects.get('title')!, 0, NOTHING_AROUND).content.ground,
 		leaving.objects.get('title')!.box
 	]).toEqual([
 		boxToward(pastTheEdge(frame, 'left', SMALL.frame), frame, 0.5),
@@ -308,11 +315,9 @@ test('an object is handed to the stage with its angle where it leans, and with n
 	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const leant = await setAt(code.lean({ turn: 8 }), coded, 1);
 	const back = await setAt(code.lean({ turn: 0 }), leant, 1);
-	expect([coded, leant, back].map((scene) => drawnObject('code', scene.objects.get('code')!).angle)).toEqual([
-		null,
-		{ tilt: 0, turn: 8 },
-		null
-	]);
+	expect(
+		[coded, leant, back].map((scene) => drawnObject('code', scene.objects.get('code')!, 0, NOTHING_AROUND).angle)
+	).toEqual([null, { tilt: 0, turn: 8 }, null]);
 });
 
 test('an object leans by a move of its own while another carries it and its content changes, each its own way along, a side of the angle left out kept', async () => {
@@ -374,14 +379,17 @@ test('a title in a place reads from the left, centred where it stands above, bel
 test('the lines lit are the one named and those through the one named, and the rest dim', async () => {
 	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const lit = (await setAt(code.light(2, { through: 3 }), coded, 1)).objects.get('code')!;
-	expect([lit.content.lines.map((line) => line.lit), drawnObject('code', lit).content.dimmed]).toEqual([[0, 1, 1], 1]);
+	expect([
+		lit.content.lines.map((line) => line.lit),
+		drawnObject('code', lit, 0, NOTHING_AROUND).content.dimmed
+	]).toEqual([[0, 1, 1], 1]);
 });
 
 test('while the light moves from one line to another, the lines not lit stay dimmed', async () => {
 	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const first = await setAt(code.light(1), coded, 1);
 	const moving = (await setAt(code.light(2), first, 0.5)).objects.get('code')!;
-	expect(drawnObject('code', moving).content.dimmed).toBe(1);
+	expect(drawnObject('code', moving, 0, NOTHING_AROUND).content.dimmed).toBe(1);
 });
 
 test('a line lit by what it says is the one line that says it, through the one from it on that says the other; words no line from there says, or more than one says, are refused, and a line past the last before any words', async () => {
@@ -589,9 +597,10 @@ test('a cursor pressed goes in as the press goes on, and comes back out as it is
 test('a terminal opened comes up as its move goes on, and one left goes as its move goes on', async () => {
 	const opened = (await setAt(open('A terminal'), openingScene(SMALL, LIVEREELS_LOOK), 0.25)).objects.get('terminal')!;
 	const leaving = (await setAt(leave(), TYPED, 0.25)).objects.get('terminal')!;
-	expect([drawnObject('terminal', opened, 0).content.shown, drawnObject('terminal', leaving, 0).content.shown]).toEqual(
-		[0.25, 0.75]
-	);
+	expect([
+		drawnObject('terminal', opened, 0, NOTHING_AROUND).content.shown,
+		drawnObject('terminal', leaving, 0, NOTHING_AROUND).content.shown
+	]).toEqual([0.25, 0.75]);
 });
 
 test('Enter puts the typed line up into the log, and the line is empty again', async () => {
@@ -659,6 +668,54 @@ test('a caption and keys never slide and take no name: one of each stands where 
 	expect(() => caption.hide({ toward: 'left' } as never)).toThrow(FilmError);
 	expect(() => keys.show(['⌘', 'K'], { as: 'second' } as never)).toThrow(FilmError);
 	expect(() => keys.hide({ as: 'second' } as never)).toThrow(FilmError);
+});
+
+test("an object inside the page's window stands, and is carried, in the window's box read as a frame of that size", async () => {
+	const windowed = await setAt(windowTo('right'), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const windowBox = windowed.window.box.to;
+	const insideTheWindow: Format = { ...SMALL, frame: { width: windowBox.width, height: windowBox.height } };
+	const nested = await setAt(code.show('x', { at: LOWER_RIGHT, inside: 'window' }), windowed, 1);
+	const carried = await setAt(code.to(UPPER_LEFT), nested, 1);
+	expect([
+		nested.objects.get('code')!.inside,
+		nested.objects.get('code')!.box,
+		carried.objects.get('code')!.box
+	]).toEqual(['window', wordsPlaced(insideTheWindow, LOWER_RIGHT), wordsPlaced(insideTheWindow, UPPER_LEFT)]);
+});
+
+test("what stands inside the page's window comes up no further than the screen it shows", async () => {
+	const nested = await setAt(
+		open('claude', { at: LOWER_RIGHT, inside: 'window' }),
+		openingScene(SMALL, LIVEREELS_LOOK),
+		1
+	);
+	const [terminalDrawn] = drawnObjectsIn(await setAt(lower(), nested, 0.5), SMALL);
+	expect(terminalDrawn!.content.shown).toBe(0.5);
+});
+
+test("an object inside the page's window leans with it, never alone", async () => {
+	const nested = await setAt(
+		code.show('x', { at: LOWER_RIGHT, inside: 'window' }),
+		openingScene(SMALL, LIVEREELS_LOOK),
+		1
+	);
+	await expect(async () => code.lean({ turn: 10 }).begin(beginningOf(nested))).rejects.toThrow(
+		new FilmError('code.lean would lean the code alone: it stands inside the window, and leans as it does')
+	);
+});
+
+test("inside the page's window a place is a box in its shares, a name of the frame's refused as the move is written and as it begins", async () => {
+	const nested = await setAt(
+		code.show('x', { at: LOWER_RIGHT, inside: 'window' }),
+		openingScene(SMALL, LIVEREELS_LOOK),
+		1
+	);
+	expect(() => code.show('x', { at: 'left', inside: 'window' })).toThrow(
+		new FilmError("code.show's at inside the window is a box in the window's shares, { left, top, width, height }")
+	);
+	await expect(async () => code.to({ of: 'left', height: 0.5 }).begin(beginningOf(nested))).rejects.toThrow(
+		new FilmError("code.to's place inside the window is a box in the window's shares, { left, top, width, height }")
+	);
 });
 
 test("a caption stands where its format puts it, at the frame's foot where it names no place", async () => {

@@ -143,12 +143,13 @@ export function drawn(scene: Scene, camera: Camera, moment: number, format: Form
 		pins: scene.pins === null ? null : drawnPins(scene.pins, camera, format.frame),
 		cursor: scene.cursor,
 		note: scene.note === null ? null : drawnNote(scene.note, camera, format.frame),
-		objects: drawnObjects(scene.objects, moment, scene.objects),
-		leaving: drawnObjects(scene.leaving, moment, scene.objects)
+		objects: drawnObjects(scene.objects, moment, scene),
+		leaving: drawnObjects(scene.leaving, moment, scene)
 	};
 }
 
-/** Objects as the stage draws them, among those standing on the frame. */
-function drawnObjects(objects: Objects, moment: number, standing: Objects): readonly DrawnObject[] {
-	return [...objects].map(([name, object]) => drawnObject(name, object, moment, standing));
+/** Objects as the stage draws them, among what stands round them in the scene. */
+function drawnObjects(objects: Objects, moment: number, scene: Scene): readonly DrawnObject[] {
+	const around = { standing: scene.objects, screen: scene.screen };
+	return [...objects].map(([name, object]) => drawnObject(name, object, moment, around));
 }

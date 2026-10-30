@@ -18,6 +18,8 @@ import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
 import {
 	type Coming,
 	type HideScript,
+	NESTED_FORM,
+	type NestedScript,
 	type ObjectKind,
 	type ObjectLeanScript,
 	SHOW_FORM,
@@ -35,9 +37,10 @@ import {
  * reads there, `align`, the place's own way where none is named; how large its letters are, `size`, in pixels of a
  * frame 1080 on its shorter side, over the whole frame and in a place alike, where none is named the look's
  * `titleSize`, and in a place a share of it no larger than its width lets a long word stand; the side it slides in
- * `from`, past the frame's edge, rather than coming up in its place; and which title it is, `as`.
+ * `from`, past the frame's edge, rather than coming up in its place; which title it is, `as`; and what it stands
+ * `inside`, the page's window, its place then a box in the window's shares.
  */
-export interface TitleScript extends ShowScript {
+export interface TitleScript extends ShowScript, NestedScript {
 	readonly at?: Place;
 	readonly align?: Alignment;
 	readonly size?: number;
@@ -55,7 +58,7 @@ interface Setting {
 }
 
 const TITLE: ObjectKind = 'title';
-const TITLE_FORM: Form<TitleScript> = { at: A_PLACE, align: AN_ALIGNMENT, size: A_SIZE, ...SHOW_FORM };
+const TITLE_FORM: Form<TitleScript> = { at: A_PLACE, align: AN_ALIGNMENT, size: A_SIZE, ...SHOW_FORM, ...NESTED_FORM };
 // Words over the whole frame on their ground stand centred
 const OVER_THE_WHOLE: Alignment = 'center';
 

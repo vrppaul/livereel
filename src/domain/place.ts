@@ -188,6 +188,14 @@ export function alignmentIn(format: Format, place: Place): Alignment {
 	return READ_CENTRED.includes(namedThrough(format, place)) ? 'center' : 'start';
 }
 
+/**
+ * Whether a place reads alike in any box: a box in shares of it, naming no place, as every name and every split of a
+ * format is the frame's own.
+ */
+export function readsInAnyBox(place: Place): boolean {
+	return typeof place !== 'string' && place.of === undefined;
+}
+
 /** Where a box starts as what stands in it comes up: past the frame's edge on the side it comes in from, or in place. */
 export function enteringFrom(box: Box, from: FrameSide | null, frame: Size): Box {
 	return from === null ? box : pastTheEdge(box, from, frame);

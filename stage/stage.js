@@ -21,6 +21,18 @@
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
 /** An element of the stage's markup: the cursor is drawn in SVG, the rest in HTML @typedef {HTMLElement | SVGElement} Staged */
+/** The scene's lists of objects: those standing, and those pushed off while they go @typedef {'objects' | 'leaving'} ObjectList */
+/** Where objects are laid: those on the frame by their list, and those inside the page's window @typedef {ObjectList | 'window'} ObjectRoot */
+/** The element each root is @typedef {{ readonly [Root in ObjectRoot]: Staged }} ObjectRoots */
+/**
+ * An object as its drawer lays it this frame: the key it is kept by, its list, the object, and its element.
+ * @typedef {{
+ *   readonly key: string,
+ *   readonly list: ObjectList,
+ *   readonly object: DrawnObject,
+ *   readonly staged: StagedObject
+ * }} ObjectStaged
+ */
 
 // What parts a line's lead from the rest of it
 const APART = ' ';
@@ -35,6 +47,9 @@ const ON_GROUND = 'data-on-ground';
 const ALIGN = 'data-align';
 // The attribute an object leans by; one face-on has none, and no transform
 const LEANT = 'data-leant';
+// Where objects are laid, each its root
+/** @type {readonly ObjectRoot[]} */
+const OBJECT_ROOTS = ['objects', 'leaving', 'window'];
 // The custom property a title's own size is set as, where it has one; the stylesheet takes the look's where it has not
 const OWN_SIZE = '--title-own-size';
 // The attribute that names the edge of the frame a caption stands at: its foot, or its top
@@ -292,34 +307,42 @@ class NoteDrawer {
 }
 
 /**
- * The objects of a scene, those standing or those pushed off, each an element made from the template of what it shows
- * and kept by its name while it stands showing that, laid in the scene's order, the last over the rest on its layer.
+ * The objects of a scene, those standing and those pushed off, each an element made from the template of what it shows
+ * and kept by its list and name while it shows that. One on the frame is laid in its list's root, one inside the page's
+ * window in the window's: in each, in the scene's order, the last over the rest on its layer.
  */
 class ObjectsDrawer {
-	/** @param {Staged} root @param {'objects' | 'leaving'} list */
-	constructor(root, list) {
-		this.root = root;
-		this.list = list;
-		/** The objects standing in the markup, by name @type {Map<string, StagedObject>} */
+	/** @param {ObjectRoots} roots */
+	constructor(roots) {
+		this.roots = roots;
+		/** The objects in the markup, by their list and name @type {Map<string, StagedObject>} */
 		this.standing = new Map();
 	}
 
 	/** @param {DrawnScene} scene */
 	draw(scene) {
-		const staged = scene[this.list].map((object) => ({ object, staged: this.stagedFor(object) }));
-		this.standing = new Map(staged.map((each) => [each.object.name, each.staged]));
-		const elements = staged.map((each) => each.staged.element);
-		if (!holdsInOrder(this.root, elements)) this.root.replaceChildren(...elements);
+		const staged = [
+			...scene.objects.map((object) => this.stagedFor('objects', object)),
+			...scene.leaving.map((object) => this.stagedFor('leaving', object))
+		];
+		this.standing = new Map(staged.map((each) => [each.key, each.staged]));
+		for (const root of OBJECT_ROOTS) {
+			const elements = staged.filter((each) => rootOf(each) === root).map((each) => each.staged.element);
+			if (!holdsInOrder(this.roots[root], elements)) this.roots[root].replaceChildren(...elements);
+		}
 		for (const each of staged) each.staged.draw(each.object);
 	}
 
 	/**
-	 * The element an object is drawn in: the one standing by its name where it shows what it showed, else one made.
-	 * @param {DrawnObject} object
+	 * An object of a list, and the element it is drawn in: the one standing by its list and name where it shows what it
+	 * showed, else one made.
+	 * @param {ObjectList} list @param {DrawnObject} object @returns {ObjectStaged}
 	 */
-	stagedFor(object) {
-		const standing = this.standing.get(object.name);
-		return standing?.kind === object.content.kind ? standing : new StagedObject(object.content.kind);
+	stagedFor(list, object) {
+		const key = keyOf(list, object.name);
+		const standing = this.standing.get(key);
+		const staged = standing?.kind === object.content.kind ? standing : new StagedObject(object.content.kind);
+		return { key, list, object, staged };
 	}
 }
 
@@ -541,10 +564,11 @@ class LookDrawer {
 /**
  * An exposure of the frame: its root, a drawer for every prop it draws and for its objects, and the page it shows, live
  * or as a picture. Every prop but the look is drawn in each exposure, as the camera stood at its moment: the type
- * checker refuses a prop without a drawer. The look is the stage's root's, one for every exposure of a frame.
+ * checker refuses a prop without a drawer. The look is the stage's root's, one for every exposure of a frame; the
+ * objects' drawer draws those pushed off too, as both lists lay what stands inside the page's window in its one root.
  * @typedef {{
  *   readonly root: Staged,
- *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look'>]: Drawer },
+ *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'leaving'>]: Drawer },
  *   readonly page: Staged,
  *   readonly picture: Staged
  * }} Exposure
@@ -594,8 +618,11 @@ function exposureOf(root) {
 			pins: new PinsDrawer(propRoot(root, 'pins')),
 			cursor: new CursorDrawer(propRoot(root, 'cursor')),
 			note: new NoteDrawer(propRoot(root, 'note')),
-			objects: new ObjectsDrawer(objectsRoot(root, 'objects'), 'objects'),
-			leaving: new ObjectsDrawer(objectsRoot(root, 'leaving'), 'leaving')
+			objects: new ObjectsDrawer({
+				objects: objectsRoot(root, 'objects'),
+				leaving: objectsRoot(root, 'leaving'),
+				window: objectsRoot(root, 'window')
+			})
 		},
 		page: partOf(root, 'page'),
 		picture: partOf(root, 'picture')
@@ -813,11 +840,38 @@ function propRoot(exposure, prop) {
 }
 
 /**
- * Where a list of the scene's objects is laid in an exposure's markup.
- * @param {Element} exposure @param {'objects' | 'leaving'} list
+ * Where a list of the scene's objects standing on the frame is laid in an exposure's markup, or those standing in the
+ * page's window.
+ * @param {Element} exposure @param {keyof ObjectRoots} list
  */
 function objectsRoot(exposure, list) {
 	return found(exposure.querySelector(`[data-scene="${list}"]`), list);
+}
+
+/** The key an object's element is kept by: its list and its name. @param {ObjectList} list @param {string} name */
+function keyOf(list, name) {
+	return `${list} ${name}`;
+}
+
+/**
+ * The root an object is laid in: its list's where it stands on the frame, the window's where it stands inside it.
+ * @param {ObjectStaged} each @returns {ObjectRoot}
+ */
+function rootOf(each) {
+	switch (each.object.inside) {
+		case 'frame':
+			return each.list;
+		case 'window':
+			return 'window';
+	}
+}
+
+/** Whether an element holds these elements and no other, in this order. @param {Staged} root @param {readonly Staged[]} elements */
+function holdsInOrder(root, elements) {
+	return (
+		root.children.length === elements.length &&
+		elements.every((element, place) => root.children.item(place) === element)
+	);
 }
 
 /** An object's element, made from the template of what it shows. @param {DrawnContent['kind']} kind */
@@ -844,14 +898,6 @@ function ofKind(content, kind) {
  */
 function isOfKind(content, kind) {
 	return content.kind === kind;
-}
-
-/** Whether an element holds these elements and no other, in this order. @param {Staged} root @param {readonly Staged[]} elements */
-function holdsInOrder(root, elements) {
-	return (
-		root.children.length === elements.length &&
-		elements.every((element, place) => root.children.item(place) === element)
-	);
 }
 
 /** An element under a root, by the part it plays. @param {Element} root @param {string} part */

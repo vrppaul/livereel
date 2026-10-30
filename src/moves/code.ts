@@ -17,7 +17,9 @@ import type { ObjectName } from '../props/object.ts';
 import {
 	type HideScript,
 	NAMED_FORM,
+	NESTED_FORM,
 	type NamedScript,
+	type NestedScript,
 	type ObjectKind,
 	type ObjectLeanScript,
 	SHOW_FORM,
@@ -33,8 +35,8 @@ import {
 	showing
 } from './object.ts';
 
-/** Where code stands, `at` a place on the frame, and how it comes there. */
-export interface CodeScript extends ShowScript {
+/** Where code stands, `at` a place on the frame or in what it stands `inside`, and how it comes there. */
+export interface CodeScript extends ShowScript, NestedScript {
 	readonly at: Place;
 }
 
@@ -51,7 +53,7 @@ const A_LINE_NAMED: Kind<LineNamed> = new Plain(
 	isLineNamed,
 	'a line: its number, a whole count from 1, or words it says, a string with something in it'
 );
-const CODE_FORM: Form<CodeScript> = { at: needed(A_PLACE), ...SHOW_FORM };
+const CODE_FORM: Form<CodeScript> = { at: needed(A_PLACE), ...SHOW_FORM, ...NESTED_FORM };
 const LIGHT_FORM: Form<LightScript> = { through: A_LINE_NAMED, ...NAMED_FORM, ...TIMING_FORM };
 // Lines are counted from 1, places in a list from 0
 const FIRST_LINE = 1;

@@ -141,14 +141,14 @@ and the moves of each part of the scene:
 - `keys.show(caps)`, `keys.hide()`
 - `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { at, align, size, from, as })`, `title.to(place)`, `title.lean({ tilt, turn })`,
+- `title.show(text, { at, align, size, from, as, inside })`, `title.to(place)`, `title.lean({ tilt, turn })`,
   `title.hide({ toward })`
-- `code.show(text, { at, from, as })`, `code.to(place)`, `code.lean({ tilt, turn })`, `code.light(line, { through })`,
-  `code.hide({ toward })`; each move of a title or code takes `as` to name which
+- `code.show(text, { at, from, as, inside })`, `code.to(place)`, `code.lean({ tilt, turn })`,
+  `code.light(line, { through })`, `code.hide({ toward })`; each move of a title or code takes `as` to name which
 - `caption.show(text)`, `caption.hide()`; a caption and keys stand over the whole frame where they come up, over
   every other object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`
-- `terminal.open(title, { at, from })`, `terminal.type(strokes, { keyboard })`, `terminal.submit()`,
+- `terminal.open(title, { at, from, inside })`, `terminal.type(strokes, { keyboard })`, `terminal.submit()`,
   `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place)`, `terminal.lean({ tilt, turn })`,
   `terminal.leave({ toward })`; the terminal stands `at` a place, read as the window reads one, across most of the
   frame in its middle where none is named; each move of it takes `as` to name which
@@ -238,6 +238,16 @@ stands beside the title, and each move of it names it, `title.hide({ as:
 'heading' })`; a move that names none takes the one called `title`, or
 `code`. A name is one object's, whatever it shows: a title shown `as:
 'code'` stands in place of the code.
+
+A title, code or the terminal stands `inside` the page's window, as a small
+window of code over the site's: `code.show(LINES, { at: { left: 0.45, top:
+0.6, width: 0.5, height: 0.3 }, inside: 'window' })`. Its place is a box in
+the window's shares, as no name of a place or split of a format is the
+window's; it is carried and slides as if the window's box were the frame,
+is cut at the window's edge, travels and leans with the window, and comes
+up no further than the screen. It leans only with the window. It keeps
+where it stands from the window's top left corner as the window grows or
+shrinks, as an element on a page does in its own.
 
 `window.to(place)` draws the page back off the frame's edges into a window
 on the ground, its corners rounding, its edge and shadow coming up, carries
