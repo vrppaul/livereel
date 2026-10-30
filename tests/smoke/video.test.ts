@@ -72,7 +72,7 @@ function framesOf(video: string): string {
 test('a frame of several exposures is one frame of the video', async () => {
 	const directory = await scratch();
 	const video = join(directory, 'film.mp4');
-	const footage = new VideoFootage(video, FRAME);
+	const footage = new VideoFootage(video, FRAME, blended);
 	const image = jpegOf(FRAME, 'gray');
 	await footage.keep(0, { earlier: [image, image, image], own: image });
 	await footage.keep(1, { earlier: [], own: image });
@@ -97,7 +97,7 @@ test("exposures ffmpeg cannot read are refused in ffmpeg's words", async () => {
 
 test('a frame handed to an ffmpeg that has stopped is refused, and no part of the video is left', async () => {
 	const directory = await scratch();
-	const footage = new VideoFootage(join(directory, 'film.mp4'), FRAME);
+	const footage = new VideoFootage(join(directory, 'film.mp4'), FRAME, blended);
 	footage.encoder.kill('SIGKILL');
 	await expect(footage.keep(0, { earlier: [], own: A_LARGE_FRAME })).rejects.toThrow(EncodingError);
 	await footage[Symbol.asyncDispose]();
@@ -108,7 +108,7 @@ test('a video whose sound cannot be laid leaves the one made before as it was, a
 	const directory = await scratch();
 	const video = join(directory, 'film.mp4');
 	writeFileSync(video, MADE_BEFORE);
-	const footage = new VideoFootage(video, FRAME);
+	const footage = new VideoFootage(video, FRAME, blended);
 	await footage.keep(0, { earlier: [], own: jpegOf(FRAME, 'gray') });
 	// Heard without being expected, as nothing refused it before the shoot
 	const track = new Soundtrack(join(directory, 'film.ts'), SOUNDLESS);

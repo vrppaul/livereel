@@ -13,6 +13,9 @@ import { JPEGS_PIPED, ffmpegThrough } from './ffmpeg.ts';
 const JPEGS_IN = [...JPEGS_PIPED, '-i', '-'];
 const ONE_JPEG_OUT = ['-frames:v', '1', ...JPEGS_PIPED, '-q:v', '2', '-'];
 
+/** How a frame's exposures are made its one image: `blended`, or blended and timed. */
+export type Blend = (exposures: Exposures) => Promise<Uint8Array>;
+
 /** The frame's one image: its own where it has no other exposure, every exposure blended where it has. */
 export function blended(exposures: Exposures): Promise<Uint8Array> {
 	if (exposures.earlier.length === 0) return Promise.resolve(exposures.own);

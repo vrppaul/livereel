@@ -24,7 +24,7 @@ pnpm livereel still examples/example-com.ts --format square --out out/example --
 - **Tests hold behaviour.** A behaviour someone can name gets a test first, at the cheapest level; a look, a refactor or a declaration gets none.
 - **Review before presenting.** Read every changed file: the right layer? redundant work? the non-obvious commented? every line needed?
 - **A film is looked at.** A change to what a film shows is checked on its contact sheet (`--sheet`) and on each new shot at full size (`still --at`); the last look at the moving film is a person's.
-- **Speed is measured.** Say with each piece how long it took and what its slowest step was.
+- **Speed is measured.** Say with each piece how long it took and what its slowest step was. A shoot's time is read off `--profile`, before a change and after it: a time claimed is one a profile printed.
 - **Ask first** before adding a dependency, changing the architecture, or changing what a scene is made of (`src/scene.ts`).
 - Never commit secrets or credentials.
 - A commit follows Conventional Commits, `type(scope): description`.

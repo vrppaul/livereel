@@ -14,7 +14,7 @@ import type { Size } from '../../domain/geometry.ts';
 import { FRAMES_PER_SECOND } from '../../domain/time.ts';
 import type { Exposures, Footage } from '../../studio/ports.ts';
 import { closed } from '../processes.ts';
-import { blended } from './exposures.ts';
+import type { Blend } from './exposures.ts';
 import { FFMPEG, FfmpegWords, JPEGS_PIPED, QUIETLY, ffmpeg } from './ffmpeg.ts';
 import { KINDS, STARTS_AT_ONCE } from './kinds.ts';
 import { pictureOf } from './partial.ts';
@@ -52,11 +52,13 @@ export class VideoFootage implements Footage, AsyncDisposable {
 	readonly encoder: Encoder;
 	readonly ended: Promise<number | null>;
 	readonly words: FfmpegWords;
+	readonly blend: Blend;
 	private readonly video: string;
 	private readonly picture: string;
 
-	constructor(video: string, frame: Size) {
+	constructor(video: string, frame: Size, blend: Blend) {
 		this.video = video;
+		this.blend = blend;
 		this.picture = pictureOf(video);
 		const scaled = ['-vf', `scale=${frame.width}:${frame.height}:flags=lanczos`];
 		this.encoder = spawn(FFMPEG, [...QUIETLY, ...FRAMES_IN, ...scaled, ...ENCODING, this.picture], {
@@ -76,7 +78,7 @@ export class VideoFootage implements Footage, AsyncDisposable {
 
 	async keep(_shot: number, exposures: Exposures): Promise<void> {
 		if (this.stopped()) throw this.words.refusal();
-		if (this.encoder.stdin.write(await blended(exposures))) return;
+		if (this.encoder.stdin.write(await this.blend(exposures))) return;
 		// A pipe whose reader has gone fails rather than drains: ffmpeg's end says why
 		await Promise.race([once(this.encoder.stdin, 'drain').catch(() => undefined), this.ended]);
 		if (this.stopped()) throw this.words.refusal();

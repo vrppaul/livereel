@@ -6,17 +6,19 @@ import { writeFile } from 'node:fs/promises';
 import { FilmError } from '../../domain/errors.ts';
 import { momentOf, secondsSaid, shotAt } from '../../domain/time.ts';
 import type { Exposures, Footage } from '../../studio/ports.ts';
-import { blended } from './exposures.ts';
+import type { Blend } from './exposures.ts';
 
 export class StillFootage implements Footage {
 	readonly path: string;
 	readonly moment: number;
 	readonly shot: number;
+	readonly blend: Blend;
 
-	constructor(path: string, moment: number) {
+	constructor(path: string, moment: number, blend: Blend) {
 		this.path = path;
 		this.moment = moment;
 		this.shot = shotAt(moment);
+		this.blend = blend;
 	}
 
 	expect(frames: number): void {
@@ -30,7 +32,7 @@ export class StillFootage implements Footage {
 	}
 
 	async keep(_shot: number, exposures: Exposures): Promise<void> {
-		await writeFile(this.path, await blended(exposures));
+		await writeFile(this.path, await this.blend(exposures));
 	}
 
 	complete(shot: number): boolean {

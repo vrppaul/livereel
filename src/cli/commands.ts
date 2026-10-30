@@ -2,7 +2,7 @@
  * The commands: shoot a film whole as a video, shoot one still of it, set a machine up to shoot.
  *
  * Each takes its own options by name and refuses any other, and a wrong value, before anything is started; each
- * says what it made, and how long the making took. A film is shot in one of its formats, named with `--format`
+ * says what it made, and how long the making took, and with `--profile` where that time went (`profile.ts`). A film is shot in one of its formats, named with `--format`
  * where it has several, and every file made of it is named after the film file and that format, so one format never
  * writes over another. One take gives every kind of video asked: the MP4 its frames go into, and those made from it.
  * The MP4 is kept only when it is asked for too; otherwise it has a name of its own, so it never takes the place of
@@ -16,6 +16,8 @@ import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { Film, FilmInFormat } from '../direction/film.ts';
 import { type Quality, type Shooting, type Shot, shoot } from '../studio/shoot.ts';
 import { Chromium, RENDERERS, type Renderer } from '../adapters/browser/chromium.ts';
+import { Profile } from '../adapters/profile.ts';
+import { blended } from '../adapters/video/exposures.ts';
 import { KINDS, KIND_NAMES, type Kind, type MadeKind, SHOT_INTO, isMade, madeFrom } from '../adapters/video/kinds.ts';
 import { SILENT, Soundtrack } from '../adapters/video/soundtrack.ts';
 import { StillFootage } from '../adapters/video/still.ts';
@@ -66,6 +68,7 @@ const QUALITY_ASKED = { type: 'string', default: FINEST } as const;
 const RENDERER_ASKED = { type: 'string', default: IN_SOFTWARE } as const;
 const QUALITY_USAGE = `[--quality ${QUALITY_NAMES.join(ONE_OF)}]`;
 const RENDERER_USAGE = `[--renderer ${RENDERERS.join(ONE_OF)}]`;
+const PROFILE_USAGE = '[--profile]';
 // What each option names, said where it is given a name it does not take
 const KIND_SAYS = '--as names a kind of video';
 const QUALITY_SAYS = '--quality names how finely a film is shot';
@@ -75,13 +78,15 @@ const SHOOT: Command = {
 	summary: 'Shoot a film whole, as a video of each kind asked: an MP4 where none is.',
 	usage:
 		`livereel shoot FILM_FILE --out DIRECTORY [--format NAME] ` +
-		`[--as ${KIND_NAMES.join(ONE_OF)}]... ${QUALITY_USAGE} [--sheet] ${RENDERER_USAGE}`,
+		`[--as ${KIND_NAMES.join(ONE_OF)}]... ${QUALITY_USAGE} [--sheet] ${RENDERER_USAGE} ${PROFILE_USAGE}`,
 	run: shootCommand
 };
 
 const STILL: Command = {
 	summary: 'Shoot one still of a film, without making the video.',
-	usage: `livereel still FILM_FILE --out DIRECTORY --at SECONDS [--format NAME] ${QUALITY_USAGE} ${RENDERER_USAGE}`,
+	usage:
+		`livereel still FILM_FILE --out DIRECTORY --at SECONDS [--format NAME] ` +
+		`${QUALITY_USAGE} ${RENDERER_USAGE} ${PROFILE_USAGE}`,
 	run: stillCommand
 };
 
@@ -117,7 +122,8 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 				as: KINDS_ASKED,
 				quality: QUALITY_ASKED,
 				sheet: FLAG,
-				renderer: RENDERER_ASKED
+				renderer: RENDERER_ASKED,
+				profile: FLAG
 			},
 			allowPositionals: true
 		})
@@ -125,7 +131,8 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const file = theFilmFile(positionals, SHOOT);
 	const out = theOut(values.out, SHOOT);
 	const kinds = kindsAsked(values.as);
-	const shotWith = shotWithAsked(values, SHOOT);
+	const profile = new Profile(() => performance.now());
+	const shotWith = shotWithAsked(values, SHOOT, profile);
 	await ffmpegNeeded();
 	await encodersNeeded(kinds);
 	const film = formatAsked(await loadedFilm(file), values.format, SHOOT);
@@ -134,7 +141,8 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const kept = kinds.includes(SHOT_INTO);
 	const mp4 = kept ? `${stem}${KINDS.mp4.suffix}` : `${stem}${SOURCE}${KINDS.mp4.suffix}`;
 	try {
-		const shot = await shotInto(mp4, file, film, shotWith);
+		const shot = await shotInto(mp4, file, film, shotWith, profile);
+		if (values.profile) profile.said().forEach(say);
 		if (kept) say(mp4);
 		for (const kind of kinds.filter(isMade)) await madeAs(kind, mp4, stem);
 		if (values.sheet) await sheetMade(mp4, stem, shot);
@@ -147,23 +155,32 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	const { values, positionals } = asUsage(STILL, () =>
 		parseArgs({
 			args: [...given],
-			options: { out: VALUE, format: VALUE, quality: QUALITY_ASKED, at: VALUE, renderer: RENDERER_ASKED },
+			options: {
+				out: VALUE,
+				format: VALUE,
+				quality: QUALITY_ASKED,
+				at: VALUE,
+				renderer: RENDERER_ASKED,
+				profile: FLAG
+			},
 			allowPositionals: true
 		})
 	);
 	const file = theFilmFile(positionals, STILL);
 	const out = theOut(values.out, STILL);
 	const moment = momentAsked(values.at);
-	const shotWith = shotWithAsked(values, STILL);
+	const profile = new Profile(() => performance.now());
+	const shotWith = shotWithAsked(values, STILL, profile);
 	await ffmpegNeeded();
 	const film = formatAsked(await loadedFilm(file), values.format, STILL);
 	await mkdir(out, { recursive: true });
 	const still = `${stemOf(out, file, film)}${APART}${String(moment)}${STILL_SUFFIX}`;
 	await rm(still, { force: true });
 	const started = performance.now();
-	const footage = new StillFootage(still, moment);
-	await shoot(film, { ...shotWith, footage, track: SILENT });
+	const footage = profile.footage(new StillFootage(still, moment, profile.blend(blended)));
+	await profile.shooting(() => shoot(film, { ...shotWith, footage, track: SILENT }));
 	say(`${still}: shot in ${secondsBetween(started, performance.now())} s`);
+	if (values.profile) profile.said().forEach(say);
 }
 
 async function setupCommand(given: readonly string[]): Promise<void> {
@@ -176,11 +193,17 @@ async function setupCommand(given: readonly string[]): Promise<void> {
  * The film shot whole into its MP4, its sounds laid under it, and the take said: the film and its format, its frames,
  * and the time it took.
  */
-async function shotInto(mp4: string, file: string, film: FilmInFormat, shotWith: ShotWith): Promise<Shot> {
+async function shotInto(
+	mp4: string,
+	file: string,
+	film: FilmInFormat,
+	shotWith: ShotWith,
+	profile: Profile
+): Promise<Shot> {
 	const started = performance.now();
-	await using footage = new VideoFootage(mp4, film.format.frame);
+	await using footage = new VideoFootage(mp4, film.format.frame, profile.blend(blended));
 	const track = new Soundtrack(file, film.sound);
-	const shot = await shoot(film, { ...shotWith, footage, track });
+	const shot = await profile.shooting(() => shoot(film, { ...shotWith, footage: profile.footage(footage), track }));
 	const filmed = performance.now();
 	await footage.finish(track, shot.seconds);
 	say(
@@ -260,11 +283,11 @@ function nameOf(file: string): string {
 	return basename(file, extname(file));
 }
 
-/** How finely a film is shot and the browser its frames are drawn in, as the command line names them. */
-function shotWithAsked(asked: { quality: string; renderer: string }, command: Command): ShotWith {
+/** How finely a film is shot and the browser its frames are drawn in, as the command line names them, timed. */
+function shotWithAsked(asked: { quality: string; renderer: string }, command: Command, profile: Profile): ShotWith {
 	const quality = nameAsked(asked.quality, QUALITY_NAMES, QUALITY_SAYS, command);
 	const renderer = nameAsked(asked.renderer, RENDERERS, RENDERER_SAYS, command);
-	return { quality: QUALITIES[quality], browser: new Chromium(renderer, warn) };
+	return { quality: QUALITIES[quality], browser: profile.browser(new Chromium(renderer, warn)) };
 }
 
 /** The one of an option's names the command line gave it; any other is refused, naming them all. */

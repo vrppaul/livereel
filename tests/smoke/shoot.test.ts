@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { Chromium, type Renderer } from '../../src/adapters/browser/chromium.ts';
+import { blended } from '../../src/adapters/video/exposures.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
@@ -101,7 +102,7 @@ test('every frame of a film is kept, in order, drawn in software or on the graph
 
 test('a still is the one frame written, and nothing after it is shot', async () => {
 	const directory = await scratch();
-	const footage = new StillFootage(join(directory, 'still.jpg'), 0.1);
+	const footage = new StillFootage(join(directory, 'still.jpg'), 0.1, blended);
 	const shot = await shoot(filmOf([play({ seconds: 0.2 })]), shootingInto(footage, 'software'));
 	expect([await readdir(directory), shot.frames]).toEqual([['still.jpg'], 4]);
 });

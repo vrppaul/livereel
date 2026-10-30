@@ -21,6 +21,7 @@
 - `defineFilm` takes `blurred: [selector, …]`: the page blurs those blocks wherever it shows them, a page the film goes on to as well, so a film of a real app shows no one's address, key or name. A selector Chrome cannot read is refused before anything is shot, where a style sheet would have dropped it without a word.
 - `defineFilm` takes `colourScheme: 'dark'`, the scheme the page is asked for; `light` where a film names none, as before.
 - A fast camera is blurred softer where a film says nothing of its blur: the shutter is open for half its way from the frame before, as a film camera's is, and the fastest frame is blended from up to 16 shots. It had been open the whole way in up to 8 shots, whose copies showed in a fast smear.
+- `shoot --profile` and `still --profile` say where the shoot's time went: each part of the browser, the stage, the filmed page and the footage the frames waited on, with its calls, the time each took, its seconds and its share of the shoot; what none of them took, as the rest; and the blends of a frame's exposures, by how many each blended.
 
 ## 0.4.0
 

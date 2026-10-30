@@ -374,3 +374,13 @@ test('a still at a moment the camera crosses fast is shot, its exposures blended
 	const ran = livereel('still', FAST, '--out', out, '--at', '0.04');
 	expect([ran.code, readdirSync(out)]).toEqual([0, ['fast-small-0.04s.jpg']]);
 });
+
+test('a shoot asked for its profile says where its time went: each part the take waited on, the rest, the blends', () => {
+	const ran = livereel('still', FAST, '--out', scratch(), '--at', '0.04', '--profile');
+	expect([ran.code, ran.said]).toEqual([
+		0,
+		expect.stringMatching(
+			/\nwhere the [\d.]+ s went:\n(  .+\n)*  stage\.capture .+\n(  .+\n)*  the rest .+\nthe footage's blends, as they ran:\n  blend of \d+ /
+		)
+	]);
+});

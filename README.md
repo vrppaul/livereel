@@ -99,6 +99,7 @@ checked frame by frame on contact sheets and stills. Install it with
 | `--sheet` | `shoot` | a frame a second side by side: `film-square-sheet.png` |
 | `--quality draft\|finest` | `shoot`, `still` | `finest`, the default, shoots at twice the frame's width and height and blurs a fast camera as the film says; `draft` shoots at the frame's own size, unblurred: quicker and softer |
 | `--renderer software\|gpu` | `shoot`, `still` | where the frames are drawn: in software, the default, or on the graphics card |
+| `--profile` | `shoot`, `still` | where the shoot's time went: each part of the browser and the footage the frames waited on, its calls, the time each took and its share, the rest, and the blends of exposures |
 
 Every file is named after the film's file and the format it is shot in.
 `livereel --help` gives each command's usage. A command that refuses says
