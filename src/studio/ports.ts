@@ -53,7 +53,8 @@ export interface PicturedStage extends DrawingStage {
 
 /**
  * A frame's images, each a JPEG: its own, and, where the camera crossed it fast, those of earlier poses along the
- * camera's way there, blended with it into the one image the frame is (`src/domain/shutter.ts`).
+ * camera's way there, blended with it into the one image the frame is (`src/domain/shutter.ts`). Where the stage drew
+ * every exposure at once, laid over one another, its own is the whole frame already, and none is earlier.
  */
 export interface Exposures {
 	readonly earlier: readonly Uint8Array[];

@@ -8,7 +8,7 @@ import { blended } from '../../src/adapters/video/exposures.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
-import type { Footage } from '../../src/studio/ports.ts';
+import type { Exposures, Footage } from '../../src/studio/ports.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
 import {
 	type ActContext,
@@ -31,9 +31,10 @@ const SMALL = { frame: { width: 320, height: 320 }, screen: { width: 480, height
 const FIELD = '[data-testid=field]';
 const TYPED = 'hello';
 
-/** Footage that keeps every frame and counts them. */
+/** Footage that keeps every frame and counts them, and how many images each was handed as. */
 class EveryFrameCounted implements Footage {
 	readonly kept: number[] = [];
+	readonly images: number[] = [];
 
 	expect(): void {}
 
@@ -41,8 +42,9 @@ class EveryFrameCounted implements Footage {
 		return true;
 	}
 
-	keep(shot: number): Promise<void> {
+	keep(shot: number, exposures: Exposures): Promise<void> {
 		this.kept.push(shot);
+		this.images.push(exposures.earlier.length + 1);
 		return Promise.resolve();
 	}
 
@@ -85,6 +87,11 @@ function shootingInto(footage: Footage, renderer: Renderer): Shooting {
 	};
 }
 
+/** A film shot as `shootingInto` shoots it, a fast camera blurred as the film says. */
+function blurredShootingInto(footage: Footage, renderer: Renderer): Shooting {
+	return { ...shootingInto(footage, renderer), quality: { sharpness: 1, blurred: true } };
+}
+
 async function scratch(): Promise<string> {
 	return mkdtemp(join(tmpdir(), 'livereel-smoke-'));
 }
@@ -101,6 +108,15 @@ test('every frame of a film is kept, in order, drawn in software or on the graph
 		6,
 		[0, 1, 2, 3, 4, 5]
 	]);
+});
+
+test("a static page's frame the camera crosses fast is one image on the graphics card, its exposures laid at once, and each exposure an image in software", async () => {
+	const onTheCard = new EveryFrameCounted();
+	const inSoftware = new EveryFrameCounted();
+	const steps = [play({ seconds: 0.2, moves: [camera.onto('h1')] })];
+	await shoot(filmOf(steps), blurredShootingInto(onTheCard, 'gpu'));
+	await shoot(filmOf(steps), blurredShootingInto(inSoftware, 'software'));
+	expect([Math.max(...onTheCard.images), Math.max(...inSoftware.images) > 1]).toEqual([1, true]);
 });
 
 test('a still is the one frame written, and nothing after it is shot', async () => {

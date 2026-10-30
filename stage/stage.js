@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * The stage's script: it draws the scene it is handed, a frame at a time, and decides nothing.
+ * The stage's script: it draws the scenes it is handed, a frame at a time, each an exposure of it, and decides nothing.
  *
  * Every number and every word comes from the film, worked out there; nothing here keeps time, so a frame is the same
  * whenever it is shot. A prop's drawer sets the prop's numbers as custom properties of its element, which
@@ -538,16 +538,18 @@ class LookDrawer {
  */
 
 const LOOK = new LookDrawer(document.documentElement);
-const FIRST_EXPOSURE = found(document.querySelector('[data-exposure]'), 'exposure');
-// The first exposure as the markup lays it out, before anything is drawn: every further exposure is a copy of it
-const UNDRAWN_EXPOSURE = FIRST_EXPOSURE.cloneNode(true);
-const FIRST = exposureOf(FIRST_EXPOSURE);
+const FIRST_ROOT = found(document.querySelector('[data-exposure]'), 'exposure');
+// The first exposure's root as the markup lays it out, before anything is drawn: every further exposure copies it
+const UNDRAWN_ROOT = FIRST_ROOT.cloneNode(true);
+const FIRST = exposureOf(FIRST_ROOT);
 /** The exposures the stage draws a frame as, the first of them its markup's own. @type {Exposure[]} */
 const EXPOSURES = [FIRST];
-// The custom property an exposure's share is set as: how much of it shows over the exposures laid before it
+// The custom property an exposure's share is set as: how much of it shows over the exposures laid before it. Laid over
+// so many before it, it shows the whole of its own light in as many parts as there are with it, so each weighs the
+// same
 const SHARE = '--share';
-// An exposure laid over so many before it shows one part in as many as there are with it, so each weighs the same
-const ONE_PART = 1;
+const WHOLE = 1;
+const ITSELF = 1;
 
 /**
  * The stage laid out as a room, drawing as many exposures of a frame at once as the room asks, a copy of the first
@@ -563,7 +565,7 @@ function setup(room) {
 		'--eye-distance': room.eyeDistance,
 		'--frame-scale': room.frameScale
 	});
-	while (EXPOSURES.length < room.exposures) EXPOSURES.push(exposureOf(addedCopy(UNDRAWN_EXPOSURE)));
+	while (EXPOSURES.length < room.exposures) EXPOSURES.push(exposureOf(addedCopy(UNDRAWN_ROOT)));
 }
 
 /** An exposure of the frame by its root. @param {Staged} root @returns {Exposure} */
@@ -641,16 +643,23 @@ async function shownIn(exposure, picture) {
 
 /**
  * One frame, drawn whole from each of its exposures' scenes, in the look of its first: each exposure laid over those
- * before it at its share, so each weighs the same; an exposure the frame has none of hidden.
+ * before it at its share, so each weighs the same; an exposure the frame has none of hidden. A frame of no exposure,
+ * or of more than the stage has, is refused, rather than drawn without some of them.
  * @param {readonly DrawnScene[]} scenes
  */
 function apply(scenes) {
+	const [first] = scenes;
+	if (first === undefined || scenes.length > EXPOSURES.length) {
+		throw new Error(
+			`the stage draws a frame as its own exposure and at most ${EXPOSURES.length}: not ${scenes.length}`
+		);
+	}
+	LOOK.draw(first);
 	for (const [place, exposure] of EXPOSURES.entries()) {
 		const scene = scenes[place];
 		shown(exposure.root, scene !== undefined);
 		if (scene === undefined) continue;
-		if (exposure === FIRST) LOOK.draw(scene);
-		numbered(exposure.root, { [SHARE]: ONE_PART / (place + ONE_PART) });
+		numbered(exposure.root, { [SHARE]: WHOLE / (place + ITSELF) });
 		for (const drawer of Object.values(exposure.drawers)) drawer.draw(scene);
 	}
 }

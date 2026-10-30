@@ -1,8 +1,9 @@
 import { expect, test } from 'vitest';
 import { exposuresAtOnceOf, flagsOf } from '../../src/adapters/browser/chromium.ts';
 
-// A film camera's shutter, open for half the way, of sixteen exposures at most
+// A film camera's shutter, open for half the way, of sixteen exposures at most, and of sixty-four
 const HALF_OF_SIXTEEN = { shutter: 0.5, exposuresAtMost: 16 };
+const HALF_OF_SIXTY_FOUR = { shutter: 0.5, exposuresAtMost: 64 };
 
 test('the gpu renderer on a system livereel knows no graphics interface of is refused, naming the systems it knows', () => {
 	expect(() => flagsOf('gpu', 'freebsd')).toThrow(
@@ -10,11 +11,12 @@ test('the gpu renderer on a system livereel knows no graphics interface of is re
 	);
 });
 
-test("the stage draws a frame's exposures at once only on the graphics card and showing a static page's picture, as many as the blur makes at most", () => {
+test("the stage draws a frame's exposures at once only on the graphics card and showing a static page's picture, as many as the blur makes at most, up to sixteen", () => {
 	expect([
 		exposuresAtOnceOf('gpu', 'static', HALF_OF_SIXTEEN),
+		exposuresAtOnceOf('gpu', 'static', HALF_OF_SIXTY_FOUR),
 		exposuresAtOnceOf('gpu', 'static', null),
 		exposuresAtOnceOf('gpu', 'dynamic', HALF_OF_SIXTEEN),
 		exposuresAtOnceOf('software', 'static', HALF_OF_SIXTEEN)
-	]).toEqual([16, 1, 1, 1]);
+	]).toEqual([16, 16, 1, 1, 1]);
 });

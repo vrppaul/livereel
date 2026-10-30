@@ -217,10 +217,15 @@ function timedStage(stage: Stage, timings: Timings): Stage {
 	}
 }
 
-/** What a stage of either kind does, timed. */
+/**
+ * What a stage of either kind does, timed; a capture of exposures laid over one another apart from a capture of one,
+ * by how many it lays, as a blend is timed by how many it blends.
+ */
 class TimedDrawingStage<Timed extends Stage> {
 	readonly stage: Timed;
 	readonly timings: Timings;
+	// How many exposures the stage last drew at once, which its capture is of
+	private drawnAtOnce = ITS_OWN;
 
 	constructor(stage: Timed, timings: Timings) {
 		this.stage = stage;
@@ -232,6 +237,7 @@ class TimedDrawingStage<Timed extends Stage> {
 	}
 
 	draw(exposures: readonly DrawnScene[]): Promise<void> {
+		this.drawnAtOnce = exposures.length;
 		return this.timings.timed('stage.draw', () => this.stage.draw(exposures));
 	}
 
@@ -240,7 +246,8 @@ class TimedDrawingStage<Timed extends Stage> {
 	}
 
 	capture(): Promise<Uint8Array> {
-		return this.timings.timed('stage.capture', () => this.stage.capture());
+		const part = this.drawnAtOnce === ITS_OWN ? 'stage.capture' : `stage.capture of ${this.drawnAtOnce}`;
+		return this.timings.timed(part, () => this.stage.capture());
 	}
 }
 

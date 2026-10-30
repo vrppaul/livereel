@@ -48,7 +48,7 @@ export function alsoExposedAt(before: Camera, now: Camera, format: Format, blur:
 }
 
 /** How many exposures a frame is made of at most: the blur's most, or its own alone where the film is not blurred. */
-export function exposuresAtMostOf(blur: MotionBlur | null): number {
+export function mostExposuresOf(blur: MotionBlur | null): number {
 	return blur === null ? ITS_OWN : blur.exposuresAtMost;
 }
 

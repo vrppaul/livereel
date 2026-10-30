@@ -37,7 +37,7 @@ import { type Browser as Playwright, type Frame, type Page, chromium } from 'pla
 import { ZOOM_AT_MOST } from '../../domain/camera.ts';
 import { FilmError, SetupError } from '../../domain/errors.ts';
 import { type Size, frameScaleOf } from '../../domain/geometry.ts';
-import { type MotionBlur, exposuresAtMostOf } from '../../domain/shutter.ts';
+import { type MotionBlur, mostExposuresOf } from '../../domain/shutter.ts';
 import type { PageKind, StagePlace } from '../../direction/film.ts';
 import type { ActContext, PageMotionSwitch } from '../../direction/page.ts';
 import type { FontNamed } from '../../direction/theme.ts';
@@ -130,9 +130,15 @@ const ON_THE_CARD = 'enabled';
 const UNTOLD = '--renderer gpu: Chrome did not tell whether it reached a graphics card';
 // The flag telling Chrome how much GPU memory it has, in megabytes, and how much it needs told for each byte of the
 // stage's copies of a frame to draw them whole: 16 copies of a 3840 × 2160 frame, as the README film shoots, drew the
-// window pushing the card off whole at 4 times their bytes, and left the page's tiles grey at 3 (measured 2026-10-30)
+// window pushing the card off whole at 4 times their bytes, as at 5 and 6, and left the page's tiles grey at 3, with
+// no error (measured 2026-10-30); a frame larger, or a card with less memory, is not tried
 const GPU_MEMORY = '--force-gpu-mem-available-mb=';
 const GPU_MEMORY_FOR_A_COPY_BYTE = 4;
+// How many exposures of a frame the stage lays over one another at most; a frame of more is captured at each. With a
+// window lifted and the camera angled, a layered capture against the exposures captured one by one and blended: 16 in
+// 510 ms, SSIM 0.9947; 32 in 1297 ms, 0.9885, edges banded; 64 in 8125 ms, 0.976, no quicker than its 64 captures
+// (the review of ac4d1ca, 2026-10-30)
+const LAID_AT_ONCE_AT_MOST = 16;
 const BYTES_A_PIXEL = 4;
 const BYTES_A_MEGABYTE = 1_048_576;
 
@@ -177,13 +183,13 @@ export function exposuresAtOnceOf(renderer: Renderer, page: PageKind, blur: Moti
 }
 
 /**
- * How many exposures of a frame the stage draws at once on the graphics card: as many as a frame has at most where it
- * shows a picture of the page.
+ * How many exposures of a frame the stage draws at once on the graphics card: as many as a frame has at most, up to
+ * livereel's bound, where it shows a picture of the page.
  */
 function exposuresOnTheCardOf(page: PageKind, blur: MotionBlur | null): number {
 	switch (page) {
 		case 'static':
-			return exposuresAtMostOf(blur);
+			return Math.min(mostExposuresOf(blur), LAID_AT_ONCE_AT_MOST);
 		case 'dynamic':
 			return ONE_AT_A_TIME;
 	}
