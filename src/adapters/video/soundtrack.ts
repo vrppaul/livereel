@@ -182,6 +182,8 @@ export class Soundtrack implements Track {
 				return [resolve(this.from, sound.path)];
 			case 'livereel':
 				return this.livereelFiles[sound.name];
+			case 'keyboard':
+				return strikesOf(sound.keyboard).map(livereelsOwn);
 		}
 	}
 }

@@ -43,6 +43,17 @@ test("livereel's sounds a film turns off are not laid, and the rest are", () => 
 	]);
 });
 
+test('a key struck on the keyboard a typing names is laid from its strikes in turn, though the film turned its keys off', () => {
+	const track = new Soundtrack(FILM, { livereels: { click: OWN, key: OFF, ending: OWN }, music: null });
+	for (const frame of KEY_FRAMES) track.hear(momentOf(frame), { kind: 'keyboard', keyboard: 'butterfly' });
+	expect(track.heardFiles.map((heard) => [relative(LIVEREEL_SOUNDS, heard.file), heard.moments])).toEqual([
+		['keys/butterfly/1.ogg', [momentOf(0), momentOf(4)]],
+		['keys/butterfly/2.ogg', [momentOf(1)]],
+		['keys/butterfly/3.ogg', [momentOf(2)]],
+		['keys/butterfly/4.ogg', [momentOf(3)]]
+	]);
+});
+
 test("livereel's keys are laid from the strikes of the film's keyboard in turn, round again after the last", () => {
 	const track = new Soundtrack(FILM, { livereels: ON_THE_LAPTOP, music: null });
 	for (const frame of KEY_FRAMES) track.hear(momentOf(frame), livereelSound('key'));

@@ -145,10 +145,10 @@ and the moves of each part of the scene:
 - `code.show(text, { at, from })`, `code.to(place)`, `code.light(line, { through })`, `code.hide({ toward })`
 - `caption.show(text)`, `caption.hide()`
 - `screen.rise()`, `screen.lower()`
-- `terminal.open(title)`, `terminal.type(strokes)`, `terminal.submit()`,
+- `terminal.open(title)`, `terminal.type(strokes, { keyboard })`, `terminal.submit()`,
   `terminal.works(lines, thinking, { thinkingShare })`, `terminal.leave()`
 - `ending.show({ name, line, command }, { from })`, `ending.hide({ toward })`, so a film may open on the card too
-- `page.scrollBy(selector, { pixels })`, `page.scrollTo(selector, { top })`, `page.type(strokes)`
+- `page.scrollBy(selector, { pixels })`, `page.scrollTo(selector, { top })`, `page.type(strokes, { keyboard })`
 - `sound.play(file)`
 
 A target is a selector, the first `every` blocks it matches, or a box of the
@@ -503,8 +503,11 @@ recorded on real keyboards, each key one of four strikes in turn.
   loud as the file, cut to the film's length and faded out at its end.
 
 `cursor.click(action, { sound })` and `cursor.press({ sound })` give one
-click a file of its own, and `sound.play(file)` plays a file of the film's
-at a moment of a step. The WebM carries the sound; a GIF holds none.
+click a file of its own, `page.type(strokes, { keyboard })` and
+`terminal.type(strokes, { keyboard })` type on another of livereel's
+keyboards, heard whatever the film says of its keys, and `sound.play(file)`
+plays a file of the film's at a moment of a step. The WebM carries the
+sound; a GIF holds none.
 
 ### Motion blur
 

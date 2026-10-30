@@ -17,7 +17,7 @@ import { between, linear } from '../domain/time.ts';
 import { A_STROKES, type Keystroke, typedAlong } from '../domain/typing.ts';
 import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import type { FilmedPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
-import { keysHeard } from '../direction/sound.ts';
+import { TYPING_FORM, type TypingScript, keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
 import type { Scene } from '../scene.ts';
 
@@ -51,15 +51,18 @@ export function scrollTo(target: string, script: ScrollToScript): Move {
 	return { part: 'page', timing: timingOf(script), begin: (beginning) => scrolling(beginning, target, aim) };
 }
 
-/** A person typing into whatever holds the page's keyboard: real keys, each heard, when the strokes have them. */
-export function type(strokes: readonly Keystroke[], script: TimingScript = {}): Move & Typed {
+/**
+ * A person typing into whatever holds the page's keyboard: real keys, each heard, on the film's keyboard or the one
+ * named, when the strokes have them.
+ */
+export function type(strokes: readonly Keystroke[], script: TypingScript = {}): Move & Typed {
 	assertKind(strokes, A_STROKES, "page.type's strokes");
-	assertWritten(script, TIMING_FORM, 'page.type');
+	assertWritten(script, TYPING_FORM, 'page.type');
 	return {
 		part: 'page',
 		timing: timingOf({ ease: linear, ...script }),
 		strokes,
-		sounds: keysHeard(strokes),
+		sounds: keysHeard(strokes, script.keyboard),
 		begin: (beginning) => keysInto(beginning.page, strokes)
 	};
 }

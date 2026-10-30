@@ -182,6 +182,11 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => page.type([STROKE], { within: null as never })).toThrow(
 		new FilmError(`page.type's within is null: it is ${SHARE}`)
 	);
+	expect(() => page.type([STROKE], { keyboard: 'typewriter' as never })).toThrow(
+		new FilmError(
+			'page.type\'s keyboard is "typewriter": it is one of livereel\'s keyboards: membrane, mechanical, mechanical-bright, butterfly, laptop, clicky'
+		)
+	);
 	expect(() => sound.play('')).toThrow(new FilmError(`sound.play's file is "": it is ${FILE}`));
 	expect(() => sound.play('./chime.wav', { within: { end: 1 } as never })).toThrow(
 		new FilmError("sound.play's within names end: it names start, or fewer")

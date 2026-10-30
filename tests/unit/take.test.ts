@@ -40,6 +40,7 @@ const PAGE = new Map([
 ]);
 const CLICK: Sound = { kind: 'livereel', name: 'click' };
 const KEY: Sound = { kind: 'livereel', name: 'key' };
+const ON_THE_BUTTERFLY: Sound = { kind: 'keyboard', keyboard: 'butterfly' };
 const ENDING: Sound = { kind: 'livereel', name: 'ending' };
 const CARD: EndingCard = { name: 'A name', line: 'A line', command: 'a command' };
 // A frame as large as the stage's look was made on, whose whole screen a camera shows at a zoom of 1
@@ -350,6 +351,20 @@ test('each key typed into the page is heard on the frame it is pressed', async (
 			{ moment: 5 / 30, sound: KEY }
 		],
 		['a', 'b']
+	]);
+});
+
+test('a typing that names a keyboard has each key heard on it, into the terminal or the page', () => {
+	const typed = [type(STROKES, { keyboard: 'butterfly' }), typeIntoThePage(STROKES, { keyboard: 'butterfly' })];
+	expect(typed.map((move) => move.sounds)).toEqual([
+		[
+			{ at: 0.5, sound: ON_THE_BUTTERFLY },
+			{ at: 1, sound: ON_THE_BUTTERFLY }
+		],
+		[
+			{ at: 0.5, sound: ON_THE_BUTTERFLY },
+			{ at: 1, sound: ON_THE_BUTTERFLY }
+		]
 	]);
 });
 

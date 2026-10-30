@@ -2,6 +2,9 @@
  * The sounds a film makes: livereel's, which a film may give files in place of or go without, its keys on one of
  * livereel's keyboards; files of the film's; and music under it all.
  *
+ * A typing may name a keyboard of its own, as a click may name a file: its keys are heard on it whatever the film says
+ * of its keys, so one film can be heard on several keyboards.
+ *
  * A move notes the sounds it makes as cues, each at a point of its way; the take hears a cue on the frame the move is
  * set at or past that point, eased, so a key is heard on the frame its letter shows. A film keeps its own time, so a
  * sound heard is laid at its frame's moment however long the browser took. A sound made in a cut is heard on the
@@ -12,6 +15,7 @@ import { FilmError } from '../domain/errors.ts';
 import { type Keystroke, typingSeconds } from '../domain/typing.ts';
 import {
 	A_PATH,
+	type Form,
 	type Handed,
 	OneOf,
 	assertKind,
@@ -19,6 +23,7 @@ import {
 	isObjectOfValues,
 	refuseNamesBeyond
 } from '../domain/handed.ts';
+import { TIMING_FORM, type TimingScript } from './move.ts';
 import { type TurnedOff, isTurnedOff, turnedOffBy } from './turned-off.ts';
 
 /** livereel's sounds: the cursor pressed in, a key typed, the ending coming up. */
@@ -29,9 +34,18 @@ const KEYBOARD_SOUNDS = ['membrane', 'mechanical', 'mechanical-bright', 'butterf
 export type KeyboardSound = (typeof KEYBOARD_SOUNDS)[number];
 const A_KEYBOARD = new OneOf(KEYBOARD_SOUNDS, `one of livereel's keyboards: ${KEYBOARD_SOUNDS.join(', ')}`);
 
-/** A sound: one of livereel's, or a file of the film's. */
+/** A sound: one of livereel's, a key struck on a keyboard a typing names, or a file of the film's. */
 export type Sound =
-	{ readonly kind: 'livereel'; readonly name: LivereelSound } | { readonly kind: 'file'; readonly path: string };
+	| { readonly kind: 'livereel'; readonly name: LivereelSound }
+	| { readonly kind: 'keyboard'; readonly keyboard: KeyboardSound }
+	| { readonly kind: 'file'; readonly path: string };
+
+/** A typing's timing, and the keyboard its keys are heard on where it is not the film's. */
+export interface TypingScript extends TimingScript {
+	readonly keyboard?: KeyboardSound;
+}
+
+export const TYPING_FORM: Form<TypingScript> = { keyboard: A_KEYBOARD, ...TIMING_FORM };
 
 /** A sound a move makes once it is `at` that far along its way, from 0 to 1. */
 export interface Cue {
@@ -190,16 +204,21 @@ export function fileSound(path: string): Sound {
 	return { kind: 'file', path };
 }
 
+function keyboardSound(keyboard: KeyboardSound): Sound {
+	return { kind: 'keyboard', keyboard };
+}
+
 /** A sound heard as its move begins. */
 export function heardAsItBegins(sound: Sound): Cue {
 	return { at: AS_IT_BEGINS, sound };
 }
 
-/** A key heard for every stroke, at its share of the typing: where a letter comes, or one is rubbed out. */
-export function keysHeard(strokes: readonly Keystroke[]): readonly Cue[] {
+/**
+ * A key heard for every stroke, at its share of the typing: where a letter comes, or one is rubbed out; on the
+ * keyboard the typing names, the film's where it names none.
+ */
+export function keysHeard(strokes: readonly Keystroke[], keyboard: KeyboardSound | undefined): readonly Cue[] {
 	const seconds = typingSeconds(strokes);
-	return strokes.map((stroke) => ({
-		at: seconds === 0 ? AS_IT_BEGINS : stroke.at / seconds,
-		sound: livereelSound('key')
-	}));
+	const key = keyboard === undefined ? livereelSound('key') : keyboardSound(keyboard);
+	return strokes.map((stroke) => ({ at: seconds === 0 ? AS_IT_BEGINS : stroke.at / seconds, sound: key }));
 }

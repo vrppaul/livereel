@@ -175,7 +175,9 @@ How to use them:
   (Cherry KC 1000), `mechanical` a mechanical one (WhiteFox), and
   `mechanical-bright` a brighter, sharper one; `butterfly` is a MacBook
   Pro's of 2018, `laptop` another laptop's, `clicky` a loud click with its
-  release.
+  release. One typing heard on another keyboard names it,
+  `page.type(strokes, { keyboard: 'butterfly' })`: two people typing, or a
+  film that shows the keyboards off.
 - Music only where the user asks for it, and quiet under the clicks
   (`volume` about 0.3).
 - `sound.play(file)` in a `play` or a `cut` is a sound of the film's own
@@ -220,13 +222,13 @@ its end at once.
 | `caption.show(text)`, `caption.hide()` | words coming up one after another at the frame's foot, or its top in a format with `captionAt: 'top'`, in place of any shown; going |
 | `look.to(theme, { within })` | the film's look moving to any of a theme's values: through the values between in a `play`, at once in a `cut`; two at once in a step where they name no value alike |
 | `terminal.open(title)` | an agent's terminal coming up over the frame; in a `cut`, there at once |
-| `terminal.type(strokes)`, `terminal.submit()` | keys typed into it; Enter |
+| `terminal.type(strokes, { keyboard })`, `terminal.submit()` | keys typed into it, heard on the film's keyboard or the one named; Enter |
 | `terminal.works(lines, thinking, { thinkingShare })` | the agent thinking, its spinner beside the words `thinking`, then its lines written one after another; a line is `{ kind, text }`, its kind `work` (a tool and what it is used on), `said` or `done` |
 | `terminal.leave()` | the terminal giving way |
 | `ending.show(card, { from })`, `ending.hide({ toward })` | the card: `{ name, line, command }`, last, or first and taken away as the page comes; with its ground it slides in whole `from` a side or out `toward` one, so a push carries it off or brings it on |
 | `page.scrollBy(selector, { pixels })` | a block's own scroll moved so many pixels |
 | `page.scrollTo(selector, { top })` | the page scrolled until a block stands `top` pixels below the top of what scrolls it |
-| `page.type(strokes)` | real keys typed into whatever holds the page's keyboard |
+| `page.type(strokes, { keyboard })` | real keys typed into whatever holds the page's keyboard, heard on the film's keyboard or the one named |
 | `sound.play(file)` | a file of the film's heard as its share begins; it moves nothing, so it shares a step with anything |
 
 `cursor.click` and `typing` give several steps: spread them among the

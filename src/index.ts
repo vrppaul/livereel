@@ -27,7 +27,14 @@ export type { Film, Script, Serving } from './direction/film.ts';
 export type { MotionBlurScript } from './direction/blur.ts';
 export type { ActContext } from './direction/page.ts';
 export type { Bounds, Move, Target, TimingScript } from './direction/move.ts';
-export type { KeyboardSound, LivereelSound, LivereelSoundsScript, Music, SoundsInPlace } from './direction/sound.ts';
+export type {
+	KeyboardSound,
+	LivereelSound,
+	LivereelSoundsScript,
+	Music,
+	SoundsInPlace,
+	TypingScript
+} from './direction/sound.ts';
 export type { TurnedOff } from './direction/turned-off.ts';
 export type { Theme } from './props/look.ts';
 export { keystrokes } from './domain/typing.ts';

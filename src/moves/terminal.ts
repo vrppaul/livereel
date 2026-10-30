@@ -13,7 +13,7 @@ import {
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
-import { keysHeard } from '../direction/sound.ts';
+import { TYPING_FORM, type TypingScript, keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
 import { A_LINES, type Terminal, type TerminalLine, openTerminal } from '../props/terminal.ts';
 
@@ -42,17 +42,17 @@ export function open(title: string, script: TimingScript = {}): Move {
 }
 
 /**
- * A person typing into the terminal, key by key, each heard, at the times the strokes have them unless the film names
- * a curve.
+ * A person typing into the terminal, key by key, each heard on the film's keyboard or the one named, at the times the
+ * strokes have them unless the film names a curve.
  */
-export function type(strokes: readonly Keystroke[], script: TimingScript = {}): Move & Typed {
+export function type(strokes: readonly Keystroke[], script: TypingScript = {}): Move & Typed {
 	assertKind(strokes, A_STROKES, "terminal.type's strokes");
-	assertWritten(script, TIMING_FORM, 'terminal.type');
+	assertWritten(script, TYPING_FORM, 'terminal.type');
 	return {
 		part: 'terminal',
 		timing: timingOf({ ease: linear, ...script }),
 		strokes,
-		sounds: keysHeard(strokes),
+		sounds: keysHeard(strokes, script.keyboard),
 		begin: (beginning) => typingInto(beginning, strokes)
 	};
 }
