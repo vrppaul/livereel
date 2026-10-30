@@ -338,7 +338,7 @@ with a timeout that long; a still takes seconds.
   two shots of it differ. Where the page's own animation must show (a
   spinner of its own), release it in an `act` and still it after: it plays
   sped up, which reads as time-lapse.
-- Once the page stands still — two captures alike after the film last
+- Once the page stands still — two pictures of it alike after the film last
   changed it — a frame drawn as the one before is that frame again. So an
   `act` waits for what it brings (`locator.waitFor()` on the answer), or the
   answer may not show until the next change. A page that changes of itself —

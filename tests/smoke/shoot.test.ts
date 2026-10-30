@@ -55,10 +55,13 @@ function filmOf(steps: readonly Step[]) {
 	return filmWritten(steps, {});
 }
 
-/** A film of these steps with what else it is written with: how its page is asked to look, what it blurs, its font. */
+/**
+ * A film of these steps with what else it is written with: how its page is asked to look, what it blurs, its font,
+ * and whether it is dynamic, framed live, or static, in a tab of its own.
+ */
 function filmWritten(
 	steps: readonly Step[],
-	written: { colourScheme?: 'dark'; blurred?: readonly string[]; theme?: { font: string } }
+	written: { colourScheme?: 'dark'; blurred?: readonly string[]; theme?: { font: string }; page?: 'dynamic' }
 ) {
 	return defineFilm({
 		formats: { small: SMALL },
@@ -107,7 +110,7 @@ test('a still is the one frame written, and nothing after it is shot', async () 
 	expect([await readdir(directory), shot.frames]).toEqual([['still.jpg'], 4]);
 });
 
-test('keys typed into the page reach the field that holds its keyboard', async () => {
+test('keys typed into the page reach the field that holds its keyboard, in its own tab or framed live', async () => {
 	const values: string[] = [];
 	const steps = [
 		act((context: ActContext) => context.page.locator(FIELD).click()),
@@ -117,10 +120,11 @@ test('keys typed into the page reach the field that holds its keyboard', async (
 		})
 	];
 	await shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'));
-	expect(values).toEqual([TYPED]);
+	await shoot(filmWritten(steps, { page: 'dynamic' }), shootingInto(new EveryFrameCounted(), 'software'));
+	expect(values).toEqual([TYPED, TYPED]);
 });
 
-test('a block a film blurs is blurred on the page, and a block it does not name is not', async () => {
+test('a block a film blurs is blurred on the page, and a block it does not name is not, in its own tab or framed live', async () => {
 	const filters: string[] = [];
 	const steps = [
 		act(async (context: ActContext) => {
@@ -129,10 +133,12 @@ test('a block a film blurs is blurred on the page, and a block it does not name 
 		})
 	];
 	await shoot(filmWritten(steps, { blurred: [FIELD] }), shootingInto(new EveryFrameCounted(), 'software'));
-	expect(filters).toEqual(['blur(12px)', 'none']);
+	const framed = filmWritten(steps, { blurred: [FIELD], page: 'dynamic' });
+	await shoot(framed, shootingInto(new EveryFrameCounted(), 'software'));
+	expect(filters).toEqual(['blur(12px)', 'none', 'blur(12px)', 'none']);
 });
 
-test('the page is asked for the colour scheme the film names', async () => {
+test('the page is asked for the colour scheme the film names, in its own tab or framed live', async () => {
 	const dark: boolean[] = [];
 	const steps = [
 		act(async (context: ActContext) => {
@@ -140,7 +146,9 @@ test('the page is asked for the colour scheme the film names', async () => {
 		})
 	];
 	await shoot(filmWritten(steps, { colourScheme: 'dark' }), shootingInto(new EveryFrameCounted(), 'software'));
-	expect(dark).toEqual([true]);
+	const framed = filmWritten(steps, { colourScheme: 'dark', page: 'dynamic' });
+	await shoot(framed, shootingInto(new EveryFrameCounted(), 'software'));
+	expect(dark).toEqual([true, true]);
 });
 
 test('a block to blur named by no selector Chrome makes a rule of is refused before the film is shot: a broken one, one that opens a comment', async () => {

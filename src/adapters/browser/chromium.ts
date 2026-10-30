@@ -28,6 +28,7 @@
 import { type Browser as Playwright, type Frame, type Page, chromium } from 'playwright-core';
 import { ZOOM_AT_MOST } from '../../domain/camera.ts';
 import { FilmError, SetupError } from '../../domain/errors.ts';
+import { frameScaleOf } from '../../domain/geometry.ts';
 import type { StagePlace } from '../../direction/film.ts';
 import type { ActContext, PageMotionSwitch } from '../../direction/page.ts';
 import type { FontNamed } from '../../direction/theme.ts';
@@ -44,7 +45,7 @@ import {
 	roomOf,
 	setUpStage
 } from './stage.ts';
-import { FrameWatch, TabWatch } from './watch.ts';
+import { FrameWatch, TabWatch, notReached } from './watch.ts';
 import type { Warn } from './warn.ts';
 
 const NAVIGATED = 'framenavigated';
@@ -163,7 +164,7 @@ export class Chromium implements Browser {
 	}
 }
 
-/** The browser with the filmed page shown on its stage: acted on, typed into and moved in the frame it stands in. */
+/** The browser with the filmed page shown on its stage: acted on, typed into and scrolled in the tab it stands in. */
 class OpenedChromium implements Opened {
 	readonly browser: Playwright;
 	readonly stage: Stage;
@@ -184,7 +185,8 @@ class OpenedChromium implements Opened {
 
 /**
  * A static page opened in a tab of its own at the screen's size, as sharp as the stage's frames are where the camera
- * comes as close as it does unbounded, and pictured on the stage apart from the app.
+ * comes as close as it does where a film names no bound, on a frame of the format's size, and pictured on the stage
+ * apart from the app.
  */
 async function pictured(
 	browser: Playwright,
@@ -193,11 +195,11 @@ async function pictured(
 	address: string,
 	sharpness: number
 ): Promise<Opened> {
-	await stage.goto(new URL(STAGE_PAGE, STAGE_FOLDER).href);
+	await stageApartOpened(stage);
 	await stageSetUp(stage, setting);
 	const filmed = await browser.newPage({
 		viewport: setting.format.screen,
-		deviceScaleFactor: sharpness * ZOOM_AT_MOST,
+		deviceScaleFactor: sharpness * ZOOM_AT_MOST * frameScaleOf(setting.format.frame),
 		permissions: [LOCAL_NETWORK]
 	});
 	await filmed.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
@@ -232,7 +234,7 @@ async function reached(page: Page, address: string): Promise<void> {
 		await page.goto(address);
 	} catch (fault) {
 		if (!(fault instanceof Error)) throw fault;
-		throw new FilmError(`the page at ${address} could not be reached`, { cause: fault });
+		throw notReached(address, { cause: fault });
 	}
 }
 
@@ -323,11 +325,16 @@ async function compositingOf(browser: Playwright): Promise<string | undefined> {
 async function staged(page: Page, stage: StagePlace, address: string, warn: Warn): Promise<Opening> {
 	switch (stage) {
 		case 'apart':
-			await page.goto(new URL(STAGE_PAGE, STAGE_FOLDER).href);
+			await stageApartOpened(page);
 			return { address, sandbox: null };
 		case 'inside':
 			return stagedInside(page, address, warn);
 	}
+}
+
+/** The stage opened apart from the app: the package's own file. */
+async function stageApartOpened(page: Page): Promise<void> {
+	await page.goto(new URL(STAGE_PAGE, STAGE_FOLDER).href);
 }
 
 /**

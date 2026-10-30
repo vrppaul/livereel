@@ -91,7 +91,7 @@ class StageNotAnswering extends StageThatKeeps {
 	}
 }
 
-/** A stage whose page is still answering the film: its captures come out as given, one after another. */
+/** A stage whose page is still answering the film: its pictures come out alike or not as given, one after another. */
 class StageAnswering extends StageThatKeeps {
 	readonly pictures: boolean[];
 

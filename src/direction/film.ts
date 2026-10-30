@@ -65,8 +65,9 @@ export interface Script<Served extends Serving, Name extends string> {
 	/** The page served, or found served elsewhere (`atAddress`), with any handles of the film's own. */
 	readonly serve: () => Served | Promise<Served>;
 	/**
-	 * Where the stage stands: `apart` from the app, where none is named, the page framed as it comes; or `inside` the
-	 * app, on its own address, for an app that signs in or refuses to be framed.
+	 * Where the stage a dynamic page is framed live in stands: `apart` from the app, where none is named, the page
+	 * framed as it comes; or `inside` the app, on its own address, for a dynamic page that signs in or refuses to be
+	 * framed. A static page stands in a tab of its own, on no stage's frame.
 	 */
 	readonly stage?: StagePlace;
 	/** Wait until the page stands as the first frame shows it. */
@@ -93,8 +94,9 @@ export interface Script<Served extends Serving, Name extends string> {
 	readonly blurred?: readonly string[];
 	/**
 	 * How the page changes: `static`, where none is named, by the film's acts and moves of the page and the page's
-	 * answer to them, so a frame like the one before is not captured again once the page stands still; or `dynamic`,
-	 * of itself too, captured every frame.
+	 * answer to them, so it stands in a tab of its own, the stage shows a picture of it taken as it changes, and a
+	 * frame like the one before is not captured again once it stands still; or `dynamic`, of itself too, so it stands
+	 * live in the stage's frame, captured every frame.
 	 */
 	readonly page?: PageKind;
 }
@@ -139,7 +141,7 @@ const AN_OBJECT_SAID = 'an object';
 const STAGE_WHERE_NONE_IS_NAMED: StagePlace = 'apart';
 const A_STAGE = new OneOf(
 	STAGES,
-	`"apart", or "inside" the app's own address for an app that signs in or refuses to be framed`
+	`"apart", or "inside" the app's own address for a dynamic page that signs in or refuses to be framed`
 );
 // The page is asked for the light colour scheme where a film names none, and blurs nothing where it names nothing
 const COLOUR_SCHEME_WHERE_NONE_IS_NAMED: ColourScheme = 'light';

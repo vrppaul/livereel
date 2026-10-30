@@ -1,5 +1,6 @@
 /**
- * The stage inside the app: served on the filmed page's own origin, for an app that signs in or refuses to be framed.
+ * The stage inside the app: served on the filmed page's own origin, for a dynamic page, framed live, that signs in or
+ * refuses to be framed.
  *
  * Framed in a stage of another site, a page is a third party to it, and its cookies of `SameSite=Lax` go with none of
  * its own requests: an app that signs in shows nobody signed in. On its own origin the page is first-party to the

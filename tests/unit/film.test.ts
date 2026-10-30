@@ -300,7 +300,7 @@ test('a film is shot on the stage it names, apart where it names none; a stage l
 	expect(films.map((film) => film.formats.get('small')!.stage)).toEqual(['apart', 'inside']);
 	expect(() => filmWritten({ stage: 'within' })).toThrow(
 		new FilmError(
-			`the film's stage is "within": it is "apart", or "inside" the app's own address for an app that signs in or refuses to be framed`
+			`the film's stage is "within": it is "apart", or "inside" the app's own address for a dynamic page that signs in or refuses to be framed`
 		)
 	);
 	expect(() => filmWritten({ stage: 'inside' })).toThrow(

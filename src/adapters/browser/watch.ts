@@ -79,12 +79,17 @@ export class TabWatch {
 	/** Why the tab shows no page, where Chrome could not reach the one it went to; none where it shows one. */
 	absence(): FilmError | undefined {
 		if (!this.tab.url().startsWith(NOT_SHOWN)) return undefined;
-		return new FilmError(`the page at ${this.address} could not be reached`);
+		return notReached(this.address);
 	}
 
 	private asked(asked: Request): void {
 		if (asked.isNavigationRequest() && asked.frame() === this.tab.mainFrame()) this.address = asked.url();
 	}
+}
+
+/** A page Chrome could not reach, refused by its address. */
+export function notReached(address: string, options?: ErrorOptions): FilmError {
+	return new FilmError(`the page at ${address} could not be reached`, options);
 }
 
 /** Whether a request takes the stage's own frame to a page: not the stage, nor a frame within the filmed page. */
@@ -94,7 +99,7 @@ function isGoingInTheFrame(stagePage: Page, asked: Request): boolean {
 
 /** Why the frame shows no page: its page refuses to be framed, its refusal named, or it could not be reached. */
 async function notShownFault(going: Going, place: StagePlace): Promise<FilmError> {
-	if (going.answer === null) return new FilmError(`the page at ${going.address} could not be reached`);
+	if (going.answer === null) return notReached(going.address);
 	const refusal = refusalAmong(await going.answer.headersArray());
 	if (refusal === undefined) {
 		return new FilmError(`the page at ${going.address} answered, but Chrome would not show it in a frame`);

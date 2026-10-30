@@ -478,8 +478,7 @@ What `inside` costs:
   changes for a popup, a download or storage access is not tried yet.
 - Only the app's own site is signed in: a page of another site the frame
   goes to gets only its cookies of `SameSite=None`. Such a page is shown
-  even where it refuses to be framed, as IANA's is in
-  `examples/example-com.ts`.
+  even where it refuses to be framed.
 - The app's scripts can reach the stage, which stands on their origin.
 - The app's service worker is not tried yet.
 
