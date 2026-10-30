@@ -45,7 +45,8 @@ export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Sho
 	const steps = await filmsOwn('steps', () => served.steps(wholePose(film.format)));
 	shooting.footage.expect(framesIn(steps));
 	await shooting.track.expect(soundsIn(steps));
-	const setting = { ...film, fonts: [...film.fonts, ...fontsIn(steps)] };
+	const motionBlur = shooting.quality.blurred ? film.motionBlur : null;
+	const setting = { ...film, fonts: [...film.fonts, ...fontsIn(steps)], motionBlur };
 	await using opened = await shooting.browser.open(setting, served.address, shooting.quality.sharpness);
 	await filmsOwn('ready', () => served.ready(opened.act));
 	const take = new Take({
@@ -54,7 +55,7 @@ export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Sho
 		track: shooting.track,
 		format: film.format,
 		opening: openingScene(film.format, film.look),
-		motionBlur: shooting.quality.blurred ? film.motionBlur : null
+		motionBlur
 	});
 	await take.run(steps);
 	return { frames: take.shots, seconds: momentOf(take.shots) };

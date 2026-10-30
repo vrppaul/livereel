@@ -8,74 +8,77 @@
 		<script defer src="stage.js"></script>
 	</head>
 	<body>
-		<!-- The screen, up out of the ground as far as it has come, with its window's shadow and edge: its root stands round the window, so the shadow beside the view reads how far it has come; the page's window, where the camera's picture shows: the whole frame or a window on the ground with its shadow under it; in it the camera moves the screen. The page sits in the screen's frame, the light and the cursor lie on it, and a callout stands beside it, past its edge where it reaches there -->
-		<div data-prop="screen">
-			<div data-prop="window">
-				<div class="stage" data-prop="camera">
-					<div class="view-shadow"></div>
-					<div class="view">
-						<div class="camera">
-							<div class="screen">
-								<iframe class="page" data-part="page" title="The page being filmed"></iframe>
-								<img class="page" data-part="picture" alt="The page being filmed" hidden />
-								<div class="light" data-prop="light"></div>
-								<svg class="cursor" data-prop="cursor" viewBox="0 0 30 40" aria-hidden="true">
-									<path d="M3 3 L3 31 L10.5 24 L16 36.5 L21 34.5 L15.5 22.5 L25.5 22.5 Z" />
-								</svg>
+		<!-- An exposure of the frame: all of it drawn as the camera stood at one moment, on the ground; the stage copies it for each further exposure it draws at once -->
+		<div class="exposure" data-exposure>
+			<!-- The screen, up out of the ground as far as it has come, with its window's shadow and edge: its root stands round the window, so the shadow beside the view reads how far it has come; the page's window, where the camera's picture shows: the whole frame or a window on the ground with its shadow under it; in it the camera moves the screen. The page sits in the screen's frame, the light and the cursor lie on it, and a callout stands beside it, past its edge where it reaches there -->
+			<div data-prop="screen">
+				<div data-prop="window">
+					<div class="stage" data-prop="camera">
+						<div class="view-shadow"></div>
+						<div class="view">
+							<div class="camera">
+								<div class="screen">
+									<iframe class="page" data-part="page" title="The page being filmed"></iframe>
+									<img class="page" data-part="picture" alt="The page being filmed" hidden />
+									<div class="light" data-prop="light"></div>
+									<svg class="cursor" data-prop="cursor" viewBox="0 0 30 40" aria-hidden="true">
+										<path d="M3 3 L3 31 L10.5 24 L16 36.5 L21 34.5 L15.5 22.5 L25.5 22.5 Z" />
+									</svg>
+								</div>
+								<div class="callout" data-prop="callout">
+									<div class="card"><div class="words" data-part="words"></div></div>
+								</div>
+								<div class="pins" data-prop="pins"></div>
 							</div>
-							<div class="callout" data-prop="callout">
-								<div class="card"><div class="words" data-part="words"></div></div>
-							</div>
-							<div class="pins" data-prop="pins"></div>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-		<!-- What stands flat over the frame, whatever the camera does: a note and its line, the title, the code, the caption, the keys, the terminal, the ending -->
-		<div class="over-the-frame">
-			<div class="note" data-prop="note">
-				<div class="line"></div>
-				<div class="words note-words" data-part="words"></div>
-			</div>
-			<!-- The title and the code standing, and each one pushed off past the frame's edge while it goes -->
-			<div data-prop="title">
-				<div class="title" data-part="standing">
-					<div class="ground" data-part="ground"></div>
-					<div class="words" data-part="words"></div>
+			<!-- What stands flat over the frame, whatever the camera does: a note and its line, the title, the code, the caption, the keys, the terminal, the ending -->
+			<div class="over-the-frame">
+				<div class="note" data-prop="note">
+					<div class="line"></div>
+					<div class="words note-words" data-part="words"></div>
 				</div>
-				<div class="title" data-part="pushed-off">
-					<div class="ground" data-part="ground"></div>
-					<div class="words" data-part="words"></div>
-				</div>
-			</div>
-			<div data-prop="code">
-				<div class="code" data-part="standing">
-					<div class="pane"><div class="lines" data-part="lines"></div></div>
-				</div>
-				<div class="code" data-part="pushed-off">
-					<div class="pane"><div class="lines" data-part="lines"></div></div>
-				</div>
-			</div>
-			<div class="caption" data-prop="caption">
-				<div class="ground" data-part="ground"></div>
-				<div class="words" data-part="words"></div>
-			</div>
-			<div class="keys" data-prop="keys"></div>
-			<div class="terminal" data-prop="terminal">
-				<div class="window">
-					<div class="bar"><i></i><i></i><i></i><span class="heading" data-part="title"></span></div>
-					<div class="log" data-part="log"></div>
-					<div class="line">
-						<span class="prompt">&gt;</span><span class="typed" data-part="typed"></span
-						><span class="caret" data-part="caret"></span>
+				<!-- The title and the code standing, and each one pushed off past the frame's edge while it goes -->
+				<div data-prop="title">
+					<div class="title" data-part="standing">
+						<div class="ground" data-part="ground"></div>
+						<div class="words" data-part="words"></div>
+					</div>
+					<div class="title" data-part="pushed-off">
+						<div class="ground" data-part="ground"></div>
+						<div class="words" data-part="words"></div>
 					</div>
 				</div>
-			</div>
-			<div class="ending" data-prop="ending">
-				<div class="name" data-part="name"></div>
-				<div class="what" data-part="what"></div>
-				<div class="command"><span class="prompt">&gt;</span><span data-part="command"></span></div>
+				<div data-prop="code">
+					<div class="code" data-part="standing">
+						<div class="pane"><div class="lines" data-part="lines"></div></div>
+					</div>
+					<div class="code" data-part="pushed-off">
+						<div class="pane"><div class="lines" data-part="lines"></div></div>
+					</div>
+				</div>
+				<div class="caption" data-prop="caption">
+					<div class="ground" data-part="ground"></div>
+					<div class="words" data-part="words"></div>
+				</div>
+				<div class="keys" data-prop="keys"></div>
+				<div class="terminal" data-prop="terminal">
+					<div class="window">
+						<div class="bar"><i></i><i></i><i></i><span class="heading" data-part="title"></span></div>
+						<div class="log" data-part="log"></div>
+						<div class="line">
+							<span class="prompt">&gt;</span><span class="typed" data-part="typed"></span
+							><span class="caret" data-part="caret"></span>
+						</div>
+					</div>
+				</div>
+				<div class="ending" data-prop="ending">
+					<div class="name" data-part="name"></div>
+					<div class="what" data-part="what"></div>
+					<div class="command"><span class="prompt">&gt;</span><span data-part="command"></span></div>
+				</div>
 			</div>
 		</div>
 	</body>

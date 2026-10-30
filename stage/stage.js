@@ -525,28 +525,35 @@ class LookDrawer {
 	}
 }
 
-/** A drawer for every prop of the scene: the type checker refuses a prop without one. @type {{ readonly [Name in PropName]: Drawer }} */
-const DRAWERS = {
-	look: new LookDrawer(document.documentElement),
-	camera: new CameraDrawer(propRoot('camera')),
-	window: new WindowDrawer(propRoot('window')),
-	screen: new ScreenDrawer(propRoot('screen')),
-	light: new LightDrawer(propRoot('light')),
-	callout: new CalloutDrawer(propRoot('callout')),
-	pins: new PinsDrawer(propRoot('pins')),
-	cursor: new CursorDrawer(propRoot('cursor')),
-	note: new NoteDrawer(propRoot('note')),
-	title: new TitleDrawer(propRoot('title')),
-	code: new CodeDrawer(propRoot('code')),
-	caption: new CaptionDrawer(propRoot('caption')),
-	keys: new KeysDrawer(propRoot('keys')),
-	terminal: new TerminalDrawer(propRoot('terminal')),
-	ending: new EndingDrawer(propRoot('ending'))
-};
-const PAGE = partOf(document.body, 'page');
-const PICTURE = partOf(document.body, 'picture');
+/**
+ * An exposure of the frame: its root, a drawer for every prop it draws, and the page it shows, live or as a picture.
+ * Every prop but the look is drawn in each exposure, as the camera stood at its moment: the type checker refuses a
+ * prop without a drawer. The look is the stage's root's, one for every exposure of a frame.
+ * @typedef {{
+ *   readonly root: Staged,
+ *   readonly drawers: { readonly [Name in Exclude<PropName, 'look'>]: Drawer },
+ *   readonly page: Staged,
+ *   readonly picture: Staged
+ * }} Exposure
+ */
 
-/** @param {Room} room */
+const LOOK = new LookDrawer(document.documentElement);
+const FIRST_EXPOSURE = found(document.querySelector('[data-exposure]'), 'exposure');
+// The first exposure as the markup lays it out, before anything is drawn: every further exposure is a copy of it
+const UNDRAWN_EXPOSURE = FIRST_EXPOSURE.cloneNode(true);
+const FIRST = exposureOf(FIRST_EXPOSURE);
+/** The exposures the stage draws a frame as, the first of them its markup's own. @type {Exposure[]} */
+const EXPOSURES = [FIRST];
+// The custom property an exposure's share is set as: how much of it shows over the exposures laid before it
+const SHARE = '--share';
+// An exposure laid over so many before it shows one part in as many as there are with it, so each weighs the same
+const ONE_PART = 1;
+
+/**
+ * The stage laid out as a room, drawing as many exposures of a frame at once as the room asks, a copy of the first
+ * made for each it lacks.
+ * @param {Room} room
+ */
 function setup(room) {
 	numbered(document.documentElement, {
 		'--frame-width': room.format.frame.width,
@@ -556,6 +563,40 @@ function setup(room) {
 		'--eye-distance': room.eyeDistance,
 		'--frame-scale': room.frameScale
 	});
+	while (EXPOSURES.length < room.exposures) EXPOSURES.push(exposureOf(addedCopy(UNDRAWN_EXPOSURE)));
+}
+
+/** An exposure of the frame by its root. @param {Staged} root @returns {Exposure} */
+function exposureOf(root) {
+	return {
+		root,
+		drawers: {
+			camera: new CameraDrawer(propRoot(root, 'camera')),
+			window: new WindowDrawer(propRoot(root, 'window')),
+			screen: new ScreenDrawer(propRoot(root, 'screen')),
+			light: new LightDrawer(propRoot(root, 'light')),
+			callout: new CalloutDrawer(propRoot(root, 'callout')),
+			pins: new PinsDrawer(propRoot(root, 'pins')),
+			cursor: new CursorDrawer(propRoot(root, 'cursor')),
+			note: new NoteDrawer(propRoot(root, 'note')),
+			title: new TitleDrawer(propRoot(root, 'title')),
+			code: new CodeDrawer(propRoot(root, 'code')),
+			caption: new CaptionDrawer(propRoot(root, 'caption')),
+			keys: new KeysDrawer(propRoot(root, 'keys')),
+			terminal: new TerminalDrawer(propRoot(root, 'terminal')),
+			ending: new EndingDrawer(propRoot(root, 'ending'))
+		},
+		page: partOf(root, 'page'),
+		picture: partOf(root, 'picture')
+	};
+}
+
+/** A copy of an element laid after everything else on the stage: its root. @param {Node} original */
+function addedCopy(original) {
+	const copy = original.cloneNode(true);
+	if (!(copy instanceof HTMLElement)) throw new Error("the stage's exposure is no element");
+	document.body.append(copy);
+	return copy;
 }
 
 /**
@@ -567,27 +608,51 @@ function isOfTheLook(name) {
 	return Object.hasOwn(LOOK_SET_AS, name);
 }
 
-/** The page opened in the screen's frame, the frame sandboxed first where it is to be. @param {Opening} opening */
+/**
+ * The page opened in the first exposure's screen's frame, the frame sandboxed first where it is to be: a stage with
+ * the page live draws one exposure at a time, as no copy of it can show the page again.
+ * @param {Opening} opening
+ */
 function open(opening) {
-	if (opening.sandbox !== null) PAGE.setAttribute('sandbox', opening.sandbox);
-	PAGE.setAttribute('src', opening.address);
+	if (opening.sandbox !== null) FIRST.page.setAttribute('sandbox', opening.sandbox);
+	FIRST.page.setAttribute('src', opening.address);
 }
 
 /**
- * A picture of the page shown in the frame's place, once it is decoded, so the next frame drawn shows it whole.
+ * A picture of the page shown in the frame's place in every exposure, once it is decoded, so the next frame drawn
+ * shows it whole.
  * @param {string} picture @returns {Promise<void>}
  */
 async function show(picture) {
-	if (!(PICTURE instanceof HTMLImageElement)) throw new Error("the stage's picture of the page is no image");
-	PICTURE.src = picture;
-	await PICTURE.decode();
-	PICTURE.removeAttribute('hidden');
-	PAGE.setAttribute('hidden', '');
+	await Promise.all(EXPOSURES.map((exposure) => shownIn(exposure, picture)));
 }
 
-/** @param {DrawnScene} scene */
-function apply(scene) {
-	for (const drawer of Object.values(DRAWERS)) drawer.draw(scene);
+/**
+ * A picture of the page shown in an exposure's frame's place, once decoded.
+ * @param {Exposure} exposure @param {string} picture
+ */
+async function shownIn(exposure, picture) {
+	if (!(exposure.picture instanceof HTMLImageElement)) throw new Error("the stage's picture of the page is no image");
+	exposure.picture.src = picture;
+	await exposure.picture.decode();
+	exposure.picture.removeAttribute('hidden');
+	exposure.page.setAttribute('hidden', '');
+}
+
+/**
+ * One frame, drawn whole from each of its exposures' scenes, in the look of its first: each exposure laid over those
+ * before it at its share, so each weighs the same; an exposure the frame has none of hidden.
+ * @param {readonly DrawnScene[]} scenes
+ */
+function apply(scenes) {
+	for (const [place, exposure] of EXPOSURES.entries()) {
+		const scene = scenes[place];
+		shown(exposure.root, scene !== undefined);
+		if (scene === undefined) continue;
+		if (exposure === FIRST) LOOK.draw(scene);
+		numbered(exposure.root, { [SHARE]: ONE_PART / (place + ONE_PART) });
+		for (const drawer of Object.values(exposure.drawers)) drawer.draw(scene);
+	}
 }
 
 /**
@@ -724,9 +789,9 @@ function lineElement(line) {
 	return row;
 }
 
-/** The root of a prop's elements in the stage's markup. @param {PropName} prop */
-function propRoot(prop) {
-	return found(document.querySelector(`[data-prop="${prop}"]`), prop);
+/** The root of a prop's elements in an exposure's markup. @param {Element} exposure @param {PropName} prop */
+function propRoot(exposure, prop) {
+	return found(exposure.querySelector(`[data-prop="${prop}"]`), prop);
 }
 
 /** An element under a root, by the part it plays. @param {Element} root @param {string} part */

@@ -99,6 +99,11 @@ class KeptAsThePageGoes extends FootageOf {
 	}
 }
 
+/** A stage that lays as many exposures of a frame over one another as the blur makes at most, and captures them once. */
+class LayeringStageThatKeeps extends PicturedStageThatKeeps {
+	override readonly exposuresAtOnce = HALF_OF_FOUR.exposuresAtMost;
+}
+
 /** A stage that cannot say whether it is there, as one whose browser is gone. */
 class StageNotAnswering extends PicturedStageThatKeeps {
 	override absence(): Promise<Error | undefined> {
@@ -145,6 +150,22 @@ test('a frame the camera crosses fast is drawn again along its way from the fram
 	await takeOf(footage, stage).run(steps);
 	expect([footage.exposed, stage.drawn.map((scene) => scene.camera.pose.focusX)]).toEqual([
 		[4, 4, 1],
+		[331.25, 337.5, 343.75, 350, 381.25, 387.5, 393.75, 400, 400]
+	]);
+});
+
+test('a frame the camera crosses fast is drawn at once as every exposure along its way, where the stage lays them over one another, and captured once', async () => {
+	const stage = new LayeringStageThatKeeps();
+	const footage = new FootageOf([0, 1, 2]);
+	const steps = [
+		play({ seconds: 2 / 30, moves: [cameraTo(CLOSE_AT_THE_RIGHT)], ease: linear }),
+		hold({ seconds: 1 / 30 })
+	];
+	await takeOf(footage, stage).run(steps);
+	expect([footage.exposed, stage.draws, stage.captured, stage.drawn.map((scene) => scene.camera.pose.focusX)]).toEqual([
+		[1, 1, 1],
+		[4, 4, 1],
+		3,
 		[331.25, 337.5, 343.75, 350, 381.25, 387.5, 393.75, 400, 400]
 	]);
 });

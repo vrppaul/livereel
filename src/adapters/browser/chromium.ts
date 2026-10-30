@@ -24,18 +24,28 @@
  * (lavapipe), the page has no WebGL (both measured on Linux 2026-10-27). The person is warned, as Chrome tells it, and
  * the film is shot. A page that cannot be reached, or refuses its frame, is refused as it is opened, by why, rather
  * than when the film first waits on it.
+ *
+ * On the graphics card, a stage showing a static page's picture draws a frame's exposures at once, each a copy of its
+ * drawing laid over the ones before so each weighs the same, and is captured once: 16 exposures of a fast camera on
+ * the README film's format took 273–321 ms against 1899 ms captured one at a time and 484 ms more for ffmpeg's blend,
+ * the two frames alike (SSIM 0.9956; measured 2026-10-30). In software the copies took 2666 ms against 2962 ms, and the
+ * ground's gradient came out banded (SSIM 0.985), so there a stage draws one exposure at a time, as a framed page's
+ * stage does: no copy of the stage can show its live frame again. Chrome is told it has GPU memory enough for the
+ * copies, or it leaves parts of them undrawn.
  */
 import { type Browser as Playwright, type Frame, type Page, chromium } from 'playwright-core';
 import { ZOOM_AT_MOST } from '../../domain/camera.ts';
 import { FilmError, SetupError } from '../../domain/errors.ts';
-import { frameScaleOf } from '../../domain/geometry.ts';
-import type { StagePlace } from '../../direction/film.ts';
+import { type Size, frameScaleOf } from '../../domain/geometry.ts';
+import { type MotionBlur, exposuresAtMostOf } from '../../domain/shutter.ts';
+import type { PageKind, StagePlace } from '../../direction/film.ts';
 import type { ActContext, PageMotionSwitch } from '../../direction/page.ts';
 import type { FontNamed } from '../../direction/theme.ts';
 import type { Browser, Opened, Setting, Stage } from '../../studio/ports.ts';
 import { stagedInside } from './inside.ts';
 import { PlaywrightPage } from './page.ts';
 import {
+	ONE_AT_A_TIME,
 	type Opening,
 	PlaywrightFramedStage,
 	PlaywrightPicturedStage,
@@ -97,6 +107,12 @@ interface Forcing {
 	readonly stageAtTheTop: boolean;
 }
 
+/** How the stage draws a frame: as sharp as the film is shot, and how many of its exposures at once. */
+interface StageDrawing {
+	readonly sharpness: number;
+	readonly exposuresAtOnce: number;
+}
+
 /** The browser, and the tab the filmed page stands in: the stage's own, or a tab of its own. */
 interface Tabs {
 	readonly browser: Playwright;
@@ -112,6 +128,13 @@ const CARD_INTERFACES = { linux: 'vulkan', darwin: 'metal', win32: 'd3d11' } as 
 const COMPOSITING = 'gpu_compositing';
 const ON_THE_CARD = 'enabled';
 const UNTOLD = '--renderer gpu: Chrome did not tell whether it reached a graphics card';
+// The flag telling Chrome how much GPU memory it has, in megabytes, and how much it needs told for each byte of the
+// stage's copies of a frame to draw them whole: 16 copies of a 3840 × 2160 frame, as the README film shoots, drew the
+// window pushing the card off whole at 4 times their bytes, and left the page's tiles grey at 3 (measured 2026-10-30)
+const GPU_MEMORY = '--force-gpu-mem-available-mb=';
+const GPU_MEMORY_FOR_A_COPY_BYTE = 4;
+const BYTES_A_PIXEL = 4;
+const BYTES_A_MEGABYTE = 1_048_576;
 
 type System = keyof typeof CARD_INTERFACES;
 
@@ -143,6 +166,37 @@ function isSystem(platform: string): platform is System {
 	return Object.hasOwn(CARD_INTERFACES, platform);
 }
 
+/** How many exposures of a frame the stage draws at once, where the renderer draws, for a page of a kind. */
+export function exposuresAtOnceOf(renderer: Renderer, page: PageKind, blur: MotionBlur | null): number {
+	switch (renderer) {
+		case 'software':
+			return ONE_AT_A_TIME;
+		case 'gpu':
+			return exposuresOnTheCardOf(page, blur);
+	}
+}
+
+/**
+ * How many exposures of a frame the stage draws at once on the graphics card: as many as a frame has at most where it
+ * shows a picture of the page.
+ */
+function exposuresOnTheCardOf(page: PageKind, blur: MotionBlur | null): number {
+	switch (page) {
+		case 'static':
+			return exposuresAtMostOf(blur);
+		case 'dynamic':
+			return ONE_AT_A_TIME;
+	}
+}
+
+/** The flags that tell Chrome it has GPU memory enough for the stage's copies of a frame, where it draws several. */
+function gpuMemoryFlagsOf(exposuresAtOnce: number, frame: Size, sharpness: number): readonly string[] {
+	if (exposuresAtOnce === ONE_AT_A_TIME) return [];
+	const copyBytes = frame.width * sharpness * (frame.height * sharpness) * BYTES_A_PIXEL;
+	const megabytes = Math.ceil((GPU_MEMORY_FOR_A_COPY_BYTE * exposuresAtOnce * copyBytes) / BYTES_A_MEGABYTE);
+	return [`${GPU_MEMORY}${megabytes}`];
+}
+
 export class Chromium implements Browser {
 	readonly renderer: Renderer;
 	readonly warn: Warn;
@@ -153,7 +207,8 @@ export class Chromium implements Browser {
 	}
 
 	async open(setting: Setting, address: string, sharpness: number): Promise<Opened> {
-		const browser = await launched(this.renderer);
+		const exposuresAtOnce = exposuresAtOnceOf(this.renderer, setting.page, setting.motionBlur);
+		const browser = await launched(this.renderer, gpuMemoryFlagsOf(exposuresAtOnce, setting.format.frame, sharpness));
 		try {
 			await whereItDrawsChecked(this.renderer, browser, this.warn);
 			const stage = await browser.newPage({
@@ -164,7 +219,7 @@ export class Chromium implements Browser {
 			await unreadRefused(stage, setting.blurred);
 			switch (setting.page) {
 				case 'static':
-					return await pictured(browser, stage, setting, address, sharpness);
+					return await pictured(browser, stage, setting, address, { sharpness, exposuresAtOnce });
 				case 'dynamic':
 					return await framedLive(browser, stage, setting, address, this.warn);
 			}
@@ -204,10 +259,11 @@ async function pictured(
 	stage: Page,
 	setting: Setting,
 	address: string,
-	sharpness: number
+	drawing: StageDrawing
 ): Promise<Opened> {
+	const { sharpness, exposuresAtOnce } = drawing;
 	await stageApartOpened(stage);
-	await stageSetUp(stage, setting);
+	await stageSetUp(stage, setting, exposuresAtOnce);
 	const pixelsAtZoomOne = sharpness * frameScaleOf(setting.format.frame);
 	const filmed = await browser.newPage({
 		viewport: setting.format.screen,
@@ -220,7 +276,7 @@ async function pictured(
 	await reached(filmed, address);
 	const session = await filmed.context().newCDPSession(filmed);
 	const filmedTab = { tab: filmed, session, screen: setting.format.screen, pixelsAtZoomOne };
-	const picturedStage = new PlaywrightPicturedStage(stage, filmedTab, watch);
+	const picturedStage = new PlaywrightPicturedStage(stage, filmedTab, watch, exposuresAtOnce);
 	return new OpenedChromium({ browser, filmed }, picturedStage, filmed.mainFrame());
 }
 
@@ -272,9 +328,10 @@ class PageMotion implements PageMotionSwitch {
 	}
 }
 
-async function launched(renderer: Renderer): Promise<Playwright> {
+/** The shell launched to draw where the renderer draws, with GPU memory flags where it needs them. */
+async function launched(renderer: Renderer, gpuMemoryFlags: readonly string[]): Promise<Playwright> {
 	try {
-		return await chromium.launch({ args: [...flagsOf(renderer, process.platform)] });
+		return await chromium.launch({ args: [...flagsOf(renderer, process.platform), ...gpuMemoryFlags] });
 	} catch (fault) {
 		throw lackOf(fault) ?? fault;
 	}
@@ -375,20 +432,20 @@ async function forcedOn(page: Page, blurred: readonly string[], stageAtTheTop: b
 }
 
 /**
- * The stage set to the film's format and asked for its colour scheme and stilled motion. A font the film names, in its
- * theme or in a look's move, that CSS reads as no list of families a fallback can follow is refused, as one with a
- * quote left open, which runs on over the stage's own fallbacks: the stage would fall to the browser's font without a
- * word.
+ * The stage set to the film's format, drawing so many exposures of a frame at once, and asked for its colour scheme
+ * and stilled motion. A font the film names, in its theme or in a look's move, that CSS reads as no list of families a
+ * fallback can follow is refused, as one with a quote left open, which runs on over the stage's own fallbacks: the
+ * stage would fall to the browser's font without a word.
  */
-async function stageSetUp(page: Page, setting: Setting): Promise<void> {
+async function stageSetUp(page: Page, setting: Setting, exposuresAtOnce: number): Promise<void> {
 	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
-	await page.evaluate(setUpStage, roomOf(setting.format));
+	await page.evaluate(setUpStage, roomOf(setting.format, exposuresAtOnce));
 	for (const named of setting.fonts) await refusedWhereNoFamily(page, named);
 }
 
 /** The stage set up and the page opened in its frame, as far as it loads: its frame. */
 async function framed(page: Page, setting: Setting, opening: Opening): Promise<Frame> {
-	await stageSetUp(page, setting);
+	await stageSetUp(page, setting, ONE_AT_A_TIME);
 	const [filmed] = await Promise.all([
 		page.waitForEvent(NAVIGATED, { predicate: isInTheStagesFrame }),
 		page.evaluate(openPage, opening)

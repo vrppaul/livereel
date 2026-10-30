@@ -227,8 +227,12 @@ class TimedDrawingStage<Timed extends Stage> {
 		this.timings = timings;
 	}
 
-	draw(scene: DrawnScene): Promise<void> {
-		return this.timings.timed('stage.draw', () => this.stage.draw(scene));
+	get exposuresAtOnce(): number {
+		return this.stage.exposuresAtOnce;
+	}
+
+	draw(exposures: readonly DrawnScene[]): Promise<void> {
+		return this.timings.timed('stage.draw', () => this.stage.draw(exposures));
 	}
 
 	absence(): Promise<Error | undefined> {

@@ -16,7 +16,13 @@ export type Stage = FramedStage | PicturedStage;
 
 /** What a stage of either kind does: a frame drawn and captured, and whether it and its page are still there. */
 interface DrawingStage {
-	readonly draw: (scene: DrawnScene) => Promise<void>;
+	/**
+	 * How many exposures of a frame the stage draws at once, laid over one another so each weighs the same, to be
+	 * captured as the frame: one where it draws one at a time, to be captured each and blended by the footage.
+	 */
+	readonly exposuresAtOnce: number;
+	/** The frame drawn as these exposures of it, as many as the stage draws at once at most. */
+	readonly draw: (exposures: readonly DrawnScene[]) => Promise<void>;
 	/**
 	 * Why the stage, or the page in its frame, is no longer there, where one is not: a click that took the stage away,
 	 * a page that refuses its frame, one that could not be reached; none where both are.
@@ -81,9 +87,13 @@ export interface Opened extends AsyncDisposable {
 /**
  * What the stage and the page are set as for a take: the film's format, where the stage stands, the colour scheme the
  * page is asked for, the blocks it blurs, every font the film names, in its theme or its looks' moves, which the
- * browser reads before anything is shot, and whether the page changes of itself, which decides how it is shown.
+ * browser reads before anything is shot, whether the page changes of itself, which decides how it is shown, and how a
+ * fast camera is blurred in the take, which says how many exposures a frame is made of at most.
  */
-export type Setting = Pick<FilmInFormat, 'format' | 'stage' | 'colourScheme' | 'blurred' | 'fonts' | 'page'>;
+export type Setting = Pick<
+	FilmInFormat,
+	'format' | 'stage' | 'colourScheme' | 'blurred' | 'fonts' | 'page' | 'motionBlur'
+>;
 
 export interface Browser {
 	readonly open: (setting: Setting, address: string, sharpness: number) => Promise<Opened>;

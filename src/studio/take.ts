@@ -10,19 +10,20 @@
  * frame being made.
  * A frame is drawn only when the footage keeps it, and drawn again where the camera or its window crossed it fast
  * since the frame before, at cameras along their way there, the rest of the scene as it stands: each drawing is an
- * exposure of the frame (`src/domain/shutter.ts`). The take does with the page what the stage's kind asks. A stage
- * that shows a picture of the page, as it shows a static one, takes it anew when the take asks: on a frame after an act
- * or a move of the page, and on every frame until two pictures in a row come out alike, nothing done to the page
- * between them and its own motion not let go, so what it brings in answer — results, an image, a scroll that eases
- * out — is seen. Once it stands still, a frame the stage would draw as it drew the last one captured is that capture,
- * neither drawn nor captured again: holds are near half a film's frames, and a capture is near all a frame costs. A
- * picture is taken as sharp as a camera as close as livereel's bound shows it, so it serves every frame after it; on a
- * frame a move of the page runs on past, or while its own motion is let go, as sharp as that frame's cameras show it,
- * as the next frame takes another: the whole screen as sharp as the bound costs about three times what it costs as
- * sharp as the camera showing all of it (253–269 against 81–83 ms, a 1040 × 1080 screen, 2026-10-30). A move's last
- * frame is pictured as sharp as the bound, so the picture after it can come out alike. A stage with the page
- * live in its frame, as it shows a dynamic one, is captured every frame, as the page changes of itself, and is laid
- * flat for an act.
+ * exposure of the frame (`src/domain/shutter.ts`). A stage that draws all of a frame's exposures at once lays them over
+ * one another and is captured once, the frame; one that draws fewer is captured at each, the footage blending them: a
+ * capture is near all a frame costs. The take does with the page what the stage's kind asks. A stage that shows a
+ * picture of the page, as it shows a static one, takes it anew when the take asks: on a frame after an act or a move
+ * of the page, and on every frame until two pictures in a row come out alike, nothing done to the page between them
+ * and its own motion not let go, so what it brings in answer — results, an image, a scroll that eases out — is seen.
+ * Once it stands still, a frame the stage would draw as it drew the last one captured is that capture, neither drawn
+ * nor captured again: holds are near half a film's frames. A picture is taken as sharp as a camera as close as
+ * livereel's bound shows it, so it serves every frame after it; on a frame a move of the page runs on past, or while
+ * its own motion is let go, as sharp as that frame's cameras show it, as the next frame takes another: the whole
+ * screen as sharp as the bound costs about three times what it costs as sharp as the camera showing all of it (253–269
+ * against 81–83 ms, a 1040 × 1080 screen, 2026-10-30). A move's last frame is pictured as sharp as the bound, so the
+ * picture after it can come out alike. A stage with the page live in its frame, as it shows a dynamic one, is
+ * captured every frame, as the page changes of itself, and is laid flat for an act.
  * A fault in a step is raised again with the moment and the step it was met at. Before each frame, after each act,
  * and of any fault a step meets, the take asks the stage whether it and its page are still there: where one is gone,
  * the take is refused by why, in place of what its loss made a step fail at (a selector that matches nothing on
@@ -51,7 +52,7 @@ interface Running {
 	readonly unheard: readonly Cue[];
 }
 
-/** A frame's own exposure as the stage drew and captured it: the scene said whole, and the image. */
+/** A frame's exposures as the stage drew and captured them at once: the scenes said whole, and the image. */
 interface Captured {
 	readonly drawing: string;
 	readonly image: Uint8Array;
@@ -78,7 +79,7 @@ export class Take {
 	readonly motionBlur: MotionBlur | null;
 	private scene: Scene;
 	private shot = 0;
-	// The last frame's own exposure captured, none before the first; and, where the stage shows a picture of the page,
+	// The last exposures captured at once, none before the first; and, where the stage shows a picture of the page,
 	// whether the page may have changed since its picture was last taken, as it may before the first, and whether it
 	// stood still as it was, its picture alike to the one before, as a framed page never is
 	private lastCaptured: Captured | null = null;
@@ -278,22 +279,34 @@ export class Take {
 	}
 
 	/**
-	 * The frame drawn at each place the camera is caught at along its way from the frame before, its own last; or, a
-	 * frame of one exposure the stage would draw as the last captured, that capture.
+	 * The frame drawn at each place the camera is caught at along its way from the frame before, its own last: all at
+	 * once where the stage draws so many at once, captured as the frame; else each captured, for the footage to blend.
 	 */
 	private async exposed(cameraBefore: Camera, pageMovesOn: boolean): Promise<Exposures> {
 		const own = this.camera();
-		const ownDrawn = this.drawnBy(own);
-		const drawing = drawingOf(ownDrawn);
 		const along = alsoExposedAt(cameraBefore, own, this.format, this.motionBlur);
 		await this.pageShown(this.opened.stage, this.zoomPictured(own, along, pageMovesOn));
-		const unchanged = this.capturedAs(drawing);
-		if (along.length === 0 && unchanged !== undefined) return { earlier: [], own: unchanged };
+		const ownDrawn = this.drawnBy(own);
+		const alongDrawn = along.map((camera) => this.drawnBy(camera));
+		if (alongDrawn.length < this.opened.stage.exposuresAtOnce) {
+			return { earlier: [], own: await this.capturedAtOnce([...alongDrawn, ownDrawn]) };
+		}
 		const earlier: Uint8Array[] = [];
-		for (const camera of along) earlier.push(await this.captured(this.drawnBy(camera)));
-		const image = await this.captured(ownDrawn);
+		for (const exposure of alongDrawn) earlier.push(await this.captured([exposure]));
+		return { earlier, own: await this.capturedAtOnce([ownDrawn]) };
+	}
+
+	/**
+	 * A frame's exposures drawn and captured at once; or, where the stage would draw them as it drew the last captured,
+	 * that capture.
+	 */
+	private async capturedAtOnce(exposures: readonly DrawnScene[]): Promise<Uint8Array> {
+		const drawing = drawingOf(exposures);
+		const unchanged = this.capturedAs(drawing);
+		if (unchanged !== undefined) return unchanged;
+		const image = await this.captured(exposures);
 		this.lastCaptured = { drawing, image };
-		return { earlier, own: image };
+		return image;
 	}
 
 	/**
@@ -333,8 +346,8 @@ export class Take {
 	}
 
 	/**
-	 * The last capture, where it was drawn as this drawing is on a page standing still as it was then; none elsewhere.
-	 * A picture taken anew alike to the last shows what that capture showed.
+	 * The last capture at once, where it was drawn as this drawing is on a page standing still as it was then; none
+	 * elsewhere. A picture taken anew alike to the last shows what that capture showed.
 	 */
 	private capturedAs(drawing: string): Uint8Array | undefined {
 		return this.pageStandsStill && this.lastCaptured?.drawing === drawing ? this.lastCaptured.image : undefined;
@@ -345,9 +358,9 @@ export class Take {
 		return drawn(this.scene, camera, this.moment(), this.format);
 	}
 
-	/** A drawn scene drawn on the stage, and captured. */
-	private async captured(scene: DrawnScene): Promise<Uint8Array> {
-		await this.opened.stage.draw(scene);
+	/** A frame's exposures drawn on the stage at once, and captured. */
+	private async captured(exposures: readonly DrawnScene[]): Promise<Uint8Array> {
+		await this.opened.stage.draw(exposures);
 		return this.opened.stage.capture();
 	}
 

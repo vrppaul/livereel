@@ -97,8 +97,8 @@ file is named `.mts`.
 
 Shoot a film with `--renderer gpu`: its frames are drawn on the graphics
 card, and it needs no screen. On Linux, where it was tried, a full shoot
-took about half as long as in software (the promo, blurred: 271 s against
-495 s); on macOS and Windows it is not tried yet. Where it reaches no
+took about a third as long as in software (the promo, blurred: 98 s against
+289 s); on macOS and Windows it is not tried yet. Where it reaches no
 graphics card, it draws the frames in software all the same and warns
 "--renderer gpu reached no graphics card"; a page that draws with WebGL may
 then draw nothing. Where it warns and a canvas on the contact sheet is
@@ -280,8 +280,8 @@ npx livereel shoot film.ts --format square --out out --sheet --renderer gpu   # 
 npx livereel still film.ts --format square --out out --at 12.5                 # one still, without the video
 ```
 
-A full shoot takes minutes: the promo, 20 seconds long, took 238 to 271 s
-on the graphics card and 495 s in software. Run it in the background, or
+A full shoot takes minutes: the promo, 20 seconds long, took 98 s on the
+graphics card and 289 s in software. Run it in the background, or
 with a timeout that long; a still takes seconds.
 
 - `--format` names the format to shoot; a film of one format needs none.

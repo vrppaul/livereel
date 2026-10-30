@@ -9,7 +9,7 @@ paths:
 The script is JavaScript with its types in JSDoc, which the type checker reads; the page runs it as it is written.
 
 - The stage draws the scene as `src/scene.ts` hands it over, and decides nothing: what is shown, where and how far along is the film's.
-- Every prop has its drawer in `DRAWERS` of `stage/stage.js`; the type checker refuses a prop without one.
+- Every prop has its drawer in each exposure of `stage/stage.js` (`exposureOf`), the look in `LOOK`, one for every exposure; the type checker refuses a prop without one.
 - A drawer finds its elements once, by the `data-prop` of its root and the `data-part` of each element under it; the look's drawer draws on the stage's root, where every rule reads it.
 - A drawer sets its prop's numbers, and the colours a film gives, as bare custom properties, and writes its words; the stylesheet gives the numbers their units and makes them places, sizes and shades. The script writes no style.
 - What a drawer is handed by name it names in a class or an attribute: a piece's styles, a callout's `data-side`, a title's `data-align`.

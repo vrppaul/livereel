@@ -18,6 +18,14 @@ body {
 	display: none !important;
 }
 
+/* An exposure of the frame, all of it on its own ground, laid over the exposures before it at its share, so that each weighs the same in the frame */
+.exposure {
+	position: absolute;
+	inset: 0;
+	background: var(--ground-light);
+	opacity: var(--share);
+}
+
 .stage {
 	position: absolute;
 	inset: 0;

@@ -47,6 +47,11 @@ export function alsoExposedAt(before: Camera, now: Camera, format: Format, blur:
 	);
 }
 
+/** How many exposures a frame is made of at most: the blur's most, or its own alone where the film is not blurred. */
+export function exposuresAtMostOf(blur: MotionBlur | null): number {
+	return blur === null ? ITS_OWN : blur.exposuresAtMost;
+}
+
 /**
  * How many exposures a smear so long takes: as many as keep its copies an eye's step apart, at most the blur's, and
  * the frame's own at least, where the camera stood still.

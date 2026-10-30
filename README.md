@@ -109,8 +109,8 @@ shot with, as the browser, ffmpeg or its encoder of the kind asked, or a
 Node new enough.
 
 `--renderer gpu` draws the frames on the graphics card, in the same headless
-browser, and needs no screen: the promo, wide and blurred, took 271 s
-against 495 s, its frames alike. It reaches the card through Vulkan on
+browser, and needs no screen: the promo, wide and blurred, took 98 s
+against 289 s, a fast camera's blur made at once on the card. It reaches the card through Vulkan on
 Linux, tried on an Intel card; through Metal on macOS and Direct3D 11 on
 Windows, not tried yet. Where it reaches no graphics card, it draws the
 frames in software all the same and warns of it ("--renderer gpu reached no

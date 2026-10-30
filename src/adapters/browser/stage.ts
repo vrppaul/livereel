@@ -45,12 +45,13 @@ export const STAGE_PAGE = 'stage.html';
 /**
  * The room the stage moves the screen in: the frame it fills, the screen, how far the eye stands from the frame, and
  * how large the stage draws on it against the frames its look was made on: the camera's zoom, and what stands over the
- * frame.
+ * frame; and how many exposures of a frame it draws at once, each a whole drawing of the stage laid over those before.
  */
 export interface Room {
 	readonly format: Format;
 	readonly eyeDistance: number;
 	readonly frameScale: number;
+	readonly exposures: number;
 }
 
 /**
@@ -69,8 +70,8 @@ export interface StageApi {
 	readonly open: (opening: Opening) => void;
 	/** A picture of the filmed page, by its address, shown in the frame's place once it is decoded. */
 	readonly show: (picture: string) => Promise<void>;
-	/** One frame, drawn whole from the scene. */
-	readonly apply: (scene: DrawnScene) => void;
+	/** One frame, drawn whole from each of its exposures' scenes, laid over one another so each weighs the same. */
+	readonly apply: (exposures: readonly DrawnScene[]) => void;
 }
 
 declare global {
@@ -80,13 +81,19 @@ declare global {
 }
 
 const JPEG_QUALITY = 92;
+// A stage that draws one exposure of a frame at a time
+export const ONE_AT_A_TIME = 1;
 // A picture of the page as the stage's image is handed it: a JPEG, in base64
 const JPEG_ADDRESS = 'data:image/jpeg;base64,';
 const BASE64 = 'base64';
 
-/** The stage with the filmed page live in its frame. */
+/**
+ * The stage with the filmed page live in its frame, which no copy of the stage can show again: it draws one exposure of
+ * a frame at a time.
+ */
 export class PlaywrightFramedStage implements FramedStage {
 	readonly kind = 'framed';
+	readonly exposuresAtOnce = ONE_AT_A_TIME;
 	readonly page: Page;
 	readonly format: Format;
 	readonly watch: FrameWatch;
@@ -99,14 +106,14 @@ export class PlaywrightFramedStage implements FramedStage {
 		this.filmed = filmed;
 	}
 
-	draw(scene: DrawnScene): Promise<void> {
-		return drawnOn(this.page, scene);
+	draw(exposures: readonly DrawnScene[]): Promise<void> {
+		return drawnOn(this.page, exposures);
 	}
 
 	/** A browser finds the point it clicks wrongly on a screen the camera has scaled; at no scale, every point is the page's own. */
 	async layFlat(scene: DrawnScene): Promise<void> {
 		await this.sizedTo({ frame: this.format.screen, screen: this.format.screen });
-		await this.draw(scene);
+		await this.draw([scene]);
 	}
 
 	standUp(): Promise<void> {
@@ -123,7 +130,7 @@ export class PlaywrightFramedStage implements FramedStage {
 
 	private async sizedTo(format: Format): Promise<void> {
 		await this.page.setViewportSize(format.frame);
-		await this.page.evaluate(setUpStage, roomOf(format));
+		await this.page.evaluate(setUpStage, roomOf(format, this.exposuresAtOnce));
 	}
 }
 
@@ -138,23 +145,28 @@ export interface FilmedTab {
 	readonly pixelsAtZoomOne: number;
 }
 
-/** The stage showing a picture of the filmed page, which stands in a tab of its own. */
+/**
+ * The stage showing a picture of the filmed page, which stands in a tab of its own, drawing as many exposures of a
+ * frame at once as it was set up to.
+ */
 export class PlaywrightPicturedStage implements PicturedStage {
 	readonly kind = 'pictured';
 	readonly page: Page;
 	readonly filmedTab: FilmedTab;
 	readonly watch: TabWatch;
+	readonly exposuresAtOnce: number;
 	// The page's picture last taken, none before the first
 	private picture: Buffer | null = null;
 
-	constructor(page: Page, filmedTab: FilmedTab, watch: TabWatch) {
+	constructor(page: Page, filmedTab: FilmedTab, watch: TabWatch, exposuresAtOnce: number) {
 		this.page = page;
 		this.filmedTab = filmedTab;
 		this.watch = watch;
+		this.exposuresAtOnce = exposuresAtOnce;
 	}
 
-	draw(scene: DrawnScene): Promise<void> {
-		return drawnOn(this.page, scene);
+	draw(exposures: readonly DrawnScene[]): Promise<void> {
+		return drawnOn(this.page, exposures);
 	}
 
 	/** The page's picture taken anew, and shown where it came out otherwise than the last. */
@@ -190,13 +202,16 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	}
 }
 
-/** The room of a format, seen from where the engine works out what the camera shows (`src/domain/camera.ts`). */
-export function roomOf(format: Format): Room {
-	return { format, eyeDistance: eyeDistanceOf(format.frame), frameScale: frameScaleOf(format.frame) };
+/**
+ * The room of a format, seen from where the engine works out what the camera shows (`src/domain/camera.ts`), for a
+ * stage drawing so many exposures of a frame at once.
+ */
+export function roomOf(format: Format, exposures: number): Room {
+	return { format, eyeDistance: eyeDistanceOf(format.frame), frameScale: frameScaleOf(format.frame), exposures };
 }
 
-function drawnOn(page: Page, scene: DrawnScene): Promise<void> {
-	return page.evaluate(applyScene, scene);
+function drawnOn(page: Page, exposures: readonly DrawnScene[]): Promise<void> {
+	return page.evaluate(applyExposures, exposures);
 }
 
 /** A page as it shows now, as a JPEG at its device scale, its text caret kept. */
@@ -220,13 +235,13 @@ function pictureShown(picture: string): Promise<void> {
 	return window.stage.show(picture);
 }
 
+function applyExposures(exposures: readonly DrawnScene[]): void {
+	window.stage.apply(exposures);
+}
+
 // What follows runs in the filmed page's own tab, handed over alone
 
 /** Once the page's fonts have loaded, or failed to. */
 async function fontsLoaded(): Promise<void> {
 	await document.fonts.ready;
-}
-
-function applyScene(scene: DrawnScene): void {
-	window.stage.apply(scene);
 }
