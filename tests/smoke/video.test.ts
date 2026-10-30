@@ -24,6 +24,9 @@ const MADE_BEFORE = 'an MP4 made before';
 // More than a pipe holds at once, so the frame waits on ffmpeg to take it
 const A_LARGE_FRAME = new Uint8Array(4 * 1024 * 1024);
 const NOT_AN_IMAGE = new TextEncoder().encode('not an image');
+// A frame decoded as one pixel of grey, and the grey of white
+const ONE_GREY_PIXEL_A_FRAME = ['-vf', 'scale=1:1', '-f', 'rawvideo', '-pix_fmt', 'gray'];
+const WHITE = 255;
 
 async function scratch(): Promise<string> {
 	return mkdtemp(join(tmpdir(), 'livereel-video-'));
@@ -59,6 +62,12 @@ function greyOf(jpeg: Uint8Array): number | undefined {
 	return decoded.stdout[0];
 }
 
+/** The grey of each of a video's frames, each shrunk to one pixel, 0 for black to 255 for white. */
+function greysOf(video: string): number[] {
+	const decoded = spawnSync('ffmpeg', ['-loglevel', 'error', '-i', video, ...ONE_GREY_PIXEL_A_FRAME, '-']);
+	return [...decoded.stdout];
+}
+
 /** How many frames a video holds, as ffprobe counts them. */
 function framesOf(video: string): string {
 	const ran = spawnSync(
@@ -81,6 +90,34 @@ test('a frame of several exposures is one frame of the video', async () => {
 	await footage[Symbol.asyncDispose]();
 });
 
+test('a frame is kept without waiting on its blend, and goes into the video in the order shot', async () => {
+	const directory = await scratch();
+	const video = join(directory, 'film.mp4');
+	const held = Promise.withResolvers<void>();
+	// The first frame's blend held until both are kept, the second's done at once
+	const blendsDone = [held.promise, Promise.resolve()];
+	const footage = new VideoFootage(video, FRAME, (exposures) => blendsDone.shift()!.then(() => exposures.own));
+	const black = jpegOf(FRAME, 'black');
+	const white = jpegOf(FRAME, 'white');
+	await footage.keep(0, { earlier: [black], own: black });
+	await footage.keep(1, { earlier: [white], own: white });
+	held.resolve();
+	await footage.finish(new Soundtrack(join(directory, 'film.ts'), SOUNDLESS), momentOf(2));
+	expect(greysOf(video).map((grey) => Math.round(grey / WHITE))).toEqual([0, 1]);
+	await footage[Symbol.asyncDispose]();
+});
+
+test("a blend that fails refuses the video as it is finished, in ffmpeg's words, and leaves no part of it", async () => {
+	const directory = await scratch();
+	const footage = new VideoFootage(join(directory, 'film.mp4'), FRAME, blended);
+	await footage.keep(0, { earlier: [NOT_AN_IMAGE], own: NOT_AN_IMAGE });
+	await expect(footage.finish(new Soundtrack(join(directory, 'film.ts'), SOUNDLESS), momentOf(1))).rejects.toThrow(
+		/^ffmpeg stopped: [^]*Invalid data found when processing input/
+	);
+	await footage[Symbol.asyncDispose]();
+	expect(await readdir(directory)).toEqual([]);
+});
+
 test("a frame's exposures are blended, each weighing the same: three black and one white make a quarter of white", async () => {
 	const black = jpegOf(FRAME, 'black');
 	const white = jpegOf(FRAME, 'white');
@@ -95,11 +132,14 @@ test("exposures ffmpeg cannot read are refused in ffmpeg's words", async () => {
 	);
 });
 
-test('a frame handed to an ffmpeg that has stopped is refused, and no part of the video is left', async () => {
+test('a frame handed to an ffmpeg that has stopped refuses the video, rather than waiting on a pipe, and leaves no part of it', async () => {
 	const directory = await scratch();
 	const footage = new VideoFootage(join(directory, 'film.mp4'), FRAME, blended);
 	footage.encoder.kill('SIGKILL');
-	await expect(footage.keep(0, { earlier: [], own: A_LARGE_FRAME })).rejects.toThrow(EncodingError);
+	await footage.keep(0, { earlier: [], own: A_LARGE_FRAME });
+	await expect(footage.finish(new Soundtrack(join(directory, 'film.ts'), SOUNDLESS), momentOf(1))).rejects.toThrow(
+		EncodingError
+	);
 	await footage[Symbol.asyncDispose]();
 	expect(await readdir(directory)).toEqual([]);
 });

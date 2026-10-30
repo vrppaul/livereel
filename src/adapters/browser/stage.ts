@@ -5,8 +5,11 @@
  * A frame is captured by Playwright at the page's device scale, the film's sharpness. A capture of livereel's own, on
  * a CDP session apart from Playwright's, came back at the page's own pixels whatever that scale, every full shoot as
  * soft as a draft; and it was no quicker (measured 2026-10-25 at 1920 × 1080: 33 ms against 35 ms at 1×, 142 ms
- * against 134 ms at 2×). The page's text caret is kept, as a person sees it typing. Whether the stage and its page
- * are still there, the stage answers from its frame's watch (`watch.ts`).
+ * against 134 ms at 2×). Its own device metrics set on it bring it to the film's sharpness, at 127–133 ms a capture
+ * against Playwright's 135–137 on a 2.7 s piece of the README film (2026-10-30): too little for a second session's
+ * metrics to keep in step with Playwright's as an act lays the screen flat. The page's text caret is kept, as a person
+ * sees it typing. Whether the stage and its page are still there, the stage answers from its frame's watch
+ * (`watch.ts`).
  */
 import type { Frame, Page } from 'playwright-core';
 import { eyeDistanceOf } from '../../domain/camera.ts';
