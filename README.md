@@ -493,9 +493,9 @@ along its way from the frame before and blended: as many times as keep the
 copies a few pixels apart, so the faster the move, the more. `defineFilm`
 takes `motionBlur: { shutter, exposuresAtMost }`, either or both:
 
-- `shutter`, how much of that way the shutter is open for: 1, the whole of
-  it, where none is given, and 0.5 a film camera's half;
-- `exposuresAtMost`, how many shots the fastest frame is blended from: 8
+- `shutter`, how much of that way the shutter is open for: 0.5, a film
+  camera's half, where none is given, and 1 the whole of it;
+- `exposuresAtMost`, how many shots the fastest frame is blended from: 16
   where none is given, more for a smoother smear and a longer shoot.
 
 `motionBlur: { enabled: false }` turns it off; `--quality draft` shoots

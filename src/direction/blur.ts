@@ -2,9 +2,10 @@
  * How a film's fast camera is blurred, as its author writes it: left out for livereel's blur, turned off, or livereel's
  * blur with any of its values the film gives in their place.
  *
- * livereel opens the shutter for the camera's whole way from the frame before: a film camera's half smears too faintly
- * for the eye to see in a film of a page. A shutter open for more than that way is refused, as the camera's way before
- * the frame before is not known; so is a blur of fewer than two exposures at most, which is the frame alone.
+ * livereel opens the shutter for half the camera's way from the frame before, as a film camera does, and blends up to
+ * sixteen exposures: the owner's eye took that over the whole way in eight on the promo and the README film, whose
+ * smears had shown their copies (2026-10-30). A shutter open for more than the whole way is refused, as the camera's
+ * way before the frame before is not known; so is a blur of fewer than two exposures at most, which is the frame alone.
  */
 import { FilmError } from '../domain/errors.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
@@ -15,9 +16,9 @@ import { type TurnedOff, turnedOffBy } from './turned-off.ts';
 export type MotionBlurScript =
 	TurnedOff | { readonly enabled?: true; readonly shutter?: number; readonly exposuresAtMost?: number };
 
-// livereel's blur: the shutter open for the camera's whole way, and at most eight exposures a frame, which keep copies a
-// step apart up to eight steps a frame and bound the cost of faster ones
-const RECOMMENDED: MotionBlur = { shutter: 1, exposuresAtMost: 8 };
+// livereel's blur: the shutter open for half the camera's way, and at most sixteen exposures a frame, which keep copies
+// a step apart up to sixteen steps a frame and bound the cost of faster ones
+const RECOMMENDED: MotionBlur = { shutter: 0.5, exposuresAtMost: 16 };
 const WIDEST_SHUTTER = 1;
 const FEWEST_EXPOSURES = 2;
 // Where a film writes its blur, and the names it writes it with
