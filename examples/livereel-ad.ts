@@ -48,10 +48,21 @@ const HEADLINE: Place = { left: 0.067, top: 0.045, width: 0.866, height: 0.22 };
 const UNDER_THE_HEADLINE: Place = { left: 0.067, top: 0.255, width: 0.866, height: 0.08 };
 const CODE_UNDER_THE_HEADLINE: Place = { left: 0.067, top: 0.24, width: 0.866, height: 0.27 };
 const MOST_OF_THE_FRAME: Place = { left: 0.067, top: 0.2, width: 0.866, height: 0.75 };
-// Where the window stands: under the headline, as the film opens and ends; low, under code; in a corner
+// Where the window stands: under the headline, as the film opens and ends; low, under code
 const UNDER_THE_HEADLINE_WINDOW: Place = { left: 0.1, top: 0.37, width: 0.8, height: 0.56 };
 const LOW_WINDOW: Place = { left: 0.067, top: 0.55, width: 0.866, height: 0.39 };
-const CORNER_WINDOW: Place = { left: 0.42, top: 0.4, width: 0.52, height: 0.52 };
+// Where the window travels, the words taking the room it leaves: a half of the frame on either side, the words in the
+// other, the window as near square as the screen, so the page fills it whole; then wide and low, past the frame's
+// foot, the words over it
+const RIGHT_HALF_WINDOW: Place = { left: 0.47, top: 0.25, width: 0.47, height: 0.49 };
+const LEFT_HALF_WINDOW: Place = { left: 0.06, top: 0.25, width: 0.47, height: 0.49 };
+const LEFT_OF_THE_WINDOW: Place = { left: 0.067, top: 0.36, width: 0.37, height: 0.28 };
+const RIGHT_OF_THE_WINDOW: Place = { left: 0.583, top: 0.36, width: 0.37, height: 0.28 };
+const PAST_THE_FOOT_WINDOW: Place = { left: 0.03, top: 0.36, width: 0.94, height: 0.84 };
+// How far into a travel the last words are gone, before the window crosses them, and how far into it the window has
+// left the room the next words come up in, each a share of the step
+const WORDS_GONE = 0.3;
+const ROOM_LEFT = 0.7;
 // The app's blocks the film looks at. The row of cards is the camera's home: it frames them, Refresh above, in every
 // shot but the question's rush to the count and the search the keys are typed into
 const VISITORS = '[data-testid=visitors]';
@@ -60,6 +71,8 @@ const REFRESH = '[data-testid=refresh]';
 const CARDS = '[data-testid=kpis]';
 const TOP_PAGES = '[data-testid=top-pages]';
 const SEARCH = '[data-testid=search]';
+// How dim the page goes round the block lit
+const LIGHT_DIM = 0.35;
 // The word set apart in a headline, in the accent's amber
 const AMBER = '#fbbf24';
 // The headlines' letters: the claim, the question set huge, and the rest
@@ -117,6 +130,27 @@ function headline(text: Wording, size: number): Move {
 	return title.show(text, { at: HEADLINE, size, within: { start: 0.2 } });
 }
 
+/**
+ * The window travelling to a place, the camera framing the cards anew in it at the angle it holds, the last words
+ * gone before it crosses them, and the words of the travel coming up in the room it leaves once it has left it; then
+ * a beat to read them.
+ */
+function travelled(text: string, windowPlace: Place, wordsPlace: Place): readonly Step[] {
+	return [
+		play({
+			seconds: 0.9,
+			moves: [
+				window.to(windowPlace),
+				camera.onto(CARDS),
+				title.hide({ within: { end: WORDS_GONE } }),
+				title.show(text, { at: wordsPlace, size: LINE_SIZE, within: { start: ROOM_LEFT } })
+			],
+			ease: easeInOutCubic
+		}),
+		hold({ seconds: 0.6 })
+	];
+}
+
 async function refreshed(context: ActContext, served: AppServed): Promise<void> {
 	await context.page.locator(REFRESH).click();
 	await context.page.locator(VISITORS_TODAY, { hasText: served.refreshed.visitors }).waitFor();
@@ -143,15 +177,14 @@ function searchedAgain(line: string, typed: readonly Step[]): readonly Step[] {
 }
 
 /**
- * Frame 0, the feed's preview, finished: the app in a window leaning under the claim, its count lit, the cursor by
- * Refresh; from frame 1 the camera creeps toward the count.
+ * Frame 0, the feed's preview, finished: the app in a window leaning under the claim, the cursor by Refresh, nothing
+ * lit, as the light is a beat of its own; from frame 1 the camera creeps toward the count.
  */
 function actTheClaim(): readonly Step[] {
 	return [
 		cut(
 			window.to(UNDER_THE_HEADLINE_WINDOW),
 			camera.onto(CARDS, { tilt: 20, turn: -18 }),
-			light.on(VISITORS, { dim: 0.35 }),
 			cursor.to(REFRESH),
 			title.show('i have not filmed a single frame of this.', { at: HEADLINE, size: CLAIM_SIZE })
 		),
@@ -200,37 +233,46 @@ function actTheLean(): readonly Step[] {
 	];
 }
 
-/** The window off to a corner and face-on, the camera keeping the cards framed in it. */
+/**
+ * The window, still leaning, travelling across the frame and down past its foot, the words of the travel taking the
+ * room it leaves each time and saying something new there.
+ */
 function actTheTravel(): readonly Step[] {
 	return [
-		play({
-			seconds: 1,
-			moves: [headline('it travels.', LINE_SIZE), window.to(CORNER_WINDOW), camera.onto(CARDS, { tilt: 0, turn: 0 })],
-			ease: easeInOutCubic
-		}),
-		hold({ seconds: 1 })
+		...travelled('it travels.', RIGHT_HALF_WINDOW, LEFT_OF_THE_WINDOW),
+		...travelled('anywhere.', LEFT_HALF_WINDOW, RIGHT_OF_THE_WINDOW),
+		...travelled('even past the edge.', PAST_THE_FOOT_WINDOW, HEADLINE)
 	];
 }
 
-/** The window back under the headline, the light carried from the count to Refresh. */
+/** The window back under the headline and face-on, a light coming up on the count, then carried to Refresh. */
 function actTheLight(): readonly Step[] {
 	return [
 		play({
 			seconds: 0.9,
-			moves: [headline('it lights one block.', LINE_SIZE), window.to(UNDER_THE_HEADLINE_WINDOW)],
+			moves: [
+				headline('it lights one block.', LINE_SIZE),
+				window.to(UNDER_THE_HEADLINE_WINDOW),
+				camera.onto(CARDS, { tilt: 0, turn: 0 })
+			],
 			ease: easeInOutCubic
 		}),
+		play({ seconds: 0.6, moves: [light.on(VISITORS, { dim: LIGHT_DIM })], ease: easeOutCubic }),
+		hold({ seconds: 0.4 }),
 		play({ seconds: 0.8, moves: [light.to(REFRESH)], ease: easeInOutCubic }),
-		hold({ seconds: 1.2 })
+		hold({ seconds: 0.8 })
 	];
 }
 
-/** The film's file under the headline, the window low: a move it makes, then the same move made slower. */
+/**
+ * The light out, the film's file under the headline, the window low: a move it makes, then the same move made slower.
+ */
 function actTheFile(): readonly Step[] {
 	return [
 		play({
 			seconds: 1,
 			moves: [
+				light.off({ within: { end: 0.4 } }),
 				headline('this is the whole film. a typescript file.', LINE_SIZE),
 				window.to(LOW_WINDOW),
 				code.show(linesOf(['quick-seconds', 'quick-move']), {
@@ -412,8 +454,7 @@ function actTheCredit(): readonly Step[] {
 				headline('i wrote the tool. it wrote the film.', LINE_SIZE),
 				terminal.leave({ toward: 'left' }),
 				window.show({ at: UNDER_THE_HEADLINE_WINDOW, from: 'right' }),
-				camera.onto(CARDS, { tilt: 14, turn: 16 }),
-				light.to(VISITORS)
+				camera.onto(CARDS, { tilt: 14, turn: 16 })
 			],
 			ease: easeInOutCubic
 		}),
