@@ -115,8 +115,6 @@ class CameraDrawer {
 			'--focus-x': pose.focusX,
 			'--focus-y': pose.focusY,
 			'--zoom': pose.zoom,
-			'--tilt': pose.tilt,
-			'--turn': pose.turn,
 			'--cut-top': cut.top,
 			'--cut-right': cut.right,
 			'--cut-bottom': cut.bottom,
@@ -125,7 +123,7 @@ class CameraDrawer {
 	}
 }
 
-/** The page's window: where on the frame the camera's picture shows, and how far it stands off the ground. */
+/** The page's window: where on the frame the camera's picture shows, how far it stands off the ground, how it leans. */
 class WindowDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
@@ -140,7 +138,9 @@ class WindowDrawer {
 			'--view-top': view.box.top,
 			'--view-width': view.box.width,
 			'--view-height': view.box.height,
-			'--lift': view.lift
+			'--lift': view.lift,
+			'--tilt': view.angle.tilt,
+			'--turn': view.angle.turn
 		});
 	}
 }

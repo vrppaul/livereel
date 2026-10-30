@@ -7,8 +7,8 @@
 
 https://github.com/user-attachments/assets/23e46e5f-8c42-454d-b66c-8a264813f884
 
-Film your live web app as a directed short: a camera that leans and
-travels, a light on the block that matters, a cursor that moves like a
+Film your live web app as a directed short: a camera that travels in a
+window that leans, a light on the block that matters, a cursor that moves like a
 hand, captions that come up word by word. The app is real — clicks, typing
 and its server's answers happen in it — and every frame is shot on a clock
 of the film's own, so a slow server costs the film nothing.
@@ -132,8 +132,8 @@ A film is a list of steps:
 
 and the moves of each part of the scene:
 
-- `camera.to(pose, { tilt, turn })`, `camera.onto(target, { every, air, zoomAtMost, tilt, turn })`
-- `window.to(place)`, `window.show({ at, from })`, `window.hide({ toward })`
+- `camera.to(pose)`, `camera.onto(target, { every, air, zoomAtMost })`
+- `window.to(place)`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
 - `callout.show(target, text, { side })`, `callout.hide()`
 - `note.show(target, text, { at })`, `note.hide()`
@@ -159,8 +159,11 @@ draws with nothing to select: a canvas, or a frame exported from a design.
 `...cursor.click(action)`. An act's `action` is handed a `context`, whose
 `context.page` is Playwright's `Frame` of the filmed page.
 
-A pose is the whole screen's, `whole`, which `steps` is handed, or
-`lookingAt(pose, focusX, focusY, zoom)`. Every move that runs over time
+A pose is the whole screen's, `whole`, which `steps` is handed, or one
+written out, `{ focusX, focusY, zoom }`. The camera chooses what of the page
+the window shows; the window leans, `window.lean({ tilt, turn })`, the
+screen in it with it, by a move of its own, so it travels and leans in one
+`play`. Every move that runs over time
 takes a share of its step, `within: { start, end }`, and a curve of its own,
 `ease`: `linear`, `easeInOutSine` (a step's own), `easeInOutCubic`,
 `easeOutCubic` or `easeOutQuint`. `keystrokes(text, { seed, slipAt, pace })`
@@ -239,9 +242,10 @@ at its middle, as close as its `air` lets, but never so far back that
 ground shows in the window, closer than `zoomAtMost` where it must, so a
 block wider than the window at that distance is cut at its edges, and a
 phone's page shows a strip of itself; framed closer, the window stands still and
-the page grows in it. An
-angled camera leans the window back or swings it, the page still filling
-it; in the whole frame an angled camera stands where the film puts it.
+the page grows in it. `window.lean` leans the window back or swings it, the
+page still filling it. Over the whole frame the camera stands where it would
+to show no edge of a face-on screen, leant or not, so a lean never moves
+what it frames; leant far, ground may show at the frame's far corners.
 Start the words once the window has drawn back, so they come up on the
 ground, not over the page. A film shot in several formats names places of
 its own in each format and writes them once (below, "Formats").

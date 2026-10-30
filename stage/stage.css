@@ -34,7 +34,7 @@ body {
 	overflow: hidden;
 }
 
-/* The camera's view, and its shadow under it: the whole frame, or a window on the ground, leant back and swung about its middle as the camera angles. The engine works out what the camera shows where in the same steps (`src/domain/camera.ts`) */
+/* The camera's view, and its shadow under it: the whole frame, or a window on the ground, leant back and swung about its middle as the window leans. The engine works out what the camera shows where in the same steps (`src/domain/camera.ts`) */
 .view,
 .view-shadow {
 	--view-corner: calc(var(--window-corner) * 1px);

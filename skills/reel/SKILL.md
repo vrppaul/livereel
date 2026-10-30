@@ -34,7 +34,7 @@ caption. Speak in the director's words, which are the tool's:
 | Word | In livereel |
 |---|---|
 | framing | `camera.onto(target, { air })` — what the frame holds, a selector's blocks or a box |
-| angle | `camera.to(pose)`, `camera.onto(…, { tilt, turn })` — the screen leans back or swings |
+| angle | `window.lean({ tilt, turn })` — the window leans back or swings, the screen in it, as it travels or holds |
 | camera move | a `play({ seconds, moves, ease })` |
 | light | `light.on`, `light.to`, `light.off` — one block lit, the rest dimmed |
 | cast | what the page shows, opened and closed by `act` |
@@ -205,8 +205,9 @@ its end at once.
 
 | Moves | |
 |---|---|
-| `camera.to(pose, { tilt, turn })` | to a pose: `whole` from `steps`, or `lookingAt(pose, focusX, focusY, zoom)` |
-| `camera.onto(target, { every, air, zoomAtMost, tilt, turn })` | frames the first `every` blocks a selector matches, or a box of the screen, `{ left, top, width, height }` in its pixels, for a canvas or a design's frame with nothing to select, `air` pixels round them, in whatever window stands, and keeps them framed as the window moves, the screen filling a window; an angle leans the window |
+| `camera.to(pose)` | to a pose: `whole` from `steps`, or one written out, `{ focusX, focusY, zoom }` |
+| `camera.onto(target, { every, air, zoomAtMost })` | frames the first `every` blocks a selector matches, or a box of the screen, `{ left, top, width, height }` in its pixels, for a canvas or a design's frame with nothing to select, `air` pixels round them, in whatever window stands, and keeps them framed as the window moves or leans, the screen filling a window |
+| `window.lean({ tilt, turn })` | the window leant back from its top edge by `tilt` and swung about its middle by `turn`, in degrees, the screen in it with it, one left out as it stands; a move of its own, so a `window.to` and a `window.lean` share a `play` |
 | `window.to(place)` | the page's window to a place, the frame itself at `whole`, a window on the ground anywhere else: a side's room across from the words' share, or a box in shares; travels apart from the camera, in the same `play` or not |
 | `window.show({ at, from })`, `window.hide({ toward })` | the window sliding in whole from past a side of the frame to its place, or out past one, where it stays; with words sliding the other way in one `play`, a push |
 | `screen.rise()`, `screen.lower()` | the screen up out of the ground from where it stands, or down into it, the window's shadow and edge with it: over a share of a `play`, or at once in a `cut` |

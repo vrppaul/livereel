@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import {
+	type Angle,
 	type Camera,
 	type Cut,
 	type Pose,
@@ -22,10 +23,12 @@ const SQUARE: Format = { frame: { width: 1080, height: 1080 }, screen: { width: 
 // The same screen in a square frame half as large each way
 const HALF = 0.5;
 const HALF_SQUARE: Format = { frame: { width: 540, height: 540 }, screen: SQUARE.screen };
-const FACE_ON: Pose = { focusX: 756, focusY: 540, zoom: 1, tilt: 0, turn: 0 };
-const LEANING_BACK: Pose = { focusX: 648, focusY: 432, zoom: 0.7, tilt: 14, turn: -9 };
-// The screen seen edge-on: no corner of the frame shows a point of it
-const EDGE_ON: Pose = { ...FACE_ON, turn: 90 };
+const FACE_ON: Pose = { focusX: 756, focusY: 540, zoom: 1 };
+const DRAWN_BACK: Pose = { focusX: 648, focusY: 432, zoom: 0.7 };
+// How a view leans: not at all, back and swung a little, and edge-on, where no corner of the frame shows the screen
+const STRAIGHT: Angle = { tilt: 0, turn: 0 };
+const LEANT_BACK: Angle = { tilt: 14, turn: -9 };
+const EDGE_ON: Angle = { tilt: 0, turn: 90 };
 // How far a corner of a square frame of 1080 stands from its middle
 const CORNER_FROM_MIDDLE = Math.hypot(540, 540);
 // The screen's corners at half its size in the frame, then at 0.55 of it: each moves 37.8 across and 27 down
@@ -43,34 +46,36 @@ const BOTTOM_RIGHT: Point = { left: 1512, top: 1080 };
 const WINDOW: Box = { left: 400, top: 500, width: 600, height: 400 };
 const WINDOW_CORNER: Point = { left: 1000, top: 900 };
 
-/** A camera at a pose, its picture the whole of a frame. */
-function inTheWhole(pose: Pose, frame: Size = SQUARE.frame): Camera {
-	return { pose, view: wholeView(frame) };
+/** A camera at a pose, its picture the whole of a frame, leant as it is said. */
+function inTheWhole(pose: Pose, angle: Angle = STRAIGHT, frame: Size = SQUARE.frame): Camera {
+	return { pose, view: { ...wholeView(frame), angle } };
 }
 
-function inTheWindow(pose: Pose): Camera {
-	return { pose, view: windowView(WINDOW) };
+function inTheWindow(pose: Pose, angle: Angle = STRAIGHT): Camera {
+	return { pose, view: { ...windowView(WINDOW), angle } };
 }
 
 /** Where a face-on camera's picture is cut, its view the whole square frame lifted so far. */
 function cutAt(lift: number): Cut {
-	return drawnCamera({ pose: FACE_ON, view: { box: { left: 0, top: 0, width: 1080, height: 1080 }, lift } }, SQUARE)
-		.cut;
+	const view = { box: { left: 0, top: 0, width: 1080, height: 1080 }, lift, angle: STRAIGHT };
+	return drawnCamera({ pose: FACE_ON, view }, SQUARE).cut;
 }
 
-function widthBetween(pose: Pose, left: Point, right: Point): number {
-	return onTheFrame(inTheWhole(pose), SQUARE.frame, right).left - onTheFrame(inTheWhole(pose), SQUARE.frame, left).left;
+function widthBetween(angle: Angle, left: Point, right: Point): number {
+	const camera = inTheWhole(FACE_ON, angle);
+	return onTheFrame(camera, SQUARE.frame, right).left - onTheFrame(camera, SQUARE.frame, left).left;
 }
 
-function heightBetween(pose: Pose, top: Point, bottom: Point): number {
-	return onTheFrame(inTheWhole(pose), SQUARE.frame, bottom).top - onTheFrame(inTheWhole(pose), SQUARE.frame, top).top;
+function heightBetween(angle: Angle, top: Point, bottom: Point): number {
+	const camera = inTheWhole(FACE_ON, angle);
+	return onTheFrame(camera, SQUARE.frame, bottom).top - onTheFrame(camera, SQUARE.frame, top).top;
 }
 
 test('a camera that stands still moves nothing on the frame, at any angle', () => {
 	expect([
 		frameShift(inTheWhole(FACE_ON), inTheWhole(FACE_ON), SQUARE),
-		frameShift(inTheWhole(LEANING_BACK), inTheWhole(LEANING_BACK), SQUARE),
-		frameShift(inTheWhole(EDGE_ON), inTheWhole(EDGE_ON), SQUARE)
+		frameShift(inTheWhole(DRAWN_BACK, LEANT_BACK), inTheWhole(DRAWN_BACK, LEANT_BACK), SQUARE),
+		frameShift(inTheWhole(FACE_ON, EDGE_ON), inTheWhole(FACE_ON, EDGE_ON), SQUARE)
 	]).toEqual([0, 0, 0]);
 });
 
@@ -80,26 +85,20 @@ test('a camera panned face-on moves what the frame shows by its way, as close as
 });
 
 test('a camera panned at an angle moves what the frame shows further than face-on, where the screen leans nearer', () => {
-	const faceOnAsFar = { ...LEANING_BACK, tilt: 0, turn: 0 };
-	const angled = frameShift(
-		inTheWhole(LEANING_BACK),
-		inTheWhole({ ...LEANING_BACK, focusX: LEANING_BACK.focusX + PANNED_BY }),
-		SQUARE
-	);
-	const faceOn = frameShift(
-		inTheWhole(faceOnAsFar),
-		inTheWhole({ ...faceOnAsFar, focusX: faceOnAsFar.focusX + PANNED_BY }),
-		SQUARE
-	);
+	const panned = { ...DRAWN_BACK, focusX: DRAWN_BACK.focusX + PANNED_BY };
+	const angled = frameShift(inTheWhole(DRAWN_BACK, LEANT_BACK), inTheWhole(panned, LEANT_BACK), SQUARE);
+	const faceOn = frameShift(inTheWhole(DRAWN_BACK), inTheWhole(panned), SQUARE);
 	expect(angled).toBeGreaterThan(faceOn);
 });
 
 test('the point of the screen a corner of the view shows at an angle is drawn at that corner: the whole frame, a window off its middle', () => {
-	const shown = underTheFrame(inTheWhole(LEANING_BACK), SQUARE.frame, FRAME_CORNER);
-	const shownInTheWindow = underTheFrame(inTheWindow(LEANING_BACK), SQUARE.frame, WINDOW_CORNER);
+	const whole = inTheWhole(DRAWN_BACK, LEANT_BACK);
+	const window = inTheWindow(DRAWN_BACK, LEANT_BACK);
+	const shown = underTheFrame(whole, SQUARE.frame, FRAME_CORNER);
+	const shownInTheWindow = underTheFrame(window, SQUARE.frame, WINDOW_CORNER);
 	expect([
-		distanceBetween(onTheFrame(inTheWhole(LEANING_BACK), SQUARE.frame, shown!), FRAME_CORNER),
-		distanceBetween(onTheFrame(inTheWindow(LEANING_BACK), SQUARE.frame, shownInTheWindow!), WINDOW_CORNER)
+		distanceBetween(onTheFrame(whole, SQUARE.frame, shown!), FRAME_CORNER),
+		distanceBetween(onTheFrame(window, SQUARE.frame, shownInTheWindow!), WINDOW_CORNER)
 	]).toEqual([expect.closeTo(0, DECIMALS), expect.closeTo(0, DECIMALS)]);
 });
 
@@ -132,26 +131,26 @@ test('a window drawn back off the frame moves what it shows by how far its corne
 });
 
 test('a screen leant back shows its top edge narrower than its bottom', () => {
-	const leant = { ...FACE_ON, tilt: 20 };
+	const leant = { tilt: 20, turn: 0 };
 	expect(widthBetween(leant, TOP_LEFT, TOP_RIGHT)).toBeLessThan(widthBetween(leant, BOTTOM_LEFT, BOTTOM_RIGHT));
 });
 
 test('a screen swung by a turn shows its right edge shorter than its left', () => {
-	const swung = { ...FACE_ON, turn: 20 };
+	const swung = { tilt: 0, turn: 20 };
 	expect(heightBetween(swung, TOP_RIGHT, BOTTOM_RIGHT)).toBeLessThan(heightBetween(swung, TOP_LEFT, BOTTOM_LEFT));
 });
 
 test('a pose shows the same on a frame half as large: the whole screen, a point of it at an angle, its corner, a face-on edge kept', () => {
-	const onTheHalf = onTheFrame(inTheWhole(LEANING_BACK, HALF_SQUARE.frame), HALF_SQUARE.frame, BOTTOM_RIGHT);
-	const onTheWhole = onTheFrame(inTheWhole(LEANING_BACK), SQUARE.frame, BOTTOM_RIGHT);
+	const onTheHalf = onTheFrame(inTheWhole(DRAWN_BACK, LEANT_BACK, HALF_SQUARE.frame), HALF_SQUARE.frame, BOTTOM_RIGHT);
+	const onTheWhole = onTheFrame(inTheWhole(DRAWN_BACK, LEANT_BACK), SQUARE.frame, BOTTOM_RIGHT);
 	const halfCorner: Point = { left: HALF_SQUARE.frame.width, top: HALF_SQUARE.frame.height };
 	const nearTheEdge: Pose = { ...FACE_ON, focusX: 50, zoom: 2 };
 	expect([
 		wholePose(HALF_SQUARE),
 		distanceBetween({ left: onTheHalf.left / HALF, top: onTheHalf.top / HALF }, onTheWhole),
 		distanceBetween(
-			underTheFrame(inTheWhole(LEANING_BACK, HALF_SQUARE.frame), HALF_SQUARE.frame, halfCorner)!,
-			underTheFrame(inTheWhole(LEANING_BACK), SQUARE.frame, FRAME_CORNER)!
+			underTheFrame(inTheWhole(DRAWN_BACK, LEANT_BACK, HALF_SQUARE.frame), HALF_SQUARE.frame, halfCorner)!,
+			underTheFrame(inTheWhole(DRAWN_BACK, LEANT_BACK), SQUARE.frame, FRAME_CORNER)!
 		),
 		covering(nearTheEdge, HALF_SQUARE, HALF_SQUARE.frame)
 	]).toEqual([
@@ -164,8 +163,7 @@ test('a pose shows the same on a frame half as large: the whole screen, a point 
 
 test('a block is framed whole with its air round it', () => {
 	const block: Box = { left: 100, top: 200, width: 440, height: 100 };
-	expect(onto(block, FACE_ON, SQUARE.frame, SQUARE.frame, { air: 50, zoomAtMost: 5 })).toEqual({
-		...FACE_ON,
+	expect(onto(block, SQUARE.frame, SQUARE.frame, { air: 50, zoomAtMost: 5 })).toEqual({
 		focusX: 320,
 		focusY: 250,
 		zoom: 2
@@ -174,7 +172,7 @@ test('a block is framed whole with its air round it', () => {
 
 test("a block framed in a window stands at the window's middle, as close as its air lets in the window", () => {
 	const block: Box = { left: 100, top: 200, width: 400, height: 100 };
-	const framed = onto(block, FACE_ON, WINDOW, SQUARE.frame, { air: 50, zoomAtMost: 5 });
+	const framed = onto(block, WINDOW, SQUARE.frame, { air: 50, zoomAtMost: 5 });
 	expect([onTheFrame(inTheWindow(framed), SQUARE.frame, { left: 300, top: 250 }), framed.zoom]).toEqual([
 		{ left: 700, top: 700 },
 		1.2
@@ -183,26 +181,19 @@ test("a block framed in a window stands at the window's middle, as close as its 
 
 test('the camera comes no closer than allowed', () => {
 	const block: Box = { left: 0, top: 0, width: 10, height: 10 };
-	expect(onto(block, FACE_ON, SQUARE.frame, SQUARE.frame, { air: 0, zoomAtMost: 3 }).zoom).toBe(3);
+	expect(onto(block, SQUARE.frame, SQUARE.frame, { air: 0, zoomAtMost: 3 }).zoom).toBe(3);
 });
 
 test('a block is framed alike on a frame half as large: as close as its air lets, and no closer than allowed', () => {
 	const fitted: Box = { left: 100, top: 200, width: 440, height: 100 };
 	const small: Box = { left: 0, top: 0, width: 10, height: 10 };
 	expect([
-		onto(fitted, FACE_ON, HALF_SQUARE.frame, HALF_SQUARE.frame, { air: 50, zoomAtMost: 5 }),
-		onto(small, FACE_ON, HALF_SQUARE.frame, HALF_SQUARE.frame, { air: 0, zoomAtMost: 3 })
+		onto(fitted, HALF_SQUARE.frame, HALF_SQUARE.frame, { air: 50, zoomAtMost: 5 }),
+		onto(small, HALF_SQUARE.frame, HALF_SQUARE.frame, { air: 0, zoomAtMost: 3 })
 	]).toEqual([
-		onto(fitted, FACE_ON, SQUARE.frame, SQUARE.frame, { air: 50, zoomAtMost: 5 }),
-		onto(small, FACE_ON, SQUARE.frame, SQUARE.frame, { air: 0, zoomAtMost: 3 })
+		onto(fitted, SQUARE.frame, SQUARE.frame, { air: 50, zoomAtMost: 5 }),
+		onto(small, SQUARE.frame, SQUARE.frame, { air: 0, zoomAtMost: 3 })
 	]);
-});
-
-test('a framing keeps the angle it was taken at', () => {
-	const angled = { ...FACE_ON, tilt: 20, turn: -10 };
-	const block = { left: 0, top: 0, width: 500, height: 500 };
-	const framed = onto(block, angled, SQUARE.frame, SQUARE.frame, { air: 0, zoomAtMost: 5 });
-	expect([framed.tilt, framed.turn]).toEqual([20, -10]);
 });
 
 test('a face-on camera near a corner moves until no edge of the screen shows', () => {
@@ -236,7 +227,7 @@ test("the picture is cut at the screen's edges flat on the frame, at the view's 
 test("a flat view slid off the frame's edge is cut at its own edge where it stands in from the frame's, and past it only where it meets or passes the frame's edge", () => {
 	const slidHalfAcross: Camera = {
 		pose: { ...FACE_ON, zoom: 2 },
-		view: { box: { left: 540, top: 0, width: 1080, height: 1080 }, lift: 0 }
+		view: { box: { left: 540, top: 0, width: 1080, height: 1080 }, lift: 0, angle: STRAIGHT }
 	};
 	expect(drawnCamera(slidHalfAcross, SQUARE).cut).toEqual({ top: -540, right: -972, bottom: -540, left: 0 });
 });
@@ -251,7 +242,7 @@ test("a picture of the page holds it as close as the closest face-on camera come
 	const pastTheBound = inTheWhole({ ...FACE_ON, zoom: 3 });
 	expect([
 		zoomPicturedFor(inTheWhole(FACE_ON), [closer]),
-		zoomPicturedFor(inTheWhole(FACE_ON), [inTheWhole(LEANING_BACK)]),
+		zoomPicturedFor(inTheWhole(FACE_ON), [inTheWhole(DRAWN_BACK, LEANT_BACK)]),
 		zoomPicturedFor(pastTheBound, [])
 	]).toEqual([1.5, 2.2, 2.2]);
 });

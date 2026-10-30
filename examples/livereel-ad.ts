@@ -131,7 +131,7 @@ function headline(text: Wording, size: number): Move {
 }
 
 /**
- * The window travelling to a place, the camera framing the cards anew in it at the angle it holds, the last words
+ * The window travelling to a place, leant as it stands, the camera framing the cards anew in it, the last words
  * gone before it crosses them, and the words of the travel coming up in the room it leaves once it has left it; then
  * a beat to read them.
  */
@@ -184,11 +184,12 @@ function actTheClaim(): readonly Step[] {
 	return [
 		cut(
 			window.to(UNDER_THE_HEADLINE_WINDOW),
-			camera.onto(CARDS, { tilt: 20, turn: -18 }),
+			camera.onto(CARDS),
+			window.lean({ tilt: 20, turn: -18 }),
 			cursor.to(REFRESH),
 			title.show('i have not filmed a single frame of this.', { at: HEADLINE, size: CLAIM_SIZE })
 		),
-		play({ seconds: 2.4, moves: [camera.onto(CARDS, { tilt: 14, turn: -12 })] })
+		play({ seconds: 2.4, moves: [window.lean({ tilt: 14, turn: -12 })] })
 	];
 }
 
@@ -197,20 +198,21 @@ function actTheQuestion(): readonly Step[] {
 	return [
 		play({
 			seconds: 0.7,
-			moves: [headline('how?', QUESTION_SIZE), camera.onto(VISITORS, { tilt: 6, turn: -6 })],
+			moves: [headline('how?', QUESTION_SIZE), camera.onto(VISITORS), window.lean({ tilt: 6, turn: -6 })],
 			ease: easeOutCubic
 		}),
 		hold({ seconds: 1.3 })
 	];
 }
 
-/** The answer: the camera draws back face-on, a real click changes the count, and who made it comes up. */
+/** The answer: the camera draws back as the window turns face-on, a real click changes the count, and who made it. */
 function actTheAnswer(served: AppServed): readonly Step[] {
 	return [
 		play({
 			seconds: 1.8,
 			moves: [
-				camera.onto(CARDS, { tilt: 0, turn: 0, within: { end: 0.5 } }),
+				camera.onto(CARDS, { within: { end: 0.5 } }),
+				window.lean({ tilt: 0, turn: 0, within: { end: 0.5 } }),
 				headline(['claude code did this. using ', { text: 'livereel', italic: true, ink: AMBER }, '.'], LINE_SIZE)
 			],
 			ease: easeInOutCubic
@@ -220,13 +222,13 @@ function actTheAnswer(served: AppServed): readonly Step[] {
 	];
 }
 
-/** The camera leaning the other way from below, still on the cards. */
+/** The window leaning the other way from below, the camera still on the cards. */
 function actTheLean(): readonly Step[] {
 	return [
 		cut(cursor.hide()),
 		play({
 			seconds: 1,
-			moves: [headline('it leans.', LINE_SIZE), camera.onto(CARDS, { tilt: -12, turn: 22 })],
+			moves: [headline('it leans.', LINE_SIZE), window.lean({ tilt: -12, turn: 22 })],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 1 })
@@ -253,7 +255,7 @@ function actTheLight(): readonly Step[] {
 			moves: [
 				headline('it lights one block.', LINE_SIZE),
 				window.to(UNDER_THE_HEADLINE_WINDOW),
-				camera.onto(CARDS, { tilt: 0, turn: 0 })
+				window.lean({ tilt: 0, turn: 0 })
 			],
 			ease: easeInOutCubic
 		}),
@@ -288,13 +290,13 @@ function actTheFile(): readonly Step[] {
 			seconds: 1.4,
 			// #endregion
 			moves: [
-				code.light('seconds', { through: 'camera', within: { end: 0.1 } }),
+				code.light('seconds', { through: 'window', within: { end: 0.1 } }),
 				// #region quick-move
-				camera.onto(CARDS, { tilt: -12, turn: 18 })
+				window.lean({ tilt: -12, turn: 18 })
 				// #endregion
 			]
 		}),
-		play({ seconds: 0.8, moves: [camera.onto(CARDS, { tilt: 0, turn: 0 })] }),
+		play({ seconds: 0.8, moves: [window.lean({ tilt: 0, turn: 0 })] }),
 		hold({ seconds: 0.6 }),
 		play({
 			seconds: 1,
@@ -309,9 +311,9 @@ function actTheFile(): readonly Step[] {
 			seconds: 4,
 			// #endregion
 			moves: [
-				code.light('seconds', { through: 'camera', within: { end: 0.1 } }),
+				code.light('seconds', { through: 'window', within: { end: 0.1 } }),
 				// #region slow-move
-				camera.onto(CARDS, { tilt: -12, turn: 18 })
+				window.lean({ tilt: -12, turn: 18 })
 				// #endregion
 			]
 		}),
@@ -352,7 +354,7 @@ function actTheLook(): readonly Step[] {
 				headline('every value is yours.', LINE_SIZE),
 				code.show(linesOf(['paper', 'corners', 'cyan', 'night']), { at: CODE_UNDER_THE_HEADLINE, from: 'right' }),
 				window.show({ at: LOW_WINDOW, from: 'right' }),
-				camera.onto(CARDS, { tilt: 8, turn: -10 })
+				window.lean({ tilt: 8, turn: -10 })
 			],
 			ease: easeInOutCubic
 		}),
@@ -399,7 +401,8 @@ function actTheSound(): readonly Step[] {
 			moves: [
 				headline('sound on for this one.', LINE_SIZE),
 				code.show(linesOf(['mechanical', 'butterfly', 'clicky']), { at: CODE_UNDER_THE_HEADLINE }),
-				camera.onto(TOP_PAGES, { tilt: 0, turn: 0 })
+				camera.onto(TOP_PAGES),
+				window.lean({ tilt: 0, turn: 0 })
 			],
 			ease: easeInOutCubic
 		}),
@@ -454,7 +457,8 @@ function actTheCredit(): readonly Step[] {
 				headline('i wrote the tool. it wrote the film.', LINE_SIZE),
 				terminal.leave({ toward: 'left' }),
 				window.show({ at: UNDER_THE_HEADLINE_WINDOW, from: 'right' }),
-				camera.onto(CARDS, { tilt: 14, turn: 16 })
+				camera.onto(CARDS),
+				window.lean({ tilt: 14, turn: 16 })
 			],
 			ease: easeInOutCubic
 		}),
@@ -468,7 +472,7 @@ function actTheEnd(): readonly Step[] {
 		play({
 			seconds: 1.6,
 			moves: [
-				camera.onto(CARDS, { tilt: 20, turn: -18 }),
+				window.lean({ tilt: 20, turn: -18 }),
 				cursor.to(REFRESH),
 				headline([{ text: 'livereel', italic: true, ink: AMBER }, '. open source.'], CLAIM_SIZE),
 				code.show('npx livereel  # github.com/vrppaul/livereel', {

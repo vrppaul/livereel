@@ -6,7 +6,7 @@ import { EYE_STEP, type MotionBlur, alsoExposedAt } from '../../src/domain/shutt
 // A screen wider than the frame, so the frame shows it alone however the camera pans here; the frame as large as the
 // stage's look was made on, where a zoom of 1 takes a page's pixel to the frame's own
 const WIDE: Format = { frame: { width: 1080, height: 1080 }, screen: { width: 2160, height: 1080 } };
-const FACE_ON: Camera = { pose: { focusX: 600, focusY: 540, zoom: 1, tilt: 0, turn: 0 }, view: wholeView(WIDE.frame) };
+const FACE_ON: Camera = { pose: { focusX: 600, focusY: 540, zoom: 1 }, view: wholeView(WIDE.frame) };
 // The camera's way from the frame before: far faster than any eye sees as smooth, and a pixel
 const FAST: Camera = panned(800);
 const SLOW: Camera = panned(601);

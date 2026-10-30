@@ -46,7 +46,7 @@ const CARD: EndingCard = { name: 'A name', line: 'A line', command: 'a command' 
 // A frame as large as the stage's look was made on, whose whole screen a camera shows at a zoom of 1
 const WHOLE_AT_ZOOM_ONE: Format = { frame: { width: 1080, height: 1080 }, screen: { width: 1080, height: 1080 } };
 // Its screen whole, and its middle twice as close; a frame's own exposure, drawn last
-const WHOLE_SCREEN: Pose = { focusX: 540, focusY: 540, zoom: 1, tilt: 0, turn: 0 };
+const WHOLE_SCREEN: Pose = { focusX: 540, focusY: 540, zoom: 1 };
 const TWICE_CLOSE: Pose = { ...WHOLE_SCREEN, zoom: 2 };
 const OWN = -1;
 // Two letters, the first showing on the third of six frames of typing, the second on the sixth
@@ -58,7 +58,7 @@ const STROKES: readonly Keystroke[] = [
 const HALF_OF_FOUR: MotionBlur = { shutter: 0.5, exposuresAtMost: 4 };
 // The camera close on the screen's right edge, a page's pixel to a frame's pixel, as 2.7 is on a frame of 400 (1080 /
 // 400): from the whole screen, at two thirds of that, a fast way
-const CLOSE_AT_THE_RIGHT: Pose = { focusX: 400, focusY: 200, zoom: 2.7, tilt: 0, turn: 0 };
+const CLOSE_AT_THE_RIGHT: Pose = { focusX: 400, focusY: 200, zoom: 2.7 };
 // Why a stage's page is gone, as a stage says it
 const GONE = new FilmError('the page at http://app/refusing/ refuses to be framed');
 // A picture of the page as it came out against the last: alike, or changed as the page answers the film

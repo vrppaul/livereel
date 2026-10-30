@@ -4,13 +4,14 @@
  *     pnpm livereel shoot examples/livereel-promo.ts --format wide --out out/promo --sheet
  *
  * Acme's analytics app is served by the film itself (`livereel-promo/`): the camera goes to its main number, a real
- * click on Refresh asks its server for today's count, and the camera leans back over the page. Then Claude Code's
+ * click on Refresh asks its server for today's count, and the camera draws back as the page leans. Then Claude Code's
  * terminal comes up over it, drawn on the stage, and is asked for the film just seen, which its agent shoots in the
  * format the film is shot in; the ending comes up over the terminal, and the app is not shown again. It is shot wide
  * for the README, or square for a feed: every pose is a framing by selector or the whole screen's, moved.
  */
 import {
 	type ActContext,
+	type Angle,
 	type Pose,
 	type Step,
 	type TerminalLine,
@@ -25,11 +26,11 @@ import {
 	hold,
 	keystrokes,
 	light,
-	lookingAt,
 	play,
 	screen,
 	terminal,
-	typing
+	typing,
+	window
 } from 'livereel';
 import { type AppServed, servedApp } from './livereel-promo/server.ts';
 
@@ -45,12 +46,10 @@ const CARDS = '[data-testid=kpis]';
 const TOP_ROW = `${REFRESH}, ${CARDS}`;
 // The screen comes up from a little smaller than the whole of it
 const OPENS_FROM = 0.86;
-// The camera drawn back over the whole page, a little off its middle, the screen leaning back and swung to the left,
+// How far the camera draws back over the whole page, and how the page leans back and swings to the left meanwhile,
 // all of it behind where the terminal's window comes up
-const LEAN_OFF_THE_MIDDLE = 20;
-const LEAN_FURTHER = 0.7;
-const LEAN_TILT = 14;
-const LEAN_TURN = -9;
+const DRAWN_BACK_BY = 0.7;
+const LEANING_BACK: Angle = { tilt: 14, turn: -9 };
 const TITLE = 'acme — claude';
 const TASK = 'make a 20-second promo of my app';
 const THINKING = 'Working…';
@@ -58,18 +57,12 @@ const ENDING = { name: 'livereel', line: 'Your agent films your live app', comma
 
 /** The whole screen from a little further off, as it stands before it comes up. */
 function fromAfar(whole: Pose): Pose {
-	return lookingAt(whole, whole.focusX, whole.focusY, whole.zoom * OPENS_FROM);
+	return { ...whole, zoom: whole.zoom * OPENS_FROM };
 }
 
-/** The whole page from further back, leaning back and swung to the left. */
-function leaningBack(whole: Pose): Pose {
-	return {
-		focusX: whole.focusX + LEAN_OFF_THE_MIDDLE,
-		focusY: whole.focusY + LEAN_OFF_THE_MIDDLE,
-		zoom: whole.zoom * LEAN_FURTHER,
-		tilt: LEAN_TILT,
-		turn: LEAN_TURN
-	};
+/** The whole page from further back. */
+function drawnBack(whole: Pose): Pose {
+	return { ...whole, zoom: whole.zoom * DRAWN_BACK_BY };
 }
 
 /** The agent's work: the skill, the film written, and the film shot in this format as an MP4 and a GIF. */
@@ -144,7 +137,7 @@ function actTheClick(served: AppServed): readonly Step[] {
 	];
 }
 
-/** The camera leans back over the whole page as the last caption comes. */
+/** The camera draws back over the whole page as it leans and the last caption comes. */
 function actTheClock(whole: Pose): readonly Step[] {
 	return [
 		cut(cursor.hide()),
@@ -153,7 +146,8 @@ function actTheClock(whole: Pose): readonly Step[] {
 			moves: [
 				caption.hide({ within: { end: 0.2 } }),
 				light.off({ within: { start: 0.05, end: 0.25 } }),
-				camera.to(leaningBack(whole), { within: { start: 0.05 } }),
+				camera.to(drawnBack(whole), { within: { start: 0.05 } }),
+				window.lean({ ...LEANING_BACK, within: { start: 0.05 } }),
 				caption.show("Every frame on the film's own clock", { within: { start: 0.35, end: 0.9 } })
 			],
 			ease: easeInOutCubic

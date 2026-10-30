@@ -26,7 +26,6 @@ import {
 	ending,
 	hold,
 	light,
-	lookingAt,
 	play,
 	screen,
 	title,
@@ -70,7 +69,7 @@ function inLanguage(language: string): string {
 
 /** The whole screen from a little further off, as it stands before it comes up. */
 function fromAfar(whole: Pose): Pose {
-	return lookingAt(whole, whole.focusX, whole.focusY, whole.zoom * OPENS_FROM);
+	return { ...whole, zoom: whole.zoom * OPENS_FROM };
 }
 
 async function followTheLink(context: ActContext): Promise<void> {

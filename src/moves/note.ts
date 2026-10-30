@@ -72,7 +72,7 @@ async function naming(beginning: Beginning, target: Target, said: Said, at: Plac
  */
 function besideTheWindow(beginning: Beginning, at: Place | null): Beside {
 	// Where the window stands, or goes while it moves
-	const window = beginning.scene.window.to.box;
+	const window = beginning.scene.window.box.to;
 	if (liesOutside(window, beginning.format.frame)) {
 		throw new FilmError(
 			"note.show's note stands beside the page's window, but the window is off the frame: bring it in first, with window.show({ at, from })"

@@ -302,8 +302,8 @@ function actTheCard(): readonly Step[] {
 }
 
 /**
- * The window across to its side, a heading and code coming up beside it; the camera leaning onto the cards, then
- * face-on to the count, which it lights.
+ * The window across to its side, a heading and code coming up beside it; the window leaning over the cards, then
+ * face-on again as the camera goes to the count, which it lights.
  */
 function actTheCamera(): readonly Step[] {
 	return [
@@ -319,9 +319,10 @@ function actTheCamera(): readonly Step[] {
 		play({
 			seconds: 1.4,
 			moves: [
-				code.light('CARDS', { within: { end: 0.2 } }),
+				code.light('lean', { within: { end: 0.2 } }),
+				camera.onto(CARDS),
 				// #region lean
-				camera.onto(CARDS, { tilt: 12, turn: -7 })
+				window.lean({ tilt: 12, turn: -7 })
 				// #endregion
 			],
 			ease: easeInOutCubic
@@ -331,8 +332,9 @@ function actTheCamera(): readonly Step[] {
 			seconds: 1.4,
 			moves: [
 				code.light('onto(VISITORS', { within: { end: 0.2 } }),
+				window.lean({ tilt: 0, turn: 0 }),
 				// #region onto
-				camera.onto(VISITORS, { tilt: 0, turn: 0 })
+				camera.onto(VISITORS)
 				// #endregion
 			],
 			ease: easeInOutCubic

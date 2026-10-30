@@ -5,7 +5,7 @@ import { type Point, boxOf, boxToward, frameScaleOf, middleX, middleY } from '..
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
 import { onto } from '../../src/moves/camera.ts';
-import { hide as windowHide, show as windowShow, to as windowTo } from '../../src/moves/window.ts';
+import { hide as windowHide, lean, show as windowShow, to as windowTo } from '../../src/moves/window.ts';
 import { lower, rise } from '../../src/moves/screen.ts';
 import { drawnTitle } from '../../src/props/title.ts';
 import * as callout from '../../src/moves/callout.ts';
@@ -349,7 +349,7 @@ test("pins are numbered along their path, the labels before the latest quietened
 test("a note's line runs from the block's edge to the words' share across from the window, level with the block", () => {
 	// Face-on, a page's pixel to a frame's pixel, in a window whose middle is the frame's: the screen drawn 100 to the left
 	const camera: Camera = {
-		pose: { focusX: 300, focusY: 200, zoom: 1 / frameScaleOf(SMALL.frame), tilt: 0, turn: 0 },
+		pose: { focusX: 300, focusY: 200, zoom: 1 / frameScaleOf(SMALL.frame) },
 		view: windowView({ left: 100, top: 100, width: 200, height: 200 })
 	};
 	const beside = { side: 'bottom', box: wordsOn(SMALL, 'bottom') } as const;
@@ -421,7 +421,7 @@ test('the window moves to a place, lifted off the ground, and back over the whol
 	const backAsABox = await setAt(windowTo({ of: 'whole' }), windowed, 1);
 	expect([windowed, halfWay, back, backAsABox].map((scene) => cameraOf(scene, SMALL).view)).toEqual([
 		windowView(windowOn(SMALL, 'right')),
-		{ box: boxToward(windowOn(SMALL, 'right'), boxOf(SMALL.frame), 0.5), lift: 0.5 },
+		{ box: boxToward(windowOn(SMALL, 'right'), boxOf(SMALL.frame), 0.5), lift: 0.5, angle: { tilt: 0, turn: 0 } },
 		wholeView(SMALL.frame),
 		wholeView(SMALL.frame)
 	]);
@@ -634,16 +634,30 @@ test('a camera onto a block reaching off the screen frames what the screen shows
 	expect(await Promise.all(reaching.map(cameraOnto))).toEqual(await Promise.all(shown.map(cameraOnto)));
 });
 
-test('an angled camera frames a block in its window as a face-on one does, the window leant and the screen filling it', async () => {
+test('a block is framed in a leant window as in a face-on one, the window leant and the screen filling it', async () => {
 	const windowed = await setAt(windowTo('right'), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const faceOn = cameraOf(await setAt(onto('#half-on'), windowed, 1), SMALL);
-	const angled = cameraOf(await setAt(onto('#half-on', { tilt: 6, turn: -16 }), windowed, 1), SMALL);
-	expect(angled).toEqual({ pose: { ...faceOn.pose, tilt: 6, turn: -16 }, view: faceOn.view });
+	const leant = await setAt(lean({ tilt: 6, turn: -16 }), windowed, 1);
+	const angled = cameraOf(await setAt(onto('#half-on'), leant, 1), SMALL);
+	expect(angled).toEqual({ pose: faceOn.pose, view: { ...faceOn.view, angle: { tilt: 6, turn: -16 } } });
 });
 
-test('an angled camera in the whole frame stands where the film puts it, the screen leant past the frame', async () => {
-	const angled = cameraOf(await setAt(onto('#block', { turn: -16 }), openingScene(SMALL, LIVEREELS_LOOK), 1), SMALL);
-	expect([angled.pose.focusX, angled.pose.focusY]).toEqual([150, 120]);
+test("a block is framed on a page leant over the whole frame as on a face-on one, kept off the screen's edge", async () => {
+	const faceOn = cameraOf(await setAt(onto('#block'), openingScene(SMALL, LIVEREELS_LOOK), 1), SMALL);
+	const leant = await setAt(lean({ turn: -16 }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	expect(cameraOf(await setAt(onto('#block'), leant, 1), SMALL).pose).toEqual(faceOn.pose);
+});
+
+test('the window leans by a move of its own while another carries it, each its own way along, and a side of the angle left out stays', async () => {
+	const leaning = await setAt(lean({ tilt: 10 }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const halfLeant = await setAt(lean({ turn: -20 }), leaning, 0.5);
+	const carried = await setAt(windowTo('right'), halfLeant, 1);
+	const halfCarried = await setAt(windowTo('right'), openingScene(SMALL, LIVEREELS_LOOK), 0.5);
+	const leantAfter = await setAt(lean({ tilt: 6 }), halfCarried, 1);
+	expect([cameraOf(carried, SMALL).view, cameraOf(leantAfter, SMALL).view]).toEqual([
+		{ ...windowView(windowOn(SMALL, 'right')), angle: { tilt: 10, turn: -10 } },
+		{ box: boxToward(boxOf(SMALL.frame), windowOn(SMALL, 'right'), 0.5), lift: 0.5, angle: { tilt: 6, turn: 0 } }
+	]);
 });
 
 test("a face-on camera onto a block at the screen's foot stops short of showing the edge", async () => {

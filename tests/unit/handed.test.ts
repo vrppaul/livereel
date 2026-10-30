@@ -15,7 +15,6 @@ import {
 	hold,
 	keystrokes,
 	light,
-	lookingAt,
 	page,
 	play,
 	screen,
@@ -26,7 +25,7 @@ import {
 	window as pageWindow
 } from '../../src/index.ts';
 
-const POSE = { focusX: 0, focusY: 0, zoom: 1, tilt: 0, turn: 0 };
+const POSE = { focusX: 0, focusY: 0, zoom: 1 };
 const CARD = { name: 'livereel', line: 'Your agent films your live app', command: 'npx livereel' };
 const SELECTOR = 'a selector: a string that names blocks of the page';
 const TARGET =
@@ -52,13 +51,13 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		new FilmError('camera.onto\'s air is "80": it is a number')
 	);
 	expect(() => camera.onto('#block', { airr: 80 } as never)).toThrow(
-		new FilmError('camera.onto names airr: it names every, air, zoomAtMost, tilt, turn, within, ease, or fewer')
+		new FilmError('camera.onto names airr: it names every, air, zoomAtMost, within, ease, or fewer')
 	);
 	expect(() => camera.onto('#block', { every: 1.5 })).toThrow(
 		new FilmError("camera.onto's every is 1.5: it is a whole count, 1 or more")
 	);
 	expect(() => camera.onto('#block', 5 as never)).toThrow(
-		new FilmError('camera.onto is handed 5 for an object of every, air, zoomAtMost, tilt, turn, within, ease')
+		new FilmError('camera.onto is handed 5 for an object of every, air, zoomAtMost, within, ease')
 	);
 	expect(() => pageWindow.show({ at: 'right' } as never)).toThrow(
 		new FilmError(`window.show's from is undefined: it is ${SIDE}`)
@@ -67,8 +66,8 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => camera.to({ zoom: 1 } as never)).toThrow(
 		new FilmError("camera.to's pose's focusX is undefined: it is a number")
 	);
-	expect(() => camera.to(POSE, { tilt: 'up' as never })).toThrow(
-		new FilmError('camera.to\'s tilt is "up": it is a number')
+	expect(() => pageWindow.lean({ tilt: 'up' as never })).toThrow(
+		new FilmError('window.lean\'s tilt is "up": it is a number')
 	);
 	expect(() => light.on(null as never)).toThrow(new FilmError(`light.on's target is null: it is ${TARGET}`));
 	expect(() => light.on('#block', { dim: null as never })).toThrow(
@@ -215,18 +214,9 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => keystrokes(5 as never, { seed: 1 })).toThrow(new FilmError("keystrokes's text is 5: it is a string"));
 	expect(() => keystrokes('ls', {} as never)).toThrow(new FilmError("keystrokes's seed is undefined: it is a number"));
-	expect(() => lookingAt(null as never, 0, 0, 1)).toThrow(
-		new FilmError(
-			"lookingAt's pose is null: it is a pose: { focusX, focusY, zoom, tilt, turn }, as steps is handed or lookingAt gives"
-		)
+	expect(() => camera.to(null as never)).toThrow(
+		new FilmError("camera.to's pose is null: it is a pose: { focusX, focusY, zoom }, as steps is handed")
 	);
-	expect(() => lookingAt(POSE, '1' as never, 0, 1)).toThrow(
-		new FilmError('lookingAt\'s focusX is "1": it is a number')
-	);
-	expect(() => lookingAt(POSE, 0, null as never, 1)).toThrow(
-		new FilmError("lookingAt's focusY is null: it is a number")
-	);
-	expect(() => lookingAt(POSE, 0, 0, Number.NaN)).toThrow(new FilmError("lookingAt's zoom is NaN: it is a number"));
 	expect(() => atAddress('')).toThrow(new FilmError('atAddress\'s address is "": it is an address, a string'));
 	expect(() => camera.to({ ...POSE, focusX: Number.POSITIVE_INFINITY })).toThrow(
 		new FilmError("camera.to's pose's focusX is Infinity: it is a number")
@@ -250,7 +240,6 @@ test('what a refusal says a film handed is said as it was, whatever JSON cannot 
 test('what the types allow is taken, an endless number among it where it means no bound', () => {
 	expect([
 		page.scrollBy('#block', { pixels: Number.POSITIVE_INFINITY }).part,
-		camera.onto('#block', { zoomAtMost: Number.POSITIVE_INFINITY }).part,
-		lookingAt(POSE, 1, 2, 3).zoom
-	]).toEqual(['page', 'camera', 3]);
+		camera.onto('#block', { zoomAtMost: Number.POSITIVE_INFINITY }).part
+	]).toEqual(['page', 'camera']);
 });

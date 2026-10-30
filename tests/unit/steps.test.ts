@@ -8,6 +8,7 @@ import { on } from '../../src/moves/light.ts';
 import { to as lookTo } from '../../src/moves/look.ts';
 import { scrollBy, type } from '../../src/moves/page.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
+import { lean, to as windowTo } from '../../src/moves/window.ts';
 
 test("the fonts a film's looks name in its steps are found before it is shot, each by its move, in a play or a cut", () => {
 	const steps = [cut(lookTo({ font: 'Georgia' })), play({ seconds: 1, moves: [lookTo({ mono: 'Menlo' })] })];
@@ -37,6 +38,13 @@ test('two moves of the look at once are refused only on a value both set, named 
 		new FilmError("two moves on the look's glow at once in one step")
 	);
 	expect(play({ seconds: 1, moves: [drifting, lookTo({ ink: '#000000' })] }).moves.length).toBe(2);
+});
+
+test("the window travels and leans at once, two moves setting values of it apart; two travels at once are refused, by the window's box", () => {
+	expect(play({ seconds: 1, moves: [windowTo('right'), lean({ tilt: 6 })] }).moves.length).toBe(2);
+	expect(() => play({ seconds: 1, moves: [windowTo('right'), windowTo('left')] })).toThrow(
+		new FilmError("two moves on the window's box at once in one step")
+	);
 });
 
 test('moves of one prop one after the other share a step, moves of two props share it at once, and sounds any way', () => {
