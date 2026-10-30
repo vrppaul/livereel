@@ -223,7 +223,7 @@ its end at once.
 | `code.show(text, { at, from, as })`, `code.to(place)`, `code.lean({ tilt, turn })`, `code.light(line, { through })`, `code.hide({ toward })` | a dark pane of code `at` a place, beside the page's window or alone, sliding in `from` past a side of the frame, pushing the code of its name shown off past the side across, or out `toward` one, carried to another place by `to`, leant by `lean` while it travels or lights; several panes by name, `as`, as titles; its lines coming up one after another, coloured as TypeScript; a line lit by words only it says (`code.light('light.on')`), or by its number from 1, or lines `line` through `through`, the line from it on that says the other, the rest dimmed; going |
 | `caption.show(text)`, `caption.hide()` | words coming up one after another at the frame's foot, or its top in a format with `captionAt: 'top'`, in place of any shown; going |
 | `look.to(theme, { within })` | the film's look moving to any of a theme's values: through the values between in a `play`, at once in a `cut`; two at once in a step where they name no value alike |
-| `terminal.open(title, { from })` | an agent's terminal coming up over the frame, or sliding in whole `from` a side; in a `cut`, there at once |
+| `terminal.open(title, { at, from })`, `terminal.to(place)`, `terminal.lean({ tilt, turn })` | an agent's terminal coming up `at` a place, read as the window reads one, across most of the frame in its middle where none is named (`{ left: 0.07, top: 0.22, width: 0.86, height: 0.56 }` for a few lines), or sliding in whole `from` a side; in a `cut`, there at once; carried to another place, leant as the window leans; every terminal move takes `as` for a second terminal |
 | `terminal.type(strokes, { keyboard })`, `terminal.submit()` | keys typed into it, heard on the film's keyboard or the one named; Enter |
 | `terminal.works(lines, thinking, { thinkingShare })` | the agent thinking, its spinner beside the words `thinking`, then its lines written one after another; a line is `{ kind, text }`, its kind `work` (a tool and what it is used on), `said` or `done` |
 | `terminal.leave({ toward })` | the terminal giving way where it stands, or sliding out whole `toward` a side, so what comes in from the side across in the same `play` pushes it off |
@@ -250,8 +250,8 @@ colour), `ink` and `quietInk`, `accent` and `accentInk` for pins and notes,
 `cursorFill` and `cursorEdge`, `terminal` and `terminalInk`, and the code's
 colours by kind, `codeComment`, `codeString`, `codeNumber`, `codeKeyword`,
 `codeCall` and `codeKey` (made for a dark pane: give them all with a light
-`terminal`). From 0 to 1: `windowShadow`, `glowX` and `glowY`, and
-`terminalWidth` and `terminalHeight`, the frame's share the terminal takes.
+`terminal`). From 0 to 1: `windowShadow`, `glowX` and `glowY`. Where the
+terminal stands is its own: `terminal.open(title, { at })`.
 From 100 to 900: `titleWeight` and `captionWeight`. In pixels of a 1080
 frame: `titleSize`, `captionSize`, `noteSize`, `calloutSize`, `pinSize`,
 `keysSize`, `codeSize`, `terminalSize`, `endingNameSize`, `endingLineSize`,

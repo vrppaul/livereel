@@ -83,8 +83,10 @@ const LINE_SIZE = 72;
 const BLOG = keystrokes('blog', { seed: 5 });
 const CAREERS = keystrokes('careers', { seed: 6 });
 const DOCS = keystrokes('docs', { seed: 7 });
-// The agent's terminal, the owner's prompts while this film was made, and the last one, typed
+// The agent's terminal, across most of the frame and as tall as its lines ask, in the middle down it; the owner's
+// prompts while this film was made, and the last one, typed
 const TERMINAL = 'claude — livereel';
+const TERMINAL_PLACE: Place = { left: 0.07, top: 0.27, width: 0.86, height: 0.46 };
 const PROMPTS: readonly TerminalLine[] = [
 	{ kind: 'asked', text: 'frame 2 — not the whole screen. show the background' },
 	{ kind: 'asked', text: "why don't we push the terminal?" },
@@ -110,8 +112,8 @@ const NIGHT: Theme = {
 	windowCorner: 24,
 	accent: '#ffb224'
 };
-// The code large enough to read in a feed, and the terminal as tall as its lines ask
-const THEME: Theme = { ...NIGHT, codeSize: 34, terminalHeight: 0.46, terminalSize: 30 };
+// The code large enough to read in a feed, and the terminal's letters
+const THEME: Theme = { ...NIGHT, codeSize: 34, terminalSize: 30 };
 // The looks the film changes to at once, one after another, then back to the night
 const PAPER: Theme = { ground: '#f5efe6', glow: '#fffaf2', ink: '#1a1a1a', windowEdge: '#00000033' };
 const SQUARE_CORNERS: Theme = { windowCorner: 0 };
@@ -437,7 +439,7 @@ function actThePrompts(): readonly Step[] {
 				headline('no. not one prompt. i lost count.', LINE_SIZE),
 				window.hide({ toward: 'left' }),
 				code.hide({ toward: 'left' }),
-				terminal.open(TERMINAL, { from: 'right' })
+				terminal.open(TERMINAL, { at: TERMINAL_PLACE, from: 'right' })
 			],
 			ease: easeInOutCubic
 		}),

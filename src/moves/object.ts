@@ -1,10 +1,11 @@
 /**
  * The moves of an object (`src/props/object.ts`), alike whatever it shows, written once for every kind that makes
- * one — a title's words, code: coming up in its box, or sliding in whole from past a side of the frame, pushing the
- * object of its name standing there off past the side across; carried to another place; leant; put away where it
- * stands, or slid out past a side. A move takes the object a film names `as`, or its kind's own name, so a film shows
- * several of a kind at once, each moved by its name. How what an object shows takes another box as it sets off is told
- * here, kind by kind.
+ * one — a title's words, code, the agent's terminal, the ending card: coming up in its box, or sliding in whole from past
+ * a side of the frame, pushing the object of its name standing there off past the side across; carried to another
+ * place; leant; put away where it stands, or slid out past a side. A move takes the object a film names `as`, or its
+ * kind's own name, so a film shows several of a kind at once, each moved by its name. What differs by what an object
+ * shows is told here, kind by kind: the curve it comes up on in place, how it reads a place, and the box it sets off
+ * from as it is carried.
  *
  * A move that carries an object sets its box alone, one that leans it its angle alone, one of what it shows its content
  * alone, each writing its own into the object as it stands, so they share a step, each as far along as its own share;
@@ -13,7 +14,8 @@
  */
 import { FACE_ON, angleToward } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import { type Box, type FrameSide, type Size, boxToward } from '../domain/geometry.ts';
+import type { Format } from '../domain/format.ts';
+import { A_FRAME_SIDE, type Box, type FrameSide, type Size, boxToward } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import {
 	A_PLACE,
@@ -22,15 +24,17 @@ import {
 	enteringFrom,
 	pastTheEdge,
 	placesNamed,
+	windowPlaced,
 	wordsPlaced,
 	wordsResized
 } from '../domain/place.ts';
-import { linear } from '../domain/time.ts';
+import { type Ease, linear } from '../domain/time.ts';
 import {
 	type Beginning,
 	type Change,
 	type Move,
 	TIMING_FORM,
+	type Timing,
 	type TimingScript,
 	objectPart,
 	timingOf,
@@ -39,10 +43,9 @@ import {
 import { AN_OBJECT_NAME, type Content, type FrameObject, type ObjectName } from '../props/object.ts';
 import { type Scene, withLeaving, withObject } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
-import { SHOWN_WHOLE, SLIDE_OUT_FORM, type SlideOutScript } from './slide.ts';
 
 /** A kind of object, as a film calls its moves, and the name of the object they take where the film names none. */
-export type ObjectKind = 'title' | 'code';
+export type ObjectKind = 'title' | 'code' | 'terminal' | 'ending';
 
 /** The object a move takes: the one a film names `as`, or its kind's own. */
 export interface NamedScript {
@@ -57,8 +60,10 @@ export interface ShowScript extends TimingScript, NamedScript {
 /** Which object is carried to another place. */
 export interface ToScript extends TimingScript, NamedScript {}
 
-/** Which object is put away, and the side of the frame it slides out `toward`, if any. */
-export interface HideScript extends SlideOutScript, NamedScript {}
+/** Which object is put away, and the side of the frame it slides out `toward`, past the frame's edge, if any. */
+export interface HideScript extends TimingScript, NamedScript {
+	readonly toward?: FrameSide;
+}
 
 /** Which object leans, and how. */
 export interface ObjectLeanScript extends LeanScript, NamedScript {}
@@ -77,15 +82,24 @@ interface Push {
 
 export const NAMED_FORM: Form<NamedScript> = { as: AN_OBJECT_NAME };
 const TO_FORM: Form<ToScript> = { ...NAMED_FORM, ...TIMING_FORM };
-const HIDE_FORM: Form<HideScript> = { ...SLIDE_OUT_FORM, ...NAMED_FORM };
+const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...TIMING_FORM, ...NAMED_FORM };
 const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { ...LEAN_FORM, ...NAMED_FORM };
 // The values of an object a move that carries it sets, one that leans it, and one of what it shows; what each writes
 // is held to them
 const CARRIED = ['box'] as const satisfies readonly (keyof FrameObject)[];
 const LEANT = ['angle'] as const satisfies readonly (keyof FrameObject)[];
-export const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
-// An object not going: neither gone nor on its way out
+const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
+// An object not going: neither gone nor on its way out; and one sliding in from a side, come up whole from the start
 const NOT_GONE = 0;
+const SHOWN_WHOLE = 1;
+// The curve what an object of each kind shows comes up on in place where the film names none: words and lines of code,
+// one after another, at an even pace; the terminal and the card, fading up whole, on their step's
+const COMES_UP_ON: { readonly [Kind in ObjectKind]: Ease | null } = {
+	title: linear,
+	code: linear,
+	terminal: null,
+	ending: null
+};
 
 /** An object's values a move that carries it writes, one that leans it, and one of what it shows. */
 type Carried = Pick<FrameObject, (typeof CARRIED)[number]>;
@@ -94,31 +108,31 @@ type Shows = Pick<FrameObject, (typeof CONTENT)[number]>;
 
 /**
  * An object of a kind coming up, face-on, showing what `comingAt` makes of the scene as the move begins: in place of
- * any of its name, what it shows coming up at an even pace unless the film names a curve; or sliding in whole from past
- * a side of the frame where the film names one, pushing the one of its name standing off past the side across, so the
- * two move as one sheet. `place` is the place the move names, none where it stands over the whole frame. The script is
- * the kind's own, checked by it.
+ * any of its name, on its kind's curve unless the film names one; or sliding in whole from past a side of the frame
+ * where the film names one, pushing the one of its name standing off past the side across, so the two move as one
+ * sheet. `place` is the place the film names, none where it names none. The script is the kind's own, checked by it.
+ * Every move of an object is handed its kind and its own name, as a refusal says it: `terminal.open`.
  */
 export function objectShow(
 	kind: ObjectKind,
+	move: string,
 	script: ShowScript,
 	place: Place | null,
 	comingAt: (beginning: Beginning) => Coming
 ): Move {
 	const name = script.as ?? kind;
 	const from = script.from ?? null;
-	const evenly = from === null ? { ease: linear } : {};
+	const curve = from === null ? COMES_UP_ON[kind] : null;
 	return {
 		part: objectPart(name),
-		timing: timingOf({ ...evenly, ...script }),
-		places: placesNamed(`${kind}.show's at`, place),
+		timing: timingOf(curve === null ? script : { ease: curve, ...script }),
+		places: placesNamed(`${move}'s at`, place),
 		begin: (beginning) => appearing(beginning, name, comingAt(beginning), from)
 	};
 }
 
 /** An object of a kind carried to a place, through the boxes between. */
-export function objectTo(kind: ObjectKind, place: Place, script: ToScript): Move {
-	const move = `${kind}.to`;
+export function objectTo(kind: ObjectKind, move: string, place: Place, script: ToScript): Move {
 	assertKind(place, A_PLACE, `${move}'s place`);
 	assertWritten(script, TO_FORM, move);
 	const name = script.as ?? kind;
@@ -135,8 +149,7 @@ export function objectTo(kind: ObjectKind, place: Place, script: ToScript): Move
  * An object of a kind going where it stands, as what it shows goes, or sliding out past a side of the frame where the
  * film names one; once gone, there is none.
  */
-export function objectHide(kind: ObjectKind, script: HideScript): Move {
-	const move = `${kind}.hide`;
+export function objectHide(kind: ObjectKind, move: string, script: HideScript): Move {
 	assertWritten(script, HIDE_FORM, move);
 	const name = script.as ?? kind;
 	const toward = script.toward ?? null;
@@ -148,8 +161,7 @@ export function objectHide(kind: ObjectKind, script: HideScript): Move {
 }
 
 /** An object of a kind leant back from its top edge by `tilt` and swung about its middle by `turn`. */
-export function objectLean(kind: ObjectKind, script: ObjectLeanScript): Move {
-	const move = `${kind}.lean`;
+export function objectLean(kind: ObjectKind, move: string, script: ObjectLeanScript): Move {
 	assertWritten(script, LEAN_OBJECT_FORM, move);
 	const name = script.as ?? kind;
 	return {
@@ -161,10 +173,55 @@ export function objectLean(kind: ObjectKind, script: ObjectLeanScript): Move {
 }
 
 /** An object as a move finds it as it begins; one not on the screen is refused, the move named. */
-export function standing(beginning: Beginning, name: ObjectName, move: string): FrameObject {
+function standing(beginning: Beginning, name: ObjectName, move: string): FrameObject {
 	const object = beginning.scene.objects.get(name);
 	if (object === undefined) throw new FilmError(`${move} finds no ${name} on the screen`);
 	return object;
+}
+
+/**
+ * An object a move carries or leans as it begins; refused where none stands, or it shows the ending card, whose ground
+ * is the frame's own, painted where its box stands on the frame: it slides whole, and stands nowhere else.
+ */
+function movable(beginning: Beginning, name: ObjectName, move: string): FrameObject {
+	const object = standing(beginning, name, move);
+	if (object.content.kind === 'ending') {
+		throw new FilmError(`${move} would move the ${name}, the ending card, which stands over the whole frame alone`);
+	}
+	return object;
+}
+
+/** A move of what an object of a name shows, which sets that alone, so it shares a step with one that carries it. */
+export function contentMove(
+	name: ObjectName,
+	timing: Timing,
+	begin: (beginning: Beginning) => Change | Promise<Change>
+): Move {
+	return { part: objectPart(name), valueNames: CONTENT, timing, begin };
+}
+
+/** What an object shows as a move finds it as it begins; refused where none stands, or it shows another kind. */
+export function contentOf<Kind extends Content['kind']>(
+	beginning: Beginning,
+	name: ObjectName,
+	move: string,
+	kind: Kind
+): Extract<Content, { readonly kind: Kind }> {
+	const content = standing(beginning, name, move).content;
+	if (!isOfKind(content, kind)) throw new FilmError(`${move} finds the ${name} showing ${content.kind}, not ${kind}`);
+	return content;
+}
+
+/** Where an object stands in a place: words and code read it as words do, the rest as the window does. */
+export function placedFor(kind: Content['kind'], format: Format, place: Place): Box {
+	switch (kind) {
+		case 'words':
+		case 'code':
+			return wordsPlaced(format, place);
+		case 'terminal':
+		case 'ending':
+			return windowPlaced(format, place);
+	}
 }
 
 /** What an object shows, written into it as it stands at each progress. */
@@ -193,15 +250,15 @@ function appearing(beginning: Beginning, name: ObjectName, coming: Coming, from:
 
 /** The object on its way to a place, from the box what it shows sets off from. */
 function carried(beginning: Beginning, name: ObjectName, place: Place, move: string): Change {
-	const object = standing(beginning, name, move);
-	const end = wordsPlaced(beginning.format, place);
+	const object = movable(beginning, name, move);
+	const end = placedFor(object.content.kind, beginning.format, place);
 	const start = settingOff(object.content, object.box, end);
 	return writing(name, (progress): Carried => ({ box: boxToward(start, end, progress) }));
 }
 
 /** The object's angle on its way from how it leans to the film's. */
 function leaning(beginning: Beginning, name: ObjectName, script: LeanScript, move: string): Change {
-	const from = standing(beginning, name, move).angle;
+	const from = movable(beginning, name, move).angle;
 	const to = leantFrom(from, script);
 	return writing(name, (progress): Leant => ({ angle: angleToward(from, to, progress) }));
 }
@@ -223,15 +280,25 @@ function slidingOut(beginning: Beginning, name: ObjectName, toward: FrameSide, m
 /**
  * Where what an object shows sets off from, carried to a box: words in a place at the size of the box they go to,
  * keeping where they read from, so their lines change once, where they would break anew on every frame of the way;
- * words on a ground of their own, and code, from their box, the ground or the pane growing or shrinking along the way.
+ * anything else from its box, growing or shrinking along the way.
  */
 function settingOff(content: Content, box: Box, end: Box): Box {
 	switch (content.kind) {
 		case 'words':
 			return content.onGround ? box : wordsResized(box, end, content.align);
 		case 'code':
+		case 'terminal':
+		case 'ending':
 			return box;
 	}
+}
+
+/** Whether what an object shows is of a kind. */
+function isOfKind<Kind extends Content['kind']>(
+	content: Content,
+	kind: Kind
+): content is Extract<Content, { readonly kind: Kind }> {
+	return content.kind === kind;
 }
 
 /**

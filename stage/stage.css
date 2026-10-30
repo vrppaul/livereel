@@ -632,28 +632,17 @@ body {
 	color: var(--code-key);
 }
 
-/* What slides whole past a side of the frame, the agent's terminal and the ending card: slid from its place across and down by its shift, in the frame's pixels */
-.terminal,
-.ending {
-	translate: calc(var(--shift-left) * 1px / var(--frame-scale)) calc(var(--shift-top) * 1px / var(--frame-scale));
-}
-
-/* The agent's terminal: a window on the ground, its log above the line being typed, a little smaller while it comes up or goes */
+/* The agent's terminal in its object: a window on the ground filling its box, its log above the line being typed, a little smaller about its middle while it comes up or goes */
 .terminal {
 	--terminal-shrinks: 0.06;
 
-	position: absolute;
-	inset: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
 	opacity: var(--shown);
 	transform: scale(calc(1 - var(--terminal-shrinks) * (1 - var(--shown))));
 }
 
 .terminal .window {
-	width: calc(var(--terminal-width) * 100%);
-	height: calc(var(--terminal-height) * 100%);
+	width: var(--content-width);
+	height: var(--content-height);
 	display: flex;
 	flex-direction: column;
 	border-radius: 16px;
@@ -758,20 +747,17 @@ body {
 	opacity: var(--caret);
 }
 
-/* The ending: the name, what it is, and the command that starts it, rising into place; or the whole card slid, its ground with it. Its ground is painted back by as much as the card slides, so it is the frame's own ground where it stands: it covers what is under it, and no edge of it shows over the film's ground and glow */
+/* The ending card in its object: the name, what it is, and the command that starts it, rising into place, on its ground. Its ground is painted back by as far as its box stands from the frame's corner, so it is the frame's own ground where it stands: it covers what is under it, and no edge of it shows over the film's ground and glow, wherever it slides */
 .ending {
 	--ending-rise: 24px;
 
-	position: absolute;
-	inset: 0;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
 	gap: 22px;
 	background: var(--ground-light);
-	background-position: calc(var(--shift-left) * -1px / var(--frame-scale))
-		calc(var(--shift-top) * -1px / var(--frame-scale));
+	background-position: calc(var(--left) * -1px / var(--frame-scale)) calc(var(--top) * -1px / var(--frame-scale));
 	color: var(--ink);
 	text-align: center;
 	opacity: var(--shown);

@@ -132,8 +132,10 @@ const PRICING = keystrokes('pricing', { seed: 4, slipAt: 3 });
 const BLOG = keystrokes('blog', { seed: 5 });
 const CAREERS = keystrokes('careers', { seed: 6 });
 const DOCS = keystrokes('docs', { seed: 7 });
-// The agent asked for this film in its terminal, and what it does
+// The agent asked for this film in its terminal, and what it does; the terminal across most of the frame and as tall
+// as its few lines ask, in the middle down it, so they do not sit under an empty screen
 const TERMINAL = 'claude — acme';
+const TERMINAL_PLACE: Place = { left: 0.07, top: 0.22, width: 0.86, height: 0.56 };
 const ASKED = keystrokes('Film our analytics app for the README', { seed: 8, slipAt: 11, pace: 0.5 });
 const THINKING = 'Directing…';
 const WORK: readonly TerminalLine[] = [
@@ -144,9 +146,8 @@ const WORK: readonly TerminalLine[] = [
 	{ kind: 'done', text: '✓ out/readme-wide.mp4, out/readme-square.mp4' }
 ];
 const CARD: EndingCard = { name: 'livereel', line: 'Film your live web app from code', command: 'npx livereel' };
-// The film's code is what it shows off, so it stands large enough to read on a README's frame; the agent's terminal
-// as tall as its few lines ask, so they do not sit under an empty screen
-const THEME: Theme = { codeSize: 40, terminalHeight: 0.56 };
+// The film's code is what it shows off, so it stands large enough to read on a README's frame
+const THEME: Theme = { codeSize: 40 };
 // The looks the film turns to on a slide of their own: paper and night at once, then, slowly, a serif with square
 // corners and a violet shadow, over a ground that stays, so the words read all the way; night's glow and quieter
 // words stay readable on its ground, where the film ends
@@ -654,7 +655,7 @@ function actTheAgent(): readonly Step[] {
 				window.hide({ toward: 'left' }),
 				title.hide({ toward: 'left' }),
 				code.hide({ toward: 'left' }),
-				terminal.open(TERMINAL, { from: 'right' })
+				terminal.open(TERMINAL, { at: TERMINAL_PLACE, from: 'right' })
 			],
 			ease: easeInOutCubic
 		}),

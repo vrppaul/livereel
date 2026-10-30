@@ -11,7 +11,7 @@
  */
 import { A_FRAME_SIDE, boxOf } from '../domain/geometry.ts';
 import { A_SIZE, type Form, assertKind, assertWritten } from '../domain/handed.ts';
-import { AN_ALIGNMENT, A_PLACE, type Alignment, type Place, alignmentIn, wordsPlaced } from '../domain/place.ts';
+import { AN_ALIGNMENT, A_PLACE, type Alignment, type Place, alignmentIn } from '../domain/place.ts';
 import { type Beginning, type Move, TIMING_FORM } from '../direction/move.ts';
 import type { TitleWords } from '../props/title.ts';
 import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
@@ -26,7 +26,8 @@ import {
 	objectHide,
 	objectLean,
 	objectShow,
-	objectTo
+	objectTo,
+	placedFor
 } from './object.ts';
 
 /**
@@ -78,22 +79,22 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 		align: script.align ?? null,
 		size: script.size ?? null
 	};
-	return objectShow(TITLE, script, setting.place, (beginning) => comingUp(setting, beginning));
+	return objectShow(TITLE, 'title.show', script, setting.place, (beginning) => comingUp(setting, beginning));
 }
 
 /** The title carried to another place, through the boxes between, reading as it did. */
 export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(TITLE, place, script);
+	return objectTo(TITLE, 'title.to', place, script);
 }
 
 /** The title going, and its ground with it, or sliding out past a side of the frame; once gone, there is none. */
 export function hide(script: HideScript = {}): Move {
-	return objectHide(TITLE, script);
+	return objectHide(TITLE, 'title.hide', script);
 }
 
 /** The title leant back from its top edge by `tilt` and swung about its middle by `turn`, its ground with it. */
 export function lean(script: ObjectLeanScript): Move {
-	return objectLean(TITLE, script);
+	return objectLean(TITLE, 'title.lean', script);
 }
 
 /**
@@ -109,5 +110,5 @@ function comingUp(setting: Setting, beginning: Beginning): Coming {
 	}
 	const align = setting.align ?? alignmentIn(format, place);
 	const placed: TitleWords = { kind: 'words', ...said, align, size, onGround: false };
-	return { content: placed, box: wordsPlaced(format, place) };
+	return { content: placed, box: placedFor(placed.kind, format, place) };
 }

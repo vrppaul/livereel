@@ -312,7 +312,7 @@ test('a film is shot on the stage it names, apart where it names none; a stage l
 
 test('a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, pixels less than none, a share past 1, a size of none, a way words come up it has not, a colour not in hex, a font of no name', () => {
 	const names =
-		'ground, glow, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, windowCorner, windowEdge, windowShadow, windowShadowColour, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, terminalWidth, terminalHeight, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, cursorFill, cursorEdge, wordsMotion';
+		'ground, glow, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, windowCorner, windowEdge, windowShadow, windowShadowColour, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, cursorFill, cursorEdge, wordsMotion';
 	expect(() => filmWritten({ theme: null })).toThrow(
 		new FilmError(`the film's theme is handed null for an object of ${names}`)
 	);

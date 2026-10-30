@@ -322,12 +322,12 @@ test('each key typed into the terminal is heard on the frame its letter shows', 
 	const stage = new PicturedStageThatKeeps();
 	const steps = [cut(open('A terminal')), play({ seconds: 0.2, moves: [type(STROKES)] })];
 	await takeOf(new FootageOf([1, 2, 5]), stage, track).run(steps);
-	expect([track.heard, stage.drawn.map((scene) => scene.terminal?.typed)]).toEqual([
+	expect([track.heard, stage.drawn.map((scene) => scene.objects.map((object) => object.content.typed))]).toEqual([
 		[
 			{ moment: 2 / 30, sound: KEY },
 			{ moment: 5 / 30, sound: KEY }
 		],
-		['', 'a', 'ab']
+		[[''], ['a'], ['ab']]
 	]);
 });
 

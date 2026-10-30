@@ -75,9 +75,6 @@ export interface Look {
 	readonly codeKeyword: string;
 	readonly codeCall: string;
 	readonly codeKey: string;
-	/** How much of the frame's width the terminal takes, and of its height, each from 0 to 1. */
-	readonly terminalWidth: number;
-	readonly terminalHeight: number;
 	/** Where the ground's glow stands, across and down the frame, each from 0 to 1. */
 	readonly glowX: number;
 	readonly glowY: number;
@@ -175,8 +172,6 @@ export const LOOK_KINDS: { readonly [Name in keyof Look]: LookKind<Look[Name]> }
 	codeKeyword: COLOUR,
 	codeCall: COLOUR,
 	codeKey: COLOUR,
-	terminalWidth: SHARE,
-	terminalHeight: SHARE,
 	glowX: SHARE,
 	glowY: SHARE,
 	titleWeight: WEIGHT,
@@ -221,8 +216,6 @@ export const LIVEREELS_LOOK: Look = {
 	codeKeyword: '#ff7b72',
 	codeCall: '#d2a8ff',
 	codeKey: '#7ee787',
-	terminalWidth: 0.86,
-	terminalHeight: 0.78,
 	glowX: 0.5,
 	glowY: 0.3,
 	titleWeight: 700,

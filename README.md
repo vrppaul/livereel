@@ -147,9 +147,13 @@ and the moves of each part of the scene:
   `code.hide({ toward })`; each move of a title or code takes `as` to name which
 - `caption.show(text)`, `caption.hide()`
 - `screen.rise()`, `screen.lower()`
-- `terminal.open(title, { from })`, `terminal.type(strokes, { keyboard })`, `terminal.submit()`,
-  `terminal.works(lines, thinking, { thinkingShare })`, `terminal.leave({ toward })`
-- `ending.show({ name, line, command }, { from })`, `ending.hide({ toward })`, so a film may open on the card too
+- `terminal.open(title, { at, from })`, `terminal.type(strokes, { keyboard })`, `terminal.submit()`,
+  `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place)`, `terminal.lean({ tilt, turn })`,
+  `terminal.leave({ toward })`; the terminal stands `at` a place, read as the window reads one, across most of the
+  frame in its middle where none is named; each move of it takes `as` to name which
+- `ending.show({ name, line, command }, { from })`, `ending.hide({ toward })`, so a film may open on the card too;
+  the card stands over the whole frame on the frame's own ground, slides in and out whole, and is never carried or
+  leant
 - `page.scrollBy(selector, { pixels })`, `page.scrollTo(selector, { top })`, `page.type(strokes, { keyboard })`
 - `sound.play(file)`
 
@@ -339,7 +343,6 @@ values; what the film leaves out stays livereel's:
 | `windowShadow`, `windowShadowColour` | how strong the shadow of the window and the code's pane is, from `0`, none, to `1`, and its colour | `1`, `#000` |
 | `terminal`, `terminalInk` | the colour of the terminal, the code's pane, the ending's command and keys' caps, and what is written on them | `#10141c`, `#f4f6fa` |
 | `codeComment`, `codeString`, `codeNumber`, `codeKeyword`, `codeCall`, `codeKey` | the colours of the code's pieces by kind: a comment, a string, a number, a word the language keeps, a function called, a key of an object; livereel's are made for a dark pane | `#8b949e`, `#a5d6ff`, `#79c0ff`, `#ff7b72`, `#d2a8ff`, `#7ee787` |
-| `terminalWidth`, `terminalHeight` | how much of the frame's width and height the terminal takes, each from 0 to 1 | `0.86`, `0.78` |
 | `glowX`, `glowY` | where the ground's glow stands, across and down, each from 0 to 1 | `0.5`, `0.3` |
 | `titleWeight`, `captionWeight` | how heavy a title's and a caption's letters are, 100 to 900 | `700`, `650` |
 | `noteSize`, `calloutSize`, `pinSize`, `keysSize`, `codeSize` | how large a note's, a callout's, a pin's label's and a key's letters are, and the code's at most, in pixels | `44`, `20`, `26`, `44`, `26` |

@@ -10,21 +10,12 @@
 import { FilmError } from '../domain/errors.ts';
 import { A_FRAME_SIDE } from '../domain/geometry.ts';
 import { A_COUNT, A_STRING, type Form, type Kind, Plain, assertKind, assertWritten, needed } from '../domain/handed.ts';
-import { A_PLACE, type Place, wordsPlaced } from '../domain/place.ts';
+import { A_PLACE, type Place } from '../domain/place.ts';
 import { between } from '../domain/time.ts';
-import {
-	type Beginning,
-	type Change,
-	type Move,
-	TIMING_FORM,
-	type TimingScript,
-	objectPart,
-	timingOf
-} from '../direction/move.ts';
+import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import { type Code, type CodeLine, NOT_LIT, WHOLLY_LIT, codeOf } from '../props/code.ts';
 import type { ObjectName } from '../props/object.ts';
 import {
-	CONTENT,
 	type HideScript,
 	NAMED_FORM,
 	type NamedScript,
@@ -32,12 +23,14 @@ import {
 	type ObjectLeanScript,
 	type ShowScript,
 	type ToScript,
+	contentMove,
+	contentOf,
 	objectHide,
 	objectLean,
 	objectShow,
 	objectTo,
-	showing,
-	standing
+	placedFor,
+	showing
 } from './object.ts';
 
 /** Where code stands, `at` a place on the frame, and how it comes there. */
@@ -48,7 +41,7 @@ export interface CodeScript extends ShowScript {
 /** A line of code as a film names it: by its number, from 1, or by words it says. */
 type LineNamed = number | string;
 
-/** The last line lit, where the film lights more than one: lines from the one named through this one; and which code. */
+/** The last line lit, where the film lights more than one, from the one named through this one; and which code. */
 export interface LightScript extends TimingScript, NamedScript {
 	readonly through?: LineNamed;
 }
@@ -72,15 +65,15 @@ export function show(text: string, script: CodeScript): Move {
 	assertWritten(script, CODE_FORM, 'code.show');
 	const { lines, key, columns } = codeOf(text);
 	const code: Code = { kind: 'code', lines: lines.map((pieces) => ({ pieces, lit: NOT_LIT })), key, columns };
-	return objectShow(CODE, script, script.at, (beginning) => ({
+	return objectShow(CODE, 'code.show', script, script.at, (beginning) => ({
 		content: code,
-		box: wordsPlaced(beginning.format, script.at)
+		box: placedFor(code.kind, beginning.format, script.at)
 	}));
 }
 
 /** The code shown carried to another place, through the boxes between. */
 export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(CODE, place, script);
+	return objectTo(CODE, 'code.to', place, script);
 }
 
 /**
@@ -92,35 +85,21 @@ export function light(line: LineNamed, script: LightScript = {}): Move {
 	assertWritten(script, LIGHT_FORM, 'code.light');
 	const name = script.as ?? CODE;
 	const through = script.through ?? line;
-	return {
-		part: objectPart(name),
-		valueNames: CONTENT,
-		timing: timingOf(script),
-		begin: (beginning) => lighting(beginning, name, line, through)
-	};
+	return contentMove(name, timingOf(script), (beginning) => lighting(beginning, name, line, through));
 }
 
 /** The code shown leant back from its top edge by `tilt` and swung about its middle by `turn`, its pane with it. */
 export function lean(script: ObjectLeanScript): Move {
-	return objectLean(CODE, script);
+	return objectLean(CODE, 'code.lean', script);
 }
 
-/** The code on the screen going, its pane with it, or sliding out past a side of the frame; once gone, there is none. */
+/** The code on the screen going, its pane with it, or sliding out past a side of the frame; once gone, none. */
 export function hide(script: HideScript = {}): Move {
-	return objectHide(CODE, script);
-}
-
-/** The code an object of a name shows, as a light begins; refused where none stands, or it shows no code. */
-function codeShown(beginning: Beginning, name: ObjectName): Code {
-	const content = standing(beginning, name, 'code.light').content;
-	if (content.kind !== 'code') {
-		throw new FilmError(`code.light lights lines of the ${name}, but it shows ${content.kind}, not code`);
-	}
-	return content;
+	return objectHide(CODE, 'code.hide', script);
 }
 
 function lighting(beginning: Beginning, name: ObjectName, firstNamed: LineNamed, lastNamed: LineNamed): Change {
-	const shown = codeShown(beginning, name);
+	const shown = contentOf(beginning, name, 'code.light', 'code');
 	const count = shown.lines.length;
 	const first = numberOf(shown.lines, firstNamed, FIRST_LINE);
 	if (first > count) {

@@ -19,9 +19,6 @@ export interface Point {
 	readonly top: number;
 }
 
-// A shift of nothing: what is shifted from its place, standing in it
-export const IN_PLACE: Point = { left: 0, top: 0 };
-
 /** The sides of the frame: where words stand, the page's window across from them, and what slides in or out. */
 export const FRAME_SIDES = ['left', 'right', 'top', 'bottom'] as const;
 
@@ -82,11 +79,6 @@ export function resizedAbout(box: Box, size: Size): Box {
 		width: size.width,
 		height: size.height
 	};
-}
-
-/** A point `progress` of the way to another. */
-export function pointToward(start: Point, end: Point, progress: number): Point {
-	return { left: between(start.left, end.left, progress), top: between(start.top, end.top, progress) };
 }
 
 /** The corners of a box: top left, top right, bottom left, bottom right. */

@@ -203,7 +203,7 @@ export function pastTheEdge(box: Box, side: FrameSide, frame: Size): Box {
 }
 
 /** How far a whole frame lies toward a side: its width across, or its height down, in the frame's pixels. */
-export function frameToward(side: FrameSide, frame: Size): Point {
+function frameToward(side: FrameSide, frame: Size): Point {
 	switch (side) {
 		case 'left':
 			return { left: -frame.width, top: NOT_ALONG };

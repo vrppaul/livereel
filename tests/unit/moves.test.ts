@@ -1,5 +1,14 @@
 import { expect, test } from 'vitest';
-import { type Camera, onTheFrame, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
+import {
+	type Camera,
+	FACE_ON,
+	onTheFrame,
+	placedIn,
+	underTheFrame,
+	wholeView,
+	windowView
+} from '../../src/domain/camera.ts';
+import { linear } from '../../src/domain/time.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import { type Point, boxOf, boxToward, frameScaleOf, middleX, middleY } from '../../src/domain/geometry.ts';
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
@@ -24,10 +33,11 @@ import { drawnNote } from '../../src/props/note.ts';
 import { drawnPins } from '../../src/props/pins.ts';
 import { press, release, to as cursorTo } from '../../src/moves/cursor.ts';
 import { off, on as lightOn, to as lightTo } from '../../src/moves/light.ts';
-import { leave, open, submit, works } from '../../src/moves/terminal.ts';
+import { leave, open, submit, to as terminalTo, type as typeInto, works } from '../../src/moves/terminal.ts';
+import { keystrokes } from '../../src/domain/typing.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
 import { saidOf } from '../../src/props/words.ts';
-import { type Scene, cameraOf, openingScene, withProp } from '../../src/scene.ts';
+import { type Scene, cameraOf, openingScene, withObject, withProp } from '../../src/scene.ts';
 import { PageOfBoxes, SMALL } from './fakes.ts';
 
 const BLOCK = { left: 100, top: 100, width: 100, height: 40 };
@@ -74,12 +84,12 @@ const PAGE = new PageOfBoxes(
 const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
 const ACTED_IN = 'bring it in with an act, as no move of livereel scrolls the page sideways';
 const LIT = { box: BLOCK, strength: 1, dim: 0.6 };
-const TYPED = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'terminal', {
-	title: 'A terminal',
-	lines: [],
-	typed: 'add a test',
+const TYPED = withObject(openingScene(SMALL, LIVEREELS_LOOK), 'terminal', {
+	box: BLOCK,
+	angle: FACE_ON,
 	shown: 1,
-	shift: { left: 0, top: 0 }
+	gone: 0,
+	content: { kind: 'terminal', title: 'A terminal', lines: [], typed: 'add a test' }
 });
 const READ: TerminalLine = { kind: 'work', text: 'Read app.py' };
 const SAID: TerminalLine = { kind: 'said', text: 'Done.' };
@@ -156,11 +166,11 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 		(await setAt(note.hide(), noted, 1)).note,
 		(await setAt(caption.hide(), captioned, 1)).caption,
 		(await setAt(keys.hide(), pressed, 1)).keys,
-		(await setAt(leave(), TYPED, 1)).terminal,
-		(await setAt(ending.hide(), carded, 1)).ending,
+		[...(await setAt(leave(), TYPED, 1)).objects.keys()],
+		[...(await setAt(ending.hide(), carded, 1)).objects.keys()],
 		[...(await setAt(title.hide(), titled, 1)).objects.keys()],
 		[...(await setAt(code.hide(), coded, 1)).objects.keys()]
-	]).toEqual([null, null, null, null, null, null, null, null, [], []]);
+	]).toEqual([null, null, null, null, null, null, [], [], [], []]);
 });
 
 test('code and a title stand in the places the film names, the title then with no ground of its own', async () => {
@@ -248,31 +258,6 @@ test('an object shown from a side pushes the one of its name off past the side a
 	]);
 });
 
-test('the ending card slides in whole from past a side of the frame, and out past one, then is gone', async () => {
-	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
-	const coming = await setAt(ending.show(card, { from: 'right' }), openingScene(SMALL, LIVEREELS_LOOK), 0);
-	const shown = await setAt(ending.show(card), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const leaving = await setAt(ending.hide({ toward: 'left' }), shown, 0.5);
-	const gone = await setAt(ending.hide({ toward: 'left' }), shown, 1);
-	expect([coming.ending, leaving.ending, gone.ending]).toEqual([
-		{ card, shown: 1, shift: { left: SMALL.frame.width, top: 0 } },
-		{ card, shown: 1, shift: { left: -SMALL.frame.width / 2, top: 0 } },
-		null
-	]);
-});
-
-test('the terminal slides in whole from past a side of the frame, and out past one, then is gone', async () => {
-	const coming = await setAt(open('claude', { from: 'right' }), openingScene(SMALL, LIVEREELS_LOOK), 0);
-	const shown = await setAt(open('claude'), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const leaving = await setAt(leave({ toward: 'left' }), shown, 0.5);
-	const gone = await setAt(leave({ toward: 'left' }), shown, 1);
-	expect([coming.terminal, leaving.terminal, gone.terminal]).toEqual([
-		{ title: 'claude', lines: [], typed: '', shown: 1, shift: { left: SMALL.frame.width, top: 0 } },
-		{ title: 'claude', lines: [], typed: '', shown: 1, shift: { left: -SMALL.frame.width / 2, top: 0 } },
-		null
-	]);
-});
-
 test('a title over the whole frame stands on its ground over the frame, and slides in from a side and out toward one as one in a place does', async () => {
 	const frame = boxOf(SMALL.frame);
 	const coming = await setAt(title.show('Here', { from: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 0.5);
@@ -350,7 +335,7 @@ test('a move of an object that is not on the screen, or a light on lines of what
 		new FilmError('title.lean finds no title on the screen')
 	);
 	await expect(async () => code.light(1).begin(beginningOf(titled))).rejects.toThrow(
-		new FilmError('code.light lights lines of the code, but it shows words, not code')
+		new FilmError('code.light finds the code showing words, not code')
 	);
 });
 
@@ -585,25 +570,75 @@ test('a cursor pressed goes in as the press goes on, and comes back out as it is
 });
 
 test('a terminal opened comes up as its move goes on, and one left goes as its move goes on', async () => {
-	expect([
-		(await setAt(open('A terminal'), openingScene(SMALL, LIVEREELS_LOOK), 0.25)).terminal?.shown,
-		(await setAt(leave(), TYPED, 0.25)).terminal?.shown
-	]).toEqual([0.25, 0.75]);
+	const opened = (await setAt(open('A terminal'), openingScene(SMALL, LIVEREELS_LOOK), 0.25)).objects.get('terminal')!;
+	const leaving = (await setAt(leave(), TYPED, 0.25)).objects.get('terminal')!;
+	expect([drawnObject('terminal', opened, 0).content.shown, drawnObject('terminal', leaving, 0).content.shown]).toEqual(
+		[0.25, 0.75]
+	);
 });
 
 test('Enter puts the typed line up into the log, and the line is empty again', async () => {
-	const terminal = (await setAt(submit(), TYPED, 1)).terminal;
-	expect([terminal?.lines, terminal?.typed]).toEqual([[{ kind: 'asked', text: 'add a test' }], '']);
+	const terminal = (await setAt(submit(), TYPED, 1)).objects.get('terminal')!.content;
+	expect([terminal.lines, terminal.typed]).toEqual([[{ kind: 'asked', text: 'add a test' }], '']);
 });
 
 test('the agent thinks first, writes its lines one after another, and stops thinking once done', async () => {
 	const work = works([READ, SAID], THINKING, { thinkingShare: 0.5 });
 	const thinking: TerminalLine = { kind: 'thinking', text: THINKING };
 	expect([
-		(await setAt(work, TYPED, 0.25)).terminal?.lines,
-		(await setAt(work, TYPED, 0.75)).terminal?.lines,
-		(await setAt(work, TYPED, 1)).terminal?.lines
+		(await setAt(work, TYPED, 0.25)).objects.get('terminal')!.content.lines,
+		(await setAt(work, TYPED, 0.75)).objects.get('terminal')!.content.lines,
+		(await setAt(work, TYPED, 1)).objects.get('terminal')!.content.lines
 	]).toEqual([[thinking], [READ, thinking], [READ, SAID]]);
+});
+
+test('a terminal stands where the film names, a place read as the window reads it, centred over most of the frame where none is named; the card over the whole frame', async () => {
+	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
+	const centred = await setAt(open('claude'), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const placed = await setAt(open('claude', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const carded = await setAt(ending.show(card), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const carried = await setAt(terminalTo('right'), centred, 1);
+	expect([
+		centred.objects.get('terminal')!.box,
+		placed.objects.get('terminal')!.box,
+		carried.objects.get('terminal')!.box,
+		carded.objects.get('ending')!.box
+	]).toEqual([
+		{ left: 28, top: 44, width: 344, height: 312 },
+		windowOn(SMALL, 'left'),
+		windowOn(SMALL, 'right'),
+		boxOf(SMALL.frame)
+	]);
+	expect(open('claude', { at: 'left' }).places).toEqual([{ place: 'left', by: "terminal.open's at" }]);
+	expect(open('claude').places).toEqual([]);
+});
+
+test('a terminal named is typed into, submitted and worked in by its name', async () => {
+	const opened = await setAt(open('claude', { as: 'second' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const typed = await setAt(typeInto(keystrokes('ls', { seed: 1 }), { as: 'second' }), opened, 1);
+	const asked = await setAt(submit({ as: 'second' }), typed, 1);
+	const done = await setAt(works([SAID], THINKING, { as: 'second' }), asked, 1);
+	expect(done.objects.get('second')!.content.lines).toEqual([{ kind: 'asked', text: 'ls' }, SAID]);
+});
+
+test('the ending card is never carried or leant: its ground is the frame’s own', async () => {
+	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
+	const carded = await setAt(ending.show(card), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	await expect(async () => title.lean({ as: 'ending', tilt: 20 }).begin(beginningOf(carded))).rejects.toThrow(
+		new FilmError('title.lean would move the ending, the ending card, which stands over the whole frame alone')
+	);
+	await expect(async () => title.to('left', { as: 'ending' }).begin(beginningOf(carded))).rejects.toThrow(FilmError);
+});
+
+test('words and code come up in place at an even pace, the terminal and the card on their step’s curve, unless the film names one', () => {
+	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
+	expect([
+		title.show('Here').timing.ease,
+		code.show('x', { at: 'left' }).timing.ease,
+		open('claude').timing.ease,
+		ending.show(card).timing.ease,
+		open('claude', { ease: linear }).timing.ease
+	]).toEqual([linear, linear, null, null, linear]);
 });
 
 /** How a move refuses the block below the screen. */

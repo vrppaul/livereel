@@ -82,8 +82,6 @@ const LOOK_SET_AS = {
 	codeKeyword: { token: '--code-keyword' },
 	codeCall: { token: '--code-call' },
 	codeKey: { token: '--code-key' },
-	terminalWidth: { token: '--terminal-width' },
-	terminalHeight: { token: '--terminal-height' },
 	glowX: { token: '--glow-x' },
 	glowY: { token: '--glow-y' },
 	titleWeight: { token: '--title-weight' },
@@ -427,7 +425,10 @@ class CodeDrawer {
 	}
 }
 
-/** What draws an object's content in its element. @typedef {{ readonly draw: (content: DrawnContent) => void }} ContentDrawer */
+/**
+ * What draws an object's content in its element.
+ * @typedef {{ readonly draw: (content: DrawnContent) => void }} ContentDrawer
+ */
 
 /**
  * The drawer of each kind of content, for the content element of an object made from that kind's template: the type
@@ -436,7 +437,9 @@ class CodeDrawer {
  */
 const CONTENT_DRAWERS = {
 	words: (element) => new TitleWordsDrawer(element),
-	code: (element) => new CodeDrawer(element)
+	code: (element) => new CodeDrawer(element),
+	terminal: (element) => new TerminalDrawer(element),
+	ending: (element) => new EndingDrawer(element)
 };
 
 /**
@@ -476,25 +479,21 @@ class KeyedList {
 	}
 }
 
+/** The agent's terminal in its object: its title, its log, laid out anew only as its lines change, the line typed. */
 class TerminalDrawer {
-	/** @param {Staged} root */
-	constructor(root) {
-		this.root = root;
-		this.title = partOf(root, 'title');
-		this.log = partOf(root, 'log');
-		this.typed = partOf(root, 'typed');
-		/** The lines that stand in the log, so it is laid out anew only when they change @type {string | null} */
+	/** @param {Staged} element */
+	constructor(element) {
+		this.element = element;
+		this.title = partOf(element, 'title');
+		this.log = partOf(element, 'log');
+		this.typed = partOf(element, 'typed');
+		/** The lines that stand in the log @type {string | null} */
 		this.standing = null;
 	}
 
-	/** @param {DrawnScene} scene */
-	draw(scene) {
-		const terminal = scene.terminal;
-		shown(this.root, terminal !== null);
-		if (terminal === null) {
-			this.standing = null;
-			return;
-		}
+	/** @param {DrawnContent} content */
+	draw(content) {
+		const terminal = ofKind(content, 'terminal');
 		const lines = terminal.lines.map((line) => [line.kind, line.lead, line.text].join(APART)).join(BETWEEN_LINES);
 		if (this.standing !== lines) {
 			this.standing = lines;
@@ -502,37 +501,27 @@ class TerminalDrawer {
 		}
 		this.title.textContent = terminal.title;
 		this.typed.textContent = terminal.typed;
-		numbered(this.root, {
-			'--shown': terminal.shown,
-			'--caret': Number(terminal.caret),
-			'--shift-left': terminal.shift.left,
-			'--shift-top': terminal.shift.top
-		});
+		numbered(this.element, { '--shown': terminal.shown, '--caret': Number(terminal.caret) });
 	}
 }
 
+/** The ending card in its object: its name, what it is, and the command that starts it. */
 class EndingDrawer {
-	/** @param {Staged} root */
-	constructor(root) {
-		this.root = root;
-		this.name = partOf(root, 'name');
-		this.what = partOf(root, 'what');
-		this.command = partOf(root, 'command');
+	/** @param {Staged} element */
+	constructor(element) {
+		this.element = element;
+		this.name = partOf(element, 'name');
+		this.what = partOf(element, 'what');
+		this.command = partOf(element, 'command');
 	}
 
-	/** @param {DrawnScene} scene */
-	draw(scene) {
-		const ending = scene.ending;
-		shown(this.root, ending !== null);
-		if (ending === null) return;
+	/** @param {DrawnContent} content */
+	draw(content) {
+		const ending = ofKind(content, 'ending');
 		this.name.textContent = ending.card.name;
 		this.what.textContent = ending.card.line;
 		this.command.textContent = ending.card.command;
-		numbered(this.root, {
-			'--shown': ending.shown,
-			'--shift-left': ending.shift.left,
-			'--shift-top': ending.shift.top
-		});
+		numbered(this.element, { '--shown': ending.shown });
 	}
 }
 
@@ -612,8 +601,6 @@ function exposureOf(root) {
 			note: new NoteDrawer(propRoot(root, 'note')),
 			caption: new CaptionDrawer(propRoot(root, 'caption')),
 			keys: new KeysDrawer(propRoot(root, 'keys')),
-			terminal: new TerminalDrawer(propRoot(root, 'terminal')),
-			ending: new EndingDrawer(propRoot(root, 'ending')),
 			objects: new ObjectsDrawer(objectsRoot(root, 'objects'), 'objects'),
 			leaving: new ObjectsDrawer(objectsRoot(root, 'leaving'), 'leaving')
 		},

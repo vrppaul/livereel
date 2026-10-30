@@ -31,7 +31,6 @@ import {
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
 import { type DrawnCaption, drawnCaption } from './props/caption.ts';
 import type { Cursor } from './props/cursor.ts';
-import type { Ending } from './props/ending.ts';
 import { type DrawnKeys, type Keys, drawnKeys } from './props/keys.ts';
 import type { Light } from './props/light.ts';
 import type { Look } from './props/look.ts';
@@ -39,7 +38,6 @@ import { type DrawnNote, type Note, drawnNote } from './props/note.ts';
 import { type DrawnObject, type FrameObject, type ObjectName, drawnObject } from './props/object.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
 import { SCREEN_UP, type Screen } from './props/screen.ts';
-import { type DrawnTerminal, type Terminal, drawnTerminal } from './props/terminal.ts';
 import type { ShownWords } from './props/words.ts';
 
 export interface PropStates {
@@ -54,8 +52,6 @@ export interface PropStates {
 	note: Note | null;
 	caption: ShownWords | null;
 	keys: Keys | null;
-	terminal: Terminal | null;
-	ending: Ending | null;
 }
 
 export type PropName = keyof PropStates;
@@ -82,8 +78,6 @@ interface DrawnProps {
 	note: DrawnNote | null;
 	caption: DrawnCaption | null;
 	keys: DrawnKeys | null;
-	terminal: DrawnTerminal | null;
-	ending: Ending | null;
 }
 
 export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
@@ -105,8 +99,6 @@ export function openingScene(format: Format, look: Look): Scene {
 		note: null,
 		caption: null,
 		keys: null,
-		terminal: null,
-		ending: null,
 		objects: new Map(),
 		leaving: new Map()
 	};
@@ -165,13 +157,11 @@ export function drawn(scene: Scene, camera: Camera, moment: number, format: Form
 		note: scene.note === null ? null : drawnNote(scene.note, camera, format.frame),
 		caption,
 		keys: scene.keys === null ? null : drawnKeys(scene.keys, caption),
-		terminal: scene.terminal === null ? null : drawnTerminal(scene.terminal, moment),
-		ending: scene.ending,
-		objects: drawnObjects(scene.objects),
-		leaving: drawnObjects(scene.leaving)
+		objects: drawnObjects(scene.objects, moment),
+		leaving: drawnObjects(scene.leaving, moment)
 	};
 }
 
-function drawnObjects(objects: Objects): readonly DrawnObject[] {
-	return [...objects].map(([name, object]) => drawnObject(name, object));
+function drawnObjects(objects: Objects, moment: number): readonly DrawnObject[] {
+	return [...objects].map(([name, object]) => drawnObject(name, object, moment));
 }
