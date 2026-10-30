@@ -183,7 +183,7 @@ export class Soundtrack implements Track {
 			case 'livereel':
 				return this.livereelFiles[sound.name];
 			case 'keyboard':
-				return strikesOf(sound.keyboard).map(livereelsOwn);
+				return strikesOf(sound.keyboard);
 		}
 	}
 }
@@ -221,7 +221,7 @@ function filesOfSource(source: SoundSource, own: string, from: string): readonly
 function filesOfKey(key: KeySource, from: string): readonly string[] {
 	switch (key.kind) {
 		case 'keyboard':
-			return strikesOf(key.keyboard).map(livereelsOwn);
+			return strikesOf(key.keyboard);
 		case 'file':
 		case 'off':
 			return filesInPlaceOf(key, from);
@@ -238,10 +238,10 @@ function filesInPlaceOf(inPlace: FileOrOff, from: string): readonly string[] {
 	}
 }
 
+/** A keyboard's files: every strike of it, in its own folder of livereel's sounds. */
 function strikesOf(keyboard: KeyboardSound): readonly string[] {
-	return Array.from(
-		{ length: STRIKES_A_KEYBOARD },
-		(_strike, place) => `keys/${keyboard}/${FIRST_STRIKE + place}${LIVEREEL_SUFFIX}`
+	return Array.from({ length: STRIKES_A_KEYBOARD }, (_strike, place) =>
+		livereelsOwn(`keys/${keyboard}/${FIRST_STRIKE + place}${LIVEREEL_SUFFIX}`)
 	);
 }
 

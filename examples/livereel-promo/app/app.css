@@ -11,7 +11,7 @@
 	--edge: #e3e6ec;
 	--edge-strong: #d5dae3;
 	--edge-faint: #eef0f4;
-	--focus-ring: rgb(59 111 245 / 18%);
+	--focus-ring: color-mix(in srgb, var(--accent) 18%, transparent);
 	--found: rgb(255 178 36 / 35%);
 	--sans: system-ui, sans-serif;
 	/* Four top pages show at once, the rest under them in the list's own scroll */

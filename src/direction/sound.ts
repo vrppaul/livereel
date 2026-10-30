@@ -15,7 +15,6 @@ import { FilmError } from '../domain/errors.ts';
 import { type Keystroke, typingSeconds } from '../domain/typing.ts';
 import {
 	A_PATH,
-	type Form,
 	type Handed,
 	OneOf,
 	assertKind,
@@ -23,7 +22,6 @@ import {
 	isObjectOfValues,
 	refuseNamesBeyond
 } from '../domain/handed.ts';
-import { TIMING_FORM, type TimingScript } from './move.ts';
 import { type TurnedOff, isTurnedOff, turnedOffBy } from './turned-off.ts';
 
 /** livereel's sounds: the cursor pressed in, a key typed, the ending coming up. */
@@ -32,20 +30,19 @@ export type LivereelSound = 'click' | 'key' | 'ending';
 /** livereel's keyboards, each recorded key by key: what a key typed sounds like where the film gives no file for it. */
 const KEYBOARD_SOUNDS = ['membrane', 'mechanical', 'mechanical-bright', 'butterfly', 'laptop', 'clicky'] as const;
 export type KeyboardSound = (typeof KEYBOARD_SOUNDS)[number];
-const A_KEYBOARD = new OneOf(KEYBOARD_SOUNDS, `one of livereel's keyboards: ${KEYBOARD_SOUNDS.join(', ')}`);
+export const A_KEYBOARD = new OneOf(KEYBOARD_SOUNDS, `one of livereel's keyboards: ${KEYBOARD_SOUNDS.join(', ')}`);
+
+/** Keys struck on one of livereel's keyboards: the film's, or the one a typing names. */
+interface OnAKeyboard {
+	readonly kind: 'keyboard';
+	readonly keyboard: KeyboardSound;
+}
 
 /** A sound: one of livereel's, a key struck on a keyboard a typing names, or a file of the film's. */
 export type Sound =
 	| { readonly kind: 'livereel'; readonly name: LivereelSound }
-	| { readonly kind: 'keyboard'; readonly keyboard: KeyboardSound }
+	| OnAKeyboard
 	| { readonly kind: 'file'; readonly path: string };
-
-/** A typing's timing, and the keyboard its keys are heard on where it is not the film's. */
-export interface TypingScript extends TimingScript {
-	readonly keyboard?: KeyboardSound;
-}
-
-export const TYPING_FORM: Form<TypingScript> = { keyboard: A_KEYBOARD, ...TIMING_FORM };
 
 /** A sound a move makes once it is `at` that far along its way, from 0 to 1. */
 export interface Cue {
@@ -77,7 +74,7 @@ export type FileOrOff = { readonly kind: 'file'; readonly path: string } | { rea
 export type SoundSource = { readonly kind: 'livereel' } | FileOrOff;
 
 /** livereel's key as a film is shot with it: one of livereel's keyboards, or what the film put in its place. */
-export type KeySource = { readonly kind: 'keyboard'; readonly keyboard: KeyboardSound } | FileOrOff;
+export type KeySource = OnAKeyboard | FileOrOff;
 
 /** livereel's sounds as a film is shot with them: where each one comes from. */
 export interface LivereelSounds {
@@ -108,7 +105,7 @@ const AS_IT_BEGINS = 0;
 // The keyboard a film's keys are heard on where it names none: the one chosen by ear, recorded in a studio key by key
 const LIVEREELS_KEYBOARD: KeyboardSound = 'membrane';
 const LIVEREELS_OWN: SoundSource = { kind: 'livereel' };
-const LIVEREELS_KEYS: KeySource = { kind: 'keyboard', keyboard: LIVEREELS_KEYBOARD };
+const LIVEREELS_KEYS: KeySource = onAKeyboard(LIVEREELS_KEYBOARD);
 const ALL_LIVEREELS: LivereelSounds = { click: LIVEREELS_OWN, key: LIVEREELS_KEYS, ending: LIVEREELS_OWN };
 const OFF: FileOrOff = { kind: 'off' };
 const ALL_OFF: LivereelSounds = { click: OFF, key: OFF, ending: OFF };
@@ -188,7 +185,7 @@ function keyOf(written: Handed): KeySource {
 /** One of livereel's keyboards, as the film names it; one livereel has not is refused, naming those it has. */
 function keyboardOf(written: unknown): KeySource {
 	assertKind(written, A_KEYBOARD, `the film's ${SOUNDS}.keyboard`);
-	return { kind: 'keyboard', keyboard: written };
+	return onAKeyboard(written);
 }
 
 /** The sound a move makes: the file the film gives for it, or livereel's. */
@@ -204,7 +201,7 @@ export function fileSound(path: string): Sound {
 	return { kind: 'file', path };
 }
 
-function keyboardSound(keyboard: KeyboardSound): Sound {
+function onAKeyboard(keyboard: KeyboardSound): OnAKeyboard {
 	return { kind: 'keyboard', keyboard };
 }
 
@@ -219,6 +216,6 @@ export function heardAsItBegins(sound: Sound): Cue {
  */
 export function keysHeard(strokes: readonly Keystroke[], keyboard: KeyboardSound | undefined): readonly Cue[] {
 	const seconds = typingSeconds(strokes);
-	const key = keyboard === undefined ? livereelSound('key') : keyboardSound(keyboard);
+	const key = keyboard === undefined ? livereelSound('key') : onAKeyboard(keyboard);
 	return strokes.map((stroke) => ({ at: seconds === 0 ? AS_IT_BEGINS : stroke.at / seconds, sound: key }));
 }

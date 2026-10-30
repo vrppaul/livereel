@@ -19,9 +19,10 @@ import {
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
-import { TYPING_FORM, type TypingScript, keysHeard } from '../direction/sound.ts';
+import { keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
 import { A_LINES, type Terminal, type TerminalLine, openTerminal } from '../props/terminal.ts';
+import { TYPING_FORM, type TypingScript } from './typing.ts';
 import { SHOWN_WHOLE, SLIDE_IN_FORM, SLIDE_OUT_FORM, type SlideInScript, type SlideOutScript } from './words.ts';
 
 /** Of the agent's work, the share it only thinks before its first line. */

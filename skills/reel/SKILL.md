@@ -162,7 +162,8 @@ keyboards. `defineFilm` takes, beside the rest:
   `{ enabled: false }` to turn it off, as `sounds: { key: { enabled: false } }`.
   The click and the ending may stand beside a keyboard; a key given so takes
   the keyboard's place, and is never named beside it;
-- `sounds: { enabled: false }` for none of livereel's;
+- `sounds: { enabled: false }` for none of livereel's but a keyboard a
+  typing names;
 - `music: { file, volume }`, a track under the whole film, `volume` 1 as
   loud as the file, cut to the film's length and faded out at its end.
 

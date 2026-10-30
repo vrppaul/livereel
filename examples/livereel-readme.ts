@@ -18,7 +18,6 @@ import {
 	type Format,
 	type Move,
 	type Place,
-	type Pose,
 	type Step,
 	type TerminalLine,
 	type Theme,
@@ -50,6 +49,13 @@ import { type AppServed, servedApp } from './livereel-promo/server.ts';
 
 // The page laid out on a screen as wide as its window, so a window shows the app across
 const SCREEN = { width: 1040, height: 1080 };
+// How a beat's heading and its code share their place down it, the code right under the heading: about the middle
+// of a tall place, from the top of a short one; in a square's short place beside the window, a heading of two lines
+// takes a taller band
+const TALL: Stacking = { heading: { top: 0.18, height: 0.22 }, code: { top: 0.42, height: 0.3 } };
+const SHORT: Stacking = { heading: { top: 0, height: 0.3 }, code: { top: 0.34, height: 0.66 } };
+const HIGH: Stacking = { heading: { top: 0, height: 0.16 }, code: { top: 0.2, height: 0.58 } };
+const TWO_LINES_OVER_CODE: Stacking = { heading: { top: 0, height: 0.4 }, code: { top: 0.44, height: 0.56 } };
 // The app in a window in the middle of the frame, the ground on either side of it; the window gone square, beside the
 // words that say the film is shot square too
 const MIDDLE_OF_THE_WIDE: Place = { left: 0.156, top: 0.067, width: 0.688, height: 0.867 };
@@ -58,7 +64,11 @@ const MIDDLE_OF_THE_SQUARE: Place = { left: 0.067, top: 0.16, width: 0.867, heig
 const SQUARE_IN_THE_SQUARE: Place = { left: 0.25, top: 0.44, width: 0.5, height: 0.5 };
 // The window the search is typed in, ending above the frame's foot, where the keys of the app's shortcut come up
 const ABOVE_THE_KEYS_IN_THE_WIDE: Place = { left: 0.525, top: 0.067, width: 0.44, height: 0.76 };
-const ABOVE_THE_KEYS_IN_THE_SQUARE: Place = { left: 0.067, top: 0.53, width: 0.867, height: 0.34 };
+const ABOVE_THE_KEYS_IN_THE_SQUARE: Place = { left: 0.067, top: 0.5, width: 0.867, height: 0.33 };
+// The window under words that stand above it, whole on the frame and narrow enough that the top pages stand whole in
+// it, as the camera cannot frame them closer than a window filled
+const UNDER_THE_WORDS_IN_THE_WIDE: Place = { left: 0.2, top: 0.42, width: 0.6, height: 0.54 };
+const UNDER_THE_WORDS_IN_THE_SQUARE: Place = { left: 0.1, top: 0.42, width: 0.8, height: 0.54 };
 // A wide frame, as a README shows it, half of it the words' so the code stands large, beside the window; a square, as
 // a feed shows it, the words above the window and below it
 const WIDE: Format = {
@@ -70,9 +80,11 @@ const WIDE: Format = {
 		page: 'right',
 		wordsAcross: 'right',
 		pageAcross: 'left',
+		...headingsAndCodeIn(TALL),
 		middle: MIDDLE_OF_THE_WIDE,
 		square: SQUARE_IN_THE_WIDE,
-		aboveTheKeys: ABOVE_THE_KEYS_IN_THE_WIDE
+		aboveTheKeys: ABOVE_THE_KEYS_IN_THE_WIDE,
+		underTheWords: UNDER_THE_WORDS_IN_THE_WIDE
 	}
 };
 const SQUARE: Format = {
@@ -84,15 +96,16 @@ const SQUARE: Format = {
 		page: 'bottom',
 		wordsAcross: 'bottom',
 		pageAcross: 'top',
+		...headingsAndCodeIn(TWO_LINES_OVER_CODE),
 		middle: MIDDLE_OF_THE_SQUARE,
 		square: SQUARE_IN_THE_SQUARE,
-		aboveTheKeys: ABOVE_THE_KEYS_IN_THE_SQUARE
+		aboveTheKeys: ABOVE_THE_KEYS_IN_THE_SQUARE,
+		underTheWords: UNDER_THE_WORDS_IN_THE_SQUARE
 	}
 };
 // #region formats
 const FORMATS = { wide: WIDE, square: SQUARE };
 // #endregion
-type FormatName = keyof typeof FORMATS;
 // The app's main number, its card, how it stands against yesterday, the button that refreshes it, and the row of
 // cards; its top pages, their list that scrolls of its own, and the search over them
 const VISITORS = '[data-testid=visitors]';
@@ -103,6 +116,9 @@ const CARDS = '[data-testid=kpis]';
 const TOP_PAGES = '[data-testid=top-pages]';
 const PAGES = '[data-testid=pages]';
 const SEARCH = '[data-testid=search]';
+// The search once it holds the keys, and the page itself, where the app's shortcut is pressed
+const SEARCH_HOLDING_THE_KEYS = `${SEARCH}:focus`;
+const THE_PAGE = 'body';
 // The button and the count it changes, framed together so the cursor's way to the button stays in the window
 const REFRESH_AND_VISITORS = `${REFRESH}, ${VISITORS}`;
 const BOTH = 2;
@@ -157,21 +173,14 @@ const SOLARIZED: Theme = {
 	codeCall: '#b58900',
 	codeKey: '#268bd2'
 };
-// How a beat's heading and its code share their place down it, the code right under the heading: about the middle
-// of a tall place, from the top of a short one
-const TALL: Stacking = { heading: { top: 0.18, height: 0.22 }, code: { top: 0.42, height: 0.3 } };
-const SHORT: Stacking = { heading: { top: 0, height: 0.3 }, code: { top: 0.34, height: 0.66 } };
-const HIGH: Stacking = { heading: { top: 0, height: 0.16 }, code: { top: 0.2, height: 0.58 } };
-// Words beside the window stand in a tall place in a wide frame, and in a short one above or below it in a square,
-// where a heading of two lines needs the taller band
-const TWO_LINES_OVER_CODE: Stacking = { heading: { top: 0, height: 0.4 }, code: { top: 0.44, height: 0.56 } };
-const BESIDE: Readonly<Record<FormatName, Stacking>> = { wide: TALL, square: TWO_LINES_OVER_CODE };
-// Where the words of a beat stand: above a window that runs off the frame's foot, or on a slide of their own with no
-// window
-const ABOVE_THE_WINDOW: Words = { place: { left: 0.06, top: 0.06, width: 0.88, height: 0.32 }, stacking: SHORT };
-const ON_A_SLIDE: Words = { place: { left: 0.18, top: 0.12, width: 0.64, height: 0.62 }, stacking: TALL };
+// Where the words of a beat stand: beside the window, or across from it, where each format names them; above a window
+// low on the frame; or on a slide of their own with no window
+const BESIDE_THE_WINDOW: Words = { heading: 'heading', code: 'code' };
+const ACROSS_FROM_THE_WINDOW: Words = { heading: 'headingAcross', code: 'codeAcross' };
+const ABOVE_THE_WINDOW = stackedIn({ left: 0.06, top: 0.06, width: 0.88, height: 0.32 }, SHORT);
+const ON_A_SLIDE = stackedIn({ left: 0.18, top: 0.12, width: 0.64, height: 0.62 }, TALL);
 // The look's slide: taller, the heading high in it, so its seven lines of code stand clear below
-const ON_THE_LOOKS_SLIDE: Words = { place: { left: 0.18, top: 0.06, width: 0.64, height: 0.88 }, stacking: HIGH };
+const ON_THE_LOOKS_SLIDE = stackedIn({ left: 0.18, top: 0.06, width: 0.64, height: 0.88 }, HIGH);
 // The window low on the frame, wider than its room and running off the frame's foot
 const LOW_AND_OFF_THE_FOOT: Place = { left: 0.03, top: 0.42, width: 0.94, height: 0.8 };
 // The lines of code each beat shows, the regions this file marks below; each is lit by what it says
@@ -191,25 +200,25 @@ interface Stacking {
 	readonly code: Band;
 }
 
-/** Where a beat's words stand: their place, and how the heading and the code share it. */
+/** Where a beat's words stand: its heading's place, and its code's. */
 interface Words {
-	readonly place: Place;
-	readonly stacking: Stacking;
+	readonly heading: Place;
+	readonly code: Place;
 }
 
-/** Words beside the page's window, on the side a format names, stacked as words beside a window are in it. */
-function besideIn(place: Place, formatName: FormatName): Words {
-	return { place, stacking: BESIDE[formatName] };
+/** A beat's heading and code in a place, each in its band of it. */
+function stackedIn(place: Place, stacking: Stacking): Words {
+	return { heading: { of: place, ...stacking.heading }, code: { of: place, ...stacking.code } };
 }
 
-/** Where a beat's heading stands: its band of the words' place. */
-function headingIn(words: Words): Place {
-	return { of: words.place, ...words.stacking.heading };
-}
-
-/** Where a beat's code stands: its band of the words' place, under the heading. */
-function codeIn(words: Words): Place {
-	return { of: words.place, ...words.stacking.code };
+/**
+ * The places a format names for a beat's heading and code beside the window and across from it, stacked so in the
+ * words' places it names.
+ */
+function headingsAndCodeIn(stacking: Stacking): Readonly<Record<string, Place>> {
+	const beside = stackedIn('words', stacking);
+	const across = stackedIn('wordsAcross', stacking);
+	return { heading: beside.heading, code: beside.code, headingAcross: across.heading, codeAcross: across.code };
 }
 
 /** Refresh clicked for real, until the page shows the count the app's server answered with. */
@@ -225,8 +234,8 @@ function refreshing(served: AppServed): (context: ActContext) => Promise<void> {
 
 /** The app's own shortcut pressed on the page, until the search holds its keys. */
 async function searchOpened(context: ActContext): Promise<void> {
-	await context.page.press('body', TO_THE_SEARCH);
-	await context.page.locator(`${SEARCH}:focus`).waitFor();
+	await context.page.press(THE_PAGE, TO_THE_SEARCH);
+	await context.page.locator(SEARCH_HOLDING_THE_KEYS).waitFor();
 }
 
 /** The search emptied, every top page listed again, the search still holding the keys. */
@@ -246,8 +255,8 @@ function linesOf(regions: readonly string[]): string {
 /** A beat's heading and code coming up in their place, the heading first. */
 function beatShown(heading: string, regions: readonly string[], words: Words): readonly Move[] {
 	return [
-		title.show(heading, { at: headingIn(words), within: { start: 0.4 } }),
-		code.show(linesOf(regions), { at: codeIn(words), within: { start: 0.55 } })
+		title.show(heading, { at: words.heading, within: { start: 0.4 } }),
+		code.show(linesOf(regions), { at: words.code, within: { start: 0.55 } })
 	];
 }
 
@@ -285,14 +294,14 @@ function actTheCard(): readonly Step[] {
  * The window across to its side, a heading and code coming up beside it; the camera leaning onto the cards, then
  * face-on to the count, which it lights.
  */
-function actTheCamera(formatName: FormatName): readonly Step[] {
+function actTheCamera(): readonly Step[] {
 	return [
 		play({
 			seconds: 1.2,
 			moves: [
 				window.to('page'),
 				camera.onto(CARDS, { air: 40 }),
-				...beatShown('Point the camera at any block', ['lean', 'onto', 'light'], besideIn('words', formatName))
+				...beatShown('Point the camera at any block', ['lean', 'onto', 'light'], BESIDE_THE_WINDOW)
 			],
 			ease: easeInOutCubic
 		}),
@@ -335,7 +344,7 @@ function actTheCamera(formatName: FormatName): readonly Step[] {
  * and the next coming up once it has left room; the light carried to Refresh, a real click on the real app, and the
  * light carried back to the count it changed.
  */
-function actTheClick(served: AppServed, formatName: FormatName): readonly Step[] {
+function actTheClick(served: AppServed): readonly Step[] {
 	return [
 		play({
 			seconds: 1.2,
@@ -347,7 +356,7 @@ function actTheClick(served: AppServed, formatName: FormatName): readonly Step[]
 			moves: beatShown(
 				'Click it for real',
 				['light-refresh', 'cursor', 'click', 'light-visitors'],
-				besideIn('wordsAcross', formatName)
+				ACROSS_FROM_THE_WINDOW
 			),
 			ease: easeOutCubic
 		}),
@@ -430,7 +439,7 @@ function actThePins(): readonly Step[] {
  * The window back up to its side, the words beside it, the camera on the top pages; their list scrolled, the app's
  * shortcut pressed with its keys on the frame, and a page searched for, a slip on the way.
  */
-function actTheSearch(formatName: FormatName): readonly Step[] {
+function actTheSearch(): readonly Step[] {
 	return [
 		cut(pin.clear()),
 		play({
@@ -438,11 +447,7 @@ function actTheSearch(formatName: FormatName): readonly Step[] {
 			moves: [
 				window.to('aboveTheKeys'),
 				camera.onto(TOP_PAGES),
-				...beatSwapped(
-					'Scroll and type, for real',
-					['scroll', 'shortcut', 'search', 'type'],
-					besideIn('words', formatName)
-				)
+				...beatSwapped('Scroll and type, for real', ['scroll', 'shortcut', 'search', 'type'], BESIDE_THE_WINDOW)
 			],
 			ease: easeInOutCubic
 		}),
@@ -450,6 +455,7 @@ function actTheSearch(formatName: FormatName): readonly Step[] {
 			seconds: 1.2,
 			moves: [
 				code.light('scrollBy', { within: { end: 0.2 } }),
+				// Four rows of the list, as many as the app shows of it at once (its --pages-shown)
 				// #region scroll
 				page.scrollBy(PAGES, { pixels: 224 })
 				// #endregion
@@ -480,13 +486,13 @@ function actTheSearch(formatName: FormatName): readonly Step[] {
 	];
 }
 
-/** The window low and wide again, the words above it: the search typed into three times, on three keyboards. */
+/** The window under the words, the top pages whole in it: the search typed into three times, on three keyboards. */
 function actTheKeyboards(): readonly Step[] {
 	return [
 		play({
 			seconds: 1.2,
 			moves: [
-				window.to(LOW_AND_OFF_THE_FOOT),
+				window.to('underTheWords'),
 				camera.onto(TOP_PAGES),
 				...beatSwapped('Hear every key', ['mechanical', 'butterfly', 'clicky'], ABOVE_THE_WINDOW)
 			],
@@ -521,8 +527,8 @@ function actTheWords(): readonly Step[] {
 			seconds: 1.2,
 			moves: [
 				window.hide({ toward: 'left' }),
-				title.show('Say it in words', { at: headingIn(ON_A_SLIDE), from: 'right' }),
-				code.show(linesOf(['words']), { at: codeIn(ON_A_SLIDE), from: 'right' })
+				title.show('Say it in words', { at: ON_A_SLIDE.heading, from: 'right' }),
+				code.show(linesOf(['words']), { at: ON_A_SLIDE.code, from: 'right' })
 			],
 			ease: easeInOutCubic
 		}),
@@ -610,12 +616,12 @@ function actTheLook(): readonly Step[] {
 }
 
 /** The look's slide going, the window coming in square beside the words that say the film is shot square too. */
-function actTheFormats(formatName: FormatName): readonly Step[] {
+function actTheFormats(): readonly Step[] {
 	return [
 		play({
 			seconds: 1.2,
 			moves: [
-				...beatSwapped('One script, every feed', ['formats'], besideIn('words', formatName)),
+				...beatSwapped('One script, every feed', ['formats'], BESIDE_THE_WINDOW),
 				window.show({ at: 'square', from: 'right' }),
 				camera.onto(CARDS, { air: 40 })
 			],
@@ -659,17 +665,17 @@ function actTheEnding(): readonly Step[] {
 	];
 }
 
-function steps(served: AppServed, _whole: Pose, formatName: FormatName): readonly Step[] {
+function steps(served: AppServed): readonly Step[] {
 	return [
 		...actTheCard(),
-		...actTheCamera(formatName),
-		...actTheClick(served, formatName),
+		...actTheCamera(),
+		...actTheClick(served),
 		...actThePins(),
-		...actTheSearch(formatName),
+		...actTheSearch(),
 		...actTheKeyboards(),
 		...actTheWords(),
 		...actTheLook(),
-		...actTheFormats(formatName),
+		...actTheFormats(),
 		...actTheAgent(),
 		...actTheEnding()
 	];

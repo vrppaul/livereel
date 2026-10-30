@@ -105,9 +105,9 @@
 			}));
 			search.addEventListener('input', () => {
 				for (const page of pages) {
-					const at = page.text.indexOf(search.value);
-					page.row.hidden = at < 0;
-					page.path.replaceChildren(...markedOf(page.text, search.value, at));
+					const foundAt = page.text.indexOf(search.value);
+					page.row.hidden = foundAt < 0;
+					page.path.replaceChildren(...markedOf(page.text, search.value, foundAt));
 				}
 			});
 
@@ -120,11 +120,11 @@
 			});
 
 			/** A path's text, the part a search found in it marked; as it is where nothing is searched for. */
-			function markedOf(text, query, at) {
-				if (query === '' || at < 0) return [text];
+			function markedOf(text, query, foundAt) {
+				if (query === '' || foundAt < 0) return [text];
 				const mark = document.createElement('mark');
 				mark.textContent = query;
-				return [text.slice(0, at), mark, text.slice(at + query.length)];
+				return [text.slice(0, foundAt), mark, text.slice(foundAt + query.length)];
 			}
 		</script>
 	</body>

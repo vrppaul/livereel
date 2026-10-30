@@ -17,9 +17,10 @@ import { between, linear } from '../domain/time.ts';
 import { A_STROKES, type Keystroke, typedAlong } from '../domain/typing.ts';
 import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import type { FilmedPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
-import { TYPING_FORM, type TypingScript, keysHeard } from '../direction/sound.ts';
+import { keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
 import type { Scene } from '../scene.ts';
+import { TYPING_FORM, type TypingScript } from './typing.ts';
 
 /** How far a block scrolls: so many pixels down its scroll, up where below none. */
 export interface ScrollByScript extends TimingScript {
