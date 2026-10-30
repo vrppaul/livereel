@@ -599,7 +599,7 @@ body {
 	color: var(--code-key);
 }
 
-/* The agent's terminal: a window on the ground, its log above the line being typed, a little smaller while it comes up or goes */
+/* The agent's terminal: a window on the ground, its log above the line being typed, a little smaller while it comes up or goes; or slid whole from its place, in the frame's pixels, as the ending card slides */
 .terminal {
 	--terminal-shrinks: 0.06;
 
@@ -609,7 +609,11 @@ body {
 	align-items: center;
 	justify-content: center;
 	opacity: var(--shown);
-	transform: scale(calc(1 - var(--terminal-shrinks) * (1 - var(--shown))));
+	transform: translate(
+			calc(var(--shift-left) * 1px / var(--frame-scale)),
+			calc(var(--shift-top) * 1px / var(--frame-scale))
+		)
+		scale(calc(1 - var(--terminal-shrinks) * (1 - var(--shown))));
 }
 
 .terminal .window {
@@ -719,7 +723,7 @@ body {
 	opacity: var(--caret);
 }
 
-/* The ending: the name, what it is, and the command that starts it, rising into place; or the whole card, its ground with it, slid from its place across and down, in the frame's pixels */
+/* The ending: the name, what it is, and the command that starts it, rising into place; or the whole card, its ground with it, slid from its place across and down, in the frame's pixels. Its ground is painted back by as much as the card slides, so it is the frame's own ground where it stands: it covers what is under it, and no edge of it shows over the film's ground and glow */
 .ending {
 	--ending-rise: 24px;
 
@@ -735,6 +739,8 @@ body {
 	justify-content: center;
 	gap: 22px;
 	background: var(--ground-light);
+	background-position: calc(var(--shift-left) * -1px / var(--frame-scale))
+		calc(var(--shift-top) * -1px / var(--frame-scale));
 	color: var(--ink);
 	text-align: center;
 	opacity: var(--shown);

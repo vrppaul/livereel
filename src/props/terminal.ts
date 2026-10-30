@@ -1,9 +1,11 @@
 /**
- * An agent's terminal drawn on the stage: its log above the line being typed.
+ * An agent's terminal drawn on the stage: its log above the line being typed, coming up or giving way where it
+ * stands, or sliding in or out whole past a side of the frame, as the ending card does, so it can be pushed.
  *
  * What moves of itself in it — the spinner of an agent at work, the caret's blink — is worked out from the film's
  * moment here, so the stage draws a terminal as it is handed and keeps no time of its own.
  */
+import { IN_PLACE, type Point } from '../domain/geometry.ts';
 import { A_STRING, type Kind, ListOf, OfForm, OneOf, needed } from '../domain/handed.ts';
 
 /** What a line of the terminal is: what was asked, a tool at work, what the agent said, a count done, thinking. */
@@ -29,6 +31,8 @@ export interface Terminal {
 	readonly typed: string;
 	// How far it has come up over the frame, or how much of it is left as it gives way: 0 none, 1 standing
 	readonly shown: number;
+	// How far it stands from its place, across and down, in the frame's pixels, as it slides
+	readonly shift: Point;
 }
 
 /** A line as the stage draws it: its kind, what leads it set apart, and the rest. */
@@ -44,6 +48,7 @@ export interface DrawnTerminal {
 	readonly typed: string;
 	readonly caret: boolean;
 	readonly shown: number;
+	readonly shift: Point;
 }
 
 // What leads a line the person typed, and what parts a tool's name from what it is used on
@@ -58,7 +63,7 @@ const HALVES_OF_A_BLINK = 2;
 
 /** A terminal standing with its title, nothing in its log yet, nothing typed. */
 export function openTerminal(title: string): Terminal {
-	return { title, lines: [], typed: '', shown: 1 };
+	return { title, lines: [], typed: '', shown: 1, shift: IN_PLACE };
 }
 
 export function drawnTerminal(terminal: Terminal, moment: number): DrawnTerminal {
@@ -69,7 +74,8 @@ export function drawnTerminal(terminal: Terminal, moment: number): DrawnTerminal
 		lines: terminal.lines.map((line) => shownLine(line, spinner)),
 		typed: terminal.typed,
 		caret: halfBlinks % HALVES_OF_A_BLINK === 0,
-		shown: terminal.shown
+		shown: terminal.shown,
+		shift: terminal.shift
 	};
 }
 

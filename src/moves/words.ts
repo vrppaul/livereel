@@ -1,7 +1,8 @@
 /**
  * What the moves of what comes up one after another and goes, a caption's, a title's, a callout's and a note's words
  * and the lines of code, do alike; and what the moves of a title and code in a place do alike as they travel: to
- * another place, in from past a side of the frame, pushing what stands off past the side across, out past one.
+ * another place, in from past a side of the frame, pushing what stands off past the side across, out past one; and
+ * how a film names the side what slides in or out whole comes from or goes toward, words, the card or the terminal.
  */
 import { A_FRAME_SIDE, type Box, type FrameSide, type Size, boxToward } from '../domain/geometry.ts';
 import { type Form } from '../domain/handed.ts';
@@ -41,6 +42,13 @@ export interface SlideOutScript extends TimingScript {
 }
 
 export const SLIDE_OUT_FORM: Form<SlideOutScript> = { toward: A_FRAME_SIDE, ...TIMING_FORM };
+
+/** The side what comes slides in `from`, past the frame's edge, rather than coming up in place. */
+export interface SlideInScript extends TimingScript {
+	readonly from?: FrameSide;
+}
+
+export const SLIDE_IN_FORM: Form<SlideInScript> = { from: A_FRAME_SIDE, ...TIMING_FORM };
 // Words not going: neither gone nor on their way out
 export const NOT_GONE = 0;
 // What slides in from a side, words or the card, comes whole at once

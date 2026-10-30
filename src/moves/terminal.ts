@@ -1,5 +1,11 @@
-/** An agent's terminal on the stage: opened, a person typing into it, the agent at work, the terminal giving way. */
+/**
+ * An agent's terminal on the stage: opened, a person typing into it, the agent at work, the terminal giving way. It
+ * comes up and goes where it stands, or slides in or out whole past a side of the frame, a whole frame as the card
+ * does, so what slides the other way in the same step pushes it as one sheet.
+ */
+import { type FrameSide, IN_PLACE, pointToward } from '../domain/geometry.ts';
 import { A_NUMBER, A_STRING, type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { frameToward } from '../domain/place.ts';
 import { linear } from '../domain/time.ts';
 import { A_STROKES, type Keystroke, typedAlong } from '../domain/typing.ts';
 import {
@@ -16,6 +22,7 @@ import {
 import { TYPING_FORM, type TypingScript, keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
 import { A_LINES, type Terminal, type TerminalLine, openTerminal } from '../props/terminal.ts';
+import { SHOWN_WHOLE, SLIDE_IN_FORM, SLIDE_OUT_FORM, type SlideInScript, type SlideOutScript } from './words.ts';
 
 /** Of the agent's work, the share it only thinks before its first line. */
 export interface WorkScript extends TimingScript {
@@ -34,11 +41,19 @@ interface Work {
 const THINKING_SHARE = 0.22;
 const WORK_FORM: Form<WorkScript> = { thinkingShare: A_NUMBER, ...TIMING_FORM };
 
-/** A terminal with its title coming up over the frame, nothing in its log yet, nothing typed; in a cut, at once. */
-export function open(title: string, script: TimingScript = {}): Move {
+/**
+ * A terminal with its title coming up over the frame, or sliding in whole from past a side of it, nothing in its log
+ * yet, nothing typed; in a cut, there at once.
+ */
+export function open(title: string, script: SlideInScript = {}): Move {
 	assertKind(title, A_STRING, "terminal.open's title");
-	assertWritten(script, TIMING_FORM, 'terminal.open');
-	return { part: 'terminal', timing: timingOf(script), begin: () => opening(title) };
+	assertWritten(script, SLIDE_IN_FORM, 'terminal.open');
+	const from = script.from ?? null;
+	return {
+		part: 'terminal',
+		timing: timingOf(script),
+		begin: (beginning) => (from === null ? opening(title) : slidingIn(title, from, beginning))
+	};
 }
 
 /**
@@ -77,15 +92,34 @@ export function works(lines: readonly TerminalLine[], thinking: string, script: 
 	};
 }
 
-/** The terminal giving way to what comes after it; once gone, there is none. */
-export function leave(script: TimingScript = {}): Move {
-	assertWritten(script, TIMING_FORM, 'terminal.leave');
-	return { part: 'terminal', timing: timingOf(script), begin: leaving };
+/**
+ * The terminal giving way to what comes after it where it stands, or sliding out whole past a side of the frame; once
+ * gone, there is none.
+ */
+export function leave(script: SlideOutScript = {}): Move {
+	assertWritten(script, SLIDE_OUT_FORM, 'terminal.leave');
+	const toward = script.toward ?? null;
+	return {
+		part: 'terminal',
+		timing: timingOf(script),
+		begin: (beginning) => (toward === null ? leaving(beginning) : slidingOut(beginning, toward))
+	};
 }
 
 function opening(title: string): Change {
 	const terminal = openTerminal(title);
 	return propChange('terminal', (progress) => ({ ...terminal, shown: progress }));
+}
+
+/** The terminal sliding in whole from a frame past its place on a side. */
+function slidingIn(title: string, from: FrameSide, beginning: Beginning): Change {
+	const terminal = openTerminal(title);
+	const start = frameToward(from, beginning.format.frame);
+	return propChange('terminal', (progress) => ({
+		...terminal,
+		shown: SHOWN_WHOLE,
+		shift: pointToward(start, IN_PLACE, progress)
+	}));
 }
 
 function typingInto(beginning: Beginning, strokes: readonly Keystroke[]): Change {
@@ -107,6 +141,15 @@ function working(work: Work): Change {
 function leaving(beginning: Beginning): Change {
 	const terminal = openOn(beginning, 'left');
 	return propChange('terminal', (progress) => untilTheEnd(progress, { ...terminal, shown: 1 - progress }));
+}
+
+/** The terminal sliding out whole to a frame past its place on a side; once there, none. */
+function slidingOut(beginning: Beginning, toward: FrameSide): Change {
+	const terminal = openOn(beginning, 'left');
+	const end = frameToward(toward, beginning.format.frame);
+	return propChange('terminal', (progress) =>
+		untilTheEnd(progress, { ...terminal, shift: pointToward(terminal.shift, end, progress) })
+	);
 }
 
 /** The lines written by `progress` of the work, after its share of thinking, and the thinking line until the end. */

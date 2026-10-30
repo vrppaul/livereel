@@ -221,10 +221,10 @@ its end at once.
 | `code.show(text, { at, from })`, `code.to(place)`, `code.light(line, { through })`, `code.hide({ toward })` | a dark pane of code `at` a place, beside the page's window or alone, sliding in `from` past a side of the frame, pushing the code shown off past the side across, or out `toward` one, carried to another place by `to`; its lines coming up one after another, coloured as TypeScript; a line lit by words only it says (`code.light('light.on')`), or by its number from 1, or lines `line` through `through`, the line from it on that says the other, the rest dimmed; going |
 | `caption.show(text)`, `caption.hide()` | words coming up one after another at the frame's foot, or its top in a format with `captionAt: 'top'`, in place of any shown; going |
 | `look.to(theme, { within })` | the film's look moving to any of a theme's values: through the values between in a `play`, at once in a `cut`; two at once in a step where they name no value alike |
-| `terminal.open(title)` | an agent's terminal coming up over the frame; in a `cut`, there at once |
+| `terminal.open(title, { from })` | an agent's terminal coming up over the frame, or sliding in whole `from` a side; in a `cut`, there at once |
 | `terminal.type(strokes, { keyboard })`, `terminal.submit()` | keys typed into it, heard on the film's keyboard or the one named; Enter |
 | `terminal.works(lines, thinking, { thinkingShare })` | the agent thinking, its spinner beside the words `thinking`, then its lines written one after another; a line is `{ kind, text }`, its kind `work` (a tool and what it is used on), `said` or `done` |
-| `terminal.leave()` | the terminal giving way |
+| `terminal.leave({ toward })` | the terminal giving way where it stands, or sliding out whole `toward` a side, so what comes in from the side across in the same `play` pushes it off |
 | `ending.show(card, { from })`, `ending.hide({ toward })` | the card: `{ name, line, command }`, last, or first and taken away as the page comes; with its ground it slides in whole `from` a side or out `toward` one, so a push carries it off or brings it on |
 | `page.scrollBy(selector, { pixels })` | a block's own scroll moved so many pixels |
 | `page.scrollTo(selector, { top })` | the page scrolled until a block stands `top` pixels below the top of what scrolls it |

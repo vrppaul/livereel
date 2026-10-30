@@ -26,6 +26,3 @@ export interface Ending {
 	readonly shown: number;
 	readonly shift: Point;
 }
-
-// A card in its place, slid nowhere
-export const IN_PLACE: Point = { left: 0, top: 0 };

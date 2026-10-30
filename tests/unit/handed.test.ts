@@ -158,6 +158,12 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => terminal.leave({ ease: 1 as never })).toThrow(
 		new FilmError(`terminal.leave's ease is 1: it is ${CURVE}`)
 	);
+	expect(() => terminal.leave({ toward: 'up' as never })).toThrow(
+		new FilmError(`terminal.leave's toward is "up": it is ${SIDE}`)
+	);
+	expect(() => terminal.open('claude', { from: 'down' as never })).toThrow(
+		new FilmError(`terminal.open's from is "down": it is ${SIDE}`)
+	);
 	expect(() => ending.show({ name: 'livereel' } as never)).toThrow(
 		new FilmError("ending.show's card's line is undefined: it is a string")
 	);

@@ -19,6 +19,9 @@ export interface Point {
 	readonly top: number;
 }
 
+// What slides whole, the ending card or the terminal, standing in its place, shifted nowhere
+export const IN_PLACE: Point = { left: 0, top: 0 };
+
 /** The sides of the frame: where words stand, the page's window across from them, and what slides in or out. */
 export const FRAME_SIDES = ['left', 'right', 'top', 'bottom'] as const;
 

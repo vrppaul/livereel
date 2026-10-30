@@ -145,8 +145,8 @@ and the moves of each part of the scene:
 - `code.show(text, { at, from })`, `code.to(place)`, `code.light(line, { through })`, `code.hide({ toward })`
 - `caption.show(text)`, `caption.hide()`
 - `screen.rise()`, `screen.lower()`
-- `terminal.open(title)`, `terminal.type(strokes, { keyboard })`, `terminal.submit()`,
-  `terminal.works(lines, thinking, { thinkingShare })`, `terminal.leave()`
+- `terminal.open(title, { from })`, `terminal.type(strokes, { keyboard })`, `terminal.submit()`,
+  `terminal.works(lines, thinking, { thinkingShare })`, `terminal.leave({ toward })`
 - `ending.show({ name, line, command }, { from })`, `ending.hide({ toward })`, so a film may open on the card too
 - `page.scrollBy(selector, { pixels })`, `page.scrollTo(selector, { top })`, `page.type(strokes, { keyboard })`
 - `sound.play(file)`

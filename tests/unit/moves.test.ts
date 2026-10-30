@@ -258,6 +258,18 @@ test('the ending card slides in whole from past a side of the frame, and out pas
 	]);
 });
 
+test('the terminal slides in whole from past a side of the frame, and out past one, then is gone', async () => {
+	const coming = await setAt(open('claude', { from: 'right' }), openingScene(SMALL, LIVEREELS_LOOK), 0);
+	const shown = await setAt(open('claude'), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const leaving = await setAt(leave({ toward: 'left' }), shown, 0.5);
+	const gone = await setAt(leave({ toward: 'left' }), shown, 1);
+	expect([coming.terminal, leaving.terminal, gone.terminal]).toEqual([
+		{ title: 'claude', lines: [], typed: '', shown: 1, shift: { left: SMALL.frame.width, top: 0 } },
+		{ title: 'claude', lines: [], typed: '', shown: 1, shift: { left: -SMALL.frame.width / 2, top: 0 } },
+		null
+	]);
+});
+
 test('a title over the whole frame is refused a move in from a side as it is made, and a move to a place or toward a side as it begins', async () => {
 	expect(() => title.show('Here', { from: 'left' })).toThrow(FilmError);
 	const whole = await setAt(title.show('Here'), openingScene(SMALL, LIVEREELS_LOOK), 1);

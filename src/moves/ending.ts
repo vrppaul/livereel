@@ -4,35 +4,26 @@
  * its name and line, and go on to the page once it has gone. A slide moves a whole frame, as words and the window do,
  * so the card and what slides with it move as one sheet.
  */
-import { A_FRAME_SIDE, type FrameSide, pointToward } from '../domain/geometry.ts';
-import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { type FrameSide, IN_PLACE, pointToward } from '../domain/geometry.ts';
+import { assertKind, assertWritten } from '../domain/handed.ts';
 import { frameToward } from '../domain/place.ts';
 import {
 	type Beginning,
 	type Change,
 	type Move,
-	TIMING_FORM,
-	type TimingScript,
 	present,
 	propChange,
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
 import { heardAsItBegins, livereelSound } from '../direction/sound.ts';
-import { A_CARD, type EndingCard, IN_PLACE } from '../props/ending.ts';
-import { SHOWN_WHOLE, SLIDE_OUT_FORM, type SlideOutScript } from './words.ts';
-
-/** The side the card slides in `from`, past the frame's edge, rather than coming up in place. */
-export interface EndingShowScript extends TimingScript {
-	readonly from?: FrameSide;
-}
-
-const SHOW_FORM: Form<EndingShowScript> = { from: A_FRAME_SIDE, ...TIMING_FORM };
+import { A_CARD, type EndingCard } from '../props/ending.ts';
+import { SHOWN_WHOLE, SLIDE_IN_FORM, SLIDE_OUT_FORM, type SlideInScript, type SlideOutScript } from './words.ts';
 
 /** The card coming up in place, or sliding in whole from past a side of the frame. */
-export function show(card: EndingCard, script: EndingShowScript = {}): Move {
+export function show(card: EndingCard, script: SlideInScript = {}): Move {
 	assertKind(card, A_CARD, "ending.show's card");
-	assertWritten(script, SHOW_FORM, 'ending.show');
+	assertWritten(script, SLIDE_IN_FORM, 'ending.show');
 	const from = script.from ?? null;
 	return {
 		part: 'ending',

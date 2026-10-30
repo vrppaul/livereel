@@ -626,13 +626,18 @@ function actTheFormats(formatName: FormatName): readonly Step[] {
 	];
 }
 
-/** The window and its words going, the agent's terminal coming up: it is asked for this film, and makes it. */
+/** The window and its words pushed off to the left by the agent's terminal: it is asked for this film, and makes it. */
 function actTheAgent(): readonly Step[] {
 	return [
 		play({
-			seconds: 0.8,
-			moves: [...beatGoing(), window.hide({ toward: 'left' }), terminal.open(TERMINAL, { within: { start: 0.4 } })],
-			ease: easeOutCubic
+			seconds: 1.2,
+			moves: [
+				window.hide({ toward: 'left' }),
+				title.hide({ toward: 'left' }),
+				code.hide({ toward: 'left' }),
+				terminal.open(TERMINAL, { from: 'right' })
+			],
+			ease: easeInOutCubic
 		}),
 		...typing(terminal.type(ASKED)),
 		hold({ seconds: 0.2 }),
@@ -642,12 +647,12 @@ function actTheAgent(): readonly Step[] {
 	];
 }
 
-/** The terminal giving way, and the card coming in from the right. */
+/** The terminal pushed off to the left by the card coming in from the right. */
 function actTheEnding(): readonly Step[] {
 	return [
 		play({
 			seconds: 1.2,
-			moves: [terminal.leave({ within: { end: 0.5 } }), ending.show(CARD, { from: 'right' })],
+			moves: [terminal.leave({ toward: 'left' }), ending.show(CARD, { from: 'right' })],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 2.5 })
