@@ -38,7 +38,9 @@ body {
 /* The camera's view, and its shadow under it: the whole frame, or a window on the ground, leant back and swung about its middle as the window leans. The engine works out what the camera shows where in the same steps (`src/domain/camera.ts`) */
 .view,
 .view-shadow {
-	--view-corner: calc(var(--window-corner) * 1px);
+	/* Drawn in the frame's own pixels: a pane's lengths, in a frame 1080's, scaled to the frame shot */
+	--pane-scale: var(--frame-scale);
+	--view-corner: calc(var(--pane-corner) * var(--pane-scale) * 1px);
 
 	position: absolute;
 	left: calc(var(--view-left) * 1px);
@@ -52,14 +54,14 @@ body {
 .view {
 	clip-path: inset(
 		calc(var(--cut-top) * 1px) calc(var(--cut-right) * 1px) calc(var(--cut-bottom) * 1px) calc(var(--cut-left) * 1px)
-			round calc(var(--lift) * var(--view-corner) * var(--frame-scale))
+			round calc(var(--lift) * var(--view-corner))
 	);
 }
 
 /* The window's shadow and edge, as far as it stands off the ground and the screen has come up in it */
 .view-shadow {
-	border-radius: calc(var(--lift) * var(--view-corner) * var(--frame-scale));
-	box-shadow: var(--view-shadow);
+	border-radius: calc(var(--lift) * var(--view-corner));
+	box-shadow: var(--pane-shadow);
 	opacity: calc(var(--lift) * var(--screen-shown));
 }
 
@@ -75,15 +77,22 @@ body {
 		scale(calc(var(--zoom) * var(--frame-scale))) translate(calc(var(--focus-x) * -1px), calc(var(--focus-y) * -1px));
 }
 
-/* The screen the page is shown on: a rounded pane lifted off the ground, as far up as it has come */
+/* The screen the page is shown on: a pane lifted off the ground, as far up as it has come. It is drawn under the camera's scale, so a pane's lengths are taken back by the camera's zoom */
 .screen {
+	--pane-scale: calc(1 / var(--zoom));
+
 	width: 100%;
 	height: 100%;
-	border-radius: 16px;
 	overflow: hidden;
 	background: var(--screen-ground);
-	box-shadow: var(--screen-shadow);
 	opacity: var(--screen-shown);
+}
+
+/* A pane on the ground — the screen, the code's pane, the agent's terminal — its corners, edge and shadow as the look has them, at its own scale, as the page's window's are */
+.screen,
+.object .pane {
+	border-radius: calc(var(--pane-corner) * var(--pane-scale) * 1px);
+	box-shadow: var(--pane-shadow);
 }
 
 .page {
@@ -328,6 +337,9 @@ body {
 .object .content {
 	--content-width: calc(var(--width) * 1px / var(--frame-scale));
 	--content-height: calc(var(--height) * 1px / var(--frame-scale));
+
+	/* A pane it shows is drawn in those pixels already */
+	--pane-scale: 1;
 
 	position: absolute;
 	left: 0;
@@ -601,9 +613,7 @@ body {
 	box-sizing: border-box;
 	padding: var(--code-down) 0;
 	overflow: hidden;
-	border-radius: calc(var(--window-corner) * 1px);
 	background: var(--terminal);
-	box-shadow: var(--view-shadow);
 	opacity: var(--grounded);
 	transform: translateY(calc(-50% + (1 - var(--grounded)) * var(--code-rise)));
 	font: 400
@@ -665,14 +675,12 @@ body {
 	transform: scale(calc(1 - var(--terminal-shrinks) * (1 - var(--shown))));
 }
 
-.terminal .window {
+.terminal .pane {
 	width: var(--content-width);
 	height: var(--content-height);
 	display: flex;
 	flex-direction: column;
-	border-radius: 16px;
 	background: var(--terminal);
-	box-shadow: var(--terminal-shadow);
 	overflow: hidden;
 	font: 400 calc(var(--terminal-size) * 1px) / 1.5 var(--mono);
 	color: var(--terminal-ink);

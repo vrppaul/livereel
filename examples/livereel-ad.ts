@@ -107,16 +107,16 @@ const NIGHT: Theme = {
 	glowY: 0.12,
 	ink: '#f5f3ff',
 	quietInk: '#c7d2fe',
-	windowEdge: '#ffffff24',
-	windowShadowColour: '#7c3aed',
-	windowCorner: 24,
+	paneEdge: '#ffffff24',
+	paneShadowColour: '#7c3aed',
+	paneCorner: 24,
 	accent: '#ffb224'
 };
 // The code large enough to read in a feed, and the terminal's letters
 const THEME: Theme = { ...NIGHT, codeSize: 34, terminalSize: 30 };
 // The looks the film changes to at once, one after another, then back to the night
-const PAPER: Theme = { ground: '#f5efe6', glow: '#fffaf2', ink: '#1a1a1a', windowEdge: '#00000033' };
-const SQUARE_CORNERS: Theme = { windowCorner: 0 };
+const PAPER: Theme = { ground: '#f5efe6', glow: '#fffaf2', ink: '#1a1a1a', paneEdge: '#00000033' };
+const SQUARE_CORNERS: Theme = { paneCorner: 0 };
 const CYAN: Theme = { accent: '#22d3ee' };
 const REGIONS = await regionsOf(new URL(import.meta.url));
 // The comma a move in a list of moves stands before when another follows it

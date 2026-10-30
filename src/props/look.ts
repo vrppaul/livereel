@@ -1,11 +1,11 @@
 /**
  * The film's look, a prop like any other: the ground the screen stands on and the titles and ending come up on, and
  * its glow, the ink of the words livereel writes over the frame, their fonts, sizes and weights and how they come up,
- * where a title and a caption's ground stand, the accent of the marks, the window's corners, edge and shadow, which the
- * code's pane takes too, the colours of the code by kind, the cursor, and the agent's terminal and the ending card,
- * their colours and sizes. A film opens on livereel's look with its theme's values, and changes it by moves as it goes:
- * in a play, a colour, a size or a shadow moves through the values between, and a font, which has none between,
- * changes half-way; in a cut, at once. The stage is handed the whole look every frame and sets each value in place of
+ * where a title and a caption's ground stand, the accent of the marks, the corners, edge and shadow of what stands on
+ * the ground as a pane — the page's window and its screen, the code's pane and the agent's terminal alike — the colours
+ * of the code by kind, the cursor, and the agent's terminal and the ending card, their colours and sizes. A film opens
+ * on livereel's look with its theme's values, and changes it by moves as it goes: in a play, a colour, a size or a
+ * shadow moves through the values between, and a font, which has none between, changes half-way; in a cut, at once. The stage is handed the whole look every frame and sets each value in place of
  * its token (`stage/tokens.css`).
  *
  * One table, `LOOK_KINDS`, says of each value what a film may write for it and how it moves, so a theme is checked by
@@ -50,15 +50,15 @@ export interface Look {
 	readonly titleMargin: number;
 	readonly captionGroundHeight: number;
 	/**
-	 * How round the corners of the page's window and the code's pane are, in pixels of a frame 1080 on its shorter
-	 * side: 0, square.
+	 * How round the corners of a pane are — the page's window, the code's pane, the agent's terminal — in pixels of a
+	 * frame 1080 on its shorter side: 0, square.
 	 */
-	readonly windowCorner: number;
-	/** The colour of the faint edge round the page's window and the code's pane, in hex, its own alpha how faint. */
-	readonly windowEdge: string;
-	/** How strong the shadow of the window and the code's pane is, from 0, none, to 1, livereel's; its colour, in hex. */
-	readonly windowShadow: number;
-	readonly windowShadowColour: string;
+	readonly paneCorner: number;
+	/** The colour of the faint edge round a pane, in hex, its own alpha how faint. */
+	readonly paneEdge: string;
+	/** How strong a pane's shadow is, from 0, none, to 1, livereel's; its colour, in hex. */
+	readonly paneShadow: number;
+	readonly paneShadowColour: string;
 	/**
 	 * The colour of the terminal, of the code's pane, of the ending's command and of a key's cap, and of what is written
 	 * on them, in hex.
@@ -160,10 +160,10 @@ export const LOOK_KINDS: { readonly [Name in keyof Look]: LookKind<Look[Name]> }
 	captionSize: SIZE,
 	titleMargin: PIXELS,
 	captionGroundHeight: PIXELS,
-	windowCorner: PIXELS,
-	windowEdge: COLOUR,
-	windowShadow: SHARE,
-	windowShadowColour: COLOUR,
+	paneCorner: PIXELS,
+	paneEdge: COLOUR,
+	paneShadow: SHARE,
+	paneShadowColour: COLOUR,
 	terminal: COLOUR,
 	terminalInk: COLOUR,
 	codeComment: COLOUR,
@@ -204,10 +204,10 @@ export const LIVEREELS_LOOK: Look = {
 	captionSize: 56,
 	titleMargin: 160,
 	captionGroundHeight: 380,
-	windowCorner: 24,
-	windowEdge: '#ffffff1a',
-	windowShadow: 1,
-	windowShadowColour: '#000',
+	paneCorner: 24,
+	paneEdge: '#ffffff1a',
+	paneShadow: 1,
+	paneShadowColour: '#000',
 	terminal: '#10141c',
 	terminalInk: '#f4f6fa',
 	codeComment: '#8b949e',

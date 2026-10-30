@@ -312,18 +312,18 @@ test('a film is shot on the stage it names, apart where it names none; a stage l
 
 test('a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, pixels less than none, a share past 1, a size of none, a way words come up it has not, a colour not in hex, a font of no name', () => {
 	const names =
-		'ground, glow, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, windowCorner, windowEdge, windowShadow, windowShadowColour, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, cursorFill, cursorEdge, wordsMotion';
+		'ground, glow, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, paneCorner, paneEdge, paneShadow, paneShadowColour, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, cursorFill, cursorEdge, wordsMotion';
 	expect(() => filmWritten({ theme: null })).toThrow(
 		new FilmError(`the film's theme is handed null for an object of ${names}`)
 	);
 	expect(() => filmWritten({ theme: { background: '#000' } })).toThrow(
 		new FilmError(`the film's theme names background: it names ${names}, or fewer`)
 	);
-	expect(() => filmWritten({ theme: { windowCorner: -4 } })).toThrow(
-		new FilmError("the film's theme's windowCorner is -4: it is a number of pixels, 0 or more")
+	expect(() => filmWritten({ theme: { paneCorner: -4 } })).toThrow(
+		new FilmError("the film's theme's paneCorner is -4: it is a number of pixels, 0 or more")
 	);
-	expect(() => filmWritten({ theme: { windowShadow: 2 } })).toThrow(
-		new FilmError("the film's theme's windowShadow is 2: it is a number from 0 to 1")
+	expect(() => filmWritten({ theme: { paneShadow: 2 } })).toThrow(
+		new FilmError("the film's theme's paneShadow is 2: it is a number from 0 to 1")
 	);
 	expect(() => filmWritten({ theme: { captionSize: 0 } })).toThrow(
 		new FilmError("the film's theme's captionSize is 0: it is a number of pixels, more than 0")

@@ -151,22 +151,22 @@ const THEME: Theme = { codeSize: 40 };
 // The looks the film turns to on a slide of their own: paper and night at once, then, slowly, a serif with square
 // corners and a violet shadow, over a ground that stays, so the words read all the way; night's glow and quieter
 // words stay readable on its ground, where the film ends
-const PAPER: Theme = { ground: '#f5efe6', ink: '#1a1a1a', windowEdge: '#00000033' };
+const PAPER: Theme = { ground: '#f5efe6', ink: '#1a1a1a', paneEdge: '#00000033' };
 const NIGHT: Theme = {
 	ground: '#1e1b4b',
 	glow: '#312e81',
 	ink: '#f5f3ff',
 	quietInk: '#c7d2fe',
-	windowEdge: '#ffffff1a'
+	paneEdge: '#ffffff1a'
 };
-const SERIF: Theme = { font: 'Georgia, serif', windowCorner: 0, windowShadowColour: '#7c3aed' };
+const SERIF: Theme = { font: 'Georgia, serif', paneCorner: 0, paneShadowColour: '#7c3aed' };
 // The glow drifting up and across while the serif comes in, two moves of the look at once
 const DRIFT: Theme = { glowX: 0.85, glowY: 0.1 };
 // Then, at once, a cyan accent under the line lit, corners rounded again, and the terminal's colours in an editor's
 // light theme, the code's colours by kind with them (Solarized light): the code's pane, and the agent's terminal and
 // the closing card's command after it
 const CYAN: Theme = { accent: '#22d3ee' };
-const ROUNDED: Theme = { windowCorner: 40 };
+const ROUNDED: Theme = { paneCorner: 40 };
 const SOLARIZED: Theme = {
 	terminal: '#fdf6e3',
 	terminalInk: '#073642',

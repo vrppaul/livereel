@@ -246,16 +246,18 @@ Put the spaces in the strings, as the words are read.
 `defineFilm` takes a `theme`, any of its values, where the user names a
 brand's look. In hex: `ground` and `glow` (left out, the ground is of one
 colour), `ink` and `quietInk`, `accent` and `accentInk` for pins and notes,
-`windowEdge` and `windowShadowColour` (a dark edge on a light ground),
+`paneEdge` and `paneShadowColour` (a dark edge on a light ground),
 `cursorFill` and `cursorEdge`, `terminal` and `terminalInk`, and the code's
 colours by kind, `codeComment`, `codeString`, `codeNumber`, `codeKeyword`,
 `codeCall` and `codeKey` (made for a dark pane: give them all with a light
-`terminal`). From 0 to 1: `windowShadow`, `glowX` and `glowY`. Where the
-terminal stands is its own: `terminal.open(title, { at })`.
+`terminal`). From 0 to 1: `paneShadow`, `glowX` and `glowY`. A pane is the
+page's window, the code's pane and the terminal alike: one corner, edge
+and shadow for all three. Where the terminal stands is its own:
+`terminal.open(title, { at })`.
 From 100 to 900: `titleWeight` and `captionWeight`. In pixels of a 1080
 frame: `titleSize`, `captionSize`, `noteSize`, `calloutSize`, `pinSize`,
 `keysSize`, `codeSize`, `terminalSize`, `endingNameSize`, `endingLineSize`,
-`endingCommandSize` and `windowCorner`; `titleMargin`, how far in from the
+`endingCommandSize` and `paneCorner`; `titleMargin`, how far in from the
 frame's sides a title over the whole frame stands, and
 `captionGroundHeight`, how far the ground darkens under a caption. As CSS
 names a family installed on the machine: `font` and `mono`. And

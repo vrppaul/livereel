@@ -1,7 +1,7 @@
 /*
  * Every colour of the stage, its shadows and its reaches, written once. The other stylesheets name these and write no
  * colour of their own (stylelint holds them to it). The film's look — the ground, its glow, the inks, the accent, the
- * fonts, the sizes and weights of words, the window's corners, edge and shadow, the code's colours, the cursor, the
+ * fonts, the sizes and weights of words, a pane's corners, edge and shadow, the code's colours, the cursor, the
  * terminal and the ending — is set on the root every frame from the scene (`LookDrawer` in `stage.js`, livereel's own
  * in `src/props/look.ts`), so a film changes it as it goes; what is worked out from it here follows.
  */
@@ -18,12 +18,10 @@
 
 	/* What stands back in the terminal and in the ending's command, on the terminal's own colour */
 	--terminal-quiet: #8b95a7;
-	--terminal-shadow: 0 0 0 1px var(--terminal-edge), 0 40px 100px rgb(0 0 0 / 50%);
 	--cursor-shadow: drop-shadow(0 3px 4px rgb(0 0 0 / 35%));
 
-	/* What the screen shows until the page draws, and the screen lifted off the ground with a faint edge */
+	/* What the screen shows until the page draws */
 	--screen-ground: #fff;
-	--screen-shadow: 0 50px 120px rgb(0 0 0 / 55%), 0 0 0 1px rgb(255 255 255 / 7%);
 
 	/* The dark round a block in the light, reaching past any edge of the screen */
 	--light-dark: 0 0 0 4000px rgb(6 9 16);
@@ -36,17 +34,8 @@
 	--caption-shadow: 0 2px 30px rgb(0 0 0 / 55%);
 	--callout-shadow: 0 12px 32px rgb(0 0 0 / 35%);
 
-	/* The page's window on the ground: its edge, and its shadow in the look's colour, as strong as the look has it, from
-	 * 0 none to 1 livereel's, that colour this strong at its darkest */
-	--window-shadow-darkest: 55%;
-	--view-shadow:
-		0 0 0 2px var(--window-edge),
-		0 60px 140px
-			color-mix(
-				in srgb,
-				var(--window-shadow-colour) calc(var(--window-shadow) * var(--window-shadow-darkest)),
-				transparent
-			);
+	/* How strong a pane's shadow is at its darkest, the look's strength of 1 */
+	--pane-shadow-darkest: 55%;
 
 	/* A key's cap standing up off the frame */
 	--key-shadow: inset 0 -6px 0 var(--terminal-edge), 0 24px 60px rgb(0 0 0 / 35%);
@@ -60,4 +49,23 @@
 	/* The look's fonts, and what stands in for each where the system has none */
 	--sans: var(--font), system-ui, sans-serif;
 	--mono: var(--mono-font), 'JetBrains Mono', monospace;
+}
+
+/*
+ * A pane on the ground — the page's window, the screen the page is shown on, the code's pane, the agent's terminal —
+ * its edge, and its shadow in the look's colour, as strong as the look has it, from 0 none to 1 livereel's. Its lengths
+ * are pixels of a frame 1080 on its shorter side, scaled by the pane's own `--pane-scale` (`stage.css`), as each is
+ * drawn at a scale of its own: so it is worked out on each pane, where a token on the root would take the root's scale.
+ */
+.view-shadow,
+.screen,
+.object .pane {
+	--pane-shadow:
+		0 0 0 calc(2px * var(--pane-scale)) var(--pane-edge),
+		0 calc(60px * var(--pane-scale)) calc(140px * var(--pane-scale))
+			color-mix(
+				in srgb,
+				var(--pane-shadow-colour) calc(var(--pane-shadow-strength) * var(--pane-shadow-darkest)),
+				transparent
+			);
 }

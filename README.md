@@ -351,9 +351,9 @@ values; what the film leaves out stays livereel's:
 | `titleSize`, `captionSize` | how large a title's and a caption's letters are, in pixels | `92`, `56` |
 | `titleMargin` | how far in from the frame's sides a title over the whole frame stands, in pixels | `160` |
 | `captionGroundHeight` | how far from the frame's foot, or its top, the ground under a caption darkens, in pixels | `380` |
-| `windowCorner` | how round the corners of the page's window and the code's pane are, in pixels; `0`, square | `24` |
-| `windowEdge` | the faint edge round the window and the code's pane, its alpha how faint | `#ffffff1a` |
-| `windowShadow`, `windowShadowColour` | how strong the shadow of the window and the code's pane is, from `0`, none, to `1`, and its colour | `1`, `#000` |
+| `paneCorner` | how round the corners of a pane are — the page's window, the code's pane and the terminal alike — in pixels; `0`, square | `24` |
+| `paneEdge` | the faint edge round a pane, its alpha how faint | `#ffffff1a` |
+| `paneShadow`, `paneShadowColour` | how strong a pane's shadow is, from `0`, none, to `1`, and its colour | `1`, `#000` |
 | `terminal`, `terminalInk` | the colour of the terminal, the code's pane, the ending's command and keys' caps, and what is written on them | `#10141c`, `#f4f6fa` |
 | `codeComment`, `codeString`, `codeNumber`, `codeKeyword`, `codeCall`, `codeKey` | the colours of the code's pieces by kind: a comment, a string, a number, a word the language keeps, a function called, a key of an object; livereel's are made for a dark pane | `#8b949e`, `#a5d6ff`, `#79c0ff`, `#ff7b72`, `#d2a8ff`, `#7ee787` |
 | `glowX`, `glowY` | where the ground's glow stands, across and down, each from 0 to 1 | `0.5`, `0.3` |
@@ -376,7 +376,7 @@ weight, a corner or a shadow through the values between, and a font or
 
 ```ts
 play({ seconds: 1.2, moves: [look.to({ ground: '#f5efe6', ink: '#1a1a1a' })] }),  // the ground turns light
-cut(look.to({ font: 'Georgia', windowCorner: 0 })),                               // a serif, square corners, at once
+cut(look.to({ font: 'Georgia', paneCorner: 0 })),                                 // a serif, square corners, at once
 play({ seconds: 6, moves: [look.to({ glowX: 0.9, glowY: 0.1 }), camera.onto(CHART)] }) // the glow drifts as the camera goes
 ```
 
