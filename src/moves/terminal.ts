@@ -6,7 +6,6 @@
  * into it and what the agent writes is what it shows, so typing shares a step with a move that carries it. Every move
  * of it takes the terminal named `terminal`, or the one the film names `as`.
  */
-import { A_FRAME_SIDE } from '../domain/geometry.ts';
 import { A_NUMBER, A_STRING, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { A_PLACE, type Place } from '../domain/place.ts';
 import { linear } from '../domain/time.ts';
@@ -22,6 +21,7 @@ import {
 	type NamedScript,
 	type ObjectKind,
 	type ObjectLeanScript,
+	SHOW_FORM,
 	type ShowScript,
 	type ToScript,
 	contentMove,
@@ -62,7 +62,7 @@ const TERMINAL: ObjectKind = 'terminal';
 const MOST_OF_THE_FRAME: Place = { left: 0.07, top: 0.11, width: 0.86, height: 0.78 };
 // Of the agent's work, the share it only thinks before its first line
 const THINKING_SHARE = 0.22;
-const TERMINAL_FORM: Form<TerminalScript> = { at: A_PLACE, from: A_FRAME_SIDE, ...NAMED_FORM, ...TIMING_FORM };
+const TERMINAL_FORM: Form<TerminalScript> = { at: A_PLACE, ...SHOW_FORM };
 const TYPING_INTO_FORM: Form<TerminalTypingScript> = { ...TYPING_FORM, ...NAMED_FORM };
 const WORK_FORM: Form<WorkScript> = { thinkingShare: A_NUMBER, ...TIMING_FORM, ...NAMED_FORM };
 

@@ -9,18 +9,18 @@
  * that size as it sets off, where it reads from, and travels whole: its lines change once, where they would break
  * anew on every frame of the way.
  */
-import { A_FRAME_SIDE, boxOf } from '../domain/geometry.ts';
+import { boxOf } from '../domain/geometry.ts';
 import { A_SIZE, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { AN_ALIGNMENT, A_PLACE, type Alignment, type Place, alignmentIn } from '../domain/place.ts';
-import { type Beginning, type Move, TIMING_FORM } from '../direction/move.ts';
+import type { Beginning, Move } from '../direction/move.ts';
 import type { TitleWords } from '../props/title.ts';
 import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
 import {
 	type Coming,
 	type HideScript,
-	NAMED_FORM,
 	type ObjectKind,
 	type ObjectLeanScript,
+	SHOW_FORM,
 	type ShowScript,
 	type ToScript,
 	objectHide,
@@ -55,14 +55,7 @@ interface Setting {
 }
 
 const TITLE: ObjectKind = 'title';
-const TITLE_FORM: Form<TitleScript> = {
-	at: A_PLACE,
-	align: AN_ALIGNMENT,
-	size: A_SIZE,
-	from: A_FRAME_SIDE,
-	...NAMED_FORM,
-	...TIMING_FORM
-};
+const TITLE_FORM: Form<TitleScript> = { at: A_PLACE, align: AN_ALIGNMENT, size: A_SIZE, ...SHOW_FORM };
 // Words over the whole frame on their ground stand centred
 const OVER_THE_WHOLE: Alignment = 'center';
 

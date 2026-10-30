@@ -8,7 +8,6 @@
  * it; a light past the last line shown, or of words no line or more than one says, is refused as it begins.
  */
 import { FilmError } from '../domain/errors.ts';
-import { A_FRAME_SIDE } from '../domain/geometry.ts';
 import { A_COUNT, A_STRING, type Form, type Kind, Plain, assertKind, assertWritten, needed } from '../domain/handed.ts';
 import { A_PLACE, type Place } from '../domain/place.ts';
 import { between } from '../domain/time.ts';
@@ -21,6 +20,7 @@ import {
 	type NamedScript,
 	type ObjectKind,
 	type ObjectLeanScript,
+	SHOW_FORM,
 	type ShowScript,
 	type ToScript,
 	contentMove,
@@ -51,7 +51,7 @@ const A_LINE_NAMED: Kind<LineNamed> = new Plain(
 	isLineNamed,
 	'a line: its number, a whole count from 1, or words it says, a string with something in it'
 );
-const CODE_FORM: Form<CodeScript> = { at: needed(A_PLACE), from: A_FRAME_SIDE, ...NAMED_FORM, ...TIMING_FORM };
+const CODE_FORM: Form<CodeScript> = { at: needed(A_PLACE), ...SHOW_FORM };
 const LIGHT_FORM: Form<LightScript> = { through: A_LINE_NAMED, ...NAMED_FORM, ...TIMING_FORM };
 // Lines are counted from 1, places in a list from 0
 const FIRST_LINE = 1;

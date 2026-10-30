@@ -193,28 +193,6 @@ class CursorDrawer {
 	}
 }
 
-class CaptionDrawer {
-	/** @param {Staged} root */
-	constructor(root) {
-		this.root = root;
-		/** @type {KeyedList<DrawnWords['words'][number]>} */
-		this.words = new KeyedList(partOf(root, 'words'), wordElement, wordNumbers);
-	}
-
-	/** @param {DrawnScene} scene */
-	draw(scene) {
-		const caption = scene.caption;
-		shown(this.root, caption !== null);
-		if (caption === null) {
-			this.words.clear();
-			return;
-		}
-		named(this.root, CAPTION_EDGE, caption.at);
-		numbered(this.root, { '--darkened': caption.ground, '--gone': caption.gone });
-		this.words.draw(caption.key, caption.words);
-	}
-}
-
 class CalloutDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
@@ -313,30 +291,9 @@ class NoteDrawer {
 	}
 }
 
-class KeysDrawer {
-	/** @param {Staged} root */
-	constructor(root) {
-		this.root = root;
-		/** @type {KeyedList<string>} */
-		this.caps = new KeyedList(root, capElement, noNumbers);
-	}
-
-	/** @param {DrawnScene} scene */
-	draw(scene) {
-		const keys = scene.keys;
-		shown(this.root, keys !== null);
-		if (keys === null) {
-			this.caps.clear();
-			return;
-		}
-		this.caps.draw(keys.key, keys.caps);
-		numbered(this.root, { '--shown': keys.shown, '--clearing': keys.clearing });
-	}
-}
-
 /**
  * The objects of a scene, those standing or those pushed off, each an element made from the template of what it shows
- * and kept by its name while it stands showing that, laid in the scene's order, the last over the rest.
+ * and kept by its name while it stands showing that, laid in the scene's order, the last over the rest on its layer.
  */
 class ObjectsDrawer {
 	/** @param {Staged} root @param {'objects' | 'leaving'} list */
@@ -366,7 +323,7 @@ class ObjectsDrawer {
 	}
 }
 
-/** An object's element on the stage, made from the template of what it shows: its box and angle set every frame. */
+/** An object's element on the stage, made from the template of what it shows: its box, layer and angle set every frame. */
 class StagedObject {
 	/** @param {DrawnContent['kind']} kind */
 	constructor(kind) {
@@ -378,6 +335,7 @@ class StagedObject {
 	/** @param {DrawnObject} object */
 	draw(object) {
 		placed(this.element, object.box);
+		numbered(this.element, { '--layer': object.layer });
 		this.element.toggleAttribute(LEANT, object.angle !== null);
 		if (object.angle !== null) numbered(this.element, { '--tilt': object.angle.tilt, '--turn': object.angle.turn });
 		this.content.draw(object.content);
@@ -425,6 +383,41 @@ class CodeDrawer {
 	}
 }
 
+/** A caption in its object: its words at the edge of the frame it stands at, on the ground that darkens it. */
+class CaptionDrawer {
+	/** @param {Staged} element */
+	constructor(element) {
+		this.element = element;
+		/** @type {KeyedList<DrawnWords['words'][number]>} */
+		this.words = new KeyedList(partOf(element, 'words'), wordElement, wordNumbers);
+	}
+
+	/** @param {DrawnContent} content */
+	draw(content) {
+		const caption = ofKind(content, 'caption');
+		named(this.element, CAPTION_EDGE, caption.at);
+		numbered(this.element, { '--darkened': caption.ground, '--gone': caption.gone });
+		this.words.draw(caption.key, caption.words);
+	}
+}
+
+/** Keys in their object: the caps of a shortcut at the frame's foot, risen clear of a caption there. */
+class KeysDrawer {
+	/** @param {Staged} element */
+	constructor(element) {
+		this.element = element;
+		/** @type {KeyedList<string>} */
+		this.caps = new KeyedList(partOf(element, 'caps'), capElement, noNumbers);
+	}
+
+	/** @param {DrawnContent} content */
+	draw(content) {
+		const keys = ofKind(content, 'keys');
+		this.caps.draw(keys.key, keys.caps);
+		numbered(this.element, { '--shown': keys.shown, '--clearing': keys.clearing });
+	}
+}
+
 /**
  * What draws an object's content in its element.
  * @typedef {{ readonly draw: (content: DrawnContent) => void }} ContentDrawer
@@ -439,7 +432,9 @@ const CONTENT_DRAWERS = {
 	words: (element) => new TitleWordsDrawer(element),
 	code: (element) => new CodeDrawer(element),
 	terminal: (element) => new TerminalDrawer(element),
-	ending: (element) => new EndingDrawer(element)
+	ending: (element) => new EndingDrawer(element),
+	caption: (element) => new CaptionDrawer(element),
+	keys: (element) => new KeysDrawer(element)
 };
 
 /**
@@ -599,8 +594,6 @@ function exposureOf(root) {
 			pins: new PinsDrawer(propRoot(root, 'pins')),
 			cursor: new CursorDrawer(propRoot(root, 'cursor')),
 			note: new NoteDrawer(propRoot(root, 'note')),
-			caption: new CaptionDrawer(propRoot(root, 'caption')),
-			keys: new KeysDrawer(propRoot(root, 'keys')),
 			objects: new ObjectsDrawer(objectsRoot(root, 'objects'), 'objects'),
 			leaving: new ObjectsDrawer(objectsRoot(root, 'leaving'), 'leaving')
 		},

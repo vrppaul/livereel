@@ -10,6 +10,7 @@ import {
 } from '../../src/domain/camera.ts';
 import { linear } from '../../src/domain/time.ts';
 import { FilmError } from '../../src/domain/errors.ts';
+import type { Format } from '../../src/domain/format.ts';
 import { type Point, boxOf, boxToward, frameScaleOf, middleX, middleY } from '../../src/domain/geometry.ts';
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
@@ -21,7 +22,7 @@ import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
 import * as ending from '../../src/moves/ending.ts';
-import { drawnObject } from '../../src/props/object.ts';
+import { type DrawnObject, drawnObject } from '../../src/props/object.ts';
 import { pastTheEdge, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
 import * as look from '../../src/moves/look.ts';
@@ -37,7 +38,7 @@ import { leave, open, submit, to as terminalTo, type as typeInto, works } from '
 import { keystrokes } from '../../src/domain/typing.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
 import { saidOf } from '../../src/props/words.ts';
-import { type Scene, cameraOf, openingScene, withObject, withProp } from '../../src/scene.ts';
+import { type Scene, cameraOf, drawn, openingScene, withObject, withProp } from '../../src/scene.ts';
 import { PageOfBoxes, SMALL } from './fakes.ts';
 
 const BLOCK = { left: 100, top: 100, width: 100, height: 40 };
@@ -95,15 +96,31 @@ const READ: TerminalLine = { kind: 'work', text: 'Read app.py' };
 const SAID: TerminalLine = { kind: 'said', text: 'Done.' };
 const THINKING = 'Working…';
 const THREE_LINES = 'play({\n\tmoves: [camera.onto(VISITORS)]\n})';
+// A frame whose captions stand at its top
+const CAPTIONS_AT_THE_TOP: Format = { ...SMALL, captionAt: 'top' };
 
 function beginningOf(scene: Scene): Beginning {
-	return { scene, page: PAGE, format: SMALL };
+	return beginningIn(scene, SMALL);
+}
+
+function beginningIn(scene: Scene, format: Format): Beginning {
+	return { scene, page: PAGE, format };
 }
 
 /** The scene a move sets, begun on a scene, at a progress of its way. */
 async function setAt(move: Move, scene: Scene, progress: number): Promise<Scene> {
-	const change = await move.begin(beginningOf(scene));
+	return setIn(move, scene, progress, SMALL);
+}
+
+/** The scene a move sets, begun on a scene shot in a format, at a progress of its way. */
+async function setIn(move: Move, scene: Scene, progress: number, format: Format): Promise<Scene> {
+	const change = await move.begin(beginningIn(scene, format));
 	return change(scene, progress);
+}
+
+/** The objects of a scene as the stage draws them, in a format, by the scene's own camera. */
+function drawnObjectsIn(scene: Scene, format: Format): readonly DrawnObject[] {
+	return drawn(scene, cameraOf(scene, format), 0, format).objects;
 }
 
 test('a callout points at what the screen shows of its block, on the side the film names', async () => {
@@ -151,7 +168,7 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 		gone: 0
 	});
 	const titled = await setAt(title.show('Words'), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const captioned = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'caption', { ...said, shown: 1, gone: 0 });
+	const captioned = await setAt(caption.show('Words'), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const pressed = await setAt(keys.show(['⌘', 'K']), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const coded = await setAt(code.show('light.on(VISITORS)', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const carded = await setAt(
@@ -164,13 +181,13 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 		(await setAt(callout.hide(), pointed, 1)).callout,
 		(await setAt(pin.clear(), pinned, 1)).pins,
 		(await setAt(note.hide(), noted, 1)).note,
-		(await setAt(caption.hide(), captioned, 1)).caption,
-		(await setAt(keys.hide(), pressed, 1)).keys,
+		[...(await setAt(caption.hide(), captioned, 1)).objects.keys()],
+		[...(await setAt(keys.hide(), pressed, 1)).objects.keys()],
 		[...(await setAt(leave(), TYPED, 1)).objects.keys()],
 		[...(await setAt(ending.hide(), carded, 1)).objects.keys()],
 		[...(await setAt(title.hide(), titled, 1)).objects.keys()],
 		[...(await setAt(code.hide(), coded, 1)).objects.keys()]
-	]).toEqual([null, null, null, null, null, null, [], [], [], []]);
+	]).toEqual([null, null, null, null, [], [], [], [], [], []]);
 });
 
 test('code and a title stand in the places the film names, the title then with no ground of its own', async () => {
@@ -322,7 +339,7 @@ test('an object leans by a move of its own while another carries it and its cont
 });
 
 test("an object takes any name with something in it, its moves apart from a prop's or the page's of that name", () => {
-	const moves = [title.show('Here', { as: 'caption' }), caption.show('Here'), code.lean({ tilt: 4, as: 'page' })];
+	const moves = [title.show('Here', { as: 'light' }), lightOn('#block'), code.lean({ tilt: 4, as: 'page' })];
 	expect(play({ seconds: 1, moves }).moves).toEqual(moves);
 	expect(() => title.show('Here', { as: '' })).toThrow(
 		new FilmError(`title.show's as is "": it is a name, a string with something in it`)
@@ -621,24 +638,70 @@ test('a terminal named is typed into, submitted and worked in by its name', asyn
 	expect(done.objects.get('second')!.content.lines).toEqual([{ kind: 'asked', text: 'ls' }, SAID]);
 });
 
-test('the ending card is never carried or leant: its ground is the frame’s own', async () => {
+test('what stands over the whole frame — the ending card, a caption, keys — is never carried or leant', async () => {
 	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
 	const carded = await setAt(ending.show(card), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	await expect(async () => title.lean({ as: 'ending', tilt: 20 }).begin(beginningOf(carded))).rejects.toThrow(
-		new FilmError('title.lean would move the ending, the ending card, which stands over the whole frame alone')
+	const captioned = await setAt(caption.show('Words'), carded, 1);
+	const pressed = await setAt(keys.show(['⌘', 'K']), captioned, 1);
+	await expect(async () => title.lean({ as: 'ending', tilt: 20 }).begin(beginningOf(pressed))).rejects.toThrow(
+		new FilmError('title.lean would move the ending object: what it shows stands over the whole frame alone')
 	);
-	await expect(async () => title.to('left', { as: 'ending' }).begin(beginningOf(carded))).rejects.toThrow(FilmError);
+	await expect(async () => title.to('left', { as: 'caption' }).begin(beginningOf(pressed))).rejects.toThrow(
+		new FilmError('title.to would move the caption object: what it shows stands over the whole frame alone')
+	);
+	await expect(async () => code.lean({ as: 'keys', tilt: 20 }).begin(beginningOf(pressed))).rejects.toThrow(
+		new FilmError('code.lean would move the keys object: what it shows stands over the whole frame alone')
+	);
 });
 
-test('words and code come up in place at an even pace, the terminal and the card on their step’s curve, unless the film names one', () => {
+test('a caption and keys never slide and take no name: one of each stands where it comes up', () => {
+	expect(() => caption.show('Words', { from: 'left' } as never)).toThrow(FilmError);
+	expect(() => caption.hide({ toward: 'left' } as never)).toThrow(FilmError);
+	expect(() => keys.show(['⌘', 'K'], { as: 'second' } as never)).toThrow(FilmError);
+	expect(() => keys.hide({ as: 'second' } as never)).toThrow(FilmError);
+});
+
+test("a caption stands where its format puts it, at the frame's foot where it names no place", async () => {
+	const showing = caption.show('Words');
+	expect([
+		(await setIn(showing, openingScene(SMALL, LIVEREELS_LOOK), 1, SMALL)).objects.get('caption')!.content.at,
+		(await setIn(showing, openingScene(SMALL, LIVEREELS_LOOK), 1, CAPTIONS_AT_THE_TOP)).objects.get('caption')!.content
+			.at
+	]).toEqual(['bottom', 'top']);
+});
+
+test("keys rise clear of a caption at the frame's foot as its ground comes up, and stand at the foot with it at the top, or none", async () => {
+	const pressed = keys.show(['⌘', 'K']);
+	// A caption a quarter of the way up: its ground, coming up twice as fast as its words, half of the way
+	const atTheFoot = await setIn(caption.show('Words'), openingScene(SMALL, LIVEREELS_LOOK), 0.25, SMALL);
+	const atTheTop = await setIn(caption.show('Words'), openingScene(SMALL, LIVEREELS_LOOK), 0.25, CAPTIONS_AT_THE_TOP);
+	expect([
+		drawnObjectsIn(await setIn(pressed, atTheFoot, 1, SMALL), SMALL).at(-1)!.content.clearing,
+		drawnObjectsIn(await setIn(pressed, atTheTop, 1, CAPTIONS_AT_THE_TOP), CAPTIONS_AT_THE_TOP).at(-1)!.content
+			.clearing,
+		drawnObjectsIn(await setAt(pressed, openingScene(SMALL, LIVEREELS_LOOK), 1), SMALL).at(-1)!.content.clearing
+	]).toEqual([0.5, 0, 0]);
+});
+
+test('a caption is drawn over every other object, and keys over it, whenever each came', async () => {
+	const pressed = await setAt(keys.show(['⌘', 'K']), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const captioned = await setAt(caption.show('Words'), pressed, 1);
+	const titled = await setAt(title.show('Here'), captioned, 1);
+	const [pressedKeys, shownCaption, shownTitle] = drawnObjectsIn(titled, SMALL);
+	expect([pressedKeys!.layer > shownCaption!.layer, shownCaption!.layer > shownTitle!.layer]).toEqual([true, true]);
+});
+
+test('words, code and a caption come up in place at an even pace, the terminal, the card and keys on their step’s curve, unless the film names one', () => {
 	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
 	expect([
 		title.show('Here').timing.ease,
 		code.show('x', { at: 'left' }).timing.ease,
+		caption.show('Here').timing.ease,
 		open('claude').timing.ease,
 		ending.show(card).timing.ease,
+		keys.show(['⌘', 'K']).timing.ease,
 		open('claude', { ease: linear }).timing.ease
-	]).toEqual([linear, linear, null, null, linear]);
+	]).toEqual([linear, linear, linear, null, null, null, linear]);
 });
 
 /** How a move refuses the block below the screen. */

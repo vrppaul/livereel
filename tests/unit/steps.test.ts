@@ -18,13 +18,13 @@ test("the fonts a film's looks name in its steps are found before it is shot, ea
 	]);
 });
 
-test('two moves of one prop at once in one step are refused as the step is written', () => {
+test('two moves of one object at once in one step are refused as the step is written', () => {
 	expect(() =>
 		play({ seconds: 1, moves: [hide({ within: { end: 0.5 } }), show('Next', { within: { start: 0.4 } })] })
-	).toThrow(new FilmError('two moves on the caption at once in one step'));
+	).toThrow(new FilmError('two moves on the caption object at once in one step'));
 });
 
-test('two moves of the page at once are refused, as two of one prop are, in a play or a cut', () => {
+test('two moves of the page at once are refused, as two of one object are, in a play or a cut', () => {
 	const typed = type(keystrokes('words', { seed: 1 }));
 	expect(() => play({ seconds: 1, moves: [scrollBy('html', { pixels: 100 }), typed] })).toThrow(
 		new FilmError('two moves on the page at once in one step')

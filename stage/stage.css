@@ -18,12 +18,13 @@ body {
 	display: none !important;
 }
 
-/* An exposure of the frame, all of it on its own ground, laid over the exposures before it at its share, so that each weighs the same in the frame */
+/* An exposure of the frame, all of it on its own ground, laid over the exposures before it at its share, so that each weighs the same in the frame. It is a picture of its own: what stands on a layer in it stays in it, where the first exposure, whole, its share 1, would otherwise lay its objects over every later one */
 .exposure {
 	position: absolute;
 	inset: 0;
 	background: var(--ground-light);
 	opacity: var(--share);
+	isolation: isolate;
 }
 
 .stage {
@@ -300,13 +301,14 @@ body {
 	pointer-events: none;
 }
 
-/* An object: its box on the frame, in the frame's pixels */
+/* An object: its box on the frame, in the frame's pixels, on its layer: one on a higher layer stands over every object on a lower, standing or pushed off */
 .object {
 	position: absolute;
 	left: calc(var(--left) * 1px);
 	top: calc(var(--top) * 1px);
 	width: calc(var(--width) * 1px);
 	height: calc(var(--height) * 1px);
+	z-index: var(--layer);
 }
 
 /* An object that leans, leant back from its top edge and swung about its middle, seen from the eye the page's window is seen from, at the frame's middle: its own perspective moved from its middle to the frame's, so it leans as it would in the window's room, alike to the pixel (probed 2026-10-30). A room with a perspective of its own, or an object face-on with a 3D transform, a turn of none too, costs the graphics card a layer in every exposure of a frame: a frame of 16 exposures then outran the card's memory the stage asks for, and drew objects in some of them not at all, or the page grey, with no error (README film, `--renderer gpu`, 2026-10-30). So only an object that leans has one */
@@ -401,15 +403,12 @@ body {
 	background: var(--marker);
 }
 
-/* A caption: words that rise out of a blur over the frame's foot, on a ground that darkens it, and sink as they go */
+/* A caption in its object, over the whole frame: words that rise out of a blur over the frame's foot, on a ground that darkens it, and sink as they go */
 .caption {
 	--word-rise: 22px;
 	--word-blur: 10px;
 	--word-sink: 10px;
 	--word-blur-leaving: 6px;
-
-	position: absolute;
-	inset: 0;
 }
 
 .caption .ground {
@@ -794,11 +793,13 @@ body {
 	margin-right: 0.6em;
 }
 
-/* Keys: the caps of a shortcut at the frame's foot, rising as they come, and clear above two lines of a caption there as far as the scene has them risen */
+/* Keys in their object, over the whole frame: the caps of a shortcut at the frame's foot, rising as they come, and clear above two lines of a caption there as far as the scene has them risen */
 .keys {
 	--keys-rise: 16px;
 	--caption-lines-cleared: 2.4;
+}
 
+.keys .caps {
 	position: absolute;
 	left: 0;
 	right: 0;

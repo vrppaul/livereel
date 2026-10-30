@@ -41,19 +41,11 @@
 					<div class="words note-words" data-part="words"></div>
 				</div>
 			</div>
-			<!-- The objects on the frame, each made from its content's template below, in the scene's order; and those pushed off past the frame's edge while they go -->
+			<!-- The objects on the frame, each made from its content's template below, in the scene's order, on the layer the scene gives it; and those pushed off past the frame's edge while they go -->
 			<div class="objects" data-scene="objects"></div>
 			<div class="objects" data-scene="leaving"></div>
-			<!-- What stands flat over the frame, whatever the camera does, over the objects: the caption, the keys -->
-			<div class="over-the-frame">
-				<div class="caption" data-prop="caption">
-					<div class="ground" data-part="ground"></div>
-					<div class="words" data-part="words"></div>
-				</div>
-				<div class="keys" data-prop="keys"></div>
-			</div>
 		</div>
-		<!-- An object, by what it shows: a title's words, on a ground of their own over its box where they have one; a pane of code; the agent's terminal; the ending card -->
+		<!-- An object, by what it shows: a title's words, on a ground of their own over its box where they have one; a pane of code; the agent's terminal; the ending card; a caption on the ground that darkens the frame's edge under it; the caps of a shortcut -->
 		<template data-kind="words">
 			<div class="object">
 				<div class="content title" data-part="content">
@@ -89,6 +81,21 @@
 					<div class="name" data-part="name"></div>
 					<div class="what" data-part="what"></div>
 					<div class="command"><span class="prompt">&gt;</span><span data-part="command"></span></div>
+				</div>
+			</div>
+		</template>
+		<template data-kind="caption">
+			<div class="object">
+				<div class="content caption" data-part="content">
+					<div class="ground"></div>
+					<div class="words" data-part="words"></div>
+				</div>
+			</div>
+		</template>
+		<template data-kind="keys">
+			<div class="object">
+				<div class="content keys" data-part="content">
+					<div class="caps" data-part="caps"></div>
 				</div>
 			</div>
 		</template>

@@ -1,11 +1,11 @@
 /**
  * The moves of an object (`src/props/object.ts`), alike whatever it shows, written once for every kind that makes
- * one — a title's words, code, the agent's terminal, the ending card: coming up in its box, or sliding in whole from past
- * a side of the frame, pushing the object of its name standing there off past the side across; carried to another
- * place; leant; put away where it stands, or slid out past a side. A move takes the object a film names `as`, or its
- * kind's own name, so a film shows several of a kind at once, each moved by its name. What differs by what an object
- * shows is told here, kind by kind: the curve it comes up on in place, how it reads a place, and the box it sets off
- * from as it is carried.
+ * one — a title's words, code, the agent's terminal, the ending card, a caption, keys: coming up in its box, or sliding
+ * in whole from past a side of the frame, pushing the object of its name standing there off past the side across;
+ * carried to another place; leant; put away where it stands, or slid out past a side. A move takes the object a film
+ * names `as`, or its kind's own name, so a film shows several of a kind at once, each moved by its name. What differs
+ * by what an object shows is told here, kind by kind: the curve it comes up on in place, whether it is ever carried or
+ * leant, how it reads a place, and the box it sets off from as it is carried.
  *
  * A move that carries an object sets its box alone, one that leans it its angle alone, one of what it shows its content
  * alone, each writing its own into the object as it stands, so they share a step, each as far along as its own share;
@@ -45,7 +45,7 @@ import { type Scene, withLeaving, withObject } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
 
 /** A kind of object, as a film calls its moves, and the name of the object they take where the film names none. */
-export type ObjectKind = 'title' | 'code' | 'terminal' | 'ending';
+export type ObjectKind = 'title' | 'code' | 'terminal' | 'ending' | 'caption' | 'keys';
 
 /** The object a move takes: the one a film names `as`, or its kind's own. */
 export interface NamedScript {
@@ -81,6 +81,7 @@ interface Push {
 }
 
 export const NAMED_FORM: Form<NamedScript> = { as: AN_OBJECT_NAME };
+export const SHOW_FORM: Form<ShowScript> = { from: A_FRAME_SIDE, ...NAMED_FORM, ...TIMING_FORM };
 const TO_FORM: Form<ToScript> = { ...NAMED_FORM, ...TIMING_FORM };
 const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...TIMING_FORM, ...NAMED_FORM };
 const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { ...LEAN_FORM, ...NAMED_FORM };
@@ -93,18 +94,32 @@ const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
 const NOT_GONE = 0;
 const SHOWN_WHOLE = 1;
 // The curve what an object of each kind shows comes up on in place where the film names none: words and lines of code,
-// one after another, at an even pace; the terminal and the card, fading up whole, on their step's
+// one after another, at an even pace; the terminal, the card and keys, fading up whole, on their step's
 const COMES_UP_ON: { readonly [Kind in ObjectKind]: Ease | null } = {
 	title: linear,
 	code: linear,
 	terminal: null,
-	ending: null
+	ending: null,
+	caption: linear,
+	keys: null
 };
+// What stands over the whole frame on the frame's own terms, never carried or leant: the card, on the frame's own
+// ground painted where its box stands; a caption, darkening the frame's edge; keys at the frame's foot, rising clear of
+// a caption there
+const OVER_THE_WHOLE_FRAME = ['ending', 'caption', 'keys'] as const satisfies readonly Content['kind'][];
 
 /** An object's values a move that carries it writes, one that leans it, and one of what it shows. */
 type Carried = Pick<FrameObject, (typeof CARRIED)[number]>;
 type Leant = Pick<FrameObject, (typeof LEANT)[number]>;
 type Shows = Pick<FrameObject, (typeof CONTENT)[number]>;
+
+/** What an object shows that is carried and leant: any but what stands over the whole frame. */
+type MovableContent = Exclude<Content, { readonly kind: (typeof OVER_THE_WHOLE_FRAME)[number] }>;
+
+/** An object that is carried and leant, by what it shows. */
+interface MovableObject extends FrameObject {
+	readonly content: MovableContent;
+}
 
 /**
  * An object of a kind coming up, face-on, showing what `comingAt` makes of the scene as the move begins: in place of
@@ -179,16 +194,17 @@ function standing(beginning: Beginning, name: ObjectName, move: string): FrameOb
 	return object;
 }
 
-/**
- * An object a move carries or leans as it begins; refused where none stands, or it shows the ending card, whose ground
- * is the frame's own, painted where its box stands on the frame: it slides whole, and stands nowhere else.
- */
-function movable(beginning: Beginning, name: ObjectName, move: string): FrameObject {
+/** An object a move carries or leans as it begins; refused where none stands, or it shows what is never moved so. */
+function movable(beginning: Beginning, name: ObjectName, move: string): MovableObject {
 	const object = standing(beginning, name, move);
-	if (object.content.kind === 'ending') {
-		throw new FilmError(`${move} would move the ${name}, the ending card, which stands over the whole frame alone`);
+	if (!isMovable(object)) {
+		throw new FilmError(`${move} would move the ${name} object: what it shows stands over the whole frame alone`);
 	}
 	return object;
+}
+
+function isMovable(object: FrameObject): object is MovableObject {
+	return !OVER_THE_WHOLE_FRAME.some((kind) => kind === object.content.kind);
 }
 
 /** A move of what an object of a name shows, which sets that alone, so it shares a step with one that carries it. */
@@ -212,14 +228,13 @@ export function contentOf<Kind extends Content['kind']>(
 	return content;
 }
 
-/** Where an object stands in a place: words and code read it as words do, the rest as the window does. */
-export function placedFor(kind: Content['kind'], format: Format, place: Place): Box {
+/** Where an object stands in a place: words and code read it as words do, the terminal as the window does. */
+export function placedFor(kind: MovableContent['kind'], format: Format, place: Place): Box {
 	switch (kind) {
 		case 'words':
 		case 'code':
 			return wordsPlaced(format, place);
 		case 'terminal':
-		case 'ending':
 			return windowPlaced(format, place);
 	}
 }
@@ -282,13 +297,12 @@ function slidingOut(beginning: Beginning, name: ObjectName, toward: FrameSide, m
  * keeping where they read from, so their lines change once, where they would break anew on every frame of the way;
  * anything else from its box, growing or shrinking along the way.
  */
-function settingOff(content: Content, box: Box, end: Box): Box {
+function settingOff(content: MovableContent, box: Box, end: Box): Box {
 	switch (content.kind) {
 		case 'words':
 			return content.onGround ? box : wordsResized(box, end, content.align);
 		case 'code':
 		case 'terminal':
-		case 'ending':
 			return box;
 	}
 }

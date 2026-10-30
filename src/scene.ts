@@ -4,15 +4,16 @@
  * A scene is plain values, never changed in place: a move's change hands back a scene with its own prop or object set,
  * and the take keeps the one standing. The film's look is a prop too, changed by moves as any other. A prop is one of
  * livereel's, each in a slot of its own; an object (`src/props/object.ts`) is the film's, known by a name it gives or
- * its kind's own, so several of a kind stand at once, drawn in the order they first came, the last over the rest: one
- * shown again in place of itself keeps its place. One pushed off by another of its name sliding in is held apart while
- * it goes, so the two stand at once, and drawn over every object standing. `drawn` works out
- * everything the stage needs from it — how far each word of a title, a caption or a callout and each line of code has
- * come, the terminal's spinner, where a note's line meets the block it names on the frame — so the stage draws numbers
- * and words and decides nothing. What the camera shows is worked out from what it aims at and the window that stands
- * (`cameraOf`), so a camera moving and a window moving in one step make the same frame whichever is set first; a
- * frame is drawn by such a camera, or by one the take hands it, along the camera's way or for an act. A prop that may
- * be absent is `null`; the compiler holds every prop to a drawn form here and to a drawer on the stage.
+ * its kind's own, so several of a kind stand at once, drawn on the layer what each shows sets and, within it, in the
+ * order they first came, the last over the rest: one shown again in place of itself keeps its place. One pushed off by
+ * another of its name sliding in is held apart while it goes, so the two stand at once, and drawn over every object
+ * standing on its layer. `drawn` works out everything the stage needs from it — how far each word of a title, a
+ * caption or a callout and each line of code has come, the terminal's spinner, how far keys rise clear of a caption,
+ * where a note's line meets the block it names on the frame — so the stage draws numbers and words and decides
+ * nothing. What the camera shows is worked out from what it aims at and the window that stands (`cameraOf`), so a
+ * camera moving and a window moving in one step make the same frame whichever is set first; a frame is drawn by such a
+ * camera, or by one the take hands it, along the camera's way or for an act. A prop that may be absent is `null`; the
+ * compiler holds every prop to a drawn form here and to a drawer on the stage.
  */
 import type { Format } from './domain/format.ts';
 import {
@@ -29,16 +30,13 @@ import {
 	wholeView
 } from './domain/camera.ts';
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
-import { type DrawnCaption, drawnCaption } from './props/caption.ts';
 import type { Cursor } from './props/cursor.ts';
-import { type DrawnKeys, type Keys, drawnKeys } from './props/keys.ts';
 import type { Light } from './props/light.ts';
 import type { Look } from './props/look.ts';
 import { type DrawnNote, type Note, drawnNote } from './props/note.ts';
-import { type DrawnObject, type FrameObject, type ObjectName, drawnObject } from './props/object.ts';
+import { type DrawnObject, type FrameObject, type ObjectName, type Objects, drawnObject } from './props/object.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
 import { SCREEN_UP, type Screen } from './props/screen.ts';
-import type { ShownWords } from './props/words.ts';
 
 export interface PropStates {
 	look: Look;
@@ -50,14 +48,9 @@ export interface PropStates {
 	pins: Pins | null;
 	cursor: Cursor | null;
 	note: Note | null;
-	caption: ShownWords | null;
-	keys: Keys | null;
 }
 
 export type PropName = keyof PropStates;
-
-/** The objects of a scene, by name, in the order they first came. */
-type Objects = ReadonlyMap<ObjectName, FrameObject>;
 
 export type Scene = { readonly [Name in PropName]: PropStates[Name] } & {
 	readonly objects: Objects;
@@ -76,8 +69,6 @@ interface DrawnProps {
 	pins: DrawnPins | null;
 	cursor: Cursor | null;
 	note: DrawnNote | null;
-	caption: DrawnCaption | null;
-	keys: DrawnKeys | null;
 }
 
 export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
@@ -97,8 +88,6 @@ export function openingScene(format: Format, look: Look): Scene {
 		pins: null,
 		cursor: null,
 		note: null,
-		caption: null,
-		keys: null,
 		objects: new Map(),
 		leaving: new Map()
 	};
@@ -144,7 +133,6 @@ export function drawingOf(exposures: readonly DrawnScene[]): string {
  * own, one along its way there, or the flat one an act is done in.
  */
 export function drawn(scene: Scene, camera: Camera, moment: number, format: Format): DrawnScene {
-	const caption = scene.caption === null ? null : drawnCaption(scene.caption, format);
 	return {
 		look: scene.look,
 		camera: drawnCamera(camera, format),
@@ -155,13 +143,12 @@ export function drawn(scene: Scene, camera: Camera, moment: number, format: Form
 		pins: scene.pins === null ? null : drawnPins(scene.pins, camera, format.frame),
 		cursor: scene.cursor,
 		note: scene.note === null ? null : drawnNote(scene.note, camera, format.frame),
-		caption,
-		keys: scene.keys === null ? null : drawnKeys(scene.keys, caption),
-		objects: drawnObjects(scene.objects, moment),
-		leaving: drawnObjects(scene.leaving, moment)
+		objects: drawnObjects(scene.objects, moment, scene.objects),
+		leaving: drawnObjects(scene.leaving, moment, scene.objects)
 	};
 }
 
-function drawnObjects(objects: Objects, moment: number): readonly DrawnObject[] {
-	return [...objects].map(([name, object]) => drawnObject(name, object, moment));
+/** Objects as the stage draws them, among those standing on the frame. */
+function drawnObjects(objects: Objects, moment: number, standing: Objects): readonly DrawnObject[] {
+	return [...objects].map(([name, object]) => drawnObject(name, object, moment, standing));
 }

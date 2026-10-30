@@ -145,7 +145,8 @@ and the moves of each part of the scene:
   `title.hide({ toward })`
 - `code.show(text, { at, from, as })`, `code.to(place)`, `code.lean({ tilt, turn })`, `code.light(line, { through })`,
   `code.hide({ toward })`; each move of a title or code takes `as` to name which
-- `caption.show(text)`, `caption.hide()`
+- `caption.show(text)`, `caption.hide()`; a caption and keys stand over the whole frame where they come up, over
+  every other object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`
 - `terminal.open(title, { at, from })`, `terminal.type(strokes, { keyboard })`, `terminal.submit()`,
   `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place)`, `terminal.lean({ tilt, turn })`,
