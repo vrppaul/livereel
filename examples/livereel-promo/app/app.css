@@ -9,7 +9,14 @@
 	--on-accent: #fff;
 	--up: #1f9d55;
 	--edge: #e3e6ec;
+	--edge-strong: #d5dae3;
+	--edge-faint: #eef0f4;
+	--focus-ring: rgb(59 111 245 / 18%);
+	--found: rgb(255 178 36 / 35%);
 	--sans: system-ui, sans-serif;
+	/* Four top pages show at once, the rest under them in the list's own scroll */
+	--page-row: 56px;
+	--pages-shown: 4;
 }
 
 * {
@@ -132,16 +139,61 @@ main {
 	background: linear-gradient(to top, var(--accent), var(--accent-light));
 }
 
-.pages {
+.top-pages {
 	display: grid;
-	gap: 18px;
-	margin: 24px 0 0;
+	gap: 20px;
+}
+
+.top-pages-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.search {
+	width: 300px;
+	height: 48px;
+	padding: 0 16px;
+	border: 1px solid var(--edge-strong);
+	border-radius: 10px;
+	font: 400 19px / 1 var(--sans);
+	color: var(--ink);
+	background: var(--card);
+}
+
+.search:focus {
+	outline: none;
+	border-color: var(--accent);
+	box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+.pages {
+	height: calc(var(--page-row) * var(--pages-shown));
+	overflow-y: auto;
+	margin: 0;
 	padding: 0;
 	list-style: none;
 	color: var(--quiet);
 }
 
 .pages li {
+	height: var(--page-row);
 	display: flex;
+	align-items: center;
 	justify-content: space-between;
+	border-bottom: 1px solid var(--edge-faint);
+}
+
+.pages li[hidden] {
+	display: none;
+}
+
+.pages li span:first-child {
+	color: var(--ink);
+}
+
+.pages mark {
+	font-weight: 700;
+	color: inherit;
+	background: var(--found);
 }

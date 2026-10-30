@@ -54,12 +54,36 @@
 					<i style="height: 94%" data-testid="today-bar"></i>
 				</div>
 			</section>
-			<section class="card">
-				<div class="label">Top pages</div>
-				<ol class="pages">
+			<section class="card top-pages" data-testid="top-pages">
+				<div class="top-pages-head">
+					<div class="label">Top pages</div>
+					<input
+						class="search"
+						type="search"
+						placeholder="Search pages"
+						aria-label="Search pages"
+						data-testid="search"
+					/>
+				</div>
+				<ol class="pages" data-testid="pages">
+					<li><span>/</span><span>9,840</span></li>
 					<li><span>/pricing</span><span>4,112</span></li>
-					<li><span>/docs/start</span><span>2,940</span></li>
-					<li><span>/blog/launch</span><span>1,806</span></li>
+					<li><span>/docs</span><span>3,577</span></li>
+					<li><span>/blog</span><span>2,904</span></li>
+					<li><span>/signup</span><span>2,316</span></li>
+					<li><span>/docs/quickstart</span><span>1,980</span></li>
+					<li><span>/changelog</span><span>1,644</span></li>
+					<li><span>/pricing/teams</span><span>1,208</span></li>
+					<li><span>/about</span><span>1,102</span></li>
+					<li><span>/blog/launch-week</span><span>987</span></li>
+					<li><span>/careers</span><span>812</span></li>
+					<li><span>/pricing/enterprise</span><span>644</span></li>
+					<li><span>/security</span><span>590</span></li>
+					<li><span>/docs/api</span><span>566</span></li>
+					<li><span>/customers</span><span>498</span></li>
+					<li><span>/contact</span><span>377</span></li>
+					<li><span>/legal/terms</span><span>205</span></li>
+					<li><span>/status</span><span>188</span></li>
 				</ol>
 			</section>
 		</main>
@@ -71,6 +95,37 @@
 				document.querySelector('[data-testid=visitors-change]').textContent = today.change;
 				document.querySelector('[data-testid=today-bar]').style.height = `${today.todayBar}%`;
 			});
+
+			// The search shows the top pages whose path holds what it says, that part of each marked
+			const search = document.querySelector('[data-testid=search]');
+			const pages = [...document.querySelectorAll('[data-testid=pages] li')].map((row) => ({
+				row,
+				path: row.firstElementChild,
+				text: row.firstElementChild.textContent
+			}));
+			search.addEventListener('input', () => {
+				for (const page of pages) {
+					const at = page.text.indexOf(search.value);
+					page.row.hidden = at < 0;
+					page.path.replaceChildren(...markedOf(page.text, search.value, at));
+				}
+			});
+
+			// ⌘ K, or Ctrl K, takes the reader to the search
+			document.addEventListener('keydown', (event) => {
+				if (event.code === 'KeyK' && (event.metaKey || event.ctrlKey)) {
+					event.preventDefault();
+					search.focus();
+				}
+			});
+
+			/** A path's text, the part a search found in it marked; as it is where nothing is searched for. */
+			function markedOf(text, query, at) {
+				if (query === '' || at < 0) return [text];
+				const mark = document.createElement('mark');
+				mark.textContent = query;
+				return [text.slice(0, at), mark, text.slice(at + query.length)];
+			}
 		</script>
 	</body>
 </html>
