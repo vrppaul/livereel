@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0
 
 - Breaking: the window leans, not the camera: `window.lean({ tilt, turn })` leans the page's window back and swings it, the screen in it with it, a side left out kept as it stands; `camera.to` and `camera.onto` take no angle, and a pose is `{ focusX, focusY, zoom }`. The window's box, lift and angle each go their own way, so `window.to` and `window.lean` share a `play`, each as far along as its own share; two of its travels at once are still refused. The camera frames a block alike at any angle, so a lean never moves what it frames; over the whole frame it stands where no edge of a face-on screen would show, leant or not, where an angled camera stood where the film put it, so a page leant far may show ground at the frame's far corners. `lookingAt` is gone: a pose is written out.
 
