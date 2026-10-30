@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- An ad for a feed, `examples/livereel-ad.ts`, square, 66.6 s, for developers: it opens on a finished frame that serves as the feed's preview and claims nobody filmed it, asks how, answers with a real click, shows the camera's moves shot by shot, the file that shot it and a change made to it, the film's acts, every value of the look, three keyboards, the prompts it took, and ends on the frame it opened on with its words changed. Acme's chart gains a test id.
+
 ## 0.5.0
 
 - livereel is published to GitHub Packages as well, as `@vrppaul/livereel`, so the repository lists its package: GitHub's registry takes only a name in its owner's scope. A release published on GitHub publishes it there (`.github/workflows/packages.yml`), after the version is out on npm, where it stays `livereel`.
