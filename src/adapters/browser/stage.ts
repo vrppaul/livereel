@@ -8,10 +8,16 @@
  * browser finds the point it clicks wrongly on a screen the camera has scaled. A static page stands in a tab of its
  * own, at the screen's size, and the stage shows a picture of it (`PlaywrightPicturedStage`), taken anew as the take
  * asks, after the page was acted on or moved: a frame then costs one capture of the stage, the page's picture standing
- * as it was, and an act is done in the page's own tab, at no scale. The picture is taken sharper than the frame by as
- * far as a camera comes in where a film names no bound (`ZOOM_AT_MOST`), so text the camera comes close to stays as
- * crisp as the live frame shows it: the README film's close shots at 4× against the live frame, SSIM 0.990–0.992,
- * alike to the eye at twice their size (2026-10-30).
+ * as it was, and an act is done in the page's own tab, at no scale. The picture is taken as sharp as a camera at the
+ * zoom the take names shows the page, up to as far as a camera comes in where a film names no bound (`ZOOM_AT_MOST`),
+ * so text the camera comes close to stays as crisp as the live frame shows it: the README film's close shots at 4×
+ * against the live frame, SSIM 0.990–0.992, alike to the eye at twice their size (2026-10-30).
+ *
+ * The page's picture is taken by CDP's capture on livereel's own session with its tab, clipped to the screen at a
+ * scale of the picture's pixels to the page's, which Chrome draws the page anew at: on a tab at 4.4×, at a scale of 2
+ * in 81–83 ms and alike to a picture of a tab at 2× (SSIM 1.0), at 4.4 in 253–269 ms against Playwright's 340–348,
+ * alike to its picture (SSIM 1.0); a 1040 × 1080 screen, 2026-10-30. Playwright's own picture takes none but the tab's
+ * device scale.
  *
  * A frame is captured by Playwright at the page's device scale, the film's sharpness. A capture of livereel's own, on
  * a CDP session apart from Playwright's, came back at the page's own pixels whatever that scale, every full shoot as
@@ -22,10 +28,10 @@
  * sees it typing, and stands steady (`chromium.ts`). Whether the filmed page and its stage are still there, the stage
  * answers from its watch (`watch.ts`): a framed page's, or a tab's, which can take no stage away nor refuse a frame.
  */
-import type { Frame, Page } from 'playwright-core';
+import type { CDPSession, Frame, Page } from 'playwright-core';
 import { eyeDistanceOf } from '../../domain/camera.ts';
 import type { Format } from '../../domain/format.ts';
-import { frameScaleOf } from '../../domain/geometry.ts';
+import { type Size, frameScaleOf } from '../../domain/geometry.ts';
 import type { DrawnScene } from '../../scene.ts';
 import type { FramedStage, PicturedStage } from '../../studio/ports.ts';
 import type { FrameWatch, TabWatch } from './watch.ts';
@@ -119,16 +125,26 @@ export class PlaywrightFramedStage implements FramedStage {
 	}
 }
 
+/**
+ * The tab a static page stands in, as its pictures are taken: on livereel's own CDP session with it, at the screen's
+ * size, a page's pixel taking so many of a picture's for a camera at a zoom of 1.
+ */
+export interface FilmedTab {
+	readonly session: CDPSession;
+	readonly screen: Size;
+	readonly pixelsAtZoomOne: number;
+}
+
 /** The stage showing a picture of the filmed page, which stands in a tab of its own. */
 export class PlaywrightPicturedStage implements PicturedStage {
 	readonly kind = 'pictured';
 	readonly page: Page;
-	readonly filmedTab: Page;
+	readonly filmedTab: FilmedTab;
 	readonly watch: TabWatch;
 	// The page's picture last taken, none before the first
 	private picture: Buffer | null = null;
 
-	constructor(page: Page, filmedTab: Page, watch: TabWatch) {
+	constructor(page: Page, filmedTab: FilmedTab, watch: TabWatch) {
 		this.page = page;
 		this.filmedTab = filmedTab;
 		this.watch = watch;
@@ -139,12 +155,22 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	}
 
 	/** The page's picture taken anew, and shown where it came out otherwise than the last. */
-	async retakePage(): Promise<boolean> {
-		const picture = await capturedOf(this.filmedTab);
+	async retakePage(zoom: number): Promise<boolean> {
+		const picture = await this.pictureAt(zoom);
 		const alike = this.picture?.equals(picture) ?? false;
 		this.picture = picture;
 		if (!alike) await this.page.evaluate(pictureShown, `${JPEG_ADDRESS}${picture.toString(BASE64)}`);
 		return alike;
+	}
+
+	/** The page as its tab shows it now, as a JPEG as sharp as a camera at this zoom shows it, its text caret kept. */
+	private async pictureAt(zoom: number): Promise<Buffer> {
+		const { session, screen, pixelsAtZoomOne } = this.filmedTab;
+		const { cssVisualViewport } = await session.send('Page.getLayoutMetrics');
+		// eslint-disable-next-line id-length -- CDP names the corner a picture is clipped at `x` and `y`
+		const clip = { x: cssVisualViewport.pageX, y: cssVisualViewport.pageY, ...screen, scale: pixelsAtZoomOne * zoom };
+		const { data } = await session.send('Page.captureScreenshot', { format: 'jpeg', quality: JPEG_QUALITY, clip });
+		return Buffer.from(data, BASE64);
 	}
 
 	/** A page in a tab of its own takes no stage away and refuses no frame: it is gone only where it was not reached. */

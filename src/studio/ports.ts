@@ -38,8 +38,11 @@ export interface FramedStage extends DrawingStage {
 /** The stage showing a picture of the page, which stands in a tab of its own and is acted on there. */
 export interface PicturedStage extends DrawingStage {
 	readonly kind: 'pictured';
-	/** A picture of the page taken anew and shown, as the page stands now; whether it came out as the last one did. */
-	readonly retakePage: () => Promise<boolean>;
+	/**
+	 * A picture of the page taken anew and shown, as the page stands now, as sharp as a camera at this zoom shows it;
+	 * whether it came out as the last one did.
+	 */
+	readonly retakePage: (zoom: number) => Promise<boolean>;
 }
 
 /**

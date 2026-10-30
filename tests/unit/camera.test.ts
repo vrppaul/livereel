@@ -12,7 +12,8 @@ import {
 	underTheFrame,
 	wholePose,
 	wholeView,
-	windowView
+	windowView,
+	zoomPicturedFor
 } from '../../src/domain/camera.ts';
 import { type Box, type Format, type Point, type Size, distanceBetween } from '../../src/domain/geometry.ts';
 
@@ -243,4 +244,14 @@ test("a flat view slid off the frame's edge is cut at its own edge where it stan
 test('a screen too short to fill the frame along a side stands in its middle along that side', () => {
 	const covered = covering({ ...FACE_ON, focusX: 200, focusY: 100, zoom: 0.8 }, SQUARE, SQUARE.frame);
 	expect([covered.focusX, covered.focusY]).toEqual([675, 540]);
+});
+
+test("a picture of the page holds it as close as the closest face-on camera comes, as close as livereel's bound where one is angled, and never closer", () => {
+	const closer = inTheWhole({ ...FACE_ON, zoom: 1.5 });
+	const pastTheBound = inTheWhole({ ...FACE_ON, zoom: 3 });
+	expect([
+		zoomPicturedFor([inTheWhole(FACE_ON), closer]),
+		zoomPicturedFor([inTheWhole(FACE_ON), inTheWhole(LEANING_BACK)]),
+		zoomPicturedFor([pastTheBound])
+	]).toEqual([1.5, 2.2, 2.2]);
 });

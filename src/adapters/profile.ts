@@ -255,8 +255,8 @@ class TimedFramedStage extends TimedDrawingStage<FramedStage> implements FramedS
 class TimedPicturedStage extends TimedDrawingStage<PicturedStage> implements PicturedStage {
 	readonly kind = 'pictured';
 
-	retakePage(): Promise<boolean> {
-		return this.timings.timed('stage.retakePage', () => this.stage.retakePage());
+	retakePage(zoom: number): Promise<boolean> {
+		return this.timings.timed('stage.retakePage', () => this.stage.retakePage(zoom));
 	}
 }
 

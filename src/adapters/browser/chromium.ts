@@ -195,9 +195,9 @@ class OpenedChromium implements Opened {
 }
 
 /**
- * A static page opened in a tab of its own at the screen's size, as sharp as the stage's frames are where the camera
- * comes as close as it does where a film names no bound, on a frame of the format's size, and pictured on the stage
- * apart from the app.
+ * A static page opened in a tab of its own at the screen's size, and pictured on the stage apart from the app, each
+ * picture as sharp as the stage's frames are for a camera at the zoom the take names, on a frame of the format's size.
+ * The tab stands at the device scale of the sharpest picture, so a page that picks its images by it picks those.
  */
 async function pictured(
 	browser: Playwright,
@@ -208,16 +208,19 @@ async function pictured(
 ): Promise<Opened> {
 	await stageApartOpened(stage);
 	await stageSetUp(stage, setting);
+	const pixelsAtZoomOne = sharpness * frameScaleOf(setting.format.frame);
 	const filmed = await browser.newPage({
 		viewport: setting.format.screen,
-		deviceScaleFactor: sharpness * ZOOM_AT_MOST * frameScaleOf(setting.format.frame),
+		deviceScaleFactor: pixelsAtZoomOne * ZOOM_AT_MOST,
 		permissions: [LOCAL_NETWORK]
 	});
 	await filmed.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
 	await forcedOn(filmed, setting.blurred, THE_PAGE_AT_THE_TOP);
 	const watch = new TabWatch(filmed, address);
 	await reached(filmed, address);
-	const picturedStage = new PlaywrightPicturedStage(stage, filmed, watch);
+	const session = await filmed.context().newCDPSession(filmed);
+	const filmedTab = { session, screen: setting.format.screen, pixelsAtZoomOne };
+	const picturedStage = new PlaywrightPicturedStage(stage, filmedTab, watch);
 	return new OpenedChromium({ browser, filmed }, picturedStage, filmed.mainFrame());
 }
 

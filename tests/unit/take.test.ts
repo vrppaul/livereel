@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import type { Pose } from '../../src/domain/camera.ts';
+import type { Format } from '../../src/domain/geometry.ts';
 import type { MotionBlur } from '../../src/domain/shutter.ts';
 import { FilmError, TakeError } from '../../src/domain/errors.ts';
 import { linear } from '../../src/domain/time.ts';
@@ -41,6 +42,8 @@ const CLICK: Sound = { kind: 'livereel', name: 'click' };
 const KEY: Sound = { kind: 'livereel', name: 'key' };
 const ENDING: Sound = { kind: 'livereel', name: 'ending' };
 const CARD: EndingCard = { name: 'A name', line: 'A line', command: 'a command' };
+// A frame as large as the stage's look was made on, whose whole screen a camera shows at a zoom of 1
+const WHOLE_AT_ZOOM_ONE: Format = { frame: { width: 1080, height: 1080 }, screen: { width: 1080, height: 1080 } };
 // Two letters, the first showing on the third of six frames of typing, the second on the sixth
 const STROKES: readonly Keystroke[] = [
 	{ at: 0.1, typed: 'a' },
@@ -109,8 +112,8 @@ class StageAnswering extends PicturedStageThatKeeps {
 		this.pictures = [...pictures];
 	}
 
-	override retakePage(): Promise<boolean> {
-		this.retaken += 1;
+	override retakePage(zoom: number): Promise<boolean> {
+		this.retakenAt.push(zoom);
 		return Promise.resolve(this.pictures.shift()!);
 	}
 }
@@ -146,14 +149,14 @@ test('a static page whose picture comes out twice alike stands still: each frame
 	const stage = new PicturedStageThatKeeps();
 	const footage = new FootageOf([0, 1, 2, 3]);
 	await takeOf(footage, stage).run([hold({ seconds: 4 / 30 })]);
-	expect([footage.kept, stage.drawn.length, stage.captured, stage.retaken]).toEqual([[0, 1, 2, 3], 1, 1, 2]);
+	expect([footage.kept, stage.drawn.length, stage.captured, stage.retakenAt.length]).toEqual([[0, 1, 2, 3], 1, 1, 2]);
 });
 
 test('a static page still answering is taken and captured every frame until its picture comes out as the last', async () => {
 	const stage = new StageAnswering([ALIKE, CHANGED, CHANGED, ALIKE]);
 	const footage = new FootageOf([0, 1, 2, 3, 4]);
 	await takeOf(footage, stage).run([hold({ seconds: 5 / 30 })]);
-	expect([footage.kept, stage.captured, stage.retaken]).toEqual([[0, 1, 2, 3, 4], 3, 4]);
+	expect([footage.kept, stage.captured, stage.retakenAt.length]).toEqual([[0, 1, 2, 3, 4], 3, 4]);
 });
 
 test('a dynamic page is shown live and captured every frame, though nothing in the scene moves', async () => {
@@ -186,11 +189,34 @@ test("a static page is taken anew after an act, while a move of the page's own r
 		hold({ seconds: 3 * frame })
 	];
 	await takeOf(footage, stage).run(steps);
-	expect([footage.kept.length, stage.retaken, stage.captured]).toEqual([
+	expect([footage.kept.length, stage.retakenAt.length, stage.captured]).toEqual([
 		16,
 		2 + 2 + 2 + 1 + 2 + 2,
 		1 + 1 + 2 + 0 + 2 + 1
 	]);
+});
+
+test("a static page is pictured as close as the frame's camera comes on each frame it changes, typed into or moving of itself, and as close as livereel's bound once that is done", async () => {
+	const stage = new PicturedStageThatKeeps();
+	const take = new Take({
+		opened: openedOn(new PageOfBoxes(PAGE), stage),
+		footage: new FootageOf([...Array(7).keys()]),
+		track: new TrackThatKeeps(),
+		format: WHOLE_AT_ZOOM_ONE,
+		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK),
+		motionBlur: HALF_OF_FOUR
+	});
+	const frame = 1 / 30;
+	const steps = [
+		play({ seconds: 2 * frame, moves: [typeIntoThePage(STROKES)] }),
+		hold({ seconds: frame }),
+		act((context) => context.motion.release()),
+		hold({ seconds: 2 * frame }),
+		act((context) => context.motion.still()),
+		hold({ seconds: frame })
+	];
+	await take.run(steps);
+	expect(stage.retakenAt).toEqual([1, 1, 2.2, 1, 1, 2.2]);
 });
 
 test('two moves of the look at once each move their own values over the frames they share: the glow drifting all the way, the ink changing over the first half', async () => {

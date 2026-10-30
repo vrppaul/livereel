@@ -75,13 +75,16 @@ export class FramedStageThatKeeps extends StageThatKeeps implements FramedStage 
 	}
 }
 
-/** A stage showing a picture of a page that never changes: every picture of it comes out as the last. */
+/**
+ * A stage showing a picture of a page that never changes, which keeps the zoom each picture was taken to hold: every
+ * picture of it comes out as the last.
+ */
 export class PicturedStageThatKeeps extends StageThatKeeps implements PicturedStage {
 	readonly kind = 'pictured';
-	retaken = 0;
+	readonly retakenAt: number[] = [];
 
-	retakePage(): Promise<boolean> {
-		this.retaken += 1;
+	retakePage(zoom: number): Promise<boolean> {
+		this.retakenAt.push(zoom);
 		return Promise.resolve(true);
 	}
 }

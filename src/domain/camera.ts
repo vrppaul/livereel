@@ -276,8 +276,22 @@ function cutPast(screenPast: number, standsIn: boolean, open: number): number {
  */
 export function keptOnTheScreen(pose: Pose, format: Format, view: View): Pose {
 	if (view.lift > FLAT) return covering(filling(pose, format, view.box), format, view.box);
-	const faceOn = pose.tilt === 0 && pose.turn === 0;
-	return faceOn ? covering(pose, format, view.box) : pose;
+	return isFaceOn(pose) ? covering(pose, format, view.box) : pose;
+}
+
+/**
+ * How close a picture of the page must hold it for these cameras to show it as sharp as it stands, as a pose's zoom
+ * has it: as close as the closest of them comes where each is face-on, a page's pixel as large anywhere on the frame;
+ * as close as a camera comes where a film names no bound where one is angled, the nearer part of its screen shown
+ * larger than its zoom; and never closer than that bound.
+ */
+export function zoomPicturedFor(cameras: readonly Camera[]): number {
+	if (!cameras.every((camera) => isFaceOn(camera.pose))) return ZOOM_AT_MOST;
+	return Math.min(ZOOM_AT_MOST, Math.max(...cameras.map((camera) => camera.pose.zoom)));
+}
+
+function isFaceOn(angle: Angle): boolean {
+	return angle.tilt === 0 && angle.turn === 0;
 }
 
 /** The pose an aim comes to in a view, kept off the screen's edge there: the film's own, or a block framed there. */
