@@ -144,8 +144,8 @@ and the moves of each part of the scene:
   `cursor.release()`, `cursor.hide()`
 - `title.show(text, { at, align, size, from, typed, as, inside })`, `title.to(place)`, `title.lean({ tilt, turn })`,
   `title.hide({ toward })`
-- `code.show(text, { at, from, as, inside })`, `code.to(place)`, `code.lean({ tilt, turn })`,
-  `code.light(line, { through })`, `code.hide({ toward })`; each move of a title or code takes `as` to name which
+- `code.show(text, { at, from, longLines, as, inside })`, `code.to(place)`, `code.lean({ tilt, turn })`,
+  `code.light(line, { through })`, `code.scrollTo(line)`, `code.hide({ toward })`; each move of a title or code takes `as` to name which
 - `caption.show(text, { typed })`, `caption.hide()`; a caption and keys stand over the whole frame where they come up, over
   every other object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`
@@ -321,7 +321,11 @@ sets a dark pane of code in its place, its lines coming
 up one after another, coloured as TypeScript is, the indent they share
 dropped. Its letters are as large as `codeSize` lets, smaller where the
 widest line would not fit across, so keep its lines short or give the words
-a larger share (`split: { wordsShare: 0.44 }`). `code.light('light.on')`
+a larger share (`split: { wordsShare: 0.44 }`); `longLines: 'cut'` keeps
+them as large as `codeSize` and cuts a line too long at the pane's edge, as
+an editor does. The pane stands no taller than its place, and
+`code.scrollTo(line)` scrolls code longer than that until the line, by its
+number or what it says, stands at its top. `code.light('light.on')`
 lights the line that says `light.on` and dims the rest, so a line lights as
 the page does what it says; `code.light(2)` lights the second line, counted
 from 1, and `code.light('cursor.to', { through: 'click' })` the lines from

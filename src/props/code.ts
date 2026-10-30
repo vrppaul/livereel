@@ -5,9 +5,14 @@
  * A film hands its code as text. It is worked out once, as its move is made, into lines of pieces, each of a kind the
  * stage colours it by, read as TypeScript is written; the indent its lines share is dropped and a tab set as spaces,
  * so it reads as an editor sets it, and its widest line is counted, so the stage sets its letters no larger than that
- * line fits across. The pane comes up its ground first and its lines one after another, as words do
- * (`src/props/words.ts`). A line lit stands on a bar of the accent, and while any is lit the rest dim.
+ * line fits across; or, where the film has its long lines cut, as large as the look has them, a line too long cut at
+ * the pane's edge, as an editor's window cuts it. The pane comes up its ground first and its lines one after another,
+ * as words do (`src/props/words.ts`). A line lit stands on a bar of the accent, and while any is lit the rest dim.
+ *
+ * The pane stands no taller than its box, and code longer than that scrolls in it as an editor's does. How far is
+ * counted in lines: the stage sets the letters' size, so lines are what the film knows of the pane's height.
  */
+import { OneOf } from '../domain/handed.ts';
 import { appearedOf, groundOf } from './words.ts';
 
 // The kinds of the pieces of a line: a comment to the line's end, a string, a number, a word the language keeps, a
@@ -35,12 +40,27 @@ export interface CodeLine {
 	readonly lit: number;
 }
 
-/** A pane of code: its lines, the key the stage knows them by, and how many letters its widest has. */
+/**
+ * How a pane fits a line longer than it is wide: its letters made smaller until its widest line fits, or kept as large
+ * as the look has them, the line cut at the pane's edge.
+ */
+const LONG_LINES = ['shrink', 'cut'] as const;
+
+export type LongLines = (typeof LONG_LINES)[number];
+
+export const A_WAY_OF_LONG_LINES = new OneOf(LONG_LINES, 'how long lines fit: "shrink" or "cut"');
+
+/**
+ * A pane of code: its lines, the key the stage knows them by, how many letters its widest has, how it fits a line too
+ * long, and how many lines it has scrolled past its top.
+ */
 export interface Code {
 	readonly kind: 'code';
 	readonly lines: readonly CodeLine[];
 	readonly key: string;
 	readonly columns: number;
+	readonly longLines: LongLines;
+	readonly scrolled: number;
 }
 
 /** A line as the stage draws it, and how far it has come up, eased, from 0 to 1. */
@@ -49,9 +69,10 @@ interface DrawnLine extends CodeLine {
 }
 
 /**
- * Code as the stage draws it: each line's progress, how far the pane's ground has come up, and how far the lines not
- * lit are dimmed: as far as the light on all its lines comes to, at most whole, so a light moving from one line to
- * another, one going out as the other comes on, keeps the rest dimmed.
+ * Code as the stage draws it: each line's progress, how far the pane's ground has come up, how far the lines not lit
+ * are dimmed: as far as the light on all its lines comes to, at most whole, so a light moving from one line to
+ * another, one going out as the other comes on, keeps the rest dimmed; how it fits a line too long, and how many lines
+ * it has scrolled past its top.
  */
 export interface DrawnCode {
 	readonly kind: 'code';
@@ -60,6 +81,8 @@ export interface DrawnCode {
 	readonly columns: number;
 	readonly ground: number;
 	readonly dimmed: number;
+	readonly longLines: LongLines;
+	readonly scrolled: number;
 }
 
 // The pieces of a line, the first kind that matches at a place winning, a group named by each kind
@@ -73,6 +96,8 @@ const LINE_START = 0;
 // A line written as it is, lit none; and one lit whole
 export const NOT_LIT = 0;
 export const WHOLLY_LIT = 1;
+// Code as it comes up, its first line at the pane's top
+export const NOT_SCROLLED = 0;
 
 /** A film's code, worked out once as its move is made: its lines of pieces, their key and its widest line's length. */
 export function codeOf(text: string): WrittenCode {
@@ -95,7 +120,9 @@ export function drawnCode(code: Code, shown: number, gone: number): DrawnCode {
 		dimmed: Math.min(
 			WHOLLY_LIT,
 			code.lines.reduce((light, line) => light + line.lit, NOT_LIT)
-		)
+		),
+		longLines: code.longLines,
+		scrolled: code.scrolled
 	};
 }
 

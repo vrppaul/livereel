@@ -24,6 +24,8 @@
 
 - What stands inside the page's window fades with the screen as it lowers, what it shows staying as far along as its own moves have it, where its content had gone back as the screen went: words typed stay typed.
 
+- Code scrolls: a pane stands no taller than its place, and `code.scrollTo(line)` scrolls longer code through the lines between until the line, by its number or words only it says, stands at its top; it shares a `play` with a move that carries the code, and with one that lights its lines one after the other. Code scrolled past what fills the pane leaves the rest of it empty, as an editor does. `code.show(text, { longLines: 'cut' })` keeps the letters as large as the look's `codeSize` and cuts a line too long at the pane's edge, as an editor's window does, where they had been made smaller until the widest line fit, which stays the way where none is named. The ad shows its own file whole, scrolled through fast to its acts, where it had shown the list of its acts alone.
+
 - An ad for a feed, `examples/livereel-ad.ts`, square, 55.7 s, for developers: it opens on a finished frame that serves as the feed's preview and claims nobody filmed it, asks how, answers with a real click, shows the camera's moves shot by shot, the camera keeping the row of cards framed but where the words name another block, the file that shot it and a change made to it, the film's acts, every value of the look, three keyboards, the prompts it took, and ends on the frame it opened on with its words changed. Acme's chart gains a test id.
 
 ## 0.5.0

@@ -1,7 +1,7 @@
 /**
  * The code a film shows of itself: the regions of its own file it marks, `// #region name` to `// #endregion`, so the
- * lines on the screen are the lines that shot it. A film reads its regions once, as it is loaded, and hands their
- * lines to `code.show`, which sets them as an editor would.
+ * lines on the screen are the lines that shot it; or its file whole, the marks left out. A film reads them once, as it
+ * is loaded, and hands their lines to `code.show`, which sets them as an editor would.
  */
 import { readFile } from 'node:fs/promises';
 
@@ -18,10 +18,23 @@ const REGION_END = /^\s*\/\/ #endregion\s*$/;
 const NEXT_LINE = 1;
 const NOT_FOUND = -1;
 const THE_BEGINNING = 0;
+// Where a line of a film's file ends
+const NEW_LINE = '\n';
+
+/** A film's file, line by line. */
+async function linesOf(film: URL): Promise<readonly string[]> {
+	return (await readFile(film, 'utf8')).split(NEW_LINE);
+}
+
+/** A film's file whole, as it shot the film, the marks of its regions left out. */
+export async function sourceOf(film: URL): Promise<string> {
+	const lines = await linesOf(film);
+	return lines.filter((line) => !REGION_START.test(line) && !REGION_END.test(line)).join(NEW_LINE);
+}
 
 /** The regions a film's file marks, each by its name. */
 export async function regionsOf(film: URL): Promise<ReadonlyMap<string, string>> {
-	const lines = (await readFile(film, 'utf8')).split('\n');
+	const lines = await linesOf(film);
 	const regions = lines.map((line, place) => regionAt(line, lines.slice(place + NEXT_LINE))).filter(isRegion);
 	return new Map(regions.map((region) => [region.name, region.text]));
 }
@@ -36,7 +49,7 @@ export function regionNamed(regions: ReadonlyMap<string, string>, name: string):
 /** The region a line starts, its lines those after it up to its end; none where the line starts none. */
 function regionAt(line: string, after: readonly string[]): Region | null {
 	const name = REGION_START.exec(line)?.groups?.['name'];
-	return name === undefined ? null : { name, text: linesUntilTheEnd(after).join('\n') };
+	return name === undefined ? null : { name, text: linesUntilTheEnd(after).join(NEW_LINE) };
 }
 
 function linesUntilTheEnd(lines: readonly string[]): readonly string[] {

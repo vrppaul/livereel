@@ -625,7 +625,7 @@ body {
 	text-align: center;
 }
 
-/* Code in its object: a pane as wide as its box, in its middle down it, dark as the terminal, its corners, edge and shadow the window's. Its ground comes up first, rising a little, then its lines one after another. Its letters are as large as the look has them, smaller where its widest line would not fit across, a monospace letter about 0.6 of its size wide. A line lit stands on a bar of the accent; while one is, the rest dim to a share of their ink */
+/* Code in its object: a pane as wide as its box, in its middle down it, dark as the terminal, its corners, edge and shadow the window's. Its ground comes up first, rising a little, then its lines one after another. Its letters are as large as the look has them, smaller where its widest line would not fit across, a monospace letter about 0.6 of its size wide; or, where the film has long lines cut, as large as the look has them, a line too long cut at the pane's edge. A line lit stands on a bar of the accent; while one is, the rest dim to a share of their ink. The pane stands no taller than its box, and its lines scroll in the part of it between its margins (`--scrolled`, in lines): that part cuts a line scrolled past its top where the margin starts, and leaves room under its foot for a line still rising */
 .code {
 	--code-across: 32px;
 	--code-down: 26px;
@@ -633,6 +633,14 @@ body {
 	--code-line-rise: 10px;
 	--letter-width: 0.6;
 	--unlit-kept: 0.35;
+	--code-letters: min(
+		calc(var(--code-size) * 1px),
+		calc((var(--content-width) - 2 * var(--code-across)) / var(--columns) / var(--letter-width))
+	);
+}
+
+.code[data-long-lines='cut'] {
+	--code-letters: calc(var(--code-size) * 1px);
 }
 
 .code .pane {
@@ -640,20 +648,27 @@ body {
 	left: 0;
 	top: calc(var(--content-height) / 2);
 	width: var(--content-width);
+	max-height: var(--content-height);
 	box-sizing: border-box;
+	display: flex;
+	flex-direction: column;
 	padding: var(--code-down) 0;
 	overflow: hidden;
 	background: var(--terminal);
 	opacity: var(--grounded);
 	transform: translateY(calc(-50% + (1 - var(--grounded)) * var(--code-rise)));
-	font: 400
-		min(
-			calc(var(--code-size) * 1px),
-			calc((var(--content-width) - 2 * var(--code-across)) / var(--columns) / var(--letter-width))
-		) /
-		1.6 var(--mono);
+	font: 400 var(--code-letters) / 1.6 var(--mono);
 	color: var(--terminal-ink);
 	white-space: pre;
+}
+
+.code .lines-shown {
+	min-height: 0;
+	clip-path: inset(0 0 calc(-1 * var(--code-line-rise)) 0);
+}
+
+.code .lines {
+	translate: 0 calc(var(--scrolled) * -1lh);
 }
 
 .code .code-line {

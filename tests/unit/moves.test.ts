@@ -435,6 +435,21 @@ test('a line lit by what it says is the one line that says it, through the one f
 	);
 });
 
+test('code scrolls through the lines between until the line named, by its number or what it says, stands at its top, and back; a line past the last is refused, in the words of the move', async () => {
+	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const halfway = (await setAt(code.scrollTo(3), coded, 0.5)).objects.get('code')!;
+	const scrolled = await setAt(code.scrollTo('})'), coded, 1);
+	const back = (await setAt(code.scrollTo(1), scrolled, 0.5)).objects.get('code')!;
+	expect([
+		halfway.content.scrolled,
+		drawnObject('code', halfway, 0, NOTHING_AROUND).content.scrolled,
+		back.content.scrolled
+	]).toEqual([1, 1, 1]);
+	await expect(async () => code.scrollTo(4).begin(beginningOf(coded))).rejects.toThrow(
+		new FilmError('code.scrollTo scrolls to line 4, but the code shown has 3: name lines from 1 to 3')
+	);
+});
+
 test('lines lit past the last of the code, or with no code shown, are refused as the move begins', async () => {
 	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	await expect(async () => code.light(3, { through: 4 }).begin(beginningOf(coded))).rejects.toThrow(FilmError);

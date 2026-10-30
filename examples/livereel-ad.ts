@@ -6,8 +6,9 @@
  *
  *     pnpm livereel shoot examples/livereel-ad.ts --out out/ad --sheet --renderer gpu
  *
- * Acme's analytics app is served by the film itself. The code on the screen is regions of this file marked
- * `// #region name`, read by `regionsOf` (`livereel-promo/code.ts`), so it is the code that shot the film.
+ * Acme's analytics app is served by the film itself. The code on the screen is this file: regions of it marked
+ * `// #region name`, read by `regionsOf`, or the whole of it, read by `sourceOf` (`livereel-promo/code.ts`), so it is
+ * the code that shot the film.
  */
 import {
 	type ActContext,
@@ -38,7 +39,7 @@ import {
 	typing,
 	window
 } from 'livereel';
-import { regionNamed, regionsOf } from './livereel-promo/code.ts';
+import { regionNamed, regionsOf, sourceOf } from './livereel-promo/code.ts';
 import { type AppServed, servedApp } from './livereel-promo/server.ts';
 
 // A square, as a feed shows it, the app laid out on a screen as wide as its window
@@ -123,6 +124,8 @@ const PAPER: Theme = { ground: '#f5efe6', glow: '#fffaf2', ink: '#1a1a1a', paneE
 const SQUARE_CORNERS: Theme = { paneCorner: 0 };
 const CYAN: Theme = { accent: '#22d3ee' };
 const REGIONS = await regionsOf(new URL(import.meta.url));
+// This file whole, scrolled through to the film's acts
+const SOURCE = await sourceOf(new URL(import.meta.url));
 // The comma a move in a list of moves stands before when another follows it
 const AFTER_AN_ITEM = /,$/u;
 
@@ -324,7 +327,10 @@ function actTheFile(): readonly Step[] {
 	];
 }
 
-/** The window pushed off, the film's acts over most of the frame, read one by one, this one among them. */
+/**
+ * The window pushed off, this film's file over most of the frame, scrolled through fast to its acts, read one by one,
+ * this one among them.
+ */
 function actTheCode(): readonly Step[] {
 	return [
 		play({
@@ -332,20 +338,29 @@ function actTheCode(): readonly Step[] {
 			moves: [
 				headline('readable. diffable. yours.', LINE_SIZE),
 				window.hide({ toward: 'left' }),
-				code.show(regionNamed(REGIONS, 'acts'), { at: MOST_OF_THE_FRAME, from: 'right' })
+				code.show(SOURCE, { at: MOST_OF_THE_FRAME, from: 'right', longLines: 'cut' })
 			],
 			ease: easeInOutCubic
 		}),
-		hold({ seconds: 1 }),
-		cut(code.light('actTheClaim')),
+		play({ seconds: 1.4, moves: [code.scrollTo(playing('Claim'))], ease: easeInOutCubic }),
+		hold({ seconds: 0.4 }),
+		cut(code.light(playing('Claim'))),
 		hold({ seconds: 0.8 }),
-		cut(code.light('actTheFile')),
+		cut(code.light(playing('File'))),
 		hold({ seconds: 0.8 }),
-		cut(code.light('actTheCode')),
+		cut(code.light(playing('Code'))),
 		hold({ seconds: 1.4 }),
-		cut(code.light('actTheEnd')),
+		cut(code.light(playing('End'))),
 		hold({ seconds: 0.8 })
 	];
+}
+
+/**
+ * What the line of this film's steps that plays an act says, by the act's name: put together here, as the words
+ * written out would stand in this file a second time.
+ */
+function playing(act: string): string {
+	return `...actThe${act}()`;
 }
 
 /** The window back in from the right, low, the code of the look over it: each value changed at once, then night. */
@@ -501,7 +516,6 @@ function actTheEnd(): readonly Step[] {
 
 function steps(served: AppServed): readonly Step[] {
 	return [
-		// #region acts
 		...actTheClaim(),
 		...actTheQuestion(),
 		...actTheAnswer(served),
@@ -515,7 +529,6 @@ function steps(served: AppServed): readonly Step[] {
 		...actThePrompts(),
 		...actTheCredit(),
 		...actTheEnd()
-		// #endregion
 	];
 }
 

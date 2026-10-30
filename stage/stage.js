@@ -68,8 +68,10 @@ const LETTER = 'letter';
 // The class of a pin, and of one whose label a later pin has quietened
 const PIN = 'pin';
 const QUIET = 'quiet';
-// The class of a line of code; each piece of it is classed by its kind
+// The class of a line of code; each piece of it is classed by its kind; and the attribute that names how a pane fits
+// a line too long
 const CODE_LINE = 'code-line';
+const LONG_LINES = 'data-long-lines';
 // What each value of the film's look sets on the stage: the token it takes the place of, or, for a value that names a
 // way, the attribute the stylesheet reads it by
 /** @type {{ readonly [Name in keyof Look]: { readonly token: string } | { readonly attribute: string } }} */
@@ -429,8 +431,10 @@ class CodeDrawer {
 		numbered(this.element, {
 			'--columns': code.columns,
 			'--grounded': code.ground,
-			'--dimmed': code.dimmed
+			'--dimmed': code.dimmed,
+			'--scrolled': code.scrolled
 		});
+		this.element.setAttribute(LONG_LINES, code.longLines);
 	}
 }
 
