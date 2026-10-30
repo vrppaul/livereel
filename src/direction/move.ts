@@ -26,15 +26,19 @@ import {
 } from '../domain/handed.ts';
 import type { Ease } from '../domain/time.ts';
 import type { FontNamed } from './theme.ts';
+import type { ObjectName } from '../props/object.ts';
 import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';
 import type { FilmedPage } from './page.ts';
 import type { Cue } from './sound.ts';
 
+/** An object as the part a move changes, said by its name, apart from any prop or the page whatever its name. */
+type ObjectPart = `${ObjectName} object`;
+
 /**
- * What a move changes: one prop of the scene, or the page itself; none, for a move that only makes a sound. Two moves
- * of one part never run at once.
+ * What a move changes: one prop of the scene, an object, or the page itself; none, for a move that only makes a sound.
+ * Two moves of one part never run at once.
  */
-type Part = PropName | 'page' | null;
+export type Part = PropName | ObjectPart | 'page' | null;
 
 const NO_SOUNDS: readonly Cue[] = [];
 const NO_FONTS: readonly FontNamed[] = [];
@@ -176,6 +180,11 @@ export function timingOf(script: TimingScript): Timing {
 /** Whether a move changes the page itself, its scroll or its keys, rather than a prop drawn over it. */
 export function movesThePage(move: Move): boolean {
 	return move.part === 'page';
+}
+
+/** The part a move of an object changes. */
+export function objectPart(name: ObjectName): ObjectPart {
+	return `${name} object`;
 }
 
 /** The sounds a move makes on its way: none, for a move that names none. */

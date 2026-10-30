@@ -141,8 +141,10 @@ and the moves of each part of the scene:
 - `keys.show(caps)`, `keys.hide()`
 - `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { at, align, size, from })`, `title.to(place)`, `title.hide({ toward })`
-- `code.show(text, { at, from })`, `code.to(place)`, `code.light(line, { through })`, `code.hide({ toward })`
+- `title.show(text, { at, align, size, from, as })`, `title.to(place)`, `title.lean({ tilt, turn })`,
+  `title.hide({ toward })`
+- `code.show(text, { at, from, as })`, `code.to(place)`, `code.lean({ tilt, turn })`, `code.light(line, { through })`,
+  `code.hide({ toward })`; each move of a title or code takes `as` to name which
 - `caption.show(text)`, `caption.hide()`
 - `screen.rise()`, `screen.lower()`
 - `terminal.open(title, { from })`, `terminal.type(strokes, { keyboard })`, `terminal.submit()`,
@@ -215,12 +217,22 @@ to another place through the boxes between, a title reading as it did;
 `show(…, { from: 'right' })` slides them in whole from a frame past that
 edge, and `hide({ toward: 'left' })` slides them out as far, whole, where
 a plain `hide()` lets them go where they stand. A title or code shown
-`from` a side while one stands in a place pushes it off past the side
+`from` a side while one of its name stands pushes it off past the side
 across, so the next slide's words push the last one's away. Everything that
 slides in one step moves a whole frame, so what leaves and what comes move
 as one sheet, a push; the ending card slides so too, its ground with it
-(`ending.show(card, { from })`, `ending.hide({ toward })`). A title over
-the whole frame has no place to travel from, and is refused.
+(`ending.show(card, { from })`, `ending.hide({ toward })`), and so does a
+title over the whole frame.
+
+A title or code leans as the window does: `title.lean({ tilt: 12 })` leans
+it back from its top edge, `code.lean({ turn: -8 })` swings it about its
+middle, a side left out kept as it stands; a lean shares a `play` with a
+move that carries it, and with `code.light`. Several titles or panes of code
+stand at once by name: `title.show('Pricing', { at: 'top', as: 'heading' })`
+stands beside the title, and each move of it names it, `title.hide({ as:
+'heading' })`; a move that names none takes the one called `title`, or
+`code`. A name is one object's, whatever it shows: a title shown `as:
+'code'` stands in place of the code.
 
 `window.to(place)` draws the page back off the frame's edges into a window
 on the ground, its corners rounding, its edge and shadow coming up, carries

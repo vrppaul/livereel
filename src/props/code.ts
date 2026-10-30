@@ -1,15 +1,13 @@
 /**
- * Code on the frame: a pane of the film's code in a place the film names, beside the page's window, so the viewer
- * reads a line and sees what it does at once, or alone, about what the frame itself shows.
+ * Code, what an object shows (`src/props/object.ts`): a pane of the film's code, beside the page's window, so the
+ * viewer reads a line and sees what it does at once, or alone, about what the frame itself shows.
  *
  * A film hands its code as text. It is worked out once, as its move is made, into lines of pieces, each of a kind the
  * stage colours it by, read as TypeScript is written; the indent its lines share is dropped and a tab set as spaces,
  * so it reads as an editor sets it, and its widest line is counted, so the stage sets its letters no larger than that
  * line fits across. The pane comes up its ground first and its lines one after another, as words do
- * (`src/props/words.ts`). A line lit stands on a bar of the accent, and while any is lit the rest dim. Code sliding in
- * from a side pushes the code shown off past the side across, and holds it while it goes, so the stage draws both.
+ * (`src/props/words.ts`). A line lit stands on a bar of the accent, and while any is lit the rest dim.
  */
-import type { Box } from '../domain/geometry.ts';
 import { appearedOf, groundOf } from './words.ts';
 
 // The kinds of the pieces of a line: a comment to the line's end, a string, a number, a word the language keeps, a
@@ -37,19 +35,12 @@ export interface CodeLine {
 	readonly lit: number;
 }
 
-/** A pane of code: its lines, its place in the frame's pixels, and how far it has come up and gone, each from 0 to 1. */
-interface CodePane {
+/** A pane of code: its lines, the key the stage knows them by, and how many letters its widest has. */
+export interface Code {
+	readonly kind: 'code';
 	readonly lines: readonly CodeLine[];
 	readonly key: string;
 	readonly columns: number;
-	readonly box: Box;
-	readonly shown: number;
-	readonly gone: number;
-}
-
-/** Code, and the pane it pushes off as it slides in, while it does; none else. */
-export interface Code extends CodePane {
-	readonly pushedOff: CodePane | null;
 }
 
 /** A line as the stage draws it, and how far it has come up, eased, from 0 to 1. */
@@ -58,22 +49,17 @@ interface DrawnLine extends CodeLine {
 }
 
 /**
- * Code as the stage draws it: each line's progress, how far the pane's ground has come up, how far it went, and how
- * far the lines not lit are dimmed: as far as the light on all its lines comes to, at most whole, so a light moving
- * from one line to another, one going out as the other comes on, keeps the rest dimmed.
+ * Code as the stage draws it: each line's progress, how far the pane's ground has come up, and how far the lines not
+ * lit are dimmed: as far as the light on all its lines comes to, at most whole, so a light moving from one line to
+ * another, one going out as the other comes on, keeps the rest dimmed.
  */
-export interface DrawnCodePane {
+export interface DrawnCode {
+	readonly kind: 'code';
 	readonly lines: readonly DrawnLine[];
 	readonly key: string;
 	readonly columns: number;
-	readonly box: Box;
 	readonly ground: number;
-	readonly gone: number;
 	readonly dimmed: number;
-}
-
-export interface DrawnCode extends DrawnCodePane {
-	readonly pushedOff: DrawnCodePane | null;
 }
 
 // The pieces of a line, the first kind that matches at a place winning, a group named by each kind
@@ -97,19 +83,15 @@ export function codeOf(text: string): WrittenCode {
 	return { lines, key: JSON.stringify(lines), columns: Math.max(...set.map((line) => line.length)) };
 }
 
-export function drawnCode(code: Code): DrawnCode {
-	return { ...drawnPane(code), pushedOff: code.pushedOff === null ? null : drawnPane(code.pushedOff) };
-}
-
-function drawnPane(code: CodePane): DrawnCodePane {
+/** Code as the stage draws it, the object showing it come up `shown` and gone `gone` so far. */
+export function drawnCode(code: Code, shown: number, gone: number): DrawnCode {
 	const count = code.lines.length;
 	return {
-		lines: code.lines.map((line, place) => ({ ...line, appeared: appearedOf(code.shown, place, count) })),
+		kind: code.kind,
+		lines: code.lines.map((line, place) => ({ ...line, appeared: appearedOf(shown, place, count) })),
 		key: code.key,
 		columns: code.columns,
-		box: code.box,
-		ground: groundOf(code.shown, code.gone),
-		gone: code.gone,
+		ground: groundOf(shown, gone),
 		dimmed: Math.min(
 			WHOLLY_LIT,
 			code.lines.reduce((light, line) => light + line.lit, NOT_LIT)

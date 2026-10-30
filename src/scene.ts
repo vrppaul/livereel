@@ -1,8 +1,12 @@
 /**
- * What the stage draws on one frame: every prop's state at one moment.
+ * What the stage draws on one frame: every prop's state at one moment, and the objects on the frame.
  *
- * A scene is plain values, never changed in place: a move's change hands back a scene with its own prop set, and the
- * take keeps the one standing. The film's look is a prop too, changed by moves as any other. `drawn` works out
+ * A scene is plain values, never changed in place: a move's change hands back a scene with its own prop or object set,
+ * and the take keeps the one standing. The film's look is a prop too, changed by moves as any other. A prop is one of
+ * livereel's, each in a slot of its own; an object (`src/props/object.ts`) is the film's, known by a name it gives or
+ * its kind's own, so several of a kind stand at once, drawn in the order they first came, the last over the rest: one
+ * shown again in place of itself keeps its place. One pushed off by another of its name sliding in is held apart while
+ * it goes, so the two stand at once, and drawn over every object standing. `drawn` works out
  * everything the stage needs from it — how far each word of a title, a caption or a callout and each line of code has
  * come, the terminal's spinner, where a note's line meets the block it names on the frame — so the stage draws numbers
  * and words and decides nothing. What the camera shows is worked out from what it aims at and the window that stands
@@ -24,7 +28,6 @@ import {
 	wholePose,
 	wholeView
 } from './domain/camera.ts';
-import { type Code, type DrawnCode, drawnCode } from './props/code.ts';
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
 import { type DrawnCaption, drawnCaption } from './props/caption.ts';
 import type { Cursor } from './props/cursor.ts';
@@ -33,10 +36,10 @@ import { type DrawnKeys, type Keys, drawnKeys } from './props/keys.ts';
 import type { Light } from './props/light.ts';
 import type { Look } from './props/look.ts';
 import { type DrawnNote, type Note, drawnNote } from './props/note.ts';
+import { type DrawnObject, type FrameObject, type ObjectName, drawnObject } from './props/object.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
 import { SCREEN_UP, type Screen } from './props/screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './props/terminal.ts';
-import { type DrawnTitle, type Title, drawnTitle } from './props/title.ts';
 import type { ShownWords } from './props/words.ts';
 
 export interface PropStates {
@@ -49,8 +52,6 @@ export interface PropStates {
 	pins: Pins | null;
 	cursor: Cursor | null;
 	note: Note | null;
-	title: Title | null;
-	code: Code | null;
 	caption: ShownWords | null;
 	keys: Keys | null;
 	terminal: Terminal | null;
@@ -59,7 +60,14 @@ export interface PropStates {
 
 export type PropName = keyof PropStates;
 
-export type Scene = { readonly [Name in PropName]: PropStates[Name] };
+/** The objects of a scene, by name, in the order they first came. */
+type Objects = ReadonlyMap<ObjectName, FrameObject>;
+
+export type Scene = { readonly [Name in PropName]: PropStates[Name] } & {
+	readonly objects: Objects;
+	/** Objects pushed off past the frame's edge by one of their name sliding in, while they go. */
+	readonly leaving: Objects;
+};
 
 /** What the stage is handed for each prop: its state, or what is worked out from it to draw. */
 interface DrawnProps {
@@ -72,15 +80,16 @@ interface DrawnProps {
 	pins: DrawnPins | null;
 	cursor: Cursor | null;
 	note: DrawnNote | null;
-	title: DrawnTitle | null;
-	code: DrawnCode | null;
 	caption: DrawnCaption | null;
 	keys: DrawnKeys | null;
 	terminal: DrawnTerminal | null;
 	ending: Ending | null;
 }
 
-export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] };
+export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
+	readonly objects: readonly DrawnObject[];
+	readonly leaving: readonly DrawnObject[];
+};
 
 /** The scene a film opens on, in its look: the whole screen, face-on, up, in the whole frame; nothing over it. */
 export function openingScene(format: Format, look: Look): Scene {
@@ -94,17 +103,34 @@ export function openingScene(format: Format, look: Look): Scene {
 		pins: null,
 		cursor: null,
 		note: null,
-		title: null,
-		code: null,
 		caption: null,
 		keys: null,
 		terminal: null,
-		ending: null
+		ending: null,
+		objects: new Map(),
+		leaving: new Map()
 	};
 }
 
 export function withProp<Name extends PropName>(scene: Scene, name: Name, state: PropStates[Name]): Scene {
 	return { ...scene, [name]: state };
+}
+
+/** The scene with an object of a name set where it stands, or coming last where none of its name stood; none, gone. */
+export function withObject(scene: Scene, name: ObjectName, object: FrameObject | null): Scene {
+	return { ...scene, objects: withNamed(scene.objects, name, object) };
+}
+
+/** The scene with the object pushed off by one of its name set as it goes; none, once it is past the edge. */
+export function withLeaving(scene: Scene, name: ObjectName, object: FrameObject | null): Scene {
+	return { ...scene, leaving: withNamed(scene.leaving, name, object) };
+}
+
+function withNamed(objects: Objects, name: ObjectName, object: FrameObject | null): Objects {
+	const named = new Map(objects);
+	if (object === null) named.delete(name);
+	else named.set(name, object);
+	return named;
 }
 
 /** The camera as the scene shows it: what it aims at, come to in the window where it stands so far. */
@@ -137,11 +163,15 @@ export function drawn(scene: Scene, camera: Camera, moment: number, format: Form
 		pins: scene.pins === null ? null : drawnPins(scene.pins, camera, format.frame),
 		cursor: scene.cursor,
 		note: scene.note === null ? null : drawnNote(scene.note, camera, format.frame),
-		title: scene.title === null ? null : drawnTitle(scene.title),
-		code: scene.code === null ? null : drawnCode(scene.code),
 		caption,
 		keys: scene.keys === null ? null : drawnKeys(scene.keys, caption),
 		terminal: scene.terminal === null ? null : drawnTerminal(scene.terminal, moment),
-		ending: scene.ending
+		ending: scene.ending,
+		objects: drawnObjects(scene.objects),
+		leaving: drawnObjects(scene.leaving)
 	};
+}
+
+function drawnObjects(objects: Objects): readonly DrawnObject[] {
+	return [...objects].map(([name, object]) => drawnObject(name, object));
 }

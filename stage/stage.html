@@ -34,31 +34,18 @@
 					</div>
 				</div>
 			</div>
-			<!-- What stands flat over the frame, whatever the camera does: a note and its line, the title, the code, the caption, the keys, the terminal, the ending -->
+			<!-- What stands flat over the frame, whatever the camera does, under the objects: a note and its line -->
 			<div class="over-the-frame">
 				<div class="note" data-prop="note">
 					<div class="line"></div>
 					<div class="words note-words" data-part="words"></div>
 				</div>
-				<!-- The title and the code standing, and each one pushed off past the frame's edge while it goes -->
-				<div data-prop="title">
-					<div class="title" data-part="standing">
-						<div class="ground" data-part="ground"></div>
-						<div class="words" data-part="words"></div>
-					</div>
-					<div class="title" data-part="pushed-off">
-						<div class="ground" data-part="ground"></div>
-						<div class="words" data-part="words"></div>
-					</div>
-				</div>
-				<div data-prop="code">
-					<div class="code" data-part="standing">
-						<div class="pane"><div class="lines" data-part="lines"></div></div>
-					</div>
-					<div class="code" data-part="pushed-off">
-						<div class="pane"><div class="lines" data-part="lines"></div></div>
-					</div>
-				</div>
+			</div>
+			<!-- The objects on the frame, each made from its content's template below, in the scene's order; and those pushed off past the frame's edge while they go -->
+			<div class="objects" data-scene="objects"></div>
+			<div class="objects" data-scene="leaving"></div>
+			<!-- What stands flat over the frame, whatever the camera does, over the objects: the caption, the keys, the terminal, the ending -->
+			<div class="over-the-frame">
 				<div class="caption" data-prop="caption">
 					<div class="ground" data-part="ground"></div>
 					<div class="words" data-part="words"></div>
@@ -81,5 +68,21 @@
 				</div>
 			</div>
 		</div>
+		<!-- An object, by what it shows: a title's words, on a ground of their own over its box where they have one; a pane of code -->
+		<template data-kind="words">
+			<div class="object">
+				<div class="content title" data-part="content">
+					<div class="ground"></div>
+					<div class="words" data-part="words"></div>
+				</div>
+			</div>
+		</template>
+		<template data-kind="code">
+			<div class="object">
+				<div class="content code" data-part="content">
+					<div class="pane"><div class="lines" data-part="lines"></div></div>
+				</div>
+			</div>
+		</template>
 	</body>
 </html>

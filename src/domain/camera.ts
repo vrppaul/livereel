@@ -164,8 +164,8 @@ const DEGREES_IN_A_HALF_TURN = 180;
 // How far a view stands off the ground: the frame itself, or a window
 const FLAT = 0;
 const LIFTED = 1;
-// A view as it stands until a move leans it
-const FACE_ON: Angle = { tilt: 0, turn: 0 };
+// A view, or anything on the frame, as it stands until a move leans it
+export const FACE_ON: Angle = { tilt: 0, turn: 0 };
 // The whole of a view, in shares of it
 const WHOLE_SHARE: Box = { left: 0, top: 0, width: 1, height: 1 };
 
@@ -249,7 +249,7 @@ function viewToward(start: View, end: View, progress: number): View {
 }
 
 /** An angle `progress` of the way to another. */
-function angleToward(start: Angle, end: Angle, progress: number): Angle {
+export function angleToward(start: Angle, end: Angle, progress: number): Angle {
 	return { tilt: between(start.tilt, end.tilt, progress), turn: between(start.turn, end.turn, progress) };
 }
 
@@ -313,8 +313,8 @@ export function zoomPicturedFor(own: Camera, along: readonly Camera[]): number {
 	return Math.min(ZOOM_AT_MOST, Math.max(...cameras.map((camera) => camera.pose.zoom)));
 }
 
-function isFaceOn(angle: Angle): boolean {
-	return angle.tilt === 0 && angle.turn === 0;
+export function isFaceOn(angle: Angle): boolean {
+	return angle.tilt === FACE_ON.tilt && angle.turn === FACE_ON.turn;
 }
 
 /** The pose an aim comes to in a view, kept off the screen's edge there: the film's own, or a block framed there. */

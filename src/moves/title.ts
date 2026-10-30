@@ -1,77 +1,65 @@
 /**
- * Titles: words that come up one after another over the whole frame, on the film's ground, or in a place the film
- * names (`src/domain/place.ts`), beside the page's window or alone, in place of any title on the screen, and go. A
- * title in a place moves to another, keeping how it reads, comes in from past a side of the frame, pushing the title
- * standing in a place off past the side across, or leaves past one; a title over the whole frame has no place to
- * move from, and is refused there. A title may set its letters' own size, in place of the look's; one that sets none
- * takes, in a place, its size by the width of the place, and its words wrap by it there, so a title moving to a place
- * of another size takes that size as it sets off, where it reads from, and travels whole: its lines change once, where
- * they would break anew on every frame of the way.
+ * Titles: words that come up one after another, shown by an object (`src/moves/object.ts`): over the whole frame on
+ * the film's ground, a title card, or in a place the film names (`src/domain/place.ts`), beside the page's window or
+ * alone, in place of the title of its name on the screen, and go. A title is the object named `title`, or one the
+ * film names `as`, so several stand at once. Any title slides in from past a side of the frame, pushing the one of its
+ * name standing off past the side across, moves to a place, leans, or leaves past a side, its ground with it where it
+ * has one. A title may set its letters' own size, in place of the look's; one that sets none takes, in a place, its
+ * size by the width of the place, and its words wrap by it there, so a title moving to a place of another size takes
+ * that size as it sets off, where it reads from, and travels whole: its lines change once, where they would break
+ * anew on every frame of the way.
  */
-import { FilmError } from '../domain/errors.ts';
-import { A_FRAME_SIDE, type Box, type FrameSide } from '../domain/geometry.ts';
+import { A_FRAME_SIDE, boxOf } from '../domain/geometry.ts';
 import { A_SIZE, type Form, assertKind, assertWritten } from '../domain/handed.ts';
-import {
-	AN_ALIGNMENT,
-	A_PLACE,
-	type Alignment,
-	type Place,
-	alignmentIn,
-	enteringFrom,
-	placesNamed,
-	wordsPlaced,
-	wordsResized
-} from '../domain/place.ts';
-import { linear } from '../domain/time.ts';
-import {
-	type Beginning,
-	type Change,
-	type Move,
-	TIMING_FORM,
-	type TimingScript,
-	present,
-	propChange,
-	timingOf
-} from '../direction/move.ts';
-import type { Title } from '../props/title.ts';
+import { AN_ALIGNMENT, A_PLACE, type Alignment, type Place, alignmentIn, wordsPlaced } from '../domain/place.ts';
+import { type Beginning, type Move, TIMING_FORM } from '../direction/move.ts';
+import type { TitleWords } from '../props/title.ts';
 import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
-import { SLIDE_OUT_FORM, type SlideOutScript } from './slide.ts';
-import { NOT_GONE, going, leavingToward, pushOf, pushedAt, shownComing, travelling } from './words.ts';
+import {
+	type Coming,
+	type HideScript,
+	NAMED_FORM,
+	type ObjectKind,
+	type ObjectLeanScript,
+	type ShowScript,
+	type ToScript,
+	objectHide,
+	objectLean,
+	objectShow,
+	objectTo
+} from './object.ts';
 
 /**
  * Where a title stands: `at` a place on the frame, or over the whole of it, on its ground, where none is named; how it
  * reads there, `align`, the place's own way where none is named; how large its letters are, `size`, in pixels of a
  * frame 1080 on its shorter side, over the whole frame and in a place alike, where none is named the look's
- * `titleSize`, and in a place a share of it no larger than its width lets a long word stand; and the side it slides in
- * `from`, past the frame's edge, rather than coming up in its place.
+ * `titleSize`, and in a place a share of it no larger than its width lets a long word stand; the side it slides in
+ * `from`, past the frame's edge, rather than coming up in its place; and which title it is, `as`.
  */
-export interface TitleScript extends TimingScript {
+export interface TitleScript extends ShowScript {
 	readonly at?: Place;
 	readonly align?: Alignment;
 	readonly size?: number;
-	readonly from?: FrameSide;
 }
 
-/** A title's words as the film sets them: what they say, how they read, and their own size, none as the look's. */
-type Setting = Said & Pick<Title, 'align' | 'size'>;
-
 /**
- * A title as `show` reads it: what it says, its place and the side it slides in from, none for either where the film
- * names none, how it reads, none for the place's own way, and its own size.
+ * A title's words as `show` reads them: what they say, their place, none over the whole frame, how they read, none for
+ * the place's own way, and their own size, none for the look's.
  */
-interface Coming {
+interface Setting {
 	readonly said: Said;
 	readonly place: Place | null;
-	readonly from: FrameSide | null;
 	readonly align: Alignment | null;
 	readonly size: number | null;
 }
 
+const TITLE: ObjectKind = 'title';
 const TITLE_FORM: Form<TitleScript> = {
 	at: A_PLACE,
 	align: AN_ALIGNMENT,
 	size: A_SIZE,
 	from: A_FRAME_SIDE,
+	...NAMED_FORM,
 	...TIMING_FORM
 };
 // Words over the whole frame on their ground stand centred
@@ -84,117 +72,42 @@ const OVER_THE_WHOLE: Alignment = 'center';
 export function show(text: Wording, script: TitleScript = {}): Move {
 	assertKind(text, A_WORDING, "title.show's text");
 	assertWritten(script, TITLE_FORM, 'title.show');
-	const place = script.at ?? null;
-	const from = script.from ?? null;
-	if (place === null && from !== null) {
-		throw new FilmError(`title.show comes in from the ${from} only to a place: name it, as { at: 'left', from }`);
-	}
-	const coming: Coming = {
+	const setting: Setting = {
 		said: saidOf(text),
-		place,
-		from,
+		place: script.at ?? null,
 		align: script.align ?? null,
 		size: script.size ?? null
 	};
-	const evenly = from === null ? { ease: linear } : {};
-	return {
-		part: 'title',
-		timing: timingOf({ ...evenly, ...script }),
-		places: placesNamed("title.show's at", place),
-		begin: (beginning) => comingUp(coming, beginning)
-	};
+	return objectShow(TITLE, script, setting.place, (beginning) => comingUp(setting, beginning));
 }
 
-/** The title in a place moving to another, through the boxes between, reading as it did. */
-export function to(place: Place, script: TimingScript = {}): Move {
-	assertKind(place, A_PLACE, "title.to's place");
-	assertWritten(script, TIMING_FORM, 'title.to');
-	return {
-		part: 'title',
-		timing: timingOf(script),
-		places: placesNamed("title.to's place", place),
-		begin: (beginning) => moving(beginning, place)
-	};
+/** The title carried to another place, through the boxes between, reading as it did. */
+export function to(place: Place, script: ToScript = {}): Move {
+	return objectTo(TITLE, place, script);
+}
+
+/** The title going, and its ground with it, or sliding out past a side of the frame; once gone, there is none. */
+export function hide(script: HideScript = {}): Move {
+	return objectHide(TITLE, script);
+}
+
+/** The title leant back from its top edge by `tilt` and swung about its middle by `turn`, its ground with it. */
+export function lean(script: ObjectLeanScript): Move {
+	return objectLean(TITLE, script);
 }
 
 /**
- * The title on the screen going, and its ground with it, or sliding out past a side of the frame where the film names
- * one; once gone, there is none.
+ * A title's words and their box as their move begins: over the whole frame on their ground, or in their place, read as
+ * the film says or in the way of the place, a format's own read as the place it names.
  */
-export function hide(script: SlideOutScript = {}): Move {
-	assertWritten(script, SLIDE_OUT_FORM, 'title.hide');
-	const toward = script.toward ?? null;
-	return {
-		part: 'title',
-		timing: timingOf(script),
-		begin: (beginning) => (toward === null ? going('title', beginning) : leaving(beginning, toward))
-	};
-}
-
-/**
- * A title coming up as its move begins: over the whole frame, or in its place, read as the film says or in the way of
- * the place, a format's own read as the place it names.
- */
-function comingUp(coming: Coming, beginning: Beginning): Change {
-	const { said, place, size } = coming;
-	if (place === null) return overTheWhole({ ...said, align: coming.align ?? OVER_THE_WHOLE, size });
-	const align = coming.align ?? alignmentIn(beginning.format, place);
-	return arriving({ ...said, align, size }, beginning, place, coming.from);
-}
-
-/** A title coming up over the whole frame, its ground first. */
-function overTheWhole(setting: Setting): Change {
-	return propChange('title', (progress) => ({
-		...setting,
-		box: null,
-		shown: progress,
-		gone: NOT_GONE,
-		pushedOff: null
-	}));
-}
-
-/**
- * A title coming up in its place, travelling in whole from past a side of the frame where one is named, and pushing
- * the title standing in a place off past the side across as it does.
- */
-function arriving(setting: Setting, beginning: Beginning, place: Place, from: FrameSide | null): Change {
-	const box = wordsPlaced(beginning.format, place);
-	const start = enteringFrom(box, from, beginning.format.frame);
-	const push = pushOf(beginning.scene.title, from, beginning.format.frame);
-	return travelling(
-		'title',
-		(at, progress) => ({
-			...setting,
-			box: at,
-			shown: shownComing(from, progress),
-			gone: NOT_GONE,
-			pushedOff: pushedAt(push, progress)
-		}),
-		start,
-		box
-	);
-}
-
-/** The title in its place travelling to another, whole, at the size of the place it goes to. */
-function moving(beginning: Beginning, place: Place): Change {
-	const { title, box } = placedTitle(beginning, 'title.to');
-	const end = wordsPlaced(beginning.format, place);
-	return travelling('title', (at) => ({ ...title, box: at }), wordsResized(box, end, title.align), end);
-}
-
-/** The title in its place sliding out past a side of the frame, whole; once there, none. */
-function leaving(beginning: Beginning, toward: FrameSide): Change {
-	const { title, box } = placedTitle(beginning, 'title.hide');
-	return leavingToward('title', (at) => ({ ...title, box: at }), box, toward, beginning);
-}
-
-/** The title on the screen and its place; refused where none stands, or one stands over the whole frame. */
-function placedTitle(beginning: Beginning, move: string): { readonly title: Title; readonly box: Box } {
-	const title = present(beginning, 'title', `${move} moves a title, but none is on the screen`);
-	if (title.box === null) {
-		throw new FilmError(
-			`${move} moves a title in a place, but this one stands over the whole frame: show it at a place`
-		);
+function comingUp(setting: Setting, beginning: Beginning): Coming {
+	const { said, place, size } = setting;
+	const format = beginning.format;
+	if (place === null) {
+		const card: TitleWords = { kind: 'words', ...said, align: setting.align ?? OVER_THE_WHOLE, size, onGround: true };
+		return { content: card, box: boxOf(format.frame) };
 	}
-	return { title, box: title.box };
+	const align = setting.align ?? alignmentIn(format, place);
+	const placed: TitleWords = { kind: 'words', ...said, align, size, onGround: false };
+	return { content: placed, box: wordsPlaced(format, place) };
 }

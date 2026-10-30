@@ -4,15 +4,15 @@ import { FilmError } from '../../src/domain/errors.ts';
 import { type Point, boxOf, boxToward, frameScaleOf, middleX, middleY } from '../../src/domain/geometry.ts';
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
+import { play } from '../../src/direction/steps.ts';
 import { onto } from '../../src/moves/camera.ts';
 import { hide as windowHide, lean, show as windowShow, to as windowTo } from '../../src/moves/window.ts';
 import { lower, rise } from '../../src/moves/screen.ts';
-import { drawnTitle } from '../../src/props/title.ts';
 import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
 import * as ending from '../../src/moves/ending.ts';
-import { drawnCode } from '../../src/props/code.ts';
+import { drawnObject } from '../../src/props/object.ts';
 import { pastTheEdge, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
 import * as look from '../../src/moves/look.ts';
@@ -140,7 +140,7 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 		shown: 1,
 		gone: 0
 	});
-	const titled = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'title', { ...said, box: null, shown: 1, gone: 0 });
+	const titled = await setAt(title.show('Words'), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const captioned = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'caption', { ...said, shown: 1, gone: 0 });
 	const pressed = await setAt(keys.show(['⌘', 'K']), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const coded = await setAt(code.show('light.on(VISITORS)', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
@@ -154,42 +154,50 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 		(await setAt(callout.hide(), pointed, 1)).callout,
 		(await setAt(pin.clear(), pinned, 1)).pins,
 		(await setAt(note.hide(), noted, 1)).note,
-		(await setAt(title.hide(), titled, 1)).title,
 		(await setAt(caption.hide(), captioned, 1)).caption,
 		(await setAt(keys.hide(), pressed, 1)).keys,
-		(await setAt(code.hide(), coded, 1)).code,
 		(await setAt(leave(), TYPED, 1)).terminal,
-		(await setAt(ending.hide(), carded, 1)).ending
-	]).toEqual([null, null, null, null, null, null, null, null, null, null]);
+		(await setAt(ending.hide(), carded, 1)).ending,
+		[...(await setAt(title.hide(), titled, 1)).objects.keys()],
+		[...(await setAt(code.hide(), coded, 1)).objects.keys()]
+	]).toEqual([null, null, null, null, null, null, null, null, [], []]);
 });
 
 test('code and a title stand in the places the film names, the title then with no ground of its own', async () => {
 	const heading = { of: 'left', height: 0.2 } as const;
 	const below = { of: 'left', top: 0.25, height: 0.75 } as const;
 	const titled = await setAt(title.show('Here', { at: heading }), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const coded = (await setAt(code.show('light.on(VISITORS)', { at: below }), titled, 1)).code!;
-	expect([titled.title!.box, drawnTitle(titled.title!).ground, coded.box]).toEqual([
+	const coded = await setAt(code.show('light.on(VISITORS)', { at: below }), titled, 1);
+	const shownTitle = coded.objects.get('title')!;
+	expect([shownTitle.box, drawnObject('title', shownTitle).content.ground, coded.objects.get('code')!.box]).toEqual([
 		wordsPlaced(SMALL, heading),
 		0,
 		wordsPlaced(SMALL, below)
 	]);
 });
 
-test('a title and code move to another place through the boxes between', async () => {
-	const titled = await setAt(title.show('Here', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const coded = await setAt(code.show('light.on(VISITORS)', { at: 'left' }), titled, 1);
-	const halfWay = await setAt(title.to('right'), await setAt(code.to('bottom'), coded, 0.5), 0.5);
-	expect([halfWay.title!.box, halfWay.code!.box]).toEqual([
-		boxToward(wordsPlaced(SMALL, 'left'), wordsPlaced(SMALL, 'right'), 0.5),
-		boxToward(wordsPlaced(SMALL, 'left'), wordsPlaced(SMALL, 'bottom'), 0.5)
+test('code and a title card move to another place through the boxes between, growing or shrinking along the way', async () => {
+	const coded = await setAt(code.show('light.on(VISITORS)', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const carded = await setAt(title.show('Card'), coded, 1);
+	const codeHalfWay = await setAt(code.to('bottom'), carded, 0.5);
+	const cardSetOff = await setAt(title.to('left'), carded, 0);
+	const cardHalfWay = await setAt(title.to('left'), carded, 0.5);
+	expect([
+		codeHalfWay.objects.get('code')!.box,
+		cardSetOff.objects.get('title')!.box,
+		cardHalfWay.objects.get('title')!.box
+	]).toEqual([
+		boxToward(wordsPlaced(SMALL, 'left'), wordsPlaced(SMALL, 'bottom'), 0.5),
+		boxOf(SMALL.frame),
+		boxToward(boxOf(SMALL.frame), wordsPlaced(SMALL, 'left'), 0.5)
 	]);
 });
 
 test("a title travelling to a place of another size takes that place's size as it sets off, so its words wrap once, and travels its middle along the way", async () => {
 	const titled = await setAt(title.show('Here', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const [start, end] = [wordsPlaced(SMALL, 'left'), wordsPlaced(SMALL, 'bottom')];
-	const setOff = (await setAt(title.to('bottom'), titled, 0)).title!.box!;
-	const halfWay = (await setAt(title.to('bottom'), titled, 0.5)).title!.box!;
+	const setOff = (await setAt(title.to('bottom'), titled, 0)).objects.get('title')!.box;
+	const halfWay = (await setAt(title.to('bottom'), titled, 0.5)).objects.get('title')!.box;
 	expect([setOff, [halfWay.width, halfWay.height, middleY(halfWay)]]).toEqual([
 		{ left: start.left, top: middleY(start) - end.height / 2, width: end.width, height: end.height },
 		[end.width, end.height, (middleY(start) + middleY(end)) / 2]
@@ -200,49 +208,43 @@ test('a title or code shown from a side slides in whole from a frame past its pl
 	const place = wordsPlaced(SMALL, 'left');
 	const coming = (
 		await setAt(title.show('Here', { at: 'left', from: 'right' }), openingScene(SMALL, LIVEREELS_LOOK), 0)
-	).title!;
+	).objects.get('title')!;
 	const coded = await setAt(code.show('light.on(VISITORS)', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const leaving = (await setAt(code.hide({ toward: 'top' }), coded, 0.5)).code!;
+	const leaving = (await setAt(code.hide({ toward: 'top' }), coded, 0.5)).objects.get('code')!;
 	const left = await setAt(code.hide({ toward: 'top' }), coded, 1);
-	expect([coming.box, coming.shown, leaving.box, left.code]).toEqual([
+	expect([coming.box, coming.shown, leaving.box, [...left.objects.keys()]]).toEqual([
 		pastTheEdge(place, 'right', SMALL.frame),
 		1,
 		boxToward(place, pastTheEdge(place, 'top', SMALL.frame), 0.5),
-		null
+		[]
 	]);
 });
 
-test('a title keeps its own size as it travels, as it is pushed off and as it slides out, and a size of none is refused', async () => {
-	const titled = await setAt(title.show('Here', { at: 'left', size: 140 }), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const travelling = (await setAt(title.to('right'), titled, 0.5)).title!;
-	const pushing = (await setAt(title.show('Next', { at: 'right', from: 'right' }), titled, 0.5)).title!;
-	const leaving = (await setAt(title.hide({ toward: 'left' }), titled, 0.5)).title!;
-	expect([travelling.size, pushing.pushedOff!.size, pushing.size, leaving.size]).toEqual([140, 140, null, 140]);
+test("a title's size of none is refused as its move is made", () => {
 	expect(() => title.show('Here', { size: 0 })).toThrow(
 		new FilmError("title.show's size is 0: it is a number of pixels, more than 0")
 	);
 });
 
-test('a title or code shown from a side while one stands in a place pushes it off past the side across, as one sheet, and it is gone at the end', async () => {
-	const [left, right] = [wordsPlaced(SMALL, 'left'), wordsPlaced(SMALL, 'right')];
-	const titled = await setAt(title.show('Here', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const coded = await setAt(code.show('light.on(VISITORS)', { at: 'left' }), titled, 1);
-	const halfWay = await setAt(
-		title.show('Next', { at: 'right', from: 'right' }),
-		await setAt(code.show('cursor.to(REFRESH)', { at: 'right', from: 'right' }), coded, 0.5),
-		0.5
-	);
-	const pushed = await setAt(title.show('Next', { at: 'right', from: 'right' }), coded, 1);
+test('an object shown from a side pushes the one of its name off past the side across, however it stands, as one sheet, and it is gone at the end; one of another name stays', async () => {
+	const [left, right, frame] = [wordsPlaced(SMALL, 'left'), wordsPlaced(SMALL, 'right'), boxOf(SMALL.frame)];
+	const coded = await setAt(code.show('light.on(VISITORS)', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const carded = await setAt(title.show('Card'), coded, 1);
+	const halfWay = await setAt(title.show('Next', { at: 'right', from: 'right' }), carded, 0.5);
+	const named = await setAt(code.show('cursor.to(REFRESH)', { at: 'right', from: 'right', as: 'second' }), carded, 0.5);
+	const pushed = await setAt(title.show('Next', { at: 'right', from: 'right' }), carded, 1);
 	expect([
-		halfWay.title!.box,
-		halfWay.title!.pushedOff!.box,
-		halfWay.code!.pushedOff!.box,
-		pushed.title!.pushedOff
+		halfWay.objects.get('title')!.box,
+		halfWay.leaving.get('title')!.box,
+		[...named.leaving.keys()],
+		named.objects.get('code')!.box,
+		[...pushed.leaving.keys()]
 	]).toEqual([
 		boxToward(pastTheEdge(right, 'right', SMALL.frame), right, 0.5),
-		boxToward(left, pastTheEdge(left, 'left', SMALL.frame), 0.5),
-		boxToward(left, pastTheEdge(left, 'left', SMALL.frame), 0.5),
-		null
+		boxToward(frame, pastTheEdge(frame, 'left', SMALL.frame), 0.5),
+		[],
+		left,
+		[]
 	]);
 });
 
@@ -271,16 +273,91 @@ test('the terminal slides in whole from past a side of the frame, and out past o
 	]);
 });
 
-test('a title over the whole frame is refused a move in from a side as it is made, and a move to a place or toward a side as it begins', async () => {
-	expect(() => title.show('Here', { from: 'left' })).toThrow(FilmError);
-	const whole = await setAt(title.show('Here'), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	await expect(async () => title.to('left').begin(beginningOf(whole))).rejects.toThrow(FilmError);
-	await expect(async () => title.hide({ toward: 'left' }).begin(beginningOf(whole))).rejects.toThrow(FilmError);
+test('a title over the whole frame stands on its ground over the frame, and slides in from a side and out toward one as one in a place does', async () => {
+	const frame = boxOf(SMALL.frame);
+	const coming = await setAt(title.show('Here', { from: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 0.5);
+	const shown = await setAt(title.show('Here'), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const leaving = await setAt(title.hide({ toward: 'top' }), shown, 0.5);
+	expect([
+		coming.objects.get('title')!.box,
+		drawnObject('title', shown.objects.get('title')!).content.ground,
+		leaving.objects.get('title')!.box
+	]).toEqual([
+		boxToward(pastTheEdge(frame, 'left', SMALL.frame), frame, 0.5),
+		1,
+		boxToward(frame, pastTheEdge(frame, 'top', SMALL.frame), 0.5)
+	]);
+});
+
+test('two titles stand at once by their names, in the order shown, each moved and put away by its own name', async () => {
+	const first = await setAt(title.show('One', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const both = await setAt(title.show('Two', { at: 'right', as: 'second' }), first, 1);
+	const moved = await setAt(title.to('bottom', { as: 'second' }), both, 1);
+	const one = await setAt(title.hide(), moved, 1);
+	expect([
+		[...both.objects.keys()],
+		moved.objects.get('second')!.box,
+		moved.objects.get('title')!.box,
+		[...one.objects.keys()]
+	]).toEqual([['title', 'second'], wordsPlaced(SMALL, 'bottom'), wordsPlaced(SMALL, 'left'), ['second']]);
+});
+
+test('an object is handed to the stage with its angle where it leans, and with none face-on, leant back to none too', async () => {
+	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const leant = await setAt(code.lean({ turn: 8 }), coded, 1);
+	const back = await setAt(code.lean({ turn: 0 }), leant, 1);
+	expect([coded, leant, back].map((scene) => drawnObject('code', scene.objects.get('code')!).angle)).toEqual([
+		null,
+		{ tilt: 0, turn: 8 },
+		null
+	]);
+});
+
+test('an object leans by a move of its own while another carries it and its content changes, each its own way along, a side of the angle left out kept', async () => {
+	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const leaning = await setAt(code.lean({ tilt: 10 }), coded, 1);
+	const moves = [code.lean({ turn: -20 }), code.to('right'), code.light(2)];
+	const turning = await setAt(code.lean({ turn: -20 }), leaning, 0.5);
+	const travelling = await setAt(code.to('right'), turning, 0.5);
+	const object = (await setAt(code.light(2), travelling, 0.5)).objects.get('code')!;
+	expect([
+		object.angle,
+		object.box,
+		object.content.lines.map((line) => line.lit),
+		play({ seconds: 1, moves }).moves
+	]).toEqual([
+		{ tilt: 10, turn: -10 },
+		boxToward(wordsPlaced(SMALL, 'left'), wordsPlaced(SMALL, 'right'), 0.5),
+		[0, 0.5, 0],
+		moves
+	]);
+	expect(() => play({ seconds: 1, moves: [code.to('right'), code.hide()] })).toThrow(
+		new FilmError('two moves on the code object at once in one step')
+	);
+});
+
+test("an object takes any name with something in it, its moves apart from a prop's or the page's of that name", () => {
+	const moves = [title.show('Here', { as: 'caption' }), caption.show('Here'), code.lean({ tilt: 4, as: 'page' })];
+	expect(play({ seconds: 1, moves }).moves).toEqual(moves);
+	expect(() => title.show('Here', { as: '' })).toThrow(
+		new FilmError(`title.show's as is "": it is a name, a string with something in it`)
+	);
+});
+
+test('a move of an object that is not on the screen, or a light on lines of what shows no code, is refused as it begins', async () => {
+	const titled = await setAt(title.show('Here', { at: 'left', as: 'code' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	await expect(async () => title.lean({ tilt: 4 }).begin(beginningOf(titled))).rejects.toThrow(
+		new FilmError('title.lean finds no title on the screen')
+	);
+	await expect(async () => code.light(1).begin(beginningOf(titled))).rejects.toThrow(
+		new FilmError('code.light lights lines of the code, but it shows words, not code')
+	);
 });
 
 test('a title in a place reads from the left, centred where it stands above, below or over the whole, unless the film names its way', async () => {
 	const alignOf = async (script: title.TitleScript) =>
-		(await setAt(title.show('Here', script), openingScene(SMALL, LIVEREELS_LOOK), 1)).title!.align;
+		(await setAt(title.show('Here', script), openingScene(SMALL, LIVEREELS_LOOK), 1)).objects.get('title')!.content
+			.align;
 	expect(
 		await Promise.all([
 			alignOf({ at: 'left' }),
@@ -294,20 +371,21 @@ test('a title in a place reads from the left, centred where it stands above, bel
 
 test('the lines lit are the one named and those through the one named, and the rest dim', async () => {
 	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const lit = (await setAt(code.light(2, { through: 3 }), coded, 1)).code!;
-	expect([lit.lines.map((line) => line.lit), drawnCode(lit).dimmed]).toEqual([[0, 1, 1], 1]);
+	const lit = (await setAt(code.light(2, { through: 3 }), coded, 1)).objects.get('code')!;
+	expect([lit.content.lines.map((line) => line.lit), drawnObject('code', lit).content.dimmed]).toEqual([[0, 1, 1], 1]);
 });
 
 test('while the light moves from one line to another, the lines not lit stay dimmed', async () => {
 	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const first = await setAt(code.light(1), coded, 1);
-	expect(drawnCode((await setAt(code.light(2), first, 0.5)).code!).dimmed).toBe(1);
+	const moving = (await setAt(code.light(2), first, 0.5)).objects.get('code')!;
+	expect(drawnObject('code', moving).content.dimmed).toBe(1);
 });
 
 test('a line lit by what it says is the one line that says it, through the one from it on that says the other; words no line from there says, or more than one says, are refused, and a line past the last before any words', async () => {
 	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const said = (await setAt(code.light('camera.onto'), coded, 1)).code!;
-	const through = (await setAt(code.light('moves', { through: '})' }), coded, 1)).code!;
+	const said = (await setAt(code.light('camera.onto'), coded, 1)).objects.get('code')!.content;
+	const through = (await setAt(code.light('moves', { through: '})' }), coded, 1)).objects.get('code')!.content;
 	expect([said.lines.map((line) => line.lit), through.lines.map((line) => line.lit)]).toEqual([
 		[0, 1, 0],
 		[0, 1, 1]
@@ -493,7 +571,7 @@ test('a block framed in a window running off the frame keeps its place in the wi
 
 test('a centred title travelling to a place of another size keeps its middle as it sets off', async () => {
 	const titled = await setAt(title.show('Here', { at: 'top' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const setOff = (await setAt(title.to('left'), titled, 0)).title!.box!;
+	const setOff = (await setAt(title.to('left'), titled, 0)).objects.get('title')!.box;
 	expect(middleX(setOff)).toEqual(middleX(wordsPlaced(SMALL, 'top')));
 });
 

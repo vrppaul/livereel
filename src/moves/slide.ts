@@ -1,8 +1,8 @@
 /**
  * What slides whole past a side of the frame, a whole frame, so what slides the other way in the same step moves with
  * it as one sheet: how a film names the side it comes from or goes toward, and the slide of what holds a shift from
- * its place, the ending card and the agent's terminal, written once for both. Words and code in a place slide by
- * their boxes (`src/moves/words.ts`).
+ * its place, the ending card and the agent's terminal, written once for both. An object, a title or code, slides
+ * by its box (`src/moves/object.ts`).
  */
 import { A_FRAME_SIDE, type FrameSide, IN_PLACE, type Point, pointToward } from '../domain/geometry.ts';
 import type { Form } from '../domain/handed.ts';

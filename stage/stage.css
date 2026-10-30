@@ -293,6 +293,48 @@ body {
 	zoom: var(--frame-scale);
 }
 
+/* The objects on the frame, over the whole of it; the page is clicked through them */
+.objects {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+/* An object: its box on the frame, in the frame's pixels */
+.object {
+	position: absolute;
+	left: calc(var(--left) * 1px);
+	top: calc(var(--top) * 1px);
+	width: calc(var(--width) * 1px);
+	height: calc(var(--height) * 1px);
+}
+
+/* An object that leans, leant back from its top edge and swung about its middle, seen from the eye the page's window is seen from, at the frame's middle: its own perspective moved from its middle to the frame's, so it leans as it would in the window's room, alike to the pixel (probed 2026-10-30). A room with a perspective of its own, or an object face-on with a 3D transform, a turn of none too, costs the graphics card a layer in every exposure of a frame: a frame of 16 exposures then outran the card's memory the stage asks for, and drew objects in some of them not at all, or the page grey, with no error (README film, `--renderer gpu`, 2026-10-30). So only an object that leans has one */
+.object[data-leant] {
+	--middle-left: calc(var(--left) + var(--width) / 2);
+	--middle-top: calc(var(--top) + var(--height) / 2);
+	--to-eye:
+		calc((var(--frame-width) / 2 - var(--middle-left)) * 1px), calc((var(--frame-height) / 2 - var(--middle-top)) * 1px);
+	--from-eye:
+		calc((var(--middle-left) - var(--frame-width) / 2) * 1px), calc((var(--middle-top) - var(--frame-height) / 2) * 1px);
+
+	transform: translate(var(--to-eye)) perspective(calc(var(--eye-distance) * 1px)) translate(var(--from-eye))
+		rotateX(calc(var(--tilt) * 1deg)) rotateY(calc(var(--turn) * 1deg));
+}
+
+/* What an object shows fills its box, sized in pixels of a frame the stage's look was made on and every length of it scaled to the frame shot, as what stands over the frame is: the box's width and height in those pixels are named once for every part of it, as a length under the zoom is never a share of the box, which the zoom would count twice */
+.object .content {
+	--content-width: calc(var(--width) * 1px / var(--frame-scale));
+	--content-height: calc(var(--height) * 1px / var(--frame-scale));
+
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: var(--content-width);
+	height: var(--content-height);
+	zoom: var(--frame-scale);
+}
+
 /* A title's, a caption's or a callout's word as it comes up: the space before it, then its own box, which rises out of a blur and sinks as it goes */
 .words .word {
 	display: inline-block;
@@ -467,15 +509,12 @@ body {
 	transform: none;
 }
 
-/* A title: words over the film's ground over the whole frame, the ground there first; or words in a place on the frame, on the ground round them */
+/* A title's words in their object: on the film's ground over its whole box, the ground there first, a title card; or in a place on the frame, on the ground round them */
 .title {
 	--word-rise: 28px;
 	--word-blur: 12px;
 	--word-sink: 12px;
 	--word-blur-leaving: 8px;
-
-	position: absolute;
-	inset: 0;
 }
 
 .title .ground {
@@ -485,44 +524,41 @@ body {
 	opacity: var(--grounded);
 }
 
-/* The words stand in the middle of what they stand over: centred over the whole frame, the look's margin in from its sides; in a place, in the middle of their box down it, read as the title names (`data-align`). Their letters are as large as the title's own size, the look's where it has none. The box is in the frame's pixels, and what stands over the frame in pixels of a frame the stage's look was made on */
+/* The words stand in the middle of their box down it, read as the title names (`data-align`), from its left or centred across it, as large as the title's own size; where it has none, as large as the box's width lets a long word stand on a line of its own, and no larger than a share of the look's for a title card. A title with no size of its own leaves its own letters unset, as a custom property naming one never set is, so the size by the box stands. The box is in the frame's pixels, and what an object shows in pixels of a frame the stage's look was made on */
 .title .words {
-	position: absolute;
-	left: calc(var(--title-margin) * 1px);
-	right: calc(var(--title-margin) * 1px);
-	top: 50%;
-	transform: translateY(-50%);
-	font: var(--title-weight) calc(var(--title-own-size, var(--title-size)) * 1px) / 1.08 var(--sans);
-	letter-spacing: -0.03em;
-	color: var(--ink);
-	text-align: center;
-	text-wrap: balance;
-}
-
-/* In a place the words stand in the middle of their box down it, read from its left or centred across it, as large as the title's own size; where it has none, as large as the box's width lets a long word stand on a line of its own, and no larger than a share of the look's over the whole frame. A title with no size of its own leaves its own letters unset, as a custom property naming one never set is, so the size by the box stands */
-.title[data-placed] .words {
 	--placed-share-of-title: 0.78;
 	--placed-words-at-most: calc(var(--title-size) * var(--placed-share-of-title) * 1px);
 	--letters-across: 8;
 	--own-letters: calc(var(--title-own-size) * 1px);
 
-	overflow-wrap: break-word;
-	left: calc(var(--left) * 1px / var(--frame-scale));
-	right: auto;
-	top: calc((var(--top) + var(--height) / 2) * 1px / var(--frame-scale));
-	width: calc(var(--width) * 1px / var(--frame-scale));
-	font-size: var(
-		--own-letters,
-		min(var(--placed-words-at-most), calc(var(--width) * 1px / var(--frame-scale) / var(--letters-across)))
-	);
+	position: absolute;
+	left: 0;
+	top: calc(var(--content-height) / 2);
+	width: var(--content-width);
+	transform: translateY(-50%);
+	font: var(--title-weight)
+		var(--own-letters, min(var(--placed-words-at-most), calc(var(--content-width) / var(--letters-across)))) / 1.08
+		var(--sans);
+	letter-spacing: -0.03em;
+	color: var(--ink);
 	text-align: start;
+	text-wrap: balance;
+	overflow-wrap: break-word;
+}
+
+/* On a ground of their own the words stand the look's margin in from the box's sides, as large as the title's own size, the look's where it has none */
+.title[data-on-ground] .words {
+	left: calc(var(--title-margin) * 1px);
+	width: calc(var(--content-width) - 2 * var(--title-margin) * 1px);
+	font-size: calc(var(--title-own-size, var(--title-size)) * 1px);
+	overflow-wrap: normal;
 }
 
 .title[data-align='center'] .words {
 	text-align: center;
 }
 
-/* Code in its place: a pane as wide as its box, in its middle down it, dark as the terminal, its corners, edge and shadow the window's. Its ground comes up first, rising a little, then its lines one after another. Its letters are as large as the look has them, smaller where its widest line would not fit across, a monospace letter about 0.6 of its size wide. A line lit stands on a bar of the accent; while one is, the rest dim to a share of their ink */
+/* Code in its object: a pane as wide as its box, in its middle down it, dark as the terminal, its corners, edge and shadow the window's. Its ground comes up first, rising a little, then its lines one after another. Its letters are as large as the look has them, smaller where its widest line would not fit across, a monospace letter about 0.6 of its size wide. A line lit stands on a bar of the accent; while one is, the rest dim to a share of their ink */
 .code {
 	--code-across: 32px;
 	--code-down: 26px;
@@ -530,16 +566,13 @@ body {
 	--code-line-rise: 10px;
 	--letter-width: 0.6;
 	--unlit-kept: 0.35;
-
-	position: absolute;
-	inset: 0;
 }
 
 .code .pane {
 	position: absolute;
-	left: calc(var(--left) * 1px / var(--frame-scale));
-	top: calc((var(--top) + var(--height) / 2) * 1px / var(--frame-scale));
-	width: calc(var(--width) * 1px / var(--frame-scale));
+	left: 0;
+	top: calc(var(--content-height) / 2);
+	width: var(--content-width);
 	box-sizing: border-box;
 	padding: var(--code-down) 0;
 	overflow: hidden;
@@ -551,7 +584,7 @@ body {
 	font: 400
 		min(
 			calc(var(--code-size) * 1px),
-			calc((var(--width) * 1px / var(--frame-scale) - 2 * var(--code-across)) / var(--columns) / var(--letter-width))
+			calc((var(--content-width) - 2 * var(--code-across)) / var(--columns) / var(--letter-width))
 		) /
 		1.6 var(--mono);
 	color: var(--terminal-ink);

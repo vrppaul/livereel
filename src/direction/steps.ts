@@ -26,8 +26,7 @@ import type { PlaceNamed } from '../domain/place.ts';
 import { type Ease, easeInOutSine, framesOf, linear } from '../domain/time.ts';
 import { A_STROKES, type Keystroke, typingSeconds } from '../domain/typing.ts';
 import type { FontNamed } from './theme.ts';
-import type { PropName } from '../scene.ts';
-import { A_CURVE, A_MOVE, A_MOVES, type Move, type Share, fontsOf, placesOf, soundsOf } from './move.ts';
+import { A_CURVE, A_MOVE, A_MOVES, type Move, type Part, type Share, fontsOf, placesOf, soundsOf } from './move.ts';
 import type { ActContext } from './page.ts';
 import type { Sound } from './sound.ts';
 
@@ -73,7 +72,7 @@ interface HoldScript {
  * some, and the share of its step it changes them over.
  */
 interface PartTaken {
-	readonly part: PropName | 'page';
+	readonly part: NonNullable<Part>;
 	readonly valueNames: readonly string[] | undefined;
 	readonly within: Share;
 }

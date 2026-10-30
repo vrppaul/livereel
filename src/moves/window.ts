@@ -15,14 +15,15 @@
  * carries it sets its box and lift, one that leans it its angle, each writing only its own into the window as it
  * stands, so the two share a step, each as far along as its own share.
  */
-import { type Angle, type Placing, type View, viewOf, viewOver } from '../domain/camera.ts';
+import { type Placing, type View, viewOf, viewOver } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import { A_FRAME_SIDE, type FrameSide, liesOutside } from '../domain/geometry.ts';
-import { A_NUMBER, type Form, assertKind, assertWritten, needed } from '../domain/handed.ts';
+import { type Form, assertKind, assertWritten, needed } from '../domain/handed.ts';
 import { A_PLACE, type Place, pastTheEdge, placesNamed, windowPlaced } from '../domain/place.ts';
 import { trackOf } from '../domain/track.ts';
 import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import { withProp } from '../scene.ts';
+import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
 
 /** Where the window slides in to, `at` a place, and the side of the frame it comes `from`. */
 export interface WindowShowScript extends TimingScript {
@@ -35,15 +36,8 @@ export interface WindowHideScript extends TimingScript {
 	readonly toward: FrameSide;
 }
 
-/** How the window leans: `tilt` and `turn` in degrees, 0 face-on; one left out stays as the window stands. */
-export interface LeanScript extends TimingScript {
-	readonly tilt?: number;
-	readonly turn?: number;
-}
-
 const SHOW_FORM: Form<WindowShowScript> = { at: needed(A_PLACE), from: needed(A_FRAME_SIDE), ...TIMING_FORM };
 const HIDE_FORM: Form<WindowHideScript> = { toward: needed(A_FRAME_SIDE), ...TIMING_FORM };
-const LEAN_FORM: Form<LeanScript> = { tilt: A_NUMBER, turn: A_NUMBER, ...TIMING_FORM };
 // The window's values a move that carries it sets, and one that leans it; what each writes is held to them
 const CARRIED = ['box', 'lift'] as const satisfies readonly (keyof Placing)[];
 const LEANT = ['angle'] as const satisfies readonly (keyof Placing)[];
@@ -151,7 +145,7 @@ function carried(beginning: Beginning, from: Standing, to: Standing, move: strin
 /** The window's angle on its way from how it leans to the film's, written into the window as it stands. */
 function leaning(beginning: Beginning, script: LeanScript): Change {
 	const from = viewOf(beginning.scene.window).angle;
-	const to: Angle = { tilt: script.tilt ?? from.tilt, turn: script.turn ?? from.turn };
+	const to = leantFrom(from, script);
 	return writing((progress): Leant => ({ angle: trackOf(from, to, progress) }));
 }
 

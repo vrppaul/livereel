@@ -13,8 +13,8 @@
 /** @import { ShownLine } from '../src/props/terminal.ts' */
 /** @import { DrawnPin } from '../src/props/pins.ts' */
 /** @import { DrawnWords, Piece, Word } from '../src/props/words.ts' */
-/** @import { CodeLine, CodePiece, DrawnCode, DrawnCodePane } from '../src/props/code.ts' */
-/** @import { DrawnTitleWords } from '../src/props/title.ts' */
+/** @import { CodeLine, CodePiece, DrawnCode } from '../src/props/code.ts' */
+/** @import { DrawnContent, DrawnObject } from '../src/props/object.ts' */
 /** @import { Box } from '../src/domain/geometry.ts' */
 /** @import { Look } from '../src/props/look.ts' */
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
@@ -29,10 +29,12 @@ const BETWEEN_LINES = '\n';
 // The attribute that names the side of the window a note's words stand beyond, and the side of its block a callout
 // stands on
 const SIDE = 'data-side';
-// The attribute a title stands in a place by, rather than over the whole frame on its ground, and the one that names
-// how it reads there
-const PLACED = 'data-placed';
+// The attribute a title's words stand on a ground of their own by, over their object's whole box, rather than in their
+// place on the ground round them, and the one that names how they read there
+const ON_GROUND = 'data-on-ground';
 const ALIGN = 'data-align';
+// The attribute an object leans by; one face-on has none, and no transform
+const LEANT = 'data-leant';
 // The custom property a title's own size is set as, where it has one; the stylesheet takes the look's where it has not
 const OWN_SIZE = '--title-own-size';
 // The attribute that names the edge of the frame a caption stands at: its foot, or its top
@@ -334,23 +336,78 @@ class KeysDrawer {
 	}
 }
 
-/** Code: the pane standing, and the one it pushes off past the frame's edge as it slides in. */
-class CodeDrawer {
-	/** @param {Staged} root */
-	constructor(root) {
-		this.standing = new CodeLayer(partOf(root, 'standing'));
-		this.pushedOff = new CodeLayer(partOf(root, 'pushed-off'));
+/**
+ * The objects of a scene, those standing or those pushed off, each an element made from the template of what it shows
+ * and kept by its name while it stands showing that, laid in the scene's order, the last over the rest.
+ */
+class ObjectsDrawer {
+	/** @param {Staged} root @param {'objects' | 'leaving'} list */
+	constructor(root, list) {
+		this.root = root;
+		this.list = list;
+		/** The objects standing in the markup, by name @type {Map<string, StagedObject>} */
+		this.standing = new Map();
 	}
 
 	/** @param {DrawnScene} scene */
 	draw(scene) {
-		this.standing.draw(scene.code);
-		this.pushedOff.draw(scene.code?.pushedOff ?? null);
+		const staged = scene[this.list].map((object) => ({ object, staged: this.stagedFor(object) }));
+		this.standing = new Map(staged.map((each) => [each.object.name, each.staged]));
+		const elements = staged.map((each) => each.staged.element);
+		if (!holdsInOrder(this.root, elements)) this.root.replaceChildren(...elements);
+		for (const each of staged) each.staged.draw(each.object);
+	}
+
+	/**
+	 * The element an object is drawn in: the one standing by its name where it shows what it showed, else one made.
+	 * @param {DrawnObject} object
+	 */
+	stagedFor(object) {
+		const standing = this.standing.get(object.name);
+		return standing?.kind === object.content.kind ? standing : new StagedObject(object.content.kind);
 	}
 }
 
-/** One pane of code in its place: its lines, each line's progress and light set every frame. */
-class CodeLayer {
+/** An object's element on the stage, made from the template of what it shows: its box and angle set every frame. */
+class StagedObject {
+	/** @param {DrawnContent['kind']} kind */
+	constructor(kind) {
+		this.kind = kind;
+		this.element = madeFrom(kind);
+		this.content = CONTENT_DRAWERS[kind](partOf(this.element, 'content'));
+	}
+
+	/** @param {DrawnObject} object */
+	draw(object) {
+		placed(this.element, object.box);
+		this.element.toggleAttribute(LEANT, object.angle !== null);
+		if (object.angle !== null) numbered(this.element, { '--tilt': object.angle.tilt, '--turn': object.angle.turn });
+		this.content.draw(object.content);
+	}
+}
+
+/** A title's words in their object: on a ground of their own over its whole box, or in their place. */
+class TitleWordsDrawer {
+	/** @param {Staged} element */
+	constructor(element) {
+		this.element = element;
+		/** @type {KeyedList<DrawnWords['words'][number]>} */
+		this.words = new KeyedList(partOf(element, 'words'), wordElement, wordNumbers);
+	}
+
+	/** @param {DrawnContent} content */
+	draw(content) {
+		const title = ofKind(content, 'words');
+		this.element.toggleAttribute(ON_GROUND, title.onGround);
+		named(this.element, ALIGN, title.align);
+		numberedOrNone(this.element, OWN_SIZE, title.size);
+		numbered(this.element, { '--grounded': title.ground, '--gone': title.gone });
+		this.words.draw(title.key, title.words);
+	}
+}
+
+/** A pane of code in its object: its lines, each line's progress and light set every frame. */
+class CodeDrawer {
 	/** @param {Staged} element */
 	constructor(element) {
 		this.element = element;
@@ -358,15 +415,10 @@ class CodeLayer {
 		this.lines = new KeyedList(partOf(element, 'lines'), codeLineElement, codeLineNumbers);
 	}
 
-	/** @param {DrawnCodePane | null} code */
-	draw(code) {
-		shown(this.element, code !== null);
-		if (code === null) {
-			this.lines.clear();
-			return;
-		}
+	/** @param {DrawnContent} content */
+	draw(content) {
+		const code = ofKind(content, 'code');
 		this.lines.draw(code.key, code.lines);
-		placed(this.element, code.box);
 		numbered(this.element, {
 			'--columns': code.columns,
 			'--grounded': code.ground,
@@ -375,45 +427,17 @@ class CodeLayer {
 	}
 }
 
-/** The title: the one standing, and the one it pushes off past the frame's edge as it slides in. */
-class TitleDrawer {
-	/** @param {Staged} root */
-	constructor(root) {
-		this.standing = new TitleLayer(partOf(root, 'standing'));
-		this.pushedOff = new TitleLayer(partOf(root, 'pushed-off'));
-	}
+/** What draws an object's content in its element. @typedef {{ readonly draw: (content: DrawnContent) => void }} ContentDrawer */
 
-	/** @param {DrawnScene} scene */
-	draw(scene) {
-		this.standing.draw(scene.title);
-		this.pushedOff.draw(scene.title?.pushedOff ?? null);
-	}
-}
-
-/** One title's words, over the whole frame on their ground or in their place. */
-class TitleLayer {
-	/** @param {Staged} element */
-	constructor(element) {
-		this.element = element;
-		/** @type {KeyedList<DrawnWords['words'][number]>} */
-		this.words = new KeyedList(partOf(element, 'words'), wordElement, wordNumbers);
-	}
-
-	/** @param {DrawnTitleWords | null} title */
-	draw(title) {
-		shown(this.element, title !== null);
-		if (title === null) {
-			this.words.clear();
-			return;
-		}
-		this.element.toggleAttribute(PLACED, title.box !== null);
-		if (title.box !== null) placed(this.element, title.box);
-		named(this.element, ALIGN, title.align);
-		numberedOrNone(this.element, OWN_SIZE, title.size);
-		numbered(this.element, { '--grounded': title.ground, '--gone': title.gone });
-		this.words.draw(title.key, title.words);
-	}
-}
+/**
+ * The drawer of each kind of content, for the content element of an object made from that kind's template: the type
+ * checker refuses a kind without one.
+ * @type {{ readonly [Kind in DrawnContent['kind']]: (element: Staged) => ContentDrawer }}
+ */
+const CONTENT_DRAWERS = {
+	words: (element) => new TitleWordsDrawer(element),
+	code: (element) => new CodeDrawer(element)
+};
 
 /**
  * Elements made from a list under a root, a word's, a line of code's or a key's cap each: laid out anew only when the
@@ -531,12 +555,12 @@ class LookDrawer {
 }
 
 /**
- * An exposure of the frame: its root, a drawer for every prop it draws, and the page it shows, live or as a picture.
- * Every prop but the look is drawn in each exposure, as the camera stood at its moment: the type checker refuses a
- * prop without a drawer. The look is the stage's root's, one for every exposure of a frame.
+ * An exposure of the frame: its root, a drawer for every prop it draws and for its objects, and the page it shows, live
+ * or as a picture. Every prop but the look is drawn in each exposure, as the camera stood at its moment: the type
+ * checker refuses a prop without a drawer. The look is the stage's root's, one for every exposure of a frame.
  * @typedef {{
  *   readonly root: Staged,
- *   readonly drawers: { readonly [Name in Exclude<PropName, 'look'>]: Drawer },
+ *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look'>]: Drawer },
  *   readonly page: Staged,
  *   readonly picture: Staged
  * }} Exposure
@@ -586,12 +610,12 @@ function exposureOf(root) {
 			pins: new PinsDrawer(propRoot(root, 'pins')),
 			cursor: new CursorDrawer(propRoot(root, 'cursor')),
 			note: new NoteDrawer(propRoot(root, 'note')),
-			title: new TitleDrawer(propRoot(root, 'title')),
-			code: new CodeDrawer(propRoot(root, 'code')),
 			caption: new CaptionDrawer(propRoot(root, 'caption')),
 			keys: new KeysDrawer(propRoot(root, 'keys')),
 			terminal: new TerminalDrawer(propRoot(root, 'terminal')),
-			ending: new EndingDrawer(propRoot(root, 'ending'))
+			ending: new EndingDrawer(propRoot(root, 'ending')),
+			objects: new ObjectsDrawer(objectsRoot(root, 'objects'), 'objects'),
+			leaving: new ObjectsDrawer(objectsRoot(root, 'leaving'), 'leaving')
 		},
 		page: partOf(root, 'page'),
 		picture: partOf(root, 'picture')
@@ -806,6 +830,48 @@ function lineElement(line) {
 /** The root of a prop's elements in an exposure's markup. @param {Element} exposure @param {PropName} prop */
 function propRoot(exposure, prop) {
 	return found(exposure.querySelector(`[data-prop="${prop}"]`), prop);
+}
+
+/**
+ * Where a list of the scene's objects is laid in an exposure's markup.
+ * @param {Element} exposure @param {'objects' | 'leaving'} list
+ */
+function objectsRoot(exposure, list) {
+	return found(exposure.querySelector(`[data-scene="${list}"]`), list);
+}
+
+/** An object's element, made from the template of what it shows. @param {DrawnContent['kind']} kind */
+function madeFrom(kind) {
+	const template = document.querySelector(`template[data-kind="${kind}"]`);
+	if (!(template instanceof HTMLTemplateElement)) throw new Error(`the stage's markup has no template of ${kind}`);
+	return found(document.importNode(template.content, true).firstElementChild, kind);
+}
+
+/**
+ * Content of a kind as its drawer is handed it: an object's element is made anew where what it shows changes kind
+ * (`ObjectsDrawer`), so content of another kind is the stage's fault.
+ * @template {DrawnContent['kind']} Kind
+ * @param {DrawnContent} content @param {Kind} kind @returns {Extract<DrawnContent, { kind: Kind }>}
+ */
+function ofKind(content, kind) {
+	if (!isOfKind(content, kind)) throw new Error(`an object of ${kind} is handed ${content.kind}`);
+	return content;
+}
+
+/**
+ * @template {DrawnContent['kind']} Kind
+ * @param {DrawnContent} content @param {Kind} kind @returns {content is Extract<DrawnContent, { kind: Kind }>}
+ */
+function isOfKind(content, kind) {
+	return content.kind === kind;
+}
+
+/** Whether an element holds these elements and no other, in this order. @param {Staged} root @param {readonly Staged[]} elements */
+function holdsInOrder(root, elements) {
+	return (
+		root.children.length === elements.length &&
+		elements.every((element, place) => root.children.item(place) === element)
+	);
 }
 
 /** An element under a root, by the part it plays. @param {Element} root @param {string} part */

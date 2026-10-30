@@ -132,7 +132,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		new FilmError("code.show's at's width is 0: it is a share more than none")
 	);
 	expect(() => title.hide({ at: 'left' } as never)).toThrow(
-		new FilmError('title.hide names at: it names toward, within, ease, or fewer')
+		new FilmError('title.hide names at: it names toward, within, ease, as, or fewer')
 	);
 	expect(() => screen.rise({ within: { start: null as never } })).toThrow(
 		new FilmError("screen.rise's within's start is null: it is a number")
