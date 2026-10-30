@@ -19,7 +19,7 @@ import type { EndingCard } from '../../src/props/ending.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { type Scene, openingScene } from '../../src/scene.ts';
 import type { Exposures } from '../../src/studio/ports.ts';
-import type { PageLife } from '../../src/direction/film.ts';
+import type { PageKind } from '../../src/direction/film.ts';
 import { Take } from '../../src/studio/take.ts';
 import { FootageOf, PageOfBoxes, SMALL, StageThatKeeps, TrackThatKeeps, openedOn } from './fakes.ts';
 
@@ -45,6 +45,10 @@ const HALF_OF_FOUR: MotionBlur = { shutter: 0.5, exposuresAtMost: 4 };
 const CLOSE_AT_THE_RIGHT: Pose = { focusX: 400, focusY: 200, zoom: 2.7, tilt: 0, turn: 0 };
 // Why a stage's page is gone, as a stage says it
 const GONE = new FilmError('the page at http://app/refusing/ refuses to be framed');
+// Captures of a page answering the film: as it was, its answer coming in, its answer
+const A_PAGE = new Uint8Array([1]);
+const ITS_ANSWER_COMING = new Uint8Array([2]);
+const ITS_ANSWER = new Uint8Array([3]);
 
 /** A move on the screen that writes down every progress it is set at. */
 class Counted implements Move {
@@ -88,11 +92,26 @@ class StageNotAnswering extends StageThatKeeps {
 	}
 }
 
+/** A stage whose page is still answering the film: its captures come out as given, one after another. */
+class StageAnswering extends StageThatKeeps {
+	readonly images: Uint8Array[];
+
+	constructor(images: readonly Uint8Array[]) {
+		super();
+		this.images = [...images];
+	}
+
+	override capture(): Promise<Uint8Array> {
+		this.captured += 1;
+		return Promise.resolve(this.images.shift()!);
+	}
+}
+
 function takeOf(
 	footage: FootageOf,
 	stage: StageThatKeeps,
 	track = new TrackThatKeeps(),
-	page: PageLife = 'still'
+	pageKind: PageKind = 'static'
 ): Take {
 	const opened = openedOn(new PageOfBoxes(PAGE), stage);
 	return new Take({
@@ -102,7 +121,7 @@ function takeOf(
 		format: SMALL,
 		opening: openingScene(SMALL, LIVEREELS_LOOK),
 		motionBlur: HALF_OF_FOUR,
-		page
+		pageKind
 	});
 }
 
@@ -114,48 +133,57 @@ test('a frame the camera crosses fast is drawn again along its way from the fram
 		play({ seconds: 2 / 30, moves: [cameraTo(CLOSE_AT_THE_RIGHT)], ease: linear }),
 		hold({ seconds: 1 / 30 })
 	];
-	await takeOf(footage, stage, new TrackThatKeeps(), 'live').run(steps);
+	await takeOf(footage, stage, new TrackThatKeeps(), 'dynamic').run(steps);
 	expect([footage.exposed, stage.drawn.map((scene) => scene.camera.pose.focusX)]).toEqual([
 		[4, 4, 1],
 		[331.25, 337.5, 343.75, 350, 381.25, 387.5, 393.75, 400, 400]
 	]);
 });
 
-test('a frame drawn as the one before it on a still page is kept as that one, neither drawn nor captured again', async () => {
+test('a static page captured twice alike is kept as it stands, each frame drawn as the one before neither drawn nor captured again', async () => {
 	const stage = new StageThatKeeps();
-	const footage = new FootageOf([0, 1, 2]);
-	await takeOf(footage, stage).run([hold({ seconds: 3 / 30 })]);
-	expect([footage.kept, stage.drawn.length, stage.captured]).toEqual([[0, 1, 2], 1, 1]);
+	const footage = new FootageOf([0, 1, 2, 3]);
+	await takeOf(footage, stage).run([hold({ seconds: 4 / 30 })]);
+	expect([footage.kept, stage.drawn.length, stage.captured]).toEqual([[0, 1, 2, 3], 2, 2]);
 });
 
-test('a live page is drawn and captured every frame, though nothing in the scene moves', async () => {
+test('a static page still answering is captured until two captures come out alike', async () => {
+	const stage = new StageAnswering([A_PAGE, ITS_ANSWER_COMING, ITS_ANSWER, ITS_ANSWER]);
+	const footage = new FootageOf([0, 1, 2, 3, 4]);
+	await takeOf(footage, stage).run([hold({ seconds: 5 / 30 })]);
+	expect([footage.kept, stage.captured]).toEqual([[0, 1, 2, 3, 4], 4]);
+});
+
+test('a dynamic page is drawn and captured every frame, though nothing in the scene moves', async () => {
 	const stage = new StageThatKeeps();
 	const footage = new FootageOf([0, 1, 2]);
-	await takeOf(footage, stage, new TrackThatKeeps(), 'live').run([hold({ seconds: 3 / 30 })]);
+	await takeOf(footage, stage, new TrackThatKeeps(), 'dynamic').run([hold({ seconds: 3 / 30 })]);
 	expect([footage.kept, stage.drawn.length, stage.captured]).toEqual([[0, 1, 2], 3, 3]);
 });
 
-test("a still page is captured anew after an act, while a move of the page's own runs, and while its own motion is let go", async () => {
+test("a static page is captured anew after an act, while a move of the page's own runs, and while its own motion is let go", async () => {
 	const stage = new StageThatKeeps();
-	const footage = new FootageOf([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+	const footage = new FootageOf([...Array(16).keys()]);
 	const frame = 1 / 30;
 	const steps = [
-		hold({ seconds: frame }),
+		// Captured twice alike, then kept as it stands: 2 captures
+		hold({ seconds: 3 * frame }),
 		act(() => Promise.resolve()),
-		// Captured after the act, then kept as it is
-		hold({ seconds: 2 * frame }),
-		// Captured on each frame the page is typed into, then kept as it is
+		// Captured after the act and once more, then kept: 2
+		hold({ seconds: 3 * frame }),
+		// Captured on each frame the page is typed into: 2
 		play({ seconds: 2 * frame, moves: [typeIntoThePage(STROKES)] }),
-		hold({ seconds: frame }),
+		// Captured once more, alike, then kept: 1
+		hold({ seconds: 3 * frame }),
 		act((context) => context.motion.release()),
-		// Captured on each frame while the page moves of itself
+		// Captured on each frame while the page moves of itself: 2
 		hold({ seconds: 2 * frame }),
 		act((context) => context.motion.still()),
-		// Captured after the act, then kept as it is
-		hold({ seconds: 2 * frame })
+		// Captured after the act and once more, then kept: 2
+		hold({ seconds: 3 * frame })
 	];
 	await takeOf(footage, stage).run(steps);
-	expect([footage.kept.length, stage.captured]).toEqual([10, 1 + 1 + 2 + 2 + 1]);
+	expect([footage.kept.length, stage.captured]).toEqual([16, 2 + 2 + 2 + 1 + 2 + 2]);
 });
 
 test('two moves of the look at once each move their own values over the frames they share: the glow drifting all the way, the ink changing over the first half', async () => {
@@ -292,7 +320,7 @@ test('a cut sets its moves at their end at once, with no frame between', async (
 test('a frame is drawn only when the footage keeps it', async () => {
 	const stage = new StageThatKeeps();
 	const footage = new FootageOf([2, 4]);
-	await takeOf(footage, stage, new TrackThatKeeps(), 'live').run([play({ seconds: 0.2 })]);
+	await takeOf(footage, stage, new TrackThatKeeps(), 'dynamic').run([play({ seconds: 0.2 })]);
 	expect([stage.drawn.length, footage.kept]).toEqual([2, [2, 4]]);
 });
 

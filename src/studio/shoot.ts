@@ -55,7 +55,7 @@ export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Sho
 		format: film.format,
 		opening: openingScene(film.format, film.look),
 		motionBlur: shooting.quality.blurred ? film.motionBlur : null,
-		page: film.page
+		pageKind: film.page
 	});
 	await take.run(steps);
 	return { frames: take.shots, seconds: momentOf(take.shots) };

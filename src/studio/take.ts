@@ -10,10 +10,12 @@
  * frame being made.
  * A frame is drawn only when the footage keeps it, and drawn again where the camera or its window crossed it fast
  * since the frame before, at cameras along their way there, the rest of the scene as it stands: each drawing is an
- * exposure of the frame (`src/domain/shutter.ts`). On a still page, a frame the stage would draw as it drew the last
- * one captured, with nothing done to the page since — no act, no move of the page, its own motion not let go — is
- * that capture, neither drawn nor captured again: holds are near half a film's frames (16.3 s of the README film's
- * 36.1), and a capture is near all a frame costs. A live page is captured every frame, as it changes of itself.
+ * exposure of the frame (`src/domain/shutter.ts`). On a static page, once the page stands still — two captures in a
+ * row of one drawing alike to the byte, nothing done to the page since, its own motion not let go — a frame the stage
+ * would draw as it drew the last one captured is that capture, neither drawn nor captured again: holds are near half
+ * a film's frames, and a capture is near all a frame costs. After an act or a move of the page, the page is captured
+ * every frame until it stands still again, so what it brings in answer — results, an image, a scroll that eases out —
+ * is seen. A dynamic page is captured every frame, as it changes of itself.
  * A fault in a step is raised again with the moment and the step it was met at. Before each frame, after each act,
  * and of any fault a step meets, the take asks the stage whether it and its page are still there: where one is gone,
  * the take is refused by why, in place of what its loss made a step fail at (a selector that matches nothing on
@@ -24,7 +26,7 @@ import { TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
 import { type MotionBlur, alsoExposedAt } from '../domain/shutter.ts';
 import { type Ease, framesOf, momentOf } from '../domain/time.ts';
-import type { PageLife } from '../direction/film.ts';
+import type { PageKind } from '../direction/film.ts';
 import { type Change, type Move, type Share, movesThePage, soundsOf } from '../direction/move.ts';
 import type { Cue } from '../direction/sound.ts';
 import type { Act, Cut, Play, Step } from '../direction/steps.ts';
@@ -61,7 +63,7 @@ export interface TakeSetup {
 	readonly format: Format;
 	readonly opening: Scene;
 	readonly motionBlur: MotionBlur | null;
-	readonly page: PageLife;
+	readonly pageKind: PageKind;
 }
 
 export class Take {
@@ -74,9 +76,11 @@ export class Take {
 	readonly reusesCaptures: boolean;
 	private scene: Scene;
 	private shot = 0;
-	// The last frame's own exposure captured, none before the first; and whether the page was changed since
+	// The last frame's own exposure captured, none before the first; whether the page was changed since; and whether
+	// the page stood still as it was captured, the capture alike to the one before it
 	private lastCaptured: Captured | null = null;
 	private pageChangedSinceCaptured = false;
+	private pageStandsStill = false;
 
 	constructor(setup: TakeSetup) {
 		this.opened = setup.opened;
@@ -85,7 +89,7 @@ export class Take {
 		this.format = setup.format;
 		this.scene = setup.opening;
 		this.motionBlur = setup.motionBlur;
-		this.reusesCaptures = setup.page === 'still';
+		this.reusesCaptures = setup.pageKind === 'static';
 	}
 
 	/** How many frames are shot so far. */
@@ -258,18 +262,25 @@ export class Take {
 		const earlier: Uint8Array[] = [];
 		for (const camera of along) earlier.push(await this.captured(this.drawnBy(camera)));
 		const image = await this.captured(ownDrawn);
+		this.pageStandsStill = !this.pageChangedSinceCaptured && this.capturedAlike(drawing, image);
 		this.lastCaptured = { drawing, image };
 		this.pageChangedSinceCaptured = false;
 		return { earlier, own: image };
 	}
 
 	/**
-	 * The last capture, where it was drawn as this drawing is and the page is as it was then: nothing done to it since,
-	 * its own motion stilled, and changed by the film alone; none elsewhere.
+	 * The last capture, where it was drawn as this drawing is and the page is as it was then: standing still as it was
+	 * captured, nothing done to it since, its own motion stilled, and changed by the film alone; none elsewhere.
 	 */
 	private capturedAs(drawing: string): Uint8Array | undefined {
-		const pageAsCaptured = this.reusesCaptures && !this.pageChangedSinceCaptured && !this.opened.act.motion.released;
+		const pageAsCaptured =
+			this.reusesCaptures && this.pageStandsStill && !this.pageChangedSinceCaptured && !this.opened.act.motion.released;
 		return pageAsCaptured && this.lastCaptured?.drawing === drawing ? this.lastCaptured.image : undefined;
+	}
+
+	/** Whether a capture of a drawing came out as the last one did, to the byte: the page stood as it stood then. */
+	private capturedAlike(drawing: string, image: Uint8Array): boolean {
+		return this.lastCaptured?.drawing === drawing && sameBytes(this.lastCaptured.image, image);
 	}
 
 	/** The scene as it stands, drawn by a camera. */
@@ -299,4 +310,9 @@ export class Take {
 
 function byStart(first: Move, second: Move): number {
 	return first.timing.within.start - second.timing.within.start;
+}
+
+/** Whether two images are the same bytes. */
+function sameBytes(first: Uint8Array, second: Uint8Array): boolean {
+	return first.length === second.length && first.every((byte, place) => byte === second[place]);
 }

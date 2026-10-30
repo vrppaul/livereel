@@ -72,7 +72,7 @@ test('a film in no form of one is refused as it is defined, where it stands: its
 	);
 	expect(() => filmWritten({ page: 'moving' })).toThrow(
 		new FilmError(
-			'the film\'s page is "moving": it is "still", changed only by the film, or "live" for a page that changes of itself, as an animation or live data does'
+			'the film\'s page is "moving": it is "static", changed by the film, or "dynamic" for a page that changes of itself, as an animation or live data does'
 		)
 	);
 	expect(() => filmWritten({ blurred: '.email' })).toThrow(

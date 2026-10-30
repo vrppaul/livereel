@@ -331,11 +331,14 @@ with a timeout that long; a still takes seconds.
   two shots of it differ. Where the page's own animation must show (a
   spinner of its own), release it in an `act` and still it after: it plays
   sped up, which reads as time-lapse.
-- A frame drawn as the one before, the page left alone since, is that frame
-  again: a page that changes of itself — a video, a canvas, an animation
-  that ignores reduced motion, data that comes in — stands still through a
-  hold. Write `page: 'live'` in `defineFilm` for such a page, and it is
-  captured every frame, at the cost of a slower shoot.
+- Once the page stands still — two captures alike after the film last
+  changed it — a frame drawn as the one before is that frame again. So an
+  `act` waits for what it brings (`locator.waitFor()` on the answer), or the
+  answer may not show until the next change. A page that changes of itself —
+  a video, a canvas, an animation that ignores reduced motion, data that
+  comes in — stands still through a hold: write `page: 'dynamic'` in
+  `defineFilm` for it, and it is captured every frame, at the cost of a
+  slower shoot.
 - A long scroll in one frame step shows blank space where the page renders
   lazily: scroll in a `play`, a little each frame.
 - A box is read as its move's share begins: a block a scroll in the same

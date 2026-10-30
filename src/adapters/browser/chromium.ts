@@ -164,9 +164,10 @@ class PageMotion implements PageMotionSwitch {
 		this.page = page;
 	}
 
-	async release(): Promise<void> {
-		await this.page.emulateMedia({ reducedMotion: 'no-preference' });
+	/** Said let go as it is asked, so an act that does not wait for it still has the page captured every frame. */
+	release(): Promise<void> {
 		this.released = true;
+		return this.page.emulateMedia({ reducedMotion: 'no-preference' });
 	}
 
 	async still(): Promise<void> {

@@ -361,13 +361,18 @@ look's glow at once in one step`.
 
 ### The page: whether it changes of itself, its colour scheme, and what it blurs
 
-A page changes only by the film where a film names nothing, `page: 'still'`:
-by its acts, by `page.scrollBy`, `page.scrollTo` and `page.type`, and while an `act` has let
-its own motion go. So a frame the stage draws as it drew the one before, the
-page left alone since, is that frame again, neither drawn nor captured: a
-hold costs next to nothing. `defineFilm` takes `page: 'live'` for a page that
-changes of itself — an animation that ignores reduced motion, a video, a
-canvas, data that comes in — which is then captured every frame.
+A page changes only by the film where a film names nothing,
+`page: 'static'`: by its acts, by `page.scrollBy`, `page.scrollTo` and
+`page.type`, by what it does in answer, and while an `act` has let its own
+motion go. After any of these the page is captured every frame until two
+captures come out alike to the byte; from then on, a frame the stage draws as
+it drew the one before is that frame again, neither drawn nor captured, so a
+hold costs next to nothing. An answer that comes later than that, as a fetch
+slower than a frame or two, is not seen until the page is changed again: an
+`act` waits for what it brings, as `locator.waitFor()` does. `defineFilm`
+takes `page: 'dynamic'` for a page that changes of itself — an animation that
+ignores reduced motion, a video, a canvas, data that comes in — which is then
+captured every frame.
 
 `defineFilm` takes `colourScheme: 'dark'` for a page filmed in its dark
 scheme; it is asked for the light one where a film names none. It takes
@@ -534,7 +539,8 @@ clock is its frames.
 - The page is asked for reduced motion, and for the light colour scheme
   unless the film names the dark one. A page that animates anyway runs
   those animations on the wall clock, so two shots of it differ there; on a
-  still page, the default, a hold shows it stopped where it was captured.
+  static page, the default, a hold shows it stopped where it was captured,
+  and so does the page's text caret.
 - A page that refuses to be framed (`X-Frame-Options`, a CSP's
   `frame-ancestors`) is shown only on the stage inside the app ("Where the
   stage stands").
