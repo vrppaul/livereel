@@ -40,18 +40,22 @@ const SHEET_COLUMNS = 6;
 const SHEET_TILE_WIDTH = 360;
 const THE_FIRST_FRAME = ['-frames:v', '1'];
 const STOP = 'SIGKILL';
-// How many frames may be blending at once while the take shoots on: the 2.7 s piece of the README film took 42.4 s
-// with 2, the take still waiting 0.9 s on them; 41.0–41.8 s with 4; 41.8–42.4 s with 8, the blends taking the
-// captures' cores (measured 2026-10-30, two shoots each)
-const FRAMES_BLENDING_AT_MOST = 4;
+// How many frames may be kept and not yet written, blending or waiting on ffmpeg, while the take shoots on: the 2.7 s
+// piece of the README film took 42.4 s with 3, the take still waiting 0.9 s on them; 41.0–41.8 s with 5; 41.8–42.4 s
+// with 9, the blends taking the captures' cores (measured 2026-10-30, two shoots each)
+export const FRAMES_QUEUED_AT_MOST = 5;
+// What a frame kept first is written after; and the last of a list, counted from its end
+const NOTHING_QUEUED = Promise.resolve();
+const THE_LAST = -1;
 
 type Encoder = ChildProcessByStdio<Writable, null, Readable>;
 
 /**
  * The MP4's picture is written under a name of its own (`pictureOf`), and the video is put in its place only as the
  * footage is finished, its sound laid under it (`soundtrack.ts`), so a film that fails leaves the last good video
- * where it was. Whatever waits on ffmpeg waits on its end too: a frame handed to an ffmpeg that has stopped is refused
- * at once, with ffmpeg's own words, rather than waiting on a pipe that will never drain.
+ * where it was. Whatever waits on ffmpeg waits on its end too: a frame handed to an ffmpeg that has stopped is refused,
+ * with ffmpeg's own words, rather than waiting on a pipe that will never drain; at once where ffmpeg has stopped as it
+ * is kept, or as it comes to be written otherwise.
  */
 export class VideoFootage implements Footage, AsyncDisposable {
 	readonly encoder: Encoder;
@@ -60,9 +64,8 @@ export class VideoFootage implements Footage, AsyncDisposable {
 	readonly blend: Blend;
 	private readonly video: string;
 	private readonly picture: string;
-	// The last frame kept, written once every frame before it is; and the frames still to be written, the oldest first
-	private written: Promise<void> = Promise.resolve();
-	private readonly writing: Promise<void>[] = [];
+	// The frames kept and not yet written, the oldest first: each is written once the one before it is
+	private readonly queued: Promise<void>[] = [];
 
 	constructor(video: string, frame: Size, blend: Blend) {
 		this.video = video;
@@ -85,17 +88,18 @@ export class VideoFootage implements Footage, AsyncDisposable {
 	}
 
 	/**
-	 * The frame's blend begun, and its writing queued after the frames before it; the take waits only while the most
-	 * frames are blending at once, on the oldest. A fault, a blend's or ffmpeg's, refuses every frame after it, and is
-	 * met where the take next waits on one, or as the footage is finished.
+	 * The frame's blend begun, and its writing queued after the frames before it; where the most are queued, the take
+	 * first waits on the oldest. A fault, a blend's or ffmpeg's, refuses every frame after it, and is met where the take
+	 * next waits, a few frames on, or as the footage is finished: said at that frame's moment, the cost of not waiting
+	 * on each blend.
 	 */
 	async keep(_shot: number, exposures: Exposures): Promise<void> {
 		if (this.stopped()) throw this.words.refusal();
-		this.written = Promise.all([this.written, this.blend(exposures)]).then(([, image]) => this.write(image));
+		if (this.queued.length >= FRAMES_QUEUED_AT_MOST) await this.queued.shift();
+		const written = Promise.all([this.lastQueued(), this.blend(exposures)]).then(([, image]) => this.write(image));
 		// Heard here too, so a fault met before the take or the finish waits on it is not one Node takes as unheard
-		this.written.catch(() => undefined);
-		this.writing.push(this.written);
-		if (this.writing.length > FRAMES_BLENDING_AT_MOST) await this.writing.shift();
+		written.catch(() => undefined);
+		this.queued.push(written);
 	}
 
 	complete(): boolean {
@@ -107,7 +111,7 @@ export class VideoFootage implements Footage, AsyncDisposable {
 	 * laid under it.
 	 */
 	async finish(track: Soundtrack, seconds: number): Promise<void> {
-		await this.written;
+		await this.lastQueued();
 		this.encoder.stdin.end();
 		if ((await this.ended) !== 0) throw this.words.refusal();
 		await track.laidUnder(this.picture, this.video, seconds);
@@ -124,8 +128,13 @@ export class VideoFootage implements Footage, AsyncDisposable {
 			this.encoder.kill(STOP);
 			await this.ended;
 		}
-		await this.written.catch(() => undefined);
+		await this.lastQueued().catch(() => undefined);
 		await rm(this.picture, { force: true });
+	}
+
+	/** The last frame kept, written once every frame before it is; nothing, before the first. */
+	private lastQueued(): Promise<void> {
+		return this.queued.at(THE_LAST) ?? NOTHING_QUEUED;
 	}
 
 	/** A frame's one image handed to ffmpeg, once ffmpeg has taken the frames before it. */

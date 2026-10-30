@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { mkdtemp, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { setTimeout } from 'node:timers/promises';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { EncodingError } from '../../src/domain/errors.ts';
@@ -12,7 +13,7 @@ import { momentOf } from '../../src/domain/time.ts';
 import { type FilmSound, fileSound } from '../../src/direction/sound.ts';
 import { blended } from '../../src/adapters/video/exposures.ts';
 import { Soundtrack } from '../../src/adapters/video/soundtrack.ts';
-import { VideoFootage } from '../../src/adapters/video/video.ts';
+import { FRAMES_QUEUED_AT_MOST, VideoFootage } from '../../src/adapters/video/video.ts';
 
 const FRAME = { width: 64, height: 64 };
 // A film that makes no sound, every one of livereel's off and no music: its video is its picture
@@ -27,6 +28,10 @@ const NOT_AN_IMAGE = new TextEncoder().encode('not an image');
 // A frame decoded as one pixel of grey, and the grey of white
 const ONE_GREY_PIXEL_A_FRAME = ['-vf', 'scale=1:1', '-f', 'rawvideo', '-pix_fmt', 'gray'];
 const WHITE = 255;
+// What a frame kept does while its blends are held: waits, or is kept; and how long it is given to be kept at once
+const WAITING = 'waiting';
+const KEPT = 'kept';
+const A_MOMENT_MILLISECONDS = 50;
 
 async function scratch(): Promise<string> {
 	return mkdtemp(join(tmpdir(), 'livereel-video-'));
@@ -104,6 +109,21 @@ test('a frame is kept without waiting on its blend, and goes into the video in t
 	held.resolve();
 	await footage.finish(new Soundtrack(join(directory, 'film.ts'), SOUNDLESS), momentOf(2));
 	expect(greysOf(video).map((grey) => Math.round(grey / WHITE))).toEqual([0, 1]);
+	await footage[Symbol.asyncDispose]();
+});
+
+test('the take waits on the footage once the most frames are queued, until the oldest is written', async () => {
+	const directory = await scratch();
+	const held = Promise.withResolvers<void>();
+	const footage = new VideoFootage(join(directory, 'film.mp4'), FRAME, (exposures) =>
+		held.promise.then(() => exposures.own)
+	);
+	const image = jpegOf(FRAME, 'gray');
+	for (const shot of Array(FRAMES_QUEUED_AT_MOST).keys()) await footage.keep(shot, { earlier: [image], own: image });
+	const next = footage.keep(FRAMES_QUEUED_AT_MOST, { earlier: [image], own: image }).then(() => KEPT);
+	const before = await Promise.race([next, setTimeout(A_MOMENT_MILLISECONDS, WAITING)]);
+	held.resolve();
+	expect([before, await next]).toEqual([WAITING, KEPT]);
 	await footage[Symbol.asyncDispose]();
 });
 

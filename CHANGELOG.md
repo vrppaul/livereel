@@ -22,7 +22,7 @@
 - `defineFilm` takes `colourScheme: 'dark'`, the scheme the page is asked for; `light` where a film names none, as before.
 - A fast camera is blurred softer where a film says nothing of its blur: the shutter is open for half its way from the frame before, as a film camera's is, and the fastest frame is blended from up to 16 shots. It had been open the whole way in up to 8 shots, whose copies showed in a fast smear.
 - `shoot --profile` and `still --profile` say where the shoot's time went: each part of the browser, the stage, the filmed page and the footage the frames waited on, with its calls, the time each took, its seconds and its share of the shoot; what none of them took, as the rest; and the blends of a frame's exposures, by how many each blended.
-- A blurred film is shot quicker: a frame's exposures are blended while the next frames are shot, up to four frames at once, and go into the video in the order shot; a blend that fails refuses the video as it is finished. The README film took 249.4 s against 288.0 s (`--renderer gpu`, an Intel Iris Xe on Linux, 2026-10-30), the frames waiting 1.1 s on the footage against 48.0 s.
+- A blurred film is shot quicker: a frame's exposures are blended while the next frames are shot, up to five frames kept and not yet written, and go into the video in the order shot; a blend that fails refuses the video a few frames on, or as it is finished. The README film took 249.4 s against 288.0 s (`--renderer gpu`, an Intel Iris Xe on Linux, 2026-10-30), the frames waiting 1.1 s on the footage against 48.0 s.
 
 ## 0.4.0
 

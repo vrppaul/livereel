@@ -3,10 +3,12 @@
  * footage makes, timed as it runs.
  *
  * Each port is wrapped as the take is handed it, so every call it makes on the browser, the stage, the filmed page and
- * the footage is counted and timed, and what none of them took is said as the rest: the film's own code, its acts,
- * and the scene worked out. Where the rest grows, a part of it is timed next, so no second is put down to a guess.
- * The footage's blends are timed apart, as they may run beside the take rather than in its way. Timing costs two
- * readings of the clock a call, so a shoot is always timed, and says it where it is asked to.
+ * the footage is counted and timed, and the footage's finish after the last frame with them; what none of them took
+ * is said as the rest: the film's own code, its acts, the sounds read before the first frame, and the scene worked
+ * out. Where the rest grows, a part of it is timed next, so no second is put down to a guess. The footage's blends
+ * are timed apart, as they run beside the take rather than in its way; a frame of one exposure blends nothing, and
+ * is not counted. Timing costs two readings of the clock a call, so a shoot is always timed, and says it where it is
+ * asked to.
  */
 import type { Box } from '../domain/geometry.ts';
 import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
@@ -67,6 +69,11 @@ export class Profile {
 		}
 	}
 
+	/** The footage finished after the last frame, the frames still queued written: a part of the shoot as well. */
+	finishing(work: () => Promise<void>): Promise<void> {
+		return this.shooting(() => this.waited.timed('footage.finish', work));
+	}
+
 	browser(browser: Browser): Browser {
 		return new TimedBrowser(browser, this.waited);
 	}
@@ -76,7 +83,10 @@ export class Profile {
 	}
 
 	blend(blend: Blend): Blend {
-		return (exposures) => this.blended.timed(`blend of ${exposures.earlier.length + ITS_OWN}`, () => blend(exposures));
+		return (exposures) =>
+			exposures.earlier.length === 0
+				? blend(exposures)
+				: this.blended.timed(`blend of ${exposures.earlier.length + ITS_OWN}`, () => blend(exposures));
 	}
 
 	/** Where the shoot's time went. */

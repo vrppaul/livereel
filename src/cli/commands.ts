@@ -2,11 +2,11 @@
  * The commands: shoot a film whole as a video, shoot one still of it, set a machine up to shoot.
  *
  * Each takes its own options by name and refuses any other, and a wrong value, before anything is started; each
- * says what it made, and how long the making took, and with `--profile` where that time went (`profile.ts`). A film is shot in one of its formats, named with `--format`
- * where it has several, and every file made of it is named after the film file and that format, so one format never
- * writes over another. One take gives every kind of video asked: the MP4 its frames go into, and those made from it.
- * The MP4 is kept only when it is asked for too; otherwise it has a name of its own, so it never takes the place of
- * one made before.
+ * says what it made, and how long the making took, and with `--profile` where that time went (`profile.ts`). A film
+ * is shot in one of its formats, named with `--format` where it has several, and every file made of it is named after
+ * the film file and that format, so one format never writes over another. One take gives every kind of video asked:
+ * the MP4 its frames go into, and those made from it. The MP4 is kept only when it is asked for too; otherwise it has
+ * a name of its own, so it never takes the place of one made before.
  */
 import { mkdir, rm } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
@@ -205,7 +205,7 @@ async function shotInto(
 	const track = new Soundtrack(file, film.sound);
 	const shot = await profile.shooting(() => shoot(film, { ...shotWith, footage: profile.footage(footage), track }));
 	const filmed = performance.now();
-	await footage.finish(track, shot.seconds);
+	await profile.finishing(() => footage.finish(track, shot.seconds));
 	say(
 		`${nameOf(file)} in ${film.formatName}: ${shot.frames} frames, ${secondsSaid(shot.seconds)} s; ` +
 			`shot in ${secondsBetween(started, filmed)} s, the video made ` +
