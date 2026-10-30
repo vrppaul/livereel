@@ -5,7 +5,7 @@
 [![Node](https://img.shields.io/node/v/livereel)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-https://github.com/user-attachments/assets/90a9e558-4e24-42bc-8d82-b0d30c2dc9ac
+https://github.com/user-attachments/assets/23e46e5f-8c42-454d-b66c-8a264813f884
 
 Film your live web app as a directed short: a camera that leans and
 travels, a light on the block that matters, a cursor that moves like a
