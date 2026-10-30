@@ -83,10 +83,12 @@ const LINE_SIZE = 72;
 const BLOG = keystrokes('blog', { seed: 5 });
 const CAREERS = keystrokes('careers', { seed: 6 });
 const DOCS = keystrokes('docs', { seed: 7 });
-// The agent's terminal, across most of the frame and as tall as its lines ask, in the middle down it; the owner's
-// prompts while this film was made, and the last one, typed
+// The window standing face-on, as it travels
+const FACE_ON = { tilt: 0, turn: 0 };
+// The agent's terminal, across most of the frame, from under the headline down to as near the frame's foot as its
+// sides stand to its edges; the owner's prompts while this film was made, and the last one, typed
 const TERMINAL = 'claude — livereel';
-const TERMINAL_PLACE: Place = { left: 0.07, top: 0.27, width: 0.86, height: 0.46 };
+const TERMINAL_PLACE: Place = { left: 0.07, top: 0.27, width: 0.86, height: 0.66 };
 const PROMPTS: readonly TerminalLine[] = [
 	{ kind: 'asked', text: 'frame 2 — not the whole screen. show the background' },
 	{ kind: 'asked', text: "why don't we push the terminal?" },
@@ -135,9 +137,9 @@ function headline(text: Wording, size: number): Move {
 }
 
 /**
- * The window travelling to a place, leant as it stands, the camera framing the cards anew in it, the last words
- * gone before it crosses them, and the words of the travel coming up in the room it leaves once it has left it; then
- * a beat to read them.
+ * The window travelling to a place, face-on, straightening on its way where it leant, the camera framing the cards
+ * anew in it, the last words gone before it crosses them, and the words of the travel coming up in the room it leaves
+ * once it has left it; then a beat to read them.
  */
 function travelled(text: string, windowPlace: Place, wordsPlace: Place): readonly Step[] {
 	return [
@@ -145,6 +147,7 @@ function travelled(text: string, windowPlace: Place, wordsPlace: Place): readonl
 			seconds: 0.9,
 			moves: [
 				window.to(windowPlace),
+				window.lean(FACE_ON),
 				camera.onto(CARDS),
 				title.hide({ within: { end: WORDS_GONE } }),
 				title.show(text, { at: wordsPlace, size: LINE_SIZE, within: { start: ROOM_LEFT } })
@@ -240,8 +243,8 @@ function actTheLean(): readonly Step[] {
 }
 
 /**
- * The window, still leaning, travelling across the frame and down past its foot, the words of the travel taking the
- * room it leaves each time and saying something new there.
+ * The window straightening as it sets off, then travelling across the frame and down past its foot, the words of the
+ * travel taking the room it leaves each time and saying something new there.
  */
 function actTheTravel(): readonly Step[] {
 	return [
@@ -251,16 +254,12 @@ function actTheTravel(): readonly Step[] {
 	];
 }
 
-/** The window back under the headline and face-on, a light coming up on the count, then carried to Refresh. */
+/** The window back under the headline, a light coming up on the count, then carried to Refresh. */
 function actTheLight(): readonly Step[] {
 	return [
 		play({
 			seconds: 0.9,
-			moves: [
-				headline('it lights one block.', LINE_SIZE),
-				window.to(UNDER_THE_HEADLINE_WINDOW),
-				window.lean({ tilt: 0, turn: 0 })
-			],
+			moves: [headline('it lights one block.', LINE_SIZE), window.to(UNDER_THE_HEADLINE_WINDOW)],
 			ease: easeInOutCubic
 		}),
 		play({ seconds: 0.6, moves: [light.on(VISITORS, { dim: LIGHT_DIM })], ease: easeOutCubic }),
