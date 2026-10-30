@@ -10,6 +10,8 @@
  * box is then in the window's pixels, and it travels and leans with the window, comes up no further than the screen,
  * and is cut at the window's edge, as an element laid in another is on a page. The window is one, and never goes, so
  * nothing stands inside what may be replaced or put away; an object inside another waits for a film that needs it.
+ * Keys over a caption's words are only drawn over them, laid out by the caption, as only the page knows how tall the
+ * words stand; they stand on the frame, and keep standing when the caption goes.
  *
  * What an object shows sets the layer it is drawn on: a caption stands over every other object, as words said over a
  * film do, and keys over the caption's ground; within a layer the one that came last stands over the rest.
@@ -20,7 +22,7 @@ import { type Kind, OneOf, Plain } from '../domain/handed.ts';
 import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
 import { type Code, type DrawnCode, drawnCode } from './code.ts';
 import { type DrawnEnding, type Ending, drawnEnding } from './ending.ts';
-import { type CaptionStanding, type DrawnKeys, type Keys, drawnKeys } from './keys.ts';
+import { type CaptionStanding, type DrawnKeys, type Keys, drawnKeys, standOver } from './keys.ts';
 import type { Screen } from './screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './terminal.ts';
 import { type DrawnTitleWords, type TitleWords, drawnTitleWords } from './title.ts';
@@ -40,9 +42,9 @@ export type Inside = Exclude<Holder, 'frame'>;
 /** What a film names to stand an object inside: the page's window, by the one name it is known by. */
 export const INSIDE_THE_WINDOW: Kind<Inside> = new OneOf(['window'], `the page's window, "window"`);
 
-/** What stands round an object as it is drawn: the objects standing on the frame, and the screen the window shows. */
+/** What stands round an object as it is drawn: the caption standing on the frame, if any, and the window's screen. */
 export interface Surroundings {
-	readonly standing: Objects;
+	readonly caption: CaptionStanding | null;
 	readonly screen: Screen;
 }
 
@@ -69,13 +71,15 @@ export interface FrameObject {
 export type Objects = ReadonlyMap<ObjectName, FrameObject>;
 
 /**
- * An object as the stage draws it: the name it is known by, what it stands in, its box there, how it leans — none
- * face-on, which the stage draws with no transform at all — the layer it is drawn on, the higher over the lower, and
- * its content as drawn.
+ * An object as the stage draws it: the name it is known by, what it stands in, the object whose words it is laid over
+ * by that one — keys over a caption's, its box then the caption's to lay out — or none, its box in what it stands in,
+ * how it leans — none face-on, which the stage draws with no transform at all — the layer it is drawn on, the higher
+ * over the lower, and its content as drawn.
  */
 export interface DrawnObject {
 	readonly name: ObjectName;
 	readonly inside: Holder;
+	readonly over: ObjectName | null;
 	readonly box: Box;
 	readonly angle: Angle | null;
 	readonly layer: number;
@@ -96,8 +100,14 @@ const LAYER_OF: { readonly [Kind in Content['kind']]: number } = {
 export function drawnObject(name: ObjectName, object: FrameObject, moment: number, around: Surroundings): DrawnObject {
 	const angle = isFaceOn(object.angle) ? null : object.angle;
 	const layer = LAYER_OF[object.content.kind];
-	const content = drawnContent(presentIn(object, around.screen), moment, around.standing);
-	return { name, inside: object.inside, box: object.box, angle, layer, content };
+	const content = drawnContent(presentIn(object, around.screen), moment, around.caption);
+	const over = drawnOver(object, around.caption);
+	return { name, inside: object.inside, over, box: object.box, angle, layer, content };
+}
+
+/** The object whose words an object is laid over: keys over a caption's standing at the frame's foot; else none. */
+function drawnOver(object: FrameObject, caption: CaptionStanding | null): ObjectName | null {
+	return object.content.kind === 'keys' && standOver(caption) ? caption.name : null;
 }
 
 /**
@@ -114,10 +124,10 @@ function presentIn(object: FrameObject, screen: Screen): FrameObject {
 }
 
 /**
- * What an object shows, drawn as far as the object has come up and gone, at a moment of the film, among the objects
- * standing on the frame.
+ * What an object shows, drawn as far as the object has come up and gone, at a moment of the film, by the caption
+ * standing on the frame, if any.
  */
-function drawnContent(object: FrameObject, moment: number, standing: Objects): DrawnContent {
+function drawnContent(object: FrameObject, moment: number, caption: CaptionStanding | null): DrawnContent {
 	const content = object.content;
 	switch (content.kind) {
 		case 'words':
@@ -131,7 +141,7 @@ function drawnContent(object: FrameObject, moment: number, standing: Objects): D
 		case 'caption':
 			return drawnCaption(content, object.shown, object.gone);
 		case 'keys':
-			return drawnKeys(content, standingShare(object), captionAmong(standing));
+			return drawnKeys(content, standingShare(object), caption);
 	}
 }
 
@@ -141,9 +151,11 @@ function standingShare(object: FrameObject): number {
 }
 
 /** The caption among the objects standing on the frame, as keys find it, its moves letting one alone stand; or none. */
-function captionAmong(standing: Objects): CaptionStanding | null {
-	for (const object of standing.values()) {
-		if (object.content.kind === 'caption') return { caption: object.content, shown: object.shown, gone: object.gone };
+export function captionAmong(standing: Objects): CaptionStanding | null {
+	for (const [name, object] of standing) {
+		if (object.content.kind === 'caption') {
+			return { name, caption: object.content, shown: object.shown, gone: object.gone };
+		}
 	}
 	return null;
 }

@@ -12,6 +12,10 @@
 
 - A title, code or the terminal stands inside the page's window, as a small window of code over the site's: `title.show`, `code.show` and `terminal.open` take `inside: 'window'`, `code.show(LINES, { at, inside: 'window' })`. Its place is a box in the window's shares, a name of the frame's refused; it is carried and slides as if the window's box were the frame, is cut at the window's edge, travels and leans with the window, and comes up no further than the screen. A move that would lean it alone is refused.
 
+- A note's words keep beside the window: as the window moves, they move as far as the middle of its edge facing them does, never leaning with it, so `window.to`, `window.show` and `window.hide` move the window while a note stands, where they had been refused until `note.hide()`; a `window.to` that would carry the words off the frame, or under the window, is refused as it begins.
+
+- Keys over a caption at the frame's foot stand over its words, by a gap, however many lines they take, rising as its ground comes up, where they had risen by two and a half of a caption's lines whatever it said: a gap too wide over one line, almost none over two.
+
 - An ad for a feed, `examples/livereel-ad.ts`, square, 55.7 s, for developers: it opens on a finished frame that serves as the feed's preview and claims nobody filmed it, asks how, answers with a real click, shows the camera's moves shot by shot, the camera keeping the row of cards framed but where the words name another block, the file that shot it and a change made to it, the film's acts, every value of the look, three keyboards, the prompts it took, and ends on the frame it opened on with its words changed. Acme's chart gains a test id.
 
 ## 0.5.0

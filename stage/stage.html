@@ -47,7 +47,7 @@
 			<div class="objects" data-scene="objects"></div>
 			<div class="objects" data-scene="leaving"></div>
 		</div>
-		<!-- An object, by what it shows: a title's words, on a ground of their own over its box where they have one; a pane of code; the agent's terminal; the ending card; a caption on the ground that darkens the frame's edge under it; the caps of a shortcut -->
+		<!-- An object, by what it shows: a title's words, on a ground of their own over its box where they have one; a pane of code; the agent's terminal; the ending card; a caption on the ground that darkens the frame's edge under it, and a place over its words for the keys; the caps of a shortcut -->
 		<template data-kind="words">
 			<div class="object">
 				<div class="content title" data-part="content">
@@ -90,7 +90,10 @@
 			<div class="object">
 				<div class="content caption" data-part="content">
 					<div class="ground"></div>
-					<div class="words" data-part="words"></div>
+					<div class="foot">
+						<div class="over-the-words" data-part="over-the-words"></div>
+						<div class="words" data-part="words"></div>
+					</div>
 				</div>
 			</div>
 		</template>

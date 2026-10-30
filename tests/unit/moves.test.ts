@@ -86,8 +86,8 @@ const PAGE = new PageOfBoxes(
 const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
 const ACTED_IN = 'bring it in with an act, as no move of livereel scrolls the page sideways';
 const LIT = { box: BLOCK, strength: 1, dim: 0.6 };
-// No object standing round one drawn alone, and the screen up
-const NOTHING_AROUND: Surroundings = { standing: new Map(), screen: SCREEN_UP };
+// No caption standing round an object drawn alone, and the screen up
+const NOTHING_AROUND: Surroundings = { caption: null, screen: SCREEN_UP };
 const TYPED = withObject(openingScene(SMALL, LIVEREELS_LOOK), 'terminal', {
 	inside: 'frame',
 	box: BLOCK,
@@ -440,7 +440,7 @@ test("a note's line runs from the block's edge to the words' share across from t
 		pose: { focusX: 300, focusY: 200, zoom: 1 / frameScaleOf(SMALL.frame) },
 		view: windowView({ left: 100, top: 100, width: 200, height: 200 })
 	};
-	const beside = { side: 'bottom', box: wordsOn(SMALL, 'bottom') } as const;
+	const beside = { side: 'bottom', box: wordsOn(SMALL, 'bottom'), window: camera.view.box } as const;
 	const drawnOne = drawnNote({ ...saidOf('Here'), box: BLOCK, beside, shown: 1, gone: 0 }, camera, SMALL.frame);
 	expect([drawnOne.from, drawnOne.to, drawnOne.angle, drawnOne.place]).toEqual([
 		{ left: expect.closeTo(50, 6), top: expect.closeTo(140, 6) },
@@ -459,26 +459,44 @@ test("a note's words stand in the words' share on the side of the frame clearest
 	);
 	const clearest = (await setAt(note.show('#block', 'Here'), windowed, 1)).note!;
 	const named = (await setAt(note.show('#block', 'Here', { at: { of: 'left', height: 0.5 } }), windowed, 1)).note!;
-	expect([clearest.beside, named.beside]).toEqual([
-		{ side: 'bottom', box: wordsOn(SMALL, 'bottom') },
-		{ side: 'left', box: wordsPlaced(SMALL, { of: 'left', height: 0.5 }) }
+	expect([clearest.beside.side, clearest.beside.box, named.beside.side, named.beside.box]).toEqual([
+		'bottom',
+		wordsOn(SMALL, 'bottom'),
+		'left',
+		wordsPlaced(SMALL, { of: 'left', height: 0.5 })
 	]);
 });
 
-test('a note shown while the window moves stands beside where the window goes', async () => {
+test('a note shown while the window moves keeps beside it on its way, and stands in its place once the window is there', async () => {
 	const halfWay = await setAt(windowTo('right'), openingScene(SMALL, LIVEREELS_LOOK), 0.5);
-	const noted = (await setAt(note.show('#block', 'Here'), halfWay, 1)).note!;
-	expect(noted.beside).toEqual({ side: 'left', box: wordsOn(SMALL, 'left') });
+	const noted = await setAt(note.show('#block', 'Here'), halfWay, 1);
+	const arrived = await setAt(windowTo('right'), noted, 1);
+	expect(drawnNote(arrived.note!, cameraOf(arrived, SMALL), SMALL.frame).place).toEqual(wordsOn(SMALL, 'left'));
 });
 
-test('while a note stands the window stays beside it: a move of the window is refused as it begins', async () => {
+test("a window move that would carry a standing note's words off the frame, or under the window, is refused as it begins", async () => {
 	const windowed = await setAt(windowTo('right'), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const noted = await setAt(note.show('#block', 'Here'), windowed, 1);
-	await expect(async () => windowTo('left').begin(beginningOf(noted))).rejects.toThrow(FilmError);
-	await expect(async () => windowHide({ toward: 'left' }).begin(beginningOf(noted))).rejects.toThrow(FilmError);
-	await expect(async () => windowShow({ at: 'left', from: 'left' }).begin(beginningOf(noted))).rejects.toThrow(
-		FilmError
+	await expect(async () => windowTo('left').begin(beginningOf(noted))).rejects.toThrow(
+		new FilmError(
+			"window.to would carry the note's words off the frame, or under the window: hide the note first, with note.hide(), or move the window where its words keep beside it"
+		)
 	);
+	await expect(async () => windowTo('whole').begin(beginningOf(noted))).rejects.toThrow(FilmError);
+});
+
+test("while a note stands the window moves, and the note's words keep beside it, as far as its edge facing them moves", async () => {
+	const windowed = await setAt(windowTo('right'), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const noted = await setAt(note.show('#block', 'Here'), windowed, 1);
+	const moved = await setAt(windowTo({ left: 0.6, top: 0.1, width: 0.35, height: 0.7 }), noted, 1);
+	const before = windowed.window.box.to;
+	const after = moved.window.box.to;
+	const words = noted.note!.beside.box;
+	expect(drawnNote(moved.note!, cameraOf(moved, SMALL), SMALL.frame).place).toEqual({
+		...words,
+		left: words.left + after.left - before.left,
+		top: words.top + middleY(after) - middleY(before)
+	});
 });
 
 test('a note with no window to stand beside, with its words over the window, or beside a window off the frame, is refused as it begins', async () => {
@@ -738,6 +756,17 @@ test("keys rise clear of a caption at the frame's foot as its ground comes up, a
 			.clearing,
 		drawnObjectsIn(await setAt(pressed, openingScene(SMALL, LIVEREELS_LOOK), 1), SMALL).at(-1)!.content.clearing
 	]).toEqual([0.5, 0, 0]);
+});
+
+test("keys shown while a caption stands at the frame's foot are drawn over its words, on the frame with it at the top, or none", async () => {
+	const pressed = keys.show(['⌘', 'K']);
+	const atTheFoot = await setIn(caption.show('Words'), openingScene(SMALL, LIVEREELS_LOOK), 1, SMALL);
+	const atTheTop = await setIn(caption.show('Words'), openingScene(SMALL, LIVEREELS_LOOK), 1, CAPTIONS_AT_THE_TOP);
+	expect([
+		drawnObjectsIn(await setIn(pressed, atTheFoot, 1, SMALL), SMALL).at(-1)!.over,
+		drawnObjectsIn(await setIn(pressed, atTheTop, 1, CAPTIONS_AT_THE_TOP), CAPTIONS_AT_THE_TOP).at(-1)!.over,
+		drawnObjectsIn(await setAt(pressed, openingScene(SMALL, LIVEREELS_LOOK), 1), SMALL).at(-1)!.over
+	]).toEqual(['caption', null, null]);
 });
 
 test('a caption is drawn over every other object, and keys over it, whenever each came', async () => {

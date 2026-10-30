@@ -8,8 +8,8 @@
  * frame's edges into a window, travels from one place to another, and grows back out to fill the frame. What slides
  * moves a whole frame, as words do, so a window and words sliding in one step move as one sheet; a window slid out
  * stays past the edge until a move brings it back. The window holds where it goes, so what comes up beside it while
- * it moves stands beside where it goes. While a note stands beside the window, its words placed beside where the
- * window stood, the window stays.
+ * it moves is placed beside where it goes; a note's words keep beside it as it moves, so they come with it on its way,
+ * and a move that would carry them off the frame, or under it, is refused.
  *
  * Where the window stands and how it leans are its own values (`Placing` in `src/domain/camera.ts`): a move that
  * carries it sets its box and lift, one that leans it its angle, each writing only its own into the window as it
@@ -17,9 +17,10 @@
  */
 import { type Placing, type View, viewOf, viewOver } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import { A_FRAME_SIDE, type FrameSide, liesOutside } from '../domain/geometry.ts';
+import { A_FRAME_SIDE, type Box, type FrameSide, liesOutside, liesWithin } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten, needed } from '../domain/handed.ts';
-import { A_PLACE, type Place, pastTheEdge, placesNamed, windowPlaced } from '../domain/place.ts';
+import { A_PLACE, type Place, pastTheEdge, placesNamed, sideBeyond, windowPlaced } from '../domain/place.ts';
+import { besideTheWindow } from '../props/note.ts';
 import { trackOf } from '../domain/track.ts';
 import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import { withProp } from '../scene.ts';
@@ -96,16 +97,32 @@ export function lean(script: LeanScript): Move {
 	};
 }
 
-/** The window on its way from where it stands to a place. */
+/**
+ * The window on its way from where it stands to a place; refused where a note's words standing beside it would keep
+ * beside it off the frame, or under it.
+ */
 function travelling(beginning: Beginning, place: Place): Change {
-	return carried(beginning, viewOf(beginning.scene.window), placed(beginning, place), 'window.to');
+	const to = placed(beginning, place);
+	refuseCarryingTheNoteOff(beginning, to.box);
+	return carried(viewOf(beginning.scene.window), to);
+}
+
+/** Refuses a window's place where the words of a note standing beside it would stand off the frame, or under it. */
+function refuseCarryingTheNoteOff(beginning: Beginning, window: Box): void {
+	const note = beginning.scene.note;
+	if (note === null) return;
+	const words = besideTheWindow(note.beside, window);
+	if (liesWithin(words, beginning.format.frame) && sideBeyond(words, window) !== null) return;
+	throw new FilmError(
+		"window.to would carry the note's words off the frame, or under the window: hide the note first, with note.hide(), or move the window where its words keep beside it"
+	);
 }
 
 /** The window on its way to its place from a frame past it on a side, lifted as it will stand there. */
 function arriving(beginning: Beginning, script: WindowShowScript): Change {
 	const to = placed(beginning, script.at);
 	const from = { ...to, box: pastTheEdge(to.box, script.from, beginning.format.frame) };
-	return carried(beginning, from, to, 'window.show');
+	return carried(from, to);
 }
 
 /**
@@ -118,7 +135,7 @@ function leaving(beginning: Beginning, toward: FrameSide): Change {
 		throw new FilmError('window.hide hides a window already off the frame: bring it in first, with window.show');
 	}
 	const to = { ...from, box: pastTheEdge(from.box, toward, beginning.format.frame) };
-	return carried(beginning, from, to, 'window.hide');
+	return carried(from, to);
 }
 
 /** Where the window stands in a place, and how far off the ground. */
@@ -126,16 +143,8 @@ function placed(beginning: Beginning, place: Place): Standing {
 	return viewOver(windowPlaced(beginning.format, place), beginning.format.frame);
 }
 
-/**
- * The window's box and lift on their way from where it stood to where it goes, written into the window as it stands;
- * refused while a note stands beside it.
- */
-function carried(beginning: Beginning, from: Standing, to: Standing, move: string): Change {
-	if (beginning.scene.note !== null) {
-		throw new FilmError(
-			`${move} moves the page's window from beside the note standing there: hide the note first, with note.hide()`
-		);
-	}
+/** The window's box and lift on their way from where it stood to where it goes, written into the window as it stands. */
+function carried(from: Standing, to: Standing): Change {
 	return writing((progress): Carried => ({
 		box: trackOf(from.box, to.box, progress),
 		lift: trackOf(from.lift, to.lift, progress)

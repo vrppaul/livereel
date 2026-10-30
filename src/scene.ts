@@ -34,7 +34,15 @@ import type { Cursor } from './props/cursor.ts';
 import type { Light } from './props/light.ts';
 import type { Look } from './props/look.ts';
 import { type DrawnNote, type Note, drawnNote } from './props/note.ts';
-import { type DrawnObject, type FrameObject, type ObjectName, type Objects, drawnObject } from './props/object.ts';
+import {
+	type DrawnObject,
+	type FrameObject,
+	type ObjectName,
+	type Objects,
+	type Surroundings,
+	captionAmong,
+	drawnObject
+} from './props/object.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
 import { SCREEN_UP, type Screen } from './props/screen.ts';
 
@@ -133,6 +141,7 @@ export function drawingOf(exposures: readonly DrawnScene[]): string {
  * own, one along its way there, or the flat one an act is done in.
  */
 export function drawn(scene: Scene, camera: Camera, moment: number, format: Format): DrawnScene {
+	const around: Surroundings = { caption: captionAmong(scene.objects), screen: scene.screen };
 	return {
 		look: scene.look,
 		camera: drawnCamera(camera, format),
@@ -143,13 +152,12 @@ export function drawn(scene: Scene, camera: Camera, moment: number, format: Form
 		pins: scene.pins === null ? null : drawnPins(scene.pins, camera, format.frame),
 		cursor: scene.cursor,
 		note: scene.note === null ? null : drawnNote(scene.note, camera, format.frame),
-		objects: drawnObjects(scene.objects, moment, scene),
-		leaving: drawnObjects(scene.leaving, moment, scene)
+		objects: drawnObjects(scene.objects, moment, around),
+		leaving: drawnObjects(scene.leaving, moment, around)
 	};
 }
 
 /** Objects as the stage draws them, among what stands round them in the scene. */
-function drawnObjects(objects: Objects, moment: number, scene: Scene): readonly DrawnObject[] {
-	const around = { standing: scene.objects, screen: scene.screen };
+function drawnObjects(objects: Objects, moment: number, around: Surroundings): readonly DrawnObject[] {
 	return [...objects].map(([name, object]) => drawnObject(name, object, moment, around));
 }

@@ -5,6 +5,7 @@
  */
 import { A_STRING, type Kind, ListOf } from '../domain/handed.ts';
 import { type Caption, standsAtTheFoot } from './caption.ts';
+import type { ObjectName } from './object.ts';
 import { groundOf } from './words.ts';
 
 /** The caps of a shortcut, each a key's name as it is written on it, and the key the stage knows them by. */
@@ -23,8 +24,12 @@ export interface DrawnKeys extends Keys {
 	readonly clearing: number;
 }
 
-/** A caption standing on the frame as keys find it: what it shows, how far it has come up and gone, from 0 to 1. */
+/**
+ * A caption standing on the frame as keys find it: the name of the object showing it, what it shows, and how far it has
+ * come up and gone, from 0 to 1.
+ */
 export interface CaptionStanding {
+	readonly name: ObjectName;
 	readonly caption: Caption;
 	readonly shown: number;
 	readonly gone: number;
@@ -45,6 +50,11 @@ export function keysOf(caps: readonly string[]): Keys {
  * its ground has come up where it stands at the frame's foot; none where it stands at the top, or none stands.
  */
 export function drawnKeys(keys: Keys, shown: number, under: CaptionStanding | null): DrawnKeys {
-	const clearing = under !== null && standsAtTheFoot(under.caption) ? groundOf(under.shown, under.gone) : NOT_RISEN;
+	const clearing = standOver(under) ? groundOf(under.shown, under.gone) : NOT_RISEN;
 	return { ...keys, shown, clearing };
+}
+
+/** Whether keys stand over the words of the caption standing on the frame: where it stands at the frame's foot. */
+export function standOver(under: CaptionStanding | null): under is CaptionStanding {
+	return under !== null && standsAtTheFoot(under.caption);
 }

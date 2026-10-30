@@ -4,7 +4,7 @@
  * the words' place with it: the film's, or the words' share on the side of the frame clearest of the window. The
  * words stand beyond the window on one side of it, where the line meets them; a note beside a window off the frame,
  * or whose words would stand over the window, as they do while the page fills the frame, is refused there. While it
- * stands, the window stays where it is (`src/moves/window.ts`).
+ * stands the window may move: the words keep beside it (`src/props/note.ts`).
  */
 import { FilmError } from '../domain/errors.ts';
 import { liesOutside } from '../domain/geometry.ts';
@@ -85,5 +85,5 @@ function besideTheWindow(beginning: Beginning, at: Place | null): Beside {
 			"note.show's words stand over the page's window: move the page into a window beside them first, with window.to(place), or name a place clear of it, with { at }"
 		);
 	}
-	return { side, box };
+	return { side, box, window };
 }

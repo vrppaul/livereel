@@ -94,8 +94,8 @@ export interface Aiming {
 
 /**
  * The window as a scene holds it: its box, its lift and its angle, each on its own way, so a move that carries the
- * window and one that leans it share a step, each as far along as its own share. What stands beside the window reads
- * where its box goes.
+ * window and one that leans it share a step, each as far along as its own share. What comes up beside the window is
+ * placed beside where its box goes.
  */
 export interface Placing {
 	readonly box: Track<Box>;

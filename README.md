@@ -288,11 +288,11 @@ from a dot at a block's edge out to them: `note.show(selector, text)`. Its
 words stand in the words' share on the side of the frame clearest of the
 window, across from a window on a side, or `at` a place the film names
 beyond the window. It names a block without covering the page; the line
-keeps to the block as the camera moves in the window, and the words keep to
-their place, level with the block as far as it lets. A note needs a window
-beside its words: one whose words would stand over the window, as they do
-while the page fills the frame, is refused; and while it stands the window
-stays, a `window.to` refused until `note.hide()` has taken it away.
+keeps to the block as the camera moves in the window, and the words keep
+beside the window: as it moves, they move as far as the middle of its edge
+facing them does, and they never lean with it. A note needs a window beside
+its words: one whose words would stand over the window, as they do while
+the page fills the frame, is refused.
 
 Pins mark a path: `pin.show(selector, label)` lays a numbered mark on a
 block's top corner, numbered after those laid before, its label running
@@ -300,8 +300,9 @@ out from the block toward the screen's middle; the labels before it
 quieten. `pin.clear()` takes them all away.
 
 Keys: `keys.show(['⌘', 'Enter'])` sets the caps of a shortcut at the
-frame's foot, as the page is sent it in an act, and they rise clear of a
-caption there as its ground comes up; `keys.hide()` takes them away.
+frame's foot, as the page is sent it in an act, and over a caption there
+they stand over its words, by a gap, however many lines they take, rising
+as its ground comes up; `keys.hide()` takes them away.
 
 Code is a second screen beside the page's window, or alone: `code.show(text, { at })`
 sets a dark pane of code in its place, its lines coming

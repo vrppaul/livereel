@@ -421,11 +421,37 @@ body {
 	opacity: var(--darkened);
 }
 
-.caption .words {
+/* A caption's foot: its words, and over them the place keys stand in, as tall as the words, which the page lays out */
+.caption .foot {
 	position: absolute;
 	left: 64px;
 	right: 64px;
 	bottom: var(--frame-edge-room);
+}
+
+/* Keys over a caption's words: their object over the place, their caps up off the words' foot as far as the caption has come, by the words' height and a gap */
+.caption .over-the-words {
+	position: absolute;
+	inset: 0;
+}
+
+.over-the-words > .object {
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.over-the-words .content.keys {
+	top: auto;
+	bottom: calc(var(--clearing) * (100% + var(--keys-gap-over-words)));
+	width: 100%;
+	height: auto;
+	zoom: 1;
+}
+
+.caption .words {
+	position: relative;
 	font: var(--caption-weight) calc(var(--caption-size) * 1px) / 1.12 var(--sans);
 	letter-spacing: -0.025em;
 	color: var(--ink);
@@ -793,22 +819,27 @@ body {
 	margin-right: 0.6em;
 }
 
-/* Keys in their object, over the whole frame: the caps of a shortcut at the frame's foot, rising as they come, and clear above two lines of a caption there as far as the scene has them risen */
+/* Keys in their object, over the whole frame: the caps of a shortcut at the frame's foot, rising as they come; over a caption's words they stand in its place for them */
 .keys {
 	--keys-rise: 16px;
-	--caption-lines-cleared: 2.4;
+	--keys-gap-over-words: 28px;
 }
 
 .keys .caps {
 	position: absolute;
 	left: 0;
 	right: 0;
-	bottom: calc(var(--frame-edge-room) + var(--caption-size) * var(--caption-lines-cleared) * var(--clearing) * 1px);
+	bottom: var(--frame-edge-room);
 	display: flex;
 	justify-content: center;
 	gap: 16px;
 	opacity: var(--shown);
 	transform: translateY(calc((1 - var(--shown)) * var(--keys-rise)));
+}
+
+/* Over a caption's words the caps stand where their content does, which the caption's place for them lifts */
+.over-the-words .keys .caps {
+	position: static;
 }
 
 /* A cap stands about twice as tall as its letters, and as wide at least */
@@ -837,7 +868,7 @@ body {
 	background: var(--caption-ground-from-top);
 }
 
-.caption[data-at='top'] .words {
+.caption[data-at='top'] .foot {
 	top: var(--frame-edge-room);
 	bottom: auto;
 }

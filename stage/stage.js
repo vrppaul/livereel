@@ -22,8 +22,10 @@
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
 /** An element of the stage's markup: the cursor is drawn in SVG, the rest in HTML @typedef {HTMLElement | SVGElement} Staged */
 /** The scene's lists of objects: those standing, and those pushed off while they go @typedef {'objects' | 'leaving'} ObjectList */
-/** Where objects are laid: those on the frame by their list, and those inside the page's window @typedef {ObjectList | 'window'} ObjectRoot */
-/** The element each root is @typedef {{ readonly [Root in ObjectRoot]: Staged }} ObjectRoots */
+/**
+ * Where objects are laid in an exposure's markup: those on the frame by their list, and those inside the page's window.
+ * @typedef {{ readonly [Root in ObjectList | 'window']: Staged }} ObjectRoots
+ */
 /**
  * An object as its drawer lays it this frame: the key it is kept by, its list, the object, and its element.
  * @typedef {{
@@ -47,9 +49,6 @@ const ON_GROUND = 'data-on-ground';
 const ALIGN = 'data-align';
 // The attribute an object leans by; one face-on has none, and no transform
 const LEANT = 'data-leant';
-// Where objects are laid, each its root
-/** @type {readonly ObjectRoot[]} */
-const OBJECT_ROOTS = ['objects', 'leaving', 'window'];
 // The custom property a title's own size is set as, where it has one; the stylesheet takes the look's where it has not
 const OWN_SIZE = '--title-own-size';
 // The attribute that names the edge of the frame a caption stands at: its foot, or its top
@@ -309,7 +308,8 @@ class NoteDrawer {
 /**
  * The objects of a scene, those standing and those pushed off, each an element made from the template of what it shows
  * and kept by its list and name while it shows that. One on the frame is laid in its list's root, one inside the page's
- * window in the window's: in each, in the scene's order, the last over the rest on its layer.
+ * window in the window's, keys the scene lays over a caption's words in the caption's place for them: in each, in the
+ * scene's order, the last over the rest on its layer.
  */
 class ObjectsDrawer {
 	/** @param {ObjectRoots} roots */
@@ -326,11 +326,35 @@ class ObjectsDrawer {
 			...scene.leaving.map((object) => this.stagedFor('leaving', object))
 		];
 		this.standing = new Map(staged.map((each) => [each.key, each.staged]));
-		for (const root of OBJECT_ROOTS) {
-			const elements = staged.filter((each) => rootOf(each) === root).map((each) => each.staged.element);
-			if (!holdsInOrder(this.roots[root], elements)) this.roots[root].replaceChildren(...elements);
+		const held = holdersOf(this.roots, staged);
+		for (const each of staged) heldBy(held, this.holderOf(each)).push(each.staged.element);
+		for (const [holder, elements] of held) {
+			if (!holdsInOrder(holder, elements)) holder.replaceChildren(...elements);
 		}
 		for (const each of staged) each.staged.draw(each.object);
+	}
+
+	/**
+	 * The element an object is laid in: the place over the words of the object the scene lays it over, where it names
+	 * one; else its list's root where it stands on the frame, the window's where it stands inside it.
+	 * @param {ObjectStaged} each @returns {Staged}
+	 */
+	holderOf(each) {
+		const over = each.object.over;
+		if (over !== null) return this.overTheWordsOf(over);
+		switch (each.object.inside) {
+			case 'frame':
+				return this.roots[each.list];
+			case 'window':
+				return this.roots.window;
+		}
+	}
+
+	/** The place over the words of the object of a name standing. @param {string} name */
+	overTheWordsOf(name) {
+		const place = this.standing.get(keyOf('objects', name))?.overTheWords ?? null;
+		if (place === null) throw new Error(`the scene lays an object over the words of the ${name}, which has none`);
+		return place;
 	}
 
 	/**
@@ -353,6 +377,8 @@ class StagedObject {
 		this.kind = kind;
 		this.element = madeFrom(kind);
 		this.content = CONTENT_DRAWERS[kind](partOf(this.element, 'content'));
+		/** Where what stands over its words is laid, where it has words to stand over @type {Staged | null} */
+		this.overTheWords = overTheWordsIn(this.element);
 	}
 
 	/** @param {DrawnObject} object */
@@ -854,16 +880,33 @@ function keyOf(list, name) {
 }
 
 /**
- * The root an object is laid in: its list's where it stands on the frame, the window's where it stands inside it.
- * @param {ObjectStaged} each @returns {ObjectRoot}
+ * Every element objects are laid in this frame, holding none yet: the roots, and each object's place over its words,
+ * where what it shows has one.
+ * @param {ObjectRoots} roots @param {readonly ObjectStaged[]} staged @returns {Map<Staged, Staged[]>}
  */
-function rootOf(each) {
-	switch (each.object.inside) {
-		case 'frame':
-			return each.list;
-		case 'window':
-			return 'window';
-	}
+function holdersOf(roots, staged) {
+	const places = staged.flatMap((each) => (each.staged.overTheWords === null ? [] : [each.staged.overTheWords]));
+	return new Map([...Object.values(roots), ...places].map((holder) => [holder, []]));
+}
+
+/**
+ * What an element holds this frame: every root and every place over words holds objects, so another is the stage's
+ * fault.
+ * @param {ReadonlyMap<Staged, Staged[]>} held @param {Staged} holder
+ */
+function heldBy(held, holder) {
+	const elements = held.get(holder);
+	if (elements === undefined) throw new Error('an object is laid in what holds no objects');
+	return elements;
+}
+
+/**
+ * The place over its words an object has, where what it shows has one: a caption's, for the keys over them.
+ * @param {Element} element
+ */
+function overTheWordsIn(element) {
+	const place = element.querySelector('[data-part="over-the-words"]');
+	return place instanceof HTMLElement ? place : null;
 }
 
 /** Whether an element holds these elements and no other, in this order. @param {Staged} root @param {readonly Staged[]} elements */
