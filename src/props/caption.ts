@@ -4,12 +4,13 @@
  * format's, read as the caption comes up, so one film can caption a square at its top and a wide frame at its foot.
  */
 import type { CaptionPlace, Format } from '../domain/format.ts';
-import { type DrawnWords, type Said, drawnWords } from './words.ts';
+import { type ComingUp, type DrawnWords, type Said, drawnWords } from './words.ts';
 
-/** A caption: what it says, and the edge of the frame it stands at. */
+/** A caption: what it says, the edge of the frame it stands at, and how its words come up, word by word or typed. */
 export interface Caption extends Said {
 	readonly kind: 'caption';
 	readonly at: CaptionPlace;
+	readonly comingUp: ComingUp;
 }
 
 /** A caption as the stage draws it: its words, and the edge of the frame it stands at. */
@@ -21,14 +22,14 @@ export interface DrawnCaption extends DrawnWords {
 // A caption stands at the frame's foot where its format names no place
 const AT_THE_FOOT: CaptionPlace = 'bottom';
 
-/** A caption saying words, at the edge of the frame its format puts it at. */
-export function captionOf(said: Said, format: Format): Caption {
-	return { kind: 'caption', ...said, at: format.captionAt ?? AT_THE_FOOT };
+/** A caption saying words, coming up as they do, at the edge of the frame its format puts it at. */
+export function captionOf(said: Said, comingUp: ComingUp, format: Format): Caption {
+	return { kind: 'caption', ...said, at: format.captionAt ?? AT_THE_FOOT, comingUp };
 }
 
 /** A caption as the stage draws it, the object showing it come up `shown` and gone `gone` so far. */
 export function drawnCaption(caption: Caption, shown: number, gone: number): DrawnCaption {
-	return { ...drawnWords({ ...caption, shown, gone }), kind: caption.kind, at: caption.at };
+	return { ...drawnWords({ ...caption, shown, gone }, caption.comingUp), kind: caption.kind, at: caption.at };
 }
 
 /** Whether a caption stands at the frame's foot, where keys would stand under it. */

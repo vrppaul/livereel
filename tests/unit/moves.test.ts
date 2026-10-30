@@ -238,6 +238,27 @@ test("a title travelling to a place of another size takes that place's size as i
 	]);
 });
 
+test('a title or a caption shown typed shows no letter before its first key, and each key is heard', async () => {
+	const typed = { seed: 1 };
+	const keysTyped = keystrokes('ab cd', typed).length;
+	const titled = await setAt(title.show('ab cd', { at: 'left', typed }), openingScene(SMALL, LIVEREELS_LOOK), 0);
+	const captioned = await setAt(caption.show('ab cd', { typed }), openingScene(SMALL, LIVEREELS_LOOK), 0);
+	const lettersShown = [titled, captioned].map((scene) =>
+		drawnObjectsIn(scene, SMALL).map((object) => object.content.words.map((word) => word.letters))
+	);
+	expect([
+		lettersShown,
+		title.show('ab cd', { typed }).sounds!.length,
+		caption.show('ab cd', { typed }).sounds!.length
+	]).toEqual([[[[0, 0]], [[0, 0]]], keysTyped, keysTyped]);
+});
+
+test('a title typed never slides in from a side', () => {
+	expect(() => title.show('ab', { typed: { seed: 1 }, from: 'left' })).toThrow(
+		new FilmError('title.show types its words where they come up: it slides in whole from a side, or is typed')
+	);
+});
+
 test('a title or code shown from a side slides in whole from a frame past its place, and one hidden toward a side slides out as far, then is gone', async () => {
 	const place = wordsPlaced(SMALL, 'left');
 	const coming = (
@@ -701,14 +722,20 @@ test("an object inside the page's window stands, and is carried, in the window's
 	]).toEqual(['window', wordsPlaced(insideTheWindow, LOWER_RIGHT), wordsPlaced(insideTheWindow, UPPER_LEFT)]);
 });
 
-test("what stands inside the page's window comes up no further than the screen it shows", async () => {
-	const nested = await setAt(
+test("what stands inside the page's window shows no more than the screen it shows, what it holds as far along as its own moves have it: words typed stay typed", async () => {
+	const opened = await setAt(
 		open('claude', { at: LOWER_RIGHT, inside: 'window' }),
 		openingScene(SMALL, LIVEREELS_LOOK),
 		1
 	);
-	const [terminalDrawn] = drawnObjectsIn(await setAt(lower(), nested, 0.5), SMALL);
-	expect(terminalDrawn!.content.shown).toBe(0.5);
+	const typed = await setAt(title.show('ab', { at: UPPER_LEFT, inside: 'window', typed: { seed: 1 } }), opened, 1);
+	const [terminalDrawn, titleDrawn] = drawnObjectsIn(await setAt(lower(), typed, 0.5), SMALL);
+	expect([
+		terminalDrawn!.held,
+		terminalDrawn!.content.shown,
+		titleDrawn!.held,
+		titleDrawn!.content.words.map((word) => word.letters)
+	]).toEqual([0.5, 1, 0.5, [2]]);
 });
 
 test("an object inside the page's window leans with it, never alone", async () => {

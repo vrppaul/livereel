@@ -142,11 +142,11 @@ and the moves of each part of the scene:
 - `keys.show(caps)`, `keys.hide()`
 - `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { at, align, size, from, as, inside })`, `title.to(place)`, `title.lean({ tilt, turn })`,
+- `title.show(text, { at, align, size, from, typed, as, inside })`, `title.to(place)`, `title.lean({ tilt, turn })`,
   `title.hide({ toward })`
 - `code.show(text, { at, from, as, inside })`, `code.to(place)`, `code.lean({ tilt, turn })`,
   `code.light(line, { through })`, `code.hide({ toward })`; each move of a title or code takes `as` to name which
-- `caption.show(text)`, `caption.hide()`; a caption and keys stand over the whole frame where they come up, over
+- `caption.show(text, { typed })`, `caption.hide()`; a caption and keys stand over the whole frame where they come up, over
   every other object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`
 - `terminal.open(title, { at, from, inside })`, `terminal.type(strokes, { keyboard })`, `terminal.submit()`,
@@ -218,6 +218,16 @@ it no larger than the place's width lets a long word stand on a line;
 frame or in a place alike: `title.show('Live', { at: 'left', size: 220 })`.
 A word larger than its place runs past it, so check it on a still.
 
+A title or a caption may be typed, letter by letter, as a person types:
+`title.show(['Film your ', { text: 'live', italic: true }, ' app'], { typed:
+{ seed: 3 } })`. The rhythm is drawn from `seed`, as `keystrokes` draws it,
+and spread over the move's share of its `play`, which sets how fast it is
+typed; each key is heard on the film's keyboard, or on the `keyboard`
+named. The words stand laid out whole from the start, so no line breaks
+anew as they are typed; a run's style, ink and marker come with each
+letter, and a caret follows the last letter typed until every one is. A
+title typed comes up in its place: one shown `from` a side is refused.
+
 Words in a place travel: `title.to(place)` and `code.to(place)` carry them
 to another place through the boxes between, a title reading as it did;
 `show(…, { from: 'right' })` slides them in whole from a frame past that
@@ -245,8 +255,9 @@ window of code over the site's: `code.show(LINES, { at: { left: 0.45, top:
 0.6, width: 0.5, height: 0.3 }, inside: 'window' })`. Its place is a box in
 the window's shares, as no name of a place or split of a format is the
 window's; it is carried and slides as if the window's box were the frame,
-is cut at the window's edge, travels and leans with the window, and comes
-up no further than the screen. It leans only with the window. It keeps
+is cut at the window's edge, travels and leans with the window, and shows
+no more than the screen does, fading as it lowers. It leans only with the
+window. It keeps
 where it stands from the window's top left corner as the window grows or
 shrinks, as an element on a page does in its own.
 

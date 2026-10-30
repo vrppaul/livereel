@@ -10,7 +10,7 @@
  */
 import { type Camera, onTheFrame } from '../domain/camera.ts';
 import { type Box, type FrameSide, type Point, type Size, middleX, middleY } from '../domain/geometry.ts';
-import { type DrawnWords, type ShownWords, drawnWords } from './words.ts';
+import { type DrawnWords, type ShownWords, WORD_BY_WORD, drawnWords } from './words.ts';
 
 /**
  * Where a note's words stand: the side of the window they stand beyond, their box, and the window's box they were
@@ -52,7 +52,7 @@ export function drawnNote(note: Note, camera: Camera, frame: Size): DrawnNote {
 	const across = to.left - from.left;
 	const down = to.top - from.top;
 	return {
-		...drawnWords(note),
+		...drawnWords(note, WORD_BY_WORD),
 		side,
 		place,
 		from,

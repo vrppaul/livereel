@@ -2,23 +2,59 @@ import { expect, test } from 'vitest';
 import { codeOf } from '../../src/props/code.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
-import { type Piece, drawnWords, saidOf } from '../../src/props/words.ts';
+import { type Piece, WORD_BY_WORD, drawnWords, saidOf, typedComingUp } from '../../src/props/words.ts';
+import { type Keystroke, lettersOf } from '../../src/domain/typing.ts';
 import { SMALL } from './fakes.ts';
 
-/** A piece of a word, set in the styles named, in no ink and on no marker of its own. */
+/** How much of a word stands typed, and whether the caret follows it. */
+interface StandingTyped {
+	readonly letters: number;
+	readonly caret: boolean;
+}
+
+// Two words typed a key a second, the space before the second typed as its first letter
+const TYPING: readonly Keystroke[] = [
+	{ at: 1, typed: 'a' },
+	{ at: 2, typed: 'ab' },
+	{ at: 3, typed: 'ab ' },
+	{ at: 4, typed: 'ab c' },
+	{ at: 5, typed: 'ab cd' }
+];
+
+/** A piece of a word, its letters, set in the styles named, in no ink and on no marker of its own. */
 function piece(text: string, ...styles: Piece['styles']): Piece {
-	return { text, styles, ink: null, marker: null };
+	return { text, letters: lettersOf(text), styles, ink: null, marker: null };
+}
+
+/** How much of each of two words stands typed, the whole come up `shown` of the way. */
+function typedAt(shown: number): readonly StandingTyped[] {
+	const said = saidOf('ab cd');
+	const words = drawnWords({ ...said, shown, gone: 0 }, typedComingUp(said, TYPING)).words;
+	return words.map((word) => ({ letters: word.letters, caret: word.caret }));
 }
 
 test("a caption's words come up one after another", () => {
 	const shown = { ...saidOf('one two three four'), shown: 0.2, gone: 0 };
-	const words = drawnWords(shown).words.map((word) => word.appeared);
+	const words = drawnWords(shown, WORD_BY_WORD).words.map((word) => word.appeared);
 	expect(words).toEqual([...words].sort((earlier, later) => later - earlier));
 	expect([words[0]! > 0, words.at(-1)]).toEqual([true, 0]);
 });
 
 test('the ground under words goes as they go', () => {
-	expect(drawnWords({ ...saidOf('Words'), shown: 1, gone: 1 }).ground).toBe(0);
+	expect(drawnWords({ ...saidOf('Words'), shown: 1, gone: 1 }, WORD_BY_WORD).ground).toBe(0);
+});
+
+test('typed words stand letter by letter as the strokes have typed them, the space before a word its first, the caret after the last letter typed until all are', () => {
+	expect([typedAt(0.6), typedAt(1)]).toEqual([
+		[
+			{ letters: 2, caret: false },
+			{ letters: 1, caret: true }
+		],
+		[
+			{ letters: 2, caret: false },
+			{ letters: 3, caret: false }
+		]
+	]);
 });
 
 test('the space between two words is set as the run it was written in, and none stands before the first or after the last', () => {

@@ -95,6 +95,8 @@ const PROMPTS: readonly TerminalLine[] = [
 	{ kind: 'asked', text: 'the first frame is the preview. make it hook' }
 ];
 const SHIP_IT = keystrokes('ok. ship it', { seed: 9, pace: 0.6 });
+// The credit typed as the last prompt was, by the same hand
+const CREDIT_TYPED = { seed: 11 };
 const NO_THINKING = 0;
 const THINKING = 'Reading…';
 // The chime as the film ends: livereel's own, from this file's folder
@@ -450,13 +452,12 @@ function actThePrompts(): readonly Step[] {
 	];
 }
 
-/** The terminal pushed off by the window, which leans the other way: who wrote what. */
+/** The terminal pushed off by the window, which leans the other way; then who wrote what, typed. */
 function actTheCredit(): readonly Step[] {
 	return [
 		play({
 			seconds: 1,
 			moves: [
-				headline('i wrote the tool. it wrote the film.', LINE_SIZE),
 				terminal.leave({ toward: 'left' }),
 				window.show({ at: UNDER_THE_HEADLINE_WINDOW, from: 'right' }),
 				camera.onto(CARDS),
@@ -464,7 +465,17 @@ function actTheCredit(): readonly Step[] {
 			],
 			ease: easeInOutCubic
 		}),
-		hold({ seconds: 2.4 })
+		play({
+			seconds: 2.4,
+			moves: [
+				title.show('i wrote the tool. it wrote the film.', {
+					at: HEADLINE,
+					size: LINE_SIZE,
+					typed: CREDIT_TYPED,
+					within: { end: 0.8 }
+				})
+			]
+		})
 	];
 }
 

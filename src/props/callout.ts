@@ -5,7 +5,7 @@
  */
 import type { Box } from '../domain/geometry.ts';
 import { OneOf } from '../domain/handed.ts';
-import { type DrawnWords, type ShownWords, drawnWords } from './words.ts';
+import { type DrawnWords, type ShownWords, WORD_BY_WORD, drawnWords } from './words.ts';
 
 /** The sides of a block a callout stands on. */
 const BLOCK_SIDES = ['above', 'below', 'left', 'right'] as const;
@@ -26,5 +26,5 @@ export interface DrawnCallout extends DrawnWords {
 }
 
 export function drawnCallout(callout: Callout): DrawnCallout {
-	return { ...drawnWords(callout), box: callout.box, side: callout.side };
+	return { ...drawnWords(callout, WORD_BY_WORD), box: callout.box, side: callout.side };
 }

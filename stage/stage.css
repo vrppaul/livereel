@@ -310,7 +310,7 @@ body {
 	pointer-events: none;
 }
 
-/* An object: its box on the frame, in the frame's pixels, on its layer: one on a higher layer stands over every object on a lower, standing or pushed off */
+/* An object: its box on the frame, in the frame's pixels, on its layer: one on a higher layer stands over every object on a lower, standing or pushed off; as much of it showing as what it stands in lets */
 .object {
 	position: absolute;
 	left: calc(var(--left) * 1px);
@@ -318,6 +318,7 @@ body {
 	width: calc(var(--width) * 1px);
 	height: calc(var(--height) * 1px);
 	z-index: var(--layer);
+	opacity: var(--held);
 }
 
 /* An object that leans, leant back from its top edge and swung about its middle, seen from the eye the page's window is seen from, at the frame's middle: its own perspective moved from its middle to the frame's, so it leans as it would in the window's room, alike to the pixel (probed 2026-10-30). A room with a perspective of its own, or an object face-on with a 3D transform, a turn of none too, costs the graphics card a layer in every exposure of a frame: a frame of 16 exposures then outran the card's memory the stage asks for, and drew objects in some of them not at all, or the page grey, with no error (README film, `--renderer gpu`, 2026-10-30). So only an object that leans has one */
@@ -413,6 +414,35 @@ body {
 
 .words .marked {
 	background: var(--marker);
+}
+
+/* A word typed, laid out whole from the start: each of its letters, the space before it first, shown once as many of the word's stand typed (`--typed`, the letter's own place `--letter`), its underline or strike with it, and its marker under each letter, not the piece, as each comes */
+.words .letter {
+	position: relative;
+	opacity: clamp(0, var(--typed) - var(--letter), 1);
+}
+
+.words .marked:has(> .letter) {
+	background: none;
+}
+
+.words .marked > .letter {
+	background: var(--marker);
+}
+
+/* The caret, a bar in the letters' ink after the last letter typed, on the word the engine says it follows while the typing goes on (`--caret`): every letter carries one, shown where the letter's place is one short of the count typed, as `2 - (typed - letter)` is 1 there and none for every letter typed before it; a letter not yet typed hides its own with itself */
+.words .letter::after {
+	--caret-width: 0.06em;
+	--caret-reach: 0.12em;
+
+	content: '';
+	position: absolute;
+	left: 100%;
+	top: var(--caret-reach);
+	bottom: var(--caret-reach);
+	width: var(--caret-width);
+	background: currentcolor;
+	opacity: calc(var(--caret) * clamp(0, 2 - (var(--typed) - var(--letter)), 1));
 }
 
 /* A caption in its object, over the whole frame: words that rise out of a blur over the frame's foot, on a ground that darkens it, and sink as they go */

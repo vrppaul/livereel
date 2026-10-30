@@ -72,7 +72,7 @@ export function keystrokes(text: string, typist: Typist): readonly Keystroke[] {
 	const strokes: Keystroke[] = [];
 	let moment = 0;
 	let typed = '';
-	const letters = Array.from(LETTERS.segment(text), (part) => part.segment);
+	const letters = lettersOf(text);
 	for (const [index, letter] of letters.entries()) {
 		const gap = chance.gap(letters[index - 1] === SPACE) * pace;
 		// A letter on no row of the keyboard has no key beside it to slip to
@@ -90,6 +90,11 @@ export function keystrokes(text: string, typist: Typist): readonly Keystroke[] {
 	return strokes;
 }
 
+/** A text's letters as a person types them, each what one key gives: an accented letter or an emoji whole. */
+export function lettersOf(text: string): readonly string[] {
+	return Array.from(LETTERS.segment(text), (part) => part.segment);
+}
+
 /** What stands typed at a moment of the typing. */
 export function typedBy(strokes: readonly Keystroke[], moment: number): string {
 	return strokes.findLast((stroke) => stroke.at <= moment)?.typed ?? '';
@@ -103,6 +108,12 @@ export function typingSeconds(strokes: readonly Keystroke[]): number {
 /** What stands typed `progress` of the way through the typing, from 0 to 1. */
 export function typedAlong(strokes: readonly Keystroke[], progress: number): string {
 	return typedBy(strokes, progress * typingSeconds(strokes));
+}
+
+/** How many keys are struck `progress` of the way through the typing, from 0 to 1. */
+export function keysStruckAlong(strokes: readonly Keystroke[], progress: number): number {
+	const moment = progress * typingSeconds(strokes);
+	return strokes.filter((stroke) => stroke.at <= moment).length;
 }
 
 /** The key beside a letter, where a finger slips to, in the letter's case; a key on no row slips nowhere. */

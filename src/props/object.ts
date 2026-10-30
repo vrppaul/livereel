@@ -7,7 +7,7 @@
  * own moves, so moves of one object that set different values share a step.
  *
  * An object stands on the frame, or inside the page's window, as a small window of code stands over the site's: its
- * box is then in the window's pixels, and it travels and leans with the window, comes up no further than the screen,
+ * box is then in the window's pixels, and it travels and leans with the window, shows no more than the screen does,
  * and is cut at the window's edge, as an element laid in another is on a page. The window is one, and never goes, so
  * nothing stands inside what may be replaced or put away; an object inside another waits for a film that needs it.
  * Keys over a caption's words are only drawn over them, laid out by the caption, as only the page knows how tall the
@@ -74,7 +74,7 @@ export type Objects = ReadonlyMap<ObjectName, FrameObject>;
  * An object as the stage draws it: the name it is known by, what it stands in, the object whose words it is laid over
  * by that one — keys over a caption's, its box then the caption's to lay out — or none, its box in what it stands in,
  * how it leans — none face-on, which the stage draws with no transform at all — the layer it is drawn on, the higher
- * over the lower, and its content as drawn.
+ * over the lower, how much of it what it stands in lets show, from 0 to 1, and its content as drawn.
  */
 export interface DrawnObject {
 	readonly name: ObjectName;
@@ -83,6 +83,7 @@ export interface DrawnObject {
 	readonly box: Box;
 	readonly angle: Angle | null;
 	readonly layer: number;
+	readonly held: number;
 	readonly content: DrawnContent;
 }
 
@@ -97,6 +98,8 @@ const LAYER_OF: { readonly [Kind in Content['kind']]: number } = {
 };
 // The corners of a box, in shares of it
 const CORNERS = cornersOf({ left: 0, top: 0, width: 1, height: 1 });
+// An object on the frame, which lets all of it show
+const WHOLLY_HELD = 1;
 
 /**
  * How far an object moves on the frame from where it stood to where it stands, the page's window as it stood and as it
@@ -138,9 +141,10 @@ function onTheFrameOf(object: FrameObject, window: View, frame: Size, share: Poi
 export function drawnObject(name: ObjectName, object: FrameObject, moment: number, around: Surroundings): DrawnObject {
 	const angle = isFaceOn(object.angle) ? null : object.angle;
 	const layer = LAYER_OF[object.content.kind];
-	const content = drawnContent(presentIn(object, around.screen), moment, around.caption);
+	const held = heldIn(object, around.screen);
+	const content = drawnContent(object, moment, around.caption);
 	const over = drawnOver(object, around.caption);
-	return { name, inside: object.inside, over, box: object.box, angle, layer, content };
+	return { name, inside: object.inside, over, box: object.box, angle, layer, held, content };
 }
 
 /** The object whose words an object is laid over: keys over a caption's standing at the frame's foot; else none. */
@@ -149,15 +153,16 @@ function drawnOver(object: FrameObject, caption: CaptionStanding | null): Object
 }
 
 /**
- * An object as far as it has come up within what it stands inside: on the frame as far as its own moves have it, in
- * the page's window no further than the screen the window shows has come up out of the ground.
+ * How much of an object what it stands inside lets show: all of it on the frame; in the page's window, as much as the
+ * screen the window shows has come up out of the ground. It fades the object whole, and what it shows stands as far
+ * along as its own moves have it: words typed stay typed as their key was heard.
  */
-function presentIn(object: FrameObject, screen: Screen): FrameObject {
+function heldIn(object: FrameObject, screen: Screen): number {
 	switch (object.inside) {
 		case 'frame':
-			return object;
+			return WHOLLY_HELD;
 		case 'window':
-			return { ...object, shown: object.shown * screen.shown };
+			return screen.shown;
 	}
 }
 

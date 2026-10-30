@@ -12,7 +12,7 @@
 /** @import { DrawnScene, PropName } from '../src/scene.ts' */
 /** @import { ShownLine } from '../src/props/terminal.ts' */
 /** @import { DrawnPin } from '../src/props/pins.ts' */
-/** @import { DrawnWords, Piece, Word } from '../src/props/words.ts' */
+/** @import { DrawnWords, Piece } from '../src/props/words.ts' */
 /** @import { CodeLine, CodePiece, DrawnCode } from '../src/props/code.ts' */
 /** @import { DrawnContent, DrawnObject } from '../src/props/object.ts' */
 /** @import { Box } from '../src/domain/geometry.ts' */
@@ -63,6 +63,8 @@ const MARKED = 'marked';
 // The classes of a word's own box, which rises as it comes up, and of the space before it, which keeps to its line
 const WORD = 'word';
 const SPACE = 'space';
+// The class of a letter of a word typed, each in an element of its own
+const LETTER = 'letter';
 // The class of a pin, and of one whose label a later pin has quietened
 const PIN = 'pin';
 const QUIET = 'quiet';
@@ -384,7 +386,7 @@ class StagedObject {
 	/** @param {DrawnObject} object */
 	draw(object) {
 		placed(this.element, object.box);
-		numbered(this.element, { '--layer': object.layer });
+		numbered(this.element, { '--layer': object.layer, '--held': object.held });
 		this.element.toggleAttribute(LEANT, object.angle !== null);
 		if (object.angle !== null) numbered(this.element, { '--tilt': object.angle.tilt, '--turn': object.angle.turn });
 		this.content.draw(object.content);
@@ -768,16 +770,55 @@ function numberedOrNone(element, property, number) {
 }
 
 /**
- * A word as it comes up: the space before it, where one is, and the word's own box, each piece of it set as its run is.
- * @param {Word} word
+ * A word as it comes up: the space before it, where one is, and the word's own box, each piece of it set as its run is;
+ * a word typed with every letter the engine names in an element of its own.
+ * @param {DrawnWords['words'][number]} word
  */
 function wordElement(word) {
+	switch (word.kind) {
+		case 'word by word':
+			return wordOf(word, pieceElement);
+		case 'typed':
+			return lettersNumbered(wordOf(word, letteredPieceElement));
+	}
+}
+
+/**
+ * A word laid out, each piece by `pieceOf`: the space before it, where one is, and the word's own box.
+ * @param {DrawnWords['words'][number]} word @param {(piece: Piece) => HTMLElement} pieceOf
+ */
+function wordOf(word, pieceOf) {
 	const element = document.createElement('span');
-	if (word.spaceBefore !== null) element.append(classed(pieceElement(word.spaceBefore), SPACE));
+	if (word.spaceBefore !== null) element.append(classed(pieceOf(word.spaceBefore), SPACE));
 	const box = classed(document.createElement('span'), WORD);
-	box.append(...word.pieces.map(pieceElement));
+	box.append(...word.pieces.map(pieceOf));
 	element.append(box);
 	return element;
+}
+
+/** A piece of a word typed, set as its run is, each of its letters in an element of its own. @param {Piece} piece */
+function letteredPieceElement(piece) {
+	const element = pieceElement(piece);
+	element.replaceChildren(...piece.letters.map(letterElement));
+	return element;
+}
+
+/** A letter of a word typed. @param {string} letter */
+function letterElement(letter) {
+	const element = classed(document.createElement('span'), LETTER);
+	element.textContent = letter;
+	return element;
+}
+
+/**
+ * A word typed, its letters numbered in the order they are typed, which is the order they read in: the space before
+ * the word first. @param {HTMLElement} word
+ */
+function lettersNumbered(word) {
+	for (const [place, letter] of word.querySelectorAll(`.${LETTER}`).entries()) {
+		if (letter instanceof HTMLElement) numbered(letter, { '--letter': place });
+	}
+	return word;
 }
 
 /** An element with a class of the stage's styles. @param {HTMLElement} element @param {string} name */
@@ -810,9 +851,17 @@ function pinElement(pin) {
 	return element;
 }
 
-/** How far a word has come up. @param {DrawnWords['words'][number]} word */
+/**
+ * How far a word has come up; of a word typed, how many of its letters stand typed, and whether the caret follows them.
+ * @param {DrawnWords['words'][number]} word
+ */
 function wordNumbers(word) {
-	return { '--appeared': word.appeared };
+	switch (word.kind) {
+		case 'word by word':
+			return { '--appeared': word.appeared };
+		case 'typed':
+			return { '--appeared': word.appeared, '--typed': word.letters, '--caret': Number(word.caret) };
+	}
 }
 
 /** How far a line of code has come up, and how far it is lit. @param {DrawnCode['lines'][number]} line */
