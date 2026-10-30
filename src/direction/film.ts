@@ -145,6 +145,11 @@ const A_STAGE = new OneOf(
 const COLOUR_SCHEME_WHERE_NONE_IS_NAMED: ColourScheme = 'light';
 const NOTHING_BLURRED: readonly string[] = [];
 const A_COLOUR_SCHEME = new OneOf(COLOUR_SCHEMES, '"light" or "dark"');
+// A stage inside the app frames a page that signs in or refuses a frame; a static page stands in a tab of its own,
+// framed by nothing
+const INSIDE_FOR_A_DYNAMIC_PAGE =
+	'the film\'s stage is "inside", which frames a dynamic page live: a static page is filmed in a tab of its own, ' +
+	'signed in as it signs in and refused no frame, so leave the stage out, or give page: "dynamic"';
 // The page changes only by the film where a film names none: what most pages do, and the quicker to shoot
 const PAGE_WHERE_NONE_IS_NAMED: PageKind = 'static';
 const A_PAGE_KIND = new OneOf(
@@ -199,6 +204,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 		this.colourScheme = script.colourScheme ?? COLOUR_SCHEME_WHERE_NONE_IS_NAMED;
 		this.blurred = script.blurred ?? NOTHING_BLURRED;
 		this.page = script.page ?? PAGE_WHERE_NONE_IS_NAMED;
+		if (this.stage === 'inside' && this.page === 'static') throw new FilmError(INSIDE_FOR_A_DYNAMIC_PAGE);
 		this.formats = new Map(namesOf(script.formats).map((name) => [name, this.inFormat(name)]));
 		if (this.formats.size === 0) throw new FilmError(NO_FORMAT);
 	}

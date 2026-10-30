@@ -295,14 +295,17 @@ test('a blur turned off is no blur', () => {
 	expect(blurOfFilm({ enabled: false })).toBeNull();
 });
 
-test('a film is shot on the stage it names, apart where it names none; a stage livereel has not is refused as the film is defined', () => {
-	expect([filmWritten({}), filmWritten({ stage: 'inside' })].map((film) => film.formats.get('small')!.stage)).toEqual([
-		'apart',
-		'inside'
-	]);
+test('a film is shot on the stage it names, apart where it names none; a stage livereel has not, or inside the app for a static page, is refused as the film is defined', () => {
+	const films = [filmWritten({}), filmWritten({ stage: 'inside', page: 'dynamic' })];
+	expect(films.map((film) => film.formats.get('small')!.stage)).toEqual(['apart', 'inside']);
 	expect(() => filmWritten({ stage: 'within' })).toThrow(
 		new FilmError(
 			`the film's stage is "within": it is "apart", or "inside" the app's own address for an app that signs in or refuses to be framed`
+		)
+	);
+	expect(() => filmWritten({ stage: 'inside' })).toThrow(
+		new FilmError(
+			'the film\'s stage is "inside", which frames a dynamic page live: a static page is filmed in a tab of its own, signed in as it signs in and refused no frame, so leave the stage out, or give page: "dynamic"'
 		)
 	);
 });

@@ -544,6 +544,7 @@ const DRAWERS = {
 	ending: new EndingDrawer(propRoot('ending'))
 };
 const PAGE = partOf(document.body, 'page');
+const PICTURE = partOf(document.body, 'picture');
 
 /** @param {Room} room */
 function setup(room) {
@@ -570,6 +571,18 @@ function isOfTheLook(name) {
 function open(opening) {
 	if (opening.sandbox !== null) PAGE.setAttribute('sandbox', opening.sandbox);
 	PAGE.setAttribute('src', opening.address);
+}
+
+/**
+ * A picture of the page shown in the frame's place, once it is decoded, so the next frame drawn shows it whole.
+ * @param {string} picture @returns {Promise<void>}
+ */
+async function show(picture) {
+	if (!(PICTURE instanceof HTMLImageElement)) throw new Error("the stage's picture of the page is no image");
+	PICTURE.src = picture;
+	await PICTURE.decode();
+	PICTURE.removeAttribute('hidden');
+	PAGE.setAttribute('hidden', '');
 }
 
 /** @param {DrawnScene} scene */
@@ -730,5 +743,5 @@ function found(element, name) {
 }
 
 /** @type {StageApi} */
-const STAGE = { setup, open, apply };
+const STAGE = { setup, open, show, apply };
 window.stage = STAGE;

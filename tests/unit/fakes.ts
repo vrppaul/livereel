@@ -38,6 +38,7 @@ export class PageOfBoxes implements FilmedPage {
 export class StageThatKeeps implements Stage {
 	readonly drawn: DrawnScene[] = [];
 	captured = 0;
+	retaken = 0;
 	private lost: Error | undefined = undefined;
 
 	draw(scene: DrawnScene): Promise<void> {
@@ -66,6 +67,12 @@ export class StageThatKeeps implements Stage {
 	capture(): Promise<Uint8Array> {
 		this.captured += 1;
 		return Promise.resolve(new Uint8Array());
+	}
+
+	/** A page that never changes: every picture of it comes out as the last. */
+	retakePage(): Promise<boolean> {
+		this.retaken += 1;
+		return Promise.resolve(true);
 	}
 }
 

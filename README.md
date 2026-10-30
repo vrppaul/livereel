@@ -443,8 +443,15 @@ move: both before anything is shot.
 
 ### Where the stage stands
 
-Your app sits in a frame of the stage, a page of livereel's own.
-`defineFilm` takes `stage`:
+A static page, the default, stands in a tab of its own at the film's
+address, as a person opens it: its cookies go with its requests, a sign-in
+the film makes holds, and a page that refuses to be framed is shown. The
+stage, a page of livereel's own, shows a picture of it, taken anew as the
+film acts on it or moves it, as sharp as a camera 2.2 times close needs.
+
+A dynamic page (`page: 'dynamic'`) sits live in a frame of the stage, and
+`defineFilm` takes `stage` for it; `stage: 'inside'` with a static page is
+refused:
 
 - `apart`, where none is named: the stage is a file of livereel's, and the
   page is framed in it as it comes, nothing of its answers touched: a
@@ -532,9 +539,13 @@ clock is its frames.
 ## Limits
 
 - What livereel films: public pages, and apps served on your machine. An
-  app that signs in is filmed with `stage: 'inside'`, signed in by the film
-  itself; a session the person signs in to themselves (two factors, a
-  sign-in elsewhere) is not taken yet ([`TODO.md`](TODO.md)).
+  app that signs in is filmed signed in by the film itself, as a static
+  page, or as a dynamic one with `stage: 'inside'`; a session the person
+  signs in to themselves (two factors, a sign-in elsewhere) is not taken yet
+  ([`TODO.md`](TODO.md)).
+- A static page is pictured as sharp as a camera 2.2 times close needs: a
+  camera closer still, by `zoomAtMost` or a pose's zoom, shows its text
+  softer than the page itself.
 - Chromium alone, headless.
 - The page is asked for reduced motion, and for the light colour scheme
   unless the film names the dark one. A page that animates anyway runs
@@ -542,8 +553,8 @@ clock is its frames.
   static page, the default, a hold shows it stopped where it was captured,
   and so does the page's text caret.
 - A page that refuses to be framed (`X-Frame-Options`, a CSP's
-  `frame-ancestors`) is shown only on the stage inside the app ("Where the
-  stage stands").
+  `frame-ancestors`) is shown as a static page, or as a dynamic one on the
+  stage inside the app ("Where the stage stands").
 
 ## Development
 

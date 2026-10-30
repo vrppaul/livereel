@@ -8,13 +8,21 @@ import type { ActContext, FilmedPage } from '../direction/page.ts';
 import type { Sound } from '../direction/sound.ts';
 import type { DrawnScene } from '../scene.ts';
 
-/** The page the film is shot on. */
+/**
+ * The page the film is shot on, and the filmed page on it: live in its frame, as the stage shows a dynamic page, or a
+ * picture of it taken in a tab of its own, as it shows a static one.
+ */
 export interface Stage {
 	readonly draw: (scene: DrawnScene) => Promise<void>;
-	/** The screen laid flat at its own size, drawn so, for the page to be acted on as it stands. */
+	/** The screen made ready for the page to be acted on as it stands: laid flat at its own size where it is framed. */
 	readonly layFlat: (scene: DrawnScene) => Promise<void>;
-	/** The stage back at the frame's size, after an act. */
+	/** The stage back as it was before an act. */
 	readonly standUp: () => Promise<void>;
+	/**
+	 * A picture of the page taken anew and shown, as the page stands now; whether it came out as the last one did. A
+	 * page shown live is never taken, and never said alike.
+	 */
+	readonly retakePage: () => Promise<boolean>;
 	/**
 	 * Why the stage, or the page in its frame, is no longer there, where one is not: a click that took the stage away,
 	 * a page that refuses its frame, one that could not be reached; none where both are.
@@ -59,10 +67,10 @@ export interface Opened extends AsyncDisposable {
 
 /**
  * What the stage and the page are set as for a take: the film's format, where the stage stands, the colour scheme the
- * page is asked for, the blocks it blurs, and every font the film names, in its theme or its looks' moves, which the
- * browser reads before anything is shot.
+ * page is asked for, the blocks it blurs, every font the film names, in its theme or its looks' moves, which the
+ * browser reads before anything is shot, and whether the page changes of itself, which decides how it is shown.
  */
-export type Setting = Pick<FilmInFormat, 'format' | 'stage' | 'colourScheme' | 'blurred' | 'fonts'>;
+export type Setting = Pick<FilmInFormat, 'format' | 'stage' | 'colourScheme' | 'blurred' | 'fonts' | 'page'>;
 
 export interface Browser {
 	readonly open: (setting: Setting, address: string, sharpness: number) => Promise<Opened>;

@@ -7,6 +7,7 @@ import { expect, test } from 'vitest';
 import { Chromium } from '../../src/adapters/browser/chromium.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { FilmError, TakeError } from '../../src/domain/errors.ts';
+import type { PageKind } from '../../src/direction/film.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
 import { NoFrames, PUSHED, type Routes, servedApp } from './app.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
@@ -110,17 +111,18 @@ async function followedInPlaceOfTheStage(context: ActContext, link: string): Pro
 	]);
 }
 
-/** A film of the app's page at a path, stood apart, of steps that make up no frame. */
-function filmAt(address: string, steps: readonly Step[]) {
+/** A film of the app's page at a path, of a kind, stood apart, of steps that make up no frame. */
+function filmAt(address: string, steps: readonly Step[], pageKind: PageKind) {
 	return defineFilm({
 		formats: { small: SMALL },
 		serve: () => atAddress(address),
 		ready: () => Promise.resolve(),
-		steps: () => steps
+		steps: () => steps,
+		page: pageKind
 	});
 }
 
-test('an app with a server of its own is filmed apart from it: framed at the address it is sent on to, scrolled, answered after a click, and pushed to', async () => {
+test('an app with a server of its own is filmed apart from it: shown at the address it is sent on to, scrolled, answered after a click, and pushed to', async () => {
 	const seen: (number | string | null)[] = [];
 	const film = defineFilm({
 		formats: { small: SMALL },
@@ -139,33 +141,33 @@ test('an app with a server of its own is filmed apart from it: framed at the add
 	expect(seen).toEqual([ANSWERED, PUSHED, 'yes', '/app/', 100]);
 });
 
-test('a page that refuses to be framed is refused on the stage apart as the frame opens it, by its refusal, naming the stage that shows it', async () => {
+test('a dynamic page that refuses to be framed is refused on the stage apart as the frame opens it, by its refusal, naming the stage that shows it', async () => {
 	await using app = await servedApp(ROUTES, '/refusing/');
-	await expect(shoot(filmAt(app.address, []).formats.get('small')!, SHOOTING)).rejects.toThrow(
+	await expect(shoot(filmAt(app.address, [], 'dynamic').formats.get('small')!, SHOOTING)).rejects.toThrow(
 		new FilmError(`the page at ${app.address} ${REFUSED_APART}`)
 	);
 });
 
-test('a page that refuses to be framed, reached by a click, is refused after the act, by its refusal', async () => {
+test('a dynamic page that refuses to be framed, reached by a click, is refused after the act, by its refusal', async () => {
 	await using app = await servedApp(ROUTES, '/links/');
-	const film = filmAt(app.address, [act((context) => followedInTheFrame(context, TO_REFUSING))]);
+	const film = filmAt(app.address, [act((context) => followedInTheFrame(context, TO_REFUSING))], 'dynamic');
 	const refusing = new URL('/refusing/', app.address).href;
 	await expect(shoot(film.formats.get('small')!, SHOOTING)).rejects.toThrow(
 		new TakeError(new FilmError(`the page at ${refusing} ${REFUSED_APART}`), 0, 1)
 	);
 });
 
-test('a page nobody answers, reached by a click from one that answered, is refused after the act as not reached', async () => {
+test('a page nobody answers, reached by a click from one that answered, is refused after the act as not reached, framed or in a tab of its own', async () => {
 	await using app = await servedApp(ROUTES, '/links/');
-	const film = filmAt(app.address, [act((context) => followedInTheFrame(context, TO_NOWHERE))]);
-	await expect(shoot(film.formats.get('small')!, SHOOTING)).rejects.toThrow(
-		new TakeError(new FilmError(`the page at ${NOWHERE} could not be reached`), 0, 1)
-	);
+	const steps = [act((context) => followedInTheFrame(context, TO_NOWHERE))];
+	const refused = new TakeError(new FilmError(`the page at ${NOWHERE} could not be reached`), 0, 1);
+	await expect(shoot(filmAt(app.address, steps, 'dynamic').formats.get('small')!, SHOOTING)).rejects.toThrow(refused);
+	await expect(shoot(filmAt(app.address, steps, 'static').formats.get('small')!, SHOOTING)).rejects.toThrow(refused);
 });
 
-test('a click that takes the page the stage stands in away is refused after the act, saying so', async () => {
+test('a click that takes the page a dynamic stage stands in away is refused after the act, saying so', async () => {
 	await using app = await servedApp(ROUTES, '/links/');
-	const film = filmAt(app.address, [act((context) => followedInPlaceOfTheStage(context, TO_TOP))]);
+	const film = filmAt(app.address, [act((context) => followedInPlaceOfTheStage(context, TO_TOP))], 'dynamic');
 	await expect(shoot(film.formats.get('small')!, SHOOTING)).rejects.toThrow(
 		new TakeError(
 			new FilmError(

@@ -131,6 +131,9 @@ export interface Framing {
 	readonly zoomAtMost: number;
 }
 
+/** How close the camera comes to a block it frames where a film names no bound, as a pose's zoom has it. */
+export const ZOOM_AT_MOST = 2.2;
+
 /**
  * A point of the room the stage moves the screen in, in the frame's pixels: across and down from the frame's middle,
  * and out from the frame toward the eye.

@@ -1,38 +1,50 @@
 /**
- * Chromium with the stage open in it and the filmed page in the stage's frame, for one take.
+ * Chromium with the stage open in it and the filmed page shown on it, for one take: a static page in a tab of its own,
+ * pictured on the stage; a dynamic one live in the stage's frame (`stage.ts`).
  *
- * The stage stands apart from the app, a file of the package (`stage/stage.html`), or inside it, on the app's own
- * address, where the film asks for it (`inside.ts`). Apart, the page is framed as it comes and nothing of its answers
- * is touched: a redirect lands in the frame, and a page that refuses to be framed is refused, its refusal named
- * (`watch.ts`). Chrome's Local Network Access checks stay on, and every page is granted `local-network-access`, as a
- * live app is filmed for what its server says: a page left as it came hears what its server on this machine pushes
- * down a WebSocket even without it, but one the stage inside the app answers anew hears nothing until granted it
- * (measured 2026-10-27; held by `tests/smoke/inside.test.ts`). It is granted on the stage apart too, so a page of a
+ * A static page's tab is the page's own: it opens the film's address at the top, first-party to its cookies, so a
+ * page that refuses to be framed or signs in is filmed as it comes, and its pictures are taken only as it changes, not
+ * every frame, which had cost a second capture a frame (347 ms against 202 on the whole screen, measured 2026-10-27).
+ * A dynamic page's stage stands apart from the app, a file of the package (`stage/stage.html`), or inside it, on the
+ * app's own address, where the film asks for it (`inside.ts`). Apart, the page is framed as it comes and nothing of
+ * its answers is touched: a redirect lands in the frame, and a page that refuses to be framed is refused, its refusal
+ * named (`watch.ts`). Chrome's Local Network Access checks stay on, and every page is granted `local-network-access`,
+ * as a live app is filmed for what its server says: a page left as it came hears what its server on this machine
+ * pushes down a WebSocket even without it, but one the stage inside the app answers anew hears nothing until granted
+ * it (measured 2026-10-27; held by `tests/smoke/inside.test.ts`). It is granted everywhere else too, so a page of a
  * public site that asks this machine is heard as it was while the checks were turned off; that is not measured.
  *
- * The page is framed live, not shown on the stage as a picture taken in a tab of its own: that took every frame a
- * second capture, at the finest 347 ms against 202 a frame on the whole screen and 937 against 194 close up (measured
- * 2026-10-27). The page's own motion is stilled, by the reduced motion it is asked for, so every move in the film is
- * the film's. Launched headless, Playwright starts Chromium's headless shell, which draws every frame in software unless asked to draw on the graphics card,
+ * The page's own motion is stilled, by the reduced motion it is asked for, so every move in the film is the film's.
+ * Launched headless, Playwright starts Chromium's headless shell, which draws every frame in software unless asked to draw on the graphics card,
  * through ANGLE onto the system's own graphics interface; it stays headless, and needs no screen. On Linux, Vulkan
  * reached an Intel Iris Xe with no screen named, and the promo, wide and blurred, took 271 s against 495 s in
  * software, its frames alike (SSIM 0.998 on average, 0.996 at the least; measured 2026-10-26). Metal on macOS and
  * Direct3D 11 on Windows are untried. Where it reaches no graphics card, the shell draws in software all the same:
  * where Vulkan finds no driver at all, through SwiftShader, WebGL drawn; where it finds Mesa's software Vulkan alone
  * (lavapipe), the page has no WebGL (both measured on Linux 2026-10-27). The person is warned, as Chrome tells it, and
- * the film is shot. A page that cannot be reached, or refuses its frame, is refused as the frame opens it, by why,
- * rather than when the film first waits on it.
+ * the film is shot. A page that cannot be reached, or refuses its frame, is refused as it is opened, by why, rather
+ * than when the film first waits on it.
  */
 import { type Browser as Playwright, type Frame, type Page, chromium } from 'playwright-core';
+import { ZOOM_AT_MOST } from '../../domain/camera.ts';
 import { FilmError, SetupError } from '../../domain/errors.ts';
 import type { StagePlace } from '../../direction/film.ts';
 import type { ActContext, PageMotionSwitch } from '../../direction/page.ts';
 import type { FontNamed } from '../../direction/theme.ts';
-import type { Browser, Opened, Setting } from '../../studio/ports.ts';
+import type { Browser, Opened, Setting, Stage } from '../../studio/ports.ts';
 import { stagedInside } from './inside.ts';
 import { PlaywrightPage } from './page.ts';
-import { BrowserStage, type Opening, STAGE_FOLDER, STAGE_PAGE, openPage, roomOf, setUpStage } from './stage.ts';
-import { FrameWatch } from './watch.ts';
+import {
+	FramedStage,
+	type Opening,
+	PicturedStage,
+	STAGE_FOLDER,
+	STAGE_PAGE,
+	openPage,
+	roomOf,
+	setUpStage
+} from './stage.ts';
+import { FrameWatch, TabWatch } from './watch.ts';
 import type { Warn } from './warn.ts';
 
 const NAVIGATED = 'framenavigated';
@@ -48,6 +60,9 @@ const NO_LIBRARIES = 'Host system is missing dependencies';
 // How a block the film blurs is blurred, whatever the page's own style says: 12 of the page's pixels, as no letter of a
 // line reads through, the camera close or not (looked at 2026-10-28)
 const BLURRING = { property: 'filter', value: 'blur(12px)', priority: 'important' } as const;
+// Whether the document at the top of a tab is the stage's own, left unblurred, or the filmed page's
+const THE_STAGE_AT_THE_TOP = true;
+const THE_PAGE_AT_THE_TOP = false;
 
 // A family any browser has, set after a film's font to see that it stands as a family of its own
 const FALLBACK_FONT = 'monospace';
@@ -58,12 +73,22 @@ interface FontProbe {
 	readonly fallback: string;
 }
 
-/** The blocks a film blurs, by selector, and how each is blurred. */
+/**
+ * The blocks a film blurs, by selector, and how each is blurred; and whether the document at the top is the stage's
+ * own, the page framed in it, and left as it is.
+ */
 interface Blurring {
 	readonly selectors: readonly string[];
 	readonly property: string;
 	readonly value: string;
 	readonly priority: string;
+	readonly stageAtTheTop: boolean;
+}
+
+/** The browser, and the tab the filmed page stands in: the stage's own, or a tab of its own. */
+interface Tabs {
+	readonly browser: Playwright;
+	readonly filmed: Page;
 }
 // The flag naming the graphics interface ANGLE draws through, and that interface on each system's card, by Node's
 // name for the system
@@ -119,18 +144,18 @@ export class Chromium implements Browser {
 		const browser = await launched(this.renderer);
 		try {
 			await whereItDrawsChecked(this.renderer, browser, this.warn);
-			const page = await browser.newPage({
+			const stage = await browser.newPage({
 				viewport: setting.format.frame,
 				deviceScaleFactor: sharpness,
 				permissions: [LOCAL_NETWORK]
 			});
-			await blurring(page, setting.blurred);
-			const opening = await staged(page, setting.stage, address, this.warn);
-			const watch = new FrameWatch(page, setting.stage, address);
-			const filmed = await framed(page, setting, opening);
-			const absence = await watch.absence(filmed);
-			if (absence !== undefined) throw absence;
-			return new OpenedChromium(browser, new BrowserStage(page, setting.format, watch, filmed), filmed);
+			await unreadRefused(stage, setting.blurred);
+			switch (setting.page) {
+				case 'static':
+					return await pictured(browser, stage, setting, address, sharpness);
+				case 'dynamic':
+					return await framedLive(browser, stage, setting, address, this.warn);
+			}
 		} catch (fault) {
 			await browser.close();
 			throw fault;
@@ -138,21 +163,76 @@ export class Chromium implements Browser {
 	}
 }
 
+/** The browser with the filmed page shown on its stage: acted on, typed into and moved in the frame it stands in. */
 class OpenedChromium implements Opened {
 	readonly browser: Playwright;
-	readonly stage: BrowserStage;
+	readonly stage: Stage;
 	readonly page: PlaywrightPage;
 	readonly act: ActContext;
 
-	constructor(browser: Playwright, stage: BrowserStage, filmed: Frame) {
-		this.browser = browser;
+	constructor(tabs: Tabs, stage: Stage, filmed: Frame) {
+		this.browser = tabs.browser;
 		this.stage = stage;
-		this.page = new PlaywrightPage(filmed, stage.page.keyboard);
-		this.act = { page: filmed, motion: new PageMotion(stage.page) };
+		this.page = new PlaywrightPage(filmed, tabs.filmed.keyboard);
+		this.act = { page: filmed, motion: new PageMotion(tabs.filmed) };
 	}
 
 	[Symbol.asyncDispose](): Promise<void> {
 		return this.browser.close();
+	}
+}
+
+/**
+ * A static page opened in a tab of its own at the screen's size, as sharp as the stage's frames are where the camera
+ * comes as close as it does unbounded, and pictured on the stage apart from the app.
+ */
+async function pictured(
+	browser: Playwright,
+	stage: Page,
+	setting: Setting,
+	address: string,
+	sharpness: number
+): Promise<Opened> {
+	await stage.goto(new URL(STAGE_PAGE, STAGE_FOLDER).href);
+	await stageSetUp(stage, setting);
+	const filmed = await browser.newPage({
+		viewport: setting.format.screen,
+		deviceScaleFactor: sharpness * ZOOM_AT_MOST,
+		permissions: [LOCAL_NETWORK]
+	});
+	await filmed.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
+	await blurring(filmed, setting.blurred, THE_PAGE_AT_THE_TOP);
+	const watch = new TabWatch(filmed, address);
+	await reached(filmed, address);
+	const pictures = new PicturedStage(stage, filmed, watch);
+	return new OpenedChromium({ browser, filmed }, pictures, filmed.mainFrame());
+}
+
+/** A dynamic page opened live in the stage's frame, the stage standing where the film asks; refused where it is gone. */
+async function framedLive(
+	browser: Playwright,
+	stage: Page,
+	setting: Setting,
+	address: string,
+	warn: Warn
+): Promise<Opened> {
+	await blurring(stage, setting.blurred, THE_STAGE_AT_THE_TOP);
+	const opening = await staged(stage, setting.stage, address, warn);
+	const watch = new FrameWatch(stage, setting.stage, address);
+	const filmed = await framed(stage, setting, opening);
+	const absence = await watch.absence(filmed);
+	if (absence !== undefined) throw absence;
+	const tabs = { browser, filmed: stage };
+	return new OpenedChromium(tabs, new FramedStage(stage, setting.format, watch, filmed), filmed);
+}
+
+/** A page gone to the film's address; one that cannot be reached refused, saying so. */
+async function reached(page: Page, address: string): Promise<void> {
+	try {
+		await page.goto(address);
+	} catch (fault) {
+		if (!(fault instanceof Error)) throw fault;
+		throw new FilmError(`the page at ${address} could not be reached`, { cause: fault });
 	}
 }
 
@@ -251,31 +331,42 @@ async function staged(page: Page, stage: StagePlace, address: string, warn: Warn
 }
 
 /**
- * The blocks a film blurs blurred in every document the page opens, by a style sheet each is given as it is made, a
- * rule a selector, so a page the film goes on to blurs them too; the stage's own document, at the top, is given none.
- * A selector Chrome cannot make a rule of is refused before anything opens, by the same making of a rule, where a
- * style sheet would drop it without a word. A block in a shadow root, or in a document that sets its own adopted
- * style sheets in place of all, is not blurred.
+ * A selector the film blurs that Chrome cannot make a rule of, refused before anything opens, by the same making of a
+ * rule, where a style sheet would drop it without a word.
  */
-async function blurring(page: Page, blurred: readonly string[]): Promise<void> {
-	if (blurred.length === 0) return;
+async function unreadRefused(page: Page, blurred: readonly string[]): Promise<void> {
 	const unread = await page.evaluate(unreadOf, blurred);
 	if (unread !== undefined) {
 		throw new FilmError(`the film's blurred holds ${JSON.stringify(unread)}: it is no selector Chrome reads`);
 	}
-	await page.addInitScript(blurredIn, { selectors: blurred, ...BLURRING });
 }
 
 /**
- * The stage set up and the page opened in its frame, as far as it loads: its frame. A font the film names, in its
- * theme or in a look's move, that CSS reads as no list of families a fallback can follow is refused first, as one with
- * a quote left open, which runs on over the stage's own fallbacks: the stage would fall to the browser's font without
- * a word.
+ * The blocks a film blurs blurred in every document a tab opens, by a style sheet each is given as it is made, a
+ * rule a selector, so a page the film goes on to blurs them too; where the stage stands at the top, its own document
+ * is given none. A block in a shadow root, or in a document that sets its own adopted style sheets in place of all,
+ * is not blurred.
  */
-async function framed(page: Page, setting: Setting, opening: Opening): Promise<Frame> {
+async function blurring(page: Page, blurred: readonly string[], stageAtTheTop: boolean): Promise<void> {
+	if (blurred.length === 0) return;
+	await page.addInitScript(blurredIn, { selectors: blurred, ...BLURRING, stageAtTheTop });
+}
+
+/**
+ * The stage set to the film's format and asked for its colour scheme and stilled motion. A font the film names, in its
+ * theme or in a look's move, that CSS reads as no list of families a fallback can follow is refused, as one with a
+ * quote left open, which runs on over the stage's own fallbacks: the stage would fall to the browser's font without a
+ * word.
+ */
+async function stageSetUp(page: Page, setting: Setting): Promise<void> {
 	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
 	await page.evaluate(setUpStage, roomOf(setting.format));
 	for (const named of setting.fonts) await refusedWhereNoFamily(page, named);
+}
+
+/** The stage set up and the page opened in its frame, as far as it loads: its frame. */
+async function framed(page: Page, setting: Setting, opening: Opening): Promise<Frame> {
+	await stageSetUp(page, setting);
 	const [filmed] = await Promise.all([
 		page.waitForEvent(NAVIGATED, { predicate: isInTheStagesFrame }),
 		page.evaluate(openPage, opening)
@@ -310,9 +401,9 @@ function unreadOf(selectors: readonly string[]): string | undefined {
 	return undefined;
 }
 
-/** A document's blocks blurred, a rule a selector, unless it is the stage's own, the page at the top. */
+/** A document's blocks blurred, a rule a selector, unless it is the stage's own, at the top of the stage's tab. */
 function blurredIn(blurring: Blurring): void {
-	if (window.top === window) return;
+	if (blurring.stageAtTheTop && window.top === window) return;
 	const sheet = new CSSStyleSheet();
 	for (const selector of blurring.selectors) {
 		const rule = sheet.cssRules.item(sheet.insertRule(`${selector} {}`));

@@ -136,14 +136,16 @@ and clicks it for real; its server is
   before shooting.
 - Prefer the page's own states to anything drawn over it: open a panel with
   its own button, not by hiding parts of the page.
-- An app whose page refuses frames, which livereel refuses naming the
-  refusal ("refuses to be framed (X-Frame-Options: DENY)"): write
-  `stage: 'inside'` in `defineFilm`, where livereel takes the refusal off.
-- An app that signs in: write `stage: 'inside'` in `defineFilm`, and sign
-  in in `ready` or in an act, as a person does, with an account the user
-  gives for the film. The stage then stands on the app's own address. Read
-  what each stage costs in `node_modules/livereel/README.md`, "Where the
-  stage stands", and tell the user before shooting.
+- A static page, the default, stands in a tab of its own, as a person opens
+  it: one that refuses frames is shown, and one that signs in is signed in
+  in `ready` or in an act, as a person does, with an account the user gives
+  for the film.
+- A dynamic page (`page: 'dynamic'`) stands live in the stage's frame. One
+  that refuses frames, which livereel refuses naming the refusal ("refuses
+  to be framed (X-Frame-Options: DENY)"), or signs in: write
+  `stage: 'inside'` in `defineFilm`, and the stage stands on the app's own
+  address. Read what each stage costs in `node_modules/livereel/README.md`,
+  "Where the stage stands", and tell the user before shooting.
 
 ### Sound
 
@@ -307,18 +309,23 @@ with a timeout that long; a still takes seconds.
 
 ## Traps already met
 
-- On the stage apart, an app's own requests go without its cookies, so an
-  app behind a sign-in shows nobody signed in. Ask the user before writing
-  the film whether the pages it shows need a sign-in; if they do, shoot it
-  with `stage: 'inside'` and an account for the film. A session only the
-  user can sign in to (two factors, a sign-in elsewhere) cannot be filmed
-  yet: say so and stop, or film a page that needs none.
-- On the stage apart, a click that moves the top page, as a link to `_top`
-  does, takes the stage away, and livereel refuses the film saying so: click
-  such a link on the stage inside the app, where it does nothing, or leave
-  it out.
-- A browser places a click wrongly on a screen the camera has scaled: an
-  `act` lays the screen flat at its own size first. Do clicks in `act`.
+- A dynamic page on the stage apart sends its own requests without its
+  cookies, so an app behind a sign-in shows nobody signed in. Ask the user
+  before writing the film whether the pages it shows need a sign-in; if they
+  do, film the page static, or dynamic with `stage: 'inside'`, and an
+  account for the film. A session only the user can sign in to (two
+  factors, a sign-in elsewhere) cannot be filmed yet: say so and stop, or
+  film a page that needs none.
+- A dynamic page on the stage apart: a click that moves the top page, as a
+  link to `_top` does, takes the stage away, and livereel refuses the film
+  saying so: click such a link on the stage inside the app, where it does
+  nothing, or leave it out.
+- Do clicks in `act`: a dynamic page's screen is laid flat at its own size
+  first, as a browser places a click wrongly on a screen the camera has
+  scaled; a static page is clicked in its own tab.
+- A static page is pictured as sharp as a camera 2.2 times close needs:
+  keep `zoomAtMost` and a pose's zoom at 2.2 or under, or its text shows
+  softer.
 - The page is asked for the light colour scheme: an app that follows the
   system's scheme is filmed light, unless the film writes
   `colourScheme: 'dark'` in `defineFilm`.

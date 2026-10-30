@@ -1,12 +1,18 @@
-// A film of an app shot on the stage inside it, on the app's own address: signed in by a redirect that sets its
-// cookie, framed though it refuses every frame, pushed to down a WebSocket, and kept in the stage though its page
-// breaks out of frames
+// A film of an app that signs in by a redirect that sets its cookie, refuses every frame, pushes down a WebSocket and
+// breaks out of frames: shot live on the stage inside it, on its own address, and as a static page in a tab of its own
 import { expect, test } from 'vitest';
 import { Chromium } from '../../src/adapters/browser/chromium.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { shoot } from '../../src/studio/shoot.ts';
 import { NoFrames, PUSHED, type Routes, servedApp } from './app.ts';
 import { type ActContext, act, defineFilm, play } from 'livereel';
+import type { Script, Serving } from '../../src/direction/film.ts';
+
+/** What reached a filmed page, and what a take warned of. */
+interface Reached {
+	readonly seen: readonly (string | null)[];
+	readonly warned: readonly string[];
+}
 
 const ME = '[data-testid=me]';
 const PUSHED_HERE = '[data-testid=pushed]';
@@ -63,13 +69,14 @@ async function whatReachedThePage(context: ActContext, seen: (string | null)[]):
 	seen.push(await context.page.evaluate(() => location.pathname));
 }
 
-test('an app on the stage inside it is filmed signed in, framed though every answer refuses, pushed to, and kept in the stage, with nothing to warn of', async () => {
+/** What reached the app's page, and what the take warned of, shot as a film of these ways to show its page. */
+async function reachedAs(showing: Pick<Script<Serving, 'small'>, 'stage' | 'page'>): Promise<Reached> {
 	const seen: (string | null)[] = [];
 	const warned: string[] = [];
 	const film = defineFilm({
+		...showing,
 		formats: { small: SMALL },
 		serve: () => servedApp(ROUTES, '/login'),
-		stage: 'inside',
 		ready: (context) => context.page.locator(ME).waitFor(),
 		steps: () => [play({ seconds: 0.2 }), act((context) => whatReachedThePage(context, seen))]
 	});
@@ -79,5 +86,16 @@ test('an app on the stage inside it is filmed signed in, framed though every ans
 		track: SILENT,
 		quality: { sharpness: 1, blurred: false }
 	});
-	expect({ seen, warned }).toEqual({ seen: [`"${SESSION}"`, SESSION, PUSHED, '/app/'], warned: [] });
+	return { seen, warned };
+}
+
+test('a dynamic app on the stage inside it is filmed signed in, framed though every answer refuses, pushed to, and kept in the stage, with nothing to warn of', async () => {
+	expect(await reachedAs({ stage: 'inside', page: 'dynamic' })).toEqual({
+		seen: [`"${SESSION}"`, SESSION, PUSHED, '/app/'],
+		warned: []
+	});
+});
+
+test('a static app, in a tab of its own, is filmed signed in, shown though every answer refuses a frame, and pushed to, with nothing to warn of', async () => {
+	expect(await reachedAs({})).toEqual({ seen: [`"${SESSION}"`, SESSION, PUSHED, '/app/'], warned: [] });
 });

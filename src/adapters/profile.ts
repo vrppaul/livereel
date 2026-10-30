@@ -219,6 +219,10 @@ class TimedStage implements Stage {
 		return this.timings.timed('stage.standUp', () => this.stage.standUp());
 	}
 
+	retakePage(): Promise<boolean> {
+		return this.timings.timed('stage.retakePage', () => this.stage.retakePage());
+	}
+
 	absence(): Promise<Error | undefined> {
 		return this.timings.timed('stage.absence', () => this.stage.absence());
 	}

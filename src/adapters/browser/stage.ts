@@ -1,6 +1,17 @@
 /**
- * The stage page as the studio uses it: a frame drawn, the screen laid flat for an act and stood up again, a frame
- * captured. `StageApi` is what the stage's script, `stage/stage.js`, answers under `window.stage`.
+ * The stage page as the studio uses it: a frame drawn, the page made ready for an act and set back after it, the page
+ * retaken where it is a picture, a frame captured. `StageApi` is what the stage's script, `stage/stage.js`, answers
+ * under `window.stage`.
+ *
+ * The stage shows the filmed page one of two ways. A dynamic page, which changes of itself, stands live in the
+ * screen's frame (`FramedStage`): every frame shows it as it is, and an act lays the screen flat first, as a browser
+ * finds the point it clicks wrongly on a screen the camera has scaled. A static page stands in a tab of its own, at
+ * the screen's size, and the stage shows a picture of it (`PicturedStage`), taken anew as the take asks, after the
+ * page was acted on or moved: a frame then costs one capture of the stage, the page's picture standing as it was, and
+ * an act is done in the page's own tab, at no scale. The picture is taken sharper than the frame by as far as a
+ * camera comes in where a film names no bound (`ZOOM_AT_MOST`), so text the camera comes close to stays as crisp as
+ * the live frame shows it: the README film's close shots at 4× against the live frame, SSIM 0.990–0.992, alike to the
+ * eye at twice their size (2026-10-30).
  *
  * A frame is captured by Playwright at the page's device scale, the film's sharpness. A capture of livereel's own, on
  * a CDP session apart from Playwright's, came back at the page's own pixels whatever that scale, every full shoot as
@@ -8,8 +19,8 @@
  * against 134 ms at 2×). Its own device metrics set on it bring it to the film's sharpness, at 127–133 ms a capture
  * against Playwright's 135–137 on a 2.7 s piece of the README film (2026-10-30): too little for a second session's
  * metrics to keep in step with Playwright's as an act lays the screen flat. The page's text caret is kept, as a person
- * sees it typing. Whether the stage and its page are still there, the stage answers from its frame's watch
- * (`watch.ts`).
+ * sees it typing. Whether the filmed page and its stage are still there, the stage answers from its watch
+ * (`watch.ts`): a framed page's, or a tab's, which can take no stage away nor refuse a frame.
  */
 import type { Frame, Page } from 'playwright-core';
 import { eyeDistanceOf } from '../../domain/camera.ts';
@@ -17,7 +28,7 @@ import type { Format } from '../../domain/format.ts';
 import { frameScaleOf } from '../../domain/geometry.ts';
 import type { DrawnScene } from '../../scene.ts';
 import type { Stage } from '../../studio/ports.ts';
-import type { FrameWatch } from './watch.ts';
+import type { FrameWatch, TabWatch } from './watch.ts';
 
 // The package's stage, as far from this module in the source as in the package built from it, and its page
 export const STAGE_FOLDER = new URL('../../../stage/', import.meta.url);
@@ -48,6 +59,8 @@ export interface StageApi {
 	readonly setup: (room: Room) => void;
 	/** The filmed page opened in the screen's frame. */
 	readonly open: (opening: Opening) => void;
+	/** A picture of the filmed page, by its address, shown in the frame's place once it is decoded. */
+	readonly show: (picture: string) => Promise<void>;
 	/** One frame, drawn whole from the scene. */
 	readonly apply: (scene: DrawnScene) => void;
 }
@@ -59,8 +72,12 @@ declare global {
 }
 
 const JPEG_QUALITY = 92;
+// A picture of the page as the stage's image is handed it: a JPEG, in base64
+const JPEG_ADDRESS = 'data:image/jpeg;base64,';
+const BASE64 = 'base64';
 
-export class BrowserStage implements Stage {
+/** The stage with the filmed page live in its frame. */
+export class FramedStage implements Stage {
 	readonly page: Page;
 	readonly format: Format;
 	readonly watch: FrameWatch;
@@ -74,7 +91,7 @@ export class BrowserStage implements Stage {
 	}
 
 	draw(scene: DrawnScene): Promise<void> {
-		return this.page.evaluate(applyScene, scene);
+		return drawnOn(this.page, scene);
 	}
 
 	/** A browser finds the point it clicks wrongly on a screen the camera has scaled; at no scale, every point is the page's own. */
@@ -87,12 +104,17 @@ export class BrowserStage implements Stage {
 		return this.sizedTo(this.format);
 	}
 
+	/** The page is live in its frame: there is no picture of it to take, and none is alike. */
+	retakePage(): Promise<boolean> {
+		return Promise.resolve(false);
+	}
+
 	absence(): Promise<Error | undefined> {
 		return this.watch.absence(this.filmed);
 	}
 
 	capture(): Promise<Uint8Array> {
-		return this.page.screenshot({ type: 'jpeg', quality: JPEG_QUALITY, caret: 'initial' });
+		return capturedOf(this.page);
 	}
 
 	private async sizedTo(format: Format): Promise<void> {
@@ -101,9 +123,64 @@ export class BrowserStage implements Stage {
 	}
 }
 
+/** The stage showing a picture of the filmed page, which stands in a tab of its own. */
+export class PicturedStage implements Stage {
+	readonly page: Page;
+	readonly filmedTab: Page;
+	readonly watch: TabWatch;
+	// The page's picture last taken, none before the first
+	private picture: Buffer | null = null;
+
+	constructor(page: Page, filmedTab: Page, watch: TabWatch) {
+		this.page = page;
+		this.filmedTab = filmedTab;
+		this.watch = watch;
+	}
+
+	draw(scene: DrawnScene): Promise<void> {
+		return drawnOn(this.page, scene);
+	}
+
+	/** The page is acted on in its own tab, at its own size: nothing is laid flat. */
+	layFlat(): Promise<void> {
+		return Promise.resolve();
+	}
+
+	standUp(): Promise<void> {
+		return Promise.resolve();
+	}
+
+	/** The page's picture taken anew, and shown where it came out otherwise than the last. */
+	async retakePage(): Promise<boolean> {
+		const picture = await capturedOf(this.filmedTab);
+		const alike = this.picture?.equals(picture) ?? false;
+		this.picture = picture;
+		if (!alike) await this.page.evaluate(pictureShown, `${JPEG_ADDRESS}${picture.toString(BASE64)}`);
+		return alike;
+	}
+
+	/** A page in a tab of its own takes no stage away and refuses no frame: it is gone only where it was not reached. */
+	absence(): Promise<Error | undefined> {
+		return Promise.resolve(this.watch.absence());
+	}
+
+	capture(): Promise<Uint8Array> {
+		return capturedOf(this.page);
+	}
+}
+
 /** The room of a format, seen from where the engine works out what the camera shows (`src/domain/camera.ts`). */
 export function roomOf(format: Format): Room {
 	return { format, eyeDistance: eyeDistanceOf(format.frame), frameScale: frameScaleOf(format.frame) };
+}
+
+function drawnOn(page: Page, scene: DrawnScene): Promise<void> {
+	return page.evaluate(applyScene, scene);
+}
+
+/** A page as it shows now, as a JPEG at its device scale, its text caret kept. */
+function capturedOf(page: Page): Promise<Buffer> {
+	return page.screenshot({ type: 'jpeg', quality: JPEG_QUALITY, caret: 'initial' });
 }
 
 // What follows runs in the stage page, each function handed over alone
@@ -116,6 +193,10 @@ export function setUpStage(room: Room): void {
 /** The filmed page opened in the stage's frame. */
 export function openPage(opening: Opening): void {
 	window.stage.open(opening);
+}
+
+function pictureShown(picture: string): Promise<void> {
+	return window.stage.show(picture);
 }
 
 function applyScene(scene: DrawnScene): void {

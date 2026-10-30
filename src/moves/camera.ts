@@ -8,7 +8,7 @@
  * it, and the whole frame face-on. So a block framed stays framed as the window travels or grows, in the same step or
  * after.
  */
-import { A_POSE, type Aim, type Angle, type Pose } from '../domain/camera.ts';
+import { A_POSE, type Aim, type Angle, type Pose, ZOOM_AT_MOST } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import { A_COUNT, A_NUMBER, A_NUMBER_OR_ENDLESS, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import {
@@ -43,9 +43,8 @@ export interface OntoScript extends AngleScript {
 	readonly zoomAtMost?: number;
 }
 
-// How much of the page shows round a block the camera frames, and how close it may come
+// How much of the page shows round a block the camera frames
 const AIR = 80;
-const ZOOM_AT_MOST = 2.2;
 const ANGLE_FORM: Form<AngleScript> = { tilt: A_NUMBER, turn: A_NUMBER, ...TIMING_FORM };
 const ONTO_FORM: Form<OntoScript> = { every: A_COUNT, air: A_NUMBER, zoomAtMost: A_NUMBER_OR_ENDLESS, ...ANGLE_FORM };
 // A box is one, where `every` counts the blocks a selector matches

@@ -84,6 +84,11 @@ body {
 	border: 0;
 }
 
+/* The page shown one way: live in its frame, or as a picture of it, the other hidden */
+.page[hidden] {
+	display: none;
+}
+
 /* The light: a block's outline, reaching a little past it, whose shadow darkens past every edge of the screen */
 .light {
 	--light-reach: 4px;
