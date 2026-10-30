@@ -22,17 +22,8 @@ import {
 	timingOf
 } from '../direction/move.ts';
 import { type CodeLine, NOT_LIT, WHOLLY_LIT, type WrittenCode, codeOf } from '../props/code.ts';
-import {
-	NOT_GONE,
-	SLIDE_OUT_FORM,
-	type SlideOutScript,
-	going,
-	leavingToward,
-	pushOf,
-	pushedAt,
-	shownComing,
-	travelling
-} from './words.ts';
+import { SLIDE_OUT_FORM, type SlideOutScript } from './slide.ts';
+import { NOT_GONE, going, leavingToward, pushOf, pushedAt, shownComing, travelling } from './words.ts';
 
 /** Where code stands: `at` a place on the frame; and the side it slides in `from`, past the frame's edge, if any. */
 export interface CodeScript extends TimingScript {

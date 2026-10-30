@@ -35,17 +35,8 @@ import {
 } from '../direction/move.ts';
 import type { Title } from '../props/title.ts';
 import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
-import {
-	NOT_GONE,
-	SLIDE_OUT_FORM,
-	type SlideOutScript,
-	going,
-	leavingToward,
-	pushOf,
-	pushedAt,
-	shownComing,
-	travelling
-} from './words.ts';
+import { SLIDE_OUT_FORM, type SlideOutScript } from './slide.ts';
+import { NOT_GONE, going, leavingToward, pushOf, pushedAt, shownComing, travelling } from './words.ts';
 
 /**
  * Where a title stands: `at` a place on the frame, or over the whole of it, on its ground, where none is named; how it

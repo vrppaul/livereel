@@ -78,7 +78,8 @@ const TYPED = withProp(openingScene(SMALL, LIVEREELS_LOOK), 'terminal', {
 	title: 'A terminal',
 	lines: [],
 	typed: 'add a test',
-	shown: 1
+	shown: 1,
+	shift: { left: 0, top: 0 }
 });
 const READ: TerminalLine = { kind: 'work', text: 'Read app.py' };
 const SAID: TerminalLine = { kind: 'said', text: 'Done.' };

@@ -56,6 +56,9 @@ const TALL: Stacking = { heading: { top: 0.18, height: 0.22 }, code: { top: 0.42
 const SHORT: Stacking = { heading: { top: 0, height: 0.3 }, code: { top: 0.34, height: 0.66 } };
 const HIGH: Stacking = { heading: { top: 0, height: 0.16 }, code: { top: 0.2, height: 0.58 } };
 const TWO_LINES_OVER_CODE: Stacking = { heading: { top: 0, height: 0.4 }, code: { top: 0.44, height: 0.56 } };
+// The names each format gives a beat's heading and code beside the window, and across from it
+const BESIDE_THE_WINDOW: WordsNamed = { heading: 'heading', code: 'code' };
+const ACROSS_FROM_THE_WINDOW: WordsNamed = { heading: 'headingAcross', code: 'codeAcross' };
 // The app in a window in the middle of the frame, the ground on either side of it; the window gone square, beside the
 // words that say the film is shot square too
 const MIDDLE_OF_THE_WIDE: Place = { left: 0.156, top: 0.067, width: 0.688, height: 0.867 };
@@ -173,10 +176,7 @@ const SOLARIZED: Theme = {
 	codeCall: '#b58900',
 	codeKey: '#268bd2'
 };
-// Where the words of a beat stand: beside the window, or across from it, where each format names them; above a window
-// low on the frame; or on a slide of their own with no window
-const BESIDE_THE_WINDOW: Words = { heading: 'heading', code: 'code' };
-const ACROSS_FROM_THE_WINDOW: Words = { heading: 'headingAcross', code: 'codeAcross' };
+// Where the words of a beat stand besides: above a window low on the frame, or on a slide of their own with no window
 const ABOVE_THE_WINDOW = stackedIn({ left: 0.06, top: 0.06, width: 0.88, height: 0.32 }, SHORT);
 const ON_A_SLIDE = stackedIn({ left: 0.18, top: 0.12, width: 0.64, height: 0.62 }, TALL);
 // The look's slide: taller, the heading high in it, so its seven lines of code stand clear below
@@ -206,6 +206,12 @@ interface Words {
 	readonly code: Place;
 }
 
+/** A beat's words where a format names their places, by those names. */
+interface WordsNamed extends Words {
+	readonly heading: string;
+	readonly code: string;
+}
+
 /** A beat's heading and code in a place, each in its band of it. */
 function stackedIn(place: Place, stacking: Stacking): Words {
 	return { heading: { of: place, ...stacking.heading }, code: { of: place, ...stacking.code } };
@@ -218,7 +224,12 @@ function stackedIn(place: Place, stacking: Stacking): Words {
 function headingsAndCodeIn(stacking: Stacking): Readonly<Record<string, Place>> {
 	const beside = stackedIn('words', stacking);
 	const across = stackedIn('wordsAcross', stacking);
-	return { heading: beside.heading, code: beside.code, headingAcross: across.heading, codeAcross: across.code };
+	return {
+		[BESIDE_THE_WINDOW.heading]: beside.heading,
+		[BESIDE_THE_WINDOW.code]: beside.code,
+		[ACROSS_FROM_THE_WINDOW.heading]: across.heading,
+		[ACROSS_FROM_THE_WINDOW.code]: across.code
+	};
 }
 
 /** Refresh clicked for real, until the page shows the count the app's server answered with. */

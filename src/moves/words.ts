@@ -1,22 +1,13 @@
 /**
  * What the moves of what comes up one after another and goes, a caption's, a title's, a callout's and a note's words
  * and the lines of code, do alike; and what the moves of a title and code in a place do alike as they travel: to
- * another place, in from past a side of the frame, pushing what stands off past the side across, out past one; and
- * how a film names the side what slides in or out whole comes from or goes toward, words, the card or the terminal.
+ * another place, in from past a side of the frame, pushing what stands off past the side across, out past one.
  */
-import { A_FRAME_SIDE, type Box, type FrameSide, type Size, boxToward } from '../domain/geometry.ts';
-import { type Form } from '../domain/handed.ts';
+import { type Box, type FrameSide, type Size, boxToward } from '../domain/geometry.ts';
 import { acrossFrom, pastTheEdge } from '../domain/place.ts';
-import {
-	type Beginning,
-	type Change,
-	TIMING_FORM,
-	type TimingScript,
-	present,
-	propChange,
-	untilTheEnd
-} from '../direction/move.ts';
+import { type Beginning, type Change, present, propChange, untilTheEnd } from '../direction/move.ts';
 import type { PropStates } from '../scene.ts';
+import { SHOWN_WHOLE } from './slide.ts';
 
 /** The props that come up one after another, words or lines of code (`src/props/words.ts`, `src/props/code.ts`). */
 type ComingUpProp = 'caption' | 'title' | 'callout' | 'note' | 'code';
@@ -36,23 +27,8 @@ interface Push<Words extends Placed> {
 	readonly end: Box;
 }
 
-/** The side what goes slides out `toward`, past the frame's edge, rather than going where it stands. */
-export interface SlideOutScript extends TimingScript {
-	readonly toward?: FrameSide;
-}
-
-export const SLIDE_OUT_FORM: Form<SlideOutScript> = { toward: A_FRAME_SIDE, ...TIMING_FORM };
-
-/** The side what comes slides in `from`, past the frame's edge, rather than coming up in place. */
-export interface SlideInScript extends TimingScript {
-	readonly from?: FrameSide;
-}
-
-export const SLIDE_IN_FORM: Form<SlideInScript> = { from: A_FRAME_SIDE, ...TIMING_FORM };
 // Words not going: neither gone nor on their way out
 export const NOT_GONE = 0;
-// What slides in from a side, words or the card, comes whole at once
-export const SHOWN_WHOLE = 1;
 
 /** What comes up one after another on the scene going; once gone, there is none. */
 export function going(prop: ComingUpProp, beginning: Beginning): Change {

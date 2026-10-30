@@ -3,9 +3,8 @@
  * comes up and goes where it stands, or slides in or out whole past a side of the frame, a whole frame as the card
  * does, so what slides the other way in the same step pushes it as one sheet.
  */
-import { type FrameSide, IN_PLACE, pointToward } from '../domain/geometry.ts';
+import type { FrameSide } from '../domain/geometry.ts';
 import { A_NUMBER, A_STRING, type Form, assertKind, assertWritten } from '../domain/handed.ts';
-import { frameToward } from '../domain/place.ts';
 import { linear } from '../domain/time.ts';
 import { A_STROKES, type Keystroke, typedAlong } from '../domain/typing.ts';
 import {
@@ -23,7 +22,14 @@ import { keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
 import { A_LINES, type Terminal, type TerminalLine, openTerminal } from '../props/terminal.ts';
 import { TYPING_FORM, type TypingScript } from './typing.ts';
-import { SHOWN_WHOLE, SLIDE_IN_FORM, SLIDE_OUT_FORM, type SlideInScript, type SlideOutScript } from './words.ts';
+import {
+	SLIDE_IN_FORM,
+	SLIDE_OUT_FORM,
+	type SlideInScript,
+	type SlideOutScript,
+	slidingIn,
+	slidingOut
+} from './slide.ts';
 
 /** Of the agent's work, the share it only thinks before its first line. */
 export interface WorkScript extends TimingScript {
@@ -53,7 +59,7 @@ export function open(title: string, script: SlideInScript = {}): Move {
 	return {
 		part: 'terminal',
 		timing: timingOf(script),
-		begin: (beginning) => (from === null ? opening(title) : slidingIn(title, from, beginning))
+		begin: (beginning) => (from === null ? opening(title) : slidIn(title, from, beginning))
 	};
 }
 
@@ -103,7 +109,7 @@ export function leave(script: SlideOutScript = {}): Move {
 	return {
 		part: 'terminal',
 		timing: timingOf(script),
-		begin: (beginning) => (toward === null ? leaving(beginning) : slidingOut(beginning, toward))
+		begin: (beginning) => (toward === null ? leaving(beginning) : slidOut(beginning, toward))
 	};
 }
 
@@ -112,15 +118,10 @@ function opening(title: string): Change {
 	return propChange('terminal', (progress) => ({ ...terminal, shown: progress }));
 }
 
-/** The terminal sliding in whole from a frame past its place on a side. */
-function slidingIn(title: string, from: FrameSide, beginning: Beginning): Change {
+/** A terminal with its title sliding in whole from past a side of the frame. */
+function slidIn(title: string, from: FrameSide, beginning: Beginning): Change {
 	const terminal = openTerminal(title);
-	const start = frameToward(from, beginning.format.frame);
-	return propChange('terminal', (progress) => ({
-		...terminal,
-		shown: SHOWN_WHOLE,
-		shift: pointToward(start, IN_PLACE, progress)
-	}));
+	return slidingIn('terminal', (shift) => ({ ...terminal, shift }), from, beginning);
 }
 
 function typingInto(beginning: Beginning, strokes: readonly Keystroke[]): Change {
@@ -145,12 +146,9 @@ function leaving(beginning: Beginning): Change {
 }
 
 /** The terminal sliding out whole to a frame past its place on a side; once there, none. */
-function slidingOut(beginning: Beginning, toward: FrameSide): Change {
+function slidOut(beginning: Beginning, toward: FrameSide): Change {
 	const terminal = openOn(beginning, 'left');
-	const end = frameToward(toward, beginning.format.frame);
-	return propChange('terminal', (progress) =>
-		untilTheEnd(progress, { ...terminal, shift: pointToward(terminal.shift, end, progress) })
-	);
+	return slidingOut('terminal', (shift) => ({ ...terminal, shift }), terminal.shift, toward, beginning);
 }
 
 /** The lines written by `progress` of the work, after its share of thinking, and the thinking line until the end. */
