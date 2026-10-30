@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- An ad for a feed, `examples/livereel-ad.ts`, square, 66.6 s, for developers: it opens on a finished frame that serves as the feed's preview and claims nobody filmed it, asks how, answers with a real click, shows the camera's moves shot by shot, the file that shot it and a change made to it, the film's acts, every value of the look, three keyboards, the prompts it took, and ends on the frame it opened on with its words changed. Acme's chart gains a test id.
+- An ad for a feed, `examples/livereel-ad.ts`, square, 55.7 s, for developers: it opens on a finished frame that serves as the feed's preview and claims nobody filmed it, asks how, answers with a real click, shows the camera's moves shot by shot, the camera keeping the row of cards framed but where the words name another block, the file that shot it and a change made to it, the film's acts, every value of the look, three keyboards, the prompts it took, and ends on the frame it opened on with its words changed. Acme's chart gains a test id.
 
 ## 0.5.0
 

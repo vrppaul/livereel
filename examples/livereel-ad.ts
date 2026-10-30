@@ -52,18 +52,14 @@ const MOST_OF_THE_FRAME: Place = { left: 0.067, top: 0.2, width: 0.866, height: 
 const UNDER_THE_HEADLINE_WINDOW: Place = { left: 0.1, top: 0.37, width: 0.8, height: 0.56 };
 const LOW_WINDOW: Place = { left: 0.067, top: 0.55, width: 0.866, height: 0.39 };
 const CORNER_WINDOW: Place = { left: 0.42, top: 0.4, width: 0.52, height: 0.52 };
-// The app's blocks the film looks at
+// The app's blocks the film looks at. The row of cards is the camera's home: it frames them, Refresh above, in every
+// shot but the question's rush to the count and the search the keys are typed into
 const VISITORS = '[data-testid=visitors]';
 const VISITORS_TODAY = '[data-testid=visitors-today]';
 const REFRESH = '[data-testid=refresh]';
 const CARDS = '[data-testid=kpis]';
-const CHART = '[data-testid=chart]';
 const TOP_PAGES = '[data-testid=top-pages]';
-const PAGES = '[data-testid=pages]';
 const SEARCH = '[data-testid=search]';
-// The button and the count it changes, framed together
-const REFRESH_AND_VISITORS = `${REFRESH}, ${VISITORS}`;
-const BOTH = 2;
 // The word set apart in a headline, in the accent's amber
 const AMBER = '#fbbf24';
 // The headlines' letters: the claim, the question set huge, and the rest
@@ -154,12 +150,12 @@ function actTheClaim(): readonly Step[] {
 	return [
 		cut(
 			window.to(UNDER_THE_HEADLINE_WINDOW),
-			camera.onto(REFRESH_AND_VISITORS, { every: BOTH, tilt: 20, turn: -18 }),
+			camera.onto(CARDS, { tilt: 20, turn: -18 }),
 			light.on(VISITORS, { dim: 0.35 }),
 			cursor.to(REFRESH),
 			title.show('i have not filmed a single frame of this.', { at: HEADLINE, size: CLAIM_SIZE })
 		),
-		play({ seconds: 3.2, moves: [camera.onto(REFRESH_AND_VISITORS, { every: BOTH, tilt: 14, turn: -12 })] })
+		play({ seconds: 2.4, moves: [camera.onto(CARDS, { tilt: 14, turn: -12 })] })
 	];
 }
 
@@ -179,46 +175,40 @@ function actTheQuestion(): readonly Step[] {
 function actTheAnswer(served: AppServed): readonly Step[] {
 	return [
 		play({
-			seconds: 2.6,
+			seconds: 1.8,
 			moves: [
-				camera.onto(REFRESH_AND_VISITORS, { every: BOTH, tilt: 0, turn: 0, within: { end: 0.5 } }),
+				camera.onto(CARDS, { tilt: 0, turn: 0, within: { end: 0.5 } }),
 				headline(['claude code did this. using ', { text: 'livereel', italic: true, ink: AMBER }, '.'], LINE_SIZE)
 			],
 			ease: easeInOutCubic
 		}),
 		...cursor.click(refreshing(served)),
-		play({ seconds: 1, moves: [camera.onto(VISITORS)], ease: easeInOutCubic }),
-		hold({ seconds: 1.6 })
+		hold({ seconds: 1.4 })
 	];
 }
 
-/** The camera leaning onto the chart from below and aside. */
+/** The camera leaning the other way from below, still on the cards. */
 function actTheLean(): readonly Step[] {
 	return [
 		cut(cursor.hide()),
 		play({
-			seconds: 1.6,
-			moves: [headline('it leans.', LINE_SIZE), camera.onto(CHART, { tilt: -12, turn: 22 })],
+			seconds: 1,
+			moves: [headline('it leans.', LINE_SIZE), camera.onto(CARDS, { tilt: -12, turn: 22 })],
 			ease: easeInOutCubic
 		}),
-		hold({ seconds: 1.8 })
+		hold({ seconds: 1 })
 	];
 }
 
-/** The window off to a corner, the camera on the top pages, their list scrolling of its own. */
+/** The window off to a corner and face-on, the camera keeping the cards framed in it. */
 function actTheTravel(): readonly Step[] {
 	return [
 		play({
-			seconds: 1.6,
-			moves: [
-				headline('it travels.', LINE_SIZE),
-				window.to(CORNER_WINDOW),
-				camera.onto(TOP_PAGES, { tilt: 0, turn: 0 })
-			],
+			seconds: 1,
+			moves: [headline('it travels.', LINE_SIZE), window.to(CORNER_WINDOW), camera.onto(CARDS, { tilt: 0, turn: 0 })],
 			ease: easeInOutCubic
 		}),
-		play({ seconds: 1.4, moves: [page.scrollBy(PAGES, { pixels: 224 })], ease: easeInOutCubic }),
-		hold({ seconds: 0.8 })
+		hold({ seconds: 1 })
 	];
 }
 
@@ -226,16 +216,12 @@ function actTheTravel(): readonly Step[] {
 function actTheLight(): readonly Step[] {
 	return [
 		play({
-			seconds: 1.4,
-			moves: [
-				headline('it lights one block.', LINE_SIZE),
-				window.to(UNDER_THE_HEADLINE_WINDOW),
-				camera.onto(REFRESH_AND_VISITORS, { every: BOTH })
-			],
+			seconds: 0.9,
+			moves: [headline('it lights one block.', LINE_SIZE), window.to(UNDER_THE_HEADLINE_WINDOW)],
 			ease: easeInOutCubic
 		}),
-		play({ seconds: 1.2, moves: [light.to(REFRESH)], ease: easeInOutCubic }),
-		hold({ seconds: 1.6 })
+		play({ seconds: 0.8, moves: [light.to(REFRESH)], ease: easeInOutCubic }),
+		hold({ seconds: 1.2 })
 	];
 }
 
@@ -243,7 +229,7 @@ function actTheLight(): readonly Step[] {
 function actTheFile(): readonly Step[] {
 	return [
 		play({
-			seconds: 1.4,
+			seconds: 1,
 			moves: [
 				headline('this is the whole film. a typescript file.', LINE_SIZE),
 				window.to(LOW_WINDOW),
@@ -266,7 +252,7 @@ function actTheFile(): readonly Step[] {
 				// #endregion
 			]
 		}),
-		play({ seconds: 1.2, moves: [camera.onto(CARDS, { tilt: 0, turn: 0 })] }),
+		play({ seconds: 0.8, moves: [camera.onto(CARDS, { tilt: 0, turn: 0 })] }),
 		hold({ seconds: 0.6 }),
 		play({
 			seconds: 1,
@@ -295,7 +281,7 @@ function actTheFile(): readonly Step[] {
 function actTheCode(): readonly Step[] {
 	return [
 		play({
-			seconds: 1.2,
+			seconds: 0.9,
 			moves: [
 				headline('readable. diffable. yours.', LINE_SIZE),
 				window.hide({ toward: 'left' }),
@@ -319,7 +305,7 @@ function actTheCode(): readonly Step[] {
 function actTheLook(): readonly Step[] {
 	return [
 		play({
-			seconds: 1.2,
+			seconds: 0.9,
 			moves: [
 				headline('every value is yours.', LINE_SIZE),
 				code.show(linesOf(['paper', 'corners', 'cyan', 'night']), { at: CODE_UNDER_THE_HEADLINE, from: 'right' }),
@@ -351,7 +337,7 @@ function actTheLook(): readonly Step[] {
 		),
 		hold({ seconds: 1 }),
 		play({
-			seconds: 1.4,
+			seconds: 1,
 			moves: [
 				code.light('NIGHT', { within: { end: 0.1 } }),
 				// #region night
@@ -367,7 +353,7 @@ function actTheLook(): readonly Step[] {
 function actTheSound(): readonly Step[] {
 	return [
 		play({
-			seconds: 1.2,
+			seconds: 0.9,
 			moves: [
 				headline('sound on for this one.', LINE_SIZE),
 				code.show(linesOf(['mechanical', 'butterfly', 'clicky']), { at: CODE_UNDER_THE_HEADLINE }),
@@ -401,7 +387,7 @@ function actTheSound(): readonly Step[] {
 function actThePrompts(): readonly Step[] {
 	return [
 		play({
-			seconds: 1.2,
+			seconds: 0.9,
 			moves: [
 				headline('no. not one prompt. i lost count.', LINE_SIZE),
 				window.hide({ toward: 'left' }),
@@ -410,7 +396,7 @@ function actThePrompts(): readonly Step[] {
 			],
 			ease: easeInOutCubic
 		}),
-		play({ seconds: 2.4, moves: [terminal.works(PROMPTS, THINKING, { thinkingShare: NO_THINKING })] }),
+		play({ seconds: 2, moves: [terminal.works(PROMPTS, THINKING, { thinkingShare: NO_THINKING })] }),
 		...typing(terminal.type(SHIP_IT)),
 		cut(terminal.submit()),
 		hold({ seconds: 1.4 })
@@ -421,12 +407,12 @@ function actThePrompts(): readonly Step[] {
 function actTheCredit(): readonly Step[] {
 	return [
 		play({
-			seconds: 1.4,
+			seconds: 1,
 			moves: [
 				headline('i wrote the tool. it wrote the film.', LINE_SIZE),
 				terminal.leave({ toward: 'left' }),
 				window.show({ at: UNDER_THE_HEADLINE_WINDOW, from: 'right' }),
-				camera.onto(REFRESH_AND_VISITORS, { every: BOTH, tilt: 14, turn: 16 }),
+				camera.onto(CARDS, { tilt: 14, turn: 16 }),
 				light.to(VISITORS)
 			],
 			ease: easeInOutCubic
@@ -439,9 +425,9 @@ function actTheCredit(): readonly Step[] {
 function actTheEnd(): readonly Step[] {
 	return [
 		play({
-			seconds: 2,
+			seconds: 1.6,
 			moves: [
-				camera.onto(REFRESH_AND_VISITORS, { every: BOTH, tilt: 20, turn: -18 }),
+				camera.onto(CARDS, { tilt: 20, turn: -18 }),
 				cursor.to(REFRESH),
 				headline([{ text: 'livereel', italic: true, ink: AMBER }, '. open source.'], CLAIM_SIZE),
 				code.show('npx livereel  # github.com/vrppaul/livereel', {
