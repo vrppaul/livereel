@@ -1,5 +1,14 @@
-{
-	"visitors": "12,517",
-	"change": "+4.4% on yesterday",
-	"todayBar": 97
-}
+[
+	{
+		"visitors": "12,517",
+		"change": "+4.4% on yesterday",
+		"todayBar": 97,
+		"announced": false
+	},
+	{
+		"visitors": "12,604",
+		"change": "+5.1% on yesterday",
+		"todayBar": 100,
+		"announced": true
+	}
+]

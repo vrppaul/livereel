@@ -44,6 +44,8 @@ const VISITORS_TODAY = '[data-testid=visitors-today]';
 const REFRESH = '[data-testid=refresh]';
 const CARDS = '[data-testid=kpis]';
 const TOP_ROW = `${REFRESH}, ${CARDS}`;
+// The film's one click on Refresh, the first the app's server answers
+const FIRST_REFRESH = 1;
 // The screen comes up from a little smaller than the whole of it
 const OPENS_FROM = 0.86;
 // How far the camera draws back over the whole page, and how the page leans back and swings to the left meanwhile,
@@ -123,7 +125,7 @@ function actTheClick(served: AppServed): readonly Step[] {
 			],
 			ease: easeInOutCubic
 		}),
-		...cursor.click((context) => refreshed(context, served.refreshed.visitors)),
+		...cursor.click((context) => refreshed(context, served.refreshes.brought(FIRST_REFRESH).visitors)),
 		play({
 			seconds: 1.7,
 			moves: [

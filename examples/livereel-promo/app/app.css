@@ -13,6 +13,7 @@
 	--edge-faint: #eef0f4;
 	--focus-ring: color-mix(in srgb, var(--accent) 18%, transparent);
 	--found: rgb(255 178 36 / 35%);
+	--lifted: 0 12px 32px rgb(28 34 48 / 18%);
 	--sans: system-ui, sans-serif;
 	/* Four top pages show at once, the rest under them in the list's own scroll */
 	--page-row: 56px;
@@ -196,4 +197,36 @@ main {
 	font-weight: 700;
 	color: inherit;
 	background: var(--found);
+}
+
+/* The note that a refresh updated the numbers, under Refresh and over the page, for a few seconds */
+.toast {
+	position: fixed;
+	top: 118px;
+	right: 50px;
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 16px 24px 16px 18px;
+	border: 1px solid var(--edge);
+	border-radius: 14px;
+	font: 650 22px / 1 var(--sans);
+	color: var(--ink);
+	background: var(--card);
+	box-shadow: var(--lifted);
+}
+
+.toast[hidden] {
+	display: none;
+}
+
+.toast-check {
+	display: grid;
+	place-items: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	font: 800 18px / 1 var(--sans);
+	color: var(--on-accent);
+	background: var(--up);
 }

@@ -1,7 +1,7 @@
 /**
  * The code a film shows of itself: the regions of its own file it marks, `// #region name` to `// #endregion`, so the
- * lines on the screen are the lines that shot it; or its file whole, the marks left out. A film reads them once, as it
- * is loaded, and hands their lines to `code.show`, which sets them as an editor would.
+ * lines on the screen are the lines that shot it; or its file whole, its comments left out, the marks among them. A
+ * film reads them once, as it is loaded, and hands their lines to `code.show`, which sets them as an editor would.
  */
 import { readFile } from 'node:fs/promises';
 
@@ -20,16 +20,20 @@ const NOT_FOUND = -1;
 const THE_BEGINNING = 0;
 // Where a line of a film's file ends
 const NEW_LINE = '\n';
+// A comment on lines of its own: a block of documentation, or a line of two slashes, a region's marks among them
+const DOCUMENTATION = /^[\t ]*\/\*\*[\s\S]*?\*\/\n/gmu;
+const LINE_COMMENT = /^[\t ]*\/\/.*\n/gmu;
+const LEFT_OUT = '';
 
 /** A film's file, line by line. */
 async function linesOf(film: URL): Promise<readonly string[]> {
 	return (await readFile(film, 'utf8')).split(NEW_LINE);
 }
 
-/** A film's file whole, as it shot the film, the marks of its regions left out. */
+/** A film's file whole, as it shot the film, its comments left out, the marks of its regions among them. */
 export async function sourceOf(film: URL): Promise<string> {
-	const lines = await linesOf(film);
-	return lines.filter((line) => !REGION_START.test(line) && !REGION_END.test(line)).join(NEW_LINE);
+	const source = await readFile(film, 'utf8');
+	return source.replace(DOCUMENTATION, LEFT_OUT).replace(LINE_COMMENT, LEFT_OUT);
 }
 
 /** The regions a film's file marks, each by its name. */

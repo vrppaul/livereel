@@ -29,9 +29,9 @@
 					<div class="value">318</div>
 					<div class="change">+2.6% on yesterday</div>
 				</div>
-				<div class="card">
+				<div class="card" data-testid="revenue">
 					<div class="label">Revenue</div>
-					<div class="value">$9,204</div>
+					<div class="value" data-testid="revenue-today">$9,204</div>
 					<div class="change">+7.9% on yesterday</div>
 				</div>
 			</section>
@@ -87,13 +87,23 @@
 				</ol>
 			</section>
 		</main>
+		<div class="toast" role="status" data-testid="toast" hidden>
+			<span class="toast-check" aria-hidden="true">✓</span>
+			<span>Updated</span>
+		</div>
 		<script>
-			// Refresh asks the server for today's numbers and shows them: the count, how it stands, and today's bar
+			// Refresh asks the server for today's numbers and shows them: the count, how it stands, today's bar, and,
+			// where the server announces them, a note that they were updated, gone again after a few seconds
+			const TOAST_SHOWN_MS = 5000;
+			const toast = document.querySelector('[data-testid=toast]');
 			document.querySelector('[data-testid=refresh]').addEventListener('click', async () => {
 				const today = await (await fetch('/api/today')).json();
 				document.querySelector('[data-testid=visitors-today]').textContent = today.visitors;
 				document.querySelector('[data-testid=visitors-change]').textContent = today.change;
 				document.querySelector('[data-testid=today-bar]').style.height = `${today.todayBar}%`;
+				if (!today.announced) return;
+				toast.hidden = false;
+				setTimeout(() => (toast.hidden = true), TOAST_SHOWN_MS);
 			});
 
 			// The search shows the top pages whose path holds what it says, that part of each marked

@@ -117,6 +117,8 @@ const VISITORS_CHANGE = '[data-testid=visitors-change]';
 const REFRESH = '[data-testid=refresh]';
 const CARDS = '[data-testid=kpis]';
 const TOP_PAGES = '[data-testid=top-pages]';
+// The film's one click on Refresh, the first the app's server answers
+const FIRST_REFRESH = 1;
 const PAGES = '[data-testid=pages]';
 const SEARCH = '[data-testid=search]';
 // The search once it holds the keys, and the page itself, where the app's shortcut is pressed
@@ -236,7 +238,7 @@ function headingsAndCodeIn(stacking: Stacking): Readonly<Record<string, Place>> 
 /** Refresh clicked for real, until the page shows the count the app's server answered with. */
 async function refreshed(context: ActContext, served: AppServed): Promise<void> {
 	await context.page.locator(REFRESH).click();
-	await context.page.locator(VISITORS_TODAY, { hasText: served.refreshed.visitors }).waitFor();
+	await context.page.locator(VISITORS_TODAY, { hasText: served.refreshes.brought(FIRST_REFRESH).visitors }).waitFor();
 }
 
 /** The act of a click on Refresh, for the app served: short, as the film shows it in its code. */
