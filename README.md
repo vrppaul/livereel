@@ -359,6 +359,7 @@ values; what the film leaves out stays livereel's:
 |---|---|---|
 | `ground` | the ground's colour at its edges | `#0b0e14` |
 | `glow` | the colour the ground lightens to toward where `glowX` and `glowY` put it; a ground named without one is of one colour | `#182033` |
+| `groundLayers` | layers laid over the ground and its glow, the first over the rest, as CSS's `background` writes them: a grid of dots, lines, a gradient | `'none'` |
 | `ink` | the words of titles, captions, callouts, notes and the ending | `#f4f6fa` |
 | `quietInk` | what stands back: a quietened pin's label, the ending's line | `#8b95a7` |
 | `accent`, `accentInk` | pins' marks and a note's line, and a pin's number on its mark | `#ffb224`, `#10141b` |
@@ -384,14 +385,37 @@ Colours are in hex; sizes in pixels of a frame 1080 on its shorter side,
 scaled to the frame shot. A font falls back to livereel's where the system
 has none; one CSS reads as no family is refused before anything is shot.
 
+The ground's layers are the film's own CSS, laid wherever the ground is:
+under the page's window, a title card and the ending card. The ending card
+stands on the frame's own ground, so the pattern stands still as it slides
+in; a title card is a sheet that travels and leans, so it carries its
+ground with it, and its pattern moves with it. Lengths in pixels are
+pixels of a frame 1080 on its shorter side too, so a pattern is as large
+for its frame at any size it is shot at:
+
+```ts
+theme: {
+	groundLayers:
+		'radial-gradient(#ffffff26 2px, transparent 2.5px) 0 0 / 36px 36px, ' + // a grid of dots
+		'linear-gradient(115deg, #ffb22414, transparent 45%)'                    // a warm light from the left
+}
+```
+
+The last layer may take a colour, as CSS lets it, which covers the ground
+and its glow under the layers. No layer takes a picture (`url()`), which
+the stage would draw only once loaded. Layers CSS cannot read, or with a
+picture, are refused before anything is shot.
+
 The look changes as the film goes, by a move like any other:
 `look.to(theme)`, any of the same values. In a `play` it moves there over
 its share of the step: a colour through the colours between, a size, a
-weight, a corner or a shadow through the values between, and a font or
-`wordsMotion`, which have none between, half-way; in a `cut`, at once.
+weight, a corner or a shadow through the values between, a font or
+`wordsMotion`, which have none between, half-way, and the ground's layers
+fading out as the new ones fade in over them; in a `cut`, at once.
 
 ```ts
 play({ seconds: 1.2, moves: [look.to({ ground: '#f5efe6', ink: '#1a1a1a' })] }),  // the ground turns light
+play({ seconds: 1, moves: [look.to({ groundLayers: LINES })] }),                  // the dots fade into lines
 cut(look.to({ font: 'Georgia', paneCorner: 0 })),                                 // a serif, square corners, at once
 play({ seconds: 6, moves: [look.to({ glowX: 0.9, glowY: 0.1 }), camera.onto(CHART)] }) // the glow drifts as the camera goes
 ```

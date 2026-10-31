@@ -25,8 +25,8 @@ import {
 import type { PlaceNamed } from '../domain/place.ts';
 import { type Ease, easeInOutSine, framesOf, linear } from '../domain/time.ts';
 import { A_STROKES, type Keystroke, typingSeconds } from '../domain/typing.ts';
-import type { FontNamed } from './theme.ts';
-import { A_CURVE, A_MOVE, A_MOVES, type Move, type Part, type Share, fontsOf, placesOf, soundsOf } from './move.ts';
+import type { CssNamed } from './theme.ts';
+import { A_CURVE, A_MOVE, A_MOVES, type Move, type Part, type Share, cssOf, placesOf, soundsOf } from './move.ts';
 import type { ActContext } from './page.ts';
 import type { Sound } from './sound.ts';
 
@@ -147,9 +147,9 @@ export function soundsIn(steps: readonly Step[]): readonly Sound[] {
 		.map((cue) => cue.sound);
 }
 
-/** Every font the steps' moves set, known before anything is shot, so one CSS reads as no family is refused at once. */
-export function fontsIn(steps: readonly Step[]): readonly FontNamed[] {
-	return steps.flatMap(movesOf).flatMap(fontsOf);
+/** All the steps' moves write in CSS, known before anything is shot, so a value CSS cannot read is refused at once. */
+export function cssIn(steps: readonly Step[]): readonly CssNamed[] {
+	return steps.flatMap(movesOf).flatMap(cssOf);
 }
 
 /** Every place the steps' moves name, known before anything is shot, so one the format has not is refused at once. */

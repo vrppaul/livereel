@@ -2,9 +2,9 @@
  * A film shot in one of its formats: its page served, its steps written and counted, the browser opened, the page
  * made ready, its own time running as the film's code waits on it, and a take.
  *
- * The film's length, its sounds and the fonts its looks set are known from its steps before a browser opens, so
- * footage that cannot be met — a still past the end — a sound that cannot be laid, or a font CSS reads as no family
- * is refused before the first frame. The browser closes before the page's
+ * The film's length, its sounds and what its looks write in CSS are known from its steps before a browser opens, so
+ * footage that cannot be met — a still past the end — a sound that cannot be laid, or a font or the ground's layers
+ * CSS cannot read is refused before the first frame. The browser closes before the page's
  * server stops. What the film's own code does — its server, its steps, its wait for the page — is the film's: a fault
  * there is said as the film's, naming where.
  */
@@ -12,7 +12,7 @@ import { wholePose } from '../domain/camera.ts';
 import { FilmError, LivereelError } from '../domain/errors.ts';
 import { momentOf } from '../domain/time.ts';
 import type { FilmInFormat } from '../direction/film.ts';
-import { fontsIn, framesIn, soundsIn } from '../direction/steps.ts';
+import { cssIn, framesIn, soundsIn } from '../direction/steps.ts';
 import { openingScene } from '../scene.ts';
 import type { Browser, Footage, Track } from './ports.ts';
 import { Take } from './take.ts';
@@ -46,7 +46,7 @@ export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Sho
 	shooting.footage.expect(framesIn(steps));
 	await shooting.track.expect(soundsIn(steps));
 	const motionBlur = shooting.quality.blurred ? film.motionBlur : null;
-	const setting = { ...film, fonts: [...film.fonts, ...fontsIn(steps)], motionBlur };
+	const setting = { ...film, css: [...film.css, ...cssIn(steps)], motionBlur };
 	await using opened = await shooting.browser.open(setting, served.address, shooting.quality.sharpness);
 	await filmsOwn('ready', () => opened.time.running(() => served.ready(opened.act)));
 	const take = new Take({

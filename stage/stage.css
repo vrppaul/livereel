@@ -27,6 +27,49 @@ body {
 	isolation: isolate;
 }
 
+/* The layers a film lays over the ground, wherever the ground is, under all else there and cut at its box: those going, fading out, and those coming, fading in, added together in a group of their own and laid over the ground as one, so half-way each stands at half its strength and the ground shows through no more than either lets it (laid one over the other, the ground had shown through both: a quarter of it half-way, a grey flash between two coloured layers, the review of 2026-10-31) */
+.layers {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	overflow: clip;
+	isolation: isolate;
+}
+
+.layers::before,
+.layers::after {
+	content: '';
+	position: absolute;
+	mix-blend-mode: plus-lighter;
+}
+
+.layers::before {
+	background: var(--layers-going);
+	opacity: calc(1 - var(--layers-come));
+}
+
+.layers::after {
+	background: var(--layers-coming);
+	opacity: var(--layers-come);
+}
+
+/* Under an exposure and the ending card, the frame's layers whole, as large as the frame in pixels of a frame the look was made on, so their lengths are the look's whatever size the frame is shot at */
+.exposure > .layers::before,
+.exposure > .layers::after,
+.ending > .layers::before,
+.ending > .layers::after {
+	width: calc(var(--frame-width) * 1px / var(--frame-scale));
+	height: calc(var(--frame-height) * 1px / var(--frame-scale));
+}
+
+/* The exposure draws in the frame's own pixels: its layers, at the frame's scale */
+.exposure > .layers::before,
+.exposure > .layers::after {
+	left: 0;
+	top: 0;
+	zoom: var(--frame-scale);
+}
+
 .stage {
 	position: absolute;
 	inset: 0;
@@ -584,11 +627,18 @@ body {
 	--word-blur-leaving: 8px;
 }
 
+/* A title card's ground is its own, over its box: the card is a sheet that slides, travels and leans, so its glow and layers go with it, where the ending card, which only slides in, stands on the frame's */
 .title .ground {
 	position: absolute;
 	inset: 0;
 	background: var(--ground-light);
 	opacity: var(--grounded);
+	isolation: isolate;
+}
+
+.title .layers::before,
+.title .layers::after {
+	inset: 0;
 }
 
 /* The words stand in the middle of their box down it, read as the title names (`data-align`), from its left or centred across it, as large as the title's own size; where it has none, as large as the box's width lets a long word stand on a line of its own, and no larger than a share of the look's for a title card. A title with no size of its own leaves its own letters unset, as a custom property naming one never set is, so the size by the box stands. The box is in the frame's pixels, and what an object shows in pixels of a frame the stage's look was made on */
@@ -825,7 +875,7 @@ body {
 	opacity: var(--caret);
 }
 
-/* The ending card in its object: the name, what it is, and the command that starts it, rising into place, on its ground. Its ground is painted back by as far as its box stands from the frame's corner, so it is the frame's own ground where it stands: it covers what is under it, and no edge of it shows over the film's ground and glow, wherever it slides */
+/* The ending card in its object: the name, what it is, and the command that starts it, rising into place, on its ground. Its ground is the frame's, its glow and layers laid back by as far as its box stands from the frame's corner and cut at the box, so it is the frame's own ground where it stands, every layer in its place: it covers what is under it, and no edge of it shows over the film's ground, wherever it slides */
 .ending {
 	--ending-rise: 24px;
 
@@ -834,6 +884,7 @@ body {
 	align-items: center;
 	justify-content: center;
 	gap: 22px;
+	isolation: isolate;
 	background: var(--ground-light);
 	background-position: calc(var(--left) * -1px / var(--frame-scale)) calc(var(--top) * -1px / var(--frame-scale));
 	color: var(--ink);
@@ -841,7 +892,14 @@ body {
 	opacity: var(--shown);
 }
 
-.ending > * {
+.ending > .layers::before,
+.ending > .layers::after {
+	left: calc(var(--left) * -1px / var(--frame-scale));
+	top: calc(var(--top) * -1px / var(--frame-scale));
+}
+
+/* What the card says rises into place; its ground stands */
+.ending > :not(.layers) {
 	transform: translateY(calc((1 - var(--shown)) * var(--ending-rise)));
 }
 

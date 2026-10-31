@@ -1,11 +1,12 @@
 /*
  * Every colour of the stage, its shadows and its reaches, written once. The other stylesheets name these and write no
- * colour of their own (stylelint holds them to it). The film's look — the ground, its glow, the inks, the accent, the
- * fonts, the sizes and weights of words, a pane's corners, edge and shadow, the code's colours, the cursor, the
- * terminal and the ending — is set on the root every frame from the scene (`LookDrawer` in `stage.js`, livereel's own
- * in `src/props/look.ts`), so a film changes it as it goes; what is worked out from it here follows.
+ * colour of their own (stylelint holds them to it). The film's look — the ground, its glow and its layers, the inks,
+ * the accent, the fonts, the sizes and weights of words, a pane's corners, edge and shadow, the code's colours, the
+ * cursor, the terminal and the ending — is set on the root every frame from the scene (`LookDrawer` in `stage.js`,
+ * livereel's own in `src/props/look.ts`), so a film changes it as it goes; what is worked out from it here follows.
  */
 :root {
+	/* The film's ground, its glow fading out to its colour; the layers a film lays over it are drawn apart (`stage.css`) */
 	--ground-light: radial-gradient(
 		120% 90% at calc(var(--glow-x) * 100%) calc(var(--glow-y) * 100%),
 		var(--ground-glow),

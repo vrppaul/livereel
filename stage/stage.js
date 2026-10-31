@@ -16,10 +16,11 @@
 /** @import { CodeLine, CodePiece, DrawnCode } from '../src/props/code.ts' */
 /** @import { DrawnContent, DrawnObject } from '../src/props/object.ts' */
 /** @import { Box } from '../src/domain/geometry.ts' */
-/** @import { Look } from '../src/props/look.ts' */
+/** @import { GroundLayers, Look } from '../src/props/look.ts' */
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
+/** A value of the look set whole on the stage, in place of one token or as one attribute: any but the ground's layers @typedef {Exclude<keyof Look, 'groundLayers'>} WholeLookName */
 /** An element of the stage's markup: the cursor is drawn in SVG, the rest in HTML @typedef {HTMLElement | SVGElement} Staged */
 /** The scene's lists of objects: those standing, and those pushed off while they go @typedef {'objects' | 'leaving'} ObjectList */
 /**
@@ -72,9 +73,9 @@ const QUIET = 'quiet';
 // a line too long
 const CODE_LINE = 'code-line';
 const LONG_LINES = 'data-long-lines';
-// What each value of the film's look sets on the stage: the token it takes the place of, or, for a value that names a
-// way, the attribute the stylesheet reads it by
-/** @type {{ readonly [Name in keyof Look]: { readonly token: string } | { readonly attribute: string } }} */
+// What each value of the film's look set whole sets on the stage: the token it takes the place of, or, for a value that
+// names a way, the attribute the stylesheet reads it by
+/** @type {{ readonly [Name in WholeLookName]: { readonly token: string } | { readonly attribute: string } }} */
 const LOOK_SET_AS = {
 	ground: { token: '--ground' },
 	glow: { token: '--ground-glow' },
@@ -118,6 +119,9 @@ const LOOK_SET_AS = {
 	wordsMotion: { attribute: 'data-words-motion' }
 };
 const LOOK_NAMES = Object.keys(LOOK_SET_AS).filter(isOfTheLook);
+// The token each part of the ground's layers takes the place of: those going, those coming, how far these have come
+/** @type {{ readonly [Part in keyof GroundLayers]: string }} */
+const LAYERS_SET_AS = { going: '--layers-going', coming: '--layers-coming', come: '--layers-come' };
 
 class CameraDrawer {
 	/** @param {Staged} root */
@@ -590,6 +594,10 @@ class LookDrawer {
 			if ('token' in set) this.root.style.setProperty(set.token, value);
 			else this.root.setAttribute(set.attribute, value);
 		}
+		const layers = scene.look.groundLayers;
+		this.root.style.setProperty(LAYERS_SET_AS.going, layers.going);
+		this.root.style.setProperty(LAYERS_SET_AS.coming, layers.coming);
+		numbered(this.root, { [LAYERS_SET_AS.come]: layers.come });
 	}
 }
 
@@ -670,9 +678,9 @@ function addedCopy(original) {
 }
 
 /**
- * Whether a name is one of the look's. Every key of the table is one, but `Object.keys` types each as a bare string:
- * the guard keeps them all and tells the type checker they are the look's names.
- * @param {string} name @returns {name is keyof Look}
+ * Whether a name is one of the look's set whole. Every key of the table is one, but `Object.keys` types each as a bare
+ * string: the guard keeps them all and tells the type checker they are the look's names.
+ * @param {string} name @returns {name is WholeLookName}
  */
 function isOfTheLook(name) {
 	return Object.hasOwn(LOOK_SET_AS, name);

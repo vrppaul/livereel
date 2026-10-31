@@ -160,6 +160,11 @@ export const A_SELECTOR = new Plain(isWords, 'a selector: a string that names bl
 export const A_PATH = new Plain(isWords, "a file's path, from the film's file");
 export const AN_ADDRESS = new Plain(isWords, 'an address, a string');
 export const A_FONT_FAMILY = new Plain(isWords, "a font's family, as CSS names one: 'Inter', or 'Inter, sans-serif'");
+/** Layers laid over the ground, in CSS: whether CSS reads them is checked in a browser, before the film is shot. */
+export const A_GROUND_LAYERS = new Plain(
+	isWords,
+	"background layers, as CSS's background writes them: 'radial-gradient(#fff2 1px, transparent 1px) 0 0 / 24px 24px', or 'none'"
+);
 /** A colour a film gives its words or its ground, in the one form checked here rather than in a browser: hex. */
 export const A_COLOUR = new Plain(isHexColour, 'a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa');
 /** A length a film sizes or spaces something by, in pixels: none at least. */

@@ -25,7 +25,7 @@ import {
 	isObjectOfValues
 } from '../domain/handed.ts';
 import type { Ease } from '../domain/time.ts';
-import type { FontNamed } from './theme.ts';
+import type { CssNamed } from './theme.ts';
 import type { ObjectName } from '../props/object.ts';
 import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';
 import type { FilmedPage } from './page.ts';
@@ -41,7 +41,7 @@ type ObjectPart = `${ObjectName} object`;
 export type Part = PropName | ObjectPart | 'page' | 'pageSpeed' | null;
 
 const NO_SOUNDS: readonly Cue[] = [];
-const NO_FONTS: readonly FontNamed[] = [];
+const NO_CSS: readonly CssNamed[] = [];
 const NO_PLACES: readonly PlaceNamed[] = [];
 // The size of a block the page lays out none of, and how a block off the screen is brought in, above or below it and
 // beside it; a box the film gives stands where it says, so it is given anew
@@ -166,8 +166,8 @@ export interface Move {
 	readonly timing: Timing;
 	/** The sounds the move makes on its way; a move that makes none has none. */
 	readonly sounds?: readonly Cue[];
-	/** The fonts the move sets, which the browser reads before the film is shot; a move that sets none has none. */
-	readonly fonts?: readonly FontNamed[];
+	/** What the move writes in CSS, which the browser reads before the film is shot; a move that writes none has none. */
+	readonly css?: readonly CssNamed[];
 	/** The places the move names, which its format is read for before the film is shot; a move that names none has none. */
 	readonly places?: readonly PlaceNamed[];
 	readonly begin: (beginning: Beginning) => Change | Promise<Change>;
@@ -192,9 +192,9 @@ export function soundsOf(move: Move): readonly Cue[] {
 	return move.sounds ?? NO_SOUNDS;
 }
 
-/** The fonts a move sets: none, for a move that names none. */
-export function fontsOf(move: Move): readonly FontNamed[] {
-	return move.fonts ?? NO_FONTS;
+/** What a move writes in CSS: none, for a move that writes none. */
+export function cssOf(move: Move): readonly CssNamed[] {
+	return move.css ?? NO_CSS;
 }
 
 /** The places a move names: none, for a move that names none. */

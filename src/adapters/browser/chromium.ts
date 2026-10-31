@@ -42,7 +42,7 @@ import { type Size, frameScaleOf } from '../../domain/geometry.ts';
 import { type MotionBlur, mostExposuresOf } from '../../domain/shutter.ts';
 import type { PageKind, StagePlace } from '../../direction/film.ts';
 import type { ActContext, PageMotionSwitch } from '../../direction/page.ts';
-import type { FontNamed } from '../../direction/theme.ts';
+import type { CssNamed } from '../../direction/theme.ts';
 import type { Browser, Opened, PageTime, Setting, Stage } from '../../studio/ports.ts';
 import { ChangesHeard } from './changes.ts';
 import { PlaywrightPageTime } from './clock.ts';
@@ -87,12 +87,30 @@ const THE_PAGE_AT_THE_TOP = false;
 
 // A family any browser has, set after a film's font to see that it stands as a family of its own
 const FALLBACK_FONT = 'monospace';
+const NO_FONT_FAMILY = 'CSS reads no font family there';
+// The token the stage sets the ground's layers in, and how CSS writes every picture a layer would load, `url()` alone
+// or in `image-set()` (probed 2026-10-31)
+const LAYERS_TOKEN = '--layers-coming';
+const PICTURE = 'url(';
+const NO_LAYERS = 'CSS reads no background layers there';
+// A picture would load as the stage draws, after a frame may be captured without it
+const PICTURED = 'the ground draws no picture, only what CSS draws itself';
 
 /** A font a film names, and the fallback set after it. */
 interface FontProbe {
 	readonly font: string;
 	readonly fallback: string;
 }
+
+/** The ground's layers a film writes, the token the stage sets them in, and how CSS writes a picture. */
+interface LayersProbe {
+	readonly layers: string;
+	readonly token: string;
+	readonly picture: string;
+}
+
+/** How CSS reads the ground's layers: as layers, as none, or as layers with a picture in them. */
+type LayersRead = 'read' | 'unread' | 'pictured';
 
 /** A property the film forces on the page's blocks a selector matches, and its value. */
 interface ForcedRule {
@@ -449,14 +467,16 @@ async function forcedOn(page: Page, blurred: readonly string[], stageAtTheTop: b
 
 /**
  * The stage set to the film's format, drawing so many exposures of a frame at once, and asked for its colour scheme
- * and stilled motion. A font the film names, in its theme or in a look's move, that CSS reads as no list of families a
- * fallback can follow is refused, as one with a quote left open, which runs on over the stage's own fallbacks: the
- * stage would fall to the browser's font without a word.
+ * and stilled motion. What the film writes in CSS, in its theme or in a look's move, is refused where CSS cannot read
+ * it as the stage sets it, where the stage would draw without a word what the film never asked for: a font CSS reads
+ * as no list of families a fallback can follow, as one with a quote left open, which runs on over the stage's own
+ * fallbacks to the browser's font; the ground's layers CSS reads as none, which would draw no layers at all, or with a
+ * picture in them.
  */
 async function stageSetUp(page: Page, setting: Setting, exposuresAtOnce: number): Promise<void> {
 	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
 	await page.evaluate(setUpStage, roomOf(setting.format, exposuresAtOnce));
-	for (const named of setting.fonts) await refusedWhereNoFamily(page, named);
+	for (const named of setting.css) await refusedWhereUnread(page, named);
 }
 
 /** The stage set up and the page opened in its frame, as far as it loads: its frame. */
@@ -470,10 +490,36 @@ async function framed(page: Page, setting: Setting, opening: Opening): Promise<F
 	return filmed;
 }
 
-/** A font a film names refused, by where it names it, where CSS reads no list of families a fallback can follow. */
-async function refusedWhereNoFamily(page: Page, named: FontNamed): Promise<void> {
-	if (await page.evaluate(isFollowedByAFallback, { font: named.family, fallback: FALLBACK_FONT })) return;
-	throw new FilmError(`${named.place} is ${JSON.stringify(named.family)}: CSS reads no font family there`);
+/** What a film writes in CSS refused, by where it writes it, where CSS cannot read it as the stage sets it. */
+async function refusedWhereUnread(page: Page, named: CssNamed): Promise<void> {
+	const fault = await cssFaultOf(page, named);
+	if (fault !== undefined) throw new FilmError(`${named.place} is ${JSON.stringify(named.value)}: ${fault}`);
+}
+
+/** What is wrong with what a film writes in CSS, as the stage sets it; none where CSS reads it so. */
+async function cssFaultOf(page: Page, named: CssNamed): Promise<string | undefined> {
+	switch (named.kind) {
+		case 'font family': {
+			const followed = await page.evaluate(isFollowedByAFallback, { font: named.value, fallback: FALLBACK_FONT });
+			return followed ? undefined : NO_FONT_FAMILY;
+		}
+		case 'ground layers':
+			return layersFaultOf(
+				await page.evaluate(layersReadOf, { layers: named.value, token: LAYERS_TOKEN, picture: PICTURE })
+			);
+	}
+}
+
+/** What is wrong with the ground's layers, by how CSS reads them; none where it reads them as layers to draw. */
+function layersFaultOf(read: LayersRead): string | undefined {
+	switch (read) {
+		case 'read':
+			return undefined;
+		case 'unread':
+			return NO_LAYERS;
+		case 'pictured':
+			return PICTURED;
+	}
 }
 
 /** Whether a page that went somewhere is the one in the stage's frame, not the stage itself. */
@@ -512,4 +558,22 @@ function isFollowedByAFallback(probe: FontProbe): boolean {
 	const element = document.createElement('i');
 	element.style.fontFamily = `${probe.font}, ${probe.fallback}`;
 	return element.style.fontFamily.endsWith(`, ${probe.fallback}`);
+}
+
+/**
+ * How CSS reads the ground's layers a film writes, as the stage draws them: set in its token, which a word CSS keeps
+ * for every property (`inherit`, `initial`) or a custom property set nowhere leaves empty, and as the whole of a
+ * background as the token stands: as no images where it reads none; else with a picture in them or without.
+ */
+function layersReadOf(probe: LayersProbe): LayersRead {
+	const holder = document.createElement('i');
+	holder.style.setProperty(probe.token, probe.layers);
+	document.body.append(holder);
+	const standing = getComputedStyle(holder).getPropertyValue(probe.token);
+	holder.remove();
+	const drawn = document.createElement('i');
+	drawn.style.background = standing;
+	const images = drawn.style.backgroundImage;
+	if (images === '') return 'unread';
+	return images.includes(probe.picture) ? 'pictured' : 'read';
 }

@@ -257,15 +257,20 @@ frame: `titleSize`, `captionSize`, `noteSize`, `calloutSize`, `pinSize`,
 `endingCommandSize` and `paneCorner`; `titleMargin`, how far in from the
 frame's sides a title over the whole frame stands, and
 `captionGroundHeight`, how far the ground darkens under a caption. As CSS
-names a family installed on the machine: `font` and `mono`. And
+names a family installed on the machine: `font` and `mono`. As CSS's
+`background` writes them, its lengths in pixels of a 1080 frame:
+`groundLayers`, laid over the ground and its glow — a grid of dots
+(`'radial-gradient(#ffffff26 2px, transparent 2.5px) 0 0 / 36px 36px'`),
+lines, a gradient — a colour on the last alone, and no `url()`. And
 `wordsMotion`: `'soft'`, `'sharp'` or `'still'`. Leave out what the user
 does not name: livereel's own is a dark ground, white ink and an amber
 accent. `look.to(theme)` changes any of these as the film goes: in a
 `play` through the values between (a ground fading light, the glow
-drifting while the camera moves), in a `cut` at once; a font changes
-half-way through a play. Two moves of the look share a step at once where
-they name no value alike, a ground named alone naming its glow too: the
-glow drifting over a whole play while the ink changes in a share of it. A
+drifting while the camera moves, the dots fading into lines), in a `cut`
+at once; a font changes half-way through a play. Two moves of the look
+share a step at once where they name no value alike, a ground named alone
+naming its glow too: the glow drifting over a whole play while the ink
+changes in a share of it. A
 run of cuts a beat apart, each adding one value, shows a look built up;
 fade the ink a little after the ground, or the words pass through the
 ground's own grey.

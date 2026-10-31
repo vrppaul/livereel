@@ -2,18 +2,24 @@
  * A theme as a film writes it: any values of a look (`Look` in `src/props/look.ts`), the look a film opens on in
  * `defineFilm` and the look it moves to in `look.to`. A value it leaves out stays as the look has it, so a film tunes
  * one and keeps the rest. Where the words and the page's window stand on the frame is the format's (`Format` in
- * `src/domain/geometry.ts`).
+ * `src/domain/geometry.ts`). What a theme writes in CSS — a font, the ground's layers, as the look's kinds say
+ * (`LOOK_KINDS`) — only a browser reads, so it is handed on with where it stands, and the browser refuses it before the
+ * film is shot.
  */
 import { assertWritten } from '../domain/handed.ts';
-import { LOOK_KINDS, type Theme } from '../props/look.ts';
+import { type CssKind, LOOK_KINDS, type Look, type Theme, namedIn } from '../props/look.ts';
 
 // A film that names no theme opens on livereel's own look
 const LIVEREELS_OWN: Theme = {};
 
-/** A font a film names, and where it names it, so a font CSS reads as no family is refused by its place. */
-export interface FontNamed {
+/**
+ * A value a film writes in CSS, where it writes it, and what CSS reads it as, so one CSS cannot read so is refused by
+ * its place.
+ */
+export interface CssNamed {
 	readonly place: string;
-	readonly family: string;
+	readonly kind: CssKind;
+	readonly value: string;
 }
 
 /** Where a film's theme stands, as a refusal names it. */
@@ -35,10 +41,16 @@ export function themeWritten(written: unknown, place: string): Theme {
 	return written;
 }
 
-/** The fonts a theme names, each by where it stands: none, where it names none. */
-export function fontsNamedIn(theme: Theme, place: string): readonly FontNamed[] {
-	return [
-		...(theme.font === undefined ? [] : [{ place: `${place}'s font`, family: theme.font }]),
-		...(theme.mono === undefined ? [] : [{ place: `${place}'s mono`, family: theme.mono }])
-	];
+/** What a theme writes in CSS, each value by where it stands, in the look's order: none, where it writes none. */
+export function cssNamedIn(theme: Theme, place: string): readonly CssNamed[] {
+	return namedIn(theme).flatMap((name) => cssOfValue(theme, name, place));
+}
+
+/** A value a theme names, by where it stands, where the film writes it in CSS; none, where it is checked as written. */
+function cssOfValue(theme: Theme, name: keyof Look, place: string): readonly CssNamed[] {
+	const kind = LOOK_KINDS[name].css;
+	const value = theme[name];
+	// Every value written in CSS is a string: the type narrows to it
+	if (kind === null || typeof value !== 'string') return [];
+	return [{ place: `${place}'s ${name}`, kind, value }];
 }

@@ -35,7 +35,7 @@ import { type MotionBlurScript, motionBlurOf } from './blur.ts';
 import type { ActContext } from './page.ts';
 import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf, musicOf } from './sound.ts';
 import { type Step, placesIn, stepsOf } from './steps.ts';
-import { type FontNamed, THE_FILMS_THEME, fontsNamedIn, themeOf } from './theme.ts';
+import { type CssNamed, THE_FILMS_THEME, cssNamedIn, themeOf } from './theme.ts';
 
 /** A page served for as long as a take lasts, at its address; the film's own handles may come with it. */
 export interface Serving extends AsyncDisposable {
@@ -109,7 +109,7 @@ export interface ServedFilm extends AsyncDisposable {
 }
 
 /**
- * A film in one of its formats, where its stage stands, the look it opens on and the fonts its theme names, how its
+ * A film in one of its formats, where its stage stands, the look it opens on and what its theme writes in CSS, how its
  * page is asked to look and what it blurs, and what it says of its sounds and of its blur.
  */
 export interface FilmInFormat {
@@ -117,7 +117,7 @@ export interface FilmInFormat {
 	readonly format: Format;
 	readonly stage: StagePlace;
 	readonly look: Look;
-	readonly fonts: readonly FontNamed[];
+	readonly css: readonly CssNamed[];
 	readonly colourScheme: ColourScheme;
 	readonly blurred: readonly string[];
 	readonly page: PageKind;
@@ -184,7 +184,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 	readonly sound: FilmSound;
 	readonly motionBlur: MotionBlur | null;
 	readonly look: Look;
-	readonly fonts: readonly FontNamed[];
+	readonly css: readonly CssNamed[];
 	readonly stage: StagePlace;
 	readonly colourScheme: ColourScheme;
 	readonly blurred: readonly string[];
@@ -200,7 +200,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 		this.motionBlur = motionBlurOf(script.motionBlur);
 		const theme = themeOf(script.theme);
 		this.look = lookWith(LIVEREELS_LOOK, theme);
-		this.fonts = fontsNamedIn(theme, THE_FILMS_THEME);
+		this.css = cssNamedIn(theme, THE_FILMS_THEME);
 		refuseUnlikeAFilm(script);
 		this.stage = script.stage ?? STAGE_WHERE_NONE_IS_NAMED;
 		this.colourScheme = script.colourScheme ?? COLOUR_SCHEME_WHERE_NONE_IS_NAMED;
@@ -217,7 +217,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 			format: this.script.formats[name],
 			stage: this.stage,
 			look: this.look,
-			fonts: this.fonts,
+			css: this.css,
 			colourScheme: this.colourScheme,
 			blurred: this.blurred,
 			page: this.page,

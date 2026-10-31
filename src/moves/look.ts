@@ -3,11 +3,11 @@
  * A theme is read as `defineFilm` reads the film's (`src/direction/theme.ts`), so a ground named alone takes its glow
  * with it; what it leaves out stays as the look has it. A move sets the values its theme names alone, over the look
  * as it stands each frame, so two moves of the look share a step at once where they name no value alike: a glow
- * drifting the whole step while the ink changes in a share of it. The fonts it names go with the move, so the browser
- * reads them before the film is shot.
+ * drifting the whole step while the ink changes in a share of it. What it writes in CSS — fonts, the ground's layers —
+ * goes with the move, so the browser reads it before the film is shot.
  */
 import { type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
-import { fontsNamedIn, themeWritten } from '../direction/theme.ts';
+import { cssNamedIn, themeWritten } from '../direction/theme.ts';
 import { assertWritten } from '../domain/handed.ts';
 import { type LookMoving, type Theme, lookToward, lookWith, namedIn } from '../props/look.ts';
 import { withProp } from '../scene.ts';
@@ -23,7 +23,7 @@ export function to(theme: Theme, script: TimingScript = {}): Move {
 		part: 'look',
 		valueNames: names,
 		timing: timingOf(script),
-		fonts: fontsNamedIn(named, PLACE),
+		css: cssNamedIn(named, PLACE),
 		begin: (beginning) => changing({ start: beginning.scene.look, end: lookWith(beginning.scene.look, named), names })
 	};
 }

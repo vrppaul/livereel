@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
 import { keystrokes } from '../../src/domain/typing.ts';
-import { act, cut, fontsIn, framesIn, hold, play } from '../../src/direction/steps.ts';
+import { act, cssIn, cut, framesIn, hold, play } from '../../src/direction/steps.ts';
 import { hide, show } from '../../src/moves/caption.ts';
 import { hide as cursorGone } from '../../src/moves/cursor.ts';
 import { on } from '../../src/moves/light.ts';
@@ -10,11 +10,16 @@ import { scrollBy, type } from '../../src/moves/page.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import { lean, to as windowTo } from '../../src/moves/window.ts';
 
-test("the fonts a film's looks name in its steps are found before it is shot, each by its move, in a play or a cut", () => {
-	const steps = [cut(lookTo({ font: 'Georgia' })), play({ seconds: 1, moves: [lookTo({ mono: 'Menlo' })] })];
-	expect(fontsIn(steps)).toEqual([
-		{ place: "look.to's font", family: 'Georgia' },
-		{ place: "look.to's mono", family: 'Menlo' }
+test("the CSS a film's looks write in its steps is found before it is shot, each value by its move, in a play or a cut: fonts, the ground's layers", () => {
+	const dots = 'radial-gradient(#fff2 1px, transparent 1px) 0 0 / 24px 24px';
+	const steps = [
+		cut(lookTo({ font: 'Georgia' })),
+		play({ seconds: 1, moves: [lookTo({ mono: 'Menlo', groundLayers: dots })] })
+	];
+	expect(cssIn(steps)).toEqual([
+		{ place: "look.to's font", kind: 'font family', value: 'Georgia' },
+		{ place: "look.to's groundLayers", kind: 'ground layers', value: dots },
+		{ place: "look.to's mono", kind: 'font family', value: 'Menlo' }
 	]);
 });
 

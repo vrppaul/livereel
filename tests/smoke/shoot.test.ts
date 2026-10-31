@@ -13,6 +13,7 @@ import { WARNED_TO_NOBODY } from './warned.ts';
 import {
 	type ActContext,
 	type Step,
+	type Theme,
 	act,
 	atAddress,
 	camera,
@@ -59,12 +60,12 @@ function filmOf(steps: readonly Step[]) {
 }
 
 /**
- * A film of these steps with what else it is written with: how its page is asked to look, what it blurs, its font,
+ * A film of these steps with what else it is written with: how its page is asked to look, what it blurs, its theme,
  * and whether it is dynamic, framed live, or static, in a tab of its own.
  */
 function filmWritten(
 	steps: readonly Step[],
-	written: { colourScheme?: 'dark'; blurred?: readonly string[]; theme?: { font: string }; page?: 'dynamic' }
+	written: { colourScheme?: 'dark'; blurred?: readonly string[]; theme?: Theme; page?: 'dynamic' }
 ) {
 	return defineFilm({
 		formats: { small: SMALL },
@@ -205,6 +206,56 @@ test("a font named in no form CSS reads is refused before the film is shot: in t
 		shootingInto(new EveryFrameCounted(), 'software')
 	);
 	await expect(moved).rejects.toThrow(`look.to's mono is "'Menlo": CSS reads no font family there`);
+});
+
+test("the ground's layers CSS reads are let through: a film whose theme lays a grid of dots and a gradient with a colour of its own over its ground is shot", async () => {
+	const dotsAndLight =
+		'radial-gradient(#ffffff26 2px, transparent 2.5px) 0 0 / 36px 36px, linear-gradient(115deg, #ffb22414, transparent 45%) #10141c';
+	const footage = new EveryFrameCounted();
+	const steps = [hold({ seconds: 0.1 })];
+	const shot = await shoot(
+		filmWritten(steps, { theme: { groundLayers: dotsAndLight } }),
+		shootingInto(footage, 'software')
+	);
+	expect([shot.frames, footage.kept]).toEqual([3, [0, 1, 2]]);
+});
+
+test("the ground's layers in no form the stage draws are refused before the film is shot: broken, a colour on a layer not the last, a custom property set nowhere, a word CSS keeps for every property, a picture, in the film's theme and in a look's move", async () => {
+	const broken = shoot(
+		filmWritten([], { theme: { groundLayers: 'linear-gradient(#fff2 #0000)' } }),
+		shootingInto(new EveryFrameCounted(), 'software')
+	);
+	await expect(broken).rejects.toThrow(
+		`the film's theme's groundLayers is "linear-gradient(#fff2 #0000)": CSS reads no background layers there`
+	);
+	const colouredFirst = shoot(
+		filmWritten([cut(look.to({ groundLayers: 'linear-gradient(#fff2, #0000) #123, none' }))], {}),
+		shootingInto(new EveryFrameCounted(), 'software')
+	);
+	await expect(colouredFirst).rejects.toThrow(
+		`look.to's groundLayers is "linear-gradient(#fff2, #0000) #123, none": CSS reads no background layers there`
+	);
+	const named = shoot(
+		filmWritten([], { theme: { groundLayers: 'var(--nowhere)' } }),
+		shootingInto(new EveryFrameCounted(), 'software')
+	);
+	await expect(named).rejects.toThrow(
+		`the film's theme's groundLayers is "var(--nowhere)": CSS reads no background layers there`
+	);
+	const inherited = shoot(
+		filmWritten([], { theme: { groundLayers: 'inherit' } }),
+		shootingInto(new EveryFrameCounted(), 'software')
+	);
+	await expect(inherited).rejects.toThrow(
+		`the film's theme's groundLayers is "inherit": CSS reads no background layers there`
+	);
+	const pictured = shoot(
+		filmWritten([], { theme: { groundLayers: 'url(dots.png)' } }),
+		shootingInto(new EveryFrameCounted(), 'software')
+	);
+	await expect(pictured).rejects.toThrow(
+		`the film's theme's groundLayers is "url(dots.png)": the ground draws no picture, only what CSS draws itself`
+	);
 });
 
 test('a scroll of a block the page does not have is refused as its share begins, naming the block', async () => {
