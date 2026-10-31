@@ -36,6 +36,7 @@ import type { Format } from '../../domain/format.ts';
 import { type Size, frameScaleOf } from '../../domain/geometry.ts';
 import type { DrawnScene } from '../../scene.ts';
 import type { FramedStage, PicturedStage } from '../../studio/ports.ts';
+import type { ChangesHeard } from './changes.ts';
 import type { FrameWatch, TabWatch } from './watch.ts';
 
 // The package's stage, as far from this module in the source as in the package built from it, and its page
@@ -143,6 +144,7 @@ export interface FilmedTab {
 	readonly session: CDPSession;
 	readonly screen: Size;
 	readonly pixelsAtZoomOne: number;
+	readonly changes: ChangesHeard;
 }
 
 /**
@@ -190,6 +192,10 @@ export class PlaywrightPicturedStage implements PicturedStage {
 		const clip = { x: cssVisualViewport.pageX, y: cssVisualViewport.pageY, ...screen, scale: pixelsAtZoomOne * zoom };
 		const { data } = await session.send('Page.captureScreenshot', { format: 'jpeg', quality: JPEG_QUALITY, clip });
 		return Buffer.from(data, BASE64);
+	}
+
+	changedOfItself(): boolean {
+		return this.filmedTab.changes.heardSinceAsked();
 	}
 
 	/** A page in a tab of its own takes no stage away and refuses no frame: it is gone only where it was not reached. */

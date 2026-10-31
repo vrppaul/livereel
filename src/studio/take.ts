@@ -15,10 +15,14 @@
  * change follows from its progress alone, so asking it what it set at an earlier moment changes nothing; a move of the
  * page, which sets the page itself, is never asked. A stage that draws all of a frame's exposures at once lays them
  * over one another and is captured once, the frame; one that draws fewer is captured at each, the footage blending them: a
- * capture is near all a frame costs. The take does with the page what the stage's kind asks. A stage that shows a
- * picture of the page, as it shows a static one, takes it anew when the take asks: on a frame after an act or a move
- * of the page, and on every frame until two pictures in a row come out alike, nothing done to the page between them
- * and its own motion not let go, so what it brings in answer — results, an image, a scroll that eases out — is seen.
+ * capture is near all a frame costs. The page's own time — its timers, animation frames and date — is the film's: run
+ * on to each frame's moment, kept or not, before the frame is shot, so a page's timer runs out as far into the film as
+ * its delay however long the browser takes; and running as the wall's only while an act waits on the page, which
+ * needs it to answer, the film's time standing. The take does with the page what the stage's kind asks. A stage that
+ * shows a picture of the page, as it shows a static one, takes it anew when the take asks: on a frame after an act, a
+ * move of the page or a change the page made of itself, and on every frame until two pictures in a row come out
+ * alike, nothing done to the page between them and its own motion not let go, so what it brings — results, an image,
+ * a scroll that eases out, a note its timer takes away — is seen.
  * Once it stands still, a frame the stage would draw as it drew the last one captured is that capture, neither drawn
  * nor captured again: holds are near half a film's frames. A picture is taken as sharp as a camera as close as
  * livereel's bound shows it, so it serves every frame after it; on a frame a move of the page runs on past, or while
@@ -122,10 +126,11 @@ export class Take {
 	}
 
 	/**
-	 * Every step in turn, until the steps or the footage run out; then the stage asked once more, so a last frame kept
-	 * as its page went is not kept without a word.
+	 * The film begun where the page's time stands, then every step in turn, until the steps or the footage run out;
+	 * then the stage asked once more, so a last frame kept as its page went is not kept without a word.
 	 */
 	async run(steps: readonly Step[]): Promise<void> {
+		this.opened.time.begin();
 		let begun = 0;
 		for (const step of steps) {
 			if (this.finished()) break;
@@ -231,10 +236,13 @@ export class Take {
 		await stage.standUp();
 	}
 
-	/** An act on the page as it stands; the stage asked once it is done, or has failed. */
+	/**
+	 * An act on the page as it stands, the page's own time running as the act waits on it; the stage asked once it is
+	 * done, or has failed.
+	 */
 	private async actedOn(step: Act): Promise<void> {
 		try {
-			await step.action(this.opened.act);
+			await this.opened.time.running(() => step.action(this.opened.act));
 		} finally {
 			await this.refusedWhereGone();
 		}
@@ -286,10 +294,12 @@ export class Take {
 	}
 
 	/**
-	 * One frame: exposed along its time and kept where the footage keeps it, and counted; refused where the stage or its
-	 * page is gone. Whether a move of the page runs on past it says whether a picture of the page serves this frame alone.
+	 * One frame: the page's own time run on to its moment, then the frame exposed along its time and kept where the
+	 * footage keeps it, and counted; refused where the stage or its page is gone. Whether a move of the page runs on past
+	 * it says whether a picture of the page serves this frame alone.
 	 */
 	private async frame(time: FrameTime, pageMovesOn: boolean): Promise<void> {
+		await this.opened.time.runTo(this.moment());
 		await this.refusedWhereGone();
 		if (this.footage.keeps(this.shot)) {
 			await this.footage.keep(this.shot, await this.exposed(time, pageMovesOn));
@@ -374,12 +384,16 @@ export class Take {
 		return servesThisFrameAlone ? zoomPicturedFor(own, along) : ZOOM_AT_MOST;
 	}
 
-	/** The page as the stage is to show it: live in its frame as it is, or its picture retaken, where due, at a zoom. */
+	/**
+	 * The page as the stage is to show it: live in its frame as it is, or its picture retaken, where due, at a zoom; a
+	 * page heard to change of itself is due, as a page acted on is.
+	 */
 	private async pageShown(stage: Stage, zoom: number): Promise<void> {
 		switch (stage.kind) {
 			case 'framed':
 				return;
 			case 'pictured':
+				if (stage.changedOfItself()) this.pageChangedSinceTaken = true;
 				if (this.pageMayHaveChanged()) await this.pageRetaken(stage, zoom);
 		}
 	}

@@ -406,20 +406,31 @@ play({ seconds: 4, moves: [look.to({ glowX: 0.9 }), look.to({ ink: '#1a1a1a' }, 
 Two that name one value at once are refused, by it: `two moves on the
 look's glow at once in one step`.
 
-### The page: whether it changes of itself, its colour scheme, and what it blurs
+### The page: its time, whether it changes of itself, its colour scheme, and what it blurs
 
-A page changes only by the film where a film names nothing,
-`page: 'static'`: by its acts, by `page.scrollBy`, `page.scrollTo` and
-`page.type`, by what it does in answer, and while an `act` has let its own
-motion go. After any of these the page is captured every frame until two
-captures come out alike to the byte; from then on, a frame the stage draws as
-it drew the one before is that frame again, neither drawn nor captured, so a
-hold costs next to nothing. An answer that comes later than that, as a fetch
-slower than a frame or two, is not seen until the page is changed again: an
-`act` waits for what it brings, as `locator.waitFor()` does. `defineFilm`
-takes `page: 'dynamic'` for a page that changes of itself — an animation that
-ignores reduced motion, a video, a canvas, data that comes in — which is then
-captured every frame.
+The page's own time is the film's. Its timers, its animation frames and its
+date stand still between frames and run on a frame's length with each, so a
+note the page takes away after 2 s goes 2 s into the film, however long the
+shoot takes, and goes on the same frame in every shot. While an `act`, or the
+film's `ready`, waits on the page, its time runs as the wall's, as the page
+needs it to answer — a search that waits for the typing to stop, data that
+loads. The film's time stands through an act, so the page comes out of it
+ahead and stands until the film catches up: what it set runs out as far into
+the film as it said, however long the acts after it took, and an animation
+its script draws stands for as long as the act took. A Web Worker's timers,
+and the date the page starts at, the machine's, are the wall's.
+
+Where a film names nothing, `page: 'static'`, the page is shown as a picture,
+taken anew after the film changes it — by its acts, by `page.scrollBy`,
+`page.scrollTo` and `page.type`, while an `act` has let its own motion go —
+and after any change to its document it makes of itself: a timer of its own,
+an answer that comes in late, data pushed to it. After any of these the page
+is captured every frame until two captures come out alike to the byte; from
+then on, a frame the stage draws as it drew the one before is that frame
+again, neither drawn nor captured, so a hold costs next to nothing.
+`defineFilm` takes `page: 'dynamic'` for a page that changes where its
+document does not — a canvas, a video, an animation that ignores reduced
+motion, a change inside a shadow root — which is then captured every frame.
 
 `defineFilm` takes `colourScheme: 'dark'` for a page filmed in its dark
 scheme; it is asked for the light one where a film names none. It takes
@@ -601,10 +612,11 @@ clock is its frames.
   softer than the page itself.
 - Chromium alone, headless.
 - The page is asked for reduced motion, and for the light colour scheme
-  unless the film names the dark one. A page that animates anyway runs
-  those animations on the wall clock, so two shots of it differ there; on a
-  static page, the default, a hold shows it stopped where it was captured.
-  The page's text caret stands shown and never blinks.
+  unless the film names the dark one. A page whose styles animate anyway
+  runs those animations on the wall clock, as the film's time holds its
+  scripts alone, so two shots of it differ there; on a static page, the
+  default, a hold shows it stopped where it was captured. The page's text
+  caret stands shown and never blinks.
 - A page that refuses to be framed (`X-Frame-Options`, a CSP's
   `frame-ancestors`) is shown as a static page, or as a dynamic one on the
   stage inside the app ("Where the stage stands").

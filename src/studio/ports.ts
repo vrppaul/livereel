@@ -49,6 +49,27 @@ export interface PicturedStage extends DrawingStage {
 	 * whether it came out as the last one did.
 	 */
 	readonly retakePage: (zoom: number) => Promise<boolean>;
+	/**
+	 * Whether the page changed its document of itself since the take last asked, as when a timer of its own runs out or
+	 * an answer comes in, so its picture may no longer show it.
+	 */
+	readonly changedOfItself: () => boolean;
+}
+
+/**
+ * The filmed page's own time — its timers, its animation frames, its date — kept to the film's: it stands between
+ * frames, is run on as far as the film goes, and runs as the wall's only while the film's own code waits on the page.
+ */
+export interface PageTime {
+	/** The film begun where the page's time stands: its moment 0, however far the waits before it ran the page on. */
+	readonly begin: () => void;
+	/**
+	 * The page's time run on to a moment of the film, its timers due by then run; where a wait ran it on past that
+	 * moment, it stands until the film catches up, so what the page set runs out as far into the film as it said.
+	 */
+	readonly runTo: (moment: number) => Promise<void>;
+	/** Work that waits on the page done with the page's time running as the wall's, as the page needs to answer it. */
+	readonly running: (work: () => Promise<void>) => Promise<void>;
 }
 
 /**
@@ -79,11 +100,12 @@ export interface Track {
 	readonly hear: (moment: number, sound: Sound) => void;
 }
 
-/** A browser with the stage and the filmed page open in it, for one take. */
+/** A browser with the stage and the filmed page open in it, for one take, the page's time standing. */
 export interface Opened extends AsyncDisposable {
 	readonly stage: Stage;
 	readonly page: FilmedPage;
 	readonly act: ActContext;
+	readonly time: PageTime;
 }
 
 /**

@@ -1,6 +1,6 @@
 /**
  * A film shot in one of its formats: its page served, its steps written and counted, the browser opened, the page
- * made ready, and a take.
+ * made ready, its own time running as the film's code waits on it, and a take.
  *
  * The film's length, its sounds and the fonts its looks set are known from its steps before a browser opens, so
  * footage that cannot be met — a still past the end — a sound that cannot be laid, or a font CSS reads as no family
@@ -48,7 +48,7 @@ export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Sho
 	const motionBlur = shooting.quality.blurred ? film.motionBlur : null;
 	const setting = { ...film, fonts: [...film.fonts, ...fontsIn(steps)], motionBlur };
 	await using opened = await shooting.browser.open(setting, served.address, shooting.quality.sharpness);
-	await filmsOwn('ready', () => served.ready(opened.act));
+	await filmsOwn('ready', () => opened.time.running(() => served.ready(opened.act)));
 	const take = new Take({
 		opened,
 		footage: shooting.footage,

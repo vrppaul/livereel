@@ -4,7 +4,16 @@ import type { ActContext, FilmedPage, PageMotionSwitch, ScrollCourse } from '../
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Box, Format } from '../../src/domain/geometry.ts';
 import type { DrawnScene } from '../../src/scene.ts';
-import type { Exposures, Footage, FramedStage, Opened, PicturedStage, Stage, Track } from '../../src/studio/ports.ts';
+import type {
+	Exposures,
+	Footage,
+	FramedStage,
+	Opened,
+	PageTime,
+	PicturedStage,
+	Stage,
+	Track
+} from '../../src/studio/ports.ts';
 
 export const SMALL: Format = { frame: { width: 400, height: 400 }, screen: { width: 600, height: 400 } };
 
@@ -93,6 +102,10 @@ export class PicturedStageThatKeeps extends StageThatKeeps implements PicturedSt
 		this.retakenAt.push(zoom);
 		return Promise.resolve(true);
 	}
+
+	changedOfItself(): boolean {
+		return false;
+	}
 }
 
 /** Footage that keeps the shots it is told to keep, up to and including the last, and how many images each was. */
@@ -161,7 +174,29 @@ class MotionSwitch implements PageMotionSwitch {
 	}
 }
 
-export function openedOn(page: PageOfBoxes, stage: Stage): Opened {
+/**
+ * The page's time as a log of what was asked of it, in order: `begun` as the film began, each moment it was run on
+ * to, and `waited` for each time it ran as the wall's while the work handed to it was done.
+ */
+export class PageTimeLogged implements PageTime {
+	readonly log: (number | 'begun' | 'waited')[] = [];
+
+	begin(): void {
+		this.log.push('begun');
+	}
+
+	runTo(moment: number): Promise<void> {
+		this.log.push(moment);
+		return Promise.resolve();
+	}
+
+	async running(work: () => Promise<void>): Promise<void> {
+		await work();
+		this.log.push('waited');
+	}
+}
+
+export function openedOn(page: PageOfBoxes, stage: Stage, time: PageTime = new PageTimeLogged()): Opened {
 	const act: ActContext = { page: NO_PAGE, motion: new MotionSwitch() };
-	return { stage, page, act, [Symbol.asyncDispose]: () => Promise.resolve() };
+	return { stage, page, act, time, [Symbol.asyncDispose]: () => Promise.resolve() };
 }

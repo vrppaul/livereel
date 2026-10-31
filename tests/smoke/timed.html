@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>A page of its own time</title>
+	</head>
+	<body>
+		<h1>A heading</h1>
+		<input data-testid="field" />
+		<p data-testid="echo"></p>
+		<script>
+			// What is typed is echoed once the typing stops for a moment, as a search waits to ask its server
+			const ECHO_AFTER_MS = 300;
+			// The page says it is ready a moment after it opens, as an app does once its data is in
+			const READY_AFTER_MS = 300;
+			const field = document.querySelector('[data-testid=field]');
+			const echo = document.querySelector('[data-testid=echo]');
+			let echoing;
+			field.addEventListener('input', () => {
+				clearTimeout(echoing);
+				echoing = setTimeout(() => (echo.textContent = field.value), ECHO_AFTER_MS);
+			});
+			setTimeout(() => (document.body.dataset.ready = 'yes'), READY_AFTER_MS);
+		</script>
+	</body>
+</html>

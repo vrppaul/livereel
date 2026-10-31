@@ -20,12 +20,13 @@ import type { Keystroke } from '../../src/domain/typing.ts';
 import type { EndingCard } from '../../src/props/ending.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { type Scene, openingScene } from '../../src/scene.ts';
-import type { Exposures, Stage } from '../../src/studio/ports.ts';
+import type { Exposures, PageTime, Stage } from '../../src/studio/ports.ts';
 import { Take } from '../../src/studio/take.ts';
 import {
 	FootageOf,
 	FramedStageThatKeeps,
 	PageOfBoxes,
+	PageTimeLogged,
 	PicturedStageThatKeeps,
 	SMALL,
 	type StageThatKeeps,
@@ -132,8 +133,30 @@ class StageAnswering extends PicturedStageThatKeeps {
 	}
 }
 
-function takeOf(footage: FootageOf, stage: Stage, track = new TrackThatKeeps()): Take {
-	const opened = openedOn(new PageOfBoxes(PAGE), stage);
+/** A page whose picture never changes, which says it changed of itself as the take asks the times given, from 0. */
+class StageChangingOfItself extends PicturedStageThatKeeps {
+	readonly changedAsked: readonly number[];
+	private asked = 0;
+
+	constructor(changedAsked: readonly number[]) {
+		super();
+		this.changedAsked = changedAsked;
+	}
+
+	override changedOfItself(): boolean {
+		const changed = this.changedAsked.includes(this.asked);
+		this.asked += 1;
+		return changed;
+	}
+}
+
+function takeOf(
+	footage: FootageOf,
+	stage: Stage,
+	track = new TrackThatKeeps(),
+	time: PageTime = new PageTimeLogged()
+): Take {
+	const opened = openedOn(new PageOfBoxes(PAGE), stage, time);
 	return new Take({
 		opened,
 		footage,
@@ -272,6 +295,23 @@ test('a static page still answering is taken and captured every frame until its 
 	const footage = new FootageOf([0, 1, 2, 3, 4]);
 	await takeOf(footage, stage).run([hold({ seconds: 5 / 30 })]);
 	expect([footage.kept, stage.captured, stage.retakenAt.length]).toEqual([[0, 1, 2, 3, 4], 3, 4]);
+});
+
+test('a static page that changed of itself is taken anew, and on every frame after until its picture comes out as the last', async () => {
+	// The page heard changing as the fourth frame is shot, after its picture stood still from the second
+	const stage = new StageChangingOfItself([3]);
+	const footage = new FootageOf([0, 1, 2, 3, 4, 5]);
+	await takeOf(footage, stage).run([hold({ seconds: 6 / 30 })]);
+	expect([footage.kept, stage.retakenAt.length, stage.captured]).toEqual([[0, 1, 2, 3, 4, 5], 2 + 2, 1 + 1]);
+});
+
+test("the page's time begins the film, is run on to each frame's moment, kept or not, and runs as the wall's only while an act waits on the page", async () => {
+	const time = new PageTimeLogged();
+	const frame = 1 / 30;
+	const steps = [hold({ seconds: 2 * frame }), act(() => Promise.resolve()), hold({ seconds: 2 * frame })];
+	// Only the last frame kept, as a still keeps it
+	await takeOf(new FootageOf([3]), new PicturedStageThatKeeps(), new TrackThatKeeps(), time).run(steps);
+	expect(time.log).toEqual(['begun', 0, frame, 'waited', 2 * frame, 3 * frame]);
 });
 
 test('a dynamic page is shown live and captured every frame, though nothing in the scene moves', async () => {

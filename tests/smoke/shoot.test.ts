@@ -8,7 +8,7 @@ import { blended } from '../../src/adapters/video/exposures.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
-import type { Exposures, Footage } from '../../src/studio/ports.ts';
+import type { Exposures, Footage, PicturedStage } from '../../src/studio/ports.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
 import {
 	type ActContext,
@@ -18,6 +18,7 @@ import {
 	camera,
 	cut,
 	defineFilm,
+	hold,
 	keystrokes,
 	light,
 	look,
@@ -210,4 +211,147 @@ test('a scroll of a block the page does not have is refused as its share begins,
 	const steps = [play({ seconds: 0.1, moves: [page.scrollTo('[data-testid=nowhere]', { top: 0 })] })];
 	const shooting = shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'));
 	await expect(shooting).rejects.toThrow('nothing on the page matches [data-testid=nowhere]');
+});
+
+// A page that keeps time of its own: it echoes what is typed into it a moment after the typing stops, and says it is
+// ready a moment after it opens
+const TIMED = new URL('./timed.html', import.meta.url).href;
+const ECHO = '[data-testid=echo]';
+const SAID_READY = 'body[data-ready]';
+// Long enough a hold that the page's time run a whole millisecond for each third of one would come out a tenth of a
+// second ahead (6.12 s), and that a page on the wall's time comes out short, as a held frame costs next to nothing
+const SIX_SECONDS = 6;
+
+/** A film of these steps of the page that keeps time of its own, made ready once it says so: static, or framed live. */
+function timedFilmOf(steps: readonly Step[], written: { page?: 'dynamic' }) {
+	return defineFilm({
+		formats: { small: SMALL },
+		serve: () => Promise.resolve(atAddress(TIMED)),
+		ready: (context) => context.page.locator(SAID_READY).waitFor(),
+		steps: () => steps,
+		...written
+	}).formats.get('small')!;
+}
+
+/** An act that writes down the page's own time, as it reads it. */
+function timeRead(read: number[]): Step {
+	return act(async (context: ActContext) => {
+		read.push(await context.page.evaluate(() => Date.now()));
+	});
+}
+
+test("the page's own time runs as far as the film's, however long the shoot takes, in its own tab or framed live", async () => {
+	const read: number[] = [];
+	const steps = [timeRead(read), hold({ seconds: SIX_SECONDS }), timeRead(read)];
+	await shoot(timedFilmOf(steps, {}), shootingInto(new EveryFrameCounted(), 'software'));
+	await shoot(timedFilmOf(steps, { page: 'dynamic' }), shootingInto(new EveryFrameCounted(), 'software'));
+	const ran = [read[1]! - read[0]!, read[3]! - read[2]!];
+	// In seconds, to the tenth: an act's own wait on the page runs the page's time a few milliseconds more
+	expect(ran.map((milliseconds) => Math.round(milliseconds / 100) / 10)).toEqual([SIX_SECONDS, SIX_SECONDS]);
+});
+
+/** An act that writes down what the page has echoed of what was typed into it. */
+function echoRead(echoed: string[]): Step {
+	return act(async (context: ActContext) => {
+		echoed.push(await context.page.locator(ECHO).innerText());
+	});
+}
+
+const typedIn = act((context: ActContext) => context.page.locator(FIELD).fill(TYPED));
+
+test('a timer the page sets runs out as far into the film as its delay, however long the shoot takes, in its own tab or framed live', async () => {
+	const echoed: string[] = [];
+	// Typed, then read before the page's 0.3 s are up and after
+	const steps = [typedIn, hold({ seconds: 0.2 }), echoRead(echoed), hold({ seconds: 0.2 }), echoRead(echoed)];
+	await shoot(timedFilmOf(steps, {}), shootingInto(new EveryFrameCounted(), 'software'));
+	await shoot(timedFilmOf(steps, { page: 'dynamic' }), shootingInto(new EveryFrameCounted(), 'software'));
+	expect(echoed).toEqual(['', TYPED, '', TYPED]);
+});
+
+test('a timer the page sets runs out as far into the film as its delay though an act after it waits on the page, in its own tab or framed live', async () => {
+	const echoed: string[] = [];
+	// Typed, then an act that waits 0.2 s on the page, then read 0.15 s and 0.35 s into the film after: the page's
+	// 0.3 s are up only at the second, the wait's own time not counted twice
+	const steps = [
+		typedIn,
+		act((context: ActContext) => context.page.waitForTimeout(200)),
+		hold({ seconds: 0.15 }),
+		echoRead(echoed),
+		hold({ seconds: 0.2 }),
+		echoRead(echoed)
+	];
+	await shoot(timedFilmOf(steps, {}), shootingInto(new EveryFrameCounted(), 'software'));
+	await shoot(timedFilmOf(steps, { page: 'dynamic' }), shootingInto(new EveryFrameCounted(), 'software'));
+	expect(echoed).toEqual(['', TYPED, '', TYPED]);
+});
+
+test("a page with a timer of a millisecond runs no further than the wall's clock while an act waits on it", async () => {
+	const read: number[] = [];
+	// Every timer the clock runs yields to the browser, so a page's time with one a millisecond runs slower than the
+	// wall's: run on as long as the wall's clock took, it ran 1.8 s ahead in a wait of 0.5 s
+	const waitedOnABusyPage = act(async (context: ActContext) => {
+		await context.page.evaluate(() => setInterval(() => undefined, 1));
+		await context.page.waitForTimeout(500);
+	});
+	const steps = [timeRead(read), waitedOnABusyPage, timeRead(read)];
+	await shoot(timedFilmOf(steps, {}), shootingInto(new EveryFrameCounted(), 'software'));
+	expect(read[1]! - read[0]! < 1000).toBe(true);
+});
+
+test("a page that goes elsewhere keeps the film's time, in its own tab", async () => {
+	const read: number[] = [];
+	const wentAgain = act(async (context: ActContext) => {
+		await context.page.goto(TIMED);
+	});
+	const steps = [timeRead(read), wentAgain, hold({ seconds: 2 }), timeRead(read)];
+	await shoot(timedFilmOf(steps, {}), shootingInto(new EveryFrameCounted(), 'software'));
+	// In seconds, to the tenth
+	expect(Math.round((read[1]! - read[0]!) / 100) / 10).toEqual(2);
+});
+
+test('a page whose own timer throws is filmed to its end, the person warned once of what it threw', async () => {
+	const warned: string[] = [];
+	const thrownEveryTenth = act((context: ActContext) =>
+		context.page.evaluate(() =>
+			setInterval(() => {
+				throw new Error('a timer of the page');
+			}, 100)
+		)
+	);
+	const steps = [thrownEveryTenth, hold({ seconds: 0.5 })];
+	const shooting = {
+		...shootingInto(new EveryFrameCounted(), 'software'),
+		browser: new Chromium('software', (line: string) => warned.push(line))
+	};
+	const shot = await shoot(timedFilmOf(steps, {}), shooting);
+	expect([shot.frames, warned.map((line) => line.includes('a timer of the page'))]).toEqual([15, [true]]);
+});
+
+test('an act waiting on what the page does after a delay of its own is answered, as is the wait for the page to say it is ready, in its own tab or framed live', async () => {
+	const answered: string[] = [];
+	const steps = [
+		act(async (context: ActContext) => {
+			await context.page.locator(FIELD).fill(TYPED);
+			answered.push(await context.page.locator(ECHO, { hasText: TYPED }).innerText());
+		})
+	];
+	await shoot(timedFilmOf(steps, {}), shootingInto(new EveryFrameCounted(), 'software'));
+	await shoot(timedFilmOf(steps, { page: 'dynamic' }), shootingInto(new EveryFrameCounted(), 'software'));
+	expect(answered).toEqual([TYPED, TYPED]);
+});
+
+test('a page in a tab of its own is heard to change of itself, once', async () => {
+	await using opened = await new Chromium('software', WARNED_TO_NOBODY).open(timedFilmOf([], {}), TIMED, 1);
+	const stage = opened.stage as PicturedStage;
+	const page = opened.act.page;
+	// What the page did as it opened and as it said it was ready, 0.3 s on, heard and forgotten; then a change it makes
+	// 0.1 s on, at 0.6 s, heard once it is made
+	await opened.time.runTo(0.5);
+	stage.changedOfItself();
+	await page.evaluate(() => setTimeout(() => (document.body.dataset['late'] = 'yes'), 100));
+	await opened.time.runTo(0.55);
+	const heard = [stage.changedOfItself()];
+	await opened.time.runTo(0.65);
+	heard.push(stage.changedOfItself(), stage.changedOfItself());
+	expect(heard).toEqual([false, true, false]);
 });

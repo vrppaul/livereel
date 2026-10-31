@@ -20,6 +20,7 @@ import type {
 	Footage,
 	FramedStage,
 	Opened,
+	PageTime,
 	PicturedStage,
 	Setting,
 	Stage
@@ -193,6 +194,7 @@ class TimedOpened implements Opened {
 	readonly stage: Stage;
 	readonly page: FilmedPage;
 	readonly act: ActContext;
+	readonly time: PageTime;
 
 	constructor(opened: Opened, timings: Timings) {
 		this.opened = opened;
@@ -200,6 +202,7 @@ class TimedOpened implements Opened {
 		this.stage = timedStage(opened.stage, timings);
 		this.page = new TimedPage(opened.page, timings);
 		this.act = opened.act;
+		this.time = new TimedPageTime(opened.time, timings);
 	}
 
 	[Symbol.asyncDispose](): Promise<void> {
@@ -268,6 +271,34 @@ class TimedPicturedStage extends TimedDrawingStage<PicturedStage> implements Pic
 
 	retakePage(zoom: number): Promise<boolean> {
 		return this.timings.timed('stage.retakePage', () => this.stage.retakePage(zoom));
+	}
+
+	/** Asked of what the stage already heard, as it was told: nothing to wait on, nothing to time. */
+	changedOfItself(): boolean {
+		return this.stage.changedOfItself();
+	}
+}
+
+/** The page's own time, each frame's run of it timed; a wait on the page is the act's or the film's own, not timed. */
+class TimedPageTime implements PageTime {
+	readonly time: PageTime;
+	readonly timings: Timings;
+
+	constructor(time: PageTime, timings: Timings) {
+		this.time = time;
+		this.timings = timings;
+	}
+
+	begin(): void {
+		this.time.begin();
+	}
+
+	runTo(moment: number): Promise<void> {
+		return this.timings.timed('page.runTo', () => this.time.runTo(moment));
+	}
+
+	running(work: () => Promise<void>): Promise<void> {
+		return this.time.running(work);
 	}
 }
 

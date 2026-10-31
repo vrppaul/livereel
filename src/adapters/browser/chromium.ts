@@ -14,7 +14,9 @@
  * it (measured 2026-10-27; held by `tests/smoke/inside.test.ts`). It is granted everywhere else too, so a page of a
  * public site that asks this machine is heard as it was while the checks were turned off; that is not measured.
  *
- * The page's own motion is stilled, by the reduced motion it is asked for, so every move in the film is the film's.
+ * The page's own motion is stilled, by the reduced motion it is asked for, so every move in the film is the film's; its
+ * own time is the film's, on a clock installed before it opens (`clock.ts`), and a static page tells of every change
+ * it makes to its document (`changes.ts`), so its picture is taken anew.
  * Launched headless, Playwright starts Chromium's headless shell, which draws every frame in software unless asked to draw on the graphics card,
  * through ANGLE onto the system's own graphics interface; it stays headless, and needs no screen. On Linux, Vulkan
  * reached an Intel Iris Xe with no screen named, and the promo, wide and blurred, took 271 s against 495 s in
@@ -41,7 +43,9 @@ import { type MotionBlur, mostExposuresOf } from '../../domain/shutter.ts';
 import type { PageKind, StagePlace } from '../../direction/film.ts';
 import type { ActContext, PageMotionSwitch } from '../../direction/page.ts';
 import type { FontNamed } from '../../direction/theme.ts';
-import type { Browser, Opened, Setting, Stage } from '../../studio/ports.ts';
+import type { Browser, Opened, PageTime, Setting, Stage } from '../../studio/ports.ts';
+import { ChangesHeard } from './changes.ts';
+import { PlaywrightPageTime } from './clock.ts';
 import { stagedInside } from './inside.ts';
 import { PlaywrightPage } from './page.ts';
 import {
@@ -225,7 +229,7 @@ export class Chromium implements Browser {
 			await unreadRefused(stage, setting.blurred);
 			switch (setting.page) {
 				case 'static':
-					return await pictured(browser, stage, setting, address, { sharpness, exposuresAtOnce });
+					return await pictured(browser, stage, setting, address, { sharpness, exposuresAtOnce }, this.warn);
 				case 'dynamic':
 					return await framedLive(browser, stage, setting, address, this.warn);
 			}
@@ -242,12 +246,14 @@ class OpenedChromium implements Opened {
 	readonly stage: Stage;
 	readonly page: PlaywrightPage;
 	readonly act: ActContext;
+	readonly time: PageTime;
 
-	constructor(tabs: Tabs, stage: Stage, filmed: Frame) {
+	constructor(tabs: Tabs, stage: Stage, filmed: Frame, time: PageTime) {
 		this.browser = tabs.browser;
 		this.stage = stage;
 		this.page = new PlaywrightPage(filmed, tabs.filmed.keyboard);
 		this.act = { page: filmed, motion: new PageMotion(tabs.filmed) };
+		this.time = time;
 	}
 
 	[Symbol.asyncDispose](): Promise<void> {
@@ -265,7 +271,8 @@ async function pictured(
 	stage: Page,
 	setting: Setting,
 	address: string,
-	drawing: StageDrawing
+	drawing: StageDrawing,
+	warn: Warn
 ): Promise<Opened> {
 	const { sharpness, exposuresAtOnce } = drawing;
 	await stageApartOpened(stage);
@@ -278,12 +285,14 @@ async function pictured(
 	});
 	await filmed.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
 	await forcedOn(filmed, setting.blurred, THE_PAGE_AT_THE_TOP);
+	const time = await PlaywrightPageTime.installedOn(filmed, warn);
+	const changes = await ChangesHeard.on(filmed);
 	const watch = new TabWatch(filmed, address);
 	await reached(filmed, address);
 	const session = await filmed.context().newCDPSession(filmed);
-	const filmedTab = { tab: filmed, session, screen: setting.format.screen, pixelsAtZoomOne };
+	const filmedTab = { tab: filmed, session, screen: setting.format.screen, pixelsAtZoomOne, changes };
 	const picturedStage = new PlaywrightPicturedStage(stage, filmedTab, watch, exposuresAtOnce);
-	return new OpenedChromium({ browser, filmed }, picturedStage, filmed.mainFrame());
+	return new OpenedChromium({ browser, filmed }, picturedStage, filmed.mainFrame(), time);
 }
 
 /** A dynamic page opened live in the stage's frame, the stage standing where the film asks; refused where it is gone. */
@@ -295,13 +304,14 @@ async function framedLive(
 	warn: Warn
 ): Promise<Opened> {
 	await forcedOn(stage, setting.blurred, THE_STAGE_AT_THE_TOP);
+	const time = await PlaywrightPageTime.installedOn(stage, warn);
 	const opening = await staged(stage, setting.stage, address, warn);
 	const watch = new FrameWatch(stage, setting.stage, address);
 	const filmed = await framed(stage, setting, opening);
 	const absence = await watch.absence(filmed);
 	if (absence !== undefined) throw absence;
 	const tabs = { browser, filmed: stage };
-	return new OpenedChromium(tabs, new PlaywrightFramedStage(stage, setting.format, watch, filmed), filmed);
+	return new OpenedChromium(tabs, new PlaywrightFramedStage(stage, setting.format, watch, filmed), filmed, time);
 }
 
 /** A page gone to the film's address; one that cannot be reached refused, saying so. */

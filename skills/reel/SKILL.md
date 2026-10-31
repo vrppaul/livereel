@@ -340,19 +340,24 @@ with a timeout that long; a still takes seconds.
   what must not be seen, and write `blurred: [selector, …]` in
   `defineFilm`; the page blurs those blocks wherever it shows them. Check on
   the stills that nothing private reads.
-- The page is asked for reduced motion, so a page that honours it stands
-  still between frames; one that ignores it animates on the wall clock, and
-  two shots of it differ. Where the page's own animation must show (a
-  spinner of its own), release it in an `act` and still it after: it plays
-  sped up, which reads as time-lapse.
-- Once the page stands still — two pictures of it alike after the film last
-  changed it — a frame drawn as the one before is that frame again. So an
-  `act` waits for what it brings (`locator.waitFor()` on the answer), or the
-  answer may not show until the next change. A page that changes of itself —
-  a video, a canvas, an animation that ignores reduced motion, data that
-  comes in — stands still through a hold: write `page: 'dynamic'` in
-  `defineFilm` for it, and it is captured every frame, at the cost of a
-  slower shoot.
+- The page is asked for reduced motion, so a page whose styles honour it
+  stands still between frames; one whose styles animate anyway animates on
+  the wall clock, and two shots of it differ. Where such an animation must
+  show (a CSS spinner of the page's own), release it in an `act` and still it
+  after: it plays sped up, which reads as time-lapse. What the page's script
+  animates plays on the film's time, at its own speed.
+- The page's timers run on the film's time: a note the app takes away after
+  5 s goes 5 s into the film, however long the shoot takes, with nothing in
+  the film about it. While an `act` waits on the page its time runs as the
+  wall's, so an act may wait for anything the page does after a delay; the
+  page then stands until the film catches up.
+- A page shown as a picture, the default, is taken anew after the film
+  changes it and after any change to its document it makes of itself — a
+  timer, a late answer, data pushed to it — until two pictures of it come out
+  alike. One that changes where its document does not — a video, a canvas, an
+  animation that ignores reduced motion, a change inside a shadow root —
+  stands still through a hold: write `page: 'dynamic'` in `defineFilm` for
+  it, and it is captured every frame, at the cost of a slower shoot.
 - A long scroll in one frame step shows blank space where the page renders
   lazily: scroll in a `play`, a little each frame.
 - A box is read as its move's share begins: a block a scroll in the same
