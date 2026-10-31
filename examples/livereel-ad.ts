@@ -48,7 +48,7 @@ const SQUARE: Format = { frame: { width: 1080, height: 1080 }, screen: { width: 
 const HEADLINE: Place = { left: 0.067, top: 0.045, width: 0.866, height: 0.22 };
 const UNDER_THE_HEADLINE: Place = { left: 0.067, top: 0.255, width: 0.866, height: 0.08 };
 const CODE_UNDER_THE_HEADLINE: Place = { left: 0.067, top: 0.24, width: 0.866, height: 0.27 };
-const MOST_OF_THE_FRAME: Place = { left: 0.067, top: 0.2, width: 0.866, height: 0.75 };
+const MOST_OF_THE_FRAME: Place = { left: 0.067, top: 0.25, width: 0.866, height: 0.72 };
 // Where the window stands: under the headline, as the film opens and ends; low, under code
 const UNDER_THE_HEADLINE_WINDOW: Place = { left: 0.1, top: 0.37, width: 0.8, height: 0.56 };
 const LOW_WINDOW: Place = { left: 0.067, top: 0.55, width: 0.866, height: 0.39 };
