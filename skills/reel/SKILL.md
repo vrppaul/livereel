@@ -75,9 +75,6 @@ What reads as made with care:
 - **Keys for a shortcut** worth learning, while it is pressed in an act,
   never for text typed; not while a caption stands, as both take the foot.
 
-What reads as generated: a zoom on every click, a glow behind the product,
-springy overshoot, ripples on clicks. Leave them out.
-
 ## 3. The film
 
 livereel is installed in the project the film lives in, and needs Node 22.20
@@ -169,8 +166,7 @@ keyboards. `defineFilm` takes, beside the rest:
 
 How to use them:
 
-- Sounds are few and quiet: a click, the keys, the ending. Never a whoosh
-  on a camera move or a sound on every caption: that reads as generated.
+- Sounds are few and quiet: a click, the keys, the ending.
 - Leave the keyboard as livereel sets it unless the user asks for another,
   and pick it by what the user says: `membrane` is an office keyboard
   (Cherry KC 1000), `mechanical` a mechanical one (WhiteFox), and
