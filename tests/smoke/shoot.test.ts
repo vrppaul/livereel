@@ -259,6 +259,23 @@ function echoRead(echoed: string[]): Step {
 
 const typedIn = act((context: ActContext) => context.page.locator(FIELD).fill(TYPED));
 
+test('a timer the page sets at a speed of 4 runs out in a quarter of its delay into the film, in its own tab or framed live', async () => {
+	const echoed: string[] = [];
+	// Typed at four times the film's speed, then read 0.05 s and 0.1 s into the film after: the page's 0.3 s are up at
+	// 0.075 s
+	const steps = [
+		cut(page.speed(4)),
+		typedIn,
+		hold({ seconds: 0.05 }),
+		echoRead(echoed),
+		hold({ seconds: 0.05 }),
+		echoRead(echoed)
+	];
+	await shoot(timedFilmOf(steps, {}), shootingInto(new EveryFrameCounted(), 'software'));
+	await shoot(timedFilmOf(steps, { page: 'dynamic' }), shootingInto(new EveryFrameCounted(), 'software'));
+	expect(echoed).toEqual(['', TYPED, '', TYPED]);
+});
+
 test('a timer the page sets runs out as far into the film as its delay, however long the shoot takes, in its own tab or framed live', async () => {
 	const echoed: string[] = [];
 	// Typed, then read before the page's 0.3 s are up and after

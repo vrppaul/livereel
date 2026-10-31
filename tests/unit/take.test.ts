@@ -11,7 +11,7 @@ import { to as lookTo } from '../../src/moves/look.ts';
 import { on, to } from '../../src/moves/light.ts';
 import { click, hide, to as cursorTo } from '../../src/moves/cursor.ts';
 import { show } from '../../src/moves/ending.ts';
-import { type as typeIntoThePage } from '../../src/moves/page.ts';
+import { speed, type as typeIntoThePage } from '../../src/moves/page.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import { open, type } from '../../src/moves/terminal.ts';
 import { lean as leanTitle, show as showTitle, to as titleTo } from '../../src/moves/title.ts';
@@ -312,6 +312,27 @@ test("the page's time begins the film, is run on to each frame's moment, kept or
 	// Only the last frame kept, as a still keeps it
 	await takeOf(new FootageOf([3]), new PicturedStageThatKeeps(), new TrackThatKeeps(), time).run(steps);
 	expect(time.log).toEqual(['begun', 0, frame, 'waited', 2 * frame, 3 * frame]);
+});
+
+test("the page's time runs at the speed the film sets it to, a frame at its speed on the way through it: through the speeds between in a play, from a cut on at once, and stands at none", async () => {
+	const time = new PageTimeLogged();
+	const frame = 1 / 30;
+	// A frame at the film's own speed, a play of two frames on to a speed of 3, half-way at its first, so its frames run
+	// at 1.5 and 2.5 on their way; then none at once
+	const steps = [
+		hold({ seconds: frame }),
+		play({ seconds: 2 * frame, moves: [speed(3)], ease: linear }),
+		cut(speed(0)),
+		hold({ seconds: frame })
+	];
+	await takeOf(new FootageOf([3]), new PicturedStageThatKeeps(), new TrackThatKeeps(), time).run(steps);
+	expect(time.log).toEqual([
+		'begun',
+		0,
+		expect.closeTo(1.5 * frame),
+		expect.closeTo((1.5 + 2.5) * frame),
+		expect.closeTo((1.5 + 2.5) * frame)
+	]);
 });
 
 test('a dynamic page is shown live and captured every frame, though nothing in the scene moves', async () => {

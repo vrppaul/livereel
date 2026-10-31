@@ -35,10 +35,10 @@ import type { Cue } from './sound.ts';
 type ObjectPart = `${ObjectName} object`;
 
 /**
- * What a move changes: one prop of the scene, an object, or the page itself; none, for a move that only makes a sound.
- * Two moves of one part never run at once.
+ * What a move changes: one prop of the scene, an object, the page itself, or the speed the page's own time runs at;
+ * none, for a move that only makes a sound. Two moves of one part never run at once.
  */
-export type Part = PropName | ObjectPart | 'page' | null;
+export type Part = PropName | ObjectPart | 'page' | 'pageSpeed' | null;
 
 const NO_SOUNDS: readonly Cue[] = [];
 const NO_FONTS: readonly FontNamed[] = [];

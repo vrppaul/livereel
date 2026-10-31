@@ -1,5 +1,6 @@
 /**
- * What the stage draws on one frame: every prop's state at one moment, and the objects on the frame.
+ * What a film's moves set, at one moment: what the stage draws on one frame — every prop's state and the objects on
+ * the frame — and the speed the take runs the page's own time at, which the stage draws nothing of.
  *
  * A scene is plain values, never changed in place: a move's change hands back a scene with its own prop or object set,
  * and the take keeps the one standing. The film's look is a prop too, changed by moves as any other. A prop is one of
@@ -67,6 +68,11 @@ export type Scene = { readonly [Name in PropName]: PropStates[Name] } & {
 	readonly objects: Objects;
 	/** Objects pushed off past the frame's edge by one of their name sliding in, while they go. */
 	readonly leaving: Objects;
+	/**
+	 * How many of the page's own seconds a second of the film runs: the film's own speed, 1, where it sets none. The
+	 * take runs the page's time by it; the stage draws nothing of it.
+	 */
+	readonly pageSpeed: number;
 };
 
 /** What the stage is handed for each prop: its state, or what is worked out from it to draw. */
@@ -87,7 +93,13 @@ export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 	readonly leaving: readonly DrawnObject[];
 };
 
-/** The scene a film opens on, in its look: the whole screen, face-on, up, in the whole frame; nothing over it. */
+// The page's own time running a second for each of the film's
+const THE_FILMS_OWN_SPEED = 1;
+
+/**
+ * The scene a film opens on, in its look: the whole screen, face-on, up, in the whole frame; nothing over it; the
+ * page's time at the film's own speed.
+ */
 export function openingScene(format: Format, look: Look): Scene {
 	return {
 		look,
@@ -100,12 +112,18 @@ export function openingScene(format: Format, look: Look): Scene {
 		cursor: null,
 		note: null,
 		objects: new Map(),
-		leaving: new Map()
+		leaving: new Map(),
+		pageSpeed: THE_FILMS_OWN_SPEED
 	};
 }
 
 export function withProp<Name extends PropName>(scene: Scene, name: Name, state: PropStates[Name]): Scene {
 	return { ...scene, [name]: state };
+}
+
+/** The scene with the page's own time running at a speed. */
+export function withPageSpeed(scene: Scene, pageSpeed: number): Scene {
+	return { ...scene, pageSpeed };
 }
 
 /** The scene with an object of a name set where it stands, or coming last where none of its name stood; none, gone. */

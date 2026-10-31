@@ -156,7 +156,8 @@ and the moves of each part of the scene:
 - `ending.show({ name, line, command }, { from })`, `ending.hide({ toward })`, so a film may open on the card too;
   the card stands over the whole frame on the frame's own ground, slides in and out whole, and is never carried or
   leant
-- `page.scrollBy(selector, { pixels })`, `page.scrollTo(selector, { top })`, `page.type(strokes, { keyboard })`
+- `page.scrollBy(selector, { pixels })`, `page.scrollTo(selector, { top })`, `page.type(strokes, { keyboard })`,
+  `page.speed(speed)`
 - `sound.play(file)`
 
 A target is a selector, the first `every` blocks it matches, or a box of the
@@ -419,6 +420,21 @@ ahead and stands until the film catches up: what it set runs out as far into
 the film as it said, however long the acts after it took, and an animation
 its script draws stands for as long as the act took. A Web Worker's timers,
 and the date the page starts at, the machine's, are the wall's.
+
+`page.speed(speed)` sets how many of the page's seconds a second of the film
+runs: `cut(page.speed(4))` shows a minute of the site in 15 s, a `play` that
+holds `page.speed(0.5)` slows it down through the play, `page.speed(0)` stands
+it still; it runs at 1, the film's own, until a film sets another. It speeds
+what the page's script does by its time — its timers, its animation frames,
+its date — and nothing else: an answer from its server comes when it comes,
+its styles' animations keep the wall's clock, and while an `act` waits on the
+page its time runs as the wall's at any speed, so a page stood still answers
+a click. The page's animation frames come every 16 ms of its own time, so
+below a speed of 0.48, 16 ms to the film's frame, an animation its script
+draws on each steps less often than the film's frames; and each of them is
+run, so a page that draws on every one costs a frame more the faster it runs:
+2.6 ms at a speed of 1, 506 ms at 60, about 125 of them a frame (measured
+2026-10-31).
 
 Where a film names nothing, `page: 'static'`, the page is shown as a picture,
 taken anew after the film changes it — by its acts, by `page.scrollBy`,

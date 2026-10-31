@@ -64,8 +64,9 @@ export interface PageTime {
 	/** The film begun where the page's time stands: its moment 0, however far the waits before it ran the page on. */
 	readonly begin: () => void;
 	/**
-	 * The page's time run on to a moment of the film, its timers due by then run; where a wait ran it on past that
-	 * moment, it stands until the film catches up, so what the page set runs out as far into the film as it said.
+	 * The page's time run on to a moment of its own since the film began, as far as the speed the film sets took it, its
+	 * timers due by then run; where a wait ran it on past that moment, it stands until the film catches up, so what the
+	 * page set runs out as far into the film as it said.
 	 */
 	readonly runTo: (moment: number) => Promise<void>;
 	/** Work that waits on the page done with the page's time running as the wall's, as the page needs to answer it. */

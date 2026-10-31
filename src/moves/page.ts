@@ -1,12 +1,15 @@
 /**
- * What is done to the page itself between frames: its own scroll, and keys a person types into it.
+ * What is done to the page itself between frames: its own scroll, and keys a person types into it; and the speed its
+ * own time runs at.
  *
- * These change the page, not the scene: each frame sets the page's scroll, or presses the keys due by then, so the
- * page renders a little each frame as a person's scroll and typing make it.
+ * The scroll and the keys change the page, not the scene: each frame sets the page's scroll, or presses the keys due
+ * by then, so the page renders a little each frame as a person's scroll and typing make it. The speed is the scene's,
+ * which the take runs the page's time by, so its time runs ever faster or slower through a play, at once from a cut.
  */
 import {
 	A_NUMBER,
 	A_NUMBER_OR_ENDLESS,
+	A_PAGE_SPEED,
 	A_SELECTOR,
 	type Form,
 	assertKind,
@@ -19,7 +22,7 @@ import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript,
 import type { FilmedPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import { keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
-import type { Scene } from '../scene.ts';
+import { type Scene, withPageSpeed } from '../scene.ts';
 import { TYPING_FORM, type TypingScript } from './typing.ts';
 
 /** How far a block scrolls: so many pixels down its scroll, up where below none. */
@@ -66,6 +69,24 @@ export function type(strokes: readonly Keystroke[], script: TypingScript = {}): 
 		sounds: keysHeard(strokes, script.keyboard),
 		begin: (beginning) => keysInto(beginning.page, strokes)
 	};
+}
+
+/**
+ * The page's own time running at a speed, so many of its seconds to each of the film's: 4 shows a minute of the site
+ * in 15 s, 0.5 slows it down, 0 stands it still; from the speed it runs at as the move's share begins.
+ */
+export function speed(pageSpeed: number, script: TimingScript = {}): Move {
+	assertKind(pageSpeed, A_PAGE_SPEED, "page.speed's speed");
+	assertWritten(script, TIMING_FORM, 'page.speed');
+	return {
+		part: 'pageSpeed',
+		timing: timingOf(script),
+		begin: (beginning) => speeding(beginning.scene.pageSpeed, pageSpeed)
+	};
+}
+
+function speeding(startSpeed: number, endSpeed: number): Change {
+	return (scene, progress) => withPageSpeed(scene, between(startSpeed, endSpeed, progress));
 }
 
 async function scrolling(beginning: Beginning, target: string, aim: ScrollAim): Promise<Change> {

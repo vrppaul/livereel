@@ -16,13 +16,14 @@
  * page, which sets the page itself, is never asked. A stage that draws all of a frame's exposures at once lays them
  * over one another and is captured once, the frame; one that draws fewer is captured at each, the footage blending them: a
  * capture is near all a frame costs. The page's own time — its timers, animation frames and date — is the film's: run
- * on to each frame's moment, kept or not, before the frame is shot, so a page's timer runs out as far into the film as
- * its delay however long the browser takes; and running as the wall's only while an act waits on the page, which
- * needs it to answer, the film's time standing. The take does with the page what the stage's kind asks. A stage that
- * shows a picture of the page, as it shows a static one, takes it anew when the take asks: on a frame after an act, a
- * move of the page or a change the page made of itself, and on every frame until two pictures in a row come out
- * alike, nothing done to the page between them and its own motion not let go, so what it brings — results, an image,
- * a scroll that eases out, a note its timer takes away — is seen.
+ * on with each frame, kept or not, before the frame is shot, as far as the film went since the last at the speed the
+ * scene set on the way, the mean of where it stood and where it stands; so a page's timer set at a speed of 2 runs
+ * out in half its delay into the film, however long the browser takes. It runs as the wall's only while an act waits
+ * on the page, which needs it to answer, the film's time standing. The take does with the page what the stage's kind
+ * asks. A stage that shows a picture of the page, as it shows a static one, takes it anew when the take asks: on a
+ * frame after an act, a move of the page or a change the page made of itself, and on every frame until two pictures
+ * in a row come out alike, nothing done to the page between them and its own motion not let go, so what it brings —
+ * results, an image, a scroll that eases out, a note its timer takes away — is seen.
  * Once it stands still, a frame the stage would draw as it drew the last one captured is that capture, neither drawn
  * nor captured again: holds are near half a film's frames. A picture is taken as sharp as a camera as close as
  * livereel's bound shows it, so it serves every frame after it; on a frame a move of the page runs on past, or while
@@ -40,12 +41,15 @@ import { type Camera, ZOOM_AT_MOST, flatCamera, zoomPicturedFor } from '../domai
 import { TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
 import { type MotionBlur, alsoExposedBack } from '../domain/shutter.ts';
-import { type Ease, framesOf, momentOf } from '../domain/time.ts';
+import { type Ease, between, framesOf, momentOf } from '../domain/time.ts';
 import { type Change, type Move, type Share, movesThePage, soundsOf } from '../direction/move.ts';
 import type { Cue } from '../direction/sound.ts';
 import type { Act, Cut, Play, Step } from '../direction/steps.ts';
 import { type DrawnScene, type Scene, cameraOf, drawingOf, drawn, frameShiftBetween } from '../scene.ts';
 import type { Exposures, Footage, FramedStage, Opened, PicturedStage, Stage, Track } from './ports.ts';
+
+// Half-way along a frame, where a speed that changes evenly over it stands at its mean
+const HALF_WAY = 0.5;
 
 /**
  * A move begun: the share of its step it runs over, its curve, what it sets and whether that is the page itself, and
@@ -110,6 +114,10 @@ export class Take {
 	private lastCaptured: Captured | null = null;
 	private pageChangedSinceTaken = true;
 	private pageStandsStill = false;
+	// How far the film's frames have taken the page's own time since the film began, in its own seconds, at the scene's
+	// speed; and the film's moment they took it to
+	private pageMoment = 0;
+	private pageRunAt = 0;
 
 	constructor(setup: TakeSetup) {
 		this.opened = setup.opened;
@@ -299,12 +307,24 @@ export class Take {
 	 * it says whether a picture of the page serves this frame alone.
 	 */
 	private async frame(time: FrameTime, pageMovesOn: boolean): Promise<void> {
-		await this.opened.time.runTo(this.moment());
+		await this.pageTimeRunOn(time.before);
 		await this.refusedWhereGone();
 		if (this.footage.keeps(this.shot)) {
 			await this.footage.keep(this.shot, await this.exposed(time, pageMovesOn));
 		}
 		this.shot += 1;
+	}
+
+	/**
+	 * The page's own time run on as far as the film's has gone since it was last, at its speed half-way along the way:
+	 * between where the scene the frame before left set it and where the scene sets it now.
+	 */
+	private async pageTimeRunOn(before: Scene): Promise<void> {
+		const moment = this.moment();
+		const speedOnTheWay = between(before.pageSpeed, this.scene.pageSpeed, HALF_WAY);
+		this.pageMoment += (moment - this.pageRunAt) * speedOnTheWay;
+		this.pageRunAt = moment;
+		await this.opened.time.runTo(this.pageMoment);
 	}
 
 	/** The take refused, by why, where the stage or the page in its frame is no longer there. */

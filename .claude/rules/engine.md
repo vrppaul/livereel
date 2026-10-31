@@ -22,7 +22,7 @@ How a module is built is said in its comment at the top. The stage has its own r
 ## Time and the frame
 
 - A frame is a moment of the film, `shot / FRAMES_PER_SECOND` seconds in, whatever the browser took: nothing reads the wall clock, but for how long a wait on the page took and the date the page starts at (`src/adapters/browser/clock.ts`).
-- The page's own time is the film's (`PageTime` in `src/studio/ports.ts`): the take begins it with the film and runs it on to each frame's moment.
+- The page's own time is the film's (`PageTime` in `src/studio/ports.ts`): the take begins it with the film and runs it on with each frame at the scene's `pageSpeed`, a field of the scene that no prop is and the stage never draws.
 - Anything that waits on the page — an act, the film's `ready` — waits inside `time.running`.
 - A move reads what it starts from once, as its share of its step begins, and becomes a change that knows its start and end; its prop at any progress follows from those and the progress alone.
 - Two moves of one part — a prop, or the page — share a step only one after the other: `play` and `cut` refuse them at once, unless each sets values of the part the other does not (`Move.valueNames`), as two moves of the look may.

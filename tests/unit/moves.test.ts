@@ -28,6 +28,7 @@ import { pastTheEdge, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
 import * as look from '../../src/moves/look.ts';
 import * as note from '../../src/moves/note.ts';
+import { speed } from '../../src/moves/page.ts';
 import * as pin from '../../src/moves/pins.ts';
 import * as title from '../../src/moves/title.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
@@ -273,6 +274,12 @@ test('a title or code shown from a side slides in whole from a frame past its pl
 		boxToward(place, pastTheEdge(place, 'top', SMALL.frame), 0.5),
 		[]
 	]);
+});
+
+test("a speed of the page's time below none is refused as its move is made", () => {
+	expect(() => speed(-1)).toThrow(
+		new FilmError("page.speed's speed is -1: it is how many of the page's seconds a second of the film runs, 0 or more")
+	);
 });
 
 test("a title's size of none is refused as its move is made", () => {

@@ -163,7 +163,12 @@ export const A_FONT_FAMILY = new Plain(isWords, "a font's family, as CSS names o
 /** A colour a film gives its words or its ground, in the one form checked here rather than in a browser: hex. */
 export const A_COLOUR = new Plain(isHexColour, 'a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa');
 /** A length a film sizes or spaces something by, in pixels: none at least. */
-export const A_PIXELS = new Plain(isPixels, 'a number of pixels, 0 or more');
+export const A_PIXELS = new Plain(isNoneOrMore, 'a number of pixels, 0 or more');
+/** How fast the page's own time runs against the film's: none at least, where it stands. */
+export const A_PAGE_SPEED = new Plain(
+	isNoneOrMore,
+	"how many of the page's seconds a second of the film runs, 0 or more"
+);
 /** How large letters are, in pixels: more than none, as letters of no size are not there. */
 export const A_SIZE = new Plain(isSize, 'a number of pixels, more than 0');
 /** A share of something a film gives, from none of it to the whole. */
@@ -329,7 +334,7 @@ function isCount(written: unknown): written is number {
 	return isNumber(written) && Number.isInteger(written) && written >= 1;
 }
 
-function isPixels(written: unknown): written is number {
+function isNoneOrMore(written: unknown): written is number {
 	return isNumber(written) && written >= NONE;
 }
 

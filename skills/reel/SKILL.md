@@ -231,6 +231,7 @@ its end at once.
 | `page.scrollBy(selector, { pixels })` | a block's own scroll moved so many pixels |
 | `page.scrollTo(selector, { top })` | the page scrolled until a block stands `top` pixels below the top of what scrolls it |
 | `page.type(strokes, { keyboard })` | real keys typed into whatever holds the page's keyboard, heard on the film's keyboard or the one named |
+| `page.speed(speed)` | how many of the page's seconds a second of the film runs: 4 shows a minute of the site's timers and script animations in 15 s, 0.5 slows them, 0 stands them still; at once in a `cut`, through the speeds between in a `play`; an `act` still waits on the page at the wall's time |
 | `sound.play(file)` | a file of the film's heard as its share begins; it moves nothing, so it shares a step with anything |
 
 `cursor.click` and `typing` give several steps: spread them among the
