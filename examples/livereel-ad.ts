@@ -257,8 +257,11 @@ function actTheTravel(): readonly Step[] {
 	];
 }
 
-/** The window back under the headline, a light coming up on the count, then carried to Refresh. */
-function actTheLight(): readonly Step[] {
+/**
+ * The window back under the headline, a light coming up on the count, then carried to Refresh, and the cursor coming
+ * in to click it for real.
+ */
+function actTheLight(served: AppServed): readonly Step[] {
 	return [
 		play({
 			seconds: 0.9,
@@ -268,7 +271,15 @@ function actTheLight(): readonly Step[] {
 		play({ seconds: 0.6, moves: [light.on(VISITORS, { dim: LIGHT_DIM })], ease: easeOutCubic }),
 		hold({ seconds: 0.4 }),
 		play({ seconds: 0.8, moves: [light.to(REFRESH)], ease: easeInOutCubic }),
-		hold({ seconds: 0.8 })
+		hold({ seconds: 0.3 }),
+		play({
+			seconds: 0.7,
+			moves: [headline('and clicks it.', LINE_SIZE), cursor.to(REFRESH)],
+			ease: easeInOutCubic
+		}),
+		...cursor.click(refreshing(served)),
+		hold({ seconds: 0.6 }),
+		cut(cursor.hide())
 	];
 }
 
@@ -521,7 +532,7 @@ function steps(served: AppServed): readonly Step[] {
 		...actTheAnswer(served),
 		...actTheLean(),
 		...actTheTravel(),
-		...actTheLight(),
+		...actTheLight(served),
 		...actTheFile(),
 		...actTheCode(),
 		...actTheLook(),
