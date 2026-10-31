@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0
 
 - `page.speed(speed)` sets how many of the page's seconds a second of the film runs: `cut(page.speed(4))` shows a minute of the site in 15 s, `page.speed(0.5)` in a `play` slows it through the play, `page.speed(0)` stands it still. It speeds what the page's script does by its time — timers, animation frames, date — and not its server's answers, its styles' animations, or its time while an `act` waits on it. A speed below none is refused as the move is made. Every animation frame and timer due is run, so a page that draws on each costs more a frame the faster it runs: 2.6 ms at 1, 506 ms at 60.
 

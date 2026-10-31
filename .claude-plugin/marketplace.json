@@ -9,7 +9,7 @@
 		{
 			"name": "livereel",
 			"description": "Direct and shoot a short film of a live web page: a camera, a light, a cursor and captions over it, frame by frame.",
-			"version": "0.6.0",
+			"version": "0.7.0",
 			"author": {
 				"name": "Pavel Paranin"
 			},
