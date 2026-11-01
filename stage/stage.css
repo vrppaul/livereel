@@ -150,6 +150,38 @@ body {
 	display: none;
 }
 
+/* The holes pieces of the page leave, laid on the screen in its pixels, so the camera and the window carry them with the page */
+.holes {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+/* A hole: the part of the screen a piece was lifted off, filled with its colour, as far as its piece has come; ringed in the accent where it has a line, as wide on the frame however close the camera comes */
+.hole {
+	position: absolute;
+	left: calc(var(--left) * 1px);
+	top: calc(var(--top) * 1px);
+	width: calc(var(--width) * 1px);
+	height: calc(var(--height) * 1px);
+	box-sizing: border-box;
+	background: var(--hole-ground);
+	opacity: var(--shown);
+}
+
+.hole[data-stroke] {
+	border: calc(var(--stroke-width) * var(--pane-scale)) var(--stroke-style) var(--accent);
+}
+
+/* A ring or a line drawn whole, or in dashes */
+[data-stroke='solid'] {
+	--stroke-style: solid;
+}
+
+[data-stroke='dashed'] {
+	--stroke-style: dashed;
+}
+
 /* The light: a block's outline, reaching a little past it, whose shadow darkens past every edge of the screen */
 .light {
 	--light-reach: 4px;
@@ -344,6 +376,13 @@ body {
 	inset: 0;
 	pointer-events: none;
 	zoom: var(--frame-scale);
+}
+
+/* The lines from pieces of the page to their sources, over the whole frame */
+.piece-lines,
+.segments {
+	position: absolute;
+	inset: 0;
 }
 
 /* The objects on the frame, over the whole of it; the page is clicked through them */
@@ -638,7 +677,6 @@ body {
 	--word-blur: 8px;
 	--word-sink: 8px;
 	--word-blur-leaving: 6px;
-	--note-line-width: 3px;
 	--note-dot: 12px;
 	--note-clear: 16px;
 
@@ -647,22 +685,28 @@ body {
 	opacity: calc(1 - var(--gone));
 }
 
-.note .line {
+/* A line drawn out from a point over the frame, a note's or one from a piece of the page to its source: from where it starts, at its angle, as far as a share of its length, in the accent's colour, whole or in dashes; its numbers in the frame's pixels */
+.segment {
 	position: absolute;
 	left: calc(var(--from-left) * 1px / var(--frame-scale));
-	top: calc(var(--from-top) * 1px / var(--frame-scale) - var(--note-line-width) / 2);
+	top: calc(var(--from-top) * 1px / var(--frame-scale) - var(--stroke-width) / 2);
 	width: calc(var(--length) * var(--drawn) * 1px / var(--frame-scale));
-	height: var(--note-line-width);
+	height: var(--stroke-width);
 	background: var(--accent);
 	transform-origin: 0 50%;
 	transform: rotate(calc(var(--angle) * 1deg));
 }
 
-.note .line::before {
+[data-stroke='dashed'] .segment {
+	background: var(--dashes);
+}
+
+/* A note's line starts from a dot at the block's edge */
+.note .segment::before {
 	content: '';
 	position: absolute;
 	left: calc(var(--note-dot) / -2);
-	top: calc((var(--note-line-width) - var(--note-dot)) / 2);
+	top: calc((var(--stroke-width) - var(--note-dot)) / 2);
 	width: var(--note-dot);
 	height: var(--note-dot);
 	border-radius: 50%;
@@ -1064,28 +1108,50 @@ body {
 	margin-right: 0.6em;
 }
 
-/* A piece of the page in its object, fading up whole as it comes in its own way and out as it goes */
-.piece {
+/* A piece of the page, a lens or an outline in its object, fading up whole as it comes in its own way and out as it goes */
+.piece,
+.lens,
+.outline {
 	opacity: var(--shown);
 }
 
-/* Its figure: the part of the page's picture over its source, as large as its box holds all of it at its fit, a screen's pixel to so many of the frame's, in the box's middle; drawn from the page's own picture as the stage last showed it (`show` in `stage/stage.js`), so it shows what the page shows there as it changes. Its lengths stand in pixels of a frame the look was made on, as all an object shows does, so a frame's pixel is a share of the frame's scale. It draws nothing past its box */
-.piece .way {
-	--piece-scale: calc(var(--fit) / var(--frame-scale));
-	--piece-width: calc(var(--source-width) * var(--piece-scale) * 1px);
-	--piece-height: calc(var(--source-height) * var(--piece-scale) * 1px);
+/* The figure of a piece of the page or a lens: the part of the page's picture over its source, at its fit, a screen's pixel to so many of the frame's, in the part of its box the engine works out; drawn from the page's own picture as the stage last showed it (`show` in `stage/stage.js`), so it shows what the page shows there as it changes. Its lengths stand in pixels of a frame the look was made on, as all an object shows does, so a frame's pixel is a share of the frame's scale. It draws nothing past its box */
+.piece .way,
+.lens .way {
+	--picture-scale: calc(var(--fit) / var(--frame-scale));
 	--way-reach: 0px;
 
 	position: absolute;
-	left: calc((var(--content-width) - var(--piece-width)) / 2);
-	top: calc((var(--content-height) - var(--piece-height)) / 2);
-	width: var(--piece-width);
-	height: var(--piece-height);
+	left: calc(var(--figure-left) * 1px / var(--frame-scale));
+	top: calc(var(--figure-top) * 1px / var(--frame-scale));
+	width: calc(var(--figure-width) * 1px / var(--frame-scale));
+	height: calc(var(--figure-height) * 1px / var(--frame-scale));
 	background-image: var(--page-picture);
-	background-size: calc(var(--screen-width) * var(--piece-scale) * 1px)
-		calc(var(--screen-height) * var(--piece-scale) * 1px);
-	background-position: calc(var(--source-left) * var(--piece-scale) * -1px)
-		calc(var(--source-top) * var(--piece-scale) * -1px);
+	background-size: calc(var(--screen-width) * var(--picture-scale) * 1px)
+		calc(var(--screen-height) * var(--picture-scale) * 1px);
+	background-position: calc(var(--source-left) * var(--picture-scale) * -1px)
+		calc(var(--source-top) * var(--picture-scale) * -1px);
+}
+
+/* A lens is a round glass with an edge and a shadow; past the screen's edge it shows the screen's ground (its glass blank where its middle sees past the screen: its rule stands at the end, after every figure's) */
+.lens .way {
+	border-radius: 50%;
+	box-shadow: var(--lens-edge);
+	background-color: var(--screen-ground);
+	background-repeat: no-repeat;
+}
+
+/* An outline's figure: a ring a little clear of its box on every side, in the accent's colour, whole or in dashes */
+.outline .way {
+	--outline-clear: 8px;
+	--outline-corner: 12px;
+	--way-reach: 0px;
+
+	position: absolute;
+	inset: calc(-1 * var(--outline-clear));
+	box-sizing: border-box;
+	border: var(--stroke-width) var(--stroke-style) var(--accent);
+	border-radius: var(--outline-corner);
 }
 
 /* Keys in their object, over the whole frame: the caps of a shortcut at the frame's foot, rising as they come; over a caption's words they stand in its place for them */
@@ -1152,7 +1218,13 @@ body {
 	bottom: auto;
 }
 
-/* A piece of the page turned away shows the eye its back: a blank card of the screen's ground, never the page mirrored */
-.object[data-face='back'] .piece .way {
+/* A lens whose middle sees past the screen's plane shows nothing of the page: its glass stands blank */
+.lens[data-blank] .way {
+	background-image: none;
+}
+
+/* A piece of the page or a lens turned away shows the eye its back: a blank card of the screen's ground, never the page mirrored */
+.object[data-face='back'] .piece .way,
+.object[data-face='back'] .lens .way {
 	background: var(--screen-ground);
 }

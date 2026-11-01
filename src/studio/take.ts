@@ -414,7 +414,9 @@ export class Take {
 	private zoomPictured(own: Exposure, along: readonly Exposure[], pageMovesOn: boolean): number {
 		const servesThisFrameAlone = pageMovesOn || this.opened.act.motion.released;
 		if (!servesThisFrameAlone) return ZOOM_AT_MOST;
-		const pieces = [own, ...along].flatMap((exposure) => pictureZoomsIn(exposure.scene, this.format));
+		const pieces = [own, ...along].flatMap((exposure) =>
+			pictureZoomsIn(exposure.scene, exposure.camera, this.format.frame)
+		);
 		return zoomPicturedFor(
 			own.camera,
 			along.map((exposure) => exposure.camera),

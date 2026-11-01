@@ -1,12 +1,12 @@
 /**
  * Colours a film writes in hex, mixed on their way from one to another: each channel and the alpha moved as far as the
  * way has gone, so a ground fades from dark to light through the colours between. A colour stands as it was written
- * at either end of its way; between them it is written whole, `#rrggbbaa`.
+ * at either end of its way; between them it is written whole, `#rrggbbaa`, as is a colour read off the page.
  */
 import { between } from './time.ts';
 
 /** A colour's red, green, blue and alpha, each from 0 to 255. */
-interface Channels {
+export interface Channels {
 	readonly red: number;
 	readonly green: number;
 	readonly blue: number;
@@ -68,7 +68,8 @@ function channelAt(digits: string, first: number): number {
 	return Number.parseInt(digits.slice(first, first + DIGITS_OF_A_CHANNEL), HEX);
 }
 
-function hexOf(channels: Channels): string {
+/** A colour written whole in hex, `#rrggbbaa`. */
+export function hexOf(channels: Channels): string {
 	return HASH + [channels.red, channels.green, channels.blue, channels.alpha].map(twoDigits).join('');
 }
 

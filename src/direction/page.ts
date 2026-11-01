@@ -29,6 +29,11 @@ export type PageShown = 'framed' | 'pictured';
 export interface FilmedPage {
 	/** Where a block stands on the screen; with `every`, the first that many that match, together. */
 	readonly box: (target: string, every: number) => Promise<Box>;
+	/**
+	 * The colour of the ground behind the first block a target matches, in hex, as the page draws it: the first
+	 * background the blocks it stands in draw whole, or white where none does.
+	 */
+	readonly groundBehind: (target: string) => Promise<string>;
 	/** The scroll a target takes to reach its aim; a target the page lacks is refused at once. */
 	readonly scrollCourse: (target: string, aim: ScrollAim) => Promise<ScrollCourse>;
 	/** Keys a person types into whatever holds the page's keyboard. */

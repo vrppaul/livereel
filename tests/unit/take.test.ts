@@ -436,7 +436,7 @@ test('a static page is pictured as close as a piece of it shows it on a frame it
 
 test('a piece is refused on a page framed live, which has no picture to draw it from', async () => {
 	await expect(takeOf(new FootageOf([0]), new FramedStageThatKeeps()).run([cut(showPiece('#first'))])).rejects.toThrow(
-		"at 0.0 s, step 1: piece.show draws a piece from the page's picture, which a page framed live has none of: the film's page is 'dynamic'"
+		"at 0.0 s, step 1: piece.show draws from the page's picture, which a page framed live has none of: the film's page is 'dynamic'"
 	);
 });
 

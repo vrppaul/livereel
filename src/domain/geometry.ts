@@ -45,6 +45,13 @@ export const A_BOX: OfForm<Box> = new OfForm<Box>(
 	"a box of the page's screen: { left, top, width, height }, in its pixels"
 );
 
+/** A straight line as the stage draws one: where it starts, how long it is, and its angle in degrees, clockwise. */
+export interface Segment {
+	readonly from: Point;
+	readonly length: number;
+	readonly angle: number;
+}
+
 /** A curve from a start to an end, drawn toward its bend: a quadratic Bézier. */
 export interface Arc {
 	readonly start: Point;
@@ -56,6 +63,7 @@ export interface Arc {
 const HALVES = 2;
 // A length of nothing: two boxes that meet only along an edge share no area
 const NO_LENGTH = 0;
+const DEGREES_IN_A_HALF_TURN = 180;
 // The shorter side of the frames the stage's look was made on, 1920 × 1080 and 1080 × 1080: what it draws in the
 // frame's own pixels is drawn as on such a frame, and scaled to the frame shot
 const LOOK_MADE_ON = 1080;
@@ -75,9 +83,14 @@ export function middleY(box: Box): number {
 
 /** A box of a size standing about another box's middle. */
 export function resizedAbout(box: Box, size: Size): Box {
+	return boxCentredOn({ left: middleX(box), top: middleY(box) }, size);
+}
+
+/** A box of a size whose middle stands at a point. */
+export function boxCentredOn(point: Point, size: Size): Box {
 	return {
-		left: middleX(box) - size.width / HALVES,
-		top: middleY(box) - size.height / HALVES,
+		left: point.left - size.width / HALVES,
+		top: point.top - size.height / HALVES,
 		width: size.width,
 		height: size.height
 	};
@@ -107,6 +120,17 @@ export function diagonalOf(size: Size): number {
 
 export function distanceBetween(first: Point, second: Point): number {
 	return Math.hypot(first.left - second.left, first.top - second.top);
+}
+
+/** The straight line from one point to another. */
+export function segmentBetween(from: Point, to: Point): Segment {
+	const across = to.left - from.left;
+	const down = to.top - from.top;
+	return {
+		from,
+		length: Math.hypot(across, down),
+		angle: (Math.atan2(down, across) * DEGREES_IN_A_HALF_TURN) / Math.PI
+	};
 }
 
 /** The point of a size laid from its top left nearest to a point: the point itself, where it lies within. */

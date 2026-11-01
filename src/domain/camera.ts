@@ -572,7 +572,7 @@ export function underTheFrame(camera: Camera, frame: Size, point: Point): Point 
 }
 
 /** The frame's own pixels a page's pixel takes in a pose, on a frame of this size. */
-function frameZoomOf(pose: Pose, frame: Size): number {
+export function frameZoomOf(pose: Pose, frame: Size): number {
 	return pose.zoom * frameScaleOf(frame);
 }
 

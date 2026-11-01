@@ -1,10 +1,13 @@
 /**
- * The filmed page as moves read it and type into it: where its blocks stand, its scroll, its keyboard.
+ * The filmed page as moves read it and type into it: where its blocks stand, the ground behind them, its scroll, its
+ * keyboard.
  *
  * The functions handed to the page run there, each alone: none may call another of this module. The block a scroll
- * moves is kept as a handle for the move that scrolls it, released with the browser.
+ * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a
+ * canvas of the page's own, which turns any colour CSS writes, in whatever form, into its channels.
  */
 import type { Frame, JSHandle, Keyboard } from 'playwright-core';
+import { type Channels, hexOf } from '../../domain/colour.ts';
 import { FilmError } from '../../domain/errors.ts';
 import { type Box, boxAround } from '../../domain/geometry.ts';
 import type { FilmedPage, ScrollAim, ScrollCourse } from '../../direction/page.ts';
@@ -20,8 +23,22 @@ interface CourseFound {
 	readonly end: number;
 }
 
+/**
+ * How the page reads a colour, handed to it: on a square canvas with sides this many pixels long, a background counting
+ * as drawn whole where its alpha reads this.
+ */
+interface GroundAsked {
+	readonly canvasSide: number;
+	readonly whole: number;
+}
+
 // What a block's overflow is when it scrolls of itself
 const SCROLLS = new Set(['auto', 'scroll']);
+// A canvas of one pixel reads a colour's alpha from 0 to 255, the most, where the colour is drawn whole
+const GROUND_ASKED: GroundAsked = { canvasSide: 1, whole: 255 };
+// The ground read where no block a block stands in draws one: white, the browser's canvas in the light scheme a film
+// asks for where it names none; a page that lets the dark scheme in shows its canvas dark, which is not read
+const WHITE: Channels = { red: 255, green: 255, blue: 255, alpha: 255 };
 
 export class PlaywrightPage implements FilmedPage {
 	readonly frame: Frame;
@@ -36,6 +53,11 @@ export class PlaywrightPage implements FilmedPage {
 		const [first, ...others] = (await this.frame.locator(target).evaluateAll(boxesOf)).slice(0, every);
 		if (first === undefined) throw nothingMatches(target);
 		return boxAround([first, ...others]);
+	}
+
+	async groundBehind(target: string): Promise<string> {
+		const block = await this.found(target);
+		return hexOf((await block.evaluate(groundOf, GROUND_ASKED)) ?? WHITE);
 	}
 
 	async scrollCourse(target: string, aim: ScrollAim): Promise<ScrollCourse> {
@@ -89,6 +111,27 @@ function boxesOf(blocks: Element[]): Box[] {
 	return blocks
 		.map((block) => block.getBoundingClientRect())
 		.map((bounds) => ({ left: bounds.left, top: bounds.top, width: bounds.width, height: bounds.height }));
+}
+
+/**
+ * The channels of the first background the blocks a block stands in draw whole, nearest first, read off a canvas of a
+ * pixel painted with each; none where none does. A tint drawn over its ground, seen through, is passed by.
+ */
+function groundOf(block: Element, asked: GroundAsked): Channels | null {
+	const canvas = document.createElement('canvas');
+	canvas.width = asked.canvasSide;
+	canvas.height = asked.canvasSide;
+	const paint = canvas.getContext('2d', { willReadFrequently: true });
+	if (paint === null) throw new Error('the page gives no canvas to read a colour on');
+	for (let holder = block.parentElement; holder !== null; holder = holder.parentElement) {
+		paint.clearRect(0, 0, asked.canvasSide, asked.canvasSide);
+		paint.fillStyle = getComputedStyle(holder).backgroundColor;
+		paint.fillRect(0, 0, asked.canvasSide, asked.canvasSide);
+		// A pixel's data holds its four channels always; the defaults tell the type checker so
+		const [red = 0, green = 0, blue = 0, alpha = 0] = paint.getImageData(0, 0, asked.canvasSide, asked.canvasSide).data;
+		if (alpha === asked.whole) return { red, green, blue, alpha };
+	}
+	return null;
 }
 
 function scrollTopSet(block: Element, top: number): void {

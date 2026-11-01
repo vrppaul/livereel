@@ -19,15 +19,22 @@ export const SMALL: Format = { frame: { width: 400, height: 400 }, screen: { wid
 
 export class PageOfBoxes implements FilmedPage {
 	readonly boxes: ReadonlyMap<string, Box>;
+	readonly grounds: ReadonlyMap<string, string>;
 	readonly typed: string[] = [];
 
-	constructor(boxes: ReadonlyMap<string, Box>) {
+	constructor(boxes: ReadonlyMap<string, Box>, grounds: ReadonlyMap<string, string> = new Map()) {
 		this.boxes = boxes;
+		this.grounds = grounds;
 	}
 
 	/** A test names only the blocks its page has. */
 	box(target: string): Promise<Box> {
 		return Promise.resolve(this.boxes.get(target)!);
+	}
+
+	/** A test names only the blocks whose ground its page has. */
+	groundBehind(target: string): Promise<string> {
+		return Promise.resolve(this.grounds.get(target)!);
 	}
 
 	scrollCourse(): Promise<ScrollCourse> {

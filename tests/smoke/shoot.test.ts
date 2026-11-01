@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { Chromium, type Renderer } from '../../src/adapters/browser/chromium.ts';
+import { PlaywrightPage } from '../../src/adapters/browser/page.ts';
 import { blended } from '../../src/adapters/video/exposures.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
@@ -262,6 +263,30 @@ test('a scroll of a block the page does not have is refused as its share begins,
 	const steps = [play({ seconds: 0.1, moves: [page.scrollTo('[data-testid=nowhere]', { top: 0 })] })];
 	const shooting = shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'));
 	await expect(shooting).rejects.toThrow('nothing on the page matches [data-testid=nowhere]');
+});
+
+// A page whose blocks stand on grounds of their own: a card on a band tinted over the page's light ground, and a note on
+// a dark band
+const GROUNDS = new URL('./grounds.html', import.meta.url).href;
+
+test('the ground behind a block is the first the blocks it stands in draw whole, a tint over it seen through, and white where none draws one', async () => {
+	const grounds: string[] = [];
+	const steps = [
+		act(async (context: ActContext) => {
+			const read = new PlaywrightPage(context.page, context.page.page().keyboard);
+			grounds.push(await read.groundBehind('[data-testid=card]'), await read.groundBehind('[data-testid=note]'));
+			await context.page.locator('body').evaluate((body) => body.style.setProperty('background', 'none'));
+			grounds.push(await read.groundBehind('[data-testid=card]'));
+		})
+	];
+	const film = defineFilm({
+		formats: { small: SMALL },
+		serve: () => Promise.resolve(atAddress(GROUNDS)),
+		ready: (context) => context.page.locator('main').waitFor(),
+		steps: () => steps
+	}).formats.get('small')!;
+	await shoot(film, shootingInto(new EveryFrameCounted(), 'software'));
+	expect(grounds).toEqual(['#f6f7f9ff', '#123456ff', '#ffffffff']);
 });
 
 // A page that keeps time of its own: it echoes what is typed into it a moment after the typing stops, and says it is

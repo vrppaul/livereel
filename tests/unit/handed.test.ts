@@ -14,7 +14,9 @@ import {
 	ending,
 	hold,
 	keystrokes,
+	lens,
 	light,
+	outline,
 	page,
 	piece,
 	play,
@@ -145,7 +147,20 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => piece.show(5 as never)).toThrow(new FilmError(`piece.show's target is 5: it is ${TARGET}`));
 	expect(() => piece.show('#chart', { from: 'left' } as never)).toThrow(
-		new FilmError('piece.show names from: it names every, enter, edge, within, ease, as, or fewer')
+		new FilmError('piece.show names from: it names every, hole, lines, enter, edge, within, ease, as, or fewer')
+	);
+	expect(() => piece.show('#chart', { hole: { ground: 'blue' } })).toThrow(
+		new FilmError(
+			`piece.show's hole's ground is "blue": it is the ground the page draws behind the block, "page", or a colour in hex`
+		)
+	);
+	expect(() => outline.show('#chart', { line: 'dotted' as never })).toThrow(
+		new FilmError(`outline.show's line is "dotted": it is how a line is drawn: "solid" or "dashed"`)
+	);
+	expect(() => lens.show('#chart', { magnification: 0 })).toThrow(
+		new FilmError(
+			"lens.show's magnification is 0: it is a magnification, more than 0, 2 showing the page twice as large as the camera"
+		)
 	);
 	expect(() => title.hide({ at: 'left' } as never)).toThrow(
 		new FilmError('title.hide names at: it names toward, leave, edge, within, ease, as, or fewer')

@@ -1,11 +1,11 @@
 /**
  * An object on the frame: something that stands in a box, grows, comes near, turns, comes up and goes, and shows what
  * it holds, its content — a title's words, a pane of code, an agent's terminal, the ending card, a caption, the keys
- * of a shortcut or a piece of the page. Where it stands, how it stands about its middle (`src/domain/stance.ts`) and
- * how far it has come and gone are the object's, alike for every content, so a move that carries, leans or slides one
- * is written once (`src/moves/object.ts`); what it shows, how that comes up in its box and what lights in it are its
- * content's. Each of where it stands, which way it faces and what it shows is set by its own moves, so moves of one
- * object that set different values share a step.
+ * of a shortcut, a piece of the page, an outline round a part of it or a lens over it. Where it stands, how it stands
+ * about its middle (`src/domain/stance.ts`) and how far it has come and gone are the object's, alike for every
+ * content, so a move that carries, leans or slides one is written once (`src/moves/object.ts`); what it shows, how
+ * that comes up in its box and what lights in it are its content's. Each of where it stands, which way it faces and
+ * what it shows is set by its own moves, so moves of one object that set different values share a step.
  *
  * An object comes up and goes in its own way, as what it shows comes up of itself, or in a way of livereel's, faded,
  * masked, wiped, opened or grown (`src/props/way.ts`): then its figure — its words, its pane, the card's lines, the
@@ -22,7 +22,14 @@
  * What an object shows sets the layer it is drawn on: a caption stands over every other object, as words said over a
  * film do, and keys over the caption's ground; within a layer the one that came last stands over the rest.
  */
-import { type View, ZOOM_AT_MOST, carriedAboutItsMiddle, leantOnTheFrame, seenFromTheEye } from '../domain/camera.ts';
+import {
+	type Camera,
+	type View,
+	ZOOM_AT_MOST,
+	carriedAboutItsMiddle,
+	leantOnTheFrame,
+	seenFromTheEye
+} from '../domain/camera.ts';
 import type { Fraction } from '../domain/fraction.ts';
 import {
 	type Box,
@@ -41,6 +48,8 @@ import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
 import { type Code, type DrawnCode, drawnCode } from './code.ts';
 import { type DrawnEnding, type Ending, drawnEnding } from './ending.ts';
 import { type CaptionStanding, type DrawnKeys, type Keys, drawnKeys, standOver } from './keys.ts';
+import { type DrawnLens, type Lens, drawnLens, lensFit } from './lens.ts';
+import { type DrawnOutline, type Outline, drawnOutline } from './outline.ts';
 import { type DrawnPiece, type Piece, drawnPiece, fitIn } from './piece.ts';
 import { type OnItsWay, type Way, alongItsWay, presencesIn, presentShare } from './way.ts';
 import type { Screen } from './screen.ts';
@@ -63,21 +72,30 @@ export type Inside = Exclude<Holder, 'frame'>;
 export const INSIDE_THE_WINDOW: Kind<Inside> = new OneOf(['window'], `the page's window, "window"`);
 
 /**
- * What stands round an object as it is drawn: the caption standing on the frame, if any, the window's screen, and the
- * frame, which the eye sees it before.
+ * What stands round an object as it is drawn: the caption standing on the frame, if any, the window's screen, the
+ * frame, which the eye sees it before, and the camera the page is seen by, which a lens shows it past.
  */
 export interface Surroundings {
 	readonly caption: CaptionStanding | null;
 	readonly screen: Screen;
 	readonly frame: Size;
+	readonly camera: Camera;
 }
 
 /** What an object shows. */
-export type Content = TitleWords | Code | Terminal | Ending | Caption | Keys | Piece;
+export type Content = TitleWords | Code | Terminal | Ending | Caption | Keys | Piece | Outline | Lens;
 
 /** What an object shows, as the stage draws it. */
 export type DrawnContent =
-	DrawnTitleWords | DrawnCode | DrawnTerminal | DrawnEnding | DrawnCaption | DrawnKeys | DrawnPiece;
+	| DrawnTitleWords
+	| DrawnCode
+	| DrawnTerminal
+	| DrawnEnding
+	| DrawnCaption
+	| DrawnKeys
+	| DrawnPiece
+	| DrawnOutline
+	| DrawnLens;
 
 /**
  * An object: what it stands inside, its box in the pixels of that from its top left corner, how it stands about the
@@ -121,10 +139,13 @@ const LAYER_OF: { readonly [Kind in Content['kind']]: number } = {
 	ending: 0,
 	caption: 1,
 	keys: 2,
-	piece: 0
+	piece: 0,
+	outline: 0,
+	lens: 0
 };
-// The corners of a box, in shares of it
+// The corners of a box, in shares of it, and its middle
 const CORNERS = cornersOf({ left: 0, top: 0, width: 1, height: 1 });
+const MIDDLE: Point = { left: 0.5, top: 0.5 };
 // An object on the frame, which lets all of it show
 const WHOLLY_HELD = 1;
 // Where the left and top edges of what an object stands in are, in its own pixels
@@ -200,6 +221,14 @@ function shareOfTheWayToTheEdge(here: Point, there: Point, side: FrameSide, hold
 }
 
 /**
+ * Where a point of an object, in shares of its box, is drawn on the frame, the page's window as it stands given: where
+ * it stands on the frame, there; inside the window, as the window shows that point of its plane.
+ */
+export function drawnOnTheFrame(object: FrameObject, window: View, frame: Size, share: Point): Point {
+	return onTheFrameOf(object, placingOf(object, frame), window, frame, share);
+}
+
+/**
  * Where a point of an object, in shares of its box, stands on the frame, carried by its placing: where it stands on the
  * frame, there; inside the window, as the page's window shows that point of its plane.
  */
@@ -238,25 +267,49 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	const layer = LAYER_OF[object.content.kind];
 	const held = heldIn(object, around.screen);
 	const onItsWay = alongItsWay(object.way, presentShare(object));
-	const content = drawnContent(object, moment, around.caption);
+	const content = drawnContent(object, moment, around);
 	const over = drawnOver(object, around.caption);
 	return { name, inside: object.inside, over, box: object.box, ...stance, layer, held, onItsWay, content };
 }
 
 /**
- * How close a piece of the page shows it, as a pose's zoom has it: the frame's pixels a screen's pixel takes in its
- * box, grown and brought near as it stands; where it leans, its nearer side shows it larger still, so at livereel's
- * bound.
+ * How close what an object shows of the page shows it, as a pose's zoom has it, the page seen by a camera: none for
+ * what shows none of it; else the frame's pixels a screen's pixel takes in its box, grown and brought near as it
+ * stands; where it leans, its nearer side shows the page larger still, so at livereel's bound.
  */
-export function pictureZoomOf(object: FrameObject, piece: Piece, frame: Size): number {
+export function pictureZoomOf(object: FrameObject, camera: Camera, frame: Size): number | null {
+	const fit = pageFitOf(object, camera, frame);
+	if (fit === null) return null;
 	const transform = drawnStance(object.angle, placingOf(object, frame)).transform;
 	switch (transform.kind) {
 		case 'flat': {
 			const grown = Math.hypot(transform.matrix.m11, transform.matrix.m12);
-			return (fitIn(piece.source, object.box) * grown) / frameScaleOf(frame);
+			return (fit * grown) / frameScaleOf(frame);
 		}
 		case 'leant':
 			return ZOOM_AT_MOST;
+	}
+}
+
+/**
+ * How many of the frame's pixels a screen's pixel takes in what an object shows of the page, the page seen by a camera:
+ * a piece as large as its box holds its source, a lens as its magnification has it; none for what shows no page.
+ */
+function pageFitOf(object: FrameObject, camera: Camera, frame: Size): number | null {
+	const content = object.content;
+	switch (content.kind) {
+		case 'piece':
+			return fitIn(content.source, object.box);
+		case 'lens':
+			return lensFit(content, camera, frame);
+		case 'words':
+		case 'code':
+		case 'terminal':
+		case 'ending':
+		case 'caption':
+		case 'keys':
+		case 'outline':
+			return null;
 	}
 }
 
@@ -281,12 +334,14 @@ function heldIn(object: FrameObject, screen: Screen): number {
 
 /**
  * What an object shows, drawn as far as its ground and its figure have come up and gone in the way it comes, at a
- * moment of the film, by the caption standing on the frame, if any. What has no ground of its own is its figure alone.
+ * moment of the film, among what stands round it: the caption standing on the frame, if any, which keys rise clear of,
+ * and the camera, which a lens shows the page past. What has no ground of its own is its figure alone.
  */
-function drawnContent(object: FrameObject, moment: number, caption: CaptionStanding | null): DrawnContent {
+function drawnContent(object: FrameObject, moment: number, around: Surroundings): DrawnContent {
 	const content = object.content;
 	const presences = presencesIn(object.way, object);
 	const figure = presences.figure;
+	const caption = around.caption;
 	switch (content.kind) {
 		case 'words':
 			return drawnTitleWords(content, presences, moment);
@@ -302,6 +357,12 @@ function drawnContent(object: FrameObject, moment: number, caption: CaptionStand
 			return drawnKeys(content, presentShare(figure), caption);
 		case 'piece':
 			return drawnPiece(content, object.box, presentShare(figure));
+		case 'outline':
+			return drawnOutline(content, presentShare(figure));
+		case 'lens': {
+			const middle = drawnOnTheFrame(object, around.camera.view, around.frame, MIDDLE);
+			return drawnLens(content, object.box, middle, around.camera, around.frame, presentShare(figure));
+		}
 	}
 }
 

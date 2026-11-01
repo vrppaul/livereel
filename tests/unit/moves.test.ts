@@ -9,6 +9,8 @@ import { windowOn, wordsOn } from '../../src/domain/split.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
 import { play } from '../../src/direction/steps.ts';
 import { onto, to as cameraTo } from '../../src/moves/camera.ts';
+import * as lens from '../../src/moves/lens.ts';
+import * as outline from '../../src/moves/outline.ts';
 import * as piece from '../../src/moves/piece.ts';
 import { hide as windowHide, lean, show as windowShow, to as windowTo } from '../../src/moves/window.ts';
 import { lower, rise } from '../../src/moves/screen.ts';
@@ -62,6 +64,10 @@ const SHOWN_ABOVE = { left: 100, top: 0, width: 100, height: 200 };
 const SHOWN_BELOW = { left: 100, top: 300, width: 100, height: 100 };
 const SHOWN_LEFT = { left: 0, top: 100, width: 200, height: 40 };
 const SHOWN_RIGHT = { left: 580, top: 100, width: 20, height: 40 };
+// Blocks of a screen as large as a 1080 frame: a card on a light ground, and another block below to its right
+const CARD = { left: 400, top: 300, width: 200, height: 100 };
+const CARDS_GROUND = '#f6f7f9';
+const OTHER = { left: 1200, top: 600, width: 100, height: 60 };
 const PAGE = new PageOfBoxes(
 	new Map([
 		['#block', BLOCK],
@@ -79,14 +85,22 @@ const PAGE = new PageOfBoxes(
 		['#shown-below', SHOWN_BELOW],
 		['#shown-left', SHOWN_LEFT],
 		['#shown-right', SHOWN_RIGHT],
-		['#wide', WIDE]
-	])
+		['#wide', WIDE],
+		['#card', CARD],
+		['#other', OTHER]
+	]),
+	new Map([['#card', CARDS_GROUND]])
 );
 const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
 const ACTED_IN = 'bring it in with an act, as no move of livereel scrolls the page sideways';
 const LIT = { box: BLOCK, strength: 1, dim: 0.6 };
-// No caption standing round an object drawn alone, the screen up, on the small frame
-const NOTHING_AROUND: Surroundings = { caption: null, screen: SCREEN_UP, frame: SMALL.frame };
+// No caption standing round an object drawn alone, the screen up, on the small frame, the camera on the whole screen
+const NOTHING_AROUND: Surroundings = {
+	caption: null,
+	screen: SCREEN_UP,
+	frame: SMALL.frame,
+	camera: cameraOf(openingScene(SMALL, LIVEREELS_LOOK), SMALL)
+};
 const TYPED = withObject(openingScene(SMALL, LIVEREELS_LOOK), 'terminal', {
 	inside: 'frame',
 	box: BLOCK,
@@ -116,8 +130,15 @@ const MIDDLE_AT_TWO = { focusX: 960, focusY: 540, zoom: 2 };
 // the part of it the camera shows
 const PAST_THE_SHOWN_EDGE = { left: 400, top: 300, width: 200, height: 100 };
 const SHOWN_AT_TWO = { left: 480, top: 300, width: 120, height: 100 };
-// Nothing standing round an object drawn alone on that frame, the screen up
-const AROUND_IN_FULL_HD: Surroundings = { caption: null, screen: SCREEN_UP, frame: FULL_HD.frame };
+// Nothing standing round an object drawn alone on that frame, the screen up, the camera on the whole screen
+const AROUND_IN_FULL_HD: Surroundings = {
+	caption: null,
+	screen: SCREEN_UP,
+	frame: FULL_HD.frame,
+	camera: cameraOf(openingScene(FULL_HD, LIVEREELS_LOOK), FULL_HD)
+};
+// A box in the upper right corner of a frame, a quarter of it across and down
+const UPPER_RIGHT_CORNER = { left: 0.75, top: 0, width: 0.25, height: 0.25 } as const;
 
 function beginningOf(scene: Scene): Beginning {
 	return beginningIn(scene, SMALL);
@@ -507,34 +528,54 @@ test('a piece of the page is born over its block as the camera shows it, cut to 
 	// Of 400 to 600 across the camera shows 480 to 600, at twice its size from the frame's left edge
 	expect([lifted.box, lifted.content]).toEqual([
 		{ left: 0, top: 60, width: 240, height: 200 },
-		{ kind: 'piece', source: SHOWN_AT_TWO }
+		{ kind: 'piece', source: SHOWN_AT_TWO, hole: null, lines: null }
 	]);
 });
 
-test('a piece goes back over its block as the camera shows it then, face-on by its nearest whole turn, as large as it was and on its plane', async () => {
+test('an outline is born round its block as the camera shows it, cut to the part the camera shows, in the line the film names, on a page framed live as on a picture', async () => {
+	const close = await setIn(cameraTo(MIDDLE_AT_TWO), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const ringed = (await setIn(outline.show(PAST_THE_SHOWN_EDGE, { line: 'dashed' }), close, 1, FULL_HD)).objects;
+	const framed = await outline.show(PAST_THE_SHOWN_EDGE).begin({ ...beginningIn(close, FULL_HD), pageShown: 'framed' });
+	expect([
+		ringed.get('outline')!.box,
+		ringed.get('outline')!.content,
+		(await framed(close, 1)).objects.get('outline')!.content
+	]).toEqual([
+		{ left: 0, top: 60, width: 240, height: 200 },
+		{ kind: 'outline', source: SHOWN_AT_TWO, line: 'dashed' },
+		{ kind: 'outline', source: SHOWN_AT_TWO, line: 'solid' }
+	]);
+});
+
+test('a piece, or an outline, goes back over its block as the camera shows it then, face-on by its nearest whole turn, as large as it was and on its plane', async () => {
 	const close = await setIn(cameraTo(MIDDLE_AT_TWO), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
 	const lifted = await setIn(piece.show(PAST_THE_SHOWN_EDGE), close, 1, FULL_HD);
-	const grown = await setIn(piece.to('whole', { scale: 1.5, depth: 100 }), lifted, 1, FULL_HD);
+	const ringed = await setIn(outline.show(PAST_THE_SHOWN_EDGE), lifted, 1, FULL_HD);
+	const grown = await setIn(piece.to('whole', { scale: 1.5, depth: 100 }), ringed, 1, FULL_HD);
 	const spun = await setIn(piece.lean({ tilt: 30, turn: 360 }), grown, 1, FULL_HD);
-	const wider = await setIn(cameraTo(WHOLE_AT_ONE), spun, 1, FULL_HD);
+	const ringMoved = await setIn(outline.to('left'), spun, 1, FULL_HD);
+	const wider = await setIn(cameraTo(WHOLE_AT_ONE), ringMoved, 1, FULL_HD);
 	const back = (await setIn(piece.back(), wider, 1, FULL_HD)).objects.get('piece')!;
-	// The camera at 1 shows the screen's pixels as the frame's: the piece stands over the part it was cut to
-	expect([back.box, back.content, back.scale, back.depth, back.angle]).toEqual([
+	const ringBack = (await setIn(outline.back(), wider, 1, FULL_HD)).objects.get('outline')!;
+	// The camera at 1 shows the screen's pixels as the frame's: each stands over the part it was cut to
+	expect([back.box, back.content, back.scale, back.depth, back.angle, ringBack.box]).toEqual([
 		SHOWN_AT_TWO,
-		{ kind: 'piece', source: SHOWN_AT_TWO },
+		{ kind: 'piece', source: SHOWN_AT_TWO, hole: null, lines: null },
 		1,
 		0,
-		{ tilt: 0, turn: 360, roll: 0 }
+		{ tilt: 0, turn: 360, roll: 0 },
+		SHOWN_AT_TWO
 	]);
 });
 
-test('a piece stands over its source only while the window faces the frame front on: leant, or turned half round, it is refused', async () => {
+test('what stands over a block of the page stands there only while the window faces the frame front on: leant, or turned half round, it is refused', async () => {
 	const lifted = await setIn(piece.show(PAST_THE_SHOWN_EDGE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
-	const leant = await setIn(lean({ turn: 20 }), lifted, 1, FULL_HD);
-	const turnedHalfRound = await setIn(lean({ turn: 180 }), lifted, 1, FULL_HD);
+	const magnified = await setIn(lens.show('#card'), lifted, 1, FULL_HD);
+	const leant = await setIn(lean({ turn: 20 }), magnified, 1, FULL_HD);
+	const turnedHalfRound = await setIn(lean({ turn: 180 }), magnified, 1, FULL_HD);
 	const refusal = (move: string) =>
 		new FilmError(
-			`${move} stands a piece over its source only while the window faces the frame front on: bring it face-on, window.lean({ tilt: 0, turn: 0 })`
+			`${move} stands over its source only while the window faces the frame front on: bring it face-on, window.lean({ tilt: 0, turn: 0 })`
 		);
 	await expect(async () => piece.show(PAST_THE_SHOWN_EDGE).begin(beginningIn(leant, FULL_HD))).rejects.toThrow(
 		refusal('piece.show')
@@ -542,20 +583,195 @@ test('a piece stands over its source only while the window faces the frame front
 	await expect(async () => piece.back().begin(beginningIn(turnedHalfRound, FULL_HD))).rejects.toThrow(
 		refusal('piece.back')
 	);
+	await expect(async () => outline.show(PAST_THE_SHOWN_EDGE).begin(beginningIn(leant, FULL_HD))).rejects.toThrow(
+		refusal('outline.show')
+	);
+	await expect(async () => lens.show('#card').begin(beginningIn(leant, FULL_HD))).rejects.toThrow(refusal('lens.show'));
+	await expect(async () => lens.to('#card').begin(beginningIn(turnedHalfRound, FULL_HD))).rejects.toThrow(
+		refusal('lens.to')
+	);
 });
 
-test("a piece is drawn as large as its box holds all of its source, and shows the page as close as that and its scale bring it, leant as close as livereel's bound", async () => {
+test('a lens is refused on a page framed live, which has no picture to draw it from', async () => {
+	const framed: Beginning = { ...beginningIn(openingScene(FULL_HD, LIVEREELS_LOOK), FULL_HD), pageShown: 'framed' };
+	await expect(async () => lens.show('#card').begin(framed)).rejects.toThrow(
+		new FilmError(
+			"lens.show draws from the page's picture, which a page framed live has none of: the film's page is 'dynamic'"
+		)
+	);
+});
+
+test("a piece is drawn as large as its box holds all of its source, in its middle, and shows the page as close as that and its scale bring it, leant as close as livereel's bound", async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
 	const lifted = await setIn(piece.show(PAST_THE_SHOWN_EDGE), wide, 1, FULL_HD);
 	const filling = await setIn(piece.to({ left: 0, top: 0, width: 1, height: 1 }, { scale: 2 }), lifted, 1, FULL_HD);
 	const leant = await setIn(piece.lean({ turn: 20 }), filling, 1, FULL_HD);
 	const object = filling.objects.get('piece')!;
-	// The whole frame, 1920 × 1080, holds the source of 200 × 100 at most 9.6 times as large across
+	// The whole frame, 1920 × 1080, holds the source of 200 × 100 at most 9.6 times as large across: 960 high, 60 in
 	expect([
 		drawnObject('piece', object, 0, AROUND_IN_FULL_HD).content,
-		pictureZoomsIn(filling, FULL_HD),
-		pictureZoomsIn(leant, FULL_HD)
-	]).toEqual([{ kind: 'piece', source: PAST_THE_SHOWN_EDGE, fit: 9.6, shown: 1 }, [19.2], [2.2]]);
+		pictureZoomsIn(filling, cameraOf(filling, FULL_HD), FULL_HD.frame),
+		pictureZoomsIn(leant, cameraOf(leant, FULL_HD), FULL_HD.frame)
+	]).toEqual([
+		{
+			kind: 'piece',
+			source: PAST_THE_SHOWN_EDGE,
+			fit: 9.6,
+			figure: { left: 0, top: 60, width: 1920, height: 960 },
+			shown: 1
+		},
+		[19.2],
+		[2.2]
+	]);
+});
+
+test("a piece lifted with a hole leaves on the screen, where it was lifted, the ground the page draws behind its block or the film's colour, ringed in the line the film names, as far as the piece has come and not gone", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const coming = await setIn(piece.show('#card', { hole: {} }), wide, 0.5, FULL_HD);
+	const area = piece.show(OTHER, { hole: { ground: '#112233', line: 'dashed' }, as: 'area' });
+	const both = await setIn(area, coming, 1, FULL_HD);
+	expect(drawn(both, cameraOf(both, FULL_HD), 0, FULL_HD).holes).toEqual([
+		{ name: 'piece', source: CARD, ground: CARDS_GROUND, line: null, shown: 0.5 },
+		{ name: 'area', source: OTHER, ground: '#112233', line: 'dashed', shown: 1 }
+	]);
+});
+
+test('a hole over a box of the screen, which has no block to read the ground behind, is refused unless the film names its colour', () => {
+	expect(() => piece.show(OTHER, { hole: { line: 'dashed' } })).toThrow(
+		new FilmError(
+			"piece.show's hole over a box of the screen finds no block to read the ground behind: name its colour, hole: { ground: '#rrggbb' }"
+		)
+	);
+});
+
+test('a piece lifted with lines draws them along the two edges of the outline round it and its source that join one to the other, drawn out as far as it has come and not gone, and none while it stands over its source', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { lines: 'solid' }), wide, 1, FULL_HD);
+	const aside = await setIn(piece.to(UPPER_RIGHT_CORNER), lifted, 1, FULL_HD);
+	const going = await setIn(piece.hide(), aside, 0.25, FULL_HD);
+	const linesOf = (scene: Scene) => drawn(scene, cameraOf(scene, FULL_HD), 0, FULL_HD).lines;
+	// The card, 400 to 600 across and 300 to 400 down, drawn in 1440 to 1920 across and 15 to 255 down: from its top left
+	// corner to the piece's, and from its bottom right corner to the piece's
+	expect([linesOf(lifted), linesOf(aside), linesOf(going)[0]!.drawn]).toEqual([
+		[],
+		[
+			{
+				name: 'piece',
+				line: 'solid',
+				segments: [
+					{ from: { left: 400, top: 300 }, length: expect.closeTo(1078.34, 2), angle: expect.closeTo(-15.33, 2) },
+					{ from: { left: 600, top: 400 }, length: expect.closeTo(1327.94, 2), angle: expect.closeTo(-6.27, 2) }
+				],
+				drawn: 1
+			}
+		],
+		0.75
+	]);
+});
+
+test("a piece's lines cross neither it nor its source while it stands partly over its source, and are none while it holds its source whole", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { lines: 'solid' }), wide, 1, FULL_HD);
+	const halfOver = await setIn(
+		piece.to({ left: 500 / 1920, top: 350 / 1080, width: 200 / 1920, height: 100 / 1080 }),
+		lifted,
+		1,
+		FULL_HD
+	);
+	const grown = await setIn(
+		piece.to({ left: 300 / 1920, top: 250 / 1080, width: 400 / 1920, height: 200 / 1080 }),
+		lifted,
+		1,
+		FULL_HD
+	);
+	const grownFromItsCorner = await setIn(
+		piece.to({ left: 400 / 1920, top: 300 / 1080, width: 400 / 1920, height: 200 / 1080 }),
+		lifted,
+		1,
+		FULL_HD
+	);
+	const linesOf = (scene: Scene) => drawn(scene, cameraOf(scene, FULL_HD), 0, FULL_HD).lines;
+	// The card, 400 to 600 across and 300 to 400 down, and the piece 500 to 700 and 350 to 450: from its top right corner
+	// to the piece's, and from its bottom left corner to the piece's, outside both; grown twice as large about the card's
+	// middle, or from its top left corner, the piece holds it whole
+	expect([linesOf(halfOver)[0]!.segments, linesOf(grown), linesOf(grownFromItsCorner)]).toEqual([
+		[
+			{ from: { left: 600, top: 300 }, length: expect.closeTo(111.8, 1), angle: expect.closeTo(26.57, 2) },
+			{ from: { left: 400, top: 400 }, length: expect.closeTo(111.8, 1), angle: expect.closeTo(26.57, 2) }
+		],
+		[],
+		[]
+	]);
+});
+
+test("a lens is born round its block's middle as the camera shows it, 320 pixels of a 1080 frame across where the film names no size, or as wide as it names, as wide for its frame on any frame", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const shown = await setIn(lens.show('#card'), wide, 1, FULL_HD);
+	const named = await setIn(lens.show('#card', { size: 150 }), wide, 1, FULL_HD);
+	const onASmallFrame = await setAt(lens.show('#block'), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	// Round the card's middle, 500 across and 350 down; a frame 400 high draws what a 1080 frame does at 400 / 1080 of
+	// its size
+	expect([
+		shown.objects.get('lens')!.box,
+		named.objects.get('lens')!.box,
+		onASmallFrame.objects.get('lens')!.box.width
+	]).toEqual([
+		{ left: 340, top: 190, width: 320, height: 320 },
+		{ left: 425, top: 275, width: 150, height: 150 },
+		expect.closeTo(118.52, 2)
+	]);
+});
+
+test('a lens shows the screen under its middle twice as close as the camera does where the film names no magnification, or as many times as it names, and the page is pictured as sharp as that', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const shown = await setIn(lens.show('#card'), wide, 1, FULL_HD);
+	const close = await setIn(cameraTo(MIDDLE_AT_TWO), shown, 1, FULL_HD);
+	const thrice = await setIn(lens.show('#card', { magnification: 3 }), wide, 1, FULL_HD);
+	const drawnLens = (scene: Scene) =>
+		drawnObject('lens', scene.objects.get('lens')!, 0, { ...AROUND_IN_FULL_HD, camera: cameraOf(scene, FULL_HD) })
+			.content;
+	// The camera at 1 shows the card's middle, 500 across and 350 down, there; at 2, at 730 and 445
+	expect([
+		drawnLens(shown),
+		drawnLens(close),
+		pictureZoomsIn(close, cameraOf(close, FULL_HD), FULL_HD.frame),
+		pictureZoomsIn(thrice, cameraOf(thrice, FULL_HD), FULL_HD.frame)
+	]).toEqual([
+		{
+			kind: 'lens',
+			source: { left: 420, top: 270, width: 160, height: 160 },
+			fit: 2,
+			figure: { left: 0, top: 0, width: 320, height: 320 },
+			shown: 1
+		},
+		{
+			kind: 'lens',
+			source: { left: 690, top: 405, width: 80, height: 80 },
+			fit: 4,
+			figure: { left: 0, top: 0, width: 320, height: 320 },
+			shown: 1
+		},
+		[4],
+		[3]
+	]);
+});
+
+test("a lens carried to another block stands round that block's middle as the camera shows it, as wide as it stood", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const shown = await setIn(lens.show('#card', { size: 150 }), wide, 1, FULL_HD);
+	const moved = await setIn(lens.to('#other'), shown, 1, FULL_HD);
+	// The other block's middle is 1250 across and 630 down
+	expect(moved.objects.get('lens')!.box).toEqual({ left: 1175, top: 555, width: 150, height: 150 });
+});
+
+test("a lens whose middle sees past the screen's plane, the window swung far round after it came, shows nothing of the page", async () => {
+	const shown = await setIn(lens.show('#card'), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const swung = await setIn(lean({ turn: 100 }), shown, 1, FULL_HD);
+	const around = { ...AROUND_IN_FULL_HD, camera: cameraOf(swung, FULL_HD) };
+	expect(drawnObject('lens', swung.objects.get('lens')!, 0, around).content).toMatchObject({
+		kind: 'lens',
+		source: null
+	});
 });
 
 test('a piece comes up in its own way fading in whole as its move goes on, and goes fading out so', async () => {

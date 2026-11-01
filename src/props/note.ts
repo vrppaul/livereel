@@ -9,7 +9,16 @@
  * at its end, in the theme's way as the note comes.
  */
 import { type Camera, onTheFrame } from '../domain/camera.ts';
-import { type Box, type FrameSide, type Point, type Size, middleX, middleY } from '../domain/geometry.ts';
+import {
+	type Box,
+	type FrameSide,
+	type Point,
+	type Segment,
+	type Size,
+	middleX,
+	middleY,
+	segmentBetween
+} from '../domain/geometry.ts';
 import { type ComingUp, type DrawnWords, type ShownWords, drawnWords } from './words.ts';
 
 /**
@@ -33,19 +42,14 @@ export interface Note extends ShownWords {
 }
 
 /**
- * A note as the stage draws it: the words' box on the frame, where the line starts at the block's edge and where it
- * meets the words, how long it is and its angle in degrees.
+ * A note as the stage draws it: the words' box on the frame, its line from the block's edge, and where the line meets
+ * the words.
  */
-export interface DrawnNote extends DrawnWords {
+export interface DrawnNote extends DrawnWords, Segment {
 	readonly side: FrameSide;
 	readonly place: Box;
-	readonly from: Point;
 	readonly to: Point;
-	readonly length: number;
-	readonly angle: number;
 }
-
-const DEGREES_IN_A_HALF_TURN = 180;
 
 /**
  * A note as the stage draws it at a moment of the film, seen by a camera, beside the window that camera shows the page
@@ -56,17 +60,7 @@ export function drawnNote(note: Note, camera: Camera, frame: Size, moment: numbe
 	const place = besideTheWindow(note.beside, camera.view.box);
 	const from = onTheFrame(camera, frame, edgeFacing(note.box, side));
 	const to = meeting(place, from, side);
-	const across = to.left - from.left;
-	const down = to.top - from.top;
-	return {
-		...drawnWords(note, note.comingUp, moment),
-		side,
-		place,
-		from,
-		to,
-		length: Math.hypot(across, down),
-		angle: (Math.atan2(down, across) * DEGREES_IN_A_HALF_TURN) / Math.PI
-	};
+	return { ...drawnWords(note, note.comingUp, moment), ...segmentBetween(from, to), side, place, to };
 }
 
 /**

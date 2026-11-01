@@ -10,7 +10,8 @@
  * another of its name sliding in is held apart while it goes, so the two stand at once, and drawn over every object
  * standing on its layer. `drawn` works out everything the stage needs from it — how far each word of a title, a
  * caption or a callout and each line of code has come, the terminal's spinner, how far keys rise clear of a caption,
- * where a note's line meets the block it names on the frame — so the stage draws numbers and words and decides
+ * where a note's line meets the block it names on the frame, the hole a piece of the page leaves and the lines it draws
+ * to its source, the part of the screen under a lens — so the stage draws numbers and words and decides
  * nothing. What the camera shows is worked out from what it aims at and the window that stands (`cameraOf`), so a
  * camera moving and a window moving in one step make the same frame whichever is set first; a frame is drawn by such a
  * camera, or by the flat one an act is done in. A prop that may be absent is `null`; the
@@ -34,6 +35,7 @@ import {
 } from './domain/camera.ts';
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
 import type { Cursor } from './props/cursor.ts';
+import { type DrawnHole, type DrawnLines, drawnHoles, drawnLines } from './props/lifted.ts';
 import type { Light } from './props/light.ts';
 import type { Look } from './props/look.ts';
 import { type DrawnNote, type Note, drawnNote } from './props/note.ts';
@@ -89,9 +91,15 @@ interface DrawnProps {
 	note: DrawnNote | null;
 }
 
+/**
+ * What the stage is handed of a scene: each prop as drawn, the objects standing and pushed off, and what the pieces of
+ * the page among them leave on the page and draw to it, holes on the screen and lines on the frame.
+ */
 export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 	readonly objects: readonly DrawnObject[];
 	readonly leaving: readonly DrawnObject[];
+	readonly holes: readonly DrawnHole[];
+	readonly lines: readonly DrawnLines[];
 };
 
 // The page's own time running a second for each of the film's
@@ -150,13 +158,13 @@ export function cameraOf(scene: Scene, format: Format): Camera {
 }
 
 /**
- * How close each piece of the page in a scene shows it, as a pose's zoom has it, standing or pushed off, so the
- * picture it is drawn from is taken as sharp.
+ * How close each piece of the page or lens in a scene shows it, as a pose's zoom has it, standing or pushed off, the
+ * page seen by the camera that shows the scene on a frame of a size, so the picture it is drawn from is taken as sharp.
  */
-export function pictureZoomsIn(scene: Scene, format: Format): readonly number[] {
-	return [...scene.objects.values(), ...scene.leaving.values()].flatMap((object) =>
-		object.content.kind === 'piece' ? [pictureZoomOf(object, object.content, format.frame)] : []
-	);
+export function pictureZoomsIn(scene: Scene, camera: Camera, frame: Size): readonly number[] {
+	return [...scene.objects.values(), ...scene.leaving.values()]
+		.map((object) => pictureZoomOf(object, camera, frame))
+		.filter((zoom) => zoom !== null);
 }
 
 /**
@@ -206,7 +214,13 @@ export function drawingOf(exposures: readonly DrawnScene[]): string {
  * own, or the flat one an act is done in.
  */
 export function drawn(scene: Scene, camera: Camera, moment: number, format: Format): DrawnScene {
-	const around: Surroundings = { caption: captionAmong(scene.objects), screen: scene.screen, frame: format.frame };
+	const around: Surroundings = {
+		caption: captionAmong(scene.objects),
+		screen: scene.screen,
+		frame: format.frame,
+		camera
+	};
+	const everyObject = [...scene.objects, ...scene.leaving];
 	return {
 		look: scene.look,
 		camera: drawnCamera(camera, format),
@@ -218,7 +232,9 @@ export function drawn(scene: Scene, camera: Camera, moment: number, format: Form
 		cursor: scene.cursor,
 		note: scene.note === null ? null : drawnNote(scene.note, camera, format.frame, moment),
 		objects: drawnObjects(scene.objects, moment, around),
-		leaving: drawnObjects(scene.leaving, moment, around)
+		leaving: drawnObjects(scene.leaving, moment, around),
+		holes: drawnHoles(everyObject),
+		lines: drawnLines(everyObject, camera, format.frame)
 	};
 }
 

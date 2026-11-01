@@ -1,11 +1,12 @@
 /**
  * The moves of an object (`src/props/object.ts`), alike whatever it shows, written once for every kind that makes
- * one — a title's words, code, the agent's terminal, the ending card, a caption, keys, a piece of the page: coming up
- * in its box, in its own way or one of livereel's (`src/props/way.ts`), or sliding in whole from past a side of the
- * frame, pushing the object of its name standing there off past the side across; carried to another place, growing and
- * coming toward the eye on the way; leant and rolled; taken back to stand as its box places it; put away where it
- * stands, in its own way or one of livereel's, or slid out past a side. A move takes the object a film names `as`, or its kind's own name, so a film shows several of a kind at once,
- * each moved by its name. What differs by what an object shows is told here, kind by kind: the curve it comes up on in
+ * one — a title's words, code, the agent's terminal, the ending card, a caption, keys, a piece of the page, an outline,
+ * a lens: coming up in its box, in its own way or one of livereel's (`src/props/way.ts`), or sliding in whole from past
+ * a side of the frame, pushing the object of its name standing there off past the side across; carried to another
+ * place, growing and coming toward the eye on the way, or to a box read off the page; leant and rolled; taken back to
+ * stand as its box places it; put away where it stands, in its own way or one of livereel's, or slid out past a side.
+ * A move takes the object a film names `as`, or its kind's own name, so a film shows several of a kind at once, each
+ * moved by its name. What differs by what an object shows is told here, kind by kind: the curve it comes up on in
  * its own way, whether it is ever carried or leant, how it reads a place, and the box it sets off from as it is
  * carried.
  *
@@ -61,7 +62,7 @@ import { type Scene, withLeaving, withObject } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
 
 /** A kind of object, as a film calls its moves, and the name of the object they take where the film names none. */
-export type ObjectKind = 'title' | 'code' | 'terminal' | 'ending' | 'caption' | 'keys' | 'piece';
+export type ObjectKind = 'title' | 'code' | 'terminal' | 'ending' | 'caption' | 'keys' | 'piece' | 'outline' | 'lens';
 
 /** The object a move takes: the one a film names `as`, or its kind's own. */
 export interface NamedScript {
@@ -122,8 +123,8 @@ export interface HideScript extends TimingScript, NamedScript, LeaveScript {
 	readonly toward?: FrameSide;
 }
 
-/** Which object is taken back to stand as its box places it. */
-export interface BackScript extends TimingScript, NamedScript {}
+/** Which object a move takes to a box the move works out: back where its box places it, or to a block of the page. */
+export interface TakenScript extends TimingScript, NamedScript {}
 
 /** Which object leans, and how: as the window leans, and rolled clockwise in its own plane by `roll`, in degrees. */
 export interface ObjectLeanScript extends LeanScript, NamedScript {
@@ -162,7 +163,7 @@ export const NESTED_FORM: Form<NestedScript> = { inside: INSIDE_THE_WINDOW };
 const TO_FORM: Form<ToScript> = { scale: A_SCALE, depth: A_DEPTH, ...NAMED_FORM, ...TIMING_FORM };
 const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...LEAVE_FORM, ...TIMING_FORM, ...NAMED_FORM };
 const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { roll: A_NUMBER, ...LEAN_FORM, ...NAMED_FORM };
-const BACK_FORM: Form<BackScript> = { ...NAMED_FORM, ...TIMING_FORM };
+const TAKEN_FORM: Form<TakenScript> = { ...NAMED_FORM, ...TIMING_FORM };
 // The values of an object a move that carries it sets, one that leans it, and one of what it shows; what each writes
 // is held to them
 const CARRIED = ['box', 'scale', 'depth'] as const satisfies readonly (keyof FrameObject)[];
@@ -173,8 +174,8 @@ const BACK = [...CARRIED, ...LEANT] as const satisfies readonly (keyof FrameObje
 // Where an object stands that a film shows inside nothing
 const ON_THE_FRAME: Holder = 'frame';
 // The curve what an object of each kind shows comes up on in its own way where the film names none: words and lines of
-// code, one after another, at an even pace; the terminal, the card, keys and a piece of the page, fading up whole, on
-// their step's. One that comes up in a way of livereel's comes on its step's
+// code, one after another, at an even pace; the terminal, the card, keys, a piece of the page, an outline and a lens,
+// fading up whole, on their step's. One that comes up in a way of livereel's comes on its step's
 const COMES_UP_ON: { readonly [Kind in ObjectKind]: Ease | null } = {
 	title: linear,
 	code: linear,
@@ -182,7 +183,9 @@ const COMES_UP_ON: { readonly [Kind in ObjectKind]: Ease | null } = {
 	ending: null,
 	caption: linear,
 	keys: null,
-	piece: null
+	piece: null,
+	outline: null,
+	lens: null
 };
 // What stands over the whole frame on the frame's own terms, never carried or leant: the card, on the frame's own
 // ground painted where its box stands; a caption, darkening the frame's edge; keys at the frame's foot, rising clear of
@@ -295,16 +298,36 @@ export function objectLean(kind: ObjectKind, move: string, script: ObjectLeanScr
 export function objectBack(
 	kind: ObjectKind,
 	move: string,
-	script: BackScript,
+	script: TakenScript,
 	boxAt: (beginning: Beginning, name: ObjectName) => Box
 ): Move {
-	assertWritten(script, BACK_FORM, move);
+	assertWritten(script, TAKEN_FORM, move);
 	const name = script.as ?? kind;
 	return {
 		part: objectPart(name),
 		valueNames: BACK,
 		timing: timingOf(script),
 		begin: (beginning) => goingBack(beginning, name, boxAt, move)
+	};
+}
+
+/**
+ * An object of a kind carried to the box `boxAt` works out of the object as the move begins, as large and as near as it
+ * stands: one read off the page, as a block where the camera shows it.
+ */
+export function objectCarriedTo(
+	kind: ObjectKind,
+	move: string,
+	script: TakenScript,
+	boxAt: (beginning: Beginning, object: FrameObject) => Promise<Box>
+): Move {
+	assertWritten(script, TAKEN_FORM, move);
+	const name = script.as ?? kind;
+	return {
+		part: objectPart(name),
+		valueNames: CARRIED,
+		timing: timingOf(script),
+		begin: (beginning) => carriedToBox(beginning, name, boxAt, move)
 	};
 }
 
@@ -385,6 +408,8 @@ export function placedFor(kind: MovableContent['kind'], format: Format, place: P
 			return wordsPlaced(format, place);
 		case 'terminal':
 		case 'piece':
+		case 'outline':
+		case 'lens':
 			return windowPlaced(format, place);
 	}
 }
@@ -500,6 +525,22 @@ function goingBack(
 	}));
 }
 
+/** The object on its way to the box `boxAt` works out of it, as large and as near as it stands. */
+async function carriedToBox(
+	beginning: Beginning,
+	name: ObjectName,
+	boxAt: (beginning: Beginning, object: FrameObject) => Promise<Box>,
+	move: string
+): Promise<Change> {
+	const object = movable(beginning, name, move);
+	const end = await boxAt(beginning, object);
+	return writing(name, (progress): Carried => ({
+		box: boxToward(object.box, end, progress),
+		scale: object.scale,
+		depth: object.depth
+	}));
+}
+
 /** The object going where it stands, in the way it goes; once gone, none. */
 function going(beginning: Beginning, name: ObjectName, way: Way, move: string): Change {
 	const object = standing(beginning, name, move);
@@ -542,6 +583,8 @@ function settingOff(content: MovableContent, box: Box, end: Box): Box {
 		case 'code':
 		case 'terminal':
 		case 'piece':
+		case 'outline':
+		case 'lens':
 			return box;
 	}
 }

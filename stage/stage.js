@@ -15,7 +15,8 @@
 /** @import { DrawnWords, Piece } from '../src/props/words.ts' */
 /** @import { CodeLine, CodePiece, DrawnCode } from '../src/props/code.ts' */
 /** @import { DrawnContent, DrawnObject } from '../src/props/object.ts' */
-/** @import { Box } from '../src/domain/geometry.ts' */
+/** @import { DrawnHole, DrawnLines } from '../src/props/lifted.ts' */
+/** @import { Box, Segment } from '../src/domain/geometry.ts' */
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
@@ -57,6 +58,16 @@ const FACE = 'data-face';
 const CUSTOM_PROPERTY = '--';
 // The custom property the page's picture is set as, the image every piece of the page is drawn from
 const PAGE_PICTURE = '--page-picture';
+// The attribute a lens shows nothing by, its middle seeing past the screen, so its glass stands blank
+const BLANK = 'data-blank';
+// The attribute that names the line a ring or a line is drawn in, whole or dashed
+const STROKE = 'data-stroke';
+// The custom property a hole's colour is set as, and the classes of a hole, of a line drawn from a point, and of a
+// piece's two lines to its source
+const HOLE_GROUND = '--hole-ground';
+const HOLE = 'hole';
+const SEGMENT = 'segment';
+const SEGMENTS = 'segments';
 // The attribute the part an object's figure stands in is on its way by, which one standing whole has not, so it is
 // drawn on no way at all; and the one that names how the figure is cut there, from its sides or round its middle
 const ON_ITS_WAY = 'data-on-its-way';
@@ -298,6 +309,7 @@ class NoteDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
 		this.root = root;
+		this.line = partOf(root, 'line');
 		/** @type {KeyedList<DrawnWords['words'][number]>} */
 		this.words = new KeyedList(partOf(root, 'words'), wordElement, wordDrawn);
 	}
@@ -314,15 +326,36 @@ class NoteDrawer {
 		numbered(this.root, {
 			'--place-left': note.place.left,
 			'--place-width': note.place.width,
-			'--from-left': note.from.left,
-			'--from-top': note.from.top,
 			'--to-top': note.to.top,
-			'--length': note.length,
-			'--angle': note.angle,
-			'--drawn': note.ground,
 			'--gone': note.gone
 		});
+		segmentDrawn(this.line, note, note.ground);
 		wordsDrawn(this.words, note);
+	}
+}
+
+/**
+ * A list of the scene's drawn in a root of its own, each item by the name of the piece of the page it is of, laid out
+ * anew only as those names change: the holes pieces leave on the screen, the lines they draw to their sources.
+ * @template {{ readonly name: string }} Item
+ */
+class SceneListDrawer {
+	/**
+	 * @param {Staged} root
+	 * @param {(scene: DrawnScene) => readonly Item[]} itemsOf
+	 * @param {(item: Item) => Node} elementOf
+	 * @param {(element: HTMLElement, item: Item) => void} drawnOn
+	 */
+	constructor(root, itemsOf, elementOf, drawnOn) {
+		this.itemsOf = itemsOf;
+		/** @type {KeyedList<Item>} */
+		this.items = new KeyedList(root, elementOf, drawnOn);
+	}
+
+	/** @param {DrawnScene} scene */
+	draw(scene) {
+		const items = this.itemsOf(scene);
+		this.items.draw(JSON.stringify(items.map((item) => item.name)), items);
 	}
 }
 
@@ -532,14 +565,42 @@ class PieceDrawer {
 	/** @param {DrawnContent} content */
 	draw(content) {
 		const piece = ofKind(content, 'piece');
-		numbered(this.element, {
-			'--source-left': piece.source.left,
-			'--source-top': piece.source.top,
-			'--source-width': piece.source.width,
-			'--source-height': piece.source.height,
-			'--fit': piece.fit,
-			'--shown': piece.shown
-		});
+		figureDrawn(this.element, piece);
+		sourceDrawn(this.element, piece.source, piece.fit);
+	}
+}
+
+/**
+ * A lens in its object: the part of the page's picture under its middle, filling it; blank where its middle sees past
+ * the screen.
+ */
+class LensDrawer {
+	/** @param {Staged} element */
+	constructor(element) {
+		this.element = element;
+	}
+
+	/** @param {DrawnContent} content */
+	draw(content) {
+		const lens = ofKind(content, 'lens');
+		figureDrawn(this.element, lens);
+		this.element.toggleAttribute(BLANK, lens.source === null);
+		if (lens.source !== null) sourceDrawn(this.element, lens.source, lens.fit);
+	}
+}
+
+/** An outline in its object: its ring, in its line, fading up whole as it comes. */
+class OutlineDrawer {
+	/** @param {Staged} element */
+	constructor(element) {
+		this.element = element;
+	}
+
+	/** @param {DrawnContent} content */
+	draw(content) {
+		const outline = ofKind(content, 'outline');
+		named(this.element, STROKE, outline.line);
+		numbered(this.element, { '--shown': outline.shown });
 	}
 }
 
@@ -577,7 +638,9 @@ const CONTENT_DRAWERS = {
 	ending: (element) => new EndingDrawer(element),
 	caption: (element) => new CaptionDrawer(element),
 	keys: (element) => new KeysDrawer(element),
-	piece: (element) => new PieceDrawer(element)
+	piece: (element) => new PieceDrawer(element),
+	outline: (element) => new OutlineDrawer(element),
+	lens: (element) => new LensDrawer(element)
 };
 
 /**
@@ -681,9 +744,9 @@ class LookDrawer {
 }
 
 /**
- * An exposure of the frame: its root, a drawer for every prop it draws and for its objects, and the page it shows, live
- * or as a picture. Every prop but the look is drawn in each exposure, as the camera stood at its moment: the type
- * checker refuses a prop without a drawer. The look is the stage's root's, one for every exposure of a frame; the
+ * An exposure of the frame: its root, a drawer for every prop it draws, for its objects, and for the holes and lines
+ * pieces of the page leave and draw, and the page it shows, live or as a picture. Every prop but the look is drawn in
+ * each exposure, as the camera stood at its moment: the type checker refuses a prop without a drawer. The look is the stage's root's, one for every exposure of a frame; the
  * objects' drawer draws those pushed off too, as both lists lay what stands inside the page's window in its one root.
  * @typedef {{
  *   readonly root: Staged,
@@ -738,10 +801,12 @@ function exposureOf(root) {
 			cursor: new CursorDrawer(propRoot(root, 'cursor')),
 			note: new NoteDrawer(propRoot(root, 'note')),
 			objects: new ObjectsDrawer({
-				objects: objectsRoot(root, 'objects'),
-				leaving: objectsRoot(root, 'leaving'),
-				window: objectsRoot(root, 'window')
-			})
+				objects: sceneRoot(root, 'objects'),
+				leaving: sceneRoot(root, 'leaving'),
+				window: sceneRoot(root, 'window')
+			}),
+			holes: new SceneListDrawer(sceneRoot(root, 'holes'), (scene) => scene.holes, holeElement, holeDrawn),
+			lines: new SceneListDrawer(sceneRoot(root, 'lines'), (scene) => scene.lines, linesElement, linesDrawn)
 		},
 		page: partOf(root, 'page'),
 		picture: partOf(root, 'picture')
@@ -1044,12 +1109,88 @@ function propRoot(exposure, prop) {
 }
 
 /**
- * Where a list of the scene's objects standing on the frame is laid in an exposure's markup, or those standing in the
- * page's window.
- * @param {Element} exposure @param {keyof ObjectRoots} list
+ * Where a list of the scene's is laid in an exposure's markup: its objects standing on the frame, those pushed off and
+ * those standing in the page's window; the holes pieces of the page leave, and the lines they draw to their sources.
+ * @param {Element} exposure @param {keyof ObjectRoots | 'holes' | 'lines'} list
  */
-function objectsRoot(exposure, list) {
+function sceneRoot(exposure, list) {
 	return found(exposure.querySelector(`[data-scene="${list}"]`), list);
+}
+
+/**
+ * A line from a point, as far drawn out from it as a share of its length.
+ * @param {Staged} element @param {Segment} segment @param {number} drawn
+ */
+function segmentDrawn(element, segment, drawn) {
+	numbered(element, {
+		'--from-left': segment.from.left,
+		'--from-top': segment.from.top,
+		'--length': segment.length,
+		'--angle': segment.angle,
+		'--drawn': drawn
+	});
+}
+
+/**
+ * The part of an object's box that shows the page, a piece's or a lens's, and how far it has come up.
+ * @param {Staged} element @param {{ readonly figure: Box, readonly shown: number }} drawn
+ */
+function figureDrawn(element, drawn) {
+	numbered(element, {
+		'--figure-left': drawn.figure.left,
+		'--figure-top': drawn.figure.top,
+		'--figure-width': drawn.figure.width,
+		'--figure-height': drawn.figure.height,
+		'--shown': drawn.shown
+	});
+}
+
+/**
+ * The part of the page's picture over a source that part shows, a screen's pixel taking so many of the frame's.
+ * @param {Staged} element @param {Box} source @param {number} fit
+ */
+function sourceDrawn(element, source, fit) {
+	numbered(element, {
+		'--source-left': source.left,
+		'--source-top': source.top,
+		'--source-width': source.width,
+		'--source-height': source.height,
+		'--fit': fit
+	});
+}
+
+function holeElement() {
+	return classed(document.createElement('div'), HOLE);
+}
+
+/**
+ * A hole: its part of the screen, its colour, the line round its edge, if any, and how far it has come.
+ * @param {HTMLElement} element @param {DrawnHole} hole
+ */
+function holeDrawn(element, hole) {
+	placed(element, hole.source);
+	numbered(element, { '--shown': hole.shown });
+	element.style.setProperty(HOLE_GROUND, hole.ground);
+	named(element, STROKE, hole.line);
+}
+
+/** A piece's two lines to its source. */
+function linesElement() {
+	const element = classed(document.createElement('div'), SEGMENTS);
+	element.append(classed(document.createElement('div'), SEGMENT), classed(document.createElement('div'), SEGMENT));
+	return element;
+}
+
+/**
+ * A piece's two lines to its source, in their line, drawn out as far as the piece has come.
+ * @param {HTMLElement} element @param {DrawnLines} lines
+ */
+function linesDrawn(element, lines) {
+	named(element, STROKE, lines.line);
+	for (const [place, segment] of lines.segments.entries()) {
+		const line = element.children.item(place);
+		if (line instanceof HTMLElement) segmentDrawn(line, segment, lines.drawn);
+	}
 }
 
 /** The key an object's element is kept by: its list and its name. @param {ObjectList} list @param {string} name */

@@ -14,7 +14,9 @@
 - A page's own animations that ignore `prefers-reduced-motion` run on the wall clock, so two shots of such a page differ: the page's time is the film's for its scripts alone (Playwright's clock, `src/adapters/browser/clock.ts`), not for its styles' animations or a video. Setting each of `document.getAnimations()` to the film's moment every frame was built and taken out (2026-10-25): its `frame.evaluate` each frame met navigations (`examples/example-com.ts` failed 3 of 3, "Execution context was destroyed"), a scroll-driven animation threw on `currentTime`, and it overrode what the page does with its own animations (a rate of 2, `reverse()`, a pause after the film first saw it); `document.getAnimations()` misses shadow roots, and a paused animation sought past its end never resolves `finished`. `HeadlessExperimental.beginFrame` with `frameTimeTicks` in the headless shell does not answer it (probed 2026-10-29 on headless shell 1248): a CSS animation went 17 px over 30 begin-frames of 33 ms and 500 px over a second of wall time, a `setInterval` ticked on the wall clock, and under begin-frame control a Playwright click and `captureScreenshot` hung. CDP's virtual time (`Emulation.setVirtualTimePolicy`) holds timers, measured on a framed page served from 127.0.0.1: paused, a `setInterval` of 100 ms ticked never in 1 s of wall time and once for each 100 ms of budget, but a CSS animation ran 0.98 s of its 2 s in that second.
 - The window is drawn by the stage's own `perspective` on `.stage` and `rotateX() rotateY()` on `.view` and `.view-shadow`, while the engine works out where its points stand through the matrix every object is drawn by (`src/domain/stance.ts`): the window's projection is written twice, and a face-on window still costs the graphics card a 3D layer in every exposure. Drawing the window by the same matrix, flat where it faces the frame, would end both.
 - An object's `depth` moves on its step's curve unbounded: on `easeOutBack` a depth of about 1820 or more passes the eye's 2000 on its way, where a face-on object is drawn as a huge inverted blank and a leant one not at all (worked out, not shot). A shrink toward a scale near none passes below it the same way, drawn as a small half-rolled object for a frame.
-- A piece of the page shown much larger than the page's picture holds it is soft: the picture is taken at livereel's bound of 2.2 at most, and a piece of a card's change line carried to `'whole'` at `scale: 2.5`, about 9.5 times, showed soft letter edges and the JPEG's ringing round green letters (the review's still of chunk 3a, 2026-11-01); near 1.5 times it is sharp. The plan gives a piece a picture of its own where a still shows it soft; not built, with the lens. A rounded card lifted by its box shows the page's ground in its corners, which the round cut or an outline answers.
+- A piece of the page shown much larger than the page's picture holds it is soft: the picture is taken at livereel's bound of 2.2 at most, and a piece of a card's change line carried to `'whole'` at `scale: 2.5`, about 9.5 times, showed soft letter edges and the JPEG's ringing round green letters (the review's still of chunk 3a, 2026-11-01); near 1.5 times it is sharp, and so is a lens magnifying twice under a camera at 1 (the probe's stills of chunk 3b, 2026-11-01). A picture of its own for a piece or a lens shown past 2.2 is not built. A rounded card lifted by its box shows the page's ground in its corners: a piece has no rounded cut.
+- A hole's ground read off the page is white where no block round the piece's block draws one, the browser's canvas in the light scheme; a page that lets the dark scheme in (`color-scheme: light dark`) and is filmed with `colourScheme: 'dark'` shows its canvas dark, rgb(18, 18, 18), which is not read (the review of chunk 3b, 2026-11-01). Reading CSS's `Canvas` colour takes an element in the page's document, so a node added and taken away, which a move must not do to the page; a film names the hole's colour meanwhile.
+- A lens stays drawn over a window that leans after it came: it shows the page under its middle flat, not foreshortened as the window shows it, and unmirrored over a window turned to show its back; past the screen's plane its glass stands blank (the review of chunk 3b, 2026-11-01). A lens is refused only as it comes or moves while the window leans.
 ## Films
 
 - The eye's step, for the motion blur, measured by the eye: `EYE_STEP` in `src/domain/shutter.ts` is a guess, 6 pixels of a 1920 × 1080 frame, which sets both from what smear a frame is blurred and how close its copies stand. Pans of 2 to 32 pixels a frame, shot sharp and blurred with the shutter open for half the way, looked alike to the owner (2026-10-26), so the step may stand higher and spare those frames their exposures; what decides it is the speed from which a pan shot sharp is seen to jump.
@@ -40,6 +42,61 @@
 - The square ad with code in it (asked 2026-10-29 08:11, its treatment in that session's words): not started.
 - A window keeps no option to show the whole screen in its shape (as before 2026-10-29): offered as a format's `split` value, not answered.
 - From the storyboard board (https://claude.ai/artifact/46tDazJ5nnEmMxxB4QvUWT), not built: one word larger than the frame, line breaks in a title for beats, a strike drawn across as it comes, two windows side by side (the terminal beside the page), text blurred in the terminal, an address bar over the window (it needs the page's address each frame: a change of construction, the owner's word first), a voice with subtitles (a new dependency, the owner's word first).
+
+## Infographics: a page beside words that walk through it (asked 2026-11-01)
+
+The frame the owner showed: on a dark ground, at the left a small label in the accent's colour and capitals, a heading
+on two lines, a line under it in a lighter ink and weight, and a list of steps whose current one is lit, the rest
+dimmed; at the right the page in a window with a bar of its own, the camera on what the current step names. The
+ground, the window at a place, several titles by name each with its size and ink, and the camera and light on a block
+are built; what is not:
+
+- A list as an object's content: its items with a mark before each, the current one lit in the accent and the rest
+  dimmed, the light moving from one to the next through a step, as `code.light` lights a line (`list.show(items, { at
+  })`, `list.light(item)`), so a film walks through it by moves, not by titles cut anew each step.
+- A title's own weight, as it has its own size: the look's `titleWeight` holds for every title, so a light line under
+  a heavy heading cannot be written.
+- A title's own spacing of its letters, for a small label in capitals spaced wide.
+- A line break where the film puts it in a title, for a heading on two lines that breaks where it means to, not where
+  its place's width breaks it (with "line breaks in a title for beats" above).
+- A bar over the page's window, a title and the window's buttons drawn as the window's own, for a page that has none
+  (with "an address bar over the window" above, and device mockups among the ideas).
+
+## Promo films: what a made-for-Reddit promo used that livereel has not (2026-11-01)
+
+Read off a 45 s promo Claude made for Screen+ in Three.js, and the prompt it was made from; the owner: «Иметь 3д это
+круто», and a native app filmed is in scope. After the ADR «the object made whole» is finished, by his order. Already
+elsewhere in this file: several windows, a voice with subtitles, subtitles as SRT, the player with a scrubber, a piece
+soft past 2.2, the infographics.
+
+- The room, an ADR of its own: objects, the window and devices standing in one 3D space at real depths, the nearer
+  covering the farther; a camera moving in it — orbit, arc, crane, a lens that narrows, a flight through a screen into
+  the next shot; slabs with thickness, rounded edges, a rim light and soft contact shadows; a monitor on a stand; several
+  screens, one picture spanned across them; depth of field and bloom. Proposed: the stage draws the room in WebGL
+  (three.js, a new dependency: his word), the page's picture the slabs' texture, the engine still working out every
+  frame and the stage only setting it; a live page stays flat. A probe first: one slab with the page's picture, its
+  light and shadow, on software and the GPU at 16 exposures. It overlaps the ADR's chunks 4–5 (a group as a node of the
+  room, an effect as a material).
+- A native app filmed as the page, an ADR of its own: its window's picture taken by the system (Windows PrintWindow,
+  X11 or PipeWire, ScreenCaptureKit), clicks and keys sent by the system, blocks named by a box of the screen and later
+  by the accessibility tree (UI Automation, AT-SPI, AX); its own time runs on the wall's clock, so a frame is taken once
+  its picture stands still, as a static page's is retaken. A new adapter beside the browser's; the system's tools are
+  dependencies, his word. Windows first, as the first such film is.
+- The film's time from its voice: steps timed by the voice-over files' measured lengths, a beat's hit on a line's key
+  word, air between lines, and a cue sheet the captions and the SRT are written from.
+- The mix: loudness to −14 LUFS with the true peak at −1 dBTP or under (ffmpeg's `loudnorm`), the music ducked under
+  the voice, a file per stem (voice, sounds), and the video also without sound.
+- A safe area a format names: the share of the frame kept clear of what matters while the voice speaks, checked.
+- An object carried to a block of the page as the camera shows it (`to(selector)`), along a curve, as the cursor's bow,
+  and vanishing into it: the sites' tags flying into the search field.
+- A tag as an object's content: a mark and a word on a pill.
+- A change of the whole frame from one scene to the next: a new ground opening as a disc, or rising as a wave, not the
+  ground's colour faded alone.
+- A line of light sweeping across the page or an object, apart from the light's spot on a block.
+- Grain seeded per frame and a vignette over the frame.
+- An end card with the film's logo, which may grow out of another mark, and a link line in place of a command.
+- A screen inside a screen: a live picture or a video as what a device shows (a page's video runs on no film clock).
+- A picture cut into slices by its depth map and spread along the depth, handed the map; with the room.
 
 ## Integrations
 

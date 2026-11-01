@@ -22,6 +22,8 @@
 								<div class="screen">
 									<iframe class="page" data-part="page" title="The page being filmed"></iframe>
 									<img class="page" data-part="picture" alt="The page being filmed" hidden />
+									<!-- The holes pieces of the page leave where they were lifted, on the page, under the light -->
+									<div class="holes" data-scene="holes"></div>
 									<div class="light" data-prop="light"></div>
 									<svg class="cursor" data-prop="cursor" viewBox="0 0 30 40" aria-hidden="true">
 										<path d="M3 3 L3 31 L10.5 24 L16 36.5 L21 34.5 L15.5 22.5 L25.5 22.5 Z" />
@@ -38,10 +40,11 @@
 					</div>
 				</div>
 			</div>
-			<!-- What stands flat over the frame, whatever the camera does, under the objects: a note and its line -->
+			<!-- What stands flat over the frame, whatever the camera does, under the objects: the lines from pieces of the page to their sources, and a note and its line -->
 			<div class="over-the-frame">
+				<div class="piece-lines" data-scene="lines"></div>
 				<div class="note" data-prop="note">
-					<div class="line"></div>
+					<div class="segment" data-part="line"></div>
 					<div class="words note-words" data-part="words"></div>
 				</div>
 			</div>
@@ -121,6 +124,22 @@
 		<template data-kind="piece">
 			<div class="object">
 				<div class="content piece" data-part="content">
+					<div class="way" data-part="way"></div>
+				</div>
+			</div>
+		</template>
+		<!-- An outline: its figure a ring a little clear of its box -->
+		<template data-kind="outline">
+			<div class="object">
+				<div class="content outline" data-part="content">
+					<div class="way" data-part="way"></div>
+				</div>
+			</div>
+		</template>
+		<!-- A lens: its figure a round glass showing the part of the page's picture under its middle -->
+		<template data-kind="lens">
+			<div class="object">
+				<div class="content lens" data-part="content">
 					<div class="way" data-part="way"></div>
 				</div>
 			</div>

@@ -155,9 +155,15 @@ and the moves of each part of the scene:
   `terminal.lean({ tilt, turn, roll })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
-- `piece.show(target, { every, enter, edge, as })`, `piece.to(place, { scale, depth })`,
+- `piece.show(target, { every, hole, lines, enter, edge, as })`, `piece.to(place, { scale, depth })`,
   `piece.lean({ tilt, turn, roll })`, `piece.back()`, `piece.hide({ toward, leave, edge })`; a piece of the page lifted
-  off a selector's blocks or a box of the screen onto the frame; each move of it takes `as` to name which
+  off a selector's blocks or a box of the screen onto the frame, leaving a `hole: { ground, line }` and drawing `lines`
+  to its source where named; each move of it takes `as` to name which
+- `outline.show(target, { every, line, enter, edge, as })`, `outline.to(place, { scale, depth })`,
+  `outline.lean({ tilt, turn, roll })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a
+  selector's blocks or a box of the screen, `'solid'` or `'dashed'`; each move of it takes `as` to name which
+- `lens.show(target, { magnification, size, enter, edge, as })`, `lens.to(target)`, `lens.hide({ toward, leave, edge })`;
+  a round glass over the page, showing what lies under its middle magnified; each move of it takes `as` to name which
 - `ending.show({ name, line, command }, { from, enter, edge })`, `ending.hide({ toward, leave, edge })`, so a film may
   open on the card too;
   the card stands over the whole frame on the frame's own ground, slides in and out whole, and is never carried or
@@ -326,6 +332,25 @@ its middle, and grows, comes near, leans, rolls and spins as a title does,
 a blank card when it turns away. `piece.back()` takes it back over its
 source as the camera shows it then, face-on and as large as it was, without
 spinning back a whole turn; `piece.hide()` puts it away.
+
+`piece.show(VISITORS, { hole: {} })` leaves a hole where the piece was
+lifted: the ground the page draws behind the block, read as it is lifted,
+the first background the blocks round it draw whole, white where none
+does; `hole: { ground: '#f6f7f9', line: 'dashed' }` names its colour, which
+a box of the screen needs, and rings it. The hole lies on the page, so the
+camera and the window carry it, and goes with the piece. `lines: 'solid'`
+draws two lines from the source, as the camera shows it, to the piece, as an
+inset is tied to its place on a map: along the outline round both, so they
+cross neither; none while one holds the other, as while the piece stands
+over its source. `outline.show(CHART, { line: 'dashed' })` rings a block or a box
+of the screen a little clear of it, born where the camera shows it as a piece
+is, from no picture, so a page framed live takes one too; it travels,
+grows, turns and goes back as a piece does. `lens.show(REVENUE)` stands a
+round glass, 320 pixels of a 1080 frame across, round the block's middle,
+showing the page under its own middle twice as large as the camera does, or
+as `magnification` and `size` say; `lens.to(CHART)` carries it round
+another block's middle, and what it shows moves under it. A lens is drawn
+from the page's picture as a piece is, refused where a piece is.
 
 A title, code or the terminal stands `inside` the page's window, as a small
 window of code over the site's: `code.show(LINES, { at: { left: 0.45, top:

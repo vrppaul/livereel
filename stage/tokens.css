@@ -24,6 +24,13 @@
 	/* What the screen shows until the page draws */
 	--screen-ground: #fff;
 
+	/* How wide a line livereel draws round what stands over the page, or out from it, is, and the dashes of one drawn in them */
+	--stroke-width: 3px;
+	--dashes: repeating-linear-gradient(to right, var(--accent) 0 12px, transparent 12px 20px);
+
+	/* A lens's edge, a thin white rim, and the shadow it casts on what lies under it */
+	--lens-edge: 0 0 0 2px #fff, 0 16px 36px rgb(16 20 27 / 38%);
+
 	/* The dark round a block in the light, reaching past any edge of the screen */
 	--light-dark: 0 0 0 4000px rgb(6 9 16);
 	--caption-ground: linear-gradient(to top, color-mix(in srgb, var(--ground) 85%, transparent), transparent);
