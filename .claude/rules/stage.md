@@ -15,6 +15,7 @@ The script is JavaScript with its types in JSDoc, which the type checker reads; 
 - What a drawer is handed by name it names in a class or an attribute: a piece's styles, a callout's `data-side`, a title's `data-align`.
 - Nothing on the stage moves of itself: no transition, animation or keyframes in its styles (stylelint refuses them), no timer or clock in its script (eslint refuses them). Every frame is set whole by `apply`.
 - A colour, a shadow or a gradient is a token; the stylesheet names tokens (stylelint refuses one written elsewhere).
+- An object's figure stands in a part of its own, `way`, which a way of livereel's is drawn on: its transform, opacity and cut are the way's, and a rule that lays it out by its class sets none of them (stylelint refuses one).
 - A value of the film's look is set on the root every frame (`LookDrawer`); every other token, and what follows from the look, is in `stage/tokens.css`.
 - What lies over the page — the title, the caption, the terminal, the ending — takes no pointer event: the page is clicked through it.
 - What the browser draws wrongly on a moved screen is not used: `backdrop-filter` mirrors what lies under it there, so the light dims and never blurs.

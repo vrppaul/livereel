@@ -39,7 +39,8 @@ import { off, on as lightOn, to as lightTo } from '../../src/moves/light.ts';
 import { leave, open, submit, to as terminalTo, type as typeInto, works } from '../../src/moves/terminal.ts';
 import { keystrokes } from '../../src/domain/typing.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
-import { saidOf } from '../../src/props/words.ts';
+import { OWN_WAY } from '../../src/props/way.ts';
+import { appearedOf, groundOf, saidOf } from '../../src/props/words.ts';
 import { type Scene, cameraOf, drawn, openingScene, withObject, withProp } from '../../src/scene.ts';
 import { PageOfBoxes, SMALL } from './fakes.ts';
 
@@ -95,6 +96,7 @@ const TYPED = withObject(openingScene(SMALL, LIVEREELS_LOOK), 'terminal', {
 	angle: FACE_ON,
 	shown: 1,
 	gone: 0,
+	way: OWN_WAY,
 	content: { kind: 'terminal', title: 'A terminal', lines: [], typed: 'add a test' }
 });
 const READ: TerminalLine = { kind: 'work', text: 'Read app.py' };
@@ -662,6 +664,111 @@ test('a terminal opened comes up as its move goes on, and one left goes as its m
 		drawnObject('terminal', opened, 0, NOTHING_AROUND).content.shown,
 		drawnObject('terminal', leaving, 0, NOTHING_AROUND).content.shown
 	]).toEqual([0.25, 0.75]);
+});
+
+test('every object comes up in a way the film names, and goes in one: a title, code, the terminal, the card, a caption, keys', async () => {
+	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const shows = [
+		title.show('Here', { enter: 'fade' }),
+		code.show('x', { at: 'left', enter: 'fade' }),
+		open('claude', { enter: 'fade' }),
+		ending.show(card, { enter: 'fade' }),
+		caption.show('Here', { enter: 'fade' }),
+		keys.show(['⌘', 'K'], { enter: 'fade' })
+	];
+	const hides = [
+		title.hide({ leave: 'fade' }),
+		code.hide({ leave: 'fade' }),
+		leave({ leave: 'fade' }),
+		ending.hide({ leave: 'fade' }),
+		caption.hide({ leave: 'fade' }),
+		keys.hide({ leave: 'fade' })
+	];
+	const coming = await Promise.all(shows.map((move) => setAt(move, opening, 0.25)));
+	const standing = await Promise.all(shows.map((move) => setAt(move, opening, 1)));
+	const going = await Promise.all(hides.map((move, place) => setAt(move, standing[place]!, 0.25)));
+	expect([
+		coming.flatMap((scene) => drawnObjectsIn(scene, SMALL).map((object) => object.onItsWay.clear)),
+		going.flatMap((scene) => drawnObjectsIn(scene, SMALL).map((object) => object.onItsWay.clear))
+	]).toEqual([
+		[0.25, 0.25, 0.25, 0.25, 0.25, 0.25],
+		[0.75, 0.75, 0.75, 0.75, 0.75, 0.75]
+	]);
+});
+
+test('what an object shows stands whole while it comes up or goes in a way: words come up together, and go together', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const masked = drawnObjectsIn(await setAt(title.show('Two words', { enter: 'mask' }), opening, 0.5), SMALL)[0]!;
+	const standing = await setAt(title.show('Two words'), opening, 1);
+	const leaving = drawnObjectsIn(await setAt(title.hide({ leave: 'iris' }), standing, 0.25), SMALL)[0]!;
+	expect([masked.content.words.map((word) => word.appeared), leaving.content.gone]).toEqual([[1, 1], 0]);
+});
+
+test('an object coming up in its own way is on no way, its words coming up one after another', async () => {
+	const own = drawnObjectsIn(await setAt(title.show('Two words'), openingScene(SMALL, LIVEREELS_LOOK), 0.5), SMALL)[0]!;
+	expect([own.content.words.map((word) => word.appeared), own.onItsWay]).toEqual([
+		[appearedOf(0.5, 0, 2), appearedOf(0.5, 1, 2)],
+		null
+	]);
+});
+
+test('the ending card coming up in its own way comes up whole, its ground and its lines one sheet', async () => {
+	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
+	const ended = drawnObjectsIn(await setAt(ending.show(card), openingScene(SMALL, LIVEREELS_LOOK), 0.25), SMALL)[0]!;
+	expect([ended.content.shown, ended.content.grounded]).toEqual([0.25, 1]);
+});
+
+test('a title card or the ending card coming up in a way has its ground come up twice as fast as the way, under what the way brings whole', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
+	const titled = drawnObjectsIn(await setAt(title.show('Two words', { enter: 'mask' }), opening, 0.25), SMALL)[0]!;
+	const ended = drawnObjectsIn(await setAt(ending.show(card, { enter: 'mask' }), opening, 0.25), SMALL)[0]!;
+	expect([
+		titled.content.ground,
+		titled.content.words.map((word) => word.appeared),
+		ended.content.grounded,
+		ended.content.shown
+	]).toEqual([groundOf(0.25, 0), [1, 1], groundOf(0.25, 0), 1]);
+});
+
+test('a mask comes from the foot and a wipe from the left where the film names no edge, and from the edge it names', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const masked = drawnObjectsIn(await setAt(title.show('ab', { enter: 'mask' }), opening, 0.25), SMALL)[0]!;
+	const wiped = drawnObjectsIn(await setAt(title.show('ab', { enter: 'wipe' }), opening, 0.25), SMALL)[0]!;
+	const fromTheLeft = drawnObjectsIn(
+		await setAt(title.show('ab', { enter: 'mask', edge: 'left' }), opening, 0.25),
+		SMALL
+	)[0]!;
+	expect([masked.onItsWay.shift, wiped.onItsWay.cut, fromTheLeft.onItsWay.shift]).toEqual([
+		{ across: 0, down: 0.75 },
+		{ kind: 'inset', top: 0, right: 0.75, bottom: 0, left: 0 },
+		{ across: -0.75, down: 0 }
+	]);
+});
+
+test('an edge goes only with a mask or a wipe', () => {
+	expect(() => title.show('ab', { enter: 'fade', edge: 'left' })).toThrow(
+		new FilmError('title.show names an edge, which goes only with a mask or a wipe')
+	);
+	expect(() => keys.hide({ edge: 'left' })).toThrow(
+		new FilmError('keys.hide names an edge, which goes only with a mask or a wipe')
+	);
+});
+
+test('an object comes up in its place in a way or slides from a side, and goes so: never both', () => {
+	expect(() => title.show('ab', { enter: 'mask', from: 'left' })).toThrow(
+		new FilmError('title.show comes up in its place in a way, or slides in from a side: not both')
+	);
+	expect(() => title.hide({ leave: 'wipe', toward: 'left' })).toThrow(
+		new FilmError('title.hide goes from its place in a way, or slides out toward a side: not both')
+	);
+});
+
+test('words typed as they come up never come up in a way', () => {
+	expect(() => caption.show('ab', { enter: 'fade', typed: { seed: 1 } })).toThrow(
+		new FilmError('caption.show types its words as they come up: they come up whole in a way, or typed')
+	);
 });
 
 test('Enter puts the typed line up into the log, and the line is empty again', async () => {

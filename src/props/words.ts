@@ -19,6 +19,7 @@
 import { A_COLOUR, A_STRING, type Kind, ListOf, OfForm, Plain, needed } from '../domain/handed.ts';
 import { easeOutCubic } from '../domain/time.ts';
 import { type Keystroke, keysStruckAlong, lettersOf } from '../domain/typing.ts';
+import type { Presences } from './way.ts';
 
 /** A run of words as a film writes it: its text, and each way it is set, on where the film names it. */
 export interface Run {
@@ -204,6 +205,19 @@ export function typedComingUp(said: Said, strokes: readonly Keystroke[]): Coming
 /** What a film says as plain text, its words with one space between each two: what a person types of it. */
 export function plainTextOf(said: Said): string {
 	return said.words.map(textOfWord).join('');
+}
+
+/**
+ * Words on a ground of their own as the stage draws them, an object showing them: the words as far as its figure has
+ * come, their ground as far as its ground has, which comes in its own way whatever way the words come.
+ */
+export function drawnWordsOnGround(said: Said, comingUp: ComingUp, presences: Presences): DrawnWords {
+	const figure = presences.figure;
+	const ground = presences.ground;
+	return {
+		...drawnWords({ ...said, shown: figure.shown, gone: figure.gone }, comingUp),
+		ground: groundOf(ground.shown, ground.gone)
+	};
 }
 
 /** Words as the stage draws them, coming up as they do. */

@@ -2,6 +2,7 @@ import { expect, test } from 'vitest';
 import { codeOf } from '../../src/props/code.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
+import { alongItsWay } from '../../src/props/way.ts';
 import { type Piece, WORD_BY_WORD, drawnWords, saidOf, typedComingUp } from '../../src/props/words.ts';
 import { type Keystroke, lettersOf } from '../../src/domain/typing.ts';
 import { SMALL } from './fakes.ts';
@@ -115,4 +116,40 @@ test("a line of the agent's work leads with its tool, and the thinking line with
 test('the caret blinks with the moment', () => {
 	const terminal = openTerminal('A terminal');
 	expect([drawnTerminal(terminal, 0).caret, drawnTerminal(terminal, 0.5).caret]).toEqual([true, false]);
+});
+
+test("a figure a quarter of its way in a way of livereel's stands as the way has it: faded; out from behind its foot or its left edge, its cut standing where the figure stands whole; wiped in from its left; opened from its middle; grown from its middle; its shadow a quarter as strong where it is cut; on no way at the end, nor in its own way", () => {
+	const unshifted = { across: 0, down: 0 };
+	const uncut = { kind: 'inset', top: 0, right: 0, bottom: 0, left: 0 };
+	expect([
+		alongItsWay({ kind: 'fade' }, 0.25),
+		alongItsWay({ kind: 'mask', edge: 'bottom' }, 0.25),
+		alongItsWay({ kind: 'mask', edge: 'left' }, 0.25),
+		alongItsWay({ kind: 'wipe', edge: 'left' }, 0.25),
+		alongItsWay({ kind: 'iris' }, 0.25),
+		alongItsWay({ kind: 'grow' }, 0.25),
+		alongItsWay({ kind: 'mask', edge: 'top' }, 1),
+		alongItsWay({ kind: 'own' }, 0.25)
+	]).toEqual([
+		{ shift: unshifted, scale: 1, clear: 0.25, shadow: 1, cut: null },
+		{
+			shift: { across: 0, down: 0.75 },
+			scale: 1,
+			clear: 1,
+			shadow: 0.25,
+			cut: { ...uncut, top: -0.75, bottom: 0.75 }
+		},
+		{
+			shift: { across: -0.75, down: 0 },
+			scale: 1,
+			clear: 1,
+			shadow: 0.25,
+			cut: { ...uncut, right: -0.75, left: 0.75 }
+		},
+		{ shift: unshifted, scale: 1, clear: 1, shadow: 0.25, cut: { ...uncut, right: 0.75 } },
+		{ shift: unshifted, scale: 1, clear: 1, shadow: 0.25, cut: { kind: 'circle', radius: 0.25 } },
+		{ shift: unshifted, scale: 0.25, clear: 1, shadow: 1, cut: null },
+		null,
+		null
+	]);
 });

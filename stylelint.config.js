@@ -6,6 +6,12 @@ const GRADIENTS_AND_SHADOWS = ['linear-gradient', 'radial-gradient', 'conic-grad
 const MOVING = ['/^transition/', '/^animation/'];
 // A shadow is a token, or none
 const SHADOWS_NAMED = { '/shadow$/': ['/^var\\(--[a-z-]+\\)$/', 'none'] };
+// The part an object's figure stands in takes its transform, opacity and cut from a way of livereel's alone, set by the
+// rules that select it by the way's attributes: a rule of a kind that lays it out by its class, alone or in a list,
+// sets none of them, or the way would stop where that rule outweighs it
+const THE_WAYS_OWN = {
+	'/\\.way(\\[[^\\]]+\\]|:[\\w-]+(\\([^)]*\\))?)*\\s*(,|$)/': ['transform', 'opacity', 'clip-path']
+};
 
 export default {
 	extends: ['stylelint-config-standard'],
@@ -15,6 +21,7 @@ export default {
 		'function-disallowed-list': [...COLOURS, ...GRADIENTS_AND_SHADOWS],
 		'declaration-property-value-allowed-list': SHADOWS_NAMED,
 		'property-disallowed-list': MOVING,
+		'rule-selector-property-disallowed-list': THE_WAYS_OWN,
 		'at-rule-disallowed-list': ['keyframes'],
 		'declaration-property-value-disallowed-list': { 'scroll-behavior': ['smooth'] }
 	},

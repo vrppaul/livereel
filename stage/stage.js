@@ -50,6 +50,10 @@ const ON_GROUND = 'data-on-ground';
 const ALIGN = 'data-align';
 // The attribute an object leans by; one face-on has none, and no transform
 const LEANT = 'data-leant';
+// The attribute the part an object's figure stands in is on its way by, which one standing whole has not, so it is
+// drawn on no way at all; and the one that names how the figure is cut there, from its sides or round its middle
+const ON_ITS_WAY = 'data-on-its-way';
+const WAY_CUT = 'data-way-cut';
 // The custom property a title's own size is set as, where it has one; the stylesheet takes the look's where it has not
 const OWN_SIZE = '--title-own-size';
 // The attribute that names the edge of the frame a caption stands at: its foot, or its top
@@ -385,6 +389,8 @@ class StagedObject {
 		this.kind = kind;
 		this.element = madeFrom(kind);
 		this.content = CONTENT_DRAWERS[kind](partOf(this.element, 'content'));
+		/** The part its figure stands in — its words, its pane, the card's lines, the caps — a way of livereel's is drawn on */
+		this.way = partOf(this.element, 'way');
 		/** Where what stands over its words is laid, where it has words to stand over @type {Staged | null} */
 		this.overTheWords = overTheWordsIn(this.element);
 	}
@@ -395,7 +401,54 @@ class StagedObject {
 		numbered(this.element, { '--layer': object.layer, '--held': object.held });
 		this.element.toggleAttribute(LEANT, object.angle !== null);
 		if (object.angle !== null) numbered(this.element, { '--tilt': object.angle.tilt, '--turn': object.angle.turn });
+		wayDrawn(this.way, object.onItsWay);
 		this.content.draw(object.content);
+	}
+}
+
+/**
+ * An object's figure as far as its way in or out has come, drawn on the part it stands in: on its way, shifted, grown,
+ * as clear and as cut as the way has it; on none, where it stands whole or comes in its own way.
+ * @param {Staged} way @param {DrawnObject['onItsWay']} onItsWay
+ */
+function wayDrawn(way, onItsWay) {
+	way.toggleAttribute(ON_ITS_WAY, onItsWay !== null);
+	if (onItsWay === null) {
+		cutDrawn(way, null);
+		return;
+	}
+	numbered(way, {
+		'--way-across': onItsWay.shift.across,
+		'--way-down': onItsWay.shift.down,
+		'--way-scale': onItsWay.scale,
+		'--way-clear': onItsWay.clear,
+		'--way-shadow': onItsWay.shadow
+	});
+	cutDrawn(way, onItsWay.cut);
+}
+
+/**
+ * A figure on its way cut as its way has it, the cut named by its kind with its numbers; uncut, where it is not.
+ * @param {Staged} way @param {NonNullable<DrawnObject['onItsWay']>['cut']} cut
+ */
+function cutDrawn(way, cut) {
+	if (cut === null) {
+		way.removeAttribute(WAY_CUT);
+		return;
+	}
+	way.setAttribute(WAY_CUT, cut.kind);
+	switch (cut.kind) {
+		case 'inset':
+			numbered(way, {
+				'--way-cut-top': cut.top,
+				'--way-cut-right': cut.right,
+				'--way-cut-bottom': cut.bottom,
+				'--way-cut-left': cut.left
+			});
+			return;
+		case 'circle':
+			numbered(way, { '--way-cut-radius': cut.radius });
+			return;
 	}
 }
 
@@ -575,7 +628,7 @@ class EndingDrawer {
 		this.name.textContent = ending.card.name;
 		this.what.textContent = ending.card.line;
 		this.command.textContent = ending.card.command;
-		numbered(this.element, { '--shown': ending.shown });
+		numbered(this.element, { '--grounded': ending.grounded, '--shown': ending.shown });
 	}
 }
 

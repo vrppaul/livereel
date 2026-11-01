@@ -5,7 +5,8 @@
  * word by word, or typed by a person.
  */
 import type { Alignment } from '../domain/place.ts';
-import { type ComingUp, type DrawnWords, type Said, drawnWords } from './words.ts';
+import type { Presences } from './way.ts';
+import { type ComingUp, type DrawnWords, type Said, drawnWordsOnGround } from './words.ts';
 
 /**
  * A title's words: what they say, how they read in their box, how large their letters are, in pixels of a frame 1080
@@ -30,9 +31,9 @@ export interface DrawnTitleWords extends DrawnWords {
 // Words in a place bring no ground of their own
 const NO_GROUND = 0;
 
-/** A title's words as the stage draws them, the object showing them come up `shown` and gone `gone` so far. */
-export function drawnTitleWords(title: TitleWords, shown: number, gone: number): DrawnTitleWords {
-	const words = drawnWords({ ...title, shown, gone }, title.comingUp);
+/** A title's words as the stage draws them, as far as the object showing them stands. */
+export function drawnTitleWords(title: TitleWords, presences: Presences): DrawnTitleWords {
+	const words = drawnWordsOnGround(title, title.comingUp, presences);
 	return {
 		...words,
 		kind: title.kind,

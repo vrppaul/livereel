@@ -32,16 +32,16 @@ import {
 	objectTo,
 	placedFor
 } from './object.ts';
-import { WORDS_TYPED, type WordsTypedScript, wordsComing } from './typing.ts';
+import { WORDS_TYPED, type WordsTypedScript, refuseTypedInAWay, wordsComing } from './typing.ts';
 
 /**
  * Where a title stands: `at` a place on the frame, or over the whole of it, on its ground, where none is named; how it
  * reads there, `align`, the place's own way where none is named; how large its letters are, `size`, in pixels of a
  * frame 1080 on its shorter side, over the whole frame and in a place alike, where none is named the look's
  * `titleSize`, and in a place a share of it no larger than its width lets a long word stand; the side it slides in
- * `from`, past the frame's edge, rather than coming up in its place; whether its words are `typed` as they come up,
- * and how; which title it is, `as`; and what it stands `inside`, the page's window, its place then a box in the
- * window's shares.
+ * `from`, past the frame's edge, rather than coming up in its place, or the way it comes up there, `enter`; whether its
+ * words are `typed` as they come up, and how; which title it is, `as`; and what it stands `inside`, the page's window,
+ * its place then a box in the window's shares.
  */
 export interface TitleScript extends ShowScript, NestedScript {
 	readonly at?: Place;
@@ -76,8 +76,8 @@ const OVER_THE_WHOLE: Alignment = 'center';
 
 /**
  * A title coming up word by word, or typed by a person where the film has it typed, each key heard; over the whole
- * frame its ground first, or in its place, or from past a side of the frame where the film names one, whole, never
- * typed; words that come up in place come up at an even pace unless the film names a curve.
+ * frame its ground first, or in its place; or whole, in a way of livereel's or from past a side of the frame where the
+ * film names one, never typed; words that come up in place come up at an even pace unless the film names a curve.
  */
 export function show(text: Wording, script: TitleScript = {}): Move {
 	assertKind(text, A_WORDING, "title.show's text");
@@ -85,6 +85,7 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 	if (script.typed !== undefined && script.from !== undefined) {
 		throw new FilmError('title.show types its words where they come up: it slides in whole from a side, or is typed');
 	}
+	refuseTypedInAWay(script, 'title.show');
 	const said = saidOf(text);
 	const coming = wordsComing(said, script.typed);
 	const setting: Setting = {

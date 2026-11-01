@@ -139,21 +139,24 @@ and the moves of each part of the scene:
 - `callout.show(target, text, { side })`, `callout.hide()`
 - `note.show(target, text, { at })`, `note.hide()`
 - `pin.show(target, label)`, `pin.clear()`
-- `keys.show(caps)`, `keys.hide()`
+- `keys.show(caps, { enter, edge })`, `keys.hide({ leave, edge })`
 - `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { at, align, size, from, typed, as, inside })`, `title.to(place)`, `title.lean({ tilt, turn })`,
-  `title.hide({ toward })`
-- `code.show(text, { at, from, longLines, as, inside })`, `code.to(place)`, `code.lean({ tilt, turn })`,
-  `code.light(line, { through })`, `code.scrollTo(line)`, `code.hide({ toward })`; each move of a title or code takes `as` to name which
-- `caption.show(text, { typed })`, `caption.hide()`; a caption and keys stand over the whole frame where they come up, over
-  every other object, the keys over the caption, one of each
+- `title.show(text, { at, align, size, from, enter, edge, typed, as, inside })`, `title.to(place)`,
+  `title.lean({ tilt, turn })`, `title.hide({ toward, leave, edge })`
+- `code.show(text, { at, from, enter, edge, longLines, as, inside })`, `code.to(place)`, `code.lean({ tilt, turn })`,
+  `code.light(line, { through })`, `code.scrollTo(line)`, `code.hide({ toward, leave, edge })`; each move of a title
+  or code takes `as` to name which
+- `caption.show(text, { enter, edge, typed })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
+  whole frame where they come up, over every other object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`
-- `terminal.open(title, { at, from, inside })`, `terminal.type(strokes, { keyboard })`, `terminal.submit()`,
-  `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place)`, `terminal.lean({ tilt, turn })`,
-  `terminal.leave({ toward })`; the terminal stands `at` a place, read as the window reads one, across most of the
-  frame in its middle where none is named; each move of it takes `as` to name which
-- `ending.show({ name, line, command }, { from })`, `ending.hide({ toward })`, so a film may open on the card too;
+- `terminal.open(title, { at, from, enter, edge, inside })`, `terminal.type(strokes, { keyboard })`,
+  `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place)`,
+  `terminal.lean({ tilt, turn })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
+  the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
+  name which
+- `ending.show({ name, line, command }, { from, enter, edge })`, `ending.hide({ toward, leave, edge })`, so a film may
+  open on the card too;
   the card stands over the whole frame on the frame's own ground, slides in and out whole, and is never carried or
   leant
 - `page.scrollBy(selector, { pixels })`, `page.scrollTo(selector, { top })`, `page.type(strokes, { keyboard })`,
@@ -240,6 +243,35 @@ slides in one step moves a whole frame, so what leaves and what comes move
 as one sheet, a push; the ending card slides so too, its ground with it
 (`ending.show(card, { from })`, `ending.hide({ toward })`), and so does a
 title over the whole frame.
+
+What comes up in its place — a title, code, the terminal, the card, a
+caption, keys — comes up in its own way, words one after another, the
+terminal growing, the card rising; or whole, in a way the film names,
+`enter`, and goes in one, `leave`:
+
+```ts
+play({ seconds: 0.9, moves: [title.show('Out of nothing', { enter: 'mask' })] }),
+play({ seconds: 0.9, moves: [code.show(LINES, { at: 'left', enter: 'wipe' })] }),
+play({ seconds: 0.6, moves: [terminal.leave({ leave: 'iris' })] }),
+```
+
+A way brings the object's figure — its words, its pane, the card's lines,
+the caps — whole: `'fade'` fades it in; `'mask'` brings it out from behind
+an edge of its own, out of nothing, its foot where `edge` names none, so
+words rise from under a line just below them; `'wipe'` uncovers it from an
+edge, its left where none is named; `'iris'` opens it from its middle;
+`'grow'` grows it from its middle. The figure is as wide as what it shows:
+words on one line as that line, keys as their caps. A pane's shadow comes
+with it, as strong as the way has come where a mask, a wipe or an iris cuts
+it, so a pane masked from its foot rises from under a line as far below it
+as the shadow falls. The ground a title card, a caption or the ending card
+stands on comes up meanwhile, whole half-way. Going, the way runs back, a
+mask behind its edge. A way runs on its step's curve. It is one or the
+other with a slide: a way with `from` or `toward` is refused, and so are
+words typed in a way, and an `edge` for a way that comes from none. Words
+on more than one line stand as wide as their box, so a mask or a wipe from
+a side crosses that width, and an iris or a grow works from the box's
+middle.
 
 A title or code leans as the window does: `title.lean({ tilt: 12 })` leans
 it back from its top edge, `code.lean({ turn: -8 })` swings it about its

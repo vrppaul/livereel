@@ -6,6 +6,10 @@
  * box and what lights in it are its content's. Each of where it stands, how it leans and what it shows is set by its
  * own moves, so moves of one object that set different values share a step.
  *
+ * An object comes up and goes in its own way, as what it shows comes up of itself, or in a way of livereel's, faded,
+ * masked, wiped, opened or grown (`src/props/way.ts`): then its figure — its words, its pane, the card's lines, the
+ * caps — stands whole and comes as the way has it, while a ground it stands on comes in its own way.
+ *
  * An object stands on the frame, or inside the page's window, as a small window of code stands over the site's: its
  * box is then in the window's pixels, and it travels and leans with the window, shows no more than the screen does,
  * and is cut at the window's edge, as an element laid in another is on a page. The window is one, and never goes, so
@@ -23,6 +27,7 @@ import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
 import { type Code, type DrawnCode, drawnCode } from './code.ts';
 import { type DrawnEnding, type Ending, drawnEnding } from './ending.ts';
 import { type CaptionStanding, type DrawnKeys, type Keys, drawnKeys, standOver } from './keys.ts';
+import { type OnItsWay, type Way, alongItsWay, presencesIn, presentShare } from './way.ts';
 import type { Screen } from './screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './terminal.ts';
 import { type DrawnTitleWords, type TitleWords, drawnTitleWords } from './title.ts';
@@ -56,7 +61,7 @@ export type DrawnContent = DrawnTitleWords | DrawnCode | DrawnTerminal | DrawnEn
 
 /**
  * An object: what it stands inside, its box in the pixels of that from its top left corner, how it leans, how far it
- * has come up and how far it has gone, each from 0 to 1, and what it shows.
+ * has come up and how far it has gone, each from 0 to 1, the way it comes up or goes, and what it shows.
  */
 export interface FrameObject {
 	readonly inside: Holder;
@@ -64,6 +69,7 @@ export interface FrameObject {
 	readonly angle: Angle;
 	readonly shown: number;
 	readonly gone: number;
+	readonly way: Way;
 	readonly content: Content;
 }
 
@@ -74,7 +80,8 @@ export type Objects = ReadonlyMap<ObjectName, FrameObject>;
  * An object as the stage draws it: the name it is known by, what it stands in, the object whose words it is laid over
  * by that one — keys over a caption's, its box then the caption's to lay out — or none, its box in what it stands in,
  * how it leans — none face-on, which the stage draws with no transform at all — the layer it is drawn on, the higher
- * over the lower, how much of it what it stands in lets show, from 0 to 1, and its content as drawn.
+ * over the lower, how much of it what it stands in lets show, from 0 to 1, how far its figure's way has come, none
+ * where it is on no way, and its content as drawn.
  */
 export interface DrawnObject {
 	readonly name: ObjectName;
@@ -84,6 +91,7 @@ export interface DrawnObject {
 	readonly angle: Angle | null;
 	readonly layer: number;
 	readonly held: number;
+	readonly onItsWay: OnItsWay | null;
 	readonly content: DrawnContent;
 }
 
@@ -142,9 +150,10 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	const angle = isFaceOn(object.angle) ? null : object.angle;
 	const layer = LAYER_OF[object.content.kind];
 	const held = heldIn(object, around.screen);
+	const onItsWay = alongItsWay(object.way, presentShare(object));
 	const content = drawnContent(object, moment, around.caption);
 	const over = drawnOver(object, around.caption);
-	return { name, inside: object.inside, over, box: object.box, angle, layer, held, content };
+	return { name, inside: object.inside, over, box: object.box, angle, layer, held, onItsWay, content };
 }
 
 /** The object whose words an object is laid over: keys over a caption's standing at the frame's foot; else none. */
@@ -167,33 +176,34 @@ function heldIn(object: FrameObject, screen: Screen): number {
 }
 
 /**
- * What an object shows, drawn as far as the object has come up and gone, at a moment of the film, by the caption
- * standing on the frame, if any.
+ * What an object shows, drawn as far as its ground and its figure have come up and gone in the way it comes, at a
+ * moment of the film, by the caption standing on the frame, if any. What has no ground of its own is its figure alone.
  */
 function drawnContent(object: FrameObject, moment: number, caption: CaptionStanding | null): DrawnContent {
 	const content = object.content;
+	const presences = presencesIn(object.way, object);
+	const figure = presences.figure;
 	switch (content.kind) {
 		case 'words':
-			return drawnTitleWords(content, object.shown, object.gone);
+			return drawnTitleWords(content, presences);
 		case 'code':
-			return drawnCode(content, object.shown, object.gone);
+			return drawnCode(content, figure.shown, figure.gone);
 		case 'terminal':
-			return drawnTerminal(content, moment, standingShare(object));
+			return drawnTerminal(content, moment, presentShare(figure));
 		case 'ending':
-			return drawnEnding(content, standingShare(object));
+			return drawnEnding(content, object.way, object);
 		case 'caption':
-			return drawnCaption(content, object.shown, object.gone);
+			return drawnCaption(content, presences);
 		case 'keys':
-			return drawnKeys(content, standingShare(object), caption);
+			return drawnKeys(content, presentShare(figure), caption);
 	}
 }
 
-/** How much of an object stands, for what shows it whole as one, fading: as far as it has come up and not yet gone. */
-function standingShare(object: FrameObject): number {
-	return object.shown * (1 - object.gone);
-}
-
-/** The caption among the objects standing on the frame, as keys find it, its moves letting one alone stand; or none. */
+/**
+ * The caption among the objects standing on the frame, as keys find it, as far as it has come up and gone, as its
+ * ground has, which the keys rise clear of and which comes in its own way whatever way its words come; or none, its
+ * moves letting one alone stand.
+ */
 export function captionAmong(standing: Objects): CaptionStanding | null {
 	for (const [name, object] of standing) {
 		if (object.content.kind === 'caption') {

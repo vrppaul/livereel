@@ -56,8 +56,8 @@ body {
 /* Under an exposure and the ending card, the frame's layers whole, as large as the frame in pixels of a frame the look was made on, so their lengths are the look's whatever size the frame is shot at */
 .exposure > .layers::before,
 .exposure > .layers::after,
-.ending > .layers::before,
-.ending > .layers::after {
+.ending .layers::before,
+.ending .layers::after {
 	width: calc(var(--frame-width) * 1px / var(--frame-scale));
 	height: calc(var(--frame-height) * 1px / var(--frame-scale));
 }
@@ -393,6 +393,43 @@ body {
 	zoom: var(--frame-scale);
 }
 
+/* The part an object's figure stands in — its words, its pane, the card's lines, the caps — which a way of livereel's is drawn on (`src/props/way.ts`), whatever the figure does of itself: it stands where the figure stands, as large, and its transform, opacity and cut are the way's alone, which no rule of a kind sets (stylelint refuses one). On its way the figure stands shifted toward the edge it comes from by its box and the reach past it on both sides, grown from its middle, as clear as the way has it, its shadow as strong, and cut where it stands whole, a reach past its box, the engine moving the cut back by the shift: so a figure shifted whole stands past its cut, out of sight. The reach is how far a figure draws past its box on each side: for words a share of their letters' size, for their tails and marks */
+.way {
+	--letters-tails: 0.25;
+	--way-reach: calc(var(--letters-tails) * 1em);
+	--way-reach-top: var(--way-reach);
+	--way-reach-right: var(--way-reach);
+	--way-reach-bottom: var(--way-reach);
+	--way-reach-left: var(--way-reach);
+	--across-and-reach: calc(100% + var(--way-reach-left) + var(--way-reach-right));
+	--down-and-reach: calc(100% + var(--way-reach-top) + var(--way-reach-bottom));
+	--to-the-corners: 70.72%;
+}
+
+[data-on-its-way] {
+	--figure-shadow-strength: var(--way-shadow);
+
+	transform: translate(calc(var(--way-across) * var(--across-and-reach)), calc(var(--way-down) * var(--down-and-reach)))
+		scale(var(--way-scale));
+	opacity: var(--way-clear);
+}
+
+/* Cut from each side by a share of the figure and the reach on both sides, 0 cutting nothing of it, 1 all of it; or round its middle by a share of the radius that takes in its corners, and its widest reach, 70.72% of the radius a circle's percentages are reckoned by */
+[data-way-cut='inset'] {
+	clip-path: inset(
+		calc(var(--way-cut-top) * var(--down-and-reach) - var(--way-reach-top))
+			calc(var(--way-cut-right) * var(--across-and-reach) - var(--way-reach-right))
+			calc(var(--way-cut-bottom) * var(--down-and-reach) - var(--way-reach-bottom))
+			calc(var(--way-cut-left) * var(--across-and-reach) - var(--way-reach-left))
+	);
+}
+
+[data-way-cut='circle'] {
+	--widest-reach: max(var(--way-reach-top), var(--way-reach-right), var(--way-reach-bottom), var(--way-reach-left));
+
+	clip-path: circle(calc(var(--way-cut-radius) * (var(--to-the-corners) + var(--widest-reach))) at 50% 50%);
+}
+
 /* A title's, a caption's or a callout's word as it comes up: the space before it, then its own box, which rises out of a blur and sinks as it goes */
 .words .word {
 	display: inline-block;
@@ -535,9 +572,14 @@ body {
 	zoom: 1;
 }
 
-.caption .words {
+/* A caption's words stand at the foot's start, as wide as their one line, or as wide as the foot where they break into more */
+.caption .way {
 	position: relative;
+	width: fit-content;
 	font: var(--caption-weight) calc(var(--caption-size) * 1px) / 1.12 var(--sans);
+}
+
+.caption .words {
 	letter-spacing: -0.025em;
 	color: var(--ink);
 	text-shadow: var(--caption-shadow);
@@ -619,12 +661,31 @@ body {
 	transform: none;
 }
 
-/* A title's words in their object: on the film's ground over its whole box, the ground there first, a title card; or in a place on the frame, on the ground round them */
+/* A title's words in their object: on the film's ground over its whole box, the ground there first, a title card; or in a place on the frame, on the ground round them. Where the words stand across their box, and how large: in a place, from its sides, as large as the title's own size; where it has none, as large as the box's width lets a long word stand on a line of its own, and no larger than a share of the look's for a title card. A title with no size of its own leaves its own letters unset, as a custom property naming one never set is, so the size by the box stands. On a ground of their own they stand the look's margin in from the box's sides, as large as the title's own size, the look's where it has none. They read as the title names (`data-align`), from the box's left, or centred across it */
 .title {
 	--word-rise: 28px;
 	--word-blur: 12px;
 	--word-sink: 12px;
 	--word-blur-leaving: 8px;
+	--placed-share-of-title: 0.78;
+	--placed-words-at-most: calc(var(--title-size) * var(--placed-share-of-title) * 1px);
+	--letters-across: 8;
+	--own-letters: calc(var(--title-own-size) * 1px);
+	--words-size: var(
+		--own-letters,
+		min(var(--placed-words-at-most), calc(var(--content-width) / var(--letters-across)))
+	);
+	--words-in-from-sides: 0px;
+	--room-before-words: 0;
+}
+
+.title[data-on-ground] {
+	--words-size: calc(var(--title-own-size, var(--title-size)) * 1px);
+	--words-in-from-sides: calc(var(--title-margin) * 1px);
+}
+
+.title[data-align='center'] {
+	--room-before-words: auto;
 }
 
 /* A title card's ground is its own, over its box: the card is a sheet that slides, travels and leans, so its glow and layers go with it, where the ending card, which only slides in, stands on the frame's */
@@ -641,33 +702,28 @@ body {
 	inset: 0;
 }
 
-/* The words stand in the middle of their box down it, read as the title names (`data-align`), from its left or centred across it, as large as the title's own size; where it has none, as large as the box's width lets a long word stand on a line of its own, and no larger than a share of the look's for a title card. A title with no size of its own leaves its own letters unset, as a custom property naming one never set is, so the size by the box stands. The box is in the frame's pixels, and what an object shows in pixels of a frame the stage's look was made on */
-.title .words {
-	--placed-share-of-title: 0.78;
-	--placed-words-at-most: calc(var(--title-size) * var(--placed-share-of-title) * 1px);
-	--letters-across: 8;
-	--own-letters: calc(var(--title-own-size) * 1px);
-
+/* The words stand in the middle of their box down it, as wide as their one line, or as wide as their box where they break into more, which CSS lays out no narrower. A word too long for its line breaks anywhere, so they never stand wider than their box. The box is in the frame's pixels, and what an object shows in pixels of a frame the stage's look was made on */
+.title .way {
 	position: absolute;
-	left: 0;
+	left: var(--words-in-from-sides);
+	right: var(--words-in-from-sides);
 	top: calc(var(--content-height) / 2);
-	width: var(--content-width);
-	transform: translateY(-50%);
-	font: var(--title-weight)
-		var(--own-letters, min(var(--placed-words-at-most), calc(var(--content-width) / var(--letters-across)))) / 1.08
-		var(--sans);
+	width: fit-content;
+	margin-left: var(--room-before-words);
+	margin-right: auto;
+	translate: 0 -50%;
+	font: var(--title-weight) var(--words-size) / 1.08 var(--sans);
+}
+
+.title .words {
 	letter-spacing: -0.03em;
 	color: var(--ink);
 	text-align: start;
 	text-wrap: balance;
-	overflow-wrap: break-word;
+	overflow-wrap: anywhere;
 }
 
-/* On a ground of their own the words stand the look's margin in from the box's sides, as large as the title's own size, the look's where it has none */
 .title[data-on-ground] .words {
-	left: calc(var(--title-margin) * 1px);
-	width: calc(var(--content-width) - 2 * var(--title-margin) * 1px);
-	font-size: calc(var(--title-own-size, var(--title-size)) * 1px);
 	overflow-wrap: normal;
 }
 
@@ -693,10 +749,23 @@ body {
 	--code-letters: calc(var(--code-size) * 1px);
 }
 
-.code .pane {
+/* A pane, of code or the terminal, reaches past its box as far as its shadow falls and blurs: little above it, as the shadow drops, far below */
+.code .way,
+.terminal .way {
+	--way-reach-top: calc((var(--pane-shadow-blur) - var(--pane-shadow-drop)) * var(--pane-scale));
+	--way-reach-right: calc(var(--pane-shadow-blur) * var(--pane-scale));
+	--way-reach-bottom: calc((var(--pane-shadow-blur) + var(--pane-shadow-drop)) * var(--pane-scale));
+	--way-reach-left: calc(var(--pane-shadow-blur) * var(--pane-scale));
+}
+
+.code .way {
 	position: absolute;
 	left: 0;
 	top: calc(var(--content-height) / 2);
+	translate: 0 -50%;
+}
+
+.code .pane {
 	width: var(--content-width);
 	max-height: var(--content-height);
 	box-sizing: border-box;
@@ -706,7 +775,7 @@ body {
 	overflow: hidden;
 	background: var(--terminal);
 	opacity: var(--grounded);
-	transform: translateY(calc(-50% + (1 - var(--grounded)) * var(--code-rise)));
+	transform: translateY(calc((1 - var(--grounded)) * var(--code-rise)));
 	font: 400 var(--code-letters) / 1.6 var(--mono);
 	color: var(--terminal-ink);
 	white-space: pre;
@@ -875,31 +944,44 @@ body {
 	opacity: var(--caret);
 }
 
-/* The ending card in its object: the name, what it is, and the command that starts it, rising into place, on its ground. Its ground is the frame's, its glow and layers laid back by as far as its box stands from the frame's corner and cut at the box, so it is the frame's own ground where it stands, every layer in its place: it covers what is under it, and no edge of it shows over the film's ground, wherever it slides */
+/* The ending card in its object: the name, what it is, and the command that starts it, rising into place in the middle of its box, on its ground, the two one sheet as far as it stands. Its ground is the frame's, its glow and layers laid back by as far as its box stands from the frame's corner and cut at the box, so it is the frame's own ground where it stands, every layer in its place: it covers what is under it, and no edge of it shows over the film's ground, wherever it slides. Where a way of livereel's brings the lines, the sheet stands whole and its ground comes up and goes on it */
 .ending {
 	--ending-rise: 24px;
 
 	display: flex;
-	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	gap: 22px;
 	isolation: isolate;
-	background: var(--ground-light);
-	background-position: calc(var(--left) * -1px / var(--frame-scale)) calc(var(--top) * -1px / var(--frame-scale));
 	color: var(--ink);
 	text-align: center;
 	opacity: var(--shown);
 }
 
-.ending > .layers::before,
-.ending > .layers::after {
+.ending .ground {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	background: var(--ground-light);
+	background-position: calc(var(--left) * -1px / var(--frame-scale)) calc(var(--top) * -1px / var(--frame-scale));
+	opacity: var(--grounded);
+}
+
+.ending .layers::before,
+.ending .layers::after {
 	left: calc(var(--left) * -1px / var(--frame-scale));
 	top: calc(var(--top) * -1px / var(--frame-scale));
 }
 
-/* What the card says rises into place; its ground stands */
-.ending > :not(.layers) {
+/* The card's lines reach past their box as far as the name's letters do, the largest of them */
+.ending .way {
+	--way-reach: calc(var(--letters-tails) * var(--ending-name-size) * 1px);
+}
+
+.ending .says {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 22px;
 	transform: translateY(calc((1 - var(--shown)) * var(--ending-rise)));
 }
 
@@ -936,20 +1018,30 @@ body {
 	--keys-gap-over-words: 28px;
 }
 
-.keys .caps {
+/* The caps stand in the middle of the frame's foot, as wide as they are, and reach past their box as far as a cap's shadow falls and blurs */
+.keys .way {
+	--way-reach-top: calc(var(--key-shadow-blur) - var(--key-shadow-drop));
+	--way-reach-right: var(--key-shadow-blur);
+	--way-reach-bottom: calc(var(--key-shadow-blur) + var(--key-shadow-drop));
+	--way-reach-left: var(--key-shadow-blur);
+
 	position: absolute;
 	left: 0;
 	right: 0;
 	bottom: var(--frame-edge-room);
+	width: fit-content;
+	margin-inline: auto;
+}
+
+.keys .caps {
 	display: flex;
-	justify-content: center;
 	gap: 16px;
 	opacity: var(--shown);
 	transform: translateY(calc((1 - var(--shown)) * var(--keys-rise)));
 }
 
 /* Over a caption's words the caps stand where their content does, which the caption's place for them lifts */
-.over-the-words .keys .caps {
+.over-the-words .keys .way {
 	position: static;
 }
 

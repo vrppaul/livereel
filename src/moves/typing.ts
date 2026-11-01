@@ -4,10 +4,12 @@
  * up, by a person whose rhythm is drawn from a seed, spread over the move's share, each key heard. A slip is not
  * theirs to make: words typed are what the film says, letter for letter; and how fast they are typed is the move's.
  */
+import { FilmError } from '../domain/errors.ts';
 import { A_NUMBER, type Form, type Kind, OfForm, needed } from '../domain/handed.ts';
 import { keystrokes } from '../domain/typing.ts';
 import { TIMING_FORM, type TimingScript } from '../direction/move.ts';
 import { A_KEYBOARD, type Cue, type KeyboardSound, keysHeard } from '../direction/sound.ts';
+import type { WayName } from '../props/way.ts';
 import { type ComingUp, type Said, WORD_BY_WORD, plainTextOf, typedComingUp } from '../props/words.ts';
 
 /** A typing's timing, and the keyboard its keys are heard on where it is not the film's. */
@@ -22,6 +24,12 @@ export interface TypingScript extends TimingScript {
 export interface WordsTypedScript {
 	readonly seed: number;
 	readonly keyboard?: KeyboardSound;
+}
+
+/** Words typed as they come up, where a film has them typed, and the way of livereel's that would bring them whole. */
+interface TypedInAWay {
+	readonly typed?: WordsTypedScript;
+	readonly enter?: WayName;
 }
 
 /** How words come up, and the key heard for every stroke where they are typed; none heard where they rise. */
@@ -40,6 +48,16 @@ export const WORDS_TYPED: Kind<WordsTypedScript> = new OfForm<WordsTypedScript>(
 
 // Words that come up word by word make no sound
 const UNHEARD: readonly Cue[] = [];
+
+/**
+ * Refuses words typed as they come up where the film has them come up whole in a way of livereel's: words typed come
+ * up letter by letter.
+ */
+export function refuseTypedInAWay(script: TypedInAWay, move: string): void {
+	if (script.typed !== undefined && script.enter !== undefined) {
+		throw new FilmError(`${move} types its words as they come up: they come up whole in a way, or typed`);
+	}
+}
 
 /** What a film says coming up typed as the film has it typed, each key heard; word by word where it has none typed. */
 export function wordsComing(said: Said, script: WordsTypedScript | undefined): WordsComing {
