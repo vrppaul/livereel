@@ -45,7 +45,15 @@ import { type Ease, between, framesOf, momentOf } from '../domain/time.ts';
 import { type Change, type Move, type Share, movesThePage, soundsOf } from '../direction/move.ts';
 import type { Cue } from '../direction/sound.ts';
 import type { Act, Cut, Play, Step } from '../direction/steps.ts';
-import { type DrawnScene, type Scene, cameraOf, drawingOf, drawn, frameShiftBetween } from '../scene.ts';
+import {
+	type DrawnScene,
+	type Scene,
+	cameraOf,
+	drawingOf,
+	drawn,
+	frameShiftBetween,
+	pictureZoomsIn
+} from '../scene.ts';
 import type { Exposures, Footage, FramedStage, Opened, PicturedStage, Stage, Track } from './ports.ts';
 
 // Half-way along a frame, where a speed that changes evenly over it stands at its mean
@@ -292,7 +300,12 @@ export class Take {
 	}
 
 	private changeOf(move: Move): Change | Promise<Change> {
-		return move.begin({ scene: this.scene, page: this.opened.page, format: this.format });
+		return move.begin({
+			scene: this.scene,
+			page: this.opened.page,
+			format: this.format,
+			pageShown: this.opened.stage.kind
+		});
 	}
 
 	/** A change set at a progress; a change of the page itself leaves the page's picture behind the page. */
@@ -340,8 +353,7 @@ export class Take {
 	private async exposed(time: FrameTime, pageMovesOn: boolean): Promise<Exposures> {
 		const own = this.exposureOf(this.scene);
 		const along = (await this.alsoExposed(time)).map((scene) => this.exposureOf(scene));
-		const alongCameras = along.map((exposure) => exposure.camera);
-		await this.pageShown(this.opened.stage, this.zoomPictured(own.camera, alongCameras, pageMovesOn));
+		await this.pageShown(this.opened.stage, this.zoomPictured(own, along, pageMovesOn));
 		const ownDrawn = this.drawnAt(own);
 		const alongDrawn = along.map((exposure) => this.drawnAt(exposure));
 		if (alongDrawn.length < this.opened.stage.exposuresAtOnce) {
@@ -395,13 +407,19 @@ export class Take {
 	}
 
 	/**
-	 * How close a picture of the page taken for a frame holds it: as close as the frame's cameras come where it serves
-	 * that frame alone, as a move of the page runs on past it or its own motion is let go, so the next frame takes
-	 * another; as close as livereel's bound elsewhere, so it serves every frame after it.
+	 * How close a picture of the page taken for a frame holds it: as close as the frame's cameras and pieces of the page
+	 * come where it serves that frame alone, as a move of the page runs on past it or its own motion is let go, so the
+	 * next frame takes another; as close as livereel's bound elsewhere, so it serves every frame after it.
 	 */
-	private zoomPictured(own: Camera, along: readonly Camera[], pageMovesOn: boolean): number {
+	private zoomPictured(own: Exposure, along: readonly Exposure[], pageMovesOn: boolean): number {
 		const servesThisFrameAlone = pageMovesOn || this.opened.act.motion.released;
-		return servesThisFrameAlone ? zoomPicturedFor(own, along) : ZOOM_AT_MOST;
+		if (!servesThisFrameAlone) return ZOOM_AT_MOST;
+		const pieces = [own, ...along].flatMap((exposure) => pictureZoomsIn(exposure.scene, this.format));
+		return zoomPicturedFor(
+			own.camera,
+			along.map((exposure) => exposure.camera),
+			pieces
+		);
 	}
 
 	/**

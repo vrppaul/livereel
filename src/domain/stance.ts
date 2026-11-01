@@ -72,6 +72,7 @@ const UPRIGHT = 0;
 const UNMOVED = 0;
 // A scale of none draws nothing, and one less draws it upside down, a half roll
 const NONE = 0;
+const DEGREES_IN_A_TURN = 360;
 
 /** How something stands until a move changes it: as large as its box, on its plane, face-on and upright. */
 export const AS_PLACED: Stance = { scale: AS_LARGE, depth: ON_ITS_PLANE, angle: { ...FACE_ON, roll: UPRIGHT } };
@@ -112,9 +113,21 @@ export function drawnStance(angle: Angle, placing: Matrix): DrawnStance {
 	return { transform, face: showsItsFront(placing) ? 'front' : 'back' };
 }
 
+/**
+ * The orientation facing the frame nearest to one, upright: each of its tilt, turn and roll at its nearest whole turn,
+ * so something spun round a whole turn goes back without spinning back.
+ */
+export function faceOnNearest(angle: Orientation): Orientation {
+	return { tilt: nearestWholeTurn(angle.tilt), turn: nearestWholeTurn(angle.turn), roll: nearestWholeTurn(angle.roll) };
+}
+
 /** An orientation `progress` of the way to another. */
 export function orientationToward(start: Orientation, end: Orientation, progress: number): Orientation {
 	return { ...angleToward(start, end, progress), roll: between(start.roll, end.roll, progress) };
+}
+
+function nearestWholeTurn(degrees: number): number {
+	return Math.round(degrees / DEGREES_IN_A_TURN) * DEGREES_IN_A_TURN;
 }
 
 function isScale(written: unknown): written is number {

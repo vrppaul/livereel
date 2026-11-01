@@ -990,7 +990,7 @@ body {
 	opacity: var(--caret);
 }
 
-/* A title, code or the terminal turned away shows the eye its back: its ground blank, a title card's or a pane's, and words on no ground nothing, never what it shows mirrored. The card, a caption and keys never turn */
+/* A title, code or the terminal turned away shows the eye its back: its ground blank, a title card's or a pane's, and words on no ground nothing, never what it shows mirrored; a piece of the page, a blank card of the screen's ground (its rule stands after the piece's own, below). The card, a caption and keys never turn */
 .object[data-face='back'] .title .words,
 .object[data-face='back'] .pane > * {
 	visibility: hidden;
@@ -1064,6 +1064,30 @@ body {
 	margin-right: 0.6em;
 }
 
+/* A piece of the page in its object, fading up whole as it comes in its own way and out as it goes */
+.piece {
+	opacity: var(--shown);
+}
+
+/* Its figure: the part of the page's picture over its source, as large as its box holds all of it at its fit, a screen's pixel to so many of the frame's, in the box's middle; drawn from the page's own picture as the stage last showed it (`show` in `stage/stage.js`), so it shows what the page shows there as it changes. Its lengths stand in pixels of a frame the look was made on, as all an object shows does, so a frame's pixel is a share of the frame's scale. It draws nothing past its box */
+.piece .way {
+	--piece-scale: calc(var(--fit) / var(--frame-scale));
+	--piece-width: calc(var(--source-width) * var(--piece-scale) * 1px);
+	--piece-height: calc(var(--source-height) * var(--piece-scale) * 1px);
+	--way-reach: 0px;
+
+	position: absolute;
+	left: calc((var(--content-width) - var(--piece-width)) / 2);
+	top: calc((var(--content-height) - var(--piece-height)) / 2);
+	width: var(--piece-width);
+	height: var(--piece-height);
+	background-image: var(--page-picture);
+	background-size: calc(var(--screen-width) * var(--piece-scale) * 1px)
+		calc(var(--screen-height) * var(--piece-scale) * 1px);
+	background-position: calc(var(--source-left) * var(--piece-scale) * -1px)
+		calc(var(--source-top) * var(--piece-scale) * -1px);
+}
+
 /* Keys in their object, over the whole frame: the caps of a shortcut at the frame's foot, rising as they come; over a caption's words they stand in its place for them */
 .keys {
 	--keys-rise: 16px;
@@ -1126,4 +1150,9 @@ body {
 .caption[data-at='top'] .foot {
 	top: var(--frame-edge-room);
 	bottom: auto;
+}
+
+/* A piece of the page turned away shows the eye its back: a blank card of the screen's ground, never the page mirrored */
+.object[data-face='back'] .piece .way {
+	background: var(--screen-ground);
 }

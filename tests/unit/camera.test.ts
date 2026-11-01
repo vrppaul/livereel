@@ -237,14 +237,16 @@ test('a screen too short to fill the frame along a side stands in its middle alo
 	expect([covered.focusX, covered.focusY]).toEqual([675, 540]);
 });
 
-test("a picture of the page holds it as close as the closest face-on camera comes, a view turned a whole turn face-on too, as close as livereel's bound where one is angled, and never closer", () => {
+test("a picture of the page holds it as close as the closest face-on camera or piece of it comes, a view turned a whole turn face-on too, as close as livereel's bound where one is angled, and never closer", () => {
 	const closer = inTheWhole({ ...FACE_ON, zoom: 1.5 });
 	const pastTheBound = inTheWhole({ ...FACE_ON, zoom: 3 });
 	const turnedWhole = inTheWhole({ ...FACE_ON, zoom: 1.5 }, { tilt: 360, turn: -360 });
 	expect([
-		zoomPicturedFor(inTheWhole(FACE_ON), [closer]),
-		zoomPicturedFor(inTheWhole(FACE_ON), [turnedWhole]),
-		zoomPicturedFor(inTheWhole(FACE_ON), [inTheWhole(DRAWN_BACK, LEANT_BACK)]),
-		zoomPicturedFor(pastTheBound, [])
-	]).toEqual([1.5, 1.5, 2.2, 2.2]);
+		zoomPicturedFor(inTheWhole(FACE_ON), [closer], []),
+		zoomPicturedFor(inTheWhole(FACE_ON), [turnedWhole], []),
+		zoomPicturedFor(inTheWhole(FACE_ON), [], [1.8]),
+		zoomPicturedFor(inTheWhole(FACE_ON), [inTheWhole(DRAWN_BACK, LEANT_BACK)], []),
+		zoomPicturedFor(pastTheBound, [], []),
+		zoomPicturedFor(inTheWhole(FACE_ON), [], [3])
+	]).toEqual([1.5, 1.5, 1.8, 2.2, 2.2, 2.2]);
 });

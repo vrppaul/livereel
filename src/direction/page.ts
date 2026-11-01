@@ -19,6 +19,12 @@ export interface ScrollCourse {
 	readonly scroll: (top: number) => Promise<void>;
 }
 
+/**
+ * How the stage shows the filmed page: live in its frame (a film's `page: 'dynamic'`), or as a picture of it, taken
+ * anew as it changes, which a piece of the page is drawn from too.
+ */
+export type PageShown = 'framed' | 'pictured';
+
 /** The filmed page as a move reads it and types into it. */
 export interface FilmedPage {
 	/** Where a block stands on the screen; with `every`, the first that many that match, together. */

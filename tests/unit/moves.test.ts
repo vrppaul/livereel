@@ -8,7 +8,8 @@ import { type Point, boxOf, boxToward, frameScaleOf, middleX, middleY } from '..
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
 import { play } from '../../src/direction/steps.ts';
-import { onto } from '../../src/moves/camera.ts';
+import { onto, to as cameraTo } from '../../src/moves/camera.ts';
+import * as piece from '../../src/moves/piece.ts';
 import { hide as windowHide, lean, show as windowShow, to as windowTo } from '../../src/moves/window.ts';
 import { lower, rise } from '../../src/moves/screen.ts';
 import * as callout from '../../src/moves/callout.ts';
@@ -34,7 +35,7 @@ import { keystrokes } from '../../src/domain/typing.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
 import { OWN_WAY } from '../../src/props/way.ts';
 import { appearedOf, comingUpIn, groundOf, saidOf } from '../../src/props/words.ts';
-import { type Scene, cameraOf, drawn, openingScene, withObject, withProp } from '../../src/scene.ts';
+import { type Scene, cameraOf, drawn, openingScene, pictureZoomsIn, withObject, withProp } from '../../src/scene.ts';
 import { PageOfBoxes, SMALL } from './fakes.ts';
 
 const BLOCK = { left: 100, top: 100, width: 100, height: 40 };
@@ -106,13 +107,24 @@ const LOWER_RIGHT = { left: 0.5, top: 0.5, width: 0.5, height: 0.5 } as const;
 const UPPER_LEFT = { left: 0, top: 0, width: 0.5, height: 0.5 } as const;
 // A band across the whole frame's width, which code stands in edge to edge
 const ACROSS_THE_FRAME = { left: 0, top: 0.3, width: 1, height: 0.4 } as const;
+// A frame as large as the stage's look was made on, its screen as large: a camera at a zoom of 1 shows the screen's
+// pixels as its own, and one at 2 its middle half twice as large
+const FULL_HD: Format = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } };
+const WHOLE_AT_ONE = { focusX: 960, focusY: 540, zoom: 1 };
+const MIDDLE_AT_TWO = { focusX: 960, focusY: 540, zoom: 2 };
+// A box of that screen reaching past the left edge of what the camera at 2 shows, which is 480 to 1440 across, and
+// the part of it the camera shows
+const PAST_THE_SHOWN_EDGE = { left: 400, top: 300, width: 200, height: 100 };
+const SHOWN_AT_TWO = { left: 480, top: 300, width: 120, height: 100 };
+// Nothing standing round an object drawn alone on that frame, the screen up
+const AROUND_IN_FULL_HD: Surroundings = { caption: null, screen: SCREEN_UP, frame: FULL_HD.frame };
 
 function beginningOf(scene: Scene): Beginning {
 	return beginningIn(scene, SMALL);
 }
 
 function beginningIn(scene: Scene, format: Format): Beginning {
-	return { scene, page: PAGE, format };
+	return { scene, page: PAGE, format, pageShown: 'pictured' };
 }
 
 /** The scene a move sets, begun on a scene, at a progress of its way. */
@@ -487,6 +499,73 @@ test('an object drawn larger than its box slides out, or is pushed off, until al
 		pushing.leaving.get('code')!.box.left,
 		pushing.objects.get('code')!.box.left
 	]).toEqual([250, 250, -250]);
+});
+
+test('a piece of the page is born over its block as the camera shows it, cut to the part the camera shows', async () => {
+	const close = await setIn(cameraTo(MIDDLE_AT_TWO), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = (await setIn(piece.show(PAST_THE_SHOWN_EDGE), close, 1, FULL_HD)).objects.get('piece')!;
+	// Of 400 to 600 across the camera shows 480 to 600, at twice its size from the frame's left edge
+	expect([lifted.box, lifted.content]).toEqual([
+		{ left: 0, top: 60, width: 240, height: 200 },
+		{ kind: 'piece', source: SHOWN_AT_TWO }
+	]);
+});
+
+test('a piece goes back over its block as the camera shows it then, face-on by its nearest whole turn, as large as it was and on its plane', async () => {
+	const close = await setIn(cameraTo(MIDDLE_AT_TWO), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = await setIn(piece.show(PAST_THE_SHOWN_EDGE), close, 1, FULL_HD);
+	const grown = await setIn(piece.to('whole', { scale: 1.5, depth: 100 }), lifted, 1, FULL_HD);
+	const spun = await setIn(piece.lean({ tilt: 30, turn: 360 }), grown, 1, FULL_HD);
+	const wider = await setIn(cameraTo(WHOLE_AT_ONE), spun, 1, FULL_HD);
+	const back = (await setIn(piece.back(), wider, 1, FULL_HD)).objects.get('piece')!;
+	// The camera at 1 shows the screen's pixels as the frame's: the piece stands over the part it was cut to
+	expect([back.box, back.content, back.scale, back.depth, back.angle]).toEqual([
+		SHOWN_AT_TWO,
+		{ kind: 'piece', source: SHOWN_AT_TWO },
+		1,
+		0,
+		{ tilt: 0, turn: 360, roll: 0 }
+	]);
+});
+
+test('a piece stands over its source only while the window faces the frame front on: leant, or turned half round, it is refused', async () => {
+	const lifted = await setIn(piece.show(PAST_THE_SHOWN_EDGE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const leant = await setIn(lean({ turn: 20 }), lifted, 1, FULL_HD);
+	const turnedHalfRound = await setIn(lean({ turn: 180 }), lifted, 1, FULL_HD);
+	const refusal = (move: string) =>
+		new FilmError(
+			`${move} stands a piece over its source only while the window faces the frame front on: bring it face-on, window.lean({ tilt: 0, turn: 0 })`
+		);
+	await expect(async () => piece.show(PAST_THE_SHOWN_EDGE).begin(beginningIn(leant, FULL_HD))).rejects.toThrow(
+		refusal('piece.show')
+	);
+	await expect(async () => piece.back().begin(beginningIn(turnedHalfRound, FULL_HD))).rejects.toThrow(
+		refusal('piece.back')
+	);
+});
+
+test("a piece is drawn as large as its box holds all of its source, and shows the page as close as that and its scale bring it, leant as close as livereel's bound", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = await setIn(piece.show(PAST_THE_SHOWN_EDGE), wide, 1, FULL_HD);
+	const filling = await setIn(piece.to({ left: 0, top: 0, width: 1, height: 1 }, { scale: 2 }), lifted, 1, FULL_HD);
+	const leant = await setIn(piece.lean({ turn: 20 }), filling, 1, FULL_HD);
+	const object = filling.objects.get('piece')!;
+	// The whole frame, 1920 × 1080, holds the source of 200 × 100 at most 9.6 times as large across
+	expect([
+		drawnObject('piece', object, 0, AROUND_IN_FULL_HD).content,
+		pictureZoomsIn(filling, FULL_HD),
+		pictureZoomsIn(leant, FULL_HD)
+	]).toEqual([{ kind: 'piece', source: PAST_THE_SHOWN_EDGE, fit: 9.6, shown: 1 }, [19.2], [2.2]]);
+});
+
+test('a piece comes up in its own way fading in whole as its move goes on, and goes fading out so', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const coming = (await setIn(piece.show(PAST_THE_SHOWN_EDGE), wide, 0.25, FULL_HD)).objects.get('piece')!;
+	const lifted = await setIn(piece.show(PAST_THE_SHOWN_EDGE), wide, 1, FULL_HD);
+	const going = (await setIn(piece.hide(), lifted, 0.25, FULL_HD)).objects.get('piece')!;
+	expect([coming, going].map((object) => drawnObject('piece', object, 0, AROUND_IN_FULL_HD).content.shown)).toEqual([
+		0.25, 0.75
+	]);
 });
 
 test('an object leans by a move of its own while another carries it and its content changes, each its own way along, a side of the angle left out kept', async () => {

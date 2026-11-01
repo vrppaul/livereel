@@ -17,6 +17,7 @@ export * as caption from './moves/caption.ts';
 export * as keys from './moves/keys.ts';
 export * as look from './moves/look.ts';
 export * as terminal from './moves/terminal.ts';
+export * as piece from './moves/piece.ts';
 export * as ending from './moves/ending.ts';
 export * as page from './moves/page.ts';
 export * as sound from './moves/sound.ts';

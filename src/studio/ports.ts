@@ -4,7 +4,7 @@
  * own, and blends no image.
  */
 import type { FilmInFormat } from '../direction/film.ts';
-import type { ActContext, FilmedPage } from '../direction/page.ts';
+import type { ActContext, FilmedPage, PageShown } from '../direction/page.ts';
 import type { Sound } from '../direction/sound.ts';
 import type { DrawnScene } from '../scene.ts';
 
@@ -34,7 +34,7 @@ interface DrawingStage {
 
 /** The stage with the page live in its frame, which every frame shows as it is. */
 export interface FramedStage extends DrawingStage {
-	readonly kind: 'framed';
+	readonly kind: Extract<PageShown, 'framed'>;
 	/** The screen laid flat at its own size, so the page is acted on as it stands. */
 	readonly layFlat: (scene: DrawnScene) => Promise<void>;
 	/** The stage back as it was before an act. */
@@ -43,7 +43,7 @@ export interface FramedStage extends DrawingStage {
 
 /** The stage showing a picture of the page, which stands in a tab of its own and is acted on there. */
 export interface PicturedStage extends DrawingStage {
-	readonly kind: 'pictured';
+	readonly kind: Extract<PageShown, 'pictured'>;
 	/**
 	 * A picture of the page taken anew and shown, as the page stands now, as sharp as a camera at this zoom shows it;
 	 * whether it came out as the last one did.

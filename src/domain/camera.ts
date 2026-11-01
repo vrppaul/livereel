@@ -22,6 +22,7 @@ import {
 	type Box,
 	type Point,
 	type Size,
+	boxBetween,
 	boxOf,
 	boxToward,
 	cornersOf,
@@ -32,6 +33,7 @@ import {
 	middleX,
 	middleY,
 	nearestWithin,
+	overlapOf,
 	partWithin
 } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, needed } from './handed.ts';
@@ -44,6 +46,7 @@ import {
 	perspective,
 	rotationX,
 	rotationY,
+	showsItsFront,
 	translation
 } from './matrix.ts';
 import { between } from './time.ts';
@@ -294,16 +297,16 @@ export function keptOnTheScreen(pose: Pose, format: Format, view: View): Pose {
 }
 
 /**
- * How close a picture of the page must hold it, as a pose's zoom has it, for a frame's cameras to show it as sharp as
- * it stands: its own, and those along its way it is also exposed at. Face-on, a camera shows a page's pixel as large
- * anywhere on the frame, so the picture holds it as close as the closest of them comes. A camera in a leant view shows
- * the nearer part of the screen larger than its zoom, so the picture holds it at livereel's bound, `ZOOM_AT_MOST`; no
- * picture holds it closer than that.
+ * How close a picture of the page must hold it, as a pose's zoom has it, for a frame's cameras and pieces of the page to
+ * show it as sharp as it stands: its own camera, those along its way it is also exposed at, and how close each piece
+ * shows it. Face-on, a camera shows a page's pixel as large anywhere on the frame, so the picture holds it as close as
+ * the closest of them comes. A camera in a leant view shows the nearer part of the screen larger than its zoom, so the
+ * picture holds it at livereel's bound, `ZOOM_AT_MOST`; no picture holds it closer than that.
  */
-export function zoomPicturedFor(own: Camera, along: readonly Camera[]): number {
+export function zoomPicturedFor(own: Camera, along: readonly Camera[], pieces: readonly number[]): number {
 	const cameras = [own, ...along];
 	if (!cameras.every((camera) => isFaceOn(camera.view.angle))) return ZOOM_AT_MOST;
-	return Math.min(ZOOM_AT_MOST, Math.max(...cameras.map((camera) => camera.pose.zoom)));
+	return Math.min(ZOOM_AT_MOST, Math.max(...cameras.map((camera) => camera.pose.zoom), ...pieces));
 }
 
 /**
@@ -312,6 +315,12 @@ export function zoomPicturedFor(own: Camera, along: readonly Camera[]): number {
  */
 export function isFaceOn(angle: Angle): boolean {
 	return facesTheFrame(angledAs(angle));
+}
+
+/** Whether an angle leaves what leans facing the frame with its front, as it stood: by whole turns alone. */
+export function isFrontOn(angle: Angle): boolean {
+	const angled = angledAs(angle);
+	return facesTheFrame(angled) && showsItsFront(angled);
 }
 
 /** The pose an aim comes to in a view, kept off the screen's edge there: the film's own, or a block framed there. */
@@ -454,6 +463,41 @@ export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
 		down: frameZoom * (point.top - pose.focusY),
 		out: ON_ITS_PLANE
 	});
+}
+
+/**
+ * Where a box of the screen stands on the frame as a camera shows it through a view that faces the frame: between where
+ * its top left and bottom right corners stand.
+ */
+export function boxOnTheFrame(camera: Camera, frame: Size, box: Box): Box {
+	return boxBetween(
+		onTheFrame(camera, frame, { left: box.left, top: box.top }),
+		onTheFrame(camera, frame, { left: box.left + box.width, top: box.top + box.height })
+	);
+}
+
+/**
+ * The part of the screen a camera shows through a view that faces the frame, in the screen's pixels: what the part of
+ * its view on the frame sees there; none where it shows nothing of the screen.
+ */
+export function screenShownBy(camera: Camera, format: Format): Box | null {
+	const viewShown = overlapOf(camera.view.box, boxOf(format.frame));
+	if (viewShown === null) return null;
+	const seen = boxBetween(
+		seenOnTheScreen(camera, format.frame, { left: viewShown.left, top: viewShown.top }),
+		seenOnTheScreen(camera, format.frame, {
+			left: viewShown.left + viewShown.width,
+			top: viewShown.top + viewShown.height
+		})
+	);
+	return overlapOf(seen, boxOf(format.screen));
+}
+
+/** The point of the screen a camera facing the frame sees at a point of the frame, which it sees the screen's plane at. */
+function seenOnTheScreen(camera: Camera, frame: Size, point: Point): Point {
+	const seen = underTheFrame(camera, frame, point);
+	if (seen === null) throw new Error('a camera facing the frame sees the plane of its screen at every point');
+	return seen;
 }
 
 /**

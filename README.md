@@ -155,6 +155,9 @@ and the moves of each part of the scene:
   `terminal.lean({ tilt, turn, roll })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
+- `piece.show(target, { every, enter, edge, as })`, `piece.to(place, { scale, depth })`,
+  `piece.lean({ tilt, turn, roll })`, `piece.back()`, `piece.hide({ toward, leave, edge })`; a piece of the page lifted
+  off a selector's blocks or a box of the screen onto the frame; each move of it takes `as` to name which
 - `ending.show({ name, line, command }, { from, enter, edge })`, `ending.hide({ toward, leave, edge })`, so a film may
   open on the card too;
   the card stands over the whole frame on the frame's own ground, slides in and out whole, and is never carried or
@@ -310,6 +313,19 @@ title, and each move of it names it, `title.hide({ as:
 'heading' })`; a move that names none takes the one called `title`, or
 `code`. A name is one object's, whatever it shows: a title shown `as:
 'code'` stands in place of the code.
+
+`piece.show(VISITORS)` lifts a piece of the page onto the frame: the blocks
+a selector matches, the first `every` of them together, or a box of the
+screen, over where the camera shows them, cut to the part it shows. It is
+drawn from the page's picture, so it shows what the page shows there as the
+page changes, and a page scrolled under it shows what scrolls into that
+part of the screen; a film whose page is `'dynamic'` has no picture and is
+refused, as is a window that leans or shows its back. It does not follow the camera after:
+carried `to` a place it stands as large as the place holds its source, in
+its middle, and grows, comes near, leans, rolls and spins as a title does,
+a blank card when it turns away. `piece.back()` takes it back over its
+source as the camera shows it then, face-on and as large as it was, without
+spinning back a whole turn; `piece.hide()` puts it away.
 
 A title, code or the terminal stands `inside` the page's window, as a small
 window of code over the site's: `code.show(LINES, { at: { left: 0.45, top:

@@ -28,7 +28,7 @@ import type { Ease } from '../domain/time.ts';
 import type { CssNamed } from './theme.ts';
 import type { ObjectName } from '../props/object.ts';
 import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';
-import type { FilmedPage } from './page.ts';
+import type { FilmedPage, PageShown } from './page.ts';
 import type { Cue } from './sound.ts';
 
 /** An object as the part a move changes, said by its name, apart from any prop or the page whatever its name. */
@@ -137,11 +137,12 @@ export const TIMING_FORM: Form<TimingScript> = {
 export const A_MOVE: Kind<Move> = new Plain(isMove, 'a move, as camera.onto or light.on makes one');
 export const A_MOVES: Kind<readonly Move[]> = new ListOf(A_MOVE, 'a list of moves');
 
-/** What a move reads as its share begins. */
+/** What a move reads as its share begins: the scene, the page, the format, and how the stage shows the page. */
 export interface Beginning {
 	readonly scene: Scene;
 	readonly page: FilmedPage;
 	readonly format: Format;
+	readonly pageShown: PageShown;
 }
 
 /**

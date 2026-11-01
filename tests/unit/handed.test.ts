@@ -16,6 +16,7 @@ import {
 	keystrokes,
 	light,
 	page,
+	piece,
 	play,
 	screen,
 	sound,
@@ -141,6 +142,10 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => terminal.lean({ roll: '90' as never })).toThrow(
 		new FilmError('terminal.lean\'s roll is "90": it is a number')
+	);
+	expect(() => piece.show(5 as never)).toThrow(new FilmError(`piece.show's target is 5: it is ${TARGET}`));
+	expect(() => piece.show('#chart', { from: 'left' } as never)).toThrow(
+		new FilmError('piece.show names from: it names every, enter, edge, within, ease, as, or fewer')
 	);
 	expect(() => title.hide({ at: 'left' } as never)).toThrow(
 		new FilmError('title.hide names at: it names toward, leave, edge, within, ease, as, or fewer')

@@ -15,6 +15,7 @@ import { speed, type as typeIntoThePage } from '../../src/moves/page.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import { open, type } from '../../src/moves/terminal.ts';
 import { lean as leanTitle, show as showTitle, to as titleTo } from '../../src/moves/title.ts';
+import { show as showPiece, to as pieceTo } from '../../src/moves/piece.ts';
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Keystroke } from '../../src/domain/typing.ts';
 import type { EndingCard } from '../../src/props/ending.ts';
@@ -411,6 +412,32 @@ test("a static page is pictured as close as the frame's camera comes on each fra
 	];
 	await take.run(steps);
 	expect(stage.retakenAt).toEqual([1, 2.2, 2.2, 1, 1, 2.2]);
+});
+
+test('a static page is pictured as close as a piece of it shows it on a frame its picture serves alone', async () => {
+	const stage = new PicturedStageThatKeeps();
+	const take = new Take({
+		opened: openedOn(new PageOfBoxes(PAGE), stage),
+		footage: new FootageOf([0]),
+		track: new TrackThatKeeps(),
+		format: WHOLE_AT_ZOOM_ONE,
+		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK),
+		motionBlur: HALF_OF_FOUR
+	});
+	// The first block, 100 × 50, lifted and carried to a box 135 pixels square: 1.35 of the frame's pixels a page's
+	await take.run([
+		cut(showPiece('#first')),
+		cut(pieceTo({ left: 0, top: 0, width: 0.125, height: 0.125 })),
+		act((context) => context.motion.release()),
+		hold({ seconds: 1 / 30 })
+	]);
+	expect(stage.retakenAt).toEqual([1.35]);
+});
+
+test('a piece is refused on a page framed live, which has no picture to draw it from', async () => {
+	await expect(takeOf(new FootageOf([0]), new FramedStageThatKeeps()).run([cut(showPiece('#first'))])).rejects.toThrow(
+		"at 0.0 s, step 1: piece.show draws a piece from the page's picture, which a page framed live has none of: the film's page is 'dynamic'"
+	);
 });
 
 test("a static page moving under a camera that crosses the frame fast is pictured as close as the frame's closest exposure", async () => {

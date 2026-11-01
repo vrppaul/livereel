@@ -1,10 +1,10 @@
 /**
  * The moves of an object (`src/props/object.ts`), alike whatever it shows, written once for every kind that makes
- * one — a title's words, code, the agent's terminal, the ending card, a caption, keys: coming up in its box, in its own
- * way or one of livereel's (`src/props/way.ts`), or sliding in whole from past a side of the frame, pushing the
- * object of its name standing there off past the side across; carried to another place, growing and coming toward the
- * eye on the way; leant and rolled; put away where it stands, in its own way or one of livereel's, or slid out past a
- * side. A move takes the object a film names `as`, or its kind's own name, so a film shows several of a kind at once,
+ * one — a title's words, code, the agent's terminal, the ending card, a caption, keys, a piece of the page: coming up
+ * in its box, in its own way or one of livereel's (`src/props/way.ts`), or sliding in whole from past a side of the
+ * frame, pushing the object of its name standing there off past the side across; carried to another place, growing and
+ * coming toward the eye on the way; leant and rolled; taken back to stand as its box places it; put away where it
+ * stands, in its own way or one of livereel's, or slid out past a side. A move takes the object a film names `as`, or its kind's own name, so a film shows several of a kind at once,
  * each moved by its name. What differs by what an object shows is told here, kind by kind: the curve it comes up on in
  * its own way, whether it is ever carried or leant, how it reads a place, and the box it sets off from as it is
  * carried.
@@ -20,7 +20,7 @@ import type { Format } from '../domain/format.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
 import { A_FRAME_SIDE, type Box, type FrameSide, type Size, boxToward, frameScaleOf } from '../domain/geometry.ts';
 import { A_NUMBER, type Form, assertKind, assertWritten } from '../domain/handed.ts';
-import { AS_PLACED, A_DEPTH, A_SCALE, type Orientation, orientationToward } from '../domain/stance.ts';
+import { AS_PLACED, A_DEPTH, A_SCALE, type Orientation, faceOnNearest, orientationToward } from '../domain/stance.ts';
 import {
 	A_PLACE,
 	type Place,
@@ -61,7 +61,7 @@ import { type Scene, withLeaving, withObject } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
 
 /** A kind of object, as a film calls its moves, and the name of the object they take where the film names none. */
-export type ObjectKind = 'title' | 'code' | 'terminal' | 'ending' | 'caption' | 'keys';
+export type ObjectKind = 'title' | 'code' | 'terminal' | 'ending' | 'caption' | 'keys' | 'piece';
 
 /** The object a move takes: the one a film names `as`, or its kind's own. */
 export interface NamedScript {
@@ -91,7 +91,10 @@ export interface ShowScript extends TimingScript, NamedScript, EnterScript {
 	readonly from?: FrameSide;
 }
 
-/** How an object that stands where it comes up, the one of its kind, comes up: a caption, keys. */
+/**
+ * How an object that stands where it comes up, never sliding in, comes up: a caption and keys, the one of their kind,
+ * and a piece of the page, over its source.
+ */
 export interface InPlaceShowScript extends TimingScript, EnterScript {}
 
 /** How an object that stands where it comes up goes. */
@@ -118,6 +121,9 @@ export interface ToScript extends TimingScript, NamedScript {
 export interface HideScript extends TimingScript, NamedScript, LeaveScript {
 	readonly toward?: FrameSide;
 }
+
+/** Which object is taken back to stand as its box places it. */
+export interface BackScript extends TimingScript, NamedScript {}
 
 /** Which object leans, and how: as the window leans, and rolled clockwise in its own plane by `roll`, in degrees. */
 export interface ObjectLeanScript extends LeanScript, NamedScript {
@@ -156,23 +162,27 @@ export const NESTED_FORM: Form<NestedScript> = { inside: INSIDE_THE_WINDOW };
 const TO_FORM: Form<ToScript> = { scale: A_SCALE, depth: A_DEPTH, ...NAMED_FORM, ...TIMING_FORM };
 const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...LEAVE_FORM, ...TIMING_FORM, ...NAMED_FORM };
 const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { roll: A_NUMBER, ...LEAN_FORM, ...NAMED_FORM };
+const BACK_FORM: Form<BackScript> = { ...NAMED_FORM, ...TIMING_FORM };
 // The values of an object a move that carries it sets, one that leans it, and one of what it shows; what each writes
 // is held to them
 const CARRIED = ['box', 'scale', 'depth'] as const satisfies readonly (keyof FrameObject)[];
 const LEANT = ['angle'] as const satisfies readonly (keyof FrameObject)[];
 const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
+// The values a move that takes an object back sets: where it stands and how it faces, together
+const BACK = [...CARRIED, ...LEANT] as const satisfies readonly (keyof FrameObject)[];
 // Where an object stands that a film shows inside nothing
 const ON_THE_FRAME: Holder = 'frame';
 // The curve what an object of each kind shows comes up on in its own way where the film names none: words and lines of
-// code, one after another, at an even pace; the terminal, the card and keys, fading up whole, on their step's. One
-// that comes up in a way of livereel's comes on its step's
+// code, one after another, at an even pace; the terminal, the card, keys and a piece of the page, fading up whole, on
+// their step's. One that comes up in a way of livereel's comes on its step's
 const COMES_UP_ON: { readonly [Kind in ObjectKind]: Ease | null } = {
 	title: linear,
 	code: linear,
 	terminal: null,
 	ending: null,
 	caption: linear,
-	keys: null
+	keys: null,
+	piece: null
 };
 // What stands over the whole frame on the frame's own terms, never carried or leant: the card, on the frame's own
 // ground painted where its box stands; a caption, darkening the frame's edge; keys at the frame's foot, rising clear of
@@ -206,7 +216,7 @@ export function objectShow(
 	move: string,
 	script: ShowScript & NestedScript,
 	place: Place | null,
-	comingAt: (beginning: Beginning) => Coming
+	comingAt: (beginning: Beginning) => Coming | Promise<Coming>
 ): Move {
 	const name = script.as ?? kind;
 	const inside = script.inside ?? ON_THE_FRAME;
@@ -277,6 +287,27 @@ export function objectLean(kind: ObjectKind, move: string, script: ObjectLeanScr
 	};
 }
 
+/**
+ * An object of a kind taken back to stand as its box places it: carried to the box `boxAt` works out as the move
+ * begins, as large as that box, on its plane, and face-on by its nearest whole turns, so one spun round goes back
+ * without spinning back.
+ */
+export function objectBack(
+	kind: ObjectKind,
+	move: string,
+	script: BackScript,
+	boxAt: (beginning: Beginning, name: ObjectName) => Box
+): Move {
+	assertWritten(script, BACK_FORM, move);
+	const name = script.as ?? kind;
+	return {
+		part: objectPart(name),
+		valueNames: BACK,
+		timing: timingOf(script),
+		begin: (beginning) => goingBack(beginning, name, boxAt, move)
+	};
+}
+
 /** An object as a move finds it as it begins; one not on the screen is refused, the move named. */
 function standing(beginning: Beginning, name: ObjectName, move: string): FrameObject {
 	const object = beginning.scene.objects.get(name);
@@ -343,13 +374,17 @@ export function contentOf<Kind extends Content['kind']>(
 	return content;
 }
 
-/** Where an object stands in a place: words and code read it as words do, the terminal as the window does. */
+/**
+ * Where an object stands in a place: words and code read it as words do, the terminal and a piece of the page as the
+ * window does.
+ */
 export function placedFor(kind: MovableContent['kind'], format: Format, place: Place): Box {
 	switch (kind) {
 		case 'words':
 		case 'code':
 			return wordsPlaced(format, place);
 		case 'terminal':
+		case 'piece':
 			return windowPlaced(format, place);
 	}
 }
@@ -359,16 +394,19 @@ export function showing(name: ObjectName, contentAt: (progress: number) => Conte
 	return writing(name, (progress): Shows => ({ content: contentAt(progress) }));
 }
 
-/** An object coming up in what it stands inside, showing what `comingAt` makes of the scene as seen from there. */
-function appearingIn(
+/**
+ * An object coming up in what it stands inside, showing what `comingAt` makes of the scene as seen from there, once it
+ * has read the page where it must.
+ */
+async function appearingIn(
 	beginning: Beginning,
 	name: ObjectName,
 	inside: Holder,
 	arrival: Arrival,
-	comingAt: (beginning: Beginning) => Coming
-): Change {
+	comingAt: (beginning: Beginning) => Coming | Promise<Coming>
+): Promise<Change> {
 	const within = seenFrom(beginning, inside);
-	return appearing(within, name, inside, comingAt(within), arrival);
+	return appearing(within, name, inside, await comingAt(within), arrival);
 }
 
 /**
@@ -441,6 +479,27 @@ function orientedFrom(standing: Orientation, script: ObjectLeanScript): Orientat
 	return { ...leantFrom(standing, script), roll: script.roll ?? standing.roll };
 }
 
+/**
+ * The object on its way back from how it stands to the box `boxAt` works out, as large as its box, on its plane, and
+ * face-on by its nearest whole turns.
+ */
+function goingBack(
+	beginning: Beginning,
+	name: ObjectName,
+	boxAt: (beginning: Beginning, name: ObjectName) => Box,
+	move: string
+): Change {
+	const object = movable(beginning, name, move);
+	const end = boxAt(beginning, name);
+	const faceOn = faceOnNearest(object.angle);
+	return writing(name, (progress): Carried & Leant => ({
+		box: boxToward(object.box, end, progress),
+		scale: between(object.scale, AS_PLACED.scale, progress),
+		depth: between(object.depth, AS_PLACED.depth, progress),
+		angle: orientationToward(object.angle, faceOn, progress)
+	}));
+}
+
 /** The object going where it stands, in the way it goes; once gone, none. */
 function going(beginning: Beginning, name: ObjectName, way: Way, move: string): Change {
 	const object = standing(beginning, name, move);
@@ -482,6 +541,7 @@ function settingOff(content: MovableContent, box: Box, end: Box): Box {
 			return content.onGround ? box : wordsResized(box, end, content.align);
 		case 'code':
 		case 'terminal':
+		case 'piece':
 			return box;
 	}
 }

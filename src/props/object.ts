@@ -1,11 +1,11 @@
 /**
  * An object on the frame: something that stands in a box, grows, comes near, turns, comes up and goes, and shows what
- * it holds, its content — a title's words, a pane of code, an agent's terminal, the ending card, a caption or the keys
- * of a shortcut. Where it stands, how it stands about its middle (`src/domain/stance.ts`) and how far it has come and
- * gone are the object's, alike for every content, so a move that carries, leans or slides one is written once
- * (`src/moves/object.ts`); what it shows, how that comes up in its box and what lights in it are its content's. Each of
- * where it stands, which way it faces and what it shows is set by its own moves, so moves of one object that set
- * different values share a step.
+ * it holds, its content — a title's words, a pane of code, an agent's terminal, the ending card, a caption, the keys
+ * of a shortcut or a piece of the page. Where it stands, how it stands about its middle (`src/domain/stance.ts`) and
+ * how far it has come and gone are the object's, alike for every content, so a move that carries, leans or slides one
+ * is written once (`src/moves/object.ts`); what it shows, how that comes up in its box and what lights in it are its
+ * content's. Each of where it stands, which way it faces and what it shows is set by its own moves, so moves of one
+ * object that set different values share a step.
  *
  * An object comes up and goes in its own way, as what it shows comes up of itself, or in a way of livereel's, faded,
  * masked, wiped, opened or grown (`src/props/way.ts`): then its figure — its words, its pane, the card's lines, the
@@ -22,9 +22,17 @@
  * What an object shows sets the layer it is drawn on: a caption stands over every other object, as words said over a
  * film do, and keys over the caption's ground; within a layer the one that came last stands over the rest.
  */
-import { type View, carriedAboutItsMiddle, leantOnTheFrame, seenFromTheEye } from '../domain/camera.ts';
+import { type View, ZOOM_AT_MOST, carriedAboutItsMiddle, leantOnTheFrame, seenFromTheEye } from '../domain/camera.ts';
 import type { Fraction } from '../domain/fraction.ts';
-import { type Box, type FrameSide, type Point, type Size, cornersOf, distanceBetween } from '../domain/geometry.ts';
+import {
+	type Box,
+	type FrameSide,
+	type Point,
+	type Size,
+	cornersOf,
+	distanceBetween,
+	frameScaleOf
+} from '../domain/geometry.ts';
 import { type Kind, OneOf, Plain } from '../domain/handed.ts';
 import { IDENTITY, type Matrix, chained } from '../domain/matrix.ts';
 import { ONE_FRAME, pastTheEdge } from '../domain/place.ts';
@@ -33,6 +41,7 @@ import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
 import { type Code, type DrawnCode, drawnCode } from './code.ts';
 import { type DrawnEnding, type Ending, drawnEnding } from './ending.ts';
 import { type CaptionStanding, type DrawnKeys, type Keys, drawnKeys, standOver } from './keys.ts';
+import { type DrawnPiece, type Piece, drawnPiece, fitIn } from './piece.ts';
 import { type OnItsWay, type Way, alongItsWay, presencesIn, presentShare } from './way.ts';
 import type { Screen } from './screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './terminal.ts';
@@ -64,10 +73,11 @@ export interface Surroundings {
 }
 
 /** What an object shows. */
-export type Content = TitleWords | Code | Terminal | Ending | Caption | Keys;
+export type Content = TitleWords | Code | Terminal | Ending | Caption | Keys | Piece;
 
 /** What an object shows, as the stage draws it. */
-export type DrawnContent = DrawnTitleWords | DrawnCode | DrawnTerminal | DrawnEnding | DrawnCaption | DrawnKeys;
+export type DrawnContent =
+	DrawnTitleWords | DrawnCode | DrawnTerminal | DrawnEnding | DrawnCaption | DrawnKeys | DrawnPiece;
 
 /**
  * An object: what it stands inside, its box in the pixels of that from its top left corner, how it stands about the
@@ -110,7 +120,8 @@ const LAYER_OF: { readonly [Kind in Content['kind']]: number } = {
 	terminal: 0,
 	ending: 0,
 	caption: 1,
-	keys: 2
+	keys: 2,
+	piece: 0
 };
 // The corners of a box, in shares of it
 const CORNERS = cornersOf({ left: 0, top: 0, width: 1, height: 1 });
@@ -232,6 +243,23 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	return { name, inside: object.inside, over, box: object.box, ...stance, layer, held, onItsWay, content };
 }
 
+/**
+ * How close a piece of the page shows it, as a pose's zoom has it: the frame's pixels a screen's pixel takes in its
+ * box, grown and brought near as it stands; where it leans, its nearer side shows it larger still, so at livereel's
+ * bound.
+ */
+export function pictureZoomOf(object: FrameObject, piece: Piece, frame: Size): number {
+	const transform = drawnStance(object.angle, placingOf(object, frame)).transform;
+	switch (transform.kind) {
+		case 'flat': {
+			const grown = Math.hypot(transform.matrix.m11, transform.matrix.m12);
+			return (fitIn(piece.source, object.box) * grown) / frameScaleOf(frame);
+		}
+		case 'leant':
+			return ZOOM_AT_MOST;
+	}
+}
+
 /** The object whose words an object is laid over: keys over a caption's standing at the frame's foot; else none. */
 function drawnOver(object: FrameObject, caption: CaptionStanding | null): ObjectName | null {
 	return object.content.kind === 'keys' && standOver(caption) ? caption.name : null;
@@ -272,6 +300,8 @@ function drawnContent(object: FrameObject, moment: number, caption: CaptionStand
 			return drawnCaption(content, presences, moment);
 		case 'keys':
 			return drawnKeys(content, presentShare(figure), caption);
+		case 'piece':
+			return drawnPiece(content, object.box, presentShare(figure));
 	}
 }
 

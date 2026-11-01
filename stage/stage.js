@@ -55,6 +55,8 @@ const TRANSFORM = 'data-transform';
 const FACE = 'data-face';
 // What a custom property's name starts with: a matrix's entries are set as custom properties named as each entry is
 const CUSTOM_PROPERTY = '--';
+// The custom property the page's picture is set as, the image every piece of the page is drawn from
+const PAGE_PICTURE = '--page-picture';
 // The attribute the part an object's figure stands in is on its way by, which one standing whole has not, so it is
 // drawn on no way at all; and the one that names how the figure is cut there, from its sides or round its middle
 const ON_ITS_WAY = 'data-on-its-way';
@@ -520,6 +522,27 @@ class CaptionDrawer {
 	}
 }
 
+/** A piece of the page in its object: the part of the page's picture over its source, as large as its box holds it. */
+class PieceDrawer {
+	/** @param {Staged} element */
+	constructor(element) {
+		this.element = element;
+	}
+
+	/** @param {DrawnContent} content */
+	draw(content) {
+		const piece = ofKind(content, 'piece');
+		numbered(this.element, {
+			'--source-left': piece.source.left,
+			'--source-top': piece.source.top,
+			'--source-width': piece.source.width,
+			'--source-height': piece.source.height,
+			'--fit': piece.fit,
+			'--shown': piece.shown
+		});
+	}
+}
+
 /** Keys in their object: the caps of a shortcut at the frame's foot, risen clear of a caption there. */
 class KeysDrawer {
 	/** @param {Staged} element */
@@ -553,7 +576,8 @@ const CONTENT_DRAWERS = {
 	terminal: (element) => new TerminalDrawer(element),
 	ending: (element) => new EndingDrawer(element),
 	caption: (element) => new CaptionDrawer(element),
-	keys: (element) => new KeysDrawer(element)
+	keys: (element) => new KeysDrawer(element),
+	piece: (element) => new PieceDrawer(element)
 };
 
 /**
@@ -753,11 +777,13 @@ function open(opening) {
 
 /**
  * A picture of the page shown in the frame's place in every exposure, once it is decoded, so the next frame drawn
- * shows it whole.
+ * shows it whole; and set on the stage's root as the picture every piece of the page is drawn from.
  * @param {string} picture @returns {Promise<void>}
  */
 async function show(picture) {
 	await Promise.all(EXPOSURES.map((exposure) => shownIn(exposure, picture)));
+	// CSS takes no address out of a custom property into a url(), so the url() is written whole here
+	document.documentElement.style.setProperty(PAGE_PICTURE, `url("${picture}")`);
 }
 
 /**

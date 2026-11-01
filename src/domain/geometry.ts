@@ -54,6 +54,8 @@ export interface Arc {
 
 // The middle of a length lies half-way along it
 const HALVES = 2;
+// A length of nothing: two boxes that meet only along an edge share no area
+const NO_LENGTH = 0;
 // The shorter side of the frames the stage's look was made on, 1920 × 1080 and 1080 × 1080: what it draws in the
 // frame's own pixels is drawn as on such a frame, and scaled to the frame shot
 const LOOK_MADE_ON = 1080;
@@ -137,10 +139,31 @@ export function liesAboveOrBelow(box: Box, size: Size): boolean {
 
 /** The part of a box within a size laid from its top left, for a box that does not lie wholly outside it. */
 export function partWithin(box: Box, size: Size): Box {
-	const left = Math.max(box.left, 0);
-	const top = Math.max(box.top, 0);
-	const right = Math.min(box.left + box.width, size.width);
-	const bottom = Math.min(box.top + box.height, size.height);
+	return betweenTheEdges(box, boxOf(size));
+}
+
+/** The box between two points: one at its top left corner, the other at its bottom right. */
+export function boxBetween(topLeft: Point, bottomRight: Point): Box {
+	return {
+		left: topLeft.left,
+		top: topLeft.top,
+		width: bottomRight.left - topLeft.left,
+		height: bottomRight.top - topLeft.top
+	};
+}
+
+/** The part two boxes share; none where they share no area. */
+export function overlapOf(first: Box, second: Box): Box | null {
+	const shared = betweenTheEdges(first, second);
+	return shared.width > NO_LENGTH && shared.height > NO_LENGTH ? shared : null;
+}
+
+/** The box between the nearer edges of two boxes on each side: their overlap, of no size or less where they part. */
+function betweenTheEdges(first: Box, second: Box): Box {
+	const left = Math.max(first.left, second.left);
+	const top = Math.max(first.top, second.top);
+	const right = Math.min(first.left + first.width, second.left + second.width);
+	const bottom = Math.min(first.top + first.height, second.top + second.height);
 	return { left, top, width: right - left, height: bottom - top };
 }
 

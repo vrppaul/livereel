@@ -45,7 +45,8 @@ import {
 	type Surroundings,
 	captionAmong,
 	drawnObject,
-	frameShiftOf
+	frameShiftOf,
+	pictureZoomOf
 } from './props/object.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
 import { SCREEN_UP, type Screen } from './props/screen.ts';
@@ -146,6 +147,16 @@ function withNamed(objects: Objects, name: ObjectName, object: FrameObject | nul
 /** The camera as the scene shows it: what it aims at, come to in the window where it stands so far. */
 export function cameraOf(scene: Scene, format: Format): Camera {
 	return seenThrough(scene.camera, scene.window, format);
+}
+
+/**
+ * How close each piece of the page in a scene shows it, as a pose's zoom has it, standing or pushed off, so the
+ * picture it is drawn from is taken as sharp.
+ */
+export function pictureZoomsIn(scene: Scene, format: Format): readonly number[] {
+	return [...scene.objects.values(), ...scene.leaving.values()].flatMap((object) =>
+		object.content.kind === 'piece' ? [pictureZoomOf(object, object.content, format.frame)] : []
+	);
 }
 
 /**
