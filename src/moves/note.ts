@@ -7,6 +7,7 @@
  * stands the window may move: the words keep beside it (`src/props/note.ts`).
  */
 import { FilmError } from '../domain/errors.ts';
+import { NONE, fractionOf } from '../domain/fraction.ts';
 import { liesOutside } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { A_PLACE, type Place, placesNamed, sideBeyond, sideClearestOf, wordsPlaced } from '../domain/place.ts';
@@ -64,7 +65,14 @@ async function naming(beginning: Beginning, target: Target, said: Said, at: Plac
 	const beside = besideTheWindow(beginning, at);
 	const box = await shownPart(beginning, target, THE_FIRST, 'note.show');
 	const comingUp = comingUpIn(beginning.scene.look.words, said);
-	return propChange('note', (progress) => ({ ...said, comingUp, box, beside, shown: progress, gone: 0 }));
+	return propChange('note', (progress) => ({
+		...said,
+		comingUp,
+		box,
+		beside,
+		shown: fractionOf(progress),
+		gone: NONE
+	}));
 }
 
 /**

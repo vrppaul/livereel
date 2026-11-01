@@ -5,6 +5,7 @@
  * out every frame from where the camera shows the block, so it runs toward the view's middle and stays on the frame.
  */
 import { type Camera, onTheFrame } from '../domain/camera.ts';
+import type { Fraction } from '../domain/fraction.ts';
 import { type Box, type Size, middleX } from '../domain/geometry.ts';
 
 /**
@@ -13,18 +14,18 @@ import { type Box, type Size, middleX } from '../domain/geometry.ts';
  */
 type Run = 'left' | 'right' | 'over';
 
-/** A pin on a block, as the screen showed it, its label, and how far it has come up, from 0 to 1. */
+/** A pin on a block, as the screen showed it, its label, and how far it has come up. */
 interface Pin {
 	readonly box: Box;
 	readonly label: string;
-	readonly shown: number;
+	readonly shown: Fraction;
 }
 
-/** The pins laid so far, in order, the key the stage knows them by, and how far they have gone, from 0 to 1. */
+/** The pins laid so far, in order, the key the stage knows them by, and how far they have gone. */
 export interface Pins {
 	readonly pins: readonly Pin[];
 	readonly key: string;
-	readonly gone: number;
+	readonly gone: Fraction;
 }
 
 /** A pin as the stage draws it: its number on the path, which way its label runs, and whether it is quietened. */

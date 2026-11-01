@@ -17,6 +17,7 @@
  * swung and leant back about its middle, and seen from the eye before the frame's middle, a nearer point larger.
  */
 import type { Format } from './format.ts';
+import { type Fraction, NONE, WHOLE, fractionOf } from './fraction.ts';
 import {
 	type Box,
 	type Point,
@@ -60,7 +61,7 @@ export interface Pose {
  * it leans, swung and leant back about its middle.
  */
 export interface View extends Leaning {
-	readonly lift: number;
+	readonly lift: Fraction;
 }
 
 /** What leans on the frame as the window does: its box, in the frame's pixels, and how it leans about its middle. */
@@ -168,8 +169,8 @@ const NOTHING = 0;
 const FRAMES_EDGE = 0;
 const DEGREES_IN_A_HALF_TURN = 180;
 // How far a view stands off the ground: the frame itself, or a window
-const FLAT = 0;
-const LIFTED = 1;
+const FLAT: Fraction = NONE;
+const LIFTED: Fraction = WHOLE;
 // A view, or anything on the frame, as it stands until a move leans it
 export const FACE_ON: Angle = { tilt: 0, turn: 0 };
 // The whole of a view, in shares of it
@@ -199,7 +200,7 @@ export function placedIn(view: View): Placing {
 export function viewOf(placing: Placing): View {
 	return {
 		box: alongTrack(placing.box, boxToward),
-		lift: alongTrack(placing.lift, between),
+		lift: fractionOf(alongTrack(placing.lift, between)),
 		angle: alongTrack(placing.angle, angleToward)
 	};
 }

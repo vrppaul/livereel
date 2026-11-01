@@ -5,6 +5,7 @@
  * move begins.
  */
 import { FilmError } from '../domain/errors.ts';
+import { fractionOf } from '../domain/fraction.ts';
 import { assertWritten } from '../domain/handed.ts';
 import { between } from '../domain/time.ts';
 import {
@@ -46,5 +47,5 @@ export function lower(script: TimingScript = {}): Move {
 function shownToward(beginning: Beginning, end: Screen, refusal: string): Change {
 	const start = beginning.scene.screen.shown;
 	if (start === end.shown) throw new FilmError(refusal);
-	return propChange('screen', (progress) => ({ shown: between(start, end.shown, progress) }));
+	return propChange('screen', (progress) => ({ shown: fractionOf(between(start, end.shown, progress)) }));
 }

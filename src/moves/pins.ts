@@ -2,6 +2,7 @@
  * Pins: a numbered mark laid on a block of the page, after any laid before, and all of them taken away together. The
  * block is read as the move's share begins, what the screen shows of it, as a callout's is.
  */
+import { NONE, fractionOf } from '../domain/fraction.ts';
 import { A_STRING, assertKind, assertWritten } from '../domain/handed.ts';
 import {
 	A_TARGET,
@@ -43,10 +44,14 @@ async function laying(beginning: Beginning, target: Target, label: string): Prom
 	const box = await shownPart(beginning, target, THE_FIRST, 'pin.show');
 	const before = beginning.scene.pins?.pins ?? [];
 	const key = keyOf([...before.map((pin) => pin.label), label]);
-	return propChange('pins', (progress) => ({ pins: [...before, { box, label, shown: progress }], key, gone: 0 }));
+	return propChange('pins', (progress) => ({
+		pins: [...before, { box, label, shown: fractionOf(progress) }],
+		key,
+		gone: NONE
+	}));
 }
 
 function clearing(beginning: Beginning): Change {
 	const pins = present(beginning, 'pins', 'the pins are cleared, but none are laid');
-	return propChange('pins', (progress) => untilTheEnd(progress, { ...pins, gone: progress }));
+	return propChange('pins', (progress) => untilTheEnd(progress, { ...pins, gone: fractionOf(progress) }));
 }

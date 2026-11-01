@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
-import { framesOf, shotAt } from '../../src/domain/time.ts';
+import { easeOutBack, framesOf, shotAt } from '../../src/domain/time.ts';
 import { Share } from '../../src/direction/move.ts';
 
 describe('the film counts its time in frames', () => {
@@ -15,6 +15,12 @@ describe('the film counts its time in frames', () => {
 	test('the frame at a moment is the nearest, a half frame counted whole', () => {
 		expect([shotAt(0), shotAt(0.1), shotAt(0.35)]).toEqual([0, 3, 11]);
 	});
+});
+
+test('the curve that bounces starts at none, passes its end on its way, and settles on it', () => {
+	expect(easeOutBack(0)).toBeCloseTo(0);
+	expect(easeOutBack(0.7)).toBeGreaterThan(1);
+	expect(easeOutBack(1)).toBe(1);
 });
 
 describe('a share of a step', () => {

@@ -71,7 +71,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => light.on(null as never)).toThrow(new FilmError(`light.on's target is null: it is ${TARGET}`));
 	expect(() => light.on('#block', { dim: null as never })).toThrow(
-		new FilmError("light.on's dim is null: it is a number")
+		new FilmError("light.on's dim is null: it is a number from 0 to 1")
 	);
 	expect(() => light.to(5 as never)).toThrow(new FilmError(`light.to's target is 5: it is ${TARGET}`));
 	expect(() => light.to('#block', { dim: 0.5 } as never)).toThrow(

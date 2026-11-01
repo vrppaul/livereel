@@ -16,6 +16,7 @@
  * layers apart in `LAYERS_SET_AS`), and the compiler refuses one left out of any.
  */
 import { colourToward } from '../domain/colour.ts';
+import { type Fraction, WHOLE, fractionOf } from '../domain/fraction.ts';
 import {
 	A_COLOUR,
 	A_FONT_FAMILY,
@@ -117,13 +118,13 @@ export interface Look {
 /**
  * The ground's layers as they stand: those going and those coming, each as CSS's `background` writes them, the first
  * layer over the rest, the last alone with a colour of its own, over the ground's, and their lengths in pixels of a
- * frame 1080 on its shorter side; and how far the coming have come in over the going, from 0 to 1. Layers a film
- * writes stand whole: both alike, come.
+ * frame 1080 on its shorter side; and how far the coming have come in over the going. Layers a film writes stand
+ * whole: both alike, come.
  */
 export interface GroundLayers {
 	readonly going: string;
 	readonly coming: string;
-	readonly come: number;
+	readonly come: Fraction;
 }
 
 /** A value of the look as a film writes it: the ground's layers as CSS writes them, any other as the look holds it. */
@@ -179,20 +180,22 @@ const HEAVIEST = 900;
 const A_WEIGHT = new Plain(isWeight, 'a weight from 100 to 900');
 // A value checked here, never written in CSS a browser must read
 const CHECKED_HERE = null;
-// The kinds of the look's values: a colour mixed on its way, a number through the numbers between, a font or a way of
-// words, which have none between, changed half-way, each held as written; and the ground's layers, held whole as
-// written and faded into new ones, those going under those coming. A font and the ground's layers are the film's CSS
+// The kinds of the look's values: a colour mixed on its way, a number through the numbers between, pixels never below
+// none and a share between none and whole on a curve that passes its ends, a font or a way of words, which have none
+// between, changed half-way, each held as written; and the ground's layers, held whole as written and faded into new
+// ones, those going under those coming. A font and the ground's layers are the film's CSS
 const COLOUR = new LookKind(A_COLOUR, asWritten, colourToward, CHECKED_HERE);
 const SIZE = new LookKind(A_SIZE, asWritten, between, CHECKED_HERE);
-const PIXELS = new LookKind(A_PIXELS, asWritten, between, CHECKED_HERE);
-const SHARE = new LookKind(A_SHARE, asWritten, between, CHECKED_HERE);
+const PIXELS = new LookKind(A_PIXELS, asWritten, pixelsToward, CHECKED_HERE);
+const SHARE = new LookKind(A_SHARE, asWritten, shareToward, CHECKED_HERE);
 const WEIGHT = new LookKind(A_WEIGHT, asWritten, between, CHECKED_HERE);
 const FAMILY = new LookKind(A_FONT_FAMILY, asWritten, halfWay, 'font family');
 const LAYERS = new LookKind(A_GROUND_LAYERS, standingWhole, fadingInto, 'ground layers');
 const WAY_OF_WORDS = new LookKind(A_WORDS_WAY, asWritten, halfWay, CHECKED_HERE);
-// CSS's word for no layers at all, and the share the layers that come stand at once they have come in whole
+// CSS's word for no layers at all
 const NO_LAYERS = 'none';
-const COME_WHOLE = 1;
+// No length at all, which a length of the look never goes below
+const NO_PIXELS = 0;
 
 /**
  * The kind of each value of the look, by its name: what a theme a film writes is checked by, value by value, how the
@@ -336,6 +339,16 @@ function asWritten<Value>(written: Value): Value {
 	return written;
 }
 
+/** Pixels of the look `progress` of the way, never below none. */
+function pixelsToward(start: number, end: number, progress: number): number {
+	return Math.max(NO_PIXELS, between(start, end, progress));
+}
+
+/** A share of the look `progress` of the way, between none and whole. */
+function shareToward(start: number, end: number, progress: number): Fraction {
+	return fractionOf(between(start, end, progress));
+}
+
 /** A value with none between, at its start for the first half of the way and at its end for the rest. */
 function halfWay<Value>(start: Value, end: Value, progress: number): Value {
 	return progress < HALF_WAY ? start : end;
@@ -343,7 +356,7 @@ function halfWay<Value>(start: Value, end: Value, progress: number): Value {
 
 /** The ground's layers a film writes, standing whole: those going and those coming alike, come in. */
 function standingWhole(layers: string): GroundLayers {
-	return { going: layers, coming: layers, come: COME_WHOLE };
+	return { going: layers, coming: layers, come: WHOLE };
 }
 
 /**
@@ -351,7 +364,7 @@ function standingWhole(layers: string): GroundLayers {
  * coming in over them as far.
  */
 function fadingInto(start: GroundLayers, end: GroundLayers, progress: number): GroundLayers {
-	return { going: start.coming, coming: end.coming, come: progress };
+	return { going: start.coming, coming: end.coming, come: fractionOf(progress) };
 }
 
 function isWeight(written: unknown): written is number {

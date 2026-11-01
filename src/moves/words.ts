@@ -8,6 +8,7 @@
  * in or comes up in a way of livereel's brings them whole.
  */
 import { FilmError } from '../domain/errors.ts';
+import { fractionOf } from '../domain/fraction.ts';
 import type { FrameSide } from '../domain/geometry.ts';
 import { A_NUMBER, type Kind, NameOrForm, OfForm, needed } from '../domain/handed.ts';
 import { keystrokes } from '../domain/typing.ts';
@@ -118,5 +119,5 @@ export function comingUpAt(coming: WordsComing, said: Said, look: Look): ComingU
 /** Words on the scene going; once gone, there are none. */
 export function going(prop: ComingUpProp, beginning: Beginning): Change {
 	const shown = present(beginning, prop, `${prop}.hide() hides what is not on the screen`);
-	return propChange(prop, (progress) => untilTheEnd(progress, { ...shown, gone: progress }));
+	return propChange(prop, (progress) => untilTheEnd(progress, { ...shown, gone: fractionOf(progress) }));
 }

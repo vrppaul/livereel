@@ -12,6 +12,7 @@
  * The pane stands no taller than its box, and code longer than that scrolls in it as an editor's does. How far is
  * counted in lines: the stage sets the letters' size, so lines are what the film knows of the pane's height.
  */
+import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import { OneOf } from '../domain/handed.ts';
 import { appearedOf, groundOf } from './words.ts';
 
@@ -34,10 +35,10 @@ export interface WrittenCode {
 	readonly columns: number;
 }
 
-/** A line of the code shown, and how far it is lit, from 0 to 1. */
+/** A line of the code shown, and how far it is lit. */
 export interface CodeLine {
 	readonly pieces: readonly CodePiece[];
-	readonly lit: number;
+	readonly lit: Fraction;
 }
 
 /**
@@ -94,8 +95,8 @@ const TAB = '\t';
 const TAB_SET_AS = '  ';
 const LINE_START = 0;
 // A line written as it is, lit none; and one lit whole
-export const NOT_LIT = 0;
-export const WHOLLY_LIT = 1;
+export const NOT_LIT: Fraction = NONE;
+export const WHOLLY_LIT: Fraction = WHOLE;
 // Code as it comes up, its first line at the pane's top
 export const NOT_SCROLLED = 0;
 
@@ -119,7 +120,7 @@ export function drawnCode(code: Code, shown: number, gone: number): DrawnCode {
 		ground: groundOf(shown, gone),
 		dimmed: Math.min(
 			WHOLLY_LIT,
-			code.lines.reduce((light, line) => light + line.lit, NOT_LIT)
+			code.lines.reduce<number>((light, line) => light + line.lit, NOT_LIT)
 		),
 		longLines: code.longLines,
 		scrolled: code.scrolled

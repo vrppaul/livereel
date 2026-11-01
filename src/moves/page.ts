@@ -36,6 +36,8 @@ export interface ScrollToScript extends TimingScript {
 }
 
 const BACKSPACE = 'Backspace';
+// The page's own time standing still: no speed is slower
+const STANDING_STILL = 0;
 const SCROLL_BY_FORM: Form<ScrollByScript> = { pixels: needed(A_NUMBER_OR_ENDLESS), ...TIMING_FORM };
 const SCROLL_TO_FORM: Form<ScrollToScript> = { top: needed(A_NUMBER), ...TIMING_FORM };
 
@@ -85,8 +87,9 @@ export function speed(pageSpeed: number, script: TimingScript = {}): Move {
 	};
 }
 
+/** The page's speed on its way, never below standing still on a curve that passes its ends. */
 function speeding(startSpeed: number, endSpeed: number): Change {
-	return (scene, progress) => withPageSpeed(scene, between(startSpeed, endSpeed, progress));
+	return (scene, progress) => withPageSpeed(scene, Math.max(STANDING_STILL, between(startSpeed, endSpeed, progress)));
 }
 
 async function scrolling(beginning: Beginning, target: string, aim: ScrollAim): Promise<Change> {

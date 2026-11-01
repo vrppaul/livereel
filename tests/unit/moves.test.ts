@@ -45,6 +45,9 @@ import { type Scene, cameraOf, drawn, openingScene, withObject, withProp } from 
 import { PageOfBoxes, SMALL } from './fakes.ts';
 
 const BLOCK = { left: 100, top: 100, width: 100, height: 40 };
+// How far along a curve that passes its ends may stand, past its end and before its start
+const PAST_ITS_END = 1.12;
+const BEFORE_ITS_START = -0.12;
 // Blocks off the small format's screen, 600 × 400: below its foot, above its top, beside it to the right and to the
 // left; one only half on it; and one the page lays out at no size, as a hidden block
 const BELOW = { left: 100, top: 900.4, width: 100, height: 40 };
@@ -198,6 +201,54 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 		[...(await setAt(title.hide(), titled, 1)).objects.keys()],
 		[...(await setAt(code.hide(), coded, 1)).objects.keys()]
 	]).toEqual([null, null, null, null, [], [], [], [], [], []]);
+});
+
+test('what comes up or goes stands between none and whole along a curve that passes its ends: the light, the cursor, pins, a callout, a title, a caption, the screen, a line of code lit, the window lifted', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const lit = withProp(opening, 'light', LIT);
+	const pointed = withProp(opening, 'cursor', { left: 10, top: 10, press: 0 });
+	const titled = await setAt(title.show('Words'), opening, 1);
+	const lowered = await setAt(lower(), opening, 1);
+	const coded = await setAt(code.show('first\nsecond', { at: 'left' }), opening, 1);
+	const firstLit = await setAt(code.light(1), coded, 1);
+	expect([
+		(await setAt(code.light(2), firstLit, PAST_ITS_END)).objects.get('code'),
+		cameraOf(await setAt(windowTo('left'), opening, PAST_ITS_END), SMALL).view,
+		(await setAt(lightOn('#block'), opening, PAST_ITS_END)).light,
+		(await setAt(off(), lit, BEFORE_ITS_START)).light,
+		(await setAt(press(), pointed, PAST_ITS_END)).cursor,
+		(await setAt(pin.show('#block', 'Here'), opening, PAST_ITS_END)).pins,
+		(await setAt(callout.show('#block', 'Words'), opening, PAST_ITS_END)).callout,
+		(await setAt(title.show('Words'), opening, PAST_ITS_END)).objects.get('title'),
+		(await setAt(caption.show('Words'), opening, PAST_ITS_END)).objects.get('caption'),
+		(await setAt(title.hide(), titled, BEFORE_ITS_START)).objects.get('title'),
+		(await setAt(rise(), lowered, PAST_ITS_END)).screen
+	]).toMatchObject([
+		{ content: { lines: [{ lit: 0 }, { lit: 1 }] } },
+		{ lift: 1 },
+		{ strength: 1 },
+		{ strength: 1 },
+		{ press: 1 },
+		{ pins: [{ shown: 1 }] },
+		{ shown: 1 },
+		{ shown: 1 },
+		{ shown: 1 },
+		{ gone: 0 },
+		{ shown: 1 }
+	]);
+});
+
+test("a value of the look, or the page's speed, along a curve that passes its ends stays within what its kind takes: a share, pixels, a speed", async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	expect([
+		(await setAt(look.to({ paneShadow: 0, titleMargin: 0 }), opening, PAST_ITS_END)).look,
+		await setAt(speed(0), opening, PAST_ITS_END)
+	]).toMatchObject([{ paneShadow: 0, titleMargin: 0 }, { pageSpeed: 0 }]);
+});
+
+test("a light's dim outside none and whole is refused as its move is made", () => {
+	expect(() => lightOn('#block', { dim: 1.5 })).toThrow(FilmError);
+	expect(() => lightOn('#block', { dim: -0.2 })).toThrow(FilmError);
 });
 
 test('code and a title stand in the places the film names, the title then with no ground of its own', async () => {

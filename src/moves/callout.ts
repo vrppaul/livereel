@@ -3,6 +3,7 @@
  * block is read as the move's share begins, what the screen shows of it, as the camera and the cursor read it; one the
  * screen shows none of is refused there.
  */
+import { NONE, fractionOf } from '../domain/fraction.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { linear } from '../domain/time.ts';
 import {
@@ -57,5 +58,12 @@ export function hide(script: TimingScript = {}): Move {
 async function pointing(beginning: Beginning, target: Target, said: Said, side: BlockSide): Promise<Change> {
 	const box = await shownPart(beginning, target, THE_FIRST, 'callout.show');
 	const comingUp = comingUpIn(beginning.scene.look.words, said);
-	return propChange('callout', (progress) => ({ ...said, comingUp, box, side, shown: progress, gone: 0 }));
+	return propChange('callout', (progress) => ({
+		...said,
+		comingUp,
+		box,
+		side,
+		shown: fractionOf(progress),
+		gone: NONE
+	}));
 }

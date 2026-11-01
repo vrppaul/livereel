@@ -207,7 +207,10 @@ export function propChange<Name extends PropName>(name: Name, stateAt: (progress
 	return (scene, progress) => withProp(scene, name, stateAt(progress));
 }
 
-/** A prop that goes: as it stands while its move goes on, and none once the move ends. */
+/**
+ * A prop that goes: as it stands while its move goes on, and none while its curve stands at its end or past it, where
+ * what goes is gone whole already; on a curve that bounces, from where it first passes the end.
+ */
 export function untilTheEnd<State>(progress: number, state: State): State | null {
 	return progress >= 1 ? null : state;
 }

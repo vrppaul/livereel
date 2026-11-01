@@ -20,6 +20,7 @@
  * every word's progress, and of a word laid out by letters, how many of its letters stand and the sign each stands as.
  */
 import { Chance, seedOf } from '../domain/chance.ts';
+import type { Fraction } from '../domain/fraction.ts';
 import { A_COLOUR, A_STRING, type Kind, ListOf, OfForm, OneOf, Plain, needed } from '../domain/handed.ts';
 import { FRAMES_PER_SECOND, easeOutCubic } from '../domain/time.ts';
 import { type Keystroke, keysStruckAlong, lettersOf } from '../domain/typing.ts';
@@ -69,10 +70,10 @@ export interface Said {
 	readonly key: string;
 }
 
-/** Words over the frame: what they are, how far they have come up, and how far they have gone, each from 0 to 1. */
+/** Words over the frame: what they are, how far they have come up, and how far they have gone. */
 export interface ShownWords extends Said {
-	readonly shown: number;
-	readonly gone: number;
+	readonly shown: Fraction;
+	readonly gone: Fraction;
 }
 
 /**

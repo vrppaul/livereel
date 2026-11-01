@@ -2,8 +2,9 @@
  * How a film counts its time, and how a move speeds up and settles.
  *
  * A film's time is its frames, so a wait for the page costs the film nothing. Every curve takes the share of time
- * gone and gives the share of the way gone, both from 0 to 1: a camera that eases in and out reads as a person's
- * hand, a linear one as a machine.
+ * gone, from 0 to 1, and gives the share of the way gone, from 0 at its start to 1 at its end: a camera that eases in
+ * and out reads as a person's hand, a linear one as a machine. One that bounces passes its end on the way and comes
+ * back to it; how much of a prop has come up is held to its ends all the same (`src/domain/fraction.ts`).
  */
 
 export type Ease = (progress: number) => number;
@@ -16,10 +17,13 @@ const HALF_WAY = 0.5;
 // A curve that eases both ways is drawn in two halves
 const HALVES = 2;
 // The powers the curves are drawn with
+const SQUARE = 2;
 const CUBE = 3;
 const FIFTH_POWER = 5;
 // How steeply the cubic curve that eases both ways starts
 const CUBIC_START = 4;
+// Robert Penner's "back" constant, which takes the curve that bounces a tenth of the way past its end
+const PENNERS_BACK = 1.70158;
 // A moment is said to a tenth of a second: one digit after the point
 const DIGITS_TO_A_TENTH = 1;
 
@@ -41,6 +45,12 @@ export function easeOutQuint(progress: number): number {
 
 export function easeInOutSine(progress: number): number {
 	return (1 - Math.cos(Math.PI * progress)) / HALVES;
+}
+
+/** Out fast, past the end by a tenth of the way, and back to settle on it. */
+export function easeOutBack(progress: number): number {
+	const fromTheEnd = progress - 1;
+	return 1 + (PENNERS_BACK + 1) * fromTheEnd ** CUBE + PENNERS_BACK * fromTheEnd ** SQUARE;
 }
 
 export function easeInOutCubic(progress: number): number {

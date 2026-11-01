@@ -178,7 +178,8 @@ screen in it with it, by a move of its own, so it travels and leans in one
 `play`. Every move that runs over time
 takes a share of its step, `within: { start, end }`, and a curve of its own,
 `ease`: `linear`, `easeInOutSine` (a step's own), `easeInOutCubic`,
-`easeOutCubic` or `easeOutQuint`. `keystrokes(text, { seed, slipAt, pace })`
+`easeOutCubic`, `easeOutQuint`, or `easeOutBack`, which passes its end and
+settles back on it. `keystrokes(text, { seed, slipAt, pace })`
 types the way a person does: unevenly, with a slip now and then.
 
 ### Titles, and words set their own way

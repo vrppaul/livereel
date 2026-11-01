@@ -9,6 +9,7 @@
  * than one says, are refused as the move begins, in its own words.
  */
 import { FilmError } from '../domain/errors.ts';
+import { fractionOf } from '../domain/fraction.ts';
 import { A_COUNT, A_STRING, type Form, type Kind, Plain, assertKind, assertWritten, needed } from '../domain/handed.ts';
 import { A_PLACE, type Place } from '../domain/place.ts';
 import { between } from '../domain/time.ts';
@@ -211,5 +212,5 @@ function isLineNamed(written: unknown): written is LineNamed {
 /** A line `progress` of the way to lit, where it is among those named, or to out. */
 function litToward(line: CodeLine, number: number, first: number, last: number, progress: number): CodeLine {
 	const named = number >= first && number <= last;
-	return { ...line, lit: between(line.lit, named ? WHOLLY_LIT : NOT_LIT, progress) };
+	return { ...line, lit: fractionOf(between(line.lit, named ? WHOLLY_LIT : NOT_LIT, progress)) };
 }

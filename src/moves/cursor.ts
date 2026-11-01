@@ -2,6 +2,7 @@
  * The cursor: along a slight arc to a block of the page, as a hand moves it; pressed in with a click, and let go;
  * taken away.
  */
+import { NONE, fractionOf } from '../domain/fraction.ts';
 import { A_POINT, type Box, type Point, bowedArc, pointAlong } from '../domain/geometry.ts';
 import { A_NUMBER, A_PATH, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { easeOutCubic } from '../domain/time.ts';
@@ -95,17 +96,17 @@ async function along(beginning: Beginning, target: Target, script: CursorScript)
 	const end = restingOn(await shownPart(beginning, target, 1, 'cursor.to'));
 	const start = beginning.scene.cursor ?? script.entering ?? enteringFor(end);
 	const arc = bowedArc({ left: start.left, top: start.top }, end, script.bow ?? BOW);
-	return propChange('cursor', (progress) => ({ ...pointAlong(arc, progress), press: 0 }));
+	return propChange('cursor', (progress) => ({ ...pointAlong(arc, progress), press: NONE }));
 }
 
 function pressingIn(beginning: Beginning): Change {
 	const cursor = present(beginning, 'cursor', 'the cursor is pressed, but it is not on the screen');
-	return propChange('cursor', (progress) => ({ ...cursor, press: progress }));
+	return propChange('cursor', (progress) => ({ ...cursor, press: fractionOf(progress) }));
 }
 
 function lettingGo(beginning: Beginning): Change {
 	const cursor = present(beginning, 'cursor', 'the cursor is let go, but it is not on the screen');
-	return propChange('cursor', (progress) => ({ ...cursor, press: 1 - progress }));
+	return propChange('cursor', (progress) => ({ ...cursor, press: fractionOf(1 - progress) }));
 }
 
 function restingOn(box: Box): Point {

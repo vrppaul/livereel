@@ -21,6 +21,7 @@
  * film do, and keys over the caption's ground; within a layer the one that came last stands over the rest.
  */
 import { type Angle, type View, isFaceOn, leantOnTheFrame } from '../domain/camera.ts';
+import type { Fraction } from '../domain/fraction.ts';
 import { type Box, type Point, type Size, cornersOf, distanceBetween } from '../domain/geometry.ts';
 import { type Kind, OneOf, Plain } from '../domain/handed.ts';
 import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
@@ -61,14 +62,14 @@ export type DrawnContent = DrawnTitleWords | DrawnCode | DrawnTerminal | DrawnEn
 
 /**
  * An object: what it stands inside, its box in the pixels of that from its top left corner, how it leans, how far it
- * has come up and how far it has gone, each from 0 to 1, the way it comes up or goes, and what it shows.
+ * has come up and how far it has gone, the way it comes up or goes, and what it shows.
  */
 export interface FrameObject {
 	readonly inside: Holder;
 	readonly box: Box;
 	readonly angle: Angle;
-	readonly shown: number;
-	readonly gone: number;
+	readonly shown: Fraction;
+	readonly gone: Fraction;
 	readonly way: Way;
 	readonly content: Content;
 }

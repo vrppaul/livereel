@@ -15,6 +15,7 @@
  * cuts the figure has its shadow come as strong as the way has come, so the cut, which crosses the shadow with a hard
  * line, crosses a faint one. An object standing whole is drawn on no way at all.
  */
+import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import type { FrameSide } from '../domain/geometry.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
 import { acrossFrom } from '../domain/place.ts';
@@ -43,10 +44,10 @@ export type Way =
 	| { readonly kind: Exclude<WayName, FromAnEdge> }
 	| { readonly kind: FromAnEdge; readonly edge: FrameSide };
 
-/** How far what comes up and goes has come up and gone, each from 0 to 1. */
+/** How far what comes up and goes has come up and gone. */
 export interface Presence {
-	readonly shown: number;
-	readonly gone: number;
+	readonly shown: Fraction;
+	readonly gone: Fraction;
 }
 
 /** How far an object's ground and its figure have come up and gone. */
@@ -109,7 +110,7 @@ const AS_IT_STANDS: OnItsWay = {
 	cut: null
 };
 // What comes up and goes there whole: come up, and not going
-const PRESENT_WHOLE: Presence = { shown: 1, gone: 0 };
+const PRESENT_WHOLE: Presence = { shown: WHOLE, gone: NONE };
 // The edge a mask comes from, below the figure, rising, and the edge a wipe comes from, its left, where none is named
 const MASKED_FROM: FrameSide = 'bottom';
 const WIPED_FROM: FrameSide = 'left';

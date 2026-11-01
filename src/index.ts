@@ -33,7 +33,7 @@ export type { TurnedOff } from './direction/turned-off.ts';
 export type { Theme } from './props/look.ts';
 export { keystrokes } from './domain/typing.ts';
 export type { Keystroke, Typist } from './domain/typing.ts';
-export { easeInOutCubic, easeInOutSine, easeOutCubic, easeOutQuint, linear } from './domain/time.ts';
+export { easeInOutCubic, easeInOutSine, easeOutBack, easeOutCubic, easeOutQuint, linear } from './domain/time.ts';
 export type { Ease } from './domain/time.ts';
 export type { Angle, Pose } from './domain/camera.ts';
 export type { Format } from './domain/format.ts';

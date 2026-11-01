@@ -4,8 +4,9 @@
  * It lights the whole block, not only what the screen shows of it (`shownPart`), so the light runs off the screen's
  * edge with a block that reaches past it, which the screen cuts, and does not round off there as if the block ended.
  */
+import { type Fraction, fractionOf } from '../domain/fraction.ts';
 import { type Box, boxToward } from '../domain/geometry.ts';
-import { A_NUMBER, type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { A_SHARE, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import {
 	A_TARGET,
 	type Beginning,
@@ -30,13 +31,13 @@ export interface LightScript extends TimingScript {
 
 // How far the light dims half-way from one block to another, so the page between them never shows bright
 const DIP = 0.7;
-const LIGHT_FORM: Form<LightScript> = { dim: A_NUMBER, ...TIMING_FORM };
+const LIGHT_FORM: Form<LightScript> = { dim: A_SHARE, ...TIMING_FORM };
 
 /** A block lit as the step goes on, the rest dimmed: one a selector names, or a box of the screen. */
 export function on(target: Target, script: LightScript = {}): Move {
 	assertKind(target, A_TARGET, "light.on's target");
 	assertWritten(script, LIGHT_FORM, 'light.on');
-	const dim = script.dim ?? LIGHT_DIM;
+	const dim = fractionOf(script.dim ?? LIGHT_DIM);
 	return { part: 'light', timing: timingOf(script), begin: (beginning) => rising(beginning, target, dim) };
 }
 
@@ -53,9 +54,9 @@ export function off(script: TimingScript = {}): Move {
 	return { part: 'light', timing: timingOf(script), begin: fading };
 }
 
-async function rising(beginning: Beginning, target: Target, dim: number): Promise<Change> {
+async function rising(beginning: Beginning, target: Target, dim: Fraction): Promise<Change> {
 	const box = await shownBox(beginning, target, 1, 'light.on');
-	return propChange('light', (progress) => ({ box, strength: progress, dim }));
+	return propChange('light', (progress) => ({ box, strength: fractionOf(progress), dim }));
 }
 
 async function carried(beginning: Beginning, target: Target): Promise<Change> {
@@ -66,9 +67,10 @@ async function carried(beginning: Beginning, target: Target): Promise<Change> {
 
 function fading(beginning: Beginning): Change {
 	const light = present(beginning, 'light', 'the light is put out, but none is on');
-	return propChange('light', (progress) => untilTheEnd(progress, { ...light, strength: 1 - progress }));
+	return propChange('light', (progress) => untilTheEnd(progress, { ...light, strength: fractionOf(1 - progress) }));
 }
 
 function carriedAt(start: Light, end: Box, progress: number): Light {
-	return { box: boxToward(start.box, end, progress), strength: 1 - DIP * Math.sin(Math.PI * progress), dim: start.dim };
+	const strength = fractionOf(1 - DIP * Math.sin(Math.PI * progress));
+	return { box: boxToward(start.box, end, progress), strength, dim: start.dim };
 }

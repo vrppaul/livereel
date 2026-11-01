@@ -16,6 +16,7 @@
 import { FACE_ON, angleToward, viewOf } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
+import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
 import { A_FRAME_SIDE, type Box, type FrameSide, type Size, boxToward } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import {
@@ -144,9 +145,6 @@ const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { ...LEAN_FORM, ...NAMED_FORM }
 const CARRIED = ['box'] as const satisfies readonly (keyof FrameObject)[];
 const LEANT = ['angle'] as const satisfies readonly (keyof FrameObject)[];
 const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
-// An object not going: neither gone nor on its way out; and one sliding in from a side, come up whole from the start
-const NOT_GONE = 0;
-const SHOWN_WHOLE = 1;
 // Where an object stands that a film shows inside nothing
 const ON_THE_FRAME: Holder = 'frame';
 // The curve what an object of each kind shows comes up on in its own way where the film names none: words and lines of
@@ -366,7 +364,8 @@ function appearing(beginning: Beginning, name: ObjectName, inside: Holder, comin
 				box: boxToward(start, coming.box, progress),
 				angle: FACE_ON,
 				shown: shownComing(arrival.from, progress),
-				gone: NOT_GONE,
+				// Not going: neither gone nor on its way out
+				gone: NONE,
 				way: arrival.way,
 				content: coming.content
 			}),
@@ -401,7 +400,8 @@ function leaning(beginning: Beginning, name: ObjectName, script: LeanScript, mov
 /** The object going where it stands, in the way it goes; once gone, none. */
 function going(beginning: Beginning, name: ObjectName, way: Way, move: string): Change {
 	const object = standing(beginning, name, move);
-	return (scene, progress) => withObject(scene, name, untilTheEnd(progress, { ...object, way, gone: progress }));
+	return (scene, progress) =>
+		withObject(scene, name, untilTheEnd(progress, { ...object, way, gone: fractionOf(progress) }));
 }
 
 /**
@@ -450,8 +450,8 @@ function isOfKind<Kind extends Content['kind']>(
  * How far an object coming into its box has come up, `progress` of the way: whole from the start where it slides in
  * from a side, so it travels as one piece, as far as its move where it comes up in place.
  */
-function shownComing(from: FrameSide | null, progress: number): number {
-	return from === null ? progress : SHOWN_WHOLE;
+function shownComing(from: FrameSide | null, progress: number): Fraction {
+	return from === null ? fractionOf(progress) : WHOLE;
 }
 
 /**
