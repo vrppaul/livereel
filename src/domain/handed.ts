@@ -142,6 +142,32 @@ export class OneOf<Name extends string> implements Kind<Name> {
 	}
 }
 
+/**
+ * A kind of one value of a few by its name, or an object of a form for a value a name cannot say: how words come up,
+ * `'mask'` or `{ typed: { seed } }`; a string is told by its names, an object down to the value at fault.
+ */
+export class NameOrForm<Name extends string, Value> implements Kind<Name | Value> {
+	readonly name: OneOf<Name>;
+	readonly form: OfForm<Value>;
+	readonly said: string;
+
+	constructor(name: OneOf<Name>, form: OfForm<Value>, said: string) {
+		this.name = name;
+		this.form = form;
+		this.said = said;
+	}
+
+	is(written: unknown): written is Name | Value {
+		return this.name.is(written) || this.form.is(written);
+	}
+
+	faultOf(written: unknown, place: string): string | undefined {
+		if (typeof written === 'string') return this.name.is(written) ? undefined : refusalOf(written, place, this.said);
+		if (isObjectOfValues(written)) return this.form.faultOf(written, place);
+		return refusalOf(written, place, this.said);
+	}
+}
+
 /** A kind of one value alone, by its name, said as it is written: a step's `kind`. */
 export class Literal<Name extends string> extends OneOf<Name> {
 	constructor(name: Name) {

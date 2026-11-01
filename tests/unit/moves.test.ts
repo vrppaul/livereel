@@ -40,7 +40,7 @@ import { leave, open, submit, to as terminalTo, type as typeInto, works } from '
 import { keystrokes } from '../../src/domain/typing.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
 import { OWN_WAY } from '../../src/props/way.ts';
-import { appearedOf, groundOf, saidOf } from '../../src/props/words.ts';
+import { appearedOf, comingUpIn, groundOf, saidOf } from '../../src/props/words.ts';
 import { type Scene, cameraOf, drawn, openingScene, withObject, withProp } from '../../src/scene.ts';
 import { PageOfBoxes, SMALL } from './fakes.ts';
 
@@ -243,22 +243,54 @@ test("a title travelling to a place of another size takes that place's size as i
 
 test('a title or a caption shown typed shows no letter before its first key, and each key is heard', async () => {
 	const typed = { seed: 1 };
+	const words = { typed };
 	const keysTyped = keystrokes('ab cd', typed).length;
-	const titled = await setAt(title.show('ab cd', { at: 'left', typed }), openingScene(SMALL, LIVEREELS_LOOK), 0);
-	const captioned = await setAt(caption.show('ab cd', { typed }), openingScene(SMALL, LIVEREELS_LOOK), 0);
+	const titled = await setAt(title.show('ab cd', { at: 'left', words }), openingScene(SMALL, LIVEREELS_LOOK), 0);
+	const captioned = await setAt(caption.show('ab cd', { words }), openingScene(SMALL, LIVEREELS_LOOK), 0);
 	const lettersShown = [titled, captioned].map((scene) =>
 		drawnObjectsIn(scene, SMALL).map((object) => object.content.words.map((word) => word.letters))
 	);
 	expect([
 		lettersShown,
-		title.show('ab cd', { typed }).sounds!.length,
-		caption.show('ab cd', { typed }).sounds!.length
+		title.show('ab cd', { words }).sounds!.length,
+		caption.show('ab cd', { words }).sounds!.length
 	]).toEqual([[[[0, 0]], [[0, 0]]], keysTyped, keysTyped]);
 });
 
-test('a title typed never slides in from a side', () => {
-	expect(() => title.show('ab', { typed: { seed: 1 }, from: 'left' })).toThrow(
-		new FilmError('title.show types its words where they come up: it slides in whole from a side, or is typed')
+test("a title's or a caption's words come up in the way the film names, and in the theme's where it names none", async () => {
+	const fading = openingScene(SMALL, { ...LIVEREELS_LOOK, words: 'fade' });
+	const shows = [
+		title.show('ab', { words: 'mask' }),
+		caption.show('ab', { words: 'scramble' }),
+		title.show('ab'),
+		caption.show('ab')
+	];
+	const scenes = await Promise.all(shows.map((move) => setAt(move, fading, 0.5)));
+	expect(scenes.map((scene) => drawnObjectsIn(scene, SMALL)[0]!.content.way)).toEqual([
+		'mask',
+		'scramble',
+		'fade',
+		'fade'
+	]);
+});
+
+test("a callout's and a note's words come up in the theme's way", async () => {
+	const blurred = openingScene(SMALL, { ...LIVEREELS_LOOK, words: 'blur' });
+	const windowed = withProp(blurred, 'window', placedIn(windowView({ left: 300, top: 20, width: 80, height: 60 })));
+	const pointed = await setAt(callout.show('#reaching-below', 'Here'), blurred, 0.5);
+	const noted = await setAt(note.show('#block', 'Here'), windowed, 0.5);
+	expect([pointed.callout?.comingUp, noted.note?.comingUp]).toEqual([
+		{ kind: 'word by word', way: 'blur' },
+		{ kind: 'word by word', way: 'blur' }
+	]);
+});
+
+test("an object that slides in or comes up in a way of livereel's brings its words whole: it names no way for them", () => {
+	expect(() => title.show('ab', { words: { typed: { seed: 1 } }, from: 'left' })).toThrow(
+		new FilmError('title.show slides in whole from a side, its words with it: it names no way for its words')
+	);
+	expect(() => caption.show('ab', { words: 'mask', enter: 'fade' })).toThrow(
+		new FilmError('caption.show comes up whole in a way, its words with it: it names no way for its words')
 	);
 });
 
@@ -486,7 +518,9 @@ test("a note's line runs from the block's edge to the words' share across from t
 		view: windowView({ left: 100, top: 100, width: 200, height: 200 })
 	};
 	const beside = { side: 'bottom', box: wordsOn(SMALL, 'bottom'), window: camera.view.box } as const;
-	const drawnOne = drawnNote({ ...saidOf('Here'), box: BLOCK, beside, shown: 1, gone: 0 }, camera, SMALL.frame);
+	const said = saidOf('Here');
+	const note = { ...said, comingUp: comingUpIn('rise', said), box: BLOCK, beside, shown: 1, gone: 0 };
+	const drawnOne = drawnNote(note, camera, SMALL.frame, 0);
 	expect([drawnOne.from, drawnOne.to, drawnOne.angle, drawnOne.place]).toEqual([
 		{ left: expect.closeTo(50, 6), top: expect.closeTo(140, 6) },
 		{ left: expect.closeTo(50, 6), top: 274 },
@@ -765,12 +799,6 @@ test('an object comes up in its place in a way or slides from a side, and goes s
 	);
 });
 
-test('words typed as they come up never come up in a way', () => {
-	expect(() => caption.show('ab', { enter: 'fade', typed: { seed: 1 } })).toThrow(
-		new FilmError('caption.show types its words as they come up: they come up whole in a way, or typed')
-	);
-});
-
 test('Enter puts the typed line up into the log, and the line is empty again', async () => {
 	const terminal = (await setAt(submit(), TYPED, 1)).objects.get('terminal')!.content;
 	expect([terminal.lines, terminal.typed]).toEqual([[{ kind: 'asked', text: 'add a test' }], '']);
@@ -857,7 +885,11 @@ test("what stands inside the page's window shows no more than the screen it show
 		openingScene(SMALL, LIVEREELS_LOOK),
 		1
 	);
-	const typed = await setAt(title.show('ab', { at: UPPER_LEFT, inside: 'window', typed: { seed: 1 } }), opened, 1);
+	const typed = await setAt(
+		title.show('ab', { at: UPPER_LEFT, inside: 'window', words: { typed: { seed: 1 } } }),
+		opened,
+		1
+	);
 	const [terminalDrawn, titleDrawn] = drawnObjectsIn(await setAt(lower(), typed, 0.5), SMALL);
 	expect([
 		terminalDrawn!.held,

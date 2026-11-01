@@ -202,10 +202,10 @@ export function drawn(scene: Scene, camera: Camera, moment: number, format: Form
 		window: camera.view,
 		screen: scene.screen,
 		light: scene.light,
-		callout: scene.callout === null ? null : drawnCallout(scene.callout),
+		callout: scene.callout === null ? null : drawnCallout(scene.callout, moment),
 		pins: scene.pins === null ? null : drawnPins(scene.pins, camera, format.frame),
 		cursor: scene.cursor,
-		note: scene.note === null ? null : drawnNote(scene.note, camera, format.frame),
+		note: scene.note === null ? null : drawnNote(scene.note, camera, format.frame, moment),
 		objects: drawnObjects(scene.objects, moment, around),
 		leaving: drawnObjects(scene.leaving, moment, around)
 	};

@@ -3,7 +3,7 @@ import { codeOf } from '../../src/props/code.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
 import { alongItsWay } from '../../src/props/way.ts';
-import { type Piece, WORD_BY_WORD, drawnWords, saidOf, typedComingUp } from '../../src/props/words.ts';
+import { type DrawnWords, type Piece, comingUpIn, drawnWords, saidOf, typedComingUp } from '../../src/props/words.ts';
 import { type Keystroke, lettersOf } from '../../src/domain/typing.ts';
 import { SMALL } from './fakes.ts';
 
@@ -30,19 +30,76 @@ function piece(text: string, ...styles: Piece['styles']): Piece {
 /** How much of each of two words stands typed, the whole come up `shown` of the way. */
 function typedAt(shown: number): readonly StandingTyped[] {
 	const said = saidOf('ab cd');
-	const words = drawnWords({ ...said, shown, gone: 0 }, typedComingUp(said, TYPING)).words;
+	const words = drawnWords({ ...said, shown, gone: 0 }, typedComingUp(said, TYPING), 0).words;
 	return words.map((word) => ({ letters: word.letters, caret: word.caret }));
 }
 
+/** Two words scrambled, the whole come up `shown` of the way, at a moment of the film; 'ab cd' where none are named. */
+function scrambledAt(shown: number, moment: number, text = 'ab cd'): DrawnWords['words'] {
+	const said = saidOf(text);
+	return drawnWords({ ...said, shown, gone: 0 }, comingUpIn('scramble', said), moment).words;
+}
+
+/** The signs two words scrambled stand as, the whole come up `shown` of the way, at a moment of the film. */
+function signsAt(shown: number, moment: number, text = 'ab cd'): readonly (readonly (string | null)[])[] {
+	return scrambledAt(shown, moment, text).map((word) => word.signs);
+}
+
 test("a caption's words come up one after another", () => {
-	const shown = { ...saidOf('one two three four'), shown: 0.2, gone: 0 };
-	const words = drawnWords(shown, WORD_BY_WORD).words.map((word) => word.appeared);
-	expect(words).toEqual([...words].sort((earlier, later) => later - earlier));
-	expect([words[0]! > 0, words.at(-1)]).toEqual([true, 0]);
+	const said = saidOf('one two three four');
+	const words = drawnWords({ ...said, shown: 0.2, gone: 0 }, comingUpIn('rise', said), 0).words;
+	const appeared = words.map((word) => word.appeared);
+	expect(appeared).toEqual([...appeared].sort((earlier, later) => later - earlier));
+	expect([appeared[0]! > 0, appeared.at(-1)]).toEqual([true, 0]);
 });
 
 test('the ground under words goes as they go', () => {
-	expect(drawnWords({ ...saidOf('Words'), shown: 1, gone: 1 }, WORD_BY_WORD).ground).toBe(0);
+	const said = saidOf('Words');
+	expect(drawnWords({ ...said, shown: 1, gone: 1 }, comingUpIn('rise', said), 0).ground).toBe(0);
+});
+
+test('words that come up word by word are drawn by the name of their way', () => {
+	const said = saidOf('Words');
+	const ways = (['rise', 'sharp', 'fade', 'blur', 'mask'] as const).map(
+		(way) => drawnWords({ ...said, shown: 0.5, gone: 0 }, comingUpIn(way, said), 0).way
+	);
+	expect(ways).toEqual(['rise', 'sharp', 'fade', 'blur', 'mask']);
+});
+
+test('words that come up by letters stand letter by letter at an even pace, the space before a word its first, with no caret', () => {
+	const said = saidOf('ab cd');
+	const words = drawnWords({ ...said, shown: 0.6, gone: 0 }, comingUpIn('letters', said), 0).words;
+	expect(words.map((word) => ({ letters: word.letters, caret: word.caret }))).toEqual([
+		{ letters: 2, caret: false },
+		{ letters: 1, caret: false }
+	]);
+});
+
+test('scrambled letters come up each as a sign drawn anew as the film goes on, a space as itself, and settle into their own a few behind those coming', () => {
+	const midway = scrambledAt(0.5, 0);
+	expect([
+		midway.map((word) => word.letters),
+		midway.map((word) => word.signs),
+		scrambledAt(1, 0).map((word) => word.signs)
+	]).toEqual([
+		[2, 3],
+		[
+			[expect.any(String), expect.any(String)],
+			[null, expect.any(String), expect.any(String)]
+		],
+		[
+			[null, null],
+			[null, null, null]
+		]
+	]);
+	expect(midway.map((word) => word.signs)).not.toEqual(scrambledAt(0.5, 0.05).map((word) => word.signs));
+});
+
+test('a scrambled letter keeps its sign two frames before another is drawn, and other words draw signs of their own', () => {
+	const firstFrame = signsAt(0.5, 0);
+	expect(signsAt(0.5, 1 / 30)).toEqual(firstFrame);
+	expect(signsAt(0.5, 2 / 30)).not.toEqual(firstFrame);
+	expect(signsAt(0.5, 0, 'xy zw')).not.toEqual(firstFrame);
 });
 
 test('typed words stand letter by letter as the strokes have typed them, the space before a word its first, the caret after the last letter typed until all are', () => {

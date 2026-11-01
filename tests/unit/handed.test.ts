@@ -139,6 +139,14 @@ test('every function a film calls refuses what it is handed in no form it takes,
 			`title.show's enter is "spin": it is how an object comes up in its place or goes from it: "fade", "mask", "wipe", "iris" or "grow"`
 		)
 	);
+	expect(() => caption.show('ab', { words: 'bounce' as never })).toThrow(
+		new FilmError(
+			`caption.show's words is "bounce": it is how words come up: "rise", "sharp", "fade", "blur", "mask", "letters" or "scramble", or typed, { typed: { seed, keyboard } }`
+		)
+	);
+	expect(() => title.show('ab', { words: { typed: { seed: 'one' as never } } })).toThrow(
+		new FilmError(`title.show's words's typed's seed is "one": it is a number`)
+	);
 	expect(() => screen.rise({ within: { start: null as never } })).toThrow(
 		new FilmError("screen.rise's within's start is null: it is a number")
 	);

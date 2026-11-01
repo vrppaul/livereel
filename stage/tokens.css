@@ -53,6 +53,10 @@
 	/* How far in from the frame's foot, or its top, a caption's words and the keys stand */
 	--frame-edge-room: 72px;
 
+	/* How far letters' tails and marks reach past the box of the line they stand on, a share of their size, and so in the letters' own size where it is used */
+	--letters-tails: 0.25;
+	--letters-tails-reach: calc(var(--letters-tails) * 1em);
+
 	/* The look's fonts, and what stands in for each where the system has none */
 	--sans: var(--font), system-ui, sans-serif;
 	--mono: var(--mono-font), 'JetBrains Mono', monospace;

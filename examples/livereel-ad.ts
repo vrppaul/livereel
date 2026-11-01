@@ -582,7 +582,7 @@ function actTheCredit(): readonly Step[] {
 				title.show('i wrote the tool. it wrote the film.', {
 					at: HEADLINE,
 					size: LINE_SIZE,
-					typed: CREDIT_TYPED,
+					words: { typed: CREDIT_TYPED },
 					within: { end: 0.8 }
 				})
 			]

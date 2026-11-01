@@ -142,12 +142,12 @@ and the moves of each part of the scene:
 - `keys.show(caps, { enter, edge })`, `keys.hide({ leave, edge })`
 - `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { at, align, size, from, enter, edge, typed, as, inside })`, `title.to(place)`,
+- `title.show(text, { at, align, size, from, enter, edge, words, as, inside })`, `title.to(place)`,
   `title.lean({ tilt, turn })`, `title.hide({ toward, leave, edge })`
 - `code.show(text, { at, from, enter, edge, longLines, as, inside })`, `code.to(place)`, `code.lean({ tilt, turn })`,
   `code.light(line, { through })`, `code.scrollTo(line)`, `code.hide({ toward, leave, edge })`; each move of a title
   or code takes `as` to name which
-- `caption.show(text, { enter, edge, typed })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
+- `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
   whole frame where they come up, over every other object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`
 - `terminal.open(title, { at, from, enter, edge, inside })`, `terminal.type(strokes, { keyboard })`,
@@ -222,15 +222,33 @@ it no larger than the place's width lets a long word stand on a line;
 frame or in a place alike: `title.show('Live', { at: 'left', size: 220 })`.
 A word larger than its place runs past it, so check it on a still.
 
-A title or a caption may be typed, letter by letter, as a person types:
-`title.show(['Film your ', { text: 'live', italic: true }, ' app'], { typed:
-{ seed: 3 } })`. The rhythm is drawn from `seed`, as `keystrokes` draws it,
-and spread over the move's share of its `play`, which sets how fast it is
-typed; each key is heard on the film's keyboard, or on the `keyboard`
-named. The words stand laid out whole from the start, so no line breaks
-anew as they are typed; a run's style, ink and marker come with each
-letter, and a caret follows the last letter typed until every one is. A
-title typed comes up in its place: one shown `from` a side is refused.
+A title's or a caption's words come up in the way `words` names, the
+theme's where it names none:
+
+```ts
+title.show('Out of nothing', { words: 'mask' }),
+caption.show('Decoded', { words: 'scramble' }),
+title.show(['Film your ', { text: 'live', italic: true }, ' app'], { words: { typed: { seed: 3 } } }),
+```
+
+Word by word, one after another: `'rise'`, out of a blur, livereel's own;
+`'sharp'`, rising with no blur; `'fade'`, fading up where they stand;
+`'blur'`, coming clear out of a blur there; `'mask'`, each word rising from
+under its own line, on as many lines as it takes. Letter by letter:
+`'letters'`, fading up one after another at an even pace; `'scramble'`,
+each letter standing as a sign drawn by chance, a new one every two frames,
+until it settles into its own a few letters behind those coming. Or typed,
+as a person types: `{ typed: { seed } }`, its rhythm drawn from `seed`, as
+`keystrokes` draws it, and spread over the move's share of its `play`,
+which sets how fast it is typed; each key is heard on the film's keyboard,
+or on the `keyboard` named, and a caret follows the last letter typed until
+every one is. Words that come by letters stand laid out whole from the
+start, so no line breaks anew as they come; a run's style, ink and marker
+come with each letter. Going, words go as they would rise, but for a mask,
+which sinks back under its line. Words come in their way only where their
+title or caption comes up in its place in its own way: `words` with `from`
+or `enter` is refused. A callout's and a note's words come in the theme's
+way.
 
 Words in a place travel: `title.to(place)` and `code.to(place)` carry them
 to another place through the boxes between, a title reading as it did;
@@ -411,7 +429,7 @@ values; what the film leaves out stays livereel's:
 | `terminalSize` | how large the terminal's letters are, in pixels | `25` |
 | `endingNameSize`, `endingLineSize`, `endingCommandSize` | how large the ending card's name, line and command are, in pixels | `96`, `36`, `38` |
 | `cursorFill`, `cursorEdge` | the cursor's colour and its edge's | `#111`, `#fff` |
-| `wordsMotion` | how words come up: `'soft'`, rising out of a blur; `'sharp'`, rising with no blur; `'still'`, fading up where they stand | `'soft'` |
+| `words` | how words come up where a film names no way of their own, a title's, a caption's, a callout's and a note's, read as each comes: `'rise'`, `'sharp'`, `'fade'`, `'blur'`, `'mask'`, `'letters'` or `'scramble'`, as `words` names on a title | `'rise'` |
 
 Colours are in hex; sizes in pixels of a frame 1080 on its shorter side,
 scaled to the frame shot. A font falls back to livereel's where the system
@@ -442,7 +460,7 @@ The look changes as the film goes, by a move like any other:
 `look.to(theme)`, any of the same values. In a `play` it moves there over
 its share of the step: a colour through the colours between, a size, a
 weight, a corner or a shadow through the values between, a font or
-`wordsMotion`, which have none between, half-way, and the ground's layers
+`words`, which have none between, half-way, and the ground's layers
 fading out as the new ones fade in over them; in a `cut`, at once.
 
 ```ts

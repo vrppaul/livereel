@@ -18,7 +18,7 @@ import {
 	timingOf
 } from '../direction/move.ts';
 import { A_BLOCK_SIDE, type BlockSide } from '../props/callout.ts';
-import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
+import { A_WORDING, type Said, type Wording, comingUpIn, saidOf } from '../props/words.ts';
 import { going } from './words.ts';
 
 /** The side of the block a callout stands on: `above` where none is named. */
@@ -56,5 +56,6 @@ export function hide(script: TimingScript = {}): Move {
 
 async function pointing(beginning: Beginning, target: Target, said: Said, side: BlockSide): Promise<Change> {
 	const box = await shownPart(beginning, target, THE_FIRST, 'callout.show');
-	return propChange('callout', (progress) => ({ ...said, box, side, shown: progress, gone: 0 }));
+	const comingUp = comingUpIn(beginning.scene.look.words, said);
+	return propChange('callout', (progress) => ({ ...said, comingUp, box, side, shown: progress, gone: 0 }));
 }

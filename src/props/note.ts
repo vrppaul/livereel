@@ -6,11 +6,11 @@
  * and never lean with it, as they stand on the ground. Where the block stands on the frame is worked out every frame
  * from the camera, so the line keeps to the block as the page moves in the window; the words meet it level with the
  * block as far as their place lets. The line is drawn first, as the words' ground would come up, and the words come up
- * at its end.
+ * at its end, in the theme's way as the note comes.
  */
 import { type Camera, onTheFrame } from '../domain/camera.ts';
 import { type Box, type FrameSide, type Point, type Size, middleX, middleY } from '../domain/geometry.ts';
-import { type DrawnWords, type ShownWords, WORD_BY_WORD, drawnWords } from './words.ts';
+import { type ComingUp, type DrawnWords, type ShownWords, drawnWords } from './words.ts';
 
 /**
  * Where a note's words stand: the side of the window they stand beyond, their box, and the window's box they were
@@ -22,8 +22,12 @@ export interface Beside {
 	readonly window: Box;
 }
 
-/** A note's words, the block it names, as the screen showed it, and where its words stand beside the window. */
+/**
+ * A note's words and how they come up, the block it names, as the screen showed it, and where its words stand beside
+ * the window.
+ */
 export interface Note extends ShownWords {
+	readonly comingUp: ComingUp;
 	readonly box: Box;
 	readonly beside: Beside;
 }
@@ -43,8 +47,11 @@ export interface DrawnNote extends DrawnWords {
 
 const DEGREES_IN_A_HALF_TURN = 180;
 
-/** A note as the stage draws it, seen by a camera, beside the window that camera shows the page in. */
-export function drawnNote(note: Note, camera: Camera, frame: Size): DrawnNote {
+/**
+ * A note as the stage draws it at a moment of the film, seen by a camera, beside the window that camera shows the page
+ * in.
+ */
+export function drawnNote(note: Note, camera: Camera, frame: Size, moment: number): DrawnNote {
 	const side = note.beside.side;
 	const place = besideTheWindow(note.beside, camera.view.box);
 	const from = onTheFrame(camera, frame, edgeFacing(note.box, side));
@@ -52,7 +59,7 @@ export function drawnNote(note: Note, camera: Camera, frame: Size): DrawnNote {
 	const across = to.left - from.left;
 	const down = to.top - from.top;
 	return {
-		...drawnWords(note, WORD_BY_WORD),
+		...drawnWords(note, note.comingUp, moment),
 		side,
 		place,
 		from,

@@ -20,7 +20,7 @@
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
-/** A value of the look set whole on the stage, in place of one token or as one attribute: any but the ground's layers @typedef {Exclude<keyof Look, 'groundLayers'>} WholeLookName */
+/** A value of the look set whole on the stage, in place of one token: any but the ground's layers, and the way words come up, which the moves that bring them read @typedef {Exclude<keyof Look, 'groundLayers' | 'words'>} WholeLookName */
 /** An element of the stage's markup: the cursor is drawn in SVG, the rest in HTML @typedef {HTMLElement | SVGElement} Staged */
 /** The scene's lists of objects: those standing, and those pushed off while they go @typedef {'objects' | 'leaving'} ObjectList */
 /**
@@ -68,8 +68,12 @@ const MARKED = 'marked';
 // The classes of a word's own box, which rises as it comes up, and of the space before it, which keeps to its line
 const WORD = 'word';
 const SPACE = 'space';
-// The class of a letter of a word typed, each in an element of its own
+// The attribute that names the way words come up, on the root of their list
+const WAY_OF_WORDS = 'data-words';
+// The class of a letter of a word laid out letter by letter, each in an element of its own, and the attribute that
+// names the sign it stands as before it settles into itself
 const LETTER = 'letter';
+const SIGN = 'data-sign';
 // The class of a pin, and of one whose label a later pin has quietened
 const PIN = 'pin';
 const QUIET = 'quiet';
@@ -77,52 +81,50 @@ const QUIET = 'quiet';
 // a line too long
 const CODE_LINE = 'code-line';
 const LONG_LINES = 'data-long-lines';
-// What each value of the film's look set whole sets on the stage: the token it takes the place of, or, for a value that
-// names a way, the attribute the stylesheet reads it by
-/** @type {{ readonly [Name in WholeLookName]: { readonly token: string } | { readonly attribute: string } }} */
-const LOOK_SET_AS = {
-	ground: { token: '--ground' },
-	glow: { token: '--ground-glow' },
-	ink: { token: INK },
-	quietInk: { token: '--ink-quiet' },
-	accent: { token: '--accent' },
-	accentInk: { token: '--accent-ink' },
-	font: { token: '--font' },
-	mono: { token: '--mono-font' },
-	titleSize: { token: '--title-size' },
-	captionSize: { token: '--caption-size' },
-	titleMargin: { token: '--title-margin' },
-	captionGroundHeight: { token: '--caption-ground-height' },
-	paneCorner: { token: '--pane-corner' },
-	paneEdge: { token: '--pane-edge' },
-	paneShadow: { token: '--pane-shadow-strength' },
-	paneShadowColour: { token: '--pane-shadow-colour' },
-	terminal: { token: '--terminal' },
-	terminalInk: { token: '--terminal-ink' },
-	codeComment: { token: '--code-comment' },
-	codeString: { token: '--code-string' },
-	codeNumber: { token: '--code-number' },
-	codeKeyword: { token: '--code-keyword' },
-	codeCall: { token: '--code-call' },
-	codeKey: { token: '--code-key' },
-	glowX: { token: '--glow-x' },
-	glowY: { token: '--glow-y' },
-	titleWeight: { token: '--title-weight' },
-	captionWeight: { token: '--caption-weight' },
-	noteSize: { token: '--note-size' },
-	calloutSize: { token: '--callout-size' },
-	pinSize: { token: '--pin-text-size' },
-	keysSize: { token: '--keys-size' },
-	codeSize: { token: '--code-size' },
-	terminalSize: { token: '--terminal-size' },
-	endingNameSize: { token: '--ending-name-size' },
-	endingLineSize: { token: '--ending-line-size' },
-	endingCommandSize: { token: '--ending-command-size' },
-	cursorFill: { token: '--cursor-fill' },
-	cursorEdge: { token: '--cursor-edge' },
-	wordsMotion: { attribute: 'data-words-motion' }
+// The token each value of the film's look set whole takes the place of on the stage
+/** @type {{ readonly [Name in WholeLookName]: string }} */
+const LOOK_TOKENS = {
+	ground: '--ground',
+	glow: '--ground-glow',
+	ink: INK,
+	quietInk: '--ink-quiet',
+	accent: '--accent',
+	accentInk: '--accent-ink',
+	font: '--font',
+	mono: '--mono-font',
+	titleSize: '--title-size',
+	captionSize: '--caption-size',
+	titleMargin: '--title-margin',
+	captionGroundHeight: '--caption-ground-height',
+	paneCorner: '--pane-corner',
+	paneEdge: '--pane-edge',
+	paneShadow: '--pane-shadow-strength',
+	paneShadowColour: '--pane-shadow-colour',
+	terminal: '--terminal',
+	terminalInk: '--terminal-ink',
+	codeComment: '--code-comment',
+	codeString: '--code-string',
+	codeNumber: '--code-number',
+	codeKeyword: '--code-keyword',
+	codeCall: '--code-call',
+	codeKey: '--code-key',
+	glowX: '--glow-x',
+	glowY: '--glow-y',
+	titleWeight: '--title-weight',
+	captionWeight: '--caption-weight',
+	noteSize: '--note-size',
+	calloutSize: '--callout-size',
+	pinSize: '--pin-text-size',
+	keysSize: '--keys-size',
+	codeSize: '--code-size',
+	terminalSize: '--terminal-size',
+	endingNameSize: '--ending-name-size',
+	endingLineSize: '--ending-line-size',
+	endingCommandSize: '--ending-command-size',
+	cursorFill: '--cursor-fill',
+	cursorEdge: '--cursor-edge'
 };
-const LOOK_NAMES = Object.keys(LOOK_SET_AS).filter(isOfTheLook);
+const LOOK_NAMES = Object.keys(LOOK_TOKENS).filter(isOfTheLook);
 // The token each part of the ground's layers takes the place of: those going, those coming, how far these have come
 /** @type {{ readonly [Part in keyof GroundLayers]: string }} */
 const LAYERS_SET_AS = { going: '--layers-going', coming: '--layers-coming', come: '--layers-come' };
@@ -224,7 +226,7 @@ class CalloutDrawer {
 	constructor(root) {
 		this.root = root;
 		/** @type {KeyedList<DrawnWords['words'][number]>} */
-		this.words = new KeyedList(partOf(root, 'words'), wordElement, wordNumbers);
+		this.words = new KeyedList(partOf(root, 'words'), wordElement, wordDrawn);
 	}
 
 	/** @param {DrawnScene} scene */
@@ -244,7 +246,7 @@ class CalloutDrawer {
 			'--grounded': callout.ground,
 			'--gone': callout.gone
 		});
-		this.words.draw(callout.key, callout.words);
+		wordsDrawn(this.words, callout);
 	}
 }
 
@@ -290,7 +292,7 @@ class NoteDrawer {
 	constructor(root) {
 		this.root = root;
 		/** @type {KeyedList<DrawnWords['words'][number]>} */
-		this.words = new KeyedList(partOf(root, 'words'), wordElement, wordNumbers);
+		this.words = new KeyedList(partOf(root, 'words'), wordElement, wordDrawn);
 	}
 
 	/** @param {DrawnScene} scene */
@@ -313,7 +315,7 @@ class NoteDrawer {
 			'--drawn': note.ground,
 			'--gone': note.gone
 		});
-		this.words.draw(note.key, note.words);
+		wordsDrawn(this.words, note);
 	}
 }
 
@@ -458,7 +460,7 @@ class TitleWordsDrawer {
 	constructor(element) {
 		this.element = element;
 		/** @type {KeyedList<DrawnWords['words'][number]>} */
-		this.words = new KeyedList(partOf(element, 'words'), wordElement, wordNumbers);
+		this.words = new KeyedList(partOf(element, 'words'), wordElement, wordDrawn);
 	}
 
 	/** @param {DrawnContent} content */
@@ -468,7 +470,7 @@ class TitleWordsDrawer {
 		named(this.element, ALIGN, title.align);
 		numberedOrNone(this.element, OWN_SIZE, title.size);
 		numbered(this.element, { '--grounded': title.ground, '--gone': title.gone });
-		this.words.draw(title.key, title.words);
+		wordsDrawn(this.words, title);
 	}
 }
 
@@ -478,7 +480,7 @@ class CodeDrawer {
 	constructor(element) {
 		this.element = element;
 		/** @type {KeyedList<DrawnCode['lines'][number]>} */
-		this.lines = new KeyedList(partOf(element, 'lines'), codeLineElement, codeLineNumbers);
+		this.lines = new KeyedList(partOf(element, 'lines'), codeLineElement, codeLineDrawn);
 	}
 
 	/** @param {DrawnContent} content */
@@ -501,7 +503,7 @@ class CaptionDrawer {
 	constructor(element) {
 		this.element = element;
 		/** @type {KeyedList<DrawnWords['words'][number]>} */
-		this.words = new KeyedList(partOf(element, 'words'), wordElement, wordNumbers);
+		this.words = new KeyedList(partOf(element, 'words'), wordElement, wordDrawn);
 	}
 
 	/** @param {DrawnContent} content */
@@ -509,7 +511,7 @@ class CaptionDrawer {
 		const caption = ofKind(content, 'caption');
 		named(this.element, CAPTION_EDGE, caption.at);
 		numbered(this.element, { '--darkened': caption.ground, '--gone': caption.gone });
-		this.words.draw(caption.key, caption.words);
+		wordsDrawn(this.words, caption);
 	}
 }
 
@@ -519,7 +521,7 @@ class KeysDrawer {
 	constructor(element) {
 		this.element = element;
 		/** @type {KeyedList<string>} */
-		this.caps = new KeyedList(partOf(element, 'caps'), capElement, noNumbers);
+		this.caps = new KeyedList(partOf(element, 'caps'), capElement, drawnWithItsList);
 	}
 
 	/** @param {DrawnContent} content */
@@ -551,19 +553,19 @@ const CONTENT_DRAWERS = {
 
 /**
  * Elements made from a list under a root, a word's, a line of code's or a key's cap each: laid out anew only when the
- * list's key changes, each element's numbers set every frame.
+ * list's key changes, each element drawn as its item has it every frame.
  * @template Item
  */
 class KeyedList {
 	/**
 	 * @param {Staged} root
 	 * @param {(item: Item) => Node} elementOf
-	 * @param {(item: Item) => Readonly<Record<string, number>>} numbersOf
+	 * @param {(element: HTMLElement, item: Item) => void} drawnOn
 	 */
-	constructor(root, elementOf, numbersOf) {
+	constructor(root, elementOf, drawnOn) {
 		this.root = root;
 		this.elementOf = elementOf;
-		this.numbersOf = numbersOf;
+		this.drawnOn = drawnOn;
 		/** The key of the list that stands in the markup @type {string | null} */
 		this.standing = null;
 	}
@@ -576,7 +578,7 @@ class KeyedList {
 		}
 		for (const [place, item] of items.entries()) {
 			const element = this.root.children.item(place);
-			if (element instanceof HTMLElement) numbered(element, this.numbersOf(item));
+			if (element instanceof HTMLElement) this.drawnOn(element, item);
 		}
 	}
 
@@ -641,12 +643,7 @@ class LookDrawer {
 
 	/** @param {DrawnScene} scene */
 	draw(scene) {
-		for (const name of LOOK_NAMES) {
-			const value = String(scene.look[name]);
-			const set = LOOK_SET_AS[name];
-			if ('token' in set) this.root.style.setProperty(set.token, value);
-			else this.root.setAttribute(set.attribute, value);
-		}
+		for (const name of LOOK_NAMES) this.root.style.setProperty(LOOK_TOKENS[name], String(scene.look[name]));
 		const layers = scene.look.groundLayers;
 		this.root.style.setProperty(LAYERS_SET_AS.going, layers.going);
 		this.root.style.setProperty(LAYERS_SET_AS.coming, layers.coming);
@@ -736,7 +733,7 @@ function addedCopy(original) {
  * @param {string} name @returns {name is WholeLookName}
  */
 function isOfTheLook(name) {
-	return Object.hasOwn(LOOK_SET_AS, name);
+	return Object.hasOwn(LOOK_TOKENS, name);
 }
 
 /**
@@ -836,14 +833,14 @@ function numberedOrNone(element, property, number) {
 
 /**
  * A word as it comes up: the space before it, where one is, and the word's own box, each piece of it set as its run is;
- * a word typed with every letter the engine names in an element of its own.
+ * a word laid out letter by letter with every letter the engine names in an element of its own.
  * @param {DrawnWords['words'][number]} word
  */
 function wordElement(word) {
 	switch (word.kind) {
 		case 'word by word':
 			return wordOf(word, pieceElement);
-		case 'typed':
+		case 'lettered':
 			return lettersNumbered(wordOf(word, letteredPieceElement));
 	}
 }
@@ -861,14 +858,14 @@ function wordOf(word, pieceOf) {
 	return element;
 }
 
-/** A piece of a word typed, set as its run is, each of its letters in an element of its own. @param {Piece} piece */
+/** A piece of a word laid out letter by letter, set as its run is, each of its letters in an element of its own. @param {Piece} piece */
 function letteredPieceElement(piece) {
 	const element = pieceElement(piece);
 	element.replaceChildren(...piece.letters.map(letterElement));
 	return element;
 }
 
-/** A letter of a word typed. @param {string} letter */
+/** A letter of a word laid out letter by letter. @param {string} letter */
 function letterElement(letter) {
 	const element = classed(document.createElement('span'), LETTER);
 	element.textContent = letter;
@@ -876,8 +873,8 @@ function letterElement(letter) {
 }
 
 /**
- * A word typed, its letters numbered in the order they are typed, which is the order they read in: the space before
- * the word first. @param {HTMLElement} word
+ * A word laid out letter by letter, its letters numbered in the order they come, which is the order they read in: the
+ * space before the word first. @param {HTMLElement} word
  */
 function lettersNumbered(word) {
 	for (const [place, letter] of word.querySelectorAll(`.${LETTER}`).entries()) {
@@ -917,27 +914,50 @@ function pinElement(pin) {
 }
 
 /**
- * How far a word has come up; of a word typed, how many of its letters stand typed, and whether the caret follows them.
- * @param {DrawnWords['words'][number]} word
+ * Words drawn in their list, the way they come up named on the list's root, as the stylesheet draws each way.
+ * @param {KeyedList<DrawnWords['words'][number]>} list @param {DrawnWords} words
  */
-function wordNumbers(word) {
+function wordsDrawn(list, words) {
+	named(list.root, WAY_OF_WORDS, words.way);
+	list.draw(words.key, words.words);
+}
+
+/**
+ * How far a word has come up; of a word laid out letter by letter, how many of its letters stand, whether the caret
+ * follows them, and the sign each letter stands as, where it does.
+ * @param {HTMLElement} element @param {DrawnWords['words'][number]} word
+ */
+function wordDrawn(element, word) {
 	switch (word.kind) {
 		case 'word by word':
-			return { '--appeared': word.appeared };
-		case 'typed':
-			return { '--appeared': word.appeared, '--typed': word.letters, '--caret': Number(word.caret) };
+			numbered(element, { '--appeared': word.appeared });
+			return;
+		case 'lettered':
+			numbered(element, { '--appeared': word.appeared, '--typed': word.letters, '--caret': Number(word.caret) });
+			signsDrawn(element, word.signs);
+			return;
 	}
 }
 
-/** How far a line of code has come up, and how far it is lit. @param {DrawnCode['lines'][number]} line */
-function codeLineNumbers(line) {
-	return { '--appeared': line.appeared, '--lit': line.lit };
+/**
+ * Each letter of a word standing as its sign, by the letter's place in the word, or as itself where it has none.
+ * @param {HTMLElement} word @param {readonly (string | null)[]} signs
+ */
+function signsDrawn(word, signs) {
+	for (const [place, letter] of word.querySelectorAll(`.${LETTER}`).entries()) {
+		const sign = signs[place] ?? null;
+		if (sign === null) letter.removeAttribute(SIGN);
+		else letter.setAttribute(SIGN, sign);
+	}
 }
 
-/** What an element that moves only with its list is set every frame: nothing. */
-function noNumbers() {
-	return {};
+/** How far a line of code has come up, and how far it is lit. @param {HTMLElement} element @param {DrawnCode['lines'][number]} line */
+function codeLineDrawn(element, line) {
+	numbered(element, { '--appeared': line.appeared, '--lit': line.lit });
 }
+
+/** What an element that moves only with its list is drawn as every frame: nothing. */
+function drawnWithItsList() {}
 
 /** A line of code, its pieces in order, each of a kind in an element classed by it. @param {CodeLine} line */
 function codeLineElement(line) {

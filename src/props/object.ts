@@ -185,7 +185,7 @@ function drawnContent(object: FrameObject, moment: number, caption: CaptionStand
 	const figure = presences.figure;
 	switch (content.kind) {
 		case 'words':
-			return drawnTitleWords(content, presences);
+			return drawnTitleWords(content, presences, moment);
 		case 'code':
 			return drawnCode(content, figure.shown, figure.gone);
 		case 'terminal':
@@ -193,7 +193,7 @@ function drawnContent(object: FrameObject, moment: number, caption: CaptionStand
 		case 'ending':
 			return drawnEnding(content, object.way, object);
 		case 'caption':
-			return drawnCaption(content, presences);
+			return drawnCaption(content, presences, moment);
 		case 'keys':
 			return drawnKeys(content, presentShare(figure), caption);
 	}

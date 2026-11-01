@@ -24,7 +24,7 @@ import {
 	timingOf
 } from '../direction/move.ts';
 import type { Beside } from '../props/note.ts';
-import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
+import { A_WORDING, type Said, type Wording, comingUpIn, saidOf } from '../props/words.ts';
 import { going } from './words.ts';
 
 /** A note's words stand `at` a place beyond the window, or in the words' share clearest of it where none is named. */
@@ -63,7 +63,8 @@ export function hide(script: TimingScript = {}): Move {
 async function naming(beginning: Beginning, target: Target, said: Said, at: Place | null): Promise<Change> {
 	const beside = besideTheWindow(beginning, at);
 	const box = await shownPart(beginning, target, THE_FIRST, 'note.show');
-	return propChange('note', (progress) => ({ ...said, box, beside, shown: progress, gone: 0 }));
+	const comingUp = comingUpIn(beginning.scene.look.words, said);
+	return propChange('note', (progress) => ({ ...said, comingUp, box, beside, shown: progress, gone: 0 }));
 }
 
 /**

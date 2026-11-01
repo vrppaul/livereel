@@ -18,28 +18,28 @@ import {
 	objectHide,
 	objectShow
 } from './object.ts';
-import { WORDS_TYPED, type WordsTypedScript, refuseTypedInAWay, wordsComing } from './typing.ts';
+import { A_WORDS_SCRIPT, type WordsScript, comingUpAt, refuseWordsBroughtWhole, wordsComing } from './words.ts';
 
-/** How a caption comes up: its timing, the way it comes up, and whether its words are `typed` as they come up, and how. */
+/** How a caption comes up: its timing, the way it comes up, and how its `words` come up, the theme's where none is named. */
 export interface CaptionScript extends InPlaceShowScript {
-	readonly typed?: WordsTypedScript;
+	readonly words?: WordsScript;
 }
 
 const CAPTION: ObjectKind = 'caption';
-const CAPTION_FORM: Form<CaptionScript> = { typed: WORDS_TYPED, ...IN_PLACE_SHOW_FORM };
+const CAPTION_FORM: Form<CaptionScript> = { words: A_WORDS_SCRIPT, ...IN_PLACE_SHOW_FORM };
 
 /**
- * A caption coming up word by word, or typed by a person where the film has it typed, each key heard, or whole in a
- * way of livereel's; its words come up at an even pace unless the film names a curve.
+ * A caption coming up, its words in the way the film names, typed by a person where it has them typed, each key heard,
+ * or in the theme's; or whole in a way of livereel's; its words come up at an even pace unless the film names a curve.
  */
 export function show(text: Wording, script: CaptionScript = {}): Move {
 	assertKind(text, A_WORDING, "caption.show's text");
 	assertWritten(script, CAPTION_FORM, 'caption.show');
-	refuseTypedInAWay(script, 'caption.show');
+	refuseWordsBroughtWhole(script, 'caption.show');
 	const said = saidOf(text);
-	const coming = wordsComing(said, script.typed);
+	const coming = wordsComing(said, script.words);
 	const showing = objectShow(CAPTION, 'caption.show', script, null, (beginning) => ({
-		content: captionOf(said, coming.comingUp, beginning.format),
+		content: captionOf(said, comingUpAt(coming, said, beginning.scene.look), beginning.format),
 		box: boxOf(beginning.format.frame)
 	}));
 	return { ...showing, sounds: coming.sounds };

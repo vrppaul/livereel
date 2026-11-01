@@ -24,17 +24,10 @@ import {
 	A_SHARE,
 	A_SIZE,
 	type Kind,
-	OneOf,
 	Plain
 } from '../domain/handed.ts';
 import { between } from '../domain/time.ts';
-
-// How words come up: rising out of a blur, rising sharp, or standing where they are as they appear
-const WORDS_MOTIONS = ['soft', 'sharp', 'still'] as const;
-
-type WordsMotion = (typeof WORDS_MOTIONS)[number];
-
-const A_WORDS_MOTION = new OneOf(WORDS_MOTIONS, 'how words come up: "soft", "sharp" or "still"');
+import { A_WORDS_WAY, type WordsWay } from './words.ts';
 
 export interface Look {
 	/** The ground's colour, in hex, as it stands at its edges. */
@@ -114,8 +107,11 @@ export interface Look {
 	/** The cursor's colour and the colour of its edge, in hex. */
 	readonly cursorFill: string;
 	readonly cursorEdge: string;
-	/** How words come up: rising out of a blur, rising sharp, or standing where they are as they appear. */
-	readonly wordsMotion: WordsMotion;
+	/**
+	 * How words come up where a film names no way of their own (`src/props/words.ts`): a title's, a caption's, a
+	 * callout's and a note's, each read as it comes.
+	 */
+	readonly words: WordsWay;
 }
 
 /**
@@ -193,7 +189,7 @@ const SHARE = new LookKind(A_SHARE, asWritten, between, CHECKED_HERE);
 const WEIGHT = new LookKind(A_WEIGHT, asWritten, between, CHECKED_HERE);
 const FAMILY = new LookKind(A_FONT_FAMILY, asWritten, halfWay, 'font family');
 const LAYERS = new LookKind(A_GROUND_LAYERS, standingWhole, fadingInto, 'ground layers');
-const WAY_OF_WORDS = new LookKind(A_WORDS_MOTION, asWritten, halfWay, CHECKED_HERE);
+const WAY_OF_WORDS = new LookKind(A_WORDS_WAY, asWritten, halfWay, CHECKED_HERE);
 // CSS's word for no layers at all, and the share the layers that come stand at once they have come in whole
 const NO_LAYERS = 'none';
 const COME_WHOLE = 1;
@@ -243,7 +239,7 @@ export const LOOK_KINDS: { readonly [Name in keyof Look]: LookKind<Written<Look[
 	endingCommandSize: SIZE,
 	cursorFill: COLOUR,
 	cursorEdge: COLOUR,
-	wordsMotion: WAY_OF_WORDS
+	words: WAY_OF_WORDS
 };
 
 /** livereel's own look: a dark ground lit toward its top middle, light words, an amber accent. */
@@ -288,7 +284,7 @@ export const LIVEREELS_LOOK: Look = {
 	endingCommandSize: 38,
 	cursorFill: '#111',
 	cursorEdge: '#fff',
-	wordsMotion: 'soft'
+	words: 'rise'
 };
 
 const LOOK_NAMES = Object.keys(LOOK_KINDS).filter(isOfTheLook);

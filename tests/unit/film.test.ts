@@ -312,7 +312,7 @@ test('a film is shot on the stage it names, apart where it names none; a stage l
 
 test('a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, pixels less than none, a share past 1, a size of none, a way words come up it has not, a colour not in hex, a font of no name', () => {
 	const names =
-		'ground, glow, groundLayers, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, paneCorner, paneEdge, paneShadow, paneShadowColour, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, cursorFill, cursorEdge, wordsMotion';
+		'ground, glow, groundLayers, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, paneCorner, paneEdge, paneShadow, paneShadowColour, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, cursorFill, cursorEdge, words';
 	expect(() => filmWritten({ theme: null })).toThrow(
 		new FilmError(`the film's theme is handed null for an object of ${names}`)
 	);
@@ -328,8 +328,10 @@ test('a theme in no form of one is refused as the film is defined, where it stan
 	expect(() => filmWritten({ theme: { captionSize: 0 } })).toThrow(
 		new FilmError("the film's theme's captionSize is 0: it is a number of pixels, more than 0")
 	);
-	expect(() => filmWritten({ theme: { wordsMotion: 'bouncy' } })).toThrow(
-		new FilmError(`the film's theme's wordsMotion is "bouncy": it is how words come up: "soft", "sharp" or "still"`)
+	expect(() => filmWritten({ theme: { words: 'bouncy' } })).toThrow(
+		new FilmError(
+			`the film's theme's words is "bouncy": it is how words come up: "rise", "sharp", "fade", "blur", "mask", "letters" or "scramble"`
+		)
 	);
 	expect(() => filmWritten({ theme: { ground: 'navy' } })).toThrow(
 		new FilmError(`the film's theme's ground is "navy": it is a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa`)

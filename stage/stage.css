@@ -395,8 +395,7 @@ body {
 
 /* The part an object's figure stands in — its words, its pane, the card's lines, the caps — which a way of livereel's is drawn on (`src/props/way.ts`), whatever the figure does of itself: it stands where the figure stands, as large, and its transform, opacity and cut are the way's alone, which no rule of a kind sets (stylelint refuses one). On its way the figure stands shifted toward the edge it comes from by its box and the reach past it on both sides, grown from its middle, as clear as the way has it, its shadow as strong, and cut where it stands whole, a reach past its box, the engine moving the cut back by the shift: so a figure shifted whole stands past its cut, out of sight. The reach is how far a figure draws past its box on each side: for words a share of their letters' size, for their tails and marks */
 .way {
-	--letters-tails: 0.25;
-	--way-reach: calc(var(--letters-tails) * 1em);
+	--way-reach: var(--letters-tails-reach);
 	--way-reach-top: var(--way-reach);
 	--way-reach-right: var(--way-reach);
 	--way-reach-bottom: var(--way-reach);
@@ -438,14 +437,30 @@ body {
 	filter: blur(calc((1 - var(--appeared)) * var(--word-blur) + var(--gone) * var(--word-blur-leaving)));
 }
 
-/* A film's theme may have words rise sharp, out of no blur, or stand where they are as they fade up */
-:root[data-words-motion='sharp'] .words .word {
+/* Words come up and go in the way the film or its theme names (`data-words`, `src/props/words.ts`): rising out of a blur, as above; rising sharp; fading up where they stand; coming clear out of a blur there; or each rising from under its own line, cut there a reach below its box for its letters' tails, and sinking back under it as it goes. Words that come letter by letter stand whole as their letters come, and go as rising words do */
+.words[data-words='sharp'] .word {
 	filter: none;
 }
 
-:root[data-words-motion='still'] .words .word {
+.words[data-words='fade'] .word {
 	filter: none;
 	transform: none;
+}
+
+.words[data-words='blur'] .word {
+	transform: none;
+}
+
+.words[data-words='mask'] .word {
+	--under-its-line: calc((1 - var(--appeared) + var(--gone)) * (100% + 2 * var(--letters-tails-reach)));
+
+	opacity: 1;
+	filter: none;
+	transform: translateY(var(--under-its-line));
+	clip-path: inset(
+		calc(-1 * var(--letters-tails-reach)) calc(-1 * var(--letters-tails-reach))
+			calc(var(--under-its-line) - var(--letters-tails-reach)) calc(-1 * var(--letters-tails-reach))
+	);
 }
 
 /* The space before a word comes up with it and keeps to its line: the browser drops it where it ends a line, and its underline or marker with it. Chrome leaves a space bare of an underline unless told not to */
@@ -458,6 +473,11 @@ body {
 .words .word > span,
 .words .space {
 	color: var(--ink);
+}
+
+/* A space, laid out inline, cannot rise from under its line with its word: it stands only while its word stands whole, so an underline or a marker under it never stands over the words still rising */
+.words[data-words='mask'] .space {
+	opacity: round(down, calc(var(--appeared) * (1 - var(--gone))), 1);
 }
 
 .words .italic {
@@ -496,10 +516,23 @@ body {
 	background: var(--marker);
 }
 
-/* A word typed, laid out whole from the start: each of its letters, the space before it first, shown once as many of the word's stand typed (`--typed`, the letter's own place `--letter`), its underline or strike with it, and its marker under each letter, not the piece, as each comes */
+/* A word laid out letter by letter, whole from the start: each of its letters, the space before it first, shown once as many of the word's stand (`--typed`, the letter's own place `--letter`), its underline or strike with it, and its marker under each letter, not the piece, as each comes */
 .words .letter {
 	position: relative;
 	opacity: clamp(0, var(--typed) - var(--letter), 1);
+}
+
+/* A scrambled letter before it settles: its own letter kept for its width, unseen, and the sign it stands as drawn over it in the letters' ink, centred on it, so a sign wider than its letter reaches past both its sides alike */
+.words .letter[data-sign] {
+	-webkit-text-fill-color: transparent;
+}
+
+.words .letter[data-sign]::before {
+	content: attr(data-sign);
+	position: absolute;
+	left: 50%;
+	translate: -50% 0;
+	-webkit-text-fill-color: currentcolor;
 }
 
 .words .marked:has(> .letter) {

@@ -28,9 +28,10 @@ export function captionOf(said: Said, comingUp: ComingUp, format: Format): Capti
 	return { kind: 'caption', ...said, at: format.captionAt ?? AT_THE_FOOT, comingUp };
 }
 
-/** A caption as the stage draws it, as far as the object showing it stands. */
-export function drawnCaption(caption: Caption, presences: Presences): DrawnCaption {
-	return { ...drawnWordsOnGround(caption, caption.comingUp, presences), kind: caption.kind, at: caption.at };
+/** A caption as the stage draws it at a moment of the film, as far as the object showing it stands. */
+export function drawnCaption(caption: Caption, presences: Presences, moment: number): DrawnCaption {
+	const words = drawnWordsOnGround(caption, caption.comingUp, presences, moment);
+	return { ...words, kind: caption.kind, at: caption.at };
 }
 
 /** Whether a caption stands at the frame's foot, where keys would stand under it. */

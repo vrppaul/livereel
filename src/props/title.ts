@@ -31,9 +31,9 @@ export interface DrawnTitleWords extends DrawnWords {
 // Words in a place bring no ground of their own
 const NO_GROUND = 0;
 
-/** A title's words as the stage draws them, as far as the object showing them stands. */
-export function drawnTitleWords(title: TitleWords, presences: Presences): DrawnTitleWords {
-	const words = drawnWordsOnGround(title, title.comingUp, presences);
+/** A title's words as the stage draws them at a moment of the film, as far as the object showing them stands. */
+export function drawnTitleWords(title: TitleWords, presences: Presences, moment: number): DrawnTitleWords {
+	const words = drawnWordsOnGround(title, title.comingUp, presences, moment);
 	return {
 		...words,
 		kind: title.kind,

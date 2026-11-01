@@ -2,8 +2,9 @@
  * A person typing: keys at uneven times, a breath now and then, a wrong key rubbed out.
  *
  * Typing at an even pace reads as a machine. The times are drawn from a seed by a generator of livereel's own
- * (mulberry32, its gaps lognormal by Box–Muller), so a film typed twice is typed the same on any Node.
+ * (`src/domain/chance.ts`, its gaps lognormal by Box–Muller), so a film typed twice is typed the same on any Node.
  */
+import { Chance } from './chance.ts';
 import {
 	A_NUMBER,
 	A_STRING,
@@ -46,14 +47,6 @@ const BREATH_SECONDS = 0.22;
 const SLIP_STANDS_SECONDS = 0.3;
 const KEYBOARD_ROWS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
 const SPACE = ' ';
-// mulberry32's constants: the step its state moves by, the shifts and the odd number it mixes with, and the range
-// of the 32-bit numbers it draws, which a draw is divided by to fall between 0 and 1
-const MULBERRY_STEP = 0x6d2b79f5;
-const FIRST_SHIFT = 15;
-const SECOND_SHIFT = 7;
-const LAST_SHIFT = 14;
-const MIXING_ODD = 61;
-const THIRTY_TWO_BITS = 4_294_967_296;
 // Box–Muller: a normal draw is the square root of minus twice the log of one uniform draw, turned by another
 const BOX_MULLER_SCALE = -2;
 const HALF_TURNS = 2;
@@ -67,14 +60,14 @@ const LAST = -1;
 export function keystrokes(text: string, typist: Typist): readonly Keystroke[] {
 	assertKind(text, A_STRING, "keystrokes's text");
 	assertWritten(typist, TYPIST_FORM, 'keystrokes');
-	const chance = new Chance(typist.seed);
+	const rhythm = new Rhythm(typist.seed);
 	const pace = typist.pace ?? 1;
 	const strokes: Keystroke[] = [];
 	let moment = 0;
 	let typed = '';
 	const letters = lettersOf(text);
 	for (const [index, letter] of letters.entries()) {
-		const gap = chance.gap(letters[index - 1] === SPACE) * pace;
+		const gap = rhythm.gap(letters[index - 1] === SPACE) * pace;
 		// A letter on no row of the keyboard has no key beside it to slip to
 		const slip = beside(letter);
 		if (index === typist.slipAt && slip !== letter) {
@@ -126,29 +119,22 @@ function beside(letter: string): string {
 }
 
 /** The seeded draws a typing's rhythm is made of. */
-class Chance {
-	private state: number;
+class Rhythm {
+	private readonly chance: Chance;
 
 	constructor(seed: number) {
-		this.state = seed >>> 0;
+		this.chance = new Chance(seed);
 	}
 
 	/** The time before a key: the usual one, more or less, slower at a word's start, now and then a breath. */
 	gap(startsAWord: boolean): number {
 		const usual = KEY_SECONDS * Math.exp(KEY_SPREAD * this.normal());
 		const atItsPace = startsAWord ? usual * WORD_START_SLOWER : usual;
-		return this.uniform() < BREATH_CHANCE ? atItsPace + BREATH_SECONDS : atItsPace;
+		return this.chance.uniform() < BREATH_CHANCE ? atItsPace + BREATH_SECONDS : atItsPace;
 	}
 
 	private normal(): number {
-		const first = 1 - this.uniform();
-		return Math.sqrt(BOX_MULLER_SCALE * Math.log(first)) * Math.cos(FULL_TURN * this.uniform());
-	}
-
-	private uniform(): number {
-		this.state = (this.state + MULBERRY_STEP) >>> 0;
-		let mixed = Math.imul(this.state ^ (this.state >>> FIRST_SHIFT), this.state | 1);
-		mixed ^= mixed + Math.imul(mixed ^ (mixed >>> SECOND_SHIFT), mixed | MIXING_ODD);
-		return ((mixed ^ (mixed >>> LAST_SHIFT)) >>> 0) / THIRTY_TWO_BITS;
+		const first = 1 - this.chance.uniform();
+		return Math.sqrt(BOX_MULLER_SCALE * Math.log(first)) * Math.cos(FULL_TURN * this.chance.uniform());
 	}
 }
