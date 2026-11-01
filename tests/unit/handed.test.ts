@@ -131,6 +131,17 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => code.show('x', { at: { width: 0 } })).toThrow(
 		new FilmError("code.show's at's width is 0: it is a share more than none")
 	);
+	expect(() => code.to('left', { scale: 0 })).toThrow(
+		new FilmError("code.to's scale is 0: it is a scale, more than 0, 1 as large as its place")
+	);
+	expect(() => title.to('left', { depth: 2000 })).toThrow(
+		new FilmError(
+			"title.to's depth is 2000: it is a number of pixels of a frame 1080 high toward the eye, less than the eye's 2000"
+		)
+	);
+	expect(() => terminal.lean({ roll: '90' as never })).toThrow(
+		new FilmError('terminal.lean\'s roll is "90": it is a number')
+	);
 	expect(() => title.hide({ at: 'left' } as never)).toThrow(
 		new FilmError('title.hide names at: it names toward, leave, edge, within, ease, as, or fewer')
 	);

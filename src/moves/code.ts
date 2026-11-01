@@ -110,7 +110,10 @@ export function show(text: string, script: CodeScript): Move {
 	}));
 }
 
-/** The code shown carried to another place, through the boxes between. */
+/**
+ * The code shown carried to another place, through the boxes between, growing to `scale` and coming `depth` toward
+ * the eye on the way where the film names them.
+ */
 export function to(place: Place, script: ToScript = {}): Move {
 	return objectTo(CODE, 'code.to', place, script);
 }
@@ -138,7 +141,10 @@ export function scrollTo(line: LineNamed, script: ScrollScript = {}): Move {
 	return contentMove(name, timingOf(script), (beginning) => scrolling(beginning, name, line));
 }
 
-/** The code shown leant back from its top edge by `tilt` and swung about its middle by `turn`, its pane with it. */
+/**
+ * The code shown leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled in its own plane
+ * by `roll`, its pane with it.
+ */
 export function lean(script: ObjectLeanScript): Move {
 	return objectLean(CODE, 'code.lean', script);
 }

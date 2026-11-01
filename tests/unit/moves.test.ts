@@ -1,13 +1,6 @@
 import { expect, test } from 'vitest';
-import {
-	type Camera,
-	FACE_ON,
-	onTheFrame,
-	placedIn,
-	underTheFrame,
-	wholeView,
-	windowView
-} from '../../src/domain/camera.ts';
+import { AS_PLACED } from '../../src/domain/stance.ts';
+import { type Camera, onTheFrame, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
 import { linear } from '../../src/domain/time.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import type { Format } from '../../src/domain/format.ts';
@@ -24,7 +17,7 @@ import * as code from '../../src/moves/code.ts';
 import * as ending from '../../src/moves/ending.ts';
 import { type DrawnObject, type Surroundings, drawnObject } from '../../src/props/object.ts';
 import { SCREEN_UP } from '../../src/props/screen.ts';
-import { pastTheEdge, wordsPlaced } from '../../src/domain/place.ts';
+import { ONE_FRAME, pastTheEdge, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
 import * as look from '../../src/moves/look.ts';
 import * as note from '../../src/moves/note.ts';
@@ -91,12 +84,12 @@ const PAGE = new PageOfBoxes(
 const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
 const ACTED_IN = 'bring it in with an act, as no move of livereel scrolls the page sideways';
 const LIT = { box: BLOCK, strength: 1, dim: 0.6 };
-// No caption standing round an object drawn alone, and the screen up
-const NOTHING_AROUND: Surroundings = { caption: null, screen: SCREEN_UP };
+// No caption standing round an object drawn alone, the screen up, on the small frame
+const NOTHING_AROUND: Surroundings = { caption: null, screen: SCREEN_UP, frame: SMALL.frame };
 const TYPED = withObject(openingScene(SMALL, LIVEREELS_LOOK), 'terminal', {
 	inside: 'frame',
 	box: BLOCK,
-	angle: FACE_ON,
+	...AS_PLACED,
 	shown: 1,
 	gone: 0,
 	way: OWN_WAY,
@@ -111,6 +104,8 @@ const CAPTIONS_AT_THE_TOP: Format = { ...SMALL, captionAt: 'top' };
 // The lower right quarter of what an object stands in, and the upper left
 const LOWER_RIGHT = { left: 0.5, top: 0.5, width: 0.5, height: 0.5 } as const;
 const UPPER_LEFT = { left: 0, top: 0, width: 0.5, height: 0.5 } as const;
+// A band across the whole frame's width, which code stands in edge to edge
+const ACROSS_THE_FRAME = { left: 0, top: 0.3, width: 1, height: 0.4 } as const;
 
 function beginningOf(scene: Scene): Beginning {
 	return beginningIn(scene, SMALL);
@@ -354,9 +349,9 @@ test('a title or code shown from a side slides in whole from a frame past its pl
 	const leaving = (await setAt(code.hide({ toward: 'top' }), coded, 0.5)).objects.get('code')!;
 	const left = await setAt(code.hide({ toward: 'top' }), coded, 1);
 	expect([coming.box, coming.shown, leaving.box, [...left.objects.keys()]]).toEqual([
-		pastTheEdge(place, 'right', SMALL.frame),
+		pastTheEdge(place, 'right', SMALL.frame, ONE_FRAME),
 		1,
-		boxToward(place, pastTheEdge(place, 'top', SMALL.frame), 0.5),
+		boxToward(place, pastTheEdge(place, 'top', SMALL.frame, ONE_FRAME), 0.5),
 		[]
 	]);
 });
@@ -387,8 +382,8 @@ test('an object shown from a side pushes the one of its name off past the side a
 		named.objects.get('code')!.box,
 		[...pushed.leaving.keys()]
 	]).toEqual([
-		boxToward(pastTheEdge(right, 'right', SMALL.frame), right, 0.5),
-		boxToward(frame, pastTheEdge(frame, 'left', SMALL.frame), 0.5),
+		boxToward(pastTheEdge(right, 'right', SMALL.frame, ONE_FRAME), right, 0.5),
+		boxToward(frame, pastTheEdge(frame, 'left', SMALL.frame, ONE_FRAME), 0.5),
 		[],
 		left,
 		[]
@@ -405,9 +400,9 @@ test('a title over the whole frame stands on its ground over the frame, and slid
 		drawnObject('title', shown.objects.get('title')!, 0, NOTHING_AROUND).content.ground,
 		leaving.objects.get('title')!.box
 	]).toEqual([
-		boxToward(pastTheEdge(frame, 'left', SMALL.frame), frame, 0.5),
+		boxToward(pastTheEdge(frame, 'left', SMALL.frame, ONE_FRAME), frame, 0.5),
 		1,
-		boxToward(frame, pastTheEdge(frame, 'top', SMALL.frame), 0.5)
+		boxToward(frame, pastTheEdge(frame, 'top', SMALL.frame, ONE_FRAME), 0.5)
 	]);
 });
 
@@ -424,13 +419,74 @@ test('two titles stand at once by their names, in the order shown, each moved an
 	]).toEqual([['title', 'second'], wordsPlaced(SMALL, 'bottom'), wordsPlaced(SMALL, 'left'), ['second']]);
 });
 
-test('an object is handed to the stage with its angle where it leans, and with none face-on, leant back to none too', async () => {
+test('an object facing the frame is drawn flat however large, near or rolled it stands, in 3D where it leans, and flat again a whole turn round', async () => {
 	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const leant = await setAt(code.lean({ turn: 8 }), coded, 1);
-	const back = await setAt(code.lean({ turn: 0 }), leant, 1);
+	const grown = await setAt(code.to('left', { scale: 1.5, depth: 300 }), coded, 1);
+	const rolled = await setAt(code.lean({ roll: 30 }), grown, 1);
+	const leant = await setAt(code.lean({ turn: 8 }), rolled, 1);
+	const turnedWhole = await setAt(code.lean({ turn: 360, tilt: -360 }), rolled, 1);
 	expect(
-		[coded, leant, back].map((scene) => drawnObject('code', scene.objects.get('code')!, 0, NOTHING_AROUND).angle)
-	).toEqual([null, { tilt: 0, turn: 8 }, null]);
+		[coded, grown, rolled, leant, turnedWhole].map(
+			(scene) => drawnObject('code', scene.objects.get('code')!, 0, NOTHING_AROUND).transform.kind
+		)
+	).toEqual(['flat', 'flat', 'flat', 'leant', 'flat']);
+});
+
+test('an object turned half way round, by a tilt or a turn, shows the eye its back, and its front rolled over or a whole turn round', async () => {
+	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const turned = await Promise.all(
+		[{ turn: 180 }, { tilt: 180 }, { turn: 120 }, { roll: 180 }, { turn: 360 }].map((angle) =>
+			setAt(code.lean(angle), coded, 1)
+		)
+	);
+	expect(turned.map((scene) => drawnObject('code', scene.objects.get('code')!, 0, NOTHING_AROUND).face)).toEqual([
+		'back',
+		'back',
+		'back',
+		'front',
+		'front'
+	]);
+});
+
+test('an object rolls as it leans, and grows and comes toward the eye as it is carried, what a move leaves out kept as it stands', async () => {
+	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const leant = await setAt(code.lean({ tilt: 10, roll: 30 }), coded, 1);
+	const turned = await setAt(code.lean({ turn: 20 }), leant, 1);
+	const grown = await setAt(code.to('right', { scale: 2, depth: 100 }), turned, 1);
+	const carried = (await setAt(code.to('left'), grown, 1)).objects.get('code')!;
+	// A depth given in pixels of a frame 1080 high stands in the frame's own
+	expect([carried.angle, carried.scale, carried.depth, carried.box]).toEqual([
+		{ tilt: 10, turn: 20, roll: 30 },
+		2,
+		100 * frameScaleOf(SMALL.frame),
+		wordsPlaced(SMALL, 'left')
+	]);
+});
+
+test("an object brought half way to the eye is drawn twice as large, and twice as far from the frame's middle", async () => {
+	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const near = (await setAt(code.to('left', { depth: 1000 }), coded, 1)).objects.get('code')!;
+	const drawnAs = drawnObject('code', near, 0, NOTHING_AROUND).transform.matrix;
+	// Twice as far from the frame's middle, its middle moves as far again as it stood from it
+	expect([drawnAs.m11, drawnAs.m22, drawnAs.m41, drawnAs.m42]).toEqual([
+		expect.closeTo(2),
+		expect.closeTo(2),
+		expect.closeTo(middleX(near.box) - SMALL.frame.width / 2),
+		expect.closeTo(middleY(near.box) - SMALL.frame.height / 2)
+	]);
+});
+
+test('an object drawn larger than its box slides out, or is pushed off, until all of it stands past the edge, the one pushing it in step', async () => {
+	const coded = await setAt(code.show(THREE_LINES, { at: ACROSS_THE_FRAME }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const grown = await setAt(code.to(ACROSS_THE_FRAME, { scale: 1.5 }), coded, 1);
+	const sliding = await setAt(code.hide({ toward: 'right' }), grown, 0.5);
+	const pushing = await setAt(code.show(THREE_LINES, { at: ACROSS_THE_FRAME, from: 'left' }), grown, 0.5);
+	// Its box as wide as the frame of 400, drawn from -100 to 500: it goes 500 to the right, half of it half way
+	expect([
+		sliding.objects.get('code')!.box.left,
+		pushing.leaving.get('code')!.box.left,
+		pushing.objects.get('code')!.box.left
+	]).toEqual([250, 250, -250]);
 });
 
 test('an object leans by a move of its own while another carries it and its content changes, each its own way along, a side of the angle left out kept', async () => {
@@ -446,7 +502,7 @@ test('an object leans by a move of its own while another carries it and its cont
 		object.content.lines.map((line) => line.lit),
 		play({ seconds: 1, moves }).moves
 	]).toEqual([
-		{ tilt: 10, turn: -10 },
+		{ tilt: 10, turn: -10, roll: 0 },
 		boxToward(wordsPlaced(SMALL, 'left'), wordsPlaced(SMALL, 'right'), 0.5),
 		[0, 0.5, 0],
 		moves
@@ -669,9 +725,9 @@ test('the window shown from a side slides in whole from a frame past its place, 
 	const shown = await setAt(windowShow({ at: 'right', from: 'bottom' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const gone = await setAt(windowHide({ toward: 'left' }), shown, 1);
 	expect([coming, shown, gone].map((scene) => cameraOf(scene, SMALL).view)).toEqual([
-		windowView(pastTheEdge(room, 'bottom', SMALL.frame)),
+		windowView(pastTheEdge(room, 'bottom', SMALL.frame, ONE_FRAME)),
 		windowView(room),
-		windowView(pastTheEdge(room, 'left', SMALL.frame))
+		windowView(pastTheEdge(room, 'left', SMALL.frame, ONE_FRAME))
 	]);
 });
 
@@ -950,14 +1006,22 @@ test("what stands inside the page's window shows no more than the screen it show
 	]).toEqual([0.5, 1, 0.5, [2]]);
 });
 
-test("an object inside the page's window leans with it, never alone", async () => {
+test("an object inside the page's window grows and rolls in the window's plane, and leans or comes toward the eye only with it", async () => {
 	const nested = await setAt(
 		code.show('x', { at: LOWER_RIGHT, inside: 'window' }),
 		openingScene(SMALL, LIVEREELS_LOOK),
 		1
 	);
+	const rolled = await setAt(code.lean({ roll: 15 }), nested, 1);
+	const grown = (await setAt(code.to(LOWER_RIGHT, { scale: 1.5 }), rolled, 1)).objects.get('code')!;
+	expect([grown.angle.roll, grown.scale]).toEqual([15, 1.5]);
 	await expect(async () => code.lean({ turn: 10 }).begin(beginningOf(nested))).rejects.toThrow(
-		new FilmError('code.lean would lean the code alone: it stands inside the window, and leans as it does')
+		new FilmError(
+			'code.lean would tilt or turn the code alone: it stands inside the window, and leans as it does; it rolls in it'
+		)
+	);
+	await expect(async () => code.to(LOWER_RIGHT, { depth: 50 }).begin(beginningOf(nested))).rejects.toThrow(
+		new FilmError('code.to would bring the code toward the eye alone: it stands inside the window, flat on it')
 	);
 });
 

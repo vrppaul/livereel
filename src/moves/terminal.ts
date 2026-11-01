@@ -118,12 +118,18 @@ export function works(lines: readonly TerminalLine[], thinking: string, script: 
 	);
 }
 
-/** The terminal carried to another place, through the boxes between. */
+/**
+ * The terminal carried to another place, through the boxes between, growing to `scale` and coming `depth` toward the
+ * eye on the way where the film names them.
+ */
 export function to(place: Place, script: ToScript = {}): Move {
 	return objectTo(TERMINAL, 'terminal.to', place, script);
 }
 
-/** The terminal leant back from its top edge by `tilt` and swung about its middle by `turn`. */
+/**
+ * The terminal leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled in its own plane by
+ * `roll`.
+ */
 export function lean(script: ObjectLeanScript): Move {
 	return objectLean(TERMINAL, 'terminal.lean', script);
 }

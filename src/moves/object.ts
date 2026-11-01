@@ -2,27 +2,30 @@
  * The moves of an object (`src/props/object.ts`), alike whatever it shows, written once for every kind that makes
  * one — a title's words, code, the agent's terminal, the ending card, a caption, keys: coming up in its box, in its own
  * way or one of livereel's (`src/props/way.ts`), or sliding in whole from past a side of the frame, pushing the
- * object of its name standing there off past the side across; carried to another place; leant; put away where it
- * stands, in its own way or one of livereel's, or slid out past a side. A move takes the object a film names `as`, or
- * its kind's own name, so a film shows several of a kind at once, each moved by its name. What differs by what an
- * object shows is told here, kind by kind: the curve it comes up on in its own way, whether it is ever carried or
- * leant, how it reads a place, and the box it sets off from as it is carried.
+ * object of its name standing there off past the side across; carried to another place, growing and coming toward the
+ * eye on the way; leant and rolled; put away where it stands, in its own way or one of livereel's, or slid out past a
+ * side. A move takes the object a film names `as`, or its kind's own name, so a film shows several of a kind at once,
+ * each moved by its name. What differs by what an object shows is told here, kind by kind: the curve it comes up on in
+ * its own way, whether it is ever carried or leant, how it reads a place, and the box it sets off from as it is
+ * carried.
  *
- * A move that carries an object sets its box alone, one that leans it its angle alone, one of what it shows its content
- * alone, each writing its own into the object as it stands, so they share a step, each as far along as its own share;
- * a move that brings one or puts it away sets it whole. A move of an object that is not on the screen is refused as it
- * begins.
+ * A move that carries an object sets its box, scale and depth alone, one that leans it its angle alone, one of what it
+ * shows its content alone, each writing its own into the object as it stands, so they share a step, each as far along
+ * as its own share; a move that brings one or puts it away sets it whole, standing as its box places it. A move of an
+ * object that is not on the screen is refused as it begins.
  */
-import { FACE_ON, angleToward, viewOf } from '../domain/camera.ts';
+import { viewOf } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
-import { A_FRAME_SIDE, type Box, type FrameSide, type Size, boxToward } from '../domain/geometry.ts';
-import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { A_FRAME_SIDE, type Box, type FrameSide, type Size, boxToward, frameScaleOf } from '../domain/geometry.ts';
+import { A_NUMBER, type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { AS_PLACED, A_DEPTH, A_SCALE, type Orientation, orientationToward } from '../domain/stance.ts';
 import {
 	A_PLACE,
 	type Place,
 	acrossFrom,
+	ONE_FRAME,
 	enteringFrom,
 	pastTheEdge,
 	placesNamed,
@@ -31,7 +34,7 @@ import {
 	wordsPlaced,
 	wordsResized
 } from '../domain/place.ts';
-import { type Ease, linear } from '../domain/time.ts';
+import { type Ease, between, linear } from '../domain/time.ts';
 import {
 	type Beginning,
 	type Change,
@@ -50,7 +53,8 @@ import {
 	type Holder,
 	INSIDE_THE_WINDOW,
 	type Inside,
-	type ObjectName
+	type ObjectName,
+	framesPastTheEdge
 } from '../props/object.ts';
 import { A_WAY, OWN_WAY, type Way, type WayName, comesFromAnEdge, wayNamed } from '../props/way.ts';
 import { type Scene, withLeaving, withObject } from '../scene.ts';
@@ -98,8 +102,14 @@ export interface NestedScript {
 	readonly inside?: Inside;
 }
 
-/** Which object is carried to another place. */
-export interface ToScript extends TimingScript, NamedScript {}
+/**
+ * Which object is carried to another place, and how large it stands there, `scale`, and how far out toward the eye,
+ * `depth`, in pixels of a frame 1080 high; either left out as it stands.
+ */
+export interface ToScript extends TimingScript, NamedScript {
+	readonly scale?: number;
+	readonly depth?: number;
+}
 
 /**
  * Which object is put away, and the side of the frame it slides out `toward`, past the frame's edge, if any, or the
@@ -109,8 +119,10 @@ export interface HideScript extends TimingScript, NamedScript, LeaveScript {
 	readonly toward?: FrameSide;
 }
 
-/** Which object leans, and how. */
-export interface ObjectLeanScript extends LeanScript, NamedScript {}
+/** Which object leans, and how: as the window leans, and rolled clockwise in its own plane by `roll`, in degrees. */
+export interface ObjectLeanScript extends LeanScript, NamedScript {
+	readonly roll?: number;
+}
 
 /** What an object comes up showing, and the box of the frame it comes up in. */
 export interface Coming {
@@ -124,10 +136,14 @@ interface Arrival {
 	readonly way: Way;
 }
 
-/** An object pushed off past the frame's edge: as it stood, and the box it goes to there. */
+/**
+ * An object pushed off past the frame's edge: as it stood, the box it goes to there, and how many frames away that is,
+ * which the one pushing it comes from.
+ */
 interface Push {
 	readonly object: FrameObject;
 	readonly end: Box;
+	readonly frames: number;
 }
 
 export const NAMED_FORM: Form<NamedScript> = { as: AN_OBJECT_NAME };
@@ -137,12 +153,12 @@ export const SHOW_FORM: Form<ShowScript> = { from: A_FRAME_SIDE, ...ENTER_FORM, 
 export const IN_PLACE_SHOW_FORM: Form<InPlaceShowScript> = { ...ENTER_FORM, ...TIMING_FORM };
 export const IN_PLACE_HIDE_FORM: Form<InPlaceHideScript> = { ...LEAVE_FORM, ...TIMING_FORM };
 export const NESTED_FORM: Form<NestedScript> = { inside: INSIDE_THE_WINDOW };
-const TO_FORM: Form<ToScript> = { ...NAMED_FORM, ...TIMING_FORM };
+const TO_FORM: Form<ToScript> = { scale: A_SCALE, depth: A_DEPTH, ...NAMED_FORM, ...TIMING_FORM };
 const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...LEAVE_FORM, ...TIMING_FORM, ...NAMED_FORM };
-const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { ...LEAN_FORM, ...NAMED_FORM };
+const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { roll: A_NUMBER, ...LEAN_FORM, ...NAMED_FORM };
 // The values of an object a move that carries it sets, one that leans it, and one of what it shows; what each writes
 // is held to them
-const CARRIED = ['box'] as const satisfies readonly (keyof FrameObject)[];
+const CARRIED = ['box', 'scale', 'depth'] as const satisfies readonly (keyof FrameObject)[];
 const LEANT = ['angle'] as const satisfies readonly (keyof FrameObject)[];
 const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
 // Where an object stands that a film shows inside nothing
@@ -209,7 +225,10 @@ export function objectShow(
 	};
 }
 
-/** An object of a kind carried to a place, through the boxes between. */
+/**
+ * An object of a kind carried to a place, through the boxes between, growing to the film's scale and coming to its
+ * depth on the way.
+ */
 export function objectTo(kind: ObjectKind, move: string, place: Place, script: ToScript): Move {
 	assertKind(place, A_PLACE, `${move}'s place`);
 	assertWritten(script, TO_FORM, move);
@@ -219,7 +238,7 @@ export function objectTo(kind: ObjectKind, move: string, place: Place, script: T
 		valueNames: CARRIED,
 		timing: timingOf(script),
 		places: placesNamed(`${move}'s place`, place),
-		begin: (beginning) => carried(beginning, name, place, move)
+		begin: (beginning) => carried(beginning, name, place, script, move)
 	};
 }
 
@@ -243,7 +262,10 @@ export function objectHide(kind: ObjectKind, move: string, script: HideScript): 
 	};
 }
 
-/** An object of a kind leant back from its top edge by `tilt` and swung about its middle by `turn`. */
+/**
+ * An object of a kind leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled in its own
+ * plane by `roll`.
+ */
 export function objectLean(kind: ObjectKind, move: string, script: ObjectLeanScript): Move {
 	assertWritten(script, LEAN_OBJECT_FORM, move);
 	const name = script.as ?? kind;
@@ -351,18 +373,18 @@ function appearingIn(
 
 /**
  * An object coming into its box in the way it comes up there, or from a frame past it where it slides in, pushing the
- * one of its name standing.
+ * one of its name standing: from as many frames past as that one goes, so the two move as one sheet.
  */
 function appearing(beginning: Beginning, name: ObjectName, inside: Holder, coming: Coming, arrival: Arrival): Change {
 	const frame = beginning.format.frame;
-	const start = enteringFrom(coming.box, arrival.from, frame);
 	const push = pushOf(beginning.scene.objects.get(name), arrival.from, frame);
+	const start = enteringFrom(coming.box, arrival.from, frame, push?.frames ?? ONE_FRAME);
 	return (scene, progress) =>
 		withLeaving(
 			withObject(scene, name, {
 				inside,
 				box: boxToward(start, coming.box, progress),
-				angle: FACE_ON,
+				...AS_PLACED,
 				shown: shownComing(arrival.from, progress),
 				// Not going: neither gone nor on its way out
 				gone: NONE,
@@ -374,27 +396,49 @@ function appearing(beginning: Beginning, name: ObjectName, inside: Holder, comin
 		);
 }
 
-/** The object on its way to a place, from the box what it shows sets off from. */
-function carried(beginning: Beginning, name: ObjectName, place: Place, move: string): Change {
+/**
+ * The object on its way to a place, from the box what it shows sets off from, and to the film's scale and depth from
+ * its own, a depth given in pixels of a frame 1080 high. Inside the page's window it stands flat on the window's
+ * plane, so a depth of its own is refused there.
+ */
+function carried(beginning: Beginning, name: ObjectName, place: Place, script: ToScript, move: string): Change {
 	const object = movable(beginning, name, move);
 	refusePlacedInside(object.inside, place, `${move}'s place`);
 	const end = placedFor(object.content.kind, seenFrom(beginning, object.inside).format, place);
 	const start = settingOff(object.content, object.box, end);
-	return writing(name, (progress): Carried => ({ box: boxToward(start, end, progress) }));
+	const scale = script.scale ?? object.scale;
+	const depth = script.depth === undefined ? object.depth : script.depth * frameScaleOf(beginning.format.frame);
+	if (object.inside !== ON_THE_FRAME && depth !== object.depth) {
+		throw new FilmError(
+			`${move} would bring the ${name} toward the eye alone: it stands inside the window, flat on it`
+		);
+	}
+	return writing(name, (progress): Carried => ({
+		box: boxToward(start, end, progress),
+		scale: between(object.scale, scale, progress),
+		depth: between(object.depth, depth, progress)
+	}));
 }
 
 /**
- * The object's angle on its way from how it leans to the film's; refused inside the page's window, as it leans with
- * the window, and a lean of its own would only lie flat on the window's.
+ * The object's orientation on its way from how it faces to the film's. Inside the page's window it leans as the window
+ * does, and a lean of its own would only lie flat on the window's, so a tilt or a turn is refused there: it rolls.
  */
-function leaning(beginning: Beginning, name: ObjectName, script: LeanScript, move: string): Change {
+function leaning(beginning: Beginning, name: ObjectName, script: ObjectLeanScript, move: string): Change {
 	const object = movable(beginning, name, move);
-	if (object.inside !== ON_THE_FRAME) {
-		throw new FilmError(`${move} would lean the ${name} alone: it stands inside the window, and leans as it does`);
-	}
 	const from = object.angle;
-	const to = leantFrom(from, script);
-	return writing(name, (progress): Leant => ({ angle: angleToward(from, to, progress) }));
+	const to = orientedFrom(from, script);
+	if (object.inside !== ON_THE_FRAME && (to.tilt !== from.tilt || to.turn !== from.turn)) {
+		throw new FilmError(
+			`${move} would tilt or turn the ${name} alone: it stands inside the window, and leans as it does; it rolls in it`
+		);
+	}
+	return writing(name, (progress): Leant => ({ angle: orientationToward(from, to, progress) }));
+}
+
+/** The orientation a lean goes to from how an object faces: the film's, each value it leaves out as it stood. */
+function orientedFrom(standing: Orientation, script: ObjectLeanScript): Orientation {
+	return { ...leantFrom(standing, script), roll: script.roll ?? standing.roll };
 }
 
 /** The object going where it stands, in the way it goes; once gone, none. */
@@ -415,10 +459,14 @@ function wayOf(name: WayName | undefined, edge: FrameSide | undefined, move: str
 	return wayNamed(name ?? null, edge ?? null);
 }
 
-/** The object sliding out whole past a side of the frame, a frame away; once there, none. */
+/**
+ * The object sliding out whole past a side of the frame, a frame away, or farther where it is drawn past its box, until
+ * all of it stands past the edge; once there, none.
+ */
 function slidingOut(beginning: Beginning, name: ObjectName, toward: FrameSide, move: string): Change {
 	const object = standing(beginning, name, move);
-	const end = pastTheEdge(object.box, toward, seenFrom(beginning, object.inside).format.frame);
+	const frame = seenFrom(beginning, object.inside).format.frame;
+	const end = pastTheEdge(object.box, toward, frame, framesPastTheEdge(object, toward, frame));
 	return (scene, progress) =>
 		withObject(scene, name, untilTheEnd(progress, { ...object, box: boxToward(object.box, end, progress) }));
 }
@@ -456,11 +504,14 @@ function shownComing(from: FrameSide | null, progress: number): Fraction {
 
 /**
  * What an object sliding in from a side pushes off: the one of its name standing, whole as it stands, and the box a
- * frame past its own on the side across; none where none stands, or nothing slides in.
+ * frame past its own on the side across, or farther where it is drawn past its box, until all of it stands past the
+ * edge; none where none stands, or nothing slides in.
  */
 function pushOf(standingThere: FrameObject | undefined, from: FrameSide | null, frame: Size): Push | null {
 	if (from === null || standingThere === undefined) return null;
-	return { object: standingThere, end: pastTheEdge(standingThere.box, acrossFrom(from), frame) };
+	const toward = acrossFrom(from);
+	const frames = framesPastTheEdge(standingThere, toward, frame);
+	return { object: standingThere, end: pastTheEdge(standingThere.box, toward, frame, frames), frames };
 }
 
 /** The object pushed off, `progress` of its way; once past the edge, none. */

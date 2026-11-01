@@ -16,6 +16,7 @@
 /** @import { CodeLine, CodePiece, DrawnCode } from '../src/props/code.ts' */
 /** @import { DrawnContent, DrawnObject } from '../src/props/object.ts' */
 /** @import { Box } from '../src/domain/geometry.ts' */
+/** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
 /** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
@@ -48,8 +49,12 @@ const SIDE = 'data-side';
 // place on the ground round them, and the one that names how they read there
 const ON_GROUND = 'data-on-ground';
 const ALIGN = 'data-align';
-// The attribute an object leans by; one face-on has none, and no transform
-const LEANT = 'data-leant';
+// The attribute that names how an object is drawn about its middle, flat or leant, and the one that names the side of
+// it the eye sees, its front or its back
+const TRANSFORM = 'data-transform';
+const FACE = 'data-face';
+// What a custom property's name starts with: a matrix's entries are set as custom properties named as each entry is
+const CUSTOM_PROPERTY = '--';
 // The attribute the part an object's figure stands in is on its way by, which one standing whole has not, so it is
 // drawn on no way at all; and the one that names how the figure is cut there, from its sides or round its middle
 const ON_ITS_WAY = 'data-on-its-way';
@@ -401,8 +406,8 @@ class StagedObject {
 	draw(object) {
 		placed(this.element, object.box);
 		numbered(this.element, { '--layer': object.layer, '--held': object.held });
-		this.element.toggleAttribute(LEANT, object.angle !== null);
-		if (object.angle !== null) numbered(this.element, { '--tilt': object.angle.tilt, '--turn': object.angle.turn });
+		transformed(this.element, object.transform);
+		this.element.setAttribute(FACE, object.face);
 		wayDrawn(this.way, object.onItsWay);
 		this.content.draw(object.content);
 	}
@@ -797,6 +802,19 @@ function apply(scenes) {
  */
 function numbered(element, numbers) {
 	for (const [name, value] of Object.entries(numbers)) element.style.setProperty(name, String(value));
+}
+
+/**
+ * An element drawn about its middle as the engine works it out, by the kind of its transform: flat, by the six entries
+ * of its matrix a 2D `matrix()` takes, or leant, by all sixteen of a `matrix3d()`.
+ * @param {Staged} element @param {Transform} transform
+ */
+function transformed(element, transform) {
+	element.setAttribute(TRANSFORM, transform.kind);
+	numbered(
+		element,
+		Object.fromEntries(Object.entries(transform.matrix).map(([entry, value]) => [CUSTOM_PROPERTY + entry, value]))
+	);
 }
 
 /**

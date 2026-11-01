@@ -195,7 +195,7 @@ export function drawingOf(exposures: readonly DrawnScene[]): string {
  * own, or the flat one an act is done in.
  */
 export function drawn(scene: Scene, camera: Camera, moment: number, format: Format): DrawnScene {
-	const around: Surroundings = { caption: captionAmong(scene.objects), screen: scene.screen };
+	const around: Surroundings = { caption: captionAmong(scene.objects), screen: scene.screen, frame: format.frame };
 	return {
 		look: scene.look,
 		camera: drawnCamera(camera, format),

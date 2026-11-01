@@ -105,7 +105,10 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 	return { ...showing, sounds: coming.sounds };
 }
 
-/** The title carried to another place, through the boxes between, reading as it did. */
+/**
+ * The title carried to another place, through the boxes between, reading as it did, growing to `scale` and coming
+ * `depth` toward the eye on the way where the film names them.
+ */
 export function to(place: Place, script: ToScript = {}): Move {
 	return objectTo(TITLE, 'title.to', place, script);
 }
@@ -115,7 +118,10 @@ export function hide(script: HideScript = {}): Move {
 	return objectHide(TITLE, 'title.hide', script);
 }
 
-/** The title leant back from its top edge by `tilt` and swung about its middle by `turn`, its ground with it. */
+/**
+ * The title leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled in its own plane by
+ * `roll`, its ground with it.
+ */
 export function lean(script: ObjectLeanScript): Move {
 	return objectLean(TITLE, 'title.lean', script);
 }

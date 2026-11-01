@@ -19,7 +19,7 @@ import { type Placing, type View, viewOf, viewOver } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import { A_FRAME_SIDE, type Box, type FrameSide, liesOutside, liesWithin } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten, needed } from '../domain/handed.ts';
-import { A_PLACE, type Place, pastTheEdge, placesNamed, sideBeyond, windowPlaced } from '../domain/place.ts';
+import { A_PLACE, ONE_FRAME, type Place, pastTheEdge, placesNamed, sideBeyond, windowPlaced } from '../domain/place.ts';
 import { besideTheWindow } from '../props/note.ts';
 import { trackOf } from '../domain/track.ts';
 import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
@@ -121,7 +121,7 @@ function refuseCarryingTheNoteOff(beginning: Beginning, window: Box): void {
 /** The window on its way to its place from a frame past it on a side, lifted as it will stand there. */
 function arriving(beginning: Beginning, script: WindowShowScript): Change {
 	const to = placed(beginning, script.at);
-	const from = { ...to, box: pastTheEdge(to.box, script.from, beginning.format.frame) };
+	const from = { ...to, box: pastTheEdge(to.box, script.from, beginning.format.frame, ONE_FRAME) };
 	return carried(from, to);
 }
 
@@ -134,7 +134,7 @@ function leaving(beginning: Beginning, toward: FrameSide): Change {
 	if (liesOutside(from.box, beginning.format.frame)) {
 		throw new FilmError('window.hide hides a window already off the frame: bring it in first, with window.show');
 	}
-	const to = { ...from, box: pastTheEdge(from.box, toward, beginning.format.frame) };
+	const to = { ...from, box: pastTheEdge(from.box, toward, beginning.format.frame, ONE_FRAME) };
 	return carried(from, to);
 }
 

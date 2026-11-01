@@ -64,6 +64,7 @@ const CLOSE_AT_THE_RIGHT: Pose = { focusX: 400, focusY: 200, zoom: 2.7 };
 // The frame's left and right halves, where a title stands
 const LEFT_HALF = { left: 0, top: 0, width: 0.5, height: 1 };
 const RIGHT_HALF = { left: 0.5, top: 0, width: 0.5, height: 1 };
+const DEGREES_IN_A_HALF_TURN = 180;
 // Why a stage's page is gone, as a stage says it
 const GONE = new FilmError('the page at http://app/refusing/ refuses to be framed');
 // A picture of the page as it came out against the last: alike, or changed as the page answers the film
@@ -167,6 +168,10 @@ function takeOf(
 	});
 }
 
+function cosineOf(degrees: number): number {
+	return Math.cos((degrees * Math.PI) / DEGREES_IN_A_HALF_TURN);
+}
+
 test('a frame the camera crosses fast is drawn again along its way from the frame before, each kept with its own', async () => {
 	const stage = new FramedStageThatKeeps();
 	const footage = new FootageOf([0, 1, 2]);
@@ -254,18 +259,31 @@ test("an object sliding fast inside the page's window while the camera stands is
 	]);
 });
 
-test('an object leant fast while the camera stands is drawn again along its way, as far leant as it was at each', async () => {
-	const stage = new FramedStageThatKeeps();
-	const footage = new FootageOf([0, 1]);
-	// A title in the frame's left half leant back 60 degrees over two frames
-	const steps = [
+test('an object leant or grown fast while the camera stands is drawn again along its way, as far as it was at each', async () => {
+	const leantStage = new FramedStageThatKeeps();
+	const grownStage = new FramedStageThatKeeps();
+	const leantFootage = new FootageOf([0, 1]);
+	const grownFootage = new FootageOf([0, 1]);
+	// A title in the frame's left half leant back 60 degrees over two frames, and one grown to twice its size
+	await takeOf(leantFootage, leantStage).run([
 		cut(showTitle('Words', { at: LEFT_HALF })),
 		play({ seconds: 2 / 30, moves: [leanTitle({ tilt: 60 })], ease: linear })
-	];
-	await takeOf(footage, stage).run(steps);
-	expect([footage.exposed, stage.drawn.map((scene) => scene.objects[0]!.angle!.tilt)]).toEqual([
-		[4, 4],
-		[18.75, 22.5, 26.25, 30, 48.75, 52.5, 56.25, 60]
+	]);
+	await takeOf(grownFootage, grownStage).run([
+		cut(showTitle('Words', { at: LEFT_HALF })),
+		play({ seconds: 2 / 30, moves: [titleTo(LEFT_HALF, { scale: 2 })], ease: linear })
+	]);
+	// Leant back, the title's height is drawn short by the cosine of its tilt, its middle level with the eye's so the
+	// eye adds nothing down it; grown face-on, as wide as its scale
+	expect([
+		[leantFootage.exposed, leantStage.drawn.map((scene) => scene.objects[0]!.transform.matrix.m22)],
+		[grownFootage.exposed, grownStage.drawn.map((scene) => scene.objects[0]!.transform.matrix.m11)]
+	]).toEqual([
+		[[4, 4], [18.75, 22.5, 26.25, 30, 48.75, 52.5, 56.25, 60].map(cosineOf)],
+		[
+			[4, 4],
+			[1.3125, 1.375, 1.4375, 1.5, 1.8125, 1.875, 1.9375, 2]
+		]
 	]);
 });
 

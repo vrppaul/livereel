@@ -84,6 +84,8 @@ const NONE = 0;
 const WHOLE = 1;
 // How far a slide toward a side moves along the frame's other way: not at all
 const NOT_ALONG = 0;
+/** How far what slides past the frame's edge goes where nothing reaches past its box: a whole frame. */
+export const ONE_FRAME = 1;
 // The side of the frame across from each
 const ACROSS: Readonly<Record<FrameSide, FrameSide>> = { left: 'right', right: 'left', top: 'bottom', bottom: 'top' };
 const A_LENGTH_SHARE = new Plain(isMoreThanNone, 'a share more than none');
@@ -196,18 +198,21 @@ export function readsInAnyBox(place: Place): boolean {
 	return typeof place !== 'string' && place.of === undefined;
 }
 
-/** Where a box starts as what stands in it comes up: past the frame's edge on the side it comes in from, or in place. */
-export function enteringFrom(box: Box, from: FrameSide | null, frame: Size): Box {
-	return from === null ? box : pastTheEdge(box, from, frame);
+/**
+ * Where a box starts as what stands in it comes up: so many frames past the edge on the side it comes in from, or in
+ * place.
+ */
+export function enteringFrom(box: Box, from: FrameSide | null, frame: Size, frames: number): Box {
+	return from === null ? box : pastTheEdge(box, from, frame, frames);
 }
 
 /**
- * A box moved a whole frame's width across, or its height down, toward a side: past the frame's edge there, and every
- * box moved so moves as far, so what slides out and what slides in together move as one sheet.
+ * A box moved so many of a frame's widths across, or its heights down, toward a side: past the frame's edge there from
+ * one on, and every box moved as many moves as far, so what slides out and what slides in together move as one sheet.
  */
-export function pastTheEdge(box: Box, side: FrameSide, frame: Size): Box {
+export function pastTheEdge(box: Box, side: FrameSide, frame: Size, frames: number): Box {
 	const shift = frameToward(side, frame);
-	return { ...box, left: box.left + shift.left, top: box.top + shift.top };
+	return { ...box, left: box.left + frames * shift.left, top: box.top + frames * shift.top };
 }
 
 /** How far a whole frame lies toward a side: its width across, or its height down, in the frame's pixels. */

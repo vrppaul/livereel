@@ -142,17 +142,17 @@ and the moves of each part of the scene:
 - `keys.show(caps, { enter, edge })`, `keys.hide({ leave, edge })`
 - `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { at, align, size, from, enter, edge, words, as, inside })`, `title.to(place)`,
-  `title.lean({ tilt, turn })`, `title.hide({ toward, leave, edge })`
-- `code.show(text, { at, from, enter, edge, longLines, as, inside })`, `code.to(place)`, `code.lean({ tilt, turn })`,
-  `code.light(line, { through })`, `code.scrollTo(line)`, `code.hide({ toward, leave, edge })`; each move of a title
-  or code takes `as` to name which
+- `title.show(text, { at, align, size, from, enter, edge, words, as, inside })`, `title.to(place, { scale, depth })`,
+  `title.lean({ tilt, turn, roll })`, `title.hide({ toward, leave, edge })`
+- `code.show(text, { at, from, enter, edge, longLines, as, inside })`, `code.to(place, { scale, depth })`,
+  `code.lean({ tilt, turn, roll })`, `code.light(line, { through })`, `code.scrollTo(line)`,
+  `code.hide({ toward, leave, edge })`; each move of a title or code takes `as` to name which
 - `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
   whole frame where they come up, over every other object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`
 - `terminal.open(title, { at, from, enter, edge, inside })`, `terminal.type(strokes, { keyboard })`,
-  `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place)`,
-  `terminal.lean({ tilt, turn })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
+  `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
+  `terminal.lean({ tilt, turn, roll })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
 - `ending.show({ name, line, command }, { from, enter, edge })`, `ending.hide({ toward, leave, edge })`, so a film may
@@ -292,12 +292,21 @@ on more than one line stand as wide as their box, so a mask or a wipe from
 a side crosses that width, and an iris or a grow works from the box's
 middle.
 
-A title or code leans as the window does: `title.lean({ tilt: 12 })` leans
-it back from its top edge, `code.lean({ turn: -8 })` swings it about its
-middle, a side left out kept as it stands; a lean shares a `play` with a
-move that carries it, and with `code.light`. Several titles or panes of code
-stand at once by name: `title.show('Pricing', { at: 'top', as: 'heading' })`
-stands beside the title, and each move of it names it, `title.hide({ as:
+A title, code or the terminal leans as the window does: `title.lean({ tilt:
+12 })` leans it back from its top edge, `code.lean({ turn: -8 })` swings it
+about its middle, and `roll` turns it in its own plane, clockwise; a value
+left out is kept as it stands, and 360 is a whole turn, so `lean({ turn: 360
+})` spins it round once. As it is carried it grows about its middle,
+`code.to('right', { scale: 1.4 })`, and comes `depth` pixels of a frame 1080
+high toward the eye, nearer than the eye's 2000, larger and farther from the
+frame's middle as the eye sees it; each is kept as it stands where it is
+left out. Turned away from the eye, it shows its back: a title card's ground
+or a pane blank, and words on no ground nothing, never mirrored. A lean
+shares a `play` with a move that carries it, and with `code.light`.
+
+Several titles or panes of code stand at once by name:
+`title.show('Pricing', { at: 'top', as: 'heading' })` stands beside the
+title, and each move of it names it, `title.hide({ as:
 'heading' })`; a move that names none takes the one called `title`, or
 `code`. A name is one object's, whatever it shows: a title shown `as:
 'code'` stands in place of the code.
@@ -308,8 +317,8 @@ window of code over the site's: `code.show(LINES, { at: { left: 0.45, top:
 the window's shares, as no name of a place or split of a format is the
 window's; it is carried and slides as if the window's box were the frame,
 is cut at the window's edge, travels and leans with the window, and shows
-no more than the screen does, fading as it lowers. It leans only with the
-window. It keeps
+no more than the screen does, fading as it lowers. It grows and rolls flat
+on the window, and leans or comes toward the eye only with it. It keeps
 where it stands from the window's top left corner as the window grows or
 shrinks, as an element on a page does in its own.
 

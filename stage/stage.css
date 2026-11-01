@@ -364,17 +364,30 @@ body {
 	opacity: var(--held);
 }
 
-/* An object that leans, leant back from its top edge and swung about its middle, seen from the eye the page's window is seen from, at the frame's middle: its own perspective moved from its middle to the frame's, so it leans as it would in the window's room, alike to the pixel (probed 2026-10-30). A room with a perspective of its own, or an object face-on with a 3D transform, a turn of none too, costs the graphics card a layer in every exposure of a frame: a frame of 16 exposures then outran the card's memory the stage asks for, and drew objects in some of them not at all, or the page grey, with no error (README film, `--renderer gpu`, 2026-10-30). So only an object that leans has one */
-.object[data-leant] {
-	--middle-left: calc(var(--left) + var(--width) / 2);
-	--middle-top: calc(var(--top) + var(--height) / 2);
-	--to-eye:
-		calc((var(--frame-width) / 2 - var(--middle-left)) * 1px), calc((var(--frame-height) / 2 - var(--middle-top)) * 1px);
-	--from-eye:
-		calc((var(--middle-left) - var(--frame-width) / 2) * 1px), calc((var(--middle-top) - var(--frame-height) / 2) * 1px);
+/* An object drawn about its middle by the matrix the engine works out (`src/domain/stance.ts`), how large, how near, rolled and leant, seen from the eye the page's window is seen from: flat or leant in 3D, as the engine names it. Each entry is named as CSS orders them, and a flat matrix's two last are its shift in pixels */
+.object[data-transform='flat'] {
+	transform: matrix(var(--m11), var(--m12), var(--m21), var(--m22), var(--m41), var(--m42));
+}
 
-	transform: translate(var(--to-eye)) perspective(calc(var(--eye-distance) * 1px)) translate(var(--from-eye))
-		rotateX(calc(var(--tilt) * 1deg)) rotateY(calc(var(--turn) * 1deg));
+.object[data-transform='leant'] {
+	transform: matrix3d(
+		var(--m11),
+		var(--m12),
+		var(--m13),
+		var(--m14),
+		var(--m21),
+		var(--m22),
+		var(--m23),
+		var(--m24),
+		var(--m31),
+		var(--m32),
+		var(--m33),
+		var(--m34),
+		var(--m41),
+		var(--m42),
+		var(--m43),
+		var(--m44)
+	);
 }
 
 /* What an object shows fills its box, sized in pixels of a frame the stage's look was made on and every length of it scaled to the frame shot, as what stands over the frame is: the box's width and height in those pixels are named once for every part of it, as a length under the zoom is never a share of the box, which the zoom would count twice */
@@ -975,6 +988,12 @@ body {
 	vertical-align: -0.18em;
 	background: var(--terminal-ink);
 	opacity: var(--caret);
+}
+
+/* A title, code or the terminal turned away shows the eye its back: its ground blank, a title card's or a pane's, and words on no ground nothing, never what it shows mirrored. The card, a caption and keys never turn */
+.object[data-face='back'] .title .words,
+.object[data-face='back'] .pane > * {
+	visibility: hidden;
 }
 
 /* The ending card in its object: the name, what it is, and the command that starts it, rising into place in the middle of its box, on its ground, the two one sheet as far as it stands. Its ground is the frame's, its glow and layers laid back by as far as its box stands from the frame's corner and cut at the box, so it is the frame's own ground where it stands, every layer in its place: it covers what is under it, and no edge of it shows over the film's ground, wherever it slides. Where a way of livereel's brings the lines, the sheet stands whole and its ground comes up and goes on it */

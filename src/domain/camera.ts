@@ -35,6 +35,17 @@ import {
 	partWithin
 } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, needed } from './handed.ts';
+import {
+	type Matrix,
+	type Spot,
+	carried,
+	chained,
+	facesTheFrame,
+	perspective,
+	rotationX,
+	rotationY,
+	translation
+} from './matrix.ts';
 import { between } from './time.ts';
 import { ARRIVED, type Track, alongTrack, arrivedAt } from './track.ts';
 
@@ -143,19 +154,9 @@ export interface Framing {
 /** How close the camera comes to a block it frames where a film names no bound, as a pose's zoom has it. */
 export const ZOOM_AT_MOST = 2.2;
 
-/**
- * A point of the room the stage moves the screen in, in the frame's pixels: across and down from the frame's middle,
- * and out from the frame toward the eye.
- */
-interface Spot {
-	readonly across: number;
-	readonly down: number;
-	readonly out: number;
-}
-
 // How far the eye stands out from the middle of a frame the stage's look was made on, in its pixels: nearer is a
 // stronger angle
-const EYE_DISTANCE = 2000;
+export const EYE_DISTANCE = 2000;
 // The middle of a length lies half-way along it, and air stands on both sides of a block
 const HALVES = 2;
 const SIDES = 2;
@@ -167,7 +168,6 @@ const ON_ITS_PLANE = 0;
 const NOTHING = 0;
 // Where the frame's left and top edges stand, in its own pixels
 const FRAMES_EDGE = 0;
-const DEGREES_IN_A_HALF_TURN = 180;
 // How far a view stands off the ground: the frame itself, or a window
 const FLAT: Fraction = NONE;
 const LIFTED: Fraction = WHOLE;
@@ -306,8 +306,12 @@ export function zoomPicturedFor(own: Camera, along: readonly Camera[]): number {
 	return Math.min(ZOOM_AT_MOST, Math.max(...cameras.map((camera) => camera.pose.zoom)));
 }
 
+/**
+ * Whether an angle leaves what leans in a plane facing the frame: neither tilted nor turned, or by whole or half turns
+ * alone, which show its front or its back.
+ */
 export function isFaceOn(angle: Angle): boolean {
-	return angle.tilt === FACE_ON.tilt && angle.turn === FACE_ON.turn;
+	return facesTheFrame(angledAs(angle));
 }
 
 /** The pose an aim comes to in a view, kept off the screen's edge there: the film's own, or a block framed there. */
@@ -423,11 +427,11 @@ function facing(screen: Size, zoom: number): Pose {
 	return { focusX: screen.width / HALVES, focusY: screen.height / HALVES, zoom };
 }
 
-/** Where the middle of what leans stands in the room: across and down from the frame's middle, on the frame's plane. */
-function middleInTheRoom(leaning: Leaning, frame: Size): Spot {
+/** Where the middle of a box on the frame stands in the room: across and down from the frame's middle, on its plane. */
+function middleInTheRoom(box: Box, frame: Size): Spot {
 	return {
-		across: middleX(leaning.box) - frame.width / HALVES,
-		down: middleY(leaning.box) - frame.height / HALVES,
+		across: middleX(box) - frame.width / HALVES,
+		down: middleY(box) - frame.height / HALVES,
 		out: ON_ITS_PLANE
 	};
 }
@@ -445,7 +449,7 @@ function keptWithin(focus: number, halfSeen: number, length: number): number {
 export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
 	const pose = camera.pose;
 	const frameZoom = frameZoomOf(pose, frame);
-	return seenFromTheEye(camera.view, frame, {
+	return aboutItsMiddle(leaningOnTheFrame(camera.view, frame), camera.view.box, {
 		across: frameZoom * (point.left - pose.focusX),
 		down: frameZoom * (point.top - pose.focusY),
 		out: ON_ITS_PLANE
@@ -454,30 +458,46 @@ export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
 
 /**
  * Where a point of what leans stands on the frame, the point in its box's own pixels from the top left corner: carried
- * into the room about the box's middle as it leans, and seen from the eye, as the stage draws the window and an object
- * that leans.
+ * into the room about the box's middle as it leans, and seen from the eye, as the stage draws the window.
  */
 export function leantOnTheFrame(leaning: Leaning, frame: Size, point: Point): Point {
-	return seenFromTheEye(leaning, frame, {
-		across: point.left - leaning.box.width / HALVES,
-		down: point.top - leaning.box.height / HALVES,
+	return carriedAboutItsMiddle(leaningOnTheFrame(leaning, frame), leaning.box, point);
+}
+
+/**
+ * Where a point of a box, in its pixels from the box's top left corner, stands once a matrix carries it about the box's
+ * middle, as CSS carries an element about its middle: in the pixels the box is placed in.
+ */
+export function carriedAboutItsMiddle(matrix: Matrix, box: Box, point: Point): Point {
+	return aboutItsMiddle(matrix, box, {
+		across: point.left - box.width / HALVES,
+		down: point.top - box.height / HALVES,
 		out: ON_ITS_PLANE
 	});
 }
 
 /**
- * Where a spot of what leans, on its own plane from its middle, stands on the frame: leant as it leans, carried to where
- * its middle stands in the room, and seen from the eye, a nearer spot farther from the frame's middle.
+ * The matrix that carries what stands in a box on the frame, about the box's middle, to where the eye sees it: from
+ * before the frame's middle, a nearer spot larger and farther from that middle.
  */
-function seenFromTheEye(leaning: Leaning, frame: Size, fromItsMiddle: Spot): Point {
-	const spot = angledAs(leaning.angle, fromItsMiddle);
-	const middle = middleInTheRoom(leaning, frame);
-	const eyeDistance = eyeDistanceOf(frame);
-	const larger = eyeDistance / (eyeDistance - spot.out);
-	return {
-		left: frame.width / HALVES + (middle.across + spot.across) * larger,
-		top: frame.height / HALVES + (middle.down + spot.down) * larger
-	};
+export function seenFromTheEye(box: Box, frame: Size): Matrix {
+	const middle = middleInTheRoom(box, frame);
+	return chained([
+		translation({ across: -middle.across, down: -middle.down, out: ON_ITS_PLANE }),
+		perspective(eyeDistanceOf(frame)),
+		translation(middle)
+	]);
+}
+
+/** The matrix of what leans on the frame as the window does, about its box's middle: leant as it is, seen from the eye. */
+function leaningOnTheFrame(leaning: Leaning, frame: Size): Matrix {
+	return chained([seenFromTheEye(leaning.box, frame), angledAs(leaning.angle)]);
+}
+
+/** Where a spot of a box, from its middle, stands once a matrix carries it about that middle: in the box's pixels. */
+function aboutItsMiddle(matrix: Matrix, box: Box, fromItsMiddle: Spot): Point {
+	const spot = carried(matrix, fromItsMiddle);
+	return { left: middleX(box) + spot.across, top: middleY(box) + spot.down };
 }
 
 /**
@@ -487,8 +507,8 @@ function seenFromTheEye(leaning: Leaning, frame: Size, fromItsMiddle: Spot): Poi
  */
 export function underTheFrame(camera: Camera, frame: Size, point: Point): Point | null {
 	const pose = camera.pose;
-	const facingNow = angledAs(camera.view.angle, FACING_OUT);
-	const middle = middleInTheRoom(camera.view, frame);
+	const facingNow = carried(angledAs(camera.view.angle), FACING_OUT);
+	const middle = middleInTheRoom(camera.view.box, frame);
 	const eyeDistance = eyeDistanceOf(frame);
 	const sight = {
 		across: point.left - frame.width / HALVES,
@@ -498,7 +518,7 @@ export function underTheFrame(camera: Camera, frame: Size, point: Point): Point 
 	// How far along the sight from the eye the plane is met: at the point itself, where the screen is face-on
 	const reach = (dotProduct(facingNow, middle) - facingNow.out * eyeDistance) / dotProduct(facingNow, sight);
 	if (!(reach > 0 && Number.isFinite(reach))) return null;
-	const met = angledBack(camera.view.angle, {
+	const met = carried(angledBack(camera.view.angle), {
 		across: sight.across * reach - middle.across,
 		down: sight.down * reach - middle.down,
 		out: eyeDistance + sight.out * reach
@@ -526,40 +546,19 @@ export function eyeDistanceOf(frame: Size): number {
 	return EYE_DISTANCE * frameScaleOf(frame);
 }
 
-/** A spot of the screen's own, at the view's angle: swung by its turn, then leant back by its tilt. */
-function angledAs(angle: Angle, spot: Spot): Spot {
-	return leantBack(swung(spot, angle.turn), angle.tilt);
+/**
+ * The matrix that carries a spot of what leans, on its own plane, to its angle: swung about its middle by its turn,
+ * then leant back by its tilt, as the stage's `rotateX() rotateY()` does.
+ */
+export function angledAs(angle: Angle): Matrix {
+	return chained([rotationX(angle.tilt), rotationY(angle.turn)]);
 }
 
-/** A spot of the room taken back from the view's angle to the screen's own. */
-function angledBack(angle: Angle, spot: Spot): Spot {
-	return swung(leantBack(spot, -angle.tilt), -angle.turn);
-}
-
-/** A spot swung about the line down the frame's middle, as CSS's `rotateY`. */
-function swung(spot: Spot, degrees: number): Spot {
-	const angle = radians(degrees);
-	return {
-		across: spot.across * Math.cos(angle) + spot.out * Math.sin(angle),
-		down: spot.down,
-		out: spot.out * Math.cos(angle) - spot.across * Math.sin(angle)
-	};
-}
-
-/** A spot leant about the line across the frame's middle, as CSS's `rotateX`: the top goes back for more degrees. */
-function leantBack(spot: Spot, degrees: number): Spot {
-	const angle = radians(degrees);
-	return {
-		across: spot.across,
-		down: spot.down * Math.cos(angle) - spot.out * Math.sin(angle),
-		out: spot.down * Math.sin(angle) + spot.out * Math.cos(angle)
-	};
+/** The matrix that takes a spot of the room back from an angle to the plane's own. */
+function angledBack(angle: Angle): Matrix {
+	return chained([rotationY(-angle.turn), rotationX(-angle.tilt)]);
 }
 
 function dotProduct(first: Spot, second: Spot): number {
 	return first.across * second.across + first.down * second.down + first.out * second.out;
-}
-
-function radians(degrees: number): number {
-	return (degrees * Math.PI) / DEGREES_IN_A_HALF_TURN;
 }

@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
 import type { Format } from '../../src/domain/format.ts';
-import { alignmentIn, pastTheEdge, windowPlaced, wordsPlaced } from '../../src/domain/place.ts';
+import { ONE_FRAME, alignmentIn, pastTheEdge, windowPlaced, wordsPlaced } from '../../src/domain/place.ts';
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
 
 // A wide frame with its page as wide
@@ -78,9 +78,9 @@ test('a place within another takes its shares of that place, a box within one to
 test('a box past the edge on a side is the box moved a whole frame toward it, every side alike', () => {
 	const box = { left: 100, top: 50, width: 200, height: 80 };
 	expect(
-		[pastTheEdge(box, 'left', WIDE.frame), pastTheEdge(box, 'right', WIDE.frame)].concat([
-			pastTheEdge(box, 'top', WIDE.frame),
-			pastTheEdge(box, 'bottom', WIDE.frame)
+		[pastTheEdge(box, 'left', WIDE.frame, ONE_FRAME), pastTheEdge(box, 'right', WIDE.frame, ONE_FRAME)].concat([
+			pastTheEdge(box, 'top', WIDE.frame, ONE_FRAME),
+			pastTheEdge(box, 'bottom', WIDE.frame, ONE_FRAME)
 		])
 	).toEqual([
 		{ ...box, left: -1820 },
