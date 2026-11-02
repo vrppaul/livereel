@@ -1,6 +1,6 @@
 /**
  * Values a move sets by name, each on its way from where it stood to where the film sends it by the rule of its kind:
- * a share held between none and whole and pixels never below none, however far past its ends a curve takes them; a
+ * a share held between none and whole and pixels between where they start and end, however far past its ends a curve takes them; a
  * place or a number passing its ends with it. A move that sets only the values a film names writes those alone, so
  * another move of the same thing sets the rest in the same step (`Move.valueNames` in `src/direction/move.ts`): the
  * film's look, an object's effects, the window's shade. The names of a table by name are read here once, for those
@@ -66,7 +66,10 @@ export function shareToward(start: number, end: number, progress: number): Fract
 	return fractionOf(between(start, end, progress));
 }
 
-/** Pixels `progress` of the way from one length to another, never below none. */
+/**
+ * Pixels `progress` of the way from one length to another, held between the two however far past its ends a curve
+ * takes them, as only places, scales and angles bounce: so never below none.
+ */
 export function pixelsToward(start: number, end: number, progress: number): number {
-	return Math.max(NO_PIXELS, between(start, end, progress));
+	return Math.min(Math.max(start, end), Math.max(Math.min(start, end), between(start, end, progress)));
 }

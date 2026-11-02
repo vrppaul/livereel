@@ -31,8 +31,8 @@ export type EffectsInPlace = Effects & Pick<Stance, 'scale' | 'depth'>;
 
 export const NO_EFFECTS: Effects = { ring: NONE, glow: NONE, shadow: NONE, blur: NO_PIXELS };
 
-// How each moves: a share between none and whole and a blur at none or more, however far past its ends a curve takes
-// them; the scale and the depth with the curve, as a carry moves them
+// How each moves: a share between none and whole and a blur between where it starts and ends, however far past its
+// ends a curve takes them; the scale and the depth with the curve, as a carry moves them
 export const EFFECTS_IN_PLACE: MovingBy<EffectsInPlace> = {
 	ring: MOVES_AS_A_SHARE,
 	glow: MOVES_AS_A_SHARE,

@@ -26,7 +26,8 @@ import {
 	A_SIZE,
 	type Kind,
 	Plain,
-	namesGiven
+	namesGiven,
+	namesSetBy
 } from '../domain/handed.ts';
 import { between } from '../domain/time.ts';
 import { namedToward, namesOf, pixelsToward, shareToward } from '../domain/toward.ts';
@@ -313,6 +314,11 @@ function heldIn<Name extends keyof Look>(theme: Theme, name: Name): readonly [Na
 /** The names of the values a theme gives, not those it writes as `undefined`. */
 export function namedIn(theme: Theme): readonly (keyof Look)[] {
 	return namesGiven(theme, LOOK_NAMES);
+}
+
+/** The names of the values a move's theme gives; one naming none is refused, as a move that would set nothing. */
+export function namesSetIn(theme: Theme, place: string): readonly (keyof Look)[] {
+	return namesSetBy(theme, LOOK_NAMES, place);
 }
 
 /**

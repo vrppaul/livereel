@@ -297,9 +297,9 @@ ground's own grey.
 The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
 person types; the curves are `linear`, `easeInOutSine` (a step's own),
 `easeInOutCubic`, `easeOutCubic`, `easeOutQuint` and `easeOutBack`, which
-passes its end by a tenth of the way and settles back on it: a place or an
-angle bounces with it, while what comes up or goes never passes whole or
-none. Give it to the move that should bounce — a `to`, a `lean`, a camera
+passes its end by a tenth of the way and settles back on it: a place, a
+scale or an angle bounces with it, while what comes up or goes never passes
+whole or none, and a blur or a length never passes where it ends. Give it to the move that should bounce — a `to`, a `lean`, a camera
 move — not to a whole `play`, nor to a show or a hide: one of those reaches
 its end a third of the way in and stops there, with no bounce.
 

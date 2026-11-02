@@ -31,8 +31,8 @@ export interface DrawnWindow extends View {
 
 export const UNSHADED: Shade = { dim: NONE, fade: NONE, blur: NO_PIXELS };
 
-// How each moves: a share between none and whole and a blur at none or more, however far past its ends a curve takes
-// them
+// How each moves: a share between none and whole and a blur between where it starts and ends, however far past its
+// ends a curve takes them
 export const SHADING: MovingBy<Shade> = { dim: MOVES_AS_A_SHARE, fade: MOVES_AS_A_SHARE, blur: MOVES_AS_PIXELS };
 
 // The names of the shade's values, in the order a refusal says them

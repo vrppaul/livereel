@@ -17,6 +17,7 @@ import {
 	keystrokes,
 	lens,
 	light,
+	look,
 	outline,
 	page,
 	piece,
@@ -302,6 +303,7 @@ test("a move that sets the values a film names refuses one naming none, and each
 		new FilmError('title.effects names none of ring, glow, shadow, blur, scale, depth')
 	);
 	expect(() => pageWindow.shade({})).toThrow(new FilmError('window.shade names none of dim, fade, blur'));
+	expect(() => look.to({})).toThrow(/^look\.to names none of ground, /);
 	expect(() => piece.effects({ shadow: 1.5 })).toThrow(
 		new FilmError("piece.effects's shadow is 1.5: it is a number from 0 to 1")
 	);

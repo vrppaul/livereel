@@ -1305,7 +1305,7 @@ test('an object grown by its effects grows about its middle in its box, as large
 	]);
 });
 
-test('how strongly an object stands out, and how far the page is dimmed and faded, stay between none and whole on a curve that passes its ends, a blur at none or more, while an object comes as near as the curve takes it', async () => {
+test('how strongly an object stands out, and how far the page is dimmed and faded, stay between none and whole on a curve that passes its ends, a blur between where it starts and ends, while an object comes as near as the curve takes it', async () => {
 	const titled = await setAt(title.show('Bouncing', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const lifted = await setAt(title.effects({ shadow: 1, blur: 8, depth: 100 }), titled, PAST_ITS_END);
 	const settled = await setAt(title.effects({ shadow: 0, blur: 0 }), lifted, PAST_ITS_END);
@@ -1317,11 +1317,11 @@ test('how strongly an object stands out, and how far the page is dimmed and fade
 		[shaded, cleared].map((scene) => [scene.window.dim, scene.window.fade, scene.window.blur])
 	]).toEqual([
 		[
-			[1, expect.closeTo(8.96), expect.closeTo(112 * frameScaleOf(SMALL.frame))],
+			[1, 8, expect.closeTo(112 * frameScaleOf(SMALL.frame))],
 			[0, 0, expect.closeTo(112 * frameScaleOf(SMALL.frame))]
 		],
 		[
-			[1, 1, expect.closeTo(8.96)],
+			[1, 1, 8],
 			[0, 0, 0]
 		]
 	]);
