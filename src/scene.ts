@@ -25,8 +25,6 @@ import {
 	type Aiming,
 	type Camera,
 	type DrawnCamera,
-	type Placing,
-	type View,
 	drawnCamera,
 	frameShift,
 	placedIn,
@@ -60,11 +58,12 @@ import {
 import type { DrawnHole } from './props/piece.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
 import { SCREEN_UP, type Screen } from './props/screen.ts';
+import { type DrawnWindow, type PageWindow, UNSHADED, drawnShade } from './props/window.ts';
 
 export interface PropStates {
 	look: Look;
 	camera: Aiming;
-	window: Placing;
+	window: PageWindow;
 	screen: Screen;
 	light: Light | null;
 	callout: Callout | null;
@@ -92,7 +91,7 @@ export type Scene = { readonly [Name in PropName]: PropStates[Name] } & {
 interface DrawnProps {
 	look: Look;
 	camera: DrawnCamera;
-	window: View;
+	window: DrawnWindow;
 	screen: Screen;
 	light: Light | null;
 	callout: DrawnCallout | null;
@@ -116,14 +115,14 @@ export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 const THE_FILMS_OWN_SPEED = 1;
 
 /**
- * The scene a film opens on, in its look: the whole screen, face-on, up, in the whole frame; nothing over it; the
- * page's time at the film's own speed.
+ * The scene a film opens on, in its look: the whole screen, face-on, up, unshaded, in the whole frame; nothing over
+ * it; the page's time at the film's own speed.
  */
 export function openingScene(format: Format, look: Look): Scene {
 	return {
 		look,
 		camera: standingAt(wholePose(format)),
-		window: placedIn(wholeView(format.frame)),
+		window: { ...placedIn(wholeView(format.frame)), ...UNSHADED },
 		screen: SCREEN_UP,
 		light: null,
 		callout: null,
@@ -258,7 +257,7 @@ export function drawn(scene: Scene, camera: Camera, moment: number, format: Form
 	return {
 		look: scene.look,
 		camera: drawnCamera(camera, format),
-		window: camera.view,
+		window: { ...camera.view, shade: drawnShade(scene.window) },
 		screen: scene.screen,
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout, moment),

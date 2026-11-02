@@ -25,9 +25,11 @@ import {
 	A_SHARE,
 	A_SIZE,
 	type Kind,
-	Plain
+	Plain,
+	namesGiven
 } from '../domain/handed.ts';
 import { between } from '../domain/time.ts';
+import { namedToward, namesOf, pixelsToward, shareToward } from '../domain/toward.ts';
 import { A_WORDS_WAY, type WordsWay } from './words.ts';
 
 export interface Look {
@@ -194,8 +196,6 @@ const LAYERS = new LookKind(A_GROUND_LAYERS, standingWhole, fadingInto, 'ground 
 const WAY_OF_WORDS = new LookKind(A_WORDS_WAY, asWritten, halfWay, CHECKED_HERE);
 // CSS's word for no layers at all
 const NO_LAYERS = 'none';
-// No length at all, which a length of the look never goes below
-const NO_PIXELS = 0;
 
 /**
  * The kind of each value of the look, by its name: what a theme a film writes is checked by, value by value, how the
@@ -290,7 +290,7 @@ export const LIVEREELS_LOOK: Look = {
 	words: 'rise'
 };
 
-const LOOK_NAMES = Object.keys(LOOK_KINDS).filter(isOfTheLook);
+const LOOK_NAMES = namesOf(LOOK_KINDS);
 // A value with none between its start and its end, as a font, changes half-way
 const HALF_WAY = 0.5;
 
@@ -312,7 +312,7 @@ function heldIn<Name extends keyof Look>(theme: Theme, name: Name): readonly [Na
 
 /** The names of the values a theme gives, not those it writes as `undefined`. */
 export function namedIn(theme: Theme): readonly (keyof Look)[] {
-	return LOOK_NAMES.filter((name) => theme[name] !== undefined);
+	return namesGiven(theme, LOOK_NAMES);
 }
 
 /**
@@ -321,32 +321,12 @@ export function namedIn(theme: Theme): readonly (keyof Look)[] {
  * new ones. Every other value stays as the look stands, so a move of other values at once keeps what it sets.
  */
 export function lookToward(look: Look, moving: LookMoving, progress: number): Look {
-	return Object.assign(
-		{},
-		look,
-		Object.fromEntries(moving.names.map((name) => [name, valueToward(name, moving, progress)]))
-	);
-}
-
-/** One value of the look `progress` of the way from one look to another, as its kind moves. */
-function valueToward<Name extends keyof Look>(name: Name, moving: LookMoving, progress: number): Look[Name] {
-	const kind: LookKind<Written<Look[Name]>, Look[Name]> = LOOK_KINDS[name];
-	return kind.toward(moving.start[name], moving.end[name], progress);
+	return { ...look, ...namedToward(LOOK_KINDS, moving.start, moving.end, moving.names, progress) };
 }
 
 /** A value the look holds as a film writes it. */
 function asWritten<Value>(written: Value): Value {
 	return written;
-}
-
-/** Pixels of the look `progress` of the way, never below none. */
-function pixelsToward(start: number, end: number, progress: number): number {
-	return Math.max(NO_PIXELS, between(start, end, progress));
-}
-
-/** A share of the look `progress` of the way, between none and whole. */
-function shareToward(start: number, end: number, progress: number): Fraction {
-	return fractionOf(between(start, end, progress));
 }
 
 /** A value with none between, at its start for the first half of the way and at its end for the rest. */
@@ -369,9 +349,4 @@ function fadingInto(start: GroundLayers, end: GroundLayers, progress: number): G
 
 function isWeight(written: unknown): written is number {
 	return typeof written === 'number' && written >= THINNEST && written <= HEAVIEST;
-}
-
-/** Whether a name is one of the look's: every key of its table is, but `Object.keys` types each as a bare string. */
-function isOfTheLook(name: string): name is keyof Look {
-	return Object.hasOwn(LOOK_KINDS, name);
 }

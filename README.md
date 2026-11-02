@@ -134,7 +134,8 @@ A film is a list of steps:
 and the moves of each part of the scene:
 
 - `camera.to(pose)`, `camera.onto(target, { every, air, zoomAtMost })`
-- `window.to(place)`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn })`
+- `window.to(place)`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn })`,
+  `window.shade({ dim, fade, blur })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
 - `callout.show(target, text, { side })`, `callout.hide()`
 - `note.show(target, text, { at })`, `note.hide()`
@@ -165,6 +166,9 @@ and the moves of each part of the scene:
 - `lens.show(target, { magnification, size, enter, edge, as, group })`, `lens.to(target)`,
   `lens.hide({ toward, leave, edge })`; a round glass over the page, showing what lies under its middle magnified; each
   move of it takes `as` to name which
+- `title.effects({ ring, glow, shadow, blur, depth })`, and so `code.effects`, `terminal.effects`, `piece.effects`,
+  `outline.effects` and `lens.effects`: how the object stands out, ringed, glowing, casting a shadow, blurred or
+  brought toward the eye where it stands
 - `group.show({ at })`, `group.to(place, { scale, depth })`, `group.lean({ tilt, turn, roll })`, `group.hide()`; a
   group of objects, turned, grown and brought near as one, each object in it as its own moves have it; each move of it
   takes `as` to name which
@@ -313,9 +317,24 @@ left out is kept as it stands, and 360 is a whole turn, so `lean({ turn: 360
 `code.to('right', { scale: 1.4 })`, and comes `depth` pixels of a frame 1080
 high toward the eye, nearer than the eye's 2000, larger and farther from the
 frame's middle as the eye sees it; each is kept as it stands where it is
-left out. Turned away from the eye, it shows its back: a title card's ground
-or a pane blank, and words on no ground nothing, never mirrored. A lean
-shares a `play` with a move that carries it, and with `code.light`.
+left out, and set by the move only where it is named. Turned away from the
+eye, it shows its back: a title card's ground or a pane blank, and words on
+no ground nothing, never mirrored. A lean shares a `play` with a move that
+carries it, and with `code.light`.
+
+An object stands out by `effects`: `piece.effects({ shadow: 1, depth: 160
+})` lifts it off the page where it stands, casting a shadow in the look's
+shadow colour as it comes toward the eye; `glow` lights the accent round
+it and `ring` draws a line of the accent along its edge, each from 0 none
+to 1 whole, as `shadow` is, and `blur` blurs it, in pixels of a frame 1080
+high. A shadow and a glow follow what the object shows, a title's letters,
+a pane's rounded corners, a lens's round glass; a ring runs round a title's
+words, or its card where it stands on one, and along the edge of anything
+else. The shadow falls toward the object's foot, so it turns as the object
+rolls, as a pane's own shadow does. The move sets only
+the values it names, the rest kept as they stand, so it shares a `play`
+with a move that carries or leans the object, and with another `effects`
+naming others. An object comes up standing out in no way.
 
 Several titles or panes of code stand at once by name:
 `title.show('Pricing', { at: 'top', as: 'heading' })` stands beside the
@@ -414,6 +433,14 @@ the page grows in it. `window.lean` leans the window back or swings it, the
 page still filling it. Over the whole frame the camera stands where it would
 to show no edge of a face-on screen, leant or not, so a lean never moves
 what it frames; leant far, ground may show at the frame's far corners.
+`window.shade({ dim: 0.6 })` dims the page while something stands clear of
+it, a piece lifted off it, a title or code: `dim` lays the dark over the
+screen, the light and the cursor on it included, and `fade` fades the screen
+into the film's ground, each from 0 none to 1 whole; `blur` blurs the page
+and the holes in it, in pixels of a frame 1080 high. The window's edge and
+shadow stay as they stand, and what stands over the page stands clear. It
+sets only what it names, so it shares a `play` with `window.to` and
+`window.lean`, and `window.shade({ dim: 0 })` takes the dark away again.
 Start the words once the window has drawn back, so they come up on the
 ground, not over the page. A film shot in several formats names places of
 its own in each format and writes them once (below, "Formats").

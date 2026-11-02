@@ -279,6 +279,28 @@ export function refuseNamesBeyond(written: Handed, form: readonly string[], plac
 	if (fault !== undefined) throw new FilmError(fault);
 }
 
+/** The names among some that a film gives a value, not one it writes as `undefined`. */
+export function namesGiven<Name extends string>(
+	written: { readonly [Named in Name]?: unknown },
+	names: readonly Name[]
+): readonly Name[] {
+	return names.filter((name) => written[name] !== undefined);
+}
+
+/**
+ * The names among some that a film gives a value, for a move that sets only those; one naming none, which would set
+ * nothing, is refused by the place it stands at.
+ */
+export function namesSetBy<Name extends string>(
+	written: { readonly [Named in Name]?: unknown },
+	names: readonly Name[],
+	place: string
+): readonly Name[] {
+	const given = namesGiven(written, names);
+	if (given.length === 0) throw new FilmError(`${place} names none of ${names.join(', ')}`);
+	return given;
+}
+
 /**
  * What a film handed over, as a refusal says it: a string quoted; a BigInt with its `n`; a function, a promise or an
  * object of a class by what it is; a list or an object as its JSON, each function and BigInt in it said so, and one

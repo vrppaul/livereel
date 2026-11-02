@@ -13,6 +13,7 @@ import { A_MAGNIFICATION, type Lens } from '../props/lens.ts';
 import type { FrameObject } from '../props/object.ts';
 import {
 	type Coming,
+	type EffectsScript,
 	GROUPED_FORM,
 	type GroupedScript,
 	type HideScript,
@@ -23,6 +24,7 @@ import {
 	type ObjectKind,
 	type TakenScript,
 	objectCarriedTo,
+	objectEffects,
 	objectHide,
 	objectShow
 } from './object.ts';
@@ -75,6 +77,14 @@ export function show(target: Target, script: LensScript = {}): Move {
 export function to(target: Target, script: TakenScript = {}): Move {
 	assertKind(target, A_TARGET, "lens.to's target");
 	return objectCarriedTo(LENS, 'lens.to', script, (beginning, object) => roundIts(beginning, target, object));
+}
+
+/**
+ * The lens standing out as the film names: ringed, glowing, casting a shadow, blurred, or brought toward the eye where
+ * it stands.
+ */
+export function effects(script: EffectsScript): Move {
+	return objectEffects(LENS, 'lens.effects', script);
 }
 
 /** The lens going where it stands, or sliding out past a side of the frame; once gone, there is none. */

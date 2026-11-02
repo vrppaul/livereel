@@ -1243,3 +1243,35 @@ body {
 .object[data-face='back'] .lens .hole {
 	visibility: hidden;
 }
+
+/* An object with its effects: what it shows drawn with the shadow it casts toward its foot and the glow round it, and blurred, as the film has each (`--effects` in `tokens.css`), and its edge ringed, rounded as it is — a title's words, or its card where it stands on one, a pane, a piece of the page, a lens's glass, an outline's ring. One standing out in no way has neither, so it draws as one with no filter does. Its rules stand at the end, after every figure's */
+.object[data-effects] .content {
+	filter: var(--effects);
+}
+
+.object[data-effects] .pane,
+.object[data-effects] .piece .way,
+.object[data-effects] .lens .way,
+.object[data-effects] .outline .way,
+.object[data-effects] .title[data-on-ground] .ground,
+.object[data-effects] .title:not([data-on-ground]) .way {
+	outline: var(--stroke-width) solid var(--ring-line);
+}
+
+/* The page shaded as the window has it (`src/props/window.ts`): the screen faded into the film's ground, with all it holds; the page and the holes in it blurred, in pixels of a frame 1080 high, which the camera's zoom would scale; and the dark laid over the screen as far as it is dimmed. The window's edge and shadow keep as they stand, and an unshaded page is drawn with none of it */
+[data-shaded] .screen {
+	opacity: calc(var(--screen-shown) * (1 - var(--shade-fade)));
+}
+
+[data-shaded] .page,
+[data-shaded] .holes {
+	filter: blur(calc(var(--shade-blur) * 1px / var(--zoom)));
+}
+
+[data-shaded] .screen::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: var(--page-dark);
+	opacity: var(--shade-dim);
+}

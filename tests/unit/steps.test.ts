@@ -4,11 +4,13 @@ import { keystrokes } from '../../src/domain/typing.ts';
 import { act, cssIn, cut, framesIn, hold, play } from '../../src/direction/steps.ts';
 import { hide, show } from '../../src/moves/caption.ts';
 import { hide as cursorGone } from '../../src/moves/cursor.ts';
+import * as lens from '../../src/moves/lens.ts';
 import { on } from '../../src/moves/light.ts';
 import { to as lookTo } from '../../src/moves/look.ts';
 import { scrollBy, type } from '../../src/moves/page.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
-import { lean, to as windowTo } from '../../src/moves/window.ts';
+import * as title from '../../src/moves/title.ts';
+import { lean, shade, to as windowTo } from '../../src/moves/window.ts';
 
 test("the CSS a film's looks write in its steps is found before it is shot, each value by its move, in a play or a cut: fonts, the ground's layers", () => {
 	const dots = 'radial-gradient(#fff2 1px, transparent 1px) 0 0 / 24px 24px';
@@ -49,6 +51,30 @@ test("the window travels and leans at once, two moves setting values of it apart
 	expect(play({ seconds: 1, moves: [windowTo('right'), lean({ tilt: 6 })] }).moves.length).toBe(2);
 	expect(() => play({ seconds: 1, moves: [windowTo('right'), windowTo('left')] })).toThrow(
 		new FilmError("two moves on the window's box at once in one step")
+	);
+});
+
+test('the window shades the page while it travels and leans, a move setting the values it names; two at once are refused on a value both set', () => {
+	expect(
+		play({ seconds: 1, moves: [windowTo('right'), lean({ tilt: 6 }), shade({ dim: 0.6 }), shade({ blur: 8 })] }).moves
+			.length
+	).toBe(4);
+	expect(() => play({ seconds: 1, moves: [shade({ dim: 0.6, fade: 0.2 }), shade({ fade: 0.5 })] })).toThrow(
+		new FilmError("two moves on the window's fade at once in one step")
+	);
+});
+
+test('an object stands out while it is carried and leant, a move setting the values it names, and a carry sets only the scale and depth it names; two at once are refused on a value both set', () => {
+	expect(
+		play({ seconds: 1, moves: [title.to('left'), title.effects({ shadow: 1, depth: 100 }), title.lean({ turn: 10 })] })
+			.moves.length
+	).toBe(3);
+	expect(play({ seconds: 1, moves: [lens.to('#block'), lens.effects({ depth: 100 })] }).moves.length).toBe(2);
+	expect(() => play({ seconds: 1, moves: [title.to('left', { depth: 50 }), title.effects({ depth: 100 })] })).toThrow(
+		new FilmError("two moves on the title object's depth at once in one step")
+	);
+	expect(() => play({ seconds: 1, moves: [title.effects({ glow: 1 }), title.effects({ glow: 0, blur: 4 })] })).toThrow(
+		new FilmError("two moves on the title object's glow at once in one step")
 	);
 });
 

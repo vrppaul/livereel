@@ -19,6 +19,7 @@ import type { Hole, Piece } from '../props/piece.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
+	type EffectsScript,
 	GROUPED_FORM,
 	type GroupedScript,
 	type HideScript,
@@ -32,6 +33,7 @@ import {
 	type ToScript,
 	contentOf,
 	objectBack,
+	objectEffects,
 	objectHide,
 	objectLean,
 	objectShow,
@@ -120,6 +122,14 @@ export function to(place: Place, script: ToScript = {}): Move {
 /** The piece leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled by `roll`. */
 export function lean(script: ObjectLeanScript): Move {
 	return objectLean(PIECE, 'piece.lean', script);
+}
+
+/**
+ * The piece standing out as the film names: ringed, glowing, casting a shadow, blurred, or brought toward the eye where
+ * it stands, lifting off the page.
+ */
+export function effects(script: EffectsScript): Move {
+	return objectEffects(PIECE, 'piece.effects', script);
 }
 
 /**

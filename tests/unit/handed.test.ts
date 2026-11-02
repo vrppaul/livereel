@@ -295,6 +295,25 @@ test('what a refusal says a film handed is said as it was, whatever JSON cannot 
 	);
 });
 
+test("a move that sets the values a film names refuses one naming none, and each value in no kind it takes: an object's effects, the window's shade", () => {
+	expect(() => title.effects({})).toThrow(new FilmError('title.effects names none of ring, glow, shadow, blur, depth'));
+	expect(() => pageWindow.shade({})).toThrow(new FilmError('window.shade names none of dim, fade, blur'));
+	expect(() => piece.effects({ shadow: 1.5 })).toThrow(
+		new FilmError("piece.effects's shadow is 1.5: it is a number from 0 to 1")
+	);
+	expect(() => lens.effects({ blur: -1 })).toThrow(
+		new FilmError("lens.effects's blur is -1: it is a number of pixels, 0 or more")
+	);
+	expect(() => code.effects({ depth: 5000 })).toThrow(
+		new FilmError(
+			"code.effects's depth is 5000: it is a number of pixels of a frame 1080 high toward the eye, less than the eye's 2000"
+		)
+	);
+	expect(() => pageWindow.shade({ dim: 2 })).toThrow(
+		new FilmError("window.shade's dim is 2: it is a number from 0 to 1")
+	);
+});
+
 test('what the types allow is taken, an endless number among it where it means no bound', () => {
 	expect([
 		page.scrollBy('#block', { pixels: Number.POSITIVE_INFINITY }).part,

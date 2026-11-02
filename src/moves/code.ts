@@ -26,6 +26,7 @@ import {
 } from '../props/code.ts';
 import type { ObjectName } from '../props/object.ts';
 import {
+	type EffectsScript,
 	type HideScript,
 	NAMED_FORM,
 	NESTED_FORM,
@@ -38,6 +39,7 @@ import {
 	type ToScript,
 	contentMove,
 	contentOf,
+	objectEffects,
 	objectHide,
 	objectLean,
 	objectShow,
@@ -147,6 +149,14 @@ export function scrollTo(line: LineNamed, script: ScrollScript = {}): Move {
  */
 export function lean(script: ObjectLeanScript): Move {
 	return objectLean(CODE, 'code.lean', script);
+}
+
+/**
+ * The code shown standing out as the film names, its pane with it: ringed, glowing, casting a shadow, blurred, or
+ * brought toward the eye where it stands.
+ */
+export function effects(script: EffectsScript): Move {
+	return objectEffects(CODE, 'code.effects', script);
 }
 
 /** The code on the screen going, its pane with it, or sliding out past a side of the frame; once gone, none. */

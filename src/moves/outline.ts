@@ -13,6 +13,7 @@ import type { Outline } from '../props/outline.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
+	type EffectsScript,
 	GROUPED_FORM,
 	type GroupedScript,
 	type HideScript,
@@ -26,6 +27,7 @@ import {
 	type ToScript,
 	contentOf,
 	objectBack,
+	objectEffects,
 	objectHide,
 	objectLean,
 	objectShow,
@@ -74,6 +76,14 @@ export function to(place: Place, script: ToScript = {}): Move {
 /** The outline leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled by `roll`. */
 export function lean(script: ObjectLeanScript): Move {
 	return objectLean(OUTLINE, 'outline.lean', script);
+}
+
+/**
+ * The outline standing out as the film names: ringed, glowing, casting a shadow, blurred, or brought toward the eye
+ * where it stands.
+ */
+export function effects(script: EffectsScript): Move {
+	return objectEffects(OUTLINE, 'outline.effects', script);
 }
 
 /**

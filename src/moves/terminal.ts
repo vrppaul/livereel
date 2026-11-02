@@ -16,6 +16,7 @@ import type { Typed } from '../direction/steps.ts';
 import type { ObjectName } from '../props/object.ts';
 import { A_LINES, type Terminal, type TerminalLine, openTerminal } from '../props/terminal.ts';
 import {
+	type EffectsScript,
 	type HideScript,
 	NAMED_FORM,
 	NESTED_FORM,
@@ -28,6 +29,7 @@ import {
 	type ToScript,
 	contentMove,
 	contentOf,
+	objectEffects,
 	objectHide,
 	objectLean,
 	objectShow,
@@ -135,6 +137,14 @@ export function to(place: Place, script: ToScript = {}): Move {
  */
 export function lean(script: ObjectLeanScript): Move {
 	return objectLean(TERMINAL, 'terminal.lean', script);
+}
+
+/**
+ * The terminal standing out as the film names: ringed, glowing, casting a shadow, blurred, or brought toward the eye
+ * where it stands.
+ */
+export function effects(script: EffectsScript): Move {
+	return objectEffects(TERMINAL, 'terminal.effects', script);
 }
 
 /**

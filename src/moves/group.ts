@@ -24,7 +24,6 @@ import {
 import { type Group, type GroupName, groupFound } from '../props/group.ts';
 import { type Scene, withGroup } from '../scene.ts';
 import {
-	CARRIED,
 	type Carried,
 	LEANT,
 	LEAN_OBJECT_FORM,
@@ -34,6 +33,7 @@ import {
 	TO_FORM,
 	type ToScript,
 	carriedAlong,
+	carriedNamed,
 	depthAsked,
 	orientedFrom
 } from './object.ts';
@@ -81,12 +81,13 @@ export function to(place: Place, script: ToScript = {}): Move {
 	assertKind(place, A_PLACE, "group.to's place");
 	assertWritten(script, TO_FORM, 'group.to');
 	const name = script.as ?? GROUP;
+	const names = carriedNamed(script);
 	return {
 		part: groupPart(name),
-		valueNames: CARRIED,
+		valueNames: names,
 		timing: timingOf(script),
 		places: placesNamed("group.to's place", place),
-		begin: (beginning) => carried(beginning, name, place, script)
+		begin: (beginning) => carried(beginning, name, place, script, names)
 	};
 }
 
@@ -127,15 +128,24 @@ function placed(beginning: Beginning, name: GroupName, place: Place): Change {
 	return (scene) => withGroup(scene, name, group);
 }
 
-/** The group on its way to stand as large as it is about a place's middle, and to the film's scale and depth. */
-function carried(beginning: Beginning, name: GroupName, place: Place, script: ToScript): Change {
+/**
+ * The group on its way to stand as large as it is about a place's middle, and to the film's scale and depth where it
+ * names them: the values named written into it.
+ */
+function carried(
+	beginning: Beginning,
+	name: GroupName,
+	place: Place,
+	script: ToScript,
+	names: readonly (keyof Carried)[]
+): Change {
 	const group = groupFound(beginning.scene.groups, name, 'group.to');
 	const to: Carried = {
 		box: resizedAbout(windowPlaced(beginning.format, place), group.box),
 		scale: script.scale ?? group.scale,
 		depth: depthAsked(script.depth, group.depth, beginning.format.frame)
 	};
-	return writing(name, (progress) => carriedAlong(group, to, progress));
+	return writing(name, (progress) => carriedAlong(group, to, names, progress));
 }
 
 /** The group's orientation on its way from how it faces to the film's. */

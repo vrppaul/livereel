@@ -11,16 +11,22 @@
  * it moves is placed beside where it goes; a note's words keep beside it as it moves, so they come with it on its way,
  * and a move that would carry them off the frame, or under it, is refused.
  *
- * Where the window stands and how it leans are its own values (`Placing` in `src/domain/camera.ts`): a move that
- * carries it sets its box and lift, one that leans it its angle, each writing only its own into the window as it
- * stands, so the two share a step, each as far along as its own share.
+ * The page in the window is shaded while something stands clear of it: dimmed, faded into the film's ground and
+ * blurred, the window's edge and shadow standing as they are (`src/props/window.ts`).
+ *
+ * Where the window stands, how it leans and how it shades the page are its own values: a move that carries it sets its
+ * box and lift, one that leans it its angle, one that shades the page those of the shade it names, each writing only
+ * its own into the window as it stands, so they share a step, each as far along as its own share.
  */
 import { type Placing, type View, viewOf, viewOver } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
+import { fractionOf } from '../domain/fraction.ts';
 import { A_FRAME_SIDE, type Box, type FrameSide, liesOutside, liesWithin } from '../domain/geometry.ts';
-import { type Form, assertKind, assertWritten, needed } from '../domain/handed.ts';
+import { A_PIXELS, A_SHARE, type Form, assertKind, assertWritten, namesSetBy, needed } from '../domain/handed.ts';
 import { A_PLACE, ONE_FRAME, type Place, pastTheEdge, placesNamed, sideBeyond, windowPlaced } from '../domain/place.ts';
+import { namedToward } from '../domain/toward.ts';
 import { besideTheWindow } from '../props/note.ts';
+import { type PageWindow, SHADE_NAMES, SHADING, type Shade } from '../props/window.ts';
 import { trackOf } from '../domain/track.ts';
 import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import { withProp } from '../scene.ts';
@@ -37,8 +43,19 @@ export interface WindowHideScript extends TimingScript {
 	readonly toward: FrameSide;
 }
 
+/**
+ * How far the page is dimmed, `dim`, and faded into the film's ground, `fade`, each from 0 none to 1 whole, and how far
+ * it is blurred, `blur`, in pixels of a frame 1080 high; any left out as it stands.
+ */
+export interface ShadeScript extends TimingScript {
+	readonly dim?: number;
+	readonly fade?: number;
+	readonly blur?: number;
+}
+
 const SHOW_FORM: Form<WindowShowScript> = { at: needed(A_PLACE), from: needed(A_FRAME_SIDE), ...TIMING_FORM };
 const HIDE_FORM: Form<WindowHideScript> = { toward: needed(A_FRAME_SIDE), ...TIMING_FORM };
+const SHADE_FORM: Form<ShadeScript> = { dim: A_SHARE, fade: A_SHARE, blur: A_PIXELS, ...TIMING_FORM };
 // The window's values a move that carries it sets, and one that leans it; what each writes is held to them
 const CARRIED = ['box', 'lift'] as const satisfies readonly (keyof Placing)[];
 const LEANT = ['angle'] as const satisfies readonly (keyof Placing)[];
@@ -83,6 +100,18 @@ export function hide(script: WindowHideScript): Move {
 		valueNames: CARRIED,
 		timing: timingOf(script),
 		begin: (beginning) => leaving(beginning, script.toward)
+	};
+}
+
+/** The page in the window dimmed, faded and blurred to the film's values, those it names alone. */
+export function shade(script: ShadeScript): Move {
+	assertWritten(script, SHADE_FORM, 'window.shade');
+	const names = namesSetBy(script, SHADE_NAMES, 'window.shade');
+	return {
+		part: 'window',
+		valueNames: names,
+		timing: timingOf(script),
+		begin: (beginning) => shading(beginning, script, names)
 	};
 }
 
@@ -158,7 +187,18 @@ function leaning(beginning: Beginning, script: LeanScript): Change {
 	return writing((progress): Leant => ({ angle: trackOf(from, to, progress) }));
 }
 
+/** The page's shade on its way from how it stands to the film's, the values it names written into the window. */
+function shading(beginning: Beginning, script: ShadeScript, names: readonly (keyof Shade)[]): Change {
+	const from = beginning.scene.window;
+	const to: Shade = {
+		dim: fractionOf(script.dim ?? from.dim),
+		fade: fractionOf(script.fade ?? from.fade),
+		blur: script.blur ?? from.blur
+	};
+	return writing((progress) => namedToward(SHADING, from, to, names, progress));
+}
+
 /** A change that writes some of the window's values into it as it stands, leaving the rest as they go. */
-function writing(valuesAt: (progress: number) => Partial<Placing>): Change {
+function writing(valuesAt: (progress: number) => Partial<PageWindow>): Change {
 	return (scene, progress) => withProp(scene, 'window', { ...scene.window, ...valuesAt(progress) });
 }

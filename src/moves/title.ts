@@ -17,6 +17,7 @@ import type { TitleWords } from '../props/title.ts';
 import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
 import {
 	type Coming,
+	type EffectsScript,
 	type HideScript,
 	NESTED_FORM,
 	type NestedScript,
@@ -25,6 +26,7 @@ import {
 	SHOW_FORM,
 	type ShowScript,
 	type ToScript,
+	objectEffects,
 	objectHide,
 	objectLean,
 	objectShow,
@@ -124,6 +126,14 @@ export function hide(script: HideScript = {}): Move {
  */
 export function lean(script: ObjectLeanScript): Move {
 	return objectLean(TITLE, 'title.lean', script);
+}
+
+/**
+ * The title standing out as the film names, its ground with it: ringed, glowing, casting a shadow, blurred, or brought
+ * toward the eye where it stands.
+ */
+export function effects(script: EffectsScript): Move {
+	return objectEffects(TITLE, 'title.effects', script);
 }
 
 /**

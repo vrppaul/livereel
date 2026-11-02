@@ -23,7 +23,13 @@ import * as group from '../../src/moves/group.ts';
 import * as lens from '../../src/moves/lens.ts';
 import * as outline from '../../src/moves/outline.ts';
 import * as piece from '../../src/moves/piece.ts';
-import { hide as windowHide, lean, show as windowShow, to as windowTo } from '../../src/moves/window.ts';
+import {
+	hide as windowHide,
+	lean,
+	shade as windowShade,
+	show as windowShow,
+	to as windowTo
+} from '../../src/moves/window.ts';
 import { lower, rise } from '../../src/moves/screen.ts';
 import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
@@ -49,7 +55,15 @@ import { drawnNote } from '../../src/props/note.ts';
 import { drawnPins } from '../../src/props/pins.ts';
 import { press, release, to as cursorTo } from '../../src/moves/cursor.ts';
 import { off, on as lightOn, to as lightTo } from '../../src/moves/light.ts';
-import { leave, open, submit, to as terminalTo, type as typeInto, works } from '../../src/moves/terminal.ts';
+import {
+	effects as terminalEffects,
+	leave,
+	open,
+	submit,
+	to as terminalTo,
+	type as typeInto,
+	works
+} from '../../src/moves/terminal.ts';
 import { keystrokes } from '../../src/domain/typing.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
 import { OWN_WAY } from '../../src/props/way.ts';
@@ -1108,6 +1122,124 @@ test('a piece of the page, or a lens, shows the holes other pieces leave in its 
 	]);
 });
 
+test('an object stands out as far as its move has come toward the values the film names, the rest as they stood; one come up, or gone back to none, is drawn standing out in no way', async () => {
+	const titled = await setAt(title.show('Lifted', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const halfway = await setAt(title.effects({ shadow: 1, blur: 8 }), titled, 0.5);
+	const glowing = await setAt(title.effects({ glow: 1, ring: 1 }), halfway, 1);
+	const settled = await setAt(title.effects({ ring: 0, glow: 0, shadow: 0, blur: 0 }), glowing, 1);
+	expect([titled, halfway, glowing, settled].map((scene) => drawnObjectsIn(scene, SMALL)[0]!.effects)).toEqual([
+		null,
+		{ ring: 0, glow: 0, shadow: 0.5, blur: 4 },
+		{ ring: 1, glow: 1, shadow: 0.5, blur: 4 },
+		null
+	]);
+});
+
+test('every object that is carried and leant stands out: a title, code, the terminal, a piece of the page, an outline, a lens', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const shown = await [
+		title.show('Words', { at: 'top' }),
+		code.show(THREE_LINES, { at: 'left' }),
+		open('A terminal', { at: 'right' }),
+		piece.show('#card'),
+		outline.show('#other'),
+		lens.show('#block')
+	].reduce(async (scene, move) => setIn(move, await scene, 1, FULL_HD), Promise.resolve(wide));
+	const ringed = await [
+		title.effects({ ring: 1 }),
+		code.effects({ ring: 1 }),
+		terminalEffects({ ring: 1 }),
+		piece.effects({ ring: 1 }),
+		outline.effects({ ring: 1 }),
+		lens.effects({ ring: 1 })
+	].reduce(async (scene, move) => setIn(move, await scene, 1, FULL_HD), Promise.resolve(shown));
+	const ring = { ring: 1, glow: 0, shadow: 0, blur: 0 };
+	expect(drawnObjectsIn(ringed, FULL_HD).map((object) => [object.name, object.effects])).toEqual([
+		['title', ring],
+		['code', ring],
+		['terminal', ring],
+		['piece', ring],
+		['outline', ring],
+		['lens', ring]
+	]);
+});
+
+test('an object brought toward the eye by its effects stands in its box, as near as a carry brings it, and a carry naming no depth, to a place or to a block, leaves the depth they set, whichever is written first', async () => {
+	const titled = await setAt(title.show('Near', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const near = await setAt(title.effects({ depth: 1000 }), titled, 1);
+	const carrying = await title.to('right').begin(beginningOf(titled));
+	const nearing = await title.effects({ depth: 1000 }).begin(beginningOf(titled));
+	const carriedFirst = await nearing(await carrying(titled, 1), 1);
+	const nearedFirst = await carrying(await nearing(titled, 1), 1);
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const glassed = await setIn(lens.show('#block'), wide, 1, FULL_HD);
+	const glassCarrying = await lens.to('#card').begin(beginningIn(glassed, FULL_HD));
+	const glassNearing = await lens.effects({ depth: 1000 }).begin(beginningIn(glassed, FULL_HD));
+	const glassCarriedFirst = await glassNearing(await glassCarrying(glassed, 1), 1);
+	const glassNearedFirst = await glassCarrying(await glassNearing(glassed, 1), 1);
+	const glassAtTheCard = (await glassCarrying(glassed, 1)).objects.get('lens')!.box;
+	const placed = wordsPlaced(SMALL, 'left');
+	const depth = 1000 * frameScaleOf(SMALL.frame);
+	// Brought half way to the eye, its middle stands twice as far from the frame's middle
+	expect([
+		near.objects.get('title')!.box,
+		drawnMiddleOf(near, 'title'),
+		...[carriedFirst, nearedFirst].map((scene) => [scene.objects.get('title')!.box, scene.objects.get('title')!.depth]),
+		...[glassCarriedFirst, glassNearedFirst].map((scene) => [
+			scene.objects.get('lens')!.box,
+			scene.objects.get('lens')!.depth
+		])
+	]).toEqual([
+		placed,
+		closeToPoint(scaledAbout(middleOf(boxOf(SMALL.frame)), middleOf(placed), 2)),
+		[wordsPlaced(SMALL, 'right'), depth],
+		[wordsPlaced(SMALL, 'right'), depth],
+		[glassAtTheCard, 1000],
+		[glassAtTheCard, 1000]
+	]);
+});
+
+test('how strongly an object stands out, and how far the page is dimmed and faded, stay between none and whole on a curve that passes its ends, a blur at none or more, while an object comes as near as the curve takes it', async () => {
+	const titled = await setAt(title.show('Bouncing', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const lifted = await setAt(title.effects({ shadow: 1, blur: 8, depth: 100 }), titled, PAST_ITS_END);
+	const settled = await setAt(title.effects({ shadow: 0, blur: 0 }), lifted, PAST_ITS_END);
+	const shaded = await setAt(windowShade({ dim: 1, fade: 1, blur: 8 }), titled, PAST_ITS_END);
+	const cleared = await setAt(windowShade({ dim: 0, fade: 0, blur: 0 }), shaded, PAST_ITS_END);
+	const standingOut = [lifted, settled].map((scene) => scene.objects.get('title')!);
+	expect([
+		standingOut.map((object) => [object.shadow, object.blur, object.depth]),
+		[shaded, cleared].map((scene) => [scene.window.dim, scene.window.fade, scene.window.blur])
+	]).toEqual([
+		[
+			[1, expect.closeTo(8.96), expect.closeTo(112 * frameScaleOf(SMALL.frame))],
+			[0, 0, expect.closeTo(112 * frameScaleOf(SMALL.frame))]
+		],
+		[
+			[1, 1, expect.closeTo(8.96)],
+			[0, 0, 0]
+		]
+	]);
+});
+
+test('the page is shaded as far as its move has come toward the values the film names, the rest as they stood, and stays so as the window travels; one shaded none is drawn with no shade', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const dimming = await setAt(windowShade({ dim: 0.6 }), opening, 0.5);
+	const blurred = await setAt(windowShade({ blur: 8, fade: 0.5 }), dimming, 1);
+	const travelled = await setAt(windowTo('right'), blurred, 1);
+	const cleared = await setAt(windowShade({ dim: 0, fade: 0, blur: 0 }), travelled, 1);
+	expect(
+		[opening, dimming, blurred, travelled, cleared].map(
+			(scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL).window.shade
+		)
+	).toEqual([
+		null,
+		{ dim: 0.3, fade: 0, blur: 0 },
+		{ dim: 0.3, fade: 0.5, blur: 8 },
+		{ dim: 0.3, fade: 0.5, blur: 8 },
+		null
+	]);
+});
+
 test("an object takes any name with something in it, its moves apart from a prop's or the page's of that name", () => {
 	const moves = [title.show('Here', { as: 'light' }), lightOn('#block'), code.lean({ tilt: 4, as: 'page' })];
 	expect(play({ seconds: 1, moves }).moves).toEqual(moves);
@@ -1618,6 +1750,9 @@ test("an object inside the page's window grows and rolls in the window's plane, 
 	);
 	await expect(async () => code.to(LOWER_RIGHT, { depth: 50 }).begin(beginningOf(nested))).rejects.toThrow(
 		new FilmError('code.to would bring the code toward the eye alone: it stands inside the window, flat on it')
+	);
+	await expect(async () => code.effects({ depth: 50 }).begin(beginningOf(nested))).rejects.toThrow(
+		new FilmError('code.effects would bring the code toward the eye alone: it stands inside the window, flat on it')
 	);
 });
 

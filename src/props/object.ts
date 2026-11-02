@@ -2,10 +2,11 @@
  * An object on the frame: something that stands in a box, grows, comes near, turns, comes up and goes, and shows what
  * it holds, its content — a title's words, a pane of code, an agent's terminal, the ending card, a caption, the keys
  * of a shortcut, a piece of the page, an outline round a part of it or a lens over it. Where it stands, how it stands
- * about its middle (`src/domain/stance.ts`) and how far it has come and gone are the object's, alike for every
- * content, so a move that carries, leans or slides one is written once (`src/moves/object.ts`); what it shows, how
- * that comes up in its box and what lights in it are its content's. Each of where it stands, which way it faces and
- * what it shows is set by its own moves, so moves of one object that set different values share a step.
+ * about its middle (`src/domain/stance.ts`), how it stands out (`src/props/effects.ts`) and how far it has come and
+ * gone are the object's, alike for every content, so a move that carries, leans, sets apart or slides one is written
+ * once (`src/moves/object.ts`); what it shows, how that comes up in its box and what lights in it are its content's.
+ * Each of where it stands, which way it faces, how it stands out and what it shows is set by its own moves, so moves
+ * of one object that set different values share a step.
  *
  * An object comes up and goes in its own way, as what it shows comes up of itself, or in a way of livereel's, faded,
  * masked, wiped, opened or grown (`src/props/way.ts`): then its figure — its words, its pane, the card's lines, the
@@ -53,6 +54,7 @@ import { ONE_FRAME, pastTheEdge } from '../domain/place.ts';
 import { type DrawnStance, type Stance, drawnStance, stanceMatrix } from '../domain/stance.ts';
 import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
 import { type Code, type DrawnCode, drawnCode } from './code.ts';
+import { type Effects, drawnEffects } from './effects.ts';
 import { type DrawnEnding, type Ending, drawnEnding } from './ending.ts';
 import { type GroupName, type Groups, cornerOf, groupNamed, groupShare, groupStanceAbout } from './group.ts';
 import { type CaptionStanding, type DrawnKeys, type Keys, drawnKeys, standOver } from './keys.ts';
@@ -126,9 +128,10 @@ export type DrawnContent =
 
 /**
  * An object: what it stands inside, its box in the pixels of that from its top left corner, how it stands about the
- * box's middle, how far it has come up and how far it has gone, the way it comes up or goes, and what it shows.
+ * box's middle, how it stands out, how far it has come up and how far it has gone, the way it comes up or goes, and
+ * what it shows.
  */
-export interface FrameObject extends Stance {
+export interface FrameObject extends Stance, Effects {
 	readonly inside: Holder;
 	readonly box: Box;
 	readonly shown: Fraction;
@@ -145,7 +148,7 @@ export type Objects = ReadonlyMap<ObjectName, FrameObject>;
  * by that one — keys over a caption's, its box then the caption's to lay out — or none, its box in what it is laid in,
  * its transform about the box's middle and the side of it the eye sees, the layer it is drawn on, the higher over the
  * lower, how much of it what it stands in lets show, from 0 to 1, how far its figure's way has come, none where it is
- * on no way, and its content as drawn.
+ * on no way, how it stands out, none where it stands out in no way, and its content as drawn.
  */
 export interface DrawnObject extends DrawnStance {
 	readonly name: ObjectName;
@@ -155,6 +158,7 @@ export interface DrawnObject extends DrawnStance {
 	readonly layer: number;
 	readonly held: number;
 	readonly onItsWay: OnItsWay | null;
+	readonly effects: Effects | null;
 	readonly content: DrawnContent;
 }
 
@@ -334,7 +338,8 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	const content = drawnContent(name, object, standing, moment, around);
 	const over = drawnOver(object, around.caption);
 	const inside = laidIn(object.inside);
-	return { name, inside, over, box: standing.laid, ...stance, layer, held, onItsWay, content };
+	const effects = drawnEffects(object);
+	return { name, inside, over, box: standing.laid, ...stance, layer, held, onItsWay, effects, content };
 }
 
 /**

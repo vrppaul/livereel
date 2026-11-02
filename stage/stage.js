@@ -73,6 +73,10 @@ const SEGMENTS = 'segments';
 // drawn on no way at all; and the one that names how the figure is cut there, from its sides or round its middle
 const ON_ITS_WAY = 'data-on-its-way';
 const WAY_CUT = 'data-way-cut';
+// The attribute an object is drawn with its effects by, which one standing out in no way has not, and the one the
+// window shades the page by, which it has not where the page is unshaded: so neither is drawn with a filter at all
+const EFFECTS = 'data-effects';
+const SHADED = 'data-shaded';
 // The custom property a title's own size is set as, where it has one; the stylesheet takes the look's where it has not
 const OWN_SIZE = '--title-own-size';
 // The attribute that names the edge of the frame a caption stands at: its foot, or its top
@@ -170,7 +174,10 @@ class CameraDrawer {
 	}
 }
 
-/** The page's window: where on the frame the camera's picture shows, how far it stands off the ground, how it leans. */
+/**
+ * The page's window: where on the frame the camera's picture shows, how far it stands off the ground, how it leans,
+ * and how it shades the page.
+ */
 class WindowDrawer {
 	/** @param {Staged} root */
 	constructor(root) {
@@ -189,7 +196,19 @@ class WindowDrawer {
 			'--tilt': view.angle.tilt,
 			'--turn': view.angle.turn
 		});
+		shadeDrawn(this.root, view.shade);
 	}
+}
+
+/**
+ * How the window shades the page, drawn on its root: how far the page is dimmed, faded and blurred; with no filter at
+ * all, where it is unshaded.
+ * @param {Staged} root @param {DrawnScene['window']['shade']} shade
+ */
+function shadeDrawn(root, shade) {
+	root.toggleAttribute(SHADED, shade !== null);
+	if (shade === null) return;
+	numbered(root, { '--shade-dim': shade.dim, '--shade-fade': shade.fade, '--shade-blur': shade.blur });
 }
 
 class ScreenDrawer {
@@ -453,8 +472,25 @@ class StagedObject {
 		transformed(this.element, object.transform);
 		this.element.setAttribute(FACE, object.face);
 		wayDrawn(this.way, object.onItsWay);
+		effectsDrawn(this.element, object.effects);
 		this.content.draw(object.content);
 	}
+}
+
+/**
+ * How an object stands out, drawn on its element: ringed, glowing, casting a shadow and blurred as strongly as each
+ * is; with no filter at all, where it stands out in no way.
+ * @param {Staged} element @param {DrawnObject['effects']} effects
+ */
+function effectsDrawn(element, effects) {
+	element.toggleAttribute(EFFECTS, effects !== null);
+	if (effects === null) return;
+	numbered(element, {
+		'--effect-ring': effects.ring,
+		'--effect-glow': effects.glow,
+		'--effect-shadow': effects.shadow,
+		'--effect-blur': effects.blur
+	});
 }
 
 /**

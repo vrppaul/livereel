@@ -3,17 +3,20 @@
  * one — a title's words, code, the agent's terminal, the ending card, a caption, keys, a piece of the page, an outline,
  * a lens: coming up in its box, in its own way or one of livereel's (`src/props/way.ts`), or sliding in whole from past
  * a side of the frame, pushing the object of its name standing there off past the side across; carried to another
- * place, growing and coming toward the eye on the way, or to a box read off the page; leant and rolled; taken back to
- * stand as its box places it; put away where it stands, in its own way or one of livereel's, or slid out past a side.
- * A move takes the object a film names `as`, or its kind's own name, so a film shows several of a kind at once, each
- * moved by its name. What differs by what an object shows is told here, kind by kind: the curve it comes up on in
- * its own way, whether it is ever carried or leant, how it reads a place, and the box it sets off from as it is
- * carried.
+ * place, growing and coming toward the eye on the way, or to a box read off the page; leant and rolled; set apart from
+ * what lies under it, ringed, glowing, casting a shadow, blurred or brought toward the eye where it stands
+ * (`src/props/effects.ts`); taken back to stand as its box places it; put away where it stands, in its own way or one
+ * of livereel's, or slid out past a side. A move takes the object a film names `as`, or its kind's own name, so a film
+ * shows several of a kind at once, each moved by its name. What differs by what an object shows is told here, kind by
+ * kind: the curve it comes up on in its own way, whether it is ever carried or leant, how it reads a place, and the box
+ * it sets off from as it is carried.
  *
- * A move that carries an object sets its box, scale and depth alone, one that leans it its angle alone, one of what it
- * shows its content alone, each writing its own into the object as it stands, so they share a step, each as far along
- * as its own share; a move that brings one or puts it away sets it whole, standing as its box places it. A move of an
- * object that is not on the screen is refused as it begins.
+ * A move that carries an object to a place sets its box and the scale and depth the film names, one that carries it to
+ * a box read off the page its box, one that leans it its angle, one of how it stands out the values the film names,
+ * one of what it shows its content, each writing only its own into the object as it stands, so they share a step, each
+ * as far along as its own share; a move that brings one sets it whole, standing as its box places it and standing out
+ * in no way, and one that puts it away sets it whole as it stands. A move of an object that is not on the screen is
+ * refused as it begins.
  *
  * An object shown into a group (`src/props/group.ts`) reads its place, or its source, as it would on the frame, and
  * stands in the group where that is measured from the group's corner, the group standing as it was placed; a box any
@@ -34,7 +37,17 @@ import {
 	frameScaleOf,
 	measuredFrom
 } from '../domain/geometry.ts';
-import { A_NAME, A_NUMBER, type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import {
+	A_NAME,
+	A_NUMBER,
+	A_PIXELS,
+	A_SHARE,
+	type Form,
+	assertKind,
+	assertWritten,
+	namesGiven,
+	namesSetBy
+} from '../domain/handed.ts';
 import { AS_PLACED, A_DEPTH, A_SCALE, type Orientation, faceOnNearest, orientationToward } from '../domain/stance.ts';
 import {
 	A_PLACE,
@@ -49,7 +62,8 @@ import {
 	wordsPlaced,
 	wordsResized
 } from '../domain/place.ts';
-import { type Ease, between, linear } from '../domain/time.ts';
+import { type Ease, linear } from '../domain/time.ts';
+import { MOVES_WITH_THE_CURVE, type MovingBy, namedToward } from '../domain/toward.ts';
 import {
 	type Beginning,
 	type Change,
@@ -61,6 +75,7 @@ import {
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
+import { EFFECTS_AND_DEPTH, EFFECTS_AND_DEPTH_NAMES, type EffectsAndDepth, NO_EFFECTS } from '../props/effects.ts';
 import { type Group, type GroupName, cornerOf, groupFound, groupNamed, standsAsPlaced } from '../props/group.ts';
 import {
 	type Content,
@@ -152,6 +167,19 @@ export interface ObjectLeanScript extends LeanScript, NamedScript {
 	readonly roll?: number;
 }
 
+/**
+ * Which object stands out, and how: a `ring` along its edge, a `glow` round it and a `shadow` under it, each from 0
+ * none to 1 whole, how far it is blurred, `blur`, and how far out toward the eye it stands, `depth`, each in pixels of
+ * a frame 1080 high; any left out as it stands.
+ */
+export interface EffectsScript extends TimingScript, NamedScript {
+	readonly ring?: number;
+	readonly glow?: number;
+	readonly shadow?: number;
+	readonly blur?: number;
+	readonly depth?: number;
+}
+
 /** What an object comes up showing, and the box of the frame it comes up in. */
 export interface Coming {
 	readonly content: Content;
@@ -186,9 +214,21 @@ export const TO_FORM: Form<ToScript> = { scale: A_SCALE, depth: A_DEPTH, ...NAME
 const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...LEAVE_FORM, ...TIMING_FORM, ...NAMED_FORM };
 export const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { roll: A_NUMBER, ...LEAN_FORM, ...NAMED_FORM };
 const TAKEN_FORM: Form<TakenScript> = { ...NAMED_FORM, ...TIMING_FORM };
-// The values of an object, or of a group, a move that carries it sets, and one that leans it; and of an object, one of
-// what it shows; what each writes is held to them
-export const CARRIED = ['box', 'scale', 'depth'] as const satisfies readonly (keyof FrameObject & keyof Group)[];
+const EFFECTS_FORM: Form<EffectsScript> = {
+	ring: A_SHARE,
+	glow: A_SHARE,
+	shadow: A_SHARE,
+	blur: A_PIXELS,
+	depth: A_DEPTH,
+	...NAMED_FORM,
+	...TIMING_FORM
+};
+// The values of an object, or of a group, a move that carries it may set, and one that leans it; and of an object, one
+// of what it shows; what each writes is held to them. One that carries an object to a place sets its box, and of its
+// scale and depth those the film names; one that carries it to a box read off the page, its box alone
+const CARRIED = ['box', 'scale', 'depth'] as const satisfies readonly (keyof FrameObject & keyof Group)[];
+const PLACED = ['box'] as const satisfies readonly (keyof FrameObject)[];
+const SET_WHERE_NAMED = ['scale', 'depth'] as const satisfies readonly (keyof FrameObject & keyof ToScript)[];
 export const LEANT = ['angle'] as const satisfies readonly (keyof FrameObject & keyof Group)[];
 const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
 // The values a move that takes an object back sets: where it stands and how it faces, together
@@ -221,6 +261,14 @@ const OVER_THE_WHOLE_FRAME = ['ending', 'caption', 'keys'] as const satisfies re
 export type Carried = Pick<FrameObject, (typeof CARRIED)[number]>;
 type Leant = Pick<FrameObject, (typeof LEANT)[number]>;
 type Shows = Pick<FrameObject, (typeof CONTENT)[number]>;
+
+// How each value a move that carries something sets moves: its box, scale and depth, each passing its ends with its
+// curve, as a place
+const CARRYING: MovingBy<Carried> = {
+	box: { toward: boxToward },
+	scale: MOVES_WITH_THE_CURVE,
+	depth: MOVES_WITH_THE_CURVE
+};
 
 /** What an object shows that is carried and leant: any but what stands over the whole frame. */
 type MovableContent = Exclude<Content, { readonly kind: (typeof OVER_THE_WHOLE_FRAME)[number] }>;
@@ -281,18 +329,44 @@ function holderNamed(script: NestedScript, move: string): Holder {
 
 /**
  * An object of a kind carried to a place, through the boxes between, growing to the film's scale and coming to its
- * depth on the way.
+ * depth on the way, where it names them.
  */
 export function objectTo(kind: ObjectKind, move: string, place: Place, script: ToScript): Move {
 	assertKind(place, A_PLACE, `${move}'s place`);
 	assertWritten(script, TO_FORM, move);
 	const name = script.as ?? kind;
+	const names = carriedNamed(script);
 	return {
 		part: objectPart(name),
-		valueNames: CARRIED,
+		valueNames: names,
 		timing: timingOf(script),
 		places: placesNamed(`${move}'s place`, place),
-		begin: (beginning) => carried(beginning, name, place, script, move)
+		begin: (beginning) => carried(beginning, name, place, script, names, move)
+	};
+}
+
+/**
+ * The values a move that carries an object, or a group, to a place sets: its box, and of its scale and depth those
+ * named.
+ */
+export function carriedNamed(script: ToScript): readonly (keyof Carried)[] {
+	return [...PLACED, ...namesGiven(script, SET_WHERE_NAMED)];
+}
+
+/**
+ * An object of a kind standing out as the film names, with a ring, a glow, a shadow or a blur, or nearer the eye where
+ * it stands; it sets those alone, so it shares a step with a move that carries it, one that leans it, or another of
+ * how it stands out naming others.
+ */
+export function objectEffects(kind: ObjectKind, move: string, script: EffectsScript): Move {
+	assertWritten(script, EFFECTS_FORM, move);
+	const names = namesSetBy(script, EFFECTS_AND_DEPTH_NAMES, move);
+	const name = script.as ?? kind;
+	return {
+		part: objectPart(name),
+		valueNames: names,
+		timing: timingOf(script),
+		begin: (beginning) => standingOut(beginning, name, script, names, move)
 	};
 }
 
@@ -366,7 +440,7 @@ export function objectCarriedTo(
 	const name = script.as ?? kind;
 	return {
 		part: objectPart(name),
-		valueNames: CARRIED,
+		valueNames: PLACED,
 		timing: timingOf(script),
 		begin: (beginning) => carriedToBox(beginning, name, boxAt, move)
 	};
@@ -530,6 +604,7 @@ function appearing(
 				inside: holder,
 				box: boxToward(start, coming.box, progress),
 				...AS_PLACED,
+				...NO_EFFECTS,
 				shown: shownComing(arrival.from, progress),
 				// Not going: neither gone nor on its way out
 				gone: NONE,
@@ -543,10 +618,16 @@ function appearing(
 
 /**
  * The object on its way to a place, from the box what it shows sets off from, and to the film's scale and depth from
- * its own, a depth given in pixels of a frame 1080 high. Inside the page's window it stands flat on the window's
- * plane, so a depth of its own is refused there.
+ * its own where it names them, a depth given in pixels of a frame 1080 high: the values named written into it.
  */
-function carried(beginning: Beginning, name: ObjectName, place: Place, script: ToScript, move: string): Change {
+function carried(
+	beginning: Beginning,
+	name: ObjectName,
+	place: Place,
+	script: ToScript,
+	names: readonly (keyof Carried)[],
+	move: string
+): Change {
 	const object = movable(beginning, name, move);
 	refusePlacedInside(object.inside, place, `${move}'s place`);
 	const placed = placedFor(object.content.kind, seenFrom(beginning, object.inside).format, place);
@@ -557,21 +638,53 @@ function carried(beginning: Beginning, name: ObjectName, place: Place, script: T
 		scale: script.scale ?? object.scale,
 		depth: depthAsked(script.depth, object.depth, beginning.format.frame)
 	};
-	if (object.inside.kind === 'window' && to.depth !== object.depth) {
+	refuseNearingInside(object, to.depth, name, move);
+	return writing(name, (progress) => carriedAlong(from, to, names, progress));
+}
+
+/** Where something carried stands `progress` of the way from one box, scale and depth to another: the values named. */
+export function carriedAlong(
+	from: Carried,
+	to: Carried,
+	names: readonly (keyof Carried)[],
+	progress: number
+): Partial<Carried> {
+	return namedToward(CARRYING, from, to, names, progress);
+}
+
+/**
+ * The object on its way from how it stands out to the film's, those values it names written into it, a blur and a
+ * depth given in pixels of a frame 1080 high.
+ */
+function standingOut(
+	beginning: Beginning,
+	name: ObjectName,
+	script: EffectsScript,
+	names: readonly (keyof EffectsAndDepth)[],
+	move: string
+): Change {
+	const object = movable(beginning, name, move);
+	const to: EffectsAndDepth = {
+		ring: fractionOf(script.ring ?? object.ring),
+		glow: fractionOf(script.glow ?? object.glow),
+		shadow: fractionOf(script.shadow ?? object.shadow),
+		blur: script.blur ?? object.blur,
+		depth: depthAsked(script.depth, object.depth, beginning.format.frame)
+	};
+	refuseNearingInside(object, to.depth, name, move);
+	return writing(name, (progress) => namedToward(EFFECTS_AND_DEPTH, object, to, names, progress));
+}
+
+/**
+ * Refuses an object brought to a depth of its own inside the page's window, where it stands flat on the window's
+ * plane.
+ */
+function refuseNearingInside(object: FrameObject, depth: number, name: ObjectName, move: string): void {
+	if (object.inside.kind === 'window' && depth !== object.depth) {
 		throw new FilmError(
 			`${move} would bring the ${name} toward the eye alone: it stands inside the window, flat on it`
 		);
 	}
-	return writing(name, (progress) => carriedAlong(from, to, progress));
-}
-
-/** Where something carried stands `progress` of the way from one box, scale and depth to another. */
-export function carriedAlong(from: Carried, to: Carried, progress: number): Carried {
-	return {
-		box: boxToward(from.box, to.box, progress),
-		scale: between(from.scale, to.scale, progress),
-		depth: between(from.depth, to.depth, progress)
-	};
 }
 
 /**
@@ -623,13 +736,13 @@ function goingBack(
 		depth: AS_PLACED.depth
 	};
 	const faceOn = faceOnNearest(object.angle);
-	return writing(name, (progress): Carried & Leant => ({
-		...carriedAlong(object, to, progress),
+	return writing(name, (progress): Partial<Carried> & Leant => ({
+		...carriedAlong(object, to, CARRIED, progress),
 		angle: orientationToward(object.angle, faceOn, progress)
 	}));
 }
 
-/** The object on its way to the box `boxAt` works out of it, as large and as near as it stands. */
+/** The object on its way to the box `boxAt` works out of it, its box written into it alone. */
 async function carriedToBox(
 	beginning: Beginning,
 	name: ObjectName,
@@ -639,7 +752,7 @@ async function carriedToBox(
 	const object = movable(beginning, name, move);
 	const end = measuredIn(beginning.scene, object.inside, await boxAt(beginning, object));
 	const to: Carried = { box: end, scale: object.scale, depth: object.depth };
-	return writing(name, (progress) => carriedAlong(object, to, progress));
+	return writing(name, (progress) => carriedAlong(object, to, PLACED, progress));
 }
 
 /** The object going where it stands, in the way it goes; once gone, none. */
