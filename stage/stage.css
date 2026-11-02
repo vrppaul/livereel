@@ -1143,9 +1143,11 @@ body {
 	background-repeat: no-repeat;
 }
 
-/* A piece of the page's corners as round as the film names, the holes it shows cut to them, so the shadow, the glow and the ring of its effects follow them */
+/* A piece of the page's corners, each as round as the engine works it out — the film's, or the window's where it stands on the window's corner — the holes it shows cut to them, so the shadow, the glow and the ring of its effects follow them */
 .piece .way {
-	border-radius: calc(var(--corner) * 1px / var(--frame-scale));
+	border-radius: calc(var(--corner-top-left) * 1px / var(--frame-scale))
+		calc(var(--corner-top-right) * 1px / var(--frame-scale)) calc(var(--corner-bottom-right) * 1px / var(--frame-scale))
+		calc(var(--corner-bottom-left) * 1px / var(--frame-scale));
 	overflow: hidden;
 }
 

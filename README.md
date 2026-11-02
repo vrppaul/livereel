@@ -164,7 +164,8 @@ and the moves of each part of the scene:
   `piece.to(place, { scale, depth })`, `piece.lean({ tilt, turn, roll })`, `piece.back()`,
   `piece.hide({ toward, leave, edge })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
-  in the page's pixels (a rounded card's own `border-radius`), square where it names none, leaving a `hole: { ground, line }` and drawing `lines` to its
+  in the page's pixels (a rounded card's own `border-radius`), square where it names none, and as round as the window
+  at a corner standing on a corner of what the window shows, leaving a `hole: { ground, line }` and drawing `lines` to its
   source where named; each move of it takes `as` to name which
 - `outline.show(target, { every, line, enter, edge, as, group, zIndex })`, `outline.to(place, { scale, depth })`,
   `outline.lean({ tilt, turn, roll })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a

@@ -64,11 +64,9 @@ const OVER_THE_CHART: Box = { left: 0.35, top: 0.42, width: 0.54, height: 0.22 }
 const DRAWN_BACK: Box = { left: 0.15, top: 0.12, width: 0.7, height: 0.7 };
 const PAGE_ASIDE: Box = { left: 0.47, top: 0.22, width: 0.48, height: 0.48 };
 const CARD_ASIDE: Box = { left: 0.03, top: 0.28, width: 0.42, height: 0.34 };
-// How round the app's cards are drawn, as its stylesheet has them, in the page's pixels; the page's window, as
-// livereel's look rounds it (its `paneCorner`), in pixels of a 1080 frame, which the whole screen shown at 1920 × 1080
-// takes as its own; a block drawn square
+// How round the app's cards are drawn, as its stylesheet has them, in the page's pixels; a block drawn square, which a
+// piece standing on the window's corner is rounded at there as the window is
 const CARD_CORNER = 18;
-const WINDOW_CORNER = 24;
 const SQUARE = 0;
 
 /**
@@ -186,7 +184,7 @@ function layersShown(stack: string, layers: readonly LiftedLayer[]): readonly St
 	return [
 		cut(group.show({ as: stack })),
 		cut(
-			piece.show(WHOLE_SCREEN, { as: UNDER, group: stack, corner: WINDOW_CORNER }),
+			piece.show(WHOLE_SCREEN, { as: UNDER, group: stack }),
 			...layers.map((layer) =>
 				piece.show(layer.target, {
 					as: layer.as,
@@ -211,9 +209,9 @@ function layersApart(layers: readonly Layer[], effects: typeof piece.effects): r
 	return layers.map((layer) => effects({ as: layer.as, depth: layer.depth }));
 }
 
-/** Each layer, a piece or an outline, back down on the page under it. */
-function layersTogether(layers: readonly Layer[], effects: typeof piece.effects): readonly Move[] {
-	return layers.map((layer) => effects({ as: layer.as, depth: 0 }));
+/** Each layer back down on the page under it. */
+function layersTogether(layers: readonly Layer[]): readonly Move[] {
+	return layers.map((layer) => piece.effects({ as: layer.as, depth: 0 }));
 }
 
 /** The stack laid back, rolled and shrunk as a drawing shows one, its layers apart. */
@@ -230,7 +228,7 @@ function stackLowered(): readonly Move[] {
 	return [
 		group.lean({ as: STACK, tilt: 0, roll: 0 }),
 		group.to('whole', { as: STACK, scale: 1 }),
-		...layersTogether(STACK_LAYERS, piece.effects)
+		...layersTogether(STACK_LAYERS)
 	];
 }
 
@@ -415,7 +413,7 @@ function actThePageSlicedInDepth(): readonly Step[] {
 				group.lean({ as: SLICES, tilt: 0, turn: 0 }),
 				group.to('whole', { as: SLICES, scale: 1 }),
 				piece.effects({ as: UNDER, blur: 0 }),
-				...layersTogether(BANDS, piece.effects)
+				...layersTogether(BANDS)
 			]
 		}),
 		layersPutAway(SLICES),
@@ -444,7 +442,7 @@ function actLayersLabelled(): readonly Step[] {
 		play({ seconds: 0.4, moves: LAYER_LABELS.map((label) => title.hide({ as: label.as })) }),
 		play({
 			seconds: 1.4,
-			moves: [...stackLowered(), ...layersTogether(RINGED_LAYERS, outline.effects)]
+			moves: [...stackLowered(), ...RINGED_LAYERS.map((layer) => outline.hide({ as: layer.as, within: { end: 0.5 } }))]
 		}),
 		layersPutAway(STACK),
 		hold({ seconds: 0.3 })

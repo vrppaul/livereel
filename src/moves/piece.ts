@@ -14,6 +14,7 @@
  */
 import { boxOnTheFrame } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
+import { type Box, frameScaleOf } from '../domain/geometry.ts';
 import {
 	A_COLOUR,
 	A_COUNT,
@@ -27,7 +28,7 @@ import {
 } from '../domain/handed.ts';
 import type { Place } from '../domain/place.ts';
 import { A_TARGET, type Beginning, type Move, type Target } from '../direction/move.ts';
-import type { Hole, Piece } from '../props/piece.ts';
+import type { Corners, Hole, Piece } from '../props/piece.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
@@ -102,6 +103,8 @@ interface Lifting {
 const PIECE: ObjectKind = 'piece';
 // A piece's corners where the film names none: square, as its box
 const SQUARE = 0;
+// How near, in the page's pixels, an edge of a piece stands to an edge of what the camera shows to stand on it
+const ON_THE_EDGE = 0.5;
 // The word a film names the ground the page draws behind a block by, for a hole
 const PAGES_GROUND = 'page';
 const A_HOLE_GROUND: Kind<string> = new Plain(
@@ -201,10 +204,36 @@ function holeAsked(target: Target, hole: HoleScript): HoleAsked {
  */
 async function lifted(beginning: Beginning, target: Target, lifting: Lifting): Promise<Coming> {
 	const camera = cameraOverThePicture(beginning, 'piece.show');
-	const { source, box } = await sourceOf(beginning, camera, target, lifting.every, lifting.air, 'piece.show');
+	const { source, shown, box } = await sourceOf(beginning, camera, target, lifting.every, lifting.air, 'piece.show');
+	// The window's corner as the look rounds it on the frame, in the page's pixels as the camera shows them there
+	const windowCorner =
+		(beginning.scene.look.paneCorner * frameScaleOf(beginning.format.frame) * source.width) / box.width;
+	const corners = cornersOf(source, shown, lifting.corner, windowCorner);
 	const hole = lifting.hole === null ? null : await holeOf(beginning, lifting.hole, lifting.corner);
-	const piece: Piece = { kind: 'piece', source, corner: lifting.corner, hole, lines: lifting.lines };
+	const piece: Piece = { kind: 'piece', source, corners, hole, lines: lifting.lines };
 	return { content: piece, box };
+}
+
+/**
+ * How round each corner of a piece is: as the film names, and as the window, where it is rounder, at a corner that
+ * stands on a corner of what the camera shows, which the window rounds.
+ */
+function cornersOf(source: Box, shown: Box, corner: number, windowCorner: number): Corners {
+	const left = standsOn(source.left, shown.left);
+	const top = standsOn(source.top, shown.top);
+	const right = standsOn(source.left + source.width, shown.left + shown.width);
+	const bottom = standsOn(source.top + source.height, shown.top + shown.height);
+	return {
+		topLeft: left && top ? Math.max(corner, windowCorner) : corner,
+		topRight: right && top ? Math.max(corner, windowCorner) : corner,
+		bottomRight: right && bottom ? Math.max(corner, windowCorner) : corner,
+		bottomLeft: left && bottom ? Math.max(corner, windowCorner) : corner
+	};
+}
+
+/** Whether an edge of a piece stands on an edge of what the camera shows. */
+function standsOn(edge: number, shownEdge: number): boolean {
+	return Math.abs(edge - shownEdge) < ON_THE_EDGE;
 }
 
 /**

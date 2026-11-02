@@ -32,31 +32,40 @@ export interface DrawnHole extends Hole {
 	readonly shown: number;
 }
 
+/** How round each corner of a piece is: a radius, in the pixels its box is in. */
+export interface Corners {
+	readonly topLeft: number;
+	readonly topRight: number;
+	readonly bottomRight: number;
+	readonly bottomLeft: number;
+}
+
 /**
- * A piece of the page: the part of the screen it shows, in the screen's pixels, how round its corners are, as the film
- * names them for a rounded block, in the same pixels, the hole it leaves there, if any, and the line the lines from it
- * to its source are drawn in, if it draws any.
+ * A piece of the page: the part of the screen it shows, in the screen's pixels, how round each of its corners is, in
+ * the same pixels — as the film names for a rounded block, and as the window where the corner stands on a corner of
+ * what the window shows — the hole it leaves there, if any, and the line the lines from it to its source are drawn in,
+ * if it draws any.
  */
 export interface Piece {
 	readonly kind: 'piece';
 	readonly source: Box;
-	readonly corner: number;
+	readonly corners: Corners;
 	readonly hole: Hole | null;
 	readonly lines: Stroke | null;
 }
 
 /**
  * A piece as the stage draws it: its source, how many of the frame's pixels a screen's pixel takes in its box, the part
- * of its box the source is drawn in, in the frame's pixels from the box's top left corner, how round its corners are,
- * in the same pixels, the holes it shows there, and how far it has come up and not gone in its own way, fading whole,
- * from 0 to 1.
+ * of its box the source is drawn in, in the frame's pixels from the box's top left corner, how round each of its
+ * corners is, in the same pixels, the holes it shows there, and how far it has come up and not gone in its own way,
+ * fading whole, from 0 to 1.
  */
 export interface DrawnPiece {
 	readonly kind: 'piece';
 	readonly source: Box;
 	readonly fit: number;
 	readonly figure: Box;
-	readonly corner: number;
+	readonly corners: Corners;
 	readonly holes: readonly DrawnHole[];
 	readonly shown: number;
 }
@@ -73,9 +82,19 @@ export function drawnPiece(piece: Piece, box: Box, shown: number, holes: readonl
 		source,
 		fit,
 		figure: figureIn(source, box),
-		corner: piece.corner * fit,
+		corners: cornersAt(piece.corners, fit),
 		holes: holesShown(holes, source, fit),
 		shown
+	};
+}
+
+/** Corners as round as a figure drawn at a fit shows them. */
+function cornersAt(corners: Corners, fit: number): Corners {
+	return {
+		topLeft: corners.topLeft * fit,
+		topRight: corners.topRight * fit,
+		bottomRight: corners.bottomRight * fit,
+		bottomLeft: corners.bottomLeft * fit
 	};
 }
 

@@ -186,6 +186,8 @@ const AROUND_IN_FULL_HD: Surroundings = {
 const UPPER_RIGHT_CORNER = { left: 0.75, top: 0, width: 0.25, height: 0.25 } as const;
 // The whole of that screen, as a box of it
 const WHOLE_SCREEN = { left: 0, top: 0, width: 1920, height: 1080 };
+// A piece's corners where neither the film nor the window rounds them
+const SQUARE_CORNERS = { topLeft: 0, topRight: 0, bottomRight: 0, bottomLeft: 0 };
 // The middle of an object's box, in shares of it
 const BOX_MIDDLE: Point = { left: 0.5, top: 0.5 };
 // How a group stands as it was placed refuses an object joining it otherwise
@@ -610,7 +612,7 @@ test('a piece of the page is born over its block as the camera shows it, cut to 
 	// Of 400 to 600 across the camera shows 480 to 600, at twice its size from the frame's left edge
 	expect([lifted.box, lifted.content]).toEqual([
 		{ left: 0, top: 60, width: 240, height: 200 },
-		{ kind: 'piece', source: SHOWN_AT_TWO, corner: 0, hole: null, lines: null }
+		{ kind: 'piece', source: SHOWN_AT_TWO, corners: SQUARE_CORNERS, hole: null, lines: null }
 	]);
 });
 
@@ -656,7 +658,7 @@ test('a piece, or an outline, goes back over its block as the camera shows it th
 	// The camera at 1 shows the screen's pixels as the frame's: each stands over the part it was cut to
 	expect([back.box, back.content, back.scale, back.depth, back.angle, ringBack.box]).toEqual([
 		SHOWN_AT_TWO,
-		{ kind: 'piece', source: SHOWN_AT_TWO, corner: 0, hole: null, lines: null },
+		{ kind: 'piece', source: SHOWN_AT_TWO, corners: SQUARE_CORNERS, hole: null, lines: null },
 		1,
 		0,
 		{ tilt: 0, turn: 360, roll: 0 },
@@ -714,7 +716,7 @@ test("a piece is drawn as large as its box holds all of its source, in its middl
 			source: PAST_THE_SHOWN_EDGE,
 			fit: 9.6,
 			figure: { left: 0, top: 60, width: 1920, height: 960 },
-			corner: 0,
+			corners: SQUARE_CORNERS,
 			holes: [],
 			shown: 1
 		},
@@ -744,10 +746,35 @@ test('a piece lifted with a corner is drawn with its corners so round, as large 
 	const contents = new Map(scene.objects.map((object) => [object.name, object.content]));
 	// The card, 200 × 100, fills the frame's 1920 × 1080 at 9.6 times as large; the whole screen stands in a quarter of
 	// the frame across and down, a quarter as large; the screen shows the page's pixels as the frame's
+	const cardCorner = expect.closeTo(172.8);
 	expect([contents.get('piece'), contents.get('screen'), scene.holes]).toEqual([
-		expect.objectContaining({ corner: expect.closeTo(172.8) }),
+		expect.objectContaining({
+			corners: { topLeft: cardCorner, topRight: cardCorner, bottomRight: cardCorner, bottomLeft: cardCorner }
+		}),
 		expect.objectContaining({ holes: [expect.objectContaining({ name: 'piece', corner: 4.5 })] }),
 		[expect.objectContaining({ name: 'piece', corner: 18 })]
+	]);
+});
+
+test("a piece whose corner stands on a corner of what the window shows is as round there as the window, the film's own corner where it is rounder", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const close = await setIn(cameraTo(MIDDLE_AT_TWO), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const liftedContent = async (move: Move, scene: Scene) =>
+		(await setIn(move, scene, 1, FULL_HD)).objects.get('piece')!.content;
+	const alongTheTop = { left: 0, top: 0, width: 1920, height: 100 };
+	// The camera at 2 shows 480 to 1440 across and 270 to 810 down: this box is cut to that corner of it
+	const pastTheShownCorner = { left: 400, top: 200, width: 200, height: 200 };
+	// The look rounds the window 24 pixels of a 1080 frame: 24 of the page's at the camera at 1, 12 at 2
+	expect([
+		await liftedContent(piece.show(WHOLE_SCREEN), wide),
+		await liftedContent(piece.show(alongTheTop), wide),
+		await liftedContent(piece.show(WHOLE_SCREEN, { corner: 30 }), wide),
+		await liftedContent(piece.show(pastTheShownCorner), close)
+	]).toEqual([
+		expect.objectContaining({ corners: { topLeft: 24, topRight: 24, bottomRight: 24, bottomLeft: 24 } }),
+		expect.objectContaining({ corners: { topLeft: 24, topRight: 24, bottomRight: 0, bottomLeft: 0 } }),
+		expect.objectContaining({ corners: { topLeft: 30, topRight: 30, bottomRight: 30, bottomLeft: 30 } }),
+		expect.objectContaining({ corners: { topLeft: 12, topRight: 0, bottomRight: 0, bottomLeft: 0 } })
 	]);
 });
 

@@ -617,7 +617,12 @@ class PieceDrawer {
 		const piece = ofKind(content, 'piece');
 		figureDrawn(this.element, piece);
 		sourceDrawn(this.element, piece.source, piece.fit);
-		numbered(this.element, { '--corner': piece.corner });
+		numbered(this.element, {
+			'--corner-top-left': piece.corners.topLeft,
+			'--corner-top-right': piece.corners.topRight,
+			'--corner-bottom-right': piece.corners.bottomRight,
+			'--corner-bottom-left': piece.corners.bottomLeft
+		});
 		drawnByName(this.holes, piece.holes);
 	}
 }
