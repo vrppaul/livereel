@@ -3,7 +3,8 @@
  * stage draws it so: one matrix (`src/domain/matrix.ts`), which the stage draws with and the engine reads where the
  * thing stands on the frame, so a film turns, rolls, grows or brings near anything that stands so by its values alone,
  * with no move of its own for each. An object stands so (`src/props/object.ts`); the window, which leans and never
- * grows, has an angle alone (`src/domain/camera.ts`).
+ * grows, has an angle alone (`src/domain/camera.ts`), and is drawn by the matrix of its lean alike
+ * (`src/props/window.ts`).
  *
  * The stage is handed a flat 2D matrix where the thing faces the frame, at any size, depth or roll, and a 3D one only
  * where it leans: a 3D transform, of no angle too, costs the graphics card a layer in every exposure of a frame, and a
@@ -109,10 +110,15 @@ export function stanceMatrix(stance: Stance): Matrix {
  * or roll.
  */
 export function drawnStance(stood: Matrix, placing: Matrix): DrawnStance {
-	const transform: Transform = facesTheFrame(stood)
-		? { kind: 'flat', matrix: flatOf(placing) }
-		: { kind: 'leant', matrix: placing };
-	return { transform, face: showsItsFront(placing) ? 'front' : 'back' };
+	return { transform: transformOf(stood, placing), face: showsItsFront(placing) ? 'front' : 'back' };
+}
+
+/**
+ * How the stage draws something its placing carries about its middle: flat where how it stands before the eye,
+ * `stood`, leaves it facing the frame, in 3D only where it leans.
+ */
+export function transformOf(stood: Matrix, placing: Matrix): Transform {
+	return facesTheFrame(stood) ? { kind: 'flat', matrix: flatOf(placing) } : { kind: 'leant', matrix: placing };
 }
 
 /**

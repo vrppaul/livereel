@@ -1346,6 +1346,18 @@ test('the page is shaded as far as its move has come toward the values the film 
 	]);
 });
 
+test("the page's window is drawn flat while it faces the frame, in a window or a whole turn round, and in 3D where it leans", async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const inAWindow = await setAt(windowTo('right'), opening, 1);
+	const leant = await setAt(lean({ tilt: 12, turn: -8 }), inAWindow, 1);
+	const turnedWhole = await setAt(lean({ tilt: 360, turn: -360 }), inAWindow, 1);
+	expect(
+		[opening, inAWindow, leant, turnedWhole].map(
+			(scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL).window.transform.kind
+		)
+	).toEqual(['flat', 'flat', 'leant', 'flat']);
+});
+
 test("an object takes any name with something in it, its moves apart from a prop's or the page's of that name", () => {
 	const moves = [title.show('Here', { as: 'light' }), lightOn('#block'), code.lean({ tilt: 4, as: 'page' })];
 	expect(play({ seconds: 1, moves }).moves).toEqual(moves);

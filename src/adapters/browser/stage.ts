@@ -31,7 +31,6 @@
  * answers from its watch (`watch.ts`): a framed page's, or a tab's, which can take no stage away nor refuse a frame.
  */
 import type { CDPSession, Frame, Page } from 'playwright-core';
-import { eyeDistanceOf } from '../../domain/camera.ts';
 import type { Format } from '../../domain/format.ts';
 import { type Size, frameScaleOf } from '../../domain/geometry.ts';
 import type { DrawnScene } from '../../scene.ts';
@@ -44,13 +43,13 @@ export const STAGE_FOLDER = new URL('../../../stage/', import.meta.url);
 export const STAGE_PAGE = 'stage.html';
 
 /**
- * The room the stage moves the screen in: the frame it fills, the screen, how far the eye stands from the frame, and
- * how large the stage draws on it against the frames its look was made on: the camera's zoom, and what stands over the
- * frame; and how many exposures of a frame it draws at once, each a whole drawing of the stage laid over those before.
+ * The room the stage moves the screen in: the frame it fills, the screen, and how large the stage draws on it against
+ * the frames its look was made on: the camera's zoom, and what stands over the frame; and how many exposures of a frame
+ * it draws at once, each a whole drawing of the stage laid over those before. The eye is in the matrices the engine
+ * hands the stage with each frame.
  */
 export interface Room {
 	readonly format: Format;
-	readonly eyeDistance: number;
 	readonly frameScale: number;
 	readonly exposures: number;
 }
@@ -209,11 +208,10 @@ export class PlaywrightPicturedStage implements PicturedStage {
 }
 
 /**
- * The room of a format, seen from where the engine works out what the camera shows (`src/domain/camera.ts`), for a
- * stage drawing so many exposures of a frame at once.
+ * The room of a format, for a stage drawing so many exposures of a frame at once.
  */
 export function roomOf(format: Format, exposures: number): Room {
-	return { format, eyeDistance: eyeDistanceOf(format.frame), frameScale: frameScaleOf(format.frame), exposures };
+	return { format, frameScale: frameScaleOf(format.frame), exposures };
 }
 
 function drawnOn(page: Page, exposures: readonly DrawnScene[]): Promise<void> {

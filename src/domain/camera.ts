@@ -12,9 +12,10 @@
  * little as it takes to keep it so; in the whole frame it moves as little as it takes to show no edge of the screen
  * face-on, along a side the screen is too short to fill at that zoom the screen standing in the frame's middle, as much
  * ground showing on either side of it. It stands so leant or not, so a lean never moves what it frames; a view leant
- * far over the whole frame may show ground at its far corners. What the camera shows where is worked out as the stage draws it (`.view` and
- * `.camera` in `stage/stage.css`): the screen carried by its focus to the view's middle and brought close, the view
- * swung and leant back about its middle, and seen from the eye before the frame's middle, a nearer point larger.
+ * far over the whole frame may show ground at its far corners. What the camera shows where is worked out as the stage
+ * draws it (`.camera` in `stage/stage.css`, and the view by the matrix worked out here, `leaningOnTheFrame`): the
+ * screen carried by its focus to the view's middle and brought close, the view swung and leant back about its middle,
+ * and seen from the eye before the frame's middle, a nearer point larger.
  */
 import type { Format } from './format.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from './fraction.ts';
@@ -542,8 +543,11 @@ export function aboutTheMiddleOf(matrix: Matrix, box: Box, within: Size): Matrix
 	]);
 }
 
-/** The matrix of what leans on the frame as the window does, about its box's middle: leant as it is, seen from the eye. */
-function leaningOnTheFrame(leaning: Leaning, frame: Size): Matrix {
+/**
+ * The matrix of what leans on the frame as the window does, about its box's middle: leant as it is, seen from the eye.
+ * The stage draws the window by it, so where the engine sees a point of the window is where it is drawn.
+ */
+export function leaningOnTheFrame(leaning: Leaning, frame: Size): Matrix {
 	return chained([seenFromTheEye(leaning.box, frame), angledAs(leaning.angle)]);
 }
 
@@ -592,10 +596,9 @@ function poseZoomFor(frameZoom: number, frame: Size): number {
 
 /**
  * How far the eye stands out from a frame's middle, in its pixels: as far, for its size, as from a frame the stage's
- * look was made on, so an angle leans as steeply on any frame. The stage's perspective is set to it (`setup` in
- * `stage/stage.js`).
+ * look was made on, so an angle leans as steeply on any frame.
  */
-export function eyeDistanceOf(frame: Size): number {
+function eyeDistanceOf(frame: Size): number {
 	return EYE_DISTANCE * frameScaleOf(frame);
 }
 

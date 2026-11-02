@@ -58,7 +58,7 @@ import {
 import type { DrawnHole } from './props/piece.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
 import { SCREEN_UP, type Screen } from './props/screen.ts';
-import { type DrawnWindow, type PageWindow, UNSHADED, drawnShade } from './props/window.ts';
+import { type DrawnWindow, type PageWindow, UNSHADED, drawnWindow } from './props/window.ts';
 
 export interface PropStates {
 	look: Look;
@@ -257,7 +257,7 @@ export function drawn(scene: Scene, camera: Camera, moment: number, format: Form
 	return {
 		look: scene.look,
 		camera: drawnCamera(camera, format),
-		window: { ...camera.view, shade: drawnShade(scene.window) },
+		window: drawnWindow(camera.view, scene.window, format.frame),
 		screen: scene.screen,
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout, moment),

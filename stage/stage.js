@@ -175,8 +175,8 @@ class CameraDrawer {
 }
 
 /**
- * The page's window: where on the frame the camera's picture shows, how far it stands off the ground, how it leans,
- * and how it shades the page.
+ * The page's window: where on the frame the camera's picture shows, how far it stands off the ground, how it is drawn
+ * about its middle as it leans, by the matrix the engine sees it through, and how it shades the page.
  */
 class WindowDrawer {
 	/** @param {Staged} root */
@@ -192,10 +192,9 @@ class WindowDrawer {
 			'--view-top': view.box.top,
 			'--view-width': view.box.width,
 			'--view-height': view.box.height,
-			'--lift': view.lift,
-			'--tilt': view.angle.tilt,
-			'--turn': view.angle.turn
+			'--lift': view.lift
 		});
+		transformed(this.root, view.transform);
 		shadeDrawn(this.root, view.shade);
 	}
 }
@@ -841,7 +840,6 @@ function setup(room) {
 		'--frame-height': room.format.frame.height,
 		'--screen-width': room.format.screen.width,
 		'--screen-height': room.format.screen.height,
-		'--eye-distance': room.eyeDistance,
 		'--frame-scale': room.frameScale
 	});
 	while (EXPOSURES.length < room.exposures) EXPOSURES.push(exposureOf(addedCopy(UNDRAWN_ROOT)));
