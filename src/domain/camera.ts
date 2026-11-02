@@ -39,6 +39,7 @@ import {
 	withAir
 } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, needed } from './handed.ts';
+import { type Course, type PathSpace, RECOMMENDED_COURSE, alongPath } from './path.ts';
 import {
 	type Matrix,
 	type Spot,
@@ -104,12 +105,15 @@ interface BlockAim {
 }
 
 /**
- * The camera as a scene holds it: on its way from the pose it stood at, as its move began, to what it aims at,
- * `progress` of the way; at 1, there.
+ * The camera as a scene holds it: on its way from the pose it stood at, as its move began, through what it aims at on
+ * the way, to what it aims at, `progress` of the way, the way going through those on its course; at 1, there. Each aim
+ * comes to a pose in the view as each frame is drawn, the keys on the way as the last.
  */
 export interface Aiming {
 	readonly from: Pose;
+	readonly through: readonly Aim[];
 	readonly aim: Aim;
+	readonly course: Course;
 	readonly progress: number;
 }
 
@@ -211,7 +215,7 @@ export function viewOf(placing: Placing): View {
 
 /** The camera standing at a pose: there already, aiming at it. */
 export function standingAt(pose: Pose): Aiming {
-	return { from: pose, aim: { kind: 'pose', pose }, progress: ARRIVED };
+	return { from: pose, through: [], aim: { kind: 'pose', pose }, course: RECOMMENDED_COURSE, progress: ARRIVED };
 }
 
 /**
@@ -230,7 +234,32 @@ export function seenThrough(aiming: Aiming, window: Placing, format: Format): Ca
 		shownTo ?? shownFrom ?? WHOLE_SHARE,
 		window.box.progress
 	);
-	return { pose: poseToward(aiming.from, aimedIn(aiming.aim, view, shown, format), aiming.progress), view };
+	const through = aiming.through.map((aim) => aimedIn(aim, view, shown, format));
+	const to = aimedIn(aiming.aim, view, shown, format);
+	const pose = alongPath(aiming.from, through, to, aiming.course, poseSpaceIn(view, format), aiming.progress);
+	return { pose, view };
+}
+
+/**
+ * How a pose goes on a way through keys in a view (`src/domain/path.ts`): by its focus and its zoom, a step from one
+ * pose to another as long as what the frame shows moves on it.
+ */
+function poseSpaceIn(view: View, format: Format): PathSpace<Pose> {
+	return {
+		toward: poseToward,
+		numbersOf: (pose) => [pose.focusX, pose.focusY, pose.zoom],
+		valueOf: poseOfNumbers,
+		distance: (start, end) => frameShift({ pose: start, view }, { pose: end, view }, format)
+	};
+}
+
+/** The pose three numbers stand for on a way: its focus across and down, and its zoom. */
+function poseOfNumbers(numbers: readonly number[]): Pose {
+	const [focusX, focusY, zoom] = numbers;
+	if (focusX === undefined || focusY === undefined || zoom === undefined) {
+		throw new Error(`a pose on a way stands for three numbers, not ${numbers.length}`);
+	}
+	return { focusX, focusY, zoom };
 }
 
 /** The part of a view's box on the frame, in shares of the box; none where it is all off the frame. */

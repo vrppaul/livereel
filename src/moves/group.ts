@@ -25,6 +25,7 @@ import { A_GROUP_ORDER, type Group, type GroupName, type GroupOrder, groupFound 
 import { type Scene, withGroup } from '../scene.ts';
 import {
 	type Carried,
+	type Carrying,
 	LEANT,
 	LEAN_OBJECT_FORM,
 	NAMED_FORM,
@@ -32,11 +33,13 @@ import {
 	type ObjectLeanScript,
 	TO_FORM,
 	type ToScript,
-	carriedAlong,
-	carriedNamed,
+	carriedThrough,
+	carryingWritten,
 	depthAsked,
-	orientedFrom
+	orientedFrom,
+	placesOnTheWay
 } from './object.ts';
+import { keysOf } from './through.ts';
 
 /**
  * Which group comes, the place it stands in, `at`, the whole frame where the film names none, and how it orders what
@@ -80,21 +83,21 @@ export function show(script: GroupShowScript = {}): Move {
 }
 
 /**
- * The group carried with everything in it till its middle stands at a place's, read as the window reads one, growing
- * to `scale` and coming `depth` toward the eye on the way, about its middle; it stays as large as it was placed, as it
- * grows by its scale alone.
+ * The group carried with everything in it till its middle stands at a place's, read as the window reads one, its middle
+ * passing those of the places the film names on its way, growing to `scale` and coming `depth` toward the eye on the
+ * way, about its middle; it stays as large as it was placed, as it grows by its scale alone.
  */
 export function to(place: Place, script: ToScript = {}): Move {
 	assertKind(place, A_PLACE, "group.to's place");
 	assertWritten(script, TO_FORM, 'group.to');
+	const carrying = carryingWritten(place, script, 'group.to');
 	const name = script.as ?? GROUP;
-	const names = carriedNamed(script);
 	return {
 		part: groupPart(name),
-		valueNames: names,
+		valueNames: carrying.names,
 		timing: timingOf(script),
-		places: placesNamed("group.to's place", place),
-		begin: (beginning) => carried(beginning, name, place, script, names)
+		places: placesOnTheWay('group.to', place, script),
+		begin: (beginning) => carried(beginning, name, carrying)
 	};
 }
 
@@ -136,23 +139,19 @@ function placed(beginning: Beginning, name: GroupName, place: Place, order: Grou
 }
 
 /**
- * The group on its way to stand as large as it is about a place's middle, and to the film's scale and depth where it
- * names them: the values named written into it.
+ * The group on its way to stand as large as it is about a place's middle, through those of the places on its way, and
+ * to the film's scale and depth where it names them: the values named written into it.
  */
-function carried(
-	beginning: Beginning,
-	name: GroupName,
-	place: Place,
-	script: ToScript,
-	names: readonly (keyof Carried)[]
-): Change {
+function carried(beginning: Beginning, name: GroupName, carrying: Carrying): Change {
 	const group = groupFound(beginning.scene.groups, name, 'group.to');
+	const { place, script } = carrying;
 	const to: Carried = {
 		box: resizedAbout(windowPlaced(beginning.format, place), group.box),
 		scale: script.scale ?? group.scale,
 		depth: depthAsked(script.depth, group.depth, beginning.format.frame)
 	};
-	return writing(name, (progress) => carriedAlong(group, to, names, progress));
+	const through = keysOf(script).map((key) => resizedAbout(windowPlaced(beginning.format, key), group.box));
+	return writing(name, (progress) => carriedThrough(group, through, to, carrying, progress));
 }
 
 /** The group's orientation on its way from how it faces to the film's. */

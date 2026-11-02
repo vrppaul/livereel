@@ -136,7 +136,11 @@ A film is a list of steps:
 
 and the moves of each part of the scene:
 
-- `camera.to(pose)`, `camera.onto(target, { every, air, zoomAtMost })`
+- `camera.to(pose, { through })`, `camera.onto(target, { every, air, zoomAtMost, through })`; `through` names the poses,
+  or the blocks, the camera passes on its way, each framed as its own is, on one curve: `shape: 'smooth'`, where none is
+  named, or `'straight'`, and `pace: 'even'`, as long a stretch of the way in each equal share of the move, where none
+  is named, or `'keys'`, an equal share from each key to the next. Every object's `to` and `group.to` take the places
+  they pass the same way, `title.to('right', { through: ['top'] })`
 - `window.to(place)`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn })`,
   `window.shade({ dim, fade, blur })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`

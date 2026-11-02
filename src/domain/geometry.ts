@@ -6,6 +6,7 @@
  * measure of a film is read off these.
  */
 import { A_NUMBER, A_PIXELS, type Kind, OfForm, OneOf, needed } from './handed.ts';
+import type { PathSpace } from './path.ts';
 import { between } from './time.ts';
 
 export interface Size {
@@ -246,6 +247,40 @@ export function boxToward(start: Box, end: Box, progress: number): Box {
 		height: between(start.height, end.height, progress)
 	};
 }
+
+/** The box four numbers stand for on a way: its left, top, width and height. */
+function boxOfNumbers(numbers: readonly number[]): Box {
+	const [left, top, width, height] = numbers;
+	if (left === undefined || top === undefined || width === undefined || height === undefined) {
+		throw new Error(`a box on a way stands for four numbers, not ${numbers.length}`);
+	}
+	return { left, top, width, height };
+}
+
+/** The farthest any corner of a box moves from where it stands in one box to where it stands in another. */
+function farthestCornerMove(start: Box, end: Box): number {
+	const acrossLeft = end.left - start.left;
+	const acrossRight = acrossLeft + end.width - start.width;
+	const downTop = end.top - start.top;
+	const downBottom = downTop + end.height - start.height;
+	return Math.max(
+		Math.hypot(acrossLeft, downTop),
+		Math.hypot(acrossRight, downTop),
+		Math.hypot(acrossLeft, downBottom),
+		Math.hypot(acrossRight, downBottom)
+	);
+}
+
+/**
+ * How a box goes on a way through keys (`src/domain/path.ts`): by its corner and its size, a step from one box to
+ * another as long as the farthest any of its corners moves.
+ */
+export const BOX_SPACE: PathSpace<Box> = {
+	toward: boxToward,
+	numbersOf: (box) => [box.left, box.top, box.width, box.height],
+	valueOf: boxOfNumbers,
+	distance: farthestCornerMove
+};
 
 /** The arc from start to end that bends to one side by `bow` of its length. */
 export function bowedArc(start: Point, end: Point, bow: number): Arc {

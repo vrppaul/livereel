@@ -1372,6 +1372,38 @@ test("the page's window is drawn flat and unmoved while it faces the frame, wher
 	]);
 });
 
+test('the camera taken onto a block through another frames the other on its way, where a pace by keys puts it', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const halfWay = await setAt(onto('#block', { through: ['#card'], pace: 'keys' }), opening, 0.5);
+	const onTheCard = await setAt(onto('#card'), opening, 1);
+	expect(cameraOf(halfWay, SMALL).pose).toEqual(cameraOf(onTheCard, SMALL).pose);
+});
+
+test('an object or a group carried to a place through another stands there on its way, where a pace by keys puts it', async () => {
+	const titled = await setAt(title.show('Here', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const grouped = await setAt(group.show({ at: 'left' }), titled, 1);
+	const titleHalfWay = await setAt(title.to('right', { through: ['top'], pace: 'keys' }), grouped, 0.5);
+	const groupHalfWay = await setAt(group.to('right', { through: ['top'], pace: 'keys' }), grouped, 0.5);
+	const titleAtTheTop = await setAt(title.to('top'), grouped, 1);
+	const groupAtTheTop = await setAt(group.to('top'), grouped, 1);
+	expect([titleHalfWay.objects.get('title')!.box, groupHalfWay.groups.get('group')!.box]).toEqual([
+		titleAtTheTop.objects.get('title')!.box,
+		groupAtTheTop.groups.get('group')!.box
+	]);
+});
+
+test('a shape or a pace with no keys to go through, and keys none, are refused as the move is made', () => {
+	expect(() => onto('#block', { shape: 'straight' })).toThrow(
+		"camera.onto's shape and pace say how a way goes through keys: name the keys in through, or leave them out"
+	);
+	expect(() => title.to('right', { through: [] })).toThrow(
+		"title.to's through names no key: name one or more, or leave it out"
+	);
+	expect(() => group.to('right', { pace: 'keys' })).toThrow(
+		"group.to's shape and pace say how a way goes through keys: name the keys in through, or leave them out"
+	);
+});
+
 test("an object takes any name with something in it, its moves apart from a prop's or the page's of that name", () => {
 	const moves = [title.show('Here', { as: 'light' }), lightOn('#block'), code.lean({ tilt: 4, as: 'page' })];
 	expect(play({ seconds: 1, moves }).moves).toEqual(moves);

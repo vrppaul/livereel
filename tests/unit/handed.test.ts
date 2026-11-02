@@ -56,13 +56,15 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		new FilmError('camera.onto\'s air is "80": it is a number')
 	);
 	expect(() => camera.onto('#block', { airr: 80 } as never)).toThrow(
-		new FilmError('camera.onto names airr: it names every, air, zoomAtMost, within, ease, or fewer')
+		new FilmError(
+			'camera.onto names airr: it names every, air, zoomAtMost, through, shape, pace, within, ease, or fewer'
+		)
 	);
 	expect(() => camera.onto('#block', { every: 1.5 })).toThrow(
 		new FilmError("camera.onto's every is 1.5: it is a whole count, 1 or more")
 	);
 	expect(() => camera.onto('#block', 5 as never)).toThrow(
-		new FilmError('camera.onto is handed 5 for an object of every, air, zoomAtMost, within, ease')
+		new FilmError('camera.onto is handed 5 for an object of every, air, zoomAtMost, through, shape, pace, within, ease')
 	);
 	expect(() => pageWindow.show({ at: 'right' } as never)).toThrow(
 		new FilmError(`window.show's from is undefined: it is ${SIDE}`)

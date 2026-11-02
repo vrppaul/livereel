@@ -30,6 +30,7 @@ import type { Format } from '../domain/format.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
 import {
 	A_FRAME_SIDE,
+	BOX_SPACE,
 	type Box,
 	type FrameSide,
 	type Size,
@@ -52,6 +53,7 @@ import { AS_PLACED, A_DEPTH, A_SCALE, type Orientation, faceOnNearest, orientati
 import {
 	A_PLACE,
 	type Place,
+	type PlaceNamed,
 	acrossFrom,
 	ONE_FRAME,
 	enteringFrom,
@@ -63,6 +65,7 @@ import {
 	wordsResized
 } from '../domain/place.ts';
 import { type Ease, linear } from '../domain/time.ts';
+import { type Course, alongPath } from '../domain/path.ts';
 import { MOVES_WITH_THE_CURVE, type MovingBy, namedToward } from '../domain/toward.ts';
 import {
 	type Beginning,
@@ -91,6 +94,7 @@ import {
 import { A_WAY, OWN_WAY, type Way, type WayName, comesFromAnEdge, wayNamed } from '../props/way.ts';
 import { type Scene, withLeaving, withObject } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
+import { type ThroughScript, courseWritten, keysOf, throughFormOf } from './through.ts';
 
 /** A kind of object, as a film calls its moves, and the name of the object they take where the film names none. */
 export type ObjectKind = 'title' | 'code' | 'terminal' | 'ending' | 'caption' | 'keys' | 'piece' | 'outline' | 'lens';
@@ -147,10 +151,11 @@ export interface NestedScript extends GroupedScript {
 }
 
 /**
- * Which object is carried to another place, and how large it stands there, `scale`, and how far out toward the eye,
- * `depth`, in pixels of a frame 1080 high; either left out as it stands.
+ * Which object is carried to another place, the places it passes `through` on its way and how its way goes through
+ * them, and how large it stands there, `scale`, and how far out toward the eye, `depth`, in pixels of a frame 1080
+ * high; either left out as it stands.
  */
-export interface ToScript extends TimingScript, NamedScript {
+export interface ToScript extends TimingScript, NamedScript, ThroughScript<Place> {
 	readonly scale?: number;
 	readonly depth?: number;
 }
@@ -215,7 +220,13 @@ export const IN_PLACE_SHOW_FORM: Form<InPlaceShowScript> = { ...ENTER_FORM, ...T
 export const IN_PLACE_HIDE_FORM: Form<InPlaceHideScript> = { ...LEAVE_FORM, ...TIMING_FORM };
 export const GROUPED_FORM: Form<GroupedScript> = { group: A_NAME, zIndex: A_NUMBER };
 export const NESTED_FORM: Form<NestedScript> = { inside: INSIDE_THE_WINDOW, ...GROUPED_FORM };
-export const TO_FORM: Form<ToScript> = { scale: A_SCALE, depth: A_DEPTH, ...NAMED_FORM, ...TIMING_FORM };
+export const TO_FORM: Form<ToScript> = {
+	scale: A_SCALE,
+	depth: A_DEPTH,
+	...throughFormOf(A_PLACE, 'a list of places'),
+	...NAMED_FORM,
+	...TIMING_FORM
+};
 const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...LEAVE_FORM, ...TIMING_FORM, ...NAMED_FORM };
 export const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { roll: A_NUMBER, ...LEAN_FORM, ...NAMED_FORM };
 const TAKEN_FORM: Form<TakenScript> = { ...NAMED_FORM, ...TIMING_FORM };
@@ -267,6 +278,17 @@ const OVER_THE_WHOLE_FRAME = ['ending', 'caption', 'keys'] as const satisfies re
 export type Carried = Pick<FrameObject, (typeof CARRIED)[number]>;
 type Leant = Pick<FrameObject, (typeof LEANT)[number]>;
 type Shows = Pick<FrameObject, (typeof CONTENT)[number]>;
+
+/**
+ * What a move that carries an object, or a group, to a place knows as it is made: the place, the film's script, the
+ * course of its way through the places the script names, and the values it sets.
+ */
+export interface Carrying {
+	readonly place: Place;
+	readonly script: ToScript;
+	readonly course: Course;
+	readonly names: readonly (keyof Carried)[];
+}
 
 // How each value a move that carries something sets moves: its box, scale and depth, each passing its ends with its
 // curve, as a place
@@ -340,28 +362,41 @@ function holderNamed(script: NestedScript, move: string): Holder {
 }
 
 /**
- * An object of a kind carried to a place, through the boxes between, growing to the film's scale and coming to its
- * depth on the way, where it names them.
+ * An object of a kind carried to a place, through the places the film names on its way, growing to the film's scale
+ * and coming to its depth on the way, where it names them.
  */
 export function objectTo(kind: ObjectKind, move: string, place: Place, script: ToScript): Move {
 	assertKind(place, A_PLACE, `${move}'s place`);
 	assertWritten(script, TO_FORM, move);
+	const carrying = carryingWritten(place, script, move);
 	const name = script.as ?? kind;
-	const names = carriedNamed(script);
 	return {
 		part: objectPart(name),
-		valueNames: names,
+		valueNames: carrying.names,
 		timing: timingOf(script),
-		places: placesNamed(`${move}'s place`, place),
-		begin: (beginning) => carried(beginning, name, place, script, names, move)
+		places: placesOnTheWay(move, place, script),
+		begin: (beginning) => carried(beginning, name, carrying, move)
 	};
+}
+
+/** A move's carrying as the film writes it, its course refused where the script names one wrongly. */
+export function carryingWritten(place: Place, script: ToScript, move: string): Carrying {
+	return { place, script, course: courseWritten(script, move), names: carriedNamed(script) };
+}
+
+/** The places a move that carries something names: where it goes, and those it passes on its way. */
+export function placesOnTheWay(move: string, place: Place, script: ToScript): readonly PlaceNamed[] {
+	return [
+		...placesNamed(`${move}'s place`, place),
+		...keysOf(script).flatMap((key) => placesNamed(`${move}'s through`, key))
+	];
 }
 
 /**
  * The values a move that carries an object, or a group, to a place sets: its box, and of its scale and depth those
  * named.
  */
-export function carriedNamed(script: ToScript): readonly (keyof Carried)[] {
+function carriedNamed(script: ToScript): readonly (keyof Carried)[] {
 	return [...PLACED, ...namesGiven(script, SET_WHERE_NAMED)];
 }
 
@@ -639,18 +674,12 @@ function appearing(
  * The object on its way to a place, from the box what it shows sets off from, and to the film's scale and depth from
  * its own where it names them, a depth given in pixels of a frame 1080 high: the values named written into it.
  */
-function carried(
-	beginning: Beginning,
-	name: ObjectName,
-	place: Place,
-	script: ToScript,
-	names: readonly (keyof Carried)[],
-	move: string
-): Change {
+function carried(beginning: Beginning, name: ObjectName, carrying: Carrying, move: string): Change {
 	const object = movable(beginning, name, move);
+	const { place, script } = carrying;
 	refusePlacedInside(object.inside, place, `${move}'s place`);
-	const placed = placedFor(object.content.kind, seenFrom(beginning, object.inside).format, place);
-	const end = measuredIn(beginning.scene, object.inside, placed);
+	keysOf(script).forEach((key) => refusePlacedInside(object.inside, key, `${move}'s through`));
+	const end = boxAt(beginning, object, place);
 	const from: Carried = { box: settingOff(object.content, object.box, end), scale: object.scale, depth: object.depth };
 	const to: Carried = {
 		box: end,
@@ -658,17 +687,41 @@ function carried(
 		depth: depthAsked(script.depth, object.depth, beginning.format.frame)
 	};
 	refuseNearingInside(object, to.depth, name, move);
-	return writing(name, (progress) => carriedAlong(from, to, names, progress));
+	const through = keysOf(script).map((key) => boxAt(beginning, object, key));
+	return writing(name, (progress) => carriedThrough(from, through, to, carrying, progress));
+}
+
+/** The box a place gives an object, read as what it stands in reads a place, and measured in it. */
+function boxAt(beginning: Beginning, object: MovableObject, place: Place): Box {
+	const placed = placedFor(object.content.kind, seenFrom(beginning, object.inside).format, place);
+	return measuredIn(beginning.scene, object.inside, placed);
 }
 
 /** Where something carried stands `progress` of the way from one box, scale and depth to another: the values named. */
-export function carriedAlong(
+function carriedAlong(
 	from: Carried,
 	to: Carried,
 	names: readonly (keyof Carried)[],
 	progress: number
 ): Partial<Carried> {
 	return namedToward(CARRYING, from, to, names, progress);
+}
+
+/**
+ * Where something carried to a place stands `progress` of the way, the values named: its box through the boxes on its
+ * way on the film's course, its scale and depth straight from where they stood.
+ */
+export function carriedThrough(
+	from: Carried,
+	through: readonly Box[],
+	to: Carried,
+	carrying: Carrying,
+	progress: number
+): Partial<Carried> {
+	return {
+		...carriedAlong(from, to, carrying.names, progress),
+		box: alongPath(from.box, through, to.box, carrying.course, BOX_SPACE, progress)
+	};
 }
 
 /**
