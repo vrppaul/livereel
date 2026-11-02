@@ -125,8 +125,8 @@ export function lean(script: ObjectLeanScript): Move {
 }
 
 /**
- * The piece standing out as the film names: ringed, glowing, casting a shadow, blurred, or brought toward the eye where
- * it stands, lifting off the page.
+ * The piece standing out as the film names: ringed, glowing, casting a shadow, blurred, grown or brought toward the eye
+ * where it stands, lifting off the page.
  */
 export function effects(script: EffectsScript): Move {
 	return objectEffects(PIECE, 'piece.effects', script);

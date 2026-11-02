@@ -129,8 +129,8 @@ export function lean(script: ObjectLeanScript): Move {
 }
 
 /**
- * The title standing out as the film names, its ground with it: ringed, glowing, casting a shadow, blurred, or brought
- * toward the eye where it stands.
+ * The title standing out as the film names, its ground with it: ringed, glowing, casting a shadow, blurred, grown or
+ * brought toward the eye where it stands.
  */
 export function effects(script: EffectsScript): Move {
 	return objectEffects(TITLE, 'title.effects', script);

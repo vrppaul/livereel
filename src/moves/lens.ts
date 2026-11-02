@@ -80,8 +80,8 @@ export function to(target: Target, script: TakenScript = {}): Move {
 }
 
 /**
- * The lens standing out as the film names: ringed, glowing, casting a shadow, blurred, or brought toward the eye where
- * it stands.
+ * The lens standing out as the film names: ringed, glowing, casting a shadow, blurred, grown or brought toward the eye
+ * where it stands.
  */
 export function effects(script: EffectsScript): Move {
 	return objectEffects(LENS, 'lens.effects', script);

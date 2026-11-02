@@ -1199,6 +1199,28 @@ test('an object brought toward the eye by its effects stands in its box, as near
 	]);
 });
 
+test('an object grown by its effects grows about its middle in its box, as large as a carry grows it, and a carry naming no scale leaves the scale they set, whichever is written first', async () => {
+	const titled = await setAt(title.show('Grown', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const grown = await setAt(title.effects({ scale: 2 }), titled, 1);
+	const carrying = await title.to('right').begin(beginningOf(titled));
+	const growing = await title.effects({ scale: 2 }).begin(beginningOf(titled));
+	const carriedFirst = await growing(await carrying(titled, 1), 1);
+	const grownFirst = await carrying(await growing(titled, 1), 1);
+	const placed = wordsPlaced(SMALL, 'left');
+	expect([
+		drawnMiddleOf(grown, 'title'),
+		...[grown, carriedFirst, grownFirst].map((scene) => [
+			scene.objects.get('title')!.box,
+			scene.objects.get('title')!.scale
+		])
+	]).toEqual([
+		closeToPoint(middleOf(placed)),
+		[placed, 2],
+		[wordsPlaced(SMALL, 'right'), 2],
+		[wordsPlaced(SMALL, 'right'), 2]
+	]);
+});
+
 test('how strongly an object stands out, and how far the page is dimmed and faded, stay between none and whole on a curve that passes its ends, a blur at none or more, while an object comes as near as the curve takes it', async () => {
 	const titled = await setAt(title.show('Bouncing', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const lifted = await setAt(title.effects({ shadow: 1, blur: 8, depth: 100 }), titled, PAST_ITS_END);

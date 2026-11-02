@@ -40,7 +40,7 @@ caption. Speak in the director's words, which are the tool's:
 | marked area | `outline.show(target, { line: 'dashed' })` — a ring round a block, several blocks or any box of the screen |
 | loupe | `lens.show(target)`, `lens.to(target)` — a round glass over the page, the page under its middle twice as large, carried from block to block |
 | stack, ring, fan | `group.show({ as })`, then objects shown with `{ group }`, then `group.lean`, `group.to` — pieces turned and shrunk as one, each at its own depth: the page in layers, a ring of cards spun round, a fan |
-| lift, glow, focus | `piece.effects({ shadow, glow, ring, blur, depth })`, and every object's alike — a block lifting off the page with a shadow under it, glowing in the accent, ringed, blurred; `window.shade({ dim, fade, blur })` — the page dimmed, faded or out of focus behind it |
+| lift, glow, focus | `piece.effects({ shadow, glow, ring, blur, scale, depth })`, and every object's alike — a block lifting off the page with a shadow under it, glowing in the accent, ringed, blurred, grown where it stands; `window.shade({ dim, fade, blur })` — the page dimmed, faded or out of focus behind it; eighteen ways to set a block apart are recipes, in "Recipes: setting a block apart" below |
 | camera move | a `play({ seconds, moves, ease })` |
 | light | `light.on`, `light.to`, `light.off` — one block lit, the rest dimmed |
 | cast | what the page shows, opened and closed by `act` |
@@ -119,14 +119,16 @@ the name of the format it is shot in. Read
 `node_modules/livereel/examples/livereel-promo.ts` serves an app of its own
 and clicks it for real; its server is
 `node_modules/livereel/examples/livereel-promo/server.ts`.
+`node_modules/livereel/examples/livereel-recipes.ts` plays the recipes
+below on that app, an act each.
 
 - Split the steps into acts, a function each; name every selector at the
   top, by test id or role where the page has them.
 - Write a step's timing, framing and rhythm as numbers in place, each the
   value of its keyword (`seconds`, `start`, `end`, `air`, `zoomAtMost`,
-  `every`, `tilt`, `turn`, `roll`, `scale`, `depth`, `dim`, `thinkingShare`,
-  `seed`, `slipAt`, `pace`, `pixels`, `top`); any other number is a constant
-  at the top.
+  `every`, `tilt`, `turn`, `roll`, `scale`, `depth`, `dim`, `fade`, `ring`,
+  `glow`, `shadow`, `blur`, `thinkingShare`, `seed`, `slipAt`, `pace`,
+  `pixels`, `top`); any other number is a constant at the top.
 - Two moves of one part — a prop, or the page — share a step only one after
   the other: `play` and `cut` refuse them at once.
 - Frame by selector, so one script fits every format. A pose given in
@@ -232,13 +234,13 @@ its end at once.
 | `terminal.type(strokes, { keyboard })`, `terminal.submit()` | keys typed into it, heard on the film's keyboard or the one named; Enter |
 | `piece.show(target, { every, hole, lines, as })`, `piece.to(place, { scale, depth })`, `piece.lean({ tilt, turn, roll })`, `piece.back()`, `piece.hide({ toward })` | a piece of the page lifted onto the frame over where the camera shows its target, a selector's first `every` blocks together or a box of the screen, cut to the part it shows; drawn from the page's picture, so it shows what the page shows there, a scroll under it too, refused on a `'dynamic'` page and while the window leans or shows its back; it stays where it was lifted as the camera moves; carried `to` a place it stands as large as the place holds it, grown, brought near, leant, rolled and spun as a title is, a blank card when it turns away; `back` puts it over its source as the camera shows it then, face-on and as large as it was; every piece move takes `as` for a second piece. `hole: {}` leaves where it was lifted filled with the ground the page draws behind the block, `hole: { ground: '#rrggbb', line: 'dashed' }` with a colour of the film's, ringed; a box of the screen needs the colour named. `lines: 'solid'` or `'dashed'` draws two lines from its source to it, which stretch as it travels and vanish as it goes back |
 | `outline.show(target, { every, line, as })`, `outline.to(place, { scale, depth })`, `outline.lean({ tilt, turn, roll })`, `outline.back()`, `outline.hide({ toward })` | a ring in the accent round a block, a selector's first `every` blocks together, or a box of the screen, a little clear of it, `line` `'solid'` (where none is named) or `'dashed'`; born where the camera shows its target, as a piece is, and moved as a piece is, but drawn from no picture, so a `'dynamic'` page takes one too |
-| `lens.show(target, { magnification, size, as })`, `lens.to(target)`, `lens.hide({ toward })` | a round glass round the middle of a block or a box of the screen, `size` pixels of a 1080 frame across (320), showing the page under its own middle `magnification` times as large as the camera does (2); `lens.to` carries it round another block's middle, what it shows moving under it; refused where a piece is. It stands round its block's middle: aim it at a block whose middle is what it should show, as a number's own element, never one as wide as its card, whose middle stands beside the number. A piece or a lens shows the holes other pieces leave in its part of the screen, so a piece of the whole screen under the pieces lifted off it shows where they were |
-| `title.effects({ ring, glow, shadow, blur, depth, as })`, `code.effects`, `terminal.effects`, `piece.effects`, `outline.effects`, `lens.effects` | the object standing out: a `shadow` it casts as though lifted off the frame, a `glow` round it and a `ring` along its edge in the accent, each from 0 to 1, a `blur` in pixels of a 1080 frame, and how near the eye it stands, `depth`, where it stands; the shadow and the glow follow what it shows, a title's letters, a pane's rounded corners, a lens's round glass, and the ring runs round a title's words, or its card, and along the edge of anything else; the shadow falls toward the object's foot, so it turns as the object rolls. It sets only what it names, so it shares a `play` with the object's `to` and `lean` and with another `effects` naming others; a `to` sets a depth only where it names one. An object comes up standing out in no way; inside the window it never nears the eye alone. A block lifted: `piece.effects({ shadow: 1, depth: 160 })` with `window.shade({ dim: 0.6 })`; a far card of a fan: `blur: 3` |
+| `lens.show(target, { magnification, size, enter, as })`, `lens.to(target)`, `lens.hide({ toward, leave })` | a round glass round the middle of a block or a box of the screen, `size` pixels of a 1080 frame across (320), showing the page under its own middle `magnification` times as large as the camera does (2); `lens.to` carries it round another block's middle, what it shows moving under it; refused where a piece is. It stands round its block's middle: aim it at a block whose middle is what it should show, as a number's own element, never one as wide as its card, whose middle stands beside the number. A piece or a lens shows the holes other pieces leave in its part of the screen, so a piece of the whole screen under the pieces lifted off it shows where they were |
+| `title.effects({ ring, glow, shadow, blur, scale, depth, as })`, `code.effects`, `terminal.effects`, `piece.effects`, `outline.effects`, `lens.effects` | the object standing out: a `shadow` it casts as though lifted off the frame, a `glow` round it and a `ring` along its edge in the accent, each from 0 to 1, a `blur` in pixels of a 1080 frame, how large it stands about its middle, `scale`, and how near the eye, `depth`, where it stands, so a piece grows in place though the film knows no place of it; the shadow and the glow follow what it shows, a title's letters, a pane's rounded corners, a lens's round glass, and the ring runs round a title's words, or its card, and along the edge of anything else; the shadow falls toward the object's foot, so it turns as the object rolls. It sets only what it names, so it shares a `play` with the object's `to` and `lean` and with another `effects` naming others; a `to` sets a scale or a depth only where it names one. An object comes up standing out in no way; inside the window it never nears the eye alone. A block lifted: `piece.effects({ shadow: 1, depth: 160 })` with `window.shade({ dim: 0.6 })`; a far card of a fan: `blur: 3` |
 | `group.show({ at, as })`, `group.to(place, { scale, depth })`, `group.lean({ tilt, turn, roll })`, `group.hide()`; `{ group }` on the show of a title, code, the terminal, a piece, an outline or a lens | a group placed `at` a place, the whole frame where none is named, before anything stands in it; an object shown with `group: 'stack'` stands in it where it would stand on the frame, and only while the group stands as placed, face-on, scale 1, depth 0. The group's `to` and `lean` carry, grow, bring near and turn everything in it about its middle, each object still as its own moves set it, so a piece's own `depth` lifts it off the next layer of a stack, and cards set round the middle at depths and turns make a ring `group.lean({ turn: 360 })` spins, the far ones drawn behind the near. `group.hide()` fades all of it and puts it away, a move of one of its objects still running then setting nothing more. `group.to` carries the group's middle to a place's, as large as it was placed. An object in a group never slides in or out: it comes up and goes in its place. A place or a block a move of it reads is read on the frame, where it stands once the group is back as placed. A ring set round the frame's plane puts its far cards behind the page yet draws them over it: bring the group toward the eye by the ring's reach, `group.to('whole', { depth })`, so all of it stands before the page |
 | `terminal.works(lines, thinking, { thinkingShare })` | the agent thinking, its spinner beside the words `thinking`, then its lines written one after another; a line is `{ kind, text }`, its kind `work` (a tool and what it is used on), `said` or `done` |
 | `terminal.leave({ toward })` | the terminal giving way where it stands, or sliding out whole `toward` a side, so what comes in from the side across in the same `play` pushes it off |
 | `ending.show(card, { from })`, `ending.hide({ toward })` | the card: `{ name, line, command }`, last, or first and taken away as the page comes; with its ground it slides in whole `from` a side or out `toward` one, so a push carries it off or brings it on |
-| `{ enter, edge }` on any object's show, `{ leave, edge }` on its hide: `title`, `code`, `terminal.open` and `terminal.leave`, `ending`, `caption`, `keys` | its figure — words, pane, the card's lines, caps — coming up whole in a way of livereel's in place of its own, on its step's curve, while a card's or caption's ground comes up under it, whole half-way: `'fade'`; `'mask'`, out from behind an edge of its own, out of nothing, words rising from under a line just below them, its foot unless `edge` names another; `'wipe'`, uncovered from an edge, its left unless `edge` names another; `'iris'`, opened from its middle; `'grow'`, grown from its middle. A pane's shadow comes with it; going, the way runs back. Words on more than one line stand as wide as their box, so a way from a side crosses it: keep words in a way to one line. Never with `from`, `toward` or `typed` |
+| `{ enter, edge }` on any object's show, `{ leave, edge }` on its hide: `title`, `code`, `terminal.open` and `terminal.leave`, `ending`, `caption`, `keys`, `piece`, `outline`, `lens` | its figure — words, pane, the card's lines, caps — coming up whole in a way of livereel's in place of its own, on its step's curve, while a card's or caption's ground comes up under it, whole half-way: `'fade'`; `'mask'`, out from behind an edge of its own, out of nothing, words rising from under a line just below them, its foot unless `edge` names another; `'wipe'`, uncovered from an edge, its left unless `edge` names another; `'iris'`, opened from its middle; `'grow'`, grown from its middle. A pane's shadow comes with it; going, the way runs back. Words on more than one line stand as wide as their box, so a way from a side crosses it: keep words in a way to one line. Never with `from`, `toward` or `typed` |
 | `page.scrollBy(selector, { pixels })` | a block's own scroll moved so many pixels |
 | `page.scrollTo(selector, { top })` | the page scrolled until a block stands `top` pixels below the top of what scrolls it |
 | `page.type(strokes, { keyboard })` | real keys typed into whatever holds the page's keyboard, heard on the film's keyboard or the one named |
@@ -300,6 +302,63 @@ angle bounces with it, while what comes up or goes never passes whole or
 none. Give it to the move that should bounce — a `to`, a `lean`, a camera
 move — not to a whole `play`, nor to a show or a hide: one of those reaches
 its end a third of the way in and stops there, with no bounce.
+
+### Recipes: setting a block apart
+
+A block set apart from the page — lifted, grown, under a lens, in layers,
+spun — is no move of its own: it is a few moves of pieces, outlines, a lens
+and groups, with the window's shade behind them. Here are eighteen, named
+as a storyboard calls them. `node_modules/livereel/examples/livereel-recipes.ts`
+plays each on the promo's app, an act a recipe, in this order, each leaving
+the page as it found it: read its act for the timing before writing one.
+
+| Recipe | Moves |
+|---|---|
+| grows in place | `piece.show(card)`, then `piece.effects({ scale: 1.7, shadow: 1, ease: easeOutBack })` with `window.shade({ dim: 0.3 })` |
+| a lens along the page | `lens.show(number, { enter: 'grow' })`, `lens.to(next)` from number to number with a hold at each, `lens.hide({ leave: 'grow' })` |
+| ringed, lit, to the middle | `piece.show(card)`; `piece.effects({ ring: 1 })` with `light.on(card)`; then `piece.to(middle)`, `piece.effects({ shadow: 1 })` and `window.shade({ dim: 0.5 })`, the card itself still lit where it stands |
+| lifted with a shadow | `piece.effects({ shadow: 1, depth: 300 })`, the page as it stands |
+| sharp over a blurred page | `piece.effects({ depth: 500 })` with `window.shade({ blur: 8 })` |
+| glowing over a dimmed page | `piece.effects({ glow: 1, scale: 1.12 })` with `window.shade({ dim: 0.7 })` |
+| out beside the page | `piece.show(card, { hole: { line: 'dashed' } })`, `piece.effects({ shadow: 1, depth: 120 })`; then `window.to(box)` on the right with `piece.to(box, { depth: 0 })` on the ground across |
+| the page sliced in depth | `group.show`; a piece of the whole screen and the bands lifted off it with `hole: {}`, all in the group; `screen.lower()`, `group.lean({ tilt: 40, turn: 10 })`, `group.to('whole', { scale: 0.7 })`, each band's `piece.effects({ depth })` a step nearer than the one below it, so the top band stands nearest and none hides another, and the page under them `blur: 4`; a slow `group.lean({ turn: -10 })` on `linear` for a drift |
+| layers, labelled | as the sliced page, laid back and rolled as a drawing (`group.lean({ tilt: 55, roll: -45 })`, `scale: 0.45`), each layer ringed by `outline.show(layer, { line: 'dashed', group })` brought to its depth by `outline.effects({ depth })`; once the stack stands, a `title.show(label, { at, size })` flat beside each layer, placed off a still |
+| a fan in depth | the cards in a group; each `piece.to(place, { depth })` a step farther than the one before, `piece.lean({ tilt: 22, turn: 18 })`, the far ones `effects({ blur })`; `window.shade({ fade: 0.9 })`; a slow `group.lean({ turn: -12 })` |
+| any area, larger in place | `outline.show(box, { line: 'dashed' })`, `piece.show(box)`, `piece.effects({ scale: 1.5, shadow: 1, ring: 1 })` |
+| an inset tied to its place | `outline.show(area)`, `piece.show(area, { lines: 'solid' })`, `piece.to(beside)` with `piece.effects({ shadow: 1 })` |
+| blocks in a wave | `outline.show(row, { line: 'dashed' })`, a piece a card, each `piece.effects({ scale: 1.1, shadow: 1, within })` a fifth of the step after the one before |
+| larger in pushes | `piece.effects({ scale: 1.3 })` in a `play` of a quarter of a second, a hold, then `piece.to(middle, { scale: 1 })`, as large as the middle holds it, with a darker shade |
+| a whole turn, forward | `piece.show(card, { hole: {} })`, `piece.to(middle, { ease: easeOutBack })` with `piece.lean({ turn: 360 })`; back by `piece.lean({ turn: 0 })`, then `piece.back()`, in one step |
+| the page turns away | `window.to(box)` with `window.lean({ turn: -38 })` while `piece.to(middle)` keeps the card face-on |
+| the stack turns | as layers, then a slow `group.lean({ roll: -135 })`, a quarter round on a turntable |
+| a carousel | the cards in a group, each `piece.to(place, { depth })` round the frame's middle a third of a turn apart and `piece.lean({ turn })` facing out; `group.to('whole', { depth })` by the ring's reach; `group.lean({ turn: 360 })` over the page faded by `window.shade({ fade: 0.9 })` |
+
+- A piece stands where it was lifted, and the film knows no place of it:
+  grow it there by `effects({ scale })`, about its middle, or bring it near
+  by `effects({ depth })`, which grows it about the frame's middle, as a
+  block lifted toward the eye looks.
+- One grown or brought near where it stands goes back by its effects at
+  rest, `effects({ scale: 1, depth: 0 })`, and goes in a `cut`, standing
+  over its source; one carried by `to` goes back by `back()`, face-on by
+  its nearest whole turns, so one spun round does not spin back: to turn
+  it back as it returns, a `lean({ turn: 0 })` over the first half of the
+  step and `back()` over the second.
+- A scale or a depth its effects set stays through a `to` that names
+  none, and grows the piece at its new place too: name it in the `to`,
+  `piece.to(box, { depth: 0 })`, where the piece should stand as the box
+  holds it.
+- Leave a hole, `hole: {}`, where the viewer should see that the block
+  left its place: a card carried to the middle, out beside the page, or
+  standing face-on before a page that turns away. Leave none where the
+  piece grows over its place, where the copy is the point and its source
+  should still show (a loupe's card lit where it stands, an inset), or
+  where the page fades away behind it.
+- A block a move reads is read as its share begins: in the step the window
+  comes back, start a piece's `back()` after it, `within: { start: 0.5 }`.
+- The camera at `whole` shows the page as large in a smaller window, cut
+  by its edge: frame the whole screen once, `camera.onto(screen, { air: 0
+  })` with the screen's box, and the page stays whole in whatever window
+  stands.
 
 ## 4. Checking it
 

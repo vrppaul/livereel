@@ -71,7 +71,10 @@ export default defineFilm({
 
 `examples/example-com.ts` is a longer film, in acts, square or wide;
 `examples/livereel-promo.ts`, the film at the top of this page, serves an
-app of its own and clicks it for real.
+app of its own and clicks it for real; `examples/livereel-recipes.ts` sets a
+block of that app apart in eighteen ways, an act each — lifted, grown, under
+a lens, in layers, spun — each a few moves of pieces, outlines, a lens,
+groups and the window.
 
 ## For agents
 
@@ -166,9 +169,9 @@ and the moves of each part of the scene:
 - `lens.show(target, { magnification, size, enter, edge, as, group })`, `lens.to(target)`,
   `lens.hide({ toward, leave, edge })`; a round glass over the page, showing what lies under its middle magnified; each
   move of it takes `as` to name which
-- `title.effects({ ring, glow, shadow, blur, depth })`, and so `code.effects`, `terminal.effects`, `piece.effects`,
-  `outline.effects` and `lens.effects`: how the object stands out, ringed, glowing, casting a shadow, blurred or
-  brought toward the eye where it stands
+- `title.effects({ ring, glow, shadow, blur, scale, depth })`, and so `code.effects`, `terminal.effects`,
+  `piece.effects`, `outline.effects` and `lens.effects`: how the object stands out, ringed, glowing, casting a shadow,
+  blurred, grown or brought toward the eye where it stands
 - `group.show({ at })`, `group.to(place, { scale, depth })`, `group.lean({ tilt, turn, roll })`, `group.hide()`; a
   group of objects, turned, grown and brought near as one, each object in it as its own moves have it; each move of it
   takes `as` to name which
@@ -327,10 +330,13 @@ An object stands out by `effects`: `piece.effects({ shadow: 1, depth: 160
 shadow colour as it comes toward the eye; `glow` lights the accent round
 it and `ring` draws a line of the accent along its edge, each from 0 none
 to 1 whole, as `shadow` is, and `blur` blurs it, in pixels of a frame 1080
-high. A shadow and a glow follow what the object shows, a title's letters,
-a pane's rounded corners, a lens's round glass; a ring runs round a title's
-words, or its card where it stands on one, and along the edge of anything
-else. The shadow falls toward the object's foot, so it turns as the object
+high. `scale` grows it about its middle where it stands, as `to` grows it
+where it goes, so a block lifted off the page grows in place though the
+film knows no place of it; `depth` brings it near the eye, larger and
+farther from the frame's middle. A shadow and a glow follow what the
+object shows, a title's letters, a pane's rounded corners, a lens's round
+glass; a ring runs round a title's words, or its card where it stands on
+one, and along the edge of anything else. The shadow falls toward the object's foot, so it turns as the object
 rolls, as a pane's own shadow does. The move sets only
 the values it names, the rest kept as they stand, so it shares a `play`
 with a move that carries or leans the object, and with another `effects`

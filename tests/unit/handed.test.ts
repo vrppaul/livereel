@@ -296,7 +296,9 @@ test('what a refusal says a film handed is said as it was, whatever JSON cannot 
 });
 
 test("a move that sets the values a film names refuses one naming none, and each value in no kind it takes: an object's effects, the window's shade", () => {
-	expect(() => title.effects({})).toThrow(new FilmError('title.effects names none of ring, glow, shadow, blur, depth'));
+	expect(() => title.effects({})).toThrow(
+		new FilmError('title.effects names none of ring, glow, shadow, blur, scale, depth')
+	);
 	expect(() => pageWindow.shade({})).toThrow(new FilmError('window.shade names none of dim, fade, blur'));
 	expect(() => piece.effects({ shadow: 1.5 })).toThrow(
 		new FilmError("piece.effects's shadow is 1.5: it is a number from 0 to 1")

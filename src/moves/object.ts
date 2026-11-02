@@ -4,7 +4,7 @@
  * a lens: coming up in its box, in its own way or one of livereel's (`src/props/way.ts`), or sliding in whole from past
  * a side of the frame, pushing the object of its name standing there off past the side across; carried to another
  * place, growing and coming toward the eye on the way, or to a box read off the page; leant and rolled; set apart from
- * what lies under it, ringed, glowing, casting a shadow, blurred or brought toward the eye where it stands
+ * what lies under it, ringed, glowing, casting a shadow, blurred, grown or brought toward the eye where it stands
  * (`src/props/effects.ts`); taken back to stand as its box places it; put away where it stands, in its own way or one
  * of livereel's, or slid out past a side. A move takes the object a film names `as`, or its kind's own name, so a film
  * shows several of a kind at once, each moved by its name. What differs by what an object shows is told here, kind by
@@ -75,7 +75,7 @@ import {
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
-import { EFFECTS_AND_DEPTH, EFFECTS_AND_DEPTH_NAMES, type EffectsAndDepth, NO_EFFECTS } from '../props/effects.ts';
+import { EFFECTS_IN_PLACE, EFFECTS_IN_PLACE_NAMES, type EffectsInPlace, NO_EFFECTS } from '../props/effects.ts';
 import { type Group, type GroupName, cornerOf, groupFound, groupNamed, standsAsPlaced } from '../props/group.ts';
 import {
 	type Content,
@@ -169,14 +169,15 @@ export interface ObjectLeanScript extends LeanScript, NamedScript {
 
 /**
  * Which object stands out, and how: a `ring` along its edge, a `glow` round it and a `shadow` under it, each from 0
- * none to 1 whole, how far it is blurred, `blur`, and how far out toward the eye it stands, `depth`, each in pixels of
- * a frame 1080 high; any left out as it stands.
+ * none to 1 whole, how far it is blurred, `blur`, how many times as large it stands about its middle, `scale`, and how
+ * far out toward the eye, `depth`, a blur and a depth in pixels of a frame 1080 high; any left out as it stands.
  */
 export interface EffectsScript extends TimingScript, NamedScript {
 	readonly ring?: number;
 	readonly glow?: number;
 	readonly shadow?: number;
 	readonly blur?: number;
+	readonly scale?: number;
 	readonly depth?: number;
 }
 
@@ -219,6 +220,7 @@ const EFFECTS_FORM: Form<EffectsScript> = {
 	glow: A_SHARE,
 	shadow: A_SHARE,
 	blur: A_PIXELS,
+	scale: A_SCALE,
 	depth: A_DEPTH,
 	...NAMED_FORM,
 	...TIMING_FORM
@@ -354,13 +356,13 @@ export function carriedNamed(script: ToScript): readonly (keyof Carried)[] {
 }
 
 /**
- * An object of a kind standing out as the film names, with a ring, a glow, a shadow or a blur, or nearer the eye where
- * it stands; it sets those alone, so it shares a step with a move that carries it, one that leans it, or another of
- * how it stands out naming others.
+ * An object of a kind standing out as the film names, with a ring, a glow, a shadow or a blur, or larger or nearer the
+ * eye where it stands; it sets those alone, so it shares a step with a move that carries it, one that leans it, or
+ * another of how it stands out naming others.
  */
 export function objectEffects(kind: ObjectKind, move: string, script: EffectsScript): Move {
 	assertWritten(script, EFFECTS_FORM, move);
-	const names = namesSetBy(script, EFFECTS_AND_DEPTH_NAMES, move);
+	const names = namesSetBy(script, EFFECTS_IN_PLACE_NAMES, move);
 	const name = script.as ?? kind;
 	return {
 		part: objectPart(name),
@@ -660,19 +662,20 @@ function standingOut(
 	beginning: Beginning,
 	name: ObjectName,
 	script: EffectsScript,
-	names: readonly (keyof EffectsAndDepth)[],
+	names: readonly (keyof EffectsInPlace)[],
 	move: string
 ): Change {
 	const object = movable(beginning, name, move);
-	const to: EffectsAndDepth = {
+	const to: EffectsInPlace = {
 		ring: fractionOf(script.ring ?? object.ring),
 		glow: fractionOf(script.glow ?? object.glow),
 		shadow: fractionOf(script.shadow ?? object.shadow),
 		blur: script.blur ?? object.blur,
+		scale: script.scale ?? object.scale,
 		depth: depthAsked(script.depth, object.depth, beginning.format.frame)
 	};
 	refuseNearingInside(object, to.depth, name, move);
-	return writing(name, (progress) => namedToward(EFFECTS_AND_DEPTH, object, to, names, progress));
+	return writing(name, (progress) => namedToward(EFFECTS_IN_PLACE, object, to, names, progress));
 }
 
 /**

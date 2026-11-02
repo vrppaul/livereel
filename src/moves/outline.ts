@@ -79,8 +79,8 @@ export function lean(script: ObjectLeanScript): Move {
 }
 
 /**
- * The outline standing out as the film names: ringed, glowing, casting a shadow, blurred, or brought toward the eye
- * where it stands.
+ * The outline standing out as the film names: ringed, glowing, casting a shadow, blurred, grown or brought toward the
+ * eye where it stands.
  */
 export function effects(script: EffectsScript): Move {
 	return objectEffects(OUTLINE, 'outline.effects', script);

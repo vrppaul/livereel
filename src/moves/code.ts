@@ -152,8 +152,8 @@ export function lean(script: ObjectLeanScript): Move {
 }
 
 /**
- * The code shown standing out as the film names, its pane with it: ringed, glowing, casting a shadow, blurred, or
- * brought toward the eye where it stands.
+ * The code shown standing out as the film names, its pane with it: ringed, glowing, casting a shadow, blurred, grown
+ * or brought toward the eye where it stands.
  */
 export function effects(script: EffectsScript): Move {
 	return objectEffects(CODE, 'code.effects', script);

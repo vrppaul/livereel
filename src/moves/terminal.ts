@@ -140,8 +140,8 @@ export function lean(script: ObjectLeanScript): Move {
 }
 
 /**
- * The terminal standing out as the film names: ringed, glowing, casting a shadow, blurred, or brought toward the eye
- * where it stands.
+ * The terminal standing out as the film names: ringed, glowing, casting a shadow, blurred, grown or brought toward the
+ * eye where it stands.
  */
 export function effects(script: EffectsScript): Move {
 	return objectEffects(TERMINAL, 'terminal.effects', script);
