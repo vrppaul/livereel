@@ -64,7 +64,8 @@ export interface HoleScript {
 
 /**
  * How a piece is lifted: off the first `every` blocks a selector matches, together, with `air` clear round them, in the
- * page's pixels; how round its corners are, `corner`, a radius in the page's pixels, as its block's `border-radius`;
+ * page's pixels; how round the corners of what it lifts are, `corner`, a radius in the page's pixels: a rounded card's
+ * own `border-radius`, where it lifts the card alone and whole;
  * the hole it leaves and the line the lines from it to its source are drawn in, where the film names them; how it comes
  * up; which piece; the group it stands in, if any.
  */

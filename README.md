@@ -146,15 +146,16 @@ and the moves of each part of the scene:
 - `keys.show(caps, { enter, edge })`, `keys.hide({ leave, edge })`
 - `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { at, align, size, from, enter, edge, words, as, inside, group })`,
+- `title.show(text, { at, align, size, from, enter, edge, words, as, inside, group, zIndex })`,
   `title.to(place, { scale, depth })`, `title.lean({ tilt, turn, roll })`, `title.hide({ toward, leave, edge })`
-- `code.show(text, { at, from, enter, edge, longLines, as, inside, group })`, `code.to(place, { scale, depth })`,
-  `code.lean({ tilt, turn, roll })`, `code.light(line, { through })`, `code.scrollTo(line)`,
+- `code.show(text, { at, from, enter, edge, longLines, as, inside, group, zIndex })`,
+  `code.to(place, { scale, depth })`, `code.lean({ tilt, turn, roll })`, `code.light(line, { through })`,
+  `code.scrollTo(line)`,
   `code.hide({ toward, leave, edge })`; each move of a title or code takes `as` to name which
 - `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
   whole frame where they come up, over every other object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`
-- `terminal.open(title, { at, from, enter, edge, inside, group })`, `terminal.type(strokes, { keyboard })`,
+- `terminal.open(title, { at, from, enter, edge, inside, group, zIndex })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
   `terminal.lean({ tilt, turn, roll })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
@@ -163,12 +164,12 @@ and the moves of each part of the scene:
   `piece.to(place, { scale, depth })`, `piece.lean({ tilt, turn, roll })`, `piece.back()`,
   `piece.hide({ toward, leave, edge })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
-  in the page's pixels, square where it names none, leaving a `hole: { ground, line }` and drawing `lines` to its
+  in the page's pixels (a rounded card's own `border-radius`), square where it names none, leaving a `hole: { ground, line }` and drawing `lines` to its
   source where named; each move of it takes `as` to name which
-- `outline.show(target, { every, line, enter, edge, as, group })`, `outline.to(place, { scale, depth })`,
+- `outline.show(target, { every, line, enter, edge, as, group, zIndex })`, `outline.to(place, { scale, depth })`,
   `outline.lean({ tilt, turn, roll })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a
   selector's blocks or a box of the screen, `'solid'` or `'dashed'`; each move of it takes `as` to name which
-- `lens.show(target, { magnification, size, enter, edge, as, group })`, `lens.to(target)`,
+- `lens.show(target, { magnification, size, enter, edge, as, group, zIndex })`, `lens.to(target)`,
   `lens.hide({ toward, leave, edge })`; a round glass over the page, showing what lies under its middle magnified; each
   move of it takes `as` to name which
 - `title.effects({ ring, glow, shadow, blur, scale, depth })`, and so `code.effects`, `terminal.effects`,
@@ -389,13 +390,16 @@ lifted off it shows where they were.
 
 `group.show({ at: 'whole', as: 'stack' })` places a group, and an object
 shown with `group: 'stack'` stands in it, where it would stand on the frame:
-`piece.show(PANELS, { as: 'panels', group: 'stack' })`. Then
+`piece.show(PANELS, { as: 'panels', group: 'stack', zIndex: 1 })`. Its
+objects are drawn by their `zIndex`, the higher over the lower, and as
+they came where it is alike, however the group leans. Then
 `group.lean({ as: 'stack', tilt: 55, roll: -45 })` and `group.to('whole', {
 as: 'stack', scale: 0.5 })` turn and shrink everything in it about the
 group's middle, each object still as its own moves have it: `piece.to`
 with a `depth` lifts one layer of a stack off the next, and cards placed
-round the group's middle at depths and turns make a ring that
-`group.lean({ turn: 360 })` spins, the far cards drawn behind the near.
+round the middle of a group shown with `order: 'depth'` at depths and
+turns make a ring that `group.lean({ turn: 360 })` spins, the far cards
+drawn behind the near; such a group takes no `zIndex`.
 `group.hide()` fades everything in it and puts it away with the group,
 whatever else moves it then: a move of one of its objects still running
 sets nothing more. `group.to(place)` carries the group's middle to the

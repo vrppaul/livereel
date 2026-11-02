@@ -991,8 +991,8 @@ test('an object joins a group only as it comes, while the group stands as it was
 	);
 	const joined = await Promise.all(spun.map((scene) => setAt(joining, scene, 1)));
 	expect(joined.map((scene) => scene.objects.get('code')!.inside)).toEqual([
-		{ kind: 'group', name: 'stack', zIndex: 0 },
-		{ kind: 'group', name: 'stack', zIndex: 0 }
+		{ kind: 'group', name: 'stack', zIndex: null },
+		{ kind: 'group', name: 'stack', zIndex: null }
 	]);
 });
 
@@ -1033,6 +1033,13 @@ test('the objects of a group ordered by depth are drawn the farther behind the n
 		['before', 'back', 'front', 'after'],
 		['before', 'front', 'back', 'after']
 	]);
+	await expect(async () =>
+		code.show(THREE_LINES, { at: 'top', group: 'group', zIndex: 1, as: 'raised' }).begin(beginningOf(grouped))
+	).rejects.toThrow(
+		new FilmError(
+			'code.show names a zIndex in the group "group", which draws by depth: leave it out, or order the group by zIndex'
+		)
+	);
 });
 
 test('a group put away fades what stands in it with it, and at its end is gone with all of it, what stands apart staying', async () => {

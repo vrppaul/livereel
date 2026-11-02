@@ -73,12 +73,12 @@ export type ObjectName = string;
 
 /**
  * What an object stands in: the frame, the page's window, or a group of objects by its name, with its zIndex there, how
- * high it is drawn among the others of the group.
+ * high it is drawn among the others of the group, where the film names one.
  */
 export type Holder =
 	| { readonly kind: 'frame' }
 	| { readonly kind: 'window' }
-	| { readonly kind: 'group'; readonly name: GroupName; readonly zIndex: number };
+	| { readonly kind: 'group'; readonly name: GroupName; readonly zIndex: number | null };
 
 /** What the stage lays an object in: the frame, or the page's window; one in a group stands on the frame. */
 type Laid = Exclude<Holder['kind'], 'group'>;
@@ -191,6 +191,10 @@ const MIDDLE: Point = { left: 0.5, top: 0.5 };
 const ITS_MIDDLE: Spot = { across: 0, down: 0, out: 0 };
 // The groups an object that slides is placed by: none, as an object in a group never slides
 const IN_NO_GROUP: Groups = new Map();
+// Where an object in no group stands in a group's order: anywhere, as its place among objects is its own; and the
+// zIndex of one in a group the film names none for, so all such are drawn as they came
+const NO_GROUP_ORDER = 0;
+const AS_THEY_CAME = 0;
 // An object on the frame, which lets all of it show
 const WHOLLY_HELD = 1;
 // Where the left and top edges of what an object stands in are, in its own pixels
@@ -369,13 +373,17 @@ export function inDrawingOrder(objects: Objects, groups: Groups): readonly Objec
 
 /**
  * Where an object is drawn among the others of its group, the lower first: by its zIndex, or, in a group ordered by
- * depth, by how far out toward the eye its middle stands. One in no group has a place of its own, where this weighs
- * nothing.
+ * depth, by how far out toward the eye its middle stands.
  */
 function orderInItsGroup(object: FrameObject, groups: Groups): number {
 	const holder = object.inside;
-	if (holder.kind === 'group' && groupNamed(groups, holder.name).order === 'zIndex') return holder.zIndex;
-	return outOf(object, groups);
+	if (holder.kind !== 'group') return NO_GROUP_ORDER;
+	switch (groupNamed(groups, holder.name).order) {
+		case 'zIndex':
+			return holder.zIndex ?? AS_THEY_CAME;
+		case 'depth':
+			return outOf(object, groups);
+	}
 }
 
 /** Whether an object stands in a group of a name. */

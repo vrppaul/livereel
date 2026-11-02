@@ -27,7 +27,9 @@ export type GroupName = string;
  * came where it is alike, so a stack's layers stand as the film lays them however the group leans; or by depth, the
  * farther behind the nearer, for a ring whose near side changes as it turns.
  */
-export type GroupOrder = 'zIndex' | 'depth';
+const GROUP_ORDERS = ['zIndex', 'depth'] as const;
+
+export type GroupOrder = (typeof GROUP_ORDERS)[number];
 
 /**
  * A group: its box on the frame, in the frame's pixels, how it stands about the box's middle, how far it has gone, and
@@ -40,7 +42,7 @@ export interface Group extends Stance {
 }
 
 export const A_GROUP_ORDER: Kind<GroupOrder> = new OneOf(
-	['zIndex', 'depth'],
+	GROUP_ORDERS,
 	'how a group orders what stands in it: "zIndex", each by its zIndex, or "depth", the farther behind the nearer'
 );
 

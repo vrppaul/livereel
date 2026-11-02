@@ -241,8 +241,6 @@ const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
 const BACK = [...CARRIED, ...LEANT] as const satisfies readonly (keyof FrameObject)[];
 // A box measured in a group stands as large as on the frame, as the group it is measured for stands as it was placed
 const AS_LARGE = 1;
-// The zIndex every object in a group shares where the film names none, so they are drawn as they came
-const AS_THEY_CAME = 0;
 // The curve what an object of each kind shows comes up on in its own way where the film names none: words and lines of
 // code, one after another, at an even pace; the terminal, the card, keys, a piece of the page, an outline and a lens,
 // fading up whole, on their step's. One that comes up in a way of livereel's comes on its step's
@@ -337,7 +335,7 @@ function holderNamed(script: NestedScript, move: string): Holder {
 		throw new FilmError(`${move} orders an object by its zIndex only in a group: name its group`);
 	}
 	if (script.inside !== undefined) return IN_THE_WINDOW;
-	if (script.group !== undefined) return { kind: 'group', name: script.group, zIndex: script.zIndex ?? AS_THEY_CAME };
+	if (script.group !== undefined) return { kind: 'group', name: script.group, zIndex: script.zIndex ?? null };
 	return ON_THE_FRAME;
 }
 
@@ -577,7 +575,7 @@ async function appearingIn(
 	comingAt: (beginning: Beginning) => Coming | Promise<Coming>,
 	move: string
 ): Promise<Change> {
-	refuseJoiningUnplaced(beginning, holder, move);
+	refuseJoining(beginning, holder, move);
 	const within = seenFrom(beginning, holder);
 	const coming = await comingAt(within);
 	const measured = { ...coming, box: measuredIn(beginning.scene, holder, coming.box) };
@@ -586,13 +584,20 @@ async function appearingIn(
 
 /**
  * Refuses an object coming up in a group none of stands, or one that does not stand as it was placed, as only then is
- * where the object would stand on the frame where it stands in the group.
+ * where the object would stand on the frame where it stands in the group; and one naming a zIndex in a group that
+ * draws by depth, where it would order nothing.
  */
-function refuseJoiningUnplaced(beginning: Beginning, holder: Holder, move: string): void {
+function refuseJoining(beginning: Beginning, holder: Holder, move: string): void {
 	if (holder.kind !== 'group') return;
-	if (!standsAsPlaced(groupFound(beginning.scene.groups, holder.name, move))) {
+	const group = groupFound(beginning.scene.groups, holder.name, move);
+	if (!standsAsPlaced(group)) {
 		throw new FilmError(
 			`${move} joins the group "${holder.name}" only while it stands as it was placed: face-on by whole turns, as large as its box, on the frame's plane`
+		);
+	}
+	if (holder.zIndex !== null && group.order === 'depth') {
+		throw new FilmError(
+			`${move} names a zIndex in the group "${holder.name}", which draws by depth: leave it out, or order the group by zIndex`
 		);
 	}
 }

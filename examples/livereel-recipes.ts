@@ -64,8 +64,11 @@ const OVER_THE_CHART: Box = { left: 0.35, top: 0.42, width: 0.54, height: 0.22 }
 const DRAWN_BACK: Box = { left: 0.15, top: 0.12, width: 0.7, height: 0.7 };
 const PAGE_ASIDE: Box = { left: 0.47, top: 0.22, width: 0.48, height: 0.48 };
 const CARD_ASIDE: Box = { left: 0.03, top: 0.28, width: 0.42, height: 0.34 };
-// How round the app's cards are drawn, as its stylesheet has them, in the page's pixels; a block drawn square
+// How round the app's cards are drawn, as its stylesheet has them, in the page's pixels; the page's window, as
+// livereel's look rounds it (its `paneCorner`), in pixels of a 1080 frame, which the whole screen shown at 1920 × 1080
+// takes as its own; a block drawn square
 const CARD_CORNER = 18;
+const WINDOW_CORNER = 24;
 const SQUARE = 0;
 
 /**
@@ -183,7 +186,7 @@ function layersShown(stack: string, layers: readonly LiftedLayer[]): readonly St
 	return [
 		cut(group.show({ as: stack })),
 		cut(
-			piece.show(WHOLE_SCREEN, { as: UNDER, group: stack }),
+			piece.show(WHOLE_SCREEN, { as: UNDER, group: stack, corner: WINDOW_CORNER }),
 			...layers.map((layer) =>
 				piece.show(layer.target, {
 					as: layer.as,
@@ -540,9 +543,9 @@ function actBlocksInAWave(): readonly Step[] {
 /** The chart's last days pushed larger where they stand, then again into the middle, the page darker each time. */
 function actLargerInPushes(): readonly Step[] {
 	return [
-		cut(piece.show(LAST_DAYS, { every: 3, air: 24 })),
+		cut(piece.show(LAST_DAYS, { every: 3, air: 12 })),
 		play({ seconds: 0.6, moves: [caption.show('Larger in pushes')] }),
-		play({ seconds: 0.28, moves: [piece.effects({ scale: 1.3, shadow: 1 }), window.shade({ dim: 0.3 })] }),
+		play({ seconds: 0.28, moves: [piece.effects({ scale: 1.2, shadow: 1 }), window.shade({ dim: 0.3 })] }),
 		hold({ seconds: 1.1 }),
 		play({ seconds: 0.5, moves: [piece.to(MIDDLE, { scale: 1 }), window.shade({ dim: 0.6 })] }),
 		hold({ seconds: 1.4 }),
