@@ -11,12 +11,13 @@
  * all, with no error (README film, `--renderer gpu`, 2026-10-30). Which side faces the eye is read off the matrix,
  * so the stage draws the back of what has turned away, never what it shows mirrored.
  */
-import { type Angle, EYE_DISTANCE, FACE_ON, angleToward, angledAs, isFaceOn } from './camera.ts';
+import { type Angle, EYE_DISTANCE, FACE_ON, angleToward, angledAs } from './camera.ts';
 import { A_NUMBER, type Kind, Plain } from './handed.ts';
 import {
 	type FlatMatrix,
 	type Matrix,
 	chained,
+	facesTheFrame,
 	flatOf,
 	rotationZ,
 	scaling,
@@ -103,11 +104,12 @@ export function stanceMatrix(stance: Stance): Matrix {
 }
 
 /**
- * Something as the stage draws it, carried about its middle by its placing — its stance, seen from the eye where it
- * stands on the frame — flat where its angle leaves it facing the frame, at any size, depth or roll.
+ * Something as the stage draws it, carried about its middle by its placing — how it stands, seen from the eye where it
+ * stands on the frame — flat where how it stands before the eye, `stood`, leaves it facing the frame, at any size, depth
+ * or roll.
  */
-export function drawnStance(angle: Angle, placing: Matrix): DrawnStance {
-	const transform: Transform = isFaceOn(angle)
+export function drawnStance(stood: Matrix, placing: Matrix): DrawnStance {
+	const transform: Transform = facesTheFrame(stood)
 		? { kind: 'flat', matrix: flatOf(placing) }
 		: { kind: 'leant', matrix: placing };
 	return { transform, face: showsItsFront(placing) ? 'front' : 'back' };

@@ -56,8 +56,12 @@ const EDGE_ON = 0;
 // How a point is seen from nearer as it comes out toward the eye: by all it comes out, for the eye's distance
 const NEARER_BY_ITS_OUT = -1;
 
+// How far an entry of a matrix may stand from the one that carries every point where it stands, while it is still
+// taken to: whole turns leave 2.4e-16, a pixel moved leaves 1
+const UNMOVED_WITHIN = 1e-9;
+
 /** A matrix that carries every point where it stands. */
-export const IDENTITY: Matrix = {
+const IDENTITY: Matrix = {
 	m11: 1,
 	m12: 0,
 	m13: 0,
@@ -75,6 +79,30 @@ export const IDENTITY: Matrix = {
 	m43: 0,
 	m44: 1
 };
+// Every entry of a matrix, by its name
+const ENTRIES = [
+	'm11',
+	'm12',
+	'm13',
+	'm14',
+	'm21',
+	'm22',
+	'm23',
+	'm24',
+	'm31',
+	'm32',
+	'm33',
+	'm34',
+	'm41',
+	'm42',
+	'm43',
+	'm44'
+] as const satisfies readonly (keyof Matrix)[];
+
+/** Whether a matrix carries every point where it stands, but for what whole turns leave of arithmetic. */
+export function carriesEveryPointWhereItStands(matrix: Matrix): boolean {
+	return ENTRIES.every((entry) => Math.abs(matrix[entry] - IDENTITY[entry]) <= UNMOVED_WITHIN);
+}
 
 /** A point moved across, down and out by a spot's own, as CSS's `translate3d()`. */
 export function translation(by: Spot): Matrix {

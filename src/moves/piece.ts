@@ -19,6 +19,8 @@ import type { Hole, Piece } from '../props/piece.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
+	GROUPED_FORM,
+	type GroupedScript,
 	type HideScript,
 	IN_PLACE_SHOW_FORM,
 	type InPlaceShowScript,
@@ -48,9 +50,10 @@ export interface HoleScript {
 
 /**
  * How a piece is lifted: off the first `every` blocks a selector matches, together; the hole it leaves and the line the
- * lines from it to its source are drawn in, where the film names them; how it comes up; which piece.
+ * lines from it to its source are drawn in, where the film names them; how it comes up; which piece; the group it
+ * stands in, if any.
  */
-export interface PieceScript extends InPlaceShowScript, NamedScript {
+export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript {
 	readonly every?: number;
 	readonly hole?: HoleScript;
 	readonly lines?: Stroke;
@@ -86,7 +89,8 @@ const PIECE_FORM: Form<PieceScript> = {
 	hole: new OfForm(HOLE_FORM, 'a hole: { ground, line }'),
 	lines: A_STROKE,
 	...IN_PLACE_SHOW_FORM,
-	...NAMED_FORM
+	...NAMED_FORM,
+	...GROUPED_FORM
 };
 /**
  * A piece of the page lifted off a target, a selector's first `every` blocks together or a box of the screen, over

@@ -37,7 +37,10 @@ import {
 } from './object.ts';
 import { TYPING_FORM, type TypingScript } from './typing.ts';
 
-/** Where the terminal opens, `at` a place on the frame or in what it stands `inside`, and how it comes there. */
+/**
+ * Where the terminal opens, `at` a place on the frame or in what it stands `inside` or in, its `group`, and how it
+ * comes there.
+ */
 export interface TerminalScript extends ShowScript, NestedScript {
 	readonly at?: Place;
 }

@@ -186,6 +186,8 @@ export const A_SELECTOR = new Plain(isWords, 'a selector: a string that names bl
 export const A_PATH = new Plain(isWords, "a file's path, from the film's file");
 export const AN_ADDRESS = new Plain(isWords, 'an address, a string');
 export const A_FONT_FAMILY = new Plain(isWords, "a font's family, as CSS names one: 'Inter', or 'Inter, sans-serif'");
+/** The name a film gives what it shows and moves by name, an object or a group of them. */
+export const A_NAME = new Plain(isWords, 'a name, a string with something in it');
 /** Layers laid over the ground, in CSS: whether CSS reads them is checked in a browser, before the film is shot. */
 export const A_GROUND_LAYERS = new Plain(
 	isWords,

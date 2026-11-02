@@ -313,7 +313,7 @@ export function zoomPicturedFor(own: Camera, along: readonly Camera[], pieces: r
  * Whether an angle leaves what leans in a plane facing the frame: neither tilted nor turned, or by whole or half turns
  * alone, which show its front or its back.
  */
-export function isFaceOn(angle: Angle): boolean {
+function isFaceOn(angle: Angle): boolean {
 	return facesTheFrame(angledAs(angle));
 }
 
@@ -436,7 +436,10 @@ function facing(screen: Size, zoom: number): Pose {
 	return { focusX: screen.width / HALVES, focusY: screen.height / HALVES, zoom };
 }
 
-/** Where the middle of a box on the frame stands in the room: across and down from the frame's middle, on its plane. */
+/**
+ * Where the middle of a box on the frame, or in anything else it stands in, stands in the room: across and down from
+ * that's middle, on its plane.
+ */
 function middleInTheRoom(box: Box, frame: Size): Spot {
 	return {
 		across: middleX(box) - frame.width / HALVES,
@@ -525,10 +528,18 @@ export function carriedAboutItsMiddle(matrix: Matrix, box: Box, point: Point): P
  * before the frame's middle, a nearer spot larger and farther from that middle.
  */
 export function seenFromTheEye(box: Box, frame: Size): Matrix {
-	const middle = middleInTheRoom(box, frame);
+	return aboutTheMiddleOf(perspective(eyeDistanceOf(frame)), box, frame);
+}
+
+/**
+ * A matrix that acts about the middle of what a box stands in, as a matrix about the box's own middle: moved from the
+ * box's middle to that middle, acted, and moved back.
+ */
+export function aboutTheMiddleOf(matrix: Matrix, box: Box, within: Size): Matrix {
+	const middle = middleInTheRoom(box, within);
 	return chained([
 		translation({ across: -middle.across, down: -middle.down, out: ON_ITS_PLANE }),
-		perspective(eyeDistanceOf(frame)),
+		matrix,
 		translation(middle)
 	]);
 }

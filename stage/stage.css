@@ -1133,12 +1133,22 @@ body {
 		calc(var(--source-top) * var(--picture-scale) * -1px);
 }
 
-/* A lens is a round glass with an edge and a shadow; past the screen's edge it shows the screen's ground (its glass blank where its middle sees past the screen: its rule stands at the end, after every figure's) */
+/* A lens is a round glass with an edge and a shadow, the holes it shows cut to it; past the screen's edge it shows the screen's ground (its glass blank where its middle sees past the screen: its rule stands at the end, after every figure's) */
 .lens .way {
 	border-radius: 50%;
+	overflow: hidden;
 	box-shadow: var(--lens-edge);
 	background-color: var(--screen-ground);
 	background-repeat: no-repeat;
+}
+
+/* A hole other pieces leave in the part of the screen a piece of the page or a lens shows, laid in its figure where the engine works it out: in the frame's pixels, which an object's lengths take as a share of the frame's scale */
+.piece .hole,
+.lens .hole {
+	left: calc(var(--left) * 1px / var(--frame-scale));
+	top: calc(var(--top) * 1px / var(--frame-scale));
+	width: calc(var(--width) * 1px / var(--frame-scale));
+	height: calc(var(--height) * 1px / var(--frame-scale));
 }
 
 /* An outline's figure: a ring a little clear of its box on every side, in the accent's colour, whole or in dashes */
@@ -1223,8 +1233,13 @@ body {
 	background-image: none;
 }
 
-/* A piece of the page or a lens turned away shows the eye its back: a blank card of the screen's ground, never the page mirrored */
+/* A piece of the page or a lens turned away shows the eye its back: a blank card of the screen's ground, never the page mirrored, nor the holes it shows */
 .object[data-face='back'] .piece .way,
 .object[data-face='back'] .lens .way {
 	background: var(--screen-ground);
+}
+
+.object[data-face='back'] .piece .hole,
+.object[data-face='back'] .lens .hole {
+	visibility: hidden;
 }

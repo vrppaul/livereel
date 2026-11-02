@@ -142,28 +142,32 @@ and the moves of each part of the scene:
 - `keys.show(caps, { enter, edge })`, `keys.hide({ leave, edge })`
 - `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { at, align, size, from, enter, edge, words, as, inside })`, `title.to(place, { scale, depth })`,
-  `title.lean({ tilt, turn, roll })`, `title.hide({ toward, leave, edge })`
-- `code.show(text, { at, from, enter, edge, longLines, as, inside })`, `code.to(place, { scale, depth })`,
+- `title.show(text, { at, align, size, from, enter, edge, words, as, inside, group })`,
+  `title.to(place, { scale, depth })`, `title.lean({ tilt, turn, roll })`, `title.hide({ toward, leave, edge })`
+- `code.show(text, { at, from, enter, edge, longLines, as, inside, group })`, `code.to(place, { scale, depth })`,
   `code.lean({ tilt, turn, roll })`, `code.light(line, { through })`, `code.scrollTo(line)`,
   `code.hide({ toward, leave, edge })`; each move of a title or code takes `as` to name which
 - `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
   whole frame where they come up, over every other object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`
-- `terminal.open(title, { at, from, enter, edge, inside })`, `terminal.type(strokes, { keyboard })`,
+- `terminal.open(title, { at, from, enter, edge, inside, group })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
   `terminal.lean({ tilt, turn, roll })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
-- `piece.show(target, { every, hole, lines, enter, edge, as })`, `piece.to(place, { scale, depth })`,
+- `piece.show(target, { every, hole, lines, enter, edge, as, group })`, `piece.to(place, { scale, depth })`,
   `piece.lean({ tilt, turn, roll })`, `piece.back()`, `piece.hide({ toward, leave, edge })`; a piece of the page lifted
   off a selector's blocks or a box of the screen onto the frame, leaving a `hole: { ground, line }` and drawing `lines`
   to its source where named; each move of it takes `as` to name which
-- `outline.show(target, { every, line, enter, edge, as })`, `outline.to(place, { scale, depth })`,
+- `outline.show(target, { every, line, enter, edge, as, group })`, `outline.to(place, { scale, depth })`,
   `outline.lean({ tilt, turn, roll })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a
   selector's blocks or a box of the screen, `'solid'` or `'dashed'`; each move of it takes `as` to name which
-- `lens.show(target, { magnification, size, enter, edge, as })`, `lens.to(target)`, `lens.hide({ toward, leave, edge })`;
-  a round glass over the page, showing what lies under its middle magnified; each move of it takes `as` to name which
+- `lens.show(target, { magnification, size, enter, edge, as, group })`, `lens.to(target)`,
+  `lens.hide({ toward, leave, edge })`; a round glass over the page, showing what lies under its middle magnified; each
+  move of it takes `as` to name which
+- `group.show({ at })`, `group.to(place, { scale, depth })`, `group.lean({ tilt, turn, roll })`, `group.hide()`; a
+  group of objects, turned, grown and brought near as one, each object in it as its own moves have it; each move of it
+  takes `as` to name which
 - `ending.show({ name, line, command }, { from, enter, edge })`, `ending.hide({ toward, leave, edge })`, so a film may
   open on the card too;
   the card stands over the whole frame on the frame's own ground, slides in and out whole, and is never carried or
@@ -350,7 +354,30 @@ round glass, 320 pixels of a 1080 frame across, round the block's middle,
 showing the page under its own middle twice as large as the camera does, or
 as `magnification` and `size` say; `lens.to(CHART)` carries it round
 another block's middle, and what it shows moves under it. A lens is drawn
-from the page's picture as a piece is, refused where a piece is.
+from the page's picture as a piece is, refused where a piece is. A piece or
+a lens shows the page as it stands, so the holes other pieces leave in its
+part of the screen with it: a piece of the whole screen under the pieces
+lifted off it shows where they were.
+
+`group.show({ at: 'whole', as: 'stack' })` places a group, and an object
+shown with `group: 'stack'` stands in it, where it would stand on the frame:
+`piece.show(PANELS, { as: 'panels', group: 'stack' })`. Then
+`group.lean({ as: 'stack', tilt: 55, roll: -45 })` and `group.to('whole', {
+as: 'stack', scale: 0.5 })` turn and shrink everything in it about the
+group's middle, each object still as its own moves have it: `piece.to`
+with a `depth` lifts one layer of a stack off the next, and cards placed
+round the group's middle at depths and turns make a ring that
+`group.lean({ turn: 360 })` spins, the far cards drawn behind the near.
+`group.hide()` fades everything in it and puts it away with the group,
+whatever else moves it then: a move of one of its objects still running
+sets nothing more. `group.to(place)` carries the group's middle to the
+place's; it stays as large as it was placed and grows by `scale`. An
+object joins a group only as it comes, while the group stands as it was
+placed, face-on, as large as its box and on the frame's plane; it never
+slides in or out past the frame's edge. A place an object in a group is
+carried to, and a block its `back` or `to` reads, is read on the frame and
+stands in the group where it would stand once the group is back as it was
+placed.
 
 A title, code or the terminal stands `inside` the page's window, as a small
 window of code over the site's: `code.show(LINES, { at: { left: 0.45, top:

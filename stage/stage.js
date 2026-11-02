@@ -15,7 +15,8 @@
 /** @import { DrawnWords, Piece } from '../src/props/words.ts' */
 /** @import { CodeLine, CodePiece, DrawnCode } from '../src/props/code.ts' */
 /** @import { DrawnContent, DrawnObject } from '../src/props/object.ts' */
-/** @import { DrawnHole, DrawnLines } from '../src/props/lifted.ts' */
+/** @import { DrawnLines } from '../src/props/lifted.ts' */
+/** @import { DrawnHole } from '../src/props/piece.ts' */
 /** @import { Box, Segment } from '../src/domain/geometry.ts' */
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
@@ -354,9 +355,17 @@ class SceneListDrawer {
 
 	/** @param {DrawnScene} scene */
 	draw(scene) {
-		const items = this.itemsOf(scene);
-		this.items.draw(JSON.stringify(items.map((item) => item.name)), items);
+		drawnByName(this.items, this.itemsOf(scene));
 	}
+}
+
+/**
+ * A list of named items drawn, laid out anew only as their names change.
+ * @template {{ readonly name: string }} Item
+ * @param {KeyedList<Item>} list @param {readonly Item[]} items
+ */
+function drawnByName(list, items) {
+	list.draw(JSON.stringify(items.map((item) => item.name)), items);
 }
 
 /**
@@ -555,11 +564,16 @@ class CaptionDrawer {
 	}
 }
 
-/** A piece of the page in its object: the part of the page's picture over its source, as large as its box holds it. */
+/**
+ * A piece of the page in its object: the part of the page's picture over its source, as large as its box holds it, and
+ * the holes other pieces leave there, in its figure.
+ */
 class PieceDrawer {
 	/** @param {Staged} element */
 	constructor(element) {
 		this.element = element;
+		/** @type {KeyedList<DrawnHole>} */
+		this.holes = new KeyedList(partOf(element, 'way'), holeElement, holeDrawn);
 	}
 
 	/** @param {DrawnContent} content */
@@ -567,17 +581,20 @@ class PieceDrawer {
 		const piece = ofKind(content, 'piece');
 		figureDrawn(this.element, piece);
 		sourceDrawn(this.element, piece.source, piece.fit);
+		drawnByName(this.holes, piece.holes);
 	}
 }
 
 /**
- * A lens in its object: the part of the page's picture under its middle, filling it; blank where its middle sees past
- * the screen.
+ * A lens in its object: the part of the page's picture under its middle, filling it, and the holes pieces leave there;
+ * blank where its middle sees past the screen.
  */
 class LensDrawer {
 	/** @param {Staged} element */
 	constructor(element) {
 		this.element = element;
+		/** @type {KeyedList<DrawnHole>} */
+		this.holes = new KeyedList(partOf(element, 'way'), holeElement, holeDrawn);
 	}
 
 	/** @param {DrawnContent} content */
@@ -586,6 +603,7 @@ class LensDrawer {
 		figureDrawn(this.element, lens);
 		this.element.toggleAttribute(BLANK, lens.source === null);
 		if (lens.source !== null) sourceDrawn(this.element, lens.source, lens.fit);
+		drawnByName(this.holes, lens.holes);
 	}
 }
 
@@ -1164,11 +1182,12 @@ function holeElement() {
 }
 
 /**
- * A hole: its part of the screen, its colour, the line round its edge, if any, and how far it has come.
+ * A hole: the box it fills, on the screen or in what a piece or a lens shows of it, its colour, the line round its
+ * edge, if any, and how far it has come.
  * @param {HTMLElement} element @param {DrawnHole} hole
  */
 function holeDrawn(element, hole) {
-	placed(element, hole.source);
+	placed(element, hole.box);
 	numbered(element, { '--shown': hole.shown });
 	element.style.setProperty(HOLE_GROUND, hole.ground);
 	named(element, STROKE, hole.line);

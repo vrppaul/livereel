@@ -13,6 +13,8 @@ import { A_MAGNIFICATION, type Lens } from '../props/lens.ts';
 import type { FrameObject } from '../props/object.ts';
 import {
 	type Coming,
+	GROUPED_FORM,
+	type GroupedScript,
 	type HideScript,
 	IN_PLACE_SHOW_FORM,
 	type InPlaceShowScript,
@@ -28,9 +30,9 @@ import { NO_PLACE, ONE_BLOCK, cameraOverThePicture, sourceOf } from './source.ts
 
 /**
  * How a lens comes: how many times larger it shows the page than the camera does, how wide it is across, in pixels of a
- * frame 1080 high; how it comes up; which lens.
+ * frame 1080 high; how it comes up; which lens; the group it stands in, if any.
  */
-export interface LensScript extends InPlaceShowScript, NamedScript {
+export interface LensScript extends InPlaceShowScript, NamedScript, GroupedScript {
 	readonly magnification?: number;
 	readonly size?: number;
 }
@@ -46,7 +48,8 @@ const LENS_FORM: Form<LensScript> = {
 	magnification: A_MAGNIFICATION,
 	size: A_SIZE,
 	...IN_PLACE_SHOW_FORM,
-	...NAMED_FORM
+	...NAMED_FORM,
+	...GROUPED_FORM
 };
 // A lens shows the page twice as large as the camera does, and stands 320 pixels of a 1080 frame across, as wide for
 // its frame as the board's loupe, where the film names neither

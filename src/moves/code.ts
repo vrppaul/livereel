@@ -47,9 +47,9 @@ import {
 } from './object.ts';
 
 /**
- * Where code stands, `at` a place on the frame or in what it stands `inside`, how it comes there, and how its pane fits
- * a line too long, `longLines`: its letters smaller until the widest fits, `'shrink'`, where the film names none, or
- * as large as the look has them, the line cut at the pane's edge, `'cut'`.
+ * Where code stands, `at` a place on the frame or in what it stands `inside` or in, its `group`, how it comes there,
+ * and how its pane fits a line too long, `longLines`: its letters smaller until the widest fits, `'shrink'`, where the
+ * film names none, or as large as the look has them, the line cut at the pane's edge, `'cut'`.
  */
 export interface CodeScript extends ShowScript, NestedScript {
 	readonly at: Place;

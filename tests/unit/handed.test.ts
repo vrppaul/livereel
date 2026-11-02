@@ -12,6 +12,7 @@ import {
 	cursor,
 	cut,
 	ending,
+	group,
 	hold,
 	keystrokes,
 	lens,
@@ -147,7 +148,20 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => piece.show(5 as never)).toThrow(new FilmError(`piece.show's target is 5: it is ${TARGET}`));
 	expect(() => piece.show('#chart', { from: 'left' } as never)).toThrow(
-		new FilmError('piece.show names from: it names every, hole, lines, enter, edge, within, ease, as, or fewer')
+		new FilmError('piece.show names from: it names every, hole, lines, enter, edge, within, ease, as, group, or fewer')
+	);
+	expect(() => code.show('x', { at: 'left', group: '' })).toThrow(
+		new FilmError(`code.show's group is "": it is a name, a string with something in it`)
+	);
+	expect(() => group.show({ at: 5 as never })).toThrow(new FilmError(`group.show's at is 5: it is ${PLACE}`));
+	expect(() => group.to('whole', { scale: 0 })).toThrow(
+		new FilmError("group.to's scale is 0: it is a scale, more than 0, 1 as large as its place")
+	);
+	expect(() => group.lean({ roll: 'half' as never })).toThrow(
+		new FilmError('group.lean\'s roll is "half": it is a number')
+	);
+	expect(() => group.hide({ toward: 'left' } as never)).toThrow(
+		new FilmError('group.hide names toward: it names as, within, ease, or fewer')
 	);
 	expect(() => piece.show('#chart', { hole: { ground: 'blue' } })).toThrow(
 		new FilmError(

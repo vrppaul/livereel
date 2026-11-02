@@ -10,22 +10,18 @@
  */
 import { type Camera, onTheFrame } from '../domain/camera.ts';
 import { type Box, type Point, type Segment, type Size, segmentBetween } from '../domain/geometry.ts';
-import { type FrameObject, type ObjectName, drawnOnTheFrame } from './object.ts';
-import { type Piece, figureIn } from './piece.ts';
+import type { Groups } from './group.ts';
+import {
+	type FrameObject,
+	type Holders,
+	type ObjectEntry,
+	type ObjectName,
+	drawnOnTheFrame,
+	holdersSeenBy
+} from './object.ts';
+import { type DrawnHole, type Piece, figureIn } from './piece.ts';
 import type { Stroke } from './stroke.ts';
 import { presentShare } from './way.ts';
-
-/**
- * A hole as the stage draws it: the name of the piece that left it, the part of the screen it fills, in the screen's
- * pixels, its colour, the line round its edge, if any, and how far it has come and not gone, as its piece has.
- */
-export interface DrawnHole {
-	readonly name: ObjectName;
-	readonly source: Box;
-	readonly ground: string;
-	readonly line: Stroke | null;
-	readonly shown: number;
-}
 
 /**
  * A piece's lines to its source as the stage draws them: the piece's name, the line they are drawn in, the two on the
@@ -72,37 +68,39 @@ const ON_THE_LINE = 1e-6;
 const LAST = -1;
 const BEFORE_THE_LAST = -2;
 
-/** The holes the pieces among objects leave, each where its piece was lifted. */
-export function drawnHoles(objects: readonly (readonly [ObjectName, FrameObject])[]): readonly DrawnHole[] {
+/** The holes the pieces among objects leave on the screen, each where its piece was lifted. */
+export function drawnHoles(objects: readonly ObjectEntry[]): readonly DrawnHole[] {
 	return piecesAmong(objects).flatMap(({ name, object, piece }) =>
-		piece.hole === null ? [] : [{ name, source: piece.source, ...piece.hole, shown: presentShare(object) }]
+		piece.hole === null ? [] : [{ name, box: piece.source, ...piece.hole, shown: presentShare(object) }]
 	);
 }
 
 /**
- * The lines the pieces among objects draw to their sources, the page seen by a camera on a frame of a size; none from a
- * piece while its lines would stand nowhere.
+ * The lines the pieces among objects draw to their sources, the page seen by a camera on a frame of a size, among the
+ * groups standing; none from a piece while its lines would stand nowhere.
  */
 export function drawnLines(
-	objects: readonly (readonly [ObjectName, FrameObject])[],
+	objects: readonly ObjectEntry[],
 	camera: Camera,
+	groups: Groups,
 	frame: Size
 ): readonly DrawnLines[] {
-	return piecesAmong(objects).flatMap((standing) => linesDrawnBy(standing, camera, frame));
+	const holders = holdersSeenBy(camera, groups);
+	return piecesAmong(objects).flatMap((standing) => linesDrawnBy(standing, camera, holders, frame));
 }
 
 /** The objects that show a piece of the page, by name. */
-function piecesAmong(objects: readonly (readonly [ObjectName, FrameObject])[]): readonly PieceStanding[] {
+function piecesAmong(objects: readonly ObjectEntry[]): readonly PieceStanding[] {
 	return objects.flatMap(([name, object]) =>
 		object.content.kind === 'piece' ? [{ name, object, piece: object.content }] : []
 	);
 }
 
 /** A piece's lines to its source, if it draws them and they stand anywhere now. */
-function linesDrawnBy(standing: PieceStanding, camera: Camera, frame: Size): readonly DrawnLines[] {
+function linesDrawnBy(standing: PieceStanding, camera: Camera, holders: Holders, frame: Size): readonly DrawnLines[] {
 	const { name, object, piece } = standing;
 	if (piece.lines === null) return [];
-	const segments = linesOf(object, piece, camera, frame);
+	const segments = linesOf(object, piece, camera, holders, frame);
 	return segments === null ? [] : [{ name, line: piece.lines, segments, drawn: presentShare(object) }];
 }
 
@@ -110,9 +108,15 @@ function linesDrawnBy(standing: PieceStanding, camera: Camera, frame: Size): rea
  * The two lines from a piece's source, as the camera shows it, to the piece as it is drawn: the edges of the outline
  * round both that join one to the other; none while one holds the other, or the outline joins them more than twice.
  */
-function linesOf(object: FrameObject, piece: Piece, camera: Camera, frame: Size): readonly [Segment, Segment] | null {
+function linesOf(
+	object: FrameObject,
+	piece: Piece,
+	camera: Camera,
+	holders: Holders,
+	frame: Size
+): readonly [Segment, Segment] | null {
 	const source = sourceCorners(piece.source, camera, frame);
-	const drawn = pieceCorners(object, piece, camera, frame);
+	const drawn = pieceCorners(object, piece, holders, frame);
 	if (holds(source, drawn) || holds(drawn, source)) return null;
 	const corners = [...ownedBy(source, 'source'), ...ownedBy(drawn, 'piece')];
 	return linesAlong(pairsRound(outlineRound(corners)).filter((edge) => edge.start.of !== edge.end.of));
@@ -124,12 +128,12 @@ function sourceCorners(source: Box, camera: Camera, frame: Size): readonly Point
 }
 
 /**
- * Where the corners of the part of a piece's box its source is drawn in stand on the frame, as the piece is drawn, in
- * order round it.
+ * Where the corners of the part of a piece's box its source is drawn in stand on the frame, as the piece is drawn in
+ * what it stands in, in order round it.
  */
-function pieceCorners(object: FrameObject, piece: Piece, camera: Camera, frame: Size): readonly Point[] {
+function pieceCorners(object: FrameObject, piece: Piece, holders: Holders, frame: Size): readonly Point[] {
 	const figure = sharesOf(figureIn(piece.source, object.box), object.box);
-	return CORNERS_ROUND.map((corner) => drawnOnTheFrame(object, camera.view, frame, pointOf(figure, corner)));
+	return CORNERS_ROUND.map((corner) => drawnOnTheFrame(object, holders, frame, pointOf(figure, corner)));
 }
 
 /** A point of a box, given in shares of it, as a point of what the box stands in. */

@@ -4,11 +4,22 @@ import { type Camera, onTheFrame, placedIn, underTheFrame, wholeView, windowView
 import { linear } from '../../src/domain/time.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import type { Format } from '../../src/domain/format.ts';
-import { type Point, boxOf, boxToward, frameScaleOf, middleX, middleY } from '../../src/domain/geometry.ts';
+import {
+	type Box,
+	type Point,
+	boxOf,
+	boxToward,
+	cornersOf,
+	distanceBetween,
+	frameScaleOf,
+	middleX,
+	middleY
+} from '../../src/domain/geometry.ts';
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
 import type { Beginning, Move } from '../../src/direction/move.ts';
 import { play } from '../../src/direction/steps.ts';
 import { onto, to as cameraTo } from '../../src/moves/camera.ts';
+import * as group from '../../src/moves/group.ts';
 import * as lens from '../../src/moves/lens.ts';
 import * as outline from '../../src/moves/outline.ts';
 import * as piece from '../../src/moves/piece.ts';
@@ -18,9 +29,15 @@ import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
 import * as ending from '../../src/moves/ending.ts';
-import { type DrawnObject, type Surroundings, drawnObject } from '../../src/props/object.ts';
+import {
+	type DrawnObject,
+	type Surroundings,
+	drawnObject,
+	drawnOnTheFrame,
+	holdersSeenBy
+} from '../../src/props/object.ts';
 import { SCREEN_UP } from '../../src/props/screen.ts';
-import { ONE_FRAME, pastTheEdge, wordsPlaced } from '../../src/domain/place.ts';
+import { ONE_FRAME, pastTheEdge, windowPlaced, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
 import * as look from '../../src/moves/look.ts';
 import * as note from '../../src/moves/note.ts';
@@ -37,7 +54,16 @@ import { keystrokes } from '../../src/domain/typing.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
 import { OWN_WAY } from '../../src/props/way.ts';
 import { appearedOf, comingUpIn, groundOf, saidOf } from '../../src/props/words.ts';
-import { type Scene, cameraOf, drawn, openingScene, pictureZoomsIn, withObject, withProp } from '../../src/scene.ts';
+import {
+	type Scene,
+	cameraOf,
+	drawn,
+	frameShiftBetween,
+	openingScene,
+	pictureZoomsIn,
+	withObject,
+	withProp
+} from '../../src/scene.ts';
 import { PageOfBoxes, SMALL } from './fakes.ts';
 
 const BLOCK = { left: 100, top: 100, width: 100, height: 40 };
@@ -94,15 +120,18 @@ const PAGE = new PageOfBoxes(
 const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
 const ACTED_IN = 'bring it in with an act, as no move of livereel scrolls the page sideways';
 const LIT = { box: BLOCK, strength: 1, dim: 0.6 };
-// No caption standing round an object drawn alone, the screen up, on the small frame, the camera on the whole screen
+// No caption standing round an object drawn alone, the screen up, on the small frame, the camera on the whole screen,
+// no group and no hole
 const NOTHING_AROUND: Surroundings = {
 	caption: null,
 	screen: SCREEN_UP,
 	frame: SMALL.frame,
-	camera: cameraOf(openingScene(SMALL, LIVEREELS_LOOK), SMALL)
+	camera: cameraOf(openingScene(SMALL, LIVEREELS_LOOK), SMALL),
+	groups: new Map(),
+	holes: []
 };
 const TYPED = withObject(openingScene(SMALL, LIVEREELS_LOOK), 'terminal', {
-	inside: 'frame',
+	inside: { kind: 'frame' },
 	box: BLOCK,
 	...AS_PLACED,
 	shown: 1,
@@ -135,10 +164,19 @@ const AROUND_IN_FULL_HD: Surroundings = {
 	caption: null,
 	screen: SCREEN_UP,
 	frame: FULL_HD.frame,
-	camera: cameraOf(openingScene(FULL_HD, LIVEREELS_LOOK), FULL_HD)
+	camera: cameraOf(openingScene(FULL_HD, LIVEREELS_LOOK), FULL_HD),
+	groups: new Map(),
+	holes: []
 };
 // A box in the upper right corner of a frame, a quarter of it across and down
 const UPPER_RIGHT_CORNER = { left: 0.75, top: 0, width: 0.25, height: 0.25 } as const;
+// The whole of that screen, as a box of it
+const WHOLE_SCREEN = { left: 0, top: 0, width: 1920, height: 1080 };
+// The middle of an object's box, in shares of it
+const BOX_MIDDLE: Point = { left: 0.5, top: 0.5 };
+// How a group stands as it was placed refuses an object joining it otherwise
+const JOINS_THE_STACK_PLACED =
+	'code.show joins the group "stack" only while it stands as it was placed: face-on by whole turns, as large as its box, on the frame\'s plane';
 
 function beginningOf(scene: Scene): Beginning {
 	return beginningIn(scene, SMALL);
@@ -162,6 +200,36 @@ async function setIn(move: Move, scene: Scene, progress: number, format: Format)
 /** The objects of a scene as the stage draws them, in a format, by the scene's own camera. */
 function drawnObjectsIn(scene: Scene, format: Format): readonly DrawnObject[] {
 	return drawn(scene, cameraOf(scene, format), 0, format).objects;
+}
+
+/** Where the middle of an object of a scene shot in the small format is drawn on the frame. */
+function drawnMiddleOf(scene: Scene, name: string): Point {
+	const holders = holdersSeenBy(cameraOf(scene, SMALL), scene.groups);
+	return drawnOnTheFrame(scene.objects.get(name)!, holders, SMALL.frame, BOX_MIDDLE);
+}
+
+/** A point carried so many times as far from another, across it where less than none. */
+function scaledAbout(about: Point, point: Point, times: number): Point {
+	return { left: about.left + times * (point.left - about.left), top: about.top + times * (point.top - about.top) };
+}
+
+/** A point as a test takes it: each of its numbers close to the one named. */
+function closeToPoint(point: Point): Point {
+	return { left: expect.closeTo(point.left), top: expect.closeTo(point.top) };
+}
+
+function middleOf(box: Box): Point {
+	return { left: middleX(box), top: middleY(box) };
+}
+
+/** A box of the frame as measured from a corner of it, a box's top left one. */
+function measuredFromCorner(box: Box, corner: Point): Box {
+	return { ...box, left: box.left - corner.left, top: box.top - corner.top };
+}
+
+/** The names of the objects of a scene shot in the small format, in the order the stage draws them. */
+function drawnNamesIn(scene: Scene): readonly string[] {
+	return drawnObjectsIn(scene, SMALL).map((object) => object.name);
 }
 
 test('a callout points at what the screen shows of its block, on the side the film names', async () => {
@@ -618,6 +686,7 @@ test("a piece is drawn as large as its box holds all of its source, in its middl
 			source: PAST_THE_SHOWN_EDGE,
 			fit: 9.6,
 			figure: { left: 0, top: 60, width: 1920, height: 960 },
+			holes: [],
 			shown: 1
 		},
 		[19.2],
@@ -631,8 +700,8 @@ test("a piece lifted with a hole leaves on the screen, where it was lifted, the 
 	const area = piece.show(OTHER, { hole: { ground: '#112233', line: 'dashed' }, as: 'area' });
 	const both = await setIn(area, coming, 1, FULL_HD);
 	expect(drawn(both, cameraOf(both, FULL_HD), 0, FULL_HD).holes).toEqual([
-		{ name: 'piece', source: CARD, ground: CARDS_GROUND, line: null, shown: 0.5 },
-		{ name: 'area', source: OTHER, ground: '#112233', line: 'dashed', shown: 1 }
+		{ name: 'piece', box: CARD, ground: CARDS_GROUND, line: null, shown: 0.5 },
+		{ name: 'area', box: OTHER, ground: '#112233', line: 'dashed', shown: 1 }
 	]);
 });
 
@@ -742,6 +811,7 @@ test('a lens shows the screen under its middle twice as close as the camera does
 			source: { left: 420, top: 270, width: 160, height: 160 },
 			fit: 2,
 			figure: { left: 0, top: 0, width: 320, height: 320 },
+			holes: [],
 			shown: 1
 		},
 		{
@@ -749,6 +819,7 @@ test('a lens shows the screen under its middle twice as close as the camera does
 			source: { left: 690, top: 405, width: 80, height: 80 },
 			fit: 4,
 			figure: { left: 0, top: 0, width: 320, height: 320 },
+			holes: [],
 			shown: 1
 		},
 		[4],
@@ -805,6 +876,236 @@ test('an object leans by a move of its own while another carries it and its cont
 	expect(() => play({ seconds: 1, moves: [code.to('right'), code.hide()] })).toThrow(
 		new FilmError('two moves on the code object at once in one step')
 	);
+});
+
+test("an object shown into a group stands where it would on the frame, in the group's pixels, and the group rolled, grown or brought near carries it about the group's middle", async () => {
+	const grouped = await setAt(group.show({ at: LOWER_RIGHT }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const joined = await setAt(code.show(THREE_LINES, { at: 'left', group: 'group' }), grouped, 1);
+	const rolled = await setAt(group.lean({ roll: 180 }), joined, 1);
+	const grown = await setAt(group.to(LOWER_RIGHT, { scale: 2 }), joined, 1);
+	const near = await setAt(group.to(LOWER_RIGHT, { depth: 1000 }), joined, 1);
+	const groupBox = windowPlaced(SMALL, LOWER_RIGHT);
+	const onTheFrame = wordsPlaced(SMALL, 'left');
+	const frameMiddle = middleOf(boxOf(SMALL.frame));
+	// Rolled half round the group's middle, the code's middle stands across it; grown twice, twice as far from it;
+	// brought half way to the eye, twice as far from the frame's middle
+	expect([
+		joined.objects.get('code')!.box,
+		drawnObjectsIn(joined, SMALL)[0]!.box,
+		drawnMiddleOf(joined, 'code'),
+		drawnMiddleOf(rolled, 'code'),
+		drawnMiddleOf(grown, 'code'),
+		drawnMiddleOf(near, 'code')
+	]).toEqual([
+		measuredFromCorner(onTheFrame, groupBox),
+		onTheFrame,
+		closeToPoint(middleOf(onTheFrame)),
+		closeToPoint(scaledAbout(middleOf(groupBox), middleOf(onTheFrame), -1)),
+		closeToPoint(scaledAbout(middleOf(groupBox), middleOf(onTheFrame), 2)),
+		closeToPoint(scaledAbout(frameMiddle, middleOf(onTheFrame), 2))
+	]);
+});
+
+test("an object in a group turned toward the eye is drawn in 3D, and one turned back against its group's turn flat", async () => {
+	const grouped = await setAt(group.show(), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const joined = await setAt(code.show(THREE_LINES, { at: 'left', group: 'group' }), grouped, 1);
+	const turned = await setAt(group.lean({ turn: 20 }), joined, 1);
+	const turnedBack = await setAt(code.lean({ turn: -20 }), turned, 1);
+	expect([joined, turned, turnedBack].map((scene) => drawnObjectsIn(scene, SMALL)[0]!.transform.kind)).toEqual([
+		'flat',
+		'leant',
+		'flat'
+	]);
+});
+
+test('an object joins a group only as it comes, while the group stands as it was placed: none standing, or one leant, grown or brought near, is refused, one spun whole turns round, or half turns that cancel, taken', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const grouped = await setAt(group.show({ as: 'stack' }), opening, 1);
+	const joining = code.show(THREE_LINES, { at: 'left', group: 'stack' });
+	const unplaced = await Promise.all(
+		[
+			group.lean({ as: 'stack', tilt: 10 }),
+			group.to('whole', { as: 'stack', scale: 1.5 }),
+			group.to('whole', { as: 'stack', depth: 100 })
+		].map((move) => setAt(move, grouped, 1))
+	);
+	const spun = await Promise.all(
+		[
+			group.lean({ as: 'stack', turn: 360, roll: -360 }),
+			group.lean({ as: 'stack', tilt: 180, turn: 180, roll: 180 })
+		].map((move) => setAt(move, grouped, 1))
+	);
+	await expect(async () => joining.begin(beginningOf(opening))).rejects.toThrow(
+		new FilmError('code.show finds no group "stack" standing')
+	);
+	await Promise.all(
+		unplaced.map((scene) =>
+			expect(async () => joining.begin(beginningOf(scene))).rejects.toThrow(new FilmError(JOINS_THE_STACK_PLACED))
+		)
+	);
+	const joined = await Promise.all(spun.map((scene) => setAt(joining, scene, 1)));
+	expect(joined.map((scene) => scene.objects.get('code')!.inside)).toEqual([
+		{ kind: 'group', name: 'stack' },
+		{ kind: 'group', name: 'stack' }
+	]);
+});
+
+test('an object stands inside the window or in a group, never both', () => {
+	expect(() => code.show(THREE_LINES, { at: LOWER_RIGHT, inside: 'window', group: 'stack' })).toThrow(
+		new FilmError('code.show stands an object inside the window or in a group: not both')
+	);
+});
+
+test('the objects of a group are drawn the farther behind the nearer, where they came among the rest', async () => {
+	const before = await setAt(title.show('Before', { at: 'top', as: 'before' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const grouped = await setAt(group.show(), before, 1);
+	const front = await setAt(code.show(THREE_LINES, { at: 'left', group: 'group', as: 'front' }), grouped, 1);
+	const back = await setAt(code.show(THREE_LINES, { at: 'right', group: 'group', as: 'back' }), front, 1);
+	const after = await setAt(title.show('After', { at: 'bottom', as: 'after' }), back, 1);
+	const apart = await setAt(code.to('left', { as: 'front', depth: 200 }), after, 1);
+	const deep = await setAt(code.to('right', { as: 'back', depth: -200 }), apart, 1);
+	const turned = await setAt(group.lean({ turn: 180 }), deep, 1);
+	expect([drawnNamesIn(deep), drawnNamesIn(turned)]).toEqual([
+		['before', 'back', 'front', 'after'],
+		['before', 'front', 'back', 'after']
+	]);
+});
+
+test('a group put away fades what stands in it with it, and at its end is gone with all of it, what stands apart staying', async () => {
+	const titled = await setAt(title.show('Apart', { at: 'top', as: 'apart' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const grouped = await setAt(group.show(), titled, 1);
+	const joined = await setAt(code.show(THREE_LINES, { at: 'left', group: 'group' }), grouped, 1);
+	const going = await setAt(group.hide(), joined, 0.25);
+	const gone = await setAt(group.hide(), joined, 1);
+	expect([
+		drawnObjectsIn(going, SMALL).map((object) => object.held),
+		[...gone.objects.keys()],
+		gone.groups.size
+	]).toEqual([[1, 0.75], ['apart'], 0]);
+});
+
+test('a group put away takes what stands in it whatever else moves it: a move of one running on, its own hide, or a show into the group brings nothing back', async () => {
+	const grouped = await setAt(group.show(), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const joined = await setAt(code.show(THREE_LINES, { at: 'left', group: 'group' }), grouped, 1);
+	const carrying = await code.to('right').begin(beginningOf(joined));
+	const hiding = await code.hide().begin(beginningOf(joined));
+	const joining = await title.show('Late', { at: 'top', group: 'group', as: 'late' }).begin(beginningOf(joined));
+	const gone = await setAt(group.hide(), joined, 1);
+	const afterwards = await Promise.all([carrying, hiding, joining].map((change) => change(gone, 0.5)));
+	expect(afterwards.map((scene) => [...scene.objects.keys()])).toEqual([[], [], []]);
+});
+
+test("a group carried to a place stands as large as it was placed about the place's middle, carrying what stands in it as far", async () => {
+	const grouped = await setAt(group.show(), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const joined = await setAt(code.show(THREE_LINES, { at: 'left', group: 'group' }), grouped, 1);
+	const carried = await setAt(group.to(UPPER_RIGHT_CORNER), joined, 1);
+	const placed = windowPlaced(SMALL, UPPER_RIGHT_CORNER);
+	const wholeFrame = boxOf(SMALL.frame);
+	const shift = { left: middleX(placed) - middleX(wholeFrame), top: middleY(placed) - middleY(wholeFrame) };
+	const onTheFrame = middleOf(wordsPlaced(SMALL, 'left'));
+	expect([carried.groups.get('group')!.box, drawnMiddleOf(carried, 'code')]).toEqual([
+		{ ...wholeFrame, left: shift.left, top: shift.top },
+		closeToPoint({ left: onTheFrame.left + shift.left, top: onTheFrame.top + shift.top })
+	]);
+});
+
+test('a place or a block a move of an object in a group reads stands in the group where it would stand on the frame', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const grouped = await setIn(group.show({ at: LOWER_RIGHT }), wide, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { group: 'group' }), grouped, 1, FULL_HD);
+	const magnified = await setIn(lens.show('#card', { group: 'group', size: 150 }), lifted, 1, FULL_HD);
+	const carried = await setIn(piece.to(UPPER_LEFT), magnified, 1, FULL_HD);
+	const back = await setIn(piece.back(), carried, 1, FULL_HD);
+	const moved = await setIn(lens.to('#other'), magnified, 1, FULL_HD);
+	const corner = windowPlaced(FULL_HD, LOWER_RIGHT);
+	// The other block's middle is 1250 across and 630 down
+	expect([carried.objects.get('piece')!.box, back.objects.get('piece')!.box, moved.objects.get('lens')!.box]).toEqual([
+		measuredFromCorner(windowPlaced(FULL_HD, UPPER_LEFT), corner),
+		measuredFromCorner(CARD, corner),
+		measuredFromCorner({ left: 1175, top: 555, width: 150, height: 150 }, corner)
+	]);
+});
+
+test("a lens in a group shows the page under its middle where its group carries it, and a piece's lines run to the piece there", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const grouped = await setIn(group.show(), wide, 1, FULL_HD);
+	const magnified = await setIn(lens.show('#card', { group: 'group' }), grouped, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#other', { group: 'group', lines: 'solid' }), magnified, 1, FULL_HD);
+	const rolled = await setIn(group.lean({ roll: 180 }), lifted, 1, FULL_HD);
+	const drawnScene = drawn(rolled, cameraOf(rolled, FULL_HD), 0, FULL_HD);
+	// Rolled half round the frame's middle, 960 across and 540 down: the lens's middle from the card's, 500 and 350, to
+	// 1420 and 730; the piece from 1200 to 1300 across and 600 to 660 down to 620 to 720 and 420 to 480, its lines from
+	// the source's top right and bottom left corners to the piece's
+	expect([drawnScene.objects[0]!.content, drawnScene.lines[0]!.segments]).toMatchObject([
+		{ kind: 'lens', source: { left: 1340, top: 650, width: 160, height: 160 } },
+		[
+			{ from: { left: 1300, top: 600 }, length: expect.closeTo(607.29, 2), angle: expect.closeTo(-162.76, 2) },
+			{ from: { left: 1200, top: 660 }, length: expect.closeTo(607.29, 2), angle: expect.closeTo(-162.76, 2) }
+		]
+	]);
+});
+
+test('an object in a group never slides: in from a side, out toward one, or pushed off by one sliding in', async () => {
+	const grouped = await setAt(group.show(), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const joined = await setAt(code.show(THREE_LINES, { at: 'left', group: 'group' }), grouped, 1);
+	expect(() => code.show(THREE_LINES, { at: 'left', group: 'group', from: 'left' })).toThrow(
+		new FilmError('code.show slides nothing in from a side into a group: an object in a group comes up in its place')
+	);
+	await expect(async () => code.hide({ toward: 'left' }).begin(beginningOf(joined))).rejects.toThrow(
+		new FilmError(
+			'code.hide would slide the code out toward a side from its group: it goes in its place, or with its group'
+		)
+	);
+	await expect(async () =>
+		title.show('Over', { at: 'left', as: 'code', from: 'right' }).begin(beginningOf(joined))
+	).rejects.toThrow(
+		new FilmError("title.show would push the code off past the frame's edge from its group: hide it first")
+	);
+});
+
+test('a group comes once in its place, one of its name standing refused, and a move of a group not standing is refused as it begins', async () => {
+	const grouped = await setAt(group.show(), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	await expect(async () => group.show().begin(beginningOf(grouped))).rejects.toThrow(
+		new FilmError('group.show finds the group "group" standing: a group comes once in its place; hide it first')
+	);
+	await expect(async () => group.lean({ as: 'ring', turn: 10 }).begin(beginningOf(grouped))).rejects.toThrow(
+		new FilmError('group.lean finds no group "ring" standing')
+	);
+});
+
+test('what stands in a group moves on the frame as its group carries it, so a group turning fast smears it', async () => {
+	const grouped = await setAt(group.show({ at: LOWER_RIGHT }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const joined = await setAt(code.show(THREE_LINES, { at: 'left', group: 'group' }), grouped, 1);
+	const rolled = await setAt(group.lean({ roll: 180 }), joined, 1);
+	const groupMiddle = middleOf(windowPlaced(SMALL, LOWER_RIGHT));
+	// Rolled half round the group's middle, each corner goes twice as far as it stood from it
+	const farthest = Math.max(
+		...cornersOf(wordsPlaced(SMALL, 'left')).map((corner) => 2 * distanceBetween(corner, groupMiddle))
+	);
+	expect(frameShiftBetween(joined, rolled, SMALL)).toBeCloseTo(farthest);
+});
+
+test('a piece of the page in a group is pictured as sharp as its group grows it', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const grouped = await setIn(group.show(), wide, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { group: 'group' }), grouped, 1, FULL_HD);
+	const grown = await setIn(group.to('whole', { scale: 2 }), lifted, 1, FULL_HD);
+	expect(pictureZoomsIn(grown, cameraOf(grown, FULL_HD), FULL_HD.frame)).toEqual([2]);
+});
+
+test('a piece of the page, or a lens, shows the holes other pieces leave in its part of the screen where they stand in it, and never its own', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { hole: {} }), wide, 1, FULL_HD);
+	const page = await setIn(piece.show(WHOLE_SCREEN, { as: 'page' }), lifted, 1, FULL_HD);
+	const magnified = await setIn(lens.show('#card'), page, 1, FULL_HD);
+	const contents = new Map(drawnObjectsIn(magnified, FULL_HD).map((object) => [object.name, object.content]));
+	// The card, 400 to 600 across and 300 to 400 down, in the page at its own size; the lens shows 420 to 580 across and
+	// 270 to 430 down twice as large, the card's part of it from 30 down
+	expect([contents.get('page'), contents.get('piece'), contents.get('lens')]).toMatchObject([
+		{ holes: [{ name: 'piece', box: CARD, ground: CARDS_GROUND, line: null, shown: 1 }] },
+		{ holes: [] },
+		{ holes: [{ name: 'piece', box: { left: 0, top: 60, width: 320, height: 200 }, ground: CARDS_GROUND }] }
+	]);
 });
 
 test("an object takes any name with something in it, its moves apart from a prop's or the page's of that name", () => {
@@ -1278,7 +1579,7 @@ test("an object inside the page's window stands, and is carried, in the window's
 		nested.objects.get('code')!.inside,
 		nested.objects.get('code')!.box,
 		carried.objects.get('code')!.box
-	]).toEqual(['window', wordsPlaced(insideTheWindow, LOWER_RIGHT), wordsPlaced(insideTheWindow, UPPER_LEFT)]);
+	]).toEqual([{ kind: 'window' }, wordsPlaced(insideTheWindow, LOWER_RIGHT), wordsPlaced(insideTheWindow, UPPER_LEFT)]);
 });
 
 test("what stands inside the page's window shows no more than the screen it shows, what it holds as far along as its own moves have it: words typed stay typed", async () => {

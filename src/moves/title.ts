@@ -47,7 +47,7 @@ import {
  * `titleSize`, and in a place a share of it no larger than its width lets a long word stand; the side it slides in
  * `from`, past the frame's edge, rather than coming up in its place, or the way it comes up there, `enter`; how its
  * words come up there, `words`, the theme's way where none is named; which title it is, `as`; and what it stands
- * `inside`, the page's window, its place then a box in the window's shares.
+ * `inside`, the page's window, its place then a box in the window's shares, or the `group` it stands in.
  */
 export interface TitleScript extends ShowScript, NestedScript {
 	readonly at?: Place;

@@ -191,6 +191,27 @@ function betweenTheEdges(first: Box, second: Box): Box {
 	return { left, top, width: right - left, height: bottom - top };
 }
 
+/**
+ * A box in the pixels of something whose top left corner stands at a point of what it stands in, a box's own corner
+ * where a box is given, as a box of what it stands in.
+ */
+export function placedFrom(box: Box, corner: Point): Box {
+	return { left: corner.left + box.left, top: corner.top + box.top, width: box.width, height: box.height };
+}
+
+/**
+ * A box as measured from a point, a box's own top left corner where a box is given, each length so many times as long:
+ * in the pixels of something whose corner stands there, drawn at that scale.
+ */
+export function measuredFrom(box: Box, corner: Point, scale: number): Box {
+	return {
+		left: (box.left - corner.left) * scale,
+		top: (box.top - corner.top) * scale,
+		width: box.width * scale,
+		height: box.height * scale
+	};
+}
+
 /** A box of the frame on whole pixels, so its edges fall on pixels. */
 export function wholePixels(box: Box): Box {
 	return {

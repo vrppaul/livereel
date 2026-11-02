@@ -1,12 +1,13 @@
 /**
  * A lens: a round glass over the page that shows the part of the screen under its middle magnified past what the camera
  * shows there, wherever it stands, so it shows another part as it travels or as the camera moves under it. Drawn from
- * the page's picture, as a piece of the page is (`src/props/piece.ts`), filling its box; it is what an object shows
- * (`src/props/object.ts`), and comes up, travels and goes as one.
+ * the page's picture, as a piece of the page is (`src/props/piece.ts`), filling its box, the holes pieces leave there
+ * with it; it is what an object shows (`src/props/object.ts`), and comes up, travels and goes as one.
  */
 import { type Camera, frameZoomOf, underTheFrame } from '../domain/camera.ts';
 import { type Box, type Point, type Size, boxCentredOn, boxOf } from '../domain/geometry.ts';
 import { A_NUMBER, type Kind, Plain } from '../domain/handed.ts';
+import { type DrawnHole, holesShown } from './piece.ts';
 
 /** A lens: how many times larger it shows the page than the camera does. */
 export interface Lens {
@@ -26,25 +27,39 @@ const NO_MAGNIFICATION = 0;
 /**
  * A lens as the stage draws it: the part of the screen it shows, none where its middle sees past the screen's plane,
  * how many of the frame's pixels a screen's pixel takes in it, the part of its box that shows it, all of it, in the
- * frame's pixels from its top left corner, and how far it has come up and not gone in its own way, fading whole.
+ * frame's pixels from its top left corner, the holes it shows there, and how far it has come up and not gone in its own
+ * way, fading whole.
  */
 export interface DrawnLens {
 	readonly kind: 'lens';
 	readonly source: Box | null;
 	readonly fit: number;
 	readonly figure: Box;
+	readonly holes: readonly DrawnHole[];
 	readonly shown: number;
 }
 
+// What a lens whose middle sees past the screen shows of the holes on it
+const NO_HOLES: readonly DrawnHole[] = [];
+
 /**
  * A lens as the stage draws it in its box, its middle drawn at a point of the frame, over the page as a camera shows it
- * on a frame of a size, as far as it has come up and not gone.
+ * on a frame of a size, as far as it has come up and not gone, showing those of the holes on the screen under it.
  */
-export function drawnLens(lens: Lens, box: Box, middle: Point, camera: Camera, frame: Size, shown: number): DrawnLens {
+export function drawnLens(
+	lens: Lens,
+	box: Box,
+	middle: Point,
+	camera: Camera,
+	frame: Size,
+	shown: number,
+	holes: readonly DrawnHole[]
+): DrawnLens {
 	const fit = lensFit(lens, camera, frame);
 	const under = underTheFrame(camera, frame, middle);
 	const source = under === null ? null : boxCentredOn(under, { width: box.width / fit, height: box.height / fit });
-	return { kind: 'lens', source, fit, figure: boxOf(box), shown };
+	const holesUnder = source === null ? NO_HOLES : holesShown(holes, source, fit);
+	return { kind: 'lens', source, fit, figure: boxOf(box), holes: holesUnder, shown };
 }
 
 /** How many of the frame's pixels a screen's pixel takes in a lens: as many as the camera shows it at, magnified. */

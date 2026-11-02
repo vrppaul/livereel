@@ -20,6 +20,7 @@ export * as terminal from './moves/terminal.ts';
 export * as piece from './moves/piece.ts';
 export * as outline from './moves/outline.ts';
 export * as lens from './moves/lens.ts';
+export * as group from './moves/group.ts';
 export * as ending from './moves/ending.ts';
 export * as page from './moves/page.ts';
 export * as sound from './moves/sound.ts';

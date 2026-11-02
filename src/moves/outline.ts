@@ -13,6 +13,8 @@ import type { Outline } from '../props/outline.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
+	GROUPED_FORM,
+	type GroupedScript,
 	type HideScript,
 	IN_PLACE_SHOW_FORM,
 	type InPlaceShowScript,
@@ -31,14 +33,23 @@ import {
 } from './object.ts';
 import { NO_PLACE, ONE_BLOCK, cameraFrontOn, sourceOf } from './source.ts';
 
-/** How an outline is drawn: round the first `every` blocks a selector matches, together; in a line; which outline. */
-export interface OutlineScript extends InPlaceShowScript, NamedScript {
+/**
+ * How an outline is drawn: round the first `every` blocks a selector matches, together; in a line; which outline; the
+ * group it stands in, if any.
+ */
+export interface OutlineScript extends InPlaceShowScript, NamedScript, GroupedScript {
 	readonly every?: number;
 	readonly line?: Stroke;
 }
 
 const OUTLINE: ObjectKind = 'outline';
-const OUTLINE_FORM: Form<OutlineScript> = { every: A_COUNT, line: A_STROKE, ...IN_PLACE_SHOW_FORM, ...NAMED_FORM };
+const OUTLINE_FORM: Form<OutlineScript> = {
+	every: A_COUNT,
+	line: A_STROKE,
+	...IN_PLACE_SHOW_FORM,
+	...NAMED_FORM,
+	...GROUPED_FORM
+};
 // The line an outline is drawn in where the film names none
 const SOLID: Stroke = 'solid';
 

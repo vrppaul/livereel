@@ -26,6 +26,7 @@ import {
 } from '../domain/handed.ts';
 import type { Ease } from '../domain/time.ts';
 import type { CssNamed } from './theme.ts';
+import type { GroupName } from '../props/group.ts';
 import type { ObjectName } from '../props/object.ts';
 import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';
 import type { FilmedPage, PageShown } from './page.ts';
@@ -34,11 +35,14 @@ import type { Cue } from './sound.ts';
 /** An object as the part a move changes, said by its name, apart from any prop or the page whatever its name. */
 type ObjectPart = `${ObjectName} object`;
 
+/** A group of objects as the part a move changes, said by its name, apart from any object of that name. */
+type GroupPart = `${GroupName} group`;
+
 /**
- * What a move changes: one prop of the scene, an object, the page itself, or the speed the page's own time runs at;
- * none, for a move that only makes a sound. Two moves of one part never run at once.
+ * What a move changes: one prop of the scene, an object, a group of objects, the page itself, or the speed the page's
+ * own time runs at; none, for a move that only makes a sound. Two moves of one part never run at once.
  */
-export type Part = PropName | ObjectPart | 'page' | 'pageSpeed' | null;
+export type Part = PropName | ObjectPart | GroupPart | 'page' | 'pageSpeed' | null;
 
 const NO_SOUNDS: readonly Cue[] = [];
 const NO_CSS: readonly CssNamed[] = [];
@@ -186,6 +190,11 @@ export function movesThePage(move: Move): boolean {
 /** The part a move of an object changes. */
 export function objectPart(name: ObjectName): ObjectPart {
 	return `${name} object`;
+}
+
+/** The part a move of a group of objects changes. */
+export function groupPart(name: GroupName): GroupPart {
+	return `${name} group`;
 }
 
 /** The sounds a move makes on its way: none, for a move that names none. */
