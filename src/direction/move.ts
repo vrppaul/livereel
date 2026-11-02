@@ -270,6 +270,9 @@ function broughtInto(target: Target, box: Box, screen: Size): string {
 	return liesAboveOrBelow(box, screen) ? SCROLLED_IN : ACTED_IN;
 }
 
+// The blocks of a selector a move that reads one block reads: its first
+export const THE_FIRST = 1;
+
 /**
  * What the page's screen shows of a target, the blocks a selector matches or a box, refused as `shownBox` refuses:
  * the part a camera can frame and a cursor rest on, as nothing past the screen is drawn.

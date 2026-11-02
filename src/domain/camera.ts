@@ -39,7 +39,7 @@ import {
 	withAir
 } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, needed } from './handed.ts';
-import { type Course, type PathSpace, RECOMMENDED_COURSE, alongPath } from './path.ts';
+import { NO_KEYS, type PathSpace, type Through, alongPath } from './path.ts';
 import {
 	type Matrix,
 	type Spot,
@@ -105,15 +105,14 @@ interface BlockAim {
 }
 
 /**
- * The camera as a scene holds it: on its way from the pose it stood at, as its move began, through what it aims at on
- * the way, to what it aims at, `progress` of the way, the way going through those on its course; at 1, there. Each aim
- * comes to a pose in the view as each frame is drawn, the keys on the way as the last.
+ * The camera as a scene holds it: on its path from the pose it stood at, as its move began, through the aims on its
+ * way, to what it aims at, `progress` of the way; at 1, there. Each aim comes to a pose in the view as each frame is
+ * drawn, the keys on the way as the last.
  */
 export interface Aiming {
 	readonly from: Pose;
-	readonly through: readonly Aim[];
+	readonly through: Through<Aim>;
 	readonly aim: Aim;
-	readonly course: Course;
 	readonly progress: number;
 }
 
@@ -215,14 +214,15 @@ export function viewOf(placing: Placing): View {
 
 /** The camera standing at a pose: there already, aiming at it. */
 export function standingAt(pose: Pose): Aiming {
-	return { from: pose, through: [], aim: { kind: 'pose', pose }, course: RECOMMENDED_COURSE, progress: ARRIVED };
+	return { from: pose, through: NO_KEYS, aim: { kind: 'pose', pose }, progress: ARRIVED };
 }
 
 /**
- * The camera as a frame shows it through the window where it stands so far: on its way from where it stood to its
- * aim, the aim come to in that view and kept off the screen's edge there. A block is framed in the part of the window
- * on the frame, its share of the window going from where the window stood to where it goes as the window does, so a
- * window sliding whole carries the page with it.
+ * The camera as a frame shows it through the window where it stands so far: on its path from where it stood, through
+ * the aims on its way, to its aim, each come to in that view and kept off the screen's edge there, as is every pose on
+ * a path through keys, which may bow past the edge between them. A block is framed in the part of the window on the
+ * frame, its share of the window going from where the window stood to where it goes as the window does, so a window
+ * sliding whole carries the page with it.
  */
 export function seenThrough(aiming: Aiming, window: Placing, format: Format): Camera {
 	const view = viewOf(window);
@@ -234,10 +234,18 @@ export function seenThrough(aiming: Aiming, window: Placing, format: Format): Ca
 		shownTo ?? shownFrom ?? WHOLE_SHARE,
 		window.box.progress
 	);
-	const through = aiming.through.map((aim) => aimedIn(aim, view, shown, format));
+	const through = { ...aiming.through, keys: aiming.through.keys.map((aim) => aimedIn(aim, view, shown, format)) };
 	const to = aimedIn(aiming.aim, view, shown, format);
-	const pose = alongPath(aiming.from, through, to, aiming.course, poseSpaceIn(view, format), aiming.progress);
-	return { pose, view };
+	const pose = alongPath(aiming.from, through, to, poseSpaceIn(view, format), aiming.progress);
+	return { pose: keptOnThePath(pose, through, format, view), view };
+}
+
+/**
+ * A pose on a path kept on the screen in a view: left as it goes on a straight way between two kept poses, which stays
+ * kept; kept anew on a path through keys, which may bow past the screen's edge between them.
+ */
+function keptOnThePath(pose: Pose, through: Through<Pose>, format: Format, view: View): Pose {
+	return through.keys.length === 0 ? pose : keptOnTheScreen(pose, format, view);
 }
 
 /**

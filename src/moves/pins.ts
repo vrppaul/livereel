@@ -9,6 +9,7 @@ import {
 	type Beginning,
 	type Change,
 	type Move,
+	THE_FIRST,
 	TIMING_FORM,
 	type Target,
 	type TimingScript,
@@ -19,9 +20,6 @@ import {
 	untilTheEnd
 } from '../direction/move.ts';
 import { keyOf } from '../props/pins.ts';
-
-// A pin marks one block: the first a selector matches
-const THE_FIRST = 1;
 
 /**
  * A pin coming up on the block a selector matches, or a box of the screen, numbered after those laid before, with its

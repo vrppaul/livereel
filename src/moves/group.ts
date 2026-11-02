@@ -7,9 +7,10 @@
  */
 import { FilmError } from '../domain/errors.ts';
 import { NONE, fractionOf } from '../domain/fraction.ts';
-import { resizedAbout } from '../domain/geometry.ts';
+import { BOX_SPACE, type Box, resizedAbout } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { A_PLACE, type Place, placesNamed, windowPlaced } from '../domain/place.ts';
+import { pathOf } from '../domain/path.ts';
 import { AS_PLACED, orientationToward } from '../domain/stance.ts';
 import {
 	type Beginning,
@@ -33,13 +34,12 @@ import {
 	type ObjectLeanScript,
 	TO_FORM,
 	type ToScript,
-	carriedThrough,
+	carriedOnPath,
 	carryingWritten,
 	depthAsked,
 	orientedFrom,
 	placesOnTheWay
 } from './object.ts';
-import { keysOf } from './through.ts';
 
 /**
  * Which group comes, the place it stands in, `at`, the whole frame where the film names none, and how it orders what
@@ -96,7 +96,7 @@ export function to(place: Place, script: ToScript = {}): Move {
 		part: groupPart(name),
 		valueNames: carrying.names,
 		timing: timingOf(script),
-		places: placesOnTheWay('group.to', place, script),
+		places: placesOnTheWay('group.to', carrying),
 		begin: (beginning) => carried(beginning, name, carrying)
 	};
 }
@@ -144,14 +144,20 @@ function placed(beginning: Beginning, name: GroupName, place: Place, order: Grou
  */
 function carried(beginning: Beginning, name: GroupName, carrying: Carrying): Change {
 	const group = groupFound(beginning.scene.groups, name, 'group.to');
-	const { place, script } = carrying;
+	const { place, through, script } = carrying;
 	const to: Carried = {
-		box: resizedAbout(windowPlaced(beginning.format, place), group.box),
+		box: aboutAPlace(beginning, place, group),
 		scale: script.scale ?? group.scale,
 		depth: depthAsked(script.depth, group.depth, beginning.format.frame)
 	};
-	const through = keysOf(script).map((key) => resizedAbout(windowPlaced(beginning.format, key), group.box));
-	return writing(name, (progress) => carriedThrough(group, through, to, carrying, progress));
+	const keys = through.keys.map((key) => aboutAPlace(beginning, key, group));
+	const boxPath = pathOf(group.box, { ...through, keys }, to.box, BOX_SPACE);
+	return writing(name, (progress) => carriedOnPath(boxPath, group, to, carrying, progress));
+}
+
+/** The box a group stands in about a place's middle, as large as it stands, the place read as the window reads one. */
+function aboutAPlace(beginning: Beginning, place: Place, group: Group): Box {
+	return resizedAbout(windowPlaced(beginning.format, place), group.box);
 }
 
 /** The group's orientation on its way from how it faces to the film's. */

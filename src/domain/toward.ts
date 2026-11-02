@@ -10,7 +10,7 @@ import { type Fraction, fractionOf } from './fraction.ts';
 import { between } from './time.ts';
 
 /** How a value moves: where it stands `progress` of the way from one to another. */
-type Toward<Value> = (start: Value, end: Value, progress: number) => Value;
+export type Toward<Value> = (start: Value, end: Value, progress: number) => Value;
 
 /** How each of some values moves, by its name, among whatever else its kind holds. */
 export type MovingBy<Values> = { readonly [Name in keyof Values]: { readonly toward: Toward<Values[Name]> } };

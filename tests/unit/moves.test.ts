@@ -1379,28 +1379,55 @@ test('the camera taken onto a block through another frames the other on its way,
 	expect(cameraOf(halfWay, SMALL).pose).toEqual(cameraOf(onTheCard, SMALL).pose);
 });
 
-test('an object or a group carried to a place through another stands there on its way, where a pace by keys puts it', async () => {
-	const titled = await setAt(title.show('Here', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
-	const grouped = await setAt(group.show({ at: 'left' }), titled, 1);
-	const titleHalfWay = await setAt(title.to('right', { through: ['top'], pace: 'keys' }), grouped, 0.5);
+test("the camera's path through keys keeps every pose on it on the screen, where the curve between them bows past its edge", async () => {
+	const tall: Format = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 3000 } };
+	// At a zoom of 2 the frame sees 960 of the screen across, so a focus stays within 480 and 1440 across
+	const start = { focusX: 480, focusY: 400, zoom: 2 };
+	const turn = { focusX: 1440, focusY: 800, zoom: 2 };
+	const end = { focusX: 1440, focusY: 1600, zoom: 2 };
+	const atTheStart = await setIn(cameraTo(start), openingScene(tall, LIVEREELS_LOOK), 1, tall);
+	const onTheWay = await Promise.all(
+		[0.2, 0.4, 0.5, 0.6, 0.8].map((progress) => setIn(cameraTo(end, { through: [turn] }), atTheStart, progress, tall))
+	);
+	expect(Math.max(...onTheWay.map((scene) => cameraOf(scene, tall).pose.focusX))).toBeLessThanOrEqual(1440);
+});
+
+test('code or a group carried to a place through another stands there on its way, where a pace by keys puts it', async () => {
+	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const grouped = await setAt(group.show({ at: 'left' }), coded, 1);
+	const codeHalfWay = await setAt(code.to('right', { through: ['top'], pace: 'keys' }), grouped, 0.5);
 	const groupHalfWay = await setAt(group.to('right', { through: ['top'], pace: 'keys' }), grouped, 0.5);
-	const titleAtTheTop = await setAt(title.to('top'), grouped, 1);
+	const codeAtTheTop = await setAt(code.to('top'), grouped, 1);
 	const groupAtTheTop = await setAt(group.to('top'), grouped, 1);
-	expect([titleHalfWay.objects.get('title')!.box, groupHalfWay.groups.get('group')!.box]).toEqual([
-		titleAtTheTop.objects.get('title')!.box,
+	expect([codeHalfWay.objects.get('code')!.box, groupHalfWay.groups.get('group')!.box]).toEqual([
+		codeAtTheTop.objects.get('code')!.box,
 		groupAtTheTop.groups.get('group')!.box
 	]);
 });
 
+test('words carried through a place of another size stand as large as where they go all the way, so their lines break once', async () => {
+	const titled = await setAt(title.show('Here', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const there = (await setAt(title.to('right'), titled, 1)).objects.get('title')!.box;
+	const onTheWay = await Promise.all(
+		[0.25, 0.5, 0.75].map((progress) => setAt(title.to('right', { through: ['top'] }), titled, progress))
+	);
+	expect(
+		onTheWay.map((scene) => {
+			const box = scene.objects.get('title')!.box;
+			return { width: box.width, height: box.height };
+		})
+	).toEqual([0.25, 0.5, 0.75].map(() => ({ width: there.width, height: there.height })));
+});
+
 test('a shape or a pace with no keys to go through, and keys none, are refused as the move is made', () => {
 	expect(() => onto('#block', { shape: 'straight' })).toThrow(
-		"camera.onto's shape and pace say how a way goes through keys: name the keys in through, or leave them out"
+		"camera.onto's shape and pace say how a path goes through keys: name the keys in through, or leave them out"
 	);
 	expect(() => title.to('right', { through: [] })).toThrow(
 		"title.to's through names no key: name one or more, or leave it out"
 	);
 	expect(() => group.to('right', { pace: 'keys' })).toThrow(
-		"group.to's shape and pace say how a way goes through keys: name the keys in through, or leave them out"
+		"group.to's shape and pace say how a path goes through keys: name the keys in through, or leave them out"
 	);
 });
 

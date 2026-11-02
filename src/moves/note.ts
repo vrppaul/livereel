@@ -17,6 +17,7 @@ import {
 	type Beginning,
 	type Change,
 	type Move,
+	THE_FIRST,
 	TIMING_FORM,
 	type Target,
 	type TimingScript,
@@ -34,8 +35,6 @@ export interface NoteScript extends TimingScript {
 }
 
 const NOTE_FORM: Form<NoteScript> = { at: A_PLACE, ...TIMING_FORM };
-// A note names one block: the first a selector matches
-const THE_FIRST = 1;
 
 /**
  * A note coming up on the ground beside the window, its line drawn to the block a selector matches, or a box of the

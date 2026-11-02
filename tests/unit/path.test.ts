@@ -16,7 +16,7 @@ const NEAR_THE_KEY = 0.0001;
 
 /** Where a box stands along the turning way, on a course, so far along. */
 function onTheTurningWay(course: Course, progress: number): Box {
-	return alongPath(START, [TURN], END, course, BOX_SPACE, progress);
+	return alongPath(START, { keys: [TURN], course }, END, BOX_SPACE, progress);
 }
 
 /** How far a box's middle moved from one to another. */
@@ -33,8 +33,17 @@ test('two keys go as their kind goes from one to the other, on any course and pa
 	const progresses = [-0.1, 0, 0.3, 1, 1.1];
 	const courses = [SMOOTH_EVEN, STRAIGHT_BY_KEYS];
 	expect(
-		courses.map((course) => progresses.map((progress) => alongPath(START, [], END, course, BOX_SPACE, progress)))
+		courses.map((course) =>
+			progresses.map((progress) => alongPath(START, { keys: [], course }, END, BOX_SPACE, progress))
+		)
 	).toEqual(courses.map(() => progresses.map((progress) => boxToward(START, END, progress))));
+});
+
+test('a key standing where the one before it stands is that one, and keys all standing as one leave the value there', () => {
+	expect([
+		alongPath(START, { keys: [START, TURN, TURN, END], course: SMOOTH_BY_KEYS }, END, BOX_SPACE, 0.5),
+		alongPath(START, { keys: [START], course: SMOOTH_EVEN }, START, BOX_SPACE, 0.3)
+	]).toEqual([TURN, START]);
 });
 
 test('a way through a key stands on it where its pace puts it, and ends on its last: half-way by keys, at its length by an even pace', () => {

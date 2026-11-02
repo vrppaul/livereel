@@ -11,6 +11,7 @@ import {
 	type Beginning,
 	type Change,
 	type Move,
+	THE_FIRST,
 	TIMING_FORM,
 	type Target,
 	type TimingScript,
@@ -29,8 +30,6 @@ export interface CalloutScript extends TimingScript {
 
 const CALLOUT_FORM: Form<CalloutScript> = { side: A_BLOCK_SIDE, ...TIMING_FORM };
 const SIDE_WHERE_NONE_IS_NAMED: BlockSide = 'above';
-// A callout points at one block: the first a selector matches
-const THE_FIRST = 1;
 
 /**
  * A callout coming up beside the block a selector matches, or a box of the screen, its card first, then its words one
