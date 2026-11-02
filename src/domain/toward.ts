@@ -3,7 +3,8 @@
  * a share held between none and whole and pixels never below none, however far past its ends a curve takes them; a
  * place or a number passing its ends with it. A move that sets only the values a film names writes those alone, so
  * another move of the same thing sets the rest in the same step (`Move.valueNames` in `src/direction/move.ts`): the
- * film's look, an object's effects, the window's shade.
+ * film's look, an object's effects, the window's shade. The names of a table by name are read here once, for those
+ * values and for a film's formats.
  */
 import { type Fraction, fractionOf } from './fraction.ts';
 import { between } from './time.ts';

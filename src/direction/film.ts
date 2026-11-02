@@ -30,6 +30,7 @@ import {
 import type { MotionBlur } from '../domain/shutter.ts';
 import { assertOwnPlaces, assertPlacesOf } from '../domain/place.ts';
 import { leavesRoom } from '../domain/split.ts';
+import { namesOf } from '../domain/toward.ts';
 import { LIVEREELS_LOOK, type Look, type Theme, lookWith } from '../props/look.ts';
 import { type MotionBlurScript, motionBlurOf } from './blur.ts';
 import type { ActContext } from './page.ts';
@@ -278,18 +279,6 @@ function refuseUnlikeAFilm(written: unknown): void {
 		if (!leavesRoom(format)) throw new FilmError(`${where}'s split ${LEAVES_NO_ROOM}`);
 		assertOwnPlaces(format, where);
 	}
-}
-
-/**
- * The names of a film's formats, in the order it gives them. Every key is one, but `Object.keys` types each as a bare
- * string: the guard keeps them all and tells the compiler they are the film's names.
- */
-function namesOf<Name extends string>(formats: Readonly<Record<Name, Format>>): Name[] {
-	return Object.keys(formats).filter((name) => isFormatOf(formats, name));
-}
-
-function isFormatOf<Name extends string>(formats: Readonly<Record<Name, Format>>, name: string): name is Name {
-	return Object.hasOwn(formats, name);
 }
 
 function servedFilm<Served extends Serving, Name extends string>(
