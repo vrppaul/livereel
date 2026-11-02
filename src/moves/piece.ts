@@ -7,12 +7,24 @@
  * refused; and it stands over its source only on a window that faces the frame, where the source shows as a box.
  *
  * Lifted, it may leave a hole: the ground the page draws behind its block, read as it is lifted, or a colour the film
- * names, where a box of the screen, with no block behind it, needs one; and draw lines from itself to its source. Every
- * move of it takes the piece named `piece`, or the one the film names `as`.
+ * names, where a box of the screen, with no block behind it, needs one; and draw lines from itself to its source. Its
+ * corners, and its hole's, are as round as the film names, square where it names none: the film knows how round a
+ * block of its page is drawn, which no box read off the page says. Every move of it takes the piece named `piece`, or
+ * the one the film names `as`.
  */
 import { boxOnTheFrame } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import { A_COLOUR, A_COUNT, type Form, type Kind, OfForm, Plain, assertKind, assertWritten } from '../domain/handed.ts';
+import {
+	A_COLOUR,
+	A_COUNT,
+	A_PIXELS,
+	type Form,
+	type Kind,
+	OfForm,
+	Plain,
+	assertKind,
+	assertWritten
+} from '../domain/handed.ts';
 import type { Place } from '../domain/place.ts';
 import { A_TARGET, type Beginning, type Move, type Target } from '../direction/move.ts';
 import type { Hole, Piece } from '../props/piece.ts';
@@ -51,12 +63,14 @@ export interface HoleScript {
 }
 
 /**
- * How a piece is lifted: off the first `every` blocks a selector matches, together; the hole it leaves and the line the
- * lines from it to its source are drawn in, where the film names them; how it comes up; which piece; the group it
- * stands in, if any.
+ * How a piece is lifted: off the first `every` blocks a selector matches, together; how round its corners are,
+ * `corner`, a radius in the page's pixels, as its block's `border-radius`; the hole it leaves and the line the lines
+ * from it to its source are drawn in, where the film names them; how it comes up; which piece; the group it stands in,
+ * if any.
  */
 export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript {
 	readonly every?: number;
+	readonly corner?: number;
 	readonly hole?: HoleScript;
 	readonly lines?: Stroke;
 }
@@ -71,14 +85,20 @@ interface HoleAsked {
 	readonly line: Stroke | null;
 }
 
-/** What a piece is lifted with, as it is made: how many blocks, the hole it leaves, if any, and its lines, if any. */
+/**
+ * What a piece is lifted with, as it is made: how many blocks, how round its corners are, the hole it leaves, if any,
+ * and its lines, if any.
+ */
 interface Lifting {
 	readonly every: number;
+	readonly corner: number;
 	readonly hole: HoleAsked | null;
 	readonly lines: Stroke | null;
 }
 
 const PIECE: ObjectKind = 'piece';
+// A piece's corners where the film names none: square, as its box
+const SQUARE = 0;
 // The word a film names the ground the page draws behind a block by, for a hole
 const PAGES_GROUND = 'page';
 const A_HOLE_GROUND: Kind<string> = new Plain(
@@ -88,6 +108,7 @@ const A_HOLE_GROUND: Kind<string> = new Plain(
 const HOLE_FORM: Form<HoleScript> = { ground: A_HOLE_GROUND, line: A_STROKE };
 const PIECE_FORM: Form<PieceScript> = {
 	every: A_COUNT,
+	corner: A_PIXELS,
 	hole: new OfForm(HOLE_FORM, 'a hole: { ground, line }'),
 	lines: A_STROKE,
 	...IN_PLACE_SHOW_FORM,
@@ -96,15 +117,17 @@ const PIECE_FORM: Form<PieceScript> = {
 };
 /**
  * A piece of the page lifted off a target, a selector's first `every` blocks together or a box of the screen, over
- * where the camera shows it, cut to the part it shows, leaving the hole and drawing the lines the film names: in place
- * of any piece of its name, in its own way, fading up whole, or in a way of livereel's the film names. A hole over a box
- * of the screen, which has no block to read the ground behind, is refused unless the film names its colour.
+ * where the camera shows it, cut to the part it shows, its corners as round as the film names, leaving the hole and
+ * drawing the lines the film names: in place of any piece of its name, in its own way, fading up whole, or in a way of
+ * livereel's the film names. A hole over a box of the screen, which has no block to read the ground behind, is refused
+ * unless the film names its colour.
  */
 export function show(target: Target, script: PieceScript = {}): Move {
 	assertKind(target, A_TARGET, "piece.show's target");
 	assertWritten(script, PIECE_FORM, 'piece.show');
 	const lifting: Lifting = {
 		every: script.every ?? ONE_BLOCK,
+		corner: script.corner ?? SQUARE,
 		hole: script.hole === undefined ? null : holeAsked(target, script.hole),
 		lines: script.lines ?? null
 	};
@@ -168,23 +191,26 @@ function holeAsked(target: Target, hole: HoleScript): HoleAsked {
 }
 
 /**
- * A piece of the page over a target, cut to the part of it the camera shows, the hole it leaves filled as the page
- * draws it now, and the box of the frame it shows there.
+ * A piece of the page over a target, cut to the part of it the camera shows, its corners as round as the film names,
+ * the hole it leaves filled as the page draws it now and as round, and the box of the frame it shows there.
  */
 async function lifted(beginning: Beginning, target: Target, lifting: Lifting): Promise<Coming> {
 	const camera = cameraOverThePicture(beginning, 'piece.show');
 	const { source, box } = await sourceOf(beginning, camera, target, lifting.every, 'piece.show');
-	const hole = lifting.hole === null ? null : await holeOf(beginning, lifting.hole);
-	const piece: Piece = { kind: 'piece', source, hole, lines: lifting.lines };
+	const hole = lifting.hole === null ? null : await holeOf(beginning, lifting.hole, lifting.corner);
+	const piece: Piece = { kind: 'piece', source, corner: lifting.corner, hole, lines: lifting.lines };
 	return { content: piece, box };
 }
 
-/** A hole as it is filled: with its colour, or the ground the page draws behind its block as the move begins. */
-async function holeOf(beginning: Beginning, asked: HoleAsked): Promise<Hole> {
+/**
+ * A hole as it is filled, with its colour or the ground the page draws behind its block as the move begins, its
+ * corners as round as its piece's.
+ */
+async function holeOf(beginning: Beginning, asked: HoleAsked, corner: number): Promise<Hole> {
 	switch (asked.filling.kind) {
 		case 'colour':
-			return { ground: asked.filling.colour, line: asked.line };
+			return { ground: asked.filling.colour, line: asked.line, corner };
 		case 'behind':
-			return { ground: await beginning.page.groundBehind(asked.filling.selector), line: asked.line };
+			return { ground: await beginning.page.groundBehind(asked.filling.selector), line: asked.line, corner };
 	}
 }

@@ -10,16 +10,21 @@ import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domai
 import type { ObjectName } from './object.ts';
 import type { Stroke } from './stroke.ts';
 
-/** What fills the part of the screen a piece was lifted off: a colour, in hex, and the line round its edge, if any. */
+/**
+ * What fills the part of the screen a piece was lifted off: a colour, in hex, the line round its edge, if any, and how
+ * round its corners are, as its piece's, in the screen's pixels.
+ */
 export interface Hole {
 	readonly ground: string;
 	readonly line: Stroke | null;
+	readonly corner: number;
 }
 
 /**
  * A hole as the stage draws it: the name of the piece that left it, the box it fills in what it is drawn on — the
  * screen, in its pixels, or what a piece or a lens shows of it, in the frame's pixels from the figure's top left corner
- * — its colour, the line round its edge, if any, and how far it has come and not gone, as its piece has.
+ * — its colour, the line round its edge, if any, how round its corners are, in the pixels its box is in, and how far
+ * it has come and not gone, as its piece has.
  */
 export interface DrawnHole extends Hole {
 	readonly name: ObjectName;
@@ -28,26 +33,30 @@ export interface DrawnHole extends Hole {
 }
 
 /**
- * A piece of the page: the part of the screen it shows, in the screen's pixels, the hole it leaves there, if any, and
- * the line the lines from it to its source are drawn in, if it draws any.
+ * A piece of the page: the part of the screen it shows, in the screen's pixels, how round its corners are, as the film
+ * names them for a rounded block, in the same pixels, the hole it leaves there, if any, and the line the lines from it
+ * to its source are drawn in, if it draws any.
  */
 export interface Piece {
 	readonly kind: 'piece';
 	readonly source: Box;
+	readonly corner: number;
 	readonly hole: Hole | null;
 	readonly lines: Stroke | null;
 }
 
 /**
  * A piece as the stage draws it: its source, how many of the frame's pixels a screen's pixel takes in its box, the part
- * of its box the source is drawn in, in the frame's pixels from the box's top left corner, the holes it shows there,
- * and how far it has come up and not gone in its own way, fading whole, from 0 to 1.
+ * of its box the source is drawn in, in the frame's pixels from the box's top left corner, how round its corners are,
+ * in the same pixels, the holes it shows there, and how far it has come up and not gone in its own way, fading whole,
+ * from 0 to 1.
  */
 export interface DrawnPiece {
 	readonly kind: 'piece';
 	readonly source: Box;
 	readonly fit: number;
 	readonly figure: Box;
+	readonly corner: number;
 	readonly holes: readonly DrawnHole[];
 	readonly shown: number;
 }
@@ -59,7 +68,15 @@ export interface DrawnPiece {
 export function drawnPiece(piece: Piece, box: Box, shown: number, holes: readonly DrawnHole[]): DrawnPiece {
 	const source = piece.source;
 	const fit = fitIn(source, box);
-	return { kind: 'piece', source, fit, figure: figureIn(source, box), holes: holesShown(holes, source, fit), shown };
+	return {
+		kind: 'piece',
+		source,
+		fit,
+		figure: figureIn(source, box),
+		corner: piece.corner * fit,
+		holes: holesShown(holes, source, fit),
+		shown
+	};
 }
 
 /**
@@ -70,10 +87,13 @@ export function holesShown(holes: readonly DrawnHole[], source: Box, fit: number
 	return holes.flatMap((hole) => holeShown(hole, source, fit));
 }
 
-/** A hole as a figure drawn from a source at a fit shows it, cut to the source; none where it lies outside. */
+/**
+ * A hole as a figure drawn from a source at a fit shows it, cut to the source, its corners as round as the figure
+ * shows them; none where it lies outside.
+ */
 function holeShown(hole: DrawnHole, source: Box, fit: number): readonly DrawnHole[] {
 	const shown = overlapOf(hole.box, source);
-	return shown === null ? [] : [{ ...hole, box: measuredFrom(shown, source, fit) }];
+	return shown === null ? [] : [{ ...hole, box: measuredFrom(shown, source, fit), corner: hole.corner * fit }];
 }
 
 /** How many of the frame's pixels a screen's pixel takes in a box that holds all of a source, as large as it can. */

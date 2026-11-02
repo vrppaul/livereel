@@ -159,10 +159,11 @@ and the moves of each part of the scene:
   `terminal.lean({ tilt, turn, roll })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
-- `piece.show(target, { every, hole, lines, enter, edge, as, group })`, `piece.to(place, { scale, depth })`,
+- `piece.show(target, { every, corner, hole, lines, enter, edge, as, group })`, `piece.to(place, { scale, depth })`,
   `piece.lean({ tilt, turn, roll })`, `piece.back()`, `piece.hide({ toward, leave, edge })`; a piece of the page lifted
-  off a selector's blocks or a box of the screen onto the frame, leaving a `hole: { ground, line }` and drawing `lines`
-  to its source where named; each move of it takes `as` to name which
+  off a selector's blocks or a box of the screen onto the frame, its corners and its hole's as round as `corner` names,
+  in the page's pixels, square where it names none, leaving a `hole: { ground, line }` and drawing `lines` to its
+  source where named; each move of it takes `as` to name which
 - `outline.show(target, { every, line, enter, edge, as, group })`, `outline.to(place, { scale, depth })`,
   `outline.lean({ tilt, turn, roll })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a
   selector's blocks or a box of the screen, `'solid'` or `'dashed'`; each move of it takes `as` to name which

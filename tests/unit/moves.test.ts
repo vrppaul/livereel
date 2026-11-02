@@ -610,7 +610,7 @@ test('a piece of the page is born over its block as the camera shows it, cut to 
 	// Of 400 to 600 across the camera shows 480 to 600, at twice its size from the frame's left edge
 	expect([lifted.box, lifted.content]).toEqual([
 		{ left: 0, top: 60, width: 240, height: 200 },
-		{ kind: 'piece', source: SHOWN_AT_TWO, hole: null, lines: null }
+		{ kind: 'piece', source: SHOWN_AT_TWO, corner: 0, hole: null, lines: null }
 	]);
 });
 
@@ -642,7 +642,7 @@ test('a piece, or an outline, goes back over its block as the camera shows it th
 	// The camera at 1 shows the screen's pixels as the frame's: each stands over the part it was cut to
 	expect([back.box, back.content, back.scale, back.depth, back.angle, ringBack.box]).toEqual([
 		SHOWN_AT_TWO,
-		{ kind: 'piece', source: SHOWN_AT_TWO, hole: null, lines: null },
+		{ kind: 'piece', source: SHOWN_AT_TWO, corner: 0, hole: null, lines: null },
 		1,
 		0,
 		{ tilt: 0, turn: 360, roll: 0 },
@@ -700,6 +700,7 @@ test("a piece is drawn as large as its box holds all of its source, in its middl
 			source: PAST_THE_SHOWN_EDGE,
 			fit: 9.6,
 			figure: { left: 0, top: 60, width: 1920, height: 960 },
+			corner: 0,
 			holes: [],
 			shown: 1
 		},
@@ -714,8 +715,25 @@ test("a piece lifted with a hole leaves on the screen, where it was lifted, the 
 	const area = piece.show(OTHER, { hole: { ground: '#112233', line: 'dashed' }, as: 'area' });
 	const both = await setIn(area, coming, 1, FULL_HD);
 	expect(drawn(both, cameraOf(both, FULL_HD), 0, FULL_HD).holes).toEqual([
-		{ name: 'piece', box: CARD, ground: CARDS_GROUND, line: null, shown: 0.5 },
-		{ name: 'area', box: OTHER, ground: '#112233', line: 'dashed', shown: 1 }
+		{ name: 'piece', box: CARD, ground: CARDS_GROUND, line: null, corner: 0, shown: 0.5 },
+		{ name: 'area', box: OTHER, ground: '#112233', line: 'dashed', corner: 0, shown: 1 }
+	]);
+});
+
+test('a piece lifted with a corner is drawn with its corners so round, as large as it shows the page, and leaves its hole as round on the screen and in a piece that shows it', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const screenLifted = await setIn(piece.show(WHOLE_SCREEN, { as: 'screen' }), wide, 1, FULL_HD);
+	const cardLifted = await setIn(piece.show('#card', { corner: 18, hole: {} }), screenLifted, 1, FULL_HD);
+	const cardFilling = await setIn(piece.to({ left: 0, top: 0, width: 1, height: 1 }), cardLifted, 1, FULL_HD);
+	const screenSmaller = await setIn(piece.to(UPPER_RIGHT_CORNER, { as: 'screen' }), cardFilling, 1, FULL_HD);
+	const scene = drawn(screenSmaller, cameraOf(screenSmaller, FULL_HD), 0, FULL_HD);
+	const contents = new Map(scene.objects.map((object) => [object.name, object.content]));
+	// The card, 200 × 100, fills the frame's 1920 × 1080 at 9.6 times as large; the whole screen stands in a quarter of
+	// the frame across and down, a quarter as large; the screen shows the page's pixels as the frame's
+	expect([contents.get('piece'), contents.get('screen'), scene.holes]).toEqual([
+		expect.objectContaining({ corner: expect.closeTo(172.8) }),
+		expect.objectContaining({ holes: [expect.objectContaining({ name: 'piece', corner: 4.5 })] }),
+		[expect.objectContaining({ name: 'piece', corner: 18 })]
 	]);
 });
 

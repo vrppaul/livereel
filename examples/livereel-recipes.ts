@@ -64,12 +64,20 @@ const OVER_THE_CHART: Box = { left: 0.35, top: 0.42, width: 0.54, height: 0.22 }
 const DRAWN_BACK: Box = { left: 0.15, top: 0.12, width: 0.7, height: 0.7 };
 const PAGE_ASIDE: Box = { left: 0.47, top: 0.22, width: 0.48, height: 0.48 };
 const CARD_ASIDE: Box = { left: 0.03, top: 0.28, width: 0.42, height: 0.34 };
+// How round the app's cards are drawn, as its stylesheet has them, in the page's pixels; a block drawn square
+const CARD_CORNER = 18;
+const SQUARE = 0;
 
 /** A layer of a stack: its name, the block or box it is, and how far toward the eye it stands, apart. */
 interface Layer {
 	readonly as: string;
 	readonly target: Target;
 	readonly depth: number;
+}
+
+/** A layer lifted off the page as a piece, with its corners as round as its block's. */
+interface LiftedLayer extends Layer {
+	readonly corner: number;
 }
 
 // The groups the acts stand their pieces in, and the piece of the whole screen under the layers lifted off it
@@ -84,15 +92,15 @@ const BAND_APART = 70;
 const LAYER_APART = 170;
 // The bands step up toward the eye from the page's foot to its top, which the page lies back from, so none hides
 // another
-const BANDS: readonly Layer[] = [
-	{ as: 'header', target: HEADER, depth: 4 * BAND_APART },
-	{ as: 'cards', target: CARDS, depth: 3 * BAND_APART },
-	{ as: 'chart', target: CHART, depth: 2 * BAND_APART },
-	{ as: 'top-pages', target: TOP_PAGES, depth: BAND_APART }
+const BANDS: readonly LiftedLayer[] = [
+	{ as: 'header', target: HEADER, depth: 4 * BAND_APART, corner: SQUARE },
+	{ as: 'cards', target: CARDS, depth: 3 * BAND_APART, corner: SQUARE },
+	{ as: 'chart', target: CHART, depth: 2 * BAND_APART, corner: CARD_CORNER },
+	{ as: 'top-pages', target: TOP_PAGES, depth: BAND_APART, corner: CARD_CORNER }
 ];
-const STACK_LAYERS: readonly Layer[] = [
-	{ as: 'header', target: HEADER, depth: LAYER_APART },
-	{ as: 'content', target: CONTENT, depth: 2 * LAYER_APART }
+const STACK_LAYERS: readonly LiftedLayer[] = [
+	{ as: 'header', target: HEADER, depth: LAYER_APART, corner: SQUARE },
+	{ as: 'content', target: CONTENT, depth: 2 * LAYER_APART, corner: SQUARE }
 ];
 // Each layer of the stack, and the page under them, ringed by a dashed line as far toward the eye as the layer stands
 const RINGED_LAYERS: readonly Layer[] = [
@@ -142,12 +150,12 @@ function cardsShown(context: ActContext): Promise<void> {
 }
 
 /** A group, and in it the whole screen and the layers lifted off it, each leaving its place empty. */
-function layersShown(stack: string, layers: readonly Layer[]): readonly Step[] {
+function layersShown(stack: string, layers: readonly LiftedLayer[]): readonly Step[] {
 	return [
 		cut(group.show({ as: stack })),
 		cut(
 			piece.show(WHOLE_SCREEN, { as: UNDER, group: stack }),
-			...layers.map((layer) => piece.show(layer.target, { as: layer.as, group: stack, hole: {} }))
+			...layers.map((layer) => piece.show(layer.target, { as: layer.as, group: stack, corner: layer.corner, hole: {} }))
 		)
 	];
 }
@@ -220,7 +228,7 @@ function cardOnTheRing(card: (typeof RING_CARDS)[number]): readonly Move[] {
 /** A card grows about its middle, past its size and back, over the page dimmed a little. */
 function actGrowsInPlace(): readonly Step[] {
 	return [
-		cut(piece.show(SIGN_UPS)),
+		cut(piece.show(SIGN_UPS, { corner: CARD_CORNER })),
 		play({
 			seconds: 0.9,
 			moves: [
@@ -259,7 +267,7 @@ function actALensAlongThePage(): readonly Step[] {
  */
 function actRingedLitToTheMiddle(): readonly Step[] {
 	return [
-		cut(piece.show(REVENUE)),
+		cut(piece.show(REVENUE, { corner: CARD_CORNER })),
 		play({
 			seconds: 0.85,
 			moves: [caption.show('Ringed, lit, to the middle'), piece.effects({ ring: 1 }), light.on(REVENUE, { dim: 0.5 })]
@@ -276,7 +284,7 @@ function actRingedLitToTheMiddle(): readonly Step[] {
 /** A card lifted toward the eye, a shadow growing under it, the page as it stands. */
 function actLiftedWithAShadow(): readonly Step[] {
 	return [
-		cut(piece.show(VISITORS)),
+		cut(piece.show(VISITORS, { corner: CARD_CORNER })),
 		play({
 			seconds: 0.95,
 			moves: [caption.show('Lifted with a shadow'), piece.effects({ shadow: 1, depth: 300 })]
@@ -291,7 +299,7 @@ function actLiftedWithAShadow(): readonly Step[] {
 /** A card lifted toward the eye, sharp, while the page behind it goes out of focus. */
 function actSharpOverABlurredPage(): readonly Step[] {
 	return [
-		cut(piece.show(SIGN_UPS)),
+		cut(piece.show(SIGN_UPS, { corner: CARD_CORNER })),
 		play({
 			seconds: 1,
 			moves: [caption.show('Sharp over a blurred page'), piece.effects({ depth: 500 }), window.shade({ blur: 8 })]
@@ -306,7 +314,7 @@ function actSharpOverABlurredPage(): readonly Step[] {
 /** A card glowing in the accent and growing a little, while the page darkens round it. */
 function actGlowingOverADimmedPage(): readonly Step[] {
 	return [
-		cut(piece.show(REVENUE)),
+		cut(piece.show(REVENUE, { corner: CARD_CORNER })),
 		play({
 			seconds: 0.9,
 			moves: [
@@ -325,7 +333,7 @@ function actGlowingOverADimmedPage(): readonly Step[] {
 /** A card lifted, a dashed place left behind, then out onto the ground as the page's window draws aside. */
 function actOutBesideThePage(): readonly Step[] {
 	return [
-		cut(piece.show(VISITORS, { hole: { line: 'dashed' } })),
+		cut(piece.show(VISITORS, { corner: CARD_CORNER, hole: { line: 'dashed' } })),
 		play({ seconds: 1, moves: [caption.show('Out beside the page'), piece.effects({ shadow: 1, depth: 120 })] }),
 		play({ seconds: 1.6, moves: [window.to(PAGE_ASIDE), piece.to(CARD_ASIDE, { depth: 0 })] }),
 		hold({ seconds: 1.2 }),
@@ -401,7 +409,7 @@ function actLayersLabelled(): readonly Step[] {
 function actAFanInDepth(): readonly Step[] {
 	return [
 		cut(group.show({ as: FAN })),
-		cut(...FAN_CARDS.map((card) => piece.show(card.target, { as: card.as, group: FAN }))),
+		cut(...FAN_CARDS.map((card) => piece.show(card.target, { as: card.as, group: FAN, corner: CARD_CORNER }))),
 		play({
 			seconds: 2,
 			moves: [caption.show('A fan in depth'), window.shade({ fade: 0.9 }), ...FAN_CARDS.flatMap(cardFanned)]
@@ -461,7 +469,7 @@ function actAnInsetTiedToItsPlace(): readonly Step[] {
 function actBlocksInAWave(): readonly Step[] {
 	return [
 		play({ seconds: 0.4, moves: [caption.show('Blocks in a wave'), outline.show(CARDS, { line: 'dashed' })] }),
-		cut(...WAVE_CARDS.map((card) => piece.show(card.target, { as: card.as }))),
+		cut(...WAVE_CARDS.map((card) => piece.show(card.target, { as: card.as, corner: CARD_CORNER }))),
 		play({
 			seconds: 1.4,
 			moves: [
@@ -500,7 +508,7 @@ function actLargerInPushes(): readonly Step[] {
 /** A card spins round once on its way to the middle, twice as large, overshooting it, and turns back as it returns. */
 function actAWholeTurnForward(): readonly Step[] {
 	return [
-		cut(piece.show(SIGN_UPS, { hole: {} })),
+		cut(piece.show(SIGN_UPS, { corner: CARD_CORNER, hole: {} })),
 		play({
 			seconds: 1.5,
 			moves: [
@@ -527,7 +535,7 @@ function actAWholeTurnForward(): readonly Step[] {
 /** The page draws back and swings away while a card of it stands face-on in the middle, then the page comes back. */
 function actThePageTurnsAway(): readonly Step[] {
 	return [
-		cut(piece.show(VISITORS, { hole: {} })),
+		cut(piece.show(VISITORS, { corner: CARD_CORNER, hole: {} })),
 		play({
 			seconds: 1.4,
 			moves: [caption.show('The page turns away'), window.to(DRAWN_BACK), window.lean({ turn: -38 }), piece.to(MIDDLE)]
@@ -562,7 +570,7 @@ function actTheStackTurns(): readonly Step[] {
 function actACarousel(): readonly Step[] {
 	return [
 		cut(group.show({ as: RING })),
-		cut(...RING_CARDS.map((card) => piece.show(card.target, { as: card.as, group: RING }))),
+		cut(...RING_CARDS.map((card) => piece.show(card.target, { as: card.as, group: RING, corner: CARD_CORNER }))),
 		play({
 			seconds: 1.4,
 			moves: [

@@ -148,7 +148,9 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => piece.show(5 as never)).toThrow(new FilmError(`piece.show's target is 5: it is ${TARGET}`));
 	expect(() => piece.show('#chart', { from: 'left' } as never)).toThrow(
-		new FilmError('piece.show names from: it names every, hole, lines, enter, edge, within, ease, as, group, or fewer')
+		new FilmError(
+			'piece.show names from: it names every, corner, hole, lines, enter, edge, within, ease, as, group, or fewer'
+		)
 	);
 	expect(() => code.show('x', { at: 'left', group: '' })).toThrow(
 		new FilmError(`code.show's group is "": it is a name, a string with something in it`)

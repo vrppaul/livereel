@@ -601,8 +601,8 @@ class CaptionDrawer {
 }
 
 /**
- * A piece of the page in its object: the part of the page's picture over its source, as large as its box holds it, and
- * the holes other pieces leave there, in its figure.
+ * A piece of the page in its object: the part of the page's picture over its source, as large as its box holds it, its
+ * corners as round as the film names, and the holes other pieces leave there, in its figure.
  */
 class PieceDrawer {
 	/** @param {Staged} element */
@@ -617,6 +617,7 @@ class PieceDrawer {
 		const piece = ofKind(content, 'piece');
 		figureDrawn(this.element, piece);
 		sourceDrawn(this.element, piece.source, piece.fit);
+		numbered(this.element, { '--corner': piece.corner });
 		drawnByName(this.holes, piece.holes);
 	}
 }
@@ -1219,12 +1220,12 @@ function holeElement() {
 
 /**
  * A hole: the box it fills, on the screen or in what a piece or a lens shows of it, its colour, the line round its
- * edge, if any, and how far it has come.
+ * edge, if any, how round its corners are, and how far it has come.
  * @param {HTMLElement} element @param {DrawnHole} hole
  */
 function holeDrawn(element, hole) {
 	placed(element, hole.box);
-	numbered(element, { '--shown': hole.shown });
+	numbered(element, { '--corner': hole.corner, '--shown': hole.shown });
 	element.style.setProperty(HOLE_GROUND, hole.ground);
 	named(element, STROKE, hole.line);
 }
