@@ -51,8 +51,8 @@ const SIDE = 'data-side';
 // place on the ground round them, and the one that names how they read there
 const ON_GROUND = 'data-on-ground';
 const ALIGN = 'data-align';
-// The attribute that names how an object is drawn about its middle, flat or leant, and the one that names the side of
-// it the eye sees, its front or its back
+// The attribute that names how an object, or the page's window, is drawn about its middle, flat or leant, and the one
+// that names the side of an object the eye sees, its front or its back
 const TRANSFORM = 'data-transform';
 const FACE = 'data-face';
 // What a custom property's name starts with: a matrix's entries are set as custom properties named as each entry is
@@ -955,7 +955,8 @@ function numbered(element, numbers) {
 
 /**
  * An element drawn about its middle as the engine works it out, by the kind of its transform: flat, by the six entries
- * of its matrix a 2D `matrix()` takes, or leant, by all sixteen of a `matrix3d()`.
+ * of its matrix a 2D `matrix()` takes, or leant, by all sixteen of a `matrix3d()`. An object is drawn so itself; the
+ * window's root holds the numbers its view and its shadow are drawn by.
  * @param {Staged} element @param {Transform} transform
  */
 function transformed(element, transform) {

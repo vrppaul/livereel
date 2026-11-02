@@ -1346,16 +1346,30 @@ test('the page is shaded as far as its move has come toward the values the film 
 	]);
 });
 
-test("the page's window is drawn flat while it faces the frame, in a window or a whole turn round, and in 3D where it leans", async () => {
+test("the page's window is drawn flat and unmoved while it faces the frame, wherever it stands and a whole turn round, and in 3D where it leans", async () => {
 	const opening = openingScene(SMALL, LIVEREELS_LOOK);
 	const inAWindow = await setAt(windowTo('right'), opening, 1);
 	const leant = await setAt(lean({ tilt: 12, turn: -8 }), inAWindow, 1);
 	const turnedWhole = await setAt(lean({ tilt: 360, turn: -360 }), inAWindow, 1);
+	const unmoved = { m11: 1, m12: 0, m21: 0, m22: 1, m41: 0, m42: 0 };
+	const unmovedButForATurnsArithmetic = {
+		m11: expect.closeTo(1, 9),
+		m12: expect.closeTo(0, 9),
+		m21: expect.closeTo(0, 9),
+		m22: expect.closeTo(1, 9),
+		m41: expect.closeTo(0, 9),
+		m42: expect.closeTo(0, 9)
+	};
 	expect(
 		[opening, inAWindow, leant, turnedWhole].map(
-			(scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL).window.transform.kind
+			(scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL).window.transform
 		)
-	).toEqual(['flat', 'flat', 'leant', 'flat']);
+	).toEqual([
+		{ kind: 'flat', matrix: unmoved },
+		{ kind: 'flat', matrix: unmoved },
+		{ kind: 'leant', matrix: expect.anything() },
+		{ kind: 'flat', matrix: unmovedButForATurnsArithmetic }
+	]);
 });
 
 test("an object takes any name with something in it, its moves apart from a prop's or the page's of that name", () => {

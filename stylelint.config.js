@@ -4,6 +4,10 @@
 const COLOURS = ['rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color-mix'];
 const GRADIENTS_AND_SHADOWS = ['linear-gradient', 'radial-gradient', 'conic-gradient', 'drop-shadow'];
 const MOVING = ['/^transition/', '/^animation/'];
+// The eye is the engine's: what the stage draws in perspective it draws by the matrices the engine hands it, so it
+// sees nothing in perspective of its own and leans nothing by an angle, either of which would write a projection twice
+const SEEN_BY_THE_ENGINE = ['perspective', 'perspective-origin'];
+const LEANT_BY_THE_ENGINE = ['perspective', 'rotateX', 'rotateY', 'rotate3d', 'translateZ', 'translate3d'];
 // A shadow is a token, or none
 const SHADOWS_NAMED = { '/shadow$/': ['/^var\\(--[a-z-]+\\)$/', 'none'] };
 // The part an object's figure stands in takes its transform, opacity and cut from a way of livereel's alone, set by the
@@ -18,9 +22,9 @@ export default {
 	rules: {
 		'color-no-hex': true,
 		'color-named': 'never',
-		'function-disallowed-list': [...COLOURS, ...GRADIENTS_AND_SHADOWS],
+		'function-disallowed-list': [...COLOURS, ...GRADIENTS_AND_SHADOWS, ...LEANT_BY_THE_ENGINE],
 		'declaration-property-value-allowed-list': SHADOWS_NAMED,
-		'property-disallowed-list': MOVING,
+		'property-disallowed-list': [...MOVING, ...SEEN_BY_THE_ENGINE],
 		'rule-selector-property-disallowed-list': THE_WAYS_OWN,
 		'at-rule-disallowed-list': ['keyframes'],
 		'declaration-property-value-disallowed-list': { 'scroll-behavior': ['smooth'] }

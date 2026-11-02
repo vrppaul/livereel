@@ -64,7 +64,7 @@ export interface Opening {
 }
 
 export interface StageApi {
-	/** The stage laid out as a room: the screen in the frame, seen from the eye. */
+	/** The stage laid out as a room: the frame and the screen in it, as large as it draws, and its exposures. */
 	readonly setup: (room: Room) => void;
 	/** The filmed page opened in the screen's frame. */
 	readonly open: (opening: Opening) => void;

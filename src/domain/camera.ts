@@ -604,7 +604,7 @@ function eyeDistanceOf(frame: Size): number {
 
 /**
  * The matrix that carries a spot of what leans, on its own plane, to its angle: swung about its middle by its turn,
- * then leant back by its tilt, as the stage's `rotateX() rotateY()` does.
+ * then leant back by its tilt, as CSS's `rotateX() rotateY()` would.
  */
 export function angledAs(angle: Angle): Matrix {
 	return chained([rotationX(angle.tilt), rotationY(angle.turn)]);

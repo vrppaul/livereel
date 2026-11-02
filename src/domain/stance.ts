@@ -3,14 +3,15 @@
  * stage draws it so: one matrix (`src/domain/matrix.ts`), which the stage draws with and the engine reads where the
  * thing stands on the frame, so a film turns, rolls, grows or brings near anything that stands so by its values alone,
  * with no move of its own for each. An object stands so (`src/props/object.ts`); the window, which leans and never
- * grows, has an angle alone (`src/domain/camera.ts`), and is drawn by the matrix of its lean alike
+ * grows, has an angle alone (`src/domain/camera.ts`), and is drawn by the matrix of its lean as flat or leant alike
  * (`src/props/window.ts`).
  *
  * The stage is handed a flat 2D matrix where the thing faces the frame, at any size, depth or roll, and a 3D one only
  * where it leans: a 3D transform, of no angle too, costs the graphics card a layer in every exposure of a frame, and a
  * frame of 16 exposures then outran the card's memory the stage asks for, and drew objects in some of them not at
- * all, with no error (README film, `--renderer gpu`, 2026-10-30). Which side faces the eye is read off the matrix,
- * so the stage draws the back of what has turned away, never what it shows mirrored.
+ * all, with no error (README film, `--renderer gpu`, 2026-10-30). Which side of an object faces the eye is read off
+ * the matrix, so the stage draws the back of one that has turned away, never what it shows mirrored; the window has no
+ * back of its own, and turned half round shows the page mirrored.
  */
 import { type Angle, EYE_DISTANCE, FACE_ON, angleToward, angledAs } from './camera.ts';
 import { A_NUMBER, type Kind, Plain } from './handed.ts';
@@ -106,8 +107,7 @@ export function stanceMatrix(stance: Stance): Matrix {
 
 /**
  * Something as the stage draws it, carried about its middle by its placing — how it stands, seen from the eye where it
- * stands on the frame — flat where how it stands before the eye, `stood`, leaves it facing the frame, at any size, depth
- * or roll.
+ * stands on the frame —: its transform, and the side of it the eye sees.
  */
 export function drawnStance(stood: Matrix, placing: Matrix): DrawnStance {
 	return { transform: transformOf(stood, placing), face: showsItsFront(placing) ? 'front' : 'back' };
