@@ -614,6 +614,20 @@ test('a piece of the page is born over its block as the camera shows it, cut to 
 	]);
 });
 
+test("a piece lifted with air takes so many of the page's pixels round its block, cut to the part the camera shows", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const close = await setIn(cameraTo(MIDDLE_AT_TWO), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const airy = piece.show(PAST_THE_SHOWN_EDGE, { air: 20 });
+	const [whole, cut] = [await setIn(airy, wide, 1, FULL_HD), await setIn(airy, close, 1, FULL_HD)].map(
+		(scene) => scene.objects.get('piece')!.content
+	);
+	// 400 to 600 across and 300 to 400 down, 20 more on every side; the camera at 2 shows 480 to 1440 across
+	expect([whole, cut]).toEqual([
+		expect.objectContaining({ source: { left: 380, top: 280, width: 240, height: 140 } }),
+		expect.objectContaining({ source: { left: 480, top: 280, width: 140, height: 140 } })
+	]);
+});
+
 test('an outline is born round its block as the camera shows it, cut to the part the camera shows, in the line the film names, on a page framed live as on a picture', async () => {
 	const close = await setIn(cameraTo(MIDDLE_AT_TWO), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
 	const ringed = (await setIn(outline.show(PAST_THE_SHOWN_EDGE, { line: 'dashed' }), close, 1, FULL_HD)).objects;
@@ -977,20 +991,38 @@ test('an object joins a group only as it comes, while the group stands as it was
 	);
 	const joined = await Promise.all(spun.map((scene) => setAt(joining, scene, 1)));
 	expect(joined.map((scene) => scene.objects.get('code')!.inside)).toEqual([
-		{ kind: 'group', name: 'stack' },
-		{ kind: 'group', name: 'stack' }
+		{ kind: 'group', name: 'stack', zIndex: 0 },
+		{ kind: 'group', name: 'stack', zIndex: 0 }
 	]);
 });
 
-test('an object stands inside the window or in a group, never both', () => {
+test('an object stands inside the window or in a group, never both, and takes a zIndex only in a group', () => {
 	expect(() => code.show(THREE_LINES, { at: LOWER_RIGHT, inside: 'window', group: 'stack' })).toThrow(
 		new FilmError('code.show stands an object inside the window or in a group: not both')
 	);
+	expect(() => code.show(THREE_LINES, { at: LOWER_RIGHT, zIndex: 2 })).toThrow(
+		new FilmError('code.show orders an object by its zIndex only in a group: name its group')
+	);
 });
 
-test('the objects of a group are drawn the farther behind the nearer, where they came among the rest', async () => {
+test('the objects of a group are drawn by their zIndex, the higher over the lower, and as they came where it is alike, however near or turned each stands, where the group came among the rest', async () => {
 	const before = await setAt(title.show('Before', { at: 'top', as: 'before' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const grouped = await setAt(group.show(), before, 1);
+	const top = await setAt(code.show(THREE_LINES, { at: 'left', group: 'group', zIndex: 2, as: 'top' }), grouped, 1);
+	const bottom = await setAt(code.show(THREE_LINES, { at: 'right', group: 'group', as: 'bottom' }), top, 1);
+	const middle = await setAt(code.show(THREE_LINES, { at: 'top', group: 'group', as: 'middle' }), bottom, 1);
+	const after = await setAt(title.show('After', { at: 'bottom', as: 'after' }), middle, 1);
+	const farther = await setAt(code.to('left', { as: 'top', depth: -200 }), after, 1);
+	const leant = await setAt(group.lean({ tilt: 60, turn: 180 }), farther, 1);
+	expect([drawnNamesIn(after), drawnNamesIn(leant)]).toEqual([
+		['before', 'bottom', 'middle', 'top', 'after'],
+		['before', 'bottom', 'middle', 'top', 'after']
+	]);
+});
+
+test('the objects of a group ordered by depth are drawn the farther behind the nearer, where they came among the rest', async () => {
+	const before = await setAt(title.show('Before', { at: 'top', as: 'before' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const grouped = await setAt(group.show({ order: 'depth' }), before, 1);
 	const front = await setAt(code.show(THREE_LINES, { at: 'left', group: 'group', as: 'front' }), grouped, 1);
 	const back = await setAt(code.show(THREE_LINES, { at: 'right', group: 'group', as: 'back' }), front, 1);
 	const after = await setAt(title.show('After', { at: 'bottom', as: 'after' }), back, 1);

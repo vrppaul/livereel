@@ -8,7 +8,7 @@
  */
 import { type Camera, boxOnTheFrame, isFrontOn, screenShownBy } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import { type Box, overlapOf } from '../domain/geometry.ts';
+import { type Box, overlapOf, withAir } from '../domain/geometry.ts';
 import { type Beginning, type Target, shownBox, targetSaid } from '../direction/move.ts';
 import { cameraOf } from '../scene.ts';
 
@@ -18,25 +18,28 @@ export interface Source {
 	readonly box: Box;
 }
 
-// A source of the first block a selector matches, where the film names no more
+// A source of the first block a selector matches, where the film names no more, and of the blocks alone, no air round
+// them
 export const ONE_BLOCK = 1;
+export const NO_AIR = 0;
 // What stands over a source stands in no place a film names: it is born where its source shows
 export const NO_PLACE = null;
 
 /**
  * The part of the screen a target stands over, the first `every` blocks a selector matches together or a box of the
- * screen, cut to the part a camera shows, and where the camera shows that on the frame; refused where the camera shows
- * none of it.
+ * screen, with so much air clear round it in the page's pixels, cut to the part a camera shows, and where the camera
+ * shows that on the frame; refused where the camera shows none of it.
  */
 export async function sourceOf(
 	beginning: Beginning,
 	camera: Camera,
 	target: Target,
 	every: number,
+	air: number,
 	move: string
 ): Promise<Source> {
 	const shown = screenShownBy(camera, beginning.format);
-	const block = await shownBox(beginning, target, every, move);
+	const block = withAir(await shownBox(beginning, target, every, move), air);
 	const source = shown === null ? null : overlapOf(block, shown);
 	if (source === null) {
 		throw new FilmError(`${move}'s ${targetSaid(target)} stands outside what the camera shows: frame it first`);

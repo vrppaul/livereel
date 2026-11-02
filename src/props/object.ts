@@ -23,8 +23,10 @@
  *
  * What an object shows sets the layer it is drawn on: a caption stands over every other object, as words said over a
  * film do, and keys over the caption's ground; within a layer the one that came last stands over the rest, but the
- * objects of a group stand together where the first of them came, the farther behind the nearer, so a ring of cards
- * turning shows the near ones over the far.
+ * objects of a group stand together where the first of them came, ordered as the film names: by each one's zIndex, the
+ * higher over the lower and as they came where it is alike, so a stack's layers stand as the film lays them however
+ * the group leans; or, in a group ordered by depth, the farther behind the nearer, so a ring of cards turning shows
+ * the near ones over the far.
  *
  * What a piece of the page or a lens shows of the page is the page as it stands: the holes other pieces leave in it
  * (`src/props/lifted.ts`) with it, so a piece of the whole screen under the pieces lifted off it shows where they were.
@@ -69,9 +71,14 @@ import { type DrawnTitleWords, type TitleWords, drawnTitleWords } from './title.
 /** The name an object is known by: one a film gives, or its kind's own. */
 export type ObjectName = string;
 
-/** What an object stands in: the frame, the page's window, or a group of objects by its name. */
+/**
+ * What an object stands in: the frame, the page's window, or a group of objects by its name, with its zIndex there, how
+ * high it is drawn among the others of the group.
+ */
 export type Holder =
-	{ readonly kind: 'frame' } | { readonly kind: 'window' } | { readonly kind: 'group'; readonly name: GroupName };
+	| { readonly kind: 'frame' }
+	| { readonly kind: 'window' }
+	| { readonly kind: 'group'; readonly name: GroupName; readonly zIndex: number };
 
 /** What the stage lays an object in: the frame, or the page's window; one in a group stands on the frame. */
 type Laid = Exclude<Holder['kind'], 'group'>;
@@ -344,7 +351,8 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 
 /**
  * Objects by name in the order the stage draws them, the later over the earlier: in the order they came, but for the
- * objects of a group, drawn together where the first of them came, the farther from the eye before the nearer.
+ * objects of a group, drawn together where the first of them came, in the order the group names, and as they came
+ * where that is alike (the sort keeps the order of what it finds alike).
  */
 export function inDrawingOrder(objects: Objects, groups: Groups): readonly ObjectEntry[] {
 	const standing = [...objects.values()];
@@ -353,10 +361,21 @@ export function inDrawingOrder(objects: Objects, groups: Groups): readonly Objec
 			name,
 			object,
 			place: drawingPlaceOf(object, came, standing),
-			out: outOf(object, groups)
+			inItsGroup: orderInItsGroup(object, groups)
 		}))
-		.toSorted((first, second) => first.place - second.place || first.out - second.out)
+		.toSorted((first, second) => first.place - second.place || first.inItsGroup - second.inItsGroup)
 		.map(({ name, object }) => [name, object] as const);
+}
+
+/**
+ * Where an object is drawn among the others of its group, the lower first: by its zIndex, or, in a group ordered by
+ * depth, by how far out toward the eye its middle stands. One in no group has a place of its own, where this weighs
+ * nothing.
+ */
+function orderInItsGroup(object: FrameObject, groups: Groups): number {
+	const holder = object.inside;
+	if (holder.kind === 'group' && groupNamed(groups, holder.name).order === 'zIndex') return holder.zIndex;
+	return outOf(object, groups);
 }
 
 /** Whether an object stands in a group of a name. */

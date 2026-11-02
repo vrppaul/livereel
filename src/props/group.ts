@@ -14,6 +14,7 @@ import { aboutTheMiddleOf } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import { type Fraction, WHOLE } from '../domain/fraction.ts';
 import type { Box, Point } from '../domain/geometry.ts';
+import { type Kind, OneOf } from '../domain/handed.ts';
 import { type Matrix, carriesEveryPointWhereItStands } from '../domain/matrix.ts';
 import { type Stance, stanceMatrix } from '../domain/stance.ts';
 import { presentShare } from './way.ts';
@@ -21,11 +22,27 @@ import { presentShare } from './way.ts';
 /** The name a film gives a group. */
 export type GroupName = string;
 
-/** A group: its box on the frame, in the frame's pixels, how it stands about the box's middle, and how far it has gone. */
+/**
+ * How a group orders what stands in it as it is drawn: by each object's zIndex, the higher over the lower and as they
+ * came where it is alike, so a stack's layers stand as the film lays them however the group leans; or by depth, the
+ * farther behind the nearer, for a ring whose near side changes as it turns.
+ */
+export type GroupOrder = 'zIndex' | 'depth';
+
+/**
+ * A group: its box on the frame, in the frame's pixels, how it stands about the box's middle, how far it has gone, and
+ * how it orders what stands in it.
+ */
 export interface Group extends Stance {
 	readonly box: Box;
 	readonly gone: Fraction;
+	readonly order: GroupOrder;
 }
+
+export const A_GROUP_ORDER: Kind<GroupOrder> = new OneOf(
+	['zIndex', 'depth'],
+	'how a group orders what stands in it: "zIndex", each by its zIndex, or "depth", the farther behind the nearer'
+);
 
 /** Groups by name. */
 export type Groups = ReadonlyMap<GroupName, Group>;

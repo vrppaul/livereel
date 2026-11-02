@@ -33,7 +33,7 @@ import {
 	objectShow,
 	objectTo
 } from './object.ts';
-import { NO_PLACE, ONE_BLOCK, cameraFrontOn, sourceOf } from './source.ts';
+import { NO_AIR, NO_PLACE, ONE_BLOCK, cameraFrontOn, sourceOf } from './source.ts';
 
 /**
  * How an outline is drawn: round the first `every` blocks a selector matches, together; in a line; which outline; the
@@ -108,7 +108,7 @@ export function hide(script: HideScript = {}): Move {
 /** An outline round a target, cut to the part of it the camera shows, and the box of the frame it shows there. */
 async function ringed(beginning: Beginning, target: Target, every: number, line: Stroke): Promise<Coming> {
 	const camera = cameraFrontOn(beginning, 'outline.show');
-	const { source, box } = await sourceOf(beginning, camera, target, every, 'outline.show');
+	const { source, box } = await sourceOf(beginning, camera, target, every, NO_AIR, 'outline.show');
 	const outline: Outline = { kind: 'outline', source, line };
 	return { content: outline, box };
 }

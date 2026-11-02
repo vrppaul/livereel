@@ -68,11 +68,15 @@ const CARD_ASIDE: Box = { left: 0.03, top: 0.28, width: 0.42, height: 0.34 };
 const CARD_CORNER = 18;
 const SQUARE = 0;
 
-/** A layer of a stack: its name, the block or box it is, and how far toward the eye it stands, apart. */
+/**
+ * A layer of a stack: its name, the block or box it is, how far toward the eye it stands, apart, and how high it is
+ * drawn among the others, its zIndex: the page under them is drawn lowest, at the zIndex where the film names none.
+ */
 interface Layer {
 	readonly as: string;
 	readonly target: Target;
 	readonly depth: number;
+	readonly zIndex: number;
 }
 
 /** A layer lifted off the page as a piece, with its corners as round as its block's. */
@@ -90,23 +94,24 @@ const UNDER = 'page';
 // frame
 const BAND_APART = 70;
 const LAYER_APART = 170;
-// The bands step up toward the eye from the page's foot to its top, which the page lies back from, so none hides
-// another
+// The bands step up toward the eye from the page's foot to its top, which the page lies back from, each drawn over the
+// page under them
 const BANDS: readonly LiftedLayer[] = [
-	{ as: 'header', target: HEADER, depth: 4 * BAND_APART, corner: SQUARE },
-	{ as: 'cards', target: CARDS, depth: 3 * BAND_APART, corner: SQUARE },
-	{ as: 'chart', target: CHART, depth: 2 * BAND_APART, corner: CARD_CORNER },
-	{ as: 'top-pages', target: TOP_PAGES, depth: BAND_APART, corner: CARD_CORNER }
+	{ as: 'header', target: HEADER, depth: 4 * BAND_APART, zIndex: 1, corner: SQUARE },
+	{ as: 'cards', target: CARDS, depth: 3 * BAND_APART, zIndex: 1, corner: SQUARE },
+	{ as: 'chart', target: CHART, depth: 2 * BAND_APART, zIndex: 1, corner: CARD_CORNER },
+	{ as: 'top-pages', target: TOP_PAGES, depth: BAND_APART, zIndex: 1, corner: CARD_CORNER }
 ];
+// The stack's layers, and each ringed by a dashed line as far toward the eye as it stands, drawn over its layer and
+// under the next: the page under them, its line, the header, its line, the content, its line
 const STACK_LAYERS: readonly LiftedLayer[] = [
-	{ as: 'header', target: HEADER, depth: LAYER_APART, corner: SQUARE },
-	{ as: 'content', target: CONTENT, depth: 2 * LAYER_APART, corner: SQUARE }
+	{ as: 'header', target: HEADER, depth: LAYER_APART, zIndex: 2, corner: SQUARE },
+	{ as: 'content', target: CONTENT, depth: 2 * LAYER_APART, zIndex: 4, corner: SQUARE }
 ];
-// Each layer of the stack, and the page under them, ringed by a dashed line as far toward the eye as the layer stands
 const RINGED_LAYERS: readonly Layer[] = [
-	{ as: 'page-line', target: WHOLE_SCREEN, depth: 0 },
-	{ as: 'header-line', target: HEADER, depth: LAYER_APART },
-	{ as: 'content-line', target: CONTENT, depth: 2 * LAYER_APART }
+	{ as: 'page-line', target: WHOLE_SCREEN, depth: 0, zIndex: 1 },
+	{ as: 'header-line', target: HEADER, depth: LAYER_APART, zIndex: 3 },
+	{ as: 'content-line', target: CONTENT, depth: 2 * LAYER_APART, zIndex: 5 }
 ];
 // The layers' labels, flat on the frame left of each as the stack stands raised, read off a still of it, in shares of
 // the frame; how large their letters are, in pixels of a 1080 frame
@@ -117,11 +122,32 @@ const LAYER_LABELS = [
 ];
 const LABEL_SIZE = 44;
 // The three cards fanned into the depth, the near one first: where each stands, in shares of the frame, how far toward
-// the eye, in pixels of a 1080 frame, and how far blurred
+// the eye, in pixels of a 1080 frame, how far blurred, and how high drawn, the near over the far
 const FAN_CARDS = [
-	{ as: 'near', target: VISITORS, at: { left: 0.13, top: 0.5, width: 0.3, height: 0.2 }, depth: 300, blur: 0 },
-	{ as: 'middle', target: SIGN_UPS, at: { left: 0.37, top: 0.37, width: 0.3, height: 0.2 }, depth: 0, blur: 2 },
-	{ as: 'far', target: REVENUE, at: { left: 0.61, top: 0.24, width: 0.3, height: 0.2 }, depth: -300, blur: 4 }
+	{
+		as: 'near',
+		target: VISITORS,
+		at: { left: 0.13, top: 0.5, width: 0.3, height: 0.2 },
+		depth: 300,
+		blur: 0,
+		zIndex: 2
+	},
+	{
+		as: 'middle',
+		target: SIGN_UPS,
+		at: { left: 0.37, top: 0.37, width: 0.3, height: 0.2 },
+		depth: 0,
+		blur: 2,
+		zIndex: 1
+	},
+	{
+		as: 'far',
+		target: REVENUE,
+		at: { left: 0.61, top: 0.24, width: 0.3, height: 0.2 },
+		depth: -300,
+		blur: 4,
+		zIndex: 0
+	}
 ];
 // The three cards on a ring round the frame's middle, a third of a turn apart: how far each stands from its middle, in
 // pixels of a 1080 frame, as a depth is given, and the frame's width in those; the place a card stands in on it, in
@@ -149,15 +175,32 @@ function cardsShown(context: ActContext): Promise<void> {
 	return context.page.locator(CARDS).waitFor();
 }
 
-/** A group, and in it the whole screen and the layers lifted off it, each leaving its place empty. */
+/**
+ * A group, and in it the whole screen and the layers lifted off it, each leaving its place empty; then the screen gone
+ * under them at once, as the piece of the whole screen stands where it stood, so the page shows once as the stack leans.
+ */
 function layersShown(stack: string, layers: readonly LiftedLayer[]): readonly Step[] {
 	return [
 		cut(group.show({ as: stack })),
 		cut(
 			piece.show(WHOLE_SCREEN, { as: UNDER, group: stack }),
-			...layers.map((layer) => piece.show(layer.target, { as: layer.as, group: stack, corner: layer.corner, hole: {} }))
-		)
+			...layers.map((layer) =>
+				piece.show(layer.target, {
+					as: layer.as,
+					group: stack,
+					zIndex: layer.zIndex,
+					corner: layer.corner,
+					hole: {}
+				})
+			)
+		),
+		cut(screen.lower())
 	];
+}
+
+/** The screen up at once under the stack lying where it was lifted, and the stack put away. */
+function layersPutAway(stack: string): Step {
+	return cut(screen.rise(), group.hide({ as: stack }));
 }
 
 /** Each layer, a piece or an outline as `effects` of its kind moves it, as far toward the eye as it stands, apart. */
@@ -170,20 +213,18 @@ function layersTogether(layers: readonly Layer[], effects: typeof piece.effects)
 	return layers.map((layer) => effects({ as: layer.as, depth: 0 }));
 }
 
-/** The stack laid back, rolled and shrunk as a drawing shows one, the screen gone under it, its layers apart. */
+/** The stack laid back, rolled and shrunk as a drawing shows one, its layers apart. */
 function stackRaised(): readonly Move[] {
 	return [
-		screen.lower(),
 		group.lean({ as: STACK, tilt: 55, roll: -45 }),
 		group.to('whole', { as: STACK, scale: 0.45 }),
 		...layersApart(STACK_LAYERS, piece.effects)
 	];
 }
 
-/** The stack back face-on and whole, its layers down, the screen up under it. */
+/** The stack back face-on and whole, its layers down. */
 function stackLowered(): readonly Move[] {
 	return [
-		screen.rise(),
 		group.lean({ as: STACK, tilt: 0, roll: 0 }),
 		group.to('whole', { as: STACK, scale: 1 }),
 		...layersTogether(STACK_LAYERS, piece.effects)
@@ -358,7 +399,6 @@ function actThePageSlicedInDepth(): readonly Step[] {
 			seconds: 2,
 			moves: [
 				caption.show('The page sliced in depth'),
-				screen.lower(),
 				group.lean({ as: SLICES, tilt: 40, turn: 10 }),
 				group.to('whole', { as: SLICES, scale: 0.7 }),
 				piece.effects({ as: UNDER, blur: 4 }),
@@ -369,14 +409,13 @@ function actThePageSlicedInDepth(): readonly Step[] {
 		play({
 			seconds: 1.4,
 			moves: [
-				screen.rise(),
 				group.lean({ as: SLICES, tilt: 0, turn: 0 }),
 				group.to('whole', { as: SLICES, scale: 1 }),
 				piece.effects({ as: UNDER, blur: 0 }),
 				...layersTogether(BANDS, piece.effects)
 			]
 		}),
-		cut(group.hide({ as: SLICES })),
+		layersPutAway(SLICES),
 		hold({ seconds: 0.3 })
 	];
 }
@@ -385,7 +424,11 @@ function actThePageSlicedInDepth(): readonly Step[] {
 function actLayersLabelled(): readonly Step[] {
 	return [
 		...layersShown(STACK, STACK_LAYERS),
-		cut(...RINGED_LAYERS.map((layer) => outline.show(layer.target, { as: layer.as, line: 'dashed', group: STACK }))),
+		cut(
+			...RINGED_LAYERS.map((layer) =>
+				outline.show(layer.target, { as: layer.as, line: 'dashed', group: STACK, zIndex: layer.zIndex })
+			)
+		),
 		play({
 			seconds: 2.2,
 			moves: [caption.show('Layers, labelled'), ...stackRaised(), ...layersApart(RINGED_LAYERS, outline.effects)]
@@ -400,7 +443,7 @@ function actLayersLabelled(): readonly Step[] {
 			seconds: 1.4,
 			moves: [...stackLowered(), ...layersTogether(RINGED_LAYERS, outline.effects)]
 		}),
-		cut(group.hide({ as: STACK })),
+		layersPutAway(STACK),
 		hold({ seconds: 0.3 })
 	];
 }
@@ -409,7 +452,11 @@ function actLayersLabelled(): readonly Step[] {
 function actAFanInDepth(): readonly Step[] {
 	return [
 		cut(group.show({ as: FAN })),
-		cut(...FAN_CARDS.map((card) => piece.show(card.target, { as: card.as, group: FAN, corner: CARD_CORNER }))),
+		cut(
+			...FAN_CARDS.map((card) =>
+				piece.show(card.target, { as: card.as, group: FAN, zIndex: card.zIndex, corner: CARD_CORNER })
+			)
+		),
 		play({
 			seconds: 2,
 			moves: [caption.show('A fan in depth'), window.shade({ fade: 0.9 }), ...FAN_CARDS.flatMap(cardFanned)]
@@ -493,7 +540,7 @@ function actBlocksInAWave(): readonly Step[] {
 /** The chart's last days pushed larger where they stand, then again into the middle, the page darker each time. */
 function actLargerInPushes(): readonly Step[] {
 	return [
-		cut(piece.show(LAST_DAYS, { every: 3 })),
+		cut(piece.show(LAST_DAYS, { every: 3, air: 24 })),
 		play({ seconds: 0.6, moves: [caption.show('Larger in pushes')] }),
 		play({ seconds: 0.28, moves: [piece.effects({ scale: 1.3, shadow: 1 }), window.shade({ dim: 0.3 })] }),
 		hold({ seconds: 1.1 }),
@@ -561,7 +608,7 @@ function actTheStackTurns(): readonly Step[] {
 		play({ seconds: 1.9, moves: [caption.show('The stack turns'), ...stackRaised()] }),
 		play({ seconds: 3.2, moves: [group.lean({ as: STACK, roll: -135 })] }),
 		play({ seconds: 1.45, moves: stackLowered() }),
-		cut(group.hide({ as: STACK })),
+		layersPutAway(STACK),
 		hold({ seconds: 0.3 })
 	];
 }
@@ -569,7 +616,7 @@ function actTheStackTurns(): readonly Step[] {
 /** Three cards on a ring before the faded page, spun round a whole turn, each passing face-on, then put back. */
 function actACarousel(): readonly Step[] {
 	return [
-		cut(group.show({ as: RING })),
+		cut(group.show({ as: RING, order: 'depth' })),
 		cut(...RING_CARDS.map((card) => piece.show(card.target, { as: card.as, group: RING, corner: CARD_CORNER }))),
 		play({
 			seconds: 1.4,

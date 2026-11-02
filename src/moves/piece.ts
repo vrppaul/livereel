@@ -51,7 +51,7 @@ import {
 	objectShow,
 	objectTo
 } from './object.ts';
-import { NO_PLACE, ONE_BLOCK, cameraOverThePicture, sourceOf } from './source.ts';
+import { NO_AIR, NO_PLACE, ONE_BLOCK, cameraOverThePicture, sourceOf } from './source.ts';
 
 /**
  * What fills the part of the screen a piece is lifted off: the ground the page draws behind its block, `'page'`, where
@@ -63,13 +63,14 @@ export interface HoleScript {
 }
 
 /**
- * How a piece is lifted: off the first `every` blocks a selector matches, together; how round its corners are,
- * `corner`, a radius in the page's pixels, as its block's `border-radius`; the hole it leaves and the line the lines
- * from it to its source are drawn in, where the film names them; how it comes up; which piece; the group it stands in,
- * if any.
+ * How a piece is lifted: off the first `every` blocks a selector matches, together, with `air` clear round them, in the
+ * page's pixels; how round its corners are, `corner`, a radius in the page's pixels, as its block's `border-radius`;
+ * the hole it leaves and the line the lines from it to its source are drawn in, where the film names them; how it comes
+ * up; which piece; the group it stands in, if any.
  */
 export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript {
 	readonly every?: number;
+	readonly air?: number;
 	readonly corner?: number;
 	readonly hole?: HoleScript;
 	readonly lines?: Stroke;
@@ -86,11 +87,12 @@ interface HoleAsked {
 }
 
 /**
- * What a piece is lifted with, as it is made: how many blocks, how round its corners are, the hole it leaves, if any,
- * and its lines, if any.
+ * What a piece is lifted with, as it is made: how many blocks, how much air round them, how round its corners are, the
+ * hole it leaves, if any, and its lines, if any.
  */
 interface Lifting {
 	readonly every: number;
+	readonly air: number;
 	readonly corner: number;
 	readonly hole: HoleAsked | null;
 	readonly lines: Stroke | null;
@@ -108,6 +110,7 @@ const A_HOLE_GROUND: Kind<string> = new Plain(
 const HOLE_FORM: Form<HoleScript> = { ground: A_HOLE_GROUND, line: A_STROKE };
 const PIECE_FORM: Form<PieceScript> = {
 	every: A_COUNT,
+	air: A_PIXELS,
 	corner: A_PIXELS,
 	hole: new OfForm(HOLE_FORM, 'a hole: { ground, line }'),
 	lines: A_STROKE,
@@ -127,6 +130,7 @@ export function show(target: Target, script: PieceScript = {}): Move {
 	assertWritten(script, PIECE_FORM, 'piece.show');
 	const lifting: Lifting = {
 		every: script.every ?? ONE_BLOCK,
+		air: script.air ?? NO_AIR,
 		corner: script.corner ?? SQUARE,
 		hole: script.hole === undefined ? null : holeAsked(target, script.hole),
 		lines: script.lines ?? null
@@ -196,7 +200,7 @@ function holeAsked(target: Target, hole: HoleScript): HoleAsked {
  */
 async function lifted(beginning: Beginning, target: Target, lifting: Lifting): Promise<Coming> {
 	const camera = cameraOverThePicture(beginning, 'piece.show');
-	const { source, box } = await sourceOf(beginning, camera, target, lifting.every, 'piece.show');
+	const { source, box } = await sourceOf(beginning, camera, target, lifting.every, lifting.air, 'piece.show');
 	const hole = lifting.hole === null ? null : await holeOf(beginning, lifting.hole, lifting.corner);
 	const piece: Piece = { kind: 'piece', source, corner: lifting.corner, hole, lines: lifting.lines };
 	return { content: piece, box };

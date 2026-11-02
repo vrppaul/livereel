@@ -34,7 +34,8 @@ import {
 	middleY,
 	nearestWithin,
 	overlapOf,
-	partWithin
+	partWithin,
+	withAir
 } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, needed } from './handed.ts';
 import {
@@ -160,9 +161,8 @@ export const ZOOM_AT_MOST = 2.2;
 // How far the eye stands out from the middle of a frame the stage's look was made on, in its pixels: nearer is a
 // stronger angle
 export const EYE_DISTANCE = 2000;
-// The middle of a length lies half-way along it, and air stands on both sides of a block
+// The middle of a length lies half-way along it
 const HALVES = 2;
-const SIDES = 2;
 // Where the screen faces before the window leans it: straight out at the eye
 const FACING_OUT: Spot = { across: 0, down: 0, out: 1 };
 // How far out of its own plane a point of what leans stands
@@ -392,10 +392,8 @@ export const A_POSE: Kind<Pose> = new OfForm<Pose>(
  * closer than allowed: worked out face-on.
  */
 export function onto(box: Box, view: Size, frame: Size, framing: Framing): Pose {
-	const fit = Math.min(
-		view.width / (box.width + SIDES * framing.air),
-		view.height / (box.height + SIDES * framing.air)
-	);
+	const aired = withAir(box, framing.air);
+	const fit = Math.min(view.width / aired.width, view.height / aired.height);
 	return {
 		focusX: middleX(box),
 		focusY: middleY(box),

@@ -21,7 +21,7 @@ import {
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
-import { type Group, type GroupName, groupFound } from '../props/group.ts';
+import { A_GROUP_ORDER, type Group, type GroupName, type GroupOrder, groupFound } from '../props/group.ts';
 import { type Scene, withGroup } from '../scene.ts';
 import {
 	type Carried,
@@ -38,9 +38,13 @@ import {
 	orientedFrom
 } from './object.ts';
 
-/** Which group comes, and the place it stands in, `at`: the whole frame where the film names none. */
+/**
+ * Which group comes, the place it stands in, `at`, the whole frame where the film names none, and how it orders what
+ * stands in it as it is drawn, `order`: by each object's zIndex where the film names none.
+ */
 export interface GroupShowScript extends TimingScript, NamedScript {
 	readonly at?: Place;
+	readonly order?: GroupOrder;
 }
 
 /** Which group goes, with everything in it. */
@@ -51,24 +55,27 @@ type Leant = Pick<Group, (typeof LEANT)[number]>;
 
 // The group a move takes where the film names none
 const GROUP: GroupName = 'group';
-// The place a group stands in where the film names none
+// The place a group stands in where the film names none, and how it orders what stands in it
 const THE_WHOLE_FRAME: Place = 'whole';
-const SHOW_FORM: Form<GroupShowScript> = { at: A_PLACE, ...NAMED_FORM, ...TIMING_FORM };
+const BY_Z_INDEX: GroupOrder = 'zIndex';
+const SHOW_FORM: Form<GroupShowScript> = { at: A_PLACE, order: A_GROUP_ORDER, ...NAMED_FORM, ...TIMING_FORM };
 const HIDE_FORM: Form<GroupHideScript> = { ...NAMED_FORM, ...TIMING_FORM };
 
 /**
  * A group placed in a place, read as the window reads one, the whole frame where the film names none: face-on, as
- * large as its box and on the frame's plane. One of its name standing is refused, as a group comes once in its place.
+ * large as its box and on the frame's plane, ordering what stands in it as the film names. One of its name standing is
+ * refused, as a group comes once in its place.
  */
 export function show(script: GroupShowScript = {}): Move {
 	assertWritten(script, SHOW_FORM, 'group.show');
 	const name = script.as ?? GROUP;
 	const place = script.at ?? THE_WHOLE_FRAME;
+	const order = script.order ?? BY_Z_INDEX;
 	return {
 		part: groupPart(name),
 		timing: timingOf(script),
 		places: placesNamed("group.show's at", script.at ?? null),
-		begin: (beginning) => placed(beginning, name, place)
+		begin: (beginning) => placed(beginning, name, place, order)
 	};
 }
 
@@ -117,14 +124,14 @@ export function hide(script: GroupHideScript = {}): Move {
 	};
 }
 
-/** A group standing in a place as the move begins; refused where one of its name stands. */
-function placed(beginning: Beginning, name: GroupName, place: Place): Change {
+/** A group standing in a place as the move begins, ordering what stands in it so; refused where one of its name stands. */
+function placed(beginning: Beginning, name: GroupName, place: Place, order: GroupOrder): Change {
 	if (beginning.scene.groups.has(name)) {
 		throw new FilmError(
 			`group.show finds the group "${name}" standing: a group comes once in its place; hide it first`
 		);
 	}
-	const group: Group = { box: windowPlaced(beginning.format, place), ...AS_PLACED, gone: NONE };
+	const group: Group = { box: windowPlaced(beginning.format, place), ...AS_PLACED, gone: NONE, order };
 	return (scene) => withGroup(scene, name, group);
 }
 

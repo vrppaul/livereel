@@ -159,9 +159,10 @@ and the moves of each part of the scene:
   `terminal.lean({ tilt, turn, roll })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
-- `piece.show(target, { every, corner, hole, lines, enter, edge, as, group })`, `piece.to(place, { scale, depth })`,
-  `piece.lean({ tilt, turn, roll })`, `piece.back()`, `piece.hide({ toward, leave, edge })`; a piece of the page lifted
-  off a selector's blocks or a box of the screen onto the frame, its corners and its hole's as round as `corner` names,
+- `piece.show(target, { every, air, corner, hole, lines, enter, edge, as, group, zIndex })`,
+  `piece.to(place, { scale, depth })`, `piece.lean({ tilt, turn, roll })`, `piece.back()`,
+  `piece.hide({ toward, leave, edge })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
+  `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
   in the page's pixels, square where it names none, leaving a `hole: { ground, line }` and drawing `lines` to its
   source where named; each move of it takes `as` to name which
 - `outline.show(target, { every, line, enter, edge, as, group })`, `outline.to(place, { scale, depth })`,
@@ -173,9 +174,10 @@ and the moves of each part of the scene:
 - `title.effects({ ring, glow, shadow, blur, scale, depth })`, and so `code.effects`, `terminal.effects`,
   `piece.effects`, `outline.effects` and `lens.effects`: how the object stands out, ringed, glowing, casting a shadow,
   blurred, grown or brought toward the eye where it stands
-- `group.show({ at })`, `group.to(place, { scale, depth })`, `group.lean({ tilt, turn, roll })`, `group.hide()`; a
-  group of objects, turned, grown and brought near as one, each object in it as its own moves have it; each move of it
-  takes `as` to name which
+- `group.show({ at, order })`, `group.to(place, { scale, depth })`, `group.lean({ tilt, turn, roll })`,
+  `group.hide()`; a group of objects, turned, grown and brought near as one, each object in it as its own moves have
+  it, drawn by the `zIndex` its show names, the higher over the lower, or, with `order: 'depth'`, the farther behind
+  the nearer; each move of it takes `as` to name which
 - `ending.show({ name, line, command }, { from, enter, edge })`, `ending.hide({ toward, leave, edge })`, so a film may
   open on the card too;
   the card stands over the whole frame on the frame's own ground, slides in and out whole, and is never carried or

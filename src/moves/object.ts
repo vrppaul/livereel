@@ -132,9 +132,13 @@ export interface InPlaceShowScript extends TimingScript, EnterScript {}
 /** How an object that stands where it comes up goes. */
 export interface InPlaceHideScript extends TimingScript, LeaveScript {}
 
-/** The `group` of objects an object comes up standing in, if any. */
+/**
+ * The `group` of objects an object comes up standing in, if any, and its `zIndex` there, how high it is drawn among the
+ * others of the group: the higher over the lower, and as they came where it is alike, as where the film names none.
+ */
 export interface GroupedScript {
 	readonly group?: GroupName;
+	readonly zIndex?: number;
 }
 
 /** What an object comes up standing in: `inside` the page's window, or in a `group`; neither, the frame. */
@@ -209,7 +213,7 @@ const LEAVE_FORM: Form<LeaveScript> = { leave: A_WAY, edge: A_FRAME_SIDE };
 export const SHOW_FORM: Form<ShowScript> = { from: A_FRAME_SIDE, ...ENTER_FORM, ...NAMED_FORM, ...TIMING_FORM };
 export const IN_PLACE_SHOW_FORM: Form<InPlaceShowScript> = { ...ENTER_FORM, ...TIMING_FORM };
 export const IN_PLACE_HIDE_FORM: Form<InPlaceHideScript> = { ...LEAVE_FORM, ...TIMING_FORM };
-export const GROUPED_FORM: Form<GroupedScript> = { group: A_NAME };
+export const GROUPED_FORM: Form<GroupedScript> = { group: A_NAME, zIndex: A_NUMBER };
 export const NESTED_FORM: Form<NestedScript> = { inside: INSIDE_THE_WINDOW, ...GROUPED_FORM };
 export const TO_FORM: Form<ToScript> = { scale: A_SCALE, depth: A_DEPTH, ...NAMED_FORM, ...TIMING_FORM };
 const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...LEAVE_FORM, ...TIMING_FORM, ...NAMED_FORM };
@@ -237,6 +241,8 @@ const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
 const BACK = [...CARRIED, ...LEANT] as const satisfies readonly (keyof FrameObject)[];
 // A box measured in a group stands as large as on the frame, as the group it is measured for stands as it was placed
 const AS_LARGE = 1;
+// The zIndex every object in a group shares where the film names none, so they are drawn as they came
+const AS_THEY_CAME = 0;
 // The curve what an object of each kind shows comes up on in its own way where the film names none: words and lines of
 // code, one after another, at an even pace; the terminal, the card, keys, a piece of the page, an outline and a lens,
 // fading up whole, on their step's. One that comes up in a way of livereel's comes on its step's
@@ -319,13 +325,19 @@ export function objectShow(
 	};
 }
 
-/** What a film names an object to come up standing in: the page's window, a group, or, naming neither, the frame. */
+/**
+ * What a film names an object to come up standing in: the page's window, a group, at its zIndex there, or, naming
+ * neither, the frame. A zIndex outside a group is refused, as it orders nothing there.
+ */
 function holderNamed(script: NestedScript, move: string): Holder {
 	if (script.inside !== undefined && script.group !== undefined) {
 		throw new FilmError(`${move} stands an object inside the window or in a group: not both`);
 	}
+	if (script.zIndex !== undefined && script.group === undefined) {
+		throw new FilmError(`${move} orders an object by its zIndex only in a group: name its group`);
+	}
 	if (script.inside !== undefined) return IN_THE_WINDOW;
-	if (script.group !== undefined) return { kind: 'group', name: script.group };
+	if (script.group !== undefined) return { kind: 'group', name: script.group, zIndex: script.zIndex ?? AS_THEY_CAME };
 	return ON_THE_FRAME;
 }
 

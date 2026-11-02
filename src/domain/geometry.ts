@@ -59,8 +59,9 @@ export interface Arc {
 	readonly end: Point;
 }
 
-// The middle of a length lies half-way along it
+// The middle of a length lies half-way along it, and air stands on both sides of a box
 const HALVES = 2;
+const SIDES = 2;
 // A length of nothing: two boxes that meet only along an edge share no area
 const NO_LENGTH = 0;
 const DEGREES_IN_A_HALF_TURN = 180;
@@ -84,6 +85,11 @@ export function middleY(box: Box): number {
 /** A box of a size standing about another box's middle. */
 export function resizedAbout(box: Box, size: Size): Box {
 	return boxCentredOn({ left: middleX(box), top: middleY(box) }, size);
+}
+
+/** A box with so much air clear on its every side, about its middle. */
+export function withAir(box: Box, air: number): Box {
+	return resizedAbout(box, { width: box.width + SIDES * air, height: box.height + SIDES * air });
 }
 
 /** A box of a size whose middle stands at a point. */
