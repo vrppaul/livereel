@@ -236,6 +236,16 @@ function closeToPoint(point: Point): Point {
 	return { left: expect.closeTo(point.left), top: expect.closeTo(point.top) };
 }
 
+/** A box as a test takes it: each of its numbers close to the one named. */
+function closeToBox(box: Box): Box {
+	return {
+		left: expect.closeTo(box.left),
+		top: expect.closeTo(box.top),
+		width: expect.closeTo(box.width),
+		height: expect.closeTo(box.height)
+	};
+}
+
 function middleOf(box: Box): Point {
 	return { left: middleX(box), top: middleY(box) };
 }
@@ -666,6 +676,68 @@ test('a piece, or an outline, goes back over its block as the camera shows it th
 		{ tilt: 0, turn: 360, roll: 0 },
 		SHOWN_AT_TWO
 	]);
+});
+
+test('a piece carried onto a block of the page sets off from where it stands on the frame, lies on the block, and stays on it as the camera moves', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	const cornered = await setIn(piece.to(UPPER_RIGHT_CORNER), lifted, 1, FULL_HD);
+	const close = await setIn(cameraTo(MIDDLE_AT_TWO), cornered, 1, FULL_HD);
+	const settingOff = await setIn(piece.onto('#other'), close, 0, FULL_HD);
+	const landed = await setIn(piece.onto('#other'), close, 1, FULL_HD);
+	const wider = await setIn(cameraTo(WHOLE_AT_ONE), landed, 1, FULL_HD);
+	// The camera at 2 on the screen's middle shows the other block, 1200 to 1300 across and 600 to 660 down, twice as
+	// large from 1440 and 660; at 1, where it stands
+	expect([settingOff, landed, wider].map((scene) => drawnObjectsIn(scene, FULL_HD)[0]!.box)).toEqual([
+		closeToBox(drawnObjectsIn(close, FULL_HD)[0]!.box),
+		closeToBox({ left: 1440, top: 660, width: 200, height: 120 }),
+		closeToBox(OTHER)
+	]);
+});
+
+test('a piece lying on the screen stands over the point of the page it lies on as the window leans', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	const landed = await setIn(piece.onto('#other'), lifted, 1, FULL_HD);
+	const leant = await setIn(lean({ tilt: 20, turn: 30 }), landed, 1, FULL_HD);
+	const camera = cameraOf(leant, FULL_HD);
+	expect(
+		drawnOnTheFrame(leant.objects.get('piece')!, holdersSeenBy(camera, leant.groups), FULL_HD.frame, BOX_MIDDLE)
+	).toEqual(closeToPoint(onTheFrame(camera, FULL_HD.frame, { left: middleX(OTHER), top: middleY(OTHER) })));
+});
+
+test('a piece lying on the screen goes back over its source there, wherever the camera has gone', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	const landed = await setIn(piece.onto('#other'), lifted, 1, FULL_HD);
+	const close = await setIn(cameraTo(MIDDLE_AT_TWO), landed, 1, FULL_HD);
+	const back = await setIn(piece.back(), close, 1, FULL_HD);
+	const further = await setIn(cameraTo(WHOLE_AT_ONE), back, 1, FULL_HD);
+	// The card, 400 to 600 across and 300 to 400 down, as the camera at 2 shows it from -160 and 60; at 1, as it stands
+	expect([back, further].map((scene) => drawnObjectsIn(scene, FULL_HD)[0]!.box)).toEqual([
+		closeToBox({ left: -160, top: 60, width: 400, height: 200 }),
+		closeToBox(CARD)
+	]);
+});
+
+test('a piece is carried onto the screen only from the frame while the window faces it front on, never out of its group, and lying there goes in its place', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	const leant = await setIn(lean({ turn: 20 }), lifted, 1, FULL_HD);
+	const grouped = await setIn(group.show({ as: 'stack' }), wide, 1, FULL_HD);
+	const stacked = await setIn(piece.show('#card', { group: 'stack' }), grouped, 1, FULL_HD);
+	const landed = await setIn(piece.onto('#other'), lifted, 1, FULL_HD);
+	await expect(async () => piece.onto('#other').begin(beginningIn(leant, FULL_HD))).rejects.toThrow(
+		new FilmError(
+			'piece.onto measures the piece on the screen only while the window faces the frame front on: bring it face-on, window.lean({ tilt: 0, turn: 0 })'
+		)
+	);
+	await expect(async () => piece.onto('#other').begin(beginningIn(stacked, FULL_HD))).rejects.toThrow(
+		new FilmError('piece.onto would carry the piece out of its group onto the screen: it goes with its group')
+	);
+	await expect(async () => piece.hide({ toward: 'left' }).begin(beginningIn(landed, FULL_HD))).rejects.toThrow(
+		new FilmError('piece.hide would slide the piece out toward a side from the screen: it goes in its place')
+	);
 });
 
 test('what stands over a block of the page stands there only while the window faces the frame front on: leant, or turned half round, it is refused', async () => {

@@ -3,7 +3,8 @@
  * one — a title's words, code, the agent's terminal, the ending card, a caption, keys, a piece of the page, an outline,
  * a lens: coming up in its box, in its own way or one of livereel's (`src/props/way.ts`), or sliding in whole from past
  * a side of the frame, pushing the object of its name standing there off past the side across; carried to another
- * place, growing and coming toward the eye on the way, or to a box read off the page; leant and rolled; set apart from
+ * place, growing and coming toward the eye on the way, to a box read off the page, or onto a block of the page to lie
+ * on the screen there; leant and rolled; set apart from
  * what lies under it, ringed, glowing, casting a shadow, blurred, grown or brought toward the eye where it stands
  * (`src/props/effects.ts`); taken back to stand as its box places it; put away where it stands, in its own way or one
  * of livereel's, or slid out past a side. A move takes the object a film names `as`, or its kind's own name, so a film
@@ -12,7 +13,8 @@
  * it sets off from as it is carried.
  *
  * A move that carries an object to a place sets its box and the scale and depth the film names, one that carries it to
- * a box read off the page its box, one that leans it its angle, one of how it stands out the values the film names,
+ * a box read off the page its box, one that carries it onto a block of the page what it stands in and its box, one
+ * that leans it its angle, one of how it stands out the values the film names,
  * one of what it shows its content, each writing only its own into the object as it stands, so they share a step, each
  * as far along as its own share; a move that brings one sets it whole, standing as its box places it and standing out
  * in no way, and one that puts it away sets it whole as it stands. A move of an object that is not on the screen is
@@ -23,8 +25,14 @@
  * later move of it reads on the frame is measured so too, so it stands there once the group stands so again. It never
  * slides past the frame's edge, as the group's plane may stand turned from the frame's; it goes in its place, or with
  * its group.
+ *
+ * An object carried onto a block of the page lies on the screen from the moment that move begins, its box measured
+ * there as the camera shows it then, so it lands on the block wherever the camera goes; a box any later move of it
+ * reads on the frame is measured on the screen so too. Only one standing on the frame is carried there, and while the
+ * window faces the frame front on, as only then does a box of the frame stand on the screen as a box. It never slides
+ * from there, as the screen's plane may stand leant from the frame's: it goes in its place.
  */
-import { viewOf } from '../domain/camera.ts';
+import { type Camera, boxOnTheScreen, isFrontOn, viewOf } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
@@ -68,13 +76,17 @@ import { type Ease, linear } from '../domain/time.ts';
 import { type Path, type Through, pathOf } from '../domain/path.ts';
 import { MOVES_WITH_THE_CURVE, type MovingBy, namedToward } from '../domain/toward.ts';
 import {
+	A_TARGET,
 	type Beginning,
 	type Change,
 	type Move,
+	THE_FIRST,
 	TIMING_FORM,
+	type Target,
 	type Timing,
 	type TimingScript,
 	objectPart,
+	shownBox,
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
@@ -84,15 +96,18 @@ import {
 	type Content,
 	type FrameObject,
 	type Holder,
+	type Holders,
 	INSIDE_THE_WINDOW,
 	IN_THE_WINDOW,
 	type Inside,
 	ON_THE_FRAME,
+	ON_THE_SCREEN,
 	type ObjectName,
-	framesPastTheEdge
+	framesPastTheEdge,
+	holdersSeenBy
 } from '../props/object.ts';
 import { A_WAY, OWN_WAY, type Way, type WayName, comesFromAnEdge, wayNamed } from '../props/way.ts';
-import { type Scene, withLeaving, withObject } from '../scene.ts';
+import { type Scene, cameraOf, withLeaving, withObject } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
 import { type ThroughScript, throughFormOf, throughWritten } from './through.ts';
 
@@ -242,9 +257,11 @@ const EFFECTS_FORM: Form<EffectsScript> = {
 };
 // The values of an object, or of a group, a move that carries it may set, and one that leans it; and of an object, one
 // of what it shows; what each writes is held to them. One that carries an object to a place sets its box, and of its
-// scale and depth those the film names; one that carries it to a box read off the page, its box alone
+// scale and depth those the film names; one that carries it to a box read off the page, its box alone; one that
+// carries it onto a block of the page, what it stands in and its box
 const CARRIED = ['box', 'scale', 'depth'] as const satisfies readonly (keyof FrameObject & keyof Group)[];
 const PLACED = ['box'] as const satisfies readonly (keyof FrameObject)[];
+const LAID_ONTO = ['inside', 'box'] as const satisfies readonly (keyof FrameObject)[];
 const SET_WHERE_NAMED = ['scale', 'depth'] as const satisfies readonly (keyof FrameObject & keyof ToScript)[];
 export const LEANT = ['angle'] as const satisfies readonly (keyof FrameObject & keyof Group)[];
 const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
@@ -276,6 +293,7 @@ const OVER_THE_WHOLE_FRAME = ['ending', 'caption', 'keys'] as const satisfies re
  * shows.
  */
 export type Carried = Pick<FrameObject, (typeof CARRIED)[number]>;
+type Lying = Pick<FrameObject, (typeof LAID_ONTO)[number]>;
 type Leant = Pick<FrameObject, (typeof LEANT)[number]>;
 type Shows = Pick<FrameObject, (typeof CONTENT)[number]>;
 
@@ -493,6 +511,23 @@ export function objectCarriedTo(
 	};
 }
 
+/**
+ * An object of a kind carried onto the first block a selector matches, or a box of the screen, to lie on the screen as
+ * large as the block: from where it stands as the move begins, measured on the screen as the camera shows it then, so
+ * it lands on the block wherever the camera goes on its way, and stays on it after.
+ */
+export function objectOnto(kind: ObjectKind, move: string, target: Target, script: TakenScript): Move {
+	assertKind(target, A_TARGET, `${move}'s target`);
+	assertWritten(script, TAKEN_FORM, move);
+	const name = script.as ?? kind;
+	return {
+		part: objectPart(name),
+		valueNames: LAID_ONTO,
+		timing: timingOf(script),
+		begin: (beginning) => laidOnto(beginning, name, target, move)
+	};
+}
+
 /** An object as a move finds it as it begins; one not on the screen is refused, the move named. */
 function standing(beginning: Beginning, name: ObjectName, move: string): FrameObject {
 	const object = beginning.scene.objects.get(name);
@@ -501,13 +536,14 @@ function standing(beginning: Beginning, name: ObjectName, move: string): FrameOb
 }
 
 /**
- * A move's beginning as what stands in a holder sees it: on the frame, or in a group, which reads the frame's places,
- * as it is; inside the page's window, its frame the window's box as it stands, so a box in shares of the frame reads as
- * one in shares of the window.
+ * A move's beginning as what stands in a holder sees it: on the frame, on the screen or in a group, which read the
+ * frame's places, as it is; inside the page's window, its frame the window's box as it stands, so a box in shares of
+ * the frame reads as one in shares of the window.
  */
 function seenFrom(beginning: Beginning, holder: Holder): Beginning {
 	switch (holder.kind) {
 		case 'frame':
+		case 'screen':
 		case 'group':
 			return beginning;
 		case 'window': {
@@ -518,17 +554,50 @@ function seenFrom(beginning: Beginning, holder: Holder): Beginning {
 }
 
 /**
- * A box a move works out as what stands in a holder sees it, as a box in what the holder measures in: as it is on the
- * frame and inside the window; in a group, measured from the group's corner, where it stands once the group stands as
- * it was placed.
+ * A box a move works out as what stands in a holder sees it, as a box in what the holder measures in, for the object
+ * of a name: as it is on the frame and inside the window; on the screen, where the camera shows it there as the move
+ * begins; in a group, measured from the group's corner, where it stands once the group stands as it was placed.
  */
-function measuredIn(scene: Scene, holder: Holder, box: Box): Box {
+function measuredIn(beginning: Beginning, holder: Holder, box: Box, name: ObjectName, move: string): Box {
 	switch (holder.kind) {
 		case 'frame':
 		case 'window':
 			return box;
+		case 'screen':
+			return boxOnTheScreen(cameraOnTheScreen(beginning, name, move), beginning.format.frame, box);
 		case 'group':
-			return measuredFrom(box, cornerOf(groupNamed(scene.groups, holder.name)), AS_LARGE);
+			return measuredFrom(box, cornerOf(groupNamed(beginning.scene.groups, holder.name)), AS_LARGE);
+	}
+}
+
+/**
+ * The scene's camera as a move that measures an object of a name on the screen begins: refused where its window leans
+ * or shows its back, as a box of the frame then stands on the screen as no box, or one turned over.
+ */
+function cameraOnTheScreen(beginning: Beginning, name: ObjectName, move: string): Camera {
+	const camera = cameraOf(beginning.scene, beginning.format);
+	if (!isFrontOn(camera.view.angle)) {
+		throw new FilmError(
+			`${move} measures the ${name} on the screen only while the window faces the frame front on: bring it face-on, window.lean({ tilt: 0, turn: 0 })`
+		);
+	}
+	return camera;
+}
+
+/**
+ * Where an object of a name stands on the screen as a move begins: where it lies there, or, standing on the frame,
+ * where the camera shows its box; one inside the window or in a group is refused, as it goes with what it stands in.
+ */
+function onTheScreen(beginning: Beginning, object: FrameObject, name: ObjectName, move: string): Box {
+	switch (object.inside.kind) {
+		case 'screen':
+			return object.box;
+		case 'frame':
+			return measuredIn(beginning, ON_THE_SCREEN, object.box, name, move);
+		case 'window':
+			throw new FilmError(`${move} would carry the ${name} out of the window onto the screen: it stands in the window`);
+		case 'group':
+			throw new FilmError(`${move} would carry the ${name} out of its group onto the screen: it goes with its group`);
 	}
 }
 
@@ -613,8 +682,9 @@ async function appearingIn(
 	refuseJoining(beginning, holder, move);
 	const within = seenFrom(beginning, holder);
 	const coming = await comingAt(within);
-	const measured = { ...coming, box: measuredIn(beginning.scene, holder, coming.box) };
-	return appearing(within, name, holder, measured, arrival, move);
+	const measured = { ...coming, box: measuredIn(beginning, holder, coming.box, name, move) };
+	const push = pushOf(beginning.scene, name, arrival.from, within.format.frame, holdersIn(beginning), move);
+	return appearing(within, name, holder, measured, arrival, push);
 }
 
 /**
@@ -639,7 +709,7 @@ function refuseJoining(beginning: Beginning, holder: Holder, move: string): void
 
 /**
  * An object coming into its box in the way it comes up there, or from a frame past it where it slides in, pushing the
- * one of its name standing: from as many frames past as that one goes, so the two move as one sheet.
+ * one of its name standing, if any: from as many frames past as that one goes, so the two move as one sheet.
  */
 function appearing(
 	beginning: Beginning,
@@ -647,10 +717,9 @@ function appearing(
 	holder: Holder,
 	coming: Coming,
 	arrival: Arrival,
-	move: string
+	push: Push | null
 ): Change {
 	const frame = beginning.format.frame;
-	const push = pushOf(beginning.scene, name, arrival.from, frame, move);
 	const start = enteringFrom(coming.box, arrival.from, frame, push?.frames ?? ONE_FRAME);
 	return (scene, progress) =>
 		withLeaving(
@@ -679,7 +748,7 @@ function carried(beginning: Beginning, name: ObjectName, carrying: Carrying, mov
 	const { place, through, script } = carrying;
 	refusePlacedInside(object.inside, place, `${move}'s place`);
 	through.keys.forEach((key) => refusePlacedInside(object.inside, key, `${move}'s through`));
-	const end = placedBoxOf(beginning, object, place);
+	const end = placedBoxOf(beginning, object, place, name, move);
 	const from: Carried = { box: settingOff(object.content, object.box, end), scale: object.scale, depth: object.depth };
 	const to: Carried = {
 		box: end,
@@ -688,15 +757,20 @@ function carried(beginning: Beginning, name: ObjectName, carrying: Carrying, mov
 	};
 	refuseNearingInside(object, to.depth, name, move);
 	// Each box on the way set off as the first is, so words stand as large as where they go all the way
-	const keys = through.keys.map((key) => settingOff(object.content, placedBoxOf(beginning, object, key), end));
+	const keys = through.keys.map((key) =>
+		settingOff(object.content, placedBoxOf(beginning, object, key, name, move), end)
+	);
 	const boxPath = pathOf(from.box, { ...through, keys }, end, BOX_SPACE);
 	return writing(name, (progress) => carriedOnPath(boxPath, from, to, carrying, progress));
 }
 
-/** The box a place gives an object, read as what it stands in reads a place, and measured in it. */
-function placedBoxOf(beginning: Beginning, object: MovableObject, place: Place): Box {
+/**
+ * The box a place gives an object of a name, read as what it stands in reads a place, and measured in it as the move
+ * begins.
+ */
+function placedBoxOf(beginning: Beginning, object: MovableObject, place: Place, name: ObjectName, move: string): Box {
 	const placed = placedFor(object.content.kind, seenFrom(beginning, object.inside).format, place);
-	return measuredIn(beginning.scene, object.inside, placed);
+	return measuredIn(beginning, object.inside, placed, name, move);
 }
 
 /** Where something carried stands `progress` of the way from one box, scale and depth to another: the values named. */
@@ -804,7 +878,7 @@ function goingBack(
 ): Change {
 	const object = movable(beginning, name, move);
 	const to: Carried = {
-		box: measuredIn(beginning.scene, object.inside, boxAt(beginning, name)),
+		box: measuredIn(beginning, object.inside, boxAt(beginning, name), name, move),
 		scale: AS_PLACED.scale,
 		depth: AS_PLACED.depth
 	};
@@ -823,9 +897,20 @@ async function carriedToBox(
 	move: string
 ): Promise<Change> {
 	const object = movable(beginning, name, move);
-	const end = measuredIn(beginning.scene, object.inside, await boxAt(beginning, object));
+	const end = measuredIn(beginning, object.inside, await boxAt(beginning, object), name, move);
 	const to: Carried = { box: end, scale: object.scale, depth: object.depth };
 	return writing(name, (progress) => carriedAlong(object, to, PLACED, progress));
+}
+
+/**
+ * The object on its way onto a block of the page, lying on the screen from where it stood there as the move began:
+ * what it stands in and its box written into it.
+ */
+async function laidOnto(beginning: Beginning, name: ObjectName, target: Target, move: string): Promise<Change> {
+	const object = movable(beginning, name, move);
+	const start = onTheScreen(beginning, object, name, move);
+	const end = await shownBox(beginning, target, THE_FIRST, move);
+	return writing(name, (progress): Lying => ({ inside: ON_THE_SCREEN, box: boxToward(start, end, progress) }));
 }
 
 /** The object going where it stands, in the way it goes; once gone, none. */
@@ -857,8 +942,11 @@ function slidingOut(beginning: Beginning, name: ObjectName, toward: FrameSide, m
 			`${move} would slide the ${name} out toward a side from its group: it goes in its place, or with its group`
 		);
 	}
+	if (object.inside.kind === 'screen') {
+		throw new FilmError(`${move} would slide the ${name} out toward a side from the screen: it goes in its place`);
+	}
 	const frame = seenFrom(beginning, object.inside).format.frame;
-	const frames = framesPastTheEdge(object, toward, frame);
+	const frames = framesPastTheEdge(object, toward, frame, holdersIn(beginning));
 	const end = pastTheEdge(object.box, toward, frame, frames);
 	return (scene, progress) =>
 		withObject(scene, name, untilTheEnd(progress, { ...object, box: boxToward(object.box, end, progress) }));
@@ -901,17 +989,33 @@ function shownComing(from: FrameSide | null, progress: number): Fraction {
 /**
  * What an object of a name sliding in from a side pushes off: the one of its name standing, whole as it stands, and the
  * box a frame past its own on the side across, or farther where it is drawn past its box, until all of it stands past
- * the edge; none where none stands, or nothing slides in. One standing in a group, which never slides, is refused.
+ * the edge, what it stands in as it stands given; none where none stands, or nothing slides in. One standing in a
+ * group or on the screen, which never slides, is refused.
  */
-function pushOf(scene: Scene, name: ObjectName, from: FrameSide | null, frame: Size, move: string): Push | null {
+function pushOf(
+	scene: Scene,
+	name: ObjectName,
+	from: FrameSide | null,
+	frame: Size,
+	holders: Holders,
+	move: string
+): Push | null {
 	const standingThere = scene.objects.get(name);
 	if (from === null || standingThere === undefined) return null;
 	if (standingThere.inside.kind === 'group') {
 		throw new FilmError(`${move} would push the ${name} off past the frame's edge from its group: hide it first`);
 	}
+	if (standingThere.inside.kind === 'screen') {
+		throw new FilmError(`${move} would push the ${name} off past the frame's edge from the screen: hide it first`);
+	}
 	const toward = acrossFrom(from);
-	const frames = framesPastTheEdge(standingThere, toward, frame);
+	const frames = framesPastTheEdge(standingThere, toward, frame, holders);
 	return { object: standingThere, end: pastTheEdge(standingThere.box, toward, frame, frames), frames };
+}
+
+/** What objects stand in as a move begins: the window and the screen as the scene's camera shows them, and the groups. */
+function holdersIn(beginning: Beginning): Holders {
+	return holdersSeenBy(cameraOf(beginning.scene, beginning.format), beginning.scene.groups);
 }
 
 /** The object pushed off, `progress` of its way; once past the edge, none. */

@@ -516,6 +516,33 @@ export function boxOnTheFrame(camera: Camera, frame: Size, box: Box): Box {
 }
 
 /**
+ * Where a box of the frame stands on the screen as a camera shows it through a view that faces the frame: between the
+ * points of the screen its top left and bottom right corners show.
+ */
+export function boxOnTheScreen(camera: Camera, frame: Size, box: Box): Box {
+	return boxBetween(
+		seenOnTheScreen(camera, frame, { left: box.left, top: box.top }),
+		seenOnTheScreen(camera, frame, { left: box.left + box.width, top: box.top + box.height })
+	);
+}
+
+/**
+ * Where a box of the screen stands in a camera's view as the camera frames the page, before the view leans: in the
+ * view's pixels from its top left corner.
+ */
+export function boxInTheView(camera: Camera, frame: Size, box: Box): Box {
+	const pose = camera.pose;
+	const frameZoom = frameZoomOf(pose, frame);
+	const view = camera.view.box;
+	return {
+		left: view.width / HALVES + frameZoom * (box.left - pose.focusX),
+		top: view.height / HALVES + frameZoom * (box.top - pose.focusY),
+		width: frameZoom * box.width,
+		height: frameZoom * box.height
+	};
+}
+
+/**
  * The part of the screen a camera shows through a view that faces the frame, in the screen's pixels: what the part of
  * its view on the frame sees there; none where it shows nothing of the screen.
  */

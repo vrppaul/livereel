@@ -12,12 +12,15 @@
  * masked, wiped, opened or grown (`src/props/way.ts`): then its figure — its words, its pane, the card's lines, the
  * caps — stands whole and comes as the way has it, while a ground it stands on comes in its own way.
  *
- * An object stands on the frame, inside the page's window, or in a group of objects (`src/props/group.ts`). Inside the
- * window, as a small window of code stands over the site's, its box is in the window's pixels, and it travels and
- * leans with the window, grows and rolls flat on it, shows no more than the screen does, and is cut at the window's
- * edge, as an element laid in another is on a page. In a group its box is in the group's pixels, and the group's
- * stance carries its own, so it is drawn on the frame as the two make one matrix, and shows as far as the group has
- * not gone. The window is one, and never goes; a group goes with what stands in it.
+ * An object stands on the frame, inside the page's window, on the screen the window shows, or in a group of objects
+ * (`src/props/group.ts`). Inside the window, as a small window of code stands over the site's, its box is in the
+ * window's pixels, and it travels and leans with the window, grows and rolls flat on it, shows no more than the screen
+ * does, and is cut at the window's edge, as an element laid in another is on a page. On the screen, as a piece carried
+ * onto a block of the page lies there, its box is in the screen's pixels: the camera frames it as it frames the page,
+ * and the window's lean carries its own, so it stays on its block wherever the camera goes; it is drawn on the frame,
+ * over the page and uncut, and shows as far as the screen has come up. In a group its box is in the group's pixels,
+ * and the group's stance carries its own, so it is drawn on the frame as the two make one matrix, and shows as far as
+ * the group has not gone. The window and the screen are one each, and never go; a group goes with what stands in it.
  * Keys over a caption's words are only drawn over them, laid out by the caption, as only the page knows how tall the
  * words stand; they stand on the frame, and keep standing when the caption goes.
  *
@@ -35,6 +38,9 @@ import {
 	type Camera,
 	type View,
 	ZOOM_AT_MOST,
+	aboutTheMiddleOf,
+	angledAs,
+	boxInTheView,
 	carriedAboutItsMiddle,
 	leantOnTheFrame,
 	seenFromTheEye
@@ -58,7 +64,15 @@ import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
 import { type Code, type DrawnCode, drawnCode } from './code.ts';
 import { type Effects, drawnEffects } from './effects.ts';
 import { type DrawnEnding, type Ending, drawnEnding } from './ending.ts';
-import { type GroupName, type Groups, cornerOf, groupNamed, groupShare, groupStanceAbout } from './group.ts';
+import {
+	type Group,
+	type GroupName,
+	type Groups,
+	cornerOf,
+	groupNamed,
+	groupShare,
+	groupStanceAbout
+} from './group.ts';
 import { type CaptionStanding, type DrawnKeys, type Keys, drawnKeys, standOver } from './keys.ts';
 import { type DrawnLens, type Lens, drawnLens, lensFit } from './lens.ts';
 import { type DrawnOutline, type Outline, drawnOutline } from './outline.ts';
@@ -72,16 +86,20 @@ import { type DrawnTitleWords, type TitleWords, drawnTitleWords } from './title.
 export type ObjectName = string;
 
 /**
- * What an object stands in: the frame, the page's window, or a group of objects by its name, with its zIndex there, how
- * high it is drawn among the others of the group, where the film names one.
+ * What an object stands in: the frame, the page's window, the screen it shows, or a group of objects by its name, with
+ * its zIndex there, how high it is drawn among the others of the group, where the film names one.
  */
 export type Holder =
 	| { readonly kind: 'frame' }
 	| { readonly kind: 'window' }
+	| { readonly kind: 'screen' }
 	| { readonly kind: 'group'; readonly name: GroupName; readonly zIndex: number | null };
 
-/** What the stage lays an object in: the frame, or the page's window; one in a group stands on the frame. */
-type Laid = Exclude<Holder['kind'], 'group'>;
+/**
+ * What the stage lays an object in: the frame, or the page's window; one in a group or on the screen stands on the
+ * frame.
+ */
+type Laid = Extract<Holder['kind'], 'frame' | 'window'>;
 
 /** What a film may stand an object inside: the page's window. */
 export type Inside = 'window';
@@ -89,32 +107,36 @@ export type Inside = 'window';
 /** What a film names to stand an object inside: the page's window, by the one name it is known by. */
 export const INSIDE_THE_WINDOW: Kind<Inside> = new OneOf(['window'], `the page's window, "window"`);
 
-// Where an object stands that a film shows inside nothing, and one it shows inside the page's window
+// Where an object stands that a film shows inside nothing, one it shows inside the page's window, and one carried onto
+// a block of the page
 export const ON_THE_FRAME: Holder = { kind: 'frame' };
 export const IN_THE_WINDOW: Holder = { kind: 'window' };
+export const ON_THE_SCREEN: Holder = { kind: 'screen' };
 
-/** What objects stand in, as a scene has them: the page's window as the camera shows it, and the groups standing. */
+/**
+ * What objects stand in, as a scene has them: the page's window and the screen in it, as the camera shows them, and the
+ * groups standing.
+ */
 export interface Holders {
-	readonly window: View;
+	readonly camera: Camera;
 	readonly groups: Groups;
 }
 
-/** What objects stand in, seen by a camera: the page's window as it shows it, and the groups standing. */
+/** What objects stand in, seen by a camera: the page's window and the screen as it shows them, and the groups standing. */
 export function holdersSeenBy(camera: Camera, groups: Groups): Holders {
-	return { window: camera.view, groups };
+	return { camera, groups };
 }
 
 /**
  * What stands round an object as it is drawn: the caption standing on the frame, if any, the window's screen, the
- * frame, which the eye sees it before, the camera the page is seen by, which a lens shows it past, the groups
- * standing, and the holes pieces of the page leave on the screen, which what shows the page shows.
+ * frame, which the eye sees it before, the camera the page is seen by, which a lens shows it past and frames what lies
+ * on the screen, the groups standing, and the holes pieces of the page leave on the screen, which what shows the page
+ * shows.
  */
-export interface Surroundings {
+export interface Surroundings extends Holders {
 	readonly caption: CaptionStanding | null;
 	readonly screen: Screen;
 	readonly frame: Size;
-	readonly camera: Camera;
-	readonly groups: Groups;
 	readonly holes: readonly DrawnHole[];
 }
 
@@ -189,8 +211,6 @@ const CORNERS = cornersOf({ left: 0, top: 0, width: 1, height: 1 });
 const MIDDLE: Point = { left: 0.5, top: 0.5 };
 // A box's middle as a matrix about the middle takes a spot: none of the way from itself
 const ITS_MIDDLE: Spot = { across: 0, down: 0, out: 0 };
-// The groups an object that slides is placed by: none, as an object in a group never slides
-const IN_NO_GROUP: Groups = new Map();
 // Where an object in no group stands in a group's order: anywhere, as its place among objects is its own; and the
 // zIndex of one in a group the film names none for, so all such are drawn as they came
 const NO_GROUP_ORDER = 0;
@@ -223,13 +243,13 @@ export function frameShiftOf(
 	endHolders: Holders,
 	frame: Size
 ): number {
-	const startStanding = standingOf(start, frame, startHolders.groups);
-	const endStanding = standingOf(end, frame, endHolders.groups);
+	const startStanding = standingOf(start, frame, startHolders);
+	const endStanding = standingOf(end, frame, endHolders);
 	return Math.max(
 		...CORNERS.map((corner) =>
 			distanceBetween(
-				onTheFrameOf(start.inside, startStanding, startHolders.window, frame, corner),
-				onTheFrameOf(end.inside, endStanding, endHolders.window, frame, corner)
+				onTheFrameOf(start.inside, startStanding, startHolders.camera.view, frame, corner),
+				onTheFrameOf(end.inside, endStanding, endHolders.camera.view, frame, corner)
 			)
 		)
 	);
@@ -237,39 +257,45 @@ export function frameShiftOf(
 
 /**
  * How an object is laid and stands: seen from the eye where it stands on the frame; flat on the window's plane where it
- * stands inside it, which the window carries to the eye as it leans; carried by its group's stance about the group's
- * middle where it stands in one, and seen from the eye where the group places it on the frame.
+ * stands inside it, which the window carries to the eye as it leans; on the screen, where the camera frames its box in
+ * the window, carried by the window's lean about the window's middle and seen from the eye; carried by its group's
+ * stance about the group's middle where it stands in one, and seen from the eye where the group places it on the frame.
  */
-function standingOf(object: FrameObject, frame: Size, groups: Groups): Standing {
-	const stood = stoodIn(object, groups);
+function standingOf(object: FrameObject, frame: Size, holders: Holders): Standing {
+	const own = stanceMatrix(object);
 	switch (object.inside.kind) {
 		case 'frame':
-			return { laid: object.box, stood, placing: chained([seenFromTheEye(object.box, frame), stood]) };
+			return seenWhereLaid(object.box, own, frame);
 		case 'window':
-			return { laid: object.box, stood, placing: stood };
+			return { laid: object.box, stood: own, placing: own };
+		case 'screen': {
+			const view = holders.camera.view;
+			const inTheView = boxInTheView(holders.camera, frame, object.box);
+			const stood = chained([aboutTheMiddleOf(angledAs(view.angle), inTheView, view.box), own]);
+			return seenWhereLaid(placedFrom(inTheView, view.box), stood, frame);
+		}
 		case 'group': {
-			const laid = placedFrom(object.box, cornerOf(groupNamed(groups, object.inside.name)));
-			return { laid, stood, placing: chained([seenFromTheEye(laid, frame), stood]) };
+			const group = groupNamed(holders.groups, object.inside.name);
+			return seenWhereLaid(placedFrom(object.box, cornerOf(group)), stoodInGroup(object, group), frame);
 		}
 	}
 }
 
-/** How an object stands about its box's middle before the eye: as its own stance has it, carried by its group's. */
-function stoodIn(object: FrameObject, groups: Groups): Matrix {
-	const own = stanceMatrix(object);
-	switch (object.inside.kind) {
-		case 'frame':
-		case 'window':
-			return own;
-		case 'group':
-			return chained([groupStanceAbout(groupNamed(groups, object.inside.name), object.box), own]);
-	}
+/** How something laid in a box on the frame stands there: as it stands about the box's middle, seen from the eye. */
+function seenWhereLaid(laid: Box, stood: Matrix, frame: Size): Standing {
+	return { laid, stood, placing: chained([seenFromTheEye(laid, frame), stood]) };
 }
 
-/** What the stage lays an object in: the frame, for one in a group, which places it on the frame. */
+/** How an object in a group stands about its box's middle before the eye: its own stance, carried by its group's. */
+function stoodInGroup(object: FrameObject, group: Group): Matrix {
+	return chained([groupStanceAbout(group, object.box), stanceMatrix(object)]);
+}
+
+/** What the stage lays an object in: the frame, for one in a group or on the screen, which places it on the frame. */
 function laidIn(holder: Holder): Laid {
 	switch (holder.kind) {
 		case 'frame':
+		case 'screen':
 		case 'group':
 			return 'frame';
 		case 'window':
@@ -281,13 +307,13 @@ function laidIn(holder: Holder): Laid {
  * How many of a frame's widths, or heights, an object moves toward a side of what it stands in for all of it as drawn
  * to stand past the edge there: one where it is drawn within its box, more where it is drawn past it, grown, rolled,
  * near or leant. A point of it as drawn moves in step with its box, faster where the eye sees it nearer, so each
- * corner's share of the way is read off where it is drawn now and a frame away. An object in a group never slides, so
- * one that slides is placed by no group.
+ * corner's share of the way is read off where it is drawn now and a frame away, what it stands in as it stands given.
+ * An object in a group or on the screen never slides.
  */
-export function framesPastTheEdge(object: FrameObject, toward: FrameSide, within: Size): number {
+export function framesPastTheEdge(object: FrameObject, toward: FrameSide, within: Size, holders: Holders): number {
 	const away = { ...object, box: pastTheEdge(object.box, toward, within, ONE_FRAME) };
-	const here = standingOf(object, within, IN_NO_GROUP);
-	const there = standingOf(away, within, IN_NO_GROUP);
+	const here = standingOf(object, within, holders);
+	const there = standingOf(away, within, holders);
 	return Math.max(
 		ONE_FRAME,
 		...CORNERS.map((corner) =>
@@ -312,20 +338,22 @@ function shareOfTheWayToTheEdge(here: Point, there: Point, side: FrameSide, with
 
 /**
  * Where a point of an object, in shares of its box, is drawn on the frame, what it stands in as it stands given: where
- * it stands on the frame or in a group, there; inside the window, as the window shows that point of its plane.
+ * it stands on the frame, on the screen or in a group, there; inside the window, as the window shows that point of its
+ * plane.
  */
 export function drawnOnTheFrame(object: FrameObject, holders: Holders, frame: Size, share: Point): Point {
-	return onTheFrameOf(object.inside, standingOf(object, frame, holders.groups), holders.window, frame, share);
+	return onTheFrameOf(object.inside, standingOf(object, frame, holders), holders.camera.view, frame, share);
 }
 
 /**
- * Where a point of an object, in shares of its box, stands on the frame, as it stands: where it stands on the frame or
- * in a group, there; inside the window, as the page's window shows that point of its plane.
+ * Where a point of an object, in shares of its box, stands on the frame, as it stands: where it stands on the frame, on
+ * the screen or in a group, there; inside the window, as the page's window shows that point of its plane.
  */
 function onTheFrameOf(holder: Holder, standing: Standing, window: View, frame: Size, share: Point): Point {
 	const drawn = drawnPointOf(standing, share);
 	switch (holder.kind) {
 		case 'frame':
+		case 'screen':
 		case 'group':
 			return drawn;
 		case 'window':
@@ -341,7 +369,7 @@ function drawnPointOf(standing: Standing, share: Point): Point {
 
 /** An object as the stage draws it at a moment of the film, among what stands round it. */
 export function drawnObject(name: ObjectName, object: FrameObject, moment: number, around: Surroundings): DrawnObject {
-	const standing = standingOf(object, around.frame, around.groups);
+	const standing = standingOf(object, around.frame, around);
 	const stance = drawnStance(standing.stood, standing.placing);
 	const layer = LAYER_OF[object.content.kind];
 	const held = heldIn(object, around);
@@ -378,11 +406,12 @@ export function inDrawingOrder(objects: Objects, groups: Groups): readonly Objec
 function orderInItsGroup(object: FrameObject, groups: Groups): number {
 	const holder = object.inside;
 	if (holder.kind !== 'group') return NO_GROUP_ORDER;
-	switch (groupNamed(groups, holder.name).order) {
+	const group = groupNamed(groups, holder.name);
+	switch (group.order) {
 		case 'zIndex':
 			return holder.zIndex ?? AS_THEY_CAME;
 		case 'depth':
-			return outOf(object, groups);
+			return outOf(object, group);
 	}
 }
 
@@ -397,9 +426,9 @@ function drawingPlaceOf(object: FrameObject, came: number, objects: readonly Fra
 	return holder.kind === 'group' ? objects.findIndex((other) => standsIn(other, holder.name)) : came;
 }
 
-/** How far out toward the eye an object's middle stands, as it and its group stand. */
-function outOf(object: FrameObject, groups: Groups): number {
-	return carried(stoodIn(object, groups), ITS_MIDDLE).out;
+/** How far out toward the eye the middle of an object in a group stands, as it and the group stand. */
+function outOf(object: FrameObject, group: Group): number {
+	return carried(stoodInGroup(object, group), ITS_MIDDLE).out;
 }
 
 /**
@@ -408,10 +437,10 @@ function outOf(object: FrameObject, groups: Groups): number {
  * stands, and as its group grows and brings it near; where it leans, its nearer side shows the page larger still, so
  * at livereel's bound.
  */
-export function pictureZoomOf(object: FrameObject, camera: Camera, frame: Size, groups: Groups): number | null {
-	const fit = pageFitOf(object, camera, frame);
+export function pictureZoomOf(object: FrameObject, holders: Holders, frame: Size): number | null {
+	const standing = standingOf(object, frame, holders);
+	const fit = pageFitOf(object, standing.laid, holders.camera, frame);
 	if (fit === null) return null;
-	const standing = standingOf(object, frame, groups);
 	const transform = drawnStance(standing.stood, standing.placing).transform;
 	switch (transform.kind) {
 		case 'flat': {
@@ -424,14 +453,15 @@ export function pictureZoomOf(object: FrameObject, camera: Camera, frame: Size, 
 }
 
 /**
- * How many of the frame's pixels a screen's pixel takes in what an object shows of the page, the page seen by a camera:
- * a piece as large as its box holds its source, a lens as its magnification has it; none for what shows no page.
+ * How many of the frame's pixels a screen's pixel takes in what an object laid in a box shows of the page, the page
+ * seen by a camera: a piece as large as the box holds its source, a lens as its magnification has it; none for what
+ * shows no page.
  */
-function pageFitOf(object: FrameObject, camera: Camera, frame: Size): number | null {
+function pageFitOf(object: FrameObject, laid: Box, camera: Camera, frame: Size): number | null {
 	const content = object.content;
 	switch (content.kind) {
 		case 'piece':
-			return fitIn(content.source, object.box);
+			return fitIn(content.source, laid);
 		case 'lens':
 			return lensFit(content, camera, frame);
 		case 'words':
@@ -452,7 +482,7 @@ function drawnOver(object: FrameObject, caption: CaptionStanding | null): Object
 
 /**
  * How much of an object what it stands in lets show, among what stands round it: all of it on the frame; in the page's
- * window, as much as the screen the window shows has come up out of the ground; in a group, as much as the group has
+ * window or on its screen, as much as the screen has come up out of the ground; in a group, as much as the group has
  * not gone. It fades the object whole, and what it shows stands as far along as its own moves have it: words typed
  * stay typed as their key was heard.
  */
@@ -461,6 +491,7 @@ function heldIn(object: FrameObject, around: Surroundings): number {
 		case 'frame':
 			return WHOLLY_HELD;
 		case 'window':
+		case 'screen':
 			return around.screen.shown;
 		case 'group':
 			return groupShare(groupNamed(around.groups, object.inside.name));
@@ -498,13 +529,13 @@ function drawnContent(
 		case 'keys':
 			return drawnKeys(content, presentShare(figure), caption);
 		case 'piece':
-			return drawnPiece(content, object.box, presentShare(figure), holesOfOthers(name, around.holes));
+			return drawnPiece(content, standing.laid, presentShare(figure), holesOfOthers(name, around.holes));
 		case 'outline':
 			return drawnOutline(content, presentShare(figure));
 		case 'lens': {
 			const middle = onTheFrameOf(object.inside, standing, around.camera.view, around.frame, MIDDLE);
 			const shown = presentShare(figure);
-			return drawnLens(content, object.box, middle, around.camera, around.frame, shown, around.holes);
+			return drawnLens(content, standing.laid, middle, around.camera, around.frame, shown, around.holes);
 		}
 	}
 }

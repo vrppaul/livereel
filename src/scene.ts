@@ -12,8 +12,9 @@
  * than how the objects in it stand together; they go with it. `drawn` works out everything the stage needs from it —
  * how far each word of a title, a caption or a callout and each line of code has come, the terminal's spinner, how far
  * keys rise clear of a caption, where a note's line meets the block it names on the frame, the hole a piece of the page
- * leaves and the lines it draws to its source, the part of the screen under a lens, where an object in a group is
- * drawn and in what order — so the stage draws numbers and words and decides nothing, and draws no group of its own.
+ * leaves and the lines it draws to its source, the part of the screen under a lens, where an object in a group, or on
+ * the screen as the camera frames it then, is drawn and in what order — so the stage draws numbers and words and
+ * decides nothing, and draws no group of its own.
  * What the camera shows is worked out from what it aims at and the window that stands (`cameraOf`), so a
  * camera moving and a window moving in one step make the same frame whichever is set first; a frame is drawn by such a
  * camera, or by the flat one an act is done in. A prop that may be absent is `null`; the
@@ -189,8 +190,9 @@ export function cameraOf(scene: Scene, format: Format): Camera {
  * page seen by the camera that shows the scene on a frame of a size, so the picture it is drawn from is taken as sharp.
  */
 export function pictureZoomsIn(scene: Scene, camera: Camera, frame: Size): readonly number[] {
+	const holders = holdersSeenBy(camera, scene.groups);
 	return [...scene.objects.values(), ...scene.leaving.values()]
-		.map((object) => pictureZoomOf(object, camera, frame, scene.groups))
+		.map((object) => pictureZoomOf(object, holders, frame))
 		.filter((zoom) => zoom !== null);
 }
 

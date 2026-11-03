@@ -3,7 +3,8 @@
  * a box of the screen lifted off the page onto the frame, over where the camera shows it as it is lifted, cut to the
  * part the camera shows there (`src/moves/source.ts`); then carried, grown, brought near, turned and put away as any
  * object is, and taken back over its source as the camera shows it then, face-on and as large as it was. It does not
- * follow the camera between. A piece is drawn from the page's picture, so a page framed live, which has none, is
+ * follow the camera between, until it is carried onto a block of the page: it lies on the screen then, and the camera
+ * frames it as it frames the page. A piece is drawn from the page's picture, so a page framed live, which has none, is
  * refused; and it stands over its source only on a window that faces the frame, where the source shows as a box.
  *
  * Lifted, it may leave a hole: the ground the page draws behind its block, read as it is lifted, or a colour the film
@@ -49,6 +50,7 @@ import {
 	objectEffects,
 	objectHide,
 	objectLean,
+	objectOnto,
 	objectShow,
 	objectTo
 } from './object.ts';
@@ -148,6 +150,14 @@ export function show(target: Target, script: PieceScript = {}): Move {
  */
 export function to(place: Place, script: ToScript = {}): Move {
 	return objectTo(PIECE, 'piece.to', place, script);
+}
+
+/**
+ * The piece carried onto the first block a selector matches, or a box of the screen, as large as the block holds its
+ * source, to lie on the screen there: it lands on the block wherever the camera goes on its way, and stays on it after.
+ */
+export function onto(target: Target, script: TakenScript = {}): Move {
+	return objectOnto(PIECE, 'piece.onto', target, script);
 }
 
 /** The piece leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled by `roll`. */
