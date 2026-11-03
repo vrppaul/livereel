@@ -902,7 +902,8 @@ function open(opening) {
  * A picture of the page shown in the frame's place in every exposure, once it is decoded, so the next frame drawn
  * shows it whole; and set on the stage's root as the picture every piece of the page is drawn from. It is shown at an
  * address of the stage's own, short however large the picture: Chrome drops a custom property's value longer than
- * 2,097,152 characters, which a dense page's picture at a camera's closest passes as a data URL (measured 2026-11-03).
+ * 2,097,152 characters, which a dense page's picture, taken as sharp as livereel's closest camera needs it, passes as a
+ * data URL (measured 2026-11-03).
  * The address of the picture it takes the place of is let go once nothing shows it.
  * @param {PagePicture} picture @returns {Promise<void>}
  */

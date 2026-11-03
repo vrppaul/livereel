@@ -13,25 +13,14 @@
 	<body>
 		<pre data-testid="lines"></pre>
 		<script>
-			// Lines of letters as dense as code, the same each time it opens: its picture at a camera's closest is too
-			// large to stand in a custom property as a data URL (7.5 million characters of base64 at 1920 × 1080)
+			// Lines of letters as dense as code, each the letters shifted on by one more: its picture, taken as sharp as
+			// livereel's closest camera needs it, is too large to stand in a custom property as a data URL (6,950,132
+			// characters of base64 at 1920 × 1080, measured 2026-11-03)
 			const LINES = 70;
 			const LETTERS_A_LINE = 240;
 			const LETTERS = 'abcdefghijklmnopqrstuvwxyz0123456789{}();=+-*/<>ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-			// A linear congruential generator's multiplier, increment and modulus, as C's rand() has them
-			const MULTIPLIER = 1103515245;
-			const INCREMENT = 12345;
-			const MODULUS = 2147483648;
-			let seed = 1;
-			const lines = [];
-			for (let line = 0; line < LINES; line++) {
-				let letters = '';
-				for (let column = 0; column < LETTERS_A_LINE; column++) {
-					seed = (seed * MULTIPLIER + INCREMENT) % MODULUS;
-					letters += LETTERS[seed % LETTERS.length];
-				}
-				lines.push(letters);
-			}
+			const REPEATED = LETTERS.repeat(Math.ceil((LINES + LETTERS_A_LINE) / LETTERS.length));
+			const lines = [...Array(LINES).keys()].map((line) => REPEATED.slice(line, line + LETTERS_A_LINE));
 			document.querySelector('[data-testid=lines]').textContent = lines.join('\n');
 		</script>
 	</body>
