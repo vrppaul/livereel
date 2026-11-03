@@ -8,13 +8,27 @@
  * what stands on the frame, a title or a caption, rides with the eye and is seen as from where it rests
  * (`src/props/object.ts`). The eye sees as from a picture plane `EYE_DISTANCE` before it, the frame's own perspective,
  * and keeps the frame's down as its own, so it never rolls: it cannot look straight down or up, where its down is lost,
- * nor at where it stands.
+ * nor at where it stands, nor pass over the top of what it looks at, where its across would turn back; a move that
+ * would take it so anywhere on its way is refused as it begins.
  */
 import { FilmError } from './errors.ts';
 import { type Point, type Size, frameScaleOf } from './geometry.ts';
 import { type Kind, OfForm } from './handed.ts';
-import { A_SPOT, type Matrix, type Spot, carriesEveryPointWhereItStands, chained, perspective } from './matrix.ts';
-import type { PathSpace } from './path.ts';
+import {
+	A_SPOT,
+	type Matrix,
+	type Spot,
+	carriesEveryPointWhereItStands,
+	chained,
+	crossOf,
+	dotOf,
+	lengthOf,
+	perspective,
+	scaledBy,
+	unitOf,
+	wayBetween
+} from './matrix.ts';
+import type { Path, PathSpace } from './path.ts';
 import { between } from './time.ts';
 
 /** Where the eye stands and the spot it looks at, each in pixels of a frame 1080 high from the frame's middle. */
@@ -29,17 +43,32 @@ export interface EyePlace {
 	readonly aim?: Spot;
 }
 
+/** The line an eye sees a point on: where the eye stands, and the way its sight goes from there. */
+export interface Sight {
+	readonly from: Spot;
+	readonly along: Spot;
+}
+
 // How far the eye stands out from the middle of a frame the stage's look was made on, in its pixels: nearer is a
 // stronger angle
 export const EYE_DISTANCE = 2000;
-// The frame's middle, which the eye at rest looks at, and the frame's down, which the eye keeps as its own
+// The frame's middle, which the eye at rest looks at; the frame's down, which the eye keeps as its own; and a move of
+// none
 const THE_FRAMES_MIDDLE: Spot = { across: 0, down: 0, out: 0 };
 const DOWN: Spot = { across: 0, down: 1, out: 0 };
-// How far an axis of the eye's turn may be from none, for its length, before the eye is taken to have lost it: an aim
-// straight down or up from the eye, or at it
+const NO_MOVE: Spot = { across: 0, down: 0, out: 0 };
+// How far the eye's across may be from none, as a share of how far it stands from its aim, before its down is taken to
+// be lost: an aim straight down or up from it, or at it
 const LOST_WITHIN = 1e-9;
+// How many steps of its way a move of the eye checks as it begins, the ends among them, for a down lost on the way: a
+// way over the top of the aim turns its across back between two of them
+const STEPS_CHECKED = 64;
+// Where two ways that point apart stand as one goes along the other: none or less
+const POINTING_APART = 0;
 // How far an eye standing where another stands has moved from it
 const NOT_MOVED = 0;
+// The plane of the frame, how far out the window stands where nothing leans it
+const THE_FRAMES_PLANE = 0;
 
 /** The eye as it stands until a film moves it: straight out from the frame's middle, looking at it. */
 export const THE_EYE_AT_REST: Eye = { at: { across: 0, down: 0, out: EYE_DISTANCE }, aim: THE_FRAMES_MIDDLE };
@@ -51,8 +80,8 @@ export const AN_EYE_PLACE: Kind<EyePlace> = new OfForm<EyePlace>(
 );
 
 /**
- * How the eye goes on a path: by where it stands and where it looks, a step as long as the two move together, in
- * pixels of a frame 1080 high.
+ * How the eye goes on a path: by where it stands and where it looks, a step as long as the two move together, in the
+ * eye's own pixels of a frame 1080 high, not in how far what the frame shows moves.
  */
 export const EYE_SPACE: PathSpace<Eye> = {
 	toward: eyeToward,
@@ -67,22 +96,37 @@ export function eyeSentTo(standing: Eye, place: EyePlace): Eye {
 }
 
 /**
- * An eye a film sends somewhere, refused where it could not see: looking at where it stands, or straight down or up,
- * where it would lose its down.
+ * The eye's path a move sends it on, refused where the eye could not see on it: looking at where it stands, or
+ * straight down or up, or passing over the top of what it looks at, its across turned back from where it set off.
  */
-export function eyeThatSees(eye: Eye, move: string): Eye {
-	const facing = lengthOf(crossOf(DOWN, outOf(eye)));
-	if (!(facing > LOST_WITHIN)) {
-		throw new FilmError(
-			`${move} sends the eye to look at where it stands, or straight down or up from it, where it has no down to keep: move its aim aside`
-		);
+export function pathThatSees(path: Path<Eye>, move: string): Path<Eye> {
+	const start = path.at(0);
+	const setOff = crossOf(DOWN, wayBetween(start.aim, start.at));
+	for (let step = 0; step <= STEPS_CHECKED; step++) {
+		const eye = path.at(step / STEPS_CHECKED);
+		const out = wayBetween(eye.aim, eye.at);
+		const across = crossOf(DOWN, out);
+		const lost = !(lengthOf(across) > LOST_WITHIN * lengthOf(out));
+		if (lost || dotOf(across, setOff) <= POINTING_APART) {
+			throw new FilmError(
+				`${move} sends the eye to look at where it stands, or straight down or up from it, or over the top of what it looks at, where it has no down to keep: move its aim aside`
+			);
+		}
 	}
-	return eye;
+	return path;
 }
 
 /** Whether an eye stands at rest, where every film was seen from before the eye could move. */
 export function isAtRest(eye: Eye): boolean {
 	return EYE_SPACE.distance(eye, THE_EYE_AT_REST) === NOT_MOVED;
+}
+
+/**
+ * Whether an eye looks straight ahead at the frame's plane from before it: moved so, it sees that plane as it is, only
+ * nearer, farther or aside, and every point of it on one line of sight.
+ */
+export function looksStraightAtTheFrame(eye: Eye): boolean {
+	return carriesEveryPointWhereItStands(turnOf(eye)) && eye.at.out > THE_FRAMES_PLANE;
 }
 
 /**
@@ -94,18 +138,10 @@ export function seenByTheEye(eye: Eye, frame: Size): Matrix {
 	return chained([perspective(EYE_DISTANCE * frameScaleOf(frame)), viewFrom(eye, frame)]);
 }
 
-/**
- * Whether an eye looks straight ahead, along the way the eye at rest looks: moved, it sees the frame's plane as it is,
- * only nearer, farther or aside.
- */
-export function looksStraightAhead(eye: Eye): boolean {
-	return carriesEveryPointWhereItStands(turnOf(eye));
-}
-
 /** The eye's turn alone, which carries the room's axes to the eye's own: none at rest. */
 export function turnOf(eye: Eye): Matrix {
 	const [across, down, out] = axesOf(eye);
-	return matrixOf(across, down, out, THE_FRAMES_MIDDLE);
+	return matrixOf(across, down, out, NO_MOVE);
 }
 
 /**
@@ -113,12 +149,12 @@ export function turnOf(eye: Eye): Matrix {
  * from its middle, and the way its sight goes through the point, which stands on its picture plane so far across and
  * down from the frame's middle.
  */
-export function sightOf(eye: Eye, frame: Size, fromTheMiddle: Point): { readonly from: Spot; readonly along: Spot } {
+export function sightOf(eye: Eye, frame: Size, fromTheMiddle: Point): Sight {
 	const scale = frameScaleOf(frame);
 	const [across, down, out] = axesOf(eye);
 	const toThePlane = -EYE_DISTANCE * scale;
 	return {
-		from: scaled(eye.at, scale),
+		from: scaledBy(eye.at, scale),
 		along: {
 			across: across.across * fromTheMiddle.left + down.across * fromTheMiddle.top + out.across * toThePlane,
 			down: across.down * fromTheMiddle.left + down.down * fromTheMiddle.top + out.down * toThePlane,
@@ -134,7 +170,7 @@ export function sightOf(eye: Eye, frame: Size, fromTheMiddle: Point): { readonly
 function viewFrom(eye: Eye, frame: Size): Matrix {
 	const scale = frameScaleOf(frame);
 	const [across, down, out] = axesOf(eye);
-	const at = scaled(eye.at, scale);
+	const at = scaledBy(eye.at, scale);
 	const moved = {
 		across: -dotOf(across, at),
 		down: -dotOf(down, at),
@@ -148,7 +184,7 @@ function viewFrom(eye: Eye, frame: Size): Matrix {
  * toward it.
  */
 function axesOf(eye: Eye): readonly [Spot, Spot, Spot] {
-	const out = unitOf(outOf(eye));
+	const out = unitOf(wayBetween(eye.aim, eye.at));
 	const across = unitOf(crossOf(DOWN, out));
 	return [across, crossOf(out, across), out];
 }
@@ -173,16 +209,6 @@ function matrixOf(across: Spot, down: Spot, out: Spot, moved: Spot): Matrix {
 		m34: 0,
 		m44: 1
 	};
-}
-
-/** The way from what an eye looks at to where it stands. */
-function outOf(eye: Eye): Spot {
-	return wayBetween(eye.aim, eye.at);
-}
-
-/** The way from one spot to another. */
-function wayBetween(start: Spot, end: Spot): Spot {
-	return { across: end.across - start.across, down: end.down - start.down, out: end.out - start.out };
 }
 
 function eyeToward(start: Eye, end: Eye, progress: number): Eye {
@@ -214,29 +240,4 @@ function eyeOfNumbers(numbers: readonly number[]): Eye {
 		at: { across: atAcross, down: atDown, out: atOut },
 		aim: { across: aimAcross, down: aimDown, out: aimOut }
 	};
-}
-
-function scaled(spot: Spot, scale: number): Spot {
-	return { across: spot.across * scale, down: spot.down * scale, out: spot.out * scale };
-}
-
-function crossOf(first: Spot, second: Spot): Spot {
-	return {
-		across: first.down * second.out - first.out * second.down,
-		down: first.out * second.across - first.across * second.out,
-		out: first.across * second.down - first.down * second.across
-	};
-}
-
-function dotOf(first: Spot, second: Spot): number {
-	return first.across * second.across + first.down * second.down + first.out * second.out;
-}
-
-function lengthOf(spot: Spot): number {
-	return Math.hypot(spot.across, spot.down, spot.out);
-}
-
-function unitOf(spot: Spot): Spot {
-	const length = lengthOf(spot);
-	return { across: spot.across / length, down: spot.down / length, out: spot.out / length };
 }

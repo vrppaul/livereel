@@ -53,6 +53,49 @@ export const A_SPOT: Kind<Spot> = new OfForm<Spot>(
 	'a spot: { across, down, out }'
 );
 
+/** The way from one spot to another. */
+export function wayBetween(start: Spot, end: Spot): Spot {
+	return { across: end.across - start.across, down: end.down - start.down, out: end.out - start.out };
+}
+
+/** A spot moved along a way so many times its length. */
+export function movedAlong(start: Spot, way: Spot, times: number): Spot {
+	return {
+		across: start.across + way.across * times,
+		down: start.down + way.down * times,
+		out: start.out + way.out * times
+	};
+}
+
+/** A spot so many times as far from the room's middle. */
+export function scaledBy(spot: Spot, times: number): Spot {
+	return { across: spot.across * times, down: spot.down * times, out: spot.out * times };
+}
+
+/** How far two ways go together: their lengths times how near one points along the other. */
+export function dotOf(first: Spot, second: Spot): number {
+	return first.across * second.across + first.down * second.down + first.out * second.out;
+}
+
+/** The way square to two others, as long as the area they span, turning from the first to the second. */
+export function crossOf(first: Spot, second: Spot): Spot {
+	return {
+		across: first.down * second.out - first.out * second.down,
+		down: first.out * second.across - first.across * second.out,
+		out: first.across * second.down - first.down * second.across
+	};
+}
+
+export function lengthOf(way: Spot): number {
+	return Math.hypot(way.across, way.down, way.out);
+}
+
+/** A way as long as one, pointing as it does: divided by its length, so a way along an axis comes out exact. */
+export function unitOf(way: Spot): Spot {
+	const length = lengthOf(way);
+	return { across: way.across / length, down: way.down / length, out: way.out / length };
+}
+
 const DEGREES_IN_A_HALF_TURN = 180;
 // How far either axis of a plane may reach out of the frame's plane, for its length, while the plane is still taken
 // to face the frame: a lean so slight moves the far corner of a frame 4096 pixels wide by less than a millionth of a

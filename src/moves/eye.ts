@@ -8,7 +8,7 @@
  * The path is worked out once, as the move begins, from where the eye stands then: its places are values of the room,
  * and nothing the eye passes moves under it.
  */
-import { AN_EYE_PLACE, EYE_SPACE, type Eye, type EyePlace, eyeSentTo, eyeThatSees } from '../domain/eye.ts';
+import { AN_EYE_PLACE, EYE_SPACE, type Eye, type EyePlace, eyeSentTo, pathThatSees } from '../domain/eye.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { type Path, type Through, pathOf } from '../domain/path.ts';
 import { type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
@@ -36,12 +36,12 @@ export function to(place: EyePlace, script: EyeToScript = {}): Move {
 
 /**
  * The eye on its way from where it stands, through the places on its way, to its own, each come to from where it
- * stands and refused where it could not see.
+ * stands; refused where it could not see anywhere on the way.
  */
 function sentAlong(standing: Eye, through: Through<EyePlace>, place: EyePlace): Change {
-	const keys = through.keys.map((key) => eyeThatSees(eyeSentTo(standing, key), EYE_TO));
-	const end = eyeThatSees(eyeSentTo(standing, place), EYE_TO);
-	return travelling(pathOf(standing, { ...through, keys }, end, EYE_SPACE));
+	const keys = through.keys.map((key) => eyeSentTo(standing, key));
+	const path = pathOf(standing, { ...through, keys }, eyeSentTo(standing, place), EYE_SPACE);
+	return travelling(pathThatSees(path, EYE_TO));
 }
 
 /** The eye `progress` of the way along its path. */

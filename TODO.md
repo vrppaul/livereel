@@ -1,5 +1,13 @@
 # TODO
 
+## The eye: what step 3a left (review of 1ec7d95, 2026-11-03)
+
+- A lens magnifies by the camera's zoom alone (`lensFit` in `src/props/lens.ts`): an eye moved nearer shows the page under it larger already, so a 2× lens with the eye straight ahead at `out: 1000` magnifies 1×, and at `out: 4000` 4×. It should count how large the eye shows the page under the lens's middle, the eye at rest left exact.
+- A world object's place is read as from the eye at rest, not, as the weighed ADR has it, at the move's beginning from where the eye stands: with the eye at `{ across: 1300, down: -400, out: 1300 }`, `title.show('Words', { at: 'top', inside: 'world' })` is drawn skewed past the frame's right edge.
+- A world object is always drawn over the window (laid in the frame's root): one standing behind the window's plane shows over the page in front of it. The ADR's root laid before the window's subtree is not built.
+- A note's words and pins' labels place themselves by the window's box on the frame's plane, not where the eye draws it (`src/props/note.ts`, `src/props/pins.ts`): with the eye straight ahead at `out: 1000` the window's edge stands far past where the words stand.
+- No near-plane clipping per frame: an object's `depth` is still bounded by the resting eye's 2000 (`A_DEPTH`); a world object an eye comes near or passes is not cut there. The window behind the eye is handed in 3D, which Chrome clips.
+
 ## Faults
 
 - A static page scrolled is still shot slower than framed live: a film scrolling a tall page for 3 s of its 4.5, the camera on its heading, took 44.2 s static against 34.9 s dynamic (`--renderer gpu --profile`, 2026-10-30), its picture taken on 94 frames at 296.9 ms each, a frame then costing a picture and a capture where a framed page costs the capture alone. A picture of only what the camera shows, at the scale it needs, would cost about a quarter of the screen's at a camera twice close (135 ms against 390 at 4.4×, measured by Playwright); the stage would then place the part on the screen. Not built.

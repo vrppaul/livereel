@@ -46,11 +46,14 @@ import {
 	type Spot,
 	carried,
 	chained,
+	dotOf,
 	facesTheFrame,
+	movedAlong,
 	rotationX,
 	rotationY,
 	showsItsFront,
-	translation
+	translation,
+	wayBetween
 } from './matrix.ts';
 import { between } from './time.ts';
 import { ARRIVED, type Track, alongTrack, arrivedAt } from './track.ts';
@@ -641,18 +644,9 @@ export function underTheFrame(camera: Camera, frame: Size, point: Point): Point 
 	});
 	// How far along the sight from the eye the plane is met: at the point itself, where the screen is face-on to the
 	// eye at rest
-	const toTheMiddle = {
-		across: middle.across - sight.from.across,
-		down: middle.down - sight.from.down,
-		out: middle.out - sight.from.out
-	};
-	const reach = dotProduct(facingNow, toTheMiddle) / dotProduct(facingNow, sight.along);
+	const reach = dotOf(facingNow, wayBetween(sight.from, middle)) / dotOf(facingNow, sight.along);
 	if (!(reach > 0 && Number.isFinite(reach))) return null;
-	const met = carried(angledBack(camera.view.angle), {
-		across: sight.from.across + sight.along.across * reach - middle.across,
-		down: sight.from.down + sight.along.down * reach - middle.down,
-		out: sight.from.out + sight.along.out * reach - middle.out
-	});
+	const met = carried(angledBack(camera.view.angle), wayBetween(middle, movedAlong(sight.from, sight.along, reach)));
 	const frameZoom = frameZoomOf(pose, frame);
 	return { left: pose.focusX + met.across / frameZoom, top: pose.focusY + met.down / frameZoom };
 }
@@ -678,8 +672,4 @@ export function angledAs(angle: Angle): Matrix {
 /** The matrix that takes a spot of the room back from an angle to the plane's own. */
 function angledBack(angle: Angle): Matrix {
 	return chained([rotationY(-angle.turn), rotationX(-angle.tilt)]);
-}
-
-function dotProduct(first: Spot, second: Spot): number {
-	return first.across * second.across + first.down * second.down + first.out * second.out;
 }

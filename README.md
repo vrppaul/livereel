@@ -449,9 +449,12 @@ carried to, and a block its `back` or `to` reads, is read on the frame and
 stands in the group where it would stand once the group is back as it was
 placed.
 
-Anything a film shows stands on the frame where it names nothing, and rides
-with the eye as it moves; shown `inside: 'world'`, it stands where it is
-placed while the eye moves past it, as the page's window does.
+A title, code or the terminal stands on the frame where it names nothing, and
+rides with the eye as it moves; shown `inside: 'world'`, it stands where it is
+placed while the eye moves past it, as the page's window does. Its place is
+read as from the eye at rest, and it is drawn over the window wherever it
+stands; its `depth` still counts from the eye at rest, so an eye moved near
+or past it is not kept in front of it.
 
 A title, code or the terminal stands `inside` the page's window, as a small
 window of code over the site's: `code.show(LINES, { at: { left: 0.45, top:

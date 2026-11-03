@@ -368,8 +368,8 @@ export function objectShow(
 }
 
 /**
- * What a film names an object to come up standing in: the page's window, the world, a group, at its zIndex there, or, naming
- * neither, the frame. A zIndex outside a group is refused, as it orders nothing there.
+ * What a film names an object to come up standing in: the page's window, the world, a group, at its zIndex there,
+ * or, naming none, the frame. A zIndex outside a group is refused, as it orders nothing there.
  */
 function holderNamed(script: NestedScript, move: string): Holder {
 	if (script.inside !== undefined && script.group !== undefined) {
@@ -732,23 +732,39 @@ function appearing(
 ): Change {
 	const frame = beginning.format.frame;
 	const push = pushOf(beginning.scene, name, arrival.from, frame, move);
-	const start = enteringFrom(coming.box, arrival.from, frame, push?.frames ?? ONE_FRAME);
+	const arrived: FrameObject = {
+		inside: holder,
+		box: coming.box,
+		...AS_PLACED,
+		...NO_EFFECTS,
+		shown: WHOLE,
+		// Not going: neither gone nor on its way out
+		gone: NONE,
+		way: arrival.way,
+		content: coming.content
+	};
+	const start = enteringFrom(coming.box, arrival.from, frame, framesToComeIn(arrived, arrival.from, push, beginning));
 	return (scene, progress) =>
 		withLeaving(
 			withObject(scene, name, {
-				inside: holder,
+				...arrived,
 				box: boxToward(start, coming.box, progress),
-				...AS_PLACED,
-				...NO_EFFECTS,
-				shown: shownComing(arrival.from, progress),
-				// Not going: neither gone nor on its way out
-				gone: NONE,
-				way: arrival.way,
-				content: coming.content
+				shown: shownComing(arrival.from, progress)
 			}),
 			name,
 			pushedAt(push, progress)
 		);
+}
+
+/**
+ * How many frames past its box an object slides in from, for all of it as drawn to stand past the edge as it sets off,
+ * seen as the eye stands, one in the world too; as far as the one it pushes goes where that is farther, so the two
+ * move as one sheet. One coming up in its place sets off from none.
+ */
+function framesToComeIn(arrived: FrameObject, from: FrameSide | null, push: Push | null, beginning: Beginning): number {
+	if (from === null) return ONE_FRAME;
+	const own = framesPastTheEdge(arrived, from, beginning.format.frame, beginning.scene.eye);
+	return Math.max(own, push?.frames ?? ONE_FRAME);
 }
 
 /**

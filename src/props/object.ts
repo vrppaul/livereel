@@ -15,9 +15,10 @@
  * An object stands on the frame, in the world, inside the page's window, on the page in it, or in a group of objects
  * (`src/props/group.ts`). On the frame, as a caption does, it rides with the eye (`src/domain/eye.ts`) and is seen as
  * from where the eye rests, wherever it moves; in the world its box is the frame's plane's as the eye at rest sees it,
- * and the eye moves past it as it moves past the window. Inside the window, as a small window of code stands over the site's, its box is in the
- * window's pixels, and it travels and leans with the window, grows and rolls flat on it, shows no more than the screen
- * does, and is cut at the window's edge, as an element laid in another is on a page. On the page, as a piece carried
+ * and the eye moves past it as it moves past the window, always drawn over the window, wherever it stands. Inside the
+ * window, as a small window of code stands over the site's, its box is in the window's pixels, and it travels and leans
+ * with the window, grows and rolls flat on it, shows no more than the screen does, and is cut at the window's edge, as
+ * an element laid in another is on a page. On the page, as a piece carried
  * onto a block of it lies there, its box is in the screen's pixels, which the camera frames as it frames the page, so
  * it keeps its place on the screen wherever the camera goes, and lies inside the window as one there does. In a group
  * its box is in the group's pixels, and the group's stance carries its own, so it is drawn on the frame as the two make

@@ -77,6 +77,8 @@ const UNMOVED = 0;
 // A scale of none draws nothing, and one less draws it upside down, a half roll
 const NONE = 0;
 const DEGREES_IN_A_TURN = 360;
+// How far before the eye something's middle is seen from, `m44` of its matrix, where it stands at the eye or behind it
+const BEHIND_THE_EYE = 0;
 
 /** How something stands until a move changes it: as large as its box, on its plane, face-on and upright. */
 export const AS_PLACED: Stance = { scale: AS_LARGE, depth: ON_ITS_PLANE, angle: { ...FACE_ON, roll: UPRIGHT } };
@@ -116,10 +118,12 @@ export function drawnStance(stood: Matrix, placing: Matrix): DrawnStance {
 
 /**
  * How the stage draws something its placing carries about its middle: flat where how it stands before the eye,
- * `stood`, leaves it facing the frame, in 3D only where it leans.
+ * `stood`, leaves it facing the frame and it stands before the eye, in 3D where it leans or stands behind the eye,
+ * where the browser cuts away what the eye cannot see, and a flat matrix would draw it whole, turned over.
  */
 export function transformOf(stood: Matrix, placing: Matrix): Transform {
-	return facesTheFrame(stood) ? { kind: 'flat', matrix: flatOf(placing) } : { kind: 'leant', matrix: placing };
+	const flat = facesTheFrame(stood) && placing.m44 > BEHIND_THE_EYE;
+	return flat ? { kind: 'flat', matrix: flatOf(placing) } : { kind: 'leant', matrix: placing };
 }
 
 /**

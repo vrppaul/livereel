@@ -2289,6 +2289,10 @@ const EYE_ASIDE: EyePlace = { at: { across: 900, down: -200, out: 1400 }, aim: {
 const AROUND_THE_AIM = { left: 0.3, top: 0.4, width: 0.2, height: 0.2 };
 const AIM_AT_REST: Point = { left: 160, top: 200 };
 const FRAMES_MIDDLE: Point = { left: 200, top: 200 };
+// What a move of the eye that would lose its down is refused with
+const EYE_REFUSAL = new FilmError(
+	'eye.to sends the eye to look at where it stands, or straight down or up from it, or over the top of what it looks at, where it has no down to keep: move its aim aside'
+);
 
 test("the eye sees the spot it aims at in the frame's middle, a title in the world there standing there; a title on the frame rides with the eye where it stood", async () => {
 	const riding = await setAt(
@@ -2318,11 +2322,8 @@ test('the eye keeps where it stands, or what it looks at, where a move leaves it
 
 test('an eye sent to look at where it stands, or straight down, is refused as its move begins', async () => {
 	const opening = openingScene(SMALL, LIVEREELS_LOOK);
-	const refusal = new FilmError(
-		'eye.to sends the eye to look at where it stands, or straight down or up from it, where it has no down to keep: move its aim aside'
-	);
-	await expect(setAt(eye.to({ aim: { across: 0, down: 0, out: 2000 } }), opening, 1)).rejects.toThrow(refusal);
-	await expect(setAt(eye.to({ at: { across: 0, down: -900, out: 0 } }), opening, 1)).rejects.toThrow(refusal);
+	await expect(setAt(eye.to({ aim: { across: 0, down: 0, out: 2000 } }), opening, 1)).rejects.toThrow(EYE_REFUSAL);
+	await expect(setAt(eye.to({ at: { across: 0, down: -900, out: 0 } }), opening, 1)).rejects.toThrow(EYE_REFUSAL);
 });
 
 test('a piece is lifted off the page while the eye looks straight ahead, moved aside or not, and refused while it looks aslant', async () => {
@@ -2337,9 +2338,56 @@ test('a piece is lifted off the page while the eye looks straight ahead, moved a
 	expect((await setIn(piece.show('#card'), steppedAside, 1, FULL_HD)).objects.has('piece')).toBe(true);
 	await expect(setIn(piece.show('#card'), aslant, 1, FULL_HD)).rejects.toThrow(
 		new FilmError(
-			'piece.show stands over its source only while the eye looks straight ahead: send its aim straight before it, eye.to({ aim })'
+			'piece.show stands over its source only while the eye looks straight ahead at the window from before it: send it so, eye.to({ at, aim })'
 		)
 	);
+});
+
+test('an eye half as far from the window shows it twice as large, and sees under each point of the frame the point of the screen drawn there, aslant too', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const atRest = cameraOf(opening, SMALL);
+	const near = cameraOf(await setAt(eye.to({ at: { across: 0, down: 0, out: 1000 } }), opening, 1), SMALL);
+	const aslant = cameraOf(await setAt(eye.to(EYE_ASIDE), opening, 1), SMALL);
+	const point: Point = { left: atRest.pose.focusX + 30, top: atRest.pose.focusY - 20 };
+	const shownNear = onTheFrame(near, SMALL.frame, point);
+	const shownAtRest = onTheFrame(atRest, SMALL.frame, point);
+	expect([
+		(shownNear.left - FRAMES_MIDDLE.left) / (shownAtRest.left - FRAMES_MIDDLE.left),
+		(shownNear.top - FRAMES_MIDDLE.top) / (shownAtRest.top - FRAMES_MIDDLE.top)
+	]).toEqual([2, 2]);
+	expect(
+		[
+			underTheFrame(near, SMALL.frame, shownNear)!,
+			underTheFrame(aslant, SMALL.frame, onTheFrame(aslant, SMALL.frame, point))!
+		].map(roundedPoint)
+	).toEqual([point, point]);
+});
+
+test('a window the eye stands behind is handed to the stage in 3D, which cuts away what the eye cannot see, never flat and turned over', async () => {
+	const behind = await setAt(
+		eye.to({ at: { across: 0, down: 0, out: -1500 }, aim: { across: 0, down: 0, out: -3500 } }),
+		openingScene(SMALL, LIVEREELS_LOOK),
+		1
+	);
+	expect(drawn(behind, cameraOf(behind, SMALL), 0, SMALL).window.transform.kind).toBe('leant');
+});
+
+test('an eye sent over the top of what it looks at, its down lost on the way, is refused as its move begins', async () => {
+	const overhead = await setAt(
+		eye.to({ at: { across: 0, down: -2000, out: 100 } }),
+		openingScene(SMALL, LIVEREELS_LOOK),
+		1
+	);
+	// Its across lost at 100 / 230 of the way, between two of the steps a move checks: it is seen turned back after
+	await expect(setAt(eye.to({ at: { across: 0, down: -2000, out: -130 } }), overhead, 1)).rejects.toThrow(EYE_REFUSAL);
+});
+
+test('a title in the world slides in from past the edge as the eye sees it, however far the eye stands', async () => {
+	const far = await setAt(eye.to({ at: { across: 0, down: 0, out: 6000 } }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const settingOff = await setAt(title.show('Words', { from: 'left', inside: 'world' }), far, 0);
+	const holders = { camera: cameraOf(settingOff, SMALL), groups: settingOff.groups };
+	const rightEdge = drawnOnTheFrame(settingOff.objects.get('title')!, holders, SMALL.frame, { left: 1, top: 0.5 });
+	expect(rightEdge.left).toBeLessThanOrEqual(0);
 });
 
 /** A point to the nearest pixel. */
