@@ -10,6 +10,7 @@ import { blended } from '../../src/adapters/video/exposures.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
 import { ZOOM_AT_MOST } from '../../src/domain/camera.ts';
+import { FilmError } from '../../src/domain/errors.ts';
 import type { Size } from '../../src/domain/geometry.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
 import type { Exposures, Footage, Opened, PicturedStage } from '../../src/studio/ports.ts';
@@ -29,6 +30,7 @@ import {
 	look,
 	page,
 	play,
+	screen,
 	typing
 } from 'livereel';
 
@@ -36,6 +38,10 @@ const PAGE = new URL('./page.html', import.meta.url).href;
 const SMALL = { frame: { width: 320, height: 320 }, screen: { width: 480, height: 320 } };
 const FIELD = '[data-testid=field]';
 const TYPED = 'hello';
+// A film that shows no page of its own, opened as a take opens it; a page of the film's own, and a block only it has
+const NO_OWN_PAGES: readonly never[] = [];
+const OWN_PAGE = { html: '<!doctype html><body style="margin: 0"><h2 id="ours" style="margin: 60px">Ours</h2></body>' };
+const ONLY_OURS = '#ours';
 
 /** Footage that keeps every frame and counts them, and how many images each was handed as. */
 class EveryFrameCounted implements Footage {
@@ -130,6 +136,35 @@ test('a still is the one frame written, and nothing after it is shot', async () 
 	const footage = new StillFootage(join(directory, 'still.jpg'), 0.1, blended);
 	const shot = await shoot(filmOf([play({ seconds: 0.2 })]), shootingInto(footage, 'software'));
 	expect([await readdir(directory), shot.frames]).toEqual([['still.jpg'], 4]);
+});
+
+test("a block only a page of the film's own has is framed while the screen shows that page, and the filmed page is acted on behind it, in its own tab or framed live", async () => {
+	const values: string[] = [];
+	const steps = [
+		cut(screen.shows(OWN_PAGE)),
+		play({ seconds: 0.2, moves: [camera.onto(ONLY_OURS)] }),
+		act((context: ActContext) => context.page.locator(FIELD).fill(TYPED)),
+		act(async (context: ActContext) => {
+			values.push(await context.page.locator(FIELD).inputValue());
+		}),
+		play({ seconds: 0.1, moves: [screen.shows('filmed', { within: { start: 0.5 } })] })
+	];
+	const inItsOwnTab = await shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'));
+	const framedLive = await shoot(
+		filmWritten(steps, { page: 'dynamic' }),
+		shootingInto(new EveryFrameCounted(), 'software')
+	);
+	expect([inItsOwnTab.frames, framedLive.frames, values]).toEqual([9, 9, [TYPED, TYPED]]);
+});
+
+test("a page of the film's own that moves of itself is refused before the film is shot, naming how it begins", async () => {
+	const spinning = '<style>h2 { animation: spin 1s infinite } @keyframes spin { to { rotate: 1turn } }</style>';
+	const steps = [cut(screen.shows({ html: `${spinning}<h2>Spinning</h2>` }))];
+	await expect(shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
+		new FilmError(
+			`the film's own page that begins ${JSON.stringify(spinning.slice(0, 60))} moves of itself, by an animation or a transition of its own, which no move of the film sets: take it out, and move what it shows with the film's moves`
+		)
+	);
 });
 
 test('keys typed into the page reach the field that holds its keyboard, in its own tab or framed live', async () => {
@@ -452,7 +487,8 @@ test('an act waiting on what the page does after a delay of its own is answered,
 });
 
 test('a page in a tab of its own is heard to change of itself, once', async () => {
-	await using opened = await new Chromium('software', WARNED_TO_NOBODY).open(timedFilmOf([], {}), TIMED, 1);
+	const setting = { ...timedFilmOf([], {}), ownPages: NO_OWN_PAGES };
+	await using opened = await new Chromium('software', WARNED_TO_NOBODY).open(setting, TIMED, 1);
 	const stage = opened.stage as PicturedStage;
 	const page = opened.act.page;
 	// What the page did as it opened and as it said it was ready, 0.3 s on, heard and forgotten; then a change it makes
@@ -501,7 +537,7 @@ test("a page's picture taken anew takes the place of the last, which the stage l
 
 /** The dense page in a tab of its own, the stage showing its pictures at the draft's sharpness. */
 function denseOpened(): Promise<Opened> {
-	return new Chromium('software', WARNED_TO_NOBODY).open(DENSE_FILM, DENSE, 1);
+	return new Chromium('software', WARNED_TO_NOBODY).open({ ...DENSE_FILM, ownPages: NO_OWN_PAGES }, DENSE, 1);
 }
 
 /** The size of the picture the stage's root holds for its pieces of the page to be drawn from, run in the stage. */

@@ -87,8 +87,10 @@ export abstract class StageThatKeeps {
 /** A stage with the page live in its frame. */
 export class FramedStageThatKeeps extends StageThatKeeps implements FramedStage {
 	readonly kind = 'framed';
+	readonly laidFlat: DrawnScene[] = [];
 
-	layFlat(): Promise<void> {
+	layFlat(scene: DrawnScene): Promise<void> {
+		this.laidFlat.push(scene);
 		return Promise.resolve();
 	}
 
@@ -203,7 +205,12 @@ export class PageTimeLogged implements PageTime {
 	}
 }
 
-export function openedOn(page: PageOfBoxes, stage: Stage, time: PageTime = new PageTimeLogged()): Opened {
+export function openedOn(
+	page: PageOfBoxes,
+	stage: Stage,
+	time: PageTime = new PageTimeLogged(),
+	ownPages: ReadonlyMap<string, PageOfBoxes> = new Map()
+): Opened {
 	const act: ActContext = { page: NO_PAGE, motion: new MotionSwitch() };
-	return { stage, page, act, time, [Symbol.asyncDispose]: () => Promise.resolve() };
+	return { stage, page, ownPages, act, time, [Symbol.asyncDispose]: () => Promise.resolve() };
 }

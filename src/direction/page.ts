@@ -1,5 +1,6 @@
 /**
- * What moves and acts may ask of the page being filmed, as the browser adapter answers it.
+ * What moves and acts may ask of the page being filmed, as the browser adapter answers it, and the pages of the film's
+ * own a move may show in its place.
  *
  * A move reads the page as its share begins and, for the page's own scroll and keys, acts on it as it goes. An act
  * is Playwright code: it is handed the filmed page's frame itself, since anything narrower would be a part of what
@@ -25,6 +26,12 @@ export interface ScrollCourse {
  * anew as it changes, which a piece of the page is drawn from too.
  */
 export type PageShown = 'framed' | 'pictured';
+
+/**
+ * A page as a move measures it: where its blocks stand and the ground behind them, as a page of the film's own is
+ * measured, which nothing scrolls or types into.
+ */
+export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind'>;
 
 /** The filmed page as a move reads it and types into it. */
 export interface FilmedPage {
@@ -61,3 +68,33 @@ export type Action = (context: ActContext) => Promise<void>;
 
 /** What the page is acted on with, as a film hands it to `act`, `page.act` or `cursor.click`. */
 export const AN_ACTION: Kind<Action> = aFunction<Action>(A_FUNCTION_SAID);
+
+/**
+ * A page of the film's own, which the screen may show in the filmed page's place: its HTML, whole, which the stage lays
+ * out before the film is shot, and the key the scene and the stage know it by.
+ */
+export interface OwnPage {
+	readonly key: string;
+	readonly html: string;
+}
+
+// FNV-1a over a page's code units, 32 bits: where it starts, what it multiplies by, and the base its key is written in
+const HASH_START = 0x811c9dc5;
+const HASH_PRIME = 0x01000193;
+const KEY_BASE = 36;
+// A hash kept to 32 bits unsigned, as a shift by none keeps it
+const UNSIGNED = 0;
+
+/** A page of the film's own, from its HTML. */
+export function ownPageOf(html: string): OwnPage {
+	return { key: pageKeyOf(html), html };
+}
+
+/** The key a page of the film's own is known by: a hash of its HTML, with its length. */
+export function pageKeyOf(html: string): string {
+	let hash = HASH_START;
+	for (let place = 0; place < html.length; place += 1) {
+		hash = Math.imul(hash ^ html.charCodeAt(place), HASH_PRIME) >>> UNSIGNED;
+	}
+	return `${hash.toString(KEY_BASE)}-${html.length.toString(KEY_BASE)}`;
+}

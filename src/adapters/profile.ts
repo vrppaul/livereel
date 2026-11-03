@@ -12,7 +12,7 @@
  */
 import type { Box } from '../domain/geometry.ts';
 import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
-import type { ActContext, FilmedPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
+import type { ActContext, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import type { DrawnScene } from '../scene.ts';
 import type {
 	Browser,
@@ -193,6 +193,7 @@ class TimedOpened implements Opened {
 	readonly timings: Timings;
 	readonly stage: Stage;
 	readonly page: FilmedPage;
+	readonly ownPages: ReadonlyMap<string, MeasuredPage>;
 	readonly act: ActContext;
 	readonly time: PageTime;
 
@@ -201,6 +202,7 @@ class TimedOpened implements Opened {
 		this.timings = timings;
 		this.stage = timedStage(opened.stage, timings);
 		this.page = new TimedPage(opened.page, timings);
+		this.ownPages = opened.ownPages;
 		this.act = opened.act;
 		this.time = new TimedPageTime(opened.time, timings);
 	}

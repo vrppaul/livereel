@@ -32,7 +32,7 @@ import {
 	show as windowShow,
 	to as windowTo
 } from '../../src/moves/window.ts';
-import { lower, rise } from '../../src/moves/screen.ts';
+import { lower, rise, shows as screenShows } from '../../src/moves/screen.ts';
 import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
@@ -170,6 +170,8 @@ const ACROSS_THE_FRAME = { left: 0, top: 0.3, width: 1, height: 0.4 } as const;
 // A frame as large as the stage's look was made on, its screen as large: a camera at a zoom of 1 shows the screen's
 // pixels as its own, and one at 2 its middle half twice as large
 const FULL_HD: Format = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } };
+// A page of the film's own
+const OWN_PAGE = { html: '<p id="card">Ours</p>' };
 const WHOLE_AT_ONE = { focusX: 960, focusY: 540, zoom: 1 };
 const MIDDLE_AT_TWO = { focusX: 960, focusY: 540, zoom: 2 };
 // A box of that screen reaching past the left edge of what the camera at 2 shows, which is 480 to 1440 across, and
@@ -202,6 +204,13 @@ const JOINS_THE_STACK_PLACED =
 
 function beginningOf(scene: Scene): Beginning {
 	return beginningIn(scene, SMALL);
+}
+
+/** What a move drawn from the page's picture says, refused while the screen shows the film's own page. */
+function ownPageRefusal(move: string): FilmError {
+	return new FilmError(
+		`${move} draws from the filmed page's picture, and the screen shows the film's own page: show the filmed page first, with screen.shows('filmed')`
+	);
 }
 
 function beginningIn(scene: Scene, format: Format): Beginning {
@@ -830,6 +839,31 @@ test('a lens is refused on a page framed live, which has no picture to draw it f
 			"lens.show draws from the page's picture, which a page framed live has none of: the film's page is 'dynamic'"
 		)
 	);
+});
+
+test("a piece and a lens are refused while the screen shows the film's own page, as they are drawn from the filmed page's picture", async () => {
+	const own = await setIn(screenShows(OWN_PAGE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	await expect(async () => piece.show('#card').begin(beginningIn(own, FULL_HD))).rejects.toThrow(
+		ownPageRefusal('piece.show')
+	);
+	await expect(async () => lens.show('#card').begin(beginningIn(own, FULL_HD))).rejects.toThrow(
+		ownPageRefusal('lens.show')
+	);
+});
+
+test("the screen showing the film's own page is refused while a lens stands, which shows the filmed page", async () => {
+	const magnified = await setIn(lens.show('#card'), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	await expect(async () => screenShows(OWN_PAGE).begin(beginningIn(magnified, FULL_HD))).rejects.toThrow(
+		new FilmError(
+			"screen.shows shows the film's own page while a lens stands, which shows the filmed page under it: hide the lens first, with lens.hide()"
+		)
+	);
+});
+
+test('the screen coming up or going down keeps showing what it shows, and shares a step with a move that changes it', async () => {
+	const own = await setAt(screenShows(OWN_PAGE), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	expect((await setAt(lower(), own, 1)).screen.shows.kind).toBe('own');
+	expect(() => play({ seconds: 1, moves: [rise(), screenShows('filmed')] })).not.toThrow();
 });
 
 test("a piece is drawn as large as its box holds all of its source, in its middle, and shows the page as close as that and its scale bring it, leant as close as livereel's bound", async () => {

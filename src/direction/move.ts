@@ -30,7 +30,7 @@ import type { CssNamed } from './theme.ts';
 import type { GroupName } from '../props/group.ts';
 import type { ObjectName } from '../props/object.ts';
 import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';
-import type { Action, FilmedPage, PageShown } from './page.ts';
+import type { Action, FilmedPage, OwnPage, PageShown } from './page.ts';
 import type { Cue } from './sound.ts';
 
 /** An object as the part a move changes, said by its name, apart from any prop or the page whatever its name. */
@@ -48,6 +48,7 @@ export type Part = PropName | ObjectPart | GroupPart | 'page' | 'pageSpeed' | 'e
 const NO_SOUNDS: readonly Cue[] = [];
 const NO_CSS: readonly CssNamed[] = [];
 const NO_PLACES: readonly PlaceNamed[] = [];
+const NO_OWN_PAGES: readonly OwnPage[] = [];
 // Where a step starts and ends, as shares of it; and how far along a move is before its share and after it
 const STEP_START = 0;
 const STEP_END = 1;
@@ -231,6 +232,8 @@ export interface Move {
 	readonly css?: readonly CssNamed[];
 	/** The places the move names, which its format is read for before the film is shot; a move that names none has none. */
 	readonly places?: readonly PlaceNamed[];
+	/** The pages of the film's own the move shows, which the stage lays before the film is shot; most show none. */
+	readonly ownPages?: readonly OwnPage[];
 	readonly begin: (beginning: Beginning) => Change | Promise<Change>;
 }
 
@@ -266,6 +269,11 @@ export function cssOf(move: Move): readonly CssNamed[] {
 /** The places a move names: none, for a move that names none. */
 export function placesOf(move: Move): readonly PlaceNamed[] {
 	return move.places ?? NO_PLACES;
+}
+
+/** The pages of the film's own a move shows: none, for a move that shows none. */
+export function ownPagesOf(move: Move): readonly OwnPage[] {
+	return move.ownPages ?? NO_OWN_PAGES;
 }
 
 /** The change of one prop: its state at each progress, written into the scene. */

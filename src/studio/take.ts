@@ -8,8 +8,9 @@
  * change ended by the frame, and every other at its eased progress. One move at most drives a part, or a value of it,
  * at any point, so the order moves are written in matters nowhere but between two acts at one moment. A cut begins
  * its moves and sets each at its end, with no frame between; an act between steps is a cut of one. The page is acted
- * on one way: as a move that acts begins, by the way the take hands every move. A sound a move makes is heard as the
- * move is set at or past its point, on the frame being made.
+ * on one way: as a move that acts begins, by the way the take hands every move. A move begins on the page the screen
+ * shows: where that is a page of the film's own, it measures blocks there, and its scroll and keys go to the filmed page
+ * behind it. A sound a move makes is heard as the move is set at or past its point, on the frame being made.
  * A frame is drawn only when the footage keeps it, and drawn again where anything on it moved fast while its shutter
  * was open — the camera, its window, the cursor, the light, an object or what it shows — as the scene stood at moments
  * of that time: the scene the frame before left, every move begun by then set as far as it had come. How far is
@@ -44,10 +45,11 @@
 import { ZOOM_AT_MOST, flatCamera, zoomPicturedFor } from '../domain/camera.ts';
 import { TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
+import type { Box } from '../domain/geometry.ts';
 import { type MotionBlur, alsoExposedBack } from '../domain/shutter.ts';
 import { type Ease, between, framesOf, momentOf } from '../domain/time.ts';
 import { type Change, type Move, type Share, movesThePage, soundsOf } from '../direction/move.ts';
-import type { Action } from '../direction/page.ts';
+import type { Action, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import type { Cue } from '../direction/sound.ts';
 import type { Cut, Play, Step } from '../direction/steps.ts';
 import {
@@ -58,7 +60,8 @@ import {
 	drawn,
 	frameShiftBetween,
 	pictureZoomsIn,
-	seenIn
+	seenIn,
+	showingTheFilmedPage
 } from '../scene.ts';
 import type { Exposures, Footage, FramedStage, Opened, PicturedStage, Stage, Track } from './ports.ts';
 
@@ -244,12 +247,15 @@ export class Take {
 	}
 
 	/**
-	 * An act on a framed page, its screen laid flat for it, and stood up again once it is done and the stage found still
-	 * there, as a stage gone cannot stand up.
+	 * An act on a framed page, its screen laid flat for it showing the filmed page, whatever page it shows, and stood up
+	 * again once it is done and the stage found still there, as a stage gone cannot stand up.
 	 */
 	private async actedOnFlat(stage: FramedStage, action: Action): Promise<void> {
 		await stage.layFlat(
-			drawn(this.scene, flatCamera(this.format), this.moment(), { ...this.format, frame: this.format.screen })
+			drawn(showingTheFilmedPage(this.scene), flatCamera(this.format), this.moment(), {
+				...this.format,
+				frame: this.format.screen
+			})
 		);
 		await this.actedOn(action);
 		await stage.standUp();
@@ -305,11 +311,32 @@ export class Take {
 	private changeOf(move: Move): Change | Promise<Change> {
 		return move.begin({
 			scene: this.scene,
-			page: this.opened.page,
+			page: this.pageShownIn(this.scene),
 			format: this.format,
 			pageShown: this.opened.stage.kind,
 			act: (action) => this.acted(action)
 		});
+	}
+
+	/**
+	 * The page a move begins on: the filmed page, or, where the screen shows a page of the film's own, that one as a move
+	 * measures it, the filmed page behind it still what scrolls and takes keys.
+	 */
+	private pageShownIn(scene: Scene): FilmedPage {
+		const shows = scene.screen.shows;
+		switch (shows.kind) {
+			case 'filmed':
+				return this.opened.page;
+			case 'own':
+				return new OwnPageShown(this.ownPageOf(shows.key), this.opened.page);
+		}
+	}
+
+	/** A page of the film's own the stage laid, by its key, as every page a move shows is laid before the film. */
+	private ownPageOf(key: string): MeasuredPage {
+		const laid = this.opened.ownPages.get(key);
+		if (laid === undefined) throw new Error(`the stage laid no page of the film's own by the key ${key}`);
+		return laid;
 	}
 
 	/** A change set at a progress; a change of the page itself leaves the page's picture behind the page. */
@@ -509,6 +536,40 @@ export class Take {
 
 	private finished(): boolean {
 		return this.footage.complete(this.shot);
+	}
+}
+
+/**
+ * A page of the film's own as a move begins on it while the screen shows it: its blocks measured where it lays them,
+ * its scroll and its keys the filmed page's behind it, as a page the film wrote stands as written.
+ */
+class OwnPageShown implements FilmedPage {
+	readonly measured: MeasuredPage;
+	readonly filmed: FilmedPage;
+
+	constructor(measured: MeasuredPage, filmed: FilmedPage) {
+		this.measured = measured;
+		this.filmed = filmed;
+	}
+
+	box(target: string, every: number): Promise<Box> {
+		return this.measured.box(target, every);
+	}
+
+	groundBehind(target: string): Promise<string> {
+		return this.measured.groundBehind(target);
+	}
+
+	scrollCourse(target: string, aim: ScrollAim): Promise<ScrollCourse> {
+		return this.filmed.scrollCourse(target, aim);
+	}
+
+	type(text: string): Promise<void> {
+		return this.filmed.type(text);
+	}
+
+	press(key: string): Promise<void> {
+		return this.filmed.press(key);
 	}
 }
 

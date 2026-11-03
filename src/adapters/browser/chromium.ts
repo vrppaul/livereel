@@ -41,7 +41,7 @@ import { FilmError, SetupError } from '../../domain/errors.ts';
 import { type Size, frameScaleOf } from '../../domain/geometry.ts';
 import { type MotionBlur, mostExposuresOf } from '../../domain/shutter.ts';
 import type { PageKind, StagePlace } from '../../direction/film.ts';
-import type { ActContext, PageMotionSwitch } from '../../direction/page.ts';
+import type { ActContext, MeasuredPage, OwnPage, PageMotionSwitch } from '../../direction/page.ts';
 import type { CssNamed } from '../../direction/theme.ts';
 import type { Browser, Opened, PageTime, Setting, Stage } from '../../studio/ports.ts';
 import { ChangesHeard } from './changes.ts';
@@ -56,6 +56,7 @@ import {
 	STAGE_FOLDER,
 	STAGE_PAGE,
 	openPage,
+	ownPagesLaid,
 	roomOf,
 	setUpStage
 } from './stage.ts';
@@ -63,6 +64,8 @@ import { FrameWatch, TabWatch, notReached } from './watch.ts';
 import type { Warn } from './warn.ts';
 
 const NAVIGATED = 'framenavigated';
+// How much of a page of the film's own a refusal says, from its start, to name it
+const HTML_SAID = 60;
 // What the filming browser is granted, so a page hears its server on this machine: why is the module's comment
 const LOCAL_NETWORK = 'local-network-access';
 // What Playwright says where the browser was never downloaded, and what the person is told in its place: Playwright
@@ -258,18 +261,23 @@ export class Chromium implements Browser {
 	}
 }
 
-/** The browser with the filmed page shown on its stage: acted on, typed into and scrolled in the tab it stands in. */
+/**
+ * The browser with the filmed page shown on its stage: acted on, typed into and scrolled in the tab it stands in; and
+ * the pages of the film's own the stage laid, measured where it lays them.
+ */
 class OpenedChromium implements Opened {
 	readonly browser: Playwright;
 	readonly stage: Stage;
 	readonly page: PlaywrightPage;
+	readonly ownPages: ReadonlyMap<string, MeasuredPage>;
 	readonly act: ActContext;
 	readonly time: PageTime;
 
-	constructor(tabs: Tabs, stage: Stage, filmed: Frame, time: PageTime) {
+	constructor(tabs: Tabs, stage: Stage, filmed: Frame, time: PageTime, ownPages: ReadonlyMap<string, MeasuredPage>) {
 		this.browser = tabs.browser;
 		this.stage = stage;
 		this.page = new PlaywrightPage(filmed, tabs.filmed.keyboard);
+		this.ownPages = ownPages;
 		this.act = { page: filmed, motion: new PageMotion(tabs.filmed) };
 		this.time = time;
 	}
@@ -310,7 +318,8 @@ async function pictured(
 	const session = await filmed.context().newCDPSession(filmed);
 	const filmedTab = { tab: filmed, session, screen: setting.format.screen, pixelsAtZoomOne, changes };
 	const picturedStage = new PlaywrightPicturedStage(stage, filmedTab, watch, exposuresAtOnce);
-	return new OpenedChromium({ browser, filmed }, picturedStage, filmed.mainFrame(), time);
+	const ownPages = ownPagesOn(stage, setting.ownPages);
+	return new OpenedChromium({ browser, filmed }, picturedStage, filmed.mainFrame(), time, ownPages);
 }
 
 /** A dynamic page opened live in the stage's frame, the stage standing where the film asks; refused where it is gone. */
@@ -329,7 +338,23 @@ async function framedLive(
 	const absence = await watch.absence(filmed);
 	if (absence !== undefined) throw absence;
 	const tabs = { browser, filmed: stage };
-	return new OpenedChromium(tabs, new PlaywrightFramedStage(stage, setting.format, watch, filmed), filmed, time);
+	const framedStage = new PlaywrightFramedStage(stage, setting.format, watch, filmed);
+	return new OpenedChromium(tabs, framedStage, filmed, time, ownPagesOn(stage, setting.ownPages));
+}
+
+/**
+ * The pages of the film's own the stage laid, each as a move measures it, by its key: the first exposure's, its frame
+ * named by the key.
+ */
+function ownPagesOn(stage: Page, pages: readonly OwnPage[]): ReadonlyMap<string, MeasuredPage> {
+	return new Map(pages.map((page) => [page.key, new PlaywrightPage(ownFrameOn(stage, page), stage.keyboard)]));
+}
+
+/** The frame the stage laid a page of the film's own in, in its first exposure. */
+function ownFrameOn(stage: Page, page: OwnPage): Frame {
+	const frame = stage.frame({ name: page.key });
+	if (frame === null) throw new Error(`the stage laid no frame for the film's own page ${page.key}`);
+	return frame;
 }
 
 /** A page gone to the film's address; one that cannot be reached refused, saying so. */
@@ -476,7 +501,20 @@ async function forcedOn(page: Page, blurred: readonly string[], stageAtTheTop: b
 async function stageSetUp(page: Page, setting: Setting, exposuresAtOnce: number): Promise<void> {
 	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
 	await page.evaluate(setUpStage, roomOf(setting.format, exposuresAtOnce));
+	refusedWhereMoving(setting.ownPages, await page.evaluate(ownPagesLaid, setting.ownPages));
 	for (const named of setting.css) await refusedWhereUnread(page, named);
+}
+
+/**
+ * The film refused where a page of its own moves of itself, by an animation or a transition of its own, which would
+ * run on the wall's clock: what moves in a film is the film's, set by its moves; named by how its HTML begins.
+ */
+function refusedWhereMoving(pages: readonly OwnPage[], moving: readonly string[]): void {
+	const [first] = pages.filter((page) => moving.includes(page.key));
+	if (first === undefined) return;
+	throw new FilmError(
+		`the film's own page that begins ${JSON.stringify(first.html.slice(0, HTML_SAID))} moves of itself, by an animation or a transition of its own, which no move of the film sets: take it out, and move what it shows with the film's moves`
+	);
 }
 
 /** The stage set up and the page opened in its frame, as far as it loads: its frame. */

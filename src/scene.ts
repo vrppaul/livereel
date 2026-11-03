@@ -65,7 +65,7 @@ import {
 } from './props/object.ts';
 import type { DrawnHole } from './props/piece.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
-import { SCREEN_UP, type Screen } from './props/screen.ts';
+import { SCREEN_UP, type Screen, THE_FILMED_PAGE } from './props/screen.ts';
 import { type DrawnWindow, type PageWindow, UNSHADED, drawnWindow } from './props/window.ts';
 
 export interface PropStates {
@@ -158,6 +158,11 @@ export function withEye(scene: Scene, eye: Eye): Scene {
 
 export function withProp<Name extends PropName>(scene: Scene, name: Name, state: PropStates[Name]): Scene {
 	return { ...scene, [name]: state };
+}
+
+/** The scene with its screen showing the filmed page, whatever page it shows, as an act on the page has it shown. */
+export function showingTheFilmedPage(scene: Scene): Scene {
+	return withProp(scene, 'screen', { ...scene.screen, shows: THE_FILMED_PAGE });
 }
 
 /** The scene with the page's own time running at a speed. */

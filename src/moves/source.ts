@@ -4,13 +4,14 @@
  * source as the camera shows it then, cut to the part the camera shows, and stands on the frame after, the camera
  * moving on without it. A source shows as a box only through a window that faces the frame with its front, so each is
  * refused while the window leans or shows its back; what is drawn from the page's picture is refused too where the
- * stage shows the page live, with no picture.
+ * stage shows the page live, with no picture, and while the screen shows a page of the film's own in its place.
  */
 import { type Camera, boxOnTheFrame, isFrontOn, screenShownBy } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import { looksStraightAtTheFrame } from '../domain/eye.ts';
 import { type Box, overlapOf, withAir } from '../domain/geometry.ts';
 import { type Beginning, type Target, shownBox, targetSaid } from '../direction/move.ts';
+import { THE_FILMED_PAGE } from '../props/screen.ts';
 import { cameraOf } from '../scene.ts';
 
 /**
@@ -80,12 +81,18 @@ export function overItsSource(move: string): string {
 
 /**
  * The scene's camera as a move of what is drawn from the page's picture begins: refused where the stage shows no
- * picture of the page, and where its window does not face the frame front on.
+ * picture of the page, where the screen shows a page of the film's own in its place, and where its window does not
+ * face the frame front on.
  */
 export function cameraOverThePicture(beginning: Beginning, move: string): Camera {
 	if (beginning.pageShown !== 'pictured') {
 		throw new FilmError(
 			`${move} draws from the page's picture, which a page framed live has none of: the film's page is 'dynamic'`
+		);
+	}
+	if (beginning.scene.screen.shows.kind !== THE_FILMED_PAGE.kind) {
+		throw new FilmError(
+			`${move} draws from the filmed page's picture, and the screen shows the film's own page: show the filmed page first, with screen.shows('filmed')`
 		);
 	}
 	return cameraFrontOn(beginning, overItsSource(move));

@@ -20,6 +20,7 @@
 /** @import { Box, Segment } from '../src/domain/geometry.ts' */
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
+/** @import { OwnPage } from '../src/direction/page.ts' */
 /** @import { Opening, PagePicture, Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
@@ -59,6 +60,21 @@ const FACE = 'data-face';
 const CUSTOM_PROPERTY = '--';
 // The custom property the page's picture is set as, the image every piece of the page is drawn from
 const PAGE_PICTURE = '--page-picture';
+// A page of the film's own: the class every page the screen shows takes, the attribute it is known by, what it is
+// called, the attribute the one a frame shows takes, and the one the screen takes while it shows one
+const PAGE = 'page';
+const OWN_PAGE = 'data-own-page';
+const OWN_PAGE_TITLE = "A page of the film's own";
+const SHOWN = 'data-shown';
+const SHOWS_OWN = 'data-shows-own';
+// The exposure the stage's markup lays out, whose pages of the film's own are named, so moves measure blocks on them,
+// and the name a page of the film's own in any other takes: none
+const FIRST_EXPOSURE = 0;
+const NAMELESS = null;
+// What a page of the film's own may do: be reached by the stage, which measures it, and run no script of its own; and
+// how many animations it has that move of themselves, none
+const MEASURABLE_ALONE = 'allow-same-origin';
+const NO_ANIMATIONS = 0;
 // The attribute a lens shows nothing by, its middle seeing past the screen, so its glass stands blank
 const BLANK = 'data-blank';
 // The attribute that names the line a ring or a line is drawn in, whole or dashed
@@ -216,15 +232,33 @@ function shadeDrawn(root, shade) {
 	numbered(root, { '--shade-dim': shade.dim, '--shade-fade': shade.fade, '--shade-blur': shade.blur });
 }
 
+/** The screen: how far it has come up, and what it shows, the filmed page or one of the film's own laid on it. */
 class ScreenDrawer {
-	/** @param {Staged} root */
-	constructor(root) {
+	/** @param {Staged} root @param {ReadonlyMap<string, HTMLIFrameElement>} ownPages */
+	constructor(root, ownPages) {
 		this.root = root;
+		this.ownPages = ownPages;
 	}
 
 	/** @param {DrawnScene} scene */
 	draw(scene) {
 		numbered(this.root, { '--screen-shown': scene.screen.shown });
+		const shownKey = ownPageShown(scene.screen.shows);
+		this.root.toggleAttribute(SHOWS_OWN, shownKey !== NAMELESS);
+		for (const [key, frame] of this.ownPages) frame.toggleAttribute(SHOWN, key === shownKey);
+	}
+}
+
+/**
+ * The key of the page of the film's own the screen shows; none where it shows the filmed page.
+ * @param {DrawnScene['screen']['shows']} shows @returns {string | null}
+ */
+function ownPageShown(shows) {
+	switch (shows.kind) {
+		case 'filmed':
+			return NAMELESS;
+		case 'own':
+			return shows.key;
 	}
 }
 
@@ -822,14 +856,16 @@ class LookDrawer {
 
 /**
  * An exposure of the frame: its root, a drawer for every prop it draws, for its objects, and for the holes and lines
- * pieces of the page leave and draw, and the page it shows, live or as a picture. Every prop but the look is drawn in
+ * pieces of the page leave and draw, and the page it shows, live or as a picture, and the pages of the film's own laid
+ * in its screen, by their keys. Every prop but the look is drawn in
  * each exposure, as the camera stood at its moment: the type checker refuses a prop without a drawer. The look is the stage's root's, one for every exposure of a frame; the
  * objects' drawer draws those pushed off too, as both lists lay what stands inside the page's window in its one root.
  * @typedef {{
  *   readonly root: Staged,
  *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'leaving'>]: Drawer },
  *   readonly page: Staged,
- *   readonly picture: Staged
+ *   readonly picture: Staged,
+ *   readonly ownPages: Map<string, HTMLIFrameElement>
  * }} Exposure
  */
 
@@ -865,12 +901,14 @@ function setup(room) {
 
 /** An exposure of the frame by its root. @param {Staged} root @returns {Exposure} */
 function exposureOf(root) {
+	/** @type {Map<string, HTMLIFrameElement>} */
+	const ownPages = new Map();
 	return {
 		root,
 		drawers: {
 			camera: new CameraDrawer(propRoot(root, 'camera')),
 			window: new WindowDrawer(propRoot(root, 'window')),
-			screen: new ScreenDrawer(propRoot(root, 'screen')),
+			screen: new ScreenDrawer(propRoot(root, 'screen'), ownPages),
 			light: new LightDrawer(propRoot(root, 'light')),
 			callout: new CalloutDrawer(propRoot(root, 'callout')),
 			pins: new PinsDrawer(propRoot(root, 'pins')),
@@ -885,7 +923,8 @@ function exposureOf(root) {
 			lines: new SceneListDrawer(sceneRoot(root, 'lines'), (scene) => scene.lines, linesElement, linesDrawn)
 		},
 		page: partOf(root, 'page'),
-		picture: partOf(root, 'picture')
+		picture: partOf(root, 'picture'),
+		ownPages
 	};
 }
 
@@ -944,6 +983,56 @@ async function shownIn(exposure, address) {
 	await exposure.picture.decode();
 	exposure.picture.removeAttribute('hidden');
 	exposure.page.setAttribute('hidden', '');
+}
+
+/**
+ * The pages of the film's own laid in the screen of every exposure, over the filmed page's place, each a document of
+ * its own at the screen's size, laid out but unseen until a frame shows it, so its fonts load: once each has loaded and
+ * its fonts are ready. The first exposure's take the page's key as their name, by which moves measure their blocks.
+ * The keys of those that move of themselves, by an animation or a transition of their own, which the film refuses.
+ * @param {readonly OwnPage[]} pages @returns {Promise<readonly string[]>}
+ */
+async function layOwnPages(pages) {
+	const frames = await Promise.all(
+		EXPOSURES.flatMap((exposure, place) =>
+			pages.map((page) => laidIn(exposure, page, place === FIRST_EXPOSURE ? page.key : NAMELESS))
+		)
+	);
+	const moving = frames.filter((frame) => movesOfItself(frame)).map((frame) => frame.getAttribute(OWN_PAGE));
+	return pages.map((page) => page.key).filter((key) => moving.includes(key));
+}
+
+/**
+ * A page of the film's own laid in an exposure's screen, with its scripts kept from running, as its frame moves as the
+ * film moves it alone, under a name where it is to have one: its frame, once it has loaded and its fonts are ready.
+ * @param {Exposure} exposure @param {OwnPage} page @param {string | null} name @returns {Promise<HTMLIFrameElement>}
+ */
+async function laidIn(exposure, page, name) {
+	const frame = document.createElement('iframe');
+	frame.classList.add(PAGE);
+	frame.setAttribute(OWN_PAGE, page.key);
+	frame.setAttribute('sandbox', MEASURABLE_ALONE);
+	frame.title = OWN_PAGE_TITLE;
+	if (name !== NAMELESS) frame.name = name;
+	const loaded = new Promise((resolve) => frame.addEventListener('load', resolve, { once: true }));
+	frame.srcdoc = page.html;
+	exposure.picture.after(frame);
+	await loaded;
+	await documentOf(frame).fonts.ready;
+	exposure.ownPages.set(page.key, frame);
+	return frame;
+}
+
+/** Whether a page of the film's own moves of itself, by an animation or a transition of its own. @param {HTMLIFrameElement} frame */
+function movesOfItself(frame) {
+	return documentOf(frame).getAnimations().length > NO_ANIMATIONS;
+}
+
+/** The document a page of the film's own laid in a frame holds. @param {HTMLIFrameElement} frame */
+function documentOf(frame) {
+	const laid = frame.contentDocument;
+	if (laid === null) throw new Error("the stage's page of the film's own holds no document");
+	return laid;
 }
 
 /**
@@ -1361,5 +1450,5 @@ function found(element, name) {
 }
 
 /** @type {StageApi} */
-const STAGE = { setup, open, show, apply };
+const STAGE = { setup, open, show, layOwnPages, apply };
 window.stage = STAGE;

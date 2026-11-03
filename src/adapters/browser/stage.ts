@@ -33,6 +33,7 @@
 import type { CDPSession, Frame, Page } from 'playwright-core';
 import type { Format } from '../../domain/format.ts';
 import { type Size, frameScaleOf } from '../../domain/geometry.ts';
+import type { OwnPage } from '../../direction/page.ts';
 import type { DrawnScene } from '../../scene.ts';
 import type { FramedStage, PicturedStage } from '../../studio/ports.ts';
 import type { ChangesHeard } from './changes.ts';
@@ -76,6 +77,12 @@ export interface StageApi {
 	readonly open: (opening: Opening) => void;
 	/** A picture of the filmed page, shown in the frame's place once it is decoded. */
 	readonly show: (picture: PagePicture) => Promise<void>;
+	/**
+	 * The pages of the film's own laid out in the screen's place in every exposure, hidden until a frame shows one, each
+	 * loaded with its fonts, its scripts kept from running; the first exposure's named by its key, where moves measure
+	 * its blocks. The keys of those that move of themselves, by an animation or a transition of their own.
+	 */
+	readonly layOwnPages: (pages: readonly OwnPage[]) => Promise<readonly string[]>;
 	/** One frame, drawn whole from each of its exposures' scenes, laid over one another so each weighs the same. */
 	readonly apply: (exposures: readonly DrawnScene[]) => void;
 }
@@ -247,6 +254,11 @@ export function openPage(opening: Opening): void {
 
 function pictureShown(picture: PagePicture): Promise<void> {
 	return window.stage.show(picture);
+}
+
+/** The pages of the film's own laid on the stage: the keys of those that move of themselves. */
+export function ownPagesLaid(pages: readonly OwnPage[]): Promise<readonly string[]> {
+	return window.stage.layOwnPages(pages);
 }
 
 function applyExposures(exposures: readonly DrawnScene[]): void {

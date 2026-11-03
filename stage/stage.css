@@ -154,6 +154,14 @@ body {
 	display: none;
 }
 
+/* A page of the film's own, laid over the filmed page's place in the screen and laid out whole, so its fonts load, but unseen until a frame shows it, and never pointed at, as an act is done on the filmed page */
+.page[data-own-page] {
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	pointer-events: none;
+}
+
 /* The holes pieces of the page leave, laid on the screen in its pixels, so the camera and the window carry them with the page */
 .holes {
 	position: absolute;
@@ -1290,6 +1298,13 @@ body {
 	inset: 0;
 	background: var(--page-dark);
 	opacity: var(--shade-dim);
+}
+
+/* While the screen shows a page of the film's own, the filmed page, live or pictured, and the holes pieces of it leave stand unseen, laid out as they were; a page of the film's own it does not show stands unseen too */
+.page[data-own-page]:not([data-shown]),
+[data-shows-own] .page:not([data-own-page]),
+[data-shows-own] .holes {
+	visibility: hidden;
 }
 
 /* What the eye's focus blurs (`src/domain/focus.ts`), by as many pixels of a frame 1080 high as the engine works out: the window, its shadow and its view with all that lies in it, on the frame, round the view's cut; and an object in the world, in its own box's pixels, as Chrome blurs an element before its matrix grows it. What the eye draws sharp is drawn with no filter at all */

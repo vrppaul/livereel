@@ -4,7 +4,7 @@
  * own, and blends no image.
  */
 import type { FilmInFormat } from '../direction/film.ts';
-import type { ActContext, FilmedPage, PageShown } from '../direction/page.ts';
+import type { ActContext, FilmedPage, MeasuredPage, OwnPage, PageShown } from '../direction/page.ts';
 import type { Sound } from '../direction/sound.ts';
 import type { DrawnScene } from '../scene.ts';
 
@@ -101,10 +101,14 @@ export interface Track {
 	readonly hear: (moment: number, sound: Sound) => void;
 }
 
-/** A browser with the stage and the filmed page open in it, for one take, the page's time standing. */
+/**
+ * A browser with the stage and the filmed page open in it, for one take, the page's time standing; and each page of
+ * the film's own the stage laid, by its key, which a move measures blocks on while the screen shows it.
+ */
 export interface Opened extends AsyncDisposable {
 	readonly stage: Stage;
 	readonly page: FilmedPage;
+	readonly ownPages: ReadonlyMap<string, MeasuredPage>;
 	readonly act: ActContext;
 	readonly time: PageTime;
 }
@@ -112,13 +116,14 @@ export interface Opened extends AsyncDisposable {
 /**
  * What the stage and the page are set as for a take: the film's format, where the stage stands, the colour scheme the
  * page is asked for, the blocks it blurs, all the film writes in CSS, in its theme or its looks' moves, which the
- * browser reads before anything is shot, whether the page changes of itself, which decides how it is shown, and how a
- * fast move is blurred in the take, which says how many exposures a frame is made of at most.
+ * browser reads before anything is shot, whether the page changes of itself, which decides how it is shown, how a
+ * fast move is blurred in the take, which says how many exposures a frame is made of at most, and the pages of the
+ * film's own its moves show, which the stage lays before anything is shot.
  */
 export type Setting = Pick<
 	FilmInFormat,
 	'format' | 'stage' | 'colourScheme' | 'blurred' | 'css' | 'page' | 'motionBlur'
->;
+> & { readonly ownPages: readonly OwnPage[] };
 
 export interface Browser {
 	readonly open: (setting: Setting, address: string, sharpness: number) => Promise<Opened>;

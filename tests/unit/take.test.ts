@@ -15,6 +15,7 @@ import { on, to } from '../../src/moves/light.ts';
 import { click, hide, press, release, to as cursorTo } from '../../src/moves/cursor.ts';
 import { show } from '../../src/moves/ending.ts';
 import { act as actAtAMoment, speed, type as typeIntoThePage } from '../../src/moves/page.ts';
+import { shows as screenShows } from '../../src/moves/screen.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import { open, type } from '../../src/moves/terminal.ts';
 import { lean as leanTitle, show as showTitle, to as titleTo } from '../../src/moves/title.ts';
@@ -24,6 +25,7 @@ import type { Sound } from '../../src/direction/sound.ts';
 import type { Keystroke } from '../../src/domain/typing.ts';
 import type { EndingCard } from '../../src/props/ending.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
+import { pageKeyOf } from '../../src/direction/page.ts';
 import { type Scene, openingScene } from '../../src/scene.ts';
 import type { Exposures, PageTime, Stage } from '../../src/studio/ports.ts';
 import { Take } from '../../src/studio/take.ts';
@@ -72,6 +74,8 @@ const CLOSE_ON_THE_MIDDLE: Pose = { focusX: 300, focusY: 200, zoom: 2.7 };
 const A_LITTLE_TO_THE_RIGHT: Pose = { ...CLOSE_ON_THE_MIDDLE, focusX: 312 };
 // A film shot unblurred
 const UNBLURRED = null;
+// A page of the film's own
+const OWN_PAGE = { html: '<p id="first">Ours</p>' };
 // Forty lines of code, each its number
 const MANY_LINES = [...Array(40).keys()].map((line) => `const line${line} = ${line};`).join('\n');
 const LEFT_HALF = { left: 0, top: 0, width: 0.5, height: 1 };
@@ -197,6 +201,19 @@ function takeOf(
 		format: SMALL,
 		opening: openingScene(SMALL, LIVEREELS_LOOK),
 		motionBlur
+	});
+}
+
+/** A take of a film that shows a page of its own, the page the stage lays for it given. */
+function takeShowingOwnPage(footage: FootageOf, stage: Stage, filmed: PageOfBoxes, own: PageOfBoxes): Take {
+	const ownPages = new Map([[pageKeyOf(OWN_PAGE.html), own]]);
+	return new Take({
+		opened: openedOn(filmed, stage, new PageTimeLogged(), ownPages),
+		footage,
+		track: new TrackThatKeeps(),
+		format: SMALL,
+		opening: openingScene(SMALL, LIVEREELS_LOOK),
+		motionBlur: HALF_OF_FOUR
 	});
 }
 
@@ -425,6 +442,47 @@ test('a frame a light is put on another block in, while its shutter is open, is 
 	];
 	await takeOf(footage, stage).run(steps);
 	expect(footage.exposed).toEqual([1]);
+});
+
+test("the screen shows a page of the film's own from a moment of a play: the exposures before it show the filmed page, those from it the film's own", async () => {
+	const stage = new FramedStageThatKeeps();
+	const footage = new FootageOf([0, 1]);
+	// The camera fast over two frames, the second's exposures a sixteenth of the step apart from 0.8125 on
+	const moves = [cameraTo(CLOSE_AT_THE_RIGHT), screenShows(OWN_PAGE, { within: { start: 0.875 } })];
+	await takeOf(footage, stage).run([play({ seconds: 2 / 30, moves, ease: linear })]);
+	expect(stage.drawn.map((scene) => scene.screen.shows.kind)).toEqual([
+		'filmed',
+		'filmed',
+		'filmed',
+		'filmed',
+		'filmed',
+		'own',
+		'own',
+		'own'
+	]);
+});
+
+test("a block a move names is measured on the page the screen shows: the film's own, where it shows it", async () => {
+	const stage = new FramedStageThatKeeps();
+	const ownPage = new PageOfBoxes(new Map([['#first', SECOND]]));
+	const steps = [cut(screenShows(OWN_PAGE)), cut(on('#first')), hold({ seconds: 1 / 30 })];
+	await takeShowingOwnPage(new FootageOf([0]), stage, new PageOfBoxes(PAGE), ownPage).run(steps);
+	expect(stage.drawn[0]!.light!.box).toEqual(SECOND);
+});
+
+test("keys typed into the page while the screen shows the film's own go to the filmed page behind it", async () => {
+	const filmedPage = new PageOfBoxes(PAGE);
+	const ownPage = new PageOfBoxes(PAGE);
+	const steps = [cut(screenShows(OWN_PAGE)), play({ seconds: 2 / 30, moves: [typeIntoThePage(STROKES)] })];
+	await takeShowingOwnPage(new FootageOf([1]), new FramedStageThatKeeps(), filmedPage, ownPage).run(steps);
+	expect([filmedPage.typed, ownPage.typed]).toEqual([['a', 'b'], []]);
+});
+
+test("a page framed live is acted on laid flat as the filmed page, while the screen shows the film's own", async () => {
+	const stage = new FramedStageThatKeeps();
+	const steps = [cut(screenShows(OWN_PAGE)), act(() => Promise.resolve())];
+	await takeShowingOwnPage(new FootageOf([0]), stage, new PageOfBoxes(PAGE), new PageOfBoxes(PAGE)).run(steps);
+	expect(stage.laidFlat.map((scene) => scene.screen.shows.kind)).toEqual(['filmed']);
 });
 
 test('a frame of a film with no blur is exposed once, however fast the camera crosses it', async () => {

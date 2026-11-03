@@ -25,7 +25,19 @@ import type { PlaceNamed } from '../domain/place.ts';
 import { type Ease, easeInOutSine, framesOf, linear } from '../domain/time.ts';
 import { A_STROKES, type Keystroke, typingSeconds } from '../domain/typing.ts';
 import type { CssNamed } from './theme.ts';
-import { A_CURVE, A_MOVE, A_MOVES, type Move, type Part, type Share, cssOf, placesOf, soundsOf } from './move.ts';
+import type { OwnPage } from './page.ts';
+import {
+	A_CURVE,
+	A_MOVE,
+	A_MOVES,
+	type Move,
+	type Part,
+	type Share,
+	cssOf,
+	ownPagesOf,
+	placesOf,
+	soundsOf
+} from './move.ts';
 import type { Sound } from './sound.ts';
 
 export interface Play {
@@ -134,6 +146,15 @@ export function soundsIn(steps: readonly Step[]): readonly Sound[] {
 /** All the steps' moves write in CSS, known before anything is shot, so a value CSS cannot read is refused at once. */
 export function cssIn(steps: readonly Step[]): readonly CssNamed[] {
 	return steps.flatMap((step) => step.moves).flatMap(cssOf);
+}
+
+/**
+ * Every page of the film's own the steps' moves show, each once, in the order they are first named, known before
+ * anything is shot, so the stage lays each out before the first frame.
+ */
+export function ownPagesIn(steps: readonly Step[]): readonly OwnPage[] {
+	const pages = steps.flatMap((step) => step.moves).flatMap(ownPagesOf);
+	return [...new Map(pages.map((page) => [page.key, page])).values()];
 }
 
 /** Every place the steps' moves name, known before anything is shot, so one the format has not is refused at once. */

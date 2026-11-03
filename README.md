@@ -172,7 +172,7 @@ and the moves of each part of the scene:
   `code.hide({ toward, leave, edge })`; each move of a title or code takes `as` to name which
 - `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
   whole frame where they come up, over every other object, the keys over the caption, one of each
-- `screen.rise()`, `screen.lower()`
+- `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`
 - `terminal.open(title, { at, from, enter, edge, inside, group, zIndex })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
   `terminal.lean({ tilt, turn, roll })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
@@ -490,7 +490,22 @@ from a frame past its place, `window.hide({ toward: 'left' })` slides it
 out as far, where it stays until a move brings it back: with words sliding
 the other way in the same step, a push. `screen.lower()` in a `play` takes
 the screen down into the ground over its share, the window's shadow and
-edge with it; in a `cut`, at once. The
+edge with it; in a `cut`, at once. `screen.shows({ html })` shows a page
+of the film's own in the filmed page's place: a whole document the film
+writes in HTML and CSS, a slide or a terminal, laid out at the screen's
+size, framed by the camera, leant and blurred as the filmed page is, its
+text drawn sharp however close the camera comes; `screen.shows('filmed')`
+shows the filmed page again. In a `cut` it swaps at once; in a `play`, at
+the moment `within: { start }` names, so a camera flying fast through the
+swap smears one into the other. The page stands as written: its scripts do
+not run, one that animates or transitions of itself is refused before the
+film is shot, as what moves in a film is the film's, and an address in it
+is read from the stage's own folder, so name an image or a font by a whole
+address or a `data:` URL. While the page of the film's own shows, a move
+finds blocks on it by their selectors, and the filmed page behind it is
+still acted on, scrolled and typed into; a piece of the page and a lens,
+drawn from the filmed page's picture, are refused, and so is the swap while
+a lens stands. The
 words take about a third of the frame, set as large as their share lets, or the share
 a format's `split` gives them (see Formats); the window takes the whole
 rest, whatever the page's shape, and shows the part of it the camera

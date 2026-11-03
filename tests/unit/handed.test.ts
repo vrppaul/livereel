@@ -204,6 +204,15 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => screen.rise({ within: { start: null as never } })).toThrow(
 		new FilmError("screen.rise's within's start is null: it is a number")
 	);
+	expect(() => screen.shows('page' as never)).toThrow(
+		new FilmError(
+			`screen.shows's page is "page": it is the filmed page, "filmed", or a page of the film's own, { html }`
+		)
+	);
+	expect(() => screen.shows({ html: '' })).toThrow(
+		new FilmError(`screen.shows's page's html is "": it is a page in HTML, a string with something in it`)
+	);
+	expect(() => screen.shows('filmed', { within: { end: 1 } as never })).toThrow(FilmError);
 	expect(() => terminal.open(null as never)).toThrow(new FilmError("terminal.open's title is null: it is a string"));
 	expect(() => terminal.open('claude', { within: 5 as never })).toThrow(
 		new FilmError(`terminal.open's within is 5: it is ${SHARE}`)
