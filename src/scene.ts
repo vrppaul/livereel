@@ -13,8 +13,8 @@
  * how far each word of a title, a caption or a callout and each line of code has come, the terminal's spinner, how far
  * keys rise clear of a caption, where a note's line meets the block it names on the frame, the hole a piece of the page
  * leaves and the lines it draws to its source, the part of the screen under a lens, where an object in a group, or on
- * the screen as the camera frames it then, is drawn and in what order — so the stage draws numbers and words and
- * decides nothing, and draws no group of its own.
+ * the page as the camera frames it then, is drawn and in what order — so the stage draws numbers and words and decides
+ * nothing, and draws no group of its own.
  * What the camera shows is worked out from what it aims at and the window that stands (`cameraOf`), so a
  * camera moving and a window moving in one step make the same frame whichever is set first; a frame is drawn by such a
  * camera, or by the flat one an act is done in. A prop that may be absent is `null`; the
@@ -51,7 +51,6 @@ import {
 	captionAmong,
 	drawnObject,
 	frameShiftOf,
-	holdersSeenBy,
 	inDrawingOrder,
 	pictureZoomOf,
 	standsIn
@@ -156,7 +155,10 @@ export function withObject(scene: Scene, name: ObjectName, object: FrameObject |
 	return { ...scene, objects: withNamed(scene.objects, name, held) };
 }
 
-/** Whether what an object stands in stands in a scene: the frame and the window always, a group while it stands. */
+/**
+ * Whether what an object stands in stands in a scene: the frame, the window and the page always, a group while it
+ * stands.
+ */
 function itsHolderStands(scene: Scene, object: FrameObject): boolean {
 	return object.inside.kind !== 'group' || scene.groups.has(object.inside.name);
 }
@@ -190,7 +192,7 @@ export function cameraOf(scene: Scene, format: Format): Camera {
  * page seen by the camera that shows the scene on a frame of a size, so the picture it is drawn from is taken as sharp.
  */
 export function pictureZoomsIn(scene: Scene, camera: Camera, frame: Size): readonly number[] {
-	const holders = holdersSeenBy(camera, scene.groups);
+	const holders: Holders = { camera, groups: scene.groups };
 	return [...scene.objects.values(), ...scene.leaving.values()]
 		.map((object) => pictureZoomOf(object, holders, frame))
 		.filter((zoom) => zoom !== null);
@@ -204,8 +206,8 @@ export function pictureZoomsIn(scene: Scene, camera: Camera, frame: Size): reado
 export function frameShiftBetween(start: Scene, end: Scene, format: Format): number {
 	const startCamera = cameraOf(start, format);
 	const endCamera = cameraOf(end, format);
-	const startHolders = holdersSeenBy(startCamera, start.groups);
-	const endHolders = holdersSeenBy(endCamera, end.groups);
+	const startHolders: Holders = { camera: startCamera, groups: start.groups };
+	const endHolders: Holders = { camera: endCamera, groups: end.groups };
 	return Math.max(
 		frameShift(startCamera, endCamera, format),
 		...objectShifts(start.objects, end.objects, startHolders, endHolders, format.frame),

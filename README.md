@@ -170,8 +170,8 @@ and the moves of each part of the scene:
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
   in the page's pixels (a rounded card's own `border-radius`), square where it names none, and as round as the window
   at a corner standing on a corner of what the window shows, leaving a `hole: { ground, line }` and drawing `lines` to its
-  source where named; carried `onto` another block, it lies on the screen there and stays on it as the camera moves; each
-  move of it takes `as` to name which
+  source where named; carried `onto` another block, it lies on the page there, in the window, and keeps that place on
+  the screen as the camera moves; each move of it takes `as` to name which
 - `outline.show(target, { every, line, enter, edge, as, group, zIndex })`, `outline.to(place, { scale, depth })`,
   `outline.lean({ tilt, turn, roll })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a
   selector's blocks or a box of the screen, `'solid'` or `'dashed'`; each move of it takes `as` to name which
@@ -389,11 +389,15 @@ carried `to` a place it stands as large as the place holds its source, in
 its middle, and grows, comes near, leans, rolls and spins as a title does,
 a blank card when it turns away. `piece.onto('#agent-panel')` carries it
 onto another block of the page, as large as the block holds its source, to
-lie on the screen there: it lands on the block wherever the camera goes on
-the way, and stays on it after, the camera framing it as it frames the
-page. `piece.back()` takes it back over its source as the camera shows it
-then, face-on and as large as it was, without spinning back a whole turn;
-`piece.hide()` puts it away.
+lie on the page there: it lands on the block wherever the camera goes on
+the way, and keeps that place on the screen after, the camera framing it
+as it frames the page, so a scroll of the page moves the block from under
+it. It lies in the window as the page does, flat on it, under what stands
+on the frame and cut at the window's edge, from the moment it sets off; it
+sets off only lying flat, face-on and at no depth of its own, and never
+slides from the page. `piece.back()` takes it back over its source as the
+camera shows it then, face-on and as large as it was, without spinning back
+a whole turn; `piece.hide()` puts it away.
 
 `piece.show(VISITORS, { hole: {} })` leaves a hole where the piece was
 lifted: the ground the page draws behind the block, read as it is lifted,

@@ -3,7 +3,7 @@
  * a box of the screen lifted off the page onto the frame, over where the camera shows it as it is lifted, cut to the
  * part the camera shows there (`src/moves/source.ts`); then carried, grown, brought near, turned and put away as any
  * object is, and taken back over its source as the camera shows it then, face-on and as large as it was. It does not
- * follow the camera between, until it is carried onto a block of the page: it lies on the screen then, and the camera
+ * follow the camera between, until it is carried onto a block of the page: it lies on the page then, and the camera
  * frames it as it frames the page. A piece is drawn from the page's picture, so a page framed live, which has none, is
  * refused; and it stands over its source only on a window that faces the frame, where the source shows as a box.
  *
@@ -154,7 +154,8 @@ export function to(place: Place, script: ToScript = {}): Move {
 
 /**
  * The piece carried onto the first block a selector matches, or a box of the screen, as large as the block holds its
- * source, to lie on the screen there: it lands on the block wherever the camera goes on its way, and stays on it after.
+ * source, to lie on the page there: it lands on the block wherever the camera goes on its way, and keeps that place on
+ * the screen after.
  */
 export function onto(target: Target, script: TakenScript = {}): Move {
 	return objectOnto(PIECE, 'piece.onto', target, script);

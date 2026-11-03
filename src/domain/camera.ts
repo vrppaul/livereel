@@ -495,13 +495,21 @@ function keptWithin(focus: number, halfSeen: number, length: number): number {
  * view set where it stands, and seen from the eye.
  */
 export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
+	return leantOnTheFrame(camera.view, frame, pointInTheView(camera, frame, point));
+}
+
+/**
+ * Where a point of the screen stands in a camera's view as the camera frames the page, before the view leans: in the
+ * view's pixels from its top left corner, as far from the view's middle as the camera's zoom takes it from its focus.
+ */
+function pointInTheView(camera: Camera, frame: Size, point: Point): Point {
 	const pose = camera.pose;
 	const frameZoom = frameZoomOf(pose, frame);
-	return aboutItsMiddle(leaningOnTheFrame(camera.view, frame), camera.view.box, {
-		across: frameZoom * (point.left - pose.focusX),
-		down: frameZoom * (point.top - pose.focusY),
-		out: ON_ITS_PLANE
-	});
+	const view = camera.view.box;
+	return {
+		left: view.width / HALVES + frameZoom * (point.left - pose.focusX),
+		top: view.height / HALVES + frameZoom * (point.top - pose.focusY)
+	};
 }
 
 /**
@@ -531,15 +539,10 @@ export function boxOnTheScreen(camera: Camera, frame: Size, box: Box): Box {
  * view's pixels from its top left corner.
  */
 export function boxInTheView(camera: Camera, frame: Size, box: Box): Box {
-	const pose = camera.pose;
-	const frameZoom = frameZoomOf(pose, frame);
-	const view = camera.view.box;
-	return {
-		left: view.width / HALVES + frameZoom * (box.left - pose.focusX),
-		top: view.height / HALVES + frameZoom * (box.top - pose.focusY),
-		width: frameZoom * box.width,
-		height: frameZoom * box.height
-	};
+	return boxBetween(
+		pointInTheView(camera, frame, { left: box.left, top: box.top }),
+		pointInTheView(camera, frame, { left: box.left + box.width, top: box.top + box.height })
+	);
 }
 
 /**

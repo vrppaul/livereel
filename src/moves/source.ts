@@ -52,17 +52,23 @@ export async function sourceOf(
 }
 
 /**
- * The scene's camera as a move begins, refused where its window leans or shows its back, as a source then shows as no
- * box, or a box turned over.
+ * The scene's camera as a move begins that does what a refusal says it does, refused where its window leans or shows
+ * its back, as a box of the screen then shows on the frame as no box, or a box turned over, and a box of the frame
+ * stands on the screen as none.
  */
-export function cameraFrontOn(beginning: Beginning, move: string): Camera {
+export function cameraFrontOn(beginning: Beginning, doing: string): Camera {
 	const camera = cameraOf(beginning.scene, beginning.format);
 	if (!isFrontOn(camera.view.angle)) {
 		throw new FilmError(
-			`${move} stands over its source only while the window faces the frame front on: bring it face-on, window.lean({ tilt: 0, turn: 0 })`
+			`${doing} only while the window faces the frame front on: bring it face-on, window.lean({ tilt: 0, turn: 0 })`
 		);
 	}
 	return camera;
+}
+
+/** What a move that stands over a source does, as a refusal says it. */
+export function overItsSource(move: string): string {
+	return `${move} stands over its source`;
 }
 
 /**
@@ -75,5 +81,5 @@ export function cameraOverThePicture(beginning: Beginning, move: string): Camera
 			`${move} draws from the page's picture, which a page framed live has none of: the film's page is 'dynamic'`
 		);
 	}
-	return cameraFrontOn(beginning, move);
+	return cameraFrontOn(beginning, overItsSource(move));
 }

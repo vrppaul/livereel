@@ -35,13 +35,7 @@ import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
 import * as ending from '../../src/moves/ending.ts';
-import {
-	type DrawnObject,
-	type Surroundings,
-	drawnObject,
-	drawnOnTheFrame,
-	holdersSeenBy
-} from '../../src/props/object.ts';
+import { type DrawnObject, type Surroundings, drawnObject, drawnOnTheFrame } from '../../src/props/object.ts';
 import { SCREEN_UP } from '../../src/props/screen.ts';
 import { ONE_FRAME, pastTheEdge, windowPlaced, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
@@ -184,8 +178,9 @@ const AROUND_IN_FULL_HD: Surroundings = {
 	groups: new Map(),
 	holes: []
 };
-// A box in the upper right corner of a frame, a quarter of it across and down
+// A box in the upper right corner of a frame, a quarter of it across and down, and one in its middle, half of it
 const UPPER_RIGHT_CORNER = { left: 0.75, top: 0, width: 0.25, height: 0.25 } as const;
+const MIDDLE_HALF = { left: 0.25, top: 0.25, width: 0.5, height: 0.5 } as const;
 // The whole of that screen, as a box of it
 const WHOLE_SCREEN = { left: 0, top: 0, width: 1920, height: 1080 };
 // A piece's corners where neither the film nor the window rounds them
@@ -222,7 +217,7 @@ function drawnObjectsIn(scene: Scene, format: Format): readonly DrawnObject[] {
 
 /** Where the middle of an object of a scene shot in the small format is drawn on the frame. */
 function drawnMiddleOf(scene: Scene, name: string): Point {
-	const holders = holdersSeenBy(cameraOf(scene, SMALL), scene.groups);
+	const holders = { camera: cameraOf(scene, SMALL), groups: scene.groups };
 	return drawnOnTheFrame(scene.objects.get(name)!, holders, SMALL.frame, BOX_MIDDLE);
 }
 
@@ -695,18 +690,42 @@ test('a piece carried onto a block of the page sets off from where it stands on 
 	]);
 });
 
-test('a piece lying on the screen stands over the point of the page it lies on as the window leans', async () => {
+test("a piece lying on the page is laid in the page's window where the camera frames its block, so under what stands on the frame and cut at the window's edge", async () => {
+	const windowed = await setIn(windowTo(MIDDLE_HALF), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), windowed, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	const landed = await setIn(piece.onto('#other'), lifted, 1, FULL_HD);
+	// The window, 960 × 540 in the frame's middle, shows the screen from 480 across and 270 down at 1: the other block,
+	// from 1200 and 600, stands at 720 and 330 in it
+	expect(drawnObjectsIn(landed, FULL_HD)[0]).toEqual(
+		expect.objectContaining({ inside: 'window', box: closeToBox({ left: 720, top: 330, width: 100, height: 60 }) })
+	);
+});
+
+test('a piece lying on the page shows its source as large as the camera frames the block it lies on, and has the picture taken as close', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	const landed = await setIn(piece.onto('#other'), lifted, 1, FULL_HD);
+	const close = await setIn(cameraTo(MIDDLE_AT_TWO), landed, 1, FULL_HD);
+	// The card, 200 × 100, in the other block, 100 × 60, at half its size; twice as large as the camera at 2 frames it
+	expect([
+		drawnObjectsIn(close, FULL_HD)[0]!.content,
+		pictureZoomsIn(close, cameraOf(close, FULL_HD), FULL_HD.frame)
+	]).toEqual([expect.objectContaining({ fit: 1 }), [1]]);
+});
+
+test('a piece lying on the page stands over the point of the page it lies on as the window leans', async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
 	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
 	const landed = await setIn(piece.onto('#other'), lifted, 1, FULL_HD);
 	const leant = await setIn(lean({ tilt: 20, turn: 30 }), landed, 1, FULL_HD);
 	const camera = cameraOf(leant, FULL_HD);
 	expect(
-		drawnOnTheFrame(leant.objects.get('piece')!, holdersSeenBy(camera, leant.groups), FULL_HD.frame, BOX_MIDDLE)
+		drawnOnTheFrame(leant.objects.get('piece')!, { camera, groups: leant.groups }, FULL_HD.frame, BOX_MIDDLE)
 	).toEqual(closeToPoint(onTheFrame(camera, FULL_HD.frame, { left: middleX(OTHER), top: middleY(OTHER) })));
 });
 
-test('a piece lying on the screen goes back over its source there, wherever the camera has gone', async () => {
+test('a piece lying on the page goes back over its source there, wherever the camera has gone', async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
 	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
 	const landed = await setIn(piece.onto('#other'), lifted, 1, FULL_HD);
@@ -720,23 +739,54 @@ test('a piece lying on the screen goes back over its source there, wherever the 
 	]);
 });
 
-test('a piece is carried onto the screen only from the frame while the window faces it front on, never out of its group, and lying there goes in its place', async () => {
+test('a piece is carried onto the page only from the frame, lying flat there, while the window faces the frame front on: leant or near, in a group, or under a leant window, it is refused', async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
 	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
-	const leant = await setIn(lean({ turn: 20 }), lifted, 1, FULL_HD);
+	const tilted = await setIn(piece.lean({ tilt: 10 }), lifted, 1, FULL_HD);
+	const near = await setIn(piece.effects({ depth: 100 }), lifted, 1, FULL_HD);
 	const grouped = await setIn(group.show({ as: 'stack' }), wide, 1, FULL_HD);
 	const stacked = await setIn(piece.show('#card', { group: 'stack' }), grouped, 1, FULL_HD);
-	const landed = await setIn(piece.onto('#other'), lifted, 1, FULL_HD);
-	await expect(async () => piece.onto('#other').begin(beginningIn(leant, FULL_HD))).rejects.toThrow(
+	const underALeantWindow = await setIn(lean({ turn: 20 }), lifted, 1, FULL_HD);
+	const notFlat = new FilmError(
+		'piece.onto would lay the piece flat on the page while it leans or stands near the eye: bring it face-on and to no depth first'
+	);
+	await expect(async () => piece.onto('#other').begin(beginningIn(tilted, FULL_HD))).rejects.toThrow(notFlat);
+	await expect(async () => piece.onto('#other').begin(beginningIn(near, FULL_HD))).rejects.toThrow(notFlat);
+	await expect(async () => piece.onto('#other').begin(beginningIn(stacked, FULL_HD))).rejects.toThrow(
+		new FilmError('piece.onto would carry the piece out of its group onto the page: it goes with its group')
+	);
+	await expect(async () => piece.onto('#other').begin(beginningIn(underALeantWindow, FULL_HD))).rejects.toThrow(
 		new FilmError(
-			'piece.onto measures the piece on the screen only while the window faces the frame front on: bring it face-on, window.lean({ tilt: 0, turn: 0 })'
+			'piece.onto measures the piece on the page only while the window faces the frame front on: bring it face-on, window.lean({ tilt: 0, turn: 0 })'
 		)
 	);
-	await expect(async () => piece.onto('#other').begin(beginningIn(stacked, FULL_HD))).rejects.toThrow(
-		new FilmError('piece.onto would carry the piece out of its group onto the screen: it goes with its group')
+});
+
+test('a piece lying on the page leans with the window, flat on it: a tilt, a turn or a depth of its own is refused', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	const landed = await setIn(piece.onto('#other'), lifted, 1, FULL_HD);
+	await expect(async () => piece.lean({ turn: 30 }).begin(beginningIn(landed, FULL_HD))).rejects.toThrow(
+		new FilmError(
+			'piece.lean would tilt or turn the piece alone: it lies on the page, and leans as it does; it rolls in it'
+		)
 	);
+	await expect(async () => piece.effects({ depth: 100 }).begin(beginningIn(landed, FULL_HD))).rejects.toThrow(
+		new FilmError('piece.effects would bring the piece toward the eye alone: it lies on the page, flat on it')
+	);
+});
+
+test('a piece lying on the page never slides: out toward a side, or pushed off by one sliding in', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	const landed = await setIn(piece.onto('#other'), lifted, 1, FULL_HD);
 	await expect(async () => piece.hide({ toward: 'left' }).begin(beginningIn(landed, FULL_HD))).rejects.toThrow(
-		new FilmError('piece.hide would slide the piece out toward a side from the screen: it goes in its place')
+		new FilmError('piece.hide would slide the piece out toward a side from the page: it goes in its place')
+	);
+	await expect(async () =>
+		title.show('Over', { at: 'left', as: 'piece', from: 'right' }).begin(beginningIn(landed, FULL_HD))
+	).rejects.toThrow(
+		new FilmError("title.show would push the piece off past the frame's edge from the page: hide it first")
 	);
 });
 
