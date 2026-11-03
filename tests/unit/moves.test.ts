@@ -1713,6 +1713,22 @@ test('a note shown while the window moves keeps beside it on its way, and stands
 	expect(drawnNote(arrived.note!, cameraOf(arrived, SMALL), SMALL.frame).place).toEqual(wordsOn(SMALL, 'left'));
 });
 
+test("a note's words carried beside the window move on the frame as far as its edge facing them, though the eye, stood far back, sees the window move less", async () => {
+	const steppedBack = await setAt(
+		eye.to({ at: { across: 0, down: 0, out: 6000 } }),
+		openingScene(SMALL, LIVEREELS_LOOK),
+		1
+	);
+	const windowed = await setAt(windowTo('right'), steppedBack, 1);
+	const noted = await setAt(note.show('#block', 'Here'), windowed, 1);
+	const moved = await setAt(windowTo({ left: 0.6, top: 0.1, width: 0.35, height: 0.7 }), noted, 1);
+	const wordsMoved = distanceBetween(
+		drawnNote(noted.note!, cameraOf(noted, SMALL), SMALL.frame).place,
+		drawnNote(moved.note!, cameraOf(moved, SMALL), SMALL.frame).place
+	);
+	expect(frameShiftBetween(noted, moved, SMALL)).toBeCloseTo(wordsMoved);
+});
+
 test("a window move that would carry a standing note's words off the frame, or under the window, is refused as it begins", async () => {
 	const windowed = await setAt(windowTo('right'), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	const noted = await setAt(note.show('#block', 'Here'), windowed, 1);

@@ -115,6 +115,26 @@ export function cornersOf(box: Box): readonly Point[] {
 	];
 }
 
+/** The corners of any box, in shares of it across and down from its top left corner, in the order `cornersOf` has. */
+export const CORNER_SHARES = cornersOf({ left: 0, top: 0, width: 1, height: 1 });
+
+/** The middle of any box, in shares of it across and down from its top left corner. */
+export const MIDDLE_SHARE: Point = { left: 0.5, top: 0.5 };
+
+/** How far a point moves that stands where it stood: nowhere, across or down. */
+export const UNMOVED: Point = { left: 0, top: 0 };
+
+/** A point, of a box or of the frame, where it stood and where it stands. */
+export interface PointMoved {
+	readonly start: Point;
+	readonly end: Point;
+}
+
+/** The point of a box so many shares of it across and down from its top left corner. */
+export function pointAt(box: Box, share: Point): Point {
+	return { left: box.left + share.left * box.width, top: box.top + share.top * box.height };
+}
+
 /** A size laid from the top left: the whole of a frame or a screen as a box. */
 export function boxOf(size: Size): Box {
 	return { left: 0, top: 0, width: size.width, height: size.height };

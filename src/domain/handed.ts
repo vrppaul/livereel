@@ -204,6 +204,8 @@ export const A_PAGE_SPEED = new Plain(
 );
 /** How large letters are, in pixels: more than none, as letters of no size are not there. */
 export const A_SIZE = new Plain(isSize, 'a number of pixels, more than 0');
+/** How tall a line stands, in times its letters' size: more than none, as a line of no height is not there. */
+export const A_LINE_HEIGHT = new Plain(isSize, "a number of times the letters' size, more than 0");
 /** A share of something a film gives, from none of it to the whole. */
 export const A_SHARE = new Plain(isShare, 'a number from 0 to 1');
 

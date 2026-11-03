@@ -5,7 +5,8 @@
  * A frame shot at once shows what moves sharp, so a fast move jumps from frame to frame. A film camera's shutter is
  * open for part of the frame's time, and what moves while it is open smears across the frame. A film says how much of
  * the time from the frame before its shutter is open for, and the smear is how far anything on the frame moves while
- * it is: the screen as the camera and its window carry it, or an object as it travels, slides or leans. An eye takes
+ * it is: the screen as the camera and its window carry it, the cursor and the light on it, an object as it travels,
+ * slides, leans or comes up in a way, and what it shows as it moves in it. An eye takes
  * copies no further apart than a step of its own as one smooth smear, so a frame is exposed as many times as keep its
  * copies that close, and never more than the film's most: each at the end of one of so many even shares of the
  * shutter's time, the last at the frame's own moment. A smear no longer than the eye's step looks no different from a

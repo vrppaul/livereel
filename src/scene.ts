@@ -28,26 +28,32 @@ import {
 	type Aiming,
 	type Camera,
 	type DrawnCamera,
+	type SeenBetween,
 	drawnCamera,
 	frameShift,
 	placedIn,
+	screenBoxShift,
+	screenPointShift,
 	seenThrough,
 	standingAt,
+	viewShift,
 	wholePose,
 	wholeView
 } from './domain/camera.ts';
+import { namesOf } from './domain/toward.ts';
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
 import type { Cursor } from './props/cursor.ts';
 import type { Group, GroupName, Groups } from './props/group.ts';
 import { type DrawnLines, drawnHoles, drawnLines } from './props/lifted.ts';
 import type { Light } from './props/light.ts';
 import type { Look } from './props/look.ts';
-import { type DrawnNote, type Note, drawnNote } from './props/note.ts';
+import { type DrawnNote, type Note, drawnNote, noteShift } from './props/note.ts';
 import {
 	type DrawnObject,
 	type FrameObject,
 	type Holders,
 	type ObjectName,
+	type ObjectThen,
 	type Objects,
 	type Surroundings,
 	captionAmong,
@@ -215,40 +221,98 @@ export function pictureZoomsIn(scene: Scene, camera: Camera, frame: Size): reado
 		.filter((zoom) => zoom !== null);
 }
 
+/** A scene at a moment of a frame's time, and the camera that shows it then. */
+export interface SceneSeen {
+	readonly scene: Scene;
+	readonly camera: Camera;
+}
+
+/** Two moments of a frame's time a move on the frame is measured between: the scenes then, and their cameras. */
+interface Between {
+	readonly start: Scene;
+	readonly end: Scene;
+	readonly seen: SeenBetween;
+	readonly format: Format;
+}
+
+// How far anything moves on the frame where nothing does
+const NOTHING_MOVES = 0;
+// How far what each prop draws moves on the frame between two moments, the compiler holding every prop to one: the
+// screen as the camera shows it, the window's edge, the light's box and the cursor's tip on the screen, and a note's
+// words beside the window and its line's end at its block, each where it stands at both, a prop that comes or goes
+// between them moving nowhere. The screen comes up in its place, and a callout and pins lie on the screen, moving only
+// as far as it carries them, which the camera's measures. The look's colours and ground change in place; the sizes it
+// sets, of letters and margins, move words too, which is not counted
+const FRAME_SHIFT_OF: { readonly [Name in PropName]: (between: Between) => number } = {
+	look: () => NOTHING_MOVES,
+	camera: ({ seen, format }) => frameShift(seen.start, seen.end, format),
+	window: ({ seen }) => viewShift(seen),
+	screen: () => NOTHING_MOVES,
+	light: ({ start, end, seen }) =>
+		shiftOfBoth(start.light, end.light, (from, to) => screenBoxShift(seen, from.box, to.box)),
+	callout: () => NOTHING_MOVES,
+	pins: () => NOTHING_MOVES,
+	cursor: ({ start, end, seen }) =>
+		shiftOfBoth(start.cursor, end.cursor, (from, to) => screenPointShift(seen, from, to)),
+	note: ({ start, end, seen }) => shiftOfBoth(start.note, end.note, (from, to) => noteShift(from, to, seen))
+};
+const PROP_NAMES = namesOf(FRAME_SHIFT_OF);
+
 /**
- * How far anything on the frame moves from one scene to another, in the frame's pixels: the farthest the screen goes as
- * their cameras show it, or a corner of an object of one name in both, standing or pushed off, as what it stands in
+ * How far anything on the frame moves from one scene to another, in the frame's pixels: the farthest what any prop
+ * draws goes as their cameras show it, or an object of one name in both, standing or pushed off, as what it stands in
  * carries it; one that comes or goes between them moves nowhere.
  */
 export function frameShiftBetween(start: Scene, end: Scene, format: Format): number {
-	const startCamera = cameraOf(start, format);
-	const endCamera = cameraOf(end, format);
-	const startHolders: Holders = { camera: startCamera, groups: start.groups };
-	const endHolders: Holders = { camera: endCamera, groups: end.groups };
+	return shiftBetween(seenIn(start, format), seenIn(end, format), format);
+}
+
+/** A scene and the camera that shows it. */
+export function seenIn(scene: Scene, format: Format): SceneSeen {
+	return { scene, camera: cameraOf(scene, format) };
+}
+
+function shiftBetween(start: SceneSeen, end: SceneSeen, format: Format): number {
+	const between: Between = {
+		start: start.scene,
+		end: end.scene,
+		seen: { start: start.camera, end: end.camera, frame: format.frame },
+		format
+	};
 	return Math.max(
-		frameShift(startCamera, endCamera, format),
-		...objectShifts(start.objects, end.objects, startHolders, endHolders, format.frame),
-		...objectShifts(start.leaving, end.leaving, startHolders, endHolders, format.frame)
+		...PROP_NAMES.map((name) => FRAME_SHIFT_OF[name](between)),
+		...objectShifts(start, end, (scene) => scene.objects, format.frame),
+		...objectShifts(start, end, (scene) => scene.leaving, format.frame)
 	);
 }
 
-/**
- * How far each object of one name in both moves on the frame from one to the other, what objects stand in then and now
- * given.
- */
+/** How far a prop moves between two moments, by where it stands at both; nowhere where it is absent at either. */
+function shiftOfBoth<State>(
+	start: State | null,
+	end: State | null,
+	shift: (start: State, end: State) => number
+): number {
+	return start === null || end === null ? NOTHING_MOVES : shift(start, end);
+}
+
+/** How far each object of one name in both of a list a scene keeps moves on the frame from one moment to the other. */
 function objectShifts(
-	start: Objects,
-	end: Objects,
-	startHolders: Holders,
-	endHolders: Holders,
+	start: SceneSeen,
+	end: SceneSeen,
+	listed: (scene: Scene) => Objects,
 	frame: Size
 ): readonly number[] {
 	const shifts: number[] = [];
-	for (const [name, object] of end) {
-		const before = start.get(name);
-		if (before !== undefined) shifts.push(frameShiftOf(before, object, startHolders, endHolders, frame));
+	for (const [name, object] of listed(end.scene)) {
+		const before = listed(start.scene).get(name);
+		if (before !== undefined) shifts.push(frameShiftOf(objectThen(before, start), objectThen(object, end), frame));
 	}
 	return shifts;
+}
+
+/** An object as it stood at a moment of a frame's time, in the scene then. */
+function objectThen(object: FrameObject, seen: SceneSeen): ObjectThen {
+	return { object, holders: { camera: seen.camera, groups: seen.scene.groups }, look: seen.scene.look };
 }
 
 /**

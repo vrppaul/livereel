@@ -8,6 +8,8 @@ import { type Bounds, type Change, type Move, timingOf } from '../../src/directi
 import { cut, hold, play } from '../../src/direction/steps.ts';
 import { act } from '../../src/moves/act.ts';
 import { to as cameraTo } from '../../src/moves/camera.ts';
+import { scrollTo as scrollCodeTo, show as showCode } from '../../src/moves/code.ts';
+import { show as showLens } from '../../src/moves/lens.ts';
 import { to as lookTo } from '../../src/moves/look.ts';
 import { on, to } from '../../src/moves/light.ts';
 import { click, hide, press, release, to as cursorTo } from '../../src/moves/cursor.ts';
@@ -16,6 +18,7 @@ import { act as actAtAMoment, speed, type as typeIntoThePage } from '../../src/m
 import { play as playSound } from '../../src/moves/sound.ts';
 import { open, type } from '../../src/moves/terminal.ts';
 import { lean as leanTitle, show as showTitle, to as titleTo } from '../../src/moves/title.ts';
+import { to as windowTo } from '../../src/moves/window.ts';
 import { show as showPiece, to as pieceTo } from '../../src/moves/piece.ts';
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Keystroke } from '../../src/domain/typing.ts';
@@ -64,7 +67,16 @@ const HALF_OF_FOUR: MotionBlur = { shutter: 0.5, exposuresAtMost: 4 };
 // 400): from the whole screen, at two thirds of that, a fast way
 const CLOSE_AT_THE_RIGHT: Pose = { focusX: 400, focusY: 200, zoom: 2.7 };
 // The frame's left and right halves, where a title stands
+// The screen's middle as close as a screen's pixel is a frame's, and twelve of its pixels to the right of it
+const CLOSE_ON_THE_MIDDLE: Pose = { focusX: 300, focusY: 200, zoom: 2.7 };
+const A_LITTLE_TO_THE_RIGHT: Pose = { ...CLOSE_ON_THE_MIDDLE, focusX: 312 };
+// A film shot unblurred
+const UNBLURRED = null;
+// Forty lines of code, each its number
+const MANY_LINES = [...Array(40).keys()].map((line) => `const line${line} = ${line};`).join('\n');
 const LEFT_HALF = { left: 0, top: 0, width: 0.5, height: 1 };
+const MIDDLE_QUARTER = { left: 0.25, top: 0.25, width: 0.5, height: 0.5 };
+const WIDER_MIDDLE = { left: 0.175, top: 0.175, width: 0.65, height: 0.65 };
 const RIGHT_HALF = { left: 0.5, top: 0, width: 0.5, height: 1 };
 const DEGREES_IN_A_HALF_TURN = 180;
 // Why a stage's page is gone, as a stage says it
@@ -174,7 +186,8 @@ function takeOf(
 	footage: FootageOf,
 	stage: Stage,
 	track = new TrackThatKeeps(),
-	time: PageTime = new PageTimeLogged()
+	time: PageTime = new PageTimeLogged(),
+	motionBlur: MotionBlur | null = HALF_OF_FOUR
 ): Take {
 	const opened = openedOn(new PageOfBoxes(PAGE), stage, time);
 	return new Take({
@@ -183,8 +196,13 @@ function takeOf(
 		track,
 		format: SMALL,
 		opening: openingScene(SMALL, LIVEREELS_LOOK),
-		motionBlur: HALF_OF_FOUR
+		motionBlur
 	});
+}
+
+/** A take of a film shot unblurred, so each frame it keeps is one drawing. */
+function unblurredTakeOf(footage: FootageOf, stage: Stage): Take {
+	return takeOf(footage, stage, new TrackThatKeeps(), new PageTimeLogged(), UNBLURRED);
 }
 
 function cosineOf(degrees: number): number {
@@ -306,6 +324,109 @@ test('an object leant or grown fast while the camera stands is drawn again along
 	]);
 });
 
+test('a frame the cursor crosses fast while the camera stands is drawn again along its way', async () => {
+	const stage = new FramedStageThatKeeps();
+	const footage = new FootageOf([0, 1]);
+	// The cursor on the first block, then to the second over two frames on a straight line, from 65 across to 244
+	const steps = [
+		cut(cursorTo('#first')),
+		play({ seconds: 2 / 30, moves: [cursorTo('#second', { bow: 0 })], ease: linear })
+	];
+	await takeOf(footage, stage).run(steps);
+	expect([footage.exposed, stage.drawn.map((scene) => scene.cursor!.left)]).toEqual([
+		[4, 4],
+		[120.9375, 132.125, 143.3125, 154.5, 210.4375, 221.625, 232.8125, 244]
+	]);
+});
+
+test('a frame the light crosses fast from one block to another is drawn again along its way', async () => {
+	const stage = new FramedStageThatKeeps();
+	const footage = new FootageOf([0, 1]);
+	const steps = [cut(on('#first')), play({ seconds: 2 / 30, moves: [to('#second')], ease: linear })];
+	await takeOf(footage, stage).run(steps);
+	expect([footage.exposed, stage.drawn.map((scene) => scene.light!.box.left)]).toEqual([
+		[4, 4],
+		[69.375, 81.25, 93.125, 105, 164.375, 176.25, 188.125, 200]
+	]);
+});
+
+test('a frame code scrolls fast through in a pane that stands still is drawn again along its scroll', async () => {
+	const stage = new FramedStageThatKeeps();
+	const footage = new FootageOf([0, 1]);
+	// Forty lines, scrolled until the last stands at the pane's top over two frames
+	const steps = [
+		cut(showCode(MANY_LINES, { at: LEFT_HALF })),
+		play({ seconds: 2 / 30, moves: [scrollCodeTo(40)], ease: linear })
+	];
+	await takeOf(footage, stage).run(steps);
+	expect([footage.exposed, stage.drawn.map((scene) => scene.objects[0]!.content.scrolled)]).toEqual([
+		[4, 4],
+		[12.1875, 14.625, 17.0625, 19.5, 31.6875, 34.125, 36.5625, 39]
+	]);
+});
+
+test('a frame a title comes up fast in, out from under a mask where its box stands still, is drawn again along its way', async () => {
+	const stage = new FramedStageThatKeeps();
+	const footage = new FootageOf([0, 1]);
+	const steps = [
+		play({ seconds: 2 / 30, moves: [showTitle('Words', { at: LEFT_HALF, enter: 'mask' })], ease: linear })
+	];
+	await takeOf(footage, stage).run(steps);
+	expect(footage.exposed).toEqual([4, 4]);
+});
+
+test('a frame the camera crosses slowly under a lens standing still is drawn again as often as the page moves in the lens, faster than on the screen', async () => {
+	const unmagnified = new PicturedStageThatKeeps();
+	const magnified = new PicturedStageThatKeeps();
+	const unmagnifiedFootage = new FootageOf([0, 1]);
+	const magnifiedFootage = new FootageOf([0, 1]);
+	// The camera a little to the right over two frames, under a lens showing the page as large as the camera does,
+	// and under one showing it four times as large
+	const close = cut(cameraTo(CLOSE_ON_THE_MIDDLE));
+	const pan = play({ seconds: 2 / 30, moves: [cameraTo(A_LITTLE_TO_THE_RIGHT)], ease: linear });
+	await takeOf(unmagnifiedFootage, unmagnified).run([close, cut(showLens('#second', { magnification: 1 })), pan]);
+	await takeOf(magnifiedFootage, magnified).run([close, cut(showLens('#second', { magnification: 4 })), pan]);
+	expect([unmagnifiedFootage.exposed, magnifiedFootage.exposed]).toEqual([
+		[2, 2],
+		[4, 4]
+	]);
+});
+
+test("a frame the window opens fast in is drawn again along its edge's way, though the page in it stands", async () => {
+	const stage = new FramedStageThatKeeps();
+	const footage = new FootageOf([0, 1]);
+	// A window in the frame's middle quarter, opened about its middle over two frames, never as tall as the screen, so
+	// the camera shows the page at its size and in its place there
+	const steps = [
+		cut(windowTo(MIDDLE_QUARTER)),
+		play({ seconds: 2 / 30, moves: [windowTo(WIDER_MIDDLE)], ease: linear })
+	];
+	await takeOf(footage, stage).run(steps);
+	expect(footage.exposed).toEqual([4, 4]);
+});
+
+test('a frame a title comes up fast in, wiped in from its left edge while it stands, is drawn again along its edge', async () => {
+	const stage = new FramedStageThatKeeps();
+	const footage = new FootageOf([0, 1]);
+	const steps = [
+		play({ seconds: 2 / 30, moves: [showTitle('Words', { at: LEFT_HALF, enter: 'wipe' })], ease: linear })
+	];
+	await takeOf(footage, stage).run(steps);
+	expect(footage.exposed).toEqual([4, 4]);
+});
+
+test('a frame a light is put on another block in, while its shutter is open, is exposed once: what a move sets as it begins is no move', async () => {
+	const stage = new FramedStageThatKeeps();
+	const footage = new FootageOf([1]);
+	// The light on the first block, then on the second as the second frame's shutter has stood open a while
+	const steps = [
+		cut(on('#first')),
+		play({ seconds: 2 / 30, moves: [on('#second', { within: { start: 0.9 } })], ease: linear })
+	];
+	await takeOf(footage, stage).run(steps);
+	expect(footage.exposed).toEqual([1]);
+});
+
 test('a frame of a film with no blur is exposed once, however fast the camera crosses it', async () => {
 	const footage = new FootageOf([0]);
 	const take = new Take({
@@ -398,7 +519,7 @@ test('a press and a let-go go on while the cursor goes its way: it comes to rest
 	// Four frames: the cursor's way over all of them, pressed in by the second once the first has it on the screen, let
 	// go by the fourth
 	const moves = [cursorTo('#first'), press({ within: { start: 0.3, end: 0.5 } }), release({ within: { start: 0.5 } })];
-	await takeOf(new FootageOf([1, 3]), stage).run([play({ seconds: 4 / 30, moves })]);
+	await unblurredTakeOf(new FootageOf([1, 3]), stage).run([play({ seconds: 4 / 30, moves })]);
 	expect([stage.drawn[0]?.cursor?.press, stage.drawn[1]?.cursor]).toEqual([1, { left: 65, top: 40, press: 0 }]);
 });
 
@@ -685,7 +806,7 @@ test('a move begun at its share reads what an earlier move of the step left', as
 test('a cut sets its moves at their end at once, with no frame between', async () => {
 	const stage = new PicturedStageThatKeeps();
 	const steps = [play({ seconds: 0.1, moves: [cursorTo('#first')] }), cut(hide()), play({ seconds: 0.1 })];
-	await takeOf(new FootageOf([2, 3]), stage).run(steps);
+	await unblurredTakeOf(new FootageOf([2, 3]), stage).run(steps);
 	expect([stage.drawn[0]?.cursor === null, stage.drawn[1]?.cursor]).toEqual([false, null]);
 });
 

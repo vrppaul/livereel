@@ -603,6 +603,7 @@ values; what the film leaves out stays livereel's:
 | `noteSize`, `calloutSize`, `pinSize`, `keysSize`, `codeSize` | how large a note's, a callout's, a pin's label's and a key's letters are, and the code's at most, in pixels | `44`, `20`, `26`, `44`, `26` |
 | `terminalSize` | how large the terminal's letters are, in pixels | `25` |
 | `endingNameSize`, `endingLineSize`, `endingCommandSize` | how large the ending card's name, line and command are, in pixels | `96`, `36`, `38` |
+| `codeLineHeight` | how tall a line of code stands, in times its letters' size: the step `code.scrollTo` scrolls by | `1.6` |
 | `cursorFill`, `cursorEdge` | the cursor's colour and its edge's | `#111`, `#fff` |
 | `words` | how words come up where a film names no way of their own, a title's, a caption's, a callout's and a note's, read as each comes: `'rise'`, `'sharp'`, `'fade'`, `'blur'`, `'mask'`, `'letters'` or `'scramble'`, as `words` names on a title | `'rise'` |
 
@@ -836,10 +837,13 @@ sound; a GIF holds none.
 ### Motion blur
 
 Where anything moves fast between frames — the camera, the page's window,
-or a title, code, the terminal or the card as it travels, slides or
-leans — a frame is shot several times along the time from the frame
-before, each as the film stood then, and blended: as many times as keep
-the copies a few pixels apart, so the faster the move, the more.
+the cursor, the light, a title, code, the terminal or the card as it
+travels, slides, leans or comes up masked, wiped, opened or grown, code
+as it scrolls, the page in a lens, a note's words beside the window — a
+frame is shot several times along the time from the frame before, each as
+the film stood then, and blended: as many times as keep the copies a few
+pixels apart, so the faster the move, the more. What a move sets as it
+begins, as a light put on another block, is not blurred, as nothing moved.
 `defineFilm` takes `motionBlur: { shutter, exposuresAtMost }`, either or
 both:
 

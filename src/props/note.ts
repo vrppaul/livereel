@@ -8,13 +8,14 @@
  * block as far as their place lets. The line is drawn first, as the words' ground would come up, and the words come up
  * at its end, in the theme's way as the note comes.
  */
-import { type Camera, onTheFrame } from '../domain/camera.ts';
+import { type Camera, type SeenBetween, onTheFrame, screenPointShift } from '../domain/camera.ts';
 import {
 	type Box,
 	type FrameSide,
 	type Point,
 	type Segment,
 	type Size,
+	distanceBetween,
 	middleX,
 	middleY,
 	segmentBetween
@@ -61,6 +62,20 @@ export function drawnNote(note: Note, camera: Camera, frame: Size, moment: numbe
 	const from = onTheFrame(camera, frame, edgeFacing(note.box, side));
 	const to = meeting(place, from, side);
 	return { ...drawnWords(note, note.comingUp, moment), ...segmentBetween(from, to), side, place, to };
+}
+
+/**
+ * How far a note moves on the frame from where it stood, as one camera showed the window and the page, to where it
+ * stands, as another shows them: the farther of its words, carried whole beside the window, and its line's end at the
+ * block.
+ */
+export function noteShift(start: Note, end: Note, seen: SeenBetween): number {
+	const startWords = besideTheWindow(start.beside, seen.start.view.box);
+	const endWords = besideTheWindow(end.beside, seen.end.view.box);
+	return Math.max(
+		distanceBetween(startWords, endWords),
+		screenPointShift(seen, edgeFacing(start.box, start.beside.side), edgeFacing(end.box, end.beside.side))
+	);
 }
 
 /**

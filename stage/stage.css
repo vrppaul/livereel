@@ -828,7 +828,7 @@ body {
 	text-align: center;
 }
 
-/* Code in its object: a pane as wide as its box, in its middle down it, dark as the terminal, its corners, edge and shadow the window's. Its ground comes up first, rising a little, then its lines one after another. Its letters are as large as the look has them, smaller where its widest line would not fit across, a monospace letter about 0.6 of its size wide; or, where the film has long lines cut, as large as the look has them, a line too long cut at the pane's edge. A line lit stands on a bar of the accent; while one is, the rest dim to a share of their ink. The pane stands no taller than its box, and its lines scroll in the part of it between its margins (`--scrolled`, in lines): that part cuts a line scrolled past its top where the margin starts, and leaves room under its foot for a line still rising */
+/* Code in its object: a pane as wide as its box, in its middle down it, dark as the terminal, its corners, edge and shadow the window's. Its ground comes up first, rising a little, then its lines one after another. Its letters are as large as the look has them, smaller where its widest line would not fit across, a monospace letter about 0.6 of its size wide; or, where the film has long lines cut, as large as the look has them, a line too long cut at the pane's edge. A line stands as tall as the look's line height takes its letters, which the engine knows too, as it blurs code scrolling fast by it. A line lit stands on a bar of the accent; while one is, the rest dim to a share of their ink. The pane stands no taller than its box, and its lines scroll in the part of it between its margins (`--scrolled`, in lines): that part cuts a line scrolled past its top where the margin starts, and leaves room under its foot for a line still rising */
 .code {
 	--code-across: 32px;
 	--code-down: 26px;
@@ -873,7 +873,7 @@ body {
 	background: var(--terminal);
 	opacity: var(--grounded);
 	transform: translateY(calc((1 - var(--grounded)) * var(--code-rise)));
-	font: 400 var(--code-letters) / 1.6 var(--mono);
+	font: 400 var(--code-letters) / var(--code-line-height) var(--mono);
 	color: var(--terminal-ink);
 	white-space: pre;
 }

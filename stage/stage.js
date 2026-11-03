@@ -147,6 +147,7 @@ const LOOK_TOKENS = {
 	endingNameSize: '--ending-name-size',
 	endingLineSize: '--ending-line-size',
 	endingCommandSize: '--ending-command-size',
+	codeLineHeight: '--code-line-height',
 	cursorFill: '--cursor-fill',
 	cursorEdge: '--cursor-edge'
 };

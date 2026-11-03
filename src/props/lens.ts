@@ -4,8 +4,8 @@
  * the page's picture, as a piece of the page is (`src/props/piece.ts`), filling its box, the holes pieces leave there
  * with it; it is what an object shows (`src/props/object.ts`), and comes up, travels and goes as one.
  */
-import { type Camera, frameZoomOf, underTheFrame } from '../domain/camera.ts';
-import { type Box, type Point, type Size, boxCentredOn, boxOf } from '../domain/geometry.ts';
+import { type Camera, type SeenBetween, frameZoomOf, underTheFrame } from '../domain/camera.ts';
+import { type Box, type Point, type Size, UNMOVED, boxCentredOn, boxOf } from '../domain/geometry.ts';
 import { A_NUMBER, type Kind, Plain } from '../domain/handed.ts';
 import { type DrawnHole, holesShown } from './piece.ts';
 
@@ -60,6 +60,23 @@ export function drawnLens(
 	const source = under === null ? null : boxCentredOn(under, { width: box.width / fit, height: box.height / fit });
 	const holesUnder = source === null ? NO_HOLES : holesShown(holes, source, fit);
 	return { kind: 'lens', source, fit, figure: boxOf(box), holes: holesUnder, shown };
+}
+
+/**
+ * How far the page a lens shows moves in it from one moment to another, its middle drawn at a point of the frame at
+ * each, in shares of its box as it stands at the later: as far as the point of the screen under its middle moves, at
+ * the later's fit, so a lens standing still over the camera's pan shows the page moving as much faster as it magnifies.
+ * None where its middle sees past the screen at either, as it shows no page there.
+ */
+export function pageMovedIn(lens: Lens, box: Size, startMiddle: Point, endMiddle: Point, seen: SeenBetween): Point {
+	const startUnder = underTheFrame(seen.start, seen.frame, startMiddle);
+	const endUnder = underTheFrame(seen.end, seen.frame, endMiddle);
+	if (startUnder === null || endUnder === null) return UNMOVED;
+	const fit = lensFit(lens, seen.end, seen.frame);
+	return {
+		left: ((startUnder.left - endUnder.left) * fit) / box.width,
+		top: ((startUnder.top - endUnder.top) * fit) / box.height
+	};
 }
 
 /** How many of the frame's pixels a screen's pixel takes in a lens: as many as the camera shows it at, magnified. */

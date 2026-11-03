@@ -22,6 +22,7 @@ import type { Format } from './format.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from './fraction.ts';
 import {
 	type Box,
+	CORNER_SHARES,
 	type Point,
 	type Size,
 	boxBetween,
@@ -37,6 +38,7 @@ import {
 	nearestWithin,
 	overlapOf,
 	partWithin,
+	pointAt,
 	withAir
 } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, needed } from './handed.ts';
@@ -152,6 +154,16 @@ export interface Cut {
 	readonly right: number;
 	readonly bottom: number;
 	readonly left: number;
+}
+
+/**
+ * The cameras two moments of a frame's time show the scene by, on a frame of a size: what moves on the frame while its
+ * shutter is open is measured between them.
+ */
+export interface SeenBetween {
+	readonly start: Camera;
+	readonly end: Camera;
+	readonly frame: Size;
 }
 
 /** The camera as the stage draws it: where it looks, and where its picture is cut in its view. */
@@ -471,6 +483,42 @@ export function frameShift(start: Camera, end: Camera, format: Format): number {
 		.map((point) => nearestWithin(point, format.screen))
 		.map((point) => distanceBetween(onTheFrame(start, format.frame, point), onTheFrame(end, format.frame, point)));
 	return Math.max(NOTHING, ...moved);
+}
+
+/**
+ * How far the window's edge moves on the frame from one camera's view to another's: the farthest any corner of it
+ * goes, as each view leans before the eye that sees it, so a window carried or grown while the camera holds the page
+ * still is measured as it moves.
+ */
+export function viewShift(seen: SeenBetween): number {
+	return Math.max(
+		...CORNER_SHARES.map((corner) =>
+			distanceBetween(cornerOnTheFrame(seen.start, seen.frame, corner), cornerOnTheFrame(seen.end, seen.frame, corner))
+		)
+	);
+}
+
+/** Where a corner of a camera's view, in shares of the view's box, stands on the frame as the view leans. */
+function cornerOnTheFrame(camera: Camera, frame: Size, corner: Point): Point {
+	return leantOnTheFrame(camera.view, camera.eye, frame, pointAt(boxOf(camera.view.box), corner));
+}
+
+/**
+ * How far a point of the screen moves on the frame from where it stood, as one camera showed it, to where it stands,
+ * as another shows it.
+ */
+export function screenPointShift(seen: SeenBetween, start: Point, end: Point): number {
+	return distanceBetween(onTheFrame(seen.start, seen.frame, start), onTheFrame(seen.end, seen.frame, end));
+}
+
+/**
+ * How far a box of the screen moves on the frame from where it stood, as one camera showed it, to where it stands, as
+ * another shows it: the farthest any of its corners goes.
+ */
+export function screenBoxShift(seen: SeenBetween, start: Box, end: Box): number {
+	return Math.max(
+		...CORNER_SHARES.map((corner) => screenPointShift(seen, pointAt(start, corner), pointAt(end, corner)))
+	);
 }
 
 function facing(screen: Size, zoom: number): Pose {

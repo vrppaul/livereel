@@ -13,7 +13,9 @@
  * counted in lines: the stage sets the letters' size, so lines are what the film knows of the pane's height.
  */
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
+import { type Size, frameScaleOf } from '../domain/geometry.ts';
 import { OneOf } from '../domain/handed.ts';
+import type { Look } from './look.ts';
 import { appearedOf, groundOf } from './words.ts';
 
 // The kinds of the pieces of a line: a comment to the line's end, a string, a number, a word the language keeps, a
@@ -125,6 +127,16 @@ export function drawnCode(code: Code, shown: number, gone: number): DrawnCode {
 		longLines: code.longLines,
 		scrolled: code.scrolled
 	};
+}
+
+/**
+ * How far code's lines scroll up its box from one pane to another, in shares of the box's height, on a frame of a
+ * size: as many lines as it scrolled, each as tall as the look's line height takes the letters at their largest, which
+ * the stage sets smaller in a pane whose widest line would not fit across.
+ */
+export function scrolledShareOf(start: Code, end: Code, look: Look, box: Size, frame: Size): number {
+	const lineHeight = look.codeSize * look.codeLineHeight * frameScaleOf(frame);
+	return ((end.scrolled - start.scrolled) * lineHeight) / box.height;
 }
 
 function indentOf(line: string): number {

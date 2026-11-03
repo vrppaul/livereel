@@ -16,7 +16,7 @@
  * line, crosses a faint one. An object standing whole is drawn on no way at all.
  */
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
-import type { FrameSide } from '../domain/geometry.ts';
+import { type FrameSide, MIDDLE_SHARE, type Point, type PointMoved, type Size } from '../domain/geometry.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
 import { acrossFrom } from '../domain/place.ts';
 
@@ -48,6 +48,11 @@ export type Way =
 export interface Presence {
 	readonly shown: Fraction;
 	readonly gone: Fraction;
+}
+
+/** What comes up and goes in a way, and how far it has. */
+export interface WayCome extends Presence {
+	readonly way: Way;
 }
 
 /** How far an object's ground and its figure have come up and gone. */
@@ -111,6 +116,11 @@ const AS_IT_STANDS: OnItsWay = {
 };
 // What comes up and goes there whole: come up, and not going
 const PRESENT_WHOLE: Presence = { shown: WHOLE, gone: NONE };
+// The sides a cut is measured on; the far edge of a box, in shares of it from its near one; and a cut that moves nowhere
+const SIDES_CUT: readonly FrameSide[] = ['top', 'right', 'bottom', 'left'];
+const FAR_EDGE = 1;
+const NO_CUT_MOVED: readonly PointMoved[] = [];
+const HALVES = 2;
 // The edge a mask comes from, below the figure, rising, and the edge a wipe comes from, its left, where none is named
 const MASKED_FROM: FrameSide = 'bottom';
 const WIPED_FROM: FrameSide = 'left';
@@ -165,7 +175,11 @@ export function presentShare(presence: Presence): number {
  * as the way has come.
  */
 export function alongItsWay(way: Way, progress: number): OnItsWay | null {
-	if (progress >= END_OF_WAY) return null;
+	return progress >= END_OF_WAY ? null : onItsWayAt(way, progress);
+}
+
+/** A figure `progress` of its way in, and at its end as it stands there; none in its own way. */
+function onItsWayAt(way: Way, progress: number): OnItsWay | null {
 	const stillToGo = END_OF_WAY - progress;
 	switch (way.kind) {
 		case 'own':
@@ -186,6 +200,68 @@ export function alongItsWay(way: Way, progress: number): OnItsWay | null {
 			return { ...AS_IT_STANDS, shadow: progress, cut: { kind: 'circle', radius: progress } };
 		case 'grow':
 			return { ...AS_IT_STANDS, scale: progress };
+	}
+}
+
+/**
+ * Where a point of a figure, in shares of its box, stands on its way: shifted and grown about the box's middle as far
+ * as the way has come, or where it stands whole on none. The shift is counted in shares of the box alone, short of the
+ * reach past it the stage draws the shift over, as far as a shadow falls.
+ */
+export function figurePointOn(onItsWay: OnItsWay | null, point: Point): Point {
+	const way = onItsWay ?? AS_IT_STANDS;
+	return {
+		left: MIDDLE_SHARE.left + (point.left - MIDDLE_SHARE.left) * way.scale + way.shift.across,
+		top: MIDDLE_SHARE.top + (point.top - MIDDLE_SHARE.top) * way.scale + way.shift.down
+	};
+}
+
+/**
+ * How a figure's cut moves from where it stood on its way to where it stands, in a box of a size: a point on each of
+ * its sides, in shares of the box, as the figure's shift and growth carry it; at the end of its way, the cut stands as
+ * the way ends it, opened whole. None where the figure is cut in the same way at neither, as in a way that cuts nothing
+ * or one in place of another. A mask's cut stands still as its figure rises out of it; a wipe's edge and an iris's ring
+ * move over a figure that stands.
+ */
+export function cutMoved(start: WayCome, end: WayCome, box: Size): readonly PointMoved[] {
+	const startWay = onItsWayAt(start.way, Math.min(presentShare(start), END_OF_WAY));
+	const endWay = onItsWayAt(end.way, Math.min(presentShare(end), END_OF_WAY));
+	const startCut = startWay?.cut ?? null;
+	const endCut = endWay?.cut ?? null;
+	if (startCut === null || endCut === null || startCut.kind !== endCut.kind) return NO_CUT_MOVED;
+	const startPoints = cutPointsOf(startCut, box);
+	const endPoints = cutPointsOf(endCut, box);
+	return SIDES_CUT.map((side) => ({
+		start: figurePointOn(startWay, startPoints[side]),
+		end: figurePointOn(endWay, endPoints[side])
+	}));
+}
+
+/**
+ * Where a cut stands on each side of a figure, in shares of its box of a size: a point at the middle of each side an
+ * inset cuts, or where a ring crosses the lines across and down the box's middle.
+ */
+function cutPointsOf(cut: Cut, box: Size): { readonly [Side in FrameSide]: Point } {
+	switch (cut.kind) {
+		case 'inset':
+			return {
+				top: { left: MIDDLE_SHARE.left, top: cut.top },
+				right: { left: FAR_EDGE - cut.right, top: MIDDLE_SHARE.top },
+				bottom: { left: MIDDLE_SHARE.left, top: FAR_EDGE - cut.bottom },
+				left: { left: cut.left, top: MIDDLE_SHARE.top }
+			};
+		case 'circle': {
+			// A ring's radius is a share of how far the box's corners stand from its middle
+			const radius = (cut.radius * Math.hypot(box.width, box.height)) / HALVES;
+			const across = radius / box.width;
+			const down = radius / box.height;
+			return {
+				top: { left: MIDDLE_SHARE.left, top: MIDDLE_SHARE.top - down },
+				right: { left: MIDDLE_SHARE.left + across, top: MIDDLE_SHARE.top },
+				bottom: { left: MIDDLE_SHARE.left, top: MIDDLE_SHARE.top + down },
+				left: { left: MIDDLE_SHARE.left - across, top: MIDDLE_SHARE.top }
+			};
+		}
 	}
 }
 

@@ -57,10 +57,13 @@ import { type Sharpness, distanceOfItsMiddle, outOfFocusBeforeItsMatrix } from '
 import type { Fraction } from '../domain/fraction.ts';
 import {
 	type Box,
+	CORNER_SHARES,
 	type FrameSide,
+	MIDDLE_SHARE,
 	type Point,
+	type PointMoved,
 	type Size,
-	cornersOf,
+	UNMOVED,
 	distanceBetween,
 	frameScaleOf,
 	middleX,
@@ -72,7 +75,7 @@ import { ITS_MIDDLE, type Matrix, type Spot, carried, chained } from '../domain/
 import { ONE_FRAME, pastTheEdge } from '../domain/place.ts';
 import { type DrawnStance, type Stance, drawnStance, stanceMatrix } from '../domain/stance.ts';
 import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
-import { type Code, type DrawnCode, drawnCode } from './code.ts';
+import { type Code, type DrawnCode, drawnCode, scrolledShareOf } from './code.ts';
 import { type Effects, drawnEffects } from './effects.ts';
 import { type DrawnEnding, type Ending, drawnEnding } from './ending.ts';
 import {
@@ -85,10 +88,11 @@ import {
 	groupStanceAbout
 } from './group.ts';
 import { type CaptionStanding, type DrawnKeys, type Keys, drawnKeys, standOver } from './keys.ts';
-import { type DrawnLens, type Lens, drawnLens, lensFit } from './lens.ts';
+import { type DrawnLens, type Lens, drawnLens, lensFit, pageMovedIn } from './lens.ts';
+import type { Look } from './look.ts';
 import { type DrawnOutline, type Outline, drawnOutline } from './outline.ts';
 import { type DrawnHole, type DrawnPiece, type Piece, drawnPiece, fitIn } from './piece.ts';
-import { type OnItsWay, type Way, alongItsWay, presencesIn, presentShare } from './way.ts';
+import { type OnItsWay, type Way, alongItsWay, cutMoved, figurePointOn, presencesIn, presentShare } from './way.ts';
 import type { Screen } from './screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './terminal.ts';
 import { type DrawnTitleWords, type TitleWords, drawnTitleWords } from './title.ts';
@@ -221,9 +225,6 @@ const LAYER_OF: { readonly [Kind in Content['kind']]: number } = {
 	outline: 0,
 	lens: 0
 };
-// The corners of a box, in shares of it, and its middle
-const CORNERS = cornersOf({ left: 0, top: 0, width: 1, height: 1 });
-const MIDDLE: Point = { left: 0.5, top: 0.5 };
 // Where an object in no group stands in a group's order: anywhere, as its place among objects is its own; and the
 // zIndex of one in a group the film names none for, so all such are drawn as they came
 const NO_GROUP_ORDER = 0;
@@ -245,27 +246,90 @@ interface Standing {
 }
 
 /**
- * How far an object moves on the frame from where it stood to where it stands, what it stands in as it stood and as it
- * stands given: the farthest any corner of its box goes, as the object stands about its middle, and as the window or
- * the group it stands in carries it.
+ * An object as it stood or stands at a moment of a frame's time: itself, what it stood in then, and the look it was
+ * drawn in, which sets how tall its lines of code stand.
  */
-export function frameShiftOf(
-	start: FrameObject,
-	end: FrameObject,
-	startHolders: Holders,
-	endHolders: Holders,
-	frame: Size
-): number {
-	const startStanding = standingOf(start, frame, startHolders);
-	const endStanding = standingOf(end, frame, endHolders);
+export interface ObjectThen {
+	readonly object: FrameObject;
+	readonly holders: Holders;
+	readonly look: Look;
+}
+
+/** An object at a moment of a frame's time, and how it stood then. */
+interface StandingThen extends ObjectThen {
+	readonly standing: Standing;
+}
+
+/**
+ * How far an object moves on the frame from where it stood to where it stands: the farthest any corner of its box goes,
+ * where its ground stands, any corner of what it shows, as its way shifts and grows it and as what it shows moves in
+ * its box — lines of code scrolling, the page under a lens — or a side of its way's cut, each as the object stands
+ * about its middle, and as the window or the group it stands in carries it.
+ */
+export function frameShiftOf(start: ObjectThen, end: ObjectThen, frame: Size): number {
+	const startThen = { ...start, standing: standingOf(start.object, frame, start.holders) };
+	const endThen = { ...end, standing: standingOf(end.object, frame, end.holders) };
+	const moved = shownMoved(startThen, endThen, frame);
+	const startWay = alongItsWay(start.object.way, presentShare(start.object));
+	const endWay = alongItsWay(end.object.way, presentShare(end.object));
+	const points: readonly PointMoved[] = [
+		...CORNER_SHARES.flatMap((corner) => [
+			{ start: corner, end: corner },
+			{ start: figurePointOn(startWay, corner), end: movedBy(figurePointOn(endWay, corner), moved) }
+		]),
+		...cutMoved(start.object, end.object, endThen.standing.laid)
+	];
 	return Math.max(
-		...CORNERS.map((corner) =>
+		...points.map((point) =>
 			distanceBetween(
-				onTheFrameOf(start.inside, startStanding, startHolders.camera, frame, corner),
-				onTheFrameOf(end.inside, endStanding, endHolders.camera, frame, corner)
+				onTheFrameOf(start.object.inside, startThen.standing, start.holders.camera, frame, point.start),
+				onTheFrameOf(end.object.inside, endThen.standing, end.holders.camera, frame, point.end)
 			)
 		)
 	);
+}
+
+/**
+ * How far what an object shows moves in its box from where it stood to where it stands, in shares of its box as it
+ * stands: lines of code as they scroll, and the page under a lens as the lens or the camera moves. What any other
+ * shows stands in its box, but for words and lines rising a little as they come up, which is not counted; and what
+ * stands in place of something else of its name has come, not moved.
+ */
+function shownMoved(start: StandingThen, end: StandingThen, frame: Size): Point {
+	const before = start.object.content;
+	const after = end.object.content;
+	switch (after.kind) {
+		case 'code':
+			return before.kind === 'code' ? linesScrolled(before, after, end, frame) : UNMOVED;
+		case 'lens':
+			return before.kind === 'lens' ? pageMovedUnder(after, start, end, frame) : UNMOVED;
+		case 'words':
+		case 'terminal':
+		case 'ending':
+		case 'caption':
+		case 'keys':
+		case 'piece':
+		case 'outline':
+			return UNMOVED;
+	}
+}
+
+/** How far code's lines scroll up its box, in shares of its box as it stands. */
+function linesScrolled(before: Code, after: Code, end: StandingThen, frame: Size): Point {
+	return { left: UNMOVED.left, top: -scrolledShareOf(before, after, end.look, end.standing.laid, frame) };
+}
+
+/** How far the page a lens shows moves in it, as far as the point of the screen under its middle moves. */
+function pageMovedUnder(lens: Lens, start: StandingThen, end: StandingThen, frame: Size): Point {
+	const startMiddle = onTheFrameOf(start.object.inside, start.standing, start.holders.camera, frame, MIDDLE_SHARE);
+	const endMiddle = onTheFrameOf(end.object.inside, end.standing, end.holders.camera, frame, MIDDLE_SHARE);
+	const seen = { start: start.holders.camera, end: end.holders.camera, frame };
+	return pageMovedIn(lens, end.standing.laid, startMiddle, endMiddle, seen);
+}
+
+/** A point moved so far, in shares of a box. */
+function movedBy(point: Point, moved: Point): Point {
+	return { left: point.left + moved.left, top: point.top + moved.top };
 }
 
 /**
@@ -360,7 +424,7 @@ export function framesPastTheEdge(object: FrameObject, toward: FrameSide, within
 	const there = standingAlone(away, within, eye);
 	return Math.max(
 		ONE_FRAME,
-		...CORNERS.map((corner) =>
+		...CORNER_SHARES.map((corner) =>
 			shareOfTheWayToTheEdge(drawnPointOf(here, corner), drawnPointOf(there, corner), toward, within)
 		)
 	);
@@ -628,7 +692,7 @@ function drawnContent(
 		case 'outline':
 			return drawnOutline(content, presentShare(figure));
 		case 'lens': {
-			const middle = onTheFrameOf(object.inside, standing, around.camera, around.frame, MIDDLE);
+			const middle = onTheFrameOf(object.inside, standing, around.camera, around.frame, MIDDLE_SHARE);
 			const shown = presentShare(figure);
 			return drawnLens(content, standing.laid, middle, around.camera, around.frame, shown, around.holes);
 		}

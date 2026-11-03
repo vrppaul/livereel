@@ -21,6 +21,7 @@ import {
 	A_COLOUR,
 	A_FONT_FAMILY,
 	A_GROUND_LAYERS,
+	A_LINE_HEIGHT,
 	A_PIXELS,
 	A_SHARE,
 	A_SIZE,
@@ -108,6 +109,8 @@ export interface Look {
 	readonly endingNameSize: number;
 	readonly endingLineSize: number;
 	readonly endingCommandSize: number;
+	/** How tall a line of code stands, in times its letters' size: the step its lines scroll by. */
+	readonly codeLineHeight: number;
 	/** The cursor's colour and the colour of its edge, in hex. */
 	readonly cursorFill: string;
 	readonly cursorEdge: string;
@@ -189,6 +192,7 @@ const CHECKED_HERE = null;
 // ones, those going under those coming. A font and the ground's layers are the film's CSS
 const COLOUR = new LookKind(A_COLOUR, asWritten, colourToward, CHECKED_HERE);
 const SIZE = new LookKind(A_SIZE, asWritten, between, CHECKED_HERE);
+const LINE_HEIGHT = new LookKind(A_LINE_HEIGHT, asWritten, between, CHECKED_HERE);
 const PIXELS = new LookKind(A_PIXELS, asWritten, pixelsToward, CHECKED_HERE);
 const SHARE = new LookKind(A_SHARE, asWritten, shareToward, CHECKED_HERE);
 const WEIGHT = new LookKind(A_WEIGHT, asWritten, between, CHECKED_HERE);
@@ -241,6 +245,7 @@ export const LOOK_KINDS: { readonly [Name in keyof Look]: LookKind<Written<Look[
 	endingNameSize: SIZE,
 	endingLineSize: SIZE,
 	endingCommandSize: SIZE,
+	codeLineHeight: LINE_HEIGHT,
 	cursorFill: COLOUR,
 	cursorEdge: COLOUR,
 	words: WAY_OF_WORDS
@@ -286,6 +291,7 @@ export const LIVEREELS_LOOK: Look = {
 	endingNameSize: 96,
 	endingLineSize: 36,
 	endingCommandSize: 38,
+	codeLineHeight: 1.6,
 	cursorFill: '#111',
 	cursorEdge: '#fff',
 	words: 'rise'
