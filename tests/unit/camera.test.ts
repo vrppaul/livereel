@@ -16,6 +16,7 @@ import {
 	windowView,
 	zoomPicturedFor
 } from '../../src/domain/camera.ts';
+import { THE_EYE_AT_REST } from '../../src/domain/eye.ts';
 import { type Box, type Format, type Point, type Size, distanceBetween } from '../../src/domain/geometry.ts';
 
 // A square frame as large as the stage's look was made on, where a zoom counts the frame's own pixels
@@ -46,19 +47,19 @@ const BOTTOM_RIGHT: Point = { left: 1512, top: 1080 };
 const WINDOW: Box = { left: 400, top: 500, width: 600, height: 400 };
 const WINDOW_CORNER: Point = { left: 1000, top: 900 };
 
-/** A camera at a pose, its picture the whole of a frame, leant as it is said. */
+/** A camera at a pose, its picture the whole of a frame, leant as it is said, seen from the eye at rest. */
 function inTheWhole(pose: Pose, angle: Angle = STRAIGHT, frame: Size = SQUARE.frame): Camera {
-	return { pose, view: { ...wholeView(frame), angle } };
+	return { pose, view: { ...wholeView(frame), angle }, eye: THE_EYE_AT_REST };
 }
 
 function inTheWindow(pose: Pose, angle: Angle = STRAIGHT): Camera {
-	return { pose, view: { ...windowView(WINDOW), angle } };
+	return { pose, view: { ...windowView(WINDOW), angle }, eye: THE_EYE_AT_REST };
 }
 
 /** Where a face-on camera's picture is cut, its view the whole square frame lifted so far. */
 function cutAt(lift: number): Cut {
 	const view = { box: { left: 0, top: 0, width: 1080, height: 1080 }, lift, angle: STRAIGHT };
-	return drawnCamera({ pose: FACE_ON, view }, SQUARE).cut;
+	return drawnCamera({ pose: FACE_ON, view, eye: THE_EYE_AT_REST }, SQUARE).cut;
 }
 
 function widthBetween(angle: Angle, left: Point, right: Point): number {
@@ -121,11 +122,13 @@ test('a window drawn back off the frame moves what it shows by how far its corne
 	const whole = inTheWhole(FACE_ON);
 	const drawnBack: Camera = {
 		pose: FACE_ON,
-		view: windowView({ left: 0, top: 0, width: 1080, height: 1080 })
+		view: windowView({ left: 0, top: 0, width: 1080, height: 1080 }),
+		eye: THE_EYE_AT_REST
 	};
 	const movedAside: Camera = {
 		pose: FACE_ON,
-		view: windowView({ left: 30, top: 40, width: 1080, height: 1080 })
+		view: windowView({ left: 30, top: 40, width: 1080, height: 1080 }),
+		eye: THE_EYE_AT_REST
 	};
 	expect([frameShift(whole, drawnBack, SQUARE), frameShift(whole, movedAside, SQUARE)]).toEqual([0, 50]);
 });
@@ -227,7 +230,8 @@ test("the picture is cut at the screen's edges flat on the frame, at the view's 
 test("a flat view slid off the frame's edge is cut at its own edge where it stands in from the frame's, and past it only where it meets or passes the frame's edge", () => {
 	const slidHalfAcross: Camera = {
 		pose: { ...FACE_ON, zoom: 2 },
-		view: { box: { left: 540, top: 0, width: 1080, height: 1080 }, lift: 0, angle: STRAIGHT }
+		view: { box: { left: 540, top: 0, width: 1080, height: 1080 }, lift: 0, angle: STRAIGHT },
+		eye: THE_EYE_AT_REST
 	};
 	expect(drawnCamera(slidHalfAcross, SQUARE).cut).toEqual({ top: -540, right: -972, bottom: -540, left: 0 });
 });

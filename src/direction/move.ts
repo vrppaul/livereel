@@ -40,10 +40,10 @@ type ObjectPart = `${ObjectName} object`;
 type GroupPart = `${GroupName} group`;
 
 /**
- * What a move changes: one prop of the scene, an object, a group of objects, the page itself, or the speed the page's
- * own time runs at; none, for a move that only makes a sound. Two moves of one part never run at once.
+ * What a move changes: one prop of the scene, an object, a group of objects, the page itself, the speed the page's own
+ * time runs at, or the eye; none, for a move that only makes a sound. Two moves of one part never run at once.
  */
-export type Part = PropName | ObjectPart | GroupPart | 'page' | 'pageSpeed' | null;
+export type Part = PropName | ObjectPart | GroupPart | 'page' | 'pageSpeed' | 'eye' | null;
 
 const NO_SOUNDS: readonly Cue[] = [];
 const NO_CSS: readonly CssNamed[] = [];

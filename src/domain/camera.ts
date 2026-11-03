@@ -17,6 +17,7 @@
  * screen carried by its focus to the view's middle and brought close, the view swung and leant back about its middle,
  * and seen from the eye before the frame's middle, a nearer point larger.
  */
+import { type Eye, THE_EYE_AT_REST, isAtRest, seenByTheEye, sightOf } from './eye.ts';
 import type { Format } from './format.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from './fraction.ts';
 import {
@@ -46,7 +47,6 @@ import {
 	carried,
 	chained,
 	facesTheFrame,
-	perspective,
 	rotationX,
 	rotationY,
 	showsItsFront,
@@ -127,10 +127,14 @@ export interface Placing {
 	readonly angle: Track<Angle>;
 }
 
-/** The camera as a frame shows it: how it looks at the screen, and where on the frame its picture shows. */
+/**
+ * The camera as a frame shows it: how it looks at the screen, where its picture shows on the frame's plane, and the eye
+ * that plane is seen from, which stands where the film has it.
+ */
 export interface Camera {
 	readonly pose: Pose;
 	readonly view: View;
+	readonly eye: Eye;
 }
 
 /**
@@ -162,9 +166,6 @@ export interface Framing {
 /** How close the camera comes to a block it frames where a film names no bound, as a pose's zoom has it. */
 export const ZOOM_AT_MOST = 2.2;
 
-// How far the eye stands out from the middle of a frame the stage's look was made on, in its pixels: nearer is a
-// stronger angle
-export const EYE_DISTANCE = 2000;
 // The middle of a length lies half-way along it
 const HALVES = 2;
 // Where the screen faces before the window leans it: straight out at the eye
@@ -222,9 +223,9 @@ export function standingAt(pose: Pose): Aiming {
  * the aims on its way, to its aim, each come to in that view and kept off the screen's edge there, as is every pose on
  * a path through keys, which may bow past the edge between them. A block is framed in the part of the window on the
  * frame, its share of the window going from where the window stood to where it goes as the window does, so a window
- * sliding whole carries the page with it.
+ * sliding whole carries the page with it. The window's plane is seen from the eye where it stands.
  */
-export function seenThrough(aiming: Aiming, window: Placing, format: Format): Camera {
+export function seenThrough(aiming: Aiming, window: Placing, eye: Eye, format: Format): Camera {
 	const view = viewOf(window);
 	const shownFrom = shownShareOf(window.box.from, format.frame);
 	const shownTo = shownShareOf(window.box.to, format.frame);
@@ -236,8 +237,8 @@ export function seenThrough(aiming: Aiming, window: Placing, format: Format): Ca
 	);
 	const through = { ...aiming.through, keys: aiming.through.keys.map((aim) => aimedIn(aim, view, shown, format)) };
 	const to = aimedIn(aiming.aim, view, shown, format);
-	const pose = alongPath(aiming.from, through, to, poseSpaceIn(view, format), aiming.progress);
-	return { pose: keptOnThePath(pose, through, format, view), view };
+	const pose = alongPath(aiming.from, through, to, poseSpaceIn(view, eye, format), aiming.progress);
+	return { pose: keptOnThePath(pose, through, format, view), view, eye };
 }
 
 /**
@@ -252,12 +253,12 @@ function keptOnThePath(pose: Pose, through: Through<Pose>, format: Format, view:
  * How a pose goes on a way through keys in a view (`src/domain/path.ts`): by its focus and its zoom, a step from one
  * pose to another as long as what the frame shows moves on it.
  */
-function poseSpaceIn(view: View, format: Format): PathSpace<Pose> {
+function poseSpaceIn(view: View, eye: Eye, format: Format): PathSpace<Pose> {
 	return {
 		toward: poseToward,
 		numbersOf: (pose) => [pose.focusX, pose.focusY, pose.zoom],
 		valueOf: poseOfNumbers,
-		distance: (start, end) => frameShift({ pose: start, view }, { pose: end, view }, format)
+		distance: (start, end) => frameShift({ pose: start, view, eye }, { pose: end, view, eye }, format)
 	};
 }
 
@@ -282,9 +283,9 @@ function shownShareOf(box: Box, frame: Size): Box | null {
 	};
 }
 
-/** The camera an act is done in: face-on at the screen's own size, on a frame the screen's size. */
+/** The camera an act is done in: face-on at the screen's own size, on a frame the screen's size, the eye at rest. */
 export function flatCamera(format: Format): Camera {
-	return { pose: flatPose(format), view: wholeView(format.screen) };
+	return { pose: flatPose(format), view: wholeView(format.screen), eye: THE_EYE_AT_REST };
 }
 
 /** An angle `progress` of the way to another. */
@@ -338,12 +339,13 @@ export function keptOnTheScreen(pose: Pose, format: Format, view: View): Pose {
  * How close a picture of the page must hold it, as a pose's zoom has it, for a frame's cameras and pieces of the page to
  * show it as sharp as it stands: its own camera, those along its way it is also exposed at, and how close each piece
  * shows it. Face-on, a camera shows a page's pixel as large anywhere on the frame, so the picture holds it as close as
- * the closest of them comes. A camera in a leant view shows the nearer part of the screen larger than its zoom, so the
- * picture holds it at livereel's bound, `ZOOM_AT_MOST`; no picture holds it closer than that.
+ * the closest of them comes. A camera in a leant view, or seen by an eye that has moved, shows the nearer part of the
+ * screen larger than its zoom, so the picture holds it at livereel's bound, `ZOOM_AT_MOST`; no picture holds it closer
+ * than that.
  */
 export function zoomPicturedFor(own: Camera, along: readonly Camera[], pieces: readonly number[]): number {
 	const cameras = [own, ...along];
-	if (!cameras.every((camera) => isFaceOn(camera.view.angle))) return ZOOM_AT_MOST;
+	if (!cameras.every((camera) => isFaceOn(camera.view.angle) && isAtRest(camera.eye))) return ZOOM_AT_MOST;
 	return Math.min(ZOOM_AT_MOST, Math.max(...cameras.map((camera) => camera.pose.zoom), ...pieces));
 }
 
@@ -495,7 +497,7 @@ function keptWithin(focus: number, halfSeen: number, length: number): number {
  * view set where it stands, and seen from the eye.
  */
 export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
-	return leantOnTheFrame(camera.view, frame, pointInTheView(camera, frame, point));
+	return leantOnTheFrame(camera.view, camera.eye, frame, pointInTheView(camera, frame, point));
 }
 
 /**
@@ -573,8 +575,8 @@ function seenOnTheScreen(camera: Camera, frame: Size, point: Point): Point {
  * Where a point of what leans stands on the frame, the point in its box's own pixels from the top left corner: carried
  * into the room about the box's middle as it leans, and seen from the eye, as the stage draws the window.
  */
-export function leantOnTheFrame(leaning: Leaning, frame: Size, point: Point): Point {
-	return carriedAboutItsMiddle(leaningOnTheFrame(leaning, frame), leaning.box, point);
+export function leantOnTheFrame(leaning: Leaning, eye: Eye, frame: Size, point: Point): Point {
+	return carriedAboutItsMiddle(leaningOnTheFrame(leaning, eye, frame), leaning.box, point);
 }
 
 /**
@@ -590,11 +592,11 @@ export function carriedAboutItsMiddle(matrix: Matrix, box: Box, point: Point): P
 }
 
 /**
- * The matrix that carries what stands in a box on the frame, about the box's middle, to where the eye sees it: from
- * before the frame's middle, a nearer spot larger and farther from that middle.
+ * The matrix that carries what stands in a box on the frame's plane, about the box's middle, to where an eye sees it:
+ * at rest, from before the frame's middle, a nearer spot larger and farther from that middle.
  */
-export function seenFromTheEye(box: Box, frame: Size): Matrix {
-	return aboutTheMiddleOf(perspective(eyeDistanceOf(frame)), box, frame);
+export function seenFromTheEye(box: Box, eye: Eye, frame: Size): Matrix {
+	return aboutTheMiddleOf(seenByTheEye(eye, frame), box, frame);
 }
 
 /**
@@ -614,8 +616,8 @@ export function aboutTheMiddleOf(matrix: Matrix, box: Box, within: Size): Matrix
  * The matrix of what leans on the frame as the window does, about its box's middle: leant as it is, seen from the eye.
  * The stage draws the window by it, so where the engine sees a point of the window is where it is drawn.
  */
-export function leaningOnTheFrame(leaning: Leaning, frame: Size): Matrix {
-	return chained([seenFromTheEye(leaning.box, frame), angledAs(leaning.angle)]);
+export function leaningOnTheFrame(leaning: Leaning, eye: Eye, frame: Size): Matrix {
+	return chained([seenFromTheEye(leaning.box, eye, frame), angledAs(leaning.angle)]);
 }
 
 /** Where a spot of a box, from its middle, stands once a matrix carries it about that middle: in the box's pixels. */
@@ -633,19 +635,23 @@ export function underTheFrame(camera: Camera, frame: Size, point: Point): Point 
 	const pose = camera.pose;
 	const facingNow = carried(angledAs(camera.view.angle), FACING_OUT);
 	const middle = middleInTheRoom(camera.view.box, frame);
-	const eyeDistance = eyeDistanceOf(frame);
-	const sight = {
-		across: point.left - frame.width / HALVES,
-		down: point.top - frame.height / HALVES,
-		out: -eyeDistance
+	const sight = sightOf(camera.eye, frame, {
+		left: point.left - frame.width / HALVES,
+		top: point.top - frame.height / HALVES
+	});
+	// How far along the sight from the eye the plane is met: at the point itself, where the screen is face-on to the
+	// eye at rest
+	const toTheMiddle = {
+		across: middle.across - sight.from.across,
+		down: middle.down - sight.from.down,
+		out: middle.out - sight.from.out
 	};
-	// How far along the sight from the eye the plane is met: at the point itself, where the screen is face-on
-	const reach = (dotProduct(facingNow, middle) - facingNow.out * eyeDistance) / dotProduct(facingNow, sight);
+	const reach = dotProduct(facingNow, toTheMiddle) / dotProduct(facingNow, sight.along);
 	if (!(reach > 0 && Number.isFinite(reach))) return null;
 	const met = carried(angledBack(camera.view.angle), {
-		across: sight.across * reach - middle.across,
-		down: sight.down * reach - middle.down,
-		out: eyeDistance + sight.out * reach
+		across: sight.from.across + sight.along.across * reach - middle.across,
+		down: sight.from.down + sight.along.down * reach - middle.down,
+		out: sight.from.out + sight.along.out * reach - middle.out
 	});
 	const frameZoom = frameZoomOf(pose, frame);
 	return { left: pose.focusX + met.across / frameZoom, top: pose.focusY + met.down / frameZoom };
@@ -659,14 +665,6 @@ export function frameZoomOf(pose: Pose, frame: Size): number {
 /** The zoom of a pose in which a page's pixel takes so many of the frame's own pixels, on a frame of this size. */
 function poseZoomFor(frameZoom: number, frame: Size): number {
 	return frameZoom / frameScaleOf(frame);
-}
-
-/**
- * How far the eye stands out from a frame's middle, in its pixels: as far, for its size, as from a frame the stage's
- * look was made on, so an angle leans as steeply on any frame.
- */
-function eyeDistanceOf(frame: Size): number {
-	return EYE_DISTANCE * frameScaleOf(frame);
 }
 
 /**

@@ -1,6 +1,8 @@
 import { expect, test } from 'vitest';
 import { AS_PLACED } from '../../src/domain/stance.ts';
 import { type Camera, onTheFrame, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
+import { type EyePlace, THE_EYE_AT_REST } from '../../src/domain/eye.ts';
+import * as eye from '../../src/moves/eye.ts';
 import { linear } from '../../src/domain/time.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import type { Format } from '../../src/domain/format.ts';
@@ -1149,7 +1151,7 @@ test('an object joins a group only as it comes, while the group stands as it was
 
 test('an object stands inside the window or in a group, never both, and takes a zIndex only in a group', () => {
 	expect(() => code.show(THREE_LINES, { at: LOWER_RIGHT, inside: 'window', group: 'stack' })).toThrow(
-		new FilmError('code.show stands an object inside the window or in a group: not both')
+		new FilmError('code.show stands an object inside the window or the world, or in a group: not both')
 	);
 	expect(() => code.show(THREE_LINES, { at: LOWER_RIGHT, zIndex: 2 })).toThrow(
 		new FilmError('code.show orders an object by its zIndex only in a group: name its group')
@@ -1665,7 +1667,8 @@ test("a note's line runs from the block's edge to the words' share across from t
 	// Face-on, a page's pixel to a frame's pixel, in a window whose middle is the frame's: the screen drawn 100 to the left
 	const camera: Camera = {
 		pose: { focusX: 300, focusY: 200, zoom: 1 / frameScaleOf(SMALL.frame) },
-		view: windowView({ left: 100, top: 100, width: 200, height: 200 })
+		view: windowView({ left: 100, top: 100, width: 200, height: 200 }),
+		eye: THE_EYE_AT_REST
 	};
 	const beside = { side: 'bottom', box: wordsOn(SMALL, 'bottom'), window: camera.view.box } as const;
 	const said = saidOf('Here');
@@ -2250,7 +2253,7 @@ test('a block is framed in a leant window as in a face-on one, the window leant 
 	const faceOn = cameraOf(await setAt(onto('#half-on'), windowed, 1), SMALL);
 	const leant = await setAt(lean({ tilt: 6, turn: -16 }), windowed, 1);
 	const angled = cameraOf(await setAt(onto('#half-on'), leant, 1), SMALL);
-	expect(angled).toEqual({ pose: faceOn.pose, view: { ...faceOn.view, angle: { tilt: 6, turn: -16 } } });
+	expect(angled).toEqual({ ...faceOn, view: { ...faceOn.view, angle: { tilt: 6, turn: -16 } } });
 });
 
 test("a block is framed on a page leant over the whole frame as on a face-on one, kept off the screen's edge", async () => {
@@ -2279,3 +2282,67 @@ test("a face-on camera onto a block at the screen's foot stops short of showing 
 	const frameFootMiddle: Point = { left: SMALL.frame.width / 2, top: SMALL.frame.height };
 	expect(underTheFrame(camera, SMALL.frame, frameFootMiddle)!.top).toBeLessThanOrEqual(SMALL.screen.height);
 });
+
+// An eye stood to the right, a little high and nearer the frame, looking at a spot 108 pixels of a frame 1080 high left
+// of the frame's middle: on the small frame 40 of its pixels, a tenth of its width; and a box of the frame around it
+const EYE_ASIDE: EyePlace = { at: { across: 900, down: -200, out: 1400 }, aim: { across: -108, down: 0, out: 0 } };
+const AROUND_THE_AIM = { left: 0.3, top: 0.4, width: 0.2, height: 0.2 };
+const AIM_AT_REST: Point = { left: 160, top: 200 };
+const FRAMES_MIDDLE: Point = { left: 200, top: 200 };
+
+test("the eye sees the spot it aims at in the frame's middle, a title in the world there standing there; a title on the frame rides with the eye where it stood", async () => {
+	const riding = await setAt(
+		title.show('Words', { at: AROUND_THE_AIM, as: 'riding' }),
+		openingScene(SMALL, LIVEREELS_LOOK),
+		1
+	);
+	const both = await setAt(title.show('Words', { at: AROUND_THE_AIM, as: 'staying', inside: 'world' }), riding, 1);
+	const aside = await setAt(eye.to(EYE_ASIDE), both, 1);
+	expect(
+		[drawnMiddleOf(both, 'staying'), drawnMiddleOf(aside, 'staying'), drawnMiddleOf(aside, 'riding')].map(roundedPoint)
+	).toEqual([AIM_AT_REST, FRAMES_MIDDLE, AIM_AT_REST]);
+});
+
+test('the eye keeps where it stands, or what it looks at, where a move leaves it out', async () => {
+	const aside = await setAt(eye.to(EYE_ASIDE), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const lookingUp = { across: 0, down: -300, out: 0 };
+	const steppedBack = { across: 0, down: 0, out: 2600 };
+	expect([
+		(await setAt(eye.to({ aim: lookingUp }), aside, 1)).eye,
+		(await setAt(eye.to({ at: steppedBack }), aside, 1)).eye
+	]).toEqual([
+		{ at: EYE_ASIDE.at, aim: lookingUp },
+		{ at: steppedBack, aim: EYE_ASIDE.aim }
+	]);
+});
+
+test('an eye sent to look at where it stands, or straight down, is refused as its move begins', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const refusal = new FilmError(
+		'eye.to sends the eye to look at where it stands, or straight down or up from it, where it has no down to keep: move its aim aside'
+	);
+	await expect(setAt(eye.to({ aim: { across: 0, down: 0, out: 2000 } }), opening, 1)).rejects.toThrow(refusal);
+	await expect(setAt(eye.to({ at: { across: 0, down: -900, out: 0 } }), opening, 1)).rejects.toThrow(refusal);
+});
+
+test('a piece is lifted off the page while the eye looks straight ahead, moved aside or not, and refused while it looks aslant', async () => {
+	const opening = openingScene(FULL_HD, LIVEREELS_LOOK);
+	const steppedAside = await setIn(
+		eye.to({ at: { across: 300, down: 0, out: 2000 }, aim: { across: 300, down: 0, out: 0 } }),
+		opening,
+		1,
+		FULL_HD
+	);
+	const aslant = await setIn(eye.to(EYE_ASIDE), opening, 1, FULL_HD);
+	expect((await setIn(piece.show('#card'), steppedAside, 1, FULL_HD)).objects.has('piece')).toBe(true);
+	await expect(setIn(piece.show('#card'), aslant, 1, FULL_HD)).rejects.toThrow(
+		new FilmError(
+			'piece.show stands over its source only while the eye looks straight ahead: send its aim straight before it, eye.to({ aim })'
+		)
+	);
+});
+
+/** A point to the nearest pixel. */
+function roundedPoint(point: Point): Point {
+	return { left: Math.round(point.left), top: Math.round(point.top) };
+}

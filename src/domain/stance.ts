@@ -13,7 +13,8 @@
  * the matrix, so the stage draws the back of one that has turned away, never what it shows mirrored; the window has no
  * back of its own, and turned half round shows the page mirrored.
  */
-import { type Angle, EYE_DISTANCE, FACE_ON, angleToward, angledAs } from './camera.ts';
+import { type Angle, FACE_ON, angleToward, angledAs } from './camera.ts';
+import { EYE_DISTANCE } from './eye.ts';
 import { A_NUMBER, type Kind, Plain } from './handed.ts';
 import {
 	type FlatMatrix,

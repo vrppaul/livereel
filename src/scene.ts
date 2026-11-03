@@ -20,6 +20,7 @@
  * camera, or by the flat one an act is done in. A prop that may be absent is `null`; the
  * compiler holds every prop to a drawn form here and to a drawer on the stage.
  */
+import { type Eye, THE_EYE_AT_REST } from './domain/eye.ts';
 import type { Format } from './domain/format.ts';
 import type { Size } from './domain/geometry.ts';
 import {
@@ -85,6 +86,11 @@ export type Scene = { readonly [Name in PropName]: PropStates[Name] } & {
 	 * take runs the page's time by it; the stage draws nothing of it.
 	 */
 	readonly pageSpeed: number;
+	/**
+	 * Where the eye stands and what it looks at (`src/domain/eye.ts`): the world, the window in it, is seen from it, the
+	 * frame rides with it. The stage draws nothing of it but the matrices it is handed.
+	 */
+	readonly eye: Eye;
 };
 
 /** What the stage is handed for each prop: its state, or what is worked out from it to draw. */
@@ -132,8 +138,14 @@ export function openingScene(format: Format, look: Look): Scene {
 		objects: new Map(),
 		leaving: new Map(),
 		groups: new Map(),
-		pageSpeed: THE_FILMS_OWN_SPEED
+		pageSpeed: THE_FILMS_OWN_SPEED,
+		eye: THE_EYE_AT_REST
 	};
+}
+
+/** The scene with the eye standing where it is sent. */
+export function withEye(scene: Scene, eye: Eye): Scene {
+	return { ...scene, eye };
 }
 
 export function withProp<Name extends PropName>(scene: Scene, name: Name, state: PropStates[Name]): Scene {
@@ -182,9 +194,12 @@ function withNamed<Value>(values: ReadonlyMap<string, Value>, name: string, valu
 	return named;
 }
 
-/** The camera as the scene shows it: what it aims at, come to in the window where it stands so far. */
+/**
+ * The camera as the scene shows it: what it aims at, come to in the window where it stands so far, seen from the eye
+ * where it stands.
+ */
 export function cameraOf(scene: Scene, format: Format): Camera {
-	return seenThrough(scene.camera, scene.window, format);
+	return seenThrough(scene.camera, scene.window, scene.eye, format);
 }
 
 /**
@@ -261,7 +276,7 @@ export function drawn(scene: Scene, camera: Camera, moment: number, format: Form
 	return {
 		look: scene.look,
 		camera: drawnCamera(camera, format),
-		window: drawnWindow(camera.view, scene.window, format.frame),
+		window: drawnWindow(camera.view, camera.eye, scene.window, format.frame),
 		screen: scene.screen,
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout, moment),

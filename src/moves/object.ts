@@ -94,9 +94,10 @@ import { type Group, type GroupName, cornerOf, groupFound, groupNamed, standsAsP
 import {
 	type Content,
 	type FrameObject,
+	AN_INSIDE,
 	type Holder,
-	INSIDE_THE_WINDOW,
 	IN_THE_WINDOW,
+	IN_THE_WORLD,
 	type Inside,
 	ON_THE_FRAME,
 	ON_THE_PAGE,
@@ -158,7 +159,10 @@ export interface GroupedScript {
 	readonly zIndex?: number;
 }
 
-/** What an object comes up standing in: `inside` the page's window, or in a `group`; neither, the frame. */
+/**
+ * What an object comes up standing in: `inside` the page's window or the world, which the eye moves through, or in a
+ * `group`; neither, the frame, which rides with the eye.
+ */
 export interface NestedScript extends GroupedScript {
 	readonly inside?: Inside;
 }
@@ -232,7 +236,9 @@ export const SHOW_FORM: Form<ShowScript> = { from: A_FRAME_SIDE, ...ENTER_FORM, 
 export const IN_PLACE_SHOW_FORM: Form<InPlaceShowScript> = { ...ENTER_FORM, ...TIMING_FORM };
 export const IN_PLACE_HIDE_FORM: Form<InPlaceHideScript> = { ...LEAVE_FORM, ...TIMING_FORM };
 export const GROUPED_FORM: Form<GroupedScript> = { group: A_NAME, zIndex: A_NUMBER };
-export const NESTED_FORM: Form<NestedScript> = { inside: INSIDE_THE_WINDOW, ...GROUPED_FORM };
+export const NESTED_FORM: Form<NestedScript> = { inside: AN_INSIDE, ...GROUPED_FORM };
+// What an object stands in that a film shows inside what it names
+const HOLDER_INSIDE: { readonly [Name in Inside]: Holder } = { window: IN_THE_WINDOW, world: IN_THE_WORLD };
 export const TO_FORM: Form<ToScript> = {
 	scale: A_SCALE,
 	depth: A_DEPTH,
@@ -362,17 +368,17 @@ export function objectShow(
 }
 
 /**
- * What a film names an object to come up standing in: the page's window, a group, at its zIndex there, or, naming
+ * What a film names an object to come up standing in: the page's window, the world, a group, at its zIndex there, or, naming
  * neither, the frame. A zIndex outside a group is refused, as it orders nothing there.
  */
 function holderNamed(script: NestedScript, move: string): Holder {
 	if (script.inside !== undefined && script.group !== undefined) {
-		throw new FilmError(`${move} stands an object inside the window or in a group: not both`);
+		throw new FilmError(`${move} stands an object inside the window or the world, or in a group: not both`);
 	}
 	if (script.zIndex !== undefined && script.group === undefined) {
 		throw new FilmError(`${move} orders an object by its zIndex only in a group: name its group`);
 	}
-	if (script.inside !== undefined) return IN_THE_WINDOW;
+	if (script.inside !== undefined) return HOLDER_INSIDE[script.inside];
 	if (script.group !== undefined) return { kind: 'group', name: script.group, zIndex: script.zIndex ?? null };
 	return ON_THE_FRAME;
 }
@@ -541,6 +547,7 @@ function standing(beginning: Beginning, name: ObjectName, move: string): FrameOb
 function seenFrom(beginning: Beginning, holder: Holder): Beginning {
 	switch (holder.kind) {
 		case 'frame':
+		case 'world':
 		case 'page':
 		case 'group':
 			return beginning;
@@ -560,6 +567,7 @@ function seenFrom(beginning: Beginning, holder: Holder): Beginning {
 function measuredIn(beginning: Beginning, holder: Holder, box: Box, name: ObjectName, move: string): Box {
 	switch (holder.kind) {
 		case 'frame':
+		case 'world':
 		case 'window':
 			return box;
 		case 'page': {
@@ -589,6 +597,8 @@ function onThePage(beginning: Beginning, object: FrameObject, name: ObjectName, 
 			return measuredIn(beginning, ON_THE_PAGE, object.box, name, move);
 		case 'window':
 			throw new FilmError(`${move} would carry the ${name} out of the window onto the page: it stands in the window`);
+		case 'world':
+			throw new FilmError(`${move} would carry the ${name} out of the world onto the page: show it on the frame`);
 		case 'group':
 			throw new FilmError(`${move} would carry the ${name} out of its group onto the page: it goes with its group`);
 	}
@@ -862,6 +872,7 @@ function flatOnTheWindowSaid(holder: Holder): string | null {
 		case 'page':
 			return 'it lies on the page';
 		case 'frame':
+		case 'world':
 		case 'group':
 			return null;
 	}
@@ -963,7 +974,7 @@ function slidingOut(beginning: Beginning, name: ObjectName, toward: FrameSide, m
 		throw new FilmError(`${move} would slide the ${name} out toward a side from the page: it goes in its place`);
 	}
 	const frame = seenFrom(beginning, object.inside).format.frame;
-	const frames = framesPastTheEdge(object, toward, frame);
+	const frames = framesPastTheEdge(object, toward, frame, beginning.scene.eye);
 	const end = pastTheEdge(object.box, toward, frame, frames);
 	return (scene, progress) =>
 		withObject(scene, name, untilTheEnd(progress, { ...object, box: boxToward(object.box, end, progress) }));
@@ -1019,7 +1030,7 @@ function pushOf(scene: Scene, name: ObjectName, from: FrameSide | null, frame: S
 		throw new FilmError(`${move} would push the ${name} off past the frame's edge from the page: hide it first`);
 	}
 	const toward = acrossFrom(from);
-	const frames = framesPastTheEdge(standingThere, toward, frame);
+	const frames = framesPastTheEdge(standingThere, toward, frame, scene.eye);
 	return { object: standingThere, end: pastTheEdge(standingThere.box, toward, frame, frames), frames };
 }
 

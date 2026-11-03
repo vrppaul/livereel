@@ -10,6 +10,8 @@
  * written once and a face-on window costs the graphics card no 3D layer in an exposure.
  */
 import { type Placing, type View, angledAs, leaningOnTheFrame } from '../domain/camera.ts';
+import { type Eye, turnOf } from '../domain/eye.ts';
+import { chained } from '../domain/matrix.ts';
 import { type Fraction, NONE } from '../domain/fraction.ts';
 import type { Box, Size } from '../domain/geometry.ts';
 import { type Transform, transformOf } from '../domain/stance.ts';
@@ -50,12 +52,15 @@ export const SHADING: MovingBy<Shade> = { dim: MOVES_AS_A_SHARE, fade: MOVES_AS_
 // The names of the shade's values, in the order a refusal says them
 export const SHADE_NAMES = namesOf(SHADING);
 
-/** The window as the stage draws it on a frame of this size: standing as the camera's view, shaded as it is. */
-export function drawnWindow(view: View, window: Shade, frame: Size): DrawnWindow {
+/**
+ * The window as the stage draws it on a frame of this size: standing as the camera's view, seen from the eye, shaded
+ * as it is.
+ */
+export function drawnWindow(view: View, eye: Eye, window: Shade, frame: Size): DrawnWindow {
 	return {
 		box: view.box,
 		lift: view.lift,
-		transform: transformOf(angledAs(view.angle), leaningOnTheFrame(view, frame)),
+		transform: transformOf(chained([turnOf(eye), angledAs(view.angle)]), leaningOnTheFrame(view, eye, frame)),
 		shade: drawnShade(window)
 	};
 }

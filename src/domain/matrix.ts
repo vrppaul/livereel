@@ -9,6 +9,7 @@
  * entry `m<column><row>` stands in that column and row. A chain of them reads as a CSS transform list does: the last
  * carries a point first.
  */
+import { A_NUMBER, type Kind, OfForm, needed } from './handed.ts';
 
 /** A matrix of four rows and four columns, its entries named by their column, then their row. */
 export interface Matrix {
@@ -45,6 +46,12 @@ export interface Spot {
 	readonly down: number;
 	readonly out: number;
 }
+
+/** A spot of the room as a film writes it, every one of its three numbers given. */
+export const A_SPOT: Kind<Spot> = new OfForm<Spot>(
+	{ across: needed(A_NUMBER), down: needed(A_NUMBER), out: needed(A_NUMBER) },
+	'a spot: { across, down, out }'
+);
 
 const DEGREES_IN_A_HALF_TURN = 180;
 // How far either axis of a plane may reach out of the frame's plane, for its length, while the plane is still taken

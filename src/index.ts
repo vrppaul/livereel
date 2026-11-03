@@ -4,6 +4,7 @@
  * by moves, in a `play` or at once in a `cut`.
  */
 export * as camera from './moves/camera.ts';
+export * as eye from './moves/eye.ts';
 export * as window from './moves/window.ts';
 export * as screen from './moves/screen.ts';
 export * as light from './moves/light.ts';
@@ -41,6 +42,8 @@ export type { Keystroke, Typist } from './domain/typing.ts';
 export { easeInOutCubic, easeInOutSine, easeOutBack, easeOutCubic, easeOutQuint, linear } from './domain/time.ts';
 export type { Ease } from './domain/time.ts';
 export type { Angle, Pose } from './domain/camera.ts';
+export type { EyePlace } from './domain/eye.ts';
+export type { Spot } from './domain/matrix.ts';
 export type { Format } from './domain/format.ts';
 export type { Box, FrameSide, Point, Size } from './domain/geometry.ts';
 export type { Place } from './domain/place.ts';

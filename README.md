@@ -141,6 +141,11 @@ and the moves of each part of the scene:
   named, or `'straight'`, and `pace: 'even'`, as long a stretch of the way in each equal share of the move, where none
   is named, or `'keys'`, an equal share from each key to the next. Every object's `to` and `group.to` take the places
   they pass the same way, `title.to('right', { through: ['top'] })`
+- `eye.to({ at, aim }, { through })`: the eye the film is seen from, standing `at` a spot and looking at the spot
+  `aim` names, each `{ across, down, out }` in pixels of a frame 1080 high from the frame's middle, `out` toward whoever
+  watches; it rests at `{ across: 0, down: 0, out: 2000 }` looking at the middle. The page's window, and what a film
+  shows `inside: 'world'`, are seen from wherever it stands; what stands on the frame, a caption, rides with it. What a
+  move leaves out stays; an eye looking at where it stands, or straight up or down, is refused
 - `window.to(place)`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn })`,
   `window.shade({ dim, fade, blur })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
@@ -443,6 +448,10 @@ slides in or out past the frame's edge. A place an object in a group is
 carried to, and a block its `back` or `to` reads, is read on the frame and
 stands in the group where it would stand once the group is back as it was
 placed.
+
+Anything a film shows stands on the frame where it names nothing, and rides
+with the eye as it moves; shown `inside: 'world'`, it stands where it is
+placed while the eye moves past it, as the page's window does.
 
 A title, code or the terminal stands `inside` the page's window, as a small
 window of code over the site's: `code.show(LINES, { at: { left: 0.45, top:

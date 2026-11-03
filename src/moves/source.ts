@@ -8,6 +8,7 @@
  */
 import { type Camera, boxOnTheFrame, isFrontOn, screenShownBy } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
+import { looksStraightAhead } from '../domain/eye.ts';
 import { type Box, overlapOf, withAir } from '../domain/geometry.ts';
 import { type Beginning, type Target, shownBox, targetSaid } from '../direction/move.ts';
 import { cameraOf } from '../scene.ts';
@@ -53,14 +54,20 @@ export async function sourceOf(
 
 /**
  * The scene's camera as a move begins that does what a refusal says it does, refused where its window leans or shows
- * its back, as a box of the screen then shows on the frame as no box, or a box turned over, and a box of the frame
- * stands on the screen as none.
+ * its back, or the eye looks at it aslant, as a box of the screen then shows on the frame as no box, or a box turned
+ * over, and a box of the frame stands on the screen as none. An eye moved but looking straight ahead sees the window's
+ * plane as it is, only nearer or aside.
  */
 export function cameraFrontOn(beginning: Beginning, doing: string): Camera {
 	const camera = cameraOf(beginning.scene, beginning.format);
 	if (!isFrontOn(camera.view.angle)) {
 		throw new FilmError(
 			`${doing} only while the window faces the frame front on: bring it face-on, window.lean({ tilt: 0, turn: 0 })`
+		);
+	}
+	if (!looksStraightAhead(camera.eye)) {
+		throw new FilmError(
+			`${doing} only while the eye looks straight ahead: send its aim straight before it, eye.to({ aim })`
 		);
 	}
 	return camera;
