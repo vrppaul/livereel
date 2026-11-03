@@ -5,8 +5,9 @@
  * A move reads what it starts from once, as its share begins, and becomes a change that knows its start and its end;
  * from then on what it sets at any progress is worked out from those and the progress alone, so a frame is the same
  * whenever it is shot. A move that finds nothing to start from — no light to carry, no block on the page, a block
- * scrolled off the screen — throws as it begins, once. A move is a plain object made by a function of its prop's
- * module (`src/moves/`).
+ * scrolled off the screen — throws as it begins, once. A move that acts on the page for real, at a moment of a play,
+ * acts as it begins, by the way the take hands it, so a move that begins after it reads the page it left. A move is a
+ * plain object made by a function of its prop's module (`src/moves/`).
  */
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
@@ -29,7 +30,7 @@ import type { CssNamed } from './theme.ts';
 import type { GroupName } from '../props/group.ts';
 import type { ObjectName } from '../props/object.ts';
 import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';
-import type { FilmedPage, PageShown } from './page.ts';
+import type { Action, FilmedPage, PageShown } from './page.ts';
 import type { Cue } from './sound.ts';
 
 /** An object as the part a move changes, said by its name, apart from any prop or the page whatever its name. */
@@ -137,16 +138,45 @@ export const TIMING_FORM: Form<TimingScript> = {
 	ease: A_CURVE
 };
 
+/** Where in its step a move done at a moment begins: at `start`, a share of the step. */
+interface Start {
+	readonly start?: number;
+}
+
+/**
+ * The timing of a move done at a moment, as a sound heard or an act: where in its step it begins, the step's start
+ * where none is given; it changes nothing on the scene, so it takes no end and no curve.
+ */
+export interface MomentScript {
+	readonly within?: Start;
+}
+
+/** The timing of a move done at a moment, as a film hands it. */
+export const MOMENT_FORM: Form<MomentScript> = {
+	within: new OfForm<Start>({ start: A_NUMBER }, 'a moment of the step: { start }')
+};
+
+/** The change of a move that changes nothing on the scene: the scene as it stands. */
+export const UNCHANGED: Change = (scene) => scene;
+
 /** A move as a film hands it to a step: made by one of livereel's moves, its share of the step read. */
 export const A_MOVE: Kind<Move> = new Plain(isMove, 'a move, as camera.onto or light.on makes one');
 export const A_MOVES: Kind<readonly Move[]> = new ListOf(A_MOVE, 'a list of moves');
 
-/** What a move reads as its share begins: the scene, the page, the format, and how the stage shows the page. */
+/**
+ * What a move reads as its share begins: the scene, the page, the format, and how the stage shows the page; and the
+ * take's way to act on the page, for a move that acts as it begins.
+ */
 export interface Beginning {
 	readonly scene: Scene;
 	readonly page: FilmedPage;
 	readonly format: Format;
 	readonly pageShown: PageShown;
+	/**
+	 * The page acted on as an `act` acts on it: the film's time standing while the page answers, the stage laid flat for
+	 * it where it shows the page live.
+	 */
+	readonly act: (action: Action) => Promise<void>;
 }
 
 /**

@@ -5,9 +5,10 @@
  * begins by then, in the order their shares begin, each after every running change whose share ended before it has
  * been set at its end — so a move reads the scene and the page as they stand at its start — then sets at its end
  * every change ended by the frame, and every other at its eased progress. One move at most drives a part, or a value
- * of the look, at any point, so the order moves are written in matters nowhere. A cut begins its moves and sets each
- * at its end, with no frame between. A sound a move makes is heard as the move is set at or past its point, on the
- * frame being made.
+ * of it, at any point, so the order moves are written in matters only where they begin at one moment with a move that
+ * acts on the page, `page.act`, which acts as it begins: those written after it read the page it left. A cut begins
+ * its moves and sets each at its end, with no frame between. A sound a move makes is heard as the move is set at or
+ * past its point, on the frame being made.
  * A frame is drawn only when the footage keeps it, and drawn again where anything on it moved fast while its shutter
  * was open — the camera, its window or an object — as the scene stood at moments of that time: the scene the frame
  * before left, every move begun by then set as far as it had come. Each drawing is an exposure of the frame
@@ -43,8 +44,9 @@ import type { Format } from '../domain/format.ts';
 import { type MotionBlur, alsoExposedBack } from '../domain/shutter.ts';
 import { type Ease, between, framesOf, momentOf } from '../domain/time.ts';
 import { type Change, type Move, type Share, movesThePage, soundsOf } from '../direction/move.ts';
+import type { Action } from '../direction/page.ts';
 import type { Cue } from '../direction/sound.ts';
-import type { Act, Cut, Play, Step } from '../direction/steps.ts';
+import type { Cut, Play, Step } from '../direction/steps.ts';
 import {
 	type DrawnScene,
 	type Scene,
@@ -189,7 +191,7 @@ export class Take {
 			case 'cut':
 				return this.cut(step);
 			case 'act':
-				return this.act(step);
+				return this.acted(step.action);
 		}
 	}
 
@@ -228,15 +230,18 @@ export class Take {
 		}
 	}
 
-	/** An act on the page as the stage shows it, which, where the stage shows a picture, leaves it behind the page. */
-	private act(step: Act): Promise<void> {
+	/**
+	 * An act on the page as the stage shows it, between steps or as a move that acts begins: where the stage shows a
+	 * picture, it leaves it behind the page.
+	 */
+	private acted(action: Action): Promise<void> {
 		this.pageChangedSinceTaken = true;
 		const stage = this.opened.stage;
 		switch (stage.kind) {
 			case 'framed':
-				return this.actedOnFlat(stage, step);
+				return this.actedOnFlat(stage, action);
 			case 'pictured':
-				return this.actedOn(step);
+				return this.actedOn(action);
 		}
 	}
 
@@ -244,11 +249,11 @@ export class Take {
 	 * An act on a framed page, its screen laid flat for it, and stood up again once it is done and the stage found still
 	 * there, as a stage gone cannot stand up.
 	 */
-	private async actedOnFlat(stage: FramedStage, step: Act): Promise<void> {
+	private async actedOnFlat(stage: FramedStage, action: Action): Promise<void> {
 		await stage.layFlat(
 			drawn(this.scene, flatCamera(this.format), this.moment(), { ...this.format, frame: this.format.screen })
 		);
-		await this.actedOn(step);
+		await this.actedOn(action);
 		await stage.standUp();
 	}
 
@@ -256,9 +261,9 @@ export class Take {
 	 * An act on the page as it stands, the page's own time running as the act waits on it; the stage asked once it is
 	 * done, or has failed.
 	 */
-	private async actedOn(step: Act): Promise<void> {
+	private async actedOn(action: Action): Promise<void> {
 		try {
-			await this.opened.time.running(() => step.action(this.opened.act));
+			await this.opened.time.running(() => action(this.opened.act));
 		} finally {
 			await this.refusedWhereGone();
 		}
@@ -304,7 +309,8 @@ export class Take {
 			scene: this.scene,
 			page: this.opened.page,
 			format: this.format,
-			pageShown: this.opened.stage.kind
+			pageShown: this.opened.stage.kind,
+			act: (action) => this.acted(action)
 		});
 	}
 

@@ -255,6 +255,10 @@ test('every function a film calls refuses what it is handed in no form it takes,
 			'page.type\'s keyboard is "typewriter": it is one of livereel\'s keyboards: membrane, mechanical, mechanical-bright, butterfly, laptop, clicky'
 		)
 	);
+	expect(() => page.act('click' as never)).toThrow(new FilmError('page.act\'s action is "click": it is a function'));
+	expect(() => page.act(() => Promise.resolve(), { within: { end: 1 } as never })).toThrow(
+		new FilmError("page.act's within names end: it names start, or fewer")
+	);
 	expect(() => sound.play('')).toThrow(new FilmError(`sound.play's file is "": it is ${FILE}`));
 	expect(() => sound.play('./chime.wav', { within: { end: 1 } as never })).toThrow(
 		new FilmError("sound.play's within names end: it names start, or fewer")

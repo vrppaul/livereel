@@ -45,7 +45,7 @@ caption. Speak in the director's words, which are the tool's:
 | flight, path | `camera.onto(last, { through: [first, second] })`, `title.to(place, { through })`, `group.to(place, { through })` — one curve through the blocks or places named, at an even speed along it, with no stop at any of them |
 | light | `light.on`, `light.to`, `light.off` — one block lit, the rest dimmed |
 | cast | what the page shows, opened and closed by `act` |
-| action | what the page does for real: a click (`cursor.click`), keys typed into it (`typing(page.type(strokes))`), anything else in an `act` |
+| action | what the page does for real: a click (`cursor.click`), keys typed into it (`typing(page.type(strokes))`), anything else in an `act`; at a moment of a play, the camera going on, `page.act` |
 | caption | `caption.show(text)`, `caption.hide()`; at the frame's foot, or its top in a format with `captionAt: 'top'`, which leaves the foot to keys |
 | title card | `title.show(text)` — words over the whole frame, on the film's ground; `title.hide()` |
 | split | `window.to('right')`, `camera.onto(selector)` and `title.show(text, { at: 'left', within: { start: 0.5 } })` in one `play` — the page draws back into a window on one side, the camera keeping the block framed in it, then the words come up on the ground across from it; `window.to('whole')` brings the page back to fill the frame; a film shot in several formats names places of its own in each format, `places: { words: 'top', page: 'bottom' }` in a square and `{ words: 'left', page: 'right' }` in a wide frame, and writes `at: 'words'` and `window.to('page')` once; a format's `split` sets the words' share and the margins, `{ wordsShare: 0.28 }` for words that ask less room above a square's window |
@@ -221,8 +221,8 @@ its end at once.
 | `screen.rise()`, `screen.lower()` | the screen up out of the ground from where it stands, or down into it, the window's shadow and edge with it: over a share of a `play`, or at once in a `cut` |
 | `light.on(target, { dim })`, `light.to(target)`, `light.off()` | one block lit, the rest dimmed by `dim`; carried; put out |
 | `cursor.to(target, { entering, bow })` | along an arc to a block, from `entering` if not yet on the screen |
-| `cursor.press({ sound })`, `cursor.release()`, `cursor.hide()` | pressed in with a click (`sound`, a file of the film's in its place), let go, taken off the screen |
-| `cursor.click(action, { sound })` | pressed with its click, `act(action)`, let go: the steps of a click |
+| `cursor.press({ sound })`, `cursor.release()`, `cursor.hide()` | pressed in with a click (`sound`, a file of the film's in its place), let go, taken off the screen; a press and a let-go go on while `cursor.to` takes it its way |
+| `cursor.click(action, { sound })` | pressed with its click, `act(action)`, let go: the steps of a click, at which the camera stops |
 | `callout.show(target, text, { side })`, `callout.hide()` | words on a card beside a block, pointing at it, `side` `above` (where none is named), `below`, `left` or `right`; carried with the page |
 | `note.show(target, text, { at })`, `note.hide()` | words on the ground beside the page's window, on the side clearest of it or `at` a place beyond it, a line drawn from them to a block in it; only with a window, and its words keep beside the window as it moves |
 | `pin.show(target, label)`, `pin.clear()` | a numbered mark on a block, after those laid before, the earlier labels quietened; all taken away |
@@ -245,11 +245,18 @@ its end at once.
 | `page.scrollBy(selector, { pixels })` | a block's own scroll moved so many pixels |
 | `page.scrollTo(selector, { top })` | the page scrolled until a block stands `top` pixels below the top of what scrolls it |
 | `page.type(strokes, { keyboard })` | real keys typed into whatever holds the page's keyboard, heard on the film's keyboard or the one named |
+| `page.act(action, { within: { start } })` | the page acted on for real at a moment of a play, as `act` acts on it, while the play's other moves go on; it moves nothing, so it shares a step with anything; a move that begins at its moment, written after it, reads the page it left |
 | `page.speed(speed)` | how many of the page's seconds a second of the film runs: 4 shows a minute of the site's timers and script animations in 15 s, 0.5 slows them, 0 stands them still; at once in a `cut`, through the speeds between in a `play`; an `act` still waits on the page at the wall's time |
 | `sound.play(file)` | a file of the film's heard as its share begins; it moves nothing, so it shares a step with anything |
 
 `cursor.click` and `typing` give several steps: spread them among the
 others, `...cursor.click(action)`, `...typing(page.type(strokes))`.
+
+A click while the camera goes on is written into a play: `cursor.press`
+over a share, `page.act(action)` from its end, `cursor.release` over the
+share after, beside `cursor.to` and the camera's move. Give the press and
+the release shares as long as a click's, about 0.09 s and 0.12 s of the
+play's seconds.
 
 A title's, a caption's or a callout's `text` is a string, or a list of
 strings and runs read one after another: a run is `{ text }` with any of

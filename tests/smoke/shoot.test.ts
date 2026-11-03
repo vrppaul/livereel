@@ -143,6 +143,21 @@ test('keys typed into the page reach the field that holds its keyboard, in its o
 	expect(values).toEqual([TYPED, TYPED]);
 });
 
+test('a click at a moment of a play reaches the page while the camera goes on closing in, in its own tab or framed live', async () => {
+	const values: string[] = [];
+	const clicked = page.act((context: ActContext) => context.page.locator(FIELD).click(), { within: { start: 0.5 } });
+	const steps = [
+		play({ seconds: 0.2, moves: [camera.onto(FIELD), clicked] }),
+		...typing(page.type(keystrokes(TYPED, { seed: 1 }))),
+		act(async (context: ActContext) => {
+			values.push(await context.page.locator(FIELD).inputValue());
+		})
+	];
+	await shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'));
+	await shoot(filmWritten(steps, { page: 'dynamic' }), shootingInto(new EveryFrameCounted(), 'software'));
+	expect(values).toEqual([TYPED, TYPED]);
+});
+
 test('a block a film blurs is blurred on the page, and a block it does not name is not, in its own tab or framed live', async () => {
 	const filters: string[] = [];
 	const steps = [

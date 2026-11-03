@@ -131,7 +131,7 @@ A film is a list of steps:
 | `play({ seconds, moves, ease })` | so many seconds of frames; each move runs over its share of the step |
 | `hold({ seconds })` | so many seconds with nothing moving |
 | `cut(...moves)` | moves made at once, between two frames |
-| `act(action)` | the page acted on for real, with Playwright: a click, a reply waited for |
+| `act(action)` | the page acted on for real, with Playwright, between two frames: a click, a reply waited for; `page.act` does it at a moment of a play |
 | `typing(move)` | as long as the keys of `terminal.type` or `page.type` take, and a beat after |
 
 and the moves of each part of the scene:
@@ -189,7 +189,7 @@ and the moves of each part of the scene:
   the card stands over the whole frame on the frame's own ground, slides in and out whole, and is never carried or
   leant
 - `page.scrollBy(selector, { pixels })`, `page.scrollTo(selector, { top })`, `page.type(strokes, { keyboard })`,
-  `page.speed(speed)`
+  `page.act(action, { within: { start } })`, `page.speed(speed)`
 - `sound.play(file)`
 
 A target is a selector, the first `every` blocks it matches, or a box of the
@@ -199,6 +199,22 @@ draws with nothing to select: a canvas, or a frame exported from a design.
 `cursor.click` and `typing` give several steps, spread among the others:
 `...cursor.click(action)`. An act's `action` is handed a `context`, whose
 `context.page` is Playwright's `Frame` of the filmed page.
+
+The camera stops at those steps. To click while it goes on, write the click
+into a play: the cursor's press, `page.act` at its end, and its release, each
+over a share of the step, while `cursor.to` and the camera go their way. The
+film's time stands while the page answers; a move that begins at the act's
+moment, written after it, reads the page the act left.
+
+```ts
+play({ seconds: 3, moves: [
+  camera.to({ focusX: 520, focusY: 400, zoom: 1.2 }),
+  cursor.to('#dark', { within: { end: 0.4 } }),
+  cursor.press({ within: { start: 0.4, end: 0.43 } }),
+  page.act((context) => context.page.locator('#dark').click(), { within: { start: 0.43 } }),
+  cursor.release({ within: { start: 0.43, end: 0.47 } })
+] })
+```
 
 A pose is the whole screen's, `whole`, which `steps` is handed, or one
 written out, `{ focusX, focusY, zoom }`. The camera chooses what of the page

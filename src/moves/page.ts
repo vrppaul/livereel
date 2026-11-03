@@ -1,10 +1,13 @@
 /**
- * What is done to the page itself between frames: its own scroll, and keys a person types into it; and the speed its
- * own time runs at.
+ * What is done to the page itself between frames: its own scroll, keys a person types into it, and an act at a moment
+ * of a play; and the speed its own time runs at.
  *
  * The scroll and the keys change the page, not the scene: each frame sets the page's scroll, or presses the keys due
- * by then, so the page renders a little each frame as a person's scroll and typing make it. The speed is the scene's,
- * which the take runs the page's time by, so its time runs ever faster or slower through a play, at once from a cut.
+ * by then, so the page renders a little each frame as a person's scroll and typing make it. An act at a moment is done
+ * once, as its move begins, the film's time standing while the page answers and every other move going on round it,
+ * so a camera need not stop at a click; it changes nothing on the scene, so it clashes with no move, as a sound does
+ * not. The speed is the scene's, which the take runs the page's time by, so its time runs ever faster or slower
+ * through a play, at once from a cut.
  */
 import {
 	A_NUMBER,
@@ -18,10 +21,20 @@ import {
 } from '../domain/handed.ts';
 import { between, linear } from '../domain/time.ts';
 import { A_STROKES, type Keystroke, typedAlong } from '../domain/typing.ts';
-import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
-import type { FilmedPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
+import {
+	type Beginning,
+	type Change,
+	MOMENT_FORM,
+	type MomentScript,
+	type Move,
+	TIMING_FORM,
+	type TimingScript,
+	UNCHANGED,
+	timingOf
+} from '../direction/move.ts';
+import type { Action, FilmedPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import { keysHeard } from '../direction/sound.ts';
-import type { Typed } from '../direction/steps.ts';
+import { AN_ACTION, type Typed } from '../direction/steps.ts';
 import { type Scene, withPageSpeed } from '../scene.ts';
 import { TYPING_FORM, type TypingScript } from './typing.ts';
 
@@ -74,6 +87,17 @@ export function type(strokes: readonly Keystroke[], script: TypingScript = {}): 
 }
 
 /**
+ * The page acted on for real at a moment of a step, as `act` acts on it between steps, while the play's other moves
+ * go on: `action(context)` is Playwright code. A move that begins at that moment, written after it, reads the page it
+ * left.
+ */
+export function act(action: Action, script: MomentScript = {}): Move {
+	assertKind(action, AN_ACTION, "page.act's action");
+	assertWritten(script, MOMENT_FORM, 'page.act');
+	return { part: null, timing: timingOf(script), begin: (beginning) => actedAsItBegins(beginning, action) };
+}
+
+/**
  * The page's own time running at a speed, so many of its seconds to each of the film's: 4 shows a minute of the site
  * in 15 s, 0.5 slows it down, 0 stands it still; from the speed it runs at as the move's share begins.
  */
@@ -90,6 +114,11 @@ export function speed(pageSpeed: number, script: TimingScript = {}): Move {
 /** The page's speed on its way, never below standing still on a curve that passes its ends. */
 function speeding(startSpeed: number, endSpeed: number): Change {
 	return (scene, progress) => withPageSpeed(scene, Math.max(STANDING_STILL, between(startSpeed, endSpeed, progress)));
+}
+
+async function actedAsItBegins(beginning: Beginning, action: Action): Promise<Change> {
+	await beginning.act(action);
+	return UNCHANGED;
 }
 
 async function scrolling(beginning: Beginning, target: string, aim: ScrollAim): Promise<Change> {

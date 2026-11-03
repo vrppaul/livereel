@@ -27,7 +27,7 @@ import { type Ease, easeInOutSine, framesOf, linear } from '../domain/time.ts';
 import { A_STROKES, type Keystroke, typingSeconds } from '../domain/typing.ts';
 import type { CssNamed } from './theme.ts';
 import { A_CURVE, A_MOVE, A_MOVES, type Move, type Part, type Share, cssOf, placesOf, soundsOf } from './move.ts';
-import type { ActContext } from './page.ts';
+import type { Action } from './page.ts';
 import type { Sound } from './sound.ts';
 
 export interface Play {
@@ -45,7 +45,7 @@ export interface Cut {
 
 export interface Act {
 	readonly kind: 'act';
-	readonly action: (context: ActContext) => Promise<void>;
+	readonly action: Action;
 }
 
 export type Step = Play | Cut | Act;
@@ -83,8 +83,8 @@ const AFTER_TYPING_SECONDS = 0.12;
 const SOME_SECONDS = new Plain(isSomeSeconds, 'some seconds, more than none');
 const PLAY_FORM: Form<PlayScript> = { seconds: needed(SOME_SECONDS), moves: A_MOVES, ease: A_CURVE };
 const HOLD_FORM: Form<HoldScript> = { seconds: needed(SOME_SECONDS) };
-/** What the page is acted on with, as a film hands it to `act` or `cursor.click`. */
-export const AN_ACTION: Kind<Act['action']> = aFunction<Act['action']>(A_FUNCTION_SAID);
+/** What the page is acted on with, as a film hands it to `act`, `page.act` or `cursor.click`. */
+export const AN_ACTION: Kind<Action> = aFunction<Action>(A_FUNCTION_SAID);
 // A step a film may write out by hand, as the types allow, each kind of step to its form
 const STEP_FORMS: { readonly [Name in Step['kind']]: Kind<Extract<Step, { kind: Name }>> } = {
 	play: new OfForm<Play>(
@@ -119,8 +119,11 @@ export function cut(...moves: readonly Move[]): Cut {
 	return { kind: 'cut', moves };
 }
 
-/** Something done to the page between two frames, to the page as it stands, the camera put aside. */
-export function act(action: (context: ActContext) => Promise<void>): Act {
+/**
+ * Something done to the page between two frames, to the page as it stands, the camera put aside; at a moment of a
+ * play, `page.act`.
+ */
+export function act(action: Action): Act {
 	assertKind(action, AN_ACTION, "act's action");
 	return { kind: 'act', action };
 }

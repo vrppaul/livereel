@@ -54,3 +54,6 @@ export interface ActContext {
 	readonly page: Frame;
 	readonly motion: PageMotionSwitch;
 }
+
+/** What a film does to the page for real, Playwright code handed what an act is handed. */
+export type Action = (context: ActContext) => Promise<void>;

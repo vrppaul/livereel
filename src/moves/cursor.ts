@@ -1,6 +1,7 @@
 /**
  * The cursor: along a slight arc to a block of the page, as a hand moves it; pressed in with a click, and let go;
- * taken away.
+ * taken away. Where it is and how far it is pressed are set by moves of their own, so a press and a let-go go on while
+ * the cursor goes its way, as a click at a moment of a play does with the camera going on.
  */
 import { NONE, fractionOf } from '../domain/fraction.ts';
 import { A_POINT, type Box, type Point, bowedArc, pointAlong } from '../domain/geometry.ts';
@@ -19,9 +20,11 @@ import {
 	shownPart,
 	timingOf
 } from '../direction/move.ts';
-import type { ActContext } from '../direction/page.ts';
+import type { Action } from '../direction/page.ts';
 import { type SoundScript, heardAsItBegins, soundOf } from '../direction/sound.ts';
 import { AN_ACTION, type Step, act, play } from '../direction/steps.ts';
+import type { Cursor } from '../props/cursor.ts';
+import { withProp } from '../scene.ts';
 
 /** Where a cursor not yet on the screen comes in from, and how far its path bends off the straight line. */
 export interface CursorScript extends TimingScript {
@@ -45,6 +48,9 @@ const ENTERS_FROM_BELOW = 220;
 // How long a press goes in, and how long it takes to let go
 const PRESS_SECONDS = 0.09;
 const RELEASE_SECONDS = 0.12;
+// The cursor's values a move that takes it somewhere sets, and one that presses it in or lets it go
+const POSITION = ['left', 'top'] as const satisfies readonly (keyof Cursor)[];
+const PRESSING = ['press'] as const satisfies readonly (keyof Cursor)[];
 const HIDDEN: Change = propChange('cursor', () => null);
 const CURSOR_FORM: Form<CursorScript> = { entering: A_POINT, bow: A_NUMBER, ...TIMING_FORM };
 const CLICK_FORM: Form<SoundScript> = { sound: A_PATH };
@@ -57,7 +63,12 @@ const PRESS_FORM: Form<PressScript> = { ...CLICK_FORM, ...TIMING_FORM };
 export function to(target: Target, script: CursorScript = {}): Move {
 	assertKind(target, A_TARGET, "cursor.to's target");
 	assertWritten(script, CURSOR_FORM, 'cursor.to');
-	return { part: 'cursor', timing: timingOf(script), begin: (beginning) => along(beginning, target, script) };
+	return {
+		part: 'cursor',
+		valueNames: POSITION,
+		timing: timingOf(script),
+		begin: (beginning) => along(beginning, target, script)
+	};
 }
 
 /** The cursor pressed in, with a click as it begins: livereel's own, or the file the film gives as `sound`. */
@@ -65,6 +76,7 @@ export function press(script: PressScript = {}): Move {
 	assertWritten(script, PRESS_FORM, 'cursor.press');
 	return {
 		part: 'cursor',
+		valueNames: PRESSING,
 		timing: timingOf(script),
 		sounds: [heardAsItBegins(soundOf(script, 'click'))],
 		begin: pressingIn
@@ -73,7 +85,7 @@ export function press(script: PressScript = {}): Move {
 
 export function release(script: TimingScript = {}): Move {
 	assertWritten(script, TIMING_FORM, 'cursor.release');
-	return { part: 'cursor', timing: timingOf(script), begin: lettingGo };
+	return { part: 'cursor', valueNames: PRESSING, timing: timingOf(script), begin: lettingGo };
 }
 
 /** The cursor taken off the screen. */
@@ -82,7 +94,7 @@ export function hide(): Move {
 }
 
 /** The cursor pressed in with its click, the page clicked as `action` does it, and the cursor let go. */
-export function click(action: (context: ActContext) => Promise<void>, script: SoundScript = {}): readonly Step[] {
+export function click(action: Action, script: SoundScript = {}): readonly Step[] {
 	assertKind(action, AN_ACTION, "cursor.click's action");
 	assertWritten(script, CLICK_FORM, 'cursor.click');
 	return [
@@ -96,17 +108,27 @@ async function along(beginning: Beginning, target: Target, script: CursorScript)
 	const end = restingOn(await shownPart(beginning, target, 1, 'cursor.to'));
 	const start = beginning.scene.cursor ?? script.entering ?? enteringFor(end);
 	const arc = bowedArc({ left: start.left, top: start.top }, end, script.bow ?? BOW);
-	return propChange('cursor', (progress) => ({ ...pointAlong(arc, progress), press: NONE }));
+	// A cursor that comes onto the screen comes unpressed
+	const begun = { left: start.left, top: start.top, press: NONE };
+	return writing(begun, (progress) => pointAlong(arc, progress));
 }
 
 function pressingIn(beginning: Beginning): Change {
 	const cursor = present(beginning, 'cursor', 'the cursor is pressed, but it is not on the screen');
-	return propChange('cursor', (progress) => ({ ...cursor, press: fractionOf(progress) }));
+	return writing(cursor, (progress) => ({ press: fractionOf(progress) }));
 }
 
 function lettingGo(beginning: Beginning): Change {
 	const cursor = present(beginning, 'cursor', 'the cursor is let go, but it is not on the screen');
-	return propChange('cursor', (progress) => ({ ...cursor, press: fractionOf(1 - progress) }));
+	return writing(cursor, (progress) => ({ press: fractionOf(1 - progress) }));
+}
+
+/**
+ * A change that writes some of the cursor's values into it as it stands, leaving the rest as another move sets them;
+ * into `begun`, the cursor as the move began it, where none stands: a cursor coming onto the screen.
+ */
+function writing(begun: Cursor, valuesAt: (progress: number) => Partial<Cursor>): Change {
+	return (scene, progress) => withProp(scene, 'cursor', { ...begun, ...scene.cursor, ...valuesAt(progress) });
 }
 
 function restingOn(box: Box): Point {

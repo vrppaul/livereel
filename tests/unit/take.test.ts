@@ -9,9 +9,9 @@ import { act, cut, hold, play } from '../../src/direction/steps.ts';
 import { to as cameraTo } from '../../src/moves/camera.ts';
 import { to as lookTo } from '../../src/moves/look.ts';
 import { on, to } from '../../src/moves/light.ts';
-import { click, hide, to as cursorTo } from '../../src/moves/cursor.ts';
+import { click, hide, press, release, to as cursorTo } from '../../src/moves/cursor.ts';
 import { show } from '../../src/moves/ending.ts';
-import { speed, type as typeIntoThePage } from '../../src/moves/page.ts';
+import { act as actAtAMoment, speed, type as typeIntoThePage } from '../../src/moves/page.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import { open, type } from '../../src/moves/terminal.ts';
 import { lean as leanTitle, show as showTitle, to as titleTo } from '../../src/moves/title.ts';
@@ -89,6 +89,23 @@ class Counted implements Move {
 	noted(scene: Scene, progress: number): Scene {
 		this.progresses.push(progress);
 		return scene;
+	}
+}
+
+/** A move on the screen that writes in a log that it began, as it begins. */
+class LoggedAsItBegins implements Move {
+	readonly part = 'screen';
+	readonly timing;
+	readonly log: string[];
+
+	constructor(within: Bounds, log: string[]) {
+		this.timing = timingOf({ within });
+		this.log = log;
+	}
+
+	begin(): Change {
+		this.log.push('begun');
+		return (scene) => scene;
 	}
 }
 
@@ -331,6 +348,57 @@ test("the page's time begins the film, is run on to each frame's moment, kept or
 	// Only the last frame kept, as a still keeps it
 	await takeOf(new FootageOf([3]), new PicturedStageThatKeeps(), new TrackThatKeeps(), time).run(steps);
 	expect(time.log).toEqual(['begun', 0, frame, 'waited', 2 * frame, 3 * frame]);
+});
+
+test("an act at a moment of a play is done as its share begins, the page's time running as the wall's while the film's stands, and the play's other moves go on round it", async () => {
+	const time = new PageTimeLogged();
+	const frame = 1 / 30;
+	const counted = new Counted({});
+	// Where the play's other move stood as the act was done
+	const setAsActed: number[] = [];
+	const acting = actAtAMoment(
+		async () => {
+			setAsActed.push(...counted.progresses);
+		},
+		{ within: { start: 0.5 } }
+	);
+	// Unblurred, so the other move is set at no moment but its frames'
+	const take = new Take({
+		opened: openedOn(new PageOfBoxes(PAGE), new PicturedStageThatKeeps(), time),
+		footage: new FootageOf([3]),
+		track: new TrackThatKeeps(),
+		format: SMALL,
+		opening: openingScene(SMALL, LIVEREELS_LOOK),
+		motionBlur: null
+	});
+	await take.run([play({ seconds: 4 * frame, moves: [counted, acting], ease: linear })]);
+	expect([setAsActed, counted.progresses, time.log]).toEqual([
+		[0.25],
+		[0.25, 0.5, 0.75, 1],
+		['begun', 0, 'waited', frame, 2 * frame, 3 * frame]
+	]);
+});
+
+test('a move that begins at the moment of an act, written after it, begins on the page the act left', async () => {
+	const log: string[] = [];
+	const acting = actAtAMoment(
+		async () => {
+			log.push('acted');
+		},
+		{ within: { start: 0.5 } }
+	);
+	const steps = [play({ seconds: 4 / 30, moves: [acting, new LoggedAsItBegins({ start: 0.5 }, log)] })];
+	await takeOf(new FootageOf([3]), new PicturedStageThatKeeps()).run(steps);
+	expect(log).toEqual(['acted', 'begun']);
+});
+
+test('a press and a let-go go on while the cursor goes its way: it comes to rest where it goes, pressed in on the way and let go', async () => {
+	const stage = new PicturedStageThatKeeps();
+	// Four frames: the cursor's way over all of them, pressed in by the second once the first has it on the screen, let
+	// go by the fourth
+	const moves = [cursorTo('#first'), press({ within: { start: 0.3, end: 0.5 } }), release({ within: { start: 0.5 } })];
+	await takeOf(new FootageOf([1, 3]), stage).run([play({ seconds: 4 / 30, moves })]);
+	expect([stage.drawn[0]?.cursor?.press, stage.drawn[1]?.cursor]).toEqual([1, { left: 65, top: 40, press: 0 }]);
 });
 
 test("the page's time runs at the speed the film sets it to, a frame at its speed on the way through it: through the speeds between in a play, from a cut on at once, and stands at none", async () => {

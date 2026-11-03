@@ -108,6 +108,8 @@ const SHOWN_RIGHT = { left: 580, top: 100, width: 20, height: 40 };
 const CARD = { left: 400, top: 300, width: 200, height: 100 };
 const CARDS_GROUND = '#f6f7f9';
 const OTHER = { left: 1200, top: 600, width: 100, height: 60 };
+// No move here acts on the page: an act at a moment of a play is the take's, tested there
+const NO_ACT = undefined as never;
 const PAGE = new PageOfBoxes(
 	new Map([
 		['#block', BLOCK],
@@ -199,7 +201,7 @@ function beginningOf(scene: Scene): Beginning {
 }
 
 function beginningIn(scene: Scene, format: Format): Beginning {
-	return { scene, page: PAGE, format, pageShown: 'pictured' };
+	return { scene, page: PAGE, format, pageShown: 'pictured', act: NO_ACT };
 }
 
 /** The scene a move sets, begun on a scene, at a progress of its way. */
