@@ -5,9 +5,12 @@ import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { Chromium, type Renderer } from '../../src/adapters/browser/chromium.ts';
 import { PlaywrightPage } from '../../src/adapters/browser/page.ts';
+import type { PlaywrightPicturedStage } from '../../src/adapters/browser/stage.ts';
 import { blended } from '../../src/adapters/video/exposures.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
+import { ZOOM_AT_MOST } from '../../src/domain/camera.ts';
+import type { Size } from '../../src/domain/geometry.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
 import type { Exposures, Footage, PicturedStage } from '../../src/studio/ports.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
@@ -463,3 +466,32 @@ test('a page in a tab of its own is heard to change of itself, once', async () =
 	heard.push(stage.changedOfItself(), stage.changedOfItself());
 	expect(heard).toEqual([false, true, false]);
 });
+
+// A page of lines as dense as code, on a screen as large as a film's, its pixel a picture's at a zoom of 1
+const DENSE = new URL('./dense.html', import.meta.url).href;
+const WIDE = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } };
+
+test("a dense page's picture at a camera's closest, too large for a custom property as a data URL, is the one every piece of the page is drawn from", async () => {
+	const film = defineFilm({
+		formats: { wide: WIDE },
+		serve: () => Promise.resolve(atAddress(DENSE)),
+		ready: (context) => context.page.locator('[data-testid=lines]').waitFor(),
+		steps: () => []
+	}).formats.get('wide')!;
+	await using opened = await new Chromium('software', WARNED_TO_NOBODY).open(film, DENSE, 1);
+	const stage = opened.stage as PlaywrightPicturedStage;
+	await stage.retakePage(ZOOM_AT_MOST);
+	expect(await stage.page.evaluate(pictureDrawnFrom)).toEqual({
+		width: Math.round(WIDE.screen.width * ZOOM_AT_MOST),
+		height: Math.round(WIDE.screen.height * ZOOM_AT_MOST)
+	});
+});
+
+/** The size of the picture the stage's root holds for its pieces of the page to be drawn from, run in the stage. */
+async function pictureDrawnFrom(): Promise<Size> {
+	const held = getComputedStyle(document.documentElement).getPropertyValue('--page-picture');
+	const picture = new Image();
+	picture.src = held.slice('url("'.length, -'")'.length);
+	await picture.decode();
+	return { width: picture.naturalWidth, height: picture.naturalHeight };
+}

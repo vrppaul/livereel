@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>A page dense with code</title>
+		<style>
+			pre {
+				margin: 0;
+				font: 13px/16px monospace;
+			}
+		</style>
+	</head>
+	<body>
+		<pre data-testid="lines"></pre>
+		<script>
+			// Lines of letters as dense as code, the same each time it opens: its picture at a camera's closest is too
+			// large to stand in a custom property as a data URL (7.5 million characters of base64 at 1920 × 1080)
+			const LINES = 70;
+			const LETTERS_A_LINE = 240;
+			const LETTERS = 'abcdefghijklmnopqrstuvwxyz0123456789{}();=+-*/<>ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+			// A linear congruential generator's multiplier, increment and modulus, as C's rand() has them
+			const MULTIPLIER = 1103515245;
+			const INCREMENT = 12345;
+			const MODULUS = 2147483648;
+			let seed = 1;
+			const lines = [];
+			for (let line = 0; line < LINES; line++) {
+				let letters = '';
+				for (let column = 0; column < LETTERS_A_LINE; column++) {
+					seed = (seed * MULTIPLIER + INCREMENT) % MODULUS;
+					letters += LETTERS[seed % LETTERS.length];
+				}
+				lines.push(letters);
+			}
+			document.querySelector('[data-testid=lines]').textContent = lines.join('\n');
+		</script>
+	</body>
+</html>

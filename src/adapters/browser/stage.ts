@@ -63,13 +63,19 @@ export interface Opening {
 	readonly sandbox: string | null;
 }
 
+/** A picture of the filmed page as the stage is handed it: its bytes in base64, as CDP takes it, and its image's type. */
+export interface PagePicture {
+	readonly base64: string;
+	readonly type: string;
+}
+
 export interface StageApi {
 	/** The stage laid out as a room: the frame and the screen in it, as large as it draws, and its exposures. */
 	readonly setup: (room: Room) => void;
 	/** The filmed page opened in the screen's frame. */
 	readonly open: (opening: Opening) => void;
-	/** A picture of the filmed page, by its address, shown in the frame's place once it is decoded. */
-	readonly show: (picture: string) => Promise<void>;
+	/** A picture of the filmed page, shown in the frame's place once it is decoded. */
+	readonly show: (picture: PagePicture) => Promise<void>;
 	/** One frame, drawn whole from each of its exposures' scenes, laid over one another so each weighs the same. */
 	readonly apply: (exposures: readonly DrawnScene[]) => void;
 }
@@ -83,9 +89,9 @@ declare global {
 const JPEG_QUALITY = 92;
 // A stage that draws one exposure of a frame at a time
 export const ONE_AT_A_TIME = 1;
-// A picture of the page as the stage's image is handed it: a JPEG, in base64
-const JPEG_ADDRESS = 'data:image/jpeg;base64,';
-const BASE64 = 'base64';
+// The page's picture is taken as a JPEG: the format as CDP names it, and the type of image the stage is handed
+const PICTURE_FORMAT = 'jpeg';
+const PICTURE_TYPE = 'image/jpeg';
 
 /**
  * The stage with the filmed page live in its frame, which no copy of the stage can show again: it draws one exposure of
@@ -156,8 +162,8 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	readonly filmedTab: FilmedTab;
 	readonly watch: TabWatch;
 	readonly exposuresAtOnce: number;
-	// The page's picture last taken, none before the first
-	private picture: Buffer | null = null;
+	// The page's picture last taken, in base64, none before the first
+	private picture: string | null = null;
 
 	constructor(page: Page, filmedTab: FilmedTab, watch: TabWatch, exposuresAtOnce: number) {
 		this.page = page;
@@ -173,24 +179,28 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	/** The page's picture taken anew, and shown where it came out otherwise than the last. */
 	async retakePage(zoom: number): Promise<boolean> {
 		const picture = await this.pictureAt(zoom);
-		const alike = this.picture?.equals(picture) ?? false;
+		const alike = this.picture === picture;
 		this.picture = picture;
-		if (!alike) await this.page.evaluate(pictureShown, `${JPEG_ADDRESS}${picture.toString(BASE64)}`);
+		if (!alike) await this.page.evaluate(pictureShown, { base64: picture, type: PICTURE_TYPE });
 		return alike;
 	}
 
 	/**
 	 * The page as its tab shows it once its fonts have loaded, as a JPEG as sharp as a camera at this zoom shows it, its
-	 * text caret kept.
+	 * text caret kept: its bytes in base64.
 	 */
-	private async pictureAt(zoom: number): Promise<Buffer> {
+	private async pictureAt(zoom: number): Promise<string> {
 		const { tab, session, screen, pixelsAtZoomOne } = this.filmedTab;
 		await tab.evaluate(fontsLoaded);
 		const { cssVisualViewport } = await session.send('Page.getLayoutMetrics');
 		// eslint-disable-next-line id-length -- CDP names the corner a picture is clipped at `x` and `y`
 		const clip = { x: cssVisualViewport.pageX, y: cssVisualViewport.pageY, ...screen, scale: pixelsAtZoomOne * zoom };
-		const { data } = await session.send('Page.captureScreenshot', { format: 'jpeg', quality: JPEG_QUALITY, clip });
-		return Buffer.from(data, BASE64);
+		const { data } = await session.send('Page.captureScreenshot', {
+			format: PICTURE_FORMAT,
+			quality: JPEG_QUALITY,
+			clip
+		});
+		return data;
 	}
 
 	changedOfItself(): boolean {
@@ -235,7 +245,7 @@ export function openPage(opening: Opening): void {
 	window.stage.open(opening);
 }
 
-function pictureShown(picture: string): Promise<void> {
+function pictureShown(picture: PagePicture): Promise<void> {
 	return window.stage.show(picture);
 }
 

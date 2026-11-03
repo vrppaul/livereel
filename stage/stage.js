@@ -20,7 +20,7 @@
 /** @import { Box, Segment } from '../src/domain/geometry.ts' */
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
-/** @import { Opening, Room, StageApi } from '../src/adapters/browser/stage.ts' */
+/** @import { Opening, PagePicture, Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
 /** A value of the look set whole on the stage, in place of one token: any but the ground's layers, and the way words come up, which the moves that bring them read @typedef {Exclude<keyof Look, 'groundLayers' | 'words'>} WholeLookName */
@@ -900,22 +900,28 @@ function open(opening) {
 
 /**
  * A picture of the page shown in the frame's place in every exposure, once it is decoded, so the next frame drawn
- * shows it whole; and set on the stage's root as the picture every piece of the page is drawn from.
- * @param {string} picture @returns {Promise<void>}
+ * shows it whole; and set on the stage's root as the picture every piece of the page is drawn from. It is shown at an
+ * address of the stage's own, short however large the picture: Chrome drops a custom property's value longer than
+ * 2,097,152 characters, which a dense page's picture at a camera's closest passes as a data URL (measured 2026-11-03).
+ * The address of the picture it takes the place of is let go once nothing shows it.
+ * @param {PagePicture} picture @returns {Promise<void>}
  */
 async function show(picture) {
-	await Promise.all(EXPOSURES.map((exposure) => shownIn(exposure, picture)));
+	const shownBefore = FIRST.picture.getAttribute('src');
+	const address = URL.createObjectURL(new Blob([Uint8Array.fromBase64(picture.base64)], { type: picture.type }));
+	await Promise.all(EXPOSURES.map((exposure) => shownIn(exposure, address)));
 	// CSS takes no address out of a custom property into a url(), so the url() is written whole here
-	document.documentElement.style.setProperty(PAGE_PICTURE, `url("${picture}")`);
+	document.documentElement.style.setProperty(PAGE_PICTURE, `url("${address}")`);
+	if (shownBefore !== null) URL.revokeObjectURL(shownBefore);
 }
 
 /**
- * A picture of the page shown in an exposure's frame's place, once decoded.
- * @param {Exposure} exposure @param {string} picture
+ * A picture of the page, by its address, shown in an exposure's frame's place, once decoded.
+ * @param {Exposure} exposure @param {string} address
  */
-async function shownIn(exposure, picture) {
+async function shownIn(exposure, address) {
 	if (!(exposure.picture instanceof HTMLImageElement)) throw new Error("the stage's picture of the page is no image");
-	exposure.picture.src = picture;
+	exposure.picture.src = address;
 	await exposure.picture.decode();
 	exposure.picture.removeAttribute('hidden');
 	exposure.page.setAttribute('hidden', '');
