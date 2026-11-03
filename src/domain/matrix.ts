@@ -53,6 +53,9 @@ export const A_SPOT: Kind<Spot> = new OfForm<Spot>(
 	'a spot: { across, down, out }'
 );
 
+/** The middle of what a matrix carries about its middle, as the matrix takes it: no way from there. */
+export const ITS_MIDDLE: Spot = { across: 0, down: 0, out: 0 };
+
 /** The way from one spot to another. */
 export function wayBetween(start: Spot, end: Spot): Spot {
 	return { across: end.across - start.across, down: end.down - start.down, out: end.out - start.out };
@@ -97,6 +100,8 @@ export function unitOf(way: Spot): Spot {
 }
 
 const DEGREES_IN_A_HALF_TURN = 180;
+// Half of a sum of two lengths is their mean
+const HALVES = 2;
 // How far either axis of a plane may reach out of the frame's plane, for its length, while the plane is still taken
 // to face the frame: a lean so slight moves the far corner of a frame 4096 pixels wide by less than a millionth of a
 // pixel, where a whole turn's arithmetic leaves 2.4e-16
@@ -197,12 +202,39 @@ export function chained(matrices: readonly Matrix[]): Matrix {
 
 /** Where a matrix carries a spot, seen from its eye where it sees in perspective. */
 export function carried(matrix: Matrix, spot: Spot): Spot {
-	const seenFrom = matrix.m14 * spot.across + matrix.m24 * spot.down + matrix.m34 * spot.out + matrix.m44;
+	const seenFrom = seenFromOf(matrix, spot);
 	return {
 		across: (matrix.m11 * spot.across + matrix.m21 * spot.down + matrix.m31 * spot.out + matrix.m41) / seenFrom,
 		down: (matrix.m12 * spot.across + matrix.m22 * spot.down + matrix.m32 * spot.out + matrix.m42) / seenFrom,
 		out: (matrix.m13 * spot.across + matrix.m23 * spot.down + matrix.m33 * spot.out + matrix.m43) / seenFrom
 	};
+}
+
+/**
+ * How far from its eye a matrix sees a spot, for how far its eye stands from the plane it sees at its own size: what
+ * it divides the spot by; less than none behind the eye, and 1 for a matrix that sees nothing in perspective.
+ */
+export function seenFromOf(matrix: Matrix, spot: Spot): number {
+	return matrix.m14 * spot.across + matrix.m24 * spot.down + matrix.m34 * spot.out + matrix.m44;
+}
+
+/**
+ * How many times as long a matrix draws, at its middle, what it carries about its middle, along the way it draws it
+ * longest: a plane grown or brought near as large as it is drawn, and one leant toward edge-on as long as along its
+ * side the eye still sees whole, never shrinking to none.
+ */
+export function longestScaleAtItsMiddle(matrix: Matrix): number {
+	const seenFrom = matrix.m44;
+	const seenFromSquared = seenFrom * seenFrom;
+	const acrossOfAcross = (matrix.m11 * seenFrom - matrix.m41 * matrix.m14) / seenFromSquared;
+	const acrossOfDown = (matrix.m21 * seenFrom - matrix.m41 * matrix.m24) / seenFromSquared;
+	const downOfAcross = (matrix.m12 * seenFrom - matrix.m42 * matrix.m14) / seenFromSquared;
+	const downOfDown = (matrix.m22 * seenFrom - matrix.m42 * matrix.m24) / seenFromSquared;
+	// The longer half-axis of the ellipse those four entries draw a circle of radius one as, by the two halves of the
+	// drawing that turn and that mirror it
+	const turning = Math.hypot(acrossOfAcross + downOfDown, downOfAcross - acrossOfDown);
+	const mirroring = Math.hypot(acrossOfAcross - downOfDown, downOfAcross + acrossOfDown);
+	return (turning + mirroring) / HALVES;
 }
 
 /**

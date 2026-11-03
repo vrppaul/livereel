@@ -16,26 +16,29 @@
 			<div data-prop="screen">
 				<div class="window" data-prop="window">
 					<div class="stage" data-prop="camera">
-						<div class="view-shadow"></div>
-						<div class="view">
-							<div class="camera">
-								<div class="screen">
-									<iframe class="page" data-part="page" title="The page being filmed"></iframe>
-									<img class="page" data-part="picture" alt="The page being filmed" hidden />
-									<!-- The holes pieces of the page leave where they were lifted, on the page, under the light -->
-									<div class="holes" data-scene="holes"></div>
-									<div class="light" data-prop="light"></div>
-									<svg class="cursor" data-prop="cursor" viewBox="0 0 30 40" aria-hidden="true">
-										<path d="M3 3 L3 31 L10.5 24 L16 36.5 L21 34.5 L15.5 22.5 L25.5 22.5 Z" />
-									</svg>
+						<!-- The window's shadow and its view, as sharp as the eye sees them: the part the eye's focus blurs, round the view's cut, so a window out of focus spreads past its edge -->
+						<div class="sharpness">
+							<div class="view-shadow"></div>
+							<div class="view">
+								<div class="camera">
+									<div class="screen">
+										<iframe class="page" data-part="page" title="The page being filmed"></iframe>
+										<img class="page" data-part="picture" alt="The page being filmed" hidden />
+										<!-- The holes pieces of the page leave where they were lifted, on the page, under the light -->
+										<div class="holes" data-scene="holes"></div>
+										<div class="light" data-prop="light"></div>
+										<svg class="cursor" data-prop="cursor" viewBox="0 0 30 40" aria-hidden="true">
+											<path d="M3 3 L3 31 L10.5 24 L16 36.5 L21 34.5 L15.5 22.5 L25.5 22.5 Z" />
+										</svg>
+									</div>
+									<div class="callout" data-prop="callout">
+										<div class="card"><div class="words" data-part="words"></div></div>
+									</div>
+									<div class="pins" data-prop="pins"></div>
 								</div>
-								<div class="callout" data-prop="callout">
-									<div class="card"><div class="words" data-part="words"></div></div>
-								</div>
-								<div class="pins" data-prop="pins"></div>
+								<!-- The objects standing in the page's window, over its picture, leaning and travelling with it -->
+								<div class="objects" data-scene="window"></div>
 							</div>
-							<!-- The objects standing in the page's window, over its picture, leaning and travelling with it -->
-							<div class="objects" data-scene="window"></div>
 						</div>
 					</div>
 				</div>

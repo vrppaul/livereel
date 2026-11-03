@@ -1,6 +1,12 @@
 # TODO
 
-## The eye: what step 3a left (review of 1ec7d95, 2026-11-03)
+## The eye: what steps 3a and 3b left (review of 1ec7d95, 2026-11-03; the focus, the same day)
+
+- The eye's focus blurs a plane as one, as soft as its point nearest the focus (`src/domain/focus.ts`): a window leant far back, as the low flight over the diff of the claude-review promo's shot 02, is drawn sharp all over while the focus stands anywhere on it, where its near lines should stand sharp and its far ones melt. The room blurs each point; banded depth of field on the flat stage, copies of the plane blurred apart and masked by depth, is not built.
+- What stands inside the window or on the page is blurred with the window, as soft as the window's point nearest the focus, though on a leant window it may stand nearer or farther than that point.
+- A focus on an object stays where the object's middle stood as the focus was put on it: carried on after, the object leaves it behind. Following an object as it moves would hold its name in the eye's focus, and a rule for a focus on an object that goes.
+- The first frame the focus blurs a thing redraws its text: a filter of any blur draws text apart from none, SSIM 0.994 on dense text (probed 2026-11-03), so text shifts a trace as its blur passes a tenth of a frame's pixel. Not looked at in a film yet.
+- Of what reads the page, only a piece stands in the world; an outline, a lens or a group of pieces stand on the frame, and are never blurred by the focus. The lines a piece in the world draws to its source, and a note's line to its block, stand over the frame, and stay sharp while the piece and the page blur.
 
 - A lens magnifies by the camera's zoom alone (`lensFit` in `src/props/lens.ts`): an eye moved nearer shows the page under it larger already, so a 2× lens with the eye straight ahead at `out: 1000` magnifies 1×, and at `out: 4000` 4×. It should count how large the eye shows the page under the lens's middle, the eye at rest left exact.
 - A world object's place is read as from the eye at rest, not, as the weighed ADR has it, at the move's beginning from where the eye stands: with the eye at `{ across: 1300, down: -400, out: 1300 }`, `title.show('Words', { at: 'top', inside: 'world' })` is drawn skewed past the frame's right edge.

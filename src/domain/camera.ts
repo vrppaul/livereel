@@ -481,7 +481,7 @@ function facing(screen: Size, zoom: number): Pose {
  * Where the middle of a box on the frame, or in anything else it stands in, stands in the room: across and down from
  * that's middle, on its plane.
  */
-function middleInTheRoom(box: Box, frame: Size): Spot {
+export function middleInTheRoom(box: Box, frame: Size): Spot {
 	return {
 		across: middleX(box) - frame.width / HALVES,
 		down: middleY(box) - frame.height / HALVES,
@@ -507,7 +507,7 @@ export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
  * Where a point of the screen stands in a camera's view as the camera frames the page, before the view leans: in the
  * view's pixels from its top left corner, as far from the view's middle as the camera's zoom takes it from its focus.
  */
-function pointInTheView(camera: Camera, frame: Size, point: Point): Point {
+export function pointInTheView(camera: Camera, frame: Size, point: Point): Point {
 	const pose = camera.pose;
 	const frameZoom = frameZoomOf(pose, frame);
 	const view = camera.view.box;
@@ -587,11 +587,12 @@ export function leantOnTheFrame(leaning: Leaning, eye: Eye, frame: Size, point: 
  * middle, as CSS carries an element about its middle: in the pixels the box is placed in.
  */
 export function carriedAboutItsMiddle(matrix: Matrix, box: Box, point: Point): Point {
-	return aboutItsMiddle(matrix, box, {
-		across: point.left - box.width / HALVES,
-		down: point.top - box.height / HALVES,
-		out: ON_ITS_PLANE
-	});
+	return aboutItsMiddle(matrix, box, fromItsMiddle(box, point));
+}
+
+/** A point of a box, in its pixels from the box's top left corner, as a spot of its plane from the box's middle. */
+export function fromItsMiddle(box: Size, point: Point): Spot {
+	return { across: point.left - box.width / HALVES, down: point.top - box.height / HALVES, out: ON_ITS_PLANE };
 }
 
 /**

@@ -152,7 +152,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => piece.show(5 as never)).toThrow(new FilmError(`piece.show's target is 5: it is ${TARGET}`));
 	expect(() => piece.show('#chart', { from: 'left' } as never)).toThrow(
 		new FilmError(
-			'piece.show names from: it names every, air, corner, hole, lines, enter, edge, within, ease, as, group, zIndex, or fewer'
+			'piece.show names from: it names every, air, corner, hole, lines, inside, enter, edge, within, ease, as, group, zIndex, or fewer'
 		)
 	);
 	expect(() => piece.onto(5 as never)).toThrow(new FilmError(`piece.onto's target is 5: it is ${TARGET}`));

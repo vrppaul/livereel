@@ -31,8 +31,9 @@
  * the window faces the frame front on, as only then does a box of the frame stand on the screen as a box. It never
  * slides from there, as the page's plane may stand leant from the frame's: it goes in its place.
  */
-import { boxOnTheScreen, viewOf } from '../domain/camera.ts';
+import { boxOnTheScreen, standingAt, viewOf } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
+import { THE_EYE_AT_REST } from '../domain/eye.ts';
 import type { Format } from '../domain/format.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
 import {
@@ -105,7 +106,7 @@ import {
 	framesPastTheEdge
 } from '../props/object.ts';
 import { A_WAY, OWN_WAY, type Way, type WayName, comesFromAnEdge, wayNamed } from '../props/way.ts';
-import { type Scene, withLeaving, withObject } from '../scene.ts';
+import { type Scene, cameraOf, withEye, withLeaving, withObject, withProp } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
 import { cameraFrontOn } from './source.ts';
 import { type ThroughScript, throughFormOf, throughWritten } from './through.ts';
@@ -533,7 +534,7 @@ export function objectOnto(kind: ObjectKind, move: string, target: Target, scrip
 }
 
 /** An object as a move finds it as it begins; one not on the screen is refused, the move named. */
-function standing(beginning: Beginning, name: ObjectName, move: string): FrameObject {
+export function standing(beginning: Beginning, name: ObjectName, move: string): FrameObject {
 	const object = beginning.scene.objects.get(name);
 	if (object === undefined) throw new FilmError(`${move} finds no ${name} on the screen`);
 	return object;
@@ -555,6 +556,27 @@ function seenFrom(beginning: Beginning, holder: Holder): Beginning {
 			const box = viewOf(beginning.scene.window).box;
 			return { ...beginning, format: { ...beginning.format, frame: { width: box.width, height: box.height } } };
 		}
+	}
+}
+
+/**
+ * A move's beginning as what stands in a holder reads the page through the camera: in the world, the camera standing
+ * where it stands and seen from the eye at rest, the frame's plane then the world's, so a box read there stands over
+ * what it was read off wherever the eye stands; anywhere else, as the eye stands. The camera is stood at its pose, as
+ * the eye paces a camera's way through keys.
+ */
+function readFrom(beginning: Beginning, holder: Holder): Beginning {
+	switch (holder.kind) {
+		case 'world': {
+			const pose = cameraOf(beginning.scene, beginning.format).pose;
+			const asAtRest = withEye(withProp(beginning.scene, 'camera', standingAt(pose)), THE_EYE_AT_REST);
+			return { ...beginning, scene: asAtRest };
+		}
+		case 'frame':
+		case 'window':
+		case 'page':
+		case 'group':
+			return beginning;
 	}
 }
 
@@ -693,7 +715,7 @@ async function appearingIn(
 ): Promise<Change> {
 	refuseJoining(beginning, holder, move);
 	const within = seenFrom(beginning, holder);
-	const coming = await comingAt(within);
+	const coming = await comingAt(readFrom(within, holder));
 	const measured = { ...coming, box: measuredIn(beginning, holder, coming.box, name, move) };
 	return appearing(within, name, holder, measured, arrival, move);
 }
@@ -922,7 +944,7 @@ function goingBack(
 ): Change {
 	const object = movable(beginning, name, move);
 	const to: Carried = {
-		box: measuredIn(beginning, object.inside, boxAt(beginning, name), name, move),
+		box: measuredIn(beginning, object.inside, boxAt(readFrom(beginning, object.inside), name), name, move),
 		scale: AS_PLACED.scale,
 		depth: AS_PLACED.depth
 	};

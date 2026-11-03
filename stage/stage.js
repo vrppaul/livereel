@@ -77,6 +77,9 @@ const WAY_CUT = 'data-way-cut';
 // window shades the page by, which it has not where the page is unshaded: so neither is drawn with a filter at all
 const EFFECTS = 'data-effects';
 const SHADED = 'data-shaded';
+// The attribute what the eye's focus blurs is drawn with, which what it draws sharp has not, so that is drawn with no
+// filter at all
+const OUT_OF_FOCUS = 'data-out-of-focus';
 // The custom property a title's own size is set as, where it has one; the stylesheet takes the look's where it has not
 const OWN_SIZE = '--title-own-size';
 // The attribute that names the edge of the frame a caption stands at: its foot, or its top
@@ -176,7 +179,8 @@ class CameraDrawer {
 
 /**
  * The page's window: where on the frame the camera's picture shows, how far it stands off the ground, how it is drawn
- * about its middle as it leans, by the matrix the engine sees it through, and how it shades the page.
+ * about its middle as it leans, by the matrix the engine sees it through, how it shades the page, and how soft the
+ * eye's focus draws it.
  */
 class WindowDrawer {
 	/** @param {Staged} root */
@@ -196,6 +200,7 @@ class WindowDrawer {
 		});
 		transformed(this.root, view.transform);
 		shadeDrawn(this.root, view.shade);
+		focusDrawn(this.root, view.outOfFocus);
 	}
 }
 
@@ -472,8 +477,20 @@ class StagedObject {
 		this.element.setAttribute(FACE, object.face);
 		wayDrawn(this.way, object.onItsWay);
 		effectsDrawn(this.element, object.effects);
+		focusDrawn(this.element, object.outOfFocus);
 		this.content.draw(object.content);
 	}
+}
+
+/**
+ * How soft the eye's focus draws the window or an object, drawn on its element: blurred by as many pixels of its own
+ * as the engine says; with no filter at all, where the eye draws it sharp.
+ * @param {Staged} element @param {number | null} outOfFocus
+ */
+function focusDrawn(element, outOfFocus) {
+	element.toggleAttribute(OUT_OF_FOCUS, outOfFocus !== null);
+	if (outOfFocus === null) return;
+	numbered(element, { '--out-of-focus': outOfFocus });
 }
 
 /**

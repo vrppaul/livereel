@@ -145,7 +145,16 @@ and the moves of each part of the scene:
   `aim` names, each `{ across, down, out }` in pixels of a frame 1080 high from the frame's middle, `out` toward whoever
   watches; it rests at `{ across: 0, down: 0, out: 2000 }` looking at the middle. The page's window, and what a film
   shows `inside: 'world'`, are seen from wherever it stands; what stands on the frame, a caption, rides with it. What a
-  move leaves out stays; an eye looking at where it stands, or straight up or down, is refused
+  move leaves out stays; an eye looking at where it stands, or straight up or down, or passing over the top of what it
+  looks at, is refused
+- `eye.focus(on, { aperture })`: the eye focused so far before it, `eye.focus(1800)`, at a spot of the world, on a
+  block of the page, `eye.focus('#thread')`, or on an object, `eye.focus({ object: 'why' })`, and open `aperture`
+  pixels of a frame 1080 high wide; it rests open none, all sharp. What stands in the world nearer or farther than the
+  focus is drawn as a disc `aperture × 2000 × |1/focus − 1/distance|` across, as a camera's lens draws it: the window,
+  with all in it, and each object shown `inside: 'world'`, each as soft as its point nearest the focus, so what the
+  eye focuses on is drawn sharp; what stands on the frame or in a group stays sharp. It shares a step with `eye.to`,
+  and holds on what it was put on as the eye moves; a focus pulled from one to another goes evenly in how sharp it
+  leaves things. A focus on what stands behind the eye is refused
 - `window.to(place)`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn })`,
   `window.shade({ dim, fade, blur })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
@@ -169,7 +178,7 @@ and the moves of each part of the scene:
   `terminal.lean({ tilt, turn, roll })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
-- `piece.show(target, { every, air, corner, hole, lines, enter, edge, as, group, zIndex })`,
+- `piece.show(target, { every, air, corner, hole, lines, enter, edge, as, inside, group, zIndex })`,
   `piece.to(place, { scale, depth })`, `piece.onto(target)`, `piece.lean({ tilt, turn, roll })`, `piece.back()`,
   `piece.hide({ toward, leave, edge })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
@@ -449,12 +458,15 @@ carried to, and a block its `back` or `to` reads, is read on the frame and
 stands in the group where it would stand once the group is back as it was
 placed.
 
-A title, code or the terminal stands on the frame where it names nothing, and
-rides with the eye as it moves; shown `inside: 'world'`, it stands where it is
-placed while the eye moves past it, as the page's window does. Its place is
-read as from the eye at rest, and it is drawn over the window wherever it
-stands; its `depth` still counts from the eye at rest, so an eye moved near
-or past it is not kept in front of it.
+A title, code, the terminal or a piece of the page stands on the frame where
+it names nothing, and rides with the eye as it moves; shown `inside:
+'world'`, it stands where it is placed while the eye moves past it, as the
+page's window does, and the eye's focus blurs it as it stands off it. Its
+place is read as from the eye at rest, and it is drawn over the window
+wherever it stands; its `depth` still counts from the eye at rest, so an eye
+moved near or past it is not kept in front of it. A piece lifted `inside:
+'world'`, `piece.show('#why', { inside: 'world' })`, stands over its source
+on the window's plane wherever the eye stands, aslant too.
 
 A title, code or the terminal stands `inside` the page's window, as a small
 window of code over the site's: `code.show(LINES, { at: { left: 0.45, top:

@@ -77,6 +77,12 @@ body {
 	overflow: hidden;
 }
 
+/* The window's shadow and its view, over the whole frame: the part the eye's focus blurs, round the view's cut, so a window out of focus spreads past its edge, and the page past the frame's edge blurs into it */
+.sharpness {
+	position: absolute;
+	inset: 0;
+}
+
 /* The camera's view, and its shadow under it: the whole frame, or a window on the ground, drawn about its middle by the matrix of its lean the engine sees it through (`leaningOnTheFrame` in `src/domain/camera.ts`), with the objects' rules below */
 .view,
 .view-shadow {
@@ -1284,4 +1290,10 @@ body {
 	inset: 0;
 	background: var(--page-dark);
 	opacity: var(--shade-dim);
+}
+
+/* What the eye's focus blurs (`src/domain/focus.ts`), by as many pixels of a frame 1080 high as the engine works out: the window, its shadow and its view with all that lies in it, on the frame, round the view's cut; and an object in the world, in its own box's pixels, as Chrome blurs an element before its matrix grows it. What the eye draws sharp is drawn with no filter at all */
+.window[data-out-of-focus] .sharpness,
+.object[data-out-of-focus] {
+	filter: blur(calc(var(--out-of-focus) * var(--frame-scale) * 1px));
 }

@@ -6,6 +6,8 @@
  * follow the camera between, until it is carried onto a block of the page: it lies on the page then, and the camera
  * frames it as it frames the page. A piece is drawn from the page's picture, so a page framed live, which has none, is
  * refused; and it stands over its source only on a window that faces the frame, where the source shows as a box.
+ * Lifted inside the world, it stands there over its source on the window's plane, wherever the eye stands, and the eye
+ * moves past it as it moves past the window, the eye's focus blurring it as it stands off it.
  *
  * Lifted, it may leave a hole: the ground the page draws behind its block, read as it is lifted, or a colour the film
  * names, where a box of the screen, with no block behind it, needs one; and draw lines from itself to its source. Its
@@ -22,6 +24,7 @@ import {
 	A_PIXELS,
 	type Form,
 	type Kind,
+	Literal,
 	OfForm,
 	Plain,
 	assertKind,
@@ -70,7 +73,7 @@ export interface HoleScript {
  * page's pixels; how round the corners of what it lifts are, `corner`, a radius in the page's pixels: a rounded card's
  * own `border-radius`, where it lifts the card alone and whole;
  * the hole it leaves and the line the lines from it to its source are drawn in, where the film names them; how it comes
- * up; which piece; the group it stands in, if any.
+ * up; which piece; the world it stands `inside`, which the eye moves through, or the group it stands in, if either.
  */
 export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript {
 	readonly every?: number;
@@ -78,6 +81,7 @@ export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScri
 	readonly corner?: number;
 	readonly hole?: HoleScript;
 	readonly lines?: Stroke;
+	readonly inside?: 'world';
 }
 
 /** How a hole is filled, as a piece is made: with the ground the page draws behind a block a selector names, or a colour. */
@@ -120,6 +124,8 @@ const PIECE_FORM: Form<PieceScript> = {
 	corner: A_PIXELS,
 	hole: new OfForm(HOLE_FORM, 'a hole: { ground, line }'),
 	lines: A_STROKE,
+	// A piece stands inside the world alone: it lies in the window only where it is carried onto the page (`onto`)
+	inside: new Literal('world'),
 	...IN_PLACE_SHOW_FORM,
 	...NAMED_FORM,
 	...GROUPED_FORM

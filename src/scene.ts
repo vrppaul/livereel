@@ -13,14 +13,15 @@
  * how far each word of a title, a caption or a callout and each line of code has come, the terminal's spinner, how far
  * keys rise clear of a caption, where a note's line meets the block it names on the frame, the hole a piece of the page
  * leaves and the lines it draws to its source, the part of the screen under a lens, where an object in a group, or on
- * the page as the camera frames it then, is drawn and in what order — so the stage draws numbers and words and decides
- * nothing, and draws no group of its own.
+ * the page as the camera frames it then, is drawn and in what order, how soft the eye's focus draws the window and
+ * each object in the world — so the stage draws numbers and words and decides nothing, and draws no group of its own.
  * What the camera shows is worked out from what it aims at and the window that stands (`cameraOf`), so a
  * camera moving and a window moving in one step make the same frame whichever is set first; a frame is drawn by such a
  * camera, or by the flat one an act is done in. A prop that may be absent is `null`; the
  * compiler holds every prop to a drawn form here and to a drawer on the stage.
  */
 import { type Eye, THE_EYE_AT_REST } from './domain/eye.ts';
+import { sharpnessOf } from './domain/focus.ts';
 import type { Format } from './domain/format.ts';
 import type { Size } from './domain/geometry.ts';
 import {
@@ -87,8 +88,9 @@ export type Scene = { readonly [Name in PropName]: PropStates[Name] } & {
 	 */
 	readonly pageSpeed: number;
 	/**
-	 * Where the eye stands and what it looks at (`src/domain/eye.ts`): the world, the window in it, is seen from it, the
-	 * frame rides with it. The stage draws nothing of it but the matrices it is handed.
+	 * Where the eye stands and what it looks at, where it focuses and how wide it is open (`src/domain/eye.ts`): the
+	 * world, the window in it, is seen from it and as sharp as it sees, the frame rides with it. The stage draws nothing
+	 * of it but the matrices and the blurs it is handed.
 	 */
 	readonly eye: Eye;
 };
@@ -265,18 +267,20 @@ export function drawingOf(exposures: readonly DrawnScene[]): string {
 export function drawn(scene: Scene, camera: Camera, moment: number, format: Format): DrawnScene {
 	const everyObject = [...scene.objects, ...scene.leaving];
 	const holes = drawnHoles(everyObject);
+	const sharpness = sharpnessOf(camera, format.frame);
 	const around: Surroundings = {
 		caption: captionAmong(scene.objects),
 		screen: scene.screen,
 		frame: format.frame,
 		camera,
 		groups: scene.groups,
-		holes
+		holes,
+		sharpness
 	};
 	return {
 		look: scene.look,
 		camera: drawnCamera(camera, format),
-		window: drawnWindow(camera.view, camera.eye, scene.window, format.frame),
+		window: drawnWindow(camera.view, camera.eye, scene.window, format.frame, sharpness),
 		screen: scene.screen,
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout, moment),

@@ -7,10 +7,12 @@
  *
  * The stage draws the window by the matrix the engine sees its points through (`leaningOnTheFrame`), as it draws an
  * object (`src/domain/stance.ts`): flat while it faces the frame, in 3D only where it leans, so its projection is
- * written once and a face-on window costs the graphics card no 3D layer in an exposure.
+ * written once and a face-on window costs the graphics card no 3D layer in an exposure. The window stands in the world,
+ * so the eye's focus blurs it, with all that lies in it, by where its middle stands (`src/domain/focus.ts`).
  */
 import { type Placing, type View, angledAs, leaningOnTheFrame } from '../domain/camera.ts';
 import { type Eye, turnOf } from '../domain/eye.ts';
+import { type Sharpness, outOfFocusOnTheFrame } from '../domain/focus.ts';
 import { chained } from '../domain/matrix.ts';
 import { type Fraction, NONE } from '../domain/fraction.ts';
 import type { Box, Size } from '../domain/geometry.ts';
@@ -34,13 +36,15 @@ export interface PageWindow extends Placing, Shade {}
 
 /**
  * The window as the stage draws it: its box on the frame, how far it stands off the ground, how it is drawn about its
- * box's middle, leant as it is and seen from the eye, and its shade; none where the page is shaded none.
+ * box's middle, leant as it is and seen from the eye, its shade, none where the page is shaded none, and how soft the
+ * eye's focus draws it and all in it, on the frame in pixels of a frame 1080 high, none where sharp.
  */
 export interface DrawnWindow {
 	readonly box: Box;
 	readonly lift: Fraction;
 	readonly transform: Transform;
 	readonly shade: Shade | null;
+	readonly outOfFocus: number | null;
 }
 
 export const UNSHADED: Shade = { dim: NONE, fade: NONE, blur: NO_PIXELS };
@@ -54,14 +58,16 @@ export const SHADE_NAMES = namesOf(SHADING);
 
 /**
  * The window as the stage draws it on a frame of this size: standing as the camera's view, seen from the eye, shaded
- * as it is.
+ * as it is, and as soft as the eye sees it.
  */
-export function drawnWindow(view: View, eye: Eye, window: Shade, frame: Size): DrawnWindow {
+export function drawnWindow(view: View, eye: Eye, window: Shade, frame: Size, sharpness: Sharpness): DrawnWindow {
+	const placing = leaningOnTheFrame(view, eye, frame);
 	return {
 		box: view.box,
 		lift: view.lift,
-		transform: transformOf(chained([turnOf(eye), angledAs(view.angle)]), leaningOnTheFrame(view, eye, frame)),
-		shade: drawnShade(window)
+		transform: transformOf(chained([turnOf(eye), angledAs(view.angle)]), placing),
+		shade: drawnShade(window),
+		outOfFocus: outOfFocusOnTheFrame(placing, view.box, sharpness, frame)
 	};
 }
 

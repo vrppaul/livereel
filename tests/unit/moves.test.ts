@@ -38,6 +38,8 @@ import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
 import * as ending from '../../src/moves/ending.ts';
 import { type DrawnObject, type Surroundings, drawnObject, drawnOnTheFrame } from '../../src/props/object.ts';
+import type { Sharpness } from '../../src/domain/focus.ts';
+import type { Piece } from '../../src/props/piece.ts';
 import { SCREEN_UP } from '../../src/props/screen.ts';
 import { ONE_FRAME, pastTheEdge, windowPlaced, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
@@ -132,15 +134,18 @@ const PAGE = new PageOfBoxes(
 const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
 const ACTED_IN = 'bring it in with an act, as no move of livereel scrolls the page sideways';
 const LIT = { box: BLOCK, strength: 1, dim: 0.6 };
+// The eye at rest, open none, seeing all sharp
+const ALL_SHARP: Sharpness = { focusedAt: 2000, aperture: 0 };
 // No caption standing round an object drawn alone, the screen up, on the small frame, the camera on the whole screen,
-// no group and no hole
+// no group and no hole, the eye seeing all sharp
 const NOTHING_AROUND: Surroundings = {
 	caption: null,
 	screen: SCREEN_UP,
 	frame: SMALL.frame,
 	camera: cameraOf(openingScene(SMALL, LIVEREELS_LOOK), SMALL),
 	groups: new Map(),
-	holes: []
+	holes: [],
+	sharpness: ALL_SHARP
 };
 const TYPED = withObject(openingScene(SMALL, LIVEREELS_LOOK), 'terminal', {
 	inside: { kind: 'frame' },
@@ -171,14 +176,16 @@ const MIDDLE_AT_TWO = { focusX: 960, focusY: 540, zoom: 2 };
 // the part of it the camera shows
 const PAST_THE_SHOWN_EDGE = { left: 400, top: 300, width: 200, height: 100 };
 const SHOWN_AT_TWO = { left: 480, top: 300, width: 120, height: 100 };
-// Nothing standing round an object drawn alone on that frame, the screen up, the camera on the whole screen
+// Nothing standing round an object drawn alone on that frame, the screen up, the camera on the whole screen, the eye
+// seeing all sharp
 const AROUND_IN_FULL_HD: Surroundings = {
 	caption: null,
 	screen: SCREEN_UP,
 	frame: FULL_HD.frame,
 	camera: cameraOf(openingScene(FULL_HD, LIVEREELS_LOOK), FULL_HD),
 	groups: new Map(),
-	holes: []
+	holes: [],
+	sharpness: ALL_SHARP
 };
 // A box in the upper right corner of a frame, a quarter of it across and down, and one in its middle, half of it
 const UPPER_RIGHT_CORNER = { left: 0.75, top: 0, width: 0.25, height: 0.25 } as const;
@@ -2315,8 +2322,8 @@ test('the eye keeps where it stands, or what it looks at, where a move leaves it
 		(await setAt(eye.to({ aim: lookingUp }), aside, 1)).eye,
 		(await setAt(eye.to({ at: steppedBack }), aside, 1)).eye
 	]).toEqual([
-		{ at: EYE_ASIDE.at, aim: lookingUp },
-		{ at: steppedBack, aim: EYE_ASIDE.aim }
+		{ ...THE_EYE_AT_REST, at: EYE_ASIDE.at, aim: lookingUp },
+		{ ...THE_EYE_AT_REST, at: steppedBack, aim: EYE_ASIDE.aim }
 	]);
 });
 
@@ -2389,6 +2396,152 @@ test('a title in the world slides in from past the edge as the eye sees it, howe
 	const rightEdge = drawnOnTheFrame(settingOff.objects.get('title')!, holders, SMALL.frame, { left: 1, top: 0.5 });
 	expect(rightEdge.left).toBeLessThanOrEqual(0);
 });
+
+// An eye opened 40 pixels of a frame 1080 high wide: a point twice as far from it as its focus, or half as far, is
+// drawn as a disc 40 across, blurred a quarter of that on the frame; a title in the world half way to the eye from the
+// frame's plane, drawn twice as large there
+const OPENED = 40;
+const A_QUARTER_OF_THE_DISC = 10;
+const HALF_WAY_TO_THE_EYE = 1000;
+// How near two points on the frame stand to be drawn at one pixel
+const HALF_A_PIXEL = 0.5;
+
+/** A scene with a title named `near` in the world half way to the eye, and one riding on the frame as near. */
+async function withNearTitles(scene: Scene): Promise<Scene> {
+	const inTheWorld = await setAt(title.show('Near', { as: 'near', inside: 'world' }), scene, 1);
+	const onTheFrame = await setAt(title.show('Riding', { as: 'riding' }), inTheWorld, 1);
+	const near = await setAt(title.effects({ as: 'near', depth: HALF_WAY_TO_THE_EYE }), onTheFrame, 1);
+	return setAt(title.effects({ as: 'riding', depth: HALF_WAY_TO_THE_EYE }), near, 1);
+}
+
+/** How soft the stage blurs the window and each object of a scene shot in the small format, by its own camera. */
+function outOfFocusIn(scene: Scene): readonly (number | null)[] {
+	const shown = drawn(scene, cameraOf(scene, SMALL), 0, SMALL);
+	return [shown.window.outOfFocus, ...shown.objects.map((object) => object.outOfFocus)];
+}
+
+test('an eye focused on a title in the world draws it sharp, and the page twice as far as soft as a disc as wide as the eye is open', async () => {
+	const near = await withNearTitles(openingScene(SMALL, LIVEREELS_LOOK));
+	const focused = await setAt(eye.focus({ object: 'near' }, { aperture: OPENED }), near, 1);
+	expect(outOfFocusIn(focused)).toEqual([expect.closeTo(A_QUARTER_OF_THE_DISC), null, null]);
+});
+
+test('a title in the world nearer than the focus is blurred in its own pixels, the less the larger it is drawn; what rides on the frame stays sharp', async () => {
+	const near = await withNearTitles(openingScene(SMALL, LIVEREELS_LOOK));
+	const onThePage = await setAt(eye.focus('#block', { aperture: OPENED }), near, 1);
+	expect(outOfFocusIn(onThePage)).toEqual([null, expect.closeTo(A_QUARTER_OF_THE_DISC / 2), null]);
+});
+
+test('a focus pulled from a near title to the page goes evenly in how sharp it leaves things: half way, the page is half as soft', async () => {
+	const near = await withNearTitles(openingScene(SMALL, LIVEREELS_LOOK));
+	const onTheTitle = await setAt(eye.focus({ object: 'near' }, { aperture: OPENED }), near, 1);
+	const halfWay = await setAt(eye.focus('#block'), onTheTitle, 0.5);
+	expect(outOfFocusIn(halfWay)[0]).toBeCloseTo(A_QUARTER_OF_THE_DISC / 2);
+});
+
+test('a focus on a title in the world holds on it as the eye comes nearer, the page behind it softer', async () => {
+	const near = await withNearTitles(openingScene(SMALL, LIVEREELS_LOOK));
+	const onTheTitle = await setAt(eye.focus({ object: 'near' }, { aperture: OPENED }), near, 1);
+	const nearer = await setAt(eye.to({ at: { across: 0, down: 0, out: 1500 } }), onTheTitle, 1);
+	// The title 500 from the eye, the page 1500: a disc of 40 × 2000 × (1/500 − 1/1500) on the frame, blurred a quarter
+	// of that
+	const disc = OPENED * 2000 * (1 / 500 - 1 / 1500);
+	expect(outOfFocusIn(nearer)).toEqual([expect.closeTo(disc / 4), null, null]);
+});
+
+test('a focus kept on a title in the world while the eye comes nearer in the same step keeps it sharp all the way', async () => {
+	const near = await withNearTitles(openingScene(SMALL, LIVEREELS_LOOK));
+	const onTheTitle = await setAt(eye.focus({ object: 'near' }, { aperture: OPENED }), near, 1);
+	const comingNearer = await eye.to({ at: { across: 0, down: 0, out: 1500 } }).begin(beginningOf(onTheTitle));
+	const keptOnIt = await eye.focus({ object: 'near' }).begin(beginningOf(onTheTitle));
+	const halfWay = await keptOnIt(await comingNearer(onTheTitle, 0.5), 0.5);
+	expect(outOfFocusIn(halfWay)[1]).toBeNull();
+});
+
+test('a focus on a title riding on the frame rides with the eye, as far before it as the title stands wherever it goes', async () => {
+	const near = await withNearTitles(openingScene(SMALL, LIVEREELS_LOOK));
+	const onTheRiding = await setAt(eye.focus({ object: 'riding' }, { aperture: OPENED }), near, 1);
+	const nearer = await setAt(eye.to({ at: { across: 0, down: 0, out: 1500 } }), onTheRiding, 1);
+	// The focus 1000 before the eye still, the page 1500: a disc of 40 × 2000 × (1/1000 − 1/1500) on the frame, blurred a
+	// quarter of that
+	const disc = OPENED * 2000 * (1 / 1000 - 1 / 1500);
+	expect(outOfFocusIn(nearer)[0]).toBeCloseTo(disc / 4);
+});
+
+test('a window leant back is drawn as sharp as the block of the page the eye focuses on', async () => {
+	const leant = await setAt(lean({ tilt: 50 }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const onTheBlock = await setAt(eye.focus('#block', { aperture: OPENED }), leant, 1);
+	expect(outOfFocusIn(onTheBlock)).toEqual([null]);
+});
+
+test('a title in the world turned nearly edge-on is blurred no more in its own pixels than face-on', async () => {
+	const near = await withNearTitles(openingScene(SMALL, LIVEREELS_LOOK));
+	const onThePage = await setAt(eye.focus('#block', { aperture: OPENED }), near, 1);
+	const turned = await setAt(title.lean({ as: 'near', turn: 89.9 }), onThePage, 1);
+	expect(outOfFocusIn(turned)[1]).toBeLessThanOrEqual(A_QUARTER_OF_THE_DISC / 2);
+});
+
+test('a blur a tenth of a pixel of the frame wide or less is drawn as none', async () => {
+	const near = await withNearTitles(openingScene(SMALL, LIVEREELS_LOOK));
+	const barelyOpen = await setAt(eye.focus({ object: 'near' }, { aperture: 0.001 }), near, 1);
+	expect(outOfFocusIn(barelyOpen)).toEqual([null, null, null]);
+});
+
+test('eye.to and eye.focus share a step, the eye standing where one sends it and focused where the other does', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const steps = play({ seconds: 1, moves: [eye.to(EYE_ASIDE), eye.focus(1000, { aperture: OPENED })] });
+	const both = await setAt(eye.focus(1000, { aperture: OPENED }), await setAt(eye.to(EYE_ASIDE), opening, 1), 1);
+	expect(steps.kind).toBe('play');
+	expect([both.eye.at, both.eye.aim, both.eye.aperture]).toEqual([EYE_ASIDE.at, EYE_ASIDE.aim, OPENED]);
+});
+
+test('a focus on an object that does not stand, or on what stands behind the eye, is refused as its move begins', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const behind = new FilmError(
+		'eye.focus focuses on what stands behind the eye, which it never sees: focus on what stands before it'
+	);
+	const pastTheTitle = await setAt(eye.to({ at: { across: 0, down: 0, out: 900 } }), await withNearTitles(opening), 1);
+	await expect(setAt(eye.focus({ object: 'gone' }), opening, 1)).rejects.toThrow(
+		new FilmError('eye.focus finds no gone on the screen')
+	);
+	await expect(setAt(eye.focus({ across: 0, down: 0, out: 2500 }), opening, 1)).rejects.toThrow(behind);
+	await expect(setAt(eye.focus({ object: 'near' }), pastTheTitle, 1)).rejects.toThrow(behind);
+});
+
+test('a focus at no distance, or in no form a focus takes, is refused as the move is made', () => {
+	const forms =
+		'a distance before the eye in pixels of a frame 1080 high, more than 0; a spot { across, down, out }; a selector or a box of the screen; or an object, { object }';
+	expect(() => eye.focus(0)).toThrow(new FilmError(`eye.focus's focus is 0: it is ${forms}`));
+	expect(() => eye.focus(true as never)).toThrow(new FilmError(`eye.focus's focus is true: it is ${forms}`));
+});
+
+test('a piece in the world stands over its source wherever the eye stands, aslant too, lifted and taken back', async () => {
+	const aslant = await setIn(eye.to(EYE_ASIDE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { inside: 'world' }), aslant, 1, FULL_HD);
+	const carried = await setIn(piece.to('top'), lifted, 1, FULL_HD);
+	const back = await setIn(piece.back(), carried, 1, FULL_HD);
+	expect([drawnOverItsSource(lifted), drawnOverItsSource(back)]).toEqual([true, true]);
+});
+
+test('a piece in the world lifted while the camera passes through a key stands over its source as the camera shows it', async () => {
+	const aslant = await setIn(eye.to(EYE_ASIDE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const passing = await setIn(onto('#other', { through: ['#card'], air: 0, zoomAtMost: 2 }), aslant, 0.4, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { inside: 'world' }), passing, 1, FULL_HD);
+	expect(drawnOverItsSource(lifted)).toBe(true);
+});
+
+/**
+ * Whether the piece of a scene shot full HD is drawn with its middle on the frame where the camera shows its source's
+ * middle, to the pixel.
+ */
+function drawnOverItsSource(scene: Scene): boolean {
+	const camera = cameraOf(scene, FULL_HD);
+	const lifted = scene.objects.get('piece')!;
+	const source = (lifted.content as Piece).source;
+	const drawnMiddle = drawnOnTheFrame(lifted, { camera, groups: scene.groups }, FULL_HD.frame, BOX_MIDDLE);
+	const sourcesMiddle = onTheFrame(camera, FULL_HD.frame, { left: middleX(source), top: middleY(source) });
+	return distanceBetween(drawnMiddle, sourcesMiddle) < HALF_A_PIXEL;
+}
 
 /** A point to the nearest pixel. */
 function roundedPoint(point: Point): Point {

@@ -36,6 +36,12 @@
  *
  * What a piece of the page or a lens shows of the page is the page as it stands: the holes other pieces leave in it
  * (`src/props/lifted.ts`) with it, so a piece of the whole screen under the pieces lifted off it shows where they were.
+ *
+ * The eye's focus (`src/domain/focus.ts`) blurs an object in the world by where its middle stands; one inside the
+ * window or on the page is blurred with the window it lies in, and one on the frame or in a group rides with the eye
+ * and stays sharp, as words laid over a film do. Where the eye focuses to see an object sharp is where its middle
+ * stands as the focus is put on it, in what it stands in, so the focus holds there as the eye, the window and the
+ * camera move, and stays there as the object moves on.
  */
 import {
 	type Camera,
@@ -43,9 +49,11 @@ import {
 	boxInTheView,
 	carriedAboutItsMiddle,
 	leantOnTheFrame,
+	middleInTheRoom,
 	seenFromTheEye
 } from '../domain/camera.ts';
-import { type Eye, THE_EYE_AT_REST, turnOf } from '../domain/eye.ts';
+import { type Eye, type Focus, THE_EYE_AT_REST, turnOf } from '../domain/eye.ts';
+import { type Sharpness, distanceOfItsMiddle, outOfFocusBeforeItsMatrix } from '../domain/focus.ts';
 import type { Fraction } from '../domain/fraction.ts';
 import {
 	type Box,
@@ -55,10 +63,12 @@ import {
 	cornersOf,
 	distanceBetween,
 	frameScaleOf,
+	middleX,
+	middleY,
 	placedFrom
 } from '../domain/geometry.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
-import { type Matrix, type Spot, carried, chained } from '../domain/matrix.ts';
+import { ITS_MIDDLE, type Matrix, type Spot, carried, chained } from '../domain/matrix.ts';
 import { ONE_FRAME, pastTheEdge } from '../domain/place.ts';
 import { type DrawnStance, type Stance, drawnStance, stanceMatrix } from '../domain/stance.ts';
 import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
@@ -132,14 +142,15 @@ export interface Holders {
 /**
  * What stands round an object as it is drawn: the caption standing on the frame, if any, the window's screen, the
  * frame, which the eye sees it before, the camera the page is seen by, which a lens shows it past and frames what lies
- * on the page, the groups standing, and the holes pieces of the page leave on the screen, which what shows the page
- * shows.
+ * on the page, the groups standing, the holes pieces of the page leave on the screen, which what shows the page
+ * shows, and how sharp the eye sees as the frame is drawn.
  */
 export interface Surroundings extends Holders {
 	readonly caption: CaptionStanding | null;
 	readonly screen: Screen;
 	readonly frame: Size;
 	readonly holes: readonly DrawnHole[];
+	readonly sharpness: Sharpness;
 }
 
 /** What an object shows. */
@@ -179,7 +190,8 @@ export type Objects = ReadonlyMap<ObjectName, FrameObject>;
  * by that one — keys over a caption's, its box then the caption's to lay out — or none, its box in what it is laid in,
  * its transform about the box's middle and the side of it the eye sees, the layer it is drawn on, the higher over the
  * lower, how much of it what it stands in lets show, from 0 to 1, how far its figure's way has come, none where it is
- * on no way, how it stands out, none where it stands out in no way, and its content as drawn.
+ * on no way, how it stands out, none where it stands out in no way, how soft the eye's focus draws it, in pixels of a
+ * frame 1080 high of its box before its matrix, none where sharp, and its content as drawn.
  */
 export interface DrawnObject extends DrawnStance {
 	readonly name: ObjectName;
@@ -190,6 +202,7 @@ export interface DrawnObject extends DrawnStance {
 	readonly held: number;
 	readonly onItsWay: OnItsWay | null;
 	readonly effects: Effects | null;
+	readonly outOfFocus: number | null;
 	readonly content: DrawnContent;
 }
 
@@ -211,8 +224,6 @@ const LAYER_OF: { readonly [Kind in Content['kind']]: number } = {
 // The corners of a box, in shares of it, and its middle
 const CORNERS = cornersOf({ left: 0, top: 0, width: 1, height: 1 });
 const MIDDLE: Point = { left: 0.5, top: 0.5 };
-// A box's middle as a matrix about the middle takes a spot: none of the way from itself
-const ITS_MIDDLE: Spot = { across: 0, down: 0, out: 0 };
 // Where an object in no group stands in a group's order: anywhere, as its place among objects is its own; and the
 // zIndex of one in a group the film names none for, so all such are drawn as they came
 const NO_GROUP_ORDER = 0;
@@ -413,7 +424,55 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	const over = drawnOver(object, around.caption);
 	const inside = laidIn(object.inside);
 	const effects = drawnEffects(object);
-	return { name, inside, over, box: standing.laid, ...stance, layer, held, onItsWay, effects, content };
+	const outOfFocus = outOfFocusIn(object.inside, standing, around);
+	return { name, inside, over, box: standing.laid, ...stance, layer, held, onItsWay, effects, outOfFocus, content };
+}
+
+/**
+ * How soft the eye's focus draws an object standing in what it stands in: by where its middle stands in the world;
+ * none inside the window or on the page, which the window's blur takes with it, nor on the frame or in a group, which
+ * ride with the eye.
+ */
+function outOfFocusIn(holder: Holder, standing: Standing, around: Surroundings): number | null {
+	switch (holder.kind) {
+		case 'world':
+			return outOfFocusBeforeItsMatrix(standing.placing, standing.laid, around.sharpness, around.frame);
+		case 'frame':
+		case 'window':
+		case 'page':
+		case 'group':
+			return null;
+	}
+}
+
+/**
+ * Where the eye focuses to see an object sharp, its middle where it stands now: on the frame or in a group, which ride
+ * with the eye, so far before it; in the world, at that spot of it; inside the window or on the page, at that point of
+ * it, where the window it lies in is placed as each frame is drawn.
+ */
+export function focusOn(object: FrameObject, holders: Holders, frame: Size): Focus {
+	const middle: Point = { left: middleX(object.box), top: middleY(object.box) };
+	switch (object.inside.kind) {
+		case 'frame':
+		case 'group':
+			return { kind: 'distance', distance: distanceOfItsMiddle(standingOf(object, frame, holders).placing) };
+		case 'world':
+			return { kind: 'world', spot: spotInTheWorld(object, frame) };
+		case 'window':
+			return { kind: 'window', point: middle };
+		case 'page':
+			return { kind: 'page', point: middle };
+	}
+}
+
+/**
+ * The spot of the world an object in it stands at, its box's middle brought out by its depth, in pixels of a frame 1080
+ * high from the frame's middle, as an eye's spots are.
+ */
+function spotInTheWorld(object: FrameObject, frame: Size): Spot {
+	const scale = frameScaleOf(frame);
+	const middle = middleInTheRoom(object.box, frame);
+	return { across: middle.across / scale, down: middle.down / scale, out: object.depth / scale };
 }
 
 /**
