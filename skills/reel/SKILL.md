@@ -207,7 +207,7 @@ its end at once.
 | `play({ seconds, moves, ease })` | so many seconds of frames, each move eased over its share |
 | `hold({ seconds })` | so many seconds with nothing moving |
 | `cut(...moves)` | moves made at once, between two frames |
-| `act(action)` | `action(context)` acts on the page for real: `context.page` is Playwright's `Frame`, `context.motion.release()` and `.still()` let the page's own animations run and still them again |
+| `act(action)` | `action(context)` acts on the page for real, between two frames, a cut of `page.act`: `context.page` is Playwright's `Frame`, `context.motion.release()` and `.still()` let the page's own animations run and still them again |
 | `typing(move)` | as long as the keys of `terminal.type` or `page.type` take, and a beat after |
 
 | Moves | |
@@ -245,7 +245,7 @@ its end at once.
 | `page.scrollBy(selector, { pixels })` | a block's own scroll moved so many pixels |
 | `page.scrollTo(selector, { top })` | the page scrolled until a block stands `top` pixels below the top of what scrolls it |
 | `page.type(strokes, { keyboard })` | real keys typed into whatever holds the page's keyboard, heard on the film's keyboard or the one named |
-| `page.act(action, { within: { start } })` | the page acted on for real at a moment of a play, as `act` acts on it, while the play's other moves go on; it moves nothing, so it shares a step with anything; a move that begins at its moment, written after it, reads the page it left |
+| `page.act(action, { within: { start } })` | the page acted on for real at a moment of a play, as `act` acts on it, while the play's other moves go on; it takes no time, so it is refused only where a scroll or a typing of the page runs across its moment; a move that begins at its moment reads the page it left |
 | `page.speed(speed)` | how many of the page's seconds a second of the film runs: 4 shows a minute of the site's timers and script animations in 15 s, 0.5 slows them, 0 stands them still; at once in a `cut`, through the speeds between in a `play`; an `act` still waits on the page at the wall's time |
 | `sound.play(file)` | a file of the film's heard as its share begins; it moves nothing, so it shares a step with anything |
 
@@ -256,7 +256,9 @@ A click while the camera goes on is written into a play: `cursor.press`
 over a share, `page.act(action)` from its end, `cursor.release` over the
 share after, beside `cursor.to` and the camera's move. Give the press and
 the release shares as long as a click's, about 0.09 s and 0.12 s of the
-play's seconds.
+play's seconds; they go on a finger's curve, as a click's do, whatever the
+play's. A press begins once the cursor is on the screen: not on the frame
+`cursor.to` brings it in on.
 
 A title's, a caption's or a callout's `text` is a string, or a list of
 strings and runs read one after another: a run is `{ text }` with any of

@@ -1,13 +1,14 @@
 import { expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
 import { keystrokes } from '../../src/domain/typing.ts';
-import { act, cssIn, cut, framesIn, hold, play } from '../../src/direction/steps.ts';
+import { cssIn, cut, framesIn, hold, play } from '../../src/direction/steps.ts';
+import { act } from '../../src/moves/act.ts';
 import { hide, show } from '../../src/moves/caption.ts';
 import { hide as cursorGone } from '../../src/moves/cursor.ts';
 import * as lens from '../../src/moves/lens.ts';
 import { on } from '../../src/moves/light.ts';
 import { to as lookTo } from '../../src/moves/look.ts';
-import { scrollBy, type } from '../../src/moves/page.ts';
+import { act as actAtAMoment, scrollBy, type } from '../../src/moves/page.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import * as title from '../../src/moves/title.ts';
 import { lean, shade, to as windowTo } from '../../src/moves/window.ts';
@@ -37,6 +38,16 @@ test('two moves of the page at once are refused, as two of one object are, in a 
 		new FilmError('two moves on the page at once in one step')
 	);
 	expect(() => cut(cursorGone(), cursorGone())).toThrow(new FilmError('two moves on the cursor at once in one step'));
+});
+
+test('an act at a moment of a play is refused while a move of the page runs across it, and shares the step with one that ends or begins there', () => {
+	const typedToHalfWay = type(keystrokes('words', { seed: 1 }), { within: { end: 0.5 } });
+	const actedAt = (start: number) => actAtAMoment(() => Promise.resolve(), { within: { start } });
+	const scrolledFromHalfWay = scrollBy('html', { pixels: 100, within: { start: 0.5 } });
+	expect(() => play({ seconds: 1, moves: [typedToHalfWay, actedAt(0.4)] })).toThrow(
+		new FilmError('two moves on the page at once in one step')
+	);
+	expect(play({ seconds: 1, moves: [typedToHalfWay, actedAt(0.5), scrolledFromHalfWay] }).moves.length).toBe(3);
 });
 
 test('two moves of the look at once are refused only on a value both set, named by it: a ground named alone sets its glow', () => {

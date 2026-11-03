@@ -3,11 +3,12 @@
  * of a play; and the speed its own time runs at.
  *
  * The scroll and the keys change the page, not the scene: each frame sets the page's scroll, or presses the keys due
- * by then, so the page renders a little each frame as a person's scroll and typing make it. An act at a moment is done
- * once, as its move begins, the film's time standing while the page answers and every other move going on round it,
- * so a camera need not stop at a click; it changes nothing on the scene, so it clashes with no move, as a sound does
- * not. The speed is the scene's, which the take runs the page's time by, so its time runs ever faster or slower
- * through a play, at once from a cut.
+ * by then, so the page renders a little each frame as a person's scroll and typing make it. An act is done once, at
+ * its moment, as its move begins, the film's time standing while the page answers and every other move going on round
+ * it, so a camera need not stop at a click. It takes no time, so it clashes only with a scroll or a typing running
+ * across its moment, which it would pull the page out from under, and the take does it before any move that begins
+ * at that moment reads the page. The speed is the scene's, which the take runs the page's time by, so its time runs
+ * ever faster or slower through a play, at once from a cut.
  */
 import {
 	A_NUMBER,
@@ -30,11 +31,12 @@ import {
 	TIMING_FORM,
 	type TimingScript,
 	UNCHANGED,
+	momentTimingOf,
 	timingOf
 } from '../direction/move.ts';
-import type { Action, FilmedPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
+import { AN_ACTION, type Action, type FilmedPage, type ScrollAim, type ScrollCourse } from '../direction/page.ts';
 import { keysHeard } from '../direction/sound.ts';
-import { AN_ACTION, type Typed } from '../direction/steps.ts';
+import type { Typed } from '../direction/steps.ts';
 import { type Scene, withPageSpeed } from '../scene.ts';
 import { TYPING_FORM, type TypingScript } from './typing.ts';
 
@@ -87,14 +89,14 @@ export function type(strokes: readonly Keystroke[], script: TypingScript = {}): 
 }
 
 /**
- * The page acted on for real at a moment of a step, as `act` acts on it between steps, while the play's other moves
- * go on: `action(context)` is Playwright code. A move that begins at that moment, written after it, reads the page it
- * left.
+ * The page acted on for real at a moment of a step, while the play's other moves go on: `action(context)` is
+ * Playwright code. A move that begins at that moment reads the page it left; two acts at one moment are done in the
+ * order written.
  */
 export function act(action: Action, script: MomentScript = {}): Move {
 	assertKind(action, AN_ACTION, "page.act's action");
 	assertWritten(script, MOMENT_FORM, 'page.act');
-	return { part: null, timing: timingOf(script), begin: (beginning) => actedAsItBegins(beginning, action) };
+	return { part: 'page', timing: momentTimingOf(script), begin: (beginning) => actedAsItBegins(beginning, action) };
 }
 
 /**

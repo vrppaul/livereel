@@ -2,13 +2,14 @@
  * One take of a film: its steps run frame by frame on the film's own clock.
  *
  * The take alone holds the scene and the count of frames shot. In a play, each frame begins the moves whose share
- * begins by then, in the order their shares begin, each after every running change whose share ended before it has
- * been set at its end — so a move reads the scene and the page as they stand at its start — then sets at its end
- * every change ended by the frame, and every other at its eased progress. One move at most drives a part, or a value
- * of it, at any point, so the order moves are written in matters only where they begin at one moment with a move that
- * acts on the page, `page.act`, which acts as it begins: those written after it read the page it left. A cut begins
- * its moves and sets each at its end, with no frame between. A sound a move makes is heard as the move is set at or
- * past its point, on the frame being made.
+ * begins by then, in the order their shares begin, the one that ends first of two that begin alike, each after every
+ * running change whose share ended before it has been set at its end — so a move reads the scene and the page as they
+ * stand at its start, and one that begins as an act is done reads the page it left — then sets at its end every
+ * change ended by the frame, and every other at its eased progress. One move at most drives a part, or a value of it,
+ * at any point, so the order moves are written in matters nowhere but between two acts at one moment. A cut begins
+ * its moves and sets each at its end, with no frame between; an act between steps is a cut of one. The page is acted
+ * on one way: as a move that acts begins, by the way the take hands every move. A sound a move makes is heard as the
+ * move is set at or past its point, on the frame being made.
  * A frame is drawn only when the footage keeps it, and drawn again where anything on it moved fast while its shutter
  * was open — the camera, its window or an object — as the scene stood at moments of that time: the scene the frame
  * before left, every move begun by then set as far as it had come. Each drawing is an exposure of the frame
@@ -190,8 +191,6 @@ export class Take {
 				return this.play(step);
 			case 'cut':
 				return this.cut(step);
-			case 'act':
-				return this.acted(step.action);
 		}
 	}
 
@@ -202,7 +201,7 @@ export class Take {
 		for (let index = 1; index <= frames; index += 1) {
 			if (this.finished()) return;
 			const progress = index / frames;
-			const due = waiting.filter((move) => move.timing.within.start <= progress).sort(byStart);
+			const due = waiting.filter((move) => move.timing.within.start <= progress).sort(inBeginningOrder);
 			waiting = waiting.filter((move) => !due.includes(move));
 			const before = this.scene;
 			// What runs over the frame's time: the moves running as the frame before was shot, and those begun since
@@ -498,6 +497,11 @@ function easedAlong(current: Running, progress: number): number {
 	return current.ease(current.within.along(progress));
 }
 
-function byStart(first: Move, second: Move): number {
-	return first.timing.within.start - second.timing.within.start;
+/**
+ * Moves in the order they begin: by where their shares start, and of two that start alike the one that ends first, so
+ * a move done at a moment, as an act, is done before any that begins as it is done reads the scene and the page.
+ */
+function inBeginningOrder(first: Move, second: Move): number {
+	const startsApart = first.timing.within.start - second.timing.within.start;
+	return startsApart === 0 ? first.timing.within.end - second.timing.within.end : startsApart;
 }

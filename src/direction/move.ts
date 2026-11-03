@@ -48,6 +48,11 @@ export type Part = PropName | ObjectPart | GroupPart | 'page' | 'pageSpeed' | nu
 const NO_SOUNDS: readonly Cue[] = [];
 const NO_CSS: readonly CssNamed[] = [];
 const NO_PLACES: readonly PlaceNamed[] = [];
+// Where a step starts and ends, as shares of it; and how far along a move is before its share and after it
+const STEP_START = 0;
+const STEP_END = 1;
+const NONE_OF_IT = 0;
+const ALL_OF_IT = 1;
 // The size of a block the page lays out none of, and how a block off the screen is brought in, above or below it and
 // beside it; a box the film gives stands where it says, so it is given anew
 const NO_SIZE = 0;
@@ -98,17 +103,33 @@ export class Share {
 
 	/** The share between these bounds; one that takes no time, or reaches past its step, is refused. */
 	static of(bounds: Bounds = {}): Share {
-		const start = bounds.start ?? 0;
-		const end = bounds.end ?? 1;
-		if (!(start >= 0 && end <= 1 && start < end)) {
+		const start = bounds.start ?? STEP_START;
+		const end = bounds.end ?? STEP_END;
+		if (!(start >= STEP_START && end <= STEP_END && start < end)) {
 			throw new FilmError(`a move's share runs from ${start} to ${end} of its step: it must start before it ends`);
 		}
 		return new Share(start, end);
 	}
 
-	/** How far along the move is when its step is `progress` along: none before its start, all after its end. */
+	/**
+	 * A moment of the step, a share that takes no time, as a move done at once takes: it ends as it begins, so it is
+	 * taken at once with a share only where that runs across it. One outside its step is refused.
+	 */
+	static at(moment: number): Share {
+		if (!(moment >= STEP_START && moment <= STEP_END)) {
+			throw new FilmError(`a move's moment is ${moment} of its step: it stands from 0 to 1 of it`);
+		}
+		return new Share(moment, moment);
+	}
+
+	/**
+	 * How far along the move is when its step is `progress` along: none before its start, all from its end, and as far
+	 * as the step has come between them; a moment is all done from its moment on.
+	 */
 	along(progress: number): number {
-		return Math.min(1, Math.max(0, (progress - this.start) / (this.end - this.start)));
+		if (progress >= this.end) return ALL_OF_IT;
+		if (progress <= this.start) return NONE_OF_IT;
+		return (progress - this.start) / (this.end - this.start);
 	}
 
 	/** Whether two shares are taken at once at some moment; one that ends as the other starts is not. */
@@ -138,14 +159,14 @@ export const TIMING_FORM: Form<TimingScript> = {
 	ease: A_CURVE
 };
 
-/** Where in its step a move done at a moment begins: at `start`, a share of the step. */
+/** Where in its step a move done at a moment is done: at `start`, a share of the step. */
 interface Start {
 	readonly start?: number;
 }
 
 /**
- * The timing of a move done at a moment, as a sound heard or an act: where in its step it begins, the step's start
- * where none is given; it changes nothing on the scene, so it takes no end and no curve.
+ * The timing of a move done at a moment, as a sound heard or an act: where in its step it is done, the step's start
+ * where none is given; it takes no time, so it takes no end and no curve.
  */
 export interface MomentScript {
 	readonly within?: Start;
@@ -155,6 +176,11 @@ export interface MomentScript {
 export const MOMENT_FORM: Form<MomentScript> = {
 	within: new OfForm<Start>({ start: A_NUMBER }, 'a moment of the step: { start }')
 };
+
+/** The timing of a move done at a moment: a share of its step that takes no time, and no curve of its own. */
+export function momentTimingOf(script: MomentScript): Timing {
+	return { within: Share.at(script.within?.start ?? STEP_START), ease: null };
+}
 
 /** The change of a move that changes nothing on the scene: the scene as it stands. */
 export const UNCHANGED: Change = (scene) => scene;

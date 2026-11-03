@@ -7,6 +7,7 @@
  */
 import type { Frame } from 'playwright-core';
 import type { Box } from '../domain/geometry.ts';
+import { A_FUNCTION_SAID, type Kind, aFunction } from '../domain/handed.ts';
 
 /** How far a scroll goes: so many pixels down the target's own scroll, or until the target stands `top` below the top of what scrolls it. */
 export type ScrollAim =
@@ -57,3 +58,6 @@ export interface ActContext {
 
 /** What a film does to the page for real, Playwright code handed what an act is handed. */
 export type Action = (context: ActContext) => Promise<void>;
+
+/** What the page is acted on with, as a film hands it to `act`, `page.act` or `cursor.click`. */
+export const AN_ACTION: Kind<Action> = aFunction<Action>(A_FUNCTION_SAID);

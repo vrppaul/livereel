@@ -3,9 +3,10 @@ import type { Pose } from '../../src/domain/camera.ts';
 import type { Format } from '../../src/domain/geometry.ts';
 import type { MotionBlur } from '../../src/domain/shutter.ts';
 import { FilmError, TakeError } from '../../src/domain/errors.ts';
-import { linear } from '../../src/domain/time.ts';
+import { easeOutCubic, linear } from '../../src/domain/time.ts';
 import { type Bounds, type Change, type Move, timingOf } from '../../src/direction/move.ts';
-import { act, cut, hold, play } from '../../src/direction/steps.ts';
+import { cut, hold, play } from '../../src/direction/steps.ts';
+import { act } from '../../src/moves/act.ts';
 import { to as cameraTo } from '../../src/moves/camera.ts';
 import { to as lookTo } from '../../src/moves/look.ts';
 import { on, to } from '../../src/moves/light.ts';
@@ -379,7 +380,7 @@ test("an act at a moment of a play is done as its share begins, the page's time 
 	]);
 });
 
-test('a move that begins at the moment of an act, written after it, begins on the page the act left', async () => {
+test('a move that begins at the moment of an act begins on the page the act left, though it is written before it', async () => {
 	const log: string[] = [];
 	const acting = actAtAMoment(
 		async () => {
@@ -387,7 +388,7 @@ test('a move that begins at the moment of an act, written after it, begins on th
 		},
 		{ within: { start: 0.5 } }
 	);
-	const steps = [play({ seconds: 4 / 30, moves: [acting, new LoggedAsItBegins({ start: 0.5 }, log)] })];
+	const steps = [play({ seconds: 4 / 30, moves: [new LoggedAsItBegins({ start: 0.5 }, log), acting] })];
 	await takeOf(new FootageOf([3]), new PicturedStageThatKeeps()).run(steps);
 	expect(log).toEqual(['acted', 'begun']);
 });
@@ -399,6 +400,18 @@ test('a press and a let-go go on while the cursor goes its way: it comes to rest
 	const moves = [cursorTo('#first'), press({ within: { start: 0.3, end: 0.5 } }), release({ within: { start: 0.5 } })];
 	await takeOf(new FootageOf([1, 3]), stage).run([play({ seconds: 4 / 30, moves })]);
 	expect([stage.drawn[0]?.cursor?.press, stage.drawn[1]?.cursor]).toEqual([1, { left: 65, top: 40, press: 0 }]);
+});
+
+test("a press goes in, and a let-go comes out, quick then settling, on a curve of their own whatever the play's", async () => {
+	const stage = new PicturedStageThatKeeps();
+	// Two frames of a straight play each: half-way along, a press is in by its curve's half-way share
+	const steps = [
+		cut(cursorTo('#first')),
+		play({ seconds: 2 / 30, moves: [press()], ease: linear }),
+		play({ seconds: 2 / 30, moves: [release()], ease: linear })
+	];
+	await takeOf(new FootageOf([0, 2]), stage).run(steps);
+	expect(stage.drawn.map((scene) => scene.cursor?.press)).toEqual([easeOutCubic(0.5), 1 - easeOutCubic(0.5)]);
 });
 
 test("the page's time runs at the speed the film sets it to, a frame at its speed on the way through it: through the speeds between in a play, from a cut on at once, and stands at none", async () => {

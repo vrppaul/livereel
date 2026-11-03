@@ -1,21 +1,20 @@
 /**
- * The steps a film is a list of: so many seconds of frames, a cut, or something done to the page between frames.
+ * The steps a film is a list of: so many seconds of frames, or a cut.
  *
- * A film reads as a script: `play` for what moves, `cut` for what changes at once, `act` for what the page really
- * does — a click, a reply from its server — which takes no time in the film however long the browser takes. Steps
- * are data; the studio runs them. Two moves of one part may share a step only one after the other, or at once where
- * each sets values of it the other does not, as two moves of the look may: a step that has both on one value at once
- * is refused as it is written, before anything is shot.
+ * A film reads as a script: `play` for what moves, `cut` for what changes at once; what the page really does — a
+ * click, a reply from its server — is a move of the page, `page.act`, in a play or a cut (`act` in `src/moves/act.ts`
+ * is a cut of one), and takes no time in the film however long the browser takes. Steps are data; the studio runs
+ * them. Two moves of one part may share a step only one after the other, or at once where each sets values of it the
+ * other does not, as two moves of the look may: a step that has both on one value at once is refused as it is
+ * written, before anything is shot.
  */
 import { FilmError } from '../domain/errors.ts';
 import {
-	A_FUNCTION_SAID,
 	type Form,
 	type Kind,
 	Literal,
 	OfForm,
 	Plain,
-	aFunction,
 	assertKind,
 	assertWritten,
 	described,
@@ -27,7 +26,6 @@ import { type Ease, easeInOutSine, framesOf, linear } from '../domain/time.ts';
 import { A_STROKES, type Keystroke, typingSeconds } from '../domain/typing.ts';
 import type { CssNamed } from './theme.ts';
 import { A_CURVE, A_MOVE, A_MOVES, type Move, type Part, type Share, cssOf, placesOf, soundsOf } from './move.ts';
-import type { Action } from './page.ts';
 import type { Sound } from './sound.ts';
 
 export interface Play {
@@ -43,12 +41,7 @@ export interface Cut {
 	readonly moves: readonly Move[];
 }
 
-export interface Act {
-	readonly kind: 'act';
-	readonly action: Action;
-}
-
-export type Step = Play | Cut | Act;
+export type Step = Play | Cut;
 
 /** How a film writes a play: its seconds, its moves, and the curve its moves take where they name none. */
 export interface PlayScript {
@@ -83,16 +76,13 @@ const AFTER_TYPING_SECONDS = 0.12;
 const SOME_SECONDS = new Plain(isSomeSeconds, 'some seconds, more than none');
 const PLAY_FORM: Form<PlayScript> = { seconds: needed(SOME_SECONDS), moves: A_MOVES, ease: A_CURVE };
 const HOLD_FORM: Form<HoldScript> = { seconds: needed(SOME_SECONDS) };
-/** What the page is acted on with, as a film hands it to `act`, `page.act` or `cursor.click`. */
-export const AN_ACTION: Kind<Action> = aFunction<Action>(A_FUNCTION_SAID);
 // A step a film may write out by hand, as the types allow, each kind of step to its form
 const STEP_FORMS: { readonly [Name in Step['kind']]: Kind<Extract<Step, { kind: Name }>> } = {
 	play: new OfForm<Play>(
 		{ kind: needed(new Literal('play')), seconds: needed(SOME_SECONDS), moves: needed(A_MOVES), ease: needed(A_CURVE) },
 		'a play'
 	),
-	cut: new OfForm<Cut>({ kind: needed(new Literal('cut')), moves: needed(A_MOVES) }, 'a cut'),
-	act: new OfForm<Act>({ kind: needed(new Literal('act')), action: needed(AN_ACTION) }, 'an act')
+	cut: new OfForm<Cut>({ kind: needed(new Literal('cut')), moves: needed(A_MOVES) }, 'a cut')
 };
 const A_STEP_SAID = 'a step, as play, hold, cut or act makes one';
 const A_TYPED_MOVE = new Plain(isTypedMove, 'a move that types, as terminal.type or page.type makes one');
@@ -119,15 +109,6 @@ export function cut(...moves: readonly Move[]): Cut {
 	return { kind: 'cut', moves };
 }
 
-/**
- * Something done to the page between two frames, to the page as it stands, the camera put aside; at a moment of a
- * play, `page.act`.
- */
-export function act(action: Action): Act {
-	assertKind(action, AN_ACTION, "act's action");
-	return { kind: 'act', action };
-}
-
 /** As long as the person takes to type, and a beat after the last key. */
 export function typing(move: Move & Typed): readonly Step[] {
 	assertKind(move, A_TYPED_MOVE, "typing's move");
@@ -145,29 +126,19 @@ export function framesIn(steps: readonly Step[]): number {
 /** Every sound the steps' moves make, known before anything is shot, so a file that is not there is refused at once. */
 export function soundsIn(steps: readonly Step[]): readonly Sound[] {
 	return steps
-		.flatMap(movesOf)
+		.flatMap((step) => step.moves)
 		.flatMap(soundsOf)
 		.map((cue) => cue.sound);
 }
 
 /** All the steps' moves write in CSS, known before anything is shot, so a value CSS cannot read is refused at once. */
 export function cssIn(steps: readonly Step[]): readonly CssNamed[] {
-	return steps.flatMap(movesOf).flatMap(cssOf);
+	return steps.flatMap((step) => step.moves).flatMap(cssOf);
 }
 
 /** Every place the steps' moves name, known before anything is shot, so one the format has not is refused at once. */
 export function placesIn(steps: readonly Step[]): readonly PlaceNamed[] {
-	return steps.flatMap(movesOf).flatMap(placesOf);
-}
-
-function movesOf(step: Step): readonly Move[] {
-	switch (step.kind) {
-		case 'play':
-		case 'cut':
-			return step.moves;
-		case 'act':
-			return [];
-	}
+	return steps.flatMap((step) => step.moves).flatMap(placesOf);
 }
 
 /** Two moves of one part at once in one step, refused by naming the part, or the value of it both set. */
@@ -225,7 +196,7 @@ function stepOf(written: unknown, place: number): Step {
 	}
 	const form: Kind<Step> = STEP_FORMS[written.kind];
 	assertKind(written, form, at);
-	refuseClashes(movesOf(written));
+	refuseClashes(written.moves);
 	return written;
 }
 

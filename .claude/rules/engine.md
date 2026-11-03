@@ -28,7 +28,7 @@ How a module is built is said in its comment at the top. The stage has its own r
 - Two moves of one part — a prop, or the page — share a step only one after the other: `play` and `cut` refuse them at once, unless each sets values of the part the other does not (`Move.valueNames`), as two moves of the look may.
 - A move that finds nothing to start from throws as it begins (`present` in `src/direction/move.ts`); nothing checks for it frame by frame.
 - A cut is moves set at their end at once; a film changes the scene by moves alone.
-- Only an act changes the page itself: a step between frames, or `page.act` as its share of a play begins (`Beginning.act`); a play changes the scene and, for the page's own scroll or keys, does what that frame wants done.
+- Only an act changes the page itself: `page.act`, done at its moment as it begins (`Beginning.act`), `act` a cut of one; a play changes the scene and, for the page's own scroll or keys, does what that frame wants done.
 - The page's own motion stays stilled (reduced motion): every move in a film is the film's.
 - What changes with time of itself — the spinner, the caret — is worked out from the moment in the prop's state module; the stage keeps no time.
 - A function handed to the page runs there alone: it calls nothing of its module.

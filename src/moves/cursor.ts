@@ -20,11 +20,12 @@ import {
 	shownPart,
 	timingOf
 } from '../direction/move.ts';
-import type { Action } from '../direction/page.ts';
+import { AN_ACTION, type Action } from '../direction/page.ts';
 import { type SoundScript, heardAsItBegins, soundOf } from '../direction/sound.ts';
-import { AN_ACTION, type Step, act, play } from '../direction/steps.ts';
+import { type Step, play } from '../direction/steps.ts';
 import type { Cursor } from '../props/cursor.ts';
 import { withProp } from '../scene.ts';
+import { act } from './act.ts';
 
 /** Where a cursor not yet on the screen comes in from, and how far its path bends off the straight line. */
 export interface CursorScript extends TimingScript {
@@ -45,9 +46,10 @@ const REST_DOWN = 0.6;
 // Where a cursor not yet on the screen comes in from, below and to the right of where it goes
 const ENTERS_FROM_RIGHT = 260;
 const ENTERS_FROM_BELOW = 220;
-// How long a press goes in, and how long it takes to let go
+// How long a press goes in, and how long it takes to let go, and how: quickly, then settling, as a finger does
 const PRESS_SECONDS = 0.09;
 const RELEASE_SECONDS = 0.12;
+const AS_A_FINGER_PRESSES = easeOutCubic;
 // The cursor's values a move that takes it somewhere sets, and one that presses it in or lets it go
 const POSITION = ['left', 'top'] as const satisfies readonly (keyof Cursor)[];
 const PRESSING = ['press'] as const satisfies readonly (keyof Cursor)[];
@@ -71,21 +73,30 @@ export function to(target: Target, script: CursorScript = {}): Move {
 	};
 }
 
-/** The cursor pressed in, with a click as it begins: livereel's own, or the file the film gives as `sound`. */
+/**
+ * The cursor pressed in, with a click as it begins: livereel's own, or the file the film gives as `sound`; on a
+ * finger's curve, whatever its step's, where the film names none.
+ */
 export function press(script: PressScript = {}): Move {
 	assertWritten(script, PRESS_FORM, 'cursor.press');
 	return {
 		part: 'cursor',
 		valueNames: PRESSING,
-		timing: timingOf(script),
+		timing: timingOf({ ease: AS_A_FINGER_PRESSES, ...script }),
 		sounds: [heardAsItBegins(soundOf(script, 'click'))],
 		begin: pressingIn
 	};
 }
 
+/** The cursor let go, on a finger's curve, whatever its step's, where the film names none. */
 export function release(script: TimingScript = {}): Move {
 	assertWritten(script, TIMING_FORM, 'cursor.release');
-	return { part: 'cursor', valueNames: PRESSING, timing: timingOf(script), begin: lettingGo };
+	return {
+		part: 'cursor',
+		valueNames: PRESSING,
+		timing: timingOf({ ease: AS_A_FINGER_PRESSES, ...script }),
+		begin: lettingGo
+	};
 }
 
 /** The cursor taken off the screen. */
@@ -98,9 +109,9 @@ export function click(action: Action, script: SoundScript = {}): readonly Step[]
 	assertKind(action, AN_ACTION, "cursor.click's action");
 	assertWritten(script, CLICK_FORM, 'cursor.click');
 	return [
-		play({ seconds: PRESS_SECONDS, moves: [press(script)], ease: easeOutCubic }),
+		play({ seconds: PRESS_SECONDS, moves: [press(script)] }),
 		act(action),
-		play({ seconds: RELEASE_SECONDS, moves: [release()], ease: easeOutCubic })
+		play({ seconds: RELEASE_SECONDS, moves: [release()] })
 	];
 }
 

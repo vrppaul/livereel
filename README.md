@@ -131,7 +131,7 @@ A film is a list of steps:
 | `play({ seconds, moves, ease })` | so many seconds of frames; each move runs over its share of the step |
 | `hold({ seconds })` | so many seconds with nothing moving |
 | `cut(...moves)` | moves made at once, between two frames |
-| `act(action)` | the page acted on for real, with Playwright, between two frames: a click, a reply waited for; `page.act` does it at a moment of a play |
+| `act(action)` | the page acted on for real, with Playwright, between two frames: a click, a reply waited for; a cut of `page.act`, which does it at a moment of a play |
 | `typing(move)` | as long as the keys of `terminal.type` or `page.type` take, and a beat after |
 
 and the moves of each part of the scene:
@@ -203,8 +203,11 @@ draws with nothing to select: a canvas, or a frame exported from a design.
 The camera stops at those steps. To click while it goes on, write the click
 into a play: the cursor's press, `page.act` at its end, and its release, each
 over a share of the step, while `cursor.to` and the camera go their way. The
-film's time stands while the page answers; a move that begins at the act's
-moment, written after it, reads the page the act left.
+film's time stands while the page answers, and a move that begins at the act's
+moment reads the page the act left. An act takes no time: it is refused only
+where a scroll or a typing of the page runs across its moment. The press and
+the release take their shares in the play's seconds, so give them about
+0.09 s and 0.12 s of it, as a click's are.
 
 ```ts
 play({ seconds: 3, moves: [
