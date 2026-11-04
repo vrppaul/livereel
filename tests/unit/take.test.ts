@@ -15,7 +15,7 @@ import { on, to } from '../../src/moves/light.ts';
 import { click, hide, press, release, to as cursorTo } from '../../src/moves/cursor.ts';
 import { show } from '../../src/moves/ending.ts';
 import { act as actAtAMoment, speed, type as typeIntoThePage } from '../../src/moves/page.ts';
-import { shows as screenShows } from '../../src/moves/screen.ts';
+import { shows as screenShows, sweep as sweepScreen } from '../../src/moves/screen.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import { open, type } from '../../src/moves/terminal.ts';
 import { lean as leanTitle, show as showTitle, to as titleTo } from '../../src/moves/title.ts';
@@ -791,6 +791,20 @@ test('a picture the stage holds for a piece is let go once no piece is drawn fro
 	// The held piece's picture is the first, the grown piece's the second: the second let go as the second frame is
 	// drawn without it, the first once that frame is shot from a scene that names it no more
 	expect(stage.letGone).toEqual([2, 1]);
+});
+
+test("a sweep of the screen has the stage hold a picture of the whole screen as the page stands as it begins, as sharp as livereel's bound, draws the screen swept from it, and lets it go once the sweep is over", async () => {
+	const stage = new PicturedStageThatKeeps();
+	await unblurredTakeOf(new FootageOf([0, 1, 2]), stage).run([
+		play({ seconds: 2 / 30, moves: [sweepScreen()], ease: linear }),
+		hold({ seconds: 1 / 30 })
+	]);
+	expect([stage.held, stage.drawn.at(0)!.screen.sweep, stage.drawn.at(OWN)!.screen.sweep, stage.letGone]).toEqual([
+		[{ part: { left: 0, top: 0, width: 600, height: 400 }, zoom: 2.2 }],
+		expect.objectContaining({ picture: 1 }),
+		null,
+		[1]
+	]);
 });
 
 test("a static page moving under a camera that crosses the frame fast is pictured as close as the frame's closest exposure", async () => {

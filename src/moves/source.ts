@@ -10,8 +10,7 @@ import { type Camera, boxOnTheFrame, isFrontOn, screenShownBy } from '../domain/
 import { FilmError } from '../domain/errors.ts';
 import { looksStraightAtTheFrame } from '../domain/eye.ts';
 import { type Box, overlapOf, withAir } from '../domain/geometry.ts';
-import { type Beginning, type Target, shownBox, targetSaid } from '../direction/move.ts';
-import { THE_FILMED_PAGE } from '../props/screen.ts';
+import { type Beginning, type Target, refuseWithoutThePicture, shownBox, targetSaid } from '../direction/move.ts';
 import { cameraOf } from '../scene.ts';
 
 /**
@@ -85,15 +84,6 @@ export function overItsSource(move: string): string {
  * face the frame front on.
  */
 export function cameraOverThePicture(beginning: Beginning, move: string): Camera {
-	if (beginning.pageShown !== 'pictured') {
-		throw new FilmError(
-			`${move} draws from the page's picture, which a page framed live has none of: the film's page is 'dynamic'`
-		);
-	}
-	if (beginning.scene.screen.shows.kind !== THE_FILMED_PAGE.kind) {
-		throw new FilmError(
-			`${move} draws from the filmed page's picture, and the screen shows the film's own page: show the filmed page first, with screen.shows('filmed')`
-		);
-	}
+	refuseWithoutThePicture(beginning, move);
 	return cameraFrontOn(beginning, overItsSource(move));
 }

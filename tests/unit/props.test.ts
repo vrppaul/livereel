@@ -2,7 +2,10 @@ import { expect, test } from 'vitest';
 import { codeOf } from '../../src/props/code.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
+import { SCREEN_UP, type Sweep, drawnScreen, drawnSweep } from '../../src/props/screen.ts';
+import { cameraOf, openingScene } from '../../src/scene.ts';
 import { alongItsWay } from '../../src/props/way.ts';
+import { NONE, WHOLE, fractionOf } from '../../src/domain/fraction.ts';
 import { type DrawnWords, type Piece, comingUpIn, drawnWords, saidOf, typedComingUp } from '../../src/props/words.ts';
 import { type Keystroke, lettersOf } from '../../src/domain/typing.ts';
 import { SMALL } from './fakes.ts';
@@ -209,4 +212,59 @@ test("a figure a quarter of its way in a way of livereel's stands as the way has
 		null,
 		null
 	]);
+});
+
+test("a band sweeping the screen's picture away crosses the window from the side the film names to the other, slanted as it names: past the near side at none, through the middle half-way, past the far side at whole, by half its width each; the picture still to sweep reaching from it past the window's far corner; its ends as far apart as the window's corners, the one nearer the top first", () => {
+	// A window showing 600 × 800 of the screen from its corner, its corners 1000 apart, the camera at a zoom of 1, so
+	// the band's half width, 60, stands as many of the screen's pixels past a side
+	const shown = { left: 0, top: 0, width: 600, height: 800 };
+	const crest = { start: '#5b8def', end: '#bca6ea' };
+	const fromTheLeft: Sweep = { picture: 1, from: 'left', slant: 0, width: 120, crest, swept: NONE };
+	const slantedFromTheRight: Sweep = { ...fromTheLeft, from: 'right', slant: -30, swept: fractionOf(0.5) };
+	expect([
+		drawnSweep(fromTheLeft, shown, 1),
+		drawnSweep({ ...fromTheLeft, swept: fractionOf(0.5) }, shown, 1).band,
+		drawnSweep({ ...fromTheLeft, swept: WHOLE }, shown, 1).band,
+		drawnSweep(slantedFromTheRight, shown, 1)
+	]).toEqual([
+		{
+			picture: 1,
+			band: { start: { left: -60, top: -100 }, end: { left: -60, top: 900 } },
+			ahead: { left: 720, top: 0 },
+			width: 120,
+			crest
+		},
+		{ start: { left: 300, top: -100 }, end: { left: 300, top: 900 } },
+		{ start: { left: 660, top: -100 }, end: { left: 660, top: 900 } },
+		{
+			picture: 1,
+			band: {
+				start: { left: expect.closeTo(50), top: expect.closeTo(-33.01) },
+				end: { left: expect.closeTo(550), top: expect.closeTo(833.01) }
+			},
+			ahead: { left: expect.closeTo(-900.33), top: expect.closeTo(519.81) },
+			width: 120,
+			crest
+		}
+	]);
+});
+
+test("a band sweeping the screen crosses what the window shows of the screen, not the ground past the screen's edges", () => {
+	// The whole screen, 600 × 400, fitted to a frame 400 square, 1.8 of a frame 1080 high's pixels a page's: the view
+	// shows 100 of ground above the screen and below it, which the band does not cross. Its way down is the screen's
+	// 400 and its own width, 160 / 1.8, so it sets off half of that above the screen's top; it is as long as the
+	// screen's corners stand apart, 721.11
+	const sweep: Sweep = {
+		picture: 1,
+		from: 'top',
+		slant: 0,
+		width: 160,
+		crest: { start: '#5b8def', end: '#bca6ea' },
+		swept: NONE
+	};
+	const drawn = drawnScreen({ ...SCREEN_UP, sweep }, cameraOf(openingScene(SMALL, LIVEREELS_LOOK), SMALL), SMALL);
+	expect(drawn.sweep!.band).toEqual({
+		start: { left: expect.closeTo(-60.56), top: expect.closeTo(-44.44) },
+		end: { left: expect.closeTo(660.56), top: expect.closeTo(-44.44) }
+	});
 });

@@ -12,9 +12,10 @@
  * than how the objects in it stand together; they go with it. `drawn` works out everything the stage needs from it —
  * how far each word of a title, a caption or a callout and each line of code has come, the terminal's spinner, how far
  * keys rise clear of a caption, where a note's line meets the block it names on the frame, the hole a piece of the page
- * leaves and the lines it draws to its source, the part of the screen under a lens, where an object in a group, or on
- * the page as the camera frames it then, is drawn and in what order, how soft the eye's focus draws the window and
- * each object in the world — so the stage draws numbers and words and decides nothing, and draws no group of its own.
+ * leaves and the lines it draws to its source, the part of the screen under a lens, where a band of light sweeping the
+ * screen stands across what the window shows of it, where an object in a group, or on the page as the camera frames it
+ * then, is drawn and in what order, how soft the eye's focus draws the window and each object in the world — so the
+ * stage draws numbers and words and decides nothing, and draws no group of its own.
  * What the camera shows is worked out from what it aims at and the window that stands (`cameraOf`), so a
  * camera moving and a window moving in one step make the same frame whichever is set first; a frame is drawn by such a
  * camera, or by the flat one an act is done in. A prop that may be absent is `null`; the
@@ -68,7 +69,15 @@ import {
 import type { PartAsked, SharperPicture } from './domain/picture.ts';
 import type { DrawnHole } from './props/piece.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
-import { SCREEN_UP, type Screen, THE_FILMED_PAGE } from './props/screen.ts';
+import {
+	type DrawnScreen,
+	SCREEN_UP,
+	type Screen,
+	THE_FILMED_PAGE,
+	drawnScreen,
+	pictureSweptBy,
+	sweepShift
+} from './props/screen.ts';
 import { type DrawnWindow, type PageWindow, UNSHADED, drawnWindow } from './props/window.ts';
 
 export interface PropStates {
@@ -109,7 +118,7 @@ interface DrawnProps {
 	look: Look;
 	camera: DrawnCamera;
 	window: DrawnWindow;
-	screen: Screen;
+	screen: DrawnScreen;
 	light: Light | null;
 	callout: DrawnCallout | null;
 	pins: DrawnPins | null;
@@ -242,9 +251,12 @@ export function partsAskedSharperIn(scene: Scene, camera: Camera, frame: Size): 
 	);
 }
 
-/** The numbers of the pictures the pieces in a scene hold, standing or pushed off. */
+/** The numbers of the pictures the pieces in a scene hold, standing or pushed off, and the one its screen's sweep holds. */
 export function picturesHeldIn(scene: Scene): readonly number[] {
-	return [...scene.objects.values(), ...scene.leaving.values()].flatMap((object) => pictureHeldBy(object));
+	return [
+		...[...scene.objects.values(), ...scene.leaving.values()].flatMap((object) => pictureHeldBy(object)),
+		...pictureSweptBy(scene.screen)
+	];
 }
 
 /** A scene at a moment of a frame's time, and the camera that shows it then. */
@@ -264,16 +276,17 @@ interface Between {
 // How far anything moves on the frame where nothing does
 const NOTHING_MOVES = 0;
 // How far what each prop draws moves on the frame between two moments, the compiler holding every prop to one: the
-// screen as the camera shows it, the window's edge, the light's box and the cursor's tip on the screen, and a note's
-// words beside the window and its line's end at its block, each where it stands at both, a prop that comes or goes
-// between them moving nowhere. The screen comes up in its place, and a callout and pins lie on the screen, moving only
-// as far as it carries them, which the camera's measures. The look's colours and ground change in place; the sizes it
-// sets, of letters and margins, move words too, which is not counted
+// screen as the camera shows it, the window's edge, the band of light sweeping the screen, the light's box and the
+// cursor's tip on the screen, and a note's words beside the window and its line's end at its block, each where it
+// stands at both, a prop that comes or goes between them moving nowhere. The screen comes up in its place, and a
+// callout and pins lie on the screen, moving only as far as it carries them, which the camera's measures. The look's
+// colours and ground change in place; the sizes it sets, of letters and margins, move words too, which is not counted
 const FRAME_SHIFT_OF: { readonly [Name in PropName]: (between: Between) => number } = {
 	look: () => NOTHING_MOVES,
 	camera: ({ seen, format }) => frameShift(seen.start, seen.end, format),
 	window: ({ seen }) => viewShift(seen),
-	screen: () => NOTHING_MOVES,
+	screen: ({ start, end, seen, format }) =>
+		shiftOfBoth(start.screen.sweep, end.screen.sweep, (from, to) => sweepShift(seen, format, from, to)),
 	light: ({ start, end, seen }) =>
 		shiftOfBoth(start.light, end.light, (from, to) => screenBoxShift(seen, from.box, to.box)),
 	callout: () => NOTHING_MOVES,
@@ -379,7 +392,7 @@ export function drawn(
 		look: scene.look,
 		camera: drawnCamera(camera, format),
 		window: drawnWindow(camera.view, camera.eye, scene.window, format.frame, sharpness),
-		screen: scene.screen,
+		screen: drawnScreen(scene.screen, camera, format),
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout, moment),
 		pins: scene.pins === null ? null : drawnPins(scene.pins, camera, format.frame),

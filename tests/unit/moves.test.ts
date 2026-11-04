@@ -32,7 +32,7 @@ import {
 	show as windowShow,
 	to as windowTo
 } from '../../src/moves/window.ts';
-import { lower, rise, shows as screenShows } from '../../src/moves/screen.ts';
+import { lower, rise, shows as screenShows, sweep as screenSweep } from '../../src/moves/screen.ts';
 import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
@@ -881,22 +881,58 @@ test('what stands over a block of the page stands there only while the window fa
 	);
 });
 
-test('a lens is refused on a page framed live, which has no picture to draw it from', async () => {
+test('a lens and a sweep of the screen are refused on a page framed live, which has no picture to draw them from', async () => {
 	const framed: Beginning = { ...beginningIn(openingScene(FULL_HD, LIVEREELS_LOOK), FULL_HD), pageShown: 'framed' };
 	await expect(async () => lens.show('#card').begin(framed)).rejects.toThrow(
 		new FilmError(
 			"lens.show draws from the page's picture, which a page framed live has none of: the film's page is 'dynamic'"
 		)
 	);
+	await expect(async () => screenSweep().begin(framed)).rejects.toThrow(
+		new FilmError(
+			"screen.sweep draws from the page's picture, which a page framed live has none of: the film's page is 'dynamic'"
+		)
+	);
 });
 
-test("a piece and a lens are refused while the screen shows the film's own page, as they are drawn from the filmed page's picture", async () => {
+test("a sweep holds a picture of the whole screen as it begins, which its band sweeps away as far as it has come, from the side, at the slant and as wide as the film names, its crest in the colours it names, and none, the look's accent as it stands, at an end it names none for; gone at its end; from the left, slanted 30° and 160 wide where the film names none of these", async () => {
+	const opening = openingScene(FULL_HD, LIVEREELS_LOOK);
+	const pictures = new PicturesHeld();
+	const named = await screenSweep({ from: 'right', slant: -28, width: 90, crest: { start: '#5b8def' } }).begin(
+		beginningHolding(opening, FULL_HD, pictures)
+	);
+	const plain = await screenSweep().begin(beginningHolding(opening, FULL_HD, pictures));
+	expect([
+		pictures.parts,
+		(await named(opening, 0.25)).screen.sweep,
+		(await named(opening, 1)).screen.sweep,
+		(await plain(opening, 0.5)).screen.sweep
+	]).toEqual([
+		[WHOLE_SCREEN, WHOLE_SCREEN],
+		{ picture: 1, from: 'right', slant: -28, width: 90, crest: { start: '#5b8def', end: null }, swept: 0.25 },
+		null,
+		{ picture: 2, from: 'left', slant: 30, width: 160, crest: { start: null, end: null }, swept: 0.5 }
+	]);
+});
+
+test("a band sweeping the screen moves on the frame as far as it crosses the window, so a fast one is drawn at moments of a frame's time", async () => {
+	// The whole screen, 1920 × 1080, on a frame as large, the band 160 wide: from 80 past the window's left side to 80
+	// past its right, 2080 in all, a quarter of it 520
+	const opening = openingScene(FULL_HD, LIVEREELS_LOOK);
+	const begun = await screenSweep({ slant: 0 }).begin(beginningHolding(opening, FULL_HD, new PicturesHeld()));
+	expect(frameShiftBetween(await begun(opening, 0.25), await begun(opening, 0.5), FULL_HD)).toBeCloseTo(520);
+});
+
+test("a piece, a lens and a sweep of the screen are refused while the screen shows the film's own page, as they are drawn from the filmed page's picture", async () => {
 	const own = await setIn(screenShows(OWN_PAGE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
 	await expect(async () => piece.show('#card').begin(beginningIn(own, FULL_HD))).rejects.toThrow(
 		ownPageRefusal('piece.show')
 	);
 	await expect(async () => lens.show('#card').begin(beginningIn(own, FULL_HD))).rejects.toThrow(
 		ownPageRefusal('lens.show')
+	);
+	await expect(async () => screenSweep().begin(beginningIn(own, FULL_HD))).rejects.toThrow(
+		ownPageRefusal('screen.sweep')
 	);
 });
 
@@ -909,10 +945,10 @@ test("the screen showing the film's own page is refused while a lens stands, whi
 	);
 });
 
-test('the screen coming up or going down keeps showing what it shows, and shares a step with a move that changes it', async () => {
+test('the screen coming up or going down keeps showing what it shows, and shares a step with a move that changes it and one that sweeps it', async () => {
 	const own = await setAt(screenShows(OWN_PAGE), openingScene(SMALL, LIVEREELS_LOOK), 1);
 	expect((await setAt(lower(), own, 1)).screen.shows.kind).toBe('own');
-	expect(() => play({ seconds: 1, moves: [rise(), screenShows('filmed')] })).not.toThrow();
+	expect(() => play({ seconds: 1, moves: [rise(), screenShows('filmed'), screenSweep()] })).not.toThrow();
 });
 
 test("a piece is drawn as large as its box holds all of its source, in its middle, and asks its source as close as that and its scale bring it, from a picture of its own past livereel's bound, and the page's picture at the bound leant", async () => {

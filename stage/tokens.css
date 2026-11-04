@@ -132,6 +132,22 @@
 }
 
 /*
+ * A band of light sweeping away the picture the screen showed (`src/props/screen.ts`): a sheen of light down its
+ * middle, fading to nothing at its sides, and its crest from the band's start to its end, in the colours the film gives
+ * them or the accent where it gives none, glowing in the two mixed. Worked out on the band, where the stage sets the
+ * crest's colours, as a token on the root would take none; its lengths are pixels of a frame 1080 high, scaled by the
+ * screen's `--pane-scale`, as the band is drawn on it.
+ */
+.band {
+	--crest-from: var(--crest-start, var(--accent));
+	--crest-to: var(--crest-end, var(--accent));
+	--band-sheen: linear-gradient(to bottom, transparent, rgb(235 242 255 / 85%), transparent);
+	--crest: linear-gradient(to right, var(--crest-from), var(--crest-to));
+	--crest-glow: 0 0 calc(36px * var(--pane-scale)) calc(9px * var(--pane-scale))
+		color-mix(in srgb, color-mix(in srgb, var(--crest-from), var(--crest-to)) 60%, transparent);
+}
+
+/*
  * How an object's figure melts into nothing toward a side of it (`src/props/effects.ts`), worked out on the part the
  * figure stands in, where the stage sets how far: a mask whole until as far in from that side as the melt goes, clear
  * at the side; laid on a tile as far past the figure on every side as the frame is wide, so what the figure draws past

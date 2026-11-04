@@ -162,7 +162,10 @@ export function show(target: Target, script: PieceScript = {}): Move {
 		lines: script.lines ?? null,
 		picture: script.picture ?? FOLLOWING_THE_PAGE.kind
 	};
-	return objectShow(PIECE, 'piece.show', script, NO_PLACE, (beginning) => lifted(beginning, target, lifting));
+	return {
+		...objectShow(PIECE, 'piece.show', script, NO_PLACE, (beginning) => lifted(beginning, target, lifting)),
+		holdsThePage: lifting.picture === 'held'
+	};
 }
 
 /**

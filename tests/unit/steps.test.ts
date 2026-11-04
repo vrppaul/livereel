@@ -9,7 +9,8 @@ import * as lens from '../../src/moves/lens.ts';
 import { on } from '../../src/moves/light.ts';
 import { to as lookTo } from '../../src/moves/look.ts';
 import { act as actAtAMoment, scrollBy, type } from '../../src/moves/page.ts';
-import { shows } from '../../src/moves/screen.ts';
+import * as piece from '../../src/moves/piece.ts';
+import { shows, sweep } from '../../src/moves/screen.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import * as title from '../../src/moves/title.ts';
 import { lean, shade, to as windowTo } from '../../src/moves/window.ts';
@@ -61,6 +62,18 @@ test('an act at a moment of a play is refused while a move of the page runs acro
 		new FilmError('two moves on the page at once in one step')
 	);
 	expect(play({ seconds: 1, moves: [typedToHalfWay, actedAt(0.5), scrolledFromHalfWay] }).moves.length).toBe(3);
+});
+
+test("an act on the page at the moment a move that holds the page's picture begins is refused, in a play or a cut, as the act is done first and the picture would hold the page it leaves: a sweep of the screen, a piece holding its picture; an act a moment after is taken", () => {
+	const actedAt = (start: number) => actAtAMoment(() => Promise.resolve(), { within: { start } });
+	const refusal = new FilmError(
+		"an act on the page at the moment a move that holds the page's picture begins, as screen.sweep or piece.show({ picture: 'held' }), is done first, and the picture would hold the page as the act leaves it: put the act a moment after, within: { start }"
+	);
+	expect(() => play({ seconds: 1, moves: [sweep(), actedAt(0)] })).toThrow(refusal);
+	expect(() => play({ seconds: 1, moves: [sweep({ within: { start: 0.5 } }), actedAt(0.5)] })).toThrow(refusal);
+	expect(() => cut(piece.show('#card', { picture: 'held' }), actedAt(0))).toThrow(refusal);
+	expect(play({ seconds: 1, moves: [sweep(), actedAt(0.02)] }).moves.length).toBe(2);
+	expect(cut(piece.show('#card'), actedAt(0)).moves.length).toBe(2);
 });
 
 test('two moves of the look at once are refused only on a value both set, named by it: a ground named alone sets its glow', () => {

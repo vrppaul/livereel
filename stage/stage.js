@@ -63,6 +63,11 @@ const CUSTOM_PROPERTY = '--';
 const PAGE_PICTURE = '--page-picture';
 const PIECE_PICTURE = '--piece-picture';
 const PICTURE = 'data-picture';
+// The custom property the picture a band of light sweeps away is set as on its element, and the colours a film gives
+// the band's crest at its two ends, the stylesheet's accent standing at an end it gives none
+const SWEPT_PICTURE = '--swept-picture';
+const CREST_START = '--crest-start';
+const CREST_END = '--crest-end';
 // A page of the film's own: the class every page the screen shows takes, the attribute it is known by, what it is
 // called, the attribute the one a frame shows takes, and the one the screen takes while it shows one
 const PAGE = 'page';
@@ -239,12 +244,18 @@ function shadeDrawn(root, shade) {
 	numbered(root, { '--shade-dim': shade.dim, '--shade-fade': shade.fade, '--shade-blur': shade.blur });
 }
 
-/** The screen: how far it has come up, and what it shows, the filmed page or one of the film's own laid on it. */
+/**
+ * The screen: how far it has come up, what it shows, the filmed page or one of the film's own laid on it, and the
+ * picture a band of light sweeps away over it.
+ */
 class ScreenDrawer {
 	/** @param {Staged} root @param {ReadonlyMap<string, HTMLIFrameElement>} ownPages */
 	constructor(root, ownPages) {
 		this.root = root;
 		this.ownPages = ownPages;
+		this.sweep = partOf(root, 'sweep');
+		this.swept = partOf(root, 'swept');
+		this.band = partOf(root, 'band');
 	}
 
 	/** @param {DrawnScene} scene */
@@ -253,7 +264,35 @@ class ScreenDrawer {
 		const shownKey = ownPageShown(scene.screen.shows);
 		this.root.toggleAttribute(SHOWS_OWN, shownKey !== NAMELESS);
 		for (const [key, frame] of this.ownPages) frame.toggleAttribute(SHOWN, key === shownKey);
+		sweepDrawn(this.sweep, this.swept, this.band, scene.screen.sweep);
 	}
+}
+
+/**
+ * The picture a band of light sweeps away, from the held picture it is, cut along the band's line where the band has
+ * still to sweep, and the band over it, as wide as the film has it, its crest in its colours; neither where no band
+ * sweeps the screen. The line's numbers are set on the part both stand in, which they are drawn by.
+ * @param {Staged} part @param {Staged} swept @param {Staged} band @param {DrawnScene['screen']['sweep']} sweep
+ */
+function sweepDrawn(part, swept, band, sweep) {
+	shown(part, sweep !== null);
+	if (sweep === null) {
+		swept.style.removeProperty(SWEPT_PICTURE);
+		return;
+	}
+	// CSS takes no address out of a custom property into a url(), so the url() is written whole here
+	swept.style.setProperty(SWEPT_PICTURE, `url("${heldPicture(sweep.picture).src}")`);
+	numbered(part, {
+		'--band-start-left': sweep.band.start.left,
+		'--band-start-top': sweep.band.start.top,
+		'--band-end-left': sweep.band.end.left,
+		'--band-end-top': sweep.band.end.top,
+		'--ahead-across': sweep.ahead.left,
+		'--ahead-down': sweep.ahead.top,
+		'--band-width': sweep.width
+	});
+	givenOrNone(band, CREST_START, sweep.crest.start);
+	givenOrNone(band, CREST_END, sweep.crest.end);
 }
 
 /**

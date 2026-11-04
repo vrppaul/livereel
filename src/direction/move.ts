@@ -29,6 +29,7 @@ import type { Ease } from '../domain/time.ts';
 import type { CssNamed } from './theme.ts';
 import type { GroupName } from '../props/group.ts';
 import type { ObjectName } from '../props/object.ts';
+import { THE_FILMED_PAGE } from '../props/screen.ts';
 import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';
 import type { Action, FilmedPage, OwnPage, PageShown } from './page.ts';
 import type { Cue } from './sound.ts';
@@ -207,7 +208,7 @@ export interface Beginning {
 	readonly act: (action: Action) => Promise<void>;
 	/**
 	 * A picture of a part of the screen, in its pixels, taken as the page stands now and held by the stage, which draws
-	 * a piece from it by the number handed back; only where the stage shows the page's picture.
+	 * a piece or a sweep from it by the number handed back; only where the stage shows the page's picture.
 	 */
 	readonly holdPicture: (part: Box) => Promise<number>;
 }
@@ -240,6 +241,11 @@ export interface Move {
 	readonly places?: readonly PlaceNamed[];
 	/** The pages of the film's own the move shows, which the stage lays before the film is shot; most show none. */
 	readonly ownPages?: readonly OwnPage[];
+	/**
+	 * Whether the move holds a picture of the page as it begins, as a sweep of the screen and a piece holding its
+	 * picture do, so an act at that moment, done first, would be in it; most hold none.
+	 */
+	readonly holdsThePage?: boolean;
 	readonly begin: (beginning: Beginning) => Change | Promise<Change>;
 }
 
@@ -306,6 +312,23 @@ export function present<Name extends PropName>(
 
 function refused(refusal: string): never {
 	throw new FilmError(refusal);
+}
+
+/**
+ * A move drawn from the filmed page's picture refused as it begins where the stage shows none of it: a page framed
+ * live, which has no picture, and one the screen shows a page of the film's own in place of.
+ */
+export function refuseWithoutThePicture(beginning: Beginning, move: string): void {
+	if (beginning.pageShown !== 'pictured') {
+		throw new FilmError(
+			`${move} draws from the page's picture, which a page framed live has none of: the film's page is 'dynamic'`
+		);
+	}
+	if (beginning.scene.screen.shows.kind !== THE_FILMED_PAGE.kind) {
+		throw new FilmError(
+			`${move} draws from the filmed page's picture, and the screen shows the film's own page: show the filmed page first, with screen.shows('filmed')`
+		);
+	}
 }
 
 /**

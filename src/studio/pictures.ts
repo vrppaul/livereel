@@ -1,8 +1,9 @@
 /**
- * The pictures of parts of the screen the stage holds for pieces of the page, apart from the page's own picture: those
- * pieces hold as they are lifted, and those sharper than the page's for pieces drawn past livereel's bound. The take
- * hands them what each frame asks and the scene each frame ends on; each picture is held as long as a frame after may
- * draw it, and let go then. A stage that shows the page live holds none, as no piece stands on it.
+ * The pictures of parts of the screen the stage holds for pieces of the page and a sweep of the screen, apart from the
+ * page's own picture: those pieces hold as they are lifted, the one a sweep holds as it begins, and those sharper than
+ * the page's for pieces drawn past livereel's bound. The take hands them what each frame asks and the scene each frame
+ * ends on; each picture is held as long as a frame after may draw it, and let go then. A stage that shows the page live
+ * holds none, as no piece or sweep stands on it.
  */
 import { ZOOM_AT_MOST } from '../domain/camera.ts';
 import type { Box } from '../domain/geometry.ts';
@@ -10,13 +11,13 @@ import { type PartAsked, type SharperPicture, serves } from '../domain/picture.t
 import { type Scene, picturesHeldIn } from '../scene.ts';
 import type { PicturedStage, Stage } from './ports.ts';
 
-/** The pictures of parts of the screen a take has its stage hold for pieces. */
+/** The pictures of parts of the screen a take has its stage hold for pieces and sweeps. */
 export interface PartPictures {
 	/** The pictures held sharper than the page's, as the last frame made asked them. */
 	readonly sharper: readonly SharperPicture[];
 	/**
-	 * A picture of a part of the screen a piece holds, taken as the page stands now, as sharp as the page's picture is
-	 * where the page stands still: its number.
+	 * A picture of a part of the screen a piece or a sweep holds, taken as the page stands now, as sharp as the page's
+	 * picture is where the page stands still: its number.
 	 */
 	readonly hold: (part: Box) => Promise<number>;
 	/**
@@ -26,8 +27,8 @@ export interface PartPictures {
 	 */
 	readonly serve: (asked: readonly PartAsked[], pageChanged: boolean) => Promise<void>;
 	/**
-	 * Every picture a piece holds let go once a scene a frame ends on names it no more: each exposure of a later frame is
-	 * drawn from that scene on, so none names it again.
+	 * Every picture a piece or a sweep holds let go once a scene a frame ends on names it no more: each exposure of a
+	 * later frame is drawn from that scene on, so none names it again.
 	 */
 	readonly letGoUnnamedBy: (scene: Scene) => Promise<void>;
 }
@@ -35,7 +36,7 @@ export interface PartPictures {
 // No picture of a part of the screen held sharper than the page's
 const NONE_SHARPER: readonly SharperPicture[] = [];
 
-/** The pictures of parts of the screen a stage holds for pieces: none, where it shows the page live. */
+/** The pictures of parts of the screen a stage holds for pieces and sweeps: none, where it shows the page live. */
 export function picturesOn(stage: Stage): PartPictures {
 	switch (stage.kind) {
 		case 'framed':
@@ -45,10 +46,10 @@ export function picturesOn(stage: Stage): PartPictures {
 	}
 }
 
-/** The pictures a stage showing the page's picture holds for pieces, by their numbers. */
+/** The pictures a stage showing the page's picture holds for pieces and sweeps, by their numbers. */
 class PicturesOnTheStage implements PartPictures {
 	readonly stage: PicturedStage;
-	// The numbers of the pictures pieces hold, and the pictures held sharper for the frame last made
+	// The numbers of the pictures pieces and sweeps hold, and the pictures held sharper for the frame last made
 	private held: number[] = [];
 	private heldSharper: SharperPicture[] = [];
 
@@ -84,7 +85,7 @@ class PicturesOnTheStage implements PartPictures {
 	}
 }
 
-/** No picture of a part of the screen, as a stage showing the page live holds: no piece stands on it. */
+/** No picture of a part of the screen, as a stage showing the page live holds: no piece or sweep stands on it. */
 class NoPictures implements PartPictures {
 	readonly sharper = NONE_SHARPER;
 

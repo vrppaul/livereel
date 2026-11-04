@@ -218,6 +218,20 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		new FilmError(`screen.shows's page's html is "": it is a page in HTML, a string with something in it`)
 	);
 	expect(() => screen.shows('filmed', { within: { end: 1 } as never })).toThrow(FilmError);
+	expect(() => screen.sweep({ from: 'middle' as never })).toThrow(
+		new FilmError(`screen.sweep's from is "middle": it is a side of the frame: "left", "right", "top" or "bottom"`)
+	);
+	expect(() => screen.sweep({ slant: 90 })).toThrow(
+		new FilmError(
+			"screen.sweep's slant is 90: it is a slant, degrees turned clockwise from the side it comes from, more than -90 and less than 90"
+		)
+	);
+	expect(() => screen.sweep({ width: 0 })).toThrow(
+		new FilmError("screen.sweep's width is 0: it is a number of pixels, more than 0")
+	);
+	expect(() => screen.sweep({ crest: { start: 'blue' } })).toThrow(
+		new FilmError(`screen.sweep's crest's start is "blue": it is a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa`)
+	);
 	expect(() => terminal.open(null as never)).toThrow(new FilmError("terminal.open's title is null: it is a string"));
 	expect(() => terminal.open('claude', { within: 5 as never })).toThrow(
 		new FilmError(`terminal.open's within is 5: it is ${SHARE}`)

@@ -6,7 +6,8 @@
  * is a cut of one), and takes no time in the film however long the browser takes. Steps are data; the studio runs
  * them. Two moves of one part may share a step only one after the other, or at once where each sets values of it the
  * other does not, as two moves of the look may: a step that has both on one value at once is refused as it is
- * written, before anything is shot.
+ * written, before anything is shot. So is an act on the page at the moment a move that holds the page's picture
+ * begins, which the act, done first, would be in.
  */
 import { FilmError } from '../domain/errors.ts';
 import {
@@ -34,6 +35,7 @@ import {
 	type Part,
 	type Share,
 	cssOf,
+	movesThePage,
 	ownPagesOf,
 	placesOf,
 	soundsOf
@@ -98,13 +100,16 @@ const STEP_FORMS: { readonly [Name in Step['kind']]: Kind<Extract<Step, { kind: 
 };
 const A_STEP_SAID = 'a step, as play, hold, cut or act makes one';
 const A_TYPED_MOVE = new Plain(isTypedMove, 'a move that types, as terminal.type or page.type makes one');
+// What a step says of an act at the moment a move that holds the page's picture begins
+const ACT_IN_A_HOLD =
+	"an act on the page at the moment a move that holds the page's picture begins, as screen.sweep or piece.show({ picture: 'held' }), is done first, and the picture would hold the page as the act leaves it: put the act a moment after, within: { start }";
 const UNSPREAD = 'spread the steps cursor.click and typing give among the others, as ...cursor.click(action)';
 
 /** So many seconds of frames, every move eased along them, each over its own share of the step. */
 export function play(script: PlayScript): Play {
 	assertWritten(script, PLAY_FORM, 'play');
 	const moves = script.moves ?? [];
-	refuseClashes(moves);
+	refuseTogether(moves);
 	return { kind: 'play', seconds: script.seconds, moves, ease: script.ease ?? easeInOutSine };
 }
 
@@ -117,7 +122,7 @@ export function hold(script: HoldScript): Play {
 /** The scene changed at once, between two frames: a cursor gone, a terminal opened, the camera elsewhere. */
 export function cut(...moves: readonly Move[]): Cut {
 	assertKind(moves, A_MOVES, "cut's moves");
-	refuseClashes(moves);
+	refuseTogether(moves);
 	return { kind: 'cut', moves };
 }
 
@@ -160,6 +165,28 @@ export function ownPagesIn(steps: readonly Step[]): readonly OwnPage[] {
 /** Every place the steps' moves name, known before anything is shot, so one the format has not is refused at once. */
 export function placesIn(steps: readonly Step[]): readonly PlaceNamed[] {
 	return steps.flatMap((step) => step.moves).flatMap(placesOf);
+}
+
+/** Moves refused together in one step: two on one part at once, and an act at the moment one holds the page begins. */
+function refuseTogether(moves: readonly Move[]): void {
+	refuseClashes(moves);
+	refuseActsAsAHoldBegins(moves);
+}
+
+/**
+ * An act on the page at the moment a move that holds the page's picture begins, refused: the take does what is done
+ * at a moment before what begins then, so the picture would hold the page as the act leaves it.
+ */
+function refuseActsAsAHoldBegins(moves: readonly Move[]): void {
+	const holdsBegin = moves.filter((move) => move.holdsThePage === true).map((move) => move.timing.within.start);
+	if (moves.some((move) => isAnAct(move) && holdsBegin.includes(move.timing.within.start))) {
+		throw new FilmError(ACT_IN_A_HOLD);
+	}
+}
+
+/** Whether a move acts on the page: one of the page done at a moment. */
+function isAnAct(move: Move): boolean {
+	return movesThePage(move) && move.timing.within.start === move.timing.within.end;
 }
 
 /** Two moves of one part at once in one step, refused by naming the part, or the value of it both set. */
@@ -217,7 +244,7 @@ function stepOf(written: unknown, place: number): Step {
 	}
 	const form: Kind<Step> = STEP_FORMS[written.kind];
 	assertKind(written, form, at);
-	refuseClashes(written.moves);
+	refuseTogether(written.moves);
 	return written;
 }
 

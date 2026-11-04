@@ -172,7 +172,7 @@ and the moves of each part of the scene:
   `code.hide({ toward, leave, edge })`; each move of a title or code takes `as` to name which
 - `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
   whole frame where they come up, over every other object, the keys over the caption, one of each
-- `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`
+- `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`, `screen.sweep({ from, slant, width, crest })`
 - `terminal.open(title, { at, from, enter, edge, inside, group, zIndex })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
   `terminal.lean({ tilt, turn, roll })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
@@ -527,7 +527,24 @@ address or a `data:` URL. While the page of the film's own shows, a move
 finds blocks on it by their selectors, and the filmed page behind it is
 still acted on, scrolled and typed into; a piece of the page and a lens,
 drawn from the filmed page's picture, are refused, and so is the swap while
-a lens stands. The
+a lens stands. `screen.sweep()` in a `play` sweeps the picture the screen
+shows away by a band of light, the page as it stands showing behind it: an
+act on the page at a moment of the play, `page.act(action, { within })`, a
+theme turned dark, comes in behind the band. The band crosses what the
+window shows of the screen from its left, or the side `from` names, slanted
+30° clockwise, or as far as `slant` names, 160 pixels of a frame 1080 high
+wide, or `width`, its crest in the look's accent as it stands, or running
+from `crest.start`, at its end nearer the top, to `crest.end`. The picture
+is held as the sweep begins, so put the act a moment after it, `within:
+{ start: 0.02 }`: one at the same moment would be done first and lie under
+the picture, and the play refuses it. An act in a step before the sweep's
+is under it too. The band crosses the window, not the page: a camera panning
+against it faster than it goes brings the picture back over page it had
+swept. A piece drawn from the page's picture and a lens show the page as it
+stands, behind the band already. In a `cut` a sweep ends as it begins, and
+nothing of it shows. A sweep is refused on a page framed live, and while the
+screen shows a page of the film's own, as it draws from the filmed page's
+picture. The
 words take about a third of the frame, set as large as their share lets, or the share
 a format's `split` gives them (see Formats); the window takes the whole
 rest, whatever the page's shape, and shows the part of it the camera

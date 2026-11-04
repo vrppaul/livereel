@@ -566,6 +566,17 @@ export function pointInTheView(camera: Camera, frame: Size, point: Point): Point
 }
 
 /**
+ * The part of the screen a camera's view shows as the camera frames the page, before the view leans: in the screen's
+ * pixels, as large as the view at the camera's zoom, its middle at the camera's focus, wherever the screen's edges are.
+ */
+export function viewOnTheScreen(camera: Camera, frame: Size): Box {
+	const frameZoom = frameZoomOf(camera.pose, frame);
+	const width = camera.view.box.width / frameZoom;
+	const height = camera.view.box.height / frameZoom;
+	return { left: camera.pose.focusX - width / HALVES, top: camera.pose.focusY - height / HALVES, width, height };
+}
+
+/**
  * Where a box of the screen stands on the frame as a camera shows it through a view that faces the frame: between where
  * its top left and bottom right corners stand.
  */

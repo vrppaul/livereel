@@ -162,6 +162,58 @@ body {
 	pointer-events: none;
 }
 
+/* A band of light sweeping away the picture the screen showed (`src/props/screen.ts`), over the page in the screen's pixels, so the camera and the window carry it with the page, under the holes, the light and the cursor; cut at the screen's edge and rounded as it is, as the band would light the ground past it */
+.sweep {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	border-radius: inherit;
+	pointer-events: none;
+}
+
+/* The picture swept away, cut to where the band has still to sweep: from the band's line on past the screen's far side */
+.swept {
+	position: absolute;
+	inset: 0;
+	background-image: var(--swept-picture);
+	background-size: 100% 100%;
+	clip-path: polygon(
+		calc(var(--band-start-left) * 1px) calc(var(--band-start-top) * 1px),
+		calc(var(--band-end-left) * 1px) calc(var(--band-end-top) * 1px),
+		calc((var(--band-end-left) + var(--ahead-across)) * 1px) calc((var(--band-end-top) + var(--ahead-down)) * 1px),
+		calc((var(--band-start-left) + var(--ahead-across)) * 1px) calc((var(--band-start-top) + var(--ahead-down)) * 1px)
+	);
+}
+
+/* The band of light along its line, from its start to its end, as wide on the frame as the film has it however close the camera comes: a sheen of light down its middle, fading to nothing at its sides, and on it the crest, a thin line in the crest's colours from the band's start to its end, glowing in them */
+.band {
+	--band-across: calc((var(--band-end-left) - var(--band-start-left)) * 1px);
+	--band-down: calc((var(--band-end-top) - var(--band-start-top)) * 1px);
+	--band-thickness: calc(var(--band-width) * var(--pane-scale) * 1px);
+	--crest-thickness: 7px;
+
+	position: absolute;
+	left: calc(var(--band-start-left) * 1px);
+	top: calc(var(--band-start-top) * 1px - var(--band-thickness) / 2);
+	width: hypot(var(--band-across), var(--band-down));
+	height: var(--band-thickness);
+	transform-origin: 0 50%;
+	rotate: atan2(var(--band-down), var(--band-across));
+	background: var(--band-sheen);
+}
+
+.band::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 50%;
+	height: calc(var(--crest-thickness) * var(--pane-scale));
+	translate: 0 -50%;
+	background: var(--crest);
+	box-shadow: var(--crest-glow);
+}
+
 /* The holes pieces of the page leave, laid on the screen in its pixels, so the camera and the window carry them with the page */
 .holes {
 	position: absolute;
@@ -1298,12 +1350,13 @@ body {
 	outline: var(--stroke-width) solid var(--ring-line);
 }
 
-/* The page shaded as the window has it (`src/props/window.ts`): the screen faded into the film's ground, with all it holds; the page and the holes in it blurred, in pixels of a frame 1080 high, which the camera's zoom would scale; and the dark laid over the screen as far as it is dimmed. The window's edge and shadow keep as they stand, and an unshaded page is drawn with none of it */
+/* The page shaded as the window has it (`src/props/window.ts`): the screen faded into the film's ground, with all it holds; the page, the picture a band sweeps away and the holes in it blurred, in pixels of a frame 1080 high, which the camera's zoom would scale, the band of light kept sharp as the light is; and the dark laid over the screen as far as it is dimmed. The window's edge and shadow keep as they stand, and an unshaded page is drawn with none of it */
 [data-shaded] .screen {
 	opacity: calc(var(--screen-shown) * (1 - var(--shade-fade)));
 }
 
 [data-shaded] .page,
+[data-shaded] .swept,
 [data-shaded] .holes {
 	filter: blur(calc(var(--shade-blur) * 1px / var(--zoom)));
 }
