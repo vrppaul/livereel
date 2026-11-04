@@ -399,7 +399,10 @@ screen, over where the camera shows them, cut to the part it shows. It is
 drawn from the page's picture, so it shows what the page shows there as the
 page changes, and a page scrolled under it shows what scrolls into that
 part of the screen; a film whose page is `'dynamic'` has no picture and is
-refused, as is a window that leans or shows its back. Lifted `picture:
+refused, as is a window that leans or shows its back. Drawn flat larger than
+the page's picture holds it, past 2.2 times, it is drawn from a picture of its
+source alone that close, taken anew as the page changes, so a button grown
+to the whole frame keeps its edges crisp. Lifted `picture:
 'held'`, `piece.show('.thread', { picture: 'held' })`, it is drawn from a
 picture of its source alone, taken as it is lifted, as sharp as the page's
 picture where the page stands still: it shows what the page showed there
@@ -899,7 +902,9 @@ clock is its frames.
   ([`TODO.md`](TODO.md)).
 - A static page is pictured as sharp as a camera 2.2 times close needs: a
   camera closer still, by `zoomAtMost` or a pose's zoom, shows its text
-  softer than the page itself.
+  softer than the page itself. A piece of the page drawn closer, flat, is
+  drawn from a picture of its own that close; one that holds its picture,
+  a leant one and a lens are not.
 - Chromium alone, headless.
 - The page is asked for reduced motion, and for the light colour scheme
   unless the film names the dark one. A page whose styles animate anyway

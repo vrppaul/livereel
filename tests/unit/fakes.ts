@@ -107,12 +107,14 @@ export interface PictureAsked {
 
 /**
  * A stage showing a picture of a page that never changes, which keeps the zoom each picture was taken to hold: every
- * picture of it comes out as the last; and each picture of a part of the screen it was asked to hold, numbered from 1.
+ * picture of it comes out as the last; each picture of a part of the screen it was asked to hold, numbered from 1; and
+ * the number of each it was told to let go, in turn.
  */
 export class PicturedStageThatKeeps extends StageThatKeeps implements PicturedStage {
 	readonly kind = 'pictured';
 	readonly retakenAt: number[] = [];
 	readonly held: PictureAsked[] = [];
+	readonly letGone: number[] = [];
 
 	retakePage(zoom: number): Promise<boolean> {
 		this.retakenAt.push(zoom);
@@ -122,6 +124,11 @@ export class PicturedStageThatKeeps extends StageThatKeeps implements PicturedSt
 	holdPicture(part: Box, zoom: number): Promise<number> {
 		this.held.push({ part, zoom });
 		return Promise.resolve(this.held.length);
+	}
+
+	letGo(number: number): Promise<void> {
+		this.letGone.push(number);
+		return Promise.resolve();
 	}
 
 	changedOfItself(): boolean {

@@ -57,6 +57,7 @@ import {
 import { type Eye, type Focus, THE_EYE_AT_REST, turnOf } from '../domain/eye.ts';
 import { type Sharpness, distanceOfItsMiddle, outOfFocusBeforeItsMatrix } from '../domain/focus.ts';
 import type { Fraction } from '../domain/fraction.ts';
+import type { PartAsked, SharperPicture } from '../domain/picture.ts';
 import {
 	type Box,
 	CORNER_SHARES,
@@ -149,7 +150,8 @@ export interface Holders {
  * What stands round an object as it is drawn: the caption standing on the frame, if any, the window's screen, the
  * frame, which the eye sees it before, the camera the page is seen by, which a lens shows it past and frames what lies
  * on the page, the groups standing, the holes pieces of the page leave on the screen, which what shows the page
- * shows, and how sharp the eye sees as the frame is drawn.
+ * shows, how sharp the eye sees as the frame is drawn, and the pictures of parts of the screen the stage holds sharper
+ * than the page's, which a piece drawn past it is drawn from.
  */
 export interface Surroundings extends Holders {
 	readonly caption: CaptionStanding | null;
@@ -157,6 +159,7 @@ export interface Surroundings extends Holders {
 	readonly frame: Size;
 	readonly holes: readonly DrawnHole[];
 	readonly sharpness: Sharpness;
+	readonly sharper: readonly SharperPicture[];
 }
 
 /** What an object shows. */
@@ -592,12 +595,37 @@ function outOf(object: FrameObject, group: Group): number {
 }
 
 /**
- * How close what an object shows of the page's picture shows it, as a pose's zoom has it, the page seen by a camera:
- * none for what shows none of it; else the frame's pixels a screen's pixel takes in its box, grown and brought near as it
- * stands, and as its group grows and brings it near; where it leans, its nearer side shows the page larger still, so
- * at livereel's bound.
+ * How close what an object draws from the page's picture shows the page, as a pose's zoom has it, the page seen by a
+ * camera: none for what draws none of it, a piece past livereel's bound drawn from a picture of its own among them.
  */
 export function pictureZoomOf(object: FrameObject, holders: Holders, frame: Size): number | null {
+	const zoom = pageZoomOf(object, holders, frame);
+	return partPastTheBound(object, zoom) === null ? zoom : null;
+}
+
+/**
+ * The part of the screen a piece drawn from the page's picture shows past livereel's bound, as close as it shows it,
+ * which it is drawn from a picture of its own of; none for any other object, nor a piece drawn within the bound,
+ * leant, or from a picture it holds.
+ */
+export function partAskedSharper(object: FrameObject, holders: Holders, frame: Size): readonly PartAsked[] {
+	const part = partPastTheBound(object, pageZoomOf(object, holders, frame));
+	return part === null ? [] : [part];
+}
+
+/** The part of the screen an object shows past livereel's bound at a zoom: a piece's source; none for any other. */
+function partPastTheBound(object: FrameObject, zoom: number | null): PartAsked | null {
+	const content = object.content;
+	return content.kind === 'piece' && zoom !== null && zoom > ZOOM_AT_MOST ? { part: content.source, zoom } : null;
+}
+
+/**
+ * How close what an object shows of the page's picture shows it, as a pose's zoom has it, the page seen by a camera:
+ * none for what shows none of it; else the frame's pixels a screen's pixel takes in its box, grown and brought near as
+ * it stands, and as its group grows and brings it near; where it leans, its nearer side shows the page larger still,
+ * so at livereel's bound.
+ */
+function pageZoomOf(object: FrameObject, holders: Holders, frame: Size): number | null {
 	const standing = standingOf(object, frame, holders);
 	const fit = pageFitOf(object, standing.laid, holders.camera, frame);
 	if (fit === null) return null;
@@ -610,6 +638,12 @@ export function pictureZoomOf(object: FrameObject, holders: Holders, frame: Size
 		case 'leant':
 			return ZOOM_AT_MOST;
 	}
+}
+
+/** The number of the picture an object holds, a piece that holds one; none for any other. */
+export function pictureHeldBy(object: FrameObject): readonly number[] {
+	const content = object.content;
+	return content.kind === 'piece' && content.picture.kind === 'held' ? [content.picture.number] : [];
 }
 
 /**
@@ -690,7 +724,13 @@ function drawnContent(
 		case 'keys':
 			return drawnKeys(content, presentShare(figure), caption);
 		case 'piece':
-			return drawnPiece(content, standing.laid, presentShare(figure), holesOfOthers(name, around.holes));
+			return drawnPiece(
+				content,
+				standing.laid,
+				presentShare(figure),
+				holesOfOthers(name, around.holes),
+				around.sharper
+			);
 		case 'outline':
 			return drawnOutline(content, presentShare(figure));
 		case 'lens': {

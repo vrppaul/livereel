@@ -52,10 +52,12 @@ export interface PicturedStage extends DrawingStage {
 	readonly retakePage: (zoom: number) => Promise<boolean>;
 	/**
 	 * A picture of a part of the screen, in its pixels, taken as the page stands now, as sharp as a camera at this zoom
-	 * shows it, and held for the rest of the take, apart from the page's picture, which may be retaken: its number, by
-	 * which a drawn piece names it. Each is held as a piece is lifted, so a take holds no more than its film lifts so.
+	 * shows it, and held apart from the page's picture, which may be retaken, until it is let go: its number, by which a
+	 * drawn piece names it.
 	 */
 	readonly holdPicture: (part: Box, zoom: number) => Promise<number>;
+	/** A picture of a part of the screen the stage holds let go, by its number: no frame drawn after names it. */
+	readonly letGo: (number: number) => Promise<void>;
 	/**
 	 * Whether the page changed its document of itself since the take last asked, as when a timer of its own runs out or
 	 * an answer comes in, so its picture may no longer show it.

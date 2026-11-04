@@ -60,9 +60,12 @@ import {
 	drawnObject,
 	frameShiftOf,
 	inDrawingOrder,
+	partAskedSharper,
+	pictureHeldBy,
 	pictureZoomOf,
 	standsIn
 } from './props/object.ts';
+import type { PartAsked, SharperPicture } from './domain/picture.ts';
 import type { DrawnHole } from './props/piece.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
 import { SCREEN_UP, type Screen, THE_FILMED_PAGE } from './props/screen.ts';
@@ -227,6 +230,23 @@ export function pictureZoomsIn(scene: Scene, camera: Camera, frame: Size): reado
 		.filter((zoom) => zoom !== null);
 }
 
+/**
+ * The parts of the screen the pieces in a scene drawn from the page's picture show closer than livereel's bound has it
+ * taken, standing or pushed off, each as close as its piece shows it, the page seen by the camera that shows the scene
+ * on a frame of a size.
+ */
+export function partsAskedSharperIn(scene: Scene, camera: Camera, frame: Size): readonly PartAsked[] {
+	const holders: Holders = { camera, groups: scene.groups };
+	return [...scene.objects.values(), ...scene.leaving.values()].flatMap((object) =>
+		partAskedSharper(object, holders, frame)
+	);
+}
+
+/** The numbers of the pictures the pieces in a scene hold, standing or pushed off. */
+export function picturesHeldIn(scene: Scene): readonly number[] {
+	return [...scene.objects.values(), ...scene.leaving.values()].flatMap((object) => pictureHeldBy(object));
+}
+
 /** A scene at a moment of a frame's time, and the camera that shows it then. */
 export interface SceneSeen {
 	readonly scene: Scene;
@@ -332,9 +352,16 @@ export function drawingOf(exposures: readonly DrawnScene[]): string {
 
 /**
  * The scene as the stage draws it at a moment of the film, in the format it is shot in, seen by a camera: the scene's
- * own, or the flat one an act is done in.
+ * own, or the flat one an act is done in; each piece drawn from the page's picture past livereel's bound drawn from the
+ * picture of its source the stage holds sharper, of those named.
  */
-export function drawn(scene: Scene, camera: Camera, moment: number, format: Format): DrawnScene {
+export function drawn(
+	scene: Scene,
+	camera: Camera,
+	moment: number,
+	format: Format,
+	sharper: readonly SharperPicture[]
+): DrawnScene {
 	const everyObject = [...scene.objects, ...scene.leaving];
 	const holes = drawnHoles(everyObject);
 	const sharpness = sharpnessOf(camera, format.frame);
@@ -345,7 +372,8 @@ export function drawn(scene: Scene, camera: Camera, moment: number, format: Form
 		camera,
 		groups: scene.groups,
 		holes,
-		sharpness
+		sharpness,
+		sharper
 	};
 	return {
 		look: scene.look,

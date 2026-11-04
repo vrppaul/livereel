@@ -19,8 +19,10 @@
  * alike to its picture (SSIM 1.0); a 1040 × 1080 screen, 2026-10-30. Playwright's own picture takes none but the tab's
  * device scale. As Playwright's did, a picture waits for the page's fonts: CDP's does not, and text in a face still
  * loading, which Chrome hides for up to 3 s, came out missing in two pictures alike, so the page was held standing
- * still without it (probed 2026-10-30). A picture of a part of the screen a piece holds is taken the same way, clipped
- * to that part, and handed to the stage by its number, which keeps it for the rest of the take.
+ * still without it (probed 2026-10-30). A picture of a part of the screen a piece is drawn from, the one it holds or
+ * one sharper than the page's, is taken the same way, clipped to that part, and handed to the stage by its number,
+ * which keeps it until the take lets it go: Chrome draws the part anew at the clip's scale, a clip at 12 of a page at
+ * 4.4 alike to a tab at 12 (SSIM 1.0, probed 2026-11-02).
  *
  * A frame is captured by Playwright at the page's device scale, the film's sharpness. A capture of livereel's own, on
  * a CDP session apart from Playwright's, came back at the page's own pixels whatever that scale, every full shoot as
@@ -83,8 +85,10 @@ export interface StageApi {
 	readonly open: (opening: Opening) => void;
 	/** A picture of the filmed page, shown in the frame's place once it is decoded. */
 	readonly show: (picture: PagePicture) => Promise<void>;
-	/** A picture of a part of the screen held by its number for the rest of the take, once it is decoded. */
+	/** A picture of a part of the screen held by its number until it is let go, once it is decoded. */
 	readonly hold: (picture: HeldPicture) => Promise<void>;
+	/** A picture of a part of the screen held let go, by its number, its address with it. */
+	readonly letGo: (number: number) => void;
 	/**
 	 * The pages of the film's own laid out in the screen's place in every exposure, hidden until a frame shows one, each
 	 * loaded with its fonts, its scripts kept from running; the first exposure's named by its key, where moves measure
@@ -210,6 +214,10 @@ export class PlaywrightPicturedStage implements PicturedStage {
 		return this.picturesHeld;
 	}
 
+	letGo(number: number): Promise<void> {
+		return this.page.evaluate(pictureLetGo, number);
+	}
+
 	/**
 	 * A part of the screen as the page's tab shows it once its fonts have loaded, as a JPEG as sharp as a camera at this
 	 * zoom shows it, its text caret kept: its bytes in base64.
@@ -283,6 +291,10 @@ function pictureShown(picture: PagePicture): Promise<void> {
 
 function pictureHeld(picture: HeldPicture): Promise<void> {
 	return window.stage.hold(picture);
+}
+
+function pictureLetGo(number: number): void {
+	window.stage.letGo(number);
 }
 
 /** The pages of the film's own laid on the stage: the keys of those that move of themselves. */

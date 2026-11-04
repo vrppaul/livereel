@@ -1257,8 +1257,8 @@ body {
 	background-image: none;
 }
 
-/* A piece drawn from the picture of its source it holds, taken as it was lifted (`hold` in `stage/stage.js`), so it shows what the page showed there then as the page changes under it: the picture is its source alone, as large as the figure (its rule stands after every figure's, and before a back's, which shows no picture) */
-.piece[data-picture='held'] .way {
+/* A piece drawn from a picture of its source alone the stage holds (`hold` in `stage/stage.js`): the one it holds as it was lifted, so it shows what the page showed there then as the page changes under it, or one sharper than the page's, so it stays sharp drawn past it. The picture is its source alone, as large as the figure (its rule stands after every figure's, and before a back's, which shows no picture) */
+.piece[data-picture='own'] .way {
 	background-image: var(--piece-picture);
 	background-size: 100% 100%;
 	background-position: 0 0;

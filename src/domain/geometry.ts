@@ -173,6 +173,16 @@ export function isTheWholeOf(box: Box, size: Size): boolean {
 	return box.left === 0 && box.top === 0 && box.width === size.width && box.height === size.height;
 }
 
+/** Whether two boxes are the same box: each edge where the other's is. */
+export function sameBox(first: Box, second: Box): boolean {
+	return (
+		first.left === second.left &&
+		first.top === second.top &&
+		first.width === second.width &&
+		first.height === second.height
+	);
+}
+
 /** Whether a box lies wholly within a size laid from its top left: no part of it outside. */
 export function liesWithin(box: Box, size: Size): boolean {
 	return box.left >= 0 && box.top >= 0 && box.left + box.width <= size.width && box.top + box.height <= size.height;

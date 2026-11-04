@@ -37,8 +37,14 @@
  * against 81–83 ms, a 1040 × 1080 screen, 2026-10-30). A move's last frame is pictured as sharp as the bound, so the
  * picture after it can come out alike. A piece that holds its picture has the stage hold one of its source alone as
  * the move lifting it begins, as sharp as the bound, which no picture of the page taken after takes the place of. A
- * stage with the page live in its frame, as it shows a dynamic one, is captured every frame, as the page changes of
- * itself, and is laid flat for an act.
+ * piece drawn from the page's picture larger than the bound is drawn from a picture of its source alone the stage holds
+ * as close as the frame, or the moves running over it at their ends, draw it (`src/studio/pictures.ts`): Chrome draws
+ * the part anew at that scale, so the piece stays as sharp as a tab that close. It is taken anew where the page's
+ * picture comes out otherwise than the last, and kept between, as a clip costs as much as a picture of the page and
+ * more as it grows: a name grown to the whole frame, one clip of 122–148 ms on the card; a line 900 pixels wide grown
+ * 21 times, 765 ms (2026-11-04). A piece drawn from one asks the page's picture no closer. A stage with the page live
+ * in its frame, as it shows a dynamic one, is captured every frame, as the page changes of itself, and is laid flat
+ * for an act.
  * A fault in a step is raised again with the moment and the step it was met at. Before each frame, after each act,
  * and of any fault a step meets, the take asks the stage whether it and its page are still there: where one is gone,
  * the take is refused by why, in place of what its loss made a step fail at (a selector that matches nothing on
@@ -48,6 +54,7 @@ import { ZOOM_AT_MOST, flatCamera, zoomPicturedFor } from '../domain/camera.ts';
 import { TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
 import type { Box } from '../domain/geometry.ts';
+import { type PartAsked, closestOf } from '../domain/picture.ts';
 import { type MotionBlur, alsoExposedBack } from '../domain/shutter.ts';
 import { type Ease, between, framesOf, momentOf } from '../domain/time.ts';
 import { type Change, type Move, type Share, movesThePage, soundsOf } from '../direction/move.ts';
@@ -61,16 +68,21 @@ import {
 	drawingOf,
 	drawn,
 	frameShiftBetween,
+	partsAskedSharperIn,
 	pictureZoomsIn,
 	seenIn,
 	showingTheFilmedPage
 } from '../scene.ts';
+import { type PartPictures, picturesOn } from './pictures.ts';
 import type { Exposures, Footage, FramedStage, Opened, PicturedStage, Stage, Track } from './ports.ts';
 
 // Half-way along a frame, where a speed that changes evenly over it stands at its mean
 const HALF_WAY = 0.5;
 // How far a frame smears where nothing on it moves
 const NOTHING_SMEARED = 0;
+// The end of a step, where every move of it stands at its end; and how many parts a frame asks where it asks none
+const AT_THEIR_ENDS = 1;
+const NONE = 0;
 
 /**
  * A move begun: the share of its step it runs over, its curve, what it sets and whether that is the page itself, and
@@ -121,6 +133,8 @@ export class Take {
 	readonly track: Track;
 	readonly format: Format;
 	readonly motionBlur: MotionBlur | null;
+	// The pictures of parts of the screen the stage holds for pieces
+	readonly pictures: PartPictures;
 	private scene: Scene;
 	private shot = 0;
 	// The last exposures captured at once, none before the first; and, where the stage shows a picture of the page,
@@ -141,6 +155,7 @@ export class Take {
 		this.format = setup.format;
 		this.scene = setup.opening;
 		this.motionBlur = setup.motionBlur;
+		this.pictures = picturesOn(setup.opened.stage);
 	}
 
 	/** How many frames are shot so far. */
@@ -250,14 +265,13 @@ export class Take {
 
 	/**
 	 * An act on a framed page, its screen laid flat for it showing the filmed page, whatever page it shows, and stood up
-	 * again once it is done and the stage found still there, as a stage gone cannot stand up.
+	 * again once it is done and the stage found still there, as a stage gone cannot stand up. A framed page has no
+	 * picture, so no piece stands to be drawn from one sharper.
 	 */
 	private async actedOnFlat(stage: FramedStage, action: Action): Promise<void> {
+		const flatFormat = { ...this.format, frame: this.format.screen };
 		await stage.layFlat(
-			drawn(showingTheFilmedPage(this.scene), flatCamera(this.format), this.moment(), {
-				...this.format,
-				frame: this.format.screen
-			})
+			drawn(showingTheFilmedPage(this.scene), flatCamera(this.format), this.moment(), flatFormat, this.pictures.sharper)
 		);
 		await this.actedOn(action);
 		await stage.standUp();
@@ -317,23 +331,8 @@ export class Take {
 			format: this.format,
 			pageShown: this.opened.stage.kind,
 			act: (action) => this.acted(action),
-			holdPicture: (part) => this.pictureHeld(part)
+			holdPicture: (part) => this.pictures.hold(part)
 		});
-	}
-
-	/**
-	 * A picture of a part of the screen the stage holds, taken as the page stands as the move that asks it begins, as
-	 * sharp as the page's picture is taken where the page stands still: its number. A move asks only where the stage
-	 * shows the page's picture, having refused itself elsewhere.
-	 */
-	private pictureHeld(part: Box): Promise<number> {
-		const stage = this.opened.stage;
-		switch (stage.kind) {
-			case 'framed':
-				throw new Error('a page framed live has no picture to hold a part of');
-			case 'pictured':
-				return stage.holdPicture(part, ZOOM_AT_MOST);
-		}
 	}
 
 	/**
@@ -374,6 +373,7 @@ export class Take {
 		if (this.footage.keeps(this.shot)) {
 			await this.footage.keep(this.shot, await this.exposed(time, pageMovesOn));
 		}
+		await this.pictures.letGoUnnamedBy(this.scene);
 		this.shot += 1;
 	}
 
@@ -402,7 +402,8 @@ export class Take {
 	private async exposed(time: FrameTime, pageMovesOn: boolean): Promise<Exposures> {
 		const own = seenIn(this.scene, this.format);
 		const along = (await this.alsoExposed(time)).map((scene) => seenIn(scene, this.format));
-		await this.pageShown(this.opened.stage, this.zoomPictured(own, along, pageMovesOn));
+		const pageChanged = await this.pageShown(this.opened.stage, this.zoomPictured(own, along, pageMovesOn));
+		await this.pictures.serve(await this.partsAskedFor(time, [own, ...along]), pageChanged);
 		const ownDrawn = this.drawnAt(own);
 		const alongDrawn = along.map((exposure) => this.drawnAt(exposure));
 		if (alongDrawn.length < this.opened.stage.exposuresAtOnce) {
@@ -501,16 +502,37 @@ export class Take {
 
 	/**
 	 * The page as the stage is to show it: live in its frame as it is, or its picture retaken, where due, at a zoom; a
-	 * page heard to change of itself is due, as a page acted on is.
+	 * page heard to change of itself is due, as a page acted on is. Whether its picture came out otherwise than the last,
+	 * as a page live in its frame never pictures.
 	 */
-	private async pageShown(stage: Stage, zoom: number): Promise<void> {
+	private async pageShown(stage: Stage, zoom: number): Promise<boolean> {
 		switch (stage.kind) {
 			case 'framed':
-				return;
+				return false;
 			case 'pictured':
 				if (stage.changedOfItself()) this.pageChangedSinceTaken = true;
-				if (this.pageMayHaveChanged()) await this.pageRetaken(stage, zoom);
+				return this.pageMayHaveChanged() && !(await this.pageRetaken(stage, zoom));
 		}
+	}
+
+	/**
+	 * The parts of the screen a frame asks sharper than the page's picture: those pieces drawn from it show past
+	 * livereel's bound in any of its exposures, each as close as the closest shows it; and, where there are any, as the
+	 * moves running over the frame leave the scene at their ends, so a piece growing past the bound is pictured once, as
+	 * close as it grows, not anew on every frame of its way.
+	 */
+	private async partsAskedFor(time: FrameTime, seen: readonly SceneSeen[]): Promise<readonly PartAsked[]> {
+		const asked = this.partsAskedIn(seen);
+		if (asked.length === NONE) return asked;
+		const ending = seenIn(await this.sceneOf(time, AT_THEIR_ENDS, time.moves), this.format);
+		return this.partsAskedIn([...seen, ending]);
+	}
+
+	/** The parts of the screen pieces drawn from the page's picture show past livereel's bound in some exposures. */
+	private partsAskedIn(seen: readonly SceneSeen[]): readonly PartAsked[] {
+		return closestOf(
+			seen.flatMap((exposure) => partsAskedSharperIn(exposure.scene, exposure.camera, this.format.frame))
+		);
 	}
 
 	/** Whether the page may stand otherwise than its picture: changed since, not yet still, or moving of itself. */
@@ -520,13 +542,14 @@ export class Take {
 
 	/**
 	 * The page's picture taken anew, at a zoom; the page standing still where it came out as the last one did with
-	 * nothing done to the page between them and its own motion stilled.
+	 * nothing done to the page between them and its own motion stilled. Whether it came out as the last one did.
 	 */
-	private async pageRetaken(stage: PicturedStage, zoom: number): Promise<void> {
+	private async pageRetaken(stage: PicturedStage, zoom: number): Promise<boolean> {
 		const changedBefore = this.pageChangedSinceTaken;
 		this.pageChangedSinceTaken = false;
 		const alike = await stage.retakePage(zoom);
 		this.pageStandsStill = alike && !changedBefore && !this.opened.act.motion.released;
+		return alike;
 	}
 
 	/**
@@ -537,9 +560,9 @@ export class Take {
 		return this.pageStandsStill && this.lastCaptured?.drawing === drawing ? this.lastCaptured.image : undefined;
 	}
 
-	/** An exposure as the stage draws it at the frame's moment. */
+	/** An exposure as the stage draws it at the frame's moment, from the pictures it holds sharper for the frame. */
 	private drawnAt(exposure: SceneSeen): DrawnScene {
-		return drawn(exposure.scene, exposure.camera, this.moment(), this.format);
+		return drawn(exposure.scene, exposure.camera, this.moment(), this.format, this.pictures.sharper);
 	}
 
 	/** A frame's exposures drawn on the stage at once, and captured. */

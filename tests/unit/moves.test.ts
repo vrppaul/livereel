@@ -72,6 +72,7 @@ import {
 	drawn,
 	frameShiftBetween,
 	openingScene,
+	partsAskedSharperIn,
 	pictureZoomsIn,
 	withObject,
 	withProp
@@ -139,7 +140,7 @@ const LIT = { box: BLOCK, strength: 1, dim: 0.6 };
 // The eye at rest, open none, seeing all sharp
 const ALL_SHARP: Sharpness = { focusedAt: 2000, aperture: 0 };
 // No caption standing round an object drawn alone, the screen up, on the small frame, the camera on the whole screen,
-// no group and no hole, the eye seeing all sharp
+// no group and no hole, the eye seeing all sharp, and no picture of a part of the screen taken sharper than the page's
 const NOTHING_AROUND: Surroundings = {
 	caption: null,
 	screen: SCREEN_UP,
@@ -147,7 +148,8 @@ const NOTHING_AROUND: Surroundings = {
 	camera: cameraOf(openingScene(SMALL, LIVEREELS_LOOK), SMALL),
 	groups: new Map(),
 	holes: [],
-	sharpness: ALL_SHARP
+	sharpness: ALL_SHARP,
+	sharper: []
 };
 const TYPED = withObject(openingScene(SMALL, LIVEREELS_LOOK), 'terminal', {
 	inside: { kind: 'frame' },
@@ -189,7 +191,8 @@ const AROUND_IN_FULL_HD: Surroundings = {
 	camera: cameraOf(openingScene(FULL_HD, LIVEREELS_LOOK), FULL_HD),
 	groups: new Map(),
 	holes: [],
-	sharpness: ALL_SHARP
+	sharpness: ALL_SHARP,
+	sharper: []
 };
 // A box in the upper right corner of a frame, a quarter of it across and down, and one in its middle, half of it
 const UPPER_RIGHT_CORNER = { left: 0.75, top: 0, width: 0.25, height: 0.25 } as const;
@@ -198,8 +201,12 @@ const MIDDLE_HALF = { left: 0.25, top: 0.25, width: 0.5, height: 0.5 } as const;
 const WHOLE_SCREEN = { left: 0, top: 0, width: 1920, height: 1080 };
 // A piece's corners where neither the film nor the window rounds them
 const SQUARE_CORNERS = { topLeft: 0, topRight: 0, bottomRight: 0, bottomLeft: 0 };
-// A piece drawn from the page's picture as the stage shows it, as one is where the film names no picture of its own
+// A piece drawn from the page's picture as the stage shows it, as one is where the film names no picture of its own,
+// and as the stage draws it where no picture of its source is taken sharper
 const FOLLOWING = { kind: 'following' };
+const DRAWN_FROM_THE_PAGE = { kind: 'page' };
+// No picture of a part of the screen the stage holds sharper than the page's
+const NONE_SHARPER: readonly never[] = [];
 // The middle of an object's box, in shares of it
 const BOX_MIDDLE: Point = { left: 0.5, top: 0.5 };
 // How a group stands as it was placed refuses an object joining it otherwise
@@ -245,7 +252,7 @@ async function setIn(move: Move, scene: Scene, progress: number, format: Format)
 
 /** The objects of a scene as the stage draws them, in a format, by the scene's own camera. */
 function drawnObjectsIn(scene: Scene, format: Format): readonly DrawnObject[] {
-	return drawn(scene, cameraOf(scene, format), 0, format).objects;
+	return drawn(scene, cameraOf(scene, format), 0, format, NONE_SHARPER).objects;
 }
 
 /** Where the middle of an object of a scene shot in the small format is drawn on the frame. */
@@ -900,7 +907,7 @@ test('the screen coming up or going down keeps showing what it shows, and shares
 	expect(() => play({ seconds: 1, moves: [rise(), screenShows('filmed')] })).not.toThrow();
 });
 
-test("a piece is drawn as large as its box holds all of its source, in its middle, and shows the page as close as that and its scale bring it, leant as close as livereel's bound", async () => {
+test("a piece is drawn as large as its box holds all of its source, in its middle, and asks its source as close as that and its scale bring it, from a picture of its own past livereel's bound, and the page's picture at the bound leant", async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
 	const lifted = await setIn(piece.show(PAST_THE_SHOWN_EDGE), wide, 1, FULL_HD);
 	const filling = await setIn(piece.to({ left: 0, top: 0, width: 1, height: 1 }, { scale: 2 }), lifted, 1, FULL_HD);
@@ -909,6 +916,7 @@ test("a piece is drawn as large as its box holds all of its source, in its middl
 	// The whole frame, 1920 × 1080, holds the source of 200 × 100 at most 9.6 times as large across: 960 high, 60 in
 	expect([
 		drawnObject('piece', object, 0, AROUND_IN_FULL_HD).content,
+		partsAskedSharperIn(filling, cameraOf(filling, FULL_HD), FULL_HD.frame),
 		pictureZoomsIn(filling, cameraOf(filling, FULL_HD), FULL_HD.frame),
 		pictureZoomsIn(leant, cameraOf(leant, FULL_HD), FULL_HD.frame)
 	]).toEqual([
@@ -920,9 +928,10 @@ test("a piece is drawn as large as its box holds all of its source, in its middl
 			corners: SQUARE_CORNERS,
 			holes: [],
 			shown: 1,
-			picture: FOLLOWING
+			picture: DRAWN_FROM_THE_PAGE
 		},
-		[19.2],
+		[{ part: PAST_THE_SHOWN_EDGE, zoom: 19.2 }],
+		[],
 		[2.2]
 	]);
 });
@@ -932,7 +941,7 @@ test("a piece lifted with a hole leaves on the screen, where it was lifted, the 
 	const coming = await setIn(piece.show('#card', { hole: {} }), wide, 0.5, FULL_HD);
 	const area = piece.show(OTHER, { hole: { ground: '#112233', line: 'dashed' }, as: 'area' });
 	const both = await setIn(area, coming, 1, FULL_HD);
-	expect(drawn(both, cameraOf(both, FULL_HD), 0, FULL_HD).holes).toEqual([
+	expect(drawn(both, cameraOf(both, FULL_HD), 0, FULL_HD, NONE_SHARPER).holes).toEqual([
 		{ name: 'piece', box: CARD, ground: CARDS_GROUND, line: null, corner: 0, shown: 0.5 },
 		{ name: 'area', box: OTHER, ground: '#112233', line: 'dashed', corner: 0, shown: 1 }
 	]);
@@ -944,7 +953,7 @@ test('a piece lifted with a corner is drawn with its corners so round, as large 
 	const cardLifted = await setIn(piece.show('#card', { corner: 18, hole: {} }), screenLifted, 1, FULL_HD);
 	const cardFilling = await setIn(piece.to({ left: 0, top: 0, width: 1, height: 1 }), cardLifted, 1, FULL_HD);
 	const screenSmaller = await setIn(piece.to(UPPER_RIGHT_CORNER, { as: 'screen' }), cardFilling, 1, FULL_HD);
-	const scene = drawn(screenSmaller, cameraOf(screenSmaller, FULL_HD), 0, FULL_HD);
+	const scene = drawn(screenSmaller, cameraOf(screenSmaller, FULL_HD), 0, FULL_HD, NONE_SHARPER);
 	const contents = new Map(scene.objects.map((object) => [object.name, object.content]));
 	// The card, 200 × 100, fills the frame's 1920 × 1080 at 9.6 times as large; the whole screen stands in a quarter of
 	// the frame across and down, a quarter as large; the screen shows the page's pixels as the frame's
@@ -993,7 +1002,7 @@ test('a piece lifted with lines draws them along the two edges of the outline ro
 	const lifted = await setIn(piece.show('#card', { lines: 'solid' }), wide, 1, FULL_HD);
 	const aside = await setIn(piece.to(UPPER_RIGHT_CORNER), lifted, 1, FULL_HD);
 	const going = await setIn(piece.hide(), aside, 0.25, FULL_HD);
-	const linesOf = (scene: Scene) => drawn(scene, cameraOf(scene, FULL_HD), 0, FULL_HD).lines;
+	const linesOf = (scene: Scene) => drawn(scene, cameraOf(scene, FULL_HD), 0, FULL_HD, NONE_SHARPER).lines;
 	// The card, 400 to 600 across and 300 to 400 down, drawn in 1440 to 1920 across and 15 to 255 down: from its top left
 	// corner to the piece's, and from its bottom right corner to the piece's
 	expect([linesOf(lifted), linesOf(aside), linesOf(going)[0]!.drawn]).toEqual([
@@ -1034,7 +1043,7 @@ test("a piece's lines cross neither it nor its source while it stands partly ove
 		1,
 		FULL_HD
 	);
-	const linesOf = (scene: Scene) => drawn(scene, cameraOf(scene, FULL_HD), 0, FULL_HD).lines;
+	const linesOf = (scene: Scene) => drawn(scene, cameraOf(scene, FULL_HD), 0, FULL_HD, NONE_SHARPER).lines;
 	// The card, 400 to 600 across and 300 to 400 down, and the piece 500 to 700 and 350 to 450: from its top right corner
 	// to the piece's, and from its bottom left corner to the piece's, outside both; grown twice as large about the card's
 	// middle, or from its top left corner, the piece holds it whole
@@ -1332,7 +1341,7 @@ test("a lens in a group shows the page under its middle where its group carries 
 	const magnified = await setIn(lens.show('#card', { group: 'group' }), grouped, 1, FULL_HD);
 	const lifted = await setIn(piece.show('#other', { group: 'group', lines: 'solid' }), magnified, 1, FULL_HD);
 	const rolled = await setIn(group.lean({ roll: 180 }), lifted, 1, FULL_HD);
-	const drawnScene = drawn(rolled, cameraOf(rolled, FULL_HD), 0, FULL_HD);
+	const drawnScene = drawn(rolled, cameraOf(rolled, FULL_HD), 0, FULL_HD, NONE_SHARPER);
 	// Rolled half round the frame's middle, 960 across and 540 down: the lens's middle from the card's, 500 and 350, to
 	// 1420 and 730; the piece from 1200 to 1300 across and 600 to 660 down to 620 to 720 and 420 to 480, its lines from
 	// the source's top right and bottom left corners to the piece's
@@ -1537,7 +1546,7 @@ test('the page is shaded as far as its move has come toward the values the film 
 	const cleared = await setAt(windowShade({ dim: 0, fade: 0, blur: 0 }), travelled, 1);
 	expect(
 		[opening, dimming, blurred, travelled, cleared].map(
-			(scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL).window.shade
+			(scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).window.shade
 		)
 	).toEqual([
 		null,
@@ -1564,7 +1573,7 @@ test("the page's window is drawn flat and unmoved while it faces the frame, wher
 	};
 	expect(
 		[opening, inAWindow, leant, turnedWhole].map(
-			(scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL).window.transform
+			(scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).window.transform
 		)
 	).toEqual([
 		{ kind: 'flat', matrix: unmoved },
@@ -2461,7 +2470,7 @@ test('a window the eye stands behind is handed to the stage in 3D, which cuts aw
 		openingScene(SMALL, LIVEREELS_LOOK),
 		1
 	);
-	expect(drawn(behind, cameraOf(behind, SMALL), 0, SMALL).window.transform.kind).toBe('leant');
+	expect(drawn(behind, cameraOf(behind, SMALL), 0, SMALL, NONE_SHARPER).window.transform.kind).toBe('leant');
 });
 
 test('an eye sent over the top of what it looks at, its down lost on the way, is refused as its move begins', async () => {
@@ -2501,7 +2510,7 @@ async function withNearTitles(scene: Scene): Promise<Scene> {
 
 /** How soft the stage blurs the window and each object of a scene shot in the small format, by its own camera. */
 function outOfFocusIn(scene: Scene): readonly (number | null)[] {
-	const shown = drawn(scene, cameraOf(scene, SMALL), 0, SMALL);
+	const shown = drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER);
 	return [shown.window.outOfFocus, ...shown.objects.map((object) => object.outOfFocus)];
 }
 

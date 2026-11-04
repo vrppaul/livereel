@@ -2,13 +2,17 @@
  * A piece of the page: a part of its screen, the piece's source, lifted onto the frame and drawn from the page's
  * picture as the stage shows it, so it shows what the page shows there as the page changes; or, where the film asks,
  * from a picture of its source alone, held as it was lifted, so it shows what the page showed there then, as the page
- * changes under it. It is what an object shows (`src/props/object.ts`), so it travels, grows, comes near and turns as
- * any object does; what is its own is the part of the screen it shows, drawn as large as its box holds all of it, in
- * the box's middle. Lifted, it may leave a hole where it stood, and draw lines from itself to its source
- * (`src/props/lifted.ts`). The holes other pieces leave in its part of the screen are drawn over it as they stand, as
- * a lens draws them (`src/props/lens.ts`), whichever picture it is drawn from.
+ * changes under it. One following the page, drawn larger than livereel's bound has the page's picture taken, is drawn
+ * from a picture of its source alone, which the take has the stage hold as close as the frame draws it and takes anew
+ * with the page's (`src/studio/take.ts`), so it stays sharp however large it grows. It is what an object shows
+ * (`src/props/object.ts`), so it travels, grows, comes near and turns as any object does; what is its own is the part
+ * of the screen it shows, drawn as large as its box holds all of it, in the box's middle. Lifted, it may leave a hole
+ * where it stood, and draw lines from itself to its source (`src/props/lifted.ts`). The holes other pieces leave in its
+ * part of the screen are drawn over it as they stand, as a lens draws them (`src/props/lens.ts`), whichever picture it
+ * is drawn from.
  */
 import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
+import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
 import type { ObjectName } from './object.ts';
 import type { Stroke } from './stroke.ts';
 
@@ -52,6 +56,14 @@ export type PiecePicture = { readonly kind: 'following' } | { readonly kind: 'he
 export const FOLLOWING_THE_PAGE: PiecePicture = { kind: 'following' };
 
 /**
+ * What the stage draws a piece from: the page's picture as it shows it, or a picture of the piece's source alone it
+ * holds by its number, the one the piece holds or one sharper than the page's.
+ */
+export type DrawnPicture = { readonly kind: 'page' } | { readonly kind: 'own'; readonly number: number };
+
+const DRAWN_FROM_THE_PAGE: DrawnPicture = { kind: 'page' };
+
+/**
  * A piece of the page: the part of the screen it shows, in the screen's pixels, how round each of its corners is, in
  * the same pixels — as the film names for a rounded block, and as the window where the corner stands on a corner of
  * what the window shows — the hole it leaves there, if any, the line the lines from it to its source are drawn in, if
@@ -80,14 +92,21 @@ export interface DrawnPiece {
 	readonly corners: Corners;
 	readonly holes: readonly DrawnHole[];
 	readonly shown: number;
-	readonly picture: PiecePicture;
+	readonly picture: DrawnPicture;
 }
 
 /**
  * A piece as the stage draws it in a box, as far as it has come up and not gone, showing those of the holes on the
- * screen in its source.
+ * screen in its source, drawn from the picture it holds, or from one of its source the stage holds sharper than the
+ * page's where it is drawn from the page's.
  */
-export function drawnPiece(piece: Piece, box: Box, shown: number, holes: readonly DrawnHole[]): DrawnPiece {
+export function drawnPiece(
+	piece: Piece,
+	box: Box,
+	shown: number,
+	holes: readonly DrawnHole[],
+	sharper: readonly SharperPicture[]
+): DrawnPiece {
 	const source = piece.source;
 	const fit = fitIn(source, box);
 	return {
@@ -98,8 +117,23 @@ export function drawnPiece(piece: Piece, box: Box, shown: number, holes: readonl
 		corners: cornersAt(piece.corners, fit),
 		holes: holesShown(holes, source, fit),
 		shown,
-		picture: piece.picture
+		picture: drawnPictureOf(piece, sharper)
 	};
+}
+
+/**
+ * What the stage draws a piece from: the picture it holds; else a picture of its source the stage holds sharper than
+ * the page's, where there is one; else the page's.
+ */
+function drawnPictureOf(piece: Piece, sharper: readonly SharperPicture[]): DrawnPicture {
+	switch (piece.picture.kind) {
+		case 'held':
+			return { kind: 'own', number: piece.picture.number };
+		case 'following': {
+			const sharp = pictureOfPart(sharper, piece.source);
+			return sharp === undefined ? DRAWN_FROM_THE_PAGE : { kind: 'own', number: sharp.number };
+		}
+	}
 }
 
 /**

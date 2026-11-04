@@ -38,7 +38,7 @@ test('a capture of exposures laid over one another at once is timed apart from a
 		open: () => Promise.resolve(openedOn(new PageOfBoxes(new Map()), new StageLayingTwo()))
 	};
 	const opening = openingScene(SMALL, LIVEREELS_LOOK);
-	const scene = drawn(opening, cameraOf(opening, SMALL), 0, SMALL);
+	const scene = drawn(opening, cameraOf(opening, SMALL), 0, SMALL, []);
 	await profile.shooting(async () => {
 		const opened = await profile.browser(browser).open(undefined as never, '', 1);
 		await opened.stage.draw([scene]);

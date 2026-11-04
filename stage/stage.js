@@ -16,7 +16,7 @@
 /** @import { CodeLine, CodePiece, DrawnCode } from '../src/props/code.ts' */
 /** @import { DrawnContent, DrawnObject } from '../src/props/object.ts' */
 /** @import { DrawnLines } from '../src/props/lifted.ts' */
-/** @import { DrawnHole, PiecePicture } from '../src/props/piece.ts' */
+/** @import { DrawnHole, DrawnPicture } from '../src/props/piece.ts' */
 /** @import { Box, Segment } from '../src/domain/geometry.ts' */
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
@@ -882,9 +882,9 @@ const FIRST = exposureOf(FIRST_ROOT);
 /** The exposures the stage draws a frame as, the first of them its markup's own. @type {Exposure[]} */
 const EXPOSURES = [FIRST];
 /**
- * The pictures of parts of the screen pieces hold, decoded, by their numbers. Each is kept as an image, not its address
- * alone: a `url()` the stylesheet draws loads after a frame may be captured without it, and the image kept decoded at
- * the same address is drawn by the very next capture.
+ * The pictures of parts of the screen pieces are drawn from, decoded, by their numbers: those they hold, and those
+ * sharper than the page's. Each is kept as an image, not its address alone: a `url()` the stylesheet draws loads after
+ * a frame may be captured without it, and the image kept decoded at the same address is drawn by the very next capture.
  * @type {Map<number, HTMLImageElement>}
  */
 const HELD_PICTURES = new Map();
@@ -986,8 +986,8 @@ async function show(picture) {
 }
 
 /**
- * A picture of a part of the screen held by its number for the rest of the take, once it is decoded, so the next frame
- * drawn shows every piece drawn from it whole; at an address of the stage's own, as the page's picture is.
+ * A picture of a part of the screen held by its number until it is let go, once it is decoded, so the next frame drawn
+ * shows every piece drawn from it whole; at an address of the stage's own, as the page's picture is.
  * @param {HeldPicture} picture @returns {Promise<void>}
  */
 async function hold(picture) {
@@ -995,6 +995,12 @@ async function hold(picture) {
 	held.src = addressOf(picture);
 	await held.decode();
 	HELD_PICTURES.set(picture.number, held);
+}
+
+/** A picture of a part of the screen held let go, by its number, and its address with it. @param {number} number */
+function letGo(number) {
+	URL.revokeObjectURL(heldPicture(number).src);
+	HELD_PICTURES.delete(number);
 }
 
 /** A picture handed to the stage at an address of the stage's own, which holds its bytes. @param {PagePicture} picture */
@@ -1362,17 +1368,18 @@ function sourceDrawn(element, source, fit) {
 }
 
 /**
- * The picture a piece is drawn from, named by its kind: the page's, as the stage shows it, or one of its source alone it
- * holds, set whole on its element as the page's is on the root, as CSS takes no address out of a custom property.
- * @param {Staged} element @param {PiecePicture} picture
+ * The picture a piece is drawn from, named by its kind: the page's, as the stage shows it, or one of its source alone
+ * the stage holds, set whole on its element as the page's is on the root, as CSS takes no address out of a custom
+ * property.
+ * @param {Staged} element @param {DrawnPicture} picture
  */
 function pictureDrawn(element, picture) {
 	named(element, PICTURE, picture.kind);
 	switch (picture.kind) {
-		case 'following':
+		case 'page':
 			element.style.removeProperty(PIECE_PICTURE);
 			return;
-		case 'held':
+		case 'own':
 			element.style.setProperty(PIECE_PICTURE, `url("${heldPicture(picture.number).src}")`);
 	}
 }
@@ -1502,5 +1509,5 @@ function found(element, name) {
 }
 
 /** @type {StageApi} */
-const STAGE = { setup, open, show, hold, layOwnPages, apply };
+const STAGE = { setup, open, show, hold, letGo, layOwnPages, apply };
 window.stage = STAGE;

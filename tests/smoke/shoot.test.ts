@@ -169,6 +169,18 @@ test('a piece holding the picture of its block it was lifted with is shot as the
 	expect([shot.frames, footage.kept]).toEqual([3, [0, 1, 2]]);
 });
 
+test("a piece drawn past livereel's bound is shot whole as the page changes under it, every frame kept", async () => {
+	const footage = new EveryFrameCounted();
+	const steps = [
+		cut(piece.show(FIELD)),
+		play({ seconds: 0.1, moves: [piece.to('whole')] }),
+		act((context: ActContext) => context.page.locator(FIELD).fill(TYPED)),
+		hold({ seconds: 0.1 })
+	];
+	const shot = await shoot(filmOf(steps), shootingInto(footage, 'software'));
+	expect([shot.frames, footage.kept]).toEqual([6, [0, 1, 2, 3, 4, 5]]);
+});
+
 test("a page of the film's own that moves of itself is refused before the film is shot, naming how it begins", async () => {
 	const spinning = '<style>h2 { animation: spin 1s infinite } @keyframes spin { to { rotate: 1turn } }</style>';
 	const steps = [cut(screen.shows({ html: `${spinning}<h2>Spinning</h2>` }))];

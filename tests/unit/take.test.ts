@@ -20,7 +20,7 @@ import { play as playSound } from '../../src/moves/sound.ts';
 import { open, type } from '../../src/moves/terminal.ts';
 import { lean as leanTitle, show as showTitle, to as titleTo } from '../../src/moves/title.ts';
 import { to as windowTo } from '../../src/moves/window.ts';
-import { show as showPiece, to as pieceTo } from '../../src/moves/piece.ts';
+import { hide as hidePiece, show as showPiece, to as pieceTo } from '../../src/moves/piece.ts';
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Keystroke } from '../../src/domain/typing.ts';
 import type { EndingCard } from '../../src/props/ending.ts';
@@ -57,6 +57,9 @@ const WHOLE_AT_ZOOM_ONE: Format = { frame: { width: 1080, height: 1080 }, screen
 // Its screen whole, and its middle twice as close; a frame's own exposure, drawn last
 const WHOLE_SCREEN: Pose = { focusX: 540, focusY: 540, zoom: 1 };
 const TWICE_CLOSE: Pose = { ...WHOLE_SCREEN, zoom: 2 };
+// Boxes of that frame, in its shares, half of it and an eighth of it across and down from its top left corner
+const HALF_THE_FRAME = { left: 0, top: 0, width: 0.5, height: 0.5 };
+const AN_EIGHTH_OF_THE_FRAME = { left: 0, top: 0, width: 0.125, height: 0.125 };
 const OWN = -1;
 // Two letters, the first showing on the third of six frames of typing, the second on the sixth
 const STROKES: readonly Keystroke[] = [
@@ -220,6 +223,18 @@ function takeShowingOwnPage(footage: FootageOf, stage: Stage, filmed: PageOfBoxe
 /** A take of a film shot unblurred, so each frame it keeps is one drawing. */
 function unblurredTakeOf(footage: FootageOf, stage: Stage): Take {
 	return takeOf(footage, stage, new TrackThatKeeps(), new PageTimeLogged(), UNBLURRED);
+}
+
+/** A take on a frame as large as the stage's look was made on, its whole screen shown by a camera at a zoom of 1. */
+function takeOfTheWholeScreen(footage: FootageOf, stage: Stage): Take {
+	return new Take({
+		opened: openedOn(new PageOfBoxes(PAGE), stage),
+		footage,
+		track: new TrackThatKeeps(),
+		format: WHOLE_AT_ZOOM_ONE,
+		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK),
+		motionBlur: HALF_OF_FOUR
+	});
 }
 
 function cosineOf(degrees: number): number {
@@ -708,8 +723,74 @@ test("a piece holding its picture has the stage hold one of its source as the pa
 	]);
 	expect([stage.held, stage.drawn.at(OWN)!.objects[0]!.content]).toEqual([
 		[{ part: FIRST, zoom: 2.2 }],
-		expect.objectContaining({ picture: { kind: 'held', number: 1 } })
+		expect.objectContaining({ picture: { kind: 'own', number: 1 } })
 	]);
+});
+
+test("a piece drawn from the page's picture past livereel's bound has the stage hold a picture of its source as close as the frame draws it, and is drawn from it", async () => {
+	const stage = new PicturedStageThatKeeps();
+	// The first block, 100 × 50, carried to a box 540 pixels square: 5.4 of the frame's pixels a page's
+	await takeOfTheWholeScreen(new FootageOf([0]), stage).run([
+		cut(showPiece('#first')),
+		cut(pieceTo(HALF_THE_FRAME)),
+		hold({ seconds: 1 / 30 })
+	]);
+	expect([stage.held, stage.drawn.at(OWN)!.objects[0]!.content]).toEqual([
+		[{ part: FIRST, zoom: expect.closeTo(5.4) }],
+		expect.objectContaining({ picture: { kind: 'own', number: 1 } })
+	]);
+});
+
+test("a piece growing past livereel's bound is pictured as close as its move takes it, not anew on each frame of its way", async () => {
+	const stage = new PicturedStageThatKeeps();
+	// The first block, 100 × 50, grown evenly to a box 540 pixels square over three frames, past the bound from the
+	// first; the page pictured on the first two frames, as it is found still on the second
+	await takeOfTheWholeScreen(new FootageOf([0, 1, 2]), stage).run([
+		cut(showPiece('#first')),
+		play({ seconds: 3 / 30, moves: [pieceTo(HALF_THE_FRAME)], ease: linear })
+	]);
+	expect(stage.held.map((asked) => asked.zoom)).toEqual([expect.closeTo(5.4)]);
+});
+
+test("a piece's picture drawn past livereel's bound is taken anew where the page's comes out otherwise than the last, the one before let go, and kept where it comes out alike", async () => {
+	// The page pictured on the first frame, and on the second, which finds it still; then acted on before the fourth,
+	// its picture coming out otherwise
+	const stage = new StageAnswering([false, true, false]);
+	await takeOfTheWholeScreen(new FootageOf([0, 1, 2, 3]), stage).run([
+		cut(showPiece('#first')),
+		cut(pieceTo(HALF_THE_FRAME)),
+		hold({ seconds: 3 / 30 }),
+		act(() => Promise.resolve()),
+		hold({ seconds: 1 / 30 })
+	]);
+	expect([stage.retakenAt.length, stage.held.length, stage.letGone]).toEqual([3, 2, [1]]);
+});
+
+test("a page typed into under a piece drawn past livereel's bound from a picture of its own is pictured as close as the camera shows it", async () => {
+	const stage = new PicturedStageThatKeeps();
+	// The camera shows the whole screen at its size; the typing's last frame is pictured as sharp as the bound
+	await takeOfTheWholeScreen(new FootageOf([0, 1]), stage).run([
+		cut(showPiece('#first')),
+		cut(pieceTo(HALF_THE_FRAME)),
+		play({ seconds: 2 / 30, moves: [typeIntoThePage(STROKES)] })
+	]);
+	expect(stage.retakenAt).toEqual([1, 2.2]);
+});
+
+test('a picture the stage holds for a piece is let go once no piece is drawn from it: one a piece holds once it is hidden, one past the bound once its piece is carried back within it', async () => {
+	const stage = new PicturedStageThatKeeps();
+	await takeOfTheWholeScreen(new FootageOf([0, 1]), stage).run([
+		cut(showPiece('#first', { picture: 'held', as: 'held' })),
+		cut(showPiece('#second', { as: 'grown' })),
+		cut(pieceTo(HALF_THE_FRAME, { as: 'grown' })),
+		hold({ seconds: 1 / 30 }),
+		cut(hidePiece({ as: 'held' })),
+		cut(pieceTo(AN_EIGHTH_OF_THE_FRAME, { as: 'grown' })),
+		hold({ seconds: 1 / 30 })
+	]);
+	// The held piece's picture is the first, the grown piece's the second: the second let go as the second frame is
+	// drawn without it, the first once that frame is shot from a scene that names it no more
+	expect(stage.letGone).toEqual([2, 1]);
 });
 
 test("a static page moving under a camera that crosses the frame fast is pictured as close as the frame's closest exposure", async () => {

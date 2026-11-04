@@ -279,6 +279,10 @@ class TimedPicturedStage extends TimedDrawingStage<PicturedStage> implements Pic
 		return this.timings.timed('stage.holdPicture', () => this.stage.holdPicture(part, zoom));
 	}
 
+	letGo(number: number): Promise<void> {
+		return this.timings.timed('stage.letGo', () => this.stage.letGo(number));
+	}
+
 	/** Asked of what the stage already heard, as it was told: nothing to wait on, nothing to time. */
 	changedOfItself(): boolean {
 		return this.stage.changedOfItself();
