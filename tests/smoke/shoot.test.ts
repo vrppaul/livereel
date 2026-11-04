@@ -2,15 +2,17 @@
 import { mkdtemp, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { chromium } from 'playwright-core';
 import { expect, test } from 'vitest';
 import { Chromium, type Renderer } from '../../src/adapters/browser/chromium.ts';
 import { PlaywrightPage } from '../../src/adapters/browser/page.ts';
+import { roomOpened } from '../../src/adapters/browser/room.ts';
 import type { PlaywrightPicturedStage } from '../../src/adapters/browser/stage.ts';
 import { blended } from '../../src/adapters/video/exposures.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
 import { ZOOM_AT_MOST } from '../../src/domain/camera.ts';
-import { FilmError } from '../../src/domain/errors.ts';
+import { FilmError, SetupError } from '../../src/domain/errors.ts';
 import type { Size } from '../../src/domain/geometry.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
 import type { Exposures, Footage, Opened, PicturedStage } from '../../src/studio/ports.ts';
@@ -32,7 +34,8 @@ import {
 	piece,
 	play,
 	screen,
-	typing
+	typing,
+	window
 } from 'livereel';
 
 const PAGE = new URL('./page.html', import.meta.url).href;
@@ -43,6 +46,8 @@ const TYPED = 'hello';
 const NO_OWN_PAGES: readonly never[] = [];
 const OWN_PAGE = { html: '<!doctype html><body style="margin: 0"><h2 id="ours" style="margin: 60px">Ours</h2></body>' };
 const ONLY_OURS = '#ours';
+// The window leant back and swung, as the room places it by the engine's matrix
+const LEANT = { tilt: 12, turn: -7 };
 
 /** Footage that keeps every frame and counts them, and how many images each was handed as. */
 class EveryFrameCounted implements Footage {
@@ -72,11 +77,17 @@ function filmOf(steps: readonly Step[]) {
 
 /**
  * A film of these steps with what else it is written with: how its page is asked to look, what it blurs, its theme,
- * and whether it is dynamic, framed live, or static, in a tab of its own.
+ * whether it is dynamic, framed live, or static, in a tab of its own, and whether it is drawn as a room.
  */
 function filmWritten(
 	steps: readonly Step[],
-	written: { colourScheme?: 'dark'; blurred?: readonly string[]; theme?: Theme; page?: 'dynamic' }
+	written: {
+		colourScheme?: 'dark';
+		blurred?: readonly string[];
+		theme?: Theme;
+		page?: 'dynamic';
+		drawing?: 'room';
+	}
 ) {
 	return defineFilm({
 		formats: { small: SMALL },
@@ -130,6 +141,47 @@ test("a static page's frame the camera crosses fast is one image on the graphics
 	await shoot(filmOf(steps), blurredShootingInto(onTheCard, 'gpu'));
 	await shoot(filmOf(steps), blurredShootingInto(inSoftware, 'software'));
 	expect([Math.max(...onTheCard.images), Math.max(...inSoftware.images) > 1]).toEqual([1, true]);
+});
+
+test("a film drawn as a room is shot, every frame kept, in software or on the graphics card, where a fast camera's frame is one image, its exposures composed at once", async () => {
+	const inSoftware = new EveryFrameCounted();
+	const onTheCard = new EveryFrameCounted();
+	const film = filmWritten([play({ seconds: 0.2, moves: [camera.onto('h1'), window.lean(LEANT)] })], {
+		drawing: 'room'
+	});
+	await shoot(film, shootingInto(inSoftware, 'software'));
+	await shoot(film, blurredShootingInto(onTheCard, 'gpu'));
+	expect([inSoftware.kept, onTheCard.kept, Math.max(...onTheCard.images)]).toEqual([
+		[0, 1, 2, 3, 4, 5],
+		[0, 1, 2, 3, 4, 5],
+		1
+	]);
+});
+
+test('a film drawn as a room in software is shot with a word that the graphics card draws it faster', async () => {
+	const warned: string[] = [];
+	const film = filmWritten([hold({ seconds: 0.1 })], { drawing: 'room' });
+	await shoot(film, {
+		...shootingInto(new EveryFrameCounted(), 'software'),
+		browser: new Chromium('software', (said) => warned.push(said))
+	});
+	expect(warned).toEqual([
+		'the room is drawn in software, where a frame takes about twenty times as long to draw as on a graphics card: --renderer gpu draws it on the card, where the machine has one'
+	]);
+});
+
+test("the room is refused as the machine's to put right where the browser draws no element into WebGL", async () => {
+	const withoutTheRoomsFlag = await chromium.launch();
+	try {
+		const opened = roomOpened(await withoutTheRoomsFlag.newPage());
+		await expect(opened).rejects.toThrow(
+			new SetupError(
+				"the room draws the stage through Chrome's HTML-in-Canvas, which this browser lacks: the browser livereel pins has it, installed by `npx livereel setup`"
+			)
+		);
+	} finally {
+		await withoutTheRoomsFlag.close();
+	}
 });
 
 test('a still is the one frame written, and nothing after it is shot', async () => {

@@ -125,13 +125,13 @@ export interface Opened extends AsyncDisposable {
 /**
  * What the stage and the page are set as for a take: the film's format, where the stage stands, the colour scheme the
  * page is asked for, the blocks it blurs, all the film writes in CSS, in its theme or its looks' moves, which the
- * browser reads before anything is shot, whether the page changes of itself, which decides how it is shown, how a
- * fast move is blurred in the take, which says how many exposures a frame is made of at most, and the pages of the
- * film's own its moves show, which the stage lays before anything is shot.
+ * browser reads before anything is shot, whether the page changes of itself, which decides how it is shown, how the
+ * stage draws a frame, flat or as a room, how a fast move is blurred in the take, which says how many exposures a frame
+ * is made of at most, and the pages of the film's own its moves show, which the stage lays before anything is shot.
  */
 export type Setting = Pick<
 	FilmInFormat,
-	'format' | 'stage' | 'colourScheme' | 'blurred' | 'css' | 'page' | 'motionBlur'
+	'format' | 'stage' | 'colourScheme' | 'blurred' | 'css' | 'page' | 'drawing' | 'motionBlur'
 > & { readonly ownPages: readonly OwnPage[] };
 
 export interface Browser {

@@ -155,6 +155,10 @@ below on that app, an act each.
   `stage: 'inside'` in `defineFilm`, and the stage stands on the app's own
   address. Read what each stage costs in `node_modules/livereel/README.md`,
   "Where the stage stands", and tell the user before shooting.
+- A shot whose window leans far, or that the eye flies low over, is drawn
+  sharper as a room: write `drawing: 'room'` in `defineFilm`, for a static
+  page, and shoot it with `--renderer gpu`. Flat, the default, draws a leant
+  window as soft as the browser draws a layer in 3D.
 
 ### Sound
 

@@ -1,5 +1,11 @@
 # TODO
 
+## The room: what its first step left (`drawing: 'room'`, 2026-11-04)
+
+- The room draws the window from a picture of it as dense as the stage page's device scale, the film's sharpness: a window leant far, as the low flight over the diff of the claude-review promo's shot 02, shows the part nearest the eye larger than that, softer; and the page's picture in it is taken as close as livereel's bound, 2.2, where the eye may show the window's near edge closer. Where the frame shows more of the plane than the graphics card holds in one texture, the whole of it is drawn less densely: a 1040 × 5000 screen at a zoom of 2.2 flown low, at the finest quality, near letters no sharper than flat's (SSIM 0.934 against flat, `runway-zoom-probe.ts` of session 79824ed0). The near part drawn densely and the far part sparsely, two surfaces or more, would keep both.
+- The eye's focus blurs the window in the room as flat does, as one, as soft as its point nearest the focus, and in its own plane before the room leans it; the room would blur each point by how far it stands from the focus, as shot 02's far lines melting ask.
+- What stands in the world, a piece shown `inside: 'world'`, is drawn in the room as flat draws it, on the frame's surface over the window, wherever it stands before or behind it; two screens in one space, shot 12, ask each to stand where it is, the nearer over the farther.
+
 ## The eye: what steps 3a and 3b left (review of 1ec7d95, 2026-11-03; the focus, the same day)
 
 - The eye's focus blurs a plane as one, as soft as its point nearest the focus (`src/domain/focus.ts`): a window leant far back, as the low flight over the diff of the claude-review promo's shot 02, is drawn sharp all over while the focus stands anywhere on it, where its near lines should stand sharp and its far ones melt. The room blurs each point; banded depth of field on the flat stage, copies of the plane blurred apart and masked by depth, is not built.

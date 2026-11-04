@@ -8,7 +8,8 @@
  * browser finds the point it clicks wrongly on a screen the camera has scaled. A static page stands in a tab of its
  * own, at the screen's size, and the stage shows a picture of it (`PlaywrightPicturedStage`), taken anew as the take
  * asks, after the page was acted on or moved: a frame then costs one capture of the stage, the page's picture standing
- * as it was, and an act is done in the page's own tab, at no scale. The picture is taken as sharp as a camera at the
+ * as it was, and an act is done in the page's own tab, at no scale. Such a stage draws a frame flat, by its markup
+ * alone (`DRAWN_FLAT`), or as a room, its markup composed in WebGL (`room.ts`). The picture is taken as sharp as a camera at the
  * zoom the take names shows the page, up to as far as a camera comes in where a film names no bound (`ZOOM_AT_MOST`),
  * so text the camera comes close to stays as crisp as the live frame shows it: the README film's close shots at 4×
  * against the live frame, SSIM 0.990–0.992, alike to the eye at twice their size (2026-10-30).
@@ -51,12 +52,12 @@ export const STAGE_FOLDER = new URL('../../../stage/', import.meta.url);
 export const STAGE_PAGE = 'stage.html';
 
 /**
- * The room the stage moves the screen in: the frame it fills, the screen, and how large the stage draws on it against
- * the frames its look was made on: the camera's zoom, and what stands over the frame; and how many exposures of a frame
- * it draws at once, each a whole drawing of the stage laid over those before. The eye is in the matrices the engine
- * hands the stage with each frame.
+ * How the stage is laid out for a take: the frame it fills, the screen the camera moves in it, and how large the stage
+ * draws on it against the frames its look was made on: the camera's zoom, and what stands over the frame; and how many
+ * exposures of a frame it draws at once, each a whole drawing of the stage laid over those before. The eye is in the
+ * matrices the engine hands the stage with each frame.
  */
-export interface Room {
+export interface Layout {
 	readonly format: Format;
 	readonly frameScale: number;
 	readonly exposures: number;
@@ -83,8 +84,8 @@ export interface HeldPicture extends PagePicture {
 }
 
 export interface StageApi {
-	/** The stage laid out as a room: the frame and the screen in it, as large as it draws, and its exposures. */
-	readonly setup: (room: Room) => void;
+	/** The stage laid out: the frame and the screen in it, as large as it draws, and its exposures. */
+	readonly setup: (layout: Layout) => void;
 	/** The filmed page opened in the screen's frame. */
 	readonly open: (opening: Opening) => void;
 	/** A picture of the filmed page, shown in the frame's place once it is decoded. */
@@ -108,6 +109,28 @@ declare global {
 		stage: StageApi;
 	}
 }
+
+/**
+ * How the stage draws a frame, flat or as a room (`room.ts`): the flags the browser is launched with for it, how the
+ * stage is opened and then laid out, how a frame's exposures are drawn on it, and what the person who asks for software
+ * is told, if anything.
+ */
+export interface StageDrawing {
+	readonly flags: readonly string[];
+	readonly opened: (page: Page) => Promise<void>;
+	readonly laidOut: (page: Page, layout: Layout) => Promise<void>;
+	readonly drawn: (page: Page, exposures: readonly DrawnScene[]) => Promise<void>;
+	readonly saidInSoftware: string | null;
+}
+
+/** The stage drawn flat: opened from the package's files as they stand, laid out by its markup, drawn by it alone. */
+export const DRAWN_FLAT: StageDrawing = {
+	flags: [],
+	opened: stageApartOpened,
+	laidOut: () => Promise.resolve(),
+	drawn: drawnOn,
+	saidInSoftware: null
+};
 
 const JPEG_QUALITY = 92;
 // A stage that draws one exposure of a frame at a time
@@ -161,7 +184,7 @@ export class PlaywrightFramedStage implements FramedStage {
 
 	private async sizedTo(format: Format): Promise<void> {
 		await this.page.setViewportSize(format.frame);
-		await this.page.evaluate(setUpStage, roomOf(format, this.exposuresAtOnce));
+		await this.page.evaluate(setUpStage, layoutOf(format, this.exposuresAtOnce));
 	}
 }
 
@@ -181,7 +204,7 @@ export interface FilmedTab {
 
 /**
  * The stage showing a picture of the filmed page, which stands in a tab of its own, drawing as many exposures of a
- * frame at once as it was set up to.
+ * frame at once as it was set up to, flat or as a room.
  */
 export class PlaywrightPicturedStage implements PicturedStage {
 	readonly kind = 'pictured';
@@ -189,6 +212,7 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	readonly filmedTab: FilmedTab;
 	readonly watch: TabWatch;
 	readonly exposuresAtOnce: number;
+	readonly drawing: StageDrawing;
 	readonly warn: Warn;
 	// The page's picture last taken, in base64, none before the first; how many pictures of a part of the screen the
 	// stage holds, each by its number, counted from 1; and whether the person has been told a picture was taken softer
@@ -197,16 +221,24 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	private picturesHeld = 0;
 	private softerSaid = false;
 
-	constructor(page: Page, filmedTab: FilmedTab, watch: TabWatch, exposuresAtOnce: number, warn: Warn) {
+	constructor(
+		page: Page,
+		filmedTab: FilmedTab,
+		watch: TabWatch,
+		exposuresAtOnce: number,
+		drawing: StageDrawing,
+		warn: Warn
+	) {
 		this.page = page;
 		this.filmedTab = filmedTab;
 		this.watch = watch;
 		this.exposuresAtOnce = exposuresAtOnce;
+		this.drawing = drawing;
 		this.warn = warn;
 	}
 
 	draw(exposures: readonly DrawnScene[]): Promise<void> {
-		return drawnOn(this.page, exposures);
+		return this.drawing.drawn(this.page, exposures);
 	}
 
 	/** The page's picture taken anew, and shown where it came out otherwise than the last. */
@@ -287,14 +319,19 @@ export class PlaywrightPicturedStage implements PicturedStage {
 }
 
 /**
- * The room of a format, for a stage drawing so many exposures of a frame at once.
+ * The stage's layout for a format, drawing so many exposures of a frame at once.
  */
-export function roomOf(format: Format, exposures: number): Room {
+export function layoutOf(format: Format, exposures: number): Layout {
 	return { format, frameScale: frameScaleOf(format.frame), exposures };
 }
 
 function drawnOn(page: Page, exposures: readonly DrawnScene[]): Promise<void> {
 	return page.evaluate(applyExposures, exposures);
+}
+
+/** The stage opened apart from the app: the package's own file. */
+export async function stageApartOpened(page: Page): Promise<void> {
+	await page.goto(new URL(STAGE_PAGE, STAGE_FOLDER).href);
 }
 
 /** A zoom as the person is told it, to two places. */
@@ -309,9 +346,9 @@ function capturedOf(page: Page): Promise<Buffer> {
 
 // What follows runs in the stage page, each function handed over alone
 
-/** The stage set to a room. */
-export function setUpStage(room: Room): void {
-	window.stage.setup(room);
+/** The stage laid out. */
+export function setUpStage(layout: Layout): void {
+	window.stage.setup(layout);
 }
 
 /** The filmed page opened in the stage's frame. */

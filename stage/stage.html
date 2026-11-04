@@ -8,57 +8,61 @@
 		<script defer src="stage.js"></script>
 	</head>
 	<body>
-		<!-- An exposure of the frame: all of it drawn as the camera stood at one moment, on the ground; the stage copies it for each further exposure it draws at once -->
+		<!-- An exposure of the frame: all of it drawn as the camera stood at one moment, on the ground; the stage copies it for each further exposure it draws at once. It stands in three surfaces, one over the other, which a film drawn as a room lays in its canvas apart: the ground, the window and all in it, and what stands on the frame -->
 		<div class="exposure" data-exposure>
-			<!-- The layers the film lays over its ground, under all else -->
-			<div class="layers"></div>
+			<!-- The ground, and the layers the film lays over it, under all else -->
+			<div class="surface" data-surface="ground"><div class="layers"></div></div>
 			<!-- The screen, up out of the ground as far as it has come, with its window's shadow and edge: its root stands round the window, so the shadow beside the view reads how far it has come; the page's window, where the camera's picture shows: the whole frame or a window on the ground with its shadow under it; in it the camera moves the screen, which the window shades. The page sits in the screen's frame, the light and the cursor lie on it, and a callout stands beside it, past its edge where it reaches there -->
-			<div data-prop="screen">
-				<div class="window" data-prop="window">
-					<div class="stage" data-prop="camera">
-						<!-- The window's shadow and its view, as sharp as the eye sees them: the part the eye's focus blurs, round the view's cut, so a window out of focus spreads past its edge -->
-						<div class="sharpness">
-							<div class="view-shadow"></div>
-							<div class="view">
-								<div class="camera">
-									<div class="screen">
-										<iframe class="page" data-part="page" title="The page being filmed"></iframe>
-										<img class="page" data-part="picture" alt="The page being filmed" hidden />
-										<!-- The picture the screen showed as a band of light began to sweep it away, over the page and cut along the band, and the band's light over it, both cut at the screen's edge -->
-										<div class="sweep" data-part="sweep" hidden>
-											<div class="swept" data-part="swept"></div>
-											<div class="band" data-part="band"></div>
+			<div class="surface" data-surface="window">
+				<div data-prop="screen">
+					<div class="window" data-prop="window">
+						<div class="stage" data-prop="camera">
+							<!-- The window's shadow and its view, as sharp as the eye sees them: the part the eye's focus blurs, round the view's cut, so a window out of focus spreads past its edge -->
+							<div class="sharpness">
+								<div class="view-shadow"></div>
+								<div class="view">
+									<div class="camera">
+										<div class="screen">
+											<iframe class="page" data-part="page" title="The page being filmed"></iframe>
+											<img class="page" data-part="picture" alt="The page being filmed" hidden />
+											<!-- The picture the screen showed as a band of light began to sweep it away, over the page and cut along the band, and the band's light over it, both cut at the screen's edge -->
+											<div class="sweep" data-part="sweep" hidden>
+												<div class="swept" data-part="swept"></div>
+												<div class="band" data-part="band"></div>
+											</div>
+											<!-- The holes pieces of the page leave where they were lifted, on the page, under the light -->
+											<div class="holes" data-scene="holes"></div>
+											<div class="light" data-prop="light"></div>
+											<svg class="cursor" data-prop="cursor" viewBox="0 0 30 40" aria-hidden="true">
+												<path d="M3 3 L3 31 L10.5 24 L16 36.5 L21 34.5 L15.5 22.5 L25.5 22.5 Z" />
+											</svg>
 										</div>
-										<!-- The holes pieces of the page leave where they were lifted, on the page, under the light -->
-										<div class="holes" data-scene="holes"></div>
-										<div class="light" data-prop="light"></div>
-										<svg class="cursor" data-prop="cursor" viewBox="0 0 30 40" aria-hidden="true">
-											<path d="M3 3 L3 31 L10.5 24 L16 36.5 L21 34.5 L15.5 22.5 L25.5 22.5 Z" />
-										</svg>
+										<div class="callout" data-prop="callout">
+											<div class="card"><div class="words" data-part="words"></div></div>
+										</div>
+										<div class="pins" data-prop="pins"></div>
 									</div>
-									<div class="callout" data-prop="callout">
-										<div class="card"><div class="words" data-part="words"></div></div>
-									</div>
-									<div class="pins" data-prop="pins"></div>
+									<!-- The objects standing in the page's window, over its picture, leaning and travelling with it -->
+									<div class="objects" data-scene="window"></div>
 								</div>
-								<!-- The objects standing in the page's window, over its picture, leaning and travelling with it -->
-								<div class="objects" data-scene="window"></div>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-			<!-- What stands flat over the frame, whatever the camera does, under the objects: the lines from pieces of the page to their sources, and a note and its line -->
-			<div class="over-the-frame">
-				<div class="piece-lines" data-scene="lines"></div>
-				<div class="note" data-prop="note">
-					<div class="segment" data-part="line"></div>
-					<div class="words note-words" data-part="words"></div>
+			<div class="surface" data-surface="frame">
+				<!-- What stands flat over the frame, whatever the camera does, under the objects: the lines from pieces of the page to their sources, and a note and its line -->
+				<div class="over-the-frame">
+					<div class="piece-lines" data-scene="lines"></div>
+					<div class="note" data-prop="note">
+						<div class="segment" data-part="line"></div>
+						<div class="words note-words" data-part="words"></div>
+					</div>
 				</div>
+				<!-- The objects on the frame, each made from its content's template below, in the scene's order, on the layer the scene gives it, one standing in another laid in that one's element; and those pushed off past the frame's edge while they go -->
+				<div class="objects" data-scene="objects"></div>
+				<div class="objects" data-scene="leaving"></div>
 			</div>
-			<!-- The objects on the frame, each made from its content's template below, in the scene's order, on the layer the scene gives it, one standing in another laid in that one's element; and those pushed off past the frame's edge while they go -->
-			<div class="objects" data-scene="objects"></div>
-			<div class="objects" data-scene="leaving"></div>
 		</div>
 		<!-- An object, by what it shows: a title's words, on a ground of their own over its box where they have one; a pane of code; the agent's terminal; the ending card, its lines on the frame's ground; a caption on the ground that darkens the frame's edge under it, and a place over its words for the keys; the caps of a shortcut. Its figure, what a way of livereel's brings, stands in the part the way is drawn on, `way` -->
 		<template data-kind="words">

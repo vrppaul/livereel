@@ -60,12 +60,12 @@ async function servedFrom(serving: unknown) {
 test('a film in no form of one is refused as it is defined, where it stands: its names, its formats and where their captions stand, its functions', () => {
 	expect(() => defineFilm(null as never)).toThrow(
 		new FilmError(
-			'the film is null: it is an object of formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, colourScheme, blurred, page'
+			'the film is null: it is an object of formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, colourScheme, blurred, page, drawing'
 		)
 	);
 	expect(() => filmWritten({ motionblur: {} })).toThrow(
 		new FilmError(
-			'the film names motionblur: it names formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, colourScheme, blurred, page, or fewer'
+			'the film names motionblur: it names formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, colourScheme, blurred, page, drawing, or fewer'
 		)
 	);
 	expect(() => filmWritten({ colourScheme: 'night' })).toThrow(
@@ -307,6 +307,21 @@ test('a film is shot on the stage it names, apart where it names none; a stage l
 	expect(() => filmWritten({ stage: 'inside' })).toThrow(
 		new FilmError(
 			'the film\'s stage is "inside", which frames a dynamic page live: a static page is filmed in a tab of its own, signed in as it signs in and refused no frame, so leave the stage out, or give page: "dynamic"'
+		)
+	);
+});
+
+test('a film is drawn as it names, flat where it names none; a drawing livereel has not, or the room for a dynamic page, is refused as the film is defined', () => {
+	const films = [filmWritten({}), filmWritten({ drawing: 'room' })];
+	expect(films.map((film) => film.formats.get('small')!.drawing)).toEqual(['flat', 'room']);
+	expect(() => filmWritten({ drawing: 'cube' })).toThrow(
+		new FilmError(
+			'the film\'s drawing is "cube": it is "flat", drawn by the browser as it draws a page, or "room", the window drawn in WebGL as a plane where the eye sees it'
+		)
+	);
+	expect(() => filmWritten({ drawing: 'room', page: 'dynamic' })).toThrow(
+		new FilmError(
+			'the film\'s drawing is "room", which draws the page from its picture: a dynamic page stands live in a frame of its own site, which WebGL is given blank, so leave the page out for a static one, or the drawing for a flat one'
 		)
 	);
 });

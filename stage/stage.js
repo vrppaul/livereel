@@ -21,7 +21,7 @@
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
 /** @import { OwnPage } from '../src/direction/page.ts' */
-/** @import { HeldPicture, Opening, PagePicture, Room, StageApi } from '../src/adapters/browser/stage.ts' */
+/** @import { HeldPicture, Layout, Opening, PagePicture, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
 /** A value of the look set whole on the stage, in place of one token: any but the ground's layers, and the way words come up, which the moves that bring them read @typedef {Exclude<keyof Look, 'groundLayers' | 'words'>} WholeLookName */
@@ -953,19 +953,19 @@ const WHOLE = 1;
 const ITSELF = 1;
 
 /**
- * The stage laid out as a room, drawing as many exposures of a frame at once as the room asks, a copy of the first
- * made for each it lacks.
- * @param {Room} room
+ * The stage laid out, drawing as many exposures of a frame at once as the layout asks, a copy of the first made for
+ * each it lacks.
+ * @param {Layout} layout
  */
-function setup(room) {
+function setup(layout) {
 	numbered(document.documentElement, {
-		'--frame-width': room.format.frame.width,
-		'--frame-height': room.format.frame.height,
-		'--screen-width': room.format.screen.width,
-		'--screen-height': room.format.screen.height,
-		'--frame-scale': room.frameScale
+		'--frame-width': layout.format.frame.width,
+		'--frame-height': layout.format.frame.height,
+		'--screen-width': layout.format.screen.width,
+		'--screen-height': layout.format.screen.height,
+		'--frame-scale': layout.frameScale
 	});
-	while (EXPOSURES.length < room.exposures) EXPOSURES.push(exposureOf(addedCopy(UNDRAWN_ROOT)));
+	while (EXPOSURES.length < layout.exposures) EXPOSURES.push(exposureOf(addedCopy(UNDRAWN_ROOT)));
 }
 
 /** An exposure of the frame by its root. @param {Staged} root @returns {Exposure} */

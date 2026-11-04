@@ -1,5 +1,5 @@
 /*
- * The stage: the ground the film stands on, the room the camera moves the screen in, and every prop's look. Nothing
+ * The stage: the ground the film stands on, the window the camera moves the screen in, and every prop's look. Nothing
  * here moves of itself: the stage's script sets the frame's and the screen's sizes and how large it draws on the frame
  * as a film begins, and each prop's numbers every frame (`--zoom`, `--shown`, `--press`), all as bare numbers, and the
  * matrix the engine draws the window and each object by; the rules below give them their units and turn them into
@@ -23,9 +23,37 @@ body {
 .exposure {
 	position: absolute;
 	inset: 0;
-	background: var(--ground-light);
 	opacity: var(--share);
 	isolation: isolate;
+}
+
+/* A surface of an exposure, over the whole frame: its ground, its window, what stands on its frame, one over the other in that order, laid in the room's canvas apart where a film is drawn as a room. It is a picture of its own, all it holds drawn in it, as the canvas draws a child of its own into a texture with no more than that child paints itself. Its size is the frame's, written out: in the canvas, which lays out what is laid in it as no box does, `inset` sizes it to none (probed 2026-11-04) */
+.surface {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: calc(var(--frame-width) * 1px);
+	height: calc(var(--frame-height) * 1px);
+	isolation: isolate;
+}
+
+/* The ground, its layers over it */
+[data-surface='ground'] {
+	background: var(--ground-light);
+}
+
+/* What stands on the frame, over the window: the page is clicked through it */
+[data-surface='frame'] {
+	pointer-events: none;
+}
+
+/* The room's canvas, over the whole frame, which draws each exposure's surfaces laid in it as the room composes them (`room.js`) */
+.room {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: calc(var(--frame-width) * 1px);
+	height: calc(var(--frame-height) * 1px);
 }
 
 /* The layers a film lays over the ground, wherever the ground is, under all else there and cut at its box: those going, fading out, and those coming, fading in, added together in a group of their own and laid over the ground as one, so half-way each stands at half its strength and the ground shows through no more than either lets it (laid one over the other, the ground had shown through both: a quarter of it half-way, a grey flash between two coloured layers, the review of 2026-10-31) */
@@ -55,8 +83,8 @@ body {
 }
 
 /* Under an exposure and the ending card, the frame's layers whole, as large as the frame in pixels of a frame the look was made on, so their lengths are the look's whatever size the frame is shot at */
-.exposure > .layers::before,
-.exposure > .layers::after,
+[data-surface='ground'] > .layers::before,
+[data-surface='ground'] > .layers::after,
 .ending .layers::before,
 .ending .layers::after {
 	width: calc(var(--frame-width) * 1px / var(--frame-scale));
@@ -64,8 +92,8 @@ body {
 }
 
 /* The exposure draws in the frame's own pixels: its layers, at the frame's scale */
-.exposure > .layers::before,
-.exposure > .layers::after {
+[data-surface='ground'] > .layers::before,
+[data-surface='ground'] > .layers::after {
 	left: 0;
 	top: 0;
 	zoom: var(--frame-scale);
@@ -494,6 +522,32 @@ body {
 		var(--m43),
 		var(--m44)
 	);
+}
+
+/* In the room the window's surface draws the window face-on, as the frame shows a window that faces it, whatever its matrix: the room places it as that matrix sees it (`room.js`) */
+.room .window[data-transform] :is(.view, .view-shadow) {
+	transform: none;
+}
+
+/* In the room the window's surface stands over the frame and as far past it as the camera's picture reaches on the window's plane, where the eye may see it leant or from aside, as densely as the graphics card holds it (`room.js`); what it holds stays where the frame has it, uncut at the frame's edge */
+.room > [data-surface='window'] {
+	left: calc(var(--surface-left) * 1px);
+	top: calc(var(--surface-top) * 1px);
+	width: calc(var(--surface-width) * 1px);
+	height: calc(var(--surface-height) * 1px);
+	zoom: var(--surface-density);
+}
+
+.room > [data-surface='window'] > [data-prop='screen'] {
+	position: absolute;
+	left: calc(var(--surface-left) * -1px);
+	top: calc(var(--surface-top) * -1px);
+	width: calc(var(--frame-width) * 1px);
+	height: calc(var(--frame-height) * 1px);
+}
+
+.room .stage {
+	overflow: visible;
 }
 
 /* What an object shows fills its box, sized in pixels of a frame the stage's look was made on and every length of it scaled to the frame shot, as what stands over the frame is: the box's width and height in those pixels are named once for every part of it, as a length under the zoom is never a share of the box, which the zoom would count twice */

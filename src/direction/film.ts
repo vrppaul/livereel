@@ -60,6 +60,13 @@ const PAGE_KINDS = ['static', 'dynamic'] as const;
 
 export type PageKind = (typeof PAGE_KINDS)[number];
 
+// How the stage draws a frame: as the browser draws a page, the window and each object flat or leant on layers of its
+// own; or as a room, the window drawn in WebGL as a plane at the place the eye sees it, from a picture of it as the
+// browser draws it face-on
+const DRAWINGS = ['flat', 'room'] as const;
+
+export type Drawing = (typeof DRAWINGS)[number];
+
 export interface Script<Served extends Serving, Name extends string> {
 	/** The frames the film is shot in, each with the screen its page is laid out on, by the film's own names. */
 	readonly formats: Readonly<Record<Name, Format>>;
@@ -100,6 +107,13 @@ export interface Script<Served extends Serving, Name extends string> {
 	 * live in the stage's frame, captured every frame.
 	 */
 	readonly page?: PageKind;
+	/**
+	 * How the stage draws a frame: `flat`, where none is named, as the browser draws a page, the window and each object
+	 * on layers of its own, a leant one drawn as soft as the browser draws a layer in 3D; or `room`, the window drawn in
+	 * WebGL as a plane where the eye sees it, from a picture of it as dense as the page's device scale, for a static
+	 * page.
+	 */
+	readonly drawing?: Drawing;
 }
 
 /** A film whose page is served: what the studio shoots. */
@@ -122,6 +136,7 @@ export interface FilmInFormat {
 	readonly colourScheme: ColourScheme;
 	readonly blurred: readonly string[];
 	readonly page: PageKind;
+	readonly drawing: Drawing;
 	readonly sound: FilmSound;
 	readonly motionBlur: MotionBlur | null;
 	readonly serve: () => Promise<ServedFilm>;
@@ -159,6 +174,17 @@ const A_PAGE_KIND = new OneOf(
 	PAGE_KINDS,
 	'"static", changed by the film, or "dynamic" for a page that changes of itself, as an animation or live data does'
 );
+// The stage draws as the browser draws a page where a film names no drawing: the quicker, in software too
+const DRAWING_WHERE_NONE_IS_NAMED: Drawing = 'flat';
+const A_DRAWING = new OneOf(
+	DRAWINGS,
+	'"flat", drawn by the browser as it draws a page, or "room", the window drawn in WebGL as a plane where the eye sees it'
+);
+// The room draws the page from its picture: a dynamic page stands live in the stage's frame, and the browser hands
+// WebGL a frame of another site blank
+const ROOM_FOR_A_STATIC_PAGE =
+	'the film\'s drawing is "room", which draws the page from its picture: a dynamic page stands live in a frame of ' +
+	'its own site, which WebGL is given blank, so leave the page out for a static one, or the drawing for a flat one';
 const SELECTORS = new ListOf(A_SELECTOR, 'a list of selectors');
 // A film's sounds, music, blur and theme are objects, what is in each read by its own reader, in its own words, first
 const FILM_FORM: Form<AnyScript> = {
@@ -173,7 +199,8 @@ const FILM_FORM: Form<AnyScript> = {
 	theme: anObject<Theme>(AN_OBJECT_SAID),
 	colourScheme: A_COLOUR_SCHEME,
 	blurred: SELECTORS,
-	page: A_PAGE_KIND
+	page: A_PAGE_KIND,
+	drawing: A_DRAWING
 };
 const A_SERVING: Kind<Serving> = new Plain(
 	isServing,
@@ -190,6 +217,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 	readonly colourScheme: ColourScheme;
 	readonly blurred: readonly string[];
 	readonly page: PageKind;
+	readonly drawing: Drawing;
 	readonly formats: ReadonlyMap<string, FilmInFormat>;
 
 	constructor(script: Script<Served, Name>) {
@@ -203,11 +231,12 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 		this.look = lookWith(LIVEREELS_LOOK, theme);
 		this.css = cssNamedIn(theme, THE_FILMS_THEME);
 		refuseUnlikeAFilm(script);
-		this.stage = script.stage ?? STAGE_WHERE_NONE_IS_NAMED;
+		const staging = stagingOf(script);
+		this.stage = staging.stage;
+		this.page = staging.page;
+		this.drawing = staging.drawing;
 		this.colourScheme = script.colourScheme ?? COLOUR_SCHEME_WHERE_NONE_IS_NAMED;
 		this.blurred = script.blurred ?? NOTHING_BLURRED;
-		this.page = script.page ?? PAGE_WHERE_NONE_IS_NAMED;
-		if (this.stage === 'inside' && this.page === 'static') throw new FilmError(INSIDE_FOR_A_DYNAMIC_PAGE);
 		this.formats = new Map(namesOf(script.formats).map((name) => [name, this.inFormat(name)]));
 		if (this.formats.size === 0) throw new FilmError(NO_FORMAT);
 	}
@@ -222,6 +251,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 			colourScheme: this.colourScheme,
 			blurred: this.blurred,
 			page: this.page,
+			drawing: this.drawing,
 			sound: this.sound,
 			motionBlur: this.motionBlur,
 			serve: () => this.served(name)
@@ -264,6 +294,27 @@ export function defineFilm<Served extends Serving, Name extends string>(script: 
 export function atAddress(address: string): Serving {
 	assertKind(address, AN_ADDRESS, "atAddress's address");
 	return new ServedElsewhere(address);
+}
+
+/** How a film's page is shown: where the stage stands, how the page changes, and how the stage draws a frame. */
+interface Staging {
+	readonly stage: StagePlace;
+	readonly page: PageKind;
+	readonly drawing: Drawing;
+}
+
+/**
+ * How a film's page is shown, livereel's way where the film names nothing; refused where the two cannot go together:
+ * a stage inside the app for a static page, which stands in a tab of its own, or the room for a dynamic page, which
+ * stands live in a frame the room cannot draw.
+ */
+function stagingOf(script: Pick<AnyScript, 'stage' | 'page' | 'drawing'>): Staging {
+	const stage = script.stage ?? STAGE_WHERE_NONE_IS_NAMED;
+	const page = script.page ?? PAGE_WHERE_NONE_IS_NAMED;
+	const drawing = script.drawing ?? DRAWING_WHERE_NONE_IS_NAMED;
+	if (stage === 'inside' && page === 'static') throw new FilmError(INSIDE_FOR_A_DYNAMIC_PAGE);
+	if (drawing === 'room' && page === 'dynamic') throw new FilmError(ROOM_FOR_A_STATIC_PAGE);
+	return { stage, page, drawing };
 }
 
 /**

@@ -13,12 +13,11 @@
  * does nothing (measured 2026-10-27). A page answered anew hears its server on this machine only as the browser is
  * granted `local-network-access` (`chromium.ts`).
  */
-import { readFile, readdir } from 'node:fs/promises';
-import { extname } from 'node:path';
 import type { CDPSession, Page } from 'playwright-core';
 import { FilmError } from '../../domain/errors.ts';
 import { type Header, framedAnyway, refusalAmong } from './refusals.ts';
-import { type Opening, STAGE_FOLDER, STAGE_PAGE } from './stage.ts';
+import { FILE_SENT, NO_SUCH_FILE, type ServedFile, stageFiles } from './stage-files.ts';
+import { type Opening, STAGE_PAGE } from './stage.ts';
 import type { Warn } from './warn.ts';
 
 /** What livereel reads of a request `Fetch` paused: at the response stage, the answer's status and headers. */
@@ -30,24 +29,10 @@ interface Paused {
 	readonly responseHeaders?: readonly Header[];
 }
 
-/** A file of the package's stage, as the stage's address answers it: its kind of content, and itself in base64. */
-interface StageFile {
-	readonly type: string;
-	readonly body: string;
-}
-
 // The ways a page comes from a server, and where the stage stands on the app's origin: a path of livereel's own,
 // which no app is expected to serve
 const SERVED = new Set(['http:', 'https:']);
 const STAGE_PATH = '/__livereel__/';
-const CONTENT_TYPES: ReadonlyMap<string, string> = new Map([
-	['.html', 'text/html; charset=utf-8'],
-	['.css', 'text/css; charset=utf-8'],
-	['.js', 'text/javascript; charset=utf-8']
-]);
-// The statuses a stage file is answered with: sent, or not one of the stage's
-const FILE_SENT = 200;
-const NO_SUCH_FILE = 404;
 const CONTENT_TYPE = 'Content-Type';
 // What Fetch pauses: every request for the stage's own files, and every page's answer as it comes
 const PAGE_RESOURCE = 'Document';
@@ -104,28 +89,11 @@ export function fulfilledHeaders(headers: readonly Header[]): Header[] {
 		.filter((header): header is Header => header.value !== null);
 }
 
-/** The package's stage files the stage's address answers, by name: those of a kind of content it knows. */
-async function stageFiles(): Promise<ReadonlyMap<string, StageFile>> {
-	const names = await readdir(STAGE_FOLDER);
-	return new Map(await Promise.all(names.flatMap(stageFileNamed)));
-}
-
-/** A file of the stage, read, by its name; none where its kind of content is not one a stage file is of. */
-function stageFileNamed(name: string): Promise<readonly [string, StageFile]>[] {
-	const type = CONTENT_TYPES.get(extname(name));
-	return type === undefined ? [] : [stageFileRead(name, type)];
-}
-
-async function stageFileRead(name: string, type: string): Promise<readonly [string, StageFile]> {
-	const body = await readFile(new URL(name, STAGE_FOLDER));
-	return [name, { type, body: body.toString(BASE64) }];
-}
-
 /** A request Fetch paused, answered as livereel answers it, or let go as it came where that fails. */
 function answeredAnyway(
 	session: CDPSession,
 	paused: Paused,
-	files: ReadonlyMap<string, StageFile>,
+	files: ReadonlyMap<string, ServedFile>,
 	warn: Warn
 ): Promise<void> {
 	return answered(session, paused, files).catch((fault: unknown) => answeredAsCame(session, paused, fault, warn));
@@ -135,7 +103,7 @@ function answeredAnyway(
  * A request Fetch paused, answered: one for the stage's own files, paused before it was sent, with the file; a page
  * that refuses to be framed anew without its refusal; anything else, a redirect or an error among them, as it came.
  */
-async function answered(session: CDPSession, paused: Paused, files: ReadonlyMap<string, StageFile>): Promise<void> {
+async function answered(session: CDPSession, paused: Paused, files: ReadonlyMap<string, ServedFile>): Promise<void> {
 	const { requestId, responseStatusCode, responseErrorReason, responseHeaders = NO_HEADERS } = paused;
 	if (responseStatusCode === undefined && responseErrorReason === undefined) {
 		return stageFileSent(session, paused, files);
@@ -160,7 +128,7 @@ async function answered(session: CDPSession, paused: Paused, files: ReadonlyMap<
 async function stageFileSent(
 	session: CDPSession,
 	paused: Paused,
-	files: ReadonlyMap<string, StageFile>
+	files: ReadonlyMap<string, ServedFile>
 ): Promise<void> {
 	const file = files.get(new URL(paused.request.url).pathname.slice(STAGE_PATH.length));
 	if (file === undefined) {
@@ -171,7 +139,7 @@ async function stageFileSent(
 		requestId: paused.requestId,
 		responseCode: FILE_SENT,
 		responseHeaders: [{ name: CONTENT_TYPE, value: file.type }],
-		body: file.body
+		body: file.body.toString(BASE64)
 	});
 }
 

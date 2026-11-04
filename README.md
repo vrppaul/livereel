@@ -867,6 +867,38 @@ What `inside` costs:
 - The app's scripts can reach the stage, which stands on their origin.
 - The app's service worker is not tried yet.
 
+### Flat, or a room
+
+`defineFilm` takes `drawing`, how the stage draws a frame:
+
+- `flat`, where none is named: as the browser draws a page, the window and
+  each object on a layer of their own. A leant one is drawn as soft as the
+  browser draws a layer in 3D, at about one of its pixels a page's pixel
+  however near the eye comes.
+- `room`: the window drawn in WebGL, a plane where the eye sees it, from a
+  picture of what the frame shows of it as dense as the page's device
+  scale, filtered as it shrinks into the distance; the ground and what
+  stands on the frame are drawn as flat draws them. A static page only: a
+  dynamic one stands live in a frame of its own site, which the browser
+  hands WebGL blank.
+
+```ts
+export default defineFilm({ drawing: 'room', ... });
+```
+
+What `room` costs:
+
+- A frame takes longer to draw: the README film took 231 s on the graphics
+  card against 211 s flat, and in software about a third of a second a
+  frame more, which livereel says as it starts.
+- Where the frame shows more of the window's plane than the graphics card
+  holds in one texture, as the eye flying low over a tall screen does, the
+  plane is drawn less densely, softer than flat near the eye.
+- It draws through Chrome's HTML-in-Canvas, an experiment of Chrome's behind
+  a flag livereel turns on, renamed twice before: livereel pins the browser
+  `npx livereel setup` installs, and refuses a browser without it, or one
+  that gives the page no WebGL, as the machine's to put right.
+
 ### Sound
 
 A film is heard: a click as the cursor presses, a key for every stroke
