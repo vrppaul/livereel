@@ -219,18 +219,21 @@ test("a band sweeping the screen's picture away crosses the window from the side
 	// the band's half width, 60, stands as many of the screen's pixels past a side
 	const shown = { left: 0, top: 0, width: 600, height: 800 };
 	const crest = { start: '#5b8def', end: '#bca6ea' };
-	const fromTheLeft: Sweep = { picture: 1, from: 'left', slant: 0, width: 120, crest, swept: NONE };
+	const fromTheLeft: Sweep = { kind: 'band', picture: 1, from: 'left', slant: 0, width: 120, crest, swept: NONE };
 	const slantedFromTheRight: Sweep = { ...fromTheLeft, from: 'right', slant: -30, swept: fractionOf(0.5) };
 	expect([
 		drawnSweep(fromTheLeft, shown, 1),
-		drawnSweep({ ...fromTheLeft, swept: fractionOf(0.5) }, shown, 1).band,
-		drawnSweep({ ...fromTheLeft, swept: WHOLE }, shown, 1).band,
+		drawnSweep({ ...fromTheLeft, swept: fractionOf(0.5) }, shown, 1).shape.band,
+		drawnSweep({ ...fromTheLeft, swept: WHOLE }, shown, 1).shape.band,
 		drawnSweep(slantedFromTheRight, shown, 1)
 	]).toEqual([
 		{
 			picture: 1,
-			band: { start: { left: -60, top: -100 }, end: { left: -60, top: 900 } },
-			ahead: { left: 720, top: 0 },
+			shape: {
+				kind: 'band',
+				band: { start: { left: -60, top: -100 }, end: { left: -60, top: 900 } },
+				ahead: { left: 720, top: 0 }
+			},
 			width: 120,
 			crest
 		},
@@ -238,11 +241,14 @@ test("a band sweeping the screen's picture away crosses the window from the side
 		{ start: { left: 660, top: -100 }, end: { left: 660, top: 900 } },
 		{
 			picture: 1,
-			band: {
-				start: { left: expect.closeTo(50), top: expect.closeTo(-33.01) },
-				end: { left: expect.closeTo(550), top: expect.closeTo(833.01) }
+			shape: {
+				kind: 'band',
+				band: {
+					start: { left: expect.closeTo(50), top: expect.closeTo(-33.01) },
+					end: { left: expect.closeTo(550), top: expect.closeTo(833.01) }
+				},
+				ahead: { left: expect.closeTo(-900.33), top: expect.closeTo(519.81) }
 			},
-			ahead: { left: expect.closeTo(-900.33), top: expect.closeTo(519.81) },
 			width: 120,
 			crest
 		}
@@ -255,6 +261,7 @@ test("a band sweeping the screen crosses what the window shows of the screen, no
 	// 400 and its own width, 160 / 1.8, so it sets off half of that above the screen's top; it is as long as the
 	// screen's corners stand apart, 721.11
 	const sweep: Sweep = {
+		kind: 'band',
 		picture: 1,
 		from: 'top',
 		slant: 0,
@@ -263,8 +270,38 @@ test("a band sweeping the screen crosses what the window shows of the screen, no
 		swept: NONE
 	};
 	const drawn = drawnScreen({ ...SCREEN_UP, sweep }, cameraOf(openingScene(SMALL, LIVEREELS_LOOK), SMALL), SMALL);
-	expect(drawn.sweep!.band).toEqual({
+	expect(drawn.sweep!.shape.band).toEqual({
 		start: { left: expect.closeTo(-60.56), top: expect.closeTo(-44.44) },
 		end: { left: expect.closeTo(660.56), top: expect.closeTo(-44.44) }
 	});
+});
+
+// A disc 90 wide, its crest in the look's accent, round a point of a part of the screen a window shows, 600 × 800 from
+// its corner
+const DISC: Sweep = {
+	kind: 'disc',
+	picture: 1,
+	round: { left: 150, top: 120 },
+	width: 90,
+	crest: { start: null, end: null },
+	swept: NONE
+};
+const PART_SHOWN = { left: 0, top: 0, width: 600, height: 800 };
+
+test('a disc opens from its ring standing wholly in its middle, or at the nearest point the window shows where its middle stands past it, to standing wholly past the farthest corner the window shows, its ring as wide on the frame at any zoom', () => {
+	// At a zoom of 2 half the ring's 90 is 22.5 of the screen's pixels. From (150, 120) the part's farthest corner, its
+	// bottom right, stands 815.41 away; from (900, 120), past its right side, its nearest point 300, and its farthest
+	// corner, its bottom left, 1,128.01
+	const pastTheRight: Sweep = { ...DISC, round: { left: 900, top: 120 } };
+	expect([
+		drawnSweep(DISC, PART_SHOWN, 2).shape,
+		drawnSweep({ ...DISC, swept: WHOLE }, PART_SHOWN, 2).shape,
+		drawnSweep(pastTheRight, PART_SHOWN, 2).shape,
+		drawnSweep({ ...pastTheRight, swept: WHOLE }, PART_SHOWN, 2).shape
+	]).toEqual([
+		{ kind: 'disc', middle: { left: 150, top: 120 }, radius: -22.5 },
+		{ kind: 'disc', middle: { left: 150, top: 120 }, radius: expect.closeTo(815.41 + 22.5) },
+		{ kind: 'disc', middle: { left: 900, top: 120 }, radius: 300 - 22.5 },
+		{ kind: 'disc', middle: { left: 900, top: 120 }, radius: expect.closeTo(1128.01 + 22.5) }
+	]);
 });

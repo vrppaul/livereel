@@ -8,7 +8,9 @@
  * held as the sweep began, lies over the page, under the light, the holes and the cursor, cut along the band. The band
  * crosses what the window shows of the screen, from a side of it to the other, slanted as the film has it, as the
  * camera frames the page there, wherever the camera goes meanwhile; it comes on from half its width past the near side
- * and goes as far past the far one, so its light comes onto the page and leaves it whole.
+ * and goes as far past the far one, so its light comes onto the page and leaves it whole. Or a disc opens round a point
+ * of the screen, its ring of light growing from its middle to past the farthest corner of what the window shows, the
+ * picture kept outside it alone.
  */
 import { type Camera, type SeenBetween, screenPointShift, viewOnTheScreen } from '../domain/camera.ts';
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
@@ -19,7 +21,10 @@ import {
 	type Point,
 	UNMOVED,
 	boxOf,
+	cornersOf,
 	diagonalOf,
+	distanceBetween,
+	nearestInTheBox,
 	middleX,
 	middleY,
 	overlapOf
@@ -31,8 +36,9 @@ import { between } from '../domain/time.ts';
 export type Shows = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string };
 
 /**
- * The colours a band of light's crest runs through: from its start, the end nearer the top, or its left where it lies
- * level, to its end; none at an end the film names no colour for, drawn in the look's accent as it stands.
+ * The colours a sweep's crest runs through: a band's from its start, the end nearer the top, or its left where it lies
+ * level, to its end; a disc's ring's from its start at the top round to its end at the bottom and back; none at an end
+ * the film names no colour for, drawn in the look's accent as it stands.
  */
 interface Crest {
 	readonly start: string | null;
@@ -40,18 +46,36 @@ interface Crest {
 }
 
 /**
- * A band of light sweeping away the picture the screen showed: the picture, held by its number as the sweep began; the
- * side of the window the band comes from, how far it stands slanted from that side, degrees clockwise as the upright
- * screen shows it, and how wide it is, in pixels of a frame 1080 high; its crest; and how far it has swept the window.
+ * Light sweeping away the picture the screen showed: the picture, held by its number as the sweep began; how wide the
+ * light is, in pixels of a frame 1080 high; its crest; and how far it has swept the window. A band comes from a side of
+ * the window, slanted from that side, degrees clockwise as the upright screen shows it; a disc opens round a point of
+ * the screen, in its pixels.
  */
-export interface Sweep {
-	readonly picture: number;
+export type Sweep = SweepShape & SweepOfAnyShape;
+
+/** The shape light sweeps the screen in: a band from a side of the window, slanted; or a disc round a point of it. */
+export type SweepShape = BandShape | DiscShape;
+
+interface BandShape {
+	readonly kind: 'band';
 	readonly from: FrameSide;
 	readonly slant: number;
+}
+
+interface DiscShape {
+	readonly kind: 'disc';
+	readonly round: Point;
+}
+
+interface SweepOfAnyShape {
+	readonly picture: number;
 	readonly width: number;
 	readonly crest: Crest;
 	readonly swept: Fraction;
 }
+
+type BandSweep = BandShape & SweepOfAnyShape;
+type DiscSweep = DiscShape & SweepOfAnyShape;
 
 /** How far the screen has come up, as a film may open on the ground alone, what it shows, and the sweep over it, if any. */
 export interface Screen {
@@ -67,17 +91,21 @@ interface DrawnBand {
 }
 
 /**
- * A sweep as the stage draws it on the screen, in its pixels: the picture held; the band's line; how far from it the
- * far side of the picture still to sweep stands, across and down, past the window; how wide the band is, in pixels of
- * a frame 1080 high; and its crest.
+ * A sweep as the stage draws it on the screen, in its pixels: the picture held; its shape; how wide its light is, in
+ * pixels of a frame 1080 high; and its crest. A band's shape is its line, and how far from it the far side of the
+ * picture still to sweep stands, across and down, past the window; a disc's, its middle and its radius, less than none
+ * while its ring has still to come out of its middle.
  */
 export interface DrawnSweep {
 	readonly picture: number;
-	readonly band: DrawnBand;
-	readonly ahead: Point;
+	readonly shape: DrawnSweepShape;
 	readonly width: number;
 	readonly crest: Crest;
 }
+
+type DrawnSweepShape =
+	| { readonly kind: 'band'; readonly band: DrawnBand; readonly ahead: Point }
+	| { readonly kind: 'disc'; readonly middle: Point; readonly radius: number };
 
 /** The screen as the stage draws it: how far it has come up, what it shows, and the sweep over it as drawn, if any. */
 export interface DrawnScreen {
@@ -109,6 +137,13 @@ const CROSSING_FROM: { readonly [Side in FrameSide]: Point } = {
 };
 const HALVES = 2;
 const DEGREES_IN_A_HALF_TURN = 180;
+// The ways from a disc's middle to the points of its ring its shift is measured by: up, right, down and left
+const RING_WAYS: readonly Point[] = [
+	{ left: 0, top: -1 },
+	{ left: 1, top: 0 },
+	{ left: 0, top: 1 },
+	{ left: -1, top: 0 }
+];
 // No picture a screen swept by none holds
 const NO_PICTURE: readonly number[] = [];
 
@@ -120,15 +155,48 @@ export function drawnScreen(screen: Screen, camera: Camera, format: Format): Dra
 
 /**
  * A sweep as the stage draws it on the screen, where a part of it, in its pixels, shows in the window at a camera's
- * zoom: the band's line across that part, as far along its way as it has swept, from half its width behind the part's
- * nearest corner to as far beyond its farthest, as long as the part's corners stand apart, so it crosses the part
- * whole however it lies; and the picture still to sweep reaching from it as far beyond as the band's whole way.
+ * zoom: its shape there, as far along its way as it has swept, its light in pixels of a frame 1080 high, as many of the
+ * screen's as a camera at a zoom of 1 shows.
  */
 export function drawnSweep(sweep: Sweep, shown: Box, zoom: number): DrawnSweep {
+	return { picture: sweep.picture, shape: drawnShapeOf(sweep, shown, zoom), width: sweep.width, crest: sweep.crest };
+}
+
+/**
+ * How far a sweep's light moves on the frame from where it stood to where it stands, as each moment's camera shows it:
+ * the way the point of it that goes farthest goes, a band's line's middle or one of a disc's ring's four, above, below
+ * and either side of its middle, as a camera panning one way while the ring grows carries its far side farthest.
+ */
+export function sweepShift(seen: SeenBetween, format: Format, start: Sweep, end: Sweep): number {
+	const startPoints = lightPointsOf(start, seen.start, format);
+	const endPoints = lightPointsOf(end, seen.end, format);
+	return Math.max(...startPoints.map((point, place) => screenPointShift(seen, point, pointAt(endPoints, place))));
+}
+
+/** The picture a screen's sweep holds, if any. */
+export function pictureSweptBy(screen: Screen): readonly number[] {
+	return screen.sweep === null ? NO_PICTURE : [screen.sweep.picture];
+}
+
+/** A sweep's shape on the screen, where a part of it shows in the window at a camera's zoom. */
+function drawnShapeOf(sweep: Sweep, shown: Box, zoom: number): DrawnSweepShape {
+	switch (sweep.kind) {
+		case 'band':
+			return drawnBand(sweep, shown, zoom);
+		case 'disc':
+			return drawnDisc(sweep, shown, zoom);
+	}
+}
+
+/**
+ * A band's line across a part of the screen, as far along its way as it has swept, from half its width behind the
+ * part's nearest corner to as far beyond its farthest, as long as the part's corners stand apart, so it crosses the
+ * part whole however it lies; and the picture still to sweep reaching from it as far beyond as the band's whole way.
+ */
+function drawnBand(sweep: BandSweep, shown: Box, zoom: number): DrawnSweepShape {
 	const crossing = turnedClockwise(CROSSING_FROM[sweep.from], sweep.slant);
 	const along = fromItsTop(quarterTurnedClockwise(crossing));
-	// The band's whole way: from the part's nearest corner to its farthest along it, and half the band past each, the
-	// band in pixels of a frame 1080 high, as many of the screen's as a camera at a zoom of 1 shows
+	// The band's whole way: from the part's nearest corner to its farthest along it, and half the band past each
 	const wayAcross = shown.width * Math.abs(crossing.left) + shown.height * Math.abs(crossing.top) + sweep.width / zoom;
 	const middle = movedAlong(
 		{ left: middleX(shown), top: middleY(shown) },
@@ -137,35 +205,53 @@ export function drawnSweep(sweep: Sweep, shown: Box, zoom: number): DrawnSweep {
 	);
 	const halfLong = diagonalOf(shown) / HALVES;
 	return {
-		picture: sweep.picture,
+		kind: 'band',
 		band: { start: movedAlong(middle, along, -halfLong), end: movedAlong(middle, along, halfLong) },
-		ahead: movedAlong(UNMOVED, crossing, wayAcross),
-		width: sweep.width,
-		crest: sweep.crest
+		ahead: movedAlong(UNMOVED, crossing, wayAcross)
 	};
 }
 
 /**
- * How far a band sweeping the screen moves on the frame from where it stood to where it stands, as each moment's camera
- * shows it: the way its line's middle goes.
+ * A disc round its middle, its radius as far along its way as it has swept: from its ring, as wide as its light,
+ * standing wholly in its middle, or wholly at the nearest point of a part of the screen where its middle stands past
+ * it, so its light comes on at once as a band's does, to standing wholly past the part's farthest corner from it.
  */
-export function sweepShift(seen: SeenBetween, format: Format, start: Sweep, end: Sweep): number {
-	return screenPointShift(seen, bandMiddleOf(start, seen.start, format), bandMiddleOf(end, seen.end, format));
-}
-
-/** The picture a screen's sweep holds, if any. */
-export function pictureSweptBy(screen: Screen): readonly number[] {
-	return screen.sweep === null ? NO_PICTURE : [screen.sweep.picture];
-}
-
-/** The middle of a band's line on the screen, as a camera frames the page in its view, in a format. */
-function bandMiddleOf(sweep: Sweep, camera: Camera, format: Format): Point {
-	const band = drawnSweep(sweep, partSwept(camera, format), camera.pose.zoom).band;
-	return { left: (band.start.left + band.end.left) / HALVES, top: (band.start.top + band.end.top) / HALVES };
+function drawnDisc(sweep: DiscSweep, shown: Box, zoom: number): DrawnSweepShape {
+	const halfTheRing = sweep.width / zoom / HALVES;
+	const nearest = distanceBetween(sweep.round, nearestInTheBox(sweep.round, shown));
+	const farthest = Math.max(...cornersOf(shown).map((corner) => distanceBetween(corner, sweep.round)));
+	const radius = between(nearest - halfTheRing, farthest + halfTheRing, sweep.swept);
+	return { kind: 'disc', middle: sweep.round, radius };
 }
 
 /**
- * The part of the screen a band sweeps across, in its pixels: what a camera's view shows of it as the camera frames the
+ * The points of a sweep's light on the screen its shift is measured by, as a camera frames the page in its view, in a
+ * format: the middle of a band's line; a disc's ring above, below and either side of its middle.
+ */
+function lightPointsOf(sweep: Sweep, camera: Camera, format: Format): readonly Point[] {
+	const shape = drawnShapeOf(sweep, partSwept(camera, format), camera.pose.zoom);
+	switch (shape.kind) {
+		case 'band':
+			return [
+				{
+					left: (shape.band.start.left + shape.band.end.left) / HALVES,
+					top: (shape.band.start.top + shape.band.end.top) / HALVES
+				}
+			];
+		case 'disc':
+			return RING_WAYS.map((way) => movedAlong(shape.middle, way, shape.radius));
+	}
+}
+
+/** The point of a sweep's light where it stands that one where it stood measures its shift by: its light's shape is kept. */
+function pointAt(points: readonly Point[], place: number): Point {
+	const point = points[place];
+	if (point === undefined) throw new Error(`a sweep's light has no point ${place}: its shape changed as it swept`);
+	return point;
+}
+
+/**
+ * The part of the screen a sweep's light crosses, in its pixels: what a camera's view shows of it as the camera frames the
  * page, not the ground past its edges; the view's own part where it shows none of the screen, as nothing swept shows.
  */
 function partSwept(camera: Camera, format: Format): Box {

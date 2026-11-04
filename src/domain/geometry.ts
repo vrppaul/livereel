@@ -174,9 +174,14 @@ export function segmentBetween(from: Point, to: Point): Segment {
 
 /** The point of a size laid from its top left nearest to a point: the point itself, where it lies within. */
 export function nearestWithin(point: Point, size: Size): Point {
+	return nearestInTheBox(point, boxOf(size));
+}
+
+/** The point of a box nearest to a point: the point itself, where it lies within. */
+export function nearestInTheBox(point: Point, box: Box): Point {
 	return {
-		left: Math.min(Math.max(point.left, 0), size.width),
-		top: Math.min(Math.max(point.top, 0), size.height)
+		left: Math.min(Math.max(point.left, box.left), box.left + box.width),
+		top: Math.min(Math.max(point.top, box.top), box.top + box.height)
 	};
 }
 

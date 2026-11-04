@@ -132,19 +132,69 @@
 }
 
 /*
- * A band of light sweeping away the picture the screen showed (`src/props/screen.ts`): a sheen of light down its
- * middle, fading to nothing at its sides, and its crest from the band's start to its end, in the colours the film gives
- * them or the accent where it gives none, glowing in the two mixed. Worked out on the band, where the stage sets the
- * crest's colours, as a token on the root would take none; its lengths are pixels of a frame 1080 high, scaled by the
- * screen's `--pane-scale`, as the band is drawn on it.
+ * Light sweeping away the picture the screen showed (`src/props/screen.ts`), a band or a disc's ring: a sheen of light
+ * across it, fading to nothing at its sides, and its crest, a thin line along it in the colours the film gives its two
+ * ends or the accent where it gives none, glowing in the two mixed. Worked out on the sweep, where the stage sets the
+ * crest's colours and the disc's numbers, as a token on the root would take none; its lengths are pixels of a frame
+ * 1080 high, scaled by the screen's `--pane-scale`, as the light is drawn on it. The picture swept away by a disc is
+ * kept outside it alone.
  */
-.band {
+.sweep {
 	--crest-from: var(--crest-start, var(--accent));
 	--crest-to: var(--crest-end, var(--accent));
-	--band-sheen: linear-gradient(to bottom, transparent, rgb(235 242 255 / 85%), transparent);
+	--crest-thickness: calc(7px * var(--pane-scale));
+	--crest-glow-blur: calc(36px * var(--pane-scale));
+	--crest-glow-spread: calc(9px * var(--pane-scale));
+	--crest-glow-colour: color-mix(in srgb, color-mix(in srgb, var(--crest-from), var(--crest-to)) 60%, transparent);
+	--sheen: rgb(235 242 255 / 85%);
+	--disc-at: calc(var(--disc-left) * 1px) calc(var(--disc-top) * 1px);
+	--disc-edge: calc(var(--disc-radius) * 1px);
+	--outside-the-disc: radial-gradient(
+		circle at var(--disc-at),
+		transparent max(0px, var(--disc-edge)),
+		#000 max(0px, var(--disc-edge))
+	);
+}
+
+/* The band: its sheen down its middle, its crest from its start to its end */
+.band {
+	--band-sheen: linear-gradient(to bottom, transparent, var(--sheen), transparent);
 	--crest: linear-gradient(to right, var(--crest-from), var(--crest-to));
-	--crest-glow: 0 0 calc(36px * var(--pane-scale)) calc(9px * var(--pane-scale))
-		color-mix(in srgb, color-mix(in srgb, var(--crest-from), var(--crest-to)) 60%, transparent);
+	--crest-glow: 0 0 var(--crest-glow-blur) var(--crest-glow-spread) var(--crest-glow-colour);
+}
+
+/*
+ * A disc's ring, round the disc's middle at its edge: its sheen across it; its glow drawn as the band's box-shadow is, a
+ * ring of the glow's colour as wide as the crest and the shadow's spread either side, blurred by half the shadow's blur
+ * radius, a box-shadow's blur being twice its Gaussian's spread; and its crest round it from its start at the top to its
+ * end at the bottom and back, drawn through a thin ring
+ */
+.ring {
+	--ring-half: calc(var(--sweep-width) * var(--pane-scale) * 1px / 2);
+	--crest-half: calc(var(--crest-thickness) / 2);
+	--glow-half: calc(var(--crest-half) + var(--crest-glow-spread));
+	--ring-sheen: radial-gradient(
+		circle at var(--disc-at),
+		transparent calc(var(--disc-edge) - var(--ring-half)),
+		var(--sheen) var(--disc-edge),
+		transparent calc(var(--disc-edge) + var(--ring-half))
+	);
+	--ring-glow: radial-gradient(
+		circle at var(--disc-at),
+		transparent calc(var(--disc-edge) - var(--glow-half)),
+		var(--crest-glow-colour) calc(var(--disc-edge) - var(--glow-half)),
+		var(--crest-glow-colour) calc(var(--disc-edge) + var(--glow-half)),
+		transparent calc(var(--disc-edge) + var(--glow-half))
+	);
+	--ring-glow-blur: blur(calc(var(--crest-glow-blur) / 2));
+	--ring-crest: conic-gradient(from 0deg at var(--disc-at), var(--crest-from), var(--crest-to) 50%, var(--crest-from));
+	--ring-crest-line: radial-gradient(
+		circle at var(--disc-at),
+		transparent calc(var(--disc-edge) - var(--crest-half)),
+		#000 calc(var(--disc-edge) - var(--crest-half)),
+		#000 calc(var(--disc-edge) + var(--crest-half)),
+		transparent calc(var(--disc-edge) + var(--crest-half))
+	);
 }
 
 /*

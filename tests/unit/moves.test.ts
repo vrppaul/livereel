@@ -910,10 +910,66 @@ test("a sweep holds a picture of the whole screen as it begins, which its band s
 		(await plain(opening, 0.5)).screen.sweep
 	]).toEqual([
 		[WHOLE_SCREEN, WHOLE_SCREEN],
-		{ picture: 1, from: 'right', slant: -28, width: 90, crest: { start: '#5b8def', end: null }, swept: 0.25 },
+		{
+			kind: 'band',
+			picture: 1,
+			from: 'right',
+			slant: -28,
+			width: 90,
+			crest: { start: '#5b8def', end: null },
+			swept: 0.25
+		},
 		null,
-		{ picture: 2, from: 'left', slant: 30, width: 160, crest: { start: null, end: null }, swept: 0.5 }
+		{ kind: 'band', picture: 2, from: 'left', slant: 30, width: 160, crest: { start: null, end: null }, swept: 0.5 }
 	]);
+});
+
+test('a sweep opening round a block of the page holds a picture of the whole screen and opens round the middle of the block as far as it has come, as wide as the film names', async () => {
+	const opening = openingScene(FULL_HD, LIVEREELS_LOOK);
+	const pictures = new PicturesHeld();
+	const begun = await screenSweep({ round: '#block', width: 90 }).begin(beginningHolding(opening, FULL_HD, pictures));
+	expect([pictures.parts, (await begun(opening, 0.25)).screen.sweep]).toEqual([
+		[WHOLE_SCREEN],
+		{
+			kind: 'disc',
+			picture: 1,
+			round: { left: 150, top: 120 },
+			width: 90,
+			crest: { start: null, end: null },
+			swept: 0.25
+		}
+	]);
+});
+
+test('a sweep named both a block to open round and a side or a slant to come from is refused as the move is made', () => {
+	const said =
+		'screen.sweep opens round a block or comes from a side of the window: give it `round`, or `from` and `slant`, not both';
+	expect(() => screenSweep({ round: '#block', from: 'left' })).toThrow(new FilmError(said));
+	expect(() => screenSweep({ round: '#block', slant: 10 })).toThrow(new FilmError(said));
+});
+
+test("a disc sweeping the screen moves on the frame as far as its ring grows, so a fast one is drawn at moments of a frame's time", async () => {
+	// Its ring grows from 45 inside the block's middle to 45 past the screen's farthest corner, a quarter of that way
+	const opening = openingScene(FULL_HD, LIVEREELS_LOOK);
+	const begun = await screenSweep({ round: '#block', width: 90 }).begin(
+		beginningHolding(opening, FULL_HD, new PicturesHeld())
+	);
+	const quarterOfTheWay = (Math.hypot(1920 - 150, 1080 - 120) + 90) / 4;
+	expect(frameShiftBetween(await begun(opening, 0.25), await begun(opening, 0.5), FULL_HD)).toBeCloseTo(
+		quarterOfTheWay
+	);
+});
+
+test("a disc's ring growing while the camera pans down moves on the frame as far as its point that goes farthest, its top", async () => {
+	// The camera at a zoom of 2 over the screen's middle, the disc 160 wide round it, its ring 40 of the screen's pixels
+	// half: at a quarter of its way with the camera at 540, its radius 117.68 and its top at 304.64 on the frame; at
+	// 0.28 with the camera 30 lower, 140.89 and 198.22. Its top goes 106.42; its point right of its middle 75.86
+	const opening = openingScene(FULL_HD, LIVEREELS_LOOK);
+	const atTheMiddle = await setIn(cameraTo({ focusX: 960, focusY: 540, zoom: 2 }), opening, 1, FULL_HD);
+	const lower = await setIn(cameraTo({ focusX: 960, focusY: 570, zoom: 2 }), opening, 1, FULL_HD);
+	const round = { left: 940, top: 520, width: 40, height: 40 };
+	const begun = await screenSweep({ round }).begin(beginningHolding(atTheMiddle, FULL_HD, new PicturesHeld()));
+	expect(frameShiftBetween(await begun(atTheMiddle, 0.25), await begun(lower, 0.28), FULL_HD)).toBeCloseTo(106.42);
 });
 
 test("a band sweeping the screen moves on the frame as far as it crosses the window, so a fast one is drawn at moments of a frame's time", async () => {

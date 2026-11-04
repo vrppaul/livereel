@@ -10,6 +10,7 @@
  * module from a file; nothing else runs in the stage page, so its names stand alone there.
  */
 /** @import { DrawnScene, PropName } from '../src/scene.ts' */
+/** @import { DrawnSweep } from '../src/props/screen.ts' */
 /** @import { ShownLine } from '../src/props/terminal.ts' */
 /** @import { DrawnPin } from '../src/props/pins.ts' */
 /** @import { DrawnWords, Piece } from '../src/props/words.ts' */
@@ -63,11 +64,13 @@ const CUSTOM_PROPERTY = '--';
 const PAGE_PICTURE = '--page-picture';
 const PIECE_PICTURE = '--piece-picture';
 const PICTURE = 'data-picture';
-// The custom property the picture a band of light sweeps away is set as on its element, and the colours a film gives
-// the band's crest at its two ends, the stylesheet's accent standing at an end it gives none
+// The custom property the picture light sweeps away is set as on its element, the colours a film gives the light's
+// crest at its two ends, the stylesheet's accent standing at an end it gives none, and the attribute its shape is named
+// by, a band or a disc
 const SWEPT_PICTURE = '--swept-picture';
 const CREST_START = '--crest-start';
 const CREST_END = '--crest-end';
+const SHAPE = 'data-shape';
 // A page of the film's own: the class every page the screen shows takes, the attribute it is known by, what it is
 // called, the attribute the one a frame shows takes, and the one the screen takes while it shows one
 const PAGE = 'page';
@@ -246,7 +249,7 @@ function shadeDrawn(root, shade) {
 
 /**
  * The screen: how far it has come up, what it shows, the filmed page or one of the film's own laid on it, and the
- * picture a band of light sweeps away over it.
+ * picture light sweeps away over it, a band or a disc.
  */
 class ScreenDrawer {
 	/** @param {Staged} root @param {ReadonlyMap<string, HTMLIFrameElement>} ownPages */
@@ -255,7 +258,6 @@ class ScreenDrawer {
 		this.ownPages = ownPages;
 		this.sweep = partOf(root, 'sweep');
 		this.swept = partOf(root, 'swept');
-		this.band = partOf(root, 'band');
 	}
 
 	/** @param {DrawnScene} scene */
@@ -264,17 +266,18 @@ class ScreenDrawer {
 		const shownKey = ownPageShown(scene.screen.shows);
 		this.root.toggleAttribute(SHOWS_OWN, shownKey !== NAMELESS);
 		for (const [key, frame] of this.ownPages) frame.toggleAttribute(SHOWN, key === shownKey);
-		sweepDrawn(this.sweep, this.swept, this.band, scene.screen.sweep);
+		sweepDrawn(this.sweep, this.swept, scene.screen.sweep);
 	}
 }
 
 /**
- * The picture a band of light sweeps away, from the held picture it is, cut along the band's line where the band has
- * still to sweep, and the band over it, as wide as the film has it, its crest in its colours; neither where no band
- * sweeps the screen. The line's numbers are set on the part both stand in, which they are drawn by.
- * @param {Staged} part @param {Staged} swept @param {Staged} band @param {DrawnScene['screen']['sweep']} sweep
+ * The picture light sweeps away, from the held picture it is, cut where the light has still to sweep, and the light over
+ * it in its shape, a band or a disc's ring, as wide as the film has it, its crest in its colours; neither where none
+ * sweeps the screen. The shape is named on the part they stand in, and its numbers and the crest's colours set there,
+ * which they are drawn by.
+ * @param {Staged} part @param {Staged} swept @param {DrawnScene['screen']['sweep']} sweep
  */
-function sweepDrawn(part, swept, band, sweep) {
+function sweepDrawn(part, swept, sweep) {
 	shown(part, sweep !== null);
 	if (sweep === null) {
 		swept.style.removeProperty(SWEPT_PICTURE);
@@ -282,17 +285,31 @@ function sweepDrawn(part, swept, band, sweep) {
 	}
 	// CSS takes no address out of a custom property into a url(), so the url() is written whole here
 	swept.style.setProperty(SWEPT_PICTURE, `url("${heldPicture(sweep.picture).src}")`);
-	numbered(part, {
-		'--band-start-left': sweep.band.start.left,
-		'--band-start-top': sweep.band.start.top,
-		'--band-end-left': sweep.band.end.left,
-		'--band-end-top': sweep.band.end.top,
-		'--ahead-across': sweep.ahead.left,
-		'--ahead-down': sweep.ahead.top,
-		'--band-width': sweep.width
-	});
-	givenOrNone(band, CREST_START, sweep.crest.start);
-	givenOrNone(band, CREST_END, sweep.crest.end);
+	named(part, SHAPE, sweep.shape.kind);
+	numbered(part, { ...shapeNumbersOf(sweep.shape), '--sweep-width': sweep.width });
+	givenOrNone(part, CREST_START, sweep.crest.start);
+	givenOrNone(part, CREST_END, sweep.crest.end);
+}
+
+/**
+ * The numbers a sweep's shape is drawn by: a band's line and how far past it the picture still to sweep reaches; a
+ * disc's middle and radius.
+ * @param {DrawnSweep['shape']} shape @returns {Record<string, number>}
+ */
+function shapeNumbersOf(shape) {
+	switch (shape.kind) {
+		case 'band':
+			return {
+				'--band-start-left': shape.band.start.left,
+				'--band-start-top': shape.band.start.top,
+				'--band-end-left': shape.band.end.left,
+				'--band-end-top': shape.band.end.top,
+				'--ahead-across': shape.ahead.left,
+				'--ahead-down': shape.ahead.top
+			};
+		case 'disc':
+			return { '--disc-left': shape.middle.left, '--disc-top': shape.middle.top, '--disc-radius': shape.radius };
+	}
 }
 
 /**

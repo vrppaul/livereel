@@ -190,7 +190,7 @@ body {
 	pointer-events: none;
 }
 
-/* A band of light sweeping away the picture the screen showed (`src/props/screen.ts`), over the page in the screen's pixels, so the camera and the window carry it with the page, under the holes, the light and the cursor; cut at the screen's edge and rounded as it is, as the band would light the ground past it */
+/* Light sweeping away the picture the screen showed, a band or a disc (`src/props/screen.ts`), over the page in the screen's pixels, so the camera and the window carry it with the page, under the holes, the light and the cursor; cut at the screen's edge and rounded as it is, as the light would light the ground past it */
 .sweep {
 	position: absolute;
 	inset: 0;
@@ -199,12 +199,19 @@ body {
 	pointer-events: none;
 }
 
-/* The picture swept away, cut to where the band has still to sweep: from the band's line on past the screen's far side */
+/* The picture swept away, cut to where the light has still to sweep: from a band's line on past the screen's far side, or outside a disc */
 .swept {
 	position: absolute;
 	inset: 0;
 	background-image: var(--swept-picture);
 	background-size: 100% 100%;
+}
+
+[data-shape='disc'] .swept {
+	mask-image: var(--outside-the-disc);
+}
+
+[data-shape='band'] .swept {
 	clip-path: polygon(
 		calc(var(--band-start-left) * 1px) calc(var(--band-start-top) * 1px),
 		calc(var(--band-end-left) * 1px) calc(var(--band-end-top) * 1px),
@@ -217,8 +224,7 @@ body {
 .band {
 	--band-across: calc((var(--band-end-left) - var(--band-start-left)) * 1px);
 	--band-down: calc((var(--band-end-top) - var(--band-start-top)) * 1px);
-	--band-thickness: calc(var(--band-width) * var(--pane-scale) * 1px);
-	--crest-thickness: 7px;
+	--band-thickness: calc(var(--sweep-width) * var(--pane-scale) * 1px);
 
 	position: absolute;
 	left: calc(var(--band-start-left) * 1px);
@@ -236,10 +242,40 @@ body {
 	left: 0;
 	right: 0;
 	top: 50%;
-	height: calc(var(--crest-thickness) * var(--pane-scale));
+	height: var(--crest-thickness);
 	translate: 0 -50%;
 	background: var(--crest);
 	box-shadow: var(--crest-glow);
+}
+
+/* A disc's ring of light, over the whole screen round the disc's middle: its sheen, over it its glow, and over that its crest */
+.ring {
+	position: absolute;
+	inset: 0;
+	background: var(--ring-sheen);
+}
+
+.ring::before,
+.ring::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+}
+
+.ring::before {
+	background: var(--ring-glow);
+	filter: var(--ring-glow-blur);
+}
+
+.ring::after {
+	background: var(--ring-crest);
+	mask-image: var(--ring-crest-line);
+}
+
+/* The light of each shape is drawn in its own alone */
+[data-shape='disc'] .band,
+[data-shape='band'] .ring {
+	visibility: hidden;
 }
 
 /* The holes pieces of the page leave, laid on the screen in its pixels, so the camera and the window carry them with the page */
@@ -1404,7 +1440,7 @@ body {
 	outline: var(--stroke-width) solid var(--ring-line);
 }
 
-/* The page shaded as the window has it (`src/props/window.ts`): the screen faded into the film's ground, with all it holds; the page, the picture a band sweeps away and the holes in it blurred, in pixels of a frame 1080 high, which the camera's zoom would scale, the band of light kept sharp as the light is; and the dark laid over the screen as far as it is dimmed. The window's edge and shadow keep as they stand, and an unshaded page is drawn with none of it */
+/* The page shaded as the window has it (`src/props/window.ts`): the screen faded into the film's ground, with all it holds; the page, the picture light sweeps away and the holes in it blurred, in pixels of a frame 1080 high, which the camera's zoom would scale, the sweep's own light kept sharp as the light is; and the dark laid over the screen as far as it is dimmed. The window's edge and shadow keep as they stand, and an unshaded page is drawn with none of it */
 [data-shaded] .screen {
 	opacity: calc(var(--screen-shown) * (1 - var(--shade-fade)));
 }

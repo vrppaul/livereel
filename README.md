@@ -173,7 +173,7 @@ and the moves of each part of the scene:
   `code.hide({ toward, leave, edge })`; each move of a title or code takes `as` to name which
 - `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
   whole frame where they come up, over every other object, the keys over the caption, one of each
-- `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`, `screen.sweep({ from, slant, width, crest })`
+- `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`, `screen.sweep({ from, slant, round, width, crest })`
 - `terminal.open(title, { at, from, enter, edge, inside, group, zIndex })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
   `terminal.lean({ tilt, turn, roll })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
@@ -535,7 +535,14 @@ theme turned dark, comes in behind the band. The band crosses what the
 window shows of the screen from its left, or the side `from` names, slanted
 30° clockwise, or as far as `slant` names, 160 pixels of a frame 1080 high
 wide, or `width`, its crest in the look's accent as it stands, or running
-from `crest.start`, at its end nearer the top, to `crest.end`. The picture
+from `crest.start`, at its end nearer the top, to `crest.end`. Or a disc
+opens `round` a block, a selector or a box of the screen, at its middle,
+its ring of light growing from there, or from the nearest point the window
+shows where it shows no middle, to past the farthest corner the window
+shows, the picture kept outside it: its middle rides with the page, and how
+far it reaches is the window's; its crest runs from `crest.start`
+at its top round to `crest.end` at its bottom. A sweep is a band or a disc:
+one named both `round` and `from` or `slant` is refused. The picture
 is held as the sweep begins, so put the act a moment after it, `within:
 { start: 0.02 }`: one at the same moment would be done first and lie under
 the picture, and the play refuses it. An act in a step before the sweep's
