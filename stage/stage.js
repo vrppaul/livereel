@@ -96,8 +96,10 @@ const WAY_CUT = 'data-way-cut';
 // window shades the page by, which it has not where the page is unshaded: so neither is drawn with a filter at all
 const EFFECTS = 'data-effects';
 const SHADED = 'data-shaded';
-// The colour of an object's ring and glow the film gave it, which one in the look's accent has not
+// The colour of an object's ring and glow the film gave it, which one in the look's accent has not; and the side of
+// its figure an object melts toward, which one melting none has not, so it is drawn with no mask at all
 const EFFECT_COLOUR = '--effect-colour';
+const MELT_TOWARD = 'data-melt-toward';
 // The attribute what the eye's focus blurs is drawn with, which what it draws sharp has not, so that is drawn with no
 // filter at all
 const OUT_OF_FOCUS = 'data-out-of-focus';
@@ -516,6 +518,7 @@ class StagedObject {
 		transformed(this.element, object.transform);
 		this.element.setAttribute(FACE, object.face);
 		wayDrawn(this.way, object.onItsWay);
+		meltDrawn(this.way, object.melt);
 		effectsDrawn(this.element, object.effects);
 		focusDrawn(this.element, object.outOfFocus);
 		this.content.draw(object.content);
@@ -549,6 +552,17 @@ function effectsDrawn(element, effects) {
 		'--effect-blur': effects.blur
 	});
 	givenOrNone(element, EFFECT_COLOUR, effects.colour);
+}
+
+/**
+ * An object's figure melted into nothing toward a side of it, from as far in as the melt goes, drawn on the part it
+ * stands in and named by its side, so the shadow and glow its object casts follow what is left; with no mask at all,
+ * where it melts none.
+ * @param {Staged} way @param {DrawnObject['melt']} melt
+ */
+function meltDrawn(way, melt) {
+	named(way, MELT_TOWARD, melt === null ? null : melt.toward);
+	if (melt !== null) numbered(way, { '--melt': melt.share });
 }
 
 /**

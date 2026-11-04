@@ -64,6 +64,7 @@ import {
 } from '../../src/moves/terminal.ts';
 import { keystrokes } from '../../src/domain/typing.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
+import { NO_EFFECTS } from '../../src/props/effects.ts';
 import { OWN_WAY } from '../../src/props/way.ts';
 import { appearedOf, comingUpIn, groundOf, saidOf } from '../../src/props/words.ts';
 import {
@@ -161,6 +162,7 @@ const TYPED = withObject(openingScene(SMALL, LIVEREELS_LOOK), 'terminal', {
 	inside: { kind: 'frame' },
 	box: BLOCK,
 	...AS_PLACED,
+	...NO_EFFECTS,
 	shown: 1,
 	gone: 0,
 	way: OWN_WAY,
@@ -1451,6 +1453,29 @@ test("an object's ring and glow are drawn in the look's accent as it stands, non
 		HALF_WAY_FROM_BLUE_TO_GREEN,
 		READERS_BLUE
 	]);
+});
+
+test('an object melts into nothing toward a side of what it shows, from as far in as the film names, a share of it: as far as its move has come, standing out in no way for it, and drawn with no melt where it melts none', async () => {
+	const titled = await setAt(title.show('Lifted', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const halfway = await setAt(title.effects({ melt: { toward: 'right', share: 0.6 } }), titled, 0.5);
+	const melted = await setAt(title.effects({ melt: { toward: 'right', share: 0.6 } }), titled, 1);
+	const back = await setAt(title.effects({ melt: { toward: 'right', share: 0 } }), melted, 1);
+	const drawn = [halfway, melted, back].map((scene) => drawnObjectsIn(scene, SMALL)[0]!);
+	expect(drawn.map((object) => [object.melt, object.effects])).toEqual([
+		[{ toward: 'right', share: 0.3 }, null],
+		[{ toward: 'right', share: 0.6 }, null],
+		[null, null]
+	]);
+});
+
+test('a melt turned to another side while the object melts is refused as its move begins', async () => {
+	const titled = await setAt(title.show('Lifted', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const melted = await setAt(title.effects({ melt: { toward: 'right', share: 0.6 } }), titled, 1);
+	await expect(async () =>
+		title.effects({ melt: { toward: 'left', share: 0.6 } }).begin(beginningOf(melted))
+	).rejects.toThrow(
+		new FilmError('title.effects turns the title to melt toward another side while it melts: melt it to none first')
+	);
 });
 
 test('a colour alone does not make an object stand out: one with no ring, glow, shadow or blur is drawn standing out in no way', async () => {

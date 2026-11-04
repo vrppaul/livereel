@@ -130,3 +130,36 @@
 		blur(calc(var(--effect-blur) * 1px));
 	--ring-line: color-mix(in srgb, var(--effect-drawn-in) calc(var(--effect-ring) * 100%), transparent);
 }
+
+/*
+ * How an object's figure melts into nothing toward a side of it (`src/props/effects.ts`), worked out on the part the
+ * figure stands in, where the stage sets how far: a mask whole until as far in from that side as the melt goes, clear
+ * at the side; laid on a tile as far past the figure on every side as the frame is wide, so what the figure draws past
+ * its box, a ring or a pane's shadow, stands whole where it does not melt, and the shadow and glow the object casts
+ * from what is left follow it.
+ */
+.way {
+	--melt-past: 100vmax;
+	--melt-mask: linear-gradient(
+		var(--melt-direction),
+		#000 calc(var(--melt-past) + (1 - var(--melt)) * (100% - 2 * var(--melt-past))),
+		transparent calc(100% - var(--melt-past))
+	);
+}
+
+/* The way a melt runs: toward the side of the figure it melts into nothing at */
+[data-melt-toward='left'] {
+	--melt-direction: to left;
+}
+
+[data-melt-toward='right'] {
+	--melt-direction: to right;
+}
+
+[data-melt-toward='top'] {
+	--melt-direction: to top;
+}
+
+[data-melt-toward='bottom'] {
+	--melt-direction: to bottom;
+}

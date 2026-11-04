@@ -5,12 +5,12 @@
  * a side of the frame, pushing the object of its name standing there off past the side across; carried to another
  * place, growing and coming toward the eye on the way, to a box read off the page, or onto a block of the page to lie
  * there; leant and rolled; set apart from what lies under it, ringed and glowing in the accent or a colour of the
- * film's, casting a shadow, blurred, grown or brought toward the eye where it stands (`src/props/effects.ts`); taken
- * back to stand as its box places it; put away where it stands, in its own way or one of livereel's, or slid out past
- * a side. A move takes the object a film names `as`, or its kind's own name, so a film shows several of a kind at once,
- * each moved by its name. What differs by what an object shows is told here, kind by kind: the curve it comes up on in
- * its own way, whether it is ever carried or leant, how it reads a place, and the box it sets off from as it is
- * carried.
+ * film's, casting a shadow, blurred, melted toward a side, grown or brought toward the eye where it stands
+ * (`src/props/effects.ts`); taken back to stand as its box places it; put away where it stands, in its own way or one
+ * of livereel's, or slid out past a side. A move takes the object a film names `as`, or its kind's own name, so a film
+ * shows several of a kind at once, each moved by its name. What differs by what an object shows is told here, kind by
+ * kind: the curve it comes up on in its own way, whether it is ever carried or leant, how it reads a place, and the
+ * box it sets off from as it is carried.
  *
  * A move that carries an object to a place sets its box and the scale and depth the film names, one that carries it to
  * a box read off the page its box, one that carries it onto a block of the page what it stands in and its box, one
@@ -54,10 +54,12 @@ import {
 	A_PIXELS,
 	A_SHARE,
 	type Form,
+	OfForm,
 	assertKind,
 	assertWritten,
 	namesGiven,
-	namesSetBy
+	namesSetBy,
+	needed
 } from '../domain/handed.ts';
 import { AS_PLACED, A_DEPTH, A_SCALE, type Orientation, faceOnNearest, orientationToward } from '../domain/stance.ts';
 import {
@@ -198,9 +200,10 @@ export interface ObjectLeanScript extends LeanScript, NamedScript {
 
 /**
  * Which object stands out, and how: a `ring` along its edge, a `glow` round it and a `shadow` under it, each from 0
- * none to 1 whole, how far it is blurred, `blur`, the `colour` of its ring and glow in hex, how many times as large it
- * stands about its middle, `scale`, and how far out toward the eye, `depth`, a blur and a depth in pixels of a frame
- * 1080 high; any left out as it stands.
+ * none to 1 whole, how far it is blurred, `blur`, the `colour` of its ring and glow in hex, how far in from a side of
+ * what it shows it melts into nothing there, `melt`, a share of it, how many times as large it stands about its
+ * middle, `scale`, and how far out toward the eye, `depth`, a blur and a depth in pixels of a frame 1080 high; any left
+ * out as it stands.
  */
 export interface EffectsScript extends TimingScript, NamedScript {
 	readonly ring?: number;
@@ -208,8 +211,15 @@ export interface EffectsScript extends TimingScript, NamedScript {
 	readonly shadow?: number;
 	readonly blur?: number;
 	readonly colour?: string;
+	readonly melt?: MeltScript;
 	readonly scale?: number;
 	readonly depth?: number;
+}
+
+/** How an object melts, as a film writes it: the side of what it shows it melts toward, and how far in, from 0 to 1. */
+interface MeltScript {
+	readonly toward: FrameSide;
+	readonly share: number;
 }
 
 /** What an object comes up showing, and the box of the frame it comes up in. */
@@ -244,6 +254,10 @@ export const GROUPED_FORM: Form<GroupedScript> = { group: A_NAME, zIndex: A_NUMB
 export const NESTED_FORM: Form<NestedScript> = { inside: AN_INSIDE, ...GROUPED_FORM };
 // What an object stands in that a film shows inside what it names
 const HOLDER_INSIDE: { readonly [Name in Inside]: Holder } = { window: IN_THE_WINDOW, world: IN_THE_WORLD };
+const A_MELT = new OfForm<MeltScript>(
+	{ toward: needed(A_FRAME_SIDE), share: needed(A_SHARE) },
+	'a melt: { toward, share }, a side of what an object shows and how far in from it it melts, from 0 to 1'
+);
 export const TO_FORM: Form<ToScript> = {
 	scale: A_SCALE,
 	depth: A_DEPTH,
@@ -260,6 +274,7 @@ const EFFECTS_FORM: Form<EffectsScript> = {
 	shadow: A_SHARE,
 	blur: A_PIXELS,
 	colour: A_COLOUR,
+	melt: A_MELT,
 	scale: A_SCALE,
 	depth: A_DEPTH,
 	...NAMED_FORM,
@@ -429,9 +444,9 @@ function carriedNamed(script: ToScript): readonly (keyof Carried)[] {
 }
 
 /**
- * An object of a kind standing out as the film names, with a ring, a glow, a shadow or a blur, or larger or nearer the
- * eye where it stands; it sets those alone, so it shares a step with a move that carries it, one that leans it, or
- * another of how it stands out naming others.
+ * An object of a kind standing out as the film names, with a ring, a glow, a shadow or a blur, a colour of its ring
+ * and glow, a melt toward a side, or larger or nearer the eye where it stands; it sets those alone, so it shares a step
+ * with a move that carries it, one that leans it, or another of how it stands out naming others.
  */
 export function objectEffects(kind: ObjectKind, move: string, script: EffectsScript): Move {
 	assertWritten(script, EFFECTS_FORM, move);
@@ -872,11 +887,20 @@ function standingOut(
 		shadow: fractionOf(script.shadow ?? object.shadow),
 		blur: script.blur ?? object.blur,
 		colour: script.colour ?? from.colour,
+		melt: script.melt === undefined ? object.melt : { ...script.melt, share: fractionOf(script.melt.share) },
 		scale: script.scale ?? object.scale,
 		depth: depthAsked(script.depth, object.depth, beginning.format.frame)
 	};
 	refuseNearingInside(object, to.depth, name, move);
+	refuseMeltTurned(object, to, name, move);
 	return writing(name, (progress) => namedToward(EFFECTS_IN_PLACE, from, to, names, progress));
+}
+
+/** Refuses a melt turned to another side while the object melts, which would jump there at once. */
+function refuseMeltTurned(object: FrameObject, to: EffectsInPlace, name: ObjectName, move: string): void {
+	if (object.melt.share > NONE && to.melt.toward !== object.melt.toward) {
+		throw new FilmError(`${move} turns the ${name} to melt toward another side while it melts: melt it to none first`);
+	}
 }
 
 /**

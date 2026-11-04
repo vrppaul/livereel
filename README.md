@@ -193,9 +193,10 @@ and the moves of each part of the scene:
 - `lens.show(target, { magnification, size, enter, edge, as, group, zIndex })`, `lens.to(target)`,
   `lens.hide({ toward, leave, edge })`; a round glass over the page, showing what lies under its middle magnified; each
   move of it takes `as` to name which
-- `title.effects({ ring, glow, shadow, blur, colour, scale, depth })`, and so `code.effects`, `terminal.effects`,
-  `piece.effects`, `outline.effects` and `lens.effects`: how the object stands out, ringed and glowing in the accent or
-  a `colour` of the film's, casting a shadow, blurred, grown or brought toward the eye where it stands
+- `title.effects({ ring, glow, shadow, blur, colour, melt, scale, depth })`, and so `code.effects`,
+  `terminal.effects`, `piece.effects`, `outline.effects` and `lens.effects`: how the object stands out, ringed and
+  glowing in the accent or a `colour` of the film's, casting a shadow, blurred, melting toward a side, grown or
+  brought toward the eye where it stands
 - `group.show({ at, order })`, `group.to(place, { scale, depth })`, `group.lean({ tilt, turn, roll })`,
   `group.hide()`; a group of objects, turned, grown and brought near as one, each object in it as its own moves have
   it, drawn by the `zIndex` its show names, the higher over the lower, or, with `order: 'depth'`, the farther behind
@@ -379,7 +380,13 @@ film's, which they go to from the colour they were seen in, the accent's
 as it stood where they had none, or in the colour named all the way where
 they rise from none; where a film names none they follow the accent, as a
 look's move changes it. An outline's own line, a piece's lines and its
-hole's line stay in the look's accent. `scale` grows it about its middle where it stands, as `to` grows it
+hole's line stay in the look's accent. `melt: { toward: 'right', share:
+0.6 }` melts what it shows into nothing at its right side, from 0.6 of it
+in, as two halves of a page melt toward the middle as they part; its
+shadow and glow follow what is left, and what it draws past its edges
+stands whole where it does not melt. A melt turned to another side while
+the object melts is refused; one that only melts draws no filter.
+`scale` grows it about its middle where it stands, as `to` grows it
 where it goes, so a block lifted off the page grows in place though the
 film knows no place of it; `depth` brings it near the eye, larger and
 farther from the frame's middle. A shadow and a glow follow what the

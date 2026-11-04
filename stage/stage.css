@@ -1280,6 +1280,15 @@ body {
 	filter: var(--effects);
 }
 
+/* An object's figure melting into nothing toward a side of it, from as far in as the melt goes (`--melt-mask` in `tokens.css`), on the part it stands in, so the shadow and glow its object casts follow what is left; the mask's tile reaches past the figure, so nothing it draws past its box is cut where it does not melt. One melting none is drawn with no mask */
+[data-melt-toward] {
+	mask-image: var(--melt-mask);
+	mask-repeat: no-repeat;
+	mask-clip: no-clip;
+	mask-size: calc(100% + 2 * var(--melt-past)) calc(100% + 2 * var(--melt-past));
+	mask-position: calc(-1 * var(--melt-past)) calc(-1 * var(--melt-past));
+}
+
 .object[data-effects] .pane,
 .object[data-effects] .piece .way,
 .object[data-effects] .lens .way,

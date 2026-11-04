@@ -79,7 +79,7 @@ import { ONE_FRAME, pastTheEdge } from '../domain/place.ts';
 import { type DrawnStance, type Stance, drawnStance, stanceMatrix } from '../domain/stance.ts';
 import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
 import { type Code, type DrawnCode, drawnCode, scrolledShareOf } from './code.ts';
-import { type Effects, drawnEffects } from './effects.ts';
+import { type DrawnEffects, type Effects, type Melting, drawnEffects, drawnMelt } from './effects.ts';
 import { type DrawnEnding, type Ending, drawnEnding } from './ending.ts';
 import {
 	type Group,
@@ -199,8 +199,9 @@ export type Objects = ReadonlyMap<ObjectName, FrameObject>;
  * by that one — keys over a caption's, its box then the caption's to lay out — or none, its box in what it is laid in,
  * its transform about the box's middle and the side of it the eye sees, the layer it is drawn on, the higher over the
  * lower, how much of it what it stands in lets show, from 0 to 1, how far its figure's way has come, none where it is
- * on no way, how it stands out, none where it stands out in no way, how soft the eye's focus draws it, in pixels of a
- * frame 1080 high of its box before its matrix, none where sharp, and its content as drawn.
+ * on no way, how it stands out, none where it stands out in no way, how it melts toward a side of its figure, none
+ * where it melts none, how soft the eye's focus draws it, in pixels of a frame 1080 high of its box before its matrix,
+ * none where sharp, and its content as drawn.
  */
 export interface DrawnObject extends DrawnStance {
 	readonly name: ObjectName;
@@ -210,7 +211,8 @@ export interface DrawnObject extends DrawnStance {
 	readonly layer: number;
 	readonly held: number;
 	readonly onItsWay: OnItsWay | null;
-	readonly effects: Effects | null;
+	readonly effects: DrawnEffects | null;
+	readonly melt: Melting | null;
 	readonly outOfFocus: number | null;
 	readonly content: DrawnContent;
 }
@@ -493,8 +495,10 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	const over = drawnOver(object, around.caption);
 	const inside = laidIn(object.inside);
 	const effects = drawnEffects(object);
+	const melt = drawnMelt(object);
 	const outOfFocus = outOfFocusIn(object.inside, standing, around);
-	return { name, inside, over, box: standing.laid, ...stance, layer, held, onItsWay, effects, outOfFocus, content };
+	const laid = { name, inside, over, box: standing.laid, ...stance, layer, held };
+	return { ...laid, onItsWay, effects, melt, outOfFocus, content };
 }
 
 /**

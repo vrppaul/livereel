@@ -324,7 +324,12 @@ test('what a refusal says a film handed is said as it was, whatever JSON cannot 
 
 test("a move that sets the values a film names refuses one naming none, and each value in no kind it takes: an object's effects, the window's shade", () => {
 	expect(() => title.effects({})).toThrow(
-		new FilmError('title.effects names none of ring, glow, shadow, blur, colour, scale, depth')
+		new FilmError('title.effects names none of ring, glow, shadow, blur, colour, melt, scale, depth')
+	);
+	expect(() => piece.effects({ melt: { toward: 'middle', share: 0.5 } })).toThrow(
+		new FilmError(
+			'piece.effects\'s melt\'s toward is "middle": it is a side of the frame: "left", "right", "top" or "bottom"'
+		)
 	);
 	expect(() => piece.effects({ colour: 'blue' })).toThrow(
 		new FilmError('piece.effects\'s colour is "blue": it is a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa')
