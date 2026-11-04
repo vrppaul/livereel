@@ -438,6 +438,18 @@ with a timeout that long; a still takes seconds.
   softer. A piece grown larger, flat, stays sharp: it is drawn from a
   picture of its own block as close; one lifted `picture: 'held'`, a leant
   one and a lens soften past 2.2.
+- A screen taller than the frame, a page laid out whole as a runway the eye
+  flies low over (`screen: { width: 1040, height: 5000 }`), is pictured
+  whole each time the page changes, 1.8 s each in software at the finest
+  quality for 1040 × 5000: keep acts and typing on it few. On a graphics
+  card no picture is taken past the card's largest texture on a side
+  (16,384 px on an Intel Iris Xe), so a screen 1040 wide and over 3,723 px
+  tall shows its close shots softer there, and livereel warns once, naming
+  the zoom past which it is softer. In software, the default, it is taken
+  whole up to 14,886 px tall, but a fast film shoots far slower there: a
+  4 s probe of a low flight over 1040 × 5000 took 301 s in software
+  against 39 s on the card. Shoot the close shots in software, or keep the
+  camera under the zoom the warning names on the card.
 - The page is asked for the light colour scheme: an app that follows the
   system's scheme is filmed light, unless the film writes
   `colourScheme: 'dark'` in `defineFilm`.

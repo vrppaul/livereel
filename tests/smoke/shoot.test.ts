@@ -559,6 +559,32 @@ test("a page's picture taken anew takes the place of the last, which the stage l
 	await expect(stage.page.evaluate(fetchedAgain, first)).rejects.toThrow('Failed to fetch');
 });
 
+// A screen whose picture at livereel's closest would be taller than a JPEG holds, on a frame where a page's pixel takes
+// one of a picture's at a zoom of 1
+const PAST_A_JPEG = { frame: { width: 1080, height: 1080 }, screen: { width: 200, height: 30_000 } };
+const JPEG_SIDE = 65_500;
+const TALL_FILM = defineFilm({
+	formats: { tall: PAST_A_JPEG },
+	serve: () => Promise.resolve(atAddress(PAGE)),
+	ready: (context) => context.page.locator('h1').waitFor(),
+	steps: () => []
+}).formats.get('tall')!;
+
+test("a picture of a screen taller at livereel's closest than a JPEG holds is taken as close as one holds it, the person told once that it is drawn softer", async () => {
+	const warned: string[] = [];
+	const browser = new Chromium('software', (said) => warned.push(said));
+	await using opened = await browser.open({ ...TALL_FILM, ownPages: NO_OWN_PAGES }, PAGE, 1);
+	const stage = opened.stage as PlaywrightPicturedStage;
+	await stage.retakePage(ZOOM_AT_MOST);
+	await stage.retakePage(ZOOM_AT_MOST);
+	expect([(await stage.page.evaluate(pictureDrawnFrom)).height, warned]).toEqual([
+		JPEG_SIDE,
+		[
+			'a picture of 200 × 30000 px of the screen is taken as close as a camera at a zoom of 2.18, not the 2.2 asked, as a JPEG holds no more than 65500 px on a side: a camera or a piece closer than 2.18 shows it softer, and pictures taken short after it are not said'
+		]
+	]);
+});
+
 /** The dense page in a tab of its own, the stage showing its pictures at the draft's sharpness. */
 function denseOpened(): Promise<Opened> {
 	return new Chromium('software', WARNED_TO_NOBODY).open({ ...DENSE_FILM, ownPages: NO_OWN_PAGES }, DENSE, 1);

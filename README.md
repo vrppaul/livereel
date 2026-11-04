@@ -765,6 +765,13 @@ beside it: `square: { frame, screen, split: { wordsShare: 0.28 } }`. A
 split that leaves the words or the window no room on its frame is refused
 before anything is shot.
 
+A screen may be taller than the frame, a page laid out whole for the eye to
+fly low over: `screen: { width: 1040, height: 5000 }`. A static page's
+picture is then of the whole of it, taken anew each time the page changes,
+and costs as it grows: 1.8 s in software and 0.8 s on a graphics card for
+1040 × 5000 at the finest quality. A picture is taken no larger than
+Chrome takes one whole ("Limits").
+
 A format names where its captions stand, `captionAt: 'top'`, or at the
 frame's foot where it names none: a square may caption its top and a wide
 frame its foot, and a caption at the top leaves the foot to the keys.
@@ -905,6 +912,14 @@ clock is its frames.
   softer than the page itself. A piece of the page drawn closer, flat, is
   drawn from a picture of its own that close; one that holds its picture,
   a leant one and a lens are not.
+- A picture of the page, or of a part of it, is taken no larger than Chrome
+  takes one whole: no side past the 65,500 px a JPEG holds, nor, on a
+  graphics card, past the card's largest texture (16,384 px on an Intel
+  Iris Xe), and no more than 2 GiB. One asked larger is taken as large as
+  it may, softer, and livereel warns once, naming the zoom past which a
+  camera or a piece shows it softer: at the finest quality, a screen 1040
+  wide is pictured as sharp as a camera 2.2 times close needs up to 3,723
+  px tall on such a card, and up to 14,886 in software.
 - Chromium alone, headless.
 - The page is asked for reduced motion, and for the light colour scheme
   unless the film names the dark one. A page whose styles animate anyway

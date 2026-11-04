@@ -44,6 +44,16 @@ import type { PageKind, StagePlace } from '../../direction/film.ts';
 import type { ActContext, MeasuredPage, OwnPage, PageMotionSwitch } from '../../direction/page.ts';
 import type { CssNamed } from '../../direction/theme.ts';
 import type { Browser, Opened, PageTime, Setting, Stage } from '../../studio/ports.ts';
+import {
+	BYTES_A_MEGABYTE,
+	BYTES_A_PIXEL,
+	NO_MEMORY,
+	type PictureBound,
+	boundsOf,
+	cardSideOf,
+	picturePixelsAtMost,
+	picturesMemoryOf
+} from './bounds.ts';
 import { ChangesHeard } from './changes.ts';
 import { PlaywrightPageTime } from './clock.ts';
 import { stagedInside } from './inside.ts';
@@ -132,10 +142,15 @@ interface Forcing {
 	readonly stageAtTheTop: boolean;
 }
 
-/** How the stage draws a frame: as sharp as the film is shot, and how many of its exposures at once. */
+/**
+ * How a stage showing the page's pictures draws a frame: how many of a picture's pixels a page's pixel takes for a
+ * camera at a zoom of 1, as sharp as the film is shot; how many of its exposures at once; and the bounds its pictures
+ * are taken within.
+ */
 interface StageDrawing {
-	readonly sharpness: number;
+	readonly pixelsAtZoomOne: number;
 	readonly exposuresAtOnce: number;
+	readonly bounds: readonly PictureBound[];
 }
 
 /** The browser, and the tab the filmed page stands in: the stage's own, or a tab of its own. */
@@ -153,10 +168,14 @@ const CARD_INTERFACES = { linux: 'vulkan', darwin: 'metal', win32: 'd3d11' } as 
 const COMPOSITING = 'gpu_compositing';
 const ON_THE_CARD = 'enabled';
 const UNTOLD = '--renderer gpu: Chrome did not tell whether it reached a graphics card';
+const NO_CARD_SIDE =
+	"--renderer gpu: Chrome gives the page no WebGL to read the graphics card's largest texture by, so a picture of the " +
+	'page larger than it on a side may come out wrong with no error: shoot a tall or wide screen in software';
 // The flag telling Chrome how much GPU memory it has, in megabytes, and how much it needs told for each byte of the
 // stage's copies of a frame to draw them whole: 16 copies of a 3840 × 2160 frame, as the README film shoots, drew the
 // window pushing the card off whole at 4 times their bytes, as at 5 and 6, and left the page's tiles grey at 3, with
-// no error (measured 2026-10-30); a frame larger, or a card with less memory, is not tried
+// no error (measured 2026-10-30); a frame larger, or a card with less memory, is not tried. The page's pictures need
+// memory of their own, added to it (`bounds.ts`)
 const GPU_MEMORY = '--force-gpu-mem-available-mb=';
 const GPU_MEMORY_FOR_A_COPY_BYTE = 4;
 // How many exposures of a frame the stage lays over one another at most; a frame of more is captured at each. With a
@@ -164,8 +183,6 @@ const GPU_MEMORY_FOR_A_COPY_BYTE = 4;
 // 510 ms, SSIM 0.9947; 32 in 1297 ms, 0.9885, edges banded; 64 in 8125 ms, 0.976, no quicker than its 64 captures
 // (the review of ac4d1ca, 2026-10-30)
 const LAID_AT_ONCE_AT_MOST = 16;
-const BYTES_A_PIXEL = 4;
-const BYTES_A_MEGABYTE = 1_048_576;
 
 type System = keyof typeof CARD_INTERFACES;
 
@@ -220,12 +237,25 @@ function exposuresOnTheCardOf(page: PageKind, blur: MotionBlur | null): number {
 	}
 }
 
-/** The flags that tell Chrome it has GPU memory enough for the stage's copies of a frame, where it draws several. */
-function gpuMemoryFlagsOf(exposuresAtOnce: number, frame: Size, sharpness: number): readonly string[] {
-	if (exposuresAtOnce === ONE_AT_A_TIME) return [];
+/**
+ * The flags that tell Chrome it has GPU memory enough for the stage's copies of a frame, where it draws several, and
+ * for the page's pictures of so many pixels at most; none where neither needs more than Chrome holds by itself.
+ */
+export function gpuMemoryFlagsOf(
+	exposuresAtOnce: number,
+	frame: Size,
+	sharpness: number,
+	picturePixels: number
+): readonly string[] {
+	const megabytes = copiesMemoryOf(exposuresAtOnce, frame, sharpness) + picturesMemoryOf(picturePixels);
+	return megabytes === NO_MEMORY ? [] : [`${GPU_MEMORY}${megabytes}`];
+}
+
+/** The GPU memory the stage's copies of a frame need told, in megabytes: none where it draws one at a time. */
+function copiesMemoryOf(exposuresAtOnce: number, frame: Size, sharpness: number): number {
+	if (exposuresAtOnce === ONE_AT_A_TIME) return NO_MEMORY;
 	const copyBytes = frame.width * sharpness * (frame.height * sharpness) * BYTES_A_PIXEL;
-	const megabytes = Math.ceil((GPU_MEMORY_FOR_A_COPY_BYTE * exposuresAtOnce * copyBytes) / BYTES_A_MEGABYTE);
-	return [`${GPU_MEMORY}${megabytes}`];
+	return Math.ceil((GPU_MEMORY_FOR_A_COPY_BYTE * exposuresAtOnce * copyBytes) / BYTES_A_MEGABYTE);
 }
 
 export class Chromium implements Browser {
@@ -239,9 +269,12 @@ export class Chromium implements Browser {
 
 	async open(setting: Setting, address: string, sharpness: number): Promise<Opened> {
 		const exposuresAtOnce = exposuresAtOnceOf(this.renderer, setting.page, setting.motionBlur);
-		const browser = await launched(this.renderer, gpuMemoryFlagsOf(exposuresAtOnce, setting.format.frame, sharpness));
+		const pixelsAtZoomOne = sharpness * frameScaleOf(setting.format.frame);
+		const picturePixels = picturePixelsAtMost(setting.page, setting.format.screen, pixelsAtZoomOne);
+		const memory = gpuMemoryFlagsOf(exposuresAtOnce, setting.format.frame, sharpness, picturePixels);
+		const browser = await launched(this.renderer, memory);
 		try {
-			await whereItDrawsChecked(this.renderer, browser, this.warn);
+			const onTheCard = await drawsOnTheCard(this.renderer, browser, this.warn);
 			const stage = await browser.newPage({
 				viewport: setting.format.frame,
 				deviceScaleFactor: sharpness,
@@ -249,8 +282,11 @@ export class Chromium implements Browser {
 			});
 			await unreadRefused(stage, setting.blurred);
 			switch (setting.page) {
-				case 'static':
-					return await pictured(browser, stage, setting, address, { sharpness, exposuresAtOnce }, this.warn);
+				case 'static': {
+					const bounds = boundsOf(picturePixels, await cardSideIn(onTheCard, stage, this.warn));
+					const drawing = { pixelsAtZoomOne, exposuresAtOnce, bounds };
+					return await pictured(browser, stage, setting, address, drawing, this.warn);
+				}
 				case 'dynamic':
 					return await framedLive(browser, stage, setting, address, this.warn);
 			}
@@ -300,10 +336,9 @@ async function pictured(
 	drawing: StageDrawing,
 	warn: Warn
 ): Promise<Opened> {
-	const { sharpness, exposuresAtOnce } = drawing;
+	const { pixelsAtZoomOne, exposuresAtOnce, bounds } = drawing;
 	await stageApartOpened(stage);
 	await stageSetUp(stage, setting, exposuresAtOnce);
-	const pixelsAtZoomOne = sharpness * frameScaleOf(setting.format.frame);
 	const filmed = await browser.newPage({
 		viewport: setting.format.screen,
 		deviceScaleFactor: pixelsAtZoomOne * ZOOM_AT_MOST,
@@ -316,8 +351,8 @@ async function pictured(
 	const watch = new TabWatch(filmed, address);
 	await reached(filmed, address);
 	const session = await filmed.context().newCDPSession(filmed);
-	const filmedTab = { tab: filmed, session, screen: setting.format.screen, pixelsAtZoomOne, changes };
-	const picturedStage = new PlaywrightPicturedStage(stage, filmedTab, watch, exposuresAtOnce);
+	const filmedTab = { tab: filmed, session, screen: setting.format.screen, pixelsAtZoomOne, bounds, changes };
+	const picturedStage = new PlaywrightPicturedStage(stage, filmedTab, watch, exposuresAtOnce, warn);
 	const ownPages = ownPagesOn(stage, setting.ownPages);
 	return new OpenedChromium({ browser, filmed }, picturedStage, filmed.mainFrame(), time, ownPages);
 }
@@ -408,27 +443,40 @@ function lackOf(fault: unknown): SetupError | undefined {
 }
 
 /**
- * The launched browser checked for drawing where it was asked to: asked onto the graphics card and reaching none, it
- * draws in software all the same, and the person is warned, as a page that draws with WebGL may then draw nothing; a
- * Chrome that does not tell is said as such.
+ * Whether the launched browser draws on the graphics card, checked against where it was asked to draw: asked onto the
+ * card and reaching none, it draws in software all the same, and the person is warned, as a page that draws with WebGL
+ * may then draw nothing; a Chrome that does not tell is said as such, and taken to draw in software.
  */
-async function whereItDrawsChecked(renderer: Renderer, browser: Playwright, warn: Warn): Promise<void> {
+async function drawsOnTheCard(renderer: Renderer, browser: Playwright, warn: Warn): Promise<boolean> {
 	switch (renderer) {
 		case 'software':
-			return;
+			return false;
 		case 'gpu': {
 			const compositing = await compositingOf(browser);
-			if (compositing === ON_THE_CARD) return;
+			if (compositing === ON_THE_CARD) return true;
 			if (compositing === undefined) {
 				warn(UNTOLD);
-				return;
+				return false;
 			}
 			warn(
 				`--renderer gpu reached no graphics card (Chrome's compositing is ${compositing}): the frames are ` +
 					'drawn in software, and a page that draws with WebGL may draw nothing'
 			);
+			return false;
 		}
 	}
+}
+
+/**
+ * The largest texture of the graphics card Chrome draws on, which no picture it takes may pass on a side, as WebGL
+ * reports it on a page; none where it draws in software, and none where it gives the page no WebGL, the person warned
+ * that a picture larger may then come out wrong.
+ */
+async function cardSideIn(onTheCard: boolean, page: Page, warn: Warn): Promise<number | null> {
+	if (!onTheCard) return null;
+	const side = await cardSideOf(page);
+	if (side === null) warn(NO_CARD_SIDE);
+	return side;
 }
 
 /**

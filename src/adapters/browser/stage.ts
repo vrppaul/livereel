@@ -22,7 +22,9 @@
  * still without it (probed 2026-10-30). A picture of a part of the screen a piece is drawn from, the one it holds or
  * one sharper than the page's, is taken the same way, clipped to that part, and handed to the stage by its number,
  * which keeps it until the take lets it go: Chrome draws the part anew at the clip's scale, a clip at 12 of a page at
- * 4.4 alike to a tab at 12 (SSIM 1.0, probed 2026-11-02).
+ * 4.4 alike to a tab at 12 (SSIM 1.0, probed 2026-11-02). Every picture is taken no larger than Chrome takes one whole
+ * where it draws (`bounds.ts`): one asked larger, of a tall screen or a part grown far, is taken as large as it may,
+ * softer, and the person is told so once.
  *
  * A frame is captured by Playwright at the page's device scale, the film's sharpness. A capture of livereel's own, on
  * a CDP session apart from Playwright's, came back at the page's own pixels whatever that scale, every full shoot as
@@ -39,8 +41,10 @@ import { type Box, type Size, boxOf, frameScaleOf } from '../../domain/geometry.
 import type { OwnPage } from '../../direction/page.ts';
 import type { DrawnScene } from '../../scene.ts';
 import type { FramedStage, PicturedStage } from '../../studio/ports.ts';
+import { type PictureBound, scaleWithin } from './bounds.ts';
 import type { ChangesHeard } from './changes.ts';
 import type { FrameWatch, TabWatch } from './watch.ts';
+import type { Warn } from './warn.ts';
 
 // The package's stage, as far from this module in the source as in the package built from it, and its page
 export const STAGE_FOLDER = new URL('../../../stage/', import.meta.url);
@@ -111,6 +115,8 @@ export const ONE_AT_A_TIME = 1;
 // The page's picture is taken as a JPEG: the format as CDP names it, and the type of image the stage is handed
 const PICTURE_FORMAT = 'jpeg';
 const PICTURE_TYPE = 'image/jpeg';
+// How many decimal places a zoom is said to
+const PLACES_SAID = 2;
 
 /**
  * The stage with the filmed page live in its frame, which no copy of the stage can show again: it draws one exposure of
@@ -161,13 +167,15 @@ export class PlaywrightFramedStage implements FramedStage {
 
 /**
  * The tab a static page stands in, as its pictures are taken: on livereel's own CDP session with it, at the screen's
- * size, a page's pixel taking so many of a picture's for a camera at a zoom of 1.
+ * size, a page's pixel taking so many of a picture's for a camera at a zoom of 1, within the bounds Chrome takes a
+ * picture whole in (`bounds.ts`).
  */
 export interface FilmedTab {
 	readonly tab: Page;
 	readonly session: CDPSession;
 	readonly screen: Size;
 	readonly pixelsAtZoomOne: number;
+	readonly bounds: readonly PictureBound[];
 	readonly changes: ChangesHeard;
 }
 
@@ -181,16 +189,20 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	readonly filmedTab: FilmedTab;
 	readonly watch: TabWatch;
 	readonly exposuresAtOnce: number;
-	// The page's picture last taken, in base64, none before the first; and how many pictures of a part of the screen
-	// the stage holds, each by its number, counted from 1
+	readonly warn: Warn;
+	// The page's picture last taken, in base64, none before the first; how many pictures of a part of the screen the
+	// stage holds, each by its number, counted from 1; and whether the person has been told a picture was taken softer
+	// than asked, which they are once
 	private picture: string | null = null;
 	private picturesHeld = 0;
+	private softerSaid = false;
 
-	constructor(page: Page, filmedTab: FilmedTab, watch: TabWatch, exposuresAtOnce: number) {
+	constructor(page: Page, filmedTab: FilmedTab, watch: TabWatch, exposuresAtOnce: number, warn: Warn) {
 		this.page = page;
 		this.filmedTab = filmedTab;
 		this.watch = watch;
 		this.exposuresAtOnce = exposuresAtOnce;
+		this.warn = warn;
 	}
 
 	draw(exposures: readonly DrawnScene[]): Promise<void> {
@@ -220,10 +232,14 @@ export class PlaywrightPicturedStage implements PicturedStage {
 
 	/**
 	 * A part of the screen as the page's tab shows it once its fonts have loaded, as a JPEG as sharp as a camera at this
-	 * zoom shows it, its text caret kept: its bytes in base64.
+	 * zoom shows it, or as the tightest bound Chrome takes it whole in lets it, its text caret kept: its bytes in base64.
 	 */
 	private async pictureAt(part: Box, zoom: number): Promise<string> {
-		const { tab, session, pixelsAtZoomOne } = this.filmedTab;
+		const { tab, session, pixelsAtZoomOne, bounds } = this.filmedTab;
+		const taken = scaleWithin(part, pixelsAtZoomOne * zoom, bounds);
+		if (taken.heldBy !== null && !this.softerSaid) {
+			this.saySofter(part, zoom, taken.scale / pixelsAtZoomOne, taken.heldBy);
+		}
 		await tab.evaluate(fontsLoaded);
 		const { cssVisualViewport } = await session.send('Page.getLayoutMetrics');
 		const clip = {
@@ -233,7 +249,7 @@ export class PlaywrightPicturedStage implements PicturedStage {
 			y: cssVisualViewport.pageY + part.top,
 			width: part.width,
 			height: part.height,
-			scale: pixelsAtZoomOne * zoom
+			scale: taken.scale
 		};
 		const { data } = await session.send('Page.captureScreenshot', {
 			format: PICTURE_FORMAT,
@@ -241,6 +257,19 @@ export class PlaywrightPicturedStage implements PicturedStage {
 			clip
 		});
 		return data;
+	}
+
+	/**
+	 * The person told, once, that a picture of a part of the screen was taken as close as a camera at a lesser zoom than
+	 * asked, and by what bound, so a camera or a piece closer than that shows it softer.
+	 */
+	private saySofter(part: Size, asked: number, taken: number, bound: PictureBound): void {
+		this.softerSaid = true;
+		this.warn(
+			`a picture of ${Math.round(part.width)} × ${Math.round(part.height)} px of the screen is taken as close as a ` +
+				`camera at a zoom of ${saidOf(taken)}, not the ${saidOf(asked)} asked, as ${bound.says}: a camera or a ` +
+				`piece closer than ${saidOf(taken)} shows it softer, and pictures taken short after it are not said`
+		);
 	}
 
 	changedOfItself(): boolean {
@@ -266,6 +295,11 @@ export function roomOf(format: Format, exposures: number): Room {
 
 function drawnOn(page: Page, exposures: readonly DrawnScene[]): Promise<void> {
 	return page.evaluate(applyExposures, exposures);
+}
+
+/** A zoom as the person is told it, to two places. */
+function saidOf(zoom: number): number {
+	return Number(zoom.toFixed(PLACES_SAID));
 }
 
 /** A page as it shows now, as a JPEG at its device scale, its text caret kept. */
