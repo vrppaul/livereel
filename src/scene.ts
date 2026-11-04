@@ -388,10 +388,11 @@ export function drawn(
 		sharpness,
 		sharper
 	};
+	const shown = drawnCamera(camera, format);
 	return {
 		look: scene.look,
-		camera: drawnCamera(camera, format),
-		window: drawnWindow(camera.view, camera.eye, scene.window, format.frame, sharpness),
+		camera: shown,
+		window: drawnWindow(camera.view, shown.cut, camera.eye, scene.window, format.frame, sharpness),
 		screen: drawnScreen(scene.screen, camera, format),
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout, moment),

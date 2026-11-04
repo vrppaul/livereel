@@ -152,9 +152,10 @@ and the moves of each part of the scene:
   pixels of a frame 1080 high wide; it rests open none, all sharp. What stands in the world nearer or farther than the
   focus is drawn as a disc `aperture × 2000 × |1/focus − 1/distance|` across, as a camera's lens draws it: the window,
   with all in it, and each object shown `inside: 'world'`, each as soft as its point nearest the focus, so what the
-  eye focuses on is drawn sharp; what stands on the frame or in a group stays sharp. It shares a step with `eye.to`,
-  and holds on what it was put on as the eye moves; a focus pulled from one to another goes evenly in how sharp it
-  leaves things. A focus on what stands behind the eye is refused
+  eye focuses on is drawn sharp; drawn as a room, each point of the window as soft as its own distance has it, so a
+  window leant back is sharp where the eye focuses and melts beyond; what stands on the frame or in a group stays
+  sharp. It shares a step with `eye.to`, and holds on what it was put on as the eye moves; a focus pulled from one to
+  another goes evenly in how sharp it leaves things. A focus on what stands behind the eye is refused
 - `window.to(place)`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn })`,
   `window.shade({ dim, fade, blur })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
@@ -877,10 +878,11 @@ What `inside` costs:
   however near the eye comes.
 - `room`: the window drawn in WebGL, a plane where the eye sees it, from a
   picture of what the frame shows of it as dense as the page's device
-  scale, filtered as it shrinks into the distance; the ground and what
-  stands on the frame are drawn as flat draws them. A static page only: a
-  dynamic one stands live in a frame of its own site, which the browser
-  hands WebGL blank.
+  scale, filtered as it shrinks into the distance, and blurred by the eye's
+  focus at each point as far as that point stands from it, where flat blurs
+  the window as one; the ground and what stands on the frame are drawn as
+  flat draws them. A static page only: a dynamic one stands live in a frame
+  of its own site, which the browser hands WebGL blank.
 
 ```ts
 export default defineFilm({ drawing: 'room', ... });

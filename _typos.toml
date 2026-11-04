@@ -1,0 +1,4 @@
+# Names of other tongues the code writes as they are: GLSL's `textureLod`, a texture read at a level of its smaller
+# copies, which typos takes for a misspelt "load" and rewrites, breaking the room's shader (`stage/room.js`)
+[default.extend-identifiers]
+textureLod = "textureLod"

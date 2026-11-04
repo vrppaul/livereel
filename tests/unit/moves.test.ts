@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { AS_PLACED } from '../../src/domain/stance.ts';
 import { type Camera, onTheFrame, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
-import { type EyePlace, THE_EYE_AT_REST } from '../../src/domain/eye.ts';
+import { EYE_DISTANCE, type EyePlace, type Focus, THE_EYE_AT_REST } from '../../src/domain/eye.ts';
 import * as eye from '../../src/moves/eye.ts';
 import { linear } from '../../src/domain/time.ts';
 import { FilmError } from '../../src/domain/errors.ts';
@@ -38,9 +38,10 @@ import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
 import * as ending from '../../src/moves/ending.ts';
 import { type DrawnObject, type Surroundings, drawnObject, drawnOnTheFrame } from '../../src/props/object.ts';
-import type { Sharpness } from '../../src/domain/focus.ts';
+import { type Sharpness, focusDistanceOf, outOfFocusAtThePoint, sharpnessOf } from '../../src/domain/focus.ts';
 import type { Piece } from '../../src/props/piece.ts';
 import { SCREEN_UP } from '../../src/props/screen.ts';
+import type { DrawnWindow } from '../../src/props/window.ts';
 import { ONE_FRAME, pastTheEdge, windowPlaced, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
 import * as look from '../../src/moves/look.ts';
@@ -2669,6 +2670,91 @@ test('a blur a tenth of a pixel of the frame wide or less is drawn as none', asy
 	const near = await withNearTitles(openingScene(SMALL, LIVEREELS_LOOK));
 	const barelyOpen = await setAt(eye.focus({ object: 'near' }, { aperture: 0.001 }), near, 1);
 	expect(outOfFocusIn(barelyOpen)).toEqual([null, null, null]);
+});
+
+// The small frame's corners and its middle
+const CORNERS_AND_MIDDLE: readonly Point[] = [
+	{ left: 0, top: 0 },
+	{ left: 400, top: 0 },
+	{ left: 0, top: 400 },
+	{ left: 400, top: 400 },
+	{ left: 200, top: 200 }
+];
+
+// A disc is blurred as a Gaussian a quarter of its width; and distances a focus stands at: as far as the frame, half
+// as far, and past a window leant back on the small frame, its far edge about 2,540 from the eye
+const DISC_WIDTH_IN_SPREADS = 4;
+const AS_FAR_AS_THE_FRAME = 2000;
+const HALF_AS_FAR = 1000;
+const PAST_THE_WINDOW = 3000;
+
+/** The window of a scene shot in the small format as the stage draws it, by the scene's own camera. */
+function drawnWindowIn(scene: Scene): DrawnWindow {
+	return drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).window;
+}
+
+/** How soft the room blurs the window of a scene shot in the small format at points of the frame, by its own camera. */
+function outOfFocusAtPointsIn(scene: Scene, points: readonly Point[]): readonly number[] {
+	const window = drawnWindowIn(scene);
+	return points.map((point) => outOfFocusAtThePoint(window.outOfFocusAt!, point));
+}
+
+/**
+ * How soft the eye opened `OPENED` wide and focused so far before it draws a point of the window or the page, seen by a
+ * camera on the small frame: a quarter of a disc `aperture × 2000 × |1/focus − 1/distance|` across.
+ */
+function spreadAt(camera: Camera, focusedAt: number, point: Focus): number {
+	const distance = focusDistanceOf(point, camera, SMALL.frame);
+	return (OPENED * EYE_DISTANCE * Math.abs(1 / focusedAt - 1 / distance)) / DISC_WIDTH_IN_SPREADS;
+}
+
+test('the room blurs a window face-on out of focus as soft at every point of the frame as the flat stage blurs it whole', async () => {
+	const near = await withNearTitles(openingScene(SMALL, LIVEREELS_LOOK));
+	const focused = await setAt(eye.focus({ object: 'near' }, { aperture: OPENED }), near, 1);
+	expect(outOfFocusAtPointsIn(focused, CORNERS_AND_MIDDLE)).toEqual(
+		CORNERS_AND_MIDDLE.map(() => expect.closeTo(A_QUARTER_OF_THE_DISC))
+	);
+});
+
+test('the room blurs a window leant back point by point: sharp where the eye focuses, nearer and farther as soft as each stands from the eye', async () => {
+	const leant = await setAt(lean({ tilt: 50 }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const onTheBlock = await setAt(eye.focus('#block', { aperture: OPENED }), leant, 1);
+	const camera = cameraOf(onTheBlock, SMALL);
+	const focusedAt = sharpnessOf(camera, SMALL.frame).focusedAt;
+	const blockMiddle = { left: BLOCK.left + BLOCK.width / 2, top: BLOCK.top + BLOCK.height / 2 };
+	const low = { left: 300, top: 350 };
+	const high = { left: 300, top: 30 };
+	const points = [blockMiddle, low, high].map((point) => onTheFrame(camera, SMALL.frame, point));
+	expect(outOfFocusAtPointsIn(onTheBlock, points)).toEqual([
+		expect.closeTo(0),
+		expect.closeTo(spreadAt(camera, focusedAt, { kind: 'page', point: low })),
+		expect.closeTo(spreadAt(camera, focusedAt, { kind: 'page', point: high }))
+	]);
+});
+
+test('the room blurs a point of the frame past the horizon of a window leant nearly edge-on as soft as one as far as can be, though its near edge stands softer', async () => {
+	const edgeOn = await setAt(lean({ tilt: 88 }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const focused = await setAt(eye.focus(PAST_THE_WINDOW, { aperture: OPENED }), edgeOn, 1);
+	// A point as far as can be is drawn as a disc of 40 × 2000 × 1/3000, 6.7 blurred, the window's near edge 7.0; the
+	// window's horizon stands about 26 pixels above the small frame's middle
+	const asFarAsCanBe = (OPENED * EYE_DISTANCE) / PAST_THE_WINDOW / DISC_WIDTH_IN_SPREADS;
+	expect(outOfFocusAtPointsIn(focused, [{ left: 200, top: 0 }])).toEqual([expect.closeTo(asFarAsCanBe)]);
+});
+
+test('the room blurs a point of the frame beside a window turned nearly edge-on no softer than the softest point of the window the frame shows', async () => {
+	const edgeOn = await setAt(lean({ turn: 89.8 }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const focused = await setAt(eye.focus(AS_FAR_AS_THE_FRAME, { aperture: OPENED }), edgeOn, 1);
+	// The window's left edge, turned toward the eye, stands nearest it, and softest; the frame's corner sees the plane
+	// past the window, nearer still
+	const nearEdge: Focus = { kind: 'window', point: { left: 0, top: 200 } };
+	const softest = spreadAt(cameraOf(focused, SMALL), AS_FAR_AS_THE_FRAME, nearEdge);
+	expect(outOfFocusAtPointsIn(focused, [{ left: 0, top: 0 }])).toEqual([expect.closeTo(softest)]);
+});
+
+test('the room blurs no point of the window where the eye is open none, or so little no point of the frame spreads past a tenth of a pixel', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK);
+	const barelyOpen = await setAt(eye.focus(HALF_AS_FAR, { aperture: 0.001 }), opening, 1);
+	expect([opening, barelyOpen].map((scene) => drawnWindowIn(scene).outOfFocusAt)).toEqual([null, null]);
 });
 
 test('eye.to and eye.focus share a step, the eye standing where one sends it and focused where the other does', async () => {

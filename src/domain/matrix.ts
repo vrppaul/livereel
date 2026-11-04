@@ -9,7 +9,9 @@
  * entry `m<column><row>` stands in that column and row. A chain of them reads as a CSS transform list does: the last
  * carries a point first.
  */
+import { type Box, type Point, cornersAround, middleX, middleY } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, needed } from './handed.ts';
+import { between } from './time.ts';
 
 /** A matrix of four rows and four columns, its entries named by their column, then their row. */
 export interface Matrix {
@@ -45,6 +47,44 @@ export interface Spot {
 	readonly across: number;
 	readonly down: number;
 	readonly out: number;
+}
+
+/**
+ * How near the eye a plane stands at each point of the frame it is seen at, in times as near as the frame's own plane:
+ * at the middle the plane is carried about, and more for each of the frame's pixels across and down from there, as a
+ * plane's nearness goes evenly across the frame.
+ */
+export interface Nearness {
+	readonly atTheMiddle: number;
+	readonly across: number;
+	readonly down: number;
+}
+
+/**
+ * A point of a plane as a matrix carries it before it is seen: how far across and down from the middle it is carried
+ * about, each times how far it is seen from, and how far it is seen from (`seenFromOf`), so a cut keeps or leaves it
+ * before it is divided.
+ */
+interface CarriedPoint {
+	readonly across: number;
+	readonly down: number;
+	readonly seenFrom: number;
+}
+
+/**
+ * An edge of a box of the frame as a cut through the eye: how far inside it a carried point stands, none on it, less
+ * than none past it, is so much of its across, its down and how far it is seen from.
+ */
+interface Edge {
+	readonly across: number;
+	readonly down: number;
+	readonly seenFrom: number;
+}
+
+/** A way or a place across and down the frame, from the middle a matrix carries about. */
+interface Way {
+	readonly across: number;
+	readonly down: number;
 }
 
 /** A spot of the room as a film writes it, every one of its three numbers given. */
@@ -108,6 +148,14 @@ const HALVES = 2;
 const FACING_WITHIN = 1e-9;
 // Where a plane carried stands edge-on to the eye, between showing its front and its back
 const EDGE_ON = 0;
+// How far inside an edge of the frame a point on it stands; and the place in a polygon of the point after one
+const ON_THE_EDGE = 0;
+const ONE_AFTER = 1;
+// The way into a box from each of its edges, across and down the frame
+const FROM_THE_LEFT: Way = { across: 1, down: 0 };
+const FROM_THE_TOP: Way = { across: 0, down: 1 };
+const FROM_THE_RIGHT: Way = { across: -1, down: 0 };
+const FROM_THE_BOTTOM: Way = { across: 0, down: -1 };
 // How a point is seen from nearer as it comes out toward the eye: by all it comes out, for the eye's distance
 const NEARER_BY_ITS_OUT = -1;
 
@@ -238,6 +286,42 @@ export function longestScaleAtItsMiddle(matrix: Matrix): number {
 }
 
 /**
+ * How near the eye a matrix sees the plane it carries about its middle, out none, at each point of the frame it carries
+ * the plane to (`Nearness`): the reciprocal of what the matrix divides the point by (`seenFromOf`); none where it
+ * carries the plane onto a line, edge-on to the eye. A point of the plane is carried by its across, its down and the
+ * matrix's own move, so a point of the frame seen back through those three columns comes to the point of the plane it
+ * shows, scaled by how near it stands there: the last row of their inverse, its cofactors over their determinant.
+ */
+export function nearnessOfItsPlane(matrix: Matrix): Nearness | null {
+	const across = matrix.m12 * matrix.m24 - matrix.m22 * matrix.m14;
+	const down = matrix.m21 * matrix.m14 - matrix.m11 * matrix.m24;
+	const atTheMiddle = matrix.m11 * matrix.m22 - matrix.m21 * matrix.m12;
+	const determinant = matrix.m41 * across + matrix.m42 * down + matrix.m44 * atTheMiddle;
+	if (determinant === EDGE_ON) return null;
+	return { atTheMiddle: atTheMiddle / determinant, across: across / determinant, down: down / determinant };
+}
+
+/**
+ * The points of the frame a matrix shows of a box of the plane it carries about the middle of another box of it, out
+ * none: as much of the box as stands within a box of the frame, a polygon going round it, in the frame's pixels; none
+ * where none of it does. The box is cut before its points are divided by how far each is seen from, as the browser cuts
+ * a layer, so a side passing behind the eye is cut away, not drawn turned over past it: the edges of a box of the frame
+ * cut through the eye, and keep only what stands before it. A plane the matrix sees edge-on, through the eye, it shows
+ * as no polygon (`nearnessOfItsPlane`).
+ */
+export function seenWithin(matrix: Matrix, laid: Box, part: Box, within: Box): readonly Point[] {
+	const middle = { left: middleX(laid), top: middleY(laid) };
+	const corners = cornersAround(part).map((corner) =>
+		carriedPointOf(matrix, { across: corner.left - middle.left, down: corner.top - middle.top })
+	);
+	const kept = edgesOf(within, middle).reduce(cutAt, corners);
+	return kept.map((point) => ({
+		left: middle.left + point.across / point.seenFrom,
+		top: middle.top + point.down / point.seenFrom
+	}));
+}
+
+/**
  * Whether a matrix that sees nothing in perspective carries the room's plane onto one facing the frame, near or far,
  * grown or rolled: neither of the plane's axes reaches out of it.
  */
@@ -303,4 +387,72 @@ function product(outer: Matrix, inner: Matrix): Matrix {
 
 function radians(degrees: number): number {
 	return (degrees * Math.PI) / DEGREES_IN_A_HALF_TURN;
+}
+
+/** A point of a plane, out none, as a matrix carries it before it is seen. */
+function carriedPointOf(matrix: Matrix, point: Way): CarriedPoint {
+	return {
+		across: matrix.m11 * point.across + matrix.m21 * point.down + matrix.m41,
+		down: matrix.m12 * point.across + matrix.m22 * point.down + matrix.m42,
+		seenFrom: matrix.m14 * point.across + matrix.m24 * point.down + matrix.m44
+	};
+}
+
+/** The edges of a box of the frame, from the middle a matrix carries about, as cuts through the eye. */
+function edgesOf(within: Box, middle: Point): readonly Edge[] {
+	const topLeft = { across: within.left - middle.left, down: within.top - middle.top };
+	const bottomRight = { across: topLeft.across + within.width, down: topLeft.down + within.height };
+	return [
+		edgeThrough(FROM_THE_LEFT, topLeft),
+		edgeThrough(FROM_THE_TOP, topLeft),
+		edgeThrough(FROM_THE_RIGHT, bottomRight),
+		edgeThrough(FROM_THE_BOTTOM, bottomRight)
+	];
+}
+
+/** The edge through a place of the frame that keeps what stands a way from it, as a cut through the eye. */
+function edgeThrough(inward: Way, place: Way): Edge {
+	return {
+		across: inward.across,
+		down: inward.down,
+		seenFrom: -(inward.across * place.across + inward.down * place.down)
+	};
+}
+
+/**
+ * A polygon of carried points going round cut at an edge: each point inside it kept, and where a side crosses it, the
+ * point it crosses at, so what is kept goes round too.
+ */
+function cutAt(points: readonly CarriedPoint[], edge: Edge): readonly CarriedPoint[] {
+	const kept: CarriedPoint[] = [];
+	for (const [place, point] of points.entries()) {
+		const next = nextAround(points, place);
+		const inside = insideOf(edge, point);
+		const nextInside = insideOf(edge, next);
+		const isKept = inside >= ON_THE_EDGE;
+		if (isKept) kept.push(point);
+		if (isKept !== nextInside >= ON_THE_EDGE) kept.push(carriedBetween(point, next, inside / (inside - nextInside)));
+	}
+	return kept;
+}
+
+/** How far inside an edge a carried point stands: none on it, less than none past it. */
+function insideOf(edge: Edge, point: CarriedPoint): number {
+	return edge.across * point.across + edge.down * point.down + edge.seenFrom * point.seenFrom;
+}
+
+/** The point after one of a polygon going round it, the first after the last. */
+function nextAround(points: readonly CarriedPoint[], place: number): CarriedPoint {
+	const next = points[(place + ONE_AFTER) % points.length];
+	if (next === undefined) throw new Error(`a polygon of ${points.length} points has none after point ${place}`);
+	return next;
+}
+
+/** A carried point a share of the way from one to another, as a side between them is cut. */
+function carriedBetween(start: CarriedPoint, end: CarriedPoint, share: number): CarriedPoint {
+	return {
+		across: between(start.across, end.across, share),
+		down: between(start.down, end.down, share),
+		seenFrom: between(start.seenFrom, end.seenFrom, share)
+	};
 }

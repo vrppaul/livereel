@@ -331,6 +331,19 @@ export function drawnCamera(camera: Camera, format: Format): DrawnCamera {
 }
 
 /**
+ * How far the camera's picture reaches on the window's plane: the view's box, past each edge as far as its cut stands
+ * out, as a window on the frame's edge shows the screen past it, and within it as far as the cut closes in.
+ */
+export function pictureReachOf(view: Box, cut: Cut): Box {
+	return {
+		left: view.left + cut.left,
+		top: view.top + cut.top,
+		width: view.width - cut.left - cut.right,
+		height: view.height - cut.top - cut.bottom
+	};
+}
+
+/**
  * Where the picture is cut on one side of its view: as far past the view's edge as the screen reaches, so much of the
  * way as the cut still stands out, where the view meets the frame's edge there; at the view's edge where it stands in
  * from the frame's.

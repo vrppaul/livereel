@@ -115,6 +115,18 @@ export function cornersOf(box: Box): readonly Point[] {
 	];
 }
 
+/** The corners of a box going round it: top left, top right, bottom right, bottom left. */
+export function cornersAround(box: Box): readonly Point[] {
+	const right = box.left + box.width;
+	const bottom = box.top + box.height;
+	return [
+		{ left: box.left, top: box.top },
+		{ left: right, top: box.top },
+		{ left: right, top: bottom },
+		{ left: box.left, top: bottom }
+	];
+}
+
 /** The corners of any box, in shares of it across and down from its top left corner, in the order `cornersOf` has. */
 export const CORNER_SHARES = cornersOf({ left: 0, top: 0, width: 1, height: 1 });
 
