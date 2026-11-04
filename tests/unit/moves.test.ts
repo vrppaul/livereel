@@ -106,6 +106,12 @@ const SHOWN_RIGHT = { left: 580, top: 100, width: 20, height: 40 };
 // Blocks of a screen as large as a 1080 frame: a card on a light ground, and another block below to its right
 const CARD = { left: 400, top: 300, width: 200, height: 100 };
 const CARDS_GROUND = '#f6f7f9';
+// Colours of a film's own, the blue claude-review draws its reader's parts in and a green, and the colours half the way
+// to the blue from livereel's amber accent, #ffb224, and from the blue to the green
+const READERS_BLUE = '#5b8def';
+const GREEN = '#00ff00';
+const HALF_WAY_FROM_THE_ACCENT_TO_BLUE = '#ada08aff';
+const HALF_WAY_FROM_BLUE_TO_GREEN = '#2ec678ff';
 const OTHER = { left: 1200, top: 600, width: 100, height: 60 };
 // No move here acts on the page: an act at a moment of a play is the take's, tested there; nor holds a picture of a
 // part of the screen, but where a test hands it a stand-in that does
@@ -1424,10 +1430,33 @@ test('an object stands out as far as its move has come toward the values the fil
 	const settled = await setAt(title.effects({ ring: 0, glow: 0, shadow: 0, blur: 0 }), glowing, 1);
 	expect([titled, halfway, glowing, settled].map((scene) => drawnObjectsIn(scene, SMALL)[0]!.effects)).toEqual([
 		null,
-		{ ring: 0, glow: 0, shadow: 0.5, blur: 4 },
-		{ ring: 1, glow: 1, shadow: 0.5, blur: 4 },
+		{ ring: 0, glow: 0, shadow: 0.5, blur: 4, colour: null },
+		{ ring: 1, glow: 1, shadow: 0.5, blur: 4, colour: null },
 		null
 	]);
+});
+
+test("an object's ring and glow are drawn in the look's accent as it stands, none named, and go to a colour the film names from the one they were seen in: the accent's as it stood, another of the film's, or, rising from none, the colour named all the way", async () => {
+	const titled = await setAt(title.show('Lifted', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const ringed = await setAt(title.effects({ ring: 1 }), titled, 1);
+	const halfwayToBlue = await setAt(title.effects({ colour: READERS_BLUE }), ringed, 0.5);
+	const blue = await setAt(title.effects({ colour: READERS_BLUE }), ringed, 1);
+	const halfwayToGreen = await setAt(title.effects({ colour: GREEN }), blue, 0.5);
+	const risingInBlue = await setAt(title.effects({ ring: 1, colour: READERS_BLUE }), titled, 0.5);
+	const scenes = [ringed, halfwayToBlue, blue, halfwayToGreen, risingInBlue];
+	expect(scenes.map((scene) => drawnObjectsIn(scene, SMALL)[0]!.effects!.colour)).toEqual([
+		null,
+		HALF_WAY_FROM_THE_ACCENT_TO_BLUE,
+		READERS_BLUE,
+		HALF_WAY_FROM_BLUE_TO_GREEN,
+		READERS_BLUE
+	]);
+});
+
+test('a colour alone does not make an object stand out: one with no ring, glow, shadow or blur is drawn standing out in no way', async () => {
+	const titled = await setAt(title.show('Lifted', { at: 'left' }), openingScene(SMALL, LIVEREELS_LOOK), 1);
+	const coloured = await setAt(title.effects({ colour: READERS_BLUE }), titled, 1);
+	expect(drawnObjectsIn(coloured, SMALL)[0]!.effects).toBeNull();
 });
 
 test('every object that is carried and leant stands out: a title, code, the terminal, a piece of the page, an outline, a lens', async () => {
@@ -1448,7 +1477,7 @@ test('every object that is carried and leant stands out: a title, code, the term
 		outline.effects({ ring: 1 }),
 		lens.effects({ ring: 1 })
 	].reduce(async (scene, move) => setIn(move, await scene, 1, FULL_HD), Promise.resolve(shown));
-	const ring = { ring: 1, glow: 0, shadow: 0, blur: 0 };
+	const ring = { ring: 1, glow: 0, shadow: 0, blur: 0, colour: null };
 	expect(drawnObjectsIn(ringed, FULL_HD).map((object) => [object.name, object.effects])).toEqual([
 		['title', ring],
 		['code', ring],

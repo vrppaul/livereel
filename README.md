@@ -193,9 +193,9 @@ and the moves of each part of the scene:
 - `lens.show(target, { magnification, size, enter, edge, as, group, zIndex })`, `lens.to(target)`,
   `lens.hide({ toward, leave, edge })`; a round glass over the page, showing what lies under its middle magnified; each
   move of it takes `as` to name which
-- `title.effects({ ring, glow, shadow, blur, scale, depth })`, and so `code.effects`, `terminal.effects`,
-  `piece.effects`, `outline.effects` and `lens.effects`: how the object stands out, ringed, glowing, casting a shadow,
-  blurred, grown or brought toward the eye where it stands
+- `title.effects({ ring, glow, shadow, blur, colour, scale, depth })`, and so `code.effects`, `terminal.effects`,
+  `piece.effects`, `outline.effects` and `lens.effects`: how the object stands out, ringed and glowing in the accent or
+  a `colour` of the film's, casting a shadow, blurred, grown or brought toward the eye where it stands
 - `group.show({ at, order })`, `group.to(place, { scale, depth })`, `group.lean({ tilt, turn, roll })`,
   `group.hide()`; a group of objects, turned, grown and brought near as one, each object in it as its own moves have
   it, drawn by the `zIndex` its show names, the higher over the lower, or, with `order: 'depth'`, the farther behind
@@ -374,15 +374,21 @@ An object stands out by `effects`: `piece.effects({ shadow: 1, depth: 160
 shadow colour as it comes toward the eye; `glow` lights the accent round
 it and `ring` draws a line of the accent along its edge, each from 0 none
 to 1 whole, as `shadow` is, and `blur` blurs it, in pixels of a frame 1080
-high. `scale` grows it about its middle where it stands, as `to` grows it
+high. `colour: '#5b8def'` draws the ring and the glow in a colour of the
+film's, which they go to from the colour they were seen in, the accent's
+as it stood where they had none, or in the colour named all the way where
+they rise from none; where a film names none they follow the accent, as a
+look's move changes it. An outline's own line, a piece's lines and its
+hole's line stay in the look's accent. `scale` grows it about its middle where it stands, as `to` grows it
 where it goes, so a block lifted off the page grows in place though the
 film knows no place of it; `depth` brings it near the eye, larger and
 farther from the frame's middle. A shadow and a glow follow what the
 object shows, a title's letters, a pane's rounded corners, a lens's round
 glass; a ring runs round a title's words, or its card where it stands on
-one, and along the edge of anything else. The shadow falls toward the object's foot, so it turns as the object
-rolls, as a pane's own shadow does. The move sets only
-the values it names, the rest kept as they stand, so it shares a `play`
+one, and along the edge of anything else. The shadow falls toward the
+object's foot, so it turns as the object rolls, as a pane's own shadow
+does. The move sets only the values it names, the rest kept as they
+stand, so it shares a `play`
 with a move that carries or leans the object, and with another `effects`
 naming others. An object comes up standing out in no way.
 

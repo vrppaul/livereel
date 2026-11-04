@@ -4,12 +4,13 @@
  * a lens: coming up in its box, in its own way or one of livereel's (`src/props/way.ts`), or sliding in whole from past
  * a side of the frame, pushing the object of its name standing there off past the side across; carried to another
  * place, growing and coming toward the eye on the way, to a box read off the page, or onto a block of the page to lie
- * there; leant and rolled; set apart from what lies under it, ringed, glowing, casting a shadow, blurred, grown or
- * brought toward the eye where it stands (`src/props/effects.ts`); taken back to stand as its box places it; put away
- * where it stands, in its own way or one of livereel's, or slid out past a side. A move takes the object a film names
- * `as`, or its kind's own name, so a film shows several of a kind at once, each moved by its name. What differs by
- * what an object shows is told here, kind by kind: the curve it comes up on in its own way, whether it is ever carried
- * or leant, how it reads a place, and the box it sets off from as it is carried.
+ * there; leant and rolled; set apart from what lies under it, ringed and glowing in the accent or a colour of the
+ * film's, casting a shadow, blurred, grown or brought toward the eye where it stands (`src/props/effects.ts`); taken
+ * back to stand as its box places it; put away where it stands, in its own way or one of livereel's, or slid out past
+ * a side. A move takes the object a film names `as`, or its kind's own name, so a film shows several of a kind at once,
+ * each moved by its name. What differs by what an object shows is told here, kind by kind: the curve it comes up on in
+ * its own way, whether it is ever carried or leant, how it reads a place, and the box it sets off from as it is
+ * carried.
  *
  * A move that carries an object to a place sets its box and the scale and depth the film names, one that carries it to
  * a box read off the page its box, one that carries it onto a block of the page what it stands in and its box, one
@@ -47,6 +48,7 @@ import {
 	measuredFrom
 } from '../domain/geometry.ts';
 import {
+	A_COLOUR,
 	A_NAME,
 	A_NUMBER,
 	A_PIXELS,
@@ -196,14 +198,16 @@ export interface ObjectLeanScript extends LeanScript, NamedScript {
 
 /**
  * Which object stands out, and how: a `ring` along its edge, a `glow` round it and a `shadow` under it, each from 0
- * none to 1 whole, how far it is blurred, `blur`, how many times as large it stands about its middle, `scale`, and how
- * far out toward the eye, `depth`, a blur and a depth in pixels of a frame 1080 high; any left out as it stands.
+ * none to 1 whole, how far it is blurred, `blur`, the `colour` of its ring and glow in hex, how many times as large it
+ * stands about its middle, `scale`, and how far out toward the eye, `depth`, a blur and a depth in pixels of a frame
+ * 1080 high; any left out as it stands.
  */
 export interface EffectsScript extends TimingScript, NamedScript {
 	readonly ring?: number;
 	readonly glow?: number;
 	readonly shadow?: number;
 	readonly blur?: number;
+	readonly colour?: string;
 	readonly scale?: number;
 	readonly depth?: number;
 }
@@ -255,6 +259,7 @@ const EFFECTS_FORM: Form<EffectsScript> = {
 	glow: A_SHARE,
 	shadow: A_SHARE,
 	blur: A_PIXELS,
+	colour: A_COLOUR,
 	scale: A_SCALE,
 	depth: A_DEPTH,
 	...NAMED_FORM,
@@ -860,16 +865,28 @@ function standingOut(
 	move: string
 ): Change {
 	const object = movable(beginning, name, move);
+	const from: EffectsInPlace = { ...object, colour: colourSeenIn(object, script.colour, beginning.scene.look.accent) };
 	const to: EffectsInPlace = {
 		ring: fractionOf(script.ring ?? object.ring),
 		glow: fractionOf(script.glow ?? object.glow),
 		shadow: fractionOf(script.shadow ?? object.shadow),
 		blur: script.blur ?? object.blur,
+		colour: script.colour ?? from.colour,
 		scale: script.scale ?? object.scale,
 		depth: depthAsked(script.depth, object.depth, beginning.format.frame)
 	};
 	refuseNearingInside(object, to.depth, name, move);
-	return writing(name, (progress) => namedToward(EFFECTS_IN_PLACE, object, to, names, progress));
+	return writing(name, (progress) => namedToward(EFFECTS_IN_PLACE, from, to, names, progress));
+}
+
+/**
+ * The colour an object's ring and glow set off from toward one a film names: the one they are seen in, their own or
+ * the look's accent as it stands as the move begins; where neither shows, the one named, as no other was seen.
+ */
+function colourSeenIn(object: FrameObject, named: string | undefined, accent: string): string {
+	const standing = object.colour ?? accent;
+	const seen = object.ring > NONE || object.glow > NONE;
+	return seen ? standing : (named ?? standing);
 }
 
 /**

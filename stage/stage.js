@@ -96,6 +96,8 @@ const WAY_CUT = 'data-way-cut';
 // window shades the page by, which it has not where the page is unshaded: so neither is drawn with a filter at all
 const EFFECTS = 'data-effects';
 const SHADED = 'data-shaded';
+// The colour of an object's ring and glow the film gave it, which one in the look's accent has not
+const EFFECT_COLOUR = '--effect-colour';
 // The attribute what the eye's focus blurs is drawn with, which what it draws sharp has not, so that is drawn with no
 // filter at all
 const OUT_OF_FOCUS = 'data-out-of-focus';
@@ -533,7 +535,8 @@ function focusDrawn(element, outOfFocus) {
 
 /**
  * How an object stands out, drawn on its element: ringed, glowing, casting a shadow and blurred as strongly as each
- * is; with no filter at all, where it stands out in no way.
+ * is, its ring and glow in the colour the film gave them or the look's accent; with no filter at all, where it stands
+ * out in no way.
  * @param {Staged} element @param {DrawnObject['effects']} effects
  */
 function effectsDrawn(element, effects) {
@@ -545,6 +548,7 @@ function effectsDrawn(element, effects) {
 		'--effect-shadow': effects.shadow,
 		'--effect-blur': effects.blur
 	});
+	givenOrNone(element, EFFECT_COLOUR, effects.colour);
 }
 
 /**
@@ -607,7 +611,7 @@ class TitleWordsDrawer {
 		const title = ofKind(content, 'words');
 		this.element.toggleAttribute(ON_GROUND, title.onGround);
 		named(this.element, ALIGN, title.align);
-		numberedOrNone(this.element, OWN_SIZE, title.size);
+		givenOrNone(this.element, OWN_SIZE, title.size);
 		numbered(this.element, { '--grounded': title.ground, '--gone': title.gone });
 		wordsDrawn(this.words, title);
 	}
@@ -1139,13 +1143,13 @@ function named(element, attribute, name) {
 }
 
 /**
- * An element's custom property set to a number the film gave, or taken off where it gave none, so the stylesheet's
- * own stands.
- * @param {Staged} element @param {string} property @param {number | null} number
+ * An element's custom property set to a value the film gave, a number or a colour, or taken off where it gave none, so
+ * the stylesheet's own stands.
+ * @param {Staged} element @param {string} property @param {number | string | null} value
  */
-function numberedOrNone(element, property, number) {
-	if (number === null) element.style.removeProperty(property);
-	else element.style.setProperty(property, String(number));
+function givenOrNone(element, property, value) {
+	if (value === null) element.style.removeProperty(property);
+	else element.style.setProperty(property, String(value));
 }
 
 /**
