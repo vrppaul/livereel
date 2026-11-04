@@ -99,21 +99,43 @@ export class FramedStageThatKeeps extends StageThatKeeps implements FramedStage 
 	}
 }
 
+/** A picture of a part of the screen a stage was asked to hold, and the zoom it was to be as sharp as. */
+export interface PictureAsked {
+	readonly part: Box;
+	readonly zoom: number;
+}
+
 /**
  * A stage showing a picture of a page that never changes, which keeps the zoom each picture was taken to hold: every
- * picture of it comes out as the last.
+ * picture of it comes out as the last; and each picture of a part of the screen it was asked to hold, numbered from 1.
  */
 export class PicturedStageThatKeeps extends StageThatKeeps implements PicturedStage {
 	readonly kind = 'pictured';
 	readonly retakenAt: number[] = [];
+	readonly held: PictureAsked[] = [];
 
 	retakePage(zoom: number): Promise<boolean> {
 		this.retakenAt.push(zoom);
 		return Promise.resolve(true);
 	}
 
+	holdPicture(part: Box, zoom: number): Promise<number> {
+		this.held.push({ part, zoom });
+		return Promise.resolve(this.held.length);
+	}
+
 	changedOfItself(): boolean {
 		return false;
+	}
+}
+
+/** The take's way to hold a picture of a part of the screen, as a move asks it: each part asked, numbered from 1. */
+export class PicturesHeld {
+	readonly parts: Box[] = [];
+
+	hold(part: Box): Promise<number> {
+		this.parts.push(part);
+		return Promise.resolve(this.parts.length);
 	}
 }
 

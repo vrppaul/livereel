@@ -191,8 +191,9 @@ export const A_MOVE: Kind<Move> = new Plain(isMove, 'a move, as camera.onto or l
 export const A_MOVES: Kind<readonly Move[]> = new ListOf(A_MOVE, 'a list of moves');
 
 /**
- * What a move reads as its share begins: the scene, the page, the format, and how the stage shows the page; and the
- * take's way to act on the page, for a move that acts as it begins.
+ * What a move reads as its share begins: the scene, the page, the format, and how the stage shows the page; the take's
+ * way to act on the page, for a move that acts as it begins; and its way to hold a picture of a part of the screen, for
+ * a move that lifts what is drawn from one.
  */
 export interface Beginning {
 	readonly scene: Scene;
@@ -204,6 +205,11 @@ export interface Beginning {
 	 * it where it shows the page live.
 	 */
 	readonly act: (action: Action) => Promise<void>;
+	/**
+	 * A picture of a part of the screen, in its pixels, taken as the page stands now and held by the stage, which draws
+	 * a piece from it by the number handed back; only where the stage shows the page's picture.
+	 */
+	readonly holdPicture: (part: Box) => Promise<number>;
 }
 
 /**

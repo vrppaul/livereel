@@ -152,7 +152,12 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => piece.show(5 as never)).toThrow(new FilmError(`piece.show's target is 5: it is ${TARGET}`));
 	expect(() => piece.show('#chart', { from: 'left' } as never)).toThrow(
 		new FilmError(
-			'piece.show names from: it names every, air, corner, hole, lines, inside, enter, edge, within, ease, as, group, zIndex, or fewer'
+			'piece.show names from: it names every, air, corner, hole, lines, picture, inside, enter, edge, within, ease, as, group, zIndex, or fewer'
+		)
+	);
+	expect(() => piece.show('#chart', { picture: 'frozen' as never })).toThrow(
+		new FilmError(
+			`piece.show's picture is "frozen": it is what a piece is drawn from: "following", the page's picture as it changes, or "held", a picture of its source held as it is lifted`
 		)
 	);
 	expect(() => piece.onto(5 as never)).toThrow(new FilmError(`piece.onto's target is 5: it is ${TARGET}`));

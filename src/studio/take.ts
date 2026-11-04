@@ -35,8 +35,10 @@
  * its own motion is let go, as sharp as that frame's cameras show it, as the next frame takes another: the whole
  * screen as sharp as the bound costs about three times what it costs as sharp as the camera showing all of it (253–269
  * against 81–83 ms, a 1040 × 1080 screen, 2026-10-30). A move's last frame is pictured as sharp as the bound, so the
- * picture after it can come out alike. A stage with the page live in its frame, as it shows a dynamic one, is
- * captured every frame, as the page changes of itself, and is laid flat for an act.
+ * picture after it can come out alike. A piece that holds its picture has the stage hold one of its source alone as
+ * the move lifting it begins, as sharp as the bound, which no picture of the page taken after takes the place of. A
+ * stage with the page live in its frame, as it shows a dynamic one, is captured every frame, as the page changes of
+ * itself, and is laid flat for an act.
  * A fault in a step is raised again with the moment and the step it was met at. Before each frame, after each act,
  * and of any fault a step meets, the take asks the stage whether it and its page are still there: where one is gone,
  * the take is refused by why, in place of what its loss made a step fail at (a selector that matches nothing on
@@ -314,8 +316,24 @@ export class Take {
 			page: this.pageShownIn(this.scene),
 			format: this.format,
 			pageShown: this.opened.stage.kind,
-			act: (action) => this.acted(action)
+			act: (action) => this.acted(action),
+			holdPicture: (part) => this.pictureHeld(part)
 		});
+	}
+
+	/**
+	 * A picture of a part of the screen the stage holds, taken as the page stands as the move that asks it begins, as
+	 * sharp as the page's picture is taken where the page stands still: its number. A move asks only where the stage
+	 * shows the page's picture, having refused itself elsewhere.
+	 */
+	private pictureHeld(part: Box): Promise<number> {
+		const stage = this.opened.stage;
+		switch (stage.kind) {
+			case 'framed':
+				throw new Error('a page framed live has no picture to hold a part of');
+			case 'pictured':
+				return stage.holdPicture(part, ZOOM_AT_MOST);
+		}
 	}
 
 	/**

@@ -16,12 +16,12 @@
 /** @import { CodeLine, CodePiece, DrawnCode } from '../src/props/code.ts' */
 /** @import { DrawnContent, DrawnObject } from '../src/props/object.ts' */
 /** @import { DrawnLines } from '../src/props/lifted.ts' */
-/** @import { DrawnHole } from '../src/props/piece.ts' */
+/** @import { DrawnHole, PiecePicture } from '../src/props/piece.ts' */
 /** @import { Box, Segment } from '../src/domain/geometry.ts' */
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
 /** @import { OwnPage } from '../src/direction/page.ts' */
-/** @import { Opening, PagePicture, Room, StageApi } from '../src/adapters/browser/stage.ts' */
+/** @import { HeldPicture, Opening, PagePicture, Room, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
 /** A value of the look set whole on the stage, in place of one token: any but the ground's layers, and the way words come up, which the moves that bring them read @typedef {Exclude<keyof Look, 'groundLayers' | 'words'>} WholeLookName */
@@ -58,8 +58,11 @@ const TRANSFORM = 'data-transform';
 const FACE = 'data-face';
 // What a custom property's name starts with: a matrix's entries are set as custom properties named as each entry is
 const CUSTOM_PROPERTY = '--';
-// The custom property the page's picture is set as, the image every piece of the page is drawn from
+// The custom property the page's picture is set as, the image every piece of the page is drawn from; the one a
+// picture a piece holds is set as on its element; and the attribute that names which a piece is drawn from
 const PAGE_PICTURE = '--page-picture';
+const PIECE_PICTURE = '--piece-picture';
+const PICTURE = 'data-picture';
 // A page of the film's own: the class every page the screen shows takes, the attribute it is known by, what it is
 // called, the attribute the one a frame shows takes, and the one the screen takes while it shows one
 const PAGE = 'page';
@@ -652,8 +655,9 @@ class CaptionDrawer {
 }
 
 /**
- * A piece of the page in its object: the part of the page's picture over its source, as large as its box holds it, its
- * corners as round as the film names, and the holes other pieces leave there, in its figure.
+ * A piece of the page in its object: the part of the page's picture over its source, or the picture of its source it
+ * holds, as large as its box holds it, its corners as round as the film names, and the holes other pieces leave there,
+ * in its figure.
  */
 class PieceDrawer {
 	/** @param {Staged} element */
@@ -668,6 +672,7 @@ class PieceDrawer {
 		const piece = ofKind(content, 'piece');
 		figureDrawn(this.element, piece);
 		sourceDrawn(this.element, piece.source, piece.fit);
+		pictureDrawn(this.element, piece.picture);
 		numbered(this.element, {
 			'--corner-top-left': piece.corners.topLeft,
 			'--corner-top-right': piece.corners.topRight,
@@ -876,6 +881,13 @@ const UNDRAWN_ROOT = FIRST_ROOT.cloneNode(true);
 const FIRST = exposureOf(FIRST_ROOT);
 /** The exposures the stage draws a frame as, the first of them its markup's own. @type {Exposure[]} */
 const EXPOSURES = [FIRST];
+/**
+ * The pictures of parts of the screen pieces hold, decoded, by their numbers. Each is kept as an image, not its address
+ * alone: a `url()` the stylesheet draws loads after a frame may be captured without it, and the image kept decoded at
+ * the same address is drawn by the very next capture.
+ * @type {Map<number, HTMLImageElement>}
+ */
+const HELD_PICTURES = new Map();
 // The custom property an exposure's share is set as: how much of it shows over the exposures laid before it. Laid over
 // so many before it, it shows the whole of its own light in as many parts as there are with it, so each weighs the
 // same
@@ -966,11 +978,28 @@ function open(opening) {
  */
 async function show(picture) {
 	const shownBefore = FIRST.picture.getAttribute('src');
-	const address = URL.createObjectURL(new Blob([Uint8Array.fromBase64(picture.base64)], { type: picture.type }));
+	const address = addressOf(picture);
 	await Promise.all(EXPOSURES.map((exposure) => shownIn(exposure, address)));
 	// CSS takes no address out of a custom property into a url(), so the url() is written whole here
 	document.documentElement.style.setProperty(PAGE_PICTURE, `url("${address}")`);
 	if (shownBefore !== null) URL.revokeObjectURL(shownBefore);
+}
+
+/**
+ * A picture of a part of the screen held by its number for the rest of the take, once it is decoded, so the next frame
+ * drawn shows every piece drawn from it whole; at an address of the stage's own, as the page's picture is.
+ * @param {HeldPicture} picture @returns {Promise<void>}
+ */
+async function hold(picture) {
+	const held = new Image();
+	held.src = addressOf(picture);
+	await held.decode();
+	HELD_PICTURES.set(picture.number, held);
+}
+
+/** A picture handed to the stage at an address of the stage's own, which holds its bytes. @param {PagePicture} picture */
+function addressOf(picture) {
+	return URL.createObjectURL(new Blob([Uint8Array.fromBase64(picture.base64)], { type: picture.type }));
 }
 
 /**
@@ -1332,6 +1361,29 @@ function sourceDrawn(element, source, fit) {
 	});
 }
 
+/**
+ * The picture a piece is drawn from, named by its kind: the page's, as the stage shows it, or one of its source alone it
+ * holds, set whole on its element as the page's is on the root, as CSS takes no address out of a custom property.
+ * @param {Staged} element @param {PiecePicture} picture
+ */
+function pictureDrawn(element, picture) {
+	named(element, PICTURE, picture.kind);
+	switch (picture.kind) {
+		case 'following':
+			element.style.removeProperty(PIECE_PICTURE);
+			return;
+		case 'held':
+			element.style.setProperty(PIECE_PICTURE, `url("${heldPicture(picture.number).src}")`);
+	}
+}
+
+/** A picture of a part of the screen the stage holds, by its number. @param {number} number */
+function heldPicture(number) {
+	const held = HELD_PICTURES.get(number);
+	if (held === undefined) throw new Error(`the stage holds no picture numbered ${number}`);
+	return held;
+}
+
 function holeElement() {
 	return classed(document.createElement('div'), HOLE);
 }
@@ -1450,5 +1502,5 @@ function found(element, name) {
 }
 
 /** @type {StageApi} */
-const STAGE = { setup, open, show, layOwnPages, apply };
+const STAGE = { setup, open, show, hold, layOwnPages, apply };
 window.stage = STAGE;

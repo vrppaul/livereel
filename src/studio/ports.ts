@@ -3,6 +3,7 @@
  * frames in, and a track to keep sounds in. The adapters answer these; the studio names no browser and no file of its
  * own, and blends no image.
  */
+import type { Box } from '../domain/geometry.ts';
 import type { FilmInFormat } from '../direction/film.ts';
 import type { ActContext, FilmedPage, MeasuredPage, OwnPage, PageShown } from '../direction/page.ts';
 import type { Sound } from '../direction/sound.ts';
@@ -49,6 +50,12 @@ export interface PicturedStage extends DrawingStage {
 	 * whether it came out as the last one did.
 	 */
 	readonly retakePage: (zoom: number) => Promise<boolean>;
+	/**
+	 * A picture of a part of the screen, in its pixels, taken as the page stands now, as sharp as a camera at this zoom
+	 * shows it, and held for the rest of the take, apart from the page's picture, which may be retaken: its number, by
+	 * which a drawn piece names it. Each is held as a piece is lifted, so a take holds no more than its film lifts so.
+	 */
+	readonly holdPicture: (part: Box, zoom: number) => Promise<number>;
 	/**
 	 * Whether the page changed its document of itself since the take last asked, as when a timer of its own runs out or
 	 * an answer comes in, so its picture may no longer show it.

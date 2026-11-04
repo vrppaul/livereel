@@ -275,6 +275,10 @@ class TimedPicturedStage extends TimedDrawingStage<PicturedStage> implements Pic
 		return this.timings.timed('stage.retakePage', () => this.stage.retakePage(zoom));
 	}
 
+	holdPicture(part: Box, zoom: number): Promise<number> {
+		return this.timings.timed('stage.holdPicture', () => this.stage.holdPicture(part, zoom));
+	}
+
 	/** Asked of what the stage already heard, as it was told: nothing to wait on, nothing to time. */
 	changedOfItself(): boolean {
 		return this.stage.changedOfItself();

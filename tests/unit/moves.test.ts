@@ -76,7 +76,7 @@ import {
 	withObject,
 	withProp
 } from '../../src/scene.ts';
-import { PageOfBoxes, SMALL } from './fakes.ts';
+import { PageOfBoxes, PicturesHeld, SMALL } from './fakes.ts';
 
 const BLOCK = { left: 100, top: 100, width: 100, height: 40 };
 // How far along a curve that passes its ends may stand, past its end and before its start
@@ -106,8 +106,10 @@ const SHOWN_RIGHT = { left: 580, top: 100, width: 20, height: 40 };
 const CARD = { left: 400, top: 300, width: 200, height: 100 };
 const CARDS_GROUND = '#f6f7f9';
 const OTHER = { left: 1200, top: 600, width: 100, height: 60 };
-// No move here acts on the page: an act at a moment of a play is the take's, tested there
+// No move here acts on the page: an act at a moment of a play is the take's, tested there; nor holds a picture of a
+// part of the screen, but where a test hands it a stand-in that does
 const NO_ACT = undefined as never;
+const NO_PICTURE_HELD = undefined as never;
 const PAGE = new PageOfBoxes(
 	new Map([
 		['#block', BLOCK],
@@ -196,6 +198,8 @@ const MIDDLE_HALF = { left: 0.25, top: 0.25, width: 0.5, height: 0.5 } as const;
 const WHOLE_SCREEN = { left: 0, top: 0, width: 1920, height: 1080 };
 // A piece's corners where neither the film nor the window rounds them
 const SQUARE_CORNERS = { topLeft: 0, topRight: 0, bottomRight: 0, bottomLeft: 0 };
+// A piece drawn from the page's picture as the stage shows it, as one is where the film names no picture of its own
+const FOLLOWING = { kind: 'following' };
 // The middle of an object's box, in shares of it
 const BOX_MIDDLE: Point = { left: 0.5, top: 0.5 };
 // How a group stands as it was placed refuses an object joining it otherwise
@@ -214,7 +218,18 @@ function ownPageRefusal(move: string): FilmError {
 }
 
 function beginningIn(scene: Scene, format: Format): Beginning {
-	return { scene, page: PAGE, format, pageShown: 'pictured', act: NO_ACT };
+	return { scene, page: PAGE, format, pageShown: 'pictured', act: NO_ACT, holdPicture: NO_PICTURE_HELD };
+}
+
+/** A beginning in a format whose take holds each picture of a part of the screen a move asks it for in a stand-in. */
+function beginningHolding(scene: Scene, format: Format, pictures: PicturesHeld): Beginning {
+	return { ...beginningIn(scene, format), holdPicture: (part) => pictures.hold(part) };
+}
+
+/** The scene a move sets, begun on a scene shot in a format whose take holds pictures in a stand-in, at its end. */
+async function heldIn(move: Move, scene: Scene, format: Format, pictures: PicturesHeld): Promise<Scene> {
+	const change = await move.begin(beginningHolding(scene, format, pictures));
+	return change(scene, 1);
 }
 
 /** The scene a move sets, begun on a scene, at a progress of its way. */
@@ -637,8 +652,27 @@ test('a piece of the page is born over its block as the camera shows it, cut to 
 	// Of 400 to 600 across the camera shows 480 to 600, at twice its size from the frame's left edge
 	expect([lifted.box, lifted.content]).toEqual([
 		{ left: 0, top: 60, width: 240, height: 200 },
-		{ kind: 'piece', source: SHOWN_AT_TWO, corners: SQUARE_CORNERS, hole: null, lines: null }
+		{ kind: 'piece', source: SHOWN_AT_TWO, corners: SQUARE_CORNERS, hole: null, lines: null, picture: FOLLOWING }
 	]);
+});
+
+test("a piece lifted holding its picture is drawn from a picture of its source the take holds as it is lifted, one lifted naming none from the page's picture as it changes", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const pictures = new PicturesHeld();
+	const held = await heldIn(piece.show('#card', { picture: 'held' }), wide, FULL_HD, pictures);
+	const following = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	expect([held.objects.get('piece')!.content, following.objects.get('piece')!.content, pictures.parts]).toEqual([
+		expect.objectContaining({ picture: { kind: 'held', number: 1 } }),
+		expect.objectContaining({ picture: FOLLOWING }),
+		[CARD]
+	]);
+});
+
+test("a piece drawn from a picture it holds asks the page's picture no closer, however large it shows its source", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK), 1, FULL_HD);
+	const held = await heldIn(piece.show(PAST_THE_SHOWN_EDGE, { picture: 'held' }), wide, FULL_HD, new PicturesHeld());
+	const filling = await setIn(piece.to({ left: 0, top: 0, width: 1, height: 1 }, { scale: 2 }), held, 1, FULL_HD);
+	expect(pictureZoomsIn(filling, cameraOf(filling, FULL_HD), FULL_HD.frame)).toEqual([]);
 });
 
 test("a piece lifted with air takes so many of the page's pixels round its block, cut to the part the camera shows", async () => {
@@ -683,7 +717,7 @@ test('a piece, or an outline, goes back over its block as the camera shows it th
 	// The camera at 1 shows the screen's pixels as the frame's: each stands over the part it was cut to
 	expect([back.box, back.content, back.scale, back.depth, back.angle, ringBack.box]).toEqual([
 		SHOWN_AT_TWO,
-		{ kind: 'piece', source: SHOWN_AT_TWO, corners: SQUARE_CORNERS, hole: null, lines: null },
+		{ kind: 'piece', source: SHOWN_AT_TWO, corners: SQUARE_CORNERS, hole: null, lines: null, picture: FOLLOWING },
 		1,
 		0,
 		{ tilt: 0, turn: 360, roll: 0 },
@@ -885,7 +919,8 @@ test("a piece is drawn as large as its box holds all of its source, in its middl
 			figure: { left: 0, top: 60, width: 1920, height: 960 },
 			corners: SQUARE_CORNERS,
 			holes: [],
-			shown: 1
+			shown: 1,
+			picture: FOLLOWING
 		},
 		[19.2],
 		[2.2]

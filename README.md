@@ -178,13 +178,14 @@ and the moves of each part of the scene:
   `terminal.lean({ tilt, turn, roll })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
-- `piece.show(target, { every, air, corner, hole, lines, enter, edge, as, inside, group, zIndex })`,
+- `piece.show(target, { every, air, corner, hole, lines, picture, enter, edge, as, inside, group, zIndex })`,
   `piece.to(place, { scale, depth })`, `piece.onto(target)`, `piece.lean({ tilt, turn, roll })`, `piece.back()`,
   `piece.hide({ toward, leave, edge })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
   in the page's pixels (a rounded card's own `border-radius`), square where it names none, and as round as the window
   at a corner standing on a corner of what the window shows, leaving a `hole: { ground, line }` and drawing `lines` to its
-  source where named; carried `onto` another block, it lies on the page there, in the window, and keeps that place on
+  source where named; drawn from the page's picture as it changes, or, `picture: 'held'`, from a picture of its source
+  held as it is lifted; carried `onto` another block, it lies on the page there, in the window, and keeps that place on
   the screen as the camera moves; each move of it takes `as` to name which
 - `outline.show(target, { every, line, enter, edge, as, group, zIndex })`, `outline.to(place, { scale, depth })`,
   `outline.lean({ tilt, turn, roll })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a
@@ -398,7 +399,12 @@ screen, over where the camera shows them, cut to the part it shows. It is
 drawn from the page's picture, so it shows what the page shows there as the
 page changes, and a page scrolled under it shows what scrolls into that
 part of the screen; a film whose page is `'dynamic'` has no picture and is
-refused, as is a window that leans or shows its back. It does not follow the camera after:
+refused, as is a window that leans or shows its back. Lifted `picture:
+'held'`, `piece.show('.thread', { picture: 'held' })`, it is drawn from a
+picture of its source alone, taken as it is lifted, as sharp as the page's
+picture where the page stands still: it shows what the page showed there
+then, so a thread lifted off a review stays as it was while the diff under
+it is shot anew. It does not follow the camera after:
 carried `to` a place it stands as large as the place holds its source, in
 its middle, and grows, comes near, leans, rolls and spins as a title does,
 a blank card when it turns away. `piece.onto('#agent-panel')` carries it
@@ -431,9 +437,9 @@ showing the page under its own middle twice as large as the camera does, or
 as `magnification` and `size` say; `lens.to(CHART)` carries it round
 another block's middle, and what it shows moves under it. A lens is drawn
 from the page's picture as a piece is, refused where a piece is. A piece or
-a lens shows the page as it stands, so the holes other pieces leave in its
-part of the screen with it: a piece of the whole screen under the pieces
-lifted off it shows where they were.
+a lens shows the holes other pieces leave in its part of the screen as
+they stand, whatever picture it is drawn from: a piece of the whole screen
+under the pieces lifted off it shows where they were.
 
 `group.show({ at: 'whole', as: 'stack' })` places a group, and an object
 shown with `group: 'stack'` stands in it, where it would stand on the frame:

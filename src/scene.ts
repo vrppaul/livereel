@@ -216,8 +216,9 @@ export function cameraOf(scene: Scene, format: Format): Camera {
 }
 
 /**
- * How close each piece of the page or lens in a scene shows it, as a pose's zoom has it, standing or pushed off, the
- * page seen by the camera that shows the scene on a frame of a size, so the picture it is drawn from is taken as sharp.
+ * How close each piece drawn from the page's picture, or lens, in a scene shows the page, as a pose's zoom has it,
+ * standing or pushed off, the page seen by the camera that shows the scene on a frame of a size, so the page's picture
+ * is taken as sharp.
  */
 export function pictureZoomsIn(scene: Scene, camera: Camera, frame: Size): readonly number[] {
 	const holders: Holders = { camera, groups: scene.groups };

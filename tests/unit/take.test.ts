@@ -700,6 +700,18 @@ test('a piece is refused on a page framed live, which has no picture to draw it 
 	);
 });
 
+test("a piece holding its picture has the stage hold one of its source as the page stands as it is lifted, as sharp as livereel's bound, and is drawn from it", async () => {
+	const stage = new PicturedStageThatKeeps();
+	await takeOf(new FootageOf([0]), stage).run([
+		cut(showPiece('#first', { picture: 'held' })),
+		hold({ seconds: 1 / 30 })
+	]);
+	expect([stage.held, stage.drawn.at(OWN)!.objects[0]!.content]).toEqual([
+		[{ part: FIRST, zoom: 2.2 }],
+		expect.objectContaining({ picture: { kind: 'held', number: 1 } })
+	]);
+});
+
 test("a static page moving under a camera that crosses the frame fast is pictured as close as the frame's closest exposure", async () => {
 	const stage = new PicturedStageThatKeeps();
 	const take = new Take({

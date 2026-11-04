@@ -19,7 +19,8 @@
  * alike to its picture (SSIM 1.0); a 1040 × 1080 screen, 2026-10-30. Playwright's own picture takes none but the tab's
  * device scale. As Playwright's did, a picture waits for the page's fonts: CDP's does not, and text in a face still
  * loading, which Chrome hides for up to 3 s, came out missing in two pictures alike, so the page was held standing
- * still without it (probed 2026-10-30).
+ * still without it (probed 2026-10-30). A picture of a part of the screen a piece holds is taken the same way, clipped
+ * to that part, and handed to the stage by its number, which keeps it for the rest of the take.
  *
  * A frame is captured by Playwright at the page's device scale, the film's sharpness. A capture of livereel's own, on
  * a CDP session apart from Playwright's, came back at the page's own pixels whatever that scale, every full shoot as
@@ -32,7 +33,7 @@
  */
 import type { CDPSession, Frame, Page } from 'playwright-core';
 import type { Format } from '../../domain/format.ts';
-import { type Size, frameScaleOf } from '../../domain/geometry.ts';
+import { type Box, type Size, boxOf, frameScaleOf } from '../../domain/geometry.ts';
 import type { OwnPage } from '../../direction/page.ts';
 import type { DrawnScene } from '../../scene.ts';
 import type { FramedStage, PicturedStage } from '../../studio/ports.ts';
@@ -70,6 +71,11 @@ export interface PagePicture {
 	readonly type: string;
 }
 
+/** A picture of a part of the filmed page's screen a piece holds, as the stage is handed it, and its number. */
+export interface HeldPicture extends PagePicture {
+	readonly number: number;
+}
+
 export interface StageApi {
 	/** The stage laid out as a room: the frame and the screen in it, as large as it draws, and its exposures. */
 	readonly setup: (room: Room) => void;
@@ -77,6 +83,8 @@ export interface StageApi {
 	readonly open: (opening: Opening) => void;
 	/** A picture of the filmed page, shown in the frame's place once it is decoded. */
 	readonly show: (picture: PagePicture) => Promise<void>;
+	/** A picture of a part of the screen held by its number for the rest of the take, once it is decoded. */
+	readonly hold: (picture: HeldPicture) => Promise<void>;
 	/**
 	 * The pages of the film's own laid out in the screen's place in every exposure, hidden until a frame shows one, each
 	 * loaded with its fonts, its scripts kept from running; the first exposure's named by its key, where moves measure
@@ -169,8 +177,10 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	readonly filmedTab: FilmedTab;
 	readonly watch: TabWatch;
 	readonly exposuresAtOnce: number;
-	// The page's picture last taken, in base64, none before the first
+	// The page's picture last taken, in base64, none before the first; and how many pictures of a part of the screen
+	// the stage holds, each by its number, counted from 1
 	private picture: string | null = null;
+	private picturesHeld = 0;
 
 	constructor(page: Page, filmedTab: FilmedTab, watch: TabWatch, exposuresAtOnce: number) {
 		this.page = page;
@@ -185,23 +195,38 @@ export class PlaywrightPicturedStage implements PicturedStage {
 
 	/** The page's picture taken anew, and shown where it came out otherwise than the last. */
 	async retakePage(zoom: number): Promise<boolean> {
-		const picture = await this.pictureAt(zoom);
+		const picture = await this.pictureAt(boxOf(this.filmedTab.screen), zoom);
 		const alike = this.picture === picture;
 		this.picture = picture;
 		if (!alike) await this.page.evaluate(pictureShown, { base64: picture, type: PICTURE_TYPE });
 		return alike;
 	}
 
+	/** A picture of a part of the screen taken and handed to the stage to hold, by the next number. */
+	async holdPicture(part: Box, zoom: number): Promise<number> {
+		const picture = await this.pictureAt(part, zoom);
+		this.picturesHeld += 1;
+		await this.page.evaluate(pictureHeld, { base64: picture, type: PICTURE_TYPE, number: this.picturesHeld });
+		return this.picturesHeld;
+	}
+
 	/**
-	 * The page as its tab shows it once its fonts have loaded, as a JPEG as sharp as a camera at this zoom shows it, its
-	 * text caret kept: its bytes in base64.
+	 * A part of the screen as the page's tab shows it once its fonts have loaded, as a JPEG as sharp as a camera at this
+	 * zoom shows it, its text caret kept: its bytes in base64.
 	 */
-	private async pictureAt(zoom: number): Promise<string> {
-		const { tab, session, screen, pixelsAtZoomOne } = this.filmedTab;
+	private async pictureAt(part: Box, zoom: number): Promise<string> {
+		const { tab, session, pixelsAtZoomOne } = this.filmedTab;
 		await tab.evaluate(fontsLoaded);
 		const { cssVisualViewport } = await session.send('Page.getLayoutMetrics');
-		// eslint-disable-next-line id-length -- CDP names the corner a picture is clipped at `x` and `y`
-		const clip = { x: cssVisualViewport.pageX, y: cssVisualViewport.pageY, ...screen, scale: pixelsAtZoomOne * zoom };
+		const clip = {
+			// eslint-disable-next-line id-length -- CDP names the corner a picture is clipped at `x` and `y`
+			x: cssVisualViewport.pageX + part.left,
+			// eslint-disable-next-line id-length -- as above
+			y: cssVisualViewport.pageY + part.top,
+			width: part.width,
+			height: part.height,
+			scale: pixelsAtZoomOne * zoom
+		};
 		const { data } = await session.send('Page.captureScreenshot', {
 			format: PICTURE_FORMAT,
 			quality: JPEG_QUALITY,
@@ -254,6 +279,10 @@ export function openPage(opening: Opening): void {
 
 function pictureShown(picture: PagePicture): Promise<void> {
 	return window.stage.show(picture);
+}
+
+function pictureHeld(picture: HeldPicture): Promise<void> {
+	return window.stage.hold(picture);
 }
 
 /** The pages of the film's own laid on the stage: the keys of those that move of themselves. */

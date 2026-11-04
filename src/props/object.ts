@@ -34,8 +34,10 @@
  * the group leans; or, in a group ordered by depth, the farther behind the nearer, so a ring of cards turning shows
  * the near ones over the far.
  *
- * What a piece of the page or a lens shows of the page is the page as it stands: the holes other pieces leave in it
- * (`src/props/lifted.ts`) with it, so a piece of the whole screen under the pieces lifted off it shows where they were.
+ * What a piece drawn from the page's picture, or a lens, shows of the page is the page as it stands; a piece that holds
+ * its picture shows it as it stood as the piece was lifted. Each shows the holes other pieces leave in it
+ * (`src/props/lifted.ts`) as they stand, so a piece of the whole screen under the pieces lifted off it shows where they
+ * were.
  *
  * The eye's focus (`src/domain/focus.ts`) blurs an object in the world by where its middle stands; one inside the
  * window or on the page is blurred with the window it lies in, and one on the frame or in a group rides with the eye
@@ -91,7 +93,7 @@ import { type CaptionStanding, type DrawnKeys, type Keys, drawnKeys, standOver }
 import { type DrawnLens, type Lens, drawnLens, lensFit, pageMovedIn } from './lens.ts';
 import type { Look } from './look.ts';
 import { type DrawnOutline, type Outline, drawnOutline } from './outline.ts';
-import { type DrawnHole, type DrawnPiece, type Piece, drawnPiece, fitIn } from './piece.ts';
+import { type DrawnHole, type DrawnPiece, type Piece, drawnPiece, pageFitOfPiece } from './piece.ts';
 import { type OnItsWay, type Way, alongItsWay, cutMoved, figurePointOn, presencesIn, presentShare } from './way.ts';
 import type { Screen } from './screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './terminal.ts';
@@ -590,8 +592,8 @@ function outOf(object: FrameObject, group: Group): number {
 }
 
 /**
- * How close what an object shows of the page shows it, as a pose's zoom has it, the page seen by a camera: none for
- * what shows none of it; else the frame's pixels a screen's pixel takes in its box, grown and brought near as it
+ * How close what an object shows of the page's picture shows it, as a pose's zoom has it, the page seen by a camera:
+ * none for what shows none of it; else the frame's pixels a screen's pixel takes in its box, grown and brought near as it
  * stands, and as its group grows and brings it near; where it leans, its nearer side shows the page larger still, so
  * at livereel's bound.
  */
@@ -611,15 +613,15 @@ export function pictureZoomOf(object: FrameObject, holders: Holders, frame: Size
 }
 
 /**
- * How many of the frame's pixels a screen's pixel takes in what an object laid in a box shows of the page, the page
- * seen by a camera: a piece as large as the box holds its source, a lens as its magnification has it; none for what
- * shows no page.
+ * How many of the frame's pixels a screen's pixel of the page's picture takes in what an object laid in a box shows of
+ * it, the page seen by a camera: a piece as large as the box holds its source, a lens as its magnification has it; none
+ * for what shows no page, or a piece drawn from a picture it holds.
  */
 function pageFitOf(object: FrameObject, laid: Box, camera: Camera, frame: Size): number | null {
 	const content = object.content;
 	switch (content.kind) {
 		case 'piece':
-			return fitIn(content.source, laid);
+			return pageFitOfPiece(content, laid);
 		case 'lens':
 			return lensFit(content, camera, frame);
 		case 'words':

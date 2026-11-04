@@ -1257,6 +1257,13 @@ body {
 	background-image: none;
 }
 
+/* A piece drawn from the picture of its source it holds, taken as it was lifted (`hold` in `stage/stage.js`), so it shows what the page showed there then as the page changes under it: the picture is its source alone, as large as the figure (its rule stands after every figure's, and before a back's, which shows no picture) */
+.piece[data-picture='held'] .way {
+	background-image: var(--piece-picture);
+	background-size: 100% 100%;
+	background-position: 0 0;
+}
+
 /* A piece of the page or a lens turned away shows the eye its back: a blank card of the screen's ground, never the page mirrored, nor the holes it shows */
 .object[data-face='back'] .piece .way,
 .object[data-face='back'] .lens .way {

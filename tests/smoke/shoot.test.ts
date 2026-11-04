@@ -29,6 +29,7 @@ import {
 	light,
 	look,
 	page,
+	piece,
 	play,
 	screen,
 	typing
@@ -155,6 +156,17 @@ test("a block only a page of the film's own has is framed while the screen shows
 		shootingInto(new EveryFrameCounted(), 'software')
 	);
 	expect([inItsOwnTab.frames, framedLive.frames, values]).toEqual([9, 9, [TYPED, TYPED]]);
+});
+
+test('a piece holding the picture of its block it was lifted with is shot as the page changes under it, every frame kept', async () => {
+	const footage = new EveryFrameCounted();
+	const steps = [
+		cut(piece.show(FIELD, { picture: 'held' })),
+		act((context: ActContext) => context.page.locator(FIELD).fill(TYPED)),
+		play({ seconds: 0.1, moves: [piece.to('whole')] })
+	];
+	const shot = await shoot(filmOf(steps), shootingInto(footage, 'software'));
+	expect([shot.frames, footage.kept]).toEqual([3, [0, 1, 2]]);
 });
 
 test("a page of the film's own that moves of itself is refused before the film is shot, naming how it begins", async () => {

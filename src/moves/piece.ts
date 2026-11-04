@@ -6,6 +6,9 @@
  * follow the camera between, until it is carried onto a block of the page: it lies on the page then, and the camera
  * frames it as it frames the page. A piece is drawn from the page's picture, so a page framed live, which has none, is
  * refused; and it stands over its source only on a window that faces the frame, where the source shows as a box.
+ * Lifted `picture: 'held'`, it is drawn from a picture of its source alone, which the take holds as it is lifted, as
+ * sharp as the page's picture is where the page stands still: it shows what the page showed there then, as the page
+ * changes under it.
  * Lifted inside the world, it stands there over its source on the window's plane, wherever the eye stands, and the eye
  * moves past it as it moves past the window, the eye's focus blurring it as it stands off it.
  *
@@ -26,13 +29,14 @@ import {
 	type Kind,
 	Literal,
 	OfForm,
+	OneOf,
 	Plain,
 	assertKind,
 	assertWritten
 } from '../domain/handed.ts';
 import type { Place } from '../domain/place.ts';
 import { A_TARGET, type Beginning, type Move, type Target } from '../direction/move.ts';
-import type { Corners, Hole, Piece } from '../props/piece.ts';
+import { type Corners, FOLLOWING_THE_PAGE, type Hole, type Piece, type PiecePicture } from '../props/piece.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
@@ -72,8 +76,10 @@ export interface HoleScript {
  * How a piece is lifted: off the first `every` blocks a selector matches, together, with `air` clear round them, in the
  * page's pixels; how round the corners of what it lifts are, `corner`, a radius in the page's pixels: a rounded card's
  * own `border-radius`, where it lifts the card alone and whole;
- * the hole it leaves and the line the lines from it to its source are drawn in, where the film names them; how it comes
- * up; which piece; the world it stands `inside`, which the eye moves through, or the group it stands in, if either.
+ * the hole it leaves and the line the lines from it to its source are drawn in, where the film names them; the
+ * `picture` it is drawn from, the page's as it changes, `'following'`, where the film names none, or one of its source
+ * held as it is lifted, `'held'`; how it comes up; which piece; the world it stands `inside`, which the eye moves
+ * through, or the group it stands in, if either.
  */
 export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript {
 	readonly every?: number;
@@ -81,6 +87,7 @@ export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScri
 	readonly corner?: number;
 	readonly hole?: HoleScript;
 	readonly lines?: Stroke;
+	readonly picture?: PiecePicture['kind'];
 	readonly inside?: 'world';
 }
 
@@ -96,7 +103,7 @@ interface HoleAsked {
 
 /**
  * What a piece is lifted with, as it is made: how many blocks, how much air round them, how round its corners are, the
- * hole it leaves, if any, and its lines, if any.
+ * hole it leaves, if any, its lines, if any, and the kind of picture it is drawn from.
  */
 interface Lifting {
 	readonly every: number;
@@ -104,6 +111,7 @@ interface Lifting {
 	readonly corner: number;
 	readonly hole: HoleAsked | null;
 	readonly lines: Stroke | null;
+	readonly picture: PiecePicture['kind'];
 }
 
 const PIECE: ObjectKind = 'piece';
@@ -118,12 +126,18 @@ const A_HOLE_GROUND: Kind<string> = new Plain(
 	`the ground the page draws behind the block, "${PAGES_GROUND}", or a colour in hex`
 );
 const HOLE_FORM: Form<HoleScript> = { ground: A_HOLE_GROUND, line: A_STROKE };
+const PIECE_PICTURES = ['following', 'held'] as const satisfies readonly PiecePicture['kind'][];
+const A_PIECE_PICTURE: Kind<PiecePicture['kind']> = new OneOf(
+	PIECE_PICTURES,
+	`what a piece is drawn from: "following", the page's picture as it changes, or "held", a picture of its source held as it is lifted`
+);
 const PIECE_FORM: Form<PieceScript> = {
 	every: A_COUNT,
 	air: A_PIXELS,
 	corner: A_PIXELS,
 	hole: new OfForm(HOLE_FORM, 'a hole: { ground, line }'),
 	lines: A_STROKE,
+	picture: A_PIECE_PICTURE,
 	// A piece stands inside the world alone: it lies in the window only where it is carried onto the page (`onto`)
 	inside: new Literal('world'),
 	...IN_PLACE_SHOW_FORM,
@@ -133,9 +147,9 @@ const PIECE_FORM: Form<PieceScript> = {
 /**
  * A piece of the page lifted off a target, a selector's first `every` blocks together or a box of the screen, over
  * where the camera shows it, cut to the part it shows, its corners as round as the film names, leaving the hole and
- * drawing the lines the film names: in place of any piece of its name, in its own way, fading up whole, or in a way of
- * livereel's the film names. A hole over a box of the screen, which has no block to read the ground behind, is refused
- * unless the film names its colour.
+ * drawing the lines the film names, drawn from the picture the film names: in place of any piece of its name, in its
+ * own way, fading up whole, or in a way of livereel's the film names. A hole over a box of the screen, which has no
+ * block to read the ground behind, is refused unless the film names its colour.
  */
 export function show(target: Target, script: PieceScript = {}): Move {
 	assertKind(target, A_TARGET, "piece.show's target");
@@ -145,7 +159,8 @@ export function show(target: Target, script: PieceScript = {}): Move {
 		air: script.air ?? NO_AIR,
 		corner: script.corner ?? SQUARE,
 		hole: script.hole === undefined ? null : holeAsked(target, script.hole),
-		lines: script.lines ?? null
+		lines: script.lines ?? null,
+		picture: script.picture ?? FOLLOWING_THE_PAGE.kind
 	};
 	return objectShow(PIECE, 'piece.show', script, NO_PLACE, (beginning) => lifted(beginning, target, lifting));
 }
@@ -217,7 +232,8 @@ function holeAsked(target: Target, hole: HoleScript): HoleAsked {
 
 /**
  * A piece of the page over a target, cut to the part of it the camera shows, its corners as round as the film names,
- * the hole it leaves filled as the page draws it now and as round, and the box of the frame it shows there.
+ * the hole it leaves filled as the page draws it now and as round, drawn from the picture the film names, and the box
+ * of the frame it shows there.
  */
 async function lifted(beginning: Beginning, target: Target, lifting: Lifting): Promise<Coming> {
 	const camera = cameraOverThePicture(beginning, 'piece.show');
@@ -227,8 +243,19 @@ async function lifted(beginning: Beginning, target: Target, lifting: Lifting): P
 		(beginning.scene.look.paneCorner * frameScaleOf(beginning.format.frame) * source.width) / box.width;
 	const corners = cornersOf(source, shown, lifting.corner, windowCorner);
 	const hole = lifting.hole === null ? null : await holeOf(beginning, lifting.hole, lifting.corner);
-	const piece: Piece = { kind: 'piece', source, corners, hole, lines: lifting.lines };
+	const picture = await pictureOf(beginning, lifting.picture, source);
+	const piece: Piece = { kind: 'piece', source, corners, hole, lines: lifting.lines, picture };
 	return { content: piece, box };
+}
+
+/** The picture a piece is drawn from: the page's, or one of its source the take holds now, as the page stands. */
+async function pictureOf(beginning: Beginning, kind: PiecePicture['kind'], source: Box): Promise<PiecePicture> {
+	switch (kind) {
+		case 'following':
+			return FOLLOWING_THE_PAGE;
+		case 'held':
+			return { kind: 'held', number: await beginning.holdPicture(source) };
+	}
 }
 
 /**
