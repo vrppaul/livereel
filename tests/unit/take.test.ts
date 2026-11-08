@@ -68,6 +68,8 @@ const STROKES: readonly Keystroke[] = [
 ];
 // A film camera's shutter, open for half the way, of four exposures at most
 const HALF_OF_FOUR: MotionBlur = { shutter: 0.5, exposuresAtMost: 4 };
+// The rate the take's frames are counted at: each frame a thirtieth of a second, as the moments below are written
+const RATE = 30;
 // The camera close on the screen's right edge, a page's pixel to a frame's pixel, as 2.7 is on a frame of 400 (1080 /
 // 400): from the whole screen, at two thirds of that, a fast way
 const CLOSE_AT_THE_RIGHT: Pose = { focusX: 400, focusY: 200, zoom: 2.7 };
@@ -203,7 +205,8 @@ function takeOf(
 		track,
 		format: SMALL,
 		opening: openingScene(SMALL, LIVEREELS_LOOK),
-		motionBlur
+		motionBlur,
+		framesPerSecond: RATE
 	});
 }
 
@@ -216,7 +219,8 @@ function takeShowingOwnPage(footage: FootageOf, stage: Stage, filmed: PageOfBoxe
 		track: new TrackThatKeeps(),
 		format: SMALL,
 		opening: openingScene(SMALL, LIVEREELS_LOOK),
-		motionBlur: HALF_OF_FOUR
+		motionBlur: HALF_OF_FOUR,
+		framesPerSecond: RATE
 	});
 }
 
@@ -233,7 +237,8 @@ function takeOfTheWholeScreen(footage: FootageOf, stage: Stage): Take {
 		track: new TrackThatKeeps(),
 		format: WHOLE_AT_ZOOM_ONE,
 		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK),
-		motionBlur: HALF_OF_FOUR
+		motionBlur: HALF_OF_FOUR,
+		framesPerSecond: RATE
 	});
 }
 
@@ -508,7 +513,8 @@ test('a frame of a film with no blur is exposed once, however fast the camera cr
 		track: new TrackThatKeeps(),
 		format: SMALL,
 		opening: openingScene(SMALL, LIVEREELS_LOOK),
-		motionBlur: null
+		motionBlur: null,
+		framesPerSecond: RATE
 	});
 	await take.run([play({ seconds: 1 / 30, moves: [cameraTo(CLOSE_AT_THE_RIGHT)] })]);
 	expect(footage.exposed).toEqual([1]);
@@ -564,7 +570,8 @@ test("an act at a moment of a play is done as its share begins, the page's time 
 		track: new TrackThatKeeps(),
 		format: SMALL,
 		opening: openingScene(SMALL, LIVEREELS_LOOK),
-		motionBlur: null
+		motionBlur: null,
+		framesPerSecond: RATE
 	});
 	await take.run([play({ seconds: 4 * frame, moves: [counted, acting], ease: linear })]);
 	expect([setAsActed, counted.progresses, time.log]).toEqual([
@@ -674,7 +681,8 @@ test("a static page is pictured as close as the frame's camera comes on each fra
 		track: new TrackThatKeeps(),
 		format: WHOLE_AT_ZOOM_ONE,
 		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK),
-		motionBlur: HALF_OF_FOUR
+		motionBlur: HALF_OF_FOUR,
+		framesPerSecond: RATE
 	});
 	const frame = 1 / 30;
 	const steps = [
@@ -697,7 +705,8 @@ test('a static page is pictured as close as a piece of it shows it on a frame it
 		track: new TrackThatKeeps(),
 		format: WHOLE_AT_ZOOM_ONE,
 		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK),
-		motionBlur: HALF_OF_FOUR
+		motionBlur: HALF_OF_FOUR,
+		framesPerSecond: RATE
 	});
 	// The first block, 100 × 50, lifted and carried to a box 135 pixels square: 1.35 of the frame's pixels a page's
 	await take.run([
@@ -815,7 +824,8 @@ test("a static page moving under a camera that crosses the frame fast is picture
 		track: new TrackThatKeeps(),
 		format: WHOLE_AT_ZOOM_ONE,
 		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK),
-		motionBlur: HALF_OF_FOUR
+		motionBlur: HALF_OF_FOUR,
+		framesPerSecond: RATE
 	});
 	// The camera drawn back from twice close to the whole screen on the first of two frames of typing
 	const steps = [
@@ -904,7 +914,8 @@ test('each key typed into the page is heard on the frame it is pressed', async (
 		track,
 		format: SMALL,
 		opening: openingScene(SMALL, LIVEREELS_LOOK),
-		motionBlur: HALF_OF_FOUR
+		motionBlur: HALF_OF_FOUR,
+		framesPerSecond: RATE
 	});
 	await take.run([play({ seconds: 0.2, moves: [typeIntoThePage(STROKES)] })]);
 	expect([track.heard, page.typed]).toEqual([

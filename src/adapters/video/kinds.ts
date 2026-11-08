@@ -62,8 +62,11 @@ const WEBM = [
 // A palette of the film's own colours, weighed by what moves between frames; every frame drawn in it, dithered in an
 // even pattern, and only the part that changed written again
 const PALETTE_MADE = 'palettegen=stats_mode=diff';
-const PALETTE_USED = '[0:v][1:v]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle';
+const PALETTE_USED = 'paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle';
 const PALETTE_SUFFIX = '.palette.png';
+// A GIF holds a frame for whole hundredths of a second, and browsers show one held a hundredth or less as held ten:
+// so a GIF is made at no more than 50 frames a second, each held two, though the film runs faster
+const GIF_FRAMES_PER_SECOND_AT_MOST = 50;
 
 function isKind(name: string): name is Kind {
 	return Object.hasOwn(KINDS, name);
@@ -79,32 +82,39 @@ export function encodersOf(kind: Kind): readonly string[] {
 	return sound === null ? [picture] : [picture, sound];
 }
 
-/** A video of another kind made from the film's MP4, under a name of its own until it is whole. */
-export async function madeFrom(mp4: string, kind: MadeKind, video: string): Promise<void> {
+/**
+ * A video of another kind made from the film's MP4, at the film's rate where the kind holds it, under a name of its own
+ * until it is whole.
+ */
+export async function madeFrom(mp4: string, kind: MadeKind, video: string, framesPerSecond: number): Promise<void> {
 	const partial = partialOf(video);
 	try {
-		await encoded(mp4, kind, partial);
+		await encoded(mp4, kind, partial, framesPerSecond);
 		await rename(partial, video);
 	} finally {
 		await rm(partial, { force: true });
 	}
 }
 
-function encoded(mp4: string, kind: MadeKind, video: string): Promise<void> {
+function encoded(mp4: string, kind: MadeKind, video: string, framesPerSecond: number): Promise<void> {
 	switch (kind) {
 		case 'webm':
 			return ffmpeg('-i', mp4, ...WEBM, video);
 		case 'gif':
-			return gifOf(mp4, video);
+			return gifOf(mp4, video, framesPerSecond);
 	}
 }
 
-/** A GIF in two passes: the palette worked out from the whole film, then every frame drawn in it. */
-async function gifOf(mp4: string, gif: string): Promise<void> {
+/**
+ * A GIF in two passes: the palette worked out from the whole film, then every frame drawn in it, at the film's rate
+ * or as many frames a second as a GIF holds, the fewer.
+ */
+async function gifOf(mp4: string, gif: string, framesPerSecond: number): Promise<void> {
 	const palette = join(dirname(gif), `${basename(gif, extname(gif))}${PALETTE_SUFFIX}`);
+	const rate = Math.min(framesPerSecond, GIF_FRAMES_PER_SECOND_AT_MOST);
 	try {
 		await ffmpeg('-i', mp4, '-vf', PALETTE_MADE, palette);
-		await ffmpeg('-i', mp4, '-i', palette, '-lavfi', PALETTE_USED, gif);
+		await ffmpeg('-i', mp4, '-i', palette, '-lavfi', `[0:v]fps=${rate}[timed];[timed][1:v]${PALETTE_USED}`, gif);
 	} finally {
 		await rm(palette, { force: true });
 	}

@@ -136,14 +136,29 @@ test('steps livereel refuses as they are written are said in its own words', () 
 	]);
 });
 
-test('a film is shot whole into a video of every frame at 30 a second, and its contact sheet', () => {
+test('a film is shot whole into a video of every frame at 60 a second, where it names no rate, and its contact sheet', () => {
 	const out = scratch();
 	const ran = livereel('shoot', SHORT, '--out', out, '--quality', 'draft', '--sheet');
 	expect([ran.code, readdirSync(out), probed(join(out, 'short-small.mp4'), 'r_frame_rate,nb_read_frames')]).toEqual([
 		0,
 		['short-small-sheet.png', 'short-small.mp4'],
-		'30/1,6'
+		'60/1,12'
 	]);
+});
+
+test('a span of a film is shot as a silent clip of its frames alone, named after its moments, and its sheet', () => {
+	const out = scratch();
+	const ran = livereel('clip', SHORT, '--out', out, '--quality', 'draft', '--from', '0.05', '--to', '0.15', '--sheet');
+	expect([
+		ran.code,
+		readdirSync(out),
+		probed(join(out, 'short-small-0.05-0.15s.mp4'), 'codec_type,nb_read_frames')
+	]).toEqual([0, ['short-small-0.05-0.15s-sheet.png', 'short-small-0.05-0.15s.mp4'], 'video,6']);
+});
+
+test('a clip that spans no whole frame is refused before anything is shot', () => {
+	const ran = livereel('clip', SHORT, '--out', scratch(), '--from', '0.004', '--to', '0.006');
+	expect([ran.code, ran.said]).toEqual([2, expect.stringContaining('--to stands at least a frame after --from')]);
 });
 
 test('a film is shot in the format asked, and named after it', () => {
@@ -164,7 +179,7 @@ test('a film is made as every kind of video asked, and as no MP4 unless it is as
 		readdirSync(out),
 		probed(join(out, 'short-small.webm'), 'codec_name,nb_read_frames'),
 		probed(join(out, 'short-small.gif'), 'codec_name,nb_read_frames')
-	]).toEqual([0, ['short-small.gif', 'short-small.webm'], 'vp9,6', 'gif,6']);
+	]).toEqual([0, ['short-small.gif', 'short-small.webm'], 'vp9,12', 'gif,10']);
 });
 
 test('a kind of video livereel does not make is refused, naming those it makes', () => {
@@ -220,7 +235,7 @@ test("a film's sounds are laid under its video, as long as the film", () => {
 	const ran = livereel('shoot', 'tests/cli/films/sounds.ts', '--out', out, '--quality', 'draft');
 	expect([ran.code, probed(join(out, 'sounds-small.mp4'), 'codec_type,duration')]).toEqual([
 		0,
-		'video,0.433333\naudio,0.433000'
+		'video,0.400000\naudio,0.400000'
 	]);
 });
 
@@ -349,7 +364,7 @@ test('an option a command does not take is refused, naming it', () => {
 
 test("a still past the end of the film is refused with the film's length", () => {
 	const ran = livereel('still', SHORT, '--out', scratch(), '--at', '5');
-	expect([ran.code, ran.said]).toEqual([1, expect.stringContaining('the film is 0.2 s long (6 frames)')]);
+	expect([ran.code, ran.said]).toEqual([1, expect.stringContaining('the film is 0.2 s long (12 frames)')]);
 });
 
 test('a still is written where it is asked for', () => {

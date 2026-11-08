@@ -116,7 +116,8 @@ interface Captured {
 
 /**
  * What a take is shot with: the page and the stage opened, where its frames and its sounds go, its format, the scene
- * it opens on, and how a fast move is blurred — not at all for a draft, or for a film that wants no blur.
+ * it opens on, how a fast move is blurred — not at all for a draft, or for a film that wants no blur — and how many
+ * frames make a second of the film.
  */
 export interface TakeSetup {
 	readonly opened: Opened;
@@ -125,6 +126,7 @@ export interface TakeSetup {
 	readonly format: Format;
 	readonly opening: Scene;
 	readonly motionBlur: MotionBlur | null;
+	readonly framesPerSecond: number;
 }
 
 export class Take {
@@ -133,6 +135,7 @@ export class Take {
 	readonly track: Track;
 	readonly format: Format;
 	readonly motionBlur: MotionBlur | null;
+	readonly framesPerSecond: number;
 	// The pictures of parts of the screen the stage holds for pieces
 	readonly pictures: PartPictures;
 	private scene: Scene;
@@ -155,6 +158,7 @@ export class Take {
 		this.format = setup.format;
 		this.scene = setup.opening;
 		this.motionBlur = setup.motionBlur;
+		this.framesPerSecond = setup.framesPerSecond;
 		this.pictures = picturesOn(setup.opened.stage);
 	}
 
@@ -214,7 +218,7 @@ export class Take {
 	}
 
 	private async play(step: Play): Promise<void> {
-		const frames = framesOf(step.seconds);
+		const frames = framesOf(step.seconds, this.framesPerSecond);
 		let waiting = [...step.moves];
 		let running: Running[] = [];
 		for (let index = 1; index <= frames; index += 1) {
@@ -572,7 +576,7 @@ export class Take {
 	}
 
 	private moment(): number {
-		return momentOf(this.shot);
+		return momentOf(this.shot, this.framesPerSecond);
 	}
 
 	private finished(): boolean {

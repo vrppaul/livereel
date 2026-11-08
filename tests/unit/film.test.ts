@@ -60,12 +60,12 @@ async function servedFrom(serving: unknown) {
 test('a film in no form of one is refused as it is defined, where it stands: its names, its formats and where their captions stand, its functions', () => {
 	expect(() => defineFilm(null as never)).toThrow(
 		new FilmError(
-			'the film is null: it is an object of formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, colourScheme, blurred, page, drawing'
+			'the film is null: it is an object of formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, framesPerSecond, colourScheme, blurred, page, drawing'
 		)
 	);
 	expect(() => filmWritten({ motionblur: {} })).toThrow(
 		new FilmError(
-			'the film names motionblur: it names formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, colourScheme, blurred, page, drawing, or fewer'
+			'the film names motionblur: it names formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, framesPerSecond, colourScheme, blurred, page, drawing, or fewer'
 		)
 	);
 	expect(() => filmWritten({ colourScheme: 'night' })).toThrow(
@@ -75,6 +75,9 @@ test('a film in no form of one is refused as it is defined, where it stands: its
 		new FilmError(
 			'the film\'s page is "moving": it is "static", changed by the film, or "dynamic" for a page that changes of itself, as an animation or live data does'
 		)
+	);
+	expect(() => filmWritten({ framesPerSecond: 29.97 })).toThrow(
+		new FilmError("the film's framesPerSecond is 29.97: it is a whole count, 1 or more")
 	);
 	expect(() => filmWritten({ blurred: '.email' })).toThrow(
 		new FilmError('the film\'s blurred is ".email": it is a list of selectors')

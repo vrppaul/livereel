@@ -122,9 +122,9 @@ test('moves of one prop one after the other share a step, moves of two props sha
 	expect([after.moves.length, together.moves.length, sounds.moves.length]).toEqual([2, 2, 3]);
 });
 
-test("a film's length is its plays' frames: a cut and an act take none", () => {
+test("a film's length is its plays' frames at its rate: a cut and an act take none", () => {
 	const steps = [hold({ seconds: 1 }), cut(cursorGone()), act(() => Promise.resolve()), hold({ seconds: 0.35 })];
-	expect(framesIn(steps)).toBe(41);
+	expect([framesIn(steps, 30), framesIn(steps, 60)]).toEqual([41, 81]);
 });
 
 test('a step of no time, or of no length a clock can count, is refused', () => {

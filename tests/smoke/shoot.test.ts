@@ -40,6 +40,8 @@ import {
 
 const PAGE = new URL('./page.html', import.meta.url).href;
 const SMALL = { frame: { width: 320, height: 320 }, screen: { width: 480, height: 320 } };
+// The films' rate: each frame a thirtieth of a second, as the counts of frames below are written
+const RATE = 30;
 const FIELD = '[data-testid=field]';
 const TYPED = 'hello';
 // A film that shows no page of its own, opened as a take opens it; a page of the film's own, and a block only it has
@@ -94,6 +96,7 @@ function filmWritten(
 		serve: () => Promise.resolve(atAddress(PAGE)),
 		ready: (context) => context.page.locator('h1').waitFor(),
 		steps: () => steps,
+		framesPerSecond: RATE,
 		...written
 	}).formats.get('small')!;
 }
@@ -186,7 +189,7 @@ test("the room is refused as the machine's to put right where the browser draws 
 
 test('a still is the one frame written, and nothing after it is shot', async () => {
 	const directory = await scratch();
-	const footage = new StillFootage(join(directory, 'still.jpg'), 0.1, blended);
+	const footage = new StillFootage(join(directory, 'still.jpg'), 0.1, RATE, blended);
 	const shot = await shoot(filmOf([play({ seconds: 0.2 })]), shootingInto(footage, 'software'));
 	expect([await readdir(directory), shot.frames]).toEqual([['still.jpg'], 4]);
 });
@@ -434,6 +437,7 @@ function timedFilmOf(steps: readonly Step[], written: { page?: 'dynamic' }) {
 		serve: () => Promise.resolve(atAddress(TIMED)),
 		ready: (context) => context.page.locator(SAID_READY).waitFor(),
 		steps: () => steps,
+		framesPerSecond: RATE,
 		...written
 	}).formats.get('small')!;
 }

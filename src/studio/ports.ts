@@ -95,7 +95,7 @@ export interface Exposures {
 
 /** Which frames a take keeps, and where each goes. */
 export interface Footage {
-	/** Refuses a film too short to hold what the footage is to keep: a still past its end. */
+	/** Refuses a film too short to hold what the footage is to keep: a still or a clip past its end. */
 	readonly expect: (frames: number) => void;
 	readonly keeps: (shot: number) => boolean;
 	readonly keep: (shot: number, exposures: Exposures) => Promise<void>;

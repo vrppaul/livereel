@@ -9,13 +9,16 @@ import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { EncodingError } from '../../src/domain/errors.ts';
 import type { Size } from '../../src/domain/geometry.ts';
-import { momentOf } from '../../src/domain/time.ts';
 import { type FilmSound, fileSound } from '../../src/direction/sound.ts';
 import { blended } from '../../src/adapters/video/exposures.ts';
 import { Soundtrack } from '../../src/adapters/video/soundtrack.ts';
-import { FRAMES_QUEUED_AT_MOST, VideoFootage } from '../../src/adapters/video/video.ts';
+import { EVERY_SHOT, FRAMES_QUEUED_AT_MOST, VideoFootage } from '../../src/adapters/video/video.ts';
+import { FilmError } from '../../src/domain/errors.ts';
 
 const FRAME = { width: 64, height: 64 };
+// The film's rate; and a clip of three frames from its second second on
+const RATE = 30;
+const A_SPAN = { first: 30, last: 32 };
 // A film that makes no sound, every one of livereel's off and no music: its video is its picture
 const OFF = { kind: 'off' } as const;
 const SOUNDLESS: FilmSound = { livereels: { click: OFF, key: OFF, ending: OFF }, music: null };
@@ -86,13 +89,23 @@ function framesOf(video: string): string {
 test('a frame of several exposures is one frame of the video', async () => {
 	const directory = await scratch();
 	const video = join(directory, 'film.mp4');
-	const footage = new VideoFootage(video, FRAME, blended);
+	const footage = new VideoFootage(video, FRAME, RATE, EVERY_SHOT, blended);
 	const image = jpegOf(FRAME, 'gray');
 	await footage.keep(0, { earlier: [image, image, image], own: image });
 	await footage.keep(1, { earlier: [], own: image });
-	await footage.finish(new Soundtrack(join(directory, 'film.ts'), SOUNDLESS), momentOf(2));
+	await footage.finish(new Soundtrack(join(directory, 'film.ts'), SOUNDLESS));
 	expect(framesOf(video)).toBe('2');
 	await footage[Symbol.asyncDispose]();
+});
+
+test('a clip keeps the frames of its span alone, is done past its last, and is refused where the film ends before it', async () => {
+	const directory = await scratch();
+	await using footage = new VideoFootage(join(directory, 'clip.mp4'), FRAME, RATE, A_SPAN, blended);
+	expect([29, 30, 32, 33].map((shot) => footage.keeps(shot))).toEqual([false, true, true, false]);
+	expect([32, 33].map((shot) => footage.complete(shot))).toEqual([false, true]);
+	expect(() => footage.expect(30)).toThrow(
+		new FilmError('the film is 1.0 s long (30 frames): there is no frame at 1.0 s')
+	);
 });
 
 test('a frame is kept without waiting on its blend, and goes into the video in the order shot', async () => {
@@ -101,13 +114,15 @@ test('a frame is kept without waiting on its blend, and goes into the video in t
 	const held = Promise.withResolvers<void>();
 	// The first frame's blend held until both are kept, the second's done at once
 	const blendsDone = [held.promise, Promise.resolve()];
-	const footage = new VideoFootage(video, FRAME, (exposures) => blendsDone.shift()!.then(() => exposures.own));
+	const footage = new VideoFootage(video, FRAME, RATE, EVERY_SHOT, (exposures) =>
+		blendsDone.shift()!.then(() => exposures.own)
+	);
 	const black = jpegOf(FRAME, 'black');
 	const white = jpegOf(FRAME, 'white');
 	await footage.keep(0, { earlier: [black], own: black });
 	await footage.keep(1, { earlier: [white], own: white });
 	held.resolve();
-	await footage.finish(new Soundtrack(join(directory, 'film.ts'), SOUNDLESS), momentOf(2));
+	await footage.finish(new Soundtrack(join(directory, 'film.ts'), SOUNDLESS));
 	expect(greysOf(video).map((grey) => Math.round(grey / WHITE))).toEqual([0, 1]);
 	await footage[Symbol.asyncDispose]();
 });
@@ -115,7 +130,7 @@ test('a frame is kept without waiting on its blend, and goes into the video in t
 test('the take waits on the footage once the most frames are queued, until the oldest is written', async () => {
 	const directory = await scratch();
 	const held = Promise.withResolvers<void>();
-	const footage = new VideoFootage(join(directory, 'film.mp4'), FRAME, (exposures) =>
+	const footage = new VideoFootage(join(directory, 'film.mp4'), FRAME, RATE, EVERY_SHOT, (exposures) =>
 		held.promise.then(() => exposures.own)
 	);
 	const image = jpegOf(FRAME, 'gray');
@@ -129,9 +144,9 @@ test('the take waits on the footage once the most frames are queued, until the o
 
 test("a blend that fails refuses the video as it is finished, in ffmpeg's words, and leaves no part of it", async () => {
 	const directory = await scratch();
-	const footage = new VideoFootage(join(directory, 'film.mp4'), FRAME, blended);
+	const footage = new VideoFootage(join(directory, 'film.mp4'), FRAME, RATE, EVERY_SHOT, blended);
 	await footage.keep(0, { earlier: [NOT_AN_IMAGE], own: NOT_AN_IMAGE });
-	await expect(footage.finish(new Soundtrack(join(directory, 'film.ts'), SOUNDLESS), momentOf(1))).rejects.toThrow(
+	await expect(footage.finish(new Soundtrack(join(directory, 'film.ts'), SOUNDLESS))).rejects.toThrow(
 		/^ffmpeg stopped: [^]*Invalid data found when processing input/
 	);
 	await footage[Symbol.asyncDispose]();
@@ -154,12 +169,10 @@ test("exposures ffmpeg cannot read are refused in ffmpeg's words", async () => {
 
 test('a frame handed to an ffmpeg that has stopped refuses the video, rather than waiting on a pipe, and leaves no part of it', async () => {
 	const directory = await scratch();
-	const footage = new VideoFootage(join(directory, 'film.mp4'), FRAME, blended);
+	const footage = new VideoFootage(join(directory, 'film.mp4'), FRAME, RATE, EVERY_SHOT, blended);
 	footage.encoder.kill('SIGKILL');
 	await footage.keep(0, { earlier: [], own: A_LARGE_FRAME });
-	await expect(footage.finish(new Soundtrack(join(directory, 'film.ts'), SOUNDLESS), momentOf(1))).rejects.toThrow(
-		EncodingError
-	);
+	await expect(footage.finish(new Soundtrack(join(directory, 'film.ts'), SOUNDLESS))).rejects.toThrow(EncodingError);
 	await footage[Symbol.asyncDispose]();
 	expect(await readdir(directory)).toEqual([]);
 });
@@ -168,12 +181,12 @@ test('a video whose sound cannot be laid leaves the one made before as it was, a
 	const directory = await scratch();
 	const video = join(directory, 'film.mp4');
 	writeFileSync(video, MADE_BEFORE);
-	const footage = new VideoFootage(video, FRAME, blended);
+	const footage = new VideoFootage(video, FRAME, RATE, EVERY_SHOT, blended);
 	await footage.keep(0, { earlier: [], own: jpegOf(FRAME, 'gray') });
 	// Heard without being expected, as nothing refused it before the shoot
 	const track = new Soundtrack(join(directory, 'film.ts'), SOUNDLESS);
 	track.hear(0, fileSound(NOT_A_SOUND));
-	await expect(footage.finish(track, momentOf(1))).rejects.toThrow(EncodingError);
+	await expect(footage.finish(track)).rejects.toThrow(EncodingError);
 	await footage[Symbol.asyncDispose]();
 	expect([await readdir(directory), readFileSync(video, 'utf8')]).toEqual([['film.mp4'], MADE_BEFORE]);
 });

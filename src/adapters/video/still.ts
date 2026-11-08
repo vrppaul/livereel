@@ -12,18 +12,20 @@ export class StillFootage implements Footage {
 	readonly path: string;
 	readonly moment: number;
 	readonly shot: number;
+	readonly framesPerSecond: number;
 	readonly blend: Blend;
 
-	constructor(path: string, moment: number, blend: Blend) {
+	constructor(path: string, moment: number, framesPerSecond: number, blend: Blend) {
 		this.path = path;
 		this.moment = moment;
-		this.shot = shotAt(moment);
+		this.shot = shotAt(moment, framesPerSecond);
+		this.framesPerSecond = framesPerSecond;
 		this.blend = blend;
 	}
 
 	expect(frames: number): void {
 		if (this.shot < frames) return;
-		const length = secondsSaid(momentOf(frames));
+		const length = secondsSaid(momentOf(frames, this.framesPerSecond));
 		throw new FilmError(`the film is ${length} s long (${frames} frames): there is no frame at ${this.moment} s`);
 	}
 

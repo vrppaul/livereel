@@ -22,7 +22,7 @@
 import { Chance, seedOf } from '../domain/chance.ts';
 import type { Fraction } from '../domain/fraction.ts';
 import { A_COLOUR, A_STRING, type Kind, ListOf, OfForm, OneOf, Plain, needed } from '../domain/handed.ts';
-import { FRAMES_PER_SECOND, easeOutCubic } from '../domain/time.ts';
+import { easeOutCubic } from '../domain/time.ts';
 import { type Keystroke, keysStruckAlong, lettersOf } from '../domain/typing.ts';
 import type { Presences } from './way.ts';
 
@@ -169,10 +169,12 @@ const LETTERED_KEY = 'lettered ';
 // Typed words show a caret after the last letter typed; letters that come up of themselves show none
 const CARET_FOLLOWS = true;
 const NO_CARET = false;
-// Scrambled letters: how many stand as signs ahead of the last settled, how many frames each sign stands before another
-// is drawn, the signs one may be, and the odd number a letter's place is mixed by, so each letter draws signs of its own
+// Scrambled letters: how many stand as signs ahead of the last settled, how many signs are drawn a second, whatever the
+// film's rate, the signs one may be, and the odd number a letter's place is mixed by, so each letter draws signs of its
+// own; and how far short of a whole draw a moment carried in floating point may land and still count as it
 const SIGNS_AHEAD = 6;
-const FRAMES_A_SIGN_STANDS = 2;
+const SIGNS_A_SECOND = 15;
+const A_HAIR_SHORT = 1e-9;
 const SIGNS = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#$%&*+=?';
 const SIGN_MIXING_ODD = 0x9e3779b1;
 // No sign: a letter standing as itself
@@ -344,14 +346,14 @@ function letteredWords(
 
 /**
  * Words scrambled, the whole `shown` of the way, at a moment of the film: their letters come up one after another, each
- * standing as a sign drawn by chance, a new one every `FRAMES_A_SIGN_STANDS` frames, and settle into their own
+ * standing as a sign drawn by chance, `SIGNS_A_SECOND` new ones a second, and settle into their own
  * `SIGNS_AHEAD` letters behind, so the last settles as the way ends. The words' key seeds the signs, so other words
  * draw signs of their own.
  */
 function scrambledWords(said: Said, shown: number, moment: number): readonly DrawnWord[] {
 	const standing = shown * (lettersIn(said.words) + SIGNS_AHEAD);
 	const settled = standing - SIGNS_AHEAD;
-	const draw = Math.floor(Math.round(moment * FRAMES_PER_SECOND) / FRAMES_A_SIGN_STANDS) + seedOf(said.key);
+	const draw = Math.floor(moment * SIGNS_A_SECOND + A_HAIR_SHORT) + seedOf(said.key);
 	return letteredWords(said.words, standing, NO_CARET, (place, letter) => signAt(place, letter, settled, draw));
 }
 

@@ -44,7 +44,7 @@ export interface Shot {
 export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Shot> {
 	await using served = await filmsOwn('serve', () => film.serve());
 	const steps = await filmsOwn('steps', () => served.steps(wholePose(film.format)));
-	shooting.footage.expect(framesIn(steps));
+	shooting.footage.expect(framesIn(steps, film.framesPerSecond));
 	await shooting.track.expect(soundsIn(steps));
 	const motionBlur = shooting.quality.blurred ? film.motionBlur : null;
 	const setting = { ...film, css: [...film.css, ...cssIn(steps)], motionBlur, ownPages: ownPagesIn(steps) };
@@ -56,10 +56,11 @@ export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Sho
 		track: shooting.track,
 		format: film.format,
 		opening: openingScene(film.format, film.look),
-		motionBlur
+		motionBlur,
+		framesPerSecond: film.framesPerSecond
 	});
 	await take.run(steps);
-	return { frames: take.shots, seconds: momentOf(take.shots) };
+	return { frames: take.shots, seconds: momentOf(take.shots, film.framesPerSecond) };
 }
 
 /** What a part of the film's own code gives; a fault in it, livereel's refusals aside, raised as the film's. */

@@ -95,10 +95,18 @@ const WRITTEN = [
 // The picture is the first input; the sounds come after it
 const FIRST_SOUND = 1;
 
-/** Where the sounds of a take that makes no video go: nowhere. */
+/** Where the sounds of a take that makes no video, or a silent one, go: nowhere. */
 export const SILENT: Track = { expect: () => Promise.resolve(), hear: () => undefined };
 
-export class Soundtrack implements Track {
+/** What a video's picture is finished with: a track laid under it, or nothing. */
+export interface SoundLaying {
+	readonly laidUnder: (picture: string, video: string, seconds: number) => Promise<void>;
+}
+
+/** A silent video's picture put in the video's place as it is: a clip of a span, whose sounds would stand elsewhere. */
+export const NOTHING_LAID: SoundLaying = { laidUnder: (picture, video) => rename(picture, video) };
+
+export class Soundtrack implements Track, SoundLaying {
 	// The folder a film's paths are from: the film file's own
 	readonly from: string;
 	readonly sound: FilmSound;

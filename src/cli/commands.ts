@@ -1,5 +1,6 @@
 /**
- * The commands: shoot a film whole as a video, shoot one still of it, set a machine up to shoot.
+ * The commands: shoot a film whole as a video, shoot a span of it as a clip or one still of it, to look at a few
+ * moments without making the whole, set a machine up to shoot.
  *
  * Each takes its own options by name and refuses any other, and a wrong value, before anything is started; each
  * says what it made, and how long the making took, and with `--profile` where that time went (`profile.ts`). A film
@@ -12,16 +13,17 @@ import { mkdir, rm } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { UsageError } from '../domain/errors.ts';
-import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
+import { MILLISECONDS_A_SECOND, secondsSaid, shotAt } from '../domain/time.ts';
 import type { Film, FilmInFormat } from '../direction/film.ts';
+import type { Track } from '../studio/ports.ts';
 import { type Quality, type Shooting, type Shot, shoot } from '../studio/shoot.ts';
 import { Chromium, RENDERERS, type Renderer } from '../adapters/browser/chromium.ts';
 import { Profile } from '../adapters/profile.ts';
 import { blended } from '../adapters/video/exposures.ts';
 import { KINDS, KIND_NAMES, type Kind, type MadeKind, SHOT_INTO, isMade, madeFrom } from '../adapters/video/kinds.ts';
-import { SILENT, Soundtrack } from '../adapters/video/soundtrack.ts';
+import { NOTHING_LAID, SILENT, type SoundLaying, Soundtrack } from '../adapters/video/soundtrack.ts';
 import { StillFootage } from '../adapters/video/still.ts';
-import { VideoFootage, contactSheet } from '../adapters/video/video.ts';
+import { EVERY_SHOT, type ShotsKept, VideoFootage, contactSheet } from '../adapters/video/video.ts';
 import { loadedFilm } from './film-file.ts';
 import { encodersNeeded, ffmpegNeeded, setUp } from './setup.ts';
 
@@ -33,6 +35,22 @@ export interface Command {
 
 /** What a command shoots with, as the command line names it: the browser frames are drawn in, and how finely. */
 type ShotWith = Pick<Shooting, 'browser' | 'quality'>;
+
+/** What a command shoots a film with: its file, the browser and how finely, and the profile its time is told in. */
+interface ShootingAsked {
+	readonly file: string;
+	readonly shotWith: ShotWith;
+	readonly profile: Profile;
+}
+
+/** Where a video's sounds go as it is shot, and what its picture is finished with: a track laid under it, or none. */
+interface VideoSound {
+	readonly track: Track;
+	readonly laying: SoundLaying;
+}
+
+// A clip of a span is silent: its sounds would stand at the film's moments, not the clip's
+const SILENCE: VideoSound = { track: SILENT, laying: NOTHING_LAID };
 
 // How finely a film is shot, by its name on the command line: a draft at the frame's own size, every frame exposed
 // once; or sharp enough to zoom into and to angle without the text going soft, a fast move blurred as the film says
@@ -46,7 +64,15 @@ const QUALITIES: Readonly<Record<QualityName, Quality>> = {
 // moment, in seconds
 const APART = '-';
 const STILL_SUFFIX = 's.jpg';
+// A clip after the moments it spans, in seconds
+const SECONDS = 's';
 const SHEET_SUFFIX = '-sheet.png';
+// A contact sheet shows a frame a second where no rate is asked: the whole film at a glance
+const A_FRAME_A_SECOND = 1;
+// The moments a command is given, as the command line names them
+const AT_SAID = '--at';
+const FROM_SAID = '--from';
+const TO_SAID = '--to';
 // The MP4 the other kinds are made from, where it is not asked for itself
 const SOURCE = '.source';
 // An option that takes a value, one that is given or not, and the kinds of video asked, an MP4 where none is
@@ -69,6 +95,7 @@ const RENDERER_ASKED = { type: 'string', default: IN_SOFTWARE } as const;
 const QUALITY_USAGE = `[--quality ${QUALITY_NAMES.join(ONE_OF)}]`;
 const RENDERER_USAGE = `[--renderer ${RENDERERS.join(ONE_OF)}]`;
 const PROFILE_USAGE = '[--profile]';
+const SHEET_USAGE = '[--sheet [--sheet-rate FRAMES_A_SECOND]]';
 // What each option names, said where it is given a name it does not take
 const KIND_SAYS = '--as names a kind of video';
 const QUALITY_SAYS = '--quality names how finely a film is shot';
@@ -78,8 +105,16 @@ const SHOOT: Command = {
 	summary: 'Shoot a film whole, as a video of each kind asked: an MP4 where none is.',
 	usage:
 		`livereel shoot FILM_FILE --out DIRECTORY [--format NAME] ` +
-		`[--as ${KIND_NAMES.join(ONE_OF)}]... ${QUALITY_USAGE} [--sheet] ${RENDERER_USAGE} ${PROFILE_USAGE}`,
+		`[--as ${KIND_NAMES.join(ONE_OF)}]... ${QUALITY_USAGE} ${SHEET_USAGE} ${RENDERER_USAGE} ${PROFILE_USAGE}`,
 	run: shootCommand
+};
+
+const CLIP: Command = {
+	summary: 'Shoot a span of a film as a silent MP4, to look at a few moments in motion without making the whole.',
+	usage:
+		`livereel clip FILM_FILE --out DIRECTORY --from SECONDS --to SECONDS [--format NAME] ` +
+		`${QUALITY_USAGE} ${SHEET_USAGE} ${RENDERER_USAGE} ${PROFILE_USAGE}`,
+	run: clipCommand
 };
 
 const STILL: Command = {
@@ -98,6 +133,7 @@ const SETUP: Command = {
 
 export const COMMANDS: ReadonlyMap<string, Command> = new Map([
 	['shoot', SHOOT],
+	['clip', CLIP],
 	['still', STILL],
 	['setup', SETUP]
 ]);
@@ -122,6 +158,7 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 				as: KINDS_ASKED,
 				quality: QUALITY_ASKED,
 				sheet: FLAG,
+				'sheet-rate': VALUE,
 				renderer: RENDERER_ASKED,
 				profile: FLAG
 			},
@@ -131,6 +168,7 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const file = theFilmFile(positionals, SHOOT);
 	const out = theOut(values.out, SHOOT);
 	const kinds = kindsAsked(values.as);
+	const sheetRate = sheetRateAsked(values.sheet, values['sheet-rate'], SHOOT);
 	const profile = new Profile(() => performance.now());
 	const shotWith = shotWithAsked(values, SHOOT, profile);
 	await ffmpegNeeded();
@@ -141,14 +179,53 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const kept = kinds.includes(SHOT_INTO);
 	const mp4 = kept ? `${stem}${KINDS.mp4.suffix}` : `${stem}${SOURCE}${KINDS.mp4.suffix}`;
 	try {
-		const shot = await shotInto(mp4, file, film, shotWith, profile);
+		const soundtrack = new Soundtrack(file, film.sound);
+		const asked = { file, shotWith, profile };
+		const shot = await shotInto(mp4, film, asked, EVERY_SHOT, { track: soundtrack, laying: soundtrack });
 		if (values.profile) profile.said().forEach(say);
 		if (kept) say(mp4);
-		for (const kind of kinds.filter(isMade)) await madeAs(kind, mp4, stem);
-		if (values.sheet) await sheetMade(mp4, stem, shot);
+		for (const kind of kinds.filter(isMade)) await madeAs(kind, mp4, stem, film);
+		if (sheetRate !== undefined) await sheetMade(mp4, stem, shot.seconds, sheetRate);
 	} finally {
 		if (!kept) await rm(mp4, { force: true });
 	}
+}
+
+async function clipCommand(given: readonly string[]): Promise<void> {
+	const { values, positionals } = asUsage(CLIP, () =>
+		parseArgs({
+			args: [...given],
+			options: {
+				out: VALUE,
+				format: VALUE,
+				from: VALUE,
+				to: VALUE,
+				quality: QUALITY_ASKED,
+				sheet: FLAG,
+				'sheet-rate': VALUE,
+				renderer: RENDERER_ASKED,
+				profile: FLAG
+			},
+			allowPositionals: true
+		})
+	);
+	const file = theFilmFile(positionals, CLIP);
+	const out = theOut(values.out, CLIP);
+	const from = momentAsked(values.from, FROM_SAID, CLIP);
+	const to = momentAsked(values.to, TO_SAID, CLIP);
+	const sheetRate = sheetRateAsked(values.sheet, values['sheet-rate'], CLIP);
+	const profile = new Profile(() => performance.now());
+	const shotWith = shotWithAsked(values, CLIP, profile);
+	await ffmpegNeeded();
+	const film = formatAsked(await loadedFilm(file), values.format, CLIP);
+	const kept = shotsBetween(from, to, film.framesPerSecond);
+	await mkdir(out, { recursive: true });
+	const stem = `${stemOf(out, file, film)}${APART}${String(from)}${APART}${String(to)}${SECONDS}`;
+	const clip = `${stem}${KINDS.mp4.suffix}`;
+	const shot = await shotInto(clip, film, { file, shotWith, profile }, kept, SILENCE);
+	say(clip);
+	if (values.profile) profile.said().forEach(say);
+	if (sheetRate !== undefined) await sheetMade(clip, stem, shot.seconds, sheetRate);
 }
 
 async function stillCommand(given: readonly string[]): Promise<void> {
@@ -168,7 +245,7 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	);
 	const file = theFilmFile(positionals, STILL);
 	const out = theOut(values.out, STILL);
-	const moment = momentAsked(values.at);
+	const moment = momentAsked(values.at, AT_SAID, STILL);
 	const profile = new Profile(() => performance.now());
 	const shotWith = shotWithAsked(values, STILL, profile);
 	await ffmpegNeeded();
@@ -177,7 +254,7 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	const still = `${stemOf(out, file, film)}${APART}${String(moment)}${STILL_SUFFIX}`;
 	await rm(still, { force: true });
 	const started = performance.now();
-	const footage = profile.footage(new StillFootage(still, moment, profile.blend(blended)));
+	const footage = profile.footage(new StillFootage(still, moment, film.framesPerSecond, profile.blend(blended)));
 	await profile.shooting(() => shoot(film, { ...shotWith, footage, track: SILENT }));
 	say(`${still}: shot in ${secondsBetween(started, performance.now())} s`);
 	if (values.profile) profile.said().forEach(say);
@@ -190,41 +267,70 @@ async function setupCommand(given: readonly string[]): Promise<void> {
 }
 
 /**
- * The film shot whole into its MP4, its sounds laid under it, and the take said: the film and its format, its frames,
- * and the time it took.
+ * The frames of a film it keeps shot into an MP4, the whole film or a span of it, the sounds heard laid under it or
+ * none, and the take said: the film and its format, the video's frames and length, and the time it took.
  */
 async function shotInto(
 	mp4: string,
-	file: string,
 	film: FilmInFormat,
-	shotWith: ShotWith,
-	profile: Profile
+	shooting: ShootingAsked,
+	kept: ShotsKept,
+	sound: VideoSound
 ): Promise<Shot> {
+	const { file, shotWith, profile } = shooting;
 	const started = performance.now();
-	await using footage = new VideoFootage(mp4, film.format.frame, profile.blend(blended));
-	const track = new Soundtrack(file, film.sound);
-	const shot = await profile.shooting(() => shoot(film, { ...shotWith, footage: profile.footage(footage), track }));
+	const blend = profile.blend(blended);
+	await using footage = new VideoFootage(mp4, film.format.frame, film.framesPerSecond, kept, blend);
+	await profile.shooting(() => shoot(film, { ...shotWith, footage: profile.footage(footage), track: sound.track }));
 	const filmed = performance.now();
-	await profile.finishing(() => footage.finish(track, shot.seconds));
+	await profile.finishing(() => footage.finish(sound.laying));
 	say(
-		`${nameOf(file)} in ${film.formatName}: ${shot.frames} frames, ${secondsSaid(shot.seconds)} s; ` +
+		`${nameOf(file)} in ${film.formatName}: ${footage.frames} frames, ${secondsSaid(footage.seconds)} s; ` +
 			`shot in ${secondsBetween(started, filmed)} s, the video made ` +
 			`${secondsBetween(filmed, performance.now())} s after the last frame`
 	);
-	return shot;
+	return { frames: footage.frames, seconds: footage.seconds };
 }
 
-async function madeAs(kind: MadeKind, mp4: string, stem: string): Promise<void> {
+async function madeAs(kind: MadeKind, mp4: string, stem: string, film: FilmInFormat): Promise<void> {
 	const video = `${stem}${KINDS[kind].suffix}`;
 	const started = performance.now();
-	await madeFrom(mp4, kind, video);
+	await madeFrom(mp4, kind, video, film.framesPerSecond);
 	say(`${video}: made in ${secondsBetween(started, performance.now())} s`);
 }
 
-async function sheetMade(mp4: string, stem: string, shot: Shot): Promise<void> {
+async function sheetMade(mp4: string, stem: string, seconds: number, sheetRate: number): Promise<void> {
 	const sheet = `${stem}${SHEET_SUFFIX}`;
-	await contactSheet(mp4, sheet, shot.seconds);
+	await contactSheet(mp4, sheet, seconds, sheetRate);
 	say(sheet);
+}
+
+/**
+ * The frames from one moment of a film to just before another, at the film's rate; a span of no frame between them
+ * is refused.
+ */
+function shotsBetween(from: number, to: number, framesPerSecond: number): ShotsKept {
+	const first = shotAt(from, framesPerSecond);
+	const after = shotAt(to, framesPerSecond);
+	if (after <= first) throw new UsageError(`${TO_SAID} stands at least a frame after ${FROM_SAID}\n${CLIP.usage}`);
+	return { first, last: after - 1 };
+}
+
+/**
+ * How many frames a second the contact sheet asked shows, a frame a second where its rate is not named; none where no
+ * sheet is asked, and a rate named without one is refused.
+ */
+function sheetRateAsked(sheet: boolean, asked: string | undefined, command: Command): number | undefined {
+	if (!sheet) {
+		if (asked !== undefined) throw new UsageError(`--sheet-rate is the rate of a --sheet\n${command.usage}`);
+		return undefined;
+	}
+	if (asked === undefined) return A_FRAME_A_SECOND;
+	const rate = Number(asked);
+	if (asked.trim() === '' || !Number.isFinite(rate) || rate <= 0) {
+		throw new UsageError(`--sheet-rate is how many frames a second the sheet shows, more than 0\n${command.usage}`);
+	}
+	return rate;
 }
 
 /** What the command line was parsed into; what parseArgs refuses — an unknown option — said as a usage error. */
@@ -271,10 +377,10 @@ function stemOf(out: string, file: string, film: FilmInFormat): string {
 	return join(out, `${nameOf(file)}${APART}${film.formatName}`);
 }
 
-function momentAsked(at: string | undefined): number {
-	const moment = Number(at);
-	if (at === undefined || at.trim() === '' || !Number.isFinite(moment) || moment < 0) {
-		throw new UsageError(`--at is the moment of the still, in seconds from 0\n${STILL.usage}`);
+function momentAsked(asked: string | undefined, option: string, command: Command): number {
+	const moment = Number(asked);
+	if (asked === undefined || asked.trim() === '' || !Number.isFinite(moment) || moment < 0) {
+		throw new UsageError(`${option} is a moment of the film, in seconds from 0\n${command.usage}`);
 	}
 	return moment;
 }

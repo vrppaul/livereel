@@ -3,17 +3,25 @@ import { FilmError } from '../../src/domain/errors.ts';
 import { easeOutBack, framesOf, shotAt } from '../../src/domain/time.ts';
 import { Share } from '../../src/direction/move.ts';
 
-describe('the film counts its time in frames', () => {
+// Two films' rates: an old film's, and livereel's where a film names none
+const THIRTY = 30;
+const SIXTY = 60;
+
+describe('the film counts its time in frames, at its own rate', () => {
 	test('so many seconds take the nearest count of frames, a half frame counted whole', () => {
-		expect([framesOf(0.35), framesOf(0.25), framesOf(1)]).toEqual([11, 8, 30]);
+		expect([framesOf(0.35, THIRTY), framesOf(0.25, THIRTY), framesOf(1, THIRTY)]).toEqual([11, 8, 30]);
+	});
+
+	test('a second takes as many frames as the film makes a second', () => {
+		expect([framesOf(1, THIRTY), framesOf(1, SIXTY)]).toEqual([30, 60]);
 	});
 
 	test('a step of a moment still takes one frame', () => {
-		expect(framesOf(0.001)).toBe(1);
+		expect(framesOf(0.001, SIXTY)).toBe(1);
 	});
 
 	test('the frame at a moment is the nearest, a half frame counted whole', () => {
-		expect([shotAt(0), shotAt(0.1), shotAt(0.35)]).toEqual([0, 3, 11]);
+		expect([shotAt(0, THIRTY), shotAt(0.1, THIRTY), shotAt(0.35, THIRTY), shotAt(0.35, SIXTY)]).toEqual([0, 3, 11, 21]);
 	});
 });
 

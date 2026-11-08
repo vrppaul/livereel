@@ -12,6 +12,7 @@ import { FilmError } from '../domain/errors.ts';
 import { FORMAT_FORM, type Format } from '../domain/format.ts';
 import {
 	AN_ADDRESS,
+	A_COUNT,
 	A_FUNCTION_SAID,
 	A_SELECTOR,
 	type Form,
@@ -96,6 +97,8 @@ export interface Script<Served extends Serving, Name extends string> {
 	readonly motionBlur?: MotionBlurScript;
 	/** The look the film opens on, livereel's save the values given; `look.to` changes it as the film goes. */
 	readonly theme?: Theme;
+	/** How many frames make a second of the film: 60, where none is named. */
+	readonly framesPerSecond?: number;
 	/** The colour scheme the page is asked for: `light`, where none is named, or `dark`. */
 	readonly colourScheme?: ColourScheme;
 	/** The blocks the page blurs wherever it shows them, by selector: an address, a key, a name no film should show. */
@@ -139,6 +142,7 @@ export interface FilmInFormat {
 	readonly drawing: Drawing;
 	readonly sound: FilmSound;
 	readonly motionBlur: MotionBlur | null;
+	readonly framesPerSecond: number;
 	readonly serve: () => Promise<ServedFilm>;
 }
 
@@ -186,6 +190,9 @@ const ROOM_FOR_A_STATIC_PAGE =
 	'the film\'s drawing is "room", which draws the page from its picture: a dynamic page stands live in a frame of ' +
 	'its own site, which WebGL is given blank, so leave the page out for a static one, or the drawing for a flat one';
 const SELECTORS = new ListOf(A_SELECTOR, 'a list of selectors');
+// So many frames make a second where a film names no rate: a fast move runs smooth at it, where at 30 it steps (the
+// claude-review promo's dive shot both ways, 2026-11-08)
+const FRAMES_PER_SECOND_WHERE_NONE_IS_NAMED = 60;
 // A film's sounds, music, blur and theme are objects, what is in each read by its own reader, in its own words, first
 const FILM_FORM: Form<AnyScript> = {
 	formats: needed(anObject<AnyScript['formats']>("an object of the film's formats, by name")),
@@ -197,6 +204,7 @@ const FILM_FORM: Form<AnyScript> = {
 	music: anObject<Music>(AN_OBJECT_SAID),
 	motionBlur: anObject<MotionBlurScript>(AN_OBJECT_SAID),
 	theme: anObject<Theme>(AN_OBJECT_SAID),
+	framesPerSecond: A_COUNT,
 	colourScheme: A_COLOUR_SCHEME,
 	blurred: SELECTORS,
 	page: A_PAGE_KIND,
@@ -218,6 +226,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 	readonly blurred: readonly string[];
 	readonly page: PageKind;
 	readonly drawing: Drawing;
+	readonly framesPerSecond: number;
 	readonly formats: ReadonlyMap<string, FilmInFormat>;
 
 	constructor(script: Script<Served, Name>) {
@@ -237,6 +246,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 		this.drawing = staging.drawing;
 		this.colourScheme = script.colourScheme ?? COLOUR_SCHEME_WHERE_NONE_IS_NAMED;
 		this.blurred = script.blurred ?? NOTHING_BLURRED;
+		this.framesPerSecond = script.framesPerSecond ?? FRAMES_PER_SECOND_WHERE_NONE_IS_NAMED;
 		this.formats = new Map(namesOf(script.formats).map((name) => [name, this.inFormat(name)]));
 		if (this.formats.size === 0) throw new FilmError(NO_FORMAT);
 	}
@@ -254,6 +264,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 			drawing: this.drawing,
 			sound: this.sound,
 			motionBlur: this.motionBlur,
+			framesPerSecond: this.framesPerSecond,
 			serve: () => this.served(name)
 		};
 	}

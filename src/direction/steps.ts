@@ -135,9 +135,12 @@ export function typing(move: Move & Typed): readonly Step[] {
 	];
 }
 
-/** How many frames the steps take: the film's length, known before anything is shot. */
-export function framesIn(steps: readonly Step[]): number {
-	return steps.reduce((frames, step) => frames + (step.kind === 'play' ? framesOf(step.seconds) : 0), 0);
+/** How many frames the steps take at the film's rate: the film's length, known before anything is shot. */
+export function framesIn(steps: readonly Step[], framesPerSecond: number): number {
+	return steps.reduce(
+		(frames, step) => frames + (step.kind === 'play' ? framesOf(step.seconds, framesPerSecond) : 0),
+		0
+	);
 }
 
 /** Every sound the steps' moves make, known before anything is shot, so a file that is not there is refused at once. */

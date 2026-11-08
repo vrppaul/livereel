@@ -20,7 +20,8 @@ comes with a skill that teaches Claude Code to direct one.
 
 - **The film keeps its own time.** A frame is a moment of the film, however
   long the browser took to draw it: waits, slow answers and loading vanish,
-  and the camera moves as smoothly at 30 frames a second as it was written.
+  and the camera moves as smoothly at 60 frames a second, or the rate the
+  film names, as it was written.
   Where the camera or a title, code or the terminal moves fast, a frame is
   shot several times along the way and blended, as a film camera's open
   shutter blurs what moves.
@@ -93,17 +94,19 @@ checked frame by frame on contact sheets and stills. Install it with
 | Command | |
 |---|---|
 | `livereel shoot FILM_FILE --out DIRECTORY` | the film whole, as a video: `film-square.mp4` |
+| `livereel clip FILM_FILE --out DIRECTORY --from SECONDS --to SECONDS` | a span of the film, silent, to look at a few moments in motion without making the whole: `film-square-12-15s.mp4` |
 | `livereel still FILM_FILE --out DIRECTORY --at SECONDS` | one frame at a moment, without the video: `film-square-1.5s.jpg` |
 | `livereel setup` | installs the browser a film is shot in, and looks for ffmpeg |
 
 | Option | Command | |
 |---|---|---|
-| `--format NAME` | `shoot`, `still` | the format to shoot, of those the film names; a film of one format needs none |
+| `--format NAME` | `shoot`, `clip`, `still` | the format to shoot, of those the film names; a film of one format needs none |
 | `--as mp4\|webm\|gif` | `shoot` | the kind of video, an MP4 where none is named; `--as mp4 --as gif` makes both from one take, each at the film's own frame and rate |
-| `--sheet` | `shoot` | a frame a second side by side: `film-square-sheet.png` |
-| `--quality draft\|finest` | `shoot`, `still` | `finest`, the default, shoots at twice the frame's width and height and blurs a fast move as the film says; `draft` shoots at the frame's own size, unblurred: quicker and softer |
-| `--renderer software\|gpu` | `shoot`, `still` | where the frames are drawn: in software, the default, or on the graphics card |
-| `--profile` | `shoot`, `still` | where the shoot's time went: each part of the browser and the footage the frames waited on, its calls, the time each took and its share, the rest, and the blends of exposures |
+| `--sheet` | `shoot`, `clip` | its frames side by side, a frame a second: `film-square-sheet.png` |
+| `--sheet-rate FRAMES_A_SECOND` | `shoot`, `clip` | how many frames a second the sheet shows: 6 to follow a move as an eye does |
+| `--quality draft\|finest` | `shoot`, `clip`, `still` | `finest`, the default, shoots at twice the frame's width and height and blurs a fast move as the film says; `draft` shoots at the frame's own size, unblurred: quicker and softer |
+| `--renderer software\|gpu` | `shoot`, `clip`, `still` | where the frames are drawn: in software, the default, or on the graphics card |
+| `--profile` | `shoot`, `clip`, `still` | where the shoot's time went: each part of the browser and the footage the frames waited on, its calls, the time each took and its share, the rest, and the blends of exposures |
 
 Every file is named after the film's file and the format it is shot in.
 `livereel --help` gives each command's usage. A command that refuses says
@@ -774,6 +777,12 @@ sets its own adopted style sheets in place of all: check the stills.
 A film names its formats, `formats: { square: …, wide: … }`, each a frame
 and the screen its page is laid out on, and is shot in one at a time. A
 frame's sides are even counts of pixels, as a video holds them.
+
+A film is shot at 60 frames a second, where a fast move runs smooth;
+`defineFilm` takes `framesPerSecond: 30` for half the frames. Every format of
+a film shares its rate. A GIF is made at 50 frames a second at most, as a
+browser holds a GIF's frame of a hundredth of a second or less ten times as
+long.
 
 The stage's look was made on frames 1080 pixels on their shorter side, as
 1920 × 1080 and 1080 × 1080 are; on any other frame it is drawn as on such

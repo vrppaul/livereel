@@ -1,15 +1,15 @@
 /**
  * How a film counts its time, and how a move speeds up and settles.
  *
- * A film's time is its frames, so a wait for the page costs the film nothing. Every curve takes the share of time
- * gone, from 0 to 1, and gives the share of the way gone, from 0 at its start to 1 at its end: a camera that eases in
- * and out reads as a person's hand, a linear one as a machine. One that bounces passes its end on the way and comes
- * back to it; how much of a prop has come up is held to its ends all the same (`src/domain/fraction.ts`).
+ * A film's time is its frames, so a wait for the page costs the film nothing; how many make a second is the film's
+ * own, so a frame is counted at its rate. Every curve takes the share of time gone, from 0 to 1, and gives the share
+ * of the way gone, from 0 at its start to 1 at its end: a camera that eases in and out reads as a person's hand, a
+ * linear one as a machine. One that bounces passes its end on the way and comes back to it; how much of a prop has
+ * come up is held to its ends all the same (`src/domain/fraction.ts`).
  */
 
 export type Ease = (progress: number) => number;
 
-export const FRAMES_PER_SECOND = 30;
 // A second in thousandths, the unit timers and delays are counted in
 export const MILLISECONDS_A_SECOND = 1000;
 // The half-way point of a curve that eases both in and out
@@ -58,18 +58,18 @@ export function easeInOutCubic(progress: number): number {
 	return 1 - (HALVES - HALVES * progress) ** CUBE / HALVES;
 }
 
-/** How many frames so many seconds take: the nearest count, and at least one. */
-export function framesOf(seconds: number): number {
-	return Math.max(1, shotAt(seconds));
+/** How many frames so many seconds take at a film's rate: the nearest count, and at least one. */
+export function framesOf(seconds: number, framesPerSecond: number): number {
+	return Math.max(1, shotAt(seconds, framesPerSecond));
 }
 
-/** The frame at a moment of the film: the nearest one. */
-export function shotAt(moment: number): number {
-	return Math.round(moment * FRAMES_PER_SECOND);
+/** The frame at a moment of a film at its rate: the nearest one. */
+export function shotAt(moment: number, framesPerSecond: number): number {
+	return Math.round(moment * framesPerSecond);
 }
 
-export function momentOf(shot: number): number {
-	return shot / FRAMES_PER_SECOND;
+export function momentOf(shot: number, framesPerSecond: number): number {
+	return shot / framesPerSecond;
 }
 
 /** A moment or a length of the film as a person reads it: seconds, to a tenth. */

@@ -95,10 +95,10 @@ test('scrambled letters come up each as a sign drawn anew as the film goes on, a
 			[null, null, null]
 		]
 	]);
-	expect(midway.map((word) => word.signs)).not.toEqual(scrambledAt(0.5, 0.05).map((word) => word.signs));
+	expect(midway.map((word) => word.signs)).not.toEqual(scrambledAt(0.5, 0.1).map((word) => word.signs));
 });
 
-test('a scrambled letter keeps its sign two frames before another is drawn, and other words draw signs of their own', () => {
+test('a scrambled letter keeps its sign a fifteenth of a second before another is drawn, and other words draw signs of their own', () => {
 	const firstFrame = signsAt(0.5, 0);
 	expect(signsAt(0.5, 1 / 30)).toEqual(firstFrame);
 	expect(signsAt(0.5, 2 / 30)).not.toEqual(firstFrame);

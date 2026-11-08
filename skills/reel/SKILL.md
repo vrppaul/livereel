@@ -391,12 +391,14 @@ You cannot watch a video. Look at frames:
 
 ```bash
 npx livereel shoot film.ts --format square --out out --sheet --renderer gpu   # the video, and a frame a second side by side
+npx livereel clip film.ts --format square --out out --from 12 --to 15 --sheet --sheet-rate 6   # a span, six frames a second side by side
 npx livereel still film.ts --format square --out out --at 12.5                 # one still, without the video
 ```
 
 A full shoot takes minutes: the promo, 20 seconds long, took 98 s on the
-graphics card and 289 s in software. Run it in the background, or
-with a timeout that long; a still takes seconds.
+graphics card and 289 s in software at 30 frames a second, and more at
+the 60 a film is shot at now. Run it in the background; a clip of a few
+seconds takes less, and a still seconds.
 
 - `--format` names the format to shoot; a film of one format needs none.
   `--as gif` or `--as webm` makes the video as a GIF or a WebM, and
@@ -406,7 +408,11 @@ with a timeout that long; a still takes seconds.
   Use it for a first look at the timing; judge the film on sheets and
   stills shot at the default, `finest`.
 - After every change, read the contact sheet of every format; read every
-  new shot at full size with `--at`.
+  new shot at full size with `--at`. A change to one shot needs no whole
+  shoot: `clip` its span, read its sheet at six frames a second to follow
+  the move, and hand the user the clip.
+- A film is shot at 60 frames a second; leave it unless the user asks for
+  another, `framesPerSecond: 30` in `defineFilm` (half the frames).
 - Check what the eye checks: is the caption about what is lit, is the text
   readable at this size, does any edge of the screen show where it should
   not, is anything cut off.
