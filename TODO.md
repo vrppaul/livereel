@@ -139,7 +139,7 @@ soft past 2.2, the infographics.
 
 ## Integrations
 
-An integration is a module a film imports, with no registry or loader, built on livereel's seams: a page served (`serve` hands back a `Serving`), acts (`ActContext`), and moves of its own, which no film can make yet. One that needs nothing but `fetch` is a subpath of this package (`livereel/figma`, a line in `exports`); one that needs a heavy dependency, a package of its own.
+An integration is a module a film imports, with no registry or loader, built on livereel's seams: a page's address and the command that serves it (`address`, `serve`), acts (`ActContext`), and moves of its own, which no film can make yet. One that needs nothing but `fetch` is a subpath of this package (`livereel/figma`, a line in `exports`); one that needs a heavy dependency, a package of its own.
 
 - A move made outside livereel, the seam an integration's moves stand on, exported as the package's promise: `Share` and `timingOf`, `Beginning`, `FilmedPage`, `Change` and the scene a move is handed. Today a step takes only a move livereel made (`Move`, `src/direction/move.ts`).
 - The props stay the core's: the scene's set of them is closed (`src/scene.ts`, `DRAWERS` on the stage), which the compiler holds.

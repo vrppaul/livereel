@@ -4,7 +4,6 @@ import { expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
 import {
 	act,
-	atAddress,
 	callout,
 	camera,
 	caption,
@@ -316,7 +315,6 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => camera.to(null as never)).toThrow(
 		new FilmError("camera.to's pose is null: it is a pose: { focusX, focusY, zoom }, as steps is handed")
 	);
-	expect(() => atAddress('')).toThrow(new FilmError('atAddress\'s address is "": it is an address, a string'));
 	expect(() => camera.to({ ...POSE, focusX: Number.POSITIVE_INFINITY })).toThrow(
 		new FilmError("camera.to's pose's focusX is Infinity: it is a number")
 	);

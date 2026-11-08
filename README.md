@@ -54,14 +54,14 @@ does.
 `film.ts`, a whole film of a page on the web:
 
 ```ts
-import { atAddress, camera, caption, defineFilm, hold, light, play } from 'livereel';
+import { camera, caption, defineFilm, hold, light, play } from 'livereel';
 
 // The line that says what the page is for
 const LINE = 'p[lang=en]';
 
 export default defineFilm({
 	formats: { square: { frame: { width: 1080, height: 1080 }, screen: { width: 1440, height: 1080 } } },
-	serve: () => atAddress('https://example.com/'),
+	address: 'https://example.com/',
 	ready: (context) => context.page.locator(LINE).waitFor(),
 	steps: () => [
 		play({ seconds: 1.2, moves: [camera.onto(LINE, { air: 120 }), light.on(LINE), caption.show('A page, filmed')] }),
@@ -72,7 +72,7 @@ export default defineFilm({
 
 `examples/example-com.ts` is a longer film, in acts, square or wide;
 `examples/livereel-promo.ts`, the film at the top of this page, serves an
-app of its own and clicks it for real; `examples/livereel-recipes.ts` sets a
+app of its own by its own command and clicks it for real; `examples/livereel-recipes.ts` sets a
 block of that app apart in eighteen ways, an act each — lifted, grown, under
 a lens, in layers, spun — each a few moves of pieces, outlines, a lens,
 groups and the window.
@@ -722,6 +722,30 @@ play({ seconds: 4, moves: [look.to({ glowX: 0.9 }), look.to({ ink: '#1a1a1a' }, 
 Two that name one value at once are refused, by it: `two moves on the
 look's glow at once in one step`.
 
+### Where the page is, and what serves it
+
+A film names its page's `address`. A page someone else serves — a public
+site, an app already running — needs nothing more. An app the film should
+start names the command that serves it, as the project runs its own server:
+
+```ts
+address: 'http://localhost:5173/',
+serve: 'npx vite --port 5173 --strict-port',
+```
+
+livereel runs the command in the film file's folder, asks the address until
+it answers, a minute at most, shoots, and stops the command once the take
+ends — the command and all it started, on Ctrl-C too — as Playwright's
+`webServer` does. A command that ends before its page answers is refused
+with how it ended and what it said last; an address that answers before the
+command runs is refused too, as that page would be filmed in its place. A
+page its command serves is at an http or https address, and its port is the
+film's to name, so the command must serve it there.
+
+What the page shows and its server answers — the app's data, a reply to a
+click — lives beside the film as data its server and the film both read
+(`examples/livereel-promo/acme.ts`), so the film knows what a click brings.
+
 ### The page: its time, whether it changes of itself, its colour scheme, and what it blurs
 
 The page's own time is the film's. Its timers, its animation frames and its
@@ -792,7 +816,7 @@ A zoom, in a pose as in `zoomAtMost`, is the frame's
 pixels a page's pixel takes on such a frame, so a pose and a framing by
 selector, its `air` in the page's pixels, show as much of the page on a
 frame of any size. A pose given in numbers is the film's to give per
-format, as `steps(served, whole, formatName)` is handed the whole screen's
+format, as `steps(whole, formatName)` is handed the whole screen's
 pose and the name of the format it is shot in.
 
 A format may give a `split` of its own, how its frame is split between
@@ -974,14 +998,18 @@ livereel shoots it as it shoots any film: at its rate, whole, as a clip of
 a span, or a still, made into a video.
 
 ```ts
-import { atAddress, defineDrawnFilm } from 'livereel';
+import { defineDrawnFilm } from 'livereel';
 
 export default defineDrawnFilm({
 	formats: { wide: { frame: { width: 1920, height: 1080 } } },
-	serve: () => atAddress('http://127.0.0.1:8741/film.html'),
+	address: 'http://127.0.0.1:8741/film.html',
+	serve: 'npx http-server -p 8741 -a 127.0.0.1',
 	framesPerSecond: 60
 });
 ```
+
+Its page is served as any film's is: here a plain server of the film's
+folder, which reaches three.js in `node_modules` by the page's import map.
 
 The page answers livereel by one global, set as its script runs, before
 anything it waits on:

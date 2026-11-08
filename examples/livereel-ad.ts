@@ -7,7 +7,7 @@
  *
  *     pnpm livereel shoot examples/livereel-ad.ts --out out/ad --sheet --renderer gpu
  *
- * Acme's analytics app is served by the film itself. The code on the screen is this file: regions of it marked
+ * Acme's analytics app is served by the film's own command. The code on the screen is this file: regions of it marked
  * `// #region name`, read by `regionsOf`, or its acts, read with their comments left out by `sourceOf`
  * (`livereel-promo/code.ts`), so it is the code that shot the film.
  */
@@ -44,7 +44,7 @@ import {
 	window
 } from 'livereel';
 import { regionNamed, regionsOf, sourceOf } from './livereel-promo/code.ts';
-import { type AppServed, type Refreshed, servedApp } from './livereel-promo/server.ts';
+import { ACME, type Refreshed, broughtBy } from './livereel-promo/acme.ts';
 
 // A square, as a feed shows it, the app laid out on a screen as wide as its window
 const SQUARE: Format = { frame: { width: 1080, height: 1080 }, screen: { width: 1040, height: 1080 } };
@@ -250,7 +250,7 @@ function actTheQuestion(): readonly Step[] {
 }
 
 /** The answer: the camera draws back as the window turns face-on, a real click changes the count, and who made it. */
-function actTheAnswer(served: AppServed): readonly Step[] {
+function actTheAnswer(): readonly Step[] {
 	return [
 		play({
 			seconds: 1.8,
@@ -261,7 +261,7 @@ function actTheAnswer(served: AppServed): readonly Step[] {
 			],
 			ease: easeInOutCubic
 		}),
-		...cursor.click(refreshing(served.refreshes.brought(FIRST_REFRESH))),
+		...cursor.click(refreshing(broughtBy(FIRST_REFRESH))),
 		hold({ seconds: 1.4 })
 	];
 }
@@ -296,7 +296,7 @@ function actTheTravel(): readonly Step[] {
  * in to click it for real, its words pushing the light's off; the light then out, so the count changed and the app's
  * note that it was updated show whole.
  */
-function actTheLight(served: AppServed): readonly Step[] {
+function actTheLight(): readonly Step[] {
 	return [
 		play({
 			seconds: 0.9,
@@ -312,7 +312,7 @@ function actTheLight(served: AppServed): readonly Step[] {
 			moves: [pushedHeadline('and clicks it.'), cursor.to(REFRESH)],
 			ease: easeInOutCubic
 		}),
-		...cursor.click(refreshing(served.refreshes.brought(SECOND_REFRESH))),
+		...cursor.click(refreshing(broughtBy(SECOND_REFRESH))),
 		play({ seconds: 0.5, moves: [light.off()], ease: easeOutCubic }),
 		cut(cursor.hide()),
 		hold({ seconds: 0.9 })
@@ -611,14 +611,14 @@ function actTheEnd(): readonly Step[] {
 	];
 }
 
-function steps(served: AppServed): readonly Step[] {
+function steps(): readonly Step[] {
 	return [
 		...actTheClaim(),
 		...actTheQuestion(),
-		...actTheAnswer(served),
+		...actTheAnswer(),
 		...actTheLean(),
 		...actTheTravel(),
-		...actTheLight(served),
+		...actTheLight(),
 		...actTheFile(),
 		...actTheCode(),
 		...actTheLook(),
@@ -636,7 +636,7 @@ function appShown(context: ActContext): Promise<void> {
 
 export default defineFilm({
 	formats: { square: SQUARE },
-	serve: servedApp,
+	...ACME,
 	ready: appShown,
 	theme: THEME,
 	// #region blurred

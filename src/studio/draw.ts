@@ -4,18 +4,26 @@
  *
  * The page says how long the film is, so a still or a clip past its end is refused before the first frame. A frame the
  * footage does not keep is never drawn: each is the page's at its moment alone. The browser closes before the page's
- * server stops. What the film's own `serve` does is the film's: a fault there is said as the film's.
+ * server stops.
  */
 import { momentOf, shotAt } from '../domain/time.ts';
 import type { DrawnFilmInFormat } from '../direction/drawn-film.ts';
-import type { DrawnBrowser, Footage } from './ports.ts';
-import { type Shot, filmsOwn } from './shoot.ts';
+import type { DrawnBrowser, Footage, PageServer } from './ports.ts';
+import type { Shot } from './shoot.ts';
+
+/** What serves a drawn film's page, the browser it is opened in, and where its frames go. */
+export interface DrawnShooting {
+	readonly server: PageServer;
+	readonly browser: DrawnBrowser;
+	readonly footage: Footage;
+}
 
 // A drawn frame is one exposure: the page draws its moment alone
 const NO_EARLIER_EXPOSURES: readonly Uint8Array[] = [];
 
-export async function shootDrawn(film: DrawnFilmInFormat, browser: DrawnBrowser, footage: Footage): Promise<Shot> {
-	await using served = await filmsOwn('serve', () => film.serve());
+export async function shootDrawn(film: DrawnFilmInFormat, shooting: DrawnShooting): Promise<Shot> {
+	const { server, browser, footage } = shooting;
+	await using served = await server.serve(film.site);
 	await using page = await browser.openDrawn(served.address, film.format.frame);
 	const frames = shotAt(page.duration, film.framesPerSecond);
 	footage.expect(frames);

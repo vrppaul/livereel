@@ -4,9 +4,8 @@ import { expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
 import type { Size } from '../../src/domain/geometry.ts';
 import type { DrawnFilmInFormat } from '../../src/direction/drawn-film.ts';
-import type { Serving } from '../../src/direction/film.ts';
-import type { DrawnBrowser, OpenedDrawnPage } from '../../src/studio/ports.ts';
-import { shootDrawn } from '../../src/studio/draw.ts';
+import type { DrawnBrowser, Footage, OpenedDrawnPage, PageServer, ServedPage } from '../../src/studio/ports.ts';
+import { type DrawnShooting, shootDrawn } from '../../src/studio/draw.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
 import { FootageOf } from './fakes.ts';
 
@@ -56,39 +55,52 @@ class BrowserOf implements DrawnBrowser {
 	}
 }
 
-/** The drawn film, its server saying when it stops. */
-function filmServed(happened: string[]): DrawnFilmInFormat {
-	const serving: Serving = {
-		address: 'http://127.0.0.1/film.html',
-		[Symbol.asyncDispose]: () => Promise.resolve(void happened.push(SERVER_STOPPED))
-	};
-	return {
-		kind: 'drawn',
-		formatName: 'small',
-		format: { frame: FRAME },
-		framesPerSecond: RATE,
-		serve: () => Promise.resolve(serving)
-	};
+const FILM: DrawnFilmInFormat = {
+	kind: 'drawn',
+	formatName: 'small',
+	format: { frame: FRAME },
+	framesPerSecond: RATE,
+	site: { address: 'http://127.0.0.1/film.html', command: 'node server.ts' }
+};
+
+/** A server that serves the film's page at once, and says when it stops. */
+class ServerThatSays implements PageServer {
+	readonly happened: string[];
+
+	constructor(happened: string[]) {
+		this.happened = happened;
+	}
+
+	serve(): Promise<ServedPage> {
+		return Promise.resolve({
+			address: FILM.site.address,
+			[Symbol.asyncDispose]: () => Promise.resolve(void this.happened.push(SERVER_STOPPED))
+		});
+	}
+}
+
+/** The drawn film shot on this page into this footage, what happens to its page and its server kept by the page. */
+function shootingOn(page: PageThatKeeps, footage: Footage): DrawnShooting {
+	return { server: new ServerThatSays(page.happened), browser: new BrowserOf(page), footage };
 }
 
 test('a drawn film draws the frames its footage keeps alone, each at its moment, and stops past the last', async () => {
-	const happened: string[] = [];
-	const page = new PageThatKeeps(happened);
+	const page = new PageThatKeeps([]);
 	const footage = new FootageOf([3, 4]);
-	const shot = await shootDrawn(filmServed(happened), new BrowserOf(page), footage);
+	const shot = await shootDrawn(FILM, shootingOn(page, footage));
 	expect([page.drawn, footage.kept, footage.exposed, shot.frames]).toEqual([[3 / RATE, 4 / RATE], [3, 4], [1, 1], 5]);
 });
 
 test("a drawn film's page is let go before its server stops", async () => {
-	const happened: string[] = [];
-	await shootDrawn(filmServed(happened), new BrowserOf(new PageThatKeeps(happened)), new FootageOf([0]));
-	expect(happened).toEqual([PAGE_CLOSED, SERVER_STOPPED]);
+	const page = new PageThatKeeps([]);
+	await shootDrawn(FILM, shootingOn(page, new FootageOf([0])));
+	expect(page.happened).toEqual([PAGE_CLOSED, SERVER_STOPPED]);
 });
 
 test('a still past the end of a drawn film is refused with the length its page says, before any frame is drawn', async () => {
 	const page = new PageThatKeeps([]);
 	const still = new StillFootage('still.jpg', 2, RATE, () => Promise.resolve(AN_IMAGE));
-	await expect(shootDrawn(filmServed([]), new BrowserOf(page), still)).rejects.toThrow(
+	await expect(shootDrawn(FILM, shootingOn(page, still))).rejects.toThrow(
 		new FilmError('the film is 1.0 s long (30 frames): there is no frame at 2 s')
 	);
 	expect(page.drawn).toEqual([]);

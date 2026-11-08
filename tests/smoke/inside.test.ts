@@ -2,11 +2,12 @@
 // breaks out of frames: shot live on the stage inside it, on its own address, and as a static page in a tab of its own
 import { expect, test } from 'vitest';
 import { Chromium } from '../../src/adapters/browser/chromium.ts';
+import { ANSWERED_WITHIN_MILLISECONDS, CommandServer } from '../../src/adapters/server.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { shoot } from '../../src/studio/shoot.ts';
 import { NoFrames, PUSHED, type Routes, servedApp } from './app.ts';
 import { type ActContext, act, defineFilm, play } from 'livereel';
-import type { Script, Serving } from '../../src/direction/film.ts';
+import type { Script } from '../../src/direction/film.ts';
 
 /** What reached a filmed page, and what a take warned of. */
 interface Reached {
@@ -70,17 +71,19 @@ async function whatReachedThePage(context: ActContext, seen: (string | null)[]):
 }
 
 /** What reached the app's page, and what the take warned of, shot as a film of these ways to show its page. */
-async function reachedAs(showing: Pick<Script<Serving, 'small'>, 'stage' | 'page'>): Promise<Reached> {
+async function reachedAs(showing: Pick<Script<'small'>, 'stage' | 'page'>): Promise<Reached> {
 	const seen: (string | null)[] = [];
 	const warned: string[] = [];
+	await using app = await servedApp(ROUTES, '/login');
 	const film = defineFilm({
 		...showing,
 		formats: { small: SMALL },
-		serve: () => servedApp(ROUTES, '/login'),
+		address: app.address,
 		ready: (context) => context.page.locator(ME).waitFor(),
 		steps: () => [play({ seconds: 0.2 }), act((context) => whatReachedThePage(context, seen))]
 	});
 	await shoot(film.formats.get('small')!, {
+		server: new CommandServer(import.meta.dirname, ANSWERED_WITHIN_MILLISECONDS),
 		browser: new Chromium('software', (line) => warned.push(line)),
 		footage: new NoFrames(),
 		track: SILENT,

@@ -12,10 +12,8 @@
 import {
 	type ActContext,
 	type Pose,
-	type Serving,
 	type Step,
 	type Wording,
-	atAddress,
 	camera,
 	caption,
 	cursor,
@@ -76,10 +74,6 @@ async function followTheLink(context: ActContext): Promise<void> {
 	await context.page.locator(LINK).click();
 	await context.page.waitForURL(FOLLOWED_TO);
 	await context.page.waitForLoadState();
-}
-
-function servedElsewhere(): Serving {
-	return atAddress(ADDRESS);
 }
 
 function linkShown(context: ActContext): Promise<void> {
@@ -184,8 +178,8 @@ function actEnding(): readonly Step[] {
 	];
 }
 
-function steps(_served: Serving, whole: Pose): readonly Step[] {
+function steps(whole: Pose): readonly Step[] {
 	return [...actOpening(whole), ...actLanguages(), ...actTheLink(whole), ...actEnding()];
 }
 
-export default defineFilm({ formats: FORMATS, serve: servedElsewhere, ready: linkShown, steps });
+export default defineFilm({ formats: FORMATS, address: ADDRESS, ready: linkShown, steps });

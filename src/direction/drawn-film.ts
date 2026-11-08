@@ -13,20 +13,22 @@
 import { FilmError } from '../domain/errors.ts';
 import type { Size } from '../domain/geometry.ts';
 import { A_FRAME } from '../domain/format.ts';
-import { A_COUNT, A_FUNCTION_SAID, type Form, aFunction, anObject, assertWritten, needed } from '../domain/handed.ts';
-import { FRAMES_PER_SECOND_WHERE_NONE_IS_NAMED, type Serving, pageServed } from './film.ts';
+import { A_COUNT, type Form, anObject, assertWritten, needed } from '../domain/handed.ts';
+import { FRAMES_PER_SECOND_WHERE_NONE_IS_NAMED } from './film.ts';
+import { SITE_FORM, type Site, type SiteScript, siteOf } from './site.ts';
 
 /** A drawn film's format: the frame it is shot at, which its page draws at. */
 export interface DrawnFormat {
 	readonly frame: Size;
 }
 
-/** A film its own page draws, as its author writes it. */
-export interface DrawnScript {
+/**
+ * A film its own page draws, as its author writes it: where its page is (`address`), and the command that serves it
+ * there, where the film starts one (`serve`), beside the rest.
+ */
+export interface DrawnScript extends SiteScript {
 	/** The frames the film is shot at, by the film's own names. */
 	readonly formats: Readonly<Record<string, DrawnFormat>>;
-	/** The film's page served, or found served elsewhere (`atAddress`). */
-	readonly serve: () => Serving | Promise<Serving>;
 	/** How many frames make a second of the film: 60, where none is named. */
 	readonly framesPerSecond?: number;
 }
@@ -47,14 +49,14 @@ export interface DrawnFilmInFormat {
 	readonly formatName: string;
 	readonly format: DrawnFormat;
 	readonly framesPerSecond: number;
-	readonly serve: () => Promise<Serving>;
+	readonly site: Site;
 }
 
 const NO_FORMAT = 'a film has a format at least: the frame it is shot at';
 // A drawn film's script, and its formats, as a film whose types nobody checked may hand them
 const DRAWN_FILM_FORM: Form<DrawnScript> = {
 	formats: needed(anObject<DrawnScript['formats']>("an object of the film's formats, by name")),
-	serve: needed(aFunction<DrawnScript['serve']>(A_FUNCTION_SAID)),
+	...SITE_FORM,
 	framesPerSecond: A_COUNT
 };
 const DRAWN_FORMAT_FORM: Form<DrawnFormat> = { frame: needed(A_FRAME) };
@@ -69,24 +71,15 @@ export class DrawnFilm {
 	constructor(script: DrawnScript) {
 		assertWritten(script, DRAWN_FILM_FORM, 'the film');
 		const framesPerSecond = script.framesPerSecond ?? FRAMES_PER_SECOND_WHERE_NONE_IS_NAMED;
+		const site = siteOf(script);
 		const formats = new Map<string, DrawnFilmInFormat>();
 		for (const [name, format] of Object.entries(script.formats)) {
 			assertWritten(format, DRAWN_FORMAT_FORM, `the film's ${name} format`);
-			formats.set(name, inFormat(name, format, framesPerSecond, script.serve));
+			formats.set(name, { kind: 'drawn', formatName: name, format, framesPerSecond, site });
 		}
 		if (formats.size === 0) throw new FilmError(NO_FORMAT);
 		this.formats = formats;
 	}
-}
-
-/** A drawn film in one of its formats, its page served anew for each take. */
-function inFormat(
-	name: string,
-	format: DrawnFormat,
-	framesPerSecond: number,
-	serve: DrawnScript['serve']
-): DrawnFilmInFormat {
-	return { kind: 'drawn', formatName: name, format, framesPerSecond, serve: () => pageServed(serve) };
 }
 
 export function defineDrawnFilm(script: DrawnScript): DrawnFilm {

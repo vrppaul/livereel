@@ -5,13 +5,14 @@
 // click from one that answered; a click that takes the stage away
 import { expect, test } from 'vitest';
 import { Chromium } from '../../src/adapters/browser/chromium.ts';
+import { ANSWERED_WITHIN_MILLISECONDS, CommandServer } from '../../src/adapters/server.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { FilmError, TakeError } from '../../src/domain/errors.ts';
 import type { PageKind } from '../../src/direction/film.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
 import { NoFrames, PUSHED, type Routes, servedApp } from './app.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
-import { type ActContext, type Step, act, atAddress, cursor, defineFilm, page, play } from 'livereel';
+import { type ActContext, type Step, act, cursor, defineFilm, page, play } from 'livereel';
 
 const FAR = '[data-testid=far]';
 const ASK = '[data-testid=ask]';
@@ -70,6 +71,7 @@ const PUSH_WITHIN_MILLISECONDS = 5000;
 const REFUSED_APART =
 	'refuses to be framed (X-Frame-Options: DENY): film it with stage: "inside", where livereel takes the refusal off';
 const SHOOTING: Shooting = {
+	server: new CommandServer(import.meta.dirname, ANSWERED_WITHIN_MILLISECONDS),
 	browser: new Chromium('software', WARNED_TO_NOBODY),
 	footage: new NoFrames(),
 	track: SILENT,
@@ -115,7 +117,7 @@ async function followedInPlaceOfTheStage(context: ActContext, link: string): Pro
 function filmAt(address: string, steps: readonly Step[], pageKind: PageKind) {
 	return defineFilm({
 		formats: { small: SMALL },
-		serve: () => atAddress(address),
+		address,
 		ready: () => Promise.resolve(),
 		steps: () => steps,
 		page: pageKind
@@ -124,9 +126,10 @@ function filmAt(address: string, steps: readonly Step[], pageKind: PageKind) {
 
 test('an app with a server of its own is filmed apart from it: shown at the address it is sent on to, scrolled, answered after a click, and pushed to', async () => {
 	const seen: (number | string | null)[] = [];
+	await using app = await servedApp(ROUTES, '/old');
 	const film = defineFilm({
 		formats: { small: SMALL },
-		serve: () => servedApp(ROUTES, '/old'),
+		address: app.address,
 		ready: (context) => context.page.locator(ASK).waitFor(),
 		steps: () => [
 			play({ seconds: 0.2, moves: [cursor.to(ASK)] }),

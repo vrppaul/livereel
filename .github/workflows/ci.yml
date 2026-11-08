@@ -54,13 +54,13 @@ jobs:
           npx livereel setup
           cp "$GITHUB_WORKSPACE/tests/smoke/page.html" .
           cat > film.ts <<'FILM'
-          import { atAddress, camera, caption, defineFilm, hold, light, play } from 'livereel';
+          import { camera, caption, defineFilm, hold, light, play } from 'livereel';
 
           const HEADING = 'h1';
 
           export default defineFilm({
           	formats: { square: { frame: { width: 640, height: 640 }, screen: { width: 960, height: 640 } } },
-          	serve: () => atAddress(new URL('./page.html', import.meta.url).href),
+          	address: new URL('./page.html', import.meta.url).href,
           	ready: (context) => context.page.locator(HEADING).waitFor(),
           	steps: () => [
           		play({ seconds: 0.5, moves: [camera.onto(HEADING), light.on(HEADING), caption.show('A heading')] }),

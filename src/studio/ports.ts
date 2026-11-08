@@ -1,11 +1,12 @@
 /**
- * What the studio needs of the world to shoot a film: a browser with the stage and the page open, footage to keep
- * frames in, and a track to keep sounds in. The adapters answer these; the studio names no browser and no file of its
- * own, and blends no image.
+ * What the studio needs of the world to shoot a film: the film's page served, a browser with the stage and the page
+ * open, footage to keep frames in, and a track to keep sounds in. The adapters answer these; the studio names no
+ * process, browser or file of its own, and blends no image.
  */
 import type { Box, Size } from '../domain/geometry.ts';
 import type { FilmInFormat } from '../direction/film.ts';
 import type { ActContext, FilmedPage, MeasuredPage, OwnPage, PageShown } from '../direction/page.ts';
+import type { Site } from '../direction/site.ts';
 import type { Sound } from '../direction/sound.ts';
 import type { DrawnScene } from '../scene.ts';
 
@@ -151,4 +152,17 @@ export interface OpenedDrawnPage extends AsyncDisposable {
 /** A browser a drawn film's page is opened in. */
 export interface DrawnBrowser {
 	readonly openDrawn: (address: string, frame: Size) => Promise<OpenedDrawnPage>;
+}
+
+/** A film's page served for as long as a take lasts, at its address. */
+export interface ServedPage extends AsyncDisposable {
+	readonly address: string;
+}
+
+/**
+ * What serves a film's page for a take: the film's command run until the page answers at its address, and stopped as
+ * the page served is disposed of; nothing started where someone else serves the page.
+ */
+export interface PageServer {
+	readonly serve: (site: Site) => Promise<ServedPage>;
 }

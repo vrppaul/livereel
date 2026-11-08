@@ -10,7 +10,7 @@
  * a name of its own, so it never takes the place of one made before.
  */
 import { mkdir, rm } from 'node:fs/promises';
-import { basename, extname, join } from 'node:path';
+import { basename, dirname, extname, join, resolve as absolute } from 'node:path';
 import { parseArgs } from 'node:util';
 import { UsageError } from '../domain/errors.ts';
 import { MILLISECONDS_A_SECOND, secondsSaid, shotAt } from '../domain/time.ts';
@@ -21,6 +21,7 @@ import type { DrawnBrowser, Footage, Track } from '../studio/ports.ts';
 import { type Quality, type Shooting, type Shot, shoot } from '../studio/shoot.ts';
 import { Chromium, RENDERERS, type Renderer } from '../adapters/browser/chromium.ts';
 import { Profile } from '../adapters/profile.ts';
+import { ANSWERED_WITHIN_MILLISECONDS, CommandServer } from '../adapters/server.ts';
 import { blended } from '../adapters/video/exposures.ts';
 import { KINDS, KIND_NAMES, type Kind, type MadeKind, SHOT_INTO, isMade, madeFrom } from '../adapters/video/kinds.ts';
 import { NOTHING_LAID, SILENT, type SoundLaying, Soundtrack } from '../adapters/video/soundtrack.ts';
@@ -36,10 +37,10 @@ export interface Command {
 }
 
 /**
- * What a command shoots with, as the command line names it: the browser frames are drawn in, a film of steps's stage
- * or a drawn film's page, and how finely.
+ * What a command shoots with, as the command line names it: what serves the film's page, the browser frames are drawn
+ * in, a film of steps's stage or a drawn film's page, and how finely.
  */
-type ShotWith = Pick<Shooting, 'browser' | 'quality'> & { readonly drawnBrowser: DrawnBrowser };
+type ShotWith = Pick<Shooting, 'server' | 'browser' | 'quality'> & { readonly drawnBrowser: DrawnBrowser };
 
 /** A film in the format a command shoots: of steps, or drawn by its own page. */
 type AnyFilmInFormat = FilmInFormat | DrawnFilmInFormat;
@@ -178,7 +179,7 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const kinds = kindsAsked(values.as);
 	const sheetRate = sheetRateAsked(values.sheet, values['sheet-rate'], SHOOT);
 	const profile = new Profile(() => performance.now());
-	const shotWith = shotWithAsked(values, SHOOT, profile);
+	const shotWith = shotWithAsked(values, file, SHOOT, profile);
 	await ffmpegNeeded();
 	await encodersNeeded(kinds);
 	const film = formatAsked(await loadedFilm(file), values.format, SHOOT);
@@ -221,7 +222,7 @@ async function clipCommand(given: readonly string[]): Promise<void> {
 	const to = momentAsked(values.to, TO_SAID, CLIP);
 	const sheetRate = sheetRateAsked(values.sheet, values['sheet-rate'], CLIP);
 	const profile = new Profile(() => performance.now());
-	const shotWith = shotWithAsked(values, CLIP, profile);
+	const shotWith = shotWithAsked(values, file, CLIP, profile);
 	await ffmpegNeeded();
 	const film = formatAsked(await loadedFilm(file), values.format, CLIP);
 	const kept = shotsBetween(from, to, film.framesPerSecond);
@@ -253,7 +254,7 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	const out = theOut(values.out, STILL);
 	const moment = momentAsked(values.at, AT_SAID, STILL);
 	const profile = new Profile(() => performance.now());
-	const shotWith = shotWithAsked(values, STILL, profile);
+	const shotWith = shotWithAsked(values, file, STILL, profile);
 	await ffmpegNeeded();
 	const film = formatAsked(await loadedFilm(file), values.format, STILL);
 	await mkdir(out, { recursive: true });
@@ -305,9 +306,15 @@ async function shotInto(
 function filmedInto(film: AnyFilmInFormat, shotWith: ShotWith, footage: Footage, track: Track): Promise<Shot> {
 	switch (film.kind) {
 		case 'steps':
-			return shoot(film, { browser: shotWith.browser, quality: shotWith.quality, footage, track });
+			return shoot(film, {
+				server: shotWith.server,
+				browser: shotWith.browser,
+				quality: shotWith.quality,
+				footage,
+				track
+			});
 		case 'drawn':
-			return shootDrawn(film, shotWith.drawnBrowser, footage);
+			return shootDrawn(film, { server: shotWith.server, browser: shotWith.drawnBrowser, footage });
 	}
 }
 
@@ -420,12 +427,22 @@ function nameOf(file: string): string {
 	return basename(file, extname(file));
 }
 
-/** How finely a film is shot and the browser its frames are drawn in, as the command line names them, timed. */
-function shotWithAsked(asked: { quality: string; renderer: string }, command: Command, profile: Profile): ShotWith {
+/**
+ * What a command shoots a film file with: the film's serve command run in the file's folder, as a project's command
+ * runs in its own; and how finely the film is shot and the browser its frames are drawn in, as the command line names
+ * them, timed.
+ */
+function shotWithAsked(
+	asked: { quality: string; renderer: string },
+	file: string,
+	command: Command,
+	profile: Profile
+): ShotWith {
 	const quality = nameAsked(asked.quality, QUALITY_NAMES, QUALITY_SAYS, command);
 	const renderer = nameAsked(asked.renderer, RENDERERS, RENDERER_SAYS, command);
 	const chromium = new Chromium(renderer, warn);
 	return {
+		server: new CommandServer(dirname(absolute(file)), ANSWERED_WITHIN_MILLISECONDS),
 		quality: QUALITIES[quality],
 		browser: profile.browser(chromium),
 		drawnBrowser: profile.drawnBrowser(chromium)

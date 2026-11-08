@@ -8,6 +8,7 @@ import { Chromium, type Renderer } from '../../src/adapters/browser/chromium.ts'
 import { PlaywrightPage } from '../../src/adapters/browser/page.ts';
 import { roomOpened } from '../../src/adapters/browser/room.ts';
 import type { PlaywrightPicturedStage } from '../../src/adapters/browser/stage.ts';
+import { ANSWERED_WITHIN_MILLISECONDS, CommandServer } from '../../src/adapters/server.ts';
 import { blended } from '../../src/adapters/video/exposures.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
@@ -22,7 +23,6 @@ import {
 	type Step,
 	type Theme,
 	act,
-	atAddress,
 	camera,
 	cut,
 	defineFilm,
@@ -50,6 +50,8 @@ const OWN_PAGE = { html: '<!doctype html><body style="margin: 0"><h2 id="ours" s
 const ONLY_OURS = '#ours';
 // The window leant back and swung, as the room places it by the engine's matrix
 const LEANT = { tilt: 12, turn: -7 };
+// The films here name pages on the disk and no command, so it starts nothing
+const SERVER = new CommandServer(import.meta.dirname, ANSWERED_WITHIN_MILLISECONDS);
 
 /** Footage that keeps every frame and counts them, and how many images each was handed as. */
 class EveryFrameCounted implements Footage {
@@ -93,7 +95,7 @@ function filmWritten(
 ) {
 	return defineFilm({
 		formats: { small: SMALL },
-		serve: () => Promise.resolve(atAddress(PAGE)),
+		address: PAGE,
 		ready: (context) => context.page.locator('h1').waitFor(),
 		steps: () => steps,
 		framesPerSecond: RATE,
@@ -107,6 +109,7 @@ function filmWritten(
  */
 function shootingInto(footage: Footage, renderer: Renderer): Shooting {
 	return {
+		server: SERVER,
 		browser: new Chromium(renderer, WARNED_TO_NOBODY),
 		footage,
 		track: SILENT,
@@ -413,7 +416,7 @@ test('the ground behind a block is the first the blocks it stands in draw whole,
 	];
 	const film = defineFilm({
 		formats: { small: SMALL },
-		serve: () => Promise.resolve(atAddress(GROUNDS)),
+		address: GROUNDS,
 		ready: (context) => context.page.locator('main').waitFor(),
 		steps: () => steps
 	}).formats.get('small')!;
@@ -434,7 +437,7 @@ const SIX_SECONDS = 6;
 function timedFilmOf(steps: readonly Step[], written: { page?: 'dynamic' }) {
 	return defineFilm({
 		formats: { small: SMALL },
-		serve: () => Promise.resolve(atAddress(TIMED)),
+		address: TIMED,
 		ready: (context) => context.page.locator(SAID_READY).waitFor(),
 		steps: () => steps,
 		framesPerSecond: RATE,
@@ -589,7 +592,7 @@ const DENSE = new URL('./dense.html', import.meta.url).href;
 const WIDE = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } };
 const DENSE_FILM = defineFilm({
 	formats: { wide: WIDE },
-	serve: () => Promise.resolve(atAddress(DENSE)),
+	address: DENSE,
 	ready: (context) => context.page.locator('[data-testid=lines]').waitFor(),
 	steps: () => []
 }).formats.get('wide')!;
@@ -621,7 +624,7 @@ const PAST_A_JPEG = { frame: { width: 1080, height: 1080 }, screen: { width: 200
 const JPEG_SIDE = 65_500;
 const TALL_FILM = defineFilm({
 	formats: { tall: PAST_A_JPEG },
-	serve: () => Promise.resolve(atAddress(PAGE)),
+	address: PAGE,
 	ready: (context) => context.page.locator('h1').waitFor(),
 	steps: () => []
 }).formats.get('tall')!;

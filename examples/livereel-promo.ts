@@ -3,11 +3,11 @@
  *
  *     pnpm livereel shoot examples/livereel-promo.ts --format wide --out out/promo --sheet
  *
- * Acme's analytics app is served by the film itself (`livereel-promo/`): the camera goes to its main number, a real
- * click on Refresh asks its server for today's count, and the camera draws back as the page leans. Then Claude Code's
- * terminal comes up over it, drawn on the stage, and is asked for the film just seen, which its agent shoots in the
- * format the film is shot in; the ending comes up over the terminal, and the app is not shown again. It is shot wide
- * for the README, or square for a feed: every pose is a framing by selector or the whole screen's, moved.
+ * Acme's analytics app is served by the film's own command (`livereel-promo/`): the camera goes to its main number, a
+ * real click on Refresh asks its server for today's count, and the camera draws back as the page leans. Then Claude
+ * Code's terminal comes up over it, drawn on the stage, and is asked for the film just seen, which its agent shoots in
+ * the format the film is shot in; the ending comes up over the terminal, and the app is not shown again. It is shot
+ * wide for the README, or square for a feed: every pose is a framing by selector or the whole screen's, moved.
  */
 import {
 	type ActContext,
@@ -32,7 +32,7 @@ import {
 	typing,
 	window
 } from 'livereel';
-import { type AppServed, servedApp } from './livereel-promo/server.ts';
+import { ACME, broughtBy } from './livereel-promo/acme.ts';
 
 // A wide frame, as a README or a talk shows it, and the app laid out on a screen of the same size; and a square frame
 // for a feed, with the app as a laptop lays it out
@@ -81,10 +81,10 @@ function cardShown(context: ActContext): Promise<void> {
 	return context.page.locator(VISITORS).waitFor();
 }
 
-/** Refresh clicked for real, until the page shows the count its server answered with. */
-async function refreshed(context: ActContext, visitors: string): Promise<void> {
+/** Refresh clicked for real, until the page shows the count its server answers the first refresh with. */
+async function refreshed(context: ActContext): Promise<void> {
 	await context.page.locator(REFRESH).click();
-	await context.page.locator(VISITORS_TODAY, { hasText: visitors }).waitFor();
+	await context.page.locator(VISITORS_TODAY, { hasText: broughtBy(FIRST_REFRESH).visitors }).waitFor();
 }
 
 /** The screen comes up out of the ground with the app on it, whole. */
@@ -113,7 +113,7 @@ function actTheNumber(): readonly Step[] {
 }
 
 /** The camera draws back to the row with Refresh, the cursor clicks it, and the number comes back changed. */
-function actTheClick(served: AppServed): readonly Step[] {
+function actTheClick(): readonly Step[] {
 	return [
 		play({
 			seconds: 1.5,
@@ -125,7 +125,7 @@ function actTheClick(served: AppServed): readonly Step[] {
 			],
 			ease: easeInOutCubic
 		}),
-		...cursor.click((context) => refreshed(context, served.refreshes.brought(FIRST_REFRESH).visitors)),
+		...cursor.click(refreshed),
 		play({
 			seconds: 1.7,
 			moves: [
@@ -179,15 +179,15 @@ function actEnding(): readonly Step[] {
 	return [play({ seconds: 0.8, moves: [ending.show(ENDING)], ease: easeOutCubic }), hold({ seconds: 1.6 })];
 }
 
-function steps(served: AppServed, whole: Pose, formatName: string): readonly Step[] {
+function steps(whole: Pose, formatName: string): readonly Step[] {
 	return [
 		...actOpening(whole),
 		...actTheNumber(),
-		...actTheClick(served),
+		...actTheClick(),
 		...actTheClock(whole),
 		...actTheAgent(formatName),
 		...actEnding()
 	];
 }
 
-export default defineFilm({ formats: { wide: WIDE, square: SQUARE }, serve: servedApp, ready: cardShown, steps });
+export default defineFilm({ formats: { wide: WIDE, square: SQUARE }, ...ACME, ready: cardShown, steps });

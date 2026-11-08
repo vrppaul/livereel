@@ -142,16 +142,20 @@ then draw nothing. Where it warns and a canvas on the contact sheet is
 empty, shoot the film again without the flag.
 
 A film is a TypeScript file whose default export is `defineFilm({ formats,
-serve, ready, steps })` from `livereel`: its formats by name, each a frame
-and the screen its page is laid out on (`{ square: { frame, screen } }`),
-how the page is served (`atAddress(url)` for a page someone else serves, or
-a server the film starts and stops), when the page is ready, and its steps.
-`steps(served, whole, formatName)` is handed the whole screen's pose and
-the name of the format it is shot in. Read
+address, serve, ready, steps })` from `livereel`: its formats by name, each a
+frame and the screen its page is laid out on (`{ square: { frame, screen } }`),
+the page's `address`, the command that serves it there where the film starts
+the app (`serve: 'npm run dev'`, run in the film's folder until the address
+answers, stopped after the take), when the page is ready, and its steps.
+Leave `serve` out for a page someone else serves or that already runs. The
+port is the film's: name one the command serves on, and one nothing else
+holds. `steps(whole, formatName)` is handed the whole screen's pose and the
+name of the format it is shot in. Read
 `node_modules/livereel/examples/example-com.ts` first: it is a whole film.
 `node_modules/livereel/examples/livereel-promo.ts` serves an app of its own
-and clicks it for real; its server is
-`node_modules/livereel/examples/livereel-promo/server.ts`.
+by its own command and clicks it for real; its server is
+`node_modules/livereel/examples/livereel-promo/server.ts`, and what a click
+brings, data the server and the film both read, `acme.ts` beside it.
 `node_modules/livereel/examples/livereel-recipes.ts` plays the recipes
 below on that app, an act each.
 
@@ -170,8 +174,8 @@ below on that app, an act each.
   (`Record<keyof typeof FORMATS, Pose>`, or `Box`), picked by the `formatName` that
   `steps` is handed: the type checker refuses a format left out. livereel
   runs a film with its types stripped, and refuses a value of the wrong
-  kind where it stands, as the film is defined and its steps as it is
-  served; the type checker finds more,
+  kind where it stands, as the film is defined and its steps before its
+  page is served; the type checker finds more,
   so check the types in the editor or with the project's type checker
   before shooting.
 - Prefer the page's own states to anything drawn over it: open a panel with
@@ -420,7 +424,9 @@ the page as it found it: read its act for the timing before writing one.
 
 Where the user's film needs what steps do not give — a world of its own
 in three.js — write it as a page that draws each moment itself, and
-`defineDrawnFilm({ formats: { wide: { frame } }, serve })` it: the page sets
+`defineDrawnFilm({ formats: { wide: { frame } }, address, serve })` it, its
+page served by the project's own command, as a plain static server of the
+film's folder (`npx http-server -p 8741 -a 127.0.0.1`) or Vite: the page sets
 `globalThis.livereelDrawnFilm = { ready, duration, at(seconds) }` as its script
 runs, and draws a moment the same however it was asked before, so a still
 or a clip of its middle draws alone. Use three.js as it is: write a light,

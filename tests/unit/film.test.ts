@@ -5,7 +5,7 @@ import { wholePose } from '../../src/domain/camera.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import { linear } from '../../src/domain/time.ts';
 import type { MotionBlurScript } from '../../src/direction/blur.ts';
-import { atAddress, defineFilm } from '../../src/direction/film.ts';
+import { defineFilm } from '../../src/direction/film.ts';
 import { play } from '../../src/direction/steps.ts';
 import { act } from '../../src/moves/act.ts';
 import * as camera from '../../src/moves/camera.ts';
@@ -16,19 +16,18 @@ import { SMALL } from './fakes.ts';
 
 const TALL = { frame: { width: 400, height: 600 }, screen: { width: 400, height: 600 } };
 
-test('the steps are handed the name of the format the film is shot in', async () => {
+test('the steps are handed the name of the format the film is shot in', () => {
 	const named: string[] = [];
 	const film = defineFilm({
 		formats: { small: SMALL, tall: TALL },
-		serve: () => atAddress('about:blank'),
+		address: 'about:blank',
 		ready: () => Promise.resolve(),
-		steps: (_served, _whole, formatName) => {
+		steps: (_whole, formatName) => {
 			named.push(formatName);
 			return [];
 		}
 	});
-	await using served = await film.formats.get('tall')!.serve();
-	served.steps(wholePose(TALL));
+	film.formats.get('tall')!.steps(wholePose(TALL));
 	expect(named).toEqual(['tall']);
 });
 
@@ -36,36 +35,29 @@ test('the steps are handed the name of the format the film is shot in', async ()
 function filmWritten(written: object) {
 	return defineFilm({
 		formats: { small: SMALL },
-		serve: () => atAddress('about:blank'),
+		address: 'about:blank',
 		ready: () => Promise.resolve(),
 		steps: () => [],
 		...written
 	} as never);
 }
 
-/** The steps a film gives, as livereel reads them once the film is served. */
-async function stepsGiven(steps: unknown) {
-	const film = filmWritten({ steps: () => steps });
-	await using served = await film.formats.get('small')!.serve();
-	return served.steps(wholePose(SMALL));
-}
-
-/** What a film's serve gives, as livereel reads it as the film is served. */
-async function servedFrom(serving: unknown) {
-	const film = filmWritten({ serve: () => serving });
-	await using served = await film.formats.get('small')!.serve();
-	return served.address;
+/** The steps a film gives, as livereel reads them before its page is served. */
+function stepsGiven(steps: unknown) {
+	return filmWritten({ steps: () => steps })
+		.formats.get('small')!
+		.steps(wholePose(SMALL));
 }
 
 test('a film in no form of one is refused as it is defined, where it stands: its names, its formats and where their captions stand, its functions', () => {
 	expect(() => defineFilm(null as never)).toThrow(
 		new FilmError(
-			'the film is null: it is an object of formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, framesPerSecond, colourScheme, blurred, page, drawing'
+			'the film is null: it is an object of formats, address, serve, stage, ready, steps, sounds, music, motionBlur, theme, framesPerSecond, colourScheme, blurred, page, drawing'
 		)
 	);
 	expect(() => filmWritten({ motionblur: {} })).toThrow(
 		new FilmError(
-			'the film names motionblur: it names formats, serve, stage, ready, steps, sounds, music, motionBlur, theme, framesPerSecond, colourScheme, blurred, page, drawing, or fewer'
+			'the film names motionblur: it names formats, address, serve, stage, ready, steps, sounds, music, motionBlur, theme, framesPerSecond, colourScheme, blurred, page, drawing, or fewer'
 		)
 	);
 	expect(() => filmWritten({ colourScheme: 'night' })).toThrow(
@@ -102,45 +94,43 @@ test('a film in no form of one is refused as it is defined, where it stands: its
 	expect(() => filmWritten({ formats: { small: { ...SMALL, captionAt: 'middle' } } })).toThrow(
 		new FilmError(`the film's small format's captionAt is "middle": it is where a caption stands: "bottom" or "top"`)
 	);
-	expect(() => filmWritten({ serve: null })).toThrow(new FilmError("the film's serve is null: it is a function"));
 });
 
-test('steps a film gives in no form of a list of steps are refused as it is served: a click or a typing not spread, a step written by hand in no form of one, anything else', async () => {
-	await expect(stepsGiven([[act(() => Promise.resolve())]])).rejects.toThrow(
+test('where a film says its page is, in no form of a place, is refused as it is defined: no address, a serve command that is no string, a page a command serves at an address no HTTP reaches', () => {
+	expect(() => filmWritten({ address: undefined })).toThrow(
+		new FilmError("the film's address is undefined: it is an address: a page's URL, a string")
+	);
+	expect(() => filmWritten({ address: 'http://127.0.0.1:5173/', serve: ['npx', 'vite'] })).toThrow(
+		new FilmError(
+			'the film\'s serve is ["npx","vite"]: it is a command, as a shell runs it: a string with something in it'
+		)
+	);
+	expect(() => filmWritten({ address: 'file:///film/page.html', serve: 'npx vite' })).toThrow(
+		new FilmError(
+			'the film\'s address is "file:///film/page.html": a page its serve command serves is at an http or https address'
+		)
+	);
+});
+
+test('steps a film gives in no form of a list of steps are refused as they are read in a format: a click or a typing not spread, a step written by hand in no form of one, anything else', () => {
+	expect(() => stepsGiven([[act(() => Promise.resolve())]])).toThrow(
 		new FilmError(
 			"the film's steps[0] is a list: spread the steps cursor.click and typing give among the others, as ...cursor.click(action)"
 		)
 	);
-	await expect(stepsGiven([{ kind: 'play', seconds: 1 }])).rejects.toThrow(
+	expect(() => stepsGiven([{ kind: 'play', seconds: 1 }])).toThrow(
 		new FilmError("the film's steps[0]'s moves is undefined: it is a list of moves")
 	);
-	await expect(
+	expect(() =>
 		stepsGiven([{ kind: 'play', seconds: 1, moves: [camera.onto('#a'), camera.onto('#b')], ease: linear }])
-	).rejects.toThrow(new FilmError('two moves on the camera at once in one step'));
-	await expect(stepsGiven([null])).rejects.toThrow(
+	).toThrow(new FilmError('two moves on the camera at once in one step'));
+	expect(() => stepsGiven([null])).toThrow(
 		new FilmError("the film's steps[0] is null: it is a step, as play, hold, cut or act makes one")
 	);
-	await expect(stepsGiven(Promise.resolve([]))).rejects.toThrow(
+	expect(() => stepsGiven(Promise.resolve([]))).toThrow(
 		new FilmError("the film's steps are a promise: they are a list of steps")
 	);
-	await expect(stepsGiven('steps')).rejects.toThrow(
-		new FilmError('the film\'s steps are "steps": they are a list of steps')
-	);
-});
-
-test('what a film serves in no form of a page served is refused as it is served, what it started stopped first', async () => {
-	const stopped: string[] = [];
-	const startedWithNoAddress = {
-		url: 'http://127.0.0.1:9/',
-		[Symbol.asyncDispose]: () => Promise.resolve(void stopped.push('stopped'))
-	};
-	await expect(servedFrom('about:blank')).rejects.toThrow(
-		new FilmError(
-			'what the film\'s serve gives is "about:blank": it is a page served, as atAddress gives one: { address }, disposed of'
-		)
-	);
-	await expect(servedFrom(startedWithNoAddress)).rejects.toThrow(FilmError);
-	expect(stopped).toEqual(['stopped']);
+	expect(() => stepsGiven('steps')).toThrow(new FilmError('the film\'s steps are "steps": they are a list of steps'));
 });
 
 test('a sound or music file named by an empty path is refused as the film is defined', () => {
@@ -156,7 +146,7 @@ test('a sound or music file named by an empty path is refused as the film is def
 function filmWithMusicAt(volume: number) {
 	return defineFilm({
 		formats: { small: SMALL },
-		serve: () => atAddress('about:blank'),
+		address: 'about:blank',
 		ready: () => Promise.resolve(),
 		steps: () => [],
 		music: { file: './music.ogg', volume }
@@ -173,7 +163,7 @@ test('music at a volume that is no level is refused as the film is defined: not 
 function filmSounding(sounds: LivereelSoundsScript) {
 	return defineFilm({
 		formats: { small: SMALL },
-		serve: () => atAddress('about:blank'),
+		address: 'about:blank',
 		ready: () => Promise.resolve(),
 		steps: () => [],
 		sounds
@@ -226,7 +216,7 @@ test('a sound written as neither a file nor `{ enabled: false }` is refused as t
 function filmPlaying(music: unknown) {
 	return defineFilm({
 		formats: { small: SMALL },
-		serve: () => atAddress('about:blank'),
+		address: 'about:blank',
 		ready: () => Promise.resolve(),
 		steps: () => [],
 		music: music as Music
@@ -283,7 +273,7 @@ test("a film's sounds, blur or music written in none of their forms is refused a
 function blurOfFilm(motionBlur: MotionBlurScript) {
 	const film = defineFilm({
 		formats: { small: SMALL },
-		serve: () => atAddress('about:blank'),
+		address: 'about:blank',
 		ready: () => Promise.resolve(),
 		steps: () => [],
 		motionBlur
@@ -405,8 +395,8 @@ test("a format's own places are refused as the film is defined, by the format, w
 	);
 });
 
-test("a place a move names that is none of livereel's nor its format's is refused as the steps are made, by the move and the format, before a frame is shot", async () => {
-	await expect(stepsGiven([play({ seconds: 1, moves: [title.show('Here', { at: { of: 'lft' } })] })])).rejects.toThrow(
+test("a place a move names that is none of livereel's nor its format's is refused as the steps are made, by the move and the format, before a frame is shot", () => {
+	expect(() => stepsGiven([play({ seconds: 1, moves: [title.show('Here', { at: { of: 'lft' } })] })])).toThrow(
 		new FilmError(
 			`title.show's at names "lft", no place of the film's small format: a place is whole, left, right, top or bottom, and its format names none of its own`
 		)

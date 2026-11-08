@@ -7,10 +7,10 @@
  *
  *     pnpm livereel shoot examples/livereel-readme.ts --format wide --out out/readme --sheet
  *
- * Acme's analytics app is served by the film itself. Each line of code a beat shows is a region of this file marked
- * `// #region name` below, read by `regionsOf` (`livereel-promo/code.ts`), a step of its own, lit as that step runs,
- * so the code on the screen is the code that shot it. The film is shot wide for the README and square for a feed;
- * each format says where its words and its window stand.
+ * Acme's analytics app is served by the film's own command. Each line of code a beat shows is a region of this file
+ * marked `// #region name` below, read by `regionsOf` (`livereel-promo/code.ts`), a step of its own, lit as that step
+ * runs, so the code on the screen is the code that shot it. The film is shot wide for the README and square for a
+ * feed; each format says where its words and its window stand.
  */
 import {
 	type ActContext,
@@ -45,7 +45,7 @@ import {
 	window
 } from 'livereel';
 import { regionNamed, regionsOf } from './livereel-promo/code.ts';
-import { type AppServed, servedApp } from './livereel-promo/server.ts';
+import { ACME, broughtBy } from './livereel-promo/acme.ts';
 
 // The page laid out on a screen as wide as its window, so a window shows the app across
 const SCREEN = { width: 1040, height: 1080 };
@@ -235,15 +235,10 @@ function headingsAndCodeIn(stacking: Stacking): Readonly<Record<string, Place>> 
 	};
 }
 
-/** Refresh clicked for real, until the page shows the count the app's server answered with. */
-async function refreshed(context: ActContext, served: AppServed): Promise<void> {
+/** Refresh clicked for real, until the page shows the count the app's server answers the first refresh with. */
+async function refreshed(context: ActContext): Promise<void> {
 	await context.page.locator(REFRESH).click();
-	await context.page.locator(VISITORS_TODAY, { hasText: served.refreshes.brought(FIRST_REFRESH).visitors }).waitFor();
-}
-
-/** The act of a click on Refresh, for the app served: short, as the film shows it in its code. */
-function refreshing(served: AppServed): (context: ActContext) => Promise<void> {
-	return (context) => refreshed(context, served);
+	await context.page.locator(VISITORS_TODAY, { hasText: broughtBy(FIRST_REFRESH).visitors }).waitFor();
 }
 
 /** The app's own shortcut pressed on the page, until the search holds its keys. */
@@ -360,7 +355,7 @@ function actTheCamera(): readonly Step[] {
  * and the next coming up once it has left room; the light carried to Refresh, a real click on the real app, and the
  * light carried back to the count it changed.
  */
-function actTheClick(served: AppServed): readonly Step[] {
+function actTheClick(): readonly Step[] {
 	return [
 		play({
 			seconds: 1.2,
@@ -398,7 +393,7 @@ function actTheClick(served: AppServed): readonly Step[] {
 		}),
 		play({ seconds: 0.3, moves: [code.light('cursor.click')] }),
 		// #region click
-		...cursor.click(refreshing(served)),
+		...cursor.click(refreshed),
 		// #endregion
 		play({
 			seconds: 1.2,
@@ -681,11 +676,11 @@ function actTheEnding(): readonly Step[] {
 	];
 }
 
-function steps(served: AppServed): readonly Step[] {
+function steps(): readonly Step[] {
 	return [
 		...actTheCard(),
 		...actTheCamera(),
-		...actTheClick(served),
+		...actTheClick(),
 		...actThePins(),
 		...actTheSearch(),
 		...actTheKeyboards(),
@@ -703,7 +698,7 @@ function appShown(context: ActContext): Promise<void> {
 
 export default defineFilm({
 	formats: FORMATS,
-	serve: servedApp,
+	...ACME,
 	ready: appShown,
 	theme: THEME,
 	steps

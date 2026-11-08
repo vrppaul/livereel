@@ -32,7 +32,7 @@ import {
 	title,
 	window
 } from 'livereel';
-import { servedApp } from './livereel-promo/server.ts';
+import { ACME } from './livereel-promo/acme.ts';
 
 // A wide frame, and the app laid out on a screen of the same size
 const WIDE = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } };
@@ -676,4 +676,4 @@ function steps(): readonly Step[] {
 	];
 }
 
-export default defineFilm({ formats: { wide: WIDE }, serve: servedApp, ready: cardsShown, steps });
+export default defineFilm({ formats: { wide: WIDE }, ...ACME, ready: cardsShown, steps });

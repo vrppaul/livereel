@@ -184,7 +184,8 @@ export const A_COUNT = new Plain(isCount, 'a whole count, 1 or more');
 export const A_STRING = new Plain(isString, 'a string');
 export const A_SELECTOR = new Plain(isWords, 'a selector: a string that names blocks of the page');
 export const A_PATH = new Plain(isWords, "a file's path, from the film's file");
-export const AN_ADDRESS = new Plain(isWords, 'an address, a string');
+export const AN_ADDRESS = new Plain(isWords, "an address: a page's URL, a string");
+export const A_COMMAND = new Plain(isWords, 'a command, as a shell runs it: a string with something in it');
 export const AN_HTML_PAGE = new Plain(isWords, 'a page in HTML, a string with something in it');
 export const A_FONT_FAMILY = new Plain(isWords, "a font's family, as CSS names one: 'Inter', or 'Inter, sans-serif'");
 /** The name a film gives what it shows and moves by name, an object or a group of them. */

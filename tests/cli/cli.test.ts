@@ -1,11 +1,20 @@
 // The command line run as it is run, as a process: what it refuses, and what it writes
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 const SHORT = 'tests/cli/films/short.ts';
+// The command line as Node runs it from the source
+const LIVEREEL_FROM_SOURCE = ['-C', 'source', 'src/cli/main.ts'];
+// A film whose own command serves a page where livereel never looks for it, and where it serves it; how long that may
+// take to answer, and how often it is asked; and the exit code of a process ended by Ctrl-C
+const HELD_SERVED = 'tests/cli/films/held-served.ts';
+const HELD_SERVER = 'http://127.0.0.1:8762/';
+const SERVED_WITHIN = { timeout: 10_000, interval: 100 };
+const ENDED_BY_CTRL_C = 130;
 const FORMATS = 'tests/cli/films/formats.ts';
 const FAST = 'tests/cli/films/fast.ts';
 const MADE_BEFORE = 'an MP4 made before';
@@ -37,7 +46,7 @@ function livereel(...given: string[]): Ran {
 }
 
 function livereelWith(environment: NodeJS.ProcessEnv, ...given: string[]): Ran {
-	return nodeRan(environment, ['-C', 'source', 'src/cli/main.ts', ...given]);
+	return nodeRan(environment, [...LIVEREEL_FROM_SOURCE, ...given]);
 }
 
 /** Node run on these arguments, as a process: its exit code and all it said. */
@@ -125,10 +134,27 @@ test("a fault in the film's own code is said as the film's, naming where it was 
 	const unready = livereel('still', 'tests/cli/films/never-ready.ts', '--out', scratch(), '--at', '0');
 	expect([unserved.code, unserved.said, unready.code, unready.said]).toEqual([
 		1,
-		"livereel still: the film's serve failed: the port is taken\n",
+		"livereel still: the film's serve command, `echo the port is taken >&2; exit 3`, ended with code 3 before http://127.0.0.1:8761/ answered; it said last:\nthe port is taken\n",
 		1,
 		"livereel still: the film's ready failed: the page never came\n"
 	]);
+});
+
+test("livereel stopped by Ctrl-C as it waits on its film's page stops all the film's serve command started, and exits as a process Ctrl-C ends", async () => {
+	const shooting = spawn(process.execPath, [
+		...LIVEREEL_FROM_SOURCE,
+		'still',
+		HELD_SERVED,
+		'--out',
+		scratch(),
+		'--at',
+		'0'
+	]);
+	await vi.waitFor(() => fetch(HELD_SERVER), SERVED_WITHIN);
+	shooting.kill('SIGINT');
+	const [code] = await once(shooting, 'exit');
+	await vi.waitFor(() => expect(fetch(HELD_SERVER)).rejects.toThrow('fetch failed'), SERVED_WITHIN);
+	expect(code).toBe(ENDED_BY_CTRL_C);
 });
 
 test('steps livereel refuses as they are written are said in its own words', () => {
