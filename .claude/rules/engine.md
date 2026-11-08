@@ -13,6 +13,7 @@ How a module is built is said in its comment at the top. The stage has its own r
 - A film runs with its types stripped: every function a film calls checks what it is handed, by its kind or its form (`src/domain/handed.ts`), before it uses it; a kind lives beside the type it checks.
 - The curve's kind, `A_CURVE`, lives beside the timing that takes it (`src/direction/move.ts`), not beside `Ease`: `src/domain/time.ts` stands below the errors, which say a moment by it, and a kind there would close a loop of imports.
 - Only syntax Node strips (`erasableSyntaxOnly`): no `enum`, no parameter properties; a class writes its fields out.
+- Of three.js, take its math alone (`THREE_MATH` in `eslint.config.js`), used inside a function: the scene holds plain numbers, never a three object. Don't wrap what three does in a few lines.
 - A function an interface asks for is written as a property (`readonly begin: (beginning: Beginning) => Change`), so the compiler holds it to its parameter types; a class implements it with a method.
 - A move is a plain object made by a function of its module in `src/moves/`, never a class; what a move keeps between frames (the keys pressed into the page) is a class of its own.
 - A value made from another is a new value: `withProp(scene, name, state)`, `{ ...light, strength }`. Nothing in a scene is changed in place.

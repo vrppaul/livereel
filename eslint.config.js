@@ -59,6 +59,27 @@ const PLAYWRIGHT = '^playwright-core(/.*)?$';
 const NODE = `^(node:.+|(${builtinModules.join('|')})(/.*)?)$`;
 // The package names its own parts by path: by its name it would reach the copy a film resolves
 const ITSELF = '^livereel$';
+// Of three.js, the parts of src/ take its math alone: calculators used inside a function, while the scene holds plain
+// numbers, as it crosses to the stage as JSON; the stage draws with the whole of it
+const THREE_MATH = [
+	'Vector3',
+	'Quaternion',
+	'Euler',
+	'Matrix4',
+	'Plane',
+	'Ray',
+	'Box3',
+	'MathUtils',
+	'Curve',
+	'CurvePath',
+	'LineCurve3',
+	'QuadraticBezierCurve3',
+	'CubicBezierCurve3',
+	'CatmullRomCurve3'
+];
+const THREE_MESSAGE = "src/ takes three.js's math alone; drawing is the stage's";
+const THREE_MATH_ALONE = { name: 'three', allowImportNames: THREE_MATH, message: THREE_MESSAGE };
+const THREE_SUBPATHS = { regex: '^three/', message: THREE_MESSAGE };
 
 function layerPatterns(part) {
 	const unreachable = Object.keys(NAMED_AS).filter((other) => other !== part && !LAYERS[part].includes(other));
@@ -67,7 +88,7 @@ function layerPatterns(part) {
 		message: `${part} builds only on ${LAYERS[part].join(', ') || 'itself'}`
 	};
 	const itself = { regex: ITSELF, message: 'a part of livereel imports another by its path' };
-	return [climbs, itself, ...outsidePatterns(OUTSIDE[part], part)];
+	return [climbs, itself, THREE_SUBPATHS, ...outsidePatterns(OUTSIDE[part], part)];
 }
 
 function outsidePatterns(allowed, part) {
@@ -91,7 +112,7 @@ function outsidePatterns(allowed, part) {
 
 const layerRules = Object.keys(LAYERS).map((part) => ({
 	files: FILES_OF[part],
-	rules: { 'no-restricted-imports': ['error', { patterns: layerPatterns(part) }] }
+	rules: { 'no-restricted-imports': ['error', { paths: [THREE_MATH_ALONE], patterns: layerPatterns(part) }] }
 }));
 
 // Short words that still say what they mean; anything else that short abbreviates, and `_` says nothing is kept
