@@ -1,5 +1,6 @@
 /**
- * A film file loaded: a TypeScript or JavaScript file whose default export is a film made by `defineFilm`.
+ * A film file loaded: a TypeScript or JavaScript file whose default export is a film made by `defineFilm`, or one its
+ * own page draws, made by `defineDrawnFilm`.
  *
  * Node runs a `.ts` film by stripping its types. The film must import the same livereel as the command runs: a film
  * made by another copy is not this copy's film, and its faults are not this copy's errors, so the copy the film's
@@ -10,6 +11,7 @@ import { createRequire, findPackageJSON } from 'node:module';
 import { resolve as absolute, extname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { LivereelError, UsageError } from '../domain/errors.ts';
+import { DrawnFilm } from '../direction/drawn-film.ts';
 import { type Film, ScriptedFilm } from '../direction/film.ts';
 
 const PACKAGE = 'livereel';
@@ -22,7 +24,7 @@ const COMMON_JS = 'commonjs';
 const MODULE_EXTENSION = '.mts';
 
 /** The film a file names; one that cannot be loaded, uses another livereel, or exports no film, is refused. */
-export async function loadedFilm(file: string): Promise<Film> {
+export async function loadedFilm(file: string): Promise<Film | DrawnFilm> {
 	const path = absolute(file);
 	if (!existsSync(path)) throw new UsageError(`${file} is not there`);
 	const theirs = livereelOf(path);
@@ -33,8 +35,10 @@ export async function loadedFilm(file: string): Promise<Film> {
 		);
 	}
 	const film = defaultOf(await imported(file, path));
-	if (!(film instanceof ScriptedFilm)) {
-		throw new UsageError(`${file} exports no film: its default export is made by defineFilm from livereel`);
+	if (!(film instanceof ScriptedFilm || film instanceof DrawnFilm)) {
+		throw new UsageError(
+			`${file} exports no film: its default export is made by defineFilm or defineDrawnFilm from livereel`
+		);
 	}
 	return film;
 }

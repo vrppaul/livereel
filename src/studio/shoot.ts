@@ -64,7 +64,7 @@ export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Sho
 }
 
 /** What a part of the film's own code gives; a fault in it, livereel's refusals aside, raised as the film's. */
-async function filmsOwn<Given>(part: string, work: () => Given | Promise<Given>): Promise<Given> {
+export async function filmsOwn<Given>(part: string, work: () => Given | Promise<Given>): Promise<Given> {
 	try {
 		return await work();
 	} catch (fault) {

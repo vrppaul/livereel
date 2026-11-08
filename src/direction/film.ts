@@ -131,6 +131,8 @@ export interface ServedFilm extends AsyncDisposable {
  * page is asked to look and what it blurs, and what it says of its sounds and of its blur.
  */
 export interface FilmInFormat {
+	/** A film of steps, beside a film its own page draws (`src/direction/drawn-film.ts`). */
+	readonly kind: 'steps';
 	readonly formatName: string;
 	readonly format: Format;
 	readonly stage: StagePlace;
@@ -192,7 +194,7 @@ const ROOM_FOR_A_STATIC_PAGE =
 const SELECTORS = new ListOf(A_SELECTOR, 'a list of selectors');
 // So many frames make a second where a film names no rate: a fast move runs smooth at it, where at 30 it steps (the
 // claude-review promo's dive shot both ways, 2026-11-08)
-const FRAMES_PER_SECOND_WHERE_NONE_IS_NAMED = 60;
+export const FRAMES_PER_SECOND_WHERE_NONE_IS_NAMED = 60;
 // A film's sounds, music, blur and theme are objects, what is in each read by its own reader, in its own words, first
 const FILM_FORM: Form<AnyScript> = {
 	formats: needed(anObject<AnyScript['formats']>("an object of the film's formats, by name")),
@@ -253,6 +255,7 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 
 	private inFormat(name: Name): FilmInFormat {
 		return {
+			kind: 'steps',
 			formatName: name,
 			format: this.script.formats[name],
 			stage: this.stage,
@@ -269,19 +272,24 @@ export class ScriptedFilm<Served extends Serving, Name extends string> implement
 		};
 	}
 
-	/**
-	 * The film served for a take. What `serve` gives in no form of a page served is refused; whatever it started is
-	 * stopped first where it can be, so nothing is left running.
-	 */
+	/** The film served for a take. */
 	private async served(name: Name): Promise<ServedFilm> {
-		const served = await this.script.serve();
-		const fault = A_SERVING.faultOf(served, "what the film's serve gives");
-		if (fault !== undefined) {
-			await disposedIfItCan(served);
-			throw new FilmError(fault);
-		}
-		return servedFilm(this.script, served, name);
+		return servedFilm(this.script, await pageServed(this.script.serve), name);
 	}
+}
+
+/**
+ * The page a film's `serve` gives, for a take. What it gives in no form of a page served is refused; whatever it
+ * started is stopped first where it can be, so nothing is left running.
+ */
+export async function pageServed<Served extends Serving>(serve: () => Served | Promise<Served>): Promise<Served> {
+	const served = await serve();
+	const fault = A_SERVING.faultOf(served, "what the film's serve gives");
+	if (fault !== undefined) {
+		await disposedIfItCan(served);
+		throw new FilmError(fault);
+	}
+	return served;
 }
 
 /** A page served by someone else, at an address: nothing to stop after. */

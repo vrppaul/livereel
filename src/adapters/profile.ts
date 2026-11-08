@@ -10,16 +10,18 @@
  * is not counted. Timing costs two readings of the clock a call, so a shoot is always timed, and says it where it is
  * asked to.
  */
-import type { Box } from '../domain/geometry.ts';
 import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { ActContext, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import type { DrawnScene } from '../scene.ts';
+import type { Box, Size } from '../domain/geometry.ts';
 import type {
 	Browser,
+	DrawnBrowser,
 	Exposures,
 	Footage,
 	FramedStage,
 	Opened,
+	OpenedDrawnPage,
 	PageTime,
 	PicturedStage,
 	Setting,
@@ -86,6 +88,10 @@ export class Profile {
 
 	browser(browser: Browser): Browser {
 		return new TimedBrowser(browser, this.waited);
+	}
+
+	drawnBrowser(browser: DrawnBrowser): DrawnBrowser {
+		return new TimedDrawnBrowser(browser, this.waited);
 	}
 
 	footage(footage: Footage): Footage {
@@ -185,6 +191,45 @@ class TimedBrowser implements Browser {
 	async open(setting: Setting, address: string, sharpness: number): Promise<Opened> {
 		const opened = await this.timings.timed('browser.open', () => this.browser.open(setting, address, sharpness));
 		return new TimedOpened(opened, this.timings);
+	}
+}
+
+class TimedDrawnBrowser implements DrawnBrowser {
+	readonly browser: DrawnBrowser;
+	readonly timings: Timings;
+
+	constructor(browser: DrawnBrowser, timings: Timings) {
+		this.browser = browser;
+		this.timings = timings;
+	}
+
+	async openDrawn(address: string, frame: Size): Promise<OpenedDrawnPage> {
+		const opened = await this.timings.timed('browser.openDrawn', () => this.browser.openDrawn(address, frame));
+		return new TimedDrawnPage(opened, this.timings);
+	}
+}
+
+class TimedDrawnPage implements OpenedDrawnPage {
+	readonly opened: OpenedDrawnPage;
+	readonly timings: Timings;
+	readonly duration: number;
+
+	constructor(opened: OpenedDrawnPage, timings: Timings) {
+		this.opened = opened;
+		this.timings = timings;
+		this.duration = opened.duration;
+	}
+
+	drawAt(seconds: number): Promise<void> {
+		return this.timings.timed('page.drawAt', () => this.opened.drawAt(seconds));
+	}
+
+	capture(): Promise<Uint8Array> {
+		return this.timings.timed('page.capture', () => this.opened.capture());
+	}
+
+	[Symbol.asyncDispose](): Promise<void> {
+		return this.timings.timed('browser.close', () => this.opened[Symbol.asyncDispose]());
 	}
 }
 

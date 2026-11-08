@@ -11,6 +11,9 @@ const FAST = 'tests/cli/films/fast.ts';
 const MADE_BEFORE = 'an MP4 made before';
 const NO_FILM = 'tests/cli/films/no-film.ts';
 const THROWS = 'tests/cli/films/throws.ts';
+// A film its own page draws, half a second long; and one whose page answers livereel by nothing
+const DRAWN = 'tests/cli/films/drawn.ts';
+const DRAWN_UNANSWERED = 'tests/cli/films/drawn-unanswered.ts';
 const AS_A_MODULE = JSON.stringify({ type: 'module' });
 // An ffmpeg that is there, but lists the MP4's encoders alone, H.264 and AAC, whatever it is asked
 const FFMPEG_OF_MP4_ALONE =
@@ -154,6 +157,26 @@ test('a span of a film is shot as a silent clip of its frames alone, named after
 		readdirSync(out),
 		probed(join(out, 'short-small-0.05-0.15s.mp4'), 'codec_type,nb_read_frames')
 	]).toEqual([0, ['short-small-0.05-0.15s-sheet.png', 'short-small-0.05-0.15s.mp4'], 'video,6']);
+});
+
+test('a film its own page draws is shot whole at its rate as long as its page says, and as a still', () => {
+	const out = scratch();
+	const shot = livereel('shoot', DRAWN, '--out', out);
+	const still = livereel('still', DRAWN, '--out', out, '--at', '0.25');
+	expect([
+		shot.code,
+		probed(join(out, 'drawn-small.mp4'), 'r_frame_rate,nb_read_frames'),
+		still.code,
+		readdirSync(out)
+	]).toEqual([0, '60/1,30', 0, ['drawn-small-0.25s.jpg', 'drawn-small.mp4']]);
+});
+
+test("a film said to be drawn by a page that answers livereel by nothing is refused as the film's", () => {
+	const ran = livereel('still', DRAWN_UNANSWERED, '--out', scratch(), '--at', '0');
+	expect([ran.code, ran.said]).toEqual([
+		1,
+		expect.stringContaining('answers livereel by no globalThis.livereelDrawnFilm')
+	]);
 });
 
 test('a clip that spans no whole frame is refused before anything is shot', () => {

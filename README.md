@@ -966,6 +966,44 @@ both:
 `motionBlur: { enabled: false }` turns it off; `--quality draft` shoots
 without it.
 
+### A film its own page draws
+
+A film that outgrows its steps — a world of its own in three.js, a canvas
+drawn by hand — is a page of the film's that draws each moment itself, and
+livereel shoots it as it shoots any film: at its rate, whole, as a clip of
+a span, or a still, made into a video.
+
+```ts
+import { atAddress, defineDrawnFilm } from 'livereel';
+
+export default defineDrawnFilm({
+	formats: { wide: { frame: { width: 1920, height: 1080 } } },
+	serve: () => atAddress('http://127.0.0.1:8741/film.html'),
+	framesPerSecond: 60
+});
+```
+
+The page answers livereel by one global, set as its script runs, before
+anything it waits on:
+
+```js
+globalThis.livereelDrawnFilm = {
+	ready: loaded,                    // a promise, settled once it can draw
+	duration: 70.9,                   // how long the film is, in seconds
+	at: (seconds) => draw(seconds)    // the frame at a moment, settled once drawn
+};
+```
+
+The page is opened at the frame's size, a page's pixel a frame's, and draws
+as finely as it wants itself, so `--quality` asks nothing of it. Its
+`duration` is read once `ready` settles, so a page may set it then. A
+moment must draw the same however the page was asked before, as a still or
+a clip draws it alone, and nothing on the page may move of itself, as its
+time is the wall's. A page that sets no such global or one in no form of
+it, fails or throws as it gets ready, says a length that is no number of
+seconds, or throws as it draws, is refused as the film's. Such a film is
+shot with no motion blur and no sound yet.
+
 ## How it works
 
 ```

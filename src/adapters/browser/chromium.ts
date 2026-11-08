@@ -47,7 +47,7 @@ import { type MotionBlur, mostExposuresOf } from '../../domain/shutter.ts';
 import type { Drawing, PageKind, StagePlace } from '../../direction/film.ts';
 import type { ActContext, MeasuredPage, OwnPage, PageMotionSwitch } from '../../direction/page.ts';
 import type { CssNamed } from '../../direction/theme.ts';
-import type { Browser, Opened, PageTime, Setting, Stage } from '../../studio/ports.ts';
+import type { Browser, DrawnBrowser, Opened, OpenedDrawnPage, PageTime, Setting, Stage } from '../../studio/ports.ts';
 import {
 	BYTES_A_MEGABYTE,
 	BYTES_A_PIXEL,
@@ -59,6 +59,7 @@ import {
 	picturesMemoryOf
 } from './bounds.ts';
 import { ChangesHeard } from './changes.ts';
+import { drawnPageOpened } from './drawn.ts';
 import { PlaywrightPageTime } from './clock.ts';
 import { stagedInside } from './inside.ts';
 import { PlaywrightPage } from './page.ts';
@@ -76,7 +77,7 @@ import {
 	setUpStage,
 	stageApartOpened
 } from './stage.ts';
-import { FrameWatch, TabWatch, notReached } from './watch.ts';
+import { FrameWatch, TabWatch, reached } from './watch.ts';
 import type { Warn } from './warn.ts';
 
 const NAVIGATED = 'framenavigated';
@@ -268,13 +269,25 @@ function copiesMemoryOf(exposuresAtOnce: number, frame: Size, sharpness: number)
 	return Math.ceil((GPU_MEMORY_FOR_A_COPY_BYTE * exposuresAtOnce * copyBytes) / BYTES_A_MEGABYTE);
 }
 
-export class Chromium implements Browser {
+export class Chromium implements Browser, DrawnBrowser {
 	readonly renderer: Renderer;
 	readonly warn: Warn;
 
 	constructor(renderer: Renderer, warn: Warn) {
 		this.renderer = renderer;
 		this.warn = warn;
+	}
+
+	/** A drawn film's page opened in the shell launched to draw where the renderer draws; no stage. */
+	async openDrawn(address: string, frame: Size): Promise<OpenedDrawnPage> {
+		const browser = await launched(flagsOf(this.renderer, process.platform));
+		try {
+			await drawsOnTheCard(this.renderer, browser, this.warn);
+			return await drawnPageOpened(browser, address, frame);
+		} catch (fault) {
+			await browser.close();
+			throw fault;
+		}
 	}
 
 	async open(setting: Setting, address: string, sharpness: number): Promise<Opened> {
@@ -402,16 +415,6 @@ function ownFrameOn(stage: Page, page: OwnPage): Frame {
 	const frame = stage.frame({ name: page.key });
 	if (frame === null) throw new Error(`the stage laid no frame for the film's own page ${page.key}`);
 	return frame;
-}
-
-/** A page gone to the film's address; one that cannot be reached refused, saying so. */
-async function reached(page: Page, address: string): Promise<void> {
-	try {
-		await page.goto(address);
-	} catch (fault) {
-		if (!(fault instanceof Error)) throw fault;
-		throw notReached(address, { cause: fault });
-	}
 }
 
 class PageMotion implements PageMotionSwitch {

@@ -11,6 +11,37 @@ server's answers — and a wait costs the film nothing.
 Work in this order and show the user each stage before the next. A film
 built before its story is agreed gets rebuilt.
 
+## 0. The setup, stage by stage
+
+Walk the user through every stage below, in order, before the film is
+written. At each, ask; name livereel's default and why it is one; where the
+choice is one of look, shoot a still of each way and let the user choose by
+eye. Write down each answer; never settle a stage for the user, and never
+start the next before they have answered. A stage the user waves through
+takes the default, said aloud.
+
+1. **The story** (section 1): who watches, the problem, the turn, the one
+   sentence after.
+2. **The storyboard** (section 2): a row a shot, read back to the user in
+   your own words before any code, so a word that reads two ways is caught
+   while it costs a line.
+3. **How it is made**: livereel's steps over the live app, the default, or
+   a film its own page draws ("A film its own page draws") where steps fall
+   short; the page live as it is, or `page: 'dynamic'` where it changes of
+   itself; `drawing: 'flat'` or `'room'`.
+4. **The frame**: each format, its frame and screen (16:9, square, 9:16),
+   and its places.
+5. **The rate**: 60 frames a second, smooth on a fast move, or 30, half the
+   frames to shoot; `framesPerSecond`.
+6. **The look**: the theme's ground, accent and type; the colour scheme;
+   what the page blurs; motion blur as livereel sets it or none; the eye's
+   focus, sharp all over or open on a shot.
+7. **Sound**: livereel's clicks and keys, the keyboard, or none; music.
+8. **The loop**: say how each shot will be checked, as section 4 has it, a
+   still of each shot first, then a clip of its span, then the whole film,
+   the user's word before each next one; a change the user asks is the one
+   thing changed, by the share they name ("twice as slow").
+
 ## 1. The story, in words
 
 Answer these, in a few lines, and get the user's word on them:
@@ -384,6 +415,17 @@ the page as it found it: read its act for the timing before writing one.
   by its edge: frame the whole screen once, `camera.onto(screen, { air: 0
   })` with the screen's box, and the page stays whole in whatever window
   stands.
+
+### A film its own page draws
+
+Where the user's film needs what steps do not give — a world of its own
+in three.js — write it as a page that draws each moment itself, and
+`defineDrawnFilm({ formats: { wide: { frame } }, serve })` it: the page sets
+`globalThis.livereelDrawnFilm = { ready, duration, at(seconds) }` as its script
+runs, and draws a moment the same however it was asked before, so a still
+or a clip of its middle draws alone. Use three.js as it is: write a light,
+a plane wearing a picture or a material in its own few lines, never a
+wrapper round them. Steps first: reach for this only where they fall short.
 
 ## 4. Checking it
 

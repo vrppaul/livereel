@@ -3,7 +3,7 @@
  * frames in, and a track to keep sounds in. The adapters answer these; the studio names no browser and no file of its
  * own, and blends no image.
  */
-import type { Box } from '../domain/geometry.ts';
+import type { Box, Size } from '../domain/geometry.ts';
 import type { FilmInFormat } from '../direction/film.ts';
 import type { ActContext, FilmedPage, MeasuredPage, OwnPage, PageShown } from '../direction/page.ts';
 import type { Sound } from '../direction/sound.ts';
@@ -136,4 +136,19 @@ export type Setting = Pick<
 
 export interface Browser {
 	readonly open: (setting: Setting, address: string, sharpness: number) => Promise<Opened>;
+}
+
+/** A drawn film's page open in a browser for one take, ready to draw, at the frame's size. */
+export interface OpenedDrawnPage extends AsyncDisposable {
+	/** How long the film is, in seconds, as its page says. */
+	readonly duration: number;
+	/** The page drawn at a moment of the film, settled. */
+	readonly drawAt: (seconds: number) => Promise<void>;
+	/** The frame as the page drew it last, as a JPEG. */
+	readonly capture: () => Promise<Uint8Array>;
+}
+
+/** A browser a drawn film's page is opened in. */
+export interface DrawnBrowser {
+	readonly openDrawn: (address: string, frame: Size) => Promise<OpenedDrawnPage>;
 }

@@ -88,8 +88,18 @@ export class TabWatch {
 }
 
 /** A page Chrome could not reach, refused by its address. */
-export function notReached(address: string, options?: ErrorOptions): FilmError {
+function notReached(address: string, options?: ErrorOptions): FilmError {
 	return new FilmError(`the page at ${address} could not be reached`, options);
+}
+
+/** A page gone to the film's address; one that cannot be reached refused, saying so. */
+export async function reached(page: Page, address: string): Promise<void> {
+	try {
+		await page.goto(address);
+	} catch (fault) {
+		if (!(fault instanceof Error)) throw fault;
+		throw notReached(address, { cause: fault });
+	}
 }
 
 /** Whether a request takes the stage's own frame to a page: not the stage, nor a frame within the filmed page. */

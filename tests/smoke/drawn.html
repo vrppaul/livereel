@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>A drawn film</title>
+		<style>
+			body {
+				margin: 0;
+			}
+			canvas {
+				display: block;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="frame" width="320" height="320"></canvas>
+		<script>
+			// Half a second of a frame going from black to white: at a moment, its grey says how far through the film it stands
+			const LENGTH_SECONDS = 0.5;
+			const WHITE = 255;
+			const context = document.getElementById('frame').getContext('2d');
+			window.livereelDrawnFilm = {
+				ready: Promise.resolve(),
+				duration: LENGTH_SECONDS,
+				at(seconds) {
+					const grey = Math.round((seconds / LENGTH_SECONDS) * WHITE);
+					context.fillStyle = `rgb(${grey}, ${grey}, ${grey})`;
+					context.fillRect(0, 0, 320, 320);
+				}
+			};
+		</script>
+	</body>
+</html>

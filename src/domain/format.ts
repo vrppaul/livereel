@@ -38,6 +38,11 @@ export interface Split {
 // A video keeps its colour once for every two pixels each way, so a frame's sides are even counts of pixels
 const PIXELS_PAIRED = 2;
 const A_FRAME_LENGTH = new Plain(isFrameLength, 'a whole, even count of pixels, as a video holds them');
+/** A frame a video holds: its sides even counts of pixels. */
+export const A_FRAME = new OfForm<Size>(
+	{ width: needed(A_FRAME_LENGTH), height: needed(A_FRAME_LENGTH) },
+	'a frame: { width, height }'
+);
 // A page is laid out on a screen of some size
 const A_SCREEN_LENGTH = new Plain(isScreenLength, 'a number of pixels, more than none');
 
@@ -46,9 +51,7 @@ const A_SCREEN_LENGTH = new Plain(isScreenLength, 'a number of pixels, more than
  * captions stand, and its own places.
  */
 export const FORMAT_FORM: Form<Format> = {
-	frame: needed(
-		new OfForm<Size>({ width: needed(A_FRAME_LENGTH), height: needed(A_FRAME_LENGTH) }, 'a frame: { width, height }')
-	),
+	frame: needed(A_FRAME),
 	screen: needed(
 		new OfForm<Size>({ width: needed(A_SCREEN_LENGTH), height: needed(A_SCREEN_LENGTH) }, 'a screen: { width, height }')
 	),

@@ -14,8 +14,10 @@ import { basename, extname, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { UsageError } from '../domain/errors.ts';
 import { MILLISECONDS_A_SECOND, secondsSaid, shotAt } from '../domain/time.ts';
+import type { DrawnFilm, DrawnFilmInFormat } from '../direction/drawn-film.ts';
 import type { Film, FilmInFormat } from '../direction/film.ts';
-import type { Track } from '../studio/ports.ts';
+import { shootDrawn } from '../studio/draw.ts';
+import type { DrawnBrowser, Footage, Track } from '../studio/ports.ts';
 import { type Quality, type Shooting, type Shot, shoot } from '../studio/shoot.ts';
 import { Chromium, RENDERERS, type Renderer } from '../adapters/browser/chromium.ts';
 import { Profile } from '../adapters/profile.ts';
@@ -33,8 +35,14 @@ export interface Command {
 	readonly run: (given: readonly string[]) => Promise<void>;
 }
 
-/** What a command shoots with, as the command line names it: the browser frames are drawn in, and how finely. */
-type ShotWith = Pick<Shooting, 'browser' | 'quality'>;
+/**
+ * What a command shoots with, as the command line names it: the browser frames are drawn in, a film of steps's stage
+ * or a drawn film's page, and how finely.
+ */
+type ShotWith = Pick<Shooting, 'browser' | 'quality'> & { readonly drawnBrowser: DrawnBrowser };
+
+/** A film in the format a command shoots: of steps, or drawn by its own page. */
+type AnyFilmInFormat = FilmInFormat | DrawnFilmInFormat;
 
 /** What a command shoots a film with: its file, the browser and how finely, and the profile its time is told in. */
 interface ShootingAsked {
@@ -179,9 +187,7 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const kept = kinds.includes(SHOT_INTO);
 	const mp4 = kept ? `${stem}${KINDS.mp4.suffix}` : `${stem}${SOURCE}${KINDS.mp4.suffix}`;
 	try {
-		const soundtrack = new Soundtrack(file, film.sound);
-		const asked = { file, shotWith, profile };
-		const shot = await shotInto(mp4, film, asked, EVERY_SHOT, { track: soundtrack, laying: soundtrack });
+		const shot = await shotInto(mp4, film, { file, shotWith, profile }, EVERY_SHOT, soundOf(film, file));
 		if (values.profile) profile.said().forEach(say);
 		if (kept) say(mp4);
 		for (const kind of kinds.filter(isMade)) await madeAs(kind, mp4, stem, film);
@@ -255,7 +261,7 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	await rm(still, { force: true });
 	const started = performance.now();
 	const footage = profile.footage(new StillFootage(still, moment, film.framesPerSecond, profile.blend(blended)));
-	await profile.shooting(() => shoot(film, { ...shotWith, footage, track: SILENT }));
+	await profile.shooting(() => filmedInto(film, shotWith, footage, SILENT));
 	say(`${still}: shot in ${secondsBetween(started, performance.now())} s`);
 	if (values.profile) profile.said().forEach(say);
 }
@@ -272,7 +278,7 @@ async function setupCommand(given: readonly string[]): Promise<void> {
  */
 async function shotInto(
 	mp4: string,
-	film: FilmInFormat,
+	film: AnyFilmInFormat,
 	shooting: ShootingAsked,
 	kept: ShotsKept,
 	sound: VideoSound
@@ -281,7 +287,7 @@ async function shotInto(
 	const started = performance.now();
 	const blend = profile.blend(blended);
 	await using footage = new VideoFootage(mp4, film.format.frame, film.framesPerSecond, kept, blend);
-	await profile.shooting(() => shoot(film, { ...shotWith, footage: profile.footage(footage), track: sound.track }));
+	await profile.shooting(() => filmedInto(film, shotWith, profile.footage(footage), sound.track));
 	const filmed = performance.now();
 	await profile.finishing(() => footage.finish(sound.laying));
 	say(
@@ -292,7 +298,32 @@ async function shotInto(
 	return { frames: footage.frames, seconds: footage.seconds };
 }
 
-async function madeAs(kind: MadeKind, mp4: string, stem: string, film: FilmInFormat): Promise<void> {
+/**
+ * A film shot into footage, its sounds heard by the track: a film of steps by its take on the stage, one its own page
+ * draws by that page alone, which makes no sound.
+ */
+function filmedInto(film: AnyFilmInFormat, shotWith: ShotWith, footage: Footage, track: Track): Promise<Shot> {
+	switch (film.kind) {
+		case 'steps':
+			return shoot(film, { browser: shotWith.browser, quality: shotWith.quality, footage, track });
+		case 'drawn':
+			return shootDrawn(film, shotWith.drawnBrowser, footage);
+	}
+}
+
+/** Where a film's sounds go as its video is shot, and what its picture is finished with: a drawn film makes none. */
+function soundOf(film: AnyFilmInFormat, file: string): VideoSound {
+	switch (film.kind) {
+		case 'steps': {
+			const soundtrack = new Soundtrack(file, film.sound);
+			return { track: soundtrack, laying: soundtrack };
+		}
+		case 'drawn':
+			return SILENCE;
+	}
+}
+
+async function madeAs(kind: MadeKind, mp4: string, stem: string, film: AnyFilmInFormat): Promise<void> {
 	const video = `${stem}${KINDS[kind].suffix}`;
 	const started = performance.now();
 	await madeFrom(mp4, kind, video, film.framesPerSecond);
@@ -360,7 +391,7 @@ function kindsAsked(asked: readonly string[]): readonly Kind[] {
 }
 
 /** The film in the format named, or in its one format where none is named; each refusal names the formats it has. */
-function formatAsked(film: Film, asked: string | undefined, command: Command): FilmInFormat {
+function formatAsked(film: Film | DrawnFilm, asked: string | undefined, command: Command): AnyFilmInFormat {
 	const choices = `--format names one of ${[...film.formats.keys()].join(LISTED)}\n${command.usage}`;
 	if (asked === undefined) {
 		const [only, ...more] = film.formats.values();
@@ -373,7 +404,7 @@ function formatAsked(film: Film, asked: string | undefined, command: Command): F
 }
 
 /** What every file made of a film in a format is named from: the film file's name and the format's, in `out`. */
-function stemOf(out: string, file: string, film: FilmInFormat): string {
+function stemOf(out: string, file: string, film: AnyFilmInFormat): string {
 	return join(out, `${nameOf(file)}${APART}${film.formatName}`);
 }
 
@@ -393,7 +424,12 @@ function nameOf(file: string): string {
 function shotWithAsked(asked: { quality: string; renderer: string }, command: Command, profile: Profile): ShotWith {
 	const quality = nameAsked(asked.quality, QUALITY_NAMES, QUALITY_SAYS, command);
 	const renderer = nameAsked(asked.renderer, RENDERERS, RENDERER_SAYS, command);
-	return { quality: QUALITIES[quality], browser: profile.browser(new Chromium(renderer, warn)) };
+	const chromium = new Chromium(renderer, warn);
+	return {
+		quality: QUALITIES[quality],
+		browser: profile.browser(chromium),
+		drawnBrowser: profile.drawnBrowser(chromium)
+	};
 }
 
 /** The one of an option's names the command line gave it; any other is refused, naming them all. */

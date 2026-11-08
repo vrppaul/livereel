@@ -30,6 +30,8 @@ export { act } from './moves/act.ts';
 export type { Cut, Play, PlayScript, Step } from './direction/steps.ts';
 export { atAddress, defineFilm } from './direction/film.ts';
 export type { Film, Script, Serving } from './direction/film.ts';
+export { defineDrawnFilm } from './direction/drawn-film.ts';
+export type { DrawnFilm, DrawnFilmPage, DrawnFormat, DrawnScript } from './direction/drawn-film.ts';
 export type { MotionBlurScript } from './direction/blur.ts';
 export type { ActContext } from './direction/page.ts';
 export type { Bounds, Move, Target, TimingScript } from './direction/move.ts';

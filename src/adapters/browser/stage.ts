@@ -132,7 +132,8 @@ export const DRAWN_FLAT: StageDrawing = {
 	saidInSoftware: null
 };
 
-const JPEG_QUALITY = 92;
+// How good a frame's JPEG is, captured off the stage or off a drawn film's page
+export const JPEG_QUALITY = 92;
 // A stage that draws one exposure of a frame at a time
 export const ONE_AT_A_TIME = 1;
 // The page's picture is taken as a JPEG: the format as CDP names it, and the type of image the stage is handed
