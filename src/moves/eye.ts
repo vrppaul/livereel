@@ -1,9 +1,10 @@
 /**
  * The eye: to a place in the room, where it stands and the spot it looks at, each in pixels of a frame 1080 high from
- * the frame's middle (`src/domain/eye.ts`), through the places the film names on its way, on the course it names
- * (`src/moves/through.ts`). What stands in the world — the page's window, an object a film shows there — is seen from
- * wherever the eye stands; what stands on the frame, a title or a caption, rides with it. What a place leaves out,
- * where the eye stands or what it looks at, stays as it stands as the move begins, at its end and at every key.
+ * the frame's middle, and the way its top points (`src/domain/eye.ts`), through the places the film names on its way,
+ * on the course it names (`src/moves/through.ts`). What stands in the world — the page's window, an object a film shows
+ * there — is seen from wherever the eye stands; what stands on the frame, a title or a caption, rides with it. What a
+ * place leaves out, where the eye stands, what it looks at or the way its top points, stays as it stands as the move
+ * begins, at its end and at every key.
  *
  * The path is worked out once, as the move begins, from where the eye stands then: its places are values of the room,
  * and nothing the eye passes moves under it.
@@ -15,13 +16,16 @@
  */
 import {
 	AN_EYE_PLACE,
+	AN_EYE_PLACE_OR_REST,
 	EYE_SPACE,
 	type Eye,
 	type EyePlace,
+	type EyePlaceOrRest,
 	type Focus,
 	type Viewpoint,
 	eyeSentTo,
 	pathThatSees,
+	placesThatRollOneWay,
 	viewpointOf
 } from '../domain/eye.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -96,9 +100,11 @@ const FOCUS_ON_SAID =
 // What a refusal names each move by
 const EYE_TO = 'eye.to';
 const EYE_FOCUS = 'eye.focus';
-// The values of the eye each move sets: where it stands and looks; where it focuses, and how wide it is open where the
-// film names it
-const STANDING = ['at', 'aim'] as const satisfies readonly (keyof Eye)[];
+// The values of the eye each move sets: where it stands, looks and its top points, every one of them, so the compiler
+// refuses a value of where the eye stands that `eye.to` would set unnamed; where it focuses, and how wide it is open
+// where the film names it
+const SETS_WHERE_IT_STANDS: { readonly [Name in keyof Viewpoint]: true } = { at: true, aim: true, up: true };
+const STANDING = Object.keys(SETS_WHERE_IT_STANDS);
 const FOCUSED = ['focusing'] as const satisfies readonly (keyof Eye)[];
 const FOCUSED_AND_OPENED = ['focusing', 'aperture'] as const satisfies readonly (keyof Eye)[];
 
@@ -120,16 +126,16 @@ class FocusOnKind implements Kind<FocusOn> {
 
 const A_FOCUS_ON: Kind<FocusOn> = new FocusOnKind();
 
-/** The eye to a place, through the places the film names on its way. */
-export function to(place: EyePlace, script: EyeToScript = {}): Move {
-	assertKind(place, AN_EYE_PLACE, `${EYE_TO}'s place`);
+/** The eye to a place, or back where it rests, through the places the film names on its way. */
+export function to(place: EyePlaceOrRest, script: EyeToScript = {}): Move {
+	assertKind(place, AN_EYE_PLACE_OR_REST, `${EYE_TO}'s place`);
 	assertWritten(script, TO_FORM, EYE_TO);
 	const through = throughWritten(script, EYE_TO);
 	return {
 		part: 'eye',
 		valueNames: STANDING,
 		timing: timingOf(script),
-		begin: (beginning) => sentAlong(viewpointOf(beginning.scene.eye), through, place)
+		begin: (beginning) => sentAlong(beginning.scene.eye, through, place)
 	};
 }
 
@@ -169,11 +175,14 @@ async function refocused(beginning: Beginning, asked: FocusAsked, aperture: numb
 
 /**
  * The eye on its way from where it stands, through the places on its way, to its own, each come to from where it
- * stands; refused where it could not see anywhere on the way.
+ * stands; refused where its up turns half round from one to the next, or it could not see anywhere on the way.
  */
-function sentAlong(setOffFrom: Viewpoint, through: Through<EyePlace>, place: EyePlace): Change {
-	const keys = through.keys.map((key) => eyeSentTo(setOffFrom, key));
-	const path = pathOf(setOffFrom, { ...through, keys }, eyeSentTo(setOffFrom, place), EYE_SPACE);
+function sentAlong(eye: Eye, through: Through<EyePlace>, place: EyePlaceOrRest): Change {
+	const setOffFrom = viewpointOf(eye);
+	const keys = through.keys.map((key) => eyeSentTo(setOffFrom, key, eye.focalLength));
+	const end = eyeSentTo(setOffFrom, place, eye.focalLength);
+	placesThatRollOneWay([setOffFrom, ...keys, end], EYE_TO);
+	const path = pathOf(setOffFrom, { ...through, keys }, end, EYE_SPACE);
 	return travelling(pathThatSees(path, EYE_TO));
 }
 

@@ -274,8 +274,9 @@ export class Take {
 	 */
 	private async actedOnFlat(stage: FramedStage, action: Action): Promise<void> {
 		const flatFormat = { ...this.format, frame: this.format.screen };
+		const camera = flatCamera(this.format, this.scene.eye.focalLength);
 		await stage.layFlat(
-			drawn(showingTheFilmedPage(this.scene), flatCamera(this.format), this.moment(), flatFormat, this.pictures.sharper)
+			drawn(showingTheFilmedPage(this.scene), camera, this.moment(), flatFormat, this.pictures.sharper)
 		);
 		await this.actedOn(action);
 		await stage.standUp();

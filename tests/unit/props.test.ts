@@ -8,7 +8,7 @@ import { alongItsWay } from '../../src/props/way.ts';
 import { NONE, WHOLE, fractionOf } from '../../src/domain/fraction.ts';
 import { type DrawnWords, type Piece, comingUpIn, drawnWords, saidOf, typedComingUp } from '../../src/props/words.ts';
 import { type Keystroke, lettersOf } from '../../src/domain/typing.ts';
-import { SMALL } from './fakes.ts';
+import { FOCAL_LENGTH, SMALL } from './fakes.ts';
 
 /** How much of a word stands typed, and whether the caret follows it. */
 interface StandingTyped {
@@ -269,7 +269,11 @@ test("a band sweeping the screen crosses what the window shows of the screen, no
 		crest: { start: '#5b8def', end: '#bca6ea' },
 		swept: NONE
 	};
-	const drawn = drawnScreen({ ...SCREEN_UP, sweep }, cameraOf(openingScene(SMALL, LIVEREELS_LOOK), SMALL), SMALL);
+	const drawn = drawnScreen(
+		{ ...SCREEN_UP, sweep },
+		cameraOf(openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH), SMALL),
+		SMALL
+	);
 	expect(drawn.sweep!.shape.band).toEqual({
 		start: { left: expect.closeTo(-60.56), top: expect.closeTo(-44.44) },
 		end: { left: expect.closeTo(660.56), top: expect.closeTo(-44.44) }

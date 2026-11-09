@@ -145,21 +145,24 @@ and the moves of each part of the scene:
   named, or `'straight'`, and `pace: 'even'`, as long a stretch of the way in each equal share of the move, where none
   is named, or `'keys'`, an equal share from each key to the next. Every object's `to` and `group.to` take the places
   they pass the same way, `title.to('right', { through: ['top'] })`
-- `eye.to({ at, aim }, { through })`: the eye the film is seen from, standing `at` a spot and looking at the spot
+- `eye.to({ at, aim, up }, { through })`: the eye the film is seen from, standing `at` a spot, looking at the spot
   `aim` names, each `{ across, down, out }` in pixels of a frame 1080 high from the frame's middle, `out` toward whoever
-  watches; it rests at `{ across: 0, down: 0, out: 2000 }` looking at the middle. The page's window, and what a film
-  shows `inside: 'world'`, are seen from wherever it stands; what stands on the frame, a caption, rides with it. What a
-  move leaves out stays; an eye looking at where it stands, or straight up or down, or passing over the top of what it
-  looks at, is refused
+  watches, and its top pointing `up`, up the frame, `{ across: 0, down: -1, out: 0 }`, until a film turns it. It rests
+  straight out from the middle as far as its focal length, looking at the middle: 2540.5 for the 24° a film sees where
+  it names no `eye: { angleOfView }`; `eye.to('rest')` sends it back there. The page's window, and what a film shows
+  `inside: 'world'`, are seen from wherever it stands; what stands on the frame, a caption, rides with it. What a move
+  leaves out stays; an eye looking at where it stands, or within 5° of along its up, as one passing over the top of
+  what it looks at with its up kept would, where the picture spins round, is refused, and so is an up turned half
+  round in one stretch: point its up into the frame, `{ across: 0, down: 0, out: -1 }`, to look straight down at it
 - `eye.focus(on, { aperture })`: the eye focused so far before it, `eye.focus(1800)`, at a spot of the world, on a
   block of the page, `eye.focus('#thread')`, or on an object, `eye.focus({ object: 'why' })`, and open `aperture`
   pixels of a frame 1080 high wide; it rests open none, all sharp. What stands in the world nearer or farther than the
-  focus is drawn as a disc `aperture × 2000 × |1/focus − 1/distance|` across, as a camera's lens draws it: the window,
-  with all in it, and each object shown `inside: 'world'`, each as soft as its point nearest the focus, so what the
-  eye focuses on is drawn sharp; drawn as a room, each point of the window as soft as its own distance has it, so a
-  window leant back is sharp where the eye focuses and melts beyond; what stands on the frame or in a group stays
-  sharp. It shares a step with `eye.to`, and holds on what it was put on as the eye moves; a focus pulled from one to
-  another goes evenly in how sharp it leaves things. A focus on what stands behind the eye is refused
+  focus is drawn as a disc `aperture × focal length × |1/focus − 1/distance|` across, as a camera's lens draws it:
+  the window, with all in it, and each object shown `inside: 'world'`, each as soft as its point nearest the focus, so
+  what the eye focuses on is drawn sharp; drawn as a room, each point of the window as soft as its own distance has
+  it, so a window leant back is sharp where the eye focuses and melts beyond; what stands on the frame or in a group
+  stays sharp. It shares a step with `eye.to`, and holds on what it was put on as the eye moves; a focus pulled from
+  one to another goes evenly in how sharp it leaves things. A focus on what stands behind the eye is refused
 - `window.to(place)`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn })`,
   `window.shade({ dim, fade, blur })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
@@ -368,9 +371,9 @@ about its middle, and `roll` turns it in its own plane, clockwise; a value
 left out is kept as it stands, and 360 is a whole turn, so `lean({ turn: 360
 })` spins it round once. As it is carried it grows about its middle,
 `code.to('right', { scale: 1.4 })`, and comes `depth` pixels of a frame 1080
-high toward the eye, nearer than the eye's 2000, larger and farther from the
-frame's middle as the eye sees it; each is kept as it stands where it is
-left out, and set by the move only where it is named. Turned away from the
+high toward the eye, less than the eye's focal length, larger and farther
+from the frame's middle as the eye sees it; each is kept as it stands where
+it is left out, and set by the move only where it is named. Turned away from the
 eye, it shows its back: a title card's ground or a pane blank, and words on
 no ground nothing, never mirrored. A lean shares a `play` with a move that
 carries it, and with `code.light`.
@@ -850,6 +853,11 @@ A film is shot at 60 frames a second, where a fast move runs smooth;
 a film shares its rate. A GIF is made at 50 frames a second at most, as a
 browser holds a GIF's frame of a hundredth of a second or less ten times as
 long.
+
+The eye sees 24° across the frame's shorter side, a long lens: a window
+leant back or a title brought near keeps its shape, and only a little of
+its depth shows. `defineFilm` takes `eye: { angleOfView: 40 }` for a wider
+one, where depth is loud. Every format of a film shares its angle.
 
 The stage's look was made on frames 1080 pixels on their shorter side, as
 1920 × 1080 and 1080 × 1080 are; on any other frame it is drawn as on such

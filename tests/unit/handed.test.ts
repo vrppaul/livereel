@@ -140,10 +140,8 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => code.to('left', { scale: 0 })).toThrow(
 		new FilmError("code.to's scale is 0: it is a scale, more than 0, 1 as large as its place")
 	);
-	expect(() => title.to('left', { depth: 2000 })).toThrow(
-		new FilmError(
-			"title.to's depth is 2000: it is a number of pixels of a frame 1080 high toward the eye, less than the eye's 2000"
-		)
+	expect(() => title.to('left', { depth: '200' as never })).toThrow(
+		new FilmError('title.to\'s depth is "200": it is a number')
 	);
 	expect(() => terminal.lean({ roll: '90' as never })).toThrow(
 		new FilmError('terminal.lean\'s roll is "90": it is a number')
@@ -353,11 +351,6 @@ test("a move that sets the values a film names refuses one naming none, and each
 	);
 	expect(() => lens.effects({ blur: -1 })).toThrow(
 		new FilmError("lens.effects's blur is -1: it is a number of pixels, 0 or more")
-	);
-	expect(() => code.effects({ depth: 5000 })).toThrow(
-		new FilmError(
-			"code.effects's depth is 5000: it is a number of pixels of a frame 1080 high toward the eye, less than the eye's 2000"
-		)
 	);
 	expect(() => pageWindow.shade({ dim: 2 })).toThrow(
 		new FilmError("window.shade's dim is 2: it is a number from 0 to 1")

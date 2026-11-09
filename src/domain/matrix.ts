@@ -385,7 +385,8 @@ function product(outer: Matrix, inner: Matrix): Matrix {
 	};
 }
 
-function radians(degrees: number): number {
+/** An angle in degrees, in radians. */
+export function radians(degrees: number): number {
 	return (degrees * Math.PI) / DEGREES_IN_A_HALF_TURN;
 }
 

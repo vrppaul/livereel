@@ -21,7 +21,7 @@
  * camera, or by the flat one an act is done in. A prop that may be absent is `null`; the
  * compiler holds every prop to a drawn form here and to a drawer on the stage.
  */
-import { type Eye, THE_EYE_AT_REST } from './domain/eye.ts';
+import { type Eye, eyeAtRest } from './domain/eye.ts';
 import { sharpnessOf } from './domain/focus.ts';
 import type { Format } from './domain/format.ts';
 import type { Size } from './domain/geometry.ts';
@@ -142,9 +142,9 @@ const THE_FILMS_OWN_SPEED = 1;
 
 /**
  * The scene a film opens on, in its look: the whole screen, face-on, up, unshaded, in the whole frame; nothing over
- * it; the page's time at the film's own speed.
+ * it; the page's time at the film's own speed; the eye of its focal length at rest.
  */
-export function openingScene(format: Format, look: Look): Scene {
+export function openingScene(format: Format, look: Look, focalLength: number): Scene {
 	return {
 		look,
 		camera: standingAt(wholePose(format)),
@@ -159,7 +159,7 @@ export function openingScene(format: Format, look: Look): Scene {
 		leaving: new Map(),
 		groups: new Map(),
 		pageSpeed: THE_FILMS_OWN_SPEED,
-		eye: THE_EYE_AT_REST
+		eye: eyeAtRest(focalLength)
 	};
 }
 

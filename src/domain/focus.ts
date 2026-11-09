@@ -1,8 +1,9 @@
 /**
  * How sharp the eye sees what stands before it. Open `aperture` wide and focused so far before it, the eye draws a point
- * that far sharp, and one nearer or farther as a disc `aperture × EYE_DISTANCE × |1/focus − 1/distance|` across on a
- * frame 1080 high, whose plane stands `EYE_DISTANCE` before it: a thin lens's circle of confusion, as After Effects
- * reckons its camera's depth of field, the aperture in pixels. The disc is blurred as a Gaussian of its own spread.
+ * that far sharp, and one nearer or farther as a disc `aperture × focal length × |1/focus − 1/distance|` across on a
+ * frame 1080 high, whose plane stands the eye's focal length before it: a thin lens's circle of confusion, as After
+ * Effects reckons its camera's depth of field, the aperture in pixels, so a longer lens blurs more. The disc is blurred
+ * as a Gaussian of its own spread.
  *
  * The flat stage blurs what stands in the world by one number each — the page's window, with all that lies in it, and
  * each object in the world — as soft as its point nearest the focus: what the eye focuses on is drawn sharp wherever it
@@ -26,7 +27,7 @@
  * than as far as can be, where a spot it was put on stands behind the eye.
  */
 import { type Camera, fromItsMiddle, leaningOnTheFrame, pointInTheView } from './camera.ts';
-import { A_PINHOLE, EYE_DISTANCE, type Focus, distanceBefore } from './eye.ts';
+import { A_PINHOLE, type Focus, distanceBefore } from './eye.ts';
 import { type Box, type Point, type Size, boxOf, cornersOf, frameScaleOf, middleX, middleY } from './geometry.ts';
 import {
 	ITS_MIDDLE,
@@ -40,11 +41,12 @@ import {
 import { between } from './time.ts';
 
 /**
- * How the eye sees as a frame is drawn: how far before it it sees sharp, in pixels of a frame 1080 high, and how wide it
- * is open.
+ * How the eye sees as a frame is drawn: how far before it it sees sharp, and its focal length, in pixels of a frame 1080
+ * high, and how wide it is open.
  */
 export interface Sharpness {
 	readonly focusedAt: number;
+	readonly focalLength: number;
 	readonly aperture: number;
 }
 
@@ -87,9 +89,12 @@ const ITS_CORNER = 0;
 // How many points of the frame show a plane that is not seen
 const NONE_SEEN = 0;
 
-/** How the eye of a camera sees as a frame of this size is drawn: where it sees sharp, and how wide it is open. */
+/**
+ * How the eye of a camera sees as a frame of this size is drawn: where it sees sharp, its focal length, and how wide it
+ * is open.
+ */
 export function sharpnessOf(camera: Camera, frame: Size): Sharpness {
-	return { focusedAt: focusedAt(camera, frame), aperture: camera.eye.aperture };
+	return { focusedAt: focusedAt(camera, frame), focalLength: camera.eye.focalLength, aperture: camera.eye.aperture };
 }
 
 /**
@@ -110,11 +115,11 @@ export function focusDistanceOf(focus: Focus, camera: Camera, frame: Size): numb
 }
 
 /**
- * How far before the eye the middle of what a matrix carries about its middle, to where the eye sees it, stands along
- * where the eye looks, in pixels of a frame 1080 high: none or less at the eye or behind it.
+ * How far before an eye of a focal length the middle of what a matrix carries about its middle, to where the eye sees
+ * it, stands along where the eye looks, in pixels of a frame 1080 high: none or less at the eye or behind it.
  */
-export function distanceOfItsMiddle(placing: Matrix): number {
-	return distanceAt(placing, ITS_MIDDLE);
+export function distanceOfItsMiddle(placing: Matrix, focalLength: number): number {
+	return distanceAt(placing, ITS_MIDDLE, focalLength);
 }
 
 /**
@@ -124,9 +129,9 @@ export function distanceOfItsMiddle(placing: Matrix): number {
  */
 export function outOfFocusOnTheFrame(placing: Matrix, laid: Size, sharpness: Sharpness, frame: Size): number | null {
 	if (sharpness.aperture === A_PINHOLE) return null;
-	const distance = distanceNearest(placing, laid, sharpness.focusedAt);
+	const distance = distanceNearest(placing, laid, sharpness);
 	if (distance <= AT_THE_EYE) return null;
-	const disc = sharpness.aperture * EYE_DISTANCE * Math.abs(1 / sharpness.focusedAt - 1 / distance);
+	const disc = sharpness.aperture * sharpness.focalLength * Math.abs(1 / sharpness.focusedAt - 1 / distance);
 	const spread = disc / A_DISCS_WIDTH_IN_SPREADS;
 	return spread * frameScaleOf(frame) <= SHARP_WITHIN ? null : spread;
 }
@@ -149,7 +154,7 @@ export function outOfFocusBeforeItsMatrix(
 /**
  * How soft the eye draws each point of the frame what a matrix carries about the middle of a box on the frame is seen
  * at (`OutOfFocusAt`), what it shows standing in another box of its plane: a disc as wide as the eye is open times how
- * far apart the plane's nearness there and the focus's stand, as `aperture × 2000 × |1/focus − 1/distance|` is, spread
+ * far apart the plane's nearness there and the focus's stand, as `aperture × focal length × |1/focus − 1/distance|` is, spread
  * as a Gaussian. None where the eye is open none, sees the plane edge-on, the frame shows none of what it shows, or no
  * point of it the frame shows spreads enough to show.
  */
@@ -166,7 +171,7 @@ export function outOfFocusAt(
 	const seen = seenWithin(placing, laid, shows, boxOf(frame));
 	if (seen.length === NONE_SEEN) return null;
 	const spread = sharpness.aperture / A_DISCS_WIDTH_IN_SPREADS;
-	const nearnessInFocus = EYE_DISTANCE / sharpness.focusedAt;
+	const nearnessInFocus = sharpness.focalLength / sharpness.focusedAt;
 	const across = -spread * nearness.across;
 	const down = -spread * nearness.down;
 	const blur: BlurAcrossTheFrame = {
@@ -210,24 +215,25 @@ function focusedAt(camera: Camera, frame: Size): number {
 }
 
 /**
- * How far before the eye the point of what a matrix carries, laid in a box of this size about its middle, nearest a
- * distance stands: that distance where the plane reaches across it, else its nearer or farther corner's.
+ * How far before the eye the point of what a matrix carries, laid in a box of this size about its middle, nearest where
+ * it sees sharp stands: there where the plane reaches across it, else its nearer or farther corner's.
  */
-function distanceNearest(placing: Matrix, laid: Size, distance: number): number {
+function distanceNearest(placing: Matrix, laid: Size, sharpness: Sharpness): number {
 	const corners = cornersOf({ left: ITS_CORNER, top: ITS_CORNER, width: laid.width, height: laid.height });
-	const distances = corners.map((corner) => distanceAt(placing, fromItsMiddle(laid, corner)));
-	return Math.min(Math.max(distance, Math.min(...distances)), Math.max(...distances));
+	const distances = corners.map((corner) => distanceAt(placing, fromItsMiddle(laid, corner), sharpness.focalLength));
+	return Math.min(Math.max(sharpness.focusedAt, Math.min(...distances)), Math.max(...distances));
 }
 
 /** How far before the eye a point of the page's window stands, in its box's pixels, as the window leans and is seen. */
 function distanceOnTheWindow(camera: Camera, frame: Size, point: Point): number {
-	return distanceAt(leaningOnTheFrame(camera.view, camera.eye, frame), fromItsMiddle(camera.view.box, point));
+	const placing = leaningOnTheFrame(camera.view, camera.eye, frame);
+	return distanceAt(placing, fromItsMiddle(camera.view.box, point), camera.eye.focalLength);
 }
 
 /**
- * How far before the eye a spot of what a matrix carries stands, once carried to where the eye sees it, in pixels of a
- * frame 1080 high: the matrix sees from the eye's distance at the frame's plane.
+ * How far before an eye of a focal length a spot of what a matrix carries stands, once carried to where the eye sees
+ * it, in pixels of a frame 1080 high: the matrix sees from as far as the focal length at the frame's plane.
  */
-function distanceAt(placing: Matrix, spot: Spot): number {
-	return seenFromOf(placing, spot) * EYE_DISTANCE;
+function distanceAt(placing: Matrix, spot: Spot, focalLength: number): number {
+	return seenFromOf(placing, spot) * focalLength;
 }

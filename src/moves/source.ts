@@ -67,7 +67,7 @@ export function cameraFrontOn(beginning: Beginning, doing: string): Camera {
 	}
 	if (!looksStraightAtTheFrame(camera.eye)) {
 		throw new FilmError(
-			`${doing} only while the eye looks straight ahead at the window from before it: send it so, eye.to({ at, aim })`
+			`${doing} only while the eye looks straight ahead at the window from before it, its top up the frame: send it so, eye.to({ at, aim, up }), or back where it rests, eye.to('rest')`
 		);
 	}
 	return camera;

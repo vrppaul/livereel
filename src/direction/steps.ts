@@ -23,6 +23,7 @@ import {
 	needed
 } from '../domain/handed.ts';
 import type { PlaceNamed } from '../domain/place.ts';
+import type { DepthNamed } from '../domain/stance.ts';
 import { type Ease, easeInOutSine, framesOf, linear } from '../domain/time.ts';
 import { A_STROKES, type Keystroke, typingSeconds } from '../domain/typing.ts';
 import type { CssNamed } from './theme.ts';
@@ -35,6 +36,7 @@ import {
 	type Part,
 	type Share,
 	cssOf,
+	depthsOf,
 	movesThePage,
 	ownPagesOf,
 	placesOf,
@@ -168,6 +170,14 @@ export function ownPagesIn(steps: readonly Step[]): readonly OwnPage[] {
 /** Every place the steps' moves name, known before anything is shot, so one the format has not is refused at once. */
 export function placesIn(steps: readonly Step[]): readonly PlaceNamed[] {
 	return steps.flatMap((step) => step.moves).flatMap(placesOf);
+}
+
+/**
+ * Every depth the steps' moves bring something to, known before anything is shot, so one the film's eye never sees is
+ * refused at once.
+ */
+export function depthsIn(steps: readonly Step[]): readonly DepthNamed[] {
+	return steps.flatMap((step) => step.moves).flatMap(depthsOf);
 }
 
 /** Moves refused together in one step: two on one part at once, and an act at the moment one holds the page begins. */

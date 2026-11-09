@@ -52,12 +52,12 @@ function stepsGiven(steps: unknown) {
 test('a film in no form of one is refused as it is defined, where it stands: its names, its formats and where their captions stand, its functions', () => {
 	expect(() => defineFilm(null as never)).toThrow(
 		new FilmError(
-			'the film is null: it is an object of formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, framesPerSecond, colourScheme, blurred, page, drawing'
+			'the film is null: it is an object of formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, framesPerSecond, eye, colourScheme, blurred, page, drawing'
 		)
 	);
 	expect(() => filmWritten({ motionblur: {} })).toThrow(
 		new FilmError(
-			'the film names motionblur: it names formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, framesPerSecond, colourScheme, blurred, page, drawing, or fewer'
+			'the film names motionblur: it names formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, framesPerSecond, eye, colourScheme, blurred, page, drawing, or fewer'
 		)
 	);
 	expect(() => filmWritten({ colourScheme: 'night' })).toThrow(
@@ -317,6 +317,49 @@ test('a film is drawn as it names, flat where it names none; a drawing livereel 
 			'the film\'s drawing is "room", which draws the page from its picture: a dynamic page stands live in a frame of its own site, which WebGL is given blank, so leave the page out for a static one, or the drawing for a flat one'
 		)
 	);
+});
+
+test("a film's eye sees 24° across the frame's shorter side where it names no angle, else the angle it names, standing so far from the frame at rest; an angle of view in no form of one is refused as the film is defined", () => {
+	const films = [filmWritten({}), filmWritten({ eye: { angleOfView: 90 } })];
+	// Half the frame's 1080 over the tangent of half the angle: 540 / tan 12°, and 540 / tan 45°
+	expect(films.map((film) => film.formats.get('small')!.focalLength)).toEqual([
+		expect.closeTo(2540.5, 2),
+		expect.closeTo(540)
+	]);
+	expect(() => filmWritten({ eye: { angleOfView: 0 } })).toThrow(
+		new FilmError(
+			"the film's eye's angleOfView is 0: it is degrees the eye sees across the frame's shorter side, more than 0 and less than 180"
+		)
+	);
+	expect(() => filmWritten({ eye: { angleOfView: 180 } })).toThrow(
+		new FilmError(
+			"the film's eye's angleOfView is 180: it is degrees the eye sees across the frame's shorter side, more than 0 and less than 180"
+		)
+	);
+	expect(() => filmWritten({ eye: { fov: 24 } })).toThrow(
+		new FilmError("the film's eye names fov: it names angleOfView, or fewer")
+	);
+});
+
+test("a depth that brings something as near as the film's eye at rest or nearer is refused as the steps are read, before anything is shot, by the eye's focal length", () => {
+	const nearing = (depth: number) => [play({ seconds: 1, moves: [title.to('left', { depth })] })];
+	expect(() => stepsGiven(nearing(2600))).toThrow(
+		new FilmError(
+			"title.to's depth is 2600: it brings it as near as the eye at rest or nearer, 2540.5 from the frame, where it is never seen; bring it less near"
+		)
+	);
+	expect(() => stepsGiven([play({ seconds: 1, moves: [title.effects({ depth: 2541 })] })])).toThrow(
+		new FilmError(
+			"title.effects's depth is 2541: it brings it as near as the eye at rest or nearer, 2540.5 from the frame, where it is never seen; bring it less near"
+		)
+	);
+	const wide = filmWritten({ eye: { angleOfView: 90 }, steps: () => nearing(600) });
+	expect(() => wide.formats.get('small')!.steps(wholePose(SMALL))).toThrow(
+		new FilmError(
+			"title.to's depth is 600: it brings it as near as the eye at rest or nearer, 540.0 from the frame, where it is never seen; bring it less near"
+		)
+	);
+	expect(stepsGiven(nearing(2500))).toHaveLength(1);
 });
 
 test("a film's set is shot 3 times as sharp as its page where it names no sharpness; a set in no form of one, or one for a dynamic page, is refused as the film is defined", () => {

@@ -116,7 +116,7 @@ const layerRules = Object.keys(LAYERS).map((part) => ({
 }));
 
 // Short words that still say what they mean; anything else that short abbreviates, and `_` says nothing is kept
-const SHORT_WORDS = ['_', 'id', 'at', 'to', 'ok', 'of', 'on', 'by', 'is', 'as'];
+const SHORT_WORDS = ['_', 'id', 'at', 'to', 'ok', 'of', 'on', 'by', 'is', 'as', 'up'];
 // A type parameter is a word, as `Name` or `Served` is, never one letter
 const TYPE_NAME = '^[A-Z][a-z]';
 // A helper is a function of its module, with a name and parameters of its own, not a closure in the body of another.

@@ -45,7 +45,7 @@ export type { Keystroke, Typist } from './domain/typing.ts';
 export { easeInOutCubic, easeInOutSine, easeOutBack, easeOutCubic, easeOutQuint, linear } from './domain/time.ts';
 export type { Ease } from './domain/time.ts';
 export type { Angle, Pose } from './domain/camera.ts';
-export type { EyePlace } from './domain/eye.ts';
+export type { EyePlace, EyePlaceOrRest } from './domain/eye.ts';
 export type { Spot } from './domain/matrix.ts';
 export type { Format } from './domain/format.ts';
 export type { Box, FrameSide, Point, Size } from './domain/geometry.ts';

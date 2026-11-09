@@ -11,7 +11,7 @@ import { BOX_SPACE, type Box, resizedAbout } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { A_PLACE, type Place, placesNamed, windowPlaced } from '../domain/place.ts';
 import { pathOf } from '../domain/path.ts';
-import { AS_PLACED, orientationToward } from '../domain/stance.ts';
+import { AS_PLACED, depthsNamed, orientationToward } from '../domain/stance.ts';
 import {
 	type Beginning,
 	type Change,
@@ -58,6 +58,8 @@ type Leant = Pick<Group, (typeof LEANT)[number]>;
 
 // The group a move takes where the film names none
 const GROUP: GroupName = 'group';
+// What a refusal names the move that carries a group by
+const GROUP_TO = 'group.to';
 // The place a group stands in where the film names none, and how it orders what stands in it
 const THE_WHOLE_FRAME: Place = 'whole';
 const BY_Z_INDEX: GroupOrder = 'zIndex';
@@ -88,15 +90,16 @@ export function show(script: GroupShowScript = {}): Move {
  * way, about its middle; it stays as large as it was placed, as it grows by its scale alone.
  */
 export function to(place: Place, script: ToScript = {}): Move {
-	assertKind(place, A_PLACE, "group.to's place");
-	assertWritten(script, TO_FORM, 'group.to');
-	const carrying = carryingWritten(place, script, 'group.to');
+	assertKind(place, A_PLACE, `${GROUP_TO}'s place`);
+	assertWritten(script, TO_FORM, GROUP_TO);
+	const carrying = carryingWritten(place, script, GROUP_TO);
 	const name = script.as ?? GROUP;
 	return {
 		part: groupPart(name),
 		valueNames: carrying.names,
 		timing: timingOf(script),
-		places: placesOnTheWay('group.to', carrying),
+		places: placesOnTheWay(GROUP_TO, carrying),
+		depths: depthsNamed(`${GROUP_TO}'s depth`, script.depth),
 		begin: (beginning) => carried(beginning, name, carrying)
 	};
 }
@@ -143,7 +146,7 @@ function placed(beginning: Beginning, name: GroupName, place: Place, order: Grou
  * to the film's scale and depth where it names them: the values named written into it.
  */
 function carried(beginning: Beginning, name: GroupName, carrying: Carrying): Change {
-	const group = groupFound(beginning.scene.groups, name, 'group.to');
+	const group = groupFound(beginning.scene.groups, name, GROUP_TO);
 	const { place, through, script } = carrying;
 	const to: Carried = {
 		box: aboutAPlace(beginning, place, group),

@@ -13,6 +13,7 @@ import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
 import { A_BOX, type Box, type Size, liesAboveOrBelow, liesOutside, partWithin } from '../domain/geometry.ts';
 import type { PlaceNamed } from '../domain/place.ts';
+import type { DepthNamed } from '../domain/stance.ts';
 import {
 	A_NUMBER,
 	A_SELECTOR,
@@ -49,6 +50,7 @@ export type Part = PropName | ObjectPart | GroupPart | 'page' | 'pageSpeed' | 'e
 const NO_SOUNDS: readonly Cue[] = [];
 const NO_CSS: readonly CssNamed[] = [];
 const NO_PLACES: readonly PlaceNamed[] = [];
+const NO_DEPTHS: readonly DepthNamed[] = [];
 const NO_OWN_PAGES: readonly OwnPage[] = [];
 // Where a step starts and ends, as shares of it; and how far along a move is before its share and after it
 const STEP_START = 0;
@@ -239,6 +241,11 @@ export interface Move {
 	readonly css?: readonly CssNamed[];
 	/** The places the move names, which its format is read for before the film is shot; a move that names none has none. */
 	readonly places?: readonly PlaceNamed[];
+	/**
+	 * The depths the move brings something to, which the film's eye is read for before the film is shot; a move that
+	 * names none has none.
+	 */
+	readonly depths?: readonly DepthNamed[];
 	/** The pages of the film's own the move shows, which the stage lays before the film is shot; most show none. */
 	readonly ownPages?: readonly OwnPage[];
 	/**
@@ -281,6 +288,11 @@ export function cssOf(move: Move): readonly CssNamed[] {
 /** The places a move names: none, for a move that names none. */
 export function placesOf(move: Move): readonly PlaceNamed[] {
 	return move.places ?? NO_PLACES;
+}
+
+/** The depths a move brings something to: none, for a move that names none. */
+export function depthsOf(move: Move): readonly DepthNamed[] {
+	return move.depths ?? NO_DEPTHS;
 }
 
 /** The pages of the film's own a move shows: none, for a move that shows none. */

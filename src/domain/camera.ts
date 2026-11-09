@@ -17,7 +17,7 @@
  * screen carried by its focus to the view's middle and brought close, the view swung and leant back about its middle,
  * and seen from the eye before the frame's middle, a nearer point larger.
  */
-import { type Eye, THE_EYE_AT_REST, isAtRest, seenByTheEye, sightOf } from './eye.ts';
+import { type Eye, eyeAtRest, isAtRest, seenByTheEye, sightOf } from './eye.ts';
 import type { Format } from './format.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from './fraction.ts';
 import {
@@ -298,9 +298,12 @@ function shownShareOf(box: Box, frame: Size): Box | null {
 	};
 }
 
-/** The camera an act is done in: face-on at the screen's own size, on a frame the screen's size, the eye at rest. */
-export function flatCamera(format: Format): Camera {
-	return { pose: flatPose(format), view: wholeView(format.screen), eye: THE_EYE_AT_REST };
+/**
+ * The camera an act is done in: face-on at the screen's own size, on a frame the screen's size, the eye of a focal
+ * length at rest.
+ */
+export function flatCamera(format: Format, focalLength: number): Camera {
+	return { pose: flatPose(format), view: wholeView(format.screen), eye: eyeAtRest(focalLength) };
 }
 
 /** An angle `progress` of the way to another. */

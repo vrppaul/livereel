@@ -14,7 +14,7 @@
  * back of its own, and turned half round shows the page mirrored.
  */
 import { type Angle, FACE_ON, angleToward, angledAs } from './camera.ts';
-import { EYE_DISTANCE } from './eye.ts';
+import { FilmError } from './errors.ts';
 import { A_NUMBER, type Kind, Plain } from './handed.ts';
 import {
 	type FlatMatrix,
@@ -79,6 +79,8 @@ const NONE = 0;
 const DEGREES_IN_A_TURN = 360;
 // How far before the eye something's middle is seen from, `m44` of its matrix, where it stands at the eye or behind it
 const BEHIND_THE_EYE = 0;
+// A refusal says how far the eye stands from the frame to a tenth of a pixel: 2540.5 at 24°
+const DIGITS_OF_A_DEPTH = 1;
 
 /** How something stands until a move changes it: as large as its box, on its plane, face-on and upright. */
 export const AS_PLACED: Stance = { scale: AS_LARGE, depth: ON_ITS_PLANE, angle: { ...FACE_ON, roll: UPRIGHT } };
@@ -87,13 +89,31 @@ export const AS_PLACED: Stance = { scale: AS_LARGE, depth: ON_ITS_PLANE, angle: 
 export const A_SCALE: Kind<number> = new Plain(isScale, 'a scale, more than 0, 1 as large as its place');
 
 /**
- * How far a film brings something toward the eye, in pixels of a frame 1080 high, the frame's own once shot: nearer
- * than the eye, as nothing past it is seen. Less than none takes it away.
+ * A depth a move brings something to, in pixels of a frame 1080 high, and the move's value that names it, as a
+ * refusal says it: "title.to's depth".
  */
-export const A_DEPTH: Kind<number> = new Plain(
-	isNearerThanTheEye,
-	`a number of pixels of a frame 1080 high toward the eye, less than the eye's ${EYE_DISTANCE}`
-);
+export interface DepthNamed {
+	readonly depth: number;
+	readonly by: string;
+}
+
+/** The depth a move's value names, for the film's eye to be read for: none where the move names none. */
+export function depthsNamed(by: string, depth: number | undefined): readonly DepthNamed[] {
+	return depth === undefined ? [] : [{ depth, by }];
+}
+
+/**
+ * The depths moves name, each refused where it brings something as near as the eye at rest or nearer, its focal length
+ * from the frame, where it is never seen from there.
+ */
+export function assertNearerThanTheEye(named: readonly DepthNamed[], focalLength: number): void {
+	const tooNear = named.find((depth) => depth.depth >= focalLength);
+	if (tooNear === undefined) return;
+	const restsAt = focalLength.toFixed(DIGITS_OF_A_DEPTH);
+	throw new FilmError(
+		`${tooNear.by} is ${String(tooNear.depth)}: it brings it as near as the eye at rest or nearer, ${restsAt} from the frame, where it is never seen; bring it less near`
+	);
+}
 
 /**
  * The matrix of a stance about the middle of its box, before any eye sees it: grown, rolled, turned and leant, then
@@ -145,8 +165,4 @@ function nearestWholeTurn(degrees: number): number {
 
 function isScale(written: unknown): written is number {
 	return A_NUMBER.is(written) && written > NONE;
-}
-
-function isNearerThanTheEye(written: unknown): written is number {
-	return A_NUMBER.is(written) && written < EYE_DISTANCE;
 }

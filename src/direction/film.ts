@@ -8,6 +8,7 @@
  */
 import type { Pose } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
+import { AN_ANGLE_OF_VIEW, focalLengthOf } from '../domain/eye.ts';
 import { FORMAT_FORM, type Format } from '../domain/format.ts';
 import {
 	A_COUNT,
@@ -25,6 +26,7 @@ import {
 } from '../domain/handed.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
 import { assertOwnPlaces, assertPlacesOf } from '../domain/place.ts';
+import { assertNearerThanTheEye } from '../domain/stance.ts';
 import { leavesRoom } from '../domain/split.ts';
 import { namesOf } from '../domain/toward.ts';
 import { LIVEREELS_LOOK, type Look, type Theme, lookWith } from '../props/look.ts';
@@ -33,7 +35,7 @@ import type { ActContext } from './page.ts';
 import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf, musicOf } from './sound.ts';
 import { type FilmSet, SET_FORM, type SetScript, setOf } from './set.ts';
 import { SITE_FORM, type Site, type SiteScript, siteOf } from './site.ts';
-import { type Step, placesIn, stepsOf } from './steps.ts';
+import { type Step, depthsIn, placesIn, stepsOf } from './steps.ts';
 import { type CssNamed, THE_FILMS_THEME, cssNamedIn, themeOf } from './theme.ts';
 
 // Where the stage a film is shot on stands: apart from the app, or inside it, on its own address
@@ -59,6 +61,11 @@ export type PageKind = (typeof PAGE_KINDS)[number];
 const DRAWINGS = ['flat', 'room'] as const;
 
 export type Drawing = (typeof DRAWINGS)[number];
+
+/** The eye a film is seen through: how many degrees it sees across the frame's shorter side. */
+interface EyeScript {
+	readonly angleOfView?: number;
+}
 
 /**
  * A film of steps as its author writes it: where its page is (`address`), and the command that serves it there, where
@@ -99,6 +106,11 @@ export interface Script<Name extends string> extends SiteScript {
 	readonly theme?: Theme;
 	/** How many frames make a second of the film: 60, where none is named. */
 	readonly framesPerSecond?: number;
+	/**
+	 * The eye the film is seen through: `angleOfView`, the degrees it sees across the frame's shorter side, 24 where
+	 * none is named; the narrower, the farther it stands, and the less what comes toward it, or leans, grows.
+	 */
+	readonly eye?: EyeScript;
 	/** The colour scheme the page is asked for: `light`, where none is named, or `dark`. */
 	readonly colourScheme?: ColourScheme;
 	/** The blocks the page blurs wherever it shows them, by selector: an address, a key, a name no film should show. */
@@ -139,6 +151,8 @@ export interface FilmInFormat {
 	readonly sound: FilmSound;
 	readonly motionBlur: MotionBlur | null;
 	readonly framesPerSecond: number;
+	/** How far before its eye the picture plane stands, in pixels of a frame 1080 high, for the angle it sees. */
+	readonly focalLength: number;
 	readonly site: Site;
 	readonly set: FilmSet | null;
 	readonly ready: (context: ActContext) => Promise<void>;
@@ -195,6 +209,9 @@ const SET_FOR_A_STATIC_PAGE =
 // So many frames make a second where a film names no rate: a fast move runs smooth at it, where at 30 it steps (the
 // claude-review promo's dive shot both ways, 2026-11-08)
 export const FRAMES_PER_SECOND_WHERE_NONE_IS_NAMED = 60;
+// The eye sees so many degrees across the frame's shorter side where a film names none: a long lens, as the
+// claude-review promo's, which grows what nears it little
+const ANGLE_OF_VIEW_WHERE_NONE_IS_NAMED = 24;
 // A film's sounds, music, blur and theme are objects, what is in each read by its own reader, in its own words, first
 const FILM_FORM: Form<AnyScript> = {
 	formats: needed(anObject<AnyScript['formats']>("an object of the film's formats, by name")),
@@ -208,6 +225,7 @@ const FILM_FORM: Form<AnyScript> = {
 	motionBlur: anObject<MotionBlurScript>(AN_OBJECT_SAID),
 	theme: anObject<Theme>(AN_OBJECT_SAID),
 	framesPerSecond: A_COUNT,
+	eye: new OfForm<EyeScript>({ angleOfView: AN_ANGLE_OF_VIEW }, "the film's eye: { angleOfView }"),
 	colourScheme: A_COLOUR_SCHEME,
 	blurred: SELECTORS,
 	page: A_PAGE_KIND,
@@ -226,6 +244,7 @@ export class ScriptedFilm<Name extends string> implements Film {
 	readonly page: PageKind;
 	readonly drawing: Drawing;
 	readonly framesPerSecond: number;
+	readonly focalLength: number;
 	readonly site: Site;
 	readonly set: FilmSet | null;
 	readonly formats: ReadonlyMap<string, FilmInFormat>;
@@ -250,6 +269,7 @@ export class ScriptedFilm<Name extends string> implements Film {
 		this.colourScheme = script.colourScheme ?? COLOUR_SCHEME_WHERE_NONE_IS_NAMED;
 		this.blurred = script.blurred ?? NOTHING_BLURRED;
 		this.framesPerSecond = script.framesPerSecond ?? FRAMES_PER_SECOND_WHERE_NONE_IS_NAMED;
+		this.focalLength = focalLengthOf(script.eye?.angleOfView ?? ANGLE_OF_VIEW_WHERE_NONE_IS_NAMED);
 		this.formats = new Map(namesOf(script.formats).map((name) => [name, this.inFormat(name)]));
 		if (this.formats.size === 0) throw new FilmError(NO_FORMAT);
 	}
@@ -269,10 +289,12 @@ export class ScriptedFilm<Name extends string> implements Film {
 			sound: this.sound,
 			motionBlur: this.motionBlur,
 			framesPerSecond: this.framesPerSecond,
+			focalLength: this.focalLength,
 			site: this.site,
 			set: this.set,
 			ready: this.script.ready,
-			steps: (whole) => placedSteps(stepsOf(this.script.steps(whole, name)), this.script.formats[name], name)
+			steps: (whole) =>
+				checkedSteps(stepsOf(this.script.steps(whole, name)), this.script.formats[name], name, this.focalLength)
 		};
 	}
 }
@@ -319,8 +341,17 @@ function refuseUnlikeAFilm(written: unknown): void {
 	}
 }
 
-/** A film's steps in a format, refused where a move names a place the format has not, before anything is shot. */
-function placedSteps(steps: readonly Step[], format: Format, formatName: string): readonly Step[] {
+/**
+ * A film's steps in a format, refused before anything is shot where a move names a place the format has not, or brings
+ * something nearer than its eye of this focal length rests.
+ */
+function checkedSteps(
+	steps: readonly Step[],
+	format: Format,
+	formatName: string,
+	focalLength: number
+): readonly Step[] {
 	assertPlacesOf(format, placesIn(steps), `the film's ${formatName} format`);
+	assertNearerThanTheEye(depthsIn(steps), focalLength);
 	return steps;
 }

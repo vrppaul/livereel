@@ -54,7 +54,7 @@ import {
 	middleInTheRoom,
 	seenFromTheEye
 } from '../domain/camera.ts';
-import { type Eye, type Focus, THE_EYE_AT_REST, turnOf } from '../domain/eye.ts';
+import { type Eye, type Focus, eyeAtRest, turnOf } from '../domain/eye.ts';
 import { type Sharpness, distanceOfItsMiddle, outOfFocusBeforeItsMatrix } from '../domain/focus.ts';
 import type { Fraction } from '../domain/fraction.ts';
 import type { PartAsked, SharperPicture } from '../domain/picture.ts';
@@ -356,7 +356,7 @@ function standingOf(object: FrameObject, frame: Size, holders: Holders): Standin
 		case 'group': {
 			const group = groupNamed(holders.groups, object.inside.name);
 			const laid = placedFrom(object.box, cornerOf(group));
-			return seenWhereLaid(laid, stoodInGroup(object, group), THE_EYE_AT_REST, frame);
+			return seenWhereLaid(laid, stoodInGroup(object, group), eyeAtRest(holders.camera.eye.focalLength), frame);
 		}
 	}
 }
@@ -369,7 +369,7 @@ function standingOf(object: FrameObject, frame: Size, holders: Holders): Standin
 function standingAlone(object: FrameObject, frame: Size, eye: Eye): Standing {
 	switch (object.inside.kind) {
 		case 'frame':
-			return seenWhereLaid(object.box, stanceMatrix(object), THE_EYE_AT_REST, frame);
+			return seenWhereLaid(object.box, stanceMatrix(object), eyeAtRest(eye.focalLength), frame);
 		case 'world':
 			return seenWhereLaid(object.box, stanceMatrix(object), eye, frame);
 		case 'window':
@@ -527,8 +527,10 @@ export function focusOn(object: FrameObject, holders: Holders, frame: Size): Foc
 	const middle: Point = { left: middleX(object.box), top: middleY(object.box) };
 	switch (object.inside.kind) {
 		case 'frame':
-		case 'group':
-			return { kind: 'distance', distance: distanceOfItsMiddle(standingOf(object, frame, holders).placing) };
+		case 'group': {
+			const placing = standingOf(object, frame, holders).placing;
+			return { kind: 'distance', distance: distanceOfItsMiddle(placing, holders.camera.eye.focalLength) };
+		}
 		case 'world':
 			return { kind: 'world', spot: spotInTheWorld(object, frame) };
 		case 'window':

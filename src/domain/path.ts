@@ -120,7 +120,10 @@ function distinctKeys<Value>(keys: readonly Value[], space: PathSpace<Value>): r
 	return keys.filter((key, index) => index === 0 || space.distance(itemAt(keys, index - 1), key) > NO_LENGTH);
 }
 
-/** A path with no key between its ends: as its kind goes from one to the other, past either end too. */
+/**
+ * A path with no key between its ends: as its kind goes from one to the other, past either end too; on each end
+ * exactly, as the arithmetic of a way between may leave a trace on it.
+ */
 class EndToEnd<Value> implements Path<Value> {
 	readonly from: Value;
 	readonly to: Value;
@@ -133,6 +136,8 @@ class EndToEnd<Value> implements Path<Value> {
 	}
 
 	at(progress: number): Value {
+		if (progress === ITS_START) return this.from;
+		if (progress === ITS_END) return this.to;
 		return this.space.toward(this.from, this.to, progress);
 	}
 }

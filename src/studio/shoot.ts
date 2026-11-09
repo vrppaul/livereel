@@ -132,7 +132,7 @@ async function taken(film: FilmInFormat, shooting: Shooting, opened: Opened, scr
 		footage: shooting.footage,
 		track: shooting.track,
 		format: film.format,
-		opening: openingScene(film.format, film.look),
+		opening: openingScene(film.format, film.look, film.focalLength),
 		motionBlur: scripted.motionBlur,
 		framesPerSecond: film.framesPerSecond
 	});

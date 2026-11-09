@@ -61,14 +61,14 @@ export interface Arc {
 }
 
 // The middle of a length lies half-way along it, and air stands on both sides of a box
-const HALVES = 2;
+export const HALVES = 2;
 const SIDES = 2;
 // A length of nothing: two boxes that meet only along an edge share no area
 const NO_LENGTH = 0;
 const DEGREES_IN_A_HALF_TURN = 180;
 // The shorter side of the frames the stage's look was made on, 1920 × 1080 and 1080 × 1080: what it draws in the
 // frame's own pixels is drawn as on such a frame, and scaled to the frame shot
-const LOOK_MADE_ON = 1080;
+export const LOOK_MADE_ON = 1080;
 
 /** How large the stage draws on a frame, against the frames its look was made on: by the frame's shorter side. */
 export function frameScaleOf(frame: Size): number {

@@ -34,7 +34,7 @@
  */
 import { boxOnTheScreen, standingAt, viewOf } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import { THE_EYE_AT_REST } from '../domain/eye.ts';
+import { eyeAtRest } from '../domain/eye.ts';
 import type { Format } from '../domain/format.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
 import {
@@ -61,7 +61,14 @@ import {
 	namesSetBy,
 	needed
 } from '../domain/handed.ts';
-import { AS_PLACED, A_DEPTH, A_SCALE, type Orientation, faceOnNearest, orientationToward } from '../domain/stance.ts';
+import {
+	AS_PLACED,
+	A_SCALE,
+	type Orientation,
+	depthsNamed,
+	faceOnNearest,
+	orientationToward
+} from '../domain/stance.ts';
 import {
 	A_PLACE,
 	type Place,
@@ -260,7 +267,7 @@ const A_MELT = new OfForm<MeltScript>(
 );
 export const TO_FORM: Form<ToScript> = {
 	scale: A_SCALE,
-	depth: A_DEPTH,
+	depth: A_NUMBER,
 	...throughFormOf(A_PLACE, 'a list of places'),
 	...NAMED_FORM,
 	...TIMING_FORM
@@ -276,7 +283,7 @@ const EFFECTS_FORM: Form<EffectsScript> = {
 	colour: A_COLOUR,
 	melt: A_MELT,
 	scale: A_SCALE,
-	depth: A_DEPTH,
+	depth: A_NUMBER,
 	...NAMED_FORM,
 	...TIMING_FORM
 };
@@ -418,6 +425,7 @@ export function objectTo(kind: ObjectKind, move: string, place: Place, script: T
 		valueNames: carrying.names,
 		timing: timingOf(script),
 		places: placesOnTheWay(move, carrying),
+		depths: depthsNamed(`${move}'s depth`, script.depth),
 		begin: (beginning) => carried(beginning, name, carrying, move)
 	};
 }
@@ -456,6 +464,7 @@ export function objectEffects(kind: ObjectKind, move: string, script: EffectsScr
 		part: objectPart(name),
 		valueNames: names,
 		timing: timingOf(script),
+		depths: depthsNamed(`${move}'s depth`, script.depth),
 		begin: (beginning) => standingOut(beginning, name, script, names, move)
 	};
 }
@@ -589,7 +598,8 @@ function readFrom(beginning: Beginning, holder: Holder): Beginning {
 	switch (holder.kind) {
 		case 'world': {
 			const pose = cameraOf(beginning.scene, beginning.format).pose;
-			const asAtRest = withEye(withProp(beginning.scene, 'camera', standingAt(pose)), THE_EYE_AT_REST);
+			const atRest = eyeAtRest(beginning.scene.eye.focalLength);
+			const asAtRest = withEye(withProp(beginning.scene, 'camera', standingAt(pose)), atRest);
 			return { ...beginning, scene: asAtRest };
 		}
 		case 'frame':
