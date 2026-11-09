@@ -2830,6 +2830,150 @@ test('an eye circling half way round what it looks at, its across turning with i
 	expect(circled.eye.at).toEqual(behind);
 });
 
+// A spot over the block, and how high over it: the eye at rest stands 2000 over the frame, so this is nearer
+const OVER_THE_BLOCK = { over: '#block', height: 800 };
+const BLOCKS_MIDDLE: Point = { left: BLOCK.left + BLOCK.width / 2, top: BLOCK.top + BLOCK.height / 2 };
+const CARDS_MIDDLE: Point = { left: CARD.left + CARD.width / 2, top: CARD.top + CARD.height / 2 };
+
+/** Where a point of the page is drawn on the small frame of a scene, by its own camera, rounded. */
+function pagePointDrawn(scene: Scene, point: Point): Point {
+	return roundedPoint(onTheFrame(cameraOf(scene, SMALL), SMALL.frame, point));
+}
+
+test('an eye flown over a block, looking straight down as it set off, ends with the block in the middle of the frame, riding the window', async () => {
+	const flown = await setAt(eye.fly([{ to: OVER_THE_BLOCK }]), openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH), 1);
+	expect([flown.eye.inside, pagePointDrawn(flown, BLOCKS_MIDDLE)]).toEqual(['window', FRAMES_MIDDLE]);
+});
+
+test('an eye flown over the window rides it: the window leant in the same step, set first or after, carries it, the block still in the middle of the frame', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH);
+	const flying = await eye.fly([{ to: OVER_THE_BLOCK }]).begin(beginningOf(opening));
+	const leaning = await lean({ tilt: 30, turn: -20 }).begin(beginningOf(opening));
+	const flownFirst = await leaning(await flying(opening, 1), 1);
+	const leantFirst = await flying(await leaning(opening, 1), 1);
+	expect([pagePointDrawn(flownFirst, BLOCKS_MIDDLE), pagePointDrawn(leantFirst, BLOCKS_MIDDLE)]).toEqual([
+		FRAMES_MIDDLE,
+		FRAMES_MIDDLE
+	]);
+});
+
+test("an eye flown turning toward a block and lifting its sight to hold it three quarters down the frame draws it there, on the frame's middle line, and holds it there flying on ahead", async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH);
+	const flying = await eye
+		.fly([{ to: OVER_THE_BLOCK }, { ahead: 0.5 }], {
+			heading: [{ by: 0, toward: '#card' }],
+			tip: [{ by: 0, holding: '#card', at: 0.75 }]
+		})
+		.begin(beginningOf(opening));
+	const overTheBlock = await setAt(eye.fly([{ to: OVER_THE_BLOCK }]), opening, 1);
+	const legsEnd = 1 / 1.5;
+	const atTheKey = await flying(opening, legsEnd);
+	const flownOn = await flying(opening, 1);
+	expect([
+		overTheBlock.eye.at.across,
+		pagePointDrawn(atTheKey, CARDS_MIDDLE),
+		pagePointDrawn(flownOn, CARDS_MIDDLE)
+	]).toEqual([expect.closeTo(atTheKey.eye.at.across), { left: 200, top: 300 }, { left: 200, top: 300 }]);
+});
+
+test('an eye rolled as a flight sets off flies on from it as it stood, the page drawn where it was, and its roll eases away by the end of the leg', async () => {
+	const aslantAndRolled = { at: { across: 0, down: 1500, out: 1500 }, up: { across: -1, down: -0.5, out: 0.5 } };
+	const rolled = await setAt(eye.to(aslantAndRolled), openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH), 1);
+	const flying = await eye.fly([{ to: OVER_THE_BLOCK }], { tip: [{ by: 0, degrees: -60 }] }).begin(beginningOf(rolled));
+	const settingOff = await flying(rolled, 0);
+	const arrived = cameraOf(await flying(rolled, 1), SMALL).eye;
+	// Unrolled, its top stands in the upright plane its sight does: square to the way across that plane
+	const sight = { across: arrived.aim.across - arrived.at.across, down: arrived.aim.down - arrived.at.down };
+	const acrossThePlane = { across: -sight.down, down: sight.across };
+	expect([
+		pagePointDrawn(settingOff, CARDS_MIDDLE),
+		arrived.up.across * acrossThePlane.across + arrived.up.down * acrossThePlane.down
+	]).toEqual([pagePointDrawn(rolled, CARDS_MIDDLE), expect.closeTo(0)]);
+});
+
+test('an eye flown on a curve that passes its end, as one that bounces, goes on past its way and back, never stopping there', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH);
+	const flying = await eye.fly([{ to: OVER_THE_BLOCK }]).begin(beginningOf(opening));
+	const [atTheEnd, past] = [(await flying(opening, 1)).eye.at, (await flying(opening, 1.1)).eye.at];
+	expect(past.out).toBeLessThan(atTheEnd.out);
+});
+
+test('an eye flown on a bend arrives heading as the film names it, and goes on ahead as far again, passing over the block half way', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH);
+	const flying = await eye
+		.fly([{ to: OVER_THE_BLOCK, arriving: 90, bend: 0.5 }, { ahead: 1 }])
+		.begin(beginningOf(opening));
+	const overTheBlock = await setAt(eye.fly([{ to: OVER_THE_BLOCK }]), opening, 1);
+	const [nearTheEnd, atTheEnd] = [(await flying(opening, 0.99)).eye, (await flying(opening, 1)).eye];
+	const legLength = Math.hypot(
+		overTheBlock.eye.at.across - opening.eye.at.across,
+		overTheBlock.eye.at.down - opening.eye.at.down,
+		overTheBlock.eye.at.out - opening.eye.at.out
+	);
+	expect([
+		Math.sign(atTheEnd.at.across - nearTheEnd.at.across),
+		atTheEnd.at.down - nearTheEnd.at.down,
+		atTheEnd.at.out - nearTheEnd.at.out
+	]).toEqual([1, expect.closeTo(0), expect.closeTo(0)]);
+	expect(atTheEnd.at.across - overTheBlock.eye.at.across).toBeGreaterThan(legLength);
+});
+
+test('a flight refused as it is made: a way of no leg, a leg in no form of one, a tip past straight down, a key by a leg past the way or no farther than the key before', () => {
+	expect(() => eye.fly([])).toThrow(new FilmError("eye.fly's way has no leg: name one or more"));
+	expect(() => eye.fly([{ to: { over: '#block', height: 0 } }])).toThrow(
+		new FilmError("eye.fly's way[0]'s to's height is 0: it is a number of pixels, more than 0")
+	);
+	expect(() => eye.fly([{ to: OVER_THE_BLOCK }, { ahead: 0 }])).toThrow(
+		new FilmError("eye.fly's way[1]'s ahead is 0: it is how many times as long as the leg before, more than 0")
+	);
+	expect(() => eye.fly([{ to: OVER_THE_BLOCK, bend: 0.5 } as never])).toThrow(
+		new FilmError("eye.fly's way[0]'s arriving is undefined: it is a number")
+	);
+	expect(() => eye.fly([{ to: OVER_THE_BLOCK }], { tip: [{ by: 0, degrees: -100 }] })).toThrow(
+		new FilmError(
+			"eye.fly's tip[0]'s degrees is -100: it is degrees from -90, looking straight down onto the page, to 90"
+		)
+	);
+	expect(() => eye.fly([{ to: OVER_THE_BLOCK }], { heading: [{ by: 1, degrees: 90 }] })).toThrow(
+		new FilmError("eye.fly's heading key 0 is reached by leg 1, and the way's legs go from 0 to 0")
+	);
+	expect(() =>
+		eye.fly([{ to: OVER_THE_BLOCK }, { ahead: 1 }], {
+			tip: [
+				{ by: 1, degrees: 0 },
+				{ by: 1, degrees: 10 }
+			]
+		})
+	).toThrow(
+		new FilmError(
+			"eye.fly's tip key 1 is reached by leg 1, no farther than the key before it: name each by a later leg"
+		)
+	);
+});
+
+test('a flight refused as it begins: a leg ahead with none before it, a leg to where the eye stands, a heading toward the block the eye stands right over', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH);
+	await expect(
+		setAt(eye.fly([{ to: OVER_THE_BLOCK }], { heading: [{ by: 0, toward: '#block' }] }), opening, 1)
+	).rejects.toThrow(
+		new FilmError(
+			"eye.fly's heading key 0 turns toward a block the eye stands right over there: turn it toward one ahead of it"
+		)
+	);
+	await expect(setAt(eye.fly([{ ahead: 1 }]), opening, 1)).rejects.toThrow(
+		new FilmError("eye.fly's leg 0 goes ahead with no leg before it: send the eye somewhere first")
+	);
+	await expect(setAt(eye.fly([{ to: OVER_THE_BLOCK }, { to: OVER_THE_BLOCK }]), opening, 1)).rejects.toThrow(
+		new FilmError("eye.fly's leg 1 goes nowhere: send it somewhere the eye does not stand")
+	);
+});
+
+test('an eye sent back to rest after a flight stands in the room again, where it rests', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH);
+	const flown = await setAt(eye.fly([{ to: OVER_THE_BLOCK }]), opening, 1);
+	expect((await setAt(eye.to('rest'), flown, 1)).eye).toEqual(opening.eye);
+});
+
 test('a piece is lifted off the page while the eye looks straight ahead, moved aside or not, and refused while it looks aslant', async () => {
 	const opening = openingScene(FULL_HD, LIVEREELS_LOOK, FOCAL_LENGTH);
 	const steppedAside = await setIn(

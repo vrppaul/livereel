@@ -168,6 +168,33 @@ export class NameOrForm<Name extends string, Value> implements Kind<Name | Value
 	}
 }
 
+/**
+ * A kind of one of a few forms of object, told apart by a name only one of them has, or else the one that has none of
+ * those: a flight's leg that goes `ahead`, one `arriving` at its point, else one straight `to` it; an object down to
+ * the value at fault in the form it names.
+ */
+export class FormByName<Value> implements Kind<Value> {
+	readonly forms: readonly (readonly [string, Kind<Value>])[];
+	readonly otherwise: Kind<Value>;
+	readonly said: string;
+
+	constructor(forms: readonly (readonly [string, Kind<Value>])[], otherwise: Kind<Value>, said: string) {
+		this.forms = forms;
+		this.otherwise = otherwise;
+		this.said = said;
+	}
+
+	is(written: unknown): written is Value {
+		return this.faultOf(written, '') === undefined;
+	}
+
+	faultOf(written: unknown, place: string): string | undefined {
+		if (!isObjectOfValues(written)) return refusalOf(written, place, this.said);
+		const named = this.forms.find(([name]) => name in written);
+		return (named === undefined ? this.otherwise : named[1]).faultOf(written, place);
+	}
+}
+
 /** A kind of one value alone, by its name, said as it is written: a step's `kind`. */
 export class Literal<Name extends string> extends OneOf<Name> {
 	constructor(name: Name) {

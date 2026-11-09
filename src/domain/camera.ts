@@ -17,7 +17,7 @@
  * screen carried by its focus to the view's middle and brought close, the view swung and leant back about its middle,
  * and seen from the eye before the frame's middle, a nearer point larger.
  */
-import { type Eye, eyeAtRest, isAtRest, seenByTheEye, sightOf } from './eye.ts';
+import { type Eye, type Viewpoint, eyeAtRest, isAtRest, seenByTheEye, sightOf } from './eye.ts';
 import type { Format } from './format.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from './fraction.ts';
 import {
@@ -53,6 +53,7 @@ import {
 	movedAlong,
 	rotationX,
 	rotationY,
+	scaledBy,
 	showsItsFront,
 	translation,
 	wayBetween
@@ -198,6 +199,8 @@ const LIFTED: Fraction = WHOLE;
 export const FACE_ON: Angle = { tilt: 0, turn: 0 };
 // The whole of a view, in shares of it
 const WHOLE_SHARE: Box = { left: 0, top: 0, width: 1, height: 1 };
+// A move the other way: so many times as far back
+const BACK = -1;
 
 /** The whole frame as the camera's view, edge to edge, face-on. */
 export function wholeView(frame: Size): View {
@@ -252,8 +255,43 @@ export function seenThrough(aiming: Aiming, window: Placing, eye: Eye, format: F
 	);
 	const through = { ...aiming.through, keys: aiming.through.keys.map((aim) => aimedIn(aim, view, shown, format)) };
 	const to = aimedIn(aiming.aim, view, shown, format);
-	const pose = alongPath(aiming.from, through, to, poseSpaceIn(view, eye, format), aiming.progress);
-	return { pose: keptOnThePath(pose, through, format, view), view, eye };
+	const inTheRoom = eyeInTheRoom(eye, view, format.frame);
+	const pose = alongPath(aiming.from, through, to, poseSpaceIn(view, inTheRoom, format), aiming.progress);
+	return { pose: keptOnThePath(pose, through, format, view), view, eye: inTheRoom };
+}
+
+/**
+ * The eye where it stands in the room: as it stands, where it stands there; carried by the window as it stands, where
+ * it rides the window.
+ */
+function eyeInTheRoom(eye: Eye, view: View, frame: Size): Eye {
+	switch (eye.inside) {
+		case 'world':
+			return eye;
+		case 'window': {
+			const placing = chained([translation(windowsMiddle(view, frame)), angledAs(view.angle)]);
+			return { ...eye, ...viewpointCarried(placing, angledAs(view.angle), eye), inside: 'world' };
+		}
+	}
+}
+
+/**
+ * An eye standing in the room, riding the window as it stands now: where it stands, looks and its top points on the
+ * window's own plane, in pixels of a frame 1080 high from the window's middle, `out` away from its face.
+ */
+export function eyeInTheWindow(eye: Eye, view: View, frame: Size): Eye {
+	const back = chained([angledBack(view.angle), translation(scaledBy(windowsMiddle(view, frame), BACK))]);
+	return { ...eye, ...viewpointCarried(back, angledBack(view.angle), eye), inside: 'window' };
+}
+
+/** Where the middle of the window stands in the room as it stands on a frame of this size, in pixels of a frame 1080 high. */
+function windowsMiddle(view: View, frame: Size): Spot {
+	return scaledBy(middleInTheRoom(view.box, frame), 1 / frameScaleOf(frame));
+}
+
+/** Where an eye stands and looks carried by a matrix, and the way its top points turned by the matrix's turn alone. */
+function viewpointCarried(matrix: Matrix, turn: Matrix, eye: Viewpoint): Viewpoint {
+	return { at: carried(matrix, eye.at), aim: carried(matrix, eye.aim), up: carried(turn, eye.up) };
 }
 
 /**

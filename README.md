@@ -154,6 +154,25 @@ and the moves of each part of the scene:
   leaves out stays; an eye looking at where it stands, or within 5° of along its up, as one passing over the top of
   what it looks at with its up kept would, where the picture spins round, is refused, and so is an up turned half
   round in one stretch: point its up into the frame, `{ across: 0, down: 0, out: -1 }`, to look straight down at it
+- `eye.fly(legs, { shape, heading, tip })`: the eye flown over the page's window from where it stands, leg after leg:
+  `{ to: { over: '#gap', height: 160 } }` to a spot `height` pixels of a frame 1080 high over a block's middle,
+  `{ to, arriving: 90, bend: 0.5 }` on a parabola that arrives heading 90° (right along the page), its turn half the
+  leg's chord before the spot, and `{ ahead: 2 }` straight on, twice as long as the leg before; a leg after another
+  leaves heading as that one arrived. Legs to spots join smoothly, `shape: 'smooth'`, never higher or lower than the
+  spots either side, or at corners, `'straight'`; the eye goes as far in each equal share of the move's own curve, and
+  straight on past the way's end on a curve that bounces. Its gaze is two values apart: the heading, degrees from up
+  the page clockwise, and the tip, how far its sight lifts off the page, -90 looking straight down onto it, 0 level.
+  Each follows rules reached by the end of a leg: degrees, a heading `toward` a block or `along: 'way'`, a tip
+  `holding` a block that share down the frame, each read where the eye stands as it flies, so a block held stays held
+  all along and on past the last key; between two rules the gaze eases from one to the other by the way flown, a
+  heading the short way round, `heading: [{ by: 0, toward: '#story' }, { by: 2, degrees: 0 }]`, `tip: [{ by: 0,
+  holding: '#story', at: 0.58 }, { by: 1, holding: '#story', at: 0.58 }, { by: 2, degrees: -90 }]`. It never rolls: a
+  roll it set off with eases away by the end of the first leg. The blocks are read as the move begins; the eye then
+  rides the window, so a window that leans or travels carries it, until `eye.to` sends it into the room. Flat, the
+  page is drawn from a picture no closer than livereel's bound, so a flight low over it shows it soft. Refused: no
+  leg, a leg ahead first or one to where the eye stands, a way that reaches the page, a height of none, a tip past
+  ±90, a heading toward the block the eye arrives right over, a key by a leg the way has not or no later than the key
+  before
 - `eye.focus(on, { aperture })`: the eye focused so far before it, `eye.focus(1800)`, at a spot of the world, on a
   block of the page, `eye.focus('#thread')`, or on an object, `eye.focus({ object: 'why' })`, and open `aperture`
   pixels of a frame 1080 high wide; it rests open none, all sharp. What stands in the world nearer or farther than the

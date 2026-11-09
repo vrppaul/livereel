@@ -9,10 +9,16 @@
  * what stands on the frame, a title or a caption, rides with the eye and is seen as from where it rests
  * (`src/props/object.ts`). The eye sees as from a picture plane its focal length before it: the longer, the narrower
  * the angle it sees across the frame's shorter side, and the less what comes toward it grows. It keeps its top where
- * the film points it, up the frame until a film turns it: it cannot look along it, where its across is lost, nor at
- * where it stands, nor flip over, its across turned back between two steps of its way, as an eye passing over the top
- * of what it looks at with its top kept up would; a move that would take it so anywhere on its way is refused as it
- * begins.
+ * the film points it, up the frame until a film turns it: it cannot look near along it, where its across turns round
+ * too fast or is lost, nor at where it stands, nor flip over, its across turned back between two steps of its way, as
+ * an eye passing over the top of what it looks at with its top kept up would; a move that would take it so anywhere on
+ * its way is refused as it begins.
+ *
+ * The eye stands in the room, or rides the page's window as a flight over the page leaves it (`src/domain/flight.ts`):
+ * then where it stands, looks and its top points are the window's own, from the window's middle on its plane, `out`
+ * away from its face, and carried into the room as the window stands as each frame is drawn
+ * (`src/domain/camera.ts`), so a window that leans or travels in the same step carries the eye with it whichever is set
+ * first.
  *
  * The eye sees as a lens does: focused at a point and open so wide. Open none, a pinhole, as every film was seen before
  * it could open, it sees all sharp; open, it draws what stands in the world nearer or farther than its focus the softer
@@ -63,13 +69,17 @@ export type Focus =
 	| { readonly kind: 'window'; readonly point: Point }
 	| { readonly kind: 'page'; readonly point: Point };
 
+/** What the eye's place is read in: the room, or the page's window as it stands. */
+type EyeHolder = 'world' | 'window';
+
 /**
- * The eye: where it stands and looks; how far before it its picture plane stands, `focalLength`, in pixels of a frame
+ * The eye: where it stands and looks, in what it stands in; how far before it its picture plane stands, `focalLength`, in pixels of a frame
  * 1080 high, as far as it stands from the frame at rest; where it focuses, on its way from where it focused as its move
  * began, each end placed where it stands as each frame is drawn; and how wide it is open, `aperture`, in pixels of a
  * frame 1080 high, open none seeing all sharp.
  */
 export interface Eye extends Viewpoint {
+	readonly inside: EyeHolder;
 	readonly focalLength: number;
 	readonly focusing: Track<Focus>;
 	readonly aperture: number;
@@ -199,6 +209,7 @@ export function eyeAtRest(focalLength: number): Eye {
 		at: { across: 0, down: 0, out: focalLength },
 		aim: THE_FRAMES_MIDDLE,
 		up: UP_THE_FRAME,
+		inside: 'world',
 		focalLength,
 		focusing: arrivedAt({ kind: 'distance', distance: focalLength }),
 		aperture: A_PINHOLE

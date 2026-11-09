@@ -783,7 +783,7 @@ function appearing(
 	move: string
 ): Change {
 	const frame = beginning.format.frame;
-	const push = pushOf(beginning.scene, name, arrival.from, frame, move);
+	const push = pushOf(beginning, name, arrival.from, move);
 	const arrived: FrameObject = {
 		inside: holder,
 		box: coming.box,
@@ -815,7 +815,8 @@ function appearing(
  */
 function framesToComeIn(arrived: FrameObject, from: FrameSide | null, push: Push | null, beginning: Beginning): number {
 	if (from === null) return ONE_FRAME;
-	const own = framesPastTheEdge(arrived, from, beginning.format.frame, beginning.scene.eye);
+	const eye = cameraOf(beginning.scene, beginning.format).eye;
+	const own = framesPastTheEdge(arrived, from, beginning.format.frame, eye);
 	return Math.max(own, push?.frames ?? ONE_FRAME);
 }
 
@@ -1063,7 +1064,7 @@ function slidingOut(beginning: Beginning, name: ObjectName, toward: FrameSide, m
 		throw new FilmError(`${move} would slide the ${name} out toward a side from the page: it goes in its place`);
 	}
 	const frame = seenFrom(beginning, object.inside).format.frame;
-	const frames = framesPastTheEdge(object, toward, frame, beginning.scene.eye);
+	const frames = framesPastTheEdge(object, toward, frame, cameraOf(beginning.scene, beginning.format).eye);
 	const end = pastTheEdge(object.box, toward, frame, frames);
 	return (scene, progress) =>
 		withObject(scene, name, untilTheEnd(progress, { ...object, box: boxToward(object.box, end, progress) }));
@@ -1109,8 +1110,9 @@ function shownComing(from: FrameSide | null, progress: number): Fraction {
  * the edge; none where none stands, or nothing slides in. One standing in a group or on the page, which never slides,
  * is refused.
  */
-function pushOf(scene: Scene, name: ObjectName, from: FrameSide | null, frame: Size, move: string): Push | null {
-	const standingThere = scene.objects.get(name);
+function pushOf(beginning: Beginning, name: ObjectName, from: FrameSide | null, move: string): Push | null {
+	const standingThere = beginning.scene.objects.get(name);
+	const frame = beginning.format.frame;
 	if (from === null || standingThere === undefined) return null;
 	if (standingThere.inside.kind === 'group') {
 		throw new FilmError(`${move} would push the ${name} off past the frame's edge from its group: hide it first`);
@@ -1119,7 +1121,7 @@ function pushOf(scene: Scene, name: ObjectName, from: FrameSide | null, frame: S
 		throw new FilmError(`${move} would push the ${name} off past the frame's edge from the page: hide it first`);
 	}
 	const toward = acrossFrom(from);
-	const frames = framesPastTheEdge(standingThere, toward, frame, scene.eye);
+	const frames = framesPastTheEdge(standingThere, toward, frame, cameraOf(beginning.scene, beginning.format).eye);
 	return { object: standingThere, end: pastTheEdge(standingThere.box, toward, frame, frames), frames };
 }
 
