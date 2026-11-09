@@ -57,10 +57,19 @@ export interface PageMotionSwitch {
 	readonly still: () => Promise<void>;
 }
 
-/** What an act is handed: the filmed page, and its own motion. */
+/**
+ * The film's set as an act shows it (`src/direction/set.ts`): a state it shot, by its name, in place of the one shown,
+ * once its picture is decoded; refused where the set shot none by the name, or the film is shot on no set.
+ */
+export interface SetShown {
+	readonly show: (state: string) => Promise<void>;
+}
+
+/** What an act is handed: the filmed page, its own motion, and the film's set. */
 export interface ActContext {
 	readonly page: Frame;
 	readonly motion: PageMotionSwitch;
+	readonly set: SetShown;
 }
 
 /** What a film does to the page for real, Playwright code handed what an act is handed. */

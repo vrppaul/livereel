@@ -52,12 +52,12 @@ function stepsGiven(steps: unknown) {
 test('a film in no form of one is refused as it is defined, where it stands: its names, its formats and where their captions stand, its functions', () => {
 	expect(() => defineFilm(null as never)).toThrow(
 		new FilmError(
-			'the film is null: it is an object of formats, address, serve, stage, ready, steps, sounds, music, motionBlur, theme, framesPerSecond, colourScheme, blurred, page, drawing'
+			'the film is null: it is an object of formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, framesPerSecond, colourScheme, blurred, page, drawing'
 		)
 	);
 	expect(() => filmWritten({ motionblur: {} })).toThrow(
 		new FilmError(
-			'the film names motionblur: it names formats, address, serve, stage, ready, steps, sounds, music, motionBlur, theme, framesPerSecond, colourScheme, blurred, page, drawing, or fewer'
+			'the film names motionblur: it names formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, framesPerSecond, colourScheme, blurred, page, drawing, or fewer'
 		)
 	);
 	expect(() => filmWritten({ colourScheme: 'night' })).toThrow(
@@ -315,6 +315,31 @@ test('a film is drawn as it names, flat where it names none; a drawing livereel 
 	expect(() => filmWritten({ drawing: 'room', page: 'dynamic' })).toThrow(
 		new FilmError(
 			'the film\'s drawing is "room", which draws the page from its picture: a dynamic page stands live in a frame of its own site, which WebGL is given blank, so leave the page out for a static one, or the drawing for a flat one'
+		)
+	);
+});
+
+test("a film's set is shot 3 times as sharp as its page where it names no sharpness; a set in no form of one, or one for a dynamic page, is refused as the film is defined", () => {
+	const scenario = () => Promise.resolve();
+	const films = [
+		filmWritten({ set: { scenario, targets: ['#refresh'] } }),
+		filmWritten({ set: { scenario, targets: [], sharpness: 2 } })
+	];
+	expect(films.map((film) => film.formats.get('small')!.set!.sharpness)).toEqual([3, 2]);
+	expect(() => filmWritten({ set: { targets: [] } })).toThrow(
+		new FilmError("the film's set's scenario is undefined: it is a function")
+	);
+	expect(() => filmWritten({ set: { scenario, targets: '#refresh' } })).toThrow(
+		new FilmError('the film\'s set\'s targets is "#refresh": it is a list of selectors')
+	);
+	expect(() => filmWritten({ set: { scenario, targets: [], sharpness: 0 } })).toThrow(
+		new FilmError(
+			"the film's set's sharpness is 0: it is how many of a picture's pixels a page's pixel takes, more than 0"
+		)
+	);
+	expect(() => filmWritten({ set: { scenario, targets: [] }, page: 'dynamic' })).toThrow(
+		new FilmError(
+			'the film names a set, whose pictures change only as its acts show another state: leave page: "dynamic" out, or film the live page, without the set'
 		)
 	);
 });

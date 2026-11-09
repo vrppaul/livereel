@@ -1,6 +1,7 @@
 /**
  * The commands: shoot a film whole as a video, shoot a span of it as a clip or one still of it, to look at a few
- * moments without making the whole, set a machine up to shoot.
+ * moments without making the whole, shoot a film's set ahead of it, set a machine up to shoot. A film's set in a
+ * format is kept beside its file, named as its videos are (`film-wide.set` beside `film.ts`), so its shoot finds it.
  *
  * Each takes its own options by name and refuses any other, and a wrong value, before anything is started; each
  * says what it made, and how long the making took, and with `--profile` where that time went (`profile.ts`). A film
@@ -18,10 +19,12 @@ import type { DrawnFilm, DrawnFilmInFormat } from '../direction/drawn-film.ts';
 import type { Film, FilmInFormat } from '../direction/film.ts';
 import { shootDrawn } from '../studio/draw.ts';
 import type { DrawnBrowser, Footage, Track } from '../studio/ports.ts';
+import { shootSet } from '../studio/set.ts';
 import { type Quality, type Shooting, type Shot, shoot } from '../studio/shoot.ts';
 import { Chromium, RENDERERS, type Renderer } from '../adapters/browser/chromium.ts';
 import { Profile } from '../adapters/profile.ts';
 import { ANSWERED_WITHIN_MILLISECONDS, CommandServer } from '../adapters/server.ts';
+import { SetFolderOnDisk } from '../adapters/set-folder.ts';
 import { blended } from '../adapters/video/exposures.ts';
 import { KINDS, KIND_NAMES, type Kind, type MadeKind, SHOT_INTO, isMade, madeFrom } from '../adapters/video/kinds.ts';
 import { NOTHING_LAID, SILENT, type SoundLaying, Soundtrack } from '../adapters/video/soundtrack.ts';
@@ -73,8 +76,9 @@ const QUALITIES: Readonly<Record<QualityName, Quality>> = {
 // moment, in seconds
 const APART = '-';
 const STILL_SUFFIX = 's.jpg';
-// A clip after the moments it spans, in seconds
+// A clip after the moments it spans, in seconds; a film's set in a format beside the film's file
 const SECONDS = 's';
+const SET_SUFFIX = '.set';
 const SHEET_SUFFIX = '-sheet.png';
 // A contact sheet shows a frame a second where no rate is asked: the whole film at a glance
 const A_FRAME_A_SECOND = 1;
@@ -134,6 +138,14 @@ const STILL: Command = {
 	run: stillCommand
 };
 
+const SET: Command = {
+	summary:
+		"Shoot a film's set: its scenario run once on the app, each state it marks pictured beside the film file, the " +
+		'film then shot from them with no app served.',
+	usage: `livereel set FILM_FILE [--format NAME] ${RENDERER_USAGE}`,
+	run: setCommand
+};
+
 const SETUP: Command = {
 	summary: 'Install the browser films are shot in, and look for ffmpeg.',
 	usage: 'livereel setup',
@@ -144,6 +156,7 @@ export const COMMANDS: ReadonlyMap<string, Command> = new Map([
 	['shoot', SHOOT],
 	['clip', CLIP],
 	['still', STILL],
+	['set', SET],
 	['setup', SETUP]
 ]);
 
@@ -262,9 +275,30 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	await rm(still, { force: true });
 	const started = performance.now();
 	const footage = profile.footage(new StillFootage(still, moment, film.framesPerSecond, profile.blend(blended)));
-	await profile.shooting(() => filmedInto(film, shotWith, footage, SILENT));
+	await profile.shooting(() => filmedInto(film, { file, shotWith, profile }, footage, SILENT));
 	say(`${still}: shot in ${secondsBetween(started, performance.now())} s`);
 	if (values.profile) profile.said().forEach(say);
+}
+
+async function setCommand(given: readonly string[]): Promise<void> {
+	const { values, positionals } = asUsage(SET, () =>
+		parseArgs({
+			args: [...given],
+			options: { format: VALUE, renderer: RENDERER_ASKED },
+			allowPositionals: true
+		})
+	);
+	const file = theFilmFile(positionals, SET);
+	const renderer = nameAsked(values.renderer, RENDERERS, RENDERER_SAYS, SET);
+	const film = withASet(formatAsked(await loadedFilm(file), values.format, SET));
+	const folder = setFolderOf(file, film);
+	const started = performance.now();
+	const states = await shootSet(film, {
+		server: new CommandServer(dirname(absolute(file)), ANSWERED_WITHIN_MILLISECONDS),
+		browser: new Chromium(renderer, warn),
+		folder: new SetFolderOnDisk(folder)
+	});
+	say(`${folder}: ${String(states)} states, shot in ${secondsBetween(started, performance.now())} s`);
 }
 
 async function setupCommand(given: readonly string[]): Promise<void> {
@@ -284,11 +318,11 @@ async function shotInto(
 	kept: ShotsKept,
 	sound: VideoSound
 ): Promise<Shot> {
-	const { file, shotWith, profile } = shooting;
+	const { file, profile } = shooting;
 	const started = performance.now();
 	const blend = profile.blend(blended);
 	await using footage = new VideoFootage(mp4, film.format.frame, film.framesPerSecond, kept, blend);
-	await profile.shooting(() => filmedInto(film, shotWith, profile.footage(footage), sound.track));
+	await profile.shooting(() => filmedInto(film, shooting, profile.footage(footage), sound.track));
 	const filmed = performance.now();
 	await profile.finishing(() => footage.finish(sound.laying));
 	say(
@@ -300,14 +334,16 @@ async function shotInto(
 }
 
 /**
- * A film shot into footage, its sounds heard by the track: a film of steps by its take on the stage, one its own page
- * draws by that page alone, which makes no sound.
+ * A film shot into footage, its sounds heard by the track: a film of steps by its take on the stage, its set read
+ * from beside its file where it names one; one its own page draws by that page alone, which makes no sound.
  */
-function filmedInto(film: AnyFilmInFormat, shotWith: ShotWith, footage: Footage, track: Track): Promise<Shot> {
+function filmedInto(film: AnyFilmInFormat, asked: ShootingAsked, footage: Footage, track: Track): Promise<Shot> {
+	const { shotWith } = asked;
 	switch (film.kind) {
 		case 'steps':
 			return shoot(film, {
 				server: shotWith.server,
+				set: new SetFolderOnDisk(setFolderOf(asked.file, film)),
 				browser: shotWith.browser,
 				quality: shotWith.quality,
 				footage,
@@ -413,6 +449,21 @@ function formatAsked(film: Film | DrawnFilm, asked: string | undefined, command:
 /** What every file made of a film in a format is named from: the film file's name and the format's, in `out`. */
 function stemOf(out: string, file: string, film: AnyFilmInFormat): string {
 	return join(out, `${nameOf(file)}${APART}${film.formatName}`);
+}
+
+/** A film of steps, which may name a set to shoot; one its own page draws is refused, as it has none. */
+function withASet(film: AnyFilmInFormat): FilmInFormat {
+	switch (film.kind) {
+		case 'steps':
+			return film;
+		case 'drawn':
+			throw new UsageError(`a film its own page draws has no set\n${SET.usage}`);
+	}
+}
+
+/** Where a film's set in a format is kept: beside the film's file, named as its videos are, so a shoot finds it. */
+function setFolderOf(file: string, film: FilmInFormat): string {
+	return `${stemOf(dirname(file), file, film)}${SET_SUFFIX}`;
 }
 
 function momentAsked(asked: string | undefined, option: string, command: Command): number {

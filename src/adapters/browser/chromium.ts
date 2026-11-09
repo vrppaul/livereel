@@ -1,6 +1,7 @@
 /**
  * Chromium with the stage open in it and the filmed page shown on it, for one take: a static page in a tab of its own,
- * pictured on the stage; a dynamic one live in the stage's frame (`stage.ts`).
+ * pictured on the stage; a dynamic one live in the stage's frame (`stage.ts`); or the film's set, laid in that tab on
+ * a page of livereel's, pictured as a static page is (`set.ts`). And the app opened alone, for its set to be shot.
  *
  * A static page's tab is the page's own: it opens the film's address at the top, first-party to its cookies, so a
  * page that refuses to be framed or signs in is filmed as it comes, and its pictures are taken only as it changes, not
@@ -45,9 +46,21 @@ import { FilmError, SetupError } from '../../domain/errors.ts';
 import { type Size, frameScaleOf } from '../../domain/geometry.ts';
 import { type MotionBlur, mostExposuresOf } from '../../domain/shutter.ts';
 import type { Drawing, PageKind, StagePlace } from '../../direction/film.ts';
-import type { ActContext, MeasuredPage, OwnPage, PageMotionSwitch } from '../../direction/page.ts';
+import type { ActContext, FilmedPage, MeasuredPage, OwnPage } from '../../direction/page.ts';
 import type { CssNamed } from '../../direction/theme.ts';
-import type { Browser, DrawnBrowser, Opened, OpenedDrawnPage, PageTime, Setting, Stage } from '../../studio/ports.ts';
+import type {
+	Browser,
+	DrawnBrowser,
+	Filmed,
+	Opened,
+	OpenedDrawnPage,
+	OpenedForSet,
+	PageTime,
+	SetBrowser,
+	SetSetting,
+	Setting,
+	Stage
+} from '../../studio/ports.ts';
 import {
 	BYTES_A_MEGABYTE,
 	BYTES_A_PIXEL,
@@ -62,8 +75,10 @@ import { ChangesHeard } from './changes.ts';
 import { drawnPageOpened } from './drawn.ts';
 import { PlaywrightPageTime } from './clock.ts';
 import { stagedInside } from './inside.ts';
-import { PlaywrightPage } from './page.ts';
+import { PageMotion } from './motion.ts';
+import { type FilmedShown, PlaywrightPage } from './page.ts';
 import { DRAWN_AS_A_ROOM } from './room.ts';
+import { AppOpenedForSet, NoSetShown, SET_PAGE, setShownIn } from './set.ts';
 import {
 	DRAWN_FLAT,
 	ONE_AT_A_TIME,
@@ -101,6 +116,9 @@ const BLURRING = { property: 'filter', value: 'blur(12px)' } as const;
 const STEADY_CARET: ForcedRule = { selector: '*', property: 'caret-animation', value: 'manual' };
 // What the film forces on the page stands whatever the page's own style says
 const OVER_THE_PAGES_OWN = 'important';
+// What an act that shows a state of the film's set is told where the film is shot on its live page
+const NO_SET_IN_THE_FILM =
+	"context.set shows a state of the film's set, and the film names none: give it set: { scenario, targets }";
 // Whether the document at the top of a tab is the stage's own, left as it is, or the filmed page's
 const THE_STAGE_AT_THE_TOP = true;
 const THE_PAGE_AT_THE_TOP = false;
@@ -161,11 +179,9 @@ interface Picturing {
 	readonly drawing: StageDrawing;
 }
 
-/** The browser, and the tab the filmed page stands in: the stage's own, or a tab of its own. */
-interface Tabs {
-	readonly browser: Playwright;
-	readonly filmed: Page;
-}
+/** The page a take films in a tab of its own, shown on the stage as a picture: static and live, or the film's set. */
+type Pictured = Extract<Filmed, { kind: 'static' | 'set' }>;
+
 // The flag naming the graphics interface ANGLE draws through, and that interface on each system's card, by Node's
 // name for the system
 const USE_ANGLE = '--use-angle=';
@@ -269,7 +285,7 @@ function copiesMemoryOf(exposuresAtOnce: number, frame: Size, sharpness: number)
 	return Math.ceil((GPU_MEMORY_FOR_A_COPY_BYTE * exposuresAtOnce * copyBytes) / BYTES_A_MEGABYTE);
 }
 
-export class Chromium implements Browser, DrawnBrowser {
+export class Chromium implements Browser, DrawnBrowser, SetBrowser {
 	readonly renderer: Renderer;
 	readonly warn: Warn;
 
@@ -290,10 +306,34 @@ export class Chromium implements Browser, DrawnBrowser {
 		}
 	}
 
-	async open(setting: Setting, address: string, sharpness: number): Promise<Opened> {
-		const exposuresAtOnce = exposuresAtOnceOf(this.renderer, setting.page, setting.motionBlur);
+	/**
+	 * The app opened for its set to be shot: a tab at the screen's size and the set's sharpness, asked for the film's
+	 * colour scheme with its own motion stilled, the blocks the film blurs blurred, at the app's address.
+	 */
+	async openForSet(setting: SetSetting, address: string): Promise<OpenedForSet> {
+		const browser = await launched(flagsOf(this.renderer, process.platform));
+		try {
+			const tab = await browser.newPage({
+				viewport: setting.format.screen,
+				deviceScaleFactor: setting.sharpness,
+				permissions: [LOCAL_NETWORK]
+			});
+			await tab.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
+			await unreadRefused(tab, setting.blurred);
+			await forcedOn(tab, setting.blurred, THE_PAGE_AT_THE_TOP);
+			await reached(tab, address);
+			return new AppOpenedForSet(browser, tab);
+		} catch (fault) {
+			await browser.close();
+			throw fault;
+		}
+	}
+
+	async open(setting: Setting, filmed: Filmed, sharpness: number): Promise<Opened> {
+		const page = pageKindOf(filmed);
+		const exposuresAtOnce = exposuresAtOnceOf(this.renderer, page, setting.motionBlur);
 		const pixelsAtZoomOne = sharpness * frameScaleOf(setting.format.frame);
-		const picturePixels = picturePixelsAtMost(setting.page, setting.format.screen, pixelsAtZoomOne);
+		const picturePixels = picturePixelsAtMost(page, setting.format.screen, pixelsAtZoomOne);
 		const memory = gpuMemoryFlagsOf(exposuresAtOnce, setting.format.frame, sharpness, picturePixels);
 		const drawing = DRAWINGS[setting.drawing];
 		const browser = await launched([...flagsOf(this.renderer, process.platform), ...drawing.flags, ...memory]);
@@ -306,14 +346,15 @@ export class Chromium implements Browser, DrawnBrowser {
 				permissions: [LOCAL_NETWORK]
 			});
 			await unreadRefused(stage, setting.blurred);
-			switch (setting.page) {
-				case 'static': {
+			switch (filmed.kind) {
+				case 'static':
+				case 'set': {
 					const bounds = boundsOf(picturePixels, await cardSideIn(onTheCard, stage, this.warn));
 					const picturing = { pixelsAtZoomOne, exposuresAtOnce, bounds, drawing };
-					return await pictured(browser, stage, setting, address, picturing, this.warn);
+					return await pictured(browser, stage, setting, filmed, picturing, this.warn);
 				}
 				case 'dynamic':
-					return await framedLive(browser, stage, setting, address, this.warn);
+					return await framedLive(browser, stage, setting, filmed.address, this.warn);
 			}
 		} catch (fault) {
 			await browser.close();
@@ -329,17 +370,23 @@ export class Chromium implements Browser, DrawnBrowser {
 class OpenedChromium implements Opened {
 	readonly browser: Playwright;
 	readonly stage: Stage;
-	readonly page: PlaywrightPage;
+	readonly page: FilmedPage;
 	readonly ownPages: ReadonlyMap<string, MeasuredPage>;
 	readonly act: ActContext;
 	readonly time: PageTime;
 
-	constructor(tabs: Tabs, stage: Stage, filmed: Frame, time: PageTime, ownPages: ReadonlyMap<string, MeasuredPage>) {
-		this.browser = tabs.browser;
+	constructor(
+		browser: Playwright,
+		stage: Stage,
+		filmed: FilmedShown,
+		time: PageTime,
+		ownPages: ReadonlyMap<string, MeasuredPage>
+	) {
+		this.browser = browser;
 		this.stage = stage;
-		this.page = new PlaywrightPage(filmed, tabs.filmed.keyboard);
+		this.page = filmed.page;
 		this.ownPages = ownPages;
-		this.act = { page: filmed, motion: new PageMotion(tabs.filmed) };
+		this.act = filmed.act;
 		this.time = time;
 	}
 
@@ -348,38 +395,82 @@ class OpenedChromium implements Opened {
 	}
 }
 
+/** How a page a take films changes: a set as a static page does, by the film's acts alone. */
+function pageKindOf(filmed: Filmed): PageKind {
+	switch (filmed.kind) {
+		case 'static':
+		case 'set':
+			return 'static';
+		case 'dynamic':
+			return 'dynamic';
+	}
+}
+
 /**
  * A static page opened in a tab of its own at the screen's size, and pictured on the stage apart from the app, each
- * picture as sharp as the stage's frames are for a camera at the zoom the take names, on a frame of the format's size.
- * The tab stands at the device scale of the sharpest picture, so a page that picks its images by it picks those.
+ * picture as sharp as the stage's frames are for a camera at the zoom the take names, on a frame of the format's size:
+ * the live page, or the film's set, laid on a page of livereel's that shows one state at a time. The tab stands at the
+ * device scale of the sharpest picture, so a page that picks its images by it picks those.
  */
 async function pictured(
 	browser: Playwright,
 	stage: Page,
 	setting: Setting,
-	address: string,
+	filmed: Pictured,
 	picturing: Picturing,
 	warn: Warn
 ): Promise<Opened> {
 	const { pixelsAtZoomOne, exposuresAtOnce, bounds, drawing } = picturing;
 	await drawing.opened(stage);
 	await stageSetUp(stage, setting, drawing, exposuresAtOnce);
-	const filmed = await browser.newPage({
+	const tab = await browser.newPage({
 		viewport: setting.format.screen,
 		deviceScaleFactor: pixelsAtZoomOne * ZOOM_AT_MOST,
 		permissions: [LOCAL_NETWORK]
 	});
-	await filmed.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
-	await forcedOn(filmed, setting.blurred, THE_PAGE_AT_THE_TOP);
-	const time = await PlaywrightPageTime.installedOn(filmed, warn);
-	const changes = await ChangesHeard.on(filmed);
-	const watch = new TabWatch(filmed, address);
-	await reached(filmed, address);
-	const session = await filmed.context().newCDPSession(filmed);
-	const filmedTab = { tab: filmed, session, screen: setting.format.screen, pixelsAtZoomOne, bounds, changes };
+	await tab.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
+	await forcedOn(tab, setting.blurred, THE_PAGE_AT_THE_TOP);
+	const time = await PlaywrightPageTime.installedOn(tab, warn);
+	const changes = await ChangesHeard.on(tab);
+	const watch = new TabWatch(tab, addressOf(filmed));
+	const shown = await shownIn(tab, filmed);
+	const session = await tab.context().newCDPSession(tab);
+	const filmedTab = { tab, session, screen: setting.format.screen, pixelsAtZoomOne, bounds, changes };
 	const picturedStage = new PlaywrightPicturedStage(stage, filmedTab, watch, exposuresAtOnce, drawing, warn);
 	const ownPages = ownPagesOn(stage, setting.ownPages);
-	return new OpenedChromium({ browser, filmed }, picturedStage, filmed.mainFrame(), time, ownPages);
+	return new OpenedChromium(browser, picturedStage, shown, time, ownPages);
+}
+
+/** The address the filmed page's tab opens: the live page's, or the set's page. */
+function addressOf(filmed: Pictured): string {
+	switch (filmed.kind) {
+		case 'static':
+			return filmed.address;
+		case 'set':
+			return SET_PAGE;
+	}
+}
+
+/** The filmed page opened in its tab, as a take reads it and an act is handed it: live, or the set, its states laid. */
+async function shownIn(tab: Page, filmed: Pictured): Promise<FilmedShown> {
+	switch (filmed.kind) {
+		case 'static':
+			await reached(tab, filmed.address);
+			return liveIn(tab.mainFrame(), tab);
+		case 'set':
+			return setShownIn(tab, filmed.set);
+	}
+}
+
+/**
+ * The live page in its frame, as a take reads it and an act is handed it, typed into and its motion switched in the
+ * tab it stands in: shot on no set.
+ */
+function liveIn(frame: Frame, tab: Page): FilmedShown {
+	return {
+		page: new PlaywrightPage(frame, tab.keyboard),
+		act: { page: frame, motion: new PageMotion(tab), set: new NoSetShown(NO_SET_IN_THE_FILM) }
+	};
 }
 
 /** A dynamic page opened live in the stage's frame, the stage standing where the film asks; refused where it is gone. */
@@ -397,9 +488,8 @@ async function framedLive(
 	const filmed = await framed(stage, setting, opening);
 	const absence = await watch.absence(filmed);
 	if (absence !== undefined) throw absence;
-	const tabs = { browser, filmed: stage };
 	const framedStage = new PlaywrightFramedStage(stage, setting.format, watch, filmed);
-	return new OpenedChromium(tabs, framedStage, filmed, time, ownPagesOn(stage, setting.ownPages));
+	return new OpenedChromium(browser, framedStage, liveIn(filmed, stage), time, ownPagesOn(stage, setting.ownPages));
 }
 
 /**
@@ -415,26 +505,6 @@ function ownFrameOn(stage: Page, page: OwnPage): Frame {
 	const frame = stage.frame({ name: page.key });
 	if (frame === null) throw new Error(`the stage laid no frame for the film's own page ${page.key}`);
 	return frame;
-}
-
-class PageMotion implements PageMotionSwitch {
-	readonly page: Page;
-	released = false;
-
-	constructor(page: Page) {
-		this.page = page;
-	}
-
-	/** Said let go as it is asked, so an act that does not wait for it still has the page captured every frame. */
-	release(): Promise<void> {
-		this.released = true;
-		return this.page.emulateMedia({ reducedMotion: 'no-preference' });
-	}
-
-	async still(): Promise<void> {
-		await this.page.emulateMedia({ reducedMotion: 'reduce' });
-		this.released = false;
-	}
 }
 
 /** The shell launched with these flags. */

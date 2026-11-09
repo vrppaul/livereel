@@ -1,10 +1,10 @@
 /**
- * What the studio needs of the world to shoot a film: the film's page served, a browser with the stage and the page
- * open, footage to keep frames in, and a track to keep sounds in. The adapters answer these; the studio names no
- * process, browser or file of its own, and blends no image.
+ * What the studio needs of the world to shoot a film: the film's page served, or its set kept, a browser with the
+ * stage and the page open, footage to keep frames in, and a track to keep sounds in. The adapters answer these; the
+ * studio names no process, browser or file of its own, and blends no image.
  */
 import type { Box, Size } from '../domain/geometry.ts';
-import type { FilmInFormat } from '../direction/film.ts';
+import type { FilmInFormat, PageKind } from '../direction/film.ts';
 import type { ActContext, FilmedPage, MeasuredPage, OwnPage, PageShown } from '../direction/page.ts';
 import type { Site } from '../direction/site.ts';
 import type { Sound } from '../direction/sound.ts';
@@ -126,17 +126,104 @@ export interface Opened extends AsyncDisposable {
 /**
  * What the stage and the page are set as for a take: the film's format, where the stage stands, the colour scheme the
  * page is asked for, the blocks it blurs, all the film writes in CSS, in its theme or its looks' moves, which the
- * browser reads before anything is shot, whether the page changes of itself, which decides how it is shown, how the
- * stage draws a frame, flat or as a room, how a fast move is blurred in the take, which says how many exposures a frame
- * is made of at most, and the pages of the film's own its moves show, which the stage lays before anything is shot.
+ * browser reads before anything is shot, how the stage draws a frame, flat or as a room, how a fast move is blurred in
+ * the take, which says how many exposures a frame is made of at most, and the pages of the film's own its moves show,
+ * which the stage lays before anything is shot.
  */
 export type Setting = Pick<
 	FilmInFormat,
-	'format' | 'stage' | 'colourScheme' | 'blurred' | 'css' | 'page' | 'drawing' | 'motionBlur'
+	'format' | 'stage' | 'colourScheme' | 'blurred' | 'css' | 'drawing' | 'motionBlur'
 > & { readonly ownPages: readonly OwnPage[] };
 
+/**
+ * The page a take films, which decides how it is shown: the live page at its address, as what serves it answers there,
+ * static, changed by the film alone, or dynamic, changing of itself too; or the film's set, its states shot ahead,
+ * shown one at a time as the film's acts name them, which changes as a static page does.
+ */
+export type Filmed =
+	| { readonly kind: Extract<PageKind, 'static'>; readonly address: string }
+	| { readonly kind: Extract<PageKind, 'dynamic'>; readonly address: string }
+	| { readonly kind: 'set'; readonly set: SetShot };
+
 export interface Browser {
-	readonly open: (setting: Setting, address: string, sharpness: number) => Promise<Opened>;
+	readonly open: (setting: Setting, filmed: Filmed, sharpness: number) => Promise<Opened>;
+}
+
+/**
+ * Where a target of the film stood in a state of its set, where it matched any block: every block it matched, in the
+ * page's order, and the ground behind the first, in hex.
+ */
+export interface TargetShot {
+	readonly target: string;
+	readonly boxes: readonly Box[];
+	readonly ground: string;
+}
+
+/** A state of a set as its scenario marked it: its name, and where the set's targets stood, those that matched. */
+export interface StateNoted {
+	readonly name: string;
+	readonly targets: readonly TargetShot[];
+}
+
+/** A state of a set as a take shows it: as it was marked, and the address of its picture. */
+export interface StateShot extends StateNoted {
+	readonly picture: string;
+}
+
+/** A state of a set as the browser took it: as it was marked, and its picture, a PNG. */
+export interface StateTaken extends StateNoted {
+	readonly picture: Uint8Array;
+}
+
+/**
+ * A film's set as it is written: the screen its states were laid out on, how many of a picture's pixels a page's pixel
+ * took, the targets it shot, and its states in the order its scenario marked them.
+ */
+export interface SetNoted {
+	readonly screen: Size;
+	readonly sharpness: number;
+	readonly targets: readonly string[];
+	readonly states: readonly StateNoted[];
+}
+
+/** A film's set as a take shows it: as it was written, each state's picture at an address the browser loads. */
+export interface SetShot extends Omit<SetNoted, 'states'> {
+	readonly states: readonly [StateShot, ...StateShot[]];
+}
+
+/** What the app is opened as for its set to be shot: the film's format, how the page is asked to look, how sharp. */
+export type SetSetting = Pick<FilmInFormat, 'format' | 'colourScheme' | 'blurred'> & { readonly sharpness: number };
+
+/**
+ * The app opened in a browser for its set to be shot: as the film's `ready` is handed it, the set's scenario the same
+ * but for the set, and each state taken off it.
+ */
+export interface OpenedForSet extends AsyncDisposable {
+	readonly act: ActContext;
+	/** The app pictured as it stands now, as the state of this name, with where each of these targets stands. */
+	readonly taken: (name: string, targets: readonly string[]) => Promise<StateTaken>;
+}
+
+/** A browser the app is opened in for its set to be shot. */
+export interface SetBrowser {
+	readonly openForSet: (setting: SetSetting, address: string) => Promise<OpenedForSet>;
+}
+
+/** Where a film's set is kept, in one of its formats. */
+export interface SetFolder {
+	/** The set shot before, as a take shows it; refused where none was, or what it holds is not whole. */
+	readonly read: () => Promise<SetShot>;
+	/** A set begun, kept apart from the one shot before until it is written whole. */
+	readonly taking: () => Promise<SetTaking>;
+}
+
+/**
+ * A set being shot: its states' pictures kept as they are taken, apart from the set shot before, which it stands in
+ * place of only once it is written whole; let go unwritten, all of it is thrown away and that one stays as it was.
+ */
+export interface SetTaking extends AsyncDisposable {
+	readonly keep: (name: string, picture: Uint8Array) => Promise<void>;
+	readonly write: (set: SetNoted) => Promise<void>;
 }
 
 /** A drawn film's page open in a browser for one take, ready to draw, at the frame's size. */

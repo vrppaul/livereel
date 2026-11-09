@@ -1,12 +1,17 @@
 // An app with a server of its own, for the films the smoke tests shoot of one: what it answers at each path, a
 // WebSocket it pushes one message down, served by the test for as long as it lasts, the film handed its address; and
-// footage that keeps no frame, as such a film is shot for what reaches the page
+// footage that keeps no frame, as such a film is shot for what reaches the page, and the set a live film never reads
 import { createHash } from 'node:crypto';
 import { type Server, createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { once } from 'node:events';
 import type { AddressInfo } from 'node:net';
+import { join } from 'node:path';
 import type { Duplex } from 'node:stream';
+import { SetFolderOnDisk } from '../../src/adapters/set-folder.ts';
 import type { Footage } from '../../src/studio/ports.ts';
+
+/** Where a film the smoke tests shoot on its live page would keep a set, which nothing shoots or reads. */
+export const NO_SET = new SetFolderOnDisk(join(import.meta.dirname, 'unshot.set'));
 
 /** What the app answers at each of its paths. */
 export type Routes = Readonly<Record<string, (request: IncomingMessage, response: ServerResponse) => void>>;

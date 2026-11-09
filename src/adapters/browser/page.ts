@@ -10,7 +10,13 @@ import type { Frame, JSHandle, Keyboard } from 'playwright-core';
 import { type Channels, hexOf } from '../../domain/colour.ts';
 import { FilmError } from '../../domain/errors.ts';
 import { type Box, boxAround } from '../../domain/geometry.ts';
-import type { FilmedPage, ScrollAim, ScrollCourse } from '../../direction/page.ts';
+import type { ActContext, FilmedPage, ScrollAim, ScrollCourse } from '../../direction/page.ts';
+
+/** The page a take films as moves read it, and as an act is handed it: live, or the film's set (`set.ts`). */
+export interface FilmedShown {
+	readonly page: FilmedPage;
+	readonly act: ActContext;
+}
 
 /** Where a target's top is to stand below the top of what scrolls it, handed to the page with the target. */
 interface CourseAsked {
@@ -50,9 +56,14 @@ export class PlaywrightPage implements FilmedPage {
 	}
 
 	async box(target: string, every: number): Promise<Box> {
-		const [first, ...others] = (await this.frame.locator(target).evaluateAll(boxesOf)).slice(0, every);
+		const [first, ...others] = (await this.boxes(target)).slice(0, every);
 		if (first === undefined) throw nothingMatches(target);
 		return boxAround([first, ...others]);
+	}
+
+	/** Where every block a target matches stands on the screen, in the page's order: none where it matches none. */
+	boxes(target: string): Promise<Box[]> {
+		return this.frame.locator(target).evaluateAll(boxesOf);
 	}
 
 	async groundBehind(target: string): Promise<string> {

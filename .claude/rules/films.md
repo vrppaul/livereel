@@ -14,5 +14,7 @@ A film is a TypeScript file whose default export is made by `defineFilm` (`src/d
 - A film is split into acts, a function each, that return their steps; `steps` only puts the acts in order.
 - What changes at once is moves handed to `cut` (`cursor.hide()`, `screen.lower()`); what the page does is a named function handed to `act`, or to `page.act` at a moment of a play.
 - A film that serves its own page names the command that serves it, `serve`, beside its `address`, as a project runs its own server; livereel starts and stops it. A film starts no server in its own code.
+- A film shot on its set marks each state in its scenario, `state(name)`, and shows it by an act, `set.show(name)`: a state's name is a constant at the top, as a selector is.
+- Every selector a move reads on a film's set is among the set's `targets`.
 - What the filmed page shows and its server answers — a change, a story, a server's reply — lives beside the film as data alone (`examples/livereel-promo/app/`), read by the server and the film alike (`examples/livereel-promo/acme.ts`).
 - What the film itself says — its captions, the words typed, an agent's lines in the terminal — is written in the film, not in data beside it, so the film reads whole.

@@ -5,7 +5,7 @@ import { Chromium } from '../../src/adapters/browser/chromium.ts';
 import { ANSWERED_WITHIN_MILLISECONDS, CommandServer } from '../../src/adapters/server.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { shoot } from '../../src/studio/shoot.ts';
-import { NoFrames, PUSHED, type Routes, servedApp } from './app.ts';
+import { NO_SET, NoFrames, PUSHED, type Routes, servedApp } from './app.ts';
 import { type ActContext, act, defineFilm, play } from 'livereel';
 import type { Script } from '../../src/direction/film.ts';
 
@@ -84,6 +84,7 @@ async function reachedAs(showing: Pick<Script<'small'>, 'stage' | 'page'>): Prom
 	});
 	await shoot(film.formats.get('small')!, {
 		server: new CommandServer(import.meta.dirname, ANSWERED_WITHIN_MILLISECONDS),
+		set: NO_SET,
 		browser: new Chromium('software', (line) => warned.push(line)),
 		footage: new NoFrames(),
 		track: SILENT,

@@ -29,15 +29,23 @@ takes the default, said aloud.
    a film its own page draws ("A film its own page draws") where steps fall
    short; the page live as it is, or `page: 'dynamic'` where it changes of
    itself; `drawing: 'flat'` or `'room'`.
-4. **The frame**: each format, its frame and screen (16:9, square, 9:16),
+4. **The app: live, or a set**: the live page, the default, acted on as the
+   film goes; or a `set`, the app shot once ahead by `livereel set` into a
+   picture of each state the film shows, then filmed with no app served, so
+   a still or a clip of any second is quick and alike every time. A set
+   suits an app that is slow to answer, changes between runs, or needs a
+   long way to the state a shot shows; it takes no scroll or typing in the
+   film, which its scenario does instead. Ask which, and list the states
+   and their names with the user before the scenario is written.
+5. **The frame**: each format, its frame and screen (16:9, square, 9:16),
    and its places.
-5. **The rate**: 60 frames a second, smooth on a fast move, or 30, half the
+6. **The rate**: 60 frames a second, smooth on a fast move, or 30, half the
    frames to shoot; `framesPerSecond`.
-6. **The look**: the theme's ground, accent and type; the colour scheme;
+7. **The look**: the theme's ground, accent and type; the colour scheme;
    what the page blurs; motion blur as livereel sets it or none; the eye's
    focus, sharp all over or open on a shot.
-7. **Sound**: livereel's clicks and keys, the keyboard, or none; music.
-8. **The loop**: say how each shot will be checked, as section 4 has it, a
+8. **Sound**: livereel's clicks and keys, the keyboard, or none; music.
+9. **The loop**: say how each shot will be checked, as section 4 has it, a
    still of each shot first, then a clip of its span, then the whole film,
    the user's word before each next one; a change the user asks is the one
    thing changed, by the share they name ("twice as slow").
@@ -159,6 +167,21 @@ brings, data the server and the film both read, `acme.ts` beside it.
 `node_modules/livereel/examples/livereel-recipes.ts` plays the recipes
 below on that app, an act each.
 
+A film shot on its set (stage 4 of the setup) names `set: { scenario,
+targets, sharpness }`. The scenario is Playwright code run once on the app
+by `livereel set film.ts --format NAME`, after `ready`: it acts on the app
+as a person would, and marks each state the film shows with
+`await context.state('refreshed')`, a name of letters, digits, dashes and
+underscores, from a letter or digit. `targets` are the film's selectors
+whose blocks the film reads: each is measured in every state, and a move on
+a target left out is refused. The film opens on the first state and shows
+another by an act, `...cursor.click(({ set }) => set.show('refreshed'))`,
+or `act` and `page.act` as for the live page; it scrolls, types and acts on
+no page, as the scenario does that and marks the state it leaves. Shoot the
+set again after the app, a format, the targets or the sharpness change: the
+film is refused on a set shot otherwise. A still of the film then needs no
+app.
+
 - Split the steps into acts, a function each; name every selector at the
   top, by test id or role where the page has them.
 - Write a step's timing, framing and rhythm as numbers in place, each the
@@ -248,7 +271,7 @@ its end at once.
 | `play({ seconds, moves, ease })` | so many seconds of frames, each move eased over its share |
 | `hold({ seconds })` | so many seconds with nothing moving |
 | `cut(...moves)` | moves made at once, between two frames |
-| `act(action)` | `action(context)` acts on the page for real, between two frames, a cut of `page.act`: `context.page` is Playwright's `Frame`, `context.motion.release()` and `.still()` let the page's own animations run and still them again |
+| `act(action)` | `action(context)` acts on the page for real, between two frames, a cut of `page.act`: `context.page` is Playwright's `Frame`, `context.motion.release()` and `.still()` let the page's own animations run and still them again, `context.set.show(name)` shows a state of the film's set |
 | `typing(move)` | as long as the keys of `terminal.type` or `page.type` take, and a beat after |
 
 | Moves | |

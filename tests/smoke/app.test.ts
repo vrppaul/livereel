@@ -10,7 +10,7 @@ import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { FilmError, TakeError } from '../../src/domain/errors.ts';
 import type { PageKind } from '../../src/direction/film.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
-import { NoFrames, PUSHED, type Routes, servedApp } from './app.ts';
+import { NO_SET, NoFrames, PUSHED, type Routes, servedApp } from './app.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
 import { type ActContext, type Step, act, cursor, defineFilm, page, play } from 'livereel';
 
@@ -72,6 +72,7 @@ const REFUSED_APART =
 	'refuses to be framed (X-Frame-Options: DENY): film it with stage: "inside", where livereel takes the refusal off';
 const SHOOTING: Shooting = {
 	server: new CommandServer(import.meta.dirname, ANSWERED_WITHIN_MILLISECONDS),
+	set: NO_SET,
 	browser: new Chromium('software', WARNED_TO_NOBODY),
 	footage: new NoFrames(),
 	track: SILENT,

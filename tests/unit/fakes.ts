@@ -194,8 +194,9 @@ export class TrackThatKeeps implements Track {
 	}
 }
 
-// No unit test acts on a real page: a film's acts are shot in the smoke tests, in a browser
+// No unit test acts on a real page, nor shows a set: a film's acts are shot in the smoke tests, in a browser
 const NO_PAGE = undefined as never;
+const NO_SET = undefined as never;
 
 /** The page's own motion as a switch that only keeps whether it is let go. */
 class MotionSwitch implements PageMotionSwitch {
@@ -240,6 +241,6 @@ export function openedOn(
 	time: PageTime = new PageTimeLogged(),
 	ownPages: ReadonlyMap<string, PageOfBoxes> = new Map()
 ): Opened {
-	const act: ActContext = { page: NO_PAGE, motion: new MotionSwitch() };
+	const act: ActContext = { page: NO_PAGE, motion: new MotionSwitch(), set: NO_SET };
 	return { stage, page, ownPages, act, time, [Symbol.asyncDispose]: () => Promise.resolve() };
 }

@@ -16,7 +16,8 @@ import { ZOOM_AT_MOST } from '../../src/domain/camera.ts';
 import { FilmError, SetupError } from '../../src/domain/errors.ts';
 import type { Size } from '../../src/domain/geometry.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
-import type { Exposures, Footage, Opened, PicturedStage } from '../../src/studio/ports.ts';
+import type { Exposures, Filmed, Footage, Opened, PicturedStage } from '../../src/studio/ports.ts';
+import { NO_SET } from './app.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
 import {
 	type ActContext,
@@ -110,6 +111,7 @@ function filmWritten(
 function shootingInto(footage: Footage, renderer: Renderer): Shooting {
 	return {
 		server: SERVER,
+		set: NO_SET,
 		browser: new Chromium(renderer, WARNED_TO_NOBODY),
 		footage,
 		track: SILENT,
@@ -571,7 +573,7 @@ test('an act waiting on what the page does after a delay of its own is answered,
 
 test('a page in a tab of its own is heard to change of itself, once', async () => {
 	const setting = { ...timedFilmOf([], {}), ownPages: NO_OWN_PAGES };
-	await using opened = await new Chromium('software', WARNED_TO_NOBODY).open(setting, TIMED, 1);
+	await using opened = await new Chromium('software', WARNED_TO_NOBODY).open(setting, liveAt(TIMED), 1);
 	const stage = opened.stage as PicturedStage;
 	const page = opened.act.page;
 	// What the page did as it opened and as it said it was ready, 0.3 s on, heard and forgotten; then a change it makes
@@ -632,7 +634,7 @@ const TALL_FILM = defineFilm({
 test("a picture of a screen taller at livereel's closest than a JPEG holds is taken as close as one holds it, the person told once that it is drawn softer", async () => {
 	const warned: string[] = [];
 	const browser = new Chromium('software', (said) => warned.push(said));
-	await using opened = await browser.open({ ...TALL_FILM, ownPages: NO_OWN_PAGES }, PAGE, 1);
+	await using opened = await browser.open({ ...TALL_FILM, ownPages: NO_OWN_PAGES }, liveAt(PAGE), 1);
 	const stage = opened.stage as PlaywrightPicturedStage;
 	await stage.retakePage(ZOOM_AT_MOST);
 	await stage.retakePage(ZOOM_AT_MOST);
@@ -646,7 +648,12 @@ test("a picture of a screen taller at livereel's closest than a JPEG holds is ta
 
 /** The dense page in a tab of its own, the stage showing its pictures at the draft's sharpness. */
 function denseOpened(): Promise<Opened> {
-	return new Chromium('software', WARNED_TO_NOBODY).open({ ...DENSE_FILM, ownPages: NO_OWN_PAGES }, DENSE, 1);
+	return new Chromium('software', WARNED_TO_NOBODY).open({ ...DENSE_FILM, ownPages: NO_OWN_PAGES }, liveAt(DENSE), 1);
+}
+
+/** A static page on the disk, filmed live. */
+function liveAt(address: string): Filmed {
+	return { kind: 'static', address };
 }
 
 /** The size of the picture the stage's root holds for its pieces of the page to be drawn from, run in the stage. */

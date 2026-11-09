@@ -381,6 +381,6 @@ function applyExposures(exposures: readonly DrawnScene[]): void {
 // What follows runs in the filmed page's own tab, handed over alone
 
 /** Once the page's fonts have loaded, or failed to. */
-async function fontsLoaded(): Promise<void> {
+export async function fontsLoaded(): Promise<void> {
 	await document.fonts.ready;
 }

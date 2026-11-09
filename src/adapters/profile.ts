@@ -18,6 +18,7 @@ import type {
 	Browser,
 	DrawnBrowser,
 	Exposures,
+	Filmed,
 	Footage,
 	FramedStage,
 	Opened,
@@ -188,8 +189,8 @@ class TimedBrowser implements Browser {
 		this.timings = timings;
 	}
 
-	async open(setting: Setting, address: string, sharpness: number): Promise<Opened> {
-		const opened = await this.timings.timed('browser.open', () => this.browser.open(setting, address, sharpness));
+	async open(setting: Setting, filmed: Filmed, sharpness: number): Promise<Opened> {
+		const opened = await this.timings.timed('browser.open', () => this.browser.open(setting, filmed, sharpness));
 		return new TimedOpened(opened, this.timings);
 	}
 }

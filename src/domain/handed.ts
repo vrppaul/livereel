@@ -210,6 +210,10 @@ export const A_SIZE = new Plain(isSize, 'a number of pixels, more than 0');
 export const A_LINE_HEIGHT = new Plain(isSize, "a number of times the letters' size, more than 0");
 /** A share of something a film gives, from none of it to the whole. */
 export const A_SHARE = new Plain(isShare, 'a number from 0 to 1');
+/** How many of a picture's pixels a page's pixel takes: more than none, as a picture of no pixels shows nothing. */
+export const A_SHARPNESS = new Plain(isSize, "how many of a picture's pixels a page's pixel takes, more than 0");
+/** Blocks of the page a film names, each by its selector. */
+export const SELECTORS = new ListOf(A_SELECTOR, 'a list of selectors');
 
 // None of a length or of a share, and the whole of a share
 const NONE = 0;

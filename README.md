@@ -96,16 +96,17 @@ checked frame by frame on contact sheets and stills. Install it with
 | `livereel shoot FILM_FILE --out DIRECTORY` | the film whole, as a video: `film-square.mp4` |
 | `livereel clip FILM_FILE --out DIRECTORY --from SECONDS --to SECONDS` | a span of the film, silent, to look at a few moments in motion without making the whole: `film-square-12-15s.mp4` |
 | `livereel still FILM_FILE --out DIRECTORY --at SECONDS` | one frame at a moment, without the video: `film-square-1.5s.jpg` |
+| `livereel set FILM_FILE` | the film's set, its app shot once ahead of the film, beside the film's file: `film-square.set/` ("The set") |
 | `livereel setup` | installs the browser a film is shot in, and looks for ffmpeg |
 
 | Option | Command | |
 |---|---|---|
-| `--format NAME` | `shoot`, `clip`, `still` | the format to shoot, of those the film names; a film of one format needs none |
+| `--format NAME` | `shoot`, `clip`, `still`, `set` | the format to shoot, of those the film names; a film of one format needs none |
 | `--as mp4\|webm\|gif` | `shoot` | the kind of video, an MP4 where none is named; `--as mp4 --as gif` makes both from one take, each at the film's own frame and rate |
 | `--sheet` | `shoot`, `clip` | its frames side by side, a frame a second: `film-square-sheet.png` |
 | `--sheet-rate FRAMES_A_SECOND` | `shoot`, `clip` | how many frames a second the sheet shows: 6 to follow a move as an eye does |
 | `--quality draft\|finest` | `shoot`, `clip`, `still` | `finest`, the default, shoots at twice the frame's width and height and blurs a fast move as the film says; `draft` shoots at the frame's own size, unblurred: quicker and softer |
-| `--renderer software\|gpu` | `shoot`, `clip`, `still` | where the frames are drawn: in software, the default, or on the graphics card |
+| `--renderer software\|gpu` | `shoot`, `clip`, `still`, `set` | where the frames are drawn: in software, the default, or on the graphics card |
 | `--profile` | `shoot`, `clip`, `still` | where the shoot's time went: each part of the browser and the footage the frames waited on, its calls, the time each took and its share, the rest, and the blends of exposures |
 
 Every file is named after the film's file and the format it is shot in.
@@ -745,6 +746,48 @@ film's to name, so the command must serve it there.
 What the page shows and its server answers — the app's data, a reply to a
 click — lives beside the film as data its server and the film both read
 (`examples/livereel-promo/acme.ts`), so the film knows what a click brings.
+
+### The set: the app shot once, ahead of the film
+
+A film of the live page shoots it as it goes: each act waits on the app, and
+a still at 58 s goes through the 57 before it. A film that names a `set`
+shoots the app once, ahead, and is then shot from those pictures, with no app
+served:
+
+```ts
+set: {
+  targets: [REFRESH, VISITORS],
+  scenario: async (context) => {
+    await context.state('opened');
+    await context.page.locator(REFRESH).click();
+    await context.page.locator(UPDATED).waitFor();
+    await context.state('refreshed');
+  },
+},
+```
+
+`livereel set film.ts --format wide` serves the app with the film's `serve`,
+waits for its `ready` and runs the scenario. At each `state(name)` it keeps a
+picture of the screen, 3 times as sharp as the page where `sharpness` names
+no other, and where each of the `targets` stands, in `film-wide.set/` beside
+the film file. A scenario that fails leaves the set shot before as it was.
+
+The film shows a state by an act, as a click on the app would bring it, at
+the moment it acts; `act` and `page.act` take it the same way:
+
+```ts
+...cursor.click(({ set }) => set.show('refreshed')),
+```
+
+The film opens on the first state. A move reads its target where the set
+shot it in the state shown: a target the set's `targets` leave out, or one
+that matched nothing in that state, is refused, as are a scroll, typing and
+an act that asks for `context.page`, which the scenario does instead, as
+the film has no app. A film is refused on a set shot on another screen,
+with other targets or at another sharpness than it names now, so shoot the
+set again after any of them changes; a set whose file or a picture is
+missing is refused too. A set's pictures change only by the film's acts, so
+its page is static.
 
 ### The page: its time, whether it changes of itself, its colour scheme, and what it blurs
 

@@ -7,6 +7,7 @@ paths:
 
 `stage/stage.html` lays out the stage, `stage/stage.css` gives every prop its look, and `stage/stage.js` answers the browser adapter under `window.stage` (`StageApi` in `src/adapters/browser/stage.ts`).
 The script is JavaScript with its types in JSDoc, which the type checker reads; the page runs it as it is written.
+Beside it, `stage/set.html`, `stage/set.css` and `stage/set.js` are the page a film's set is shown on, in the filmed page's tab: one state's picture at a time, answering under `window.filmSet` (`SetApi` in `src/adapters/browser/set.ts`).
 
 - The stage draws the scene as `src/scene.ts` hands it over, and decides nothing: what is shown, where and how far along is the film's.
 - Every prop has its drawer in each exposure of `stage/stage.js` (`exposureOf`), the look in `LOOK`, one for every exposure; the type checker refuses a prop without one.

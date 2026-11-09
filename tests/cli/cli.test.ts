@@ -1,10 +1,10 @@
 // The command line run as it is run, as a process: what it refuses, and what it writes
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { expect, test, vi } from 'vitest';
+import { expect, onTestFinished, test, vi } from 'vitest';
 
 const SHORT = 'tests/cli/films/short.ts';
 // The command line as Node runs it from the source
@@ -23,6 +23,9 @@ const THROWS = 'tests/cli/films/throws.ts';
 // A film its own page draws, half a second long; and one whose page answers livereel by nothing
 const DRAWN = 'tests/cli/films/drawn.ts';
 const DRAWN_UNANSWERED = 'tests/cli/films/drawn-unanswered.ts';
+// A film shot on its set, and the folder its set is shot into, beside it
+const ON_SET = 'tests/cli/films/on-set.ts';
+const ON_SET_FOLDER = 'tests/cli/films/on-set-small.set';
 const AS_A_MODULE = JSON.stringify({ type: 'module' });
 // An ffmpeg that is there, but lists the MP4's encoders alone, H.264 and AAC, whatever it is asked
 const FFMPEG_OF_MP4_ALONE =
@@ -195,6 +198,25 @@ test('a film its own page draws is shot whole at its rate as long as its page sa
 		still.code,
 		readdirSync(out)
 	]).toEqual([0, '60/1,30', 0, ['drawn-small-0.25s.jpg', 'drawn-small.mp4']]);
+});
+
+test("a film's set is shot beside its file, and the film then shot from it as a still; a film its own page draws has no set to shoot", () => {
+	const out = scratch();
+	onTestFinished(() => rmSync(ON_SET_FOLDER, { recursive: true, force: true }));
+	const shotSet = livereel('set', ON_SET);
+	const still = livereel('still', ON_SET, '--out', out, '--at', '0.15');
+	const shotFolder = readdirSync(ON_SET_FOLDER).toSorted();
+	expect([shotSet.code, shotSet.said, shotFolder, still.code, readdirSync(out)]).toEqual([
+		0,
+		expect.stringMatching(/^tests\/cli\/films\/on-set-small\.set: 2 states, shot in [\d.]+ s\n$/),
+		['opened.png', 'set.json', 'typed.png'],
+		0,
+		['on-set-small-0.15s.jpg']
+	]);
+	expect(livereel('set', DRAWN)).toEqual({
+		code: 2,
+		said: expect.stringContaining('livereel set: a film its own page draws has no set')
+	});
 });
 
 test("a film said to be drawn by a page that answers livereel by nothing is refused as the film's", () => {

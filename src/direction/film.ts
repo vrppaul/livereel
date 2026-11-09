@@ -12,10 +12,10 @@ import { FORMAT_FORM, type Format } from '../domain/format.ts';
 import {
 	A_COUNT,
 	A_FUNCTION_SAID,
-	A_SELECTOR,
 	type Form,
-	ListOf,
+	OfForm,
 	OneOf,
+	SELECTORS,
 	aFunction,
 	anObject,
 	assertWritten,
@@ -31,6 +31,7 @@ import { LIVEREELS_LOOK, type Look, type Theme, lookWith } from '../props/look.t
 import { type MotionBlurScript, motionBlurOf } from './blur.ts';
 import type { ActContext } from './page.ts';
 import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf, musicOf } from './sound.ts';
+import { type FilmSet, SET_FORM, type SetScript, setOf } from './set.ts';
 import { SITE_FORM, type Site, type SiteScript, siteOf } from './site.ts';
 import { type Step, placesIn, stepsOf } from './steps.ts';
 import { type CssNamed, THE_FILMS_THEME, cssNamedIn, themeOf } from './theme.ts';
@@ -72,8 +73,14 @@ export interface Script<Name extends string> extends SiteScript {
 	 * framed. A static page stands in a tab of its own, on no stage's frame.
 	 */
 	readonly stage?: StagePlace;
-	/** Wait until the page stands as the first frame shows it. */
+	/** Wait until the page stands as the first frame shows it; for a film shot on its set, as its scenario starts on it. */
 	readonly ready: (context: ActContext) => Promise<void>;
+	/**
+	 * The app's states shot once ahead of the film by `livereel set`, its scenario marking each, and where the film's
+	 * targets stand in each, so the film is shot from their pictures, with no app served, and an act shows a state by
+	 * `context.set.show(name)`; the live page where none is named.
+	 */
+	readonly set?: SetScript;
 	/**
 	 * The steps, handed the whole screen's pose and the name of the format they are shot in. The name is not inferred
 	 * from here, so steps that take fewer names than `formats` has are refused by the compiler.
@@ -113,9 +120,9 @@ export interface Script<Name extends string> extends SiteScript {
 }
 
 /**
- * A film in one of its formats, where its page is, where its stage stands, the look it opens on and what its theme
- * writes in CSS, how its page is asked to look and what it blurs, what it says of its sounds and of its blur, and its
- * own code: its wait for the page, and its steps in this format.
+ * A film in one of its formats, where its page is and the set it is shot on where it names one, where its stage
+ * stands, the look it opens on and what its theme writes in CSS, how its page is asked to look and what it blurs, what
+ * it says of its sounds and of its blur, and its own code: its wait for the page, and its steps in this format.
  */
 export interface FilmInFormat {
 	/** A film of steps, beside a film its own page draws (`src/direction/drawn-film.ts`). */
@@ -133,6 +140,7 @@ export interface FilmInFormat {
 	readonly motionBlur: MotionBlur | null;
 	readonly framesPerSecond: number;
 	readonly site: Site;
+	readonly set: FilmSet | null;
 	readonly ready: (context: ActContext) => Promise<void>;
 	readonly steps: (whole: Pose) => readonly Step[];
 }
@@ -180,7 +188,10 @@ const A_DRAWING = new OneOf(
 const ROOM_FOR_A_STATIC_PAGE =
 	'the film\'s drawing is "room", which draws the page from its picture: a dynamic page stands live in a frame of ' +
 	'its own site, which WebGL is given blank, so leave the page out for a static one, or the drawing for a flat one';
-const SELECTORS = new ListOf(A_SELECTOR, 'a list of selectors');
+// A set's pictures change only as the film's acts show another state, as a static page does
+const SET_FOR_A_STATIC_PAGE =
+	'the film names a set, whose pictures change only as its acts show another state: leave page: "dynamic" out, or ' +
+	'film the live page, without the set';
 // So many frames make a second where a film names no rate: a fast move runs smooth at it, where at 30 it steps (the
 // claude-review promo's dive shot both ways, 2026-11-08)
 export const FRAMES_PER_SECOND_WHERE_NONE_IS_NAMED = 60;
@@ -190,6 +201,7 @@ const FILM_FORM: Form<AnyScript> = {
 	...SITE_FORM,
 	stage: A_STAGE,
 	ready: needed(aFunction<AnyScript['ready']>(A_FUNCTION_SAID)),
+	set: new OfForm<SetScript>(SET_FORM, "the film's set: { scenario, targets, sharpness }"),
 	steps: needed(aFunction<AnyScript['steps']>(A_FUNCTION_SAID)),
 	sounds: anObject<LivereelSoundsScript>(AN_OBJECT_SAID),
 	music: anObject<Music>(AN_OBJECT_SAID),
@@ -215,6 +227,7 @@ export class ScriptedFilm<Name extends string> implements Film {
 	readonly drawing: Drawing;
 	readonly framesPerSecond: number;
 	readonly site: Site;
+	readonly set: FilmSet | null;
 	readonly formats: ReadonlyMap<string, FilmInFormat>;
 
 	constructor(script: Script<Name>) {
@@ -229,6 +242,7 @@ export class ScriptedFilm<Name extends string> implements Film {
 		this.css = cssNamedIn(theme, THE_FILMS_THEME);
 		refuseUnlikeAFilm(script);
 		this.site = siteOf(script);
+		this.set = setOf(script.set);
 		const staging = stagingOf(script);
 		this.stage = staging.stage;
 		this.page = staging.page;
@@ -256,6 +270,7 @@ export class ScriptedFilm<Name extends string> implements Film {
 			motionBlur: this.motionBlur,
 			framesPerSecond: this.framesPerSecond,
 			site: this.site,
+			set: this.set,
 			ready: this.script.ready,
 			steps: (whole) => placedSteps(stepsOf(this.script.steps(whole, name)), this.script.formats[name], name)
 		};
@@ -275,15 +290,17 @@ interface Staging {
 
 /**
  * How a film's page is shown, livereel's way where the film names nothing; refused where the two cannot go together:
- * a stage inside the app for a static page, which stands in a tab of its own, or the room for a dynamic page, which
- * stands live in a frame the room cannot draw.
+ * a stage inside the app for a static page, which stands in a tab of its own, the room for a dynamic page, which
+ * stands live in a frame the room cannot draw, or a set for a dynamic page, as a set's pictures change only by the
+ * film's acts.
  */
-function stagingOf(script: Pick<AnyScript, 'stage' | 'page' | 'drawing'>): Staging {
+function stagingOf(script: Pick<AnyScript, 'stage' | 'page' | 'drawing' | 'set'>): Staging {
 	const stage = script.stage ?? STAGE_WHERE_NONE_IS_NAMED;
 	const page = script.page ?? PAGE_WHERE_NONE_IS_NAMED;
 	const drawing = script.drawing ?? DRAWING_WHERE_NONE_IS_NAMED;
 	if (stage === 'inside' && page === 'static') throw new FilmError(INSIDE_FOR_A_DYNAMIC_PAGE);
 	if (drawing === 'room' && page === 'dynamic') throw new FilmError(ROOM_FOR_A_STATIC_PAGE);
+	if (script.set !== undefined && page === 'dynamic') throw new FilmError(SET_FOR_A_STATIC_PAGE);
 	return { stage, page, drawing };
 }
 

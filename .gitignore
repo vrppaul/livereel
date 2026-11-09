@@ -4,3 +4,7 @@ dist/
 
 # What a film is shot into
 out/
+
+# What a set being shot is kept in, and a set shot before set aside in, until the set is written
+*.set.taking/
+*.set.aside/
