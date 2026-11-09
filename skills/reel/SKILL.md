@@ -385,7 +385,16 @@ fade the ink a little after the ground, or the words pass through the
 ground's own grey.
 
 The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
-person types; the curves are `linear`, `easeInOutSine` (a step's own),
+person types. Curves of the film's own numbers: `cubicBezier(x1, y1, x2,
+y2)` as a designer hands CSS's `cubic-bezier()`; `hermite({ settingOff,
+arriving })`, each speed from 0 to 3 times the mean, so two plays of one
+move run on with no jolt where the second sets off at the speed the first
+arrived at, in its own mean's terms: that speed, how far the first went a
+second as it arrived, times the second's seconds over how far it goes, the
+two going the same way; `softThenHeld(fastestAt)` for a flight that sets off
+softly and runs on at speed, held at π/2 ÷ (fastestAt + π/2 × (1 −
+fastestAt)) times its mean, 1.17 at 0.4. Livereel's curves are `linear`,
+`easeInOutSine` (a step's own),
 `easeInOutCubic`, `easeOutCubic`, `easeOutQuint` and `easeOutBack`, which
 passes its end by a tenth of the way and settles back on it: a place, a
 scale or an angle bounces with it, while what comes up or goes never passes
