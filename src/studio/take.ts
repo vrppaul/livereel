@@ -338,7 +338,8 @@ export class Take {
 			format: this.format,
 			pageShown: this.opened.stage.kind,
 			act: (action) => this.acted(action),
-			holdPicture: (part) => this.pictures.hold(part)
+			holdPicture: (part) => this.pictures.hold(part),
+			thingsBuilt: this.opened.thingsBuilt
 		});
 	}
 

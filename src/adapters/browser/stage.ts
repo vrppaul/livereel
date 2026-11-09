@@ -112,13 +112,14 @@ declare global {
 
 /**
  * How the stage draws a frame, flat or as a room (`room.ts`): the flags the browser is launched with for it, how the
- * stage is opened and then laid out, how a frame's exposures are drawn on it, and what the person who asks for software
- * is told, if anything.
+ * stage is opened, serving the film's things module where it names one, and then laid out, loading it: the names it
+ * builds a thing by, none for a stage that draws no things; how a frame's exposures are drawn on it, and what the
+ * person who asks for software is told, if anything.
  */
 export interface StageDrawing {
 	readonly flags: readonly string[];
-	readonly opened: (page: Page) => Promise<void>;
-	readonly laidOut: (page: Page, layout: Layout) => Promise<void>;
+	readonly opened: (page: Page, things: string | null) => Promise<void>;
+	readonly laidOut: (page: Page, layout: Layout, things: string | null) => Promise<readonly string[]>;
 	readonly drawn: (page: Page, exposures: readonly DrawnScene[]) => Promise<void>;
 	readonly saidInSoftware: string | null;
 }
@@ -127,11 +128,13 @@ export interface StageDrawing {
 export const DRAWN_FLAT: StageDrawing = {
 	flags: [],
 	opened: stageApartOpened,
-	laidOut: () => Promise.resolve(),
+	laidOut: () => Promise.resolve(NO_THINGS),
 	drawn: drawnOn,
 	saidInSoftware: null
 };
 
+// A stage that draws no things of a film's own: flat CSS draws no three.js
+export const NO_THINGS: readonly string[] = [];
 // How good a frame's JPEG is, captured off the stage or off a drawn film's page
 export const JPEG_QUALITY = 92;
 // A stage that draws one exposure of a frame at a time

@@ -295,7 +295,7 @@ async function setCommand(given: readonly string[]): Promise<void> {
 	const started = performance.now();
 	const states = await shootSet(film, {
 		server: new CommandServer(dirname(absolute(file)), ANSWERED_WITHIN_MILLISECONDS),
-		browser: new Chromium(renderer, warn),
+		browser: new Chromium(renderer, warn, dirname(absolute(file))),
 		folder: new SetFolderOnDisk(folder)
 	});
 	say(`${folder}: ${String(states)} states, shot in ${secondsBetween(started, performance.now())} s`);
@@ -491,9 +491,10 @@ function shotWithAsked(
 ): ShotWith {
 	const quality = nameAsked(asked.quality, QUALITY_NAMES, QUALITY_SAYS, command);
 	const renderer = nameAsked(asked.renderer, RENDERERS, RENDERER_SAYS, command);
-	const chromium = new Chromium(renderer, warn);
+	const filmFolder = dirname(absolute(file));
+	const chromium = new Chromium(renderer, warn, filmFolder);
 	return {
-		server: new CommandServer(dirname(absolute(file)), ANSWERED_WITHIN_MILLISECONDS),
+		server: new CommandServer(filmFolder, ANSWERED_WITHIN_MILLISECONDS),
 		quality: QUALITIES[quality],
 		browser: profile.browser(chromium),
 		drawnBrowser: profile.drawnBrowser(chromium)

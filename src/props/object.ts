@@ -1,7 +1,8 @@
 /**
  * An object on the frame: something that stands in a box, grows, comes near, turns, comes up and goes, and shows what
  * it holds, its content — a title's words, a pane of code, an agent's terminal, the ending card, a caption, the keys
- * of a shortcut, a piece of the page, an outline round a part of it or a lens over it. Where it stands, how it stands
+ * of a shortcut, a piece of the page, an outline round a part of it, a lens over it, or a thing of the film's own
+ * three.js (`src/props/thing.ts`), which the room draws and the stage's markup does not. Where it stands, how it stands
  * about its middle (`src/domain/stance.ts`), how it stands out (`src/props/effects.ts`) and how far it has come and
  * gone are the object's, alike for every content, so a move that carries, leans, sets apart or slides one is written
  * once (`src/moves/object.ts`); what it shows, how that comes up in its box and what lights in it are its content's.
@@ -98,6 +99,7 @@ import { type DrawnHole, type DrawnPiece, type Piece, drawnPiece, pageFitOfPiece
 import { type OnItsWay, type Way, alongItsWay, cutMoved, figurePointOn, presencesIn, presentShare } from './way.ts';
 import type { Screen } from './screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './terminal.ts';
+import { type DrawnThing, type Thing, drawnThing } from './thing.ts';
 import { type DrawnTitleWords, type TitleWords, drawnTitleWords } from './title.ts';
 
 /** The name an object is known by: one a film gives, or its kind's own. */
@@ -163,7 +165,7 @@ export interface Surroundings extends Holders {
 }
 
 /** What an object shows. */
-export type Content = TitleWords | Code | Terminal | Ending | Caption | Keys | Piece | Outline | Lens;
+export type Content = TitleWords | Code | Terminal | Ending | Caption | Keys | Piece | Outline | Lens | Thing;
 
 /** What an object shows, as the stage draws it. */
 export type DrawnContent =
@@ -175,7 +177,8 @@ export type DrawnContent =
 	| DrawnKeys
 	| DrawnPiece
 	| DrawnOutline
-	| DrawnLens;
+	| DrawnLens
+	| DrawnThing;
 
 /**
  * An object: what it stands inside, its box in the pixels of that from its top left corner, how it stands about the
@@ -230,7 +233,8 @@ const LAYER_OF: { readonly [Kind in Content['kind']]: number } = {
 	keys: 2,
 	piece: 0,
 	outline: 0,
-	lens: 0
+	lens: 0,
+	thing: 0
 };
 // Where an object in no group stands in a group's order: anywhere, as its place among objects is its own; and the
 // zIndex of one in a group the film names none for, so all such are drawn as they came
@@ -317,6 +321,7 @@ function shownMoved(start: StandingThen, end: StandingThen, frame: Size): Point 
 		case 'keys':
 		case 'piece':
 		case 'outline':
+		case 'thing':
 			return UNMOVED;
 	}
 }
@@ -671,6 +676,7 @@ function pageFitOf(object: FrameObject, laid: Box, camera: Camera, frame: Size):
 		case 'caption':
 		case 'keys':
 		case 'outline':
+		case 'thing':
 			return null;
 	}
 }
@@ -743,6 +749,10 @@ function drawnContent(
 			const middle = onTheFrameOf(object.inside, standing, around.camera, around.frame, MIDDLE_SHARE);
 			const shown = presentShare(figure);
 			return drawnLens(content, standing.laid, middle, around.camera, around.frame, shown, around.holes);
+		}
+		case 'thing': {
+			const thingStanding = { ...standing, scale: object.scale, inTheWorld: object.inside.kind === 'world' };
+			return drawnThing(content, thingStanding, presentShare(figure), around);
 		}
 	}
 }

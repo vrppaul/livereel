@@ -13,7 +13,7 @@ import { FilmError, TakeError } from '../../src/domain/errors.ts';
 import type { PageServer, SetNoted } from '../../src/studio/ports.ts';
 import { shootSet } from '../../src/studio/set.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
-import { NO_SET, NoFrames } from './app.ts';
+import { FILMS_FOLDER, NO_SET, NoFrames } from './app.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
 import { type ActContext, type SetContext, type Step, act, camera, defineFilm, page, play } from 'livereel';
 
@@ -57,7 +57,7 @@ async function setShot(steps: readonly Step[]): Promise<SetFolderOnDisk> {
 	const folder = new SetFolderOnDisk(join(await mkdtemp(join(tmpdir(), 'livereel-set-')), 'film-small.set'));
 	await shootSet(filmOnSet(steps), {
 		server: new CommandServer(import.meta.dirname, ANSWERED_WITHIN_MILLISECONDS),
-		browser: new Chromium('software', WARNED_TO_NOBODY),
+		browser: new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER),
 		folder
 	});
 	return folder;
@@ -68,7 +68,7 @@ function shotOnSet(steps: readonly Step[], set: SetFolderOnDisk) {
 	return shoot(filmOnSet(steps), {
 		server: NO_SERVER,
 		set,
-		browser: new Chromium('software', WARNED_TO_NOBODY),
+		browser: new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER),
 		footage: new NoFrames(),
 		track: SILENT,
 		quality: { sharpness: 1, blurred: false }
@@ -90,7 +90,7 @@ function shootingLive(): Shooting {
 	return {
 		server: new CommandServer(import.meta.dirname, ANSWERED_WITHIN_MILLISECONDS),
 		set: NO_SET,
-		browser: new Chromium('software', WARNED_TO_NOBODY),
+		browser: new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER),
 		footage: new NoFrames(),
 		track: SILENT,
 		quality: { sharpness: 1, blurred: false }
@@ -122,7 +122,7 @@ test("a film's set is shot from the app its command serves: a picture of each st
 test("a film's set is opened on its first state's picture, and an act shows another's in its place", async () => {
 	const set = await (await setShot([])).read();
 	const film = filmOnSet([]);
-	await using opened = await new Chromium('software', WARNED_TO_NOBODY).open(
+	await using opened = await new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER).open(
 		{ ...film, motionBlur: null, ownPages: [] },
 		{ kind: 'set', set },
 		1

@@ -151,5 +151,5 @@ function titleComing(setting: Setting, beginning: Beginning): Coming {
 	}
 	const align = setting.align ?? alignmentIn(format, place);
 	const placed: TitleWords = { kind: 'words', ...said, align, size, onGround: false, comingUp };
-	return { content: placed, box: placedFor(placed.kind, format, place) };
+	return { content: placed, box: placedFor(placed, format, place) };
 }

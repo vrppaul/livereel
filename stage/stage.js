@@ -794,6 +794,17 @@ class OutlineDrawer {
 	}
 }
 
+/**
+ * A thing in its object: nothing the markup draws, as the room draws it from the film's own three.js
+ * (`stage/room.js`); its element stands for its box alone.
+ */
+class ThingDrawer {
+	/** @param {DrawnContent} content */
+	draw(content) {
+		ofKind(content, 'thing');
+	}
+}
+
 /** Keys in their object: the caps of a shortcut at the frame's foot, risen clear of a caption there. */
 class KeysDrawer {
 	/** @param {Staged} element */
@@ -830,7 +841,8 @@ const CONTENT_DRAWERS = {
 	keys: (element) => new KeysDrawer(element),
 	piece: (element) => new PieceDrawer(element),
 	outline: (element) => new OutlineDrawer(element),
-	lens: (element) => new LensDrawer(element)
+	lens: (element) => new LensDrawer(element),
+	thing: () => new ThingDrawer()
 };
 
 /**

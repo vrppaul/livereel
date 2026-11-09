@@ -226,6 +226,9 @@ and the moves of each part of the scene:
 - `lens.show(target, { magnification, size, enter, edge, as, group, zIndex })`, `lens.to(target)`,
   `lens.hide({ toward, leave, edge })`; a round glass over the page, showing what lies under its middle magnified; each
   move of it takes `as` to name which
+- `thing.show(made, { at, reach, values, inside: 'world', from, as })`, `thing.to(place, { through, scale, depth })`,
+  `thing.lean({ tilt, turn, roll })`, `thing.set(values)`, `thing.hide({ toward })`: a thing of the film's own
+  three.js, built by the film's things module by the name `made`, in a room alone ("Flat, or a room")
 - `title.effects({ ring, glow, shadow, blur, colour, melt, scale, depth })`, and so `code.effects`,
   `terminal.effects`, `piece.effects`, `outline.effects` and `lens.effects`: how the object stands out, ringed and
   glowing in the accent or a `colour` of the film's, casting a shadow, blurred, melting toward a side, grown or
@@ -1011,6 +1014,59 @@ What `inside` costs:
 ```ts
 export default defineFilm({ drawing: 'room', ... });
 ```
+
+A room also draws a film's own things: what no prop of livereel's draws and
+three.js draws in a few tens of lines, an end card standing in the world, a
+sheet leant over the page. `things` names a JavaScript module beside the
+film, whose default export builds each thing by a name from the stage's own
+three, and sets it every exposure from its numbers and how far it has come
+up, keeping nothing else:
+
+```js
+// things.js
+export default {
+	card: {
+		build: (three) =>
+			new three.Mesh(new three.BoxGeometry(300, 180, 12), new three.MeshBasicMaterial({ transparent: true })),
+		set: (built, values, shown, three) => {
+			built.rotation.y = values.turn * Math.PI;
+			built.material.opacity = shown;
+		}
+	}
+};
+```
+
+```ts
+export default defineFilm({ drawing: 'room', things: './things.js', ... });
+// in the steps
+const card = { at: 'whole', reach: { width: 300, height: 180 }, values: { turn: 0 }, inside: 'world' };
+play({ seconds: 1, moves: [thing.show('card', card)] }),
+play({ seconds: 1, moves: [thing.set({ turn: 0.5 }), thing.to('whole', { depth: 600 })] })
+```
+
+A thing is an object, so it stands at a place, on the frame or in the
+world, is carried, grown, brought near and leant as any object is. `reach`
+is how far it reaches across and up, whole, in pixels of a frame 1080 high:
+its box is that footprint about the place's middle, from whose middle it is
+built, a unit of it a pixel of a frame 1080 high, its axes three's own, up
+the frame, its faces turning as three's do. Its box's corners say how near
+the eye's focus it stands and how far it moves for the motion blur; a move
+of its numbers moves nothing the blur counts, so a fast turn by `set` is
+shot unblurred. It is drawn alone, with a depth of its own, blurred by the
+eye's focus as one, by its box's point nearest the focus; in the world, the
+page's window hides what of it stands behind the window's plane, point by
+point; on the frame it rides with the eye, sharp, before the window. The
+room draws it unlit: build it of `MeshBasicMaterial` or a `ShaderMaterial`
+of its own, as no light of the world's reaches it yet. It comes and goes in
+its own way alone, as its module draws `shown` (a material it fades is
+`transparent`), and takes no effects. `set` is handed the stage's `three`
+for what it makes anew. Refused: things in a film not drawn as a room and a
+module path not ending in `.js`, as the film is defined; a module that fails
+to load or exports no builders, as the stage opens; a thing inside the
+window or in a group, as
+the move is made; a thing the module builds none of, as it begins; what the
+module throws building or setting one, as the frame is drawn; and
+`thing.set` of a number the thing was not shown with.
 
 What `room` costs:
 

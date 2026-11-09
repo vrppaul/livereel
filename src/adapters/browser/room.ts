@@ -12,8 +12,9 @@
  * 155, so livereel pins the Playwright, and with it the browser, the room was built on, and the room is refused as it
  * opens, as the machine's to put right, where the browser lacks it or gives the page no WebGL.
  */
+import { readFile } from 'node:fs/promises';
 import type { Page, Route } from 'playwright-core';
-import { SetupError } from '../../domain/errors.ts';
+import { FilmError, SetupError } from '../../domain/errors.ts';
 import type { DrawnScene } from '../../scene.ts';
 import { FILE_SENT, NO_SUCH_FILE, type ServedFile, filesNamed, stageFiles } from './stage-files.ts';
 import { type Layout, STAGE_PAGE, type StageDrawing } from './stage.ts';
@@ -23,11 +24,22 @@ import { type Layout, STAGE_PAGE, type StageDrawing } from './stage.ts';
  * canvas, and a frame composed in WebGL from them as the stage drew them.
  */
 export interface RoomApi {
-	/** Every exposure's surfaces laid in the room's canvas, which draws a frame of the layout's size. */
-	readonly setup: (layout: Layout) => void;
-	/** One frame composed from its exposures' surfaces as the stage drew them, each placed as its scene has it. */
-	readonly compose: (exposures: readonly DrawnScene[]) => Promise<void>;
+	/**
+	 * Every exposure's surfaces laid in the room's canvas, which draws a frame of the layout's size, and the film's
+	 * things module loaded from its address where it names one: the names it builds a thing by, or what the film is
+	 * told where the module fails to load or exports no builders.
+	 */
+	readonly setup: (layout: Layout, things: string | null) => Promise<ThingsLoaded>;
+	/**
+	 * One frame composed from its exposures' surfaces as the stage drew them, each placed as its scene has it, and the
+	 * film's things among them; what the film is told where its module fails building or setting one, none where not.
+	 */
+	readonly compose: (exposures: readonly DrawnScene[]) => Promise<string | null>;
 }
+
+/** The film's things module as the room loads it: the names it builds a thing by, or what the film is told. */
+export type ThingsLoaded =
+	{ readonly kind: 'built'; readonly names: readonly string[] } | { readonly kind: 'refused'; readonly said: string };
 
 declare global {
 	interface Window {
@@ -45,8 +57,8 @@ declare global {
 export const DRAWN_AS_A_ROOM: StageDrawing = {
 	flags: ['--enable-blink-features=CanvasDrawElement'],
 	opened: roomOpened,
-	laidOut: (page, layout) => page.evaluate(roomSetUp, layout),
-	drawn: (page, exposures) => page.evaluate(composedInTheRoom, exposures),
+	laidOut: roomLaidOut,
+	drawn: drawnInTheRoom,
 	saidInSoftware:
 		'the room is drawn in software, where a frame takes about twenty times as long to draw as on a graphics card: ' +
 		'--renderer gpu draws it on the card, where the machine has one'
@@ -69,6 +81,9 @@ const THREE_ENTRY = 'three.module.js';
 const THREE_FILES = [THREE_ENTRY, 'three.core.js'];
 const THREE_MODULE = `./${THREE_PATH}${THREE_ENTRY}`;
 const THREE_FOLDER = new URL('./', import.meta.resolve('three'));
+// Where the film's things module is served under the origin, and the kind of content it is answered with
+const THINGS_PATH = 'film/things.js';
+const SCRIPT_TYPE = 'text/javascript; charset=utf-8';
 // What the room draws with, and what the person is told where the browser lacks it
 const NO_WEBGL =
 	'the room draws in WebGL, which the browser gives no page here: in software it draws it through SwiftShader where ' +
@@ -81,16 +96,47 @@ const NO_ELEMENT_DRAWING =
 type RoomLack = 'none' | 'webgl' | 'element drawing';
 
 /**
- * The stage opened as a room on livereel's own origin, its script loaded; refused where the browser lacks what the
- * room draws with.
+ * The stage opened as a room on livereel's own origin, its script loaded, and the film's things module where it names
+ * one, served from the disk under the origin as it stands; refused where the browser lacks what the room draws with.
  */
-export async function roomOpened(page: Page): Promise<void> {
-	const files = new Map([...(await stageFiles()), ...(await threeFiles())]);
+export async function roomOpened(page: Page, things: string | null): Promise<void> {
+	const films = things === null ? [] : [[THINGS_PATH, await thingsFileOf(things)] as const];
+	const files = new Map([...(await stageFiles()), ...(await threeFiles()), ...films]);
 	await page.route(`${ROOM_ORIGIN}${EVERY_PATH}`, (route) => answered(route, files));
 	await page.goto(new URL(STAGE_PAGE, ROOM_ORIGIN).href);
 	refusedWhereLacking(await page.evaluate(roomLackOf));
 	await page.addScriptTag({ type: IMPORT_MAP, content: JSON.stringify({ imports: { three: THREE_MODULE } }) });
 	await page.addScriptTag({ type: MODULE, url: new URL(ROOM_SCRIPT, ROOM_ORIGIN).href });
+}
+
+/**
+ * The room laid out, and the film's things module loaded where it names one, served as the room opened: the names it
+ * builds a thing by, none where it names none; refused, as the film's, where it fails to load or exports no builders.
+ */
+async function roomLaidOut(page: Page, layout: Layout, things: string | null): Promise<readonly string[]> {
+	const address = things === null ? null : new URL(THINGS_PATH, ROOM_ORIGIN).href;
+	const loaded = await page.evaluate(roomSetUp, { layout, address });
+	switch (loaded.kind) {
+		case 'built':
+			return loaded.names;
+		case 'refused':
+			throw new FilmError(loaded.said);
+	}
+}
+
+/** The film's things module read from the disk; refused, as the film's, where there is none at its path. */
+async function thingsFileOf(things: string): Promise<ServedFile> {
+	try {
+		return { type: SCRIPT_TYPE, body: await readFile(things) };
+	} catch (fault) {
+		throw new FilmError(`the film's things module ${things} could not be read: ${String(fault)}`);
+	}
+}
+
+/** A frame drawn in the room; refused, as the film's, where the film's things module fails building or setting one. */
+async function drawnInTheRoom(page: Page, exposures: readonly DrawnScene[]): Promise<void> {
+	const refused = await page.evaluate(composedInTheRoom, exposures);
+	if (refused !== null) throw new FilmError(refused);
 }
 
 /** three's module files, by their path under the room's origin. */
@@ -130,13 +176,13 @@ function roomLackOf(): RoomLack {
 	return 'texElementImage2D' in context ? 'none' : 'element drawing';
 }
 
-/** The room's canvas laid over the stage, its surfaces laid in it. */
-function roomSetUp(layout: Layout): void {
-	window.room.setup(layout);
+/** The room's canvas laid over the stage, its surfaces laid in it, and the film's things module loaded where named. */
+function roomSetUp(laying: { readonly layout: Layout; readonly address: string | null }): Promise<ThingsLoaded> {
+	return window.room.setup(laying.layout, laying.address);
 }
 
-/** One frame drawn by the stage's markup, then composed by the room from its surfaces. */
-function composedInTheRoom(exposures: readonly DrawnScene[]): Promise<void> {
+/** One frame drawn by the stage's markup, then composed by the room from its surfaces and the film's things. */
+function composedInTheRoom(exposures: readonly DrawnScene[]): Promise<string | null> {
 	window.stage.apply(exposures);
 	return window.room.compose(exposures);
 }

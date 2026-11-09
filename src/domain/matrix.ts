@@ -243,6 +243,11 @@ export function scaling(factor: number): Matrix {
 	return { ...IDENTITY, m11: factor, m22: factor };
 }
 
+/** A point carried from the middle so many times as far along each way, as CSS's `scale3d()`; less than none turns it. */
+export function scalingAlong(across: number, down: number, out: number): Matrix {
+	return { ...IDENTITY, m11: across, m22: down, m33: out };
+}
+
 /** Matrices one after another, as a CSS transform list reads them: the last carries a point first. */
 export function chained(matrices: readonly Matrix[]): Matrix {
 	return matrices.reduce(product, IDENTITY);

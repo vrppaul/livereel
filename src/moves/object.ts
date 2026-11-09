@@ -1,8 +1,9 @@
 /**
  * The moves of an object (`src/props/object.ts`), alike whatever it shows, written once for every kind that makes
  * one — a title's words, code, the agent's terminal, the ending card, a caption, keys, a piece of the page, an outline,
- * a lens: coming up in its box, in its own way or one of livereel's (`src/props/way.ts`), or sliding in whole from past
- * a side of the frame, pushing the object of its name standing there off past the side across; carried to another
+ * a lens, a thing of the film's own: coming up in its box, in its own way or one of livereel's (`src/props/way.ts`), or
+ * sliding in whole from past a side of the frame, pushing the object of its name standing there off past the side
+ * across; carried to another
  * place, growing and coming toward the eye on the way, to a box read off the page, or onto a block of the page to lie
  * there; leant and rolled; set apart from what lies under it, ringed and glowing in the accent or a colour of the
  * film's, casting a shadow, blurred, melted toward a side, grown or brought toward the eye where it stands
@@ -43,9 +44,12 @@ import {
 	type Box,
 	type FrameSide,
 	type Size,
+	boxCentredOn,
 	boxToward,
 	frameScaleOf,
-	measuredFrom
+	measuredFrom,
+	middleX,
+	middleY
 } from '../domain/geometry.ts';
 import {
 	A_COLOUR,
@@ -116,6 +120,7 @@ import {
 	type ObjectName,
 	framesPastTheEdge
 } from '../props/object.ts';
+import type { Reach } from '../props/thing.ts';
 import { A_WAY, OWN_WAY, type Way, type WayName, comesFromAnEdge, wayNamed } from '../props/way.ts';
 import { type Scene, cameraOf, withEye, withLeaving, withObject, withProp } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
@@ -123,7 +128,8 @@ import { cameraFrontOn } from './source.ts';
 import { type ThroughScript, throughFormOf, throughWritten } from './through.ts';
 
 /** A kind of object, as a film calls its moves, and the name of the object they take where the film names none. */
-export type ObjectKind = 'title' | 'code' | 'terminal' | 'ending' | 'caption' | 'keys' | 'piece' | 'outline' | 'lens';
+export type ObjectKind =
+	'title' | 'code' | 'terminal' | 'ending' | 'caption' | 'keys' | 'piece' | 'outline' | 'lens' | 'thing';
 
 /** The object a move takes: the one a film names `as`, or its kind's own. */
 export interface NamedScript {
@@ -302,8 +308,9 @@ const BACK = [...CARRIED, ...LEANT] as const satisfies readonly (keyof FrameObje
 // A box measured in a group stands as large as on the frame, as the group it is measured for stands as it was placed
 const AS_LARGE = 1;
 // The curve what an object of each kind shows comes up on in its own way where the film names none: words and lines of
-// code, one after another, at an even pace; the terminal, the card, keys, a piece of the page, an outline and a lens,
-// fading up whole, on their step's. One that comes up in a way of livereel's comes on its step's
+// code, one after another, at an even pace; the terminal, the card, keys, a piece of the page, an outline, a lens and a
+// thing, whose module reads how far it has come, fading up whole, on their step's. One that comes up in a way of
+// livereel's comes on its step's
 const COMES_UP_ON: { readonly [Kind in ObjectKind]: Ease | null } = {
 	title: linear,
 	code: linear,
@@ -313,7 +320,8 @@ const COMES_UP_ON: { readonly [Kind in ObjectKind]: Ease | null } = {
 	keys: null,
 	piece: null,
 	outline: null,
-	lens: null
+	lens: null,
+	thing: null
 };
 // What stands over the whole frame on the frame's own terms, never carried or leant: the card, on the frame's own
 // ground painted where its box stands; a caption, darkening the frame's edge; keys at the frame's foot, rising clear of
@@ -711,10 +719,10 @@ export function contentOf<Kind extends Content['kind']>(
 
 /**
  * Where an object stands in a place: words and code read it as words do, the terminal and a piece of the page as the
- * window does.
+ * window does; a thing as far as it reaches, about the middle of where the window would stand.
  */
-export function placedFor(kind: MovableContent['kind'], format: Format, place: Place): Box {
-	switch (kind) {
+export function placedFor(content: MovableContent, format: Format, place: Place): Box {
+	switch (content.kind) {
 		case 'words':
 		case 'code':
 			return wordsPlaced(format, place);
@@ -723,7 +731,16 @@ export function placedFor(kind: MovableContent['kind'], format: Format, place: P
 		case 'outline':
 		case 'lens':
 			return windowPlaced(format, place);
+		case 'thing':
+			return reachedFrom(windowPlaced(format, place), content.reach, format.frame);
 	}
+}
+
+/** The box a thing's reach takes about the middle of a box, on a frame of this size. */
+function reachedFrom(placed: Box, reach: Reach, frame: Size): Box {
+	const scale = frameScaleOf(frame);
+	const middle = { left: middleX(placed), top: middleY(placed) };
+	return boxCentredOn(middle, { width: reach.width * scale, height: reach.height * scale });
 }
 
 /** What an object shows, written into it as it stands at each progress. */
@@ -850,7 +867,7 @@ function carried(beginning: Beginning, name: ObjectName, carrying: Carrying, mov
  * begins.
  */
 function placedBoxOf(beginning: Beginning, object: MovableObject, place: Place, name: ObjectName, move: string): Box {
-	const placed = placedFor(object.content.kind, seenFrom(beginning, object.inside).format, place);
+	const placed = placedFor(object.content, seenFrom(beginning, object.inside).format, place);
 	return measuredIn(beginning, object.inside, placed, name, move);
 }
 
@@ -1084,6 +1101,7 @@ function settingOff(content: MovableContent, box: Box, end: Box): Box {
 		case 'piece':
 		case 'outline':
 		case 'lens':
+		case 'thing':
 			return box;
 	}
 }

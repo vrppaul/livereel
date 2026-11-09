@@ -242,6 +242,7 @@ class TimedOpened implements Opened {
 	readonly ownPages: ReadonlyMap<string, MeasuredPage>;
 	readonly act: ActContext;
 	readonly time: PageTime;
+	readonly thingsBuilt: readonly string[];
 
 	constructor(opened: Opened, timings: Timings) {
 		this.opened = opened;
@@ -251,6 +252,7 @@ class TimedOpened implements Opened {
 		this.ownPages = opened.ownPages;
 		this.act = opened.act;
 		this.time = new TimedPageTime(opened.time, timings);
+		this.thingsBuilt = opened.thingsBuilt;
 	}
 
 	[Symbol.asyncDispose](): Promise<void> {

@@ -40,6 +40,7 @@
  * launched, opened, laid out and drawn as `room.ts` has it, which the person who asks for software is told costs a frame
  * about twenty times as long there. A framed page is drawn flat.
  */
+import { resolve } from 'node:path';
 import { type Browser as Playwright, type Frame, type Page, chromium } from 'playwright-core';
 import { ZOOM_AT_MOST } from '../../domain/camera.ts';
 import { FilmError, SetupError } from '../../domain/errors.ts';
@@ -81,6 +82,7 @@ import { DRAWN_AS_A_ROOM } from './room.ts';
 import { AppOpenedForSet, NoSetShown, SET_PAGE, setShownIn } from './set.ts';
 import {
 	DRAWN_FLAT,
+	NO_THINGS,
 	ONE_AT_A_TIME,
 	type Opening,
 	PlaywrightFramedStage,
@@ -177,7 +179,21 @@ interface Picturing {
 	readonly exposuresAtOnce: number;
 	readonly bounds: readonly PictureBound[];
 	readonly drawing: StageDrawing;
+	/** The film's things module, where it names one: its file on the disk. */
+	readonly things: string | null;
 }
+
+/**
+ * What the stage lays before a take: the film's own pages, by their keys, and the names the film's things module
+ * builds a thing by.
+ */
+interface LaidOnTheStage {
+	readonly ownPages: ReadonlyMap<string, MeasuredPage>;
+	readonly thingsBuilt: readonly string[];
+}
+
+// A page framed live is drawn flat, which loads no things module
+const NO_THINGS_MODULE = null;
 
 /** The page a take films in a tab of its own, shown on the stage as a picture: static and live, or the film's set. */
 type Pictured = Extract<Filmed, { kind: 'static' | 'set' }>;
@@ -288,10 +304,13 @@ function copiesMemoryOf(exposuresAtOnce: number, frame: Size, sharpness: number)
 export class Chromium implements Browser, DrawnBrowser, SetBrowser {
 	readonly renderer: Renderer;
 	readonly warn: Warn;
+	/** The folder of the film's file, which the paths a film names are read from. */
+	readonly filmFolder: string;
 
-	constructor(renderer: Renderer, warn: Warn) {
+	constructor(renderer: Renderer, warn: Warn, filmFolder: string) {
 		this.renderer = renderer;
 		this.warn = warn;
+		this.filmFolder = filmFolder;
 	}
 
 	/** A drawn film's page opened in the shell launched to draw where the renderer draws; no stage. */
@@ -350,7 +369,8 @@ export class Chromium implements Browser, DrawnBrowser, SetBrowser {
 				case 'static':
 				case 'set': {
 					const bounds = boundsOf(picturePixels, await cardSideIn(onTheCard, stage, this.warn));
-					const picturing = { pixelsAtZoomOne, exposuresAtOnce, bounds, drawing };
+					const things = setting.things === null ? null : resolve(this.filmFolder, setting.things);
+					const picturing = { pixelsAtZoomOne, exposuresAtOnce, bounds, drawing, things };
 					return await pictured(browser, stage, setting, filmed, picturing, this.warn);
 				}
 				case 'dynamic':
@@ -374,20 +394,16 @@ class OpenedChromium implements Opened {
 	readonly ownPages: ReadonlyMap<string, MeasuredPage>;
 	readonly act: ActContext;
 	readonly time: PageTime;
+	readonly thingsBuilt: readonly string[];
 
-	constructor(
-		browser: Playwright,
-		stage: Stage,
-		filmed: FilmedShown,
-		time: PageTime,
-		ownPages: ReadonlyMap<string, MeasuredPage>
-	) {
+	constructor(browser: Playwright, stage: Stage, filmed: FilmedShown, time: PageTime, laid: LaidOnTheStage) {
 		this.browser = browser;
 		this.stage = stage;
 		this.page = filmed.page;
-		this.ownPages = ownPages;
+		this.ownPages = laid.ownPages;
 		this.act = filmed.act;
 		this.time = time;
+		this.thingsBuilt = laid.thingsBuilt;
 	}
 
 	[Symbol.asyncDispose](): Promise<void> {
@@ -421,8 +437,8 @@ async function pictured(
 	warn: Warn
 ): Promise<Opened> {
 	const { pixelsAtZoomOne, exposuresAtOnce, bounds, drawing } = picturing;
-	await drawing.opened(stage);
-	await stageSetUp(stage, setting, drawing, exposuresAtOnce);
+	await drawing.opened(stage, picturing.things);
+	const thingsBuilt = await stageSetUp(stage, setting, drawing, exposuresAtOnce, picturing.things);
 	const tab = await browser.newPage({
 		viewport: setting.format.screen,
 		deviceScaleFactor: pixelsAtZoomOne * ZOOM_AT_MOST,
@@ -438,7 +454,7 @@ async function pictured(
 	const filmedTab = { tab, session, screen: setting.format.screen, pixelsAtZoomOne, bounds, changes };
 	const picturedStage = new PlaywrightPicturedStage(stage, filmedTab, watch, exposuresAtOnce, drawing, warn);
 	const ownPages = ownPagesOn(stage, setting.ownPages);
-	return new OpenedChromium(browser, picturedStage, shown, time, ownPages);
+	return new OpenedChromium(browser, picturedStage, shown, time, { ownPages, thingsBuilt });
 }
 
 /** The address the filmed page's tab opens: the live page's, or the set's page. */
@@ -489,7 +505,8 @@ async function framedLive(
 	const absence = await watch.absence(filmed);
 	if (absence !== undefined) throw absence;
 	const framedStage = new PlaywrightFramedStage(stage, setting.format, watch, filmed);
-	return new OpenedChromium(browser, framedStage, liveIn(filmed, stage), time, ownPagesOn(stage, setting.ownPages));
+	const laid = { ownPages: ownPagesOn(stage, setting.ownPages), thingsBuilt: NO_THINGS };
+	return new OpenedChromium(browser, framedStage, liveIn(filmed, stage), time, laid);
 }
 
 /**
@@ -626,13 +643,20 @@ async function forcedOn(page: Page, blurred: readonly string[], stageAtTheTop: b
  * on over the stage's own fallbacks to the browser's font; the ground's layers CSS reads as none, which would draw no
  * layers at all, or with a picture in them.
  */
-async function stageSetUp(page: Page, setting: Setting, drawing: StageDrawing, exposuresAtOnce: number): Promise<void> {
+async function stageSetUp(
+	page: Page,
+	setting: Setting,
+	drawing: StageDrawing,
+	exposuresAtOnce: number,
+	things: string | null
+): Promise<readonly string[]> {
 	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
 	const layout = layoutOf(setting.format, exposuresAtOnce);
 	await page.evaluate(setUpStage, layout);
-	await drawing.laidOut(page, layout);
+	const thingsBuilt = await drawing.laidOut(page, layout, things);
 	refusedWhereMoving(setting.ownPages, await page.evaluate(ownPagesLaid, setting.ownPages));
 	for (const named of setting.css) await refusedWhereUnread(page, named);
+	return thingsBuilt;
 }
 
 /**
@@ -649,7 +673,7 @@ function refusedWhereMoving(pages: readonly OwnPage[], moving: readonly string[]
 
 /** The stage set up and the page opened in its frame, as far as it loads: its frame; a framed page is drawn flat. */
 async function framed(page: Page, setting: Setting, opening: Opening): Promise<Frame> {
-	await stageSetUp(page, setting, DRAWN_FLAT, ONE_AT_A_TIME);
+	await stageSetUp(page, setting, DRAWN_FLAT, ONE_AT_A_TIME, NO_THINGS_MODULE);
 	const [filmed] = await Promise.all([
 		page.waitForEvent(NAVIGATED, { predicate: isInTheStagesFrame }),
 		page.evaluate(openPage, opening)

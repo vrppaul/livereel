@@ -128,10 +128,11 @@ const NO_NESTED_HELPERS = {
 		':function :matches(ArrowFunctionExpression[expression=false], FunctionExpression, FunctionDeclaration, ClassDeclaration, ClassExpression)',
 	message: 'A helper with logic is a function of the module, not one inside another.'
 };
-// A module is loaded where it is named, so the layers above see every import: only a film file is loaded by its path
+// A module is loaded where it is named, so the layers above see every import: only a film's own files are loaded by
+// their path, its film file by the command line and its things module by the room
 const NO_LOADING_BY_PATH = {
 	selector: 'ImportExpression',
-	message: 'A module is imported where it is named; only the command line loads a film by its path.'
+	message: "A module is imported where it is named; only a film's own files are loaded by their path."
 };
 // The film's own clock is its frames: what is worked out of a film reads no wall clock and waits on no timer
 const WALL_CLOCK = ['Date', 'performance', 'setTimeout', 'setInterval', 'setImmediate', 'requestAnimationFrame'].map(
@@ -250,7 +251,7 @@ export default tseslint.config(
 		}
 	},
 	{
-		files: ['src/cli/film-file.ts'],
+		files: ['src/cli/film-file.ts', 'stage/things.js'],
 		rules: { 'no-restricted-syntax': ['error', NO_NESTED_HELPERS] }
 	},
 	{

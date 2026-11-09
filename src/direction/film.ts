@@ -13,9 +13,11 @@ import { FORMAT_FORM, type Format } from '../domain/format.ts';
 import {
 	A_COUNT,
 	A_FUNCTION_SAID,
+	A_PATH,
 	type Form,
 	OfForm,
 	OneOf,
+	Plain,
 	SELECTORS,
 	aFunction,
 	anObject,
@@ -129,6 +131,11 @@ export interface Script<Name extends string> extends SiteScript {
 	 * page.
 	 */
 	readonly drawing?: Drawing;
+	/**
+	 * The film's own things, a JavaScript module by its path from the film's file, whose default export builds each
+	 * thing `thing.show` names in three.js and sets it from its numbers (`src/props/thing.ts`): drawn in a room alone.
+	 */
+	readonly things?: string;
 }
 
 /**
@@ -148,6 +155,8 @@ export interface FilmInFormat {
 	readonly blurred: readonly string[];
 	readonly page: PageKind;
 	readonly drawing: Drawing;
+	/** The film's things module, its path from the film's file; none where the film builds no thing. */
+	readonly things: string | null;
 	readonly sound: FilmSound;
 	readonly motionBlur: MotionBlur | null;
 	readonly framesPerSecond: number;
@@ -197,6 +206,13 @@ const A_DRAWING = new OneOf(
 	DRAWINGS,
 	'"flat", drawn by the browser as it draws a page, or "room", the window drawn in WebGL as a plane where the eye sees it'
 );
+// A film's things stand in the world, which the room draws in WebGL; flat draws CSS, and no three.js
+const THINGS_IN_A_ROOM =
+	'the film names its things, which stand in the world the room draws in WebGL: name drawing: "room", or leave ' +
+	'the things out of a flat film';
+// A film's things are a module the browser loads as it is written: JavaScript, not TypeScript
+const A_SCRIPT_PATH = new Plain(isScriptPath, "a JavaScript module's path, from the film's file, ending in .js");
+const SCRIPT_EXTENSION = '.js';
 // The room draws the page from its picture: a dynamic page stands live in the stage's frame, and the browser hands
 // WebGL a frame of another site blank
 const ROOM_FOR_A_STATIC_PAGE =
@@ -229,7 +245,8 @@ const FILM_FORM: Form<AnyScript> = {
 	colourScheme: A_COLOUR_SCHEME,
 	blurred: SELECTORS,
 	page: A_PAGE_KIND,
-	drawing: A_DRAWING
+	drawing: A_DRAWING,
+	things: A_SCRIPT_PATH
 };
 
 export class ScriptedFilm<Name extends string> implements Film {
@@ -243,6 +260,7 @@ export class ScriptedFilm<Name extends string> implements Film {
 	readonly blurred: readonly string[];
 	readonly page: PageKind;
 	readonly drawing: Drawing;
+	readonly things: string | null;
 	readonly framesPerSecond: number;
 	readonly focalLength: number;
 	readonly site: Site;
@@ -266,6 +284,7 @@ export class ScriptedFilm<Name extends string> implements Film {
 		this.stage = staging.stage;
 		this.page = staging.page;
 		this.drawing = staging.drawing;
+		this.things = staging.things;
 		this.colourScheme = script.colourScheme ?? COLOUR_SCHEME_WHERE_NONE_IS_NAMED;
 		this.blurred = script.blurred ?? NOTHING_BLURRED;
 		this.framesPerSecond = script.framesPerSecond ?? FRAMES_PER_SECOND_WHERE_NONE_IS_NAMED;
@@ -286,6 +305,7 @@ export class ScriptedFilm<Name extends string> implements Film {
 			blurred: this.blurred,
 			page: this.page,
 			drawing: this.drawing,
+			things: this.things,
 			sound: this.sound,
 			motionBlur: this.motionBlur,
 			framesPerSecond: this.framesPerSecond,
@@ -308,6 +328,7 @@ interface Staging {
 	readonly stage: StagePlace;
 	readonly page: PageKind;
 	readonly drawing: Drawing;
+	readonly things: string | null;
 }
 
 /**
@@ -316,14 +337,26 @@ interface Staging {
  * stands live in a frame the room cannot draw, or a set for a dynamic page, as a set's pictures change only by the
  * film's acts.
  */
-function stagingOf(script: Pick<AnyScript, 'stage' | 'page' | 'drawing' | 'set'>): Staging {
+function stagingOf(script: Pick<AnyScript, 'stage' | 'page' | 'drawing' | 'set' | 'things'>): Staging {
 	const stage = script.stage ?? STAGE_WHERE_NONE_IS_NAMED;
 	const page = script.page ?? PAGE_WHERE_NONE_IS_NAMED;
 	const drawing = script.drawing ?? DRAWING_WHERE_NONE_IS_NAMED;
 	if (stage === 'inside' && page === 'static') throw new FilmError(INSIDE_FOR_A_DYNAMIC_PAGE);
 	if (drawing === 'room' && page === 'dynamic') throw new FilmError(ROOM_FOR_A_STATIC_PAGE);
 	if (script.set !== undefined && page === 'dynamic') throw new FilmError(SET_FOR_A_STATIC_PAGE);
-	return { stage, page, drawing };
+	return { stage, page, drawing, things: thingsDrawnIn(drawing, script.things) };
+}
+
+/** The film's things module, where it names one; refused in a film not drawn as a room, which alone draws things. */
+function thingsDrawnIn(drawing: Drawing, things: string | undefined): string | null {
+	if (things === undefined) return null;
+	if (drawing !== 'room') throw new FilmError(THINGS_IN_A_ROOM);
+	return things;
+}
+
+/** Whether a film names a module the browser loads as it is written: a path ending in `.js`. */
+function isScriptPath(written: unknown): written is string {
+	return A_PATH.is(written) && written.endsWith(SCRIPT_EXTENSION);
 }
 
 /**

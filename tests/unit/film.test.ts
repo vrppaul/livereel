@@ -52,12 +52,12 @@ function stepsGiven(steps: unknown) {
 test('a film in no form of one is refused as it is defined, where it stands: its names, its formats and where their captions stand, its functions', () => {
 	expect(() => defineFilm(null as never)).toThrow(
 		new FilmError(
-			'the film is null: it is an object of formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, framesPerSecond, eye, colourScheme, blurred, page, drawing'
+			'the film is null: it is an object of formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, framesPerSecond, eye, colourScheme, blurred, page, drawing, things'
 		)
 	);
 	expect(() => filmWritten({ motionblur: {} })).toThrow(
 		new FilmError(
-			'the film names motionblur: it names formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, framesPerSecond, eye, colourScheme, blurred, page, drawing, or fewer'
+			'the film names motionblur: it names formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, framesPerSecond, eye, colourScheme, blurred, page, drawing, things, or fewer'
 		)
 	);
 	expect(() => filmWritten({ colourScheme: 'night' })).toThrow(
@@ -315,6 +315,21 @@ test('a film is drawn as it names, flat where it names none; a drawing livereel 
 	expect(() => filmWritten({ drawing: 'room', page: 'dynamic' })).toThrow(
 		new FilmError(
 			'the film\'s drawing is "room", which draws the page from its picture: a dynamic page stands live in a frame of its own site, which WebGL is given blank, so leave the page out for a static one, or the drawing for a flat one'
+		)
+	);
+});
+
+test("a film's things module is its path, none where it names none; refused in a film not drawn as a room, and where it names no JavaScript", () => {
+	const films = [filmWritten({}), filmWritten({ drawing: 'room', things: './things.js' })];
+	expect(films.map((film) => film.formats.get('small')!.things)).toEqual([null, './things.js']);
+	expect(() => filmWritten({ things: './things.js' })).toThrow(
+		new FilmError(
+			'the film names its things, which stand in the world the room draws in WebGL: name drawing: "room", or leave the things out of a flat film'
+		)
+	);
+	expect(() => filmWritten({ drawing: 'room', things: './things.ts' })).toThrow(
+		new FilmError(
+			"the film's things is \"./things.ts\": it is a JavaScript module's path, from the film's file, ending in .js"
 		)
 	);
 });

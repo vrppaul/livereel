@@ -13,6 +13,9 @@ import type { Footage } from '../../src/studio/ports.ts';
 /** Where a film the smoke tests shoot on its live page would keep a set, which nothing shoots or reads. */
 export const NO_SET = new SetFolderOnDisk(join(import.meta.dirname, 'unshot.set'));
 
+/** The folder the smoke tests' films stand in, which the paths they name are read from. */
+export const FILMS_FOLDER = import.meta.dirname;
+
 /** What the app answers at each of its paths. */
 export type Routes = Readonly<Record<string, (request: IncomingMessage, response: ServerResponse) => void>>;
 

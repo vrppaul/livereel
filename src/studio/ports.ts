@@ -113,7 +113,8 @@ export interface Track {
 
 /**
  * A browser with the stage and the filmed page open in it, for one take, the page's time standing; and each page of
- * the film's own the stage laid, by its key, which a move measures blocks on while the screen shows it.
+ * the film's own the stage laid, by its key, which a move measures blocks on while the screen shows it; and the names
+ * the film's things module builds a thing by, none where the stage draws no things.
  */
 export interface Opened extends AsyncDisposable {
 	readonly stage: Stage;
@@ -121,18 +122,19 @@ export interface Opened extends AsyncDisposable {
 	readonly ownPages: ReadonlyMap<string, MeasuredPage>;
 	readonly act: ActContext;
 	readonly time: PageTime;
+	readonly thingsBuilt: readonly string[];
 }
 
 /**
  * What the stage and the page are set as for a take: the film's format, where the stage stands, the colour scheme the
  * page is asked for, the blocks it blurs, all the film writes in CSS, in its theme or its looks' moves, which the
- * browser reads before anything is shot, how the stage draws a frame, flat or as a room, how a fast move is blurred in
- * the take, which says how many exposures a frame is made of at most, and the pages of the film's own its moves show,
- * which the stage lays before anything is shot.
+ * browser reads before anything is shot, how the stage draws a frame, flat or as a room, and the film's things module
+ * the room loads, how a fast move is blurred in the take, which says how many exposures a frame is made of at most, and
+ * the pages of the film's own its moves show, which the stage lays before anything is shot.
  */
 export type Setting = Pick<
 	FilmInFormat,
-	'format' | 'stage' | 'colourScheme' | 'blurred' | 'css' | 'drawing' | 'motionBlur'
+	'format' | 'stage' | 'colourScheme' | 'blurred' | 'css' | 'drawing' | 'things' | 'motionBlur'
 > & { readonly ownPages: readonly OwnPage[] };
 
 /**

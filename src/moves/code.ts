@@ -108,7 +108,7 @@ export function show(text: string, script: CodeScript): Move {
 	};
 	return objectShow(CODE, 'code.show', script, script.at, (beginning) => ({
 		content: code,
-		box: placedFor(code.kind, beginning.format, script.at)
+		box: placedFor(code, beginning.format, script.at)
 	}));
 }
 

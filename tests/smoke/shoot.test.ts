@@ -13,11 +13,11 @@ import { blended } from '../../src/adapters/video/exposures.ts';
 import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
 import { ZOOM_AT_MOST } from '../../src/domain/camera.ts';
-import { FilmError, SetupError } from '../../src/domain/errors.ts';
+import { FilmError, SetupError, TakeError } from '../../src/domain/errors.ts';
 import type { Size } from '../../src/domain/geometry.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
 import type { Exposures, Filmed, Footage, Opened, PicturedStage } from '../../src/studio/ports.ts';
-import { NO_SET } from './app.ts';
+import { FILMS_FOLDER, NO_SET } from './app.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
 import {
 	type ActContext,
@@ -35,6 +35,7 @@ import {
 	piece,
 	play,
 	screen,
+	thing,
 	typing,
 	window
 } from 'livereel';
@@ -51,6 +52,19 @@ const OWN_PAGE = { html: '<!doctype html><body style="margin: 0"><h2 id="ours" s
 const ONLY_OURS = '#ours';
 // The window leant back and swung, as the room places it by the engine's matrix
 const LEANT = { tilt: 12, turn: -7 };
+// A card of the film's things module, as wide as half a frame 1080 high and a third as tall, about the frame's middle
+const A_CARD = { at: 'whole', reach: { width: 540, height: 360 }, values: { turn: 0 } } as const;
+
+/** What a film that shows a thing its module builds none of is told, as its first step begins. */
+function unbuiltRefusalOf(made: string): TakeError {
+	return new TakeError(
+		new FilmError(
+			`thing.show shows ${made}, which the film's things module builds none of: draw the film as a room, name its things module, and export a builder of ${made} from it`
+		),
+		0,
+		1
+	);
+}
 // The films here name pages on the disk and no command, so it starts nothing
 const SERVER = new CommandServer(import.meta.dirname, ANSWERED_WITHIN_MILLISECONDS);
 
@@ -92,6 +106,7 @@ function filmWritten(
 		theme?: Theme;
 		page?: 'dynamic';
 		drawing?: 'room';
+		things?: string;
 	}
 ) {
 	return defineFilm({
@@ -112,7 +127,7 @@ function shootingInto(footage: Footage, renderer: Renderer): Shooting {
 	return {
 		server: SERVER,
 		set: NO_SET,
-		browser: new Chromium(renderer, WARNED_TO_NOBODY),
+		browser: new Chromium(renderer, WARNED_TO_NOBODY, FILMS_FOLDER),
 		footage,
 		track: SILENT,
 		quality: { sharpness: 1, blurred: false }
@@ -166,12 +181,49 @@ test("a film drawn as a room is shot, every frame kept, in software or on the gr
 	]);
 });
 
+test("a film's things are built by its module and drawn in the room, every frame kept, in software or on the graphics card, as they come up, turn and move", async () => {
+	const inSoftware = new EveryFrameCounted();
+	const onTheCard = new EveryFrameCounted();
+	const steps = [
+		play({ seconds: 0.1, moves: [thing.show('card', { ...A_CARD, inside: 'world' })] }),
+		play({ seconds: 0.1, moves: [thing.set({ turn: 1 }), thing.to('whole', { depth: 400 })] })
+	];
+	const film = filmWritten(steps, { drawing: 'room', things: './things.js' });
+	await shoot(film, shootingInto(inSoftware, 'software'));
+	await shoot(film, blurredShootingInto(onTheCard, 'gpu'));
+	expect([inSoftware.kept, onTheCard.kept]).toEqual([
+		[0, 1, 2, 3, 4, 5],
+		[0, 1, 2, 3, 4, 5]
+	]);
+});
+
+test("a thing is refused as it begins where flat draws the film, which loads no things module, and where the film's module builds none of it", async () => {
+	const shown = [play({ seconds: 0.1, moves: [thing.show('card', A_CARD)] })];
+	const unbuilt = [play({ seconds: 0.1, moves: [thing.show('sheen', A_CARD)] })];
+	await expect(shoot(filmWritten(shown, {}), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
+		unbuiltRefusalOf('card')
+	);
+	const room = filmWritten(unbuilt, { drawing: 'room', things: './things.js' });
+	await expect(shoot(room, shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
+		unbuiltRefusalOf('sheen')
+	);
+});
+
+test("a film's things module that exports no builders is refused as the stage opens", async () => {
+	const film = filmWritten([hold({ seconds: 0.1 })], { drawing: 'room', things: './no-things.js' });
+	await expect(shoot(film, shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
+		new FilmError(
+			"the film's things module exports no builders by default: export default { card: { build(three) {...}, set(built, values, shown, three) {...} } }"
+		)
+	);
+});
+
 test('a film drawn as a room in software is shot with a word that the graphics card draws it faster', async () => {
 	const warned: string[] = [];
 	const film = filmWritten([hold({ seconds: 0.1 })], { drawing: 'room' });
 	await shoot(film, {
 		...shootingInto(new EveryFrameCounted(), 'software'),
-		browser: new Chromium('software', (said) => warned.push(said))
+		browser: new Chromium('software', (said) => warned.push(said), FILMS_FOLDER)
 	});
 	expect(warned).toEqual([
 		'the room is drawn in software, where a frame takes about twenty times as long to draw as on a graphics card: --renderer gpu draws it on the card, where the machine has one'
@@ -181,7 +233,7 @@ test('a film drawn as a room in software is shot with a word that the graphics c
 test("the room is refused as the machine's to put right where the browser draws no element into WebGL", async () => {
 	const withoutTheRoomsFlag = await chromium.launch();
 	try {
-		const opened = roomOpened(await withoutTheRoomsFlag.newPage());
+		const opened = roomOpened(await withoutTheRoomsFlag.newPage(), null);
 		await expect(opened).rejects.toThrow(
 			new SetupError(
 				"the room draws the stage through Chrome's HTML-in-Canvas, which this browser lacks: the browser livereel pins has it, installed by `npx livereel setup`"
@@ -552,7 +604,7 @@ test('a page whose own timer throws is filmed to its end, the person warned once
 	const steps = [thrownEveryTenth, hold({ seconds: 0.5 })];
 	const shooting = {
 		...shootingInto(new EveryFrameCounted(), 'software'),
-		browser: new Chromium('software', (line: string) => warned.push(line))
+		browser: new Chromium('software', (line: string) => warned.push(line), FILMS_FOLDER)
 	};
 	const shot = await shoot(timedFilmOf(steps, {}), shooting);
 	expect([shot.frames, warned.map((line) => line.includes('a timer of the page'))]).toEqual([15, [true]]);
@@ -573,7 +625,7 @@ test('an act waiting on what the page does after a delay of its own is answered,
 
 test('a page in a tab of its own is heard to change of itself, once', async () => {
 	const setting = { ...timedFilmOf([], {}), ownPages: NO_OWN_PAGES };
-	await using opened = await new Chromium('software', WARNED_TO_NOBODY).open(setting, liveAt(TIMED), 1);
+	await using opened = await new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER).open(setting, liveAt(TIMED), 1);
 	const stage = opened.stage as PicturedStage;
 	const page = opened.act.page;
 	// What the page did as it opened and as it said it was ready, 0.3 s on, heard and forgotten; then a change it makes
@@ -633,7 +685,7 @@ const TALL_FILM = defineFilm({
 
 test("a picture of a screen taller at livereel's closest than a JPEG holds is taken as close as one holds it, the person told once that it is drawn softer", async () => {
 	const warned: string[] = [];
-	const browser = new Chromium('software', (said) => warned.push(said));
+	const browser = new Chromium('software', (said) => warned.push(said), FILMS_FOLDER);
 	await using opened = await browser.open({ ...TALL_FILM, ownPages: NO_OWN_PAGES }, liveAt(PAGE), 1);
 	const stage = opened.stage as PlaywrightPicturedStage;
 	await stage.retakePage(ZOOM_AT_MOST);
@@ -648,7 +700,11 @@ test("a picture of a screen taller at livereel's closest than a JPEG holds is ta
 
 /** The dense page in a tab of its own, the stage showing its pictures at the draft's sharpness. */
 function denseOpened(): Promise<Opened> {
-	return new Chromium('software', WARNED_TO_NOBODY).open({ ...DENSE_FILM, ownPages: NO_OWN_PAGES }, liveAt(DENSE), 1);
+	return new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER).open(
+		{ ...DENSE_FILM, ownPages: NO_OWN_PAGES },
+		liveAt(DENSE),
+		1
+	);
 }
 
 /** A static page on the disk, filmed live. */

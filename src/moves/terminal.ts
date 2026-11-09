@@ -84,7 +84,7 @@ export function open(title: string, script: TerminalScript = {}): Move {
 	const named = script.at ?? null;
 	return objectShow(TERMINAL, 'terminal.open', script, named, (beginning) => ({
 		content: terminal,
-		box: placedFor(terminal.kind, beginning.format, named ?? MOST_OF_THE_FRAME)
+		box: placedFor(terminal, beginning.format, named ?? MOST_OF_THE_FRAME)
 	}));
 }
 

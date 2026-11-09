@@ -209,6 +209,8 @@ export interface Beginning {
 	 * a piece or a sweep from it by the number handed back; only where the stage shows the page's picture.
 	 */
 	readonly holdPicture: (part: Box) => Promise<number>;
+	/** The names the film's things module builds a thing by: none where the film draws no things of its own. */
+	readonly thingsBuilt: readonly string[];
 }
 
 /**

@@ -49,7 +49,10 @@ import * as look from '../../src/moves/look.ts';
 import * as note from '../../src/moves/note.ts';
 import { speed } from '../../src/moves/page.ts';
 import * as pin from '../../src/moves/pins.ts';
+import * as thing from '../../src/moves/thing.ts';
 import * as title from '../../src/moves/title.ts';
+import type { DrawnThing } from '../../src/props/thing.ts';
+import { type Matrix, carried } from '../../src/domain/matrix.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { drawnNote } from '../../src/props/note.ts';
 import { drawnPins } from '../../src/props/pins.ts';
@@ -120,6 +123,8 @@ const OTHER = { left: 1200, top: 600, width: 100, height: 60 };
 // part of the screen, but where a test hands it a stand-in that does
 const NO_ACT = undefined as never;
 const NO_PICTURE_HELD = undefined as never;
+// The things the film's module builds, as a room loaded it: a card
+const THINGS_BUILT = ['card'];
 const PAGE = new PageOfBoxes(
 	new Map([
 		['#block', BLOCK],
@@ -235,7 +240,15 @@ function ownPageRefusal(move: string): FilmError {
 }
 
 function beginningIn(scene: Scene, format: Format): Beginning {
-	return { scene, page: PAGE, format, pageShown: 'pictured', act: NO_ACT, holdPicture: NO_PICTURE_HELD };
+	return {
+		scene,
+		page: PAGE,
+		format,
+		pageShown: 'pictured',
+		act: NO_ACT,
+		holdPicture: NO_PICTURE_HELD,
+		thingsBuilt: THINGS_BUILT
+	};
 }
 
 /** A beginning in a format whose take holds each picture of a part of the screen a move asks it for in a stand-in. */
@@ -3345,3 +3358,96 @@ function drawnOverItsSource(scene: Scene): boolean {
 function roundedPoint(point: Point): Point {
 	return { left: Math.round(point.left), top: Math.round(point.top) };
 }
+
+// A card a film's things module builds, open none and glowing whole, 540 across and 270 up of a frame 1080 high, shown
+// about the frame's middle
+const A_CARD = { open: 0, glow: 1 };
+const CARD_REACH = { width: 540, height: 270 };
+const A_CARD_SHOWN = { at: 'whole', reach: CARD_REACH, values: A_CARD } as const;
+
+/** A scene with a card shown in the world at the frame's middle, brought so far toward the eye. */
+async function cardAt(depth: number): Promise<Scene> {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH);
+	const shown = await setAt(thing.show('card', { ...A_CARD_SHOWN, inside: 'world' }), opening, 1);
+	return setAt(thing.to('whole', { depth }), shown, 1);
+}
+
+/** The 3 × 3 part of a matrix's determinant, which is less than none where the matrix turns faces over. */
+function handednessOf(matrix: Matrix): number {
+	return (
+		matrix.m11 * (matrix.m22 * matrix.m33 - matrix.m32 * matrix.m23) -
+		matrix.m21 * (matrix.m12 * matrix.m33 - matrix.m32 * matrix.m13) +
+		matrix.m31 * (matrix.m12 * matrix.m23 - matrix.m22 * matrix.m13)
+	);
+}
+
+/** What a scene's first object shows as the stage draws it, a thing. */
+function drawnThingIn(scene: Scene): DrawnThing {
+	return drawnObjectsIn(scene, SMALL)[0]!.content as DrawnThing;
+}
+
+test("a thing stands as far as it reaches about its place's middle, and is carried to another place's middle as large", async () => {
+	// The small frame is 400 high, so the card reaches 200 across and 100 up about its middle, 200 and 200
+	const shown = await cardAt(0);
+	const carried = await setAt(thing.to('left'), shown, 1);
+	const [atTheMiddle, onTheLeft] = [shown, carried].map((scene) => scene.objects.get('thing')!.box);
+	expect([atTheMiddle, [onTheLeft!.width, onTheLeft!.height]]).toEqual([
+		{ left: 100, top: 150, width: 200, height: 100 },
+		[200, 100]
+	]);
+});
+
+test("a thing shown in the world is drawn as one the page's window may hide, and one on the frame as one it never hides", async () => {
+	const onTheFrame = await setAt(
+		thing.show('card', A_CARD_SHOWN),
+		openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH),
+		1
+	);
+	expect([await cardAt(0), onTheFrame].map((scene) => drawnThingIn(scene).inTheWorld)).toEqual([true, false]);
+});
+
+test("a thing's numbers go from those it was shown with to those set, the rest kept as they stand", async () => {
+	const shown = await cardAt(0);
+	const halfWay = await setAt(thing.set({ open: 1 }), shown, 0.5);
+	expect(drawnThingIn(halfWay).values).toEqual({ open: 0.5, glow: 1 });
+});
+
+test("a thing is drawn by three's own axes on both sides, up the frame, its faces turning as three's do, a unit of it a pixel of a frame 1080 high, the eye as far before the frame as its focal length", async () => {
+	const drawnCard = drawnThingIn(await cardAt(0));
+	const scale = SMALL.frame.height / 1080;
+	expect([
+		drawnCard.placing.m11,
+		drawnCard.placing.m22,
+		handednessOf(drawnCard.placing) > 0,
+		drawnCard.eyeDistance
+	]).toEqual([expect.closeTo(scale), expect.closeTo(scale), true, expect.closeTo(FOCAL_LENGTH * scale)]);
+});
+
+test("a thing leant back by its stance takes three's top away from the eye, up the frame, as three would", async () => {
+	const leant = await setAt(thing.lean({ tilt: 30 }), await cardAt(0), 1);
+	const top = carried(drawnThingIn(leant).placing, { across: 0, down: 1, out: 0 });
+	expect([top.down > 0, top.out < 0]).toEqual([true, true]);
+});
+
+test('a thing grown by its stance grows toward the eye as much as across and up', async () => {
+	const grown = drawnThingIn(await setAt(thing.to('whole', { scale: 2 }), await cardAt(0), 1)).placing;
+	expect(grown.m33).toBeCloseTo(grown.m11);
+});
+
+test("a thing is refused standing inside the window, built by a name the film's module builds none of, and setting a number it was not shown with", async () => {
+	expect(() => thing.show('card', { ...A_CARD_SHOWN, inside: 'window' as never })).toThrow(
+		new FilmError('thing.show\'s inside is "window": it is "world"')
+	);
+	await expect(
+		setAt(thing.show('sheen', A_CARD_SHOWN), openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH), 1)
+	).rejects.toThrow(
+		new FilmError(
+			"thing.show shows sheen, which the film's things module builds none of: draw the film as a room, name its things module, and export a builder of sheen from it"
+		)
+	);
+	await expect(setAt(thing.set({ shine: 1 }), await cardAt(0), 1)).rejects.toThrow(
+		new FilmError(
+			'thing.set sets shine, which the thing was not shown with: show it with every number its module reads'
+		)
+	);
+});

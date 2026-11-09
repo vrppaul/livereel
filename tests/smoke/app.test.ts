@@ -10,7 +10,7 @@ import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { FilmError, TakeError } from '../../src/domain/errors.ts';
 import type { PageKind } from '../../src/direction/film.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
-import { NO_SET, NoFrames, PUSHED, type Routes, servedApp } from './app.ts';
+import { FILMS_FOLDER, NO_SET, NoFrames, PUSHED, type Routes, servedApp } from './app.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
 import { type ActContext, type Step, act, cursor, defineFilm, page, play } from 'livereel';
 
@@ -73,7 +73,7 @@ const REFUSED_APART =
 const SHOOTING: Shooting = {
 	server: new CommandServer(import.meta.dirname, ANSWERED_WITHIN_MILLISECONDS),
 	set: NO_SET,
-	browser: new Chromium('software', WARNED_TO_NOBODY),
+	browser: new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER),
 	footage: new NoFrames(),
 	track: SILENT,
 	quality: { sharpness: 1, blurred: false }
