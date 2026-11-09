@@ -1,3 +1,4 @@
+import { CubicBezierCurve3, Vector3 } from 'three';
 import { expect, test } from 'vitest';
 import { AS_PLACED } from '../../src/domain/stance.ts';
 import { type Camera, onTheFrame, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
@@ -2951,6 +2952,25 @@ test('an eye flown on a bend arrives heading as the film names it, and goes on a
 	expect(atTheEnd.at.across - overTheBlock.eye.at.across).toBeGreaterThan(legLength);
 });
 
+test("an eye flown along a film's own curve sets off along it from where it stands, half its length flown half way", async () => {
+	// A curve 300 across, wherever the film drew it, its own parameter bunched at its start: 300 × t³ across
+	const bunched = new CubicBezierCurve3(
+		new Vector3(1000, 500, 7),
+		new Vector3(1000, 500, 7),
+		new Vector3(1000, 500, 7),
+		new Vector3(1300, 500, 7)
+	);
+	const opening = openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH);
+	const flying = await eye.fly([{ along: bunched }]).begin(beginningOf(opening));
+	const [halfWay, atTheEnd] = [(await flying(opening, 0.5)).eye.at, (await flying(opening, 1)).eye.at];
+	expect([halfWay.across, halfWay.down, halfWay.out, atTheEnd.across]).toEqual([
+		expect.closeTo(150, 0),
+		expect.closeTo(0),
+		expect.closeTo(FOCAL_LENGTH),
+		expect.closeTo(300)
+	]);
+});
+
 test('a flight refused as it is made: a way of no leg, a leg in no form of one, a tip past straight down, a key by a leg past the way or no farther than the key before', () => {
 	expect(() => eye.fly([])).toThrow(new FilmError("eye.fly's way has no leg: name one or more"));
 	expect(() => eye.fly([{ to: { over: '#block', height: 0 } }])).toThrow(
@@ -2961,6 +2981,11 @@ test('a flight refused as it is made: a way of no leg, a leg in no form of one, 
 	);
 	expect(() => eye.fly([{ to: OVER_THE_BLOCK, bend: 0.5 } as never])).toThrow(
 		new FilmError("eye.fly's way[0]'s arriving is undefined: it is a number")
+	);
+	expect(() => eye.fly([{ along: [0, 300] as never }])).toThrow(
+		new FilmError(
+			"eye.fly's way[0]'s along is [0,300]: it is a figure, a curve of three.js whose points are x across, y down and z out in pixels of a frame 1080 high"
+		)
 	);
 	expect(() => eye.fly([{ to: OVER_THE_BLOCK }], { tip: [{ by: 0, degrees: -100 }] })).toThrow(
 		new FilmError(

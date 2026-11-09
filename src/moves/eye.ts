@@ -36,11 +36,13 @@ import {
 import { type Camera, eyeInTheWindow, fromItsMiddle, pointInTheView } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import {
+	AN_OWN_FIGURE,
 	type Flight,
 	type GazeKey,
 	JOININGS,
 	type Joining,
 	type Leg,
+	type OwnFigure,
 	type Way,
 	flownAt,
 	gazeOf,
@@ -118,8 +120,16 @@ interface LegAhead {
 	readonly ahead: number;
 }
 
+/**
+ * A leg flown along a figure the film draws in three.js, its points x across, y down and z out in pixels of a frame
+ * 1080 high, set off from where the leg starts.
+ */
+interface LegAlong {
+	readonly along: OwnFigure;
+}
+
 /** A leg of a flight's way, as a film writes it. */
-export type LegScript = LegTo | LegBending | LegAhead;
+export type LegScript = LegTo | LegBending | LegAhead | LegAlong;
 
 /** A key of the eye's gaze, reached as the eye reaches the end of its way's leg `by`, from 0 for the first. */
 interface GazeKeyScript {
@@ -202,11 +212,12 @@ const A_LEG: Kind<LegScript> = new FormByName<LegScript>(
 				'a leg ahead: { ahead }'
 			)
 		],
+		['along', new OfForm<LegAlong>({ along: needed(AN_OWN_FIGURE) }, 'a leg along a figure: { along }')],
 		['arriving', A_LEG_BENDING],
 		['bend', A_LEG_BENDING]
 	],
 	new OfForm<LegTo>({ to: needed(AN_OVER) }, 'a leg: { to }'),
-	'a leg: { to }, { to, arriving, bend } or { ahead }'
+	'a leg: { to }, { to, arriving, bend }, { ahead } or { along }'
 );
 const A_LEG_NUMBER: Kind<number> = new Plain(isLegNumber, "a leg's number, 0 for the first");
 const A_TIP: Kind<number> = new Plain(isTip, 'degrees from -90, looking straight down onto the page, to 90');
@@ -431,6 +442,7 @@ async function flown(
 /** A leg of the way as the film writes it, its point read over the block it names. */
 async function legRead(beginning: Beginning, camera: Camera, leg: LegScript): Promise<Leg> {
 	if ('ahead' in leg) return { kind: 'ahead', times: leg.ahead };
+	if ('along' in leg) return { kind: 'along', figure: leg.along };
 	const to = await spotOver(beginning, camera, leg.to.over, leg.to.height);
 	if ('arriving' in leg) return { kind: 'bending', to, arriving: leg.arriving, bend: leg.bend };
 	return { kind: 'to', to };

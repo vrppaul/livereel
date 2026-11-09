@@ -1,4 +1,5 @@
 // A flight's way and gaze, worked out alone: how legs join, how a heading turns, how an eye at rest is read
+import { CatmullRomCurve3, EllipseCurve, LineCurve3, Vector3 } from 'three';
 import { expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
 import { eyeAtRest } from '../../src/domain/eye.ts';
@@ -49,6 +50,46 @@ test('a leg that bends after another leaves heading as that one arrived, with no
 		{ kind: 'bending', to: { across: 500, down: 800, out: 1000 }, arriving: 90, bend: 0.5 }
 	];
 	expect(headingKeptThrough(wayOf(SETTING_OFF, bending, 'straight', 'eye.fly'))).toBeCloseTo(1, 2);
+});
+
+test("a smooth leg to a point before a figure of the film's arrives heading the way the figure leaves, with no corner", () => {
+	const intoAFigure: readonly Leg[] = [
+		{ kind: 'to', to: { across: 500, down: 0, out: 1000 } },
+		{ kind: 'along', figure: new LineCurve3(new Vector3(0, 0, 0), new Vector3(0, 500, 0)) }
+	];
+	expect(headingKeptThrough(wayOf(SETTING_OFF, intoAFigure, 'smooth', 'eye.fly'))).toBeCloseTo(1, 2);
+});
+
+test('a figure that closes on itself is flown round it and back to where it set off', () => {
+	const square = [new Vector3(0, 0, 0), new Vector3(400, 0, 0), new Vector3(400, 400, 0), new Vector3(0, 400, 0)];
+	const round = wayOf(
+		SETTING_OFF,
+		[{ kind: 'along', figure: new CatmullRomCurve3(square, true) }],
+		'smooth',
+		'eye.fly'
+	);
+	const back = round.curve.getPoint(1);
+	expect([back.x, back.y, back.z, round.curve.getLength() > 1200]).toEqual([
+		expect.closeTo(0),
+		expect.closeTo(0),
+		expect.closeTo(1000),
+		true
+	]);
+});
+
+test('a figure that gives a point of no numbers anywhere along it, or flat with no out, is refused', () => {
+	// Its out the root of a number below none round its middle
+	const brokenInTheMiddle = {
+		getPoint: (share: number) => new Vector3(100 * share, 0, Math.sqrt((share - 0.5) ** 2 - 0.01))
+	};
+	const flat = new EllipseCurve(0, 0, 300, 300, 0, Math.PI);
+	const refusal = new FilmError(
+		"eye.fly's leg 0's figure gives a point of no numbers: draw it in three dimensions, through numbers, x across, y down and z out"
+	);
+	expect(() => wayOf(SETTING_OFF, [{ kind: 'along', figure: brokenInTheMiddle }], 'smooth', 'eye.fly')).toThrow(
+		refusal
+	);
+	expect(() => wayOf(SETTING_OFF, [{ kind: 'along', figure: flat as never }], 'smooth', 'eye.fly')).toThrow(refusal);
 });
 
 test('a smooth way that sinks to a point and runs on level never goes below it, where a Catmull-Rom curve dips under the page', () => {

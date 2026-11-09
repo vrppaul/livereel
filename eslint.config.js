@@ -63,6 +63,7 @@ const ITSELF = '^livereel$';
 // numbers, as it crosses to the stage as JSON; the stage draws with the whole of it
 const THREE_MATH = [
 	'Vector3',
+	'Vector3Like',
 	'Quaternion',
 	'Euler',
 	'Matrix4',

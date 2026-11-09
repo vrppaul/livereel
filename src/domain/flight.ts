@@ -8,11 +8,14 @@
  * progress, whatever bends the way takes; past either end, as a curve that bounces takes it, it goes straight on along
  * the way there. A leg goes straight to a point; or bends, arriving at its point heading the way the film names, as a
  * parabola does, its turn as far before the point as `bend` shares of the leg's chord; or goes on ahead, straight along
- * the way's last heading, so many times as long as the leg before. A leg after another leaves heading as that one
- * arrived. Where the way is smooth, a leg to a point arrives heading from where it starts toward the next leg's point,
- * as a Catmull-Rom curve does, but never higher or lower than the two points either side of it: where the way sinks to
- * a point and runs on level, it flattens there, as a smooth way that sinks to a point and runs on low dipped under the
- * page (the review of the flight, 2026-11-09). A way that reaches the page's plane anywhere is refused.
+ * the way's last heading, so many times as long as the leg before; or goes along a figure the film draws itself in
+ * three.js, its points across, down and out, set off from where the leg starts wherever the film drew it, for a shape
+ * no leg of livereel's draws. A leg after another leaves heading as that one arrived, but a figure, which leaves as the
+ * film drew it. Where the way is smooth, a leg to a point arrives heading the way a figure after it leaves, or from
+ * where it starts toward the next leg's point, as a Catmull-Rom curve does, but never higher or lower than the two
+ * points either side of it: where the way sinks to a point and runs on level, it flattens there, as a smooth way that
+ * sinks to a point and runs on low dipped under the page (the review of the flight, 2026-11-09). A way that reaches the
+ * page's plane anywhere is refused.
  *
  * The gaze is two values apart, as a person flying low over a page turns and tips their head: the heading, which way
  * on the window's plane the eye looks, in degrees from up the page clockwise, and the tip, how far its sight lifts off
@@ -23,18 +26,44 @@
  * the way between them; past the last it follows the last; a heading turns the short way round. The eye never rolls
  * but as it sets off: a roll it stood with eases away by the end of the first leg.
  */
-import { CubicBezierCurve3, type Curve, CurvePath, LineCurve3, Vector3 } from 'three';
+import { CubicBezierCurve3, Curve, CurvePath, LineCurve3, Vector3, type Vector3Like } from 'three';
 import { FilmError } from './errors.ts';
 import type { Viewpoint } from './eye.ts';
+import { type Kind, Plain, isObjectOfValues } from './handed.ts';
 import { type Spot, radians } from './matrix.ts';
 import { easeInOutSine } from './curves.ts';
 import { between } from './toward.ts';
+
+/**
+ * A figure a film draws itself in three.js, as a curve of three's: its point at a share of its own parameter, x across,
+ * y down and z out in pixels of a frame 1080 high, as a film writes a spot. It is the film's own, of whatever copy of
+ * three the film imports, so it is read by its points alone.
+ */
+export interface OwnFigure {
+	readonly getPoint: (share: number) => Vector3Like;
+}
 
 /** A leg of a flight, as the way is built from it. */
 export type Leg =
 	| { readonly kind: 'to'; readonly to: Spot }
 	| { readonly kind: 'bending'; readonly to: Spot; readonly arriving: number; readonly bend: number }
-	| { readonly kind: 'ahead'; readonly times: number };
+	| { readonly kind: 'ahead'; readonly times: number }
+	| { readonly kind: 'along'; readonly figure: OwnFigure };
+
+/** A film's own figure as it hands one: any object that gives its points, as every curve of three's does. */
+export const AN_OWN_FIGURE: Kind<OwnFigure> = new Plain(
+	isOwnFigure,
+	'a figure, a curve of three.js whose points are x across, y down and z out in pixels of a frame 1080 high'
+);
+
+/**
+ * How the way goes on past a leg's end, which a smooth leg to a point arrives heading by: toward the next leg's point,
+ * as a Catmull-Rom curve does, or the way a figure of the film's leaves; along its chord where it goes on neither way.
+ */
+type Onward =
+	| { readonly kind: 'toward'; readonly point: Vector3 }
+	| { readonly kind: 'leaving'; readonly heading: Vector3 }
+	| { readonly kind: 'chord' };
 
 /** How legs straight to their points join: at a corner, or smoothly through each point. */
 export const JOININGS = ['straight', 'smooth'] as const;
@@ -132,12 +161,11 @@ export function wayOf(from: Spot, legs: readonly Leg[], joining: Joining, move: 
 	let standing = vectorOf(from);
 	let arrived: Arrival | null = null;
 	for (const [index, leg] of legs.entries()) {
-		const next = legs[index + 1];
-		const nextPoint = next !== undefined && next.kind === 'to' ? vectorOf(next.to) : null;
-		const legsCurve = legCurve(leg, standing, arrived, nextPoint, joining, `${move}'s leg ${String(index)}`);
+		const where = `${move}'s leg ${String(index)}`;
+		const legsCurve = legCurve(leg, standing, arrived, onwardAfter(legs[index + 1]), joining, where);
 		const ends = legsCurve.getPoint(ITS_END);
-		if (standing.distanceTo(ends) < NOWHERE) {
-			throw new FilmError(`${move}'s leg ${String(index)} goes nowhere: send it somewhere the eye does not stand`);
+		if (goesNowhere(leg, legsCurve, standing)) {
+			throw new FilmError(`${where} goes nowhere: send it somewhere the eye does not stand`);
 		}
 		curve.add(legsCurve);
 		standing = ends;
@@ -260,15 +288,15 @@ function refuseUnderThePage(curve: CurvePath<Vector3>, move: string): void {
 }
 
 /**
- * A leg's curve from where the way stands: leaving heading as the leg before arrived, where there is one; arriving
- * toward the next leg's point where the way is smooth and the next goes to one; refused, as `where` names it, going
- * ahead with no leg before.
+ * A leg's curve from where the way stands: leaving heading as the leg before arrived, where there is one, but a figure,
+ * which leaves as the film drew it; arriving as the way goes on past it where the way is smooth; refused, as `where`
+ * names it, going ahead with no leg before, or along a figure that gives a point of no numbers.
  */
 function legCurve(
 	leg: Leg,
 	start: Vector3,
 	arrived: Arrival | null,
-	nextPoint: Vector3 | null,
+	onward: Onward,
 	joining: Joining,
 	where: string
 ): Curve<Vector3> {
@@ -277,7 +305,7 @@ function legCurve(
 			const to = vectorOf(leg.to);
 			if (joining === 'straight') return new LineCurve3(start, to);
 			const leaving = arrived === null ? null : arrived.heading.clone().multiplyScalar(start.distanceTo(to));
-			return hermiteLeg(start, to, leaving, nextPoint);
+			return hermiteLeg(start, to, leaving, onward);
 		}
 		case 'bending':
 			return bendingLeg(start, vectorOf(leg.to), leg.arriving, leg.bend, arrived);
@@ -287,26 +315,96 @@ function legCurve(
 			}
 			return new LineCurve3(start, start.clone().addScaledVector(arrived.heading, leg.times * arrived.length));
 		}
+		case 'along': {
+			const figure = new CarriedFigure(leg.figure, start);
+			// A point of no numbers anywhere along it, a flat figure's missing out among them, leaves it no length
+			if (!Number.isFinite(figure.getLength())) {
+				throw new FilmError(
+					`${where}'s figure gives a point of no numbers: draw it in three dimensions, through numbers, x across, y down and z out`
+				);
+			}
+			return figure;
+		}
 	}
 }
 
 /**
- * A leg to a point joined smoothly: leaving as named, along its chord where nothing is named; arriving heading from
- * where it starts toward the next point, as a Catmull-Rom curve does, along its chord where there is none; each never
- * rising or sinking past its heights.
+ * Whether a leg goes nowhere: a leg ends where it starts, but a figure, which may close on itself, only where it has no
+ * length.
  */
-function hermiteLeg(start: Vector3, end: Vector3, leaving: Vector3 | null, nextPoint: Vector3 | null): Curve<Vector3> {
+function goesNowhere(leg: Leg, legsCurve: Curve<Vector3>, start: Vector3): boolean {
+	if (leg.kind === 'along') return legsCurve.getLength() < NOWHERE;
+	return start.distanceTo(legsCurve.getPoint(ITS_END)) < NOWHERE;
+}
+
+/** How the way goes on past a leg, as the next leg sets off: toward its point, the way its figure leaves, or neither. */
+function onwardAfter(next: Leg | undefined): Onward {
+	switch (next?.kind) {
+		case 'to':
+			return { kind: 'toward', point: vectorOf(next.to) };
+		case 'along':
+			return { kind: 'leaving', heading: new CarriedFigure(next.figure, new Vector3()).getTangent(ITS_START) };
+		case 'bending':
+		case 'ahead':
+		case undefined:
+			return { kind: 'chord' };
+	}
+}
+
+/**
+ * A film's own figure carried from where it was drawn to where its leg starts: each of its points carried as far as
+ * takes its start there, so a film draws it wherever it likes.
+ */
+class CarriedFigure extends Curve<Vector3> {
+	readonly figure: OwnFigure;
+	readonly carriedBy: Vector3;
+
+	constructor(figure: OwnFigure, start: Vector3) {
+		super();
+		this.figure = figure;
+		this.carriedBy = start.clone().sub(figure.getPoint(ITS_START));
+	}
+
+	override getPoint(share: number, target = new Vector3()): Vector3 {
+		return target.copy(this.figure.getPoint(share)).add(this.carriedBy);
+	}
+}
+
+function isOwnFigure(written: unknown): written is OwnFigure {
+	return isObjectOfValues(written) && typeof written.getPoint === 'function';
+}
+
+/**
+ * A leg to a point joined smoothly: leaving as named, along its chord where nothing is named; arriving as the way goes
+ * on past it; each never rising or sinking past its heights.
+ */
+function hermiteLeg(start: Vector3, end: Vector3, leaving: Vector3 | null, onward: Onward): Curve<Vector3> {
 	const chord = end.clone().sub(start);
 	const rise = chord.z;
 	const setOff = monotone(leaving ?? chord, rise, rise);
-	const arriving =
-		nextPoint === null ? chord : monotone(nextPoint.clone().sub(start).divideScalar(HALVES), rise, nextPoint.z - end.z);
+	const arriving = arrivingAs(onward, start, end, chord);
 	return new CubicBezierCurve3(
 		start,
 		start.clone().addScaledVector(setOff, A_HANDLE),
 		end.clone().addScaledVector(arriving, -A_HANDLE),
 		end
 	);
+}
+
+/**
+ * The tangent a smooth leg to a point arrives with: from where it starts toward the next point, halved, as a
+ * Catmull-Rom curve's; along the way a figure leaves, as long as the leg's chord; or along its chord; never rising or
+ * sinking past its heights.
+ */
+function arrivingAs(onward: Onward, start: Vector3, end: Vector3, chord: Vector3): Vector3 {
+	switch (onward.kind) {
+		case 'toward':
+			return monotone(onward.point.clone().sub(start).divideScalar(HALVES), chord.z, onward.point.z - end.z);
+		case 'leaving':
+			return monotone(onward.heading.clone().multiplyScalar(chord.length()), chord.z, onward.heading.z);
+		case 'chord':
+			return chord;
+	}
 }
 
 /**
