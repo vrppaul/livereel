@@ -21,8 +21,7 @@
 - A note's words and pins' labels place themselves by the window's box on the frame's plane, not where the eye draws it (`src/props/note.ts`, `src/props/pins.ts`): with the eye straight ahead at `out: 1000` the window's edge stands far past where the words stand.
 - No near-plane clipping per frame: an object's `depth` is still bounded by the resting eye's focal length (`assertNearerThanTheEye`, before the film is shot); a world object an eye comes near or passes is not cut there. The window behind the eye is handed in 3D, which Chrome clips.
 - An eye's up on a path through keys goes by its numbers on the curve, not turned round evenly as on a way with no key: a roll of 170° through one key turns faster near the key than at the ends (the review of the eye's up, 2026-11-09). Each stretch is refused only where its up turns half round.
-- Curves live in two places: livereel's own and `Ease` in `src/domain/time.ts`, a film's own in `src/direction/curves.ts`, and `A_CURVE` in `src/direction/move.ts`. One `src/domain/curves.ts` would hold them all and their kind (the review of the curves, 2026-11-09); the imports of `Ease` move with it.
-- A camera's zoom goes evenly in the zoom itself, so a zoom from 1 to 4 grows fast at its start and slow at its end. Decided (2026-11-09, the ADR of the world's bricks' `pace: 'scale'`): a camera's way with no key goes by even steps of scale, its zoom evenly in its logarithm, the point that stands still on the frame kept still; every film's zoom changes with it. Not built.
+- The camera zooms by steps of scale, but two values a person also reads as a zoom go evenly in themselves: an object's `scale` and the eye's `out` (the review of the zoom by scale, 2026-11-09); and a smooth camera path through keys keeps its zoom by scale but not a still point, 25 pixels off at a quarter of whole → (1280, 720, 2) → (1440, 810, 4).
 
 ## Faults
 

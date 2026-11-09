@@ -9,9 +9,9 @@
  * too: filling a window, and the whole frame with no edge of a face-on screen, leant or not. So a block framed stays
  * framed as the window travels, grows or leans, in the same step or after.
  */
-import { A_POSE, type Aim, type Framing, type Pose, ZOOM_AT_MOST } from '../domain/camera.ts';
+import { A_POSE, A_ZOOM_AT_MOST, type Aim, type Framing, type Pose, ZOOM_AT_MOST } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import { A_COUNT, A_NUMBER, A_NUMBER_OR_ENDLESS, type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { A_COUNT, A_PIXELS, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import type { Through } from '../domain/path.ts';
 import {
 	A_TARGET,
@@ -50,8 +50,8 @@ const AIR = 80;
 const TO_FORM: Form<ToScript> = { ...throughFormOf(A_POSE, 'a list of poses'), ...TIMING_FORM };
 const ONTO_FORM: Form<OntoScript> = {
 	every: A_COUNT,
-	air: A_NUMBER,
-	zoomAtMost: A_NUMBER_OR_ENDLESS,
+	air: A_PIXELS,
+	zoomAtMost: A_ZOOM_AT_MOST,
 	...throughFormOf(A_TARGET, 'a list of selectors and boxes of the screen'),
 	...TIMING_FORM
 };

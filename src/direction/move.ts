@@ -22,11 +22,10 @@ import {
 	ListOf,
 	OfForm,
 	Plain,
-	aFunction,
 	described,
 	isObjectOfValues
 } from '../domain/handed.ts';
-import type { Ease } from '../domain/time.ts';
+import { A_CURVE, type Ease } from '../domain/curves.ts';
 import type { CssNamed } from './theme.ts';
 import type { GroupName } from '../props/group.ts';
 import type { ObjectName } from '../props/object.ts';
@@ -153,9 +152,6 @@ export interface TimingScript {
 	readonly within?: Bounds;
 	readonly ease?: Ease;
 }
-
-/** A curve as a film hands it: a function, livereel's or its own; what it gives is the film's. */
-export const A_CURVE: Kind<Ease> = aFunction<Ease>('a curve: a function of progress, as easeInOutSine');
 
 /** A move's timing as a film hands it, which every move's options take beside their own. */
 export const TIMING_FORM: Form<TimingScript> = {

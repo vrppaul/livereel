@@ -22,7 +22,7 @@
 import { Chance, seedOf } from '../domain/chance.ts';
 import type { Fraction } from '../domain/fraction.ts';
 import { A_COLOUR, A_STRING, type Kind, ListOf, OfForm, OneOf, Plain, needed } from '../domain/handed.ts';
-import { easeOutCubic } from '../domain/time.ts';
+import { easeOutCubic } from '../domain/curves.ts';
 import { type Keystroke, keysStruckAlong, lettersOf } from '../domain/typing.ts';
 import type { Presences } from './way.ts';
 

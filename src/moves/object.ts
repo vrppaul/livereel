@@ -83,7 +83,7 @@ import {
 	wordsPlaced,
 	wordsResized
 } from '../domain/place.ts';
-import { type Ease, linear } from '../domain/time.ts';
+import { type Ease, linear } from '../domain/curves.ts';
 import { type Path, type Through, pathOf } from '../domain/path.ts';
 import { MOVES_WITH_THE_CURVE, type MovingBy, namedToward } from '../domain/toward.ts';
 import {

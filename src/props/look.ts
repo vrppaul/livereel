@@ -30,7 +30,7 @@ import {
 	namesGiven,
 	namesSetBy
 } from '../domain/handed.ts';
-import { between } from '../domain/time.ts';
+import { between } from '../domain/toward.ts';
 import { namedToward, namesOf, pixelsToward, shareToward } from '../domain/toward.ts';
 import { A_WORDS_WAY, type WordsWay } from './words.ts';
 

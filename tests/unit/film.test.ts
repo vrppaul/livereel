@@ -3,7 +3,7 @@
 import { expect, test } from 'vitest';
 import { wholePose } from '../../src/domain/camera.ts';
 import { FilmError } from '../../src/domain/errors.ts';
-import { linear } from '../../src/domain/time.ts';
+import { linear } from '../../src/domain/curves.ts';
 import type { MotionBlurScript } from '../../src/direction/blur.ts';
 import { defineFilm } from '../../src/direction/film.ts';
 import { play } from '../../src/direction/steps.ts';

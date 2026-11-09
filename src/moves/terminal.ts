@@ -8,7 +8,7 @@
  */
 import { A_NUMBER, A_STRING, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { A_PLACE, type Place } from '../domain/place.ts';
-import { linear } from '../domain/time.ts';
+import { linear } from '../domain/curves.ts';
 import { A_STROKES, type Keystroke, typedAlong } from '../domain/typing.ts';
 import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import { keysHeard } from '../direction/sound.ts';

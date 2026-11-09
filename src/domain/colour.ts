@@ -3,7 +3,7 @@
  * way has gone, so a ground fades from dark to light through the colours between. A colour stands as it was written
  * at either end of its way; between them it is written whole, `#rrggbbaa`, as is a colour read off the page.
  */
-import { between } from './time.ts';
+import { between } from './toward.ts';
 
 /** A colour's red, green, blue and alpha, each from 0 to 255. */
 export interface Channels {

@@ -52,7 +52,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		new FilmError("camera.onto's target's top is undefined: it is a number")
 	);
 	expect(() => camera.onto('#block', { air: '80' as never })).toThrow(
-		new FilmError('camera.onto\'s air is "80": it is a number')
+		new FilmError('camera.onto\'s air is "80": it is a number of pixels, 0 or more')
 	);
 	expect(() => camera.onto('#block', { airr: 80 } as never)).toThrow(
 		new FilmError(
@@ -316,19 +316,30 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => camera.to({ ...POSE, focusX: Number.POSITIVE_INFINITY })).toThrow(
 		new FilmError("camera.to's pose's focusX is Infinity: it is a number")
 	);
+	expect(() => camera.to({ ...POSE, zoom: 0 })).toThrow(
+		new FilmError("camera.to's pose's zoom is 0: it is a zoom, the frame's pixels a page's pixel takes, more than 0")
+	);
+	expect(() => camera.onto('#block', { zoomAtMost: 0 })).toThrow(
+		new FilmError(
+			"camera.onto's zoomAtMost is 0: it is a zoom, the frame's pixels a page's pixel takes, more than 0, or Infinity for no bound"
+		)
+	);
+	expect(() => camera.onto('#block', { air: -150 })).toThrow(
+		new FilmError("camera.onto's air is -150: it is a number of pixels, 0 or more")
+	);
 });
 
 test('what a refusal says a film handed is said as it was, whatever JSON cannot write: a BigInt, a class, a value that holds itself', () => {
 	const holdsItself: { self?: object } = {};
 	holdsItself.self = holdsItself;
 	expect(() => camera.onto('#block', { air: { amount: 10n } as never })).toThrow(
-		new FilmError('camera.onto\'s air is {"amount":"10n"}: it is a number')
+		new FilmError('camera.onto\'s air is {"amount":"10n"}: it is a number of pixels, 0 or more')
 	);
 	expect(() => camera.onto('#block', { air: new Map() as never })).toThrow(
-		new FilmError("camera.onto's air is an object of the class Map: it is a number")
+		new FilmError("camera.onto's air is an object of the class Map: it is a number of pixels, 0 or more")
 	);
 	expect(() => camera.onto('#block', { air: holdsItself as never })).toThrow(
-		new FilmError("camera.onto's air is an object that holds itself: it is a number")
+		new FilmError("camera.onto's air is an object that holds itself: it is a number of pixels, 0 or more")
 	);
 });
 

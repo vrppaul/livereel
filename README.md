@@ -266,7 +266,9 @@ play({ seconds: 3, moves: [
 
 A pose is the whole screen's, `whole`, which `steps` is handed, or one
 written out, `{ focusX, focusY, zoom }`. The camera chooses what of the page
-the window shows; the window leans, `window.lean({ tilt, turn })`, the
+the window shows, its zoom going by even steps of scale, 1 to 4 at 2 half
+way, the point of the page that stands at one place on the frame at both
+ends staying there all the way; the window leans, `window.lean({ tilt, turn })`, the
 screen in it with it, by a move of its own, so it travels and leans in one
 `play`. Every move that runs over time
 takes a share of its step, `within: { start, end }`, and a curve of its own,

@@ -11,7 +11,7 @@ import { NONE, fractionOf } from '../domain/fraction.ts';
 import { liesOutside } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { A_PLACE, type Place, placesNamed, sideBeyond, sideClearestOf, wordsPlaced } from '../domain/place.ts';
-import { linear } from '../domain/time.ts';
+import { linear } from '../domain/curves.ts';
 import {
 	A_TARGET,
 	type Beginning,

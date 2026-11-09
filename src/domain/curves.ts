@@ -1,13 +1,19 @@
 /**
- * Curves a film makes of its own numbers, for a move's `ease` or a step's: one drawn as CSS draws `cubic-bezier()`, as
- * a designer's tool hands it; one that sets off and arrives at the speeds the film names, each in times its mean speed;
- * and one that sets off softly and holds its speed from a share of its time on, as a flight that dives and runs on
- * along a page does. Each is checked as it is made, as a film's types are stripped, and gives the share of the way gone
- * at a share of the time, read from 0 to 1 alone, exactly 0 and 1 at its ends, as livereel's curves are
- * (`src/domain/time.ts`).
+ * How a move speeds up and settles: every curve a film's moves and steps take, livereel's and those a film makes of its
+ * own numbers, and the kind a film's curve is checked by, in one place.
+ *
+ * Every curve takes the share of time gone, from 0 to 1, and gives the share of the way gone, from 0 at its start to 1
+ * at its end, exactly at both: a camera that eases in and out reads as a person's hand, a linear one as a machine. One
+ * that bounces passes its end on the way and comes back to it; how much of a prop has come up is held to its ends all
+ * the same (`src/domain/fraction.ts`). A film makes its own as a designer's tool hands one, `cubicBezier` as CSS draws
+ * `cubic-bezier()`; one that sets off and arrives at the speeds it names, each in times its mean speed, `atSpeeds`; and
+ * one that sets off softly and holds its speed from a share of its time on, `softThenHeld`, as a flight that dives and
+ * runs on along a page does. Each is checked as it is made, as a film's types are stripped.
  */
-import { A_NUMBER, type Form, Plain, assertKind, assertWritten, needed } from '../domain/handed.ts';
-import type { Ease } from '../domain/time.ts';
+import { A_NUMBER, type Form, type Kind, Plain, aFunction, assertKind, assertWritten, needed } from './handed.ts';
+
+/** A curve: the share of the way gone at a share of the time. */
+export type Ease = (progress: number) => number;
 
 /** How fast a move sets off and arrives, each in times its mean speed: 1 is as fast as an even move goes. */
 export interface Speeds {
@@ -15,15 +21,24 @@ export interface Speeds {
 	readonly arriving: number;
 }
 
+// A curve's start and end, by its own parameter and as shares of time and of the way; and its half-way point
+const ITS_START = 0;
+const ITS_END = 1;
+const HALF_WAY = 0.5;
+// A curve that eases both ways is drawn in two halves; a time is halved toward a share of it the same way
+const HALVES = 2;
+// The powers the curves are drawn with
+const SQUARE = 2;
+const CUBE = 3;
+const FIFTH_POWER = 5;
+// How steeply the cubic curve that eases both ways starts
+const CUBIC_START = 4;
+// Robert Penner's "back" constant, which takes the curve that bounces a tenth of the way past its end
+const PENNERS_BACK = 1.70158;
 // How many times the time a Bézier's handles leave either side of a share of time is halved to find it: down to the
 // last bit a number holds, as its time runs on from its start to its end alone, its handles' times within its own
 const HALVINGS = 52;
-// A curve's start and end, by its own parameter and as shares of time and of the way
-const ITS_START = 0;
-const ITS_END = 1;
-// A cubic's powers, and the weights of its Bernstein form, in which a Bézier is drawn through its handles
-const SQUARE = 2;
-const CUBE = 3;
+// The weights of a cubic's Bernstein form, in which a Bézier is drawn through its handles
 const BERNSTEINS_WEIGHT = 3;
 // The weights of a cubic Hermite curve of its two speeds
 const SPEEDS_SQUARE_WEIGHT = 2;
@@ -33,10 +48,11 @@ const ENDS_CUBE_WEIGHT = 2;
 // before its start; and the slowest, at rest
 const FASTEST_SPEED = 3;
 const AT_REST = 0;
-// The time either side of a share of time is halved by; and a sine's quarter turn, in which a soft start comes from
-// rest to its fastest
-const HALVES = 2;
+// A sine's quarter turn, in which a soft start comes from rest to its fastest
 const A_QUARTER_TURN = Math.PI / HALVES;
+
+/** A curve as a film hands it: a function, livereel's or its own; what it gives is the film's. */
+export const A_CURVE: Kind<Ease> = aFunction<Ease>('a curve: a function of progress, as easeInOutSine');
 
 const A_HANDLES_SHARE = new Plain(isShareOfTime, 'a share of the time, from 0 to 1, as CSS takes it');
 const A_SPEED = new Plain(
@@ -45,6 +61,33 @@ const A_SPEED = new Plain(
 );
 const SPEEDS_FORM: Form<Speeds> = { settingOff: needed(A_SPEED), arriving: needed(A_SPEED) };
 const A_TIME_WITHIN = new Plain(isWithinTheTime, 'a share of the time, more than 0 and at most 1');
+
+export function linear(progress: number): number {
+	return progress;
+}
+
+export function easeOutCubic(progress: number): number {
+	return 1 - (1 - progress) ** CUBE;
+}
+
+export function easeOutQuint(progress: number): number {
+	return 1 - (1 - progress) ** FIFTH_POWER;
+}
+
+export function easeInOutSine(progress: number): number {
+	return (1 - Math.cos(Math.PI * progress)) / HALVES;
+}
+
+/** Out fast, past the end by a tenth of the way, and back to settle on it. */
+export function easeOutBack(progress: number): number {
+	const fromTheEnd = progress - 1;
+	return 1 + (PENNERS_BACK + 1) * fromTheEnd ** CUBE + PENNERS_BACK * fromTheEnd ** SQUARE;
+}
+
+export function easeInOutCubic(progress: number): number {
+	if (progress < HALF_WAY) return CUBIC_START * progress ** CUBE;
+	return 1 - (HALVES - HALVES * progress) ** CUBE / HALVES;
+}
 
 /**
  * A curve drawn as CSS's `cubic-bezier(x1, y1, x2, y2)`: from the start to the end through two handles, each a share of

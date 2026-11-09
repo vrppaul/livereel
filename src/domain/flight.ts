@@ -27,7 +27,8 @@ import { CubicBezierCurve3, type Curve, CurvePath, LineCurve3, Vector3 } from 't
 import { FilmError } from './errors.ts';
 import type { Viewpoint } from './eye.ts';
 import { type Spot, radians } from './matrix.ts';
-import { between, easeInOutSine } from './time.ts';
+import { easeInOutSine } from './curves.ts';
+import { between } from './toward.ts';
 
 /** A leg of a flight, as the way is built from it. */
 export type Leg =

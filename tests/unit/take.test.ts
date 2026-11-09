@@ -3,7 +3,7 @@ import type { Pose } from '../../src/domain/camera.ts';
 import type { Format } from '../../src/domain/geometry.ts';
 import type { MotionBlur } from '../../src/domain/shutter.ts';
 import { FilmError, TakeError } from '../../src/domain/errors.ts';
-import { easeOutCubic, linear } from '../../src/domain/time.ts';
+import { easeOutCubic, linear } from '../../src/domain/curves.ts';
 import { type Bounds, type Change, type Move, timingOf } from '../../src/direction/move.ts';
 import { cut, hold, play } from '../../src/direction/steps.ts';
 import { act } from '../../src/moves/act.ts';
@@ -250,8 +250,9 @@ function cosineOf(degrees: number): number {
 test('a frame the camera crosses fast is drawn again along its way from the frame before, each kept with its own', async () => {
 	const stage = new FramedStageThatKeeps();
 	const footage = new FootageOf([0, 1, 2]);
-	// Two frames of the camera's way, half of it each, then one with nothing moving, on a page drawn every frame
+	// Two frames of the camera's pan, half of it each, then one with nothing moving, on a page drawn every frame
 	const steps = [
+		cut(cameraTo(CLOSE_ON_THE_MIDDLE)),
 		play({ seconds: 2 / 30, moves: [cameraTo(CLOSE_AT_THE_RIGHT)], ease: linear }),
 		hold({ seconds: 1 / 30 })
 	];
@@ -266,6 +267,7 @@ test('a frame the camera crosses fast is drawn at once as every exposure along i
 	const stage = new LayeringStageThatKeeps();
 	const footage = new FootageOf([0, 1, 2]);
 	const steps = [
+		cut(cameraTo(CLOSE_ON_THE_MIDDLE)),
 		play({ seconds: 2 / 30, moves: [cameraTo(CLOSE_AT_THE_RIGHT)], ease: linear }),
 		hold({ seconds: 1 / 30 })
 	];

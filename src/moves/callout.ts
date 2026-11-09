@@ -5,7 +5,7 @@
  */
 import { NONE, fractionOf } from '../domain/fraction.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
-import { linear } from '../domain/time.ts';
+import { linear } from '../domain/curves.ts';
 import {
 	A_TARGET,
 	type Beginning,

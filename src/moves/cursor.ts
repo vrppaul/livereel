@@ -6,7 +6,7 @@
 import { NONE, fractionOf } from '../domain/fraction.ts';
 import { A_POINT, type Box, type Point, bowedArc, pointAlong } from '../domain/geometry.ts';
 import { A_NUMBER, A_PATH, type Form, assertKind, assertWritten } from '../domain/handed.ts';
-import { easeOutCubic } from '../domain/time.ts';
+import { easeOutCubic } from '../domain/curves.ts';
 import {
 	A_TARGET,
 	type Beginning,

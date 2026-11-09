@@ -3,7 +3,7 @@ import { AS_PLACED } from '../../src/domain/stance.ts';
 import { type Camera, onTheFrame, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
 import { type EyePlace, type Focus, eyeAtRest } from '../../src/domain/eye.ts';
 import * as eye from '../../src/moves/eye.ts';
-import { linear } from '../../src/domain/time.ts';
+import { linear } from '../../src/domain/curves.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import type { Format } from '../../src/domain/format.ts';
 import {
@@ -1865,6 +1865,39 @@ test("the camera's path through keys keeps every pose on it on the screen, where
 		[0.2, 0.4, 0.5, 0.6, 0.8].map((progress) => setIn(cameraTo(end, { through: [turn] }), atTheStart, progress, tall))
 	);
 	expect(Math.max(...onTheWay.map((scene) => cameraOf(scene, tall).pose.focusX))).toBeLessThanOrEqual(1440);
+});
+
+test('a camera zooming goes by even steps of scale, the point of the page that stands still on the frame at both ends standing still all the way', async () => {
+	// From the whole screen at 1 to 4 round a point of it: the page's point 1600 across and 900 down stands 640 and 360
+	// from the frame's middle at both ends, a page's pixel a frame's at 1
+	const nearTheCorner = { focusX: 1440, focusY: 810, zoom: 4 };
+	const opening = openingScene(FULL_HD, LIVEREELS_LOOK, FOCAL_LENGTH);
+	const [aQuarterOn, halfWay] = await Promise.all(
+		[0.25, 0.5].map((progress) => setIn(cameraTo(nearTheCorner), opening, progress, FULL_HD))
+	);
+	const poses = [aQuarterOn!, halfWay!].map((scene) => cameraOf(scene, FULL_HD).pose);
+	const pointOnTheFrame = poses.flatMap((pose) => [(1600 - pose.focusX) * pose.zoom, (900 - pose.focusY) * pose.zoom]);
+	expect([poses[1]!.zoom, ...pointOnTheFrame].map((number) => Math.round(number * 1000) / 1000)).toEqual([
+		2, 640, 360, 640, 360
+	]);
+});
+
+test('a camera zooming in the whole frame from a screen too short to fill it shows no ground past its edge once the screen fills the frame', async () => {
+	// A wide screen in a square frame: whole, it stands in the frame's middle with ground above and below it; at 2.6 the
+	// frame shows 415 of its pixels down, so a focus 210 down shows its top edge at the frame's top. Half way, at 1.4,
+	// the screen fills the frame from top to bottom, and the frame's top shows its top edge or below it
+	const squareOfAWideScreen: Format = { frame: { width: 1080, height: 1080 }, screen: { width: 1440, height: 1080 } };
+	const nearTheTop = { focusX: 720, focusY: 210, zoom: 2.6 };
+	const opening = openingScene(squareOfAWideScreen, LIVEREELS_LOOK, FOCAL_LENGTH);
+	const halfWay = await setIn(cameraTo(nearTheTop), opening, 0.5, squareOfAWideScreen);
+	const { pose } = cameraOf(halfWay, squareOfAWideScreen);
+	expect(pose.focusY - 540 / pose.zoom).toBeGreaterThanOrEqual(0);
+});
+
+test("a camera's path through keys of its zoom alone goes by even steps of scale between them", async () => {
+	const throughTwo = cameraTo({ ...MIDDLE_AT_TWO, zoom: 4 }, { through: [MIDDLE_AT_TWO], pace: 'keys' });
+	const aQuarterOn = await setIn(throughTwo, openingScene(FULL_HD, LIVEREELS_LOOK, FOCAL_LENGTH), 0.25, FULL_HD);
+	expect(cameraOf(aQuarterOn, FULL_HD).pose.zoom).toBeCloseTo(Math.SQRT2, 9);
 });
 
 test('code or a group carried to a place through another stands there on its way, where a pace by keys puts it', async () => {

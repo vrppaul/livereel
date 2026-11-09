@@ -7,7 +7,6 @@
  * values and for a film's formats.
  */
 import { type Fraction, fractionOf } from './fraction.ts';
-import { between } from './time.ts';
 
 /** How a value moves: where it stands `progress` of the way from one to another. */
 export type Toward<Value> = (start: Value, end: Value, progress: number) => Value;
@@ -59,6 +58,11 @@ export function namesOf<Values extends object>(table: Values): readonly Extract<
 /** Whether each value named stands where it rests, as values a stage draws nothing of there. */
 export function standsAtRest<Values>(values: Values, rest: Values, names: readonly (keyof Values)[]): boolean {
 	return names.every((name) => values[name] === rest[name]);
+}
+
+/** A number `progress` of the way from one to another, past either as a curve that bounces takes it. */
+export function between(start: number, end: number, progress: number): number {
+	return start + (end - start) * progress;
 }
 
 /** A share `progress` of the way from one to another, held between none and whole. */

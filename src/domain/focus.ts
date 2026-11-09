@@ -38,7 +38,7 @@ import {
 	seenFromOf,
 	seenWithin
 } from './matrix.ts';
-import { between } from './time.ts';
+import { between } from './toward.ts';
 
 /**
  * How the eye sees as a frame is drawn: how far before it it sees sharp, and its focal length, in pixels of a frame 1080

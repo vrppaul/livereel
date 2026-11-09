@@ -45,7 +45,7 @@ import {
 	wayBetween
 } from './matrix.ts';
 import type { Path, PathSpace } from './path.ts';
-import { between } from './time.ts';
+import { between } from './toward.ts';
 import { type Track, arrivedAt } from './track.ts';
 
 /**

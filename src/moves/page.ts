@@ -20,7 +20,8 @@ import {
 	assertWritten,
 	needed
 } from '../domain/handed.ts';
-import { between, linear } from '../domain/time.ts';
+import { linear } from '../domain/curves.ts';
+import { between } from '../domain/toward.ts';
 import { A_STROKES, type Keystroke, typedAlong } from '../domain/typing.ts';
 import {
 	type Beginning,

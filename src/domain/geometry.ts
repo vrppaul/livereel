@@ -7,7 +7,7 @@
  */
 import { A_NUMBER, A_PIXELS, type Kind, OfForm, OneOf, needed } from './handed.ts';
 import type { PathSpace } from './path.ts';
-import { between } from './time.ts';
+import { between } from './toward.ts';
 
 export interface Size {
 	readonly width: number;

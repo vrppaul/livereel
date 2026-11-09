@@ -27,7 +27,7 @@ import {
 	showsItsFront,
 	translation
 } from './matrix.ts';
-import { between } from './time.ts';
+import { between } from './toward.ts';
 
 /** How something faces: leant back and swung as the window is, and rolled clockwise in its own plane, `roll`. */
 export interface Orientation extends Angle {

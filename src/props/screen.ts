@@ -30,7 +30,7 @@ import {
 	overlapOf
 } from '../domain/geometry.ts';
 import { A_NUMBER, type Kind, Plain } from '../domain/handed.ts';
-import { between } from '../domain/time.ts';
+import { between } from '../domain/toward.ts';
 
 /** What the screen shows: the filmed page, or a page of the film's own by its key. */
 export type Shows = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string };

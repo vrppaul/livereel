@@ -11,7 +11,7 @@
  */
 import { type Box, type Point, cornersAround, middleX, middleY } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, needed } from './handed.ts';
-import { between } from './time.ts';
+import { between } from './toward.ts';
 
 /** A matrix of four rows and four columns, its entries named by their column, then their row. */
 export interface Matrix {

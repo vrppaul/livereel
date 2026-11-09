@@ -24,12 +24,12 @@ import {
 } from '../domain/handed.ts';
 import type { PlaceNamed } from '../domain/place.ts';
 import type { DepthNamed } from '../domain/stance.ts';
-import { type Ease, easeInOutSine, framesOf, linear } from '../domain/time.ts';
+import { A_CURVE, type Ease, easeInOutSine, linear } from '../domain/curves.ts';
+import { framesOf } from '../domain/time.ts';
 import { A_STROKES, type Keystroke, typingSeconds } from '../domain/typing.ts';
 import type { CssNamed } from './theme.ts';
 import type { OwnPage } from './page.ts';
 import {
-	A_CURVE,
 	A_MOVE,
 	A_MOVES,
 	type Move,

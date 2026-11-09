@@ -41,7 +41,7 @@ import {
 	pointAt,
 	withAir
 } from './geometry.ts';
-import { A_NUMBER, type Kind, OfForm, needed } from './handed.ts';
+import { A_NUMBER, type Kind, OfForm, Plain, needed } from './handed.ts';
 import { NO_KEYS, type PathSpace, type Through, alongPath } from './path.ts';
 import {
 	type Matrix,
@@ -58,7 +58,7 @@ import {
 	translation,
 	wayBetween
 } from './matrix.ts';
-import { between } from './time.ts';
+import { between } from './toward.ts';
 import { ARRIVED, type Track, alongTrack, arrivedAt } from './track.ts';
 
 /** How the screen leans back from its top edge, `tilt`, and swings about its middle, `turn`: degrees, 0 face-on. */
@@ -192,6 +192,8 @@ const ON_ITS_PLANE = 0;
 const NOTHING = 0;
 // Where the frame's left and top edges stand, in its own pixels
 const FRAMES_EDGE = 0;
+// A zoom that shows a page's pixel as none of the frame's, which no camera comes to
+const NO_ZOOM = 0;
 // How far a view stands off the ground: the frame itself, or a window
 const FLAT: Fraction = NONE;
 const LIFTED: Fraction = WHOLE;
@@ -239,7 +241,8 @@ export function standingAt(pose: Pose): Aiming {
 /**
  * The camera as a frame shows it through the window where it stands so far: on its path from where it stood, through
  * the aims on its way, to its aim, each come to in that view and kept off the screen's edge there, as is every pose on
- * a path through keys, which may bow past the edge between them. A block is framed in the part of the window on the
+ * its path: a path through keys may bow past the edge between them, and a zoom from a screen too short to fill the frame
+ * would show the screen's edge where it kept its still point still. A block is framed in the part of the window on the
  * frame, its share of the window going from where the window stood to where it goes as the window does, so a window
  * sliding whole carries the page with it. The window's plane is seen from the eye where it stands.
  */
@@ -257,7 +260,7 @@ export function seenThrough(aiming: Aiming, window: Placing, eye: Eye, format: F
 	const to = aimedIn(aiming.aim, view, shown, format);
 	const inTheRoom = eyeInTheRoom(eye, view, format.frame);
 	const pose = alongPath(aiming.from, through, to, poseSpaceIn(view, inTheRoom, format), aiming.progress);
-	return { pose: keptOnThePath(pose, through, format, view), view, eye: inTheRoom };
+	return { pose: keptOnTheScreen(pose, format, view), view, eye: inTheRoom };
 }
 
 /**
@@ -295,33 +298,26 @@ function viewpointCarried(matrix: Matrix, turn: Matrix, eye: Viewpoint): Viewpoi
 }
 
 /**
- * A pose on a path kept on the screen in a view: left as it goes on a straight way between two kept poses, which stays
- * kept; kept anew on a path through keys, which may bow past the screen's edge between them.
- */
-function keptOnThePath(pose: Pose, through: Through<Pose>, format: Format, view: View): Pose {
-	return through.keys.length === 0 ? pose : keptOnTheScreen(pose, format, view);
-}
-
-/**
- * How a pose goes on a way through keys in a view (`src/domain/path.ts`): by its focus and its zoom, a step from one
- * pose to another as long as what the frame shows moves on it.
+ * How a pose goes on a way through keys in a view (`src/domain/path.ts`): by its focus and its zoom's logarithm, so
+ * through keys too its zoom goes by steps of scale; a step from one pose to another as long as what the frame shows
+ * moves on it.
  */
 function poseSpaceIn(view: View, eye: Eye, format: Format): PathSpace<Pose> {
 	return {
 		toward: poseToward,
-		numbersOf: (pose) => [pose.focusX, pose.focusY, pose.zoom],
+		numbersOf: (pose) => [pose.focusX, pose.focusY, Math.log(pose.zoom)],
 		valueOf: poseOfNumbers,
 		distance: (start, end) => frameShift({ pose: start, view, eye }, { pose: end, view, eye }, format)
 	};
 }
 
-/** The pose three numbers stand for on a way: its focus across and down, and its zoom. */
+/** The pose three numbers stand for on a way: its focus across and down, and its zoom's logarithm. */
 function poseOfNumbers(numbers: readonly number[]): Pose {
-	const [focusX, focusY, zoom] = numbers;
-	if (focusX === undefined || focusY === undefined || zoom === undefined) {
+	const [focusX, focusY, zoomsLogarithm] = numbers;
+	if (focusX === undefined || focusY === undefined || zoomsLogarithm === undefined) {
 		throw new Error(`a pose on a way stands for three numbers, not ${numbers.length}`);
 	}
-	return { focusX, focusY, zoom };
+	return { focusX, focusY, zoom: Math.exp(zoomsLogarithm) };
 }
 
 /** The part of a view's box on the frame, in shares of the box; none where it is all off the frame. */
@@ -482,17 +478,44 @@ function flatPose(format: Format): Pose {
 	return facing(format.screen, poseZoomFor(1, format.screen));
 }
 
+/**
+ * A pose `progress` of the way to another: its zoom by even steps of scale, evenly in its logarithm, so a zoom from 1
+ * to 4 stands at 2 half way, as a person sees a zoom go evenly; its focus as keeps still the point of the page that
+ * stands at one place on the frame at both ends, so a zoom round a point stays on it all the way, where the screen's
+ * edge lets it (`seenThrough`).
+ */
 function poseToward(start: Pose, end: Pose, progress: number): Pose {
+	const focusShare = focusShareAt(start.zoom, end.zoom, progress);
 	return {
-		focusX: between(start.focusX, end.focusX, progress),
-		focusY: between(start.focusY, end.focusY, progress),
-		zoom: between(start.zoom, end.zoom, progress)
+		focusX: between(start.focusX, end.focusX, focusShare),
+		focusY: between(start.focusY, end.focusY, focusShare),
+		zoom: start.zoom * (end.zoom / start.zoom) ** progress
 	};
 }
 
+/**
+ * The share of the way between two foci where the zoom has gone `progress` of its way by scale, the point still on the
+ * frame kept still: `(1 − start ÷ zoom) ÷ (1 − start ÷ end)`, written with `expm1` so a zoom that hardly changes comes
+ * out as exact as a pan, which, of one zoom, goes evenly.
+ */
+function focusShareAt(startZoom: number, endZoom: number, progress: number): number {
+	const zoomRatiosLogarithm = Math.log(endZoom / startZoom);
+	if (zoomRatiosLogarithm === 0) return progress;
+	return Math.expm1(-zoomRatiosLogarithm * progress) / Math.expm1(-zoomRatiosLogarithm);
+}
+
+/** How close a camera comes: more than none, as a camera at none shows no page, and its zoom goes by scale. */
+const A_ZOOM: Kind<number> = new Plain(isZoom, "a zoom, the frame's pixels a page's pixel takes, more than 0");
+
+/** The closest a film lets the camera come to a block it frames: a zoom, or no bound. */
+export const A_ZOOM_AT_MOST: Kind<number> = new Plain(
+	isZoomOrEndless,
+	"a zoom, the frame's pixels a page's pixel takes, more than 0, or Infinity for no bound"
+);
+
 /** A pose as a film hands it, made by livereel or written out whole. */
 export const A_POSE: Kind<Pose> = new OfForm<Pose>(
-	{ focusX: needed(A_NUMBER), focusY: needed(A_NUMBER), zoom: needed(A_NUMBER) },
+	{ focusX: needed(A_NUMBER), focusY: needed(A_NUMBER), zoom: needed(A_ZOOM) },
 	'a pose: { focusX, focusY, zoom }, as steps is handed'
 );
 
@@ -786,4 +809,12 @@ export function angledAs(angle: Angle): Matrix {
 /** The matrix that takes a spot of the room back from an angle to the plane's own. */
 function angledBack(angle: Angle): Matrix {
 	return chained([rotationY(-angle.turn), rotationX(-angle.tilt)]);
+}
+
+function isZoom(written: unknown): written is number {
+	return A_NUMBER.is(written) && written > NO_ZOOM;
+}
+
+function isZoomOrEndless(written: unknown): written is number {
+	return isZoom(written) || written === Number.POSITIVE_INFINITY;
 }

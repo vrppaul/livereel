@@ -42,10 +42,18 @@ export type { TurnedOff } from './direction/turned-off.ts';
 export type { Theme } from './props/look.ts';
 export { keystrokes } from './domain/typing.ts';
 export type { Keystroke, Typist } from './domain/typing.ts';
-export { easeInOutCubic, easeInOutSine, easeOutBack, easeOutCubic, easeOutQuint, linear } from './domain/time.ts';
-export type { Ease } from './domain/time.ts';
-export { atSpeeds, cubicBezier, softThenHeld } from './direction/curves.ts';
-export type { Speeds } from './direction/curves.ts';
+export {
+	atSpeeds,
+	cubicBezier,
+	easeInOutCubic,
+	easeInOutSine,
+	easeOutBack,
+	easeOutCubic,
+	easeOutQuint,
+	linear,
+	softThenHeld
+} from './domain/curves.ts';
+export type { Ease, Speeds } from './domain/curves.ts';
 export type { Angle, Pose } from './domain/camera.ts';
 export type { EyePlace, EyePlaceOrRest } from './domain/eye.ts';
 export type { Spot } from './domain/matrix.ts';

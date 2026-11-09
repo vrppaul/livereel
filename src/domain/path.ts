@@ -19,8 +19,7 @@
  * (`PathSpace`): a box's in `src/domain/geometry.ts`, a pose's in `src/domain/camera.ts`.
  */
 import { type Kind, OneOf } from './handed.ts';
-import { between } from './time.ts';
-import type { Toward } from './toward.ts';
+import { type Toward, between } from './toward.ts';
 
 /** How a path goes through its keys: curved through them, or straight from one to the next. */
 export type Shape = 'smooth' | 'straight';

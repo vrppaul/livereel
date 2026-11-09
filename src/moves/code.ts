@@ -12,7 +12,7 @@ import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
 import { A_COUNT, A_STRING, type Form, type Kind, Plain, assertKind, assertWritten, needed } from '../domain/handed.ts';
 import { A_PLACE, type Place } from '../domain/place.ts';
-import { between } from '../domain/time.ts';
+import { between } from '../domain/toward.ts';
 import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import {
 	A_WAY_OF_LONG_LINES,

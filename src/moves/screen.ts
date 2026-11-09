@@ -31,7 +31,7 @@ import {
 	assertWritten,
 	needed
 } from '../domain/handed.ts';
-import { between } from '../domain/time.ts';
+import { between } from '../domain/toward.ts';
 import {
 	A_TARGET,
 	type Beginning,
