@@ -56,7 +56,7 @@ import {
 	middleInTheRoom,
 	seenFromTheEye
 } from '../domain/camera.ts';
-import { type Eye, type Focus, eyeAtRest, turnOf } from '../domain/eye.ts';
+import { type Eye, type Focus, eyeAtRest, inTheEyesSpace, turnOf } from '../domain/eye.ts';
 import { type Sharpness, distanceOfItsMiddle, outOfFocusBeforeItsMatrix } from '../domain/focus.ts';
 import type { Fraction } from '../domain/fraction.ts';
 import type { PartAsked, SharperPicture } from '../domain/picture.ts';
@@ -411,6 +411,7 @@ function thingStandingOf(object: FrameObject, standing: Standing, eye: Eye, fram
 				laid: standing.laid,
 				placing: standing.placing,
 				inTheEyesSpace: chained([inTheEyesSpaceAbout(standing.laid, seeing, frame), stanceMatrix(object)]),
+				roomInTheEyesSpace: inTheEyesSpace(seeing, frame),
 				scale: object.scale,
 				inTheWorld: object.inside.kind === 'world'
 			};

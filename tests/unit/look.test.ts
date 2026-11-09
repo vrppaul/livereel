@@ -15,18 +15,41 @@ test("a theme's value written as undefined is left out, as a film whose types no
 	expect(lookWith(LIVEREELS_LOOK, { font: undefined } as never).font).toBe(LIVEREELS_LOOK.font);
 });
 
-test("a look on its way to a theme's values: a colour mixed, a number between, a font changed half-way, the ground's layers fading into the theme's, what the theme leaves out as the look stands", () => {
+test("a look on its way to a theme's values: a colour mixed, a number between, a font and the world's lights changed half-way, the ground's layers fading into the theme's, what the theme leaves out as the look stands", () => {
 	const dots = 'radial-gradient(#fff2 1px, transparent 1px) 0 0 / 24px 24px';
-	const end = lookWith(LIVEREELS_LOOK, { ground: '#ffffff', paneShadow: 0, font: 'Georgia', groundLayers: dots });
+	const lights = [
+		{
+			colour: '#fff',
+			strength: 1,
+			at: { across: 0, down: -800, out: 600 },
+			aim: { across: 0, down: 0, out: 0 },
+			angle: 30,
+			softness: 1
+		}
+	];
+	const theme = { ground: '#ffffff', paneShadow: 0, font: 'Georgia', groundLayers: dots, lights };
+	const end = lookWith(LIVEREELS_LOOK, theme);
 	const standing = lookWith(LIVEREELS_LOOK, { ink: '#000000' });
-	const moving = { start: LIVEREELS_LOOK, end, names: ['ground', 'paneShadow', 'font', 'groundLayers'] } as const;
+	const names = ['ground', 'paneShadow', 'font', 'groundLayers', 'lights'] as const;
+	const moving = { start: LIVEREELS_LOOK, end, names };
 	const quarter = lookToward(standing, moving, 0.25);
 	const half = lookToward(standing, moving, 0.5);
-	expect([quarter.ground, quarter.paneShadow, quarter.font, half.font, quarter.groundLayers, quarter.ink]).toEqual([
+	expect([
+		quarter.ground,
+		quarter.paneShadow,
+		quarter.font,
+		half.font,
+		quarter.lights,
+		half.lights,
+		quarter.groundLayers,
+		quarter.ink
+	]).toEqual([
 		'#484a4fff',
 		0.75,
 		LIVEREELS_LOOK.font,
 		'Georgia',
+		[],
+		lights,
 		{ going: 'none', coming: dots, come: 0.25 },
 		'#000000'
 	]);

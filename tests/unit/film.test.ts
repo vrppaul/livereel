@@ -402,9 +402,41 @@ test("a film's set is shot 3 times as sharp as its page where it names no sharpn
 	);
 });
 
-test('a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, pixels less than none, a share past 1, a size of none, a way words come up it has not, a colour not in hex, a font of no name', () => {
+test('a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, pixels less than none, a share past 1, a size of none, a way words come up it has not, a colour not in hex, a font of no name, a light whose cone opens a half-turn, that aims where it stands or whose colour has an alpha three reads none of, a soft box spanning a half-turn or turned up past straight up', () => {
 	const names =
-		'ground, glow, groundLayers, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, paneCorner, paneEdge, paneShadow, paneShadowColour, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, codeLineHeight, cursorFill, cursorEdge, words';
+		'ground, glow, groundLayers, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, paneCorner, paneEdge, paneShadow, paneShadowColour, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, codeLineHeight, cursorFill, cursorEdge, words, lights, softBoxes';
+	const light = {
+		colour: '#fff',
+		strength: 1,
+		at: { across: 0, down: -800, out: 600 },
+		aim: { across: 0, down: 0, out: 0 },
+		angle: 30,
+		softness: 1
+	};
+	const softBox = { colour: '#fff', brightness: 4, round: -15, up: 24, width: 10, height: 40, lean: 24 };
+	expect(() => filmWritten({ theme: { lights: [{ ...light, angle: 90 }] } })).toThrow(
+		new FilmError(
+			"the film's theme's lights[0]'s angle is 90: it is how far its cone opens from its middle, in degrees, more than 0 and less than 90"
+		)
+	);
+	expect(() => filmWritten({ theme: { lights: [light, { ...light, aim: light.at }] } })).toThrow(
+		new FilmError("the film's theme's lights[1] aims at the spot it stands at: it aims away from where it stands")
+	);
+	expect(() => filmWritten({ theme: { lights: [{ ...light, colour: '#ff000080' }] } })).toThrow(
+		new FilmError(
+			`the film's theme's lights[0]'s colour is "#ff000080": it is a colour in hex with no alpha: #rgb or #rrggbb`
+		)
+	);
+	expect(() => filmWritten({ theme: { softBoxes: [{ ...softBox, width: 180 }] } })).toThrow(
+		new FilmError(
+			"the film's theme's softBoxes[0]'s width is 180: it is how far it spans seen from the room's middle, in degrees, more than 0 and less than 180"
+		)
+	);
+	expect(() => filmWritten({ theme: { softBoxes: [{ ...softBox, up: 100 }] } })).toThrow(
+		new FilmError(
+			"the film's theme's softBoxes[0]'s up is 100: it is how far up from level it stands, in degrees, from -90 to 90"
+		)
+	);
 	expect(() => filmWritten({ theme: null })).toThrow(
 		new FilmError(`the film's theme is handed null for an object of ${names}`)
 	);

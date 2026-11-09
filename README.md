@@ -737,11 +737,50 @@ and its glow under the layers. No layer takes a picture (`url()`), which
 the stage would draw only once loaded. Layers CSS cannot read, or with a
 picture, are refused before anything is shot.
 
+A film drawn as a room may light the world its own three.js things stand
+in: `lights`, spotlights standing at a spot of the room and aiming at
+another, as the eye does, each in pixels of a frame 1080 high from the
+frame's middle; and `softBoxes`, glowing panels round the room that faces
+reflect and are lit by, rough ones as well as glossy, each turned `round`
+from straight toward the eye at rest, to the right for more degrees, and
+`up` from level. A light is as strong however far it reaches: its
+`strength` is how bright a white face square to it stands, 1 its whole
+colour. A soft box spans `width` and `height` degrees seen from the room's
+middle, brightest along its middle; boxes as bright as below light a matte
+thing strongly too. Each colour is hex with no alpha. Things built of
+three's lit materials take the lights, `MeshStandardMaterial`,
+`MeshPhysicalMaterial`, `MeshLambertMaterial`, `MeshPhongMaterial` and
+`MeshToonMaterial`, and all but the toon the soft boxes; `MeshBasicMaterial`
+and a film's own `ShaderMaterial` see neither. livereel's own look has
+neither:
+
+```ts
+theme: {
+	lights: [
+		{ colour: '#ffffff', strength: 1.2, at: { across: 150, down: -2000, out: 400 }, aim: { across: 0, down: 0, out: 0 }, angle: 30, softness: 1 },
+		{ colour: '#2a5cff', strength: 1, at: { across: -1700, down: -250, out: -1000 }, aim: { across: 0, down: 0, out: 0 }, angle: 35, softness: 1 }
+	],
+	softBoxes: [
+		{ colour: '#ffffff', brightness: 12, round: 0, up: 75, width: 33, height: 33, lean: 0 },  // overhead
+		{ colour: '#ffffff', brightness: 30, round: -15, up: 24, width: 9, height: 39, lean: 24 }  // a key, high on the left
+	]
+}
+```
+
+The lights and the reflections stay where they stand in the room as the
+eye moves; a thing on the frame, which rides with the eye, is lit as the
+eye at rest would see it. A light whose cone opens 90° or more, or that
+aims at the spot it stands at, and a soft box spanning 180° or more, or
+turned up past straight up, are refused as the film is defined. They cast
+no shadow. `look.to` changes them whole, half-way through a play: a light
+does not yet fade in by its strength.
+
 The look changes as the film goes, by a move like any other:
 `look.to(theme)`, any of the same values. In a `play` it moves there over
 its share of the step: a colour through the colours between, a size, a
-weight, a corner or a shadow through the values between, a font or
-`words`, which have none between, half-way, and the ground's layers
+weight, a corner or a shadow through the values between, a font, `words`,
+the lights or the soft boxes, which have none between, half-way, and the
+ground's layers
 fading out as the new ones fade in over them; in a `cut`, at once.
 
 ```ts
@@ -1056,9 +1095,10 @@ shot unblurred. It is drawn alone, with a depth of its own, blurred by the
 eye's focus as one, by its box's point nearest the focus; in the world, the
 page's window parts it, what stands behind the window laid under the page and
 what stands before it over, so a page that fades shows what stands behind it;
-on the frame it rides with the eye, sharp, before the window. The room draws
-it unlit: build it of `MeshBasicMaterial` or a `ShaderMaterial` of its own, as
-no light of the world's reaches it yet; a see-through `ShaderMaterial` in the
+on the frame it rides with the eye, sharp, before the window. Built of
+`MeshBasicMaterial` or a `ShaderMaterial` of its own, it is drawn flat; of
+one of three's lit materials, lit by the theme's `lights` and `softBoxes`,
+as the look says; a see-through `ShaderMaterial` in the
 world, or one that writes no depth, sets `clipping: true` and includes three's
 clipping chunks, so the window parts it face by face. It comes and goes in
 its own way alone, as its module draws `shown` (a material it fades is

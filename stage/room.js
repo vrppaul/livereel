@@ -494,8 +494,8 @@ class Room {
 	/**
 	 * An exposure drawn and added into the frame: each of its surfaces laid over those under it, where its scene places
 	 * it, as the eye's focus blurs it, those drawn anew for each exposure drawn into their textures first; its things
-	 * posed first, and the parts of them that stand under a surface laid before it, each as the eye's focus blurs it.
-	 * What the film is told where its module throws building or setting a thing, none where all are drawn.
+	 * posed and lit first, and the parts of them that stand under a surface laid before it, each as the eye's focus
+	 * blurs it. What the film is told where its module throws building or setting a thing, none where all are drawn.
 	 * @param {ReadonlyMap<SurfaceName, Element>} surfaces @param {ReadonlyMap<SurfaceName, Placing>} placings
 	 * @param {DrawnScene} scene @param {Box} gathered @returns {string | null}
 	 */
@@ -503,6 +503,7 @@ class Room {
 		const things = thingsIn(scene);
 		const refused = this.thingsPosed(things);
 		if (refused !== null) return refused;
+		this.things.lit(this.renderer, scene.lighting);
 		const windowSurface = surfaceOfTheWindow(scene.window.inTheEyesSpace, placingOfThe(placings, 'window'));
 		const parts = things.flatMap((thing) => this.partsOf(thing, windowSurface));
 		this.renderer.setRenderTarget(this.exposure);

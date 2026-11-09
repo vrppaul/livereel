@@ -52,7 +52,8 @@ import * as pin from '../../src/moves/pins.ts';
 import * as thing from '../../src/moves/thing.ts';
 import * as title from '../../src/moves/title.ts';
 import type { DrawnThing } from '../../src/props/thing.ts';
-import { ITS_MIDDLE, type Matrix, carried } from '../../src/domain/matrix.ts';
+import { drawnLighting } from '../../src/props/lighting.ts';
+import { ITS_MIDDLE, type Matrix, carried, chained } from '../../src/domain/matrix.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { drawnNote } from '../../src/props/note.ts';
 import { drawnPins } from '../../src/props/pins.ts';
@@ -3404,6 +3405,33 @@ test("a thing shown in the world is drawn as one the page's window may hide, and
 		1
 	);
 	expect([await cardAt(0), onTheFrame].map((scene) => drawnThingIn(scene).inTheWorld)).toEqual([true, false]);
+});
+
+test('a thing in the world carries the room as the eye sees it, and one on the frame as the eye at rest does, so a light standing where that eye stands and aiming where it looks is seen at its middle, straight down its sight', async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH);
+	const inTheWorld = await setAt(eye.to(EYE_ASIDE), await cardAt(0), 1);
+	const onTheFrame = await setAt(eye.to(EYE_ASIDE), await setAt(thing.show('card', A_CARD_SHOWN), opening, 1), 1);
+	const atRest = eyeAtRest(FOCAL_LENGTH);
+	const light = { colour: '#fff', strength: 1, angle: 20, softness: 1 };
+	const lights = [
+		{ ...light, at: EYE_ASIDE.at, aim: EYE_ASIDE.aim },
+		{ ...light, at: atRest.at, aim: atRest.aim }
+	];
+	const [atTheEye, atTheEyeAtRest] = drawnLighting(lights, [], SMALL.frame).lights;
+	const [worldsRoom, framesRoom] = [inTheWorld, onTheFrame].map((scene) => drawnThingIn(scene).roomInTheEyesSpace);
+	const scale = SMALL.frame.height / 1080;
+	const atItsMiddle = { across: expect.closeTo(0), down: expect.closeTo(0), out: expect.closeTo(0) };
+	expect([
+		carried(chained([worldsRoom!, atTheEye!.standing]), ITS_MIDDLE),
+		carried(chained([worldsRoom!, atTheEye!.aimedAt]), ITS_MIDDLE),
+		carried(chained([framesRoom!, atTheEyeAtRest!.standing]), ITS_MIDDLE),
+		carried(chained([framesRoom!, atTheEyeAtRest!.aimedAt]), ITS_MIDDLE)
+	]).toEqual([
+		atItsMiddle,
+		{ ...atItsMiddle, out: expect.closeTo(-Math.hypot(1008, 200, 1400) * scale) },
+		atItsMiddle,
+		{ ...atItsMiddle, out: expect.closeTo(-FOCAL_LENGTH * scale) }
+	]);
 });
 
 test("a thing's numbers go from those it was shown with to those set, the rest kept as they stand", async () => {

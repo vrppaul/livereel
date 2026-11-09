@@ -42,9 +42,11 @@ export interface Thing {
  * A thing as the stage draws it: the name its module builds it by, its numbers, how far it has come up and not gone in
  * its own way, from 0 to 1; the matrix that carries a point of it, in three's own axes — x across, y up, z toward the
  * eye — in pixels of a frame 1080 high from its box's middle, into the eye's own space in the frame's pixels, in
- * three's axes too, the eye at its middle looking down its z; how far the eye stands before the frame, in the frame's
- * pixels, which the stage sees it in perspective from; how soft the eye's focus draws it on the frame, in pixels of a
- * frame 1080 high, none where sharp; and whether it stands in the world, where the page's window parts it.
+ * three's axes too, the eye at its middle looking down its z; the matrix that carries the room, about the frame's
+ * middle in its pixels, into the same space, in three's axes, where the world's lights stand
+ * (`src/props/lighting.ts`); how far the eye stands before the frame, in the frame's pixels, which the stage sees it
+ * in perspective from; how soft the eye's focus draws it on the frame, in pixels of a frame 1080 high, none where
+ * sharp; and whether it stands in the world, where the page's window parts it.
  */
 export interface DrawnThing {
 	readonly kind: 'thing';
@@ -52,6 +54,7 @@ export interface DrawnThing {
 	readonly values: ThingValues;
 	readonly shown: number;
 	readonly inTheEyesSpace: Matrix;
+	readonly roomInTheEyesSpace: Matrix;
 	readonly eyeDistance: number;
 	readonly outOfFocus: number | null;
 	readonly inTheWorld: boolean;
@@ -66,12 +69,13 @@ export interface AroundAThing {
 /**
  * How a thing stands as it is drawn: its box; the matrices that carry it about the box's middle to where the eye sees
  * it on the frame and into the eye's own space, each of which grows it across and down alone, as an object's stance
- * does; how much its stance grows it; and where it stands.
+ * does; the matrix that carries the room into that eye's own space; how much its stance grows it; and where it stands.
  */
 export interface ThingStanding {
 	readonly laid: Box;
 	readonly placing: Matrix;
 	readonly inTheEyesSpace: Matrix;
+	readonly roomInTheEyesSpace: Matrix;
 	readonly scale: number;
 	readonly inTheWorld: boolean;
 }
@@ -112,6 +116,7 @@ export function drawnThing(thing: Thing, standing: ThingStanding, shown: number,
 		values: thing.values,
 		shown,
 		inTheEyesSpace: chained([inThreesAxes(standing.inTheEyesSpace), units]),
+		roomInTheEyesSpace: inThreesAxes(standing.roomInTheEyesSpace),
 		eyeDistance: around.sharpness.focalLength * scale,
 		outOfFocus,
 		inTheWorld: standing.inTheWorld

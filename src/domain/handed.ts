@@ -224,8 +224,12 @@ export const A_GROUND_LAYERS = new Plain(
 );
 /** A colour a film gives its words or its ground, in the one form checked here rather than in a browser: hex. */
 export const A_COLOUR = new Plain(isHexColour, 'a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa');
+/** A colour of light, which three reads in hex with no alpha, as light is not laid over anything. */
+export const A_LIGHTS_COLOUR = new Plain(isOpaqueHexColour, 'a colour in hex with no alpha: #rgb or #rrggbb');
 /** A length a film sizes or spaces something by, in pixels: none at least. */
 export const A_PIXELS = new Plain(isNoneOrMore, 'a number of pixels, 0 or more');
+/** How bright a light is: none at least, with no bound above, as a light may outshine white. */
+export const A_BRIGHTNESS = new Plain(isNoneOrMore, 'how bright it is, a number, 0 or more: 1 its whole colour');
 /** How fast the page's own time runs against the film's: none at least, where it stands. */
 export const A_PAGE_SPEED = new Plain(
 	isNoneOrMore,
@@ -247,6 +251,8 @@ const NONE = 0;
 const WHOLE = 1;
 // A colour in hex, its alpha optional, in short digits or long
 const HEX_COLOUR = /^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+// A colour in hex with no alpha, in short digits or long
+const OPAQUE_HEX_COLOUR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 
 /** A kind a film must give, never leave out. */
 export function needed<Value>(kind: Kind<Value>): Needed<Value> {
@@ -447,6 +453,10 @@ function isWords(written: unknown): written is string {
 
 function isHexColour(written: unknown): written is string {
 	return isString(written) && HEX_COLOUR.test(written);
+}
+
+function isOpaqueHexColour(written: unknown): written is string {
+	return isString(written) && OPAQUE_HEX_COLOUR.test(written);
 }
 
 function isCallable(written: unknown): boolean {

@@ -14,8 +14,9 @@
  * keys rise clear of a caption, where a note's line meets the block it names on the frame, the hole a piece of the page
  * leaves and the lines it draws to its source, the part of the screen under a lens, where a band of light sweeping the
  * screen stands across what the window shows of it, where an object in a group, or on the page as the camera frames it
- * then, is drawn and in what order, how soft the eye's focus draws the window and each object in the world — so the
- * stage draws numbers and words and decides nothing, and draws no group of its own.
+ * then, is drawn and in what order, how soft the eye's focus draws the window and each object in the world, where the
+ * world's lights stand in the room and how the eye that sees each thing sees the room — so the stage draws numbers and
+ * words and decides nothing, and draws no group of its own.
  * What the camera shows is worked out from what it aims at and the window that stands (`cameraOf`), so a
  * camera moving and a window moving in one step make the same frame whichever is set first; a frame is drawn by such a
  * camera, or by the flat one an act is done in. A prop that may be absent is `null`; the
@@ -47,6 +48,7 @@ import type { Cursor } from './props/cursor.ts';
 import type { Group, GroupName, Groups } from './props/group.ts';
 import { type DrawnLines, drawnHoles, drawnLines } from './props/lifted.ts';
 import type { Light } from './props/light.ts';
+import { type DrawnLighting, drawnLighting } from './props/lighting.ts';
 import type { Look } from './props/look.ts';
 import { type DrawnNote, type Note, drawnNote, noteShift } from './props/note.ts';
 import {
@@ -128,13 +130,15 @@ interface DrawnProps {
 
 /**
  * What the stage is handed of a scene: each prop as drawn, the objects standing and pushed off, and what the pieces of
- * the page among them leave on the page and draw to it, holes on the screen and lines on the frame.
+ * the page among them leave on the page and draw to it, holes on the screen and lines on the frame; and the world's
+ * light, as the room lights a film's own things by it.
  */
 export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 	readonly objects: readonly DrawnObject[];
 	readonly leaving: readonly DrawnObject[];
 	readonly holes: readonly DrawnHole[];
 	readonly lines: readonly DrawnLines[];
+	readonly lighting: DrawnLighting;
 };
 
 // The page's own time running a second for each of the film's
@@ -402,7 +406,8 @@ export function drawn(
 		objects: drawnObjects(scene.objects, moment, around),
 		leaving: drawnObjects(scene.leaving, moment, around),
 		holes,
-		lines: drawnLines(everyObject, camera, scene.groups, format.frame)
+		lines: drawnLines(everyObject, camera, scene.groups, format.frame),
+		lighting: drawnLighting(scene.look.lights, scene.look.softBoxes, format.frame)
 	};
 }
 

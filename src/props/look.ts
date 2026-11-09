@@ -4,16 +4,19 @@
  * sizes and weights and how they come up, where a title and a caption's ground stand, the accent of the marks, the
  * corners, edge and shadow of what stands on the ground as a pane — the page's window and its screen, the code's pane
  * and the agent's terminal alike — the colours of the code by kind, the cursor, and the agent's terminal and the
- * ending card, their colours and sizes. A film opens on livereel's look with its theme's values, and changes it by
- * moves as it goes: in a play, a colour, a size or a shadow moves through the values between, a font, which has none
- * between, changes half-way, and the ground's layers fade into new ones; in a cut, at once. The stage is handed the
- * whole look every frame and sets each value in place of its token (`stage/tokens.css`), the ground's layers part by
- * part.
+ * ending card, their colours and sizes, and the lights and soft boxes of the world a film's own things stand in. A film
+ * opens on livereel's look with its theme's values, and changes it by moves as it goes: in a play, a colour, a size or
+ * a shadow moves through the values between, a font, which has none between, and the world's lights or its soft boxes,
+ * which a play changes whole, change half-way, and the ground's layers fade into new ones; in a cut, at once. The stage
+ * is handed the whole look every frame and sets each value in place of its token (`stage/tokens.css`), the ground's
+ * layers part by part; the world's light it is handed as the room lights things by (`DrawnLighting` in
+ * `src/props/lighting.ts`).
  *
  * One table, `LOOK_KINDS`, says of each value what a film may write for it, how the look holds it and how it moves, so
  * a theme is checked by it and a look moved by it, and livereel's own values stand in `LIVEREELS_LOOK`: a value of the
- * look is its line in the type, in the two tables and in the stage's (`LOOK_SET_AS` in `stage/stage.js`, the ground's
- * layers apart in `LAYERS_SET_AS`), and the compiler refuses one left out of any.
+ * look is its line in the type, in the two tables and in the stage's (`LOOK_TOKENS` in `stage/stage.js`; the ground's
+ * layers apart in `LAYERS_SET_AS`, the world's light in `stage/things.js`), and the compiler refuses one left out of
+ * any.
  */
 import { colourToward } from '../domain/colour.ts';
 import { type Fraction, WHOLE, fractionOf } from '../domain/fraction.ts';
@@ -32,6 +35,7 @@ import {
 } from '../domain/handed.ts';
 import { between } from '../domain/toward.ts';
 import { namedToward, namesOf, pixelsToward, shareToward } from '../domain/toward.ts';
+import { A_SOFT_BOXES, A_WORLD_LIGHTS, type SoftBox, type WorldLight } from './lighting.ts';
 import { A_WORDS_WAY, type WordsWay } from './words.ts';
 
 export interface Look {
@@ -119,6 +123,12 @@ export interface Look {
 	 * callout's and a note's, each read as it comes.
 	 */
 	readonly words: WordsWay;
+	/**
+	 * The world's lights, which light a film's own things in a lit material, and the soft boxes their glossy faces
+	 * reflect (`src/props/lighting.ts`): none in livereel's own look, a film of flat light.
+	 */
+	readonly lights: readonly WorldLight[];
+	readonly softBoxes: readonly SoftBox[];
 }
 
 /**
@@ -199,6 +209,12 @@ const WEIGHT = new LookKind(A_WEIGHT, asWritten, between, CHECKED_HERE);
 const FAMILY = new LookKind(A_FONT_FAMILY, asWritten, halfWay, 'font family');
 const LAYERS = new LookKind(A_GROUND_LAYERS, standingWhole, fadingInto, 'ground layers');
 const WAY_OF_WORDS = new LookKind(A_WORDS_WAY, asWritten, halfWay, CHECKED_HERE);
+// The world's lights and soft boxes, changed whole half-way: lights fading in light by light wait for a film that asks
+// (TODO.md), and soft boxes are drawn anew for the stage at each change
+const LIGHTS = new LookKind(A_WORLD_LIGHTS, asWritten, halfWay, CHECKED_HERE);
+const SOFT_BOXES = new LookKind(A_SOFT_BOXES, asWritten, halfWay, CHECKED_HERE);
+// A world with no light placed in it
+const NONE_PLACED: readonly never[] = [];
 // CSS's word for no layers at all
 const NO_LAYERS = 'none';
 
@@ -248,7 +264,9 @@ export const LOOK_KINDS: { readonly [Name in keyof Look]: LookKind<Written<Look[
 	codeLineHeight: LINE_HEIGHT,
 	cursorFill: COLOUR,
 	cursorEdge: COLOUR,
-	words: WAY_OF_WORDS
+	words: WAY_OF_WORDS,
+	lights: LIGHTS,
+	softBoxes: SOFT_BOXES
 };
 
 /** livereel's own look: a dark ground lit toward its top middle, light words, an amber accent. */
@@ -294,7 +312,9 @@ export const LIVEREELS_LOOK: Look = {
 	codeLineHeight: 1.6,
 	cursorFill: '#111',
 	cursorEdge: '#fff',
-	words: 'rise'
+	words: 'rise',
+	lights: NONE_PLACED,
+	softBoxes: NONE_PLACED
 };
 
 const LOOK_NAMES = namesOf(LOOK_KINDS);
