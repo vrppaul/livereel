@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
 import { easeOutBack, framesOf, shotAt } from '../../src/domain/time.ts';
 import { Share } from '../../src/direction/move.ts';
-import { cubicBezier, hermite, softThenHeld } from '../../src/direction/curves.ts';
+import { atSpeeds, cubicBezier, softThenHeld } from '../../src/direction/curves.ts';
 
 // How far either side of a share of time a curve's speed is read
 const A_MOMENT = 1e-4;
@@ -32,7 +32,7 @@ describe("curves of a film's own numbers", () => {
 	});
 
 	test('one that sets off and arrives at the speeds named, from its start to its end', () => {
-		const joining = hermite({ settingOff: 2, arriving: 0.5 });
+		const joining = atSpeeds({ settingOff: 2, arriving: 0.5 });
 		expect([joining(0), joining(1), speedOf(joining, A_MOMENT), speedOf(joining, 1 - A_MOMENT)]).toEqual([
 			0,
 			1,
@@ -56,14 +56,14 @@ describe("curves of a film's own numbers", () => {
 		expect(() => cubicBezier(1.2, 0, 0.5, 1)).toThrow(
 			new FilmError("cubicBezier's first handle's time is 1.2: it is a share of the time, from 0 to 1, as CSS takes it")
 		);
-		expect(() => hermite({ settingOff: -1, arriving: 0 })).toThrow(
+		expect(() => atSpeeds({ settingOff: -1, arriving: 0 })).toThrow(
 			new FilmError(
-				"hermite's settingOff is -1: it is times the mean speed, from 0 to 3: faster, the curve runs past its end or back before its start"
+				"atSpeeds's settingOff is -1: it is times the mean speed, from 0 to 3: faster, the curve runs past its end or back before its start"
 			)
 		);
-		expect(() => hermite({ settingOff: 0, arriving: 4 })).toThrow(
+		expect(() => atSpeeds({ settingOff: 0, arriving: 4 })).toThrow(
 			new FilmError(
-				"hermite's arriving is 4: it is times the mean speed, from 0 to 3: faster, the curve runs past its end or back before its start"
+				"atSpeeds's arriving is 4: it is times the mean speed, from 0 to 3: faster, the curve runs past its end or back before its start"
 			)
 		);
 		expect(() => softThenHeld(0)).toThrow(

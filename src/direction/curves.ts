@@ -63,8 +63,8 @@ export function cubicBezier(firstTime: number, firstWay: number, secondTime: num
  * curve. A move joins the one before at the speed it arrived at where it sets off at that speed in its own mean's
  * terms: the speed it arrived at, as how far it went a second, times this move's seconds over how far this one goes.
  */
-export function hermite(speeds: Speeds): Ease {
-	assertWritten(speeds, SPEEDS_FORM, 'hermite');
+export function atSpeeds(speeds: Speeds): Ease {
+	assertWritten(speeds, SPEEDS_FORM, 'atSpeeds');
 	const { settingOff, arriving } = speeds;
 	return (progress) => hermiteAt(progress, settingOff, arriving);
 }

@@ -273,7 +273,7 @@ takes a share of its step, `within: { start, end }`, and a curve of its own,
 `ease`: `linear`, `easeInOutSine` (a step's own), `easeInOutCubic`,
 `easeOutCubic`, `easeOutQuint`, or `easeOutBack`, which passes its end and
 settles back on it; or one of a film's own numbers: `cubicBezier(0.4, 0,
-0.2, 1)` as CSS's `cubic-bezier()`, `hermite({ settingOff, arriving })`,
+0.2, 1)` as CSS's `cubic-bezier()`, `atSpeeds({ settingOff, arriving })`,
 which sets off and arrives at those speeds, each from 0 to 3 times its
 mean, so a move set off at the speed the one before arrived at, counted in
 its own mean's terms, runs on from it with no jolt, and `softThenHeld(0.4)`, which sets off

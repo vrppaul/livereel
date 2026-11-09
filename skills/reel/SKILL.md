@@ -386,7 +386,7 @@ ground's own grey.
 
 The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
 person types. Curves of the film's own numbers: `cubicBezier(x1, y1, x2,
-y2)` as a designer hands CSS's `cubic-bezier()`; `hermite({ settingOff,
+y2)` as a designer hands CSS's `cubic-bezier()`; `atSpeeds({ settingOff,
 arriving })`, each speed from 0 to 3 times the mean, so two plays of one
 move run on with no jolt where the second sets off at the speed the first
 arrived at, in its own mean's terms: that speed, how far the first went a
