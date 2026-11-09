@@ -182,6 +182,8 @@ const IDENTITY: Matrix = {
 	m43: 0,
 	m44: 1
 };
+// A point's down turned up, as three's y runs up the frame, against the frame's down
+const DOWN_TURNED_UP: Matrix = { ...IDENTITY, m22: -1 };
 // Every entry of a matrix, by its name
 const ENTRIES = [
 	'm11',
@@ -251,6 +253,14 @@ export function scalingAlong(across: number, down: number, out: number): Matrix 
 /** Matrices one after another, as a CSS transform list reads them: the last carries a point first. */
 export function chained(matrices: readonly Matrix[]): Matrix {
 	return matrices.reduce(product, IDENTITY);
+}
+
+/**
+ * A matrix of the frame's axes written in three's, where a film's own three objects stand: down turned up on both of
+ * its sides, so what it carries keeps its handedness and a face turns as three's do.
+ */
+export function inThreesAxes(matrix: Matrix): Matrix {
+	return chained([DOWN_TURNED_UP, matrix, DOWN_TURNED_UP]);
 }
 
 /** Where a matrix carries a spot, seen from its eye where it sees in perspective. */

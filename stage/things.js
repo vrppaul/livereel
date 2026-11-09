@@ -3,14 +3,24 @@
  * A film's own things in the room (`src/props/thing.ts`): each built once by the film's module from the stage's own
  * three, never a copy of the film's, so its objects and the room's renderer agree, then set whole from its numbers and
  * how far it has come up every exposure, and drawn alone into a layer of its own, with a depth of its own, so its own
- * faces hide one another as the eye sees them, and a thing in the world hides behind the page's window point by point.
+ * faces hide one another as the eye sees them.
  *
- * The engine places it, as it places the window: by the matrix that carries a point of it to the frame's pixels up from
- * its box's middle, seen from the eye, which keeps how far each point stands as the fourth value it divides by, written
- * in three's own axes on both sides so its faces turn as three's do. So no camera of three's stands here: the
- * projection carries that matrix's frame pixels onto the box of the frame a layer holds, and keeps a depth that grows
- * with how far a point stands from the eye, from a pixel before it to as far past the frame as the eye stands before
- * it, many times over; the window's plane is kept in the same depth (`depthRowOf`), so the two hide one another.
+ * A thing in the world is drawn in the two parts the page's window parts it into: before the window, what of it stands
+ * nearer the eye than the window's surface where the surface stands, and all of it the eye sees past the surface's
+ * edges; behind it, what stands behind the surface, and a sliver before it. The surface is drawn as depth before the
+ * part before it, so the thing hides behind it as its own faces hide one another, its edge on the page smoothed as a
+ * thing's own edges are. The part behind is cut by the surface's plane a sliver before it, face by face, so a
+ * see-through thing keeps its far faces and one that writes no depth is cut as well; over it the surface wipes what
+ * stands nearer than the sliver, for a shader of the film's that three does not cut, and all past the surface's edges
+ * is wiped. The sliver lies under the part before, so where the two meet in a pixel the part behind fills it and the
+ * part before is laid over: two layers each covering a share of a pixel, laid one over the other, would leave the
+ * pixel short of whole and dark. The part before is cut by the plane a sliver behind it, for a material that tests no
+ * depth.
+ *
+ * The engine places a thing and the window alike: by the matrix that carries a point into the eye's own space, in
+ * three's axes, the eye at its middle looking down its z, as three's camera space is. So three's camera stands where
+ * it stands of itself, and only its projection is the room's: a perspective from the eye onto the box of the frame a
+ * layer holds, the frame's picture plane as far before the eye as the engine says.
  *
  * Its module keeps no state and reads no clock: what it draws is a function of the numbers handed it, as a still at a
  * moment drawn twice is its check. What it throws loading, building or setting a thing is the film's, said so.
@@ -36,6 +46,25 @@ import { matrixOf } from './matrices.js';
 
 /** How a thing stands built: the name it was built by, the group the engine's matrix places, and its own objects. @typedef {{ readonly made: string, readonly placed: THREE.Group, readonly built: THREE.Object3D }} Standing */
 
+/**
+ * The page window's surface a thing in the world is parted by, in the eye's own space: its plane, which keeps the
+ * eye's side; and the matrix that carries a square of one side about its middle onto the surface, and its reverse.
+ * @typedef {{ readonly plane: THREE.Plane, readonly surface: THREE.Matrix4, readonly fromTheSurface: THREE.Matrix4 }} WindowSurface
+ */
+
+/**
+ * How much of a thing is drawn: all of it; its part before the window's surface; or its part behind it, and whether
+ * the eye sees any of the thing past the surface's edges, where that part is wiped.
+ * @typedef {{ readonly kind: 'whole' }
+ *   | { readonly kind: 'before', readonly window: WindowSurface }
+ *   | { readonly kind: 'behind', readonly window: WindowSurface, readonly pastTheEdges: boolean }} ThingPart
+ */
+
+/**
+ * Which of the window's parts a thing is drawn in, and whether the eye sees any of it past the surface's edges.
+ * @typedef {{ readonly before: boolean, readonly behind: boolean, readonly pastTheEdges: boolean }} Sides
+ */
+
 // The name a module's default export stands under, and what a builder holds; and what the film is told where its
 // things module exports no builders there
 const DEFAULT_EXPORT = 'default';
@@ -47,25 +76,42 @@ const NO_BUILDERS =
 // frame as the eye stands before it the farthest stands
 const NEAREST = 1;
 const FARTHEST_IN_EYE_DISTANCES = 100;
-// WebGL's clip space, from -1 to 1 each way: its left and bottom, its right and top, and its span; the depth it keeps
-// runs from the near end to the far
-const CLIP_FROM = -1;
-const CLIP_TO = 1;
-const CLIP_SPAN = CLIP_TO - CLIP_FROM;
-const NEAR_END = CLIP_FROM;
-const FAR_END = CLIP_TO;
-// Where each column of a 4 × 4 matrix starts among its elements, as three keeps them a column at a time, and the rows
-// of clip space's across, up and depth within a column; the fourth row, what a point is divided by, is kept as it is
-const COLUMN_FIRST = 0;
-const COLUMN_SECOND = 4;
-const COLUMN_THIRD = 8;
-const COLUMN_FOURTH = 12;
-const ROW_ACROSS = 0;
-const ROW_UP = 1;
-const ROW_DEPTH = 2;
-// A box's middle stands half way across and down it; and the frame's plane, where a thing's box lies
+// A box's middle stands half way across and down it
 const HALVES = 2;
-const ON_THE_FRAMES_PLANE = 0;
+// Where a point stands on the window's plane, on neither side of it; a thing of nothing drawn, in neither part; how far
+// from its middle the edges of a square of one side stand; a sight along the plane, which never meets it; and how far
+// out of the eye's space a point stands at the eye, past which it stands behind the eye, which sees it not
+const ON_THE_PLANE = 0;
+/** @type {Sides} */
+const IN_NEITHER_PART = { before: false, behind: false, pastTheEdges: false };
+const HALF_A_SIDE = 0.5;
+const ALONG_THE_PLANE = 0;
+const AT_THE_EYE = 0;
+// The renderer cutting nothing away, as it draws all but a thing's parts
+/** @type {THREE.Plane[]} */
+const NOTHING_CUT = [];
+// What marks a sample of a layer the window's surface covers, as the part behind it is wiped
+const ON_THE_SURFACE = 1;
+// How far past the window's surface each part reaches, in pixels of the frame as far off as the surface: as far as a
+// face leant up to 63° from the eye goes toward it across a pixel, so the part behind fills the pixels it meets the
+// part before in
+const SLIVER_IN_PIXELS = 2;
+// A sample written clear, of no colour and no light, where colour is written at all
+const CLEAR = `
+void main() {
+	gl_FragColor = vec4(0.0);
+}`;
+// The window's surface where the eye sees it, by three's own matrices; and a square covering the whole of a layer
+const SEEN_FROM_THE_EYE = `
+void main() {
+	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+const OVER_THE_WHOLE_LAYER = `
+void main() {
+	gl_Position = vec4(position.xy, 0.0, 1.0);
+}`;
+// How wide and high WebGL's own space is, from -1 to 1 either way: a square as large covers the whole of a layer
+const WEBGL_SPAN = 2;
 
 /** The film's things: its module's builders, and each thing built, by its name, with the name it was built by. */
 export class Things {
@@ -76,6 +122,11 @@ export class Things {
 		this.built = new Map();
 		this.scene = new THREE.Scene();
 		this.camera = new THREE.Camera();
+		const square = new THREE.PlaneGeometry();
+		this.surfaceAsDepth = placedSquare(square, surfaceAsDepthMaterial());
+		this.surfaceMarking = placedSquare(square, surfaceMarkingMaterial());
+		this.surfaceWiping = placedSquare(square, surfaceWipingMaterial());
+		this.pastTheSurfaceWiping = pastTheSurfaceWiping();
 	}
 
 	/**
@@ -97,12 +148,12 @@ export class Things {
 	}
 
 	/**
-	 * A thing drawn into the layer the renderer draws into, which holds a box of the frame, set from its numbers and
-	 * placed where its scene has it, over what depth the layer keeps; what the film is told where its module throws
-	 * building or setting it, none where it draws.
-	 * @param {THREE.WebGLRenderer} renderer @param {ThingObject} thing @param {Box} drawn @returns {string | null}
+	 * A thing posed for an exposure: built the first time, set from its numbers and how far it has come up, and placed
+	 * where its scene has it; what the film is told where its module throws building or setting it, none where it
+	 * stands.
+	 * @param {ThingObject} thing @returns {string | null}
 	 */
-	drawn(renderer, thing, drawn) {
+	posed(thing) {
 		const made = thing.content.made;
 		/** @type {Standing} */
 		let standing;
@@ -112,18 +163,78 @@ export class Things {
 		} catch (fault) {
 			return `the film's things module failed building or setting ${made}: ${String(fault)}`;
 		}
-		standing.placed.matrix.copy(placedAbout(thing));
+		standing.placed.matrix.copy(matrixOf(thing.content.inTheEyesSpace));
 		standing.placed.matrixWorldNeedsUpdate = true;
-		this.camera.projectionMatrix.copy(projectionOnto(drawn, thing.content.eyeDistance));
-		this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
-		this.scene.clear();
-		this.scene.add(standing.placed);
-		renderer.render(this.scene, this.camera);
 		return null;
 	}
 
 	/**
-	 * The thing as it stands: its objects, built by its builder the first time it is drawn, or anew where it is built by
+	 * Which of the window's parts a posed thing in the world is drawn in, by the box round all of it in the eye's own
+	 * space: behind, where any of it stands behind the window's plane; before, where any of it stands before the plane,
+	 * or where the eye sees any of it past the surface's edges, as the part before holds all that. Each box of its
+	 * parts is counted anew, as its module's `set` may move their points.
+	 * @param {ThingObject} thing @param {WindowSurface} window @returns {Sides}
+	 */
+	sidesOf(thing, window) {
+		const placed = this.posedAs(thing).placed;
+		placed.traverse(boxCountedAnew);
+		const around = new THREE.Box3().setFromObject(placed);
+		if (around.isEmpty()) return IN_NEITHER_PART;
+		const corners = cornersOf(around);
+		const distances = corners.map((corner) => window.plane.distanceToPoint(corner));
+		const pastTheEdges = !corners.every((corner) => isSeenOnTheSurface(corner, window));
+		return {
+			before: pastTheEdges || distances.some((distance) => distance >= ON_THE_PLANE),
+			behind: distances.some((distance) => distance < ON_THE_PLANE),
+			pastTheEdges
+		};
+	}
+
+	/**
+	 * A posed thing drawn into the layer the renderer draws into, which holds a box of the frame: all of it; or its
+	 * part before the window's surface, hidden behind the surface drawn first as depth and cut a sliver behind it; or
+	 * its part behind it, cut a sliver before it, what stands nearer than the sliver wiped, and all past the surface's
+	 * edges, where the eye sees any of the thing there.
+	 * @param {THREE.WebGLRenderer} renderer @param {ThingObject} thing @param {Box} drawn @param {Box} frame
+	 * @param {ThingPart} part
+	 */
+	drawn(renderer, thing, drawn, frame, part) {
+		const eyeDistance = thing.content.eyeDistance;
+		this.camera.projectionMatrix.copy(projectionOnto(drawn, frame, eyeDistance));
+		this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
+		this.scene.clear();
+		this.scene.add(this.posedAs(thing).placed);
+		switch (part.kind) {
+			case 'whole':
+				renderer.render(this.scene, this.camera);
+				return;
+			case 'before':
+				renderer.render(placedOn(this.surfaceAsDepth, part.window.surface), this.camera);
+				renderer.clippingPlanes = [cutASliverPast(part.window, part.kind, eyeDistance)];
+				renderer.render(this.scene, this.camera);
+				renderer.clippingPlanes = NOTHING_CUT;
+				return;
+			case 'behind':
+				renderer.clippingPlanes = [cutASliverPast(part.window, part.kind, eyeDistance)];
+				renderer.render(this.scene, this.camera);
+				renderer.clippingPlanes = NOTHING_CUT;
+				renderer.render(placedOn(this.surfaceWiping, aSliverBefore(part.window, eyeDistance)), this.camera);
+				if (!part.pastTheEdges) return;
+				renderer.render(placedOn(this.surfaceMarking, part.window.surface), this.camera);
+				renderer.render(this.pastTheSurfaceWiping, this.camera);
+				return;
+		}
+	}
+
+	/** A thing as it was last posed. @param {ThingObject} thing @returns {Standing} */
+	posedAs(thing) {
+		const standing = this.built.get(thing.name);
+		if (standing === undefined) throw new Error(`the room draws the thing ${thing.name} before it poses it`);
+		return standing;
+	}
+
+	/**
+	 * The thing as it stands: its objects, built by its builder the first time it is posed, or anew where it is built by
 	 * another, the old ones let go, inside a group the engine's matrix places, so what its module turns or moves of them
 	 * it does in the thing's own space.
 	 * @param {ThingObject} thing @returns {Standing}
@@ -148,19 +259,6 @@ export class Things {
 		if (builder === undefined) throw new Error(`the film's things module builds no ${made}`);
 		return builder;
 	}
-}
-
-/**
- * The row a projection keeps depth by, for an eye standing so far before the frame in its pixels: the point's out, how
- * far before the frame it stands, over its fourth value, `eyeDistance × (1 − w) / w`, grows as it nears, so the depth
- * is the reverse of it, set to meet the ends a pixel before the eye and far past the frame.
- * @param {number} eyeDistance @returns {{ readonly outward: number, readonly kept: number }}
- */
-export function depthRowOf(eyeDistance) {
-	const farthest = eyeDistance * FARTHEST_IN_EYE_DISTANCES;
-	const squared = eyeDistance * eyeDistance;
-	const outward = (NEAR_END - FAR_END) / (squared * (1 / NEAREST - 1 / farthest));
-	return { outward, kept: NEAR_END - (outward * squared) / NEAREST + outward * eyeDistance };
 }
 
 /** Whether an object a scene draws is a thing. @param {DrawnObject} object @returns {object is ThingObject} */
@@ -194,42 +292,178 @@ function letGo(built) {
 	built.traverse(partLetGo);
 }
 
-/** A part's geometry and materials let go of, where it is a mesh. @param {THREE.Object3D} part */
+/**
+ * A part's box counted anew from its points as they stand, where three draws it: an instanced or batched mesh's own,
+ * round all its copies, or else its geometry's, which three keeps from the first count otherwise.
+ * @param {THREE.Object3D} part
+ */
+function boxCountedAnew(part) {
+	if (part instanceof THREE.InstancedMesh || part instanceof THREE.BatchedMesh) part.computeBoundingBox();
+	else if (isDrawnPart(part)) part.geometry.computeBoundingBox();
+}
+
+/** A part's geometry and materials let go of, where three draws it. @param {THREE.Object3D} part */
 function partLetGo(part) {
-	if (!(part instanceof THREE.Mesh)) return;
-	const mesh = /** @type {THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]>} */ (part);
-	mesh.geometry.dispose();
-	for (const material of [mesh.material].flat()) material.dispose();
+	if (!isDrawnPart(part)) return;
+	part.geometry.dispose();
+	for (const material of [/** @type {THREE.Material | THREE.Material[]} */ (part.material)].flat()) material.dispose();
 }
 
 /**
- * The matrix that carries a point of a thing to the frame's pixels up from its top, its fourth value how far it
- * stands: its placing about its box's middle, then moved to that middle, as far for each point as it divides by, so
- * the move holds once divided.
- * @param {ThingObject} thing
+ * Whether three draws a part, of a geometry and materials of its own: a mesh, lines or points.
+ * @param {THREE.Object3D} part @returns {part is THREE.Mesh | THREE.Line | THREE.Points}
  */
-function placedAbout(thing) {
-	const middleAcross = thing.box.left + thing.box.width / HALVES;
-	const middleUp = -(thing.box.top + thing.box.height / HALVES);
+function isDrawnPart(part) {
+	return part instanceof THREE.Mesh || part instanceof THREE.Line || part instanceof THREE.Points;
+}
+
+/** A box's eight corners. @param {THREE.Box3} box */
+function cornersOf(box) {
+	return [box.min.x, box.max.x].flatMap((across) =>
+		[box.min.y, box.max.y].flatMap((up) => [box.min.z, box.max.z].map((out) => new THREE.Vector3(across, up, out)))
+	);
+}
+
+/**
+ * Whether the eye sees a point on a line through the window's surface: its sight toward the point meets the plane
+ * ahead, within the surface's edges; a sight running along the plane or away from it meets none.
+ * @param {THREE.Vector3} point @param {WindowSurface} window
+ */
+function isSeenOnTheSurface(point, window) {
+	const toward = window.plane.normal.dot(point);
+	if (point.z >= AT_THE_EYE || toward >= ALONG_THE_PLANE) return false;
+	const shareOfTheWay = -window.plane.constant / toward;
+	const onTheSquare = point.clone().multiplyScalar(shareOfTheWay).applyMatrix4(window.fromTheSurface);
+	return Math.abs(onTheSquare.x) <= HALF_A_SIDE && Math.abs(onTheSquare.y) <= HALF_A_SIDE;
+}
+
+/**
+ * A square the window's surface is drawn by, in a material of its own, placed by a matrix of its own.
+ * @param {THREE.PlaneGeometry} square @param {THREE.Material} material
+ */
+function placedSquare(square, material) {
+	const placed = new THREE.Mesh(square, material);
+	placed.matrixAutoUpdate = false;
+	return placed;
+}
+
+/** A square placed onto the window's surface, as it is drawn next. @param {THREE.Mesh} square @param {THREE.Matrix4} surface */
+function placedOn(square, surface) {
+	square.matrix.copy(surface);
+	square.matrixWorldNeedsUpdate = true;
+	return square;
+}
+
+/**
+ * The window's surface drawn as depth alone, before a thing, so what stands behind it is hidden as it is drawn: by the
+ * shader the surface is marked by, so the two parts cover the same samples at the surface's edges.
+ */
+function surfaceAsDepthMaterial() {
+	return new THREE.ShaderMaterial({
+		vertexShader: SEEN_FROM_THE_EYE,
+		fragmentShader: CLEAR,
+		side: THREE.DoubleSide,
+		colorWrite: false
+	});
+}
+
+/** The window's surface marking each sample it covers over a thing, leaving its colour and depth as they stand. */
+function surfaceMarkingMaterial() {
+	return new THREE.ShaderMaterial({
+		vertexShader: SEEN_FROM_THE_EYE,
+		fragmentShader: CLEAR,
+		side: THREE.DoubleSide,
+		colorWrite: false,
+		depthTest: false,
+		depthWrite: false,
+		stencilWrite: true,
+		stencilRef: ON_THE_SURFACE,
+		stencilFunc: THREE.AlwaysStencilFunc,
+		stencilZPass: THREE.ReplaceStencilOp
+	});
+}
+
+/**
+ * The window's surface drawn over a thing, wiping each sample where the thing stands nearer the eye than it: what of a
+ * film's own shader that three does not cut stands before the surface.
+ */
+function surfaceWipingMaterial() {
+	return new THREE.ShaderMaterial({
+		vertexShader: SEEN_FROM_THE_EYE,
+		fragmentShader: CLEAR,
+		side: THREE.DoubleSide,
+		depthFunc: THREE.GreaterDepth,
+		depthWrite: false,
+		blending: THREE.NoBlending
+	});
+}
+
+/**
+ * The window's surface moved a sliver toward the eye: so many pixels of the frame as far off as the surface stands,
+ * along the plane's way toward the eye.
+ * @param {WindowSurface} window @param {number} eyeDistance
+ */
+function aSliverBefore(window, eyeDistance) {
 	return new THREE.Matrix4()
-		.makeTranslation(middleAcross, middleUp, ON_THE_FRAMES_PLANE)
-		.multiply(matrixOf(thing.content.placing));
+		.makeTranslation(window.plane.normal.clone().multiplyScalar(sliverOf(window, eyeDistance)))
+		.multiply(window.surface);
 }
 
 /**
- * The projection that carries the frame's pixels up from its top, each with how far it stands from the eye as the
- * fourth value it is divided by, onto a layer holding a box of the frame, and keeps a depth from a pixel before the eye
- * to far past the frame (`depthRowOf`).
- * @param {Box} drawn @param {number} eyeDistance
+ * The window's plane a part of a thing is cut by: keeping the eye's side of it for the part before, the far side for
+ * the part behind, moved a sliver into the side it cuts away, so the part reaches a sliver past the surface.
+ * @param {WindowSurface} window @param {'before' | 'behind'} kept @param {number} eyeDistance
  */
-function projectionOnto(drawn, eyeDistance) {
-	const depth = depthRowOf(eyeDistance);
-	const projection = new THREE.Matrix4();
-	projection.elements[COLUMN_FIRST + ROW_ACROSS] = CLIP_SPAN / drawn.width;
-	projection.elements[COLUMN_FOURTH + ROW_ACROSS] = CLIP_FROM - (CLIP_SPAN * drawn.left) / drawn.width;
-	projection.elements[COLUMN_SECOND + ROW_UP] = CLIP_SPAN / drawn.height;
-	projection.elements[COLUMN_FOURTH + ROW_UP] = CLIP_TO + (CLIP_SPAN * drawn.top) / drawn.height;
-	projection.elements[COLUMN_THIRD + ROW_DEPTH] = depth.outward;
-	projection.elements[COLUMN_FOURTH + ROW_DEPTH] = depth.kept;
-	return projection;
+function cutASliverPast(window, kept, eyeDistance) {
+	const keeping = kept === 'before' ? window.plane.clone() : window.plane.clone().negate();
+	keeping.constant += sliverOf(window, eyeDistance);
+	return keeping;
+}
+
+/**
+ * How far a sliver past the window's surface reaches, in the eye's own space: so many pixels of the frame as far off as
+ * the surface stands.
+ * @param {WindowSurface} window @param {number} eyeDistance
+ */
+function sliverOf(window, eyeDistance) {
+	return (SLIVER_IN_PIXELS * window.plane.constant) / eyeDistance;
+}
+
+/** The whole of a layer wiped but for the samples the window's surface marked. */
+function pastTheSurfaceWiping() {
+	const whole = new THREE.Mesh(
+		new THREE.PlaneGeometry(WEBGL_SPAN, WEBGL_SPAN),
+		new THREE.ShaderMaterial({
+			vertexShader: OVER_THE_WHOLE_LAYER,
+			fragmentShader: CLEAR,
+			depthTest: false,
+			depthWrite: false,
+			blending: THREE.NoBlending,
+			stencilWrite: true,
+			stencilRef: ON_THE_SURFACE,
+			stencilFunc: THREE.NotEqualStencilFunc
+		})
+	);
+	whole.frustumCulled = false;
+	return whole;
+}
+
+/**
+ * The projection that sees the eye's own space in perspective from the eye onto a layer holding a box of the frame:
+ * the frame's middle straight before the eye, its picture plane as far before it as the eye stands, and a depth kept
+ * from a pixel before the eye to far past the frame.
+ * @param {Box} drawn @param {Box} frame @param {number} eyeDistance
+ */
+function projectionOnto(drawn, frame, eyeDistance) {
+	const toTheNearest = NEAREST / eyeDistance;
+	const leftOfTheMiddle = drawn.left - (frame.left + frame.width / HALVES);
+	const topOverTheMiddle = frame.top + frame.height / HALVES - drawn.top;
+	return new THREE.Matrix4().makePerspective(
+		leftOfTheMiddle * toTheNearest,
+		(leftOfTheMiddle + drawn.width) * toTheNearest,
+		topOverTheMiddle * toTheNearest,
+		(topOverTheMiddle - drawn.height) * toTheNearest,
+		NEAREST,
+		eyeDistance * FARTHEST_IN_EYE_DISTANCES
+	);
 }

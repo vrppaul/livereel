@@ -1054,10 +1054,13 @@ the eye's focus it stands and how far it moves for the motion blur; a move
 of its numbers moves nothing the blur counts, so a fast turn by `set` is
 shot unblurred. It is drawn alone, with a depth of its own, blurred by the
 eye's focus as one, by its box's point nearest the focus; in the world, the
-page's window hides what of it stands behind the window's plane, point by
-point; on the frame it rides with the eye, sharp, before the window. The
-room draws it unlit: build it of `MeshBasicMaterial` or a `ShaderMaterial`
-of its own, as no light of the world's reaches it yet. It comes and goes in
+page's window parts it, what stands behind the window laid under the page and
+what stands before it over, so a page that fades shows what stands behind it;
+on the frame it rides with the eye, sharp, before the window. The room draws
+it unlit: build it of `MeshBasicMaterial` or a `ShaderMaterial` of its own, as
+no light of the world's reaches it yet; a see-through `ShaderMaterial` in the
+world, or one that writes no depth, sets `clipping: true` and includes three's
+clipping chunks, so the window parts it face by face. It comes and goes in
 its own way alone, as its module draws `shown` (a material it fades is
 `transparent`), and takes no effects. `set` is handed the stage's `three`
 for what it makes anew. Refused: things in a film not drawn as a room and a

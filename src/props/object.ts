@@ -51,6 +51,7 @@ import {
 	ZOOM_AT_MOST,
 	boxInTheView,
 	carriedAboutItsMiddle,
+	inTheEyesSpaceAbout,
 	leantOnTheFrame,
 	middleInTheRoom,
 	seenFromTheEye
@@ -99,7 +100,7 @@ import { type DrawnHole, type DrawnPiece, type Piece, drawnPiece, pageFitOfPiece
 import { type OnItsWay, type Way, alongItsWay, cutMoved, figurePointOn, presencesIn, presentShare } from './way.ts';
 import type { Screen } from './screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './terminal.ts';
-import { type DrawnThing, type Thing, drawnThing } from './thing.ts';
+import { type DrawnThing, type Thing, type ThingStanding, drawnThing } from './thing.ts';
 import { type DrawnTitleWords, type TitleWords, drawnTitleWords } from './title.ts';
 
 /** The name an object is known by: one a film gives, or its kind's own. */
@@ -374,14 +375,50 @@ function standingOf(object: FrameObject, frame: Size, holders: Holders): Standin
 function standingAlone(object: FrameObject, frame: Size, eye: Eye): Standing {
 	switch (object.inside.kind) {
 		case 'frame':
-			return seenWhereLaid(object.box, stanceMatrix(object), eyeAtRest(eye.focalLength), frame);
 		case 'world':
-			return seenWhereLaid(object.box, stanceMatrix(object), eye, frame);
+			return seenWhereLaid(object.box, stanceMatrix(object), eyeSeeing(object.inside.kind, eye), frame);
 		case 'window':
 			return flatOnTheWindow(object.box, object);
 		case 'page':
 		case 'group':
 			throw new Error('an object on the page or in a group never slides: its move refuses it as it begins');
+	}
+}
+
+/**
+ * The eye that sees what stands alone on the frame or in the world: on the frame, which rides with the eye, the eye at
+ * rest; in the world, the eye as it stands.
+ */
+function eyeSeeing(holder: 'frame' | 'world', eye: Eye): Eye {
+	switch (holder) {
+		case 'frame':
+			return eyeAtRest(eye.focalLength);
+		case 'world':
+			return eye;
+	}
+}
+
+/**
+ * How a thing stands as the room draws it: as any object does, and carried about its box's middle into the eye's own
+ * space of the eye that sees it. `thing.show` stands it on the frame or in the world alone.
+ */
+function thingStandingOf(object: FrameObject, standing: Standing, eye: Eye, frame: Size): ThingStanding {
+	switch (object.inside.kind) {
+		case 'frame':
+		case 'world': {
+			const seeing = eyeSeeing(object.inside.kind, eye);
+			return {
+				laid: standing.laid,
+				placing: standing.placing,
+				inTheEyesSpace: chained([inTheEyesSpaceAbout(standing.laid, seeing, frame), stanceMatrix(object)]),
+				scale: object.scale,
+				inTheWorld: object.inside.kind === 'world'
+			};
+		}
+		case 'window':
+		case 'page':
+		case 'group':
+			throw new Error('a thing stands on the frame or in the world alone, as thing.show stands it');
 	}
 }
 
@@ -751,7 +788,7 @@ function drawnContent(
 			return drawnLens(content, standing.laid, middle, around.camera, around.frame, shown, around.holes);
 		}
 		case 'thing': {
-			const thingStanding = { ...standing, scale: object.scale, inTheWorld: object.inside.kind === 'world' };
+			const thingStanding = thingStandingOf(object, standing, around.camera.eye, around.frame);
 			return drawnThing(content, thingStanding, presentShare(figure), around);
 		}
 	}

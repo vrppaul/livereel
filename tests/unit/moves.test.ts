@@ -52,7 +52,7 @@ import * as pin from '../../src/moves/pins.ts';
 import * as thing from '../../src/moves/thing.ts';
 import * as title from '../../src/moves/title.ts';
 import type { DrawnThing } from '../../src/props/thing.ts';
-import { type Matrix, carried } from '../../src/domain/matrix.ts';
+import { ITS_MIDDLE, type Matrix, carried } from '../../src/domain/matrix.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { drawnNote } from '../../src/props/note.ts';
 import { drawnPins } from '../../src/props/pins.ts';
@@ -3412,25 +3412,26 @@ test("a thing's numbers go from those it was shown with to those set, the rest k
 	expect(drawnThingIn(halfWay).values).toEqual({ open: 0.5, glow: 1 });
 });
 
-test("a thing is drawn by three's own axes on both sides, up the frame, its faces turning as three's do, a unit of it a pixel of a frame 1080 high, the eye as far before the frame as its focal length", async () => {
+test("a thing is carried into the eye's space by three's own axes on both sides, up the frame, its faces turning as three's do, a unit of it a pixel of a frame 1080 high, the eye as far before the frame as its focal length", async () => {
 	const drawnCard = drawnThingIn(await cardAt(0));
+	const inTheEyesSpace = drawnCard.inTheEyesSpace;
 	const scale = SMALL.frame.height / 1080;
-	expect([
-		drawnCard.placing.m11,
-		drawnCard.placing.m22,
-		handednessOf(drawnCard.placing) > 0,
-		drawnCard.eyeDistance
-	]).toEqual([expect.closeTo(scale), expect.closeTo(scale), true, expect.closeTo(FOCAL_LENGTH * scale)]);
+	expect([inTheEyesSpace.m11, inTheEyesSpace.m22, handednessOf(inTheEyesSpace) > 0, drawnCard.eyeDistance]).toEqual([
+		expect.closeTo(scale),
+		expect.closeTo(scale),
+		true,
+		expect.closeTo(FOCAL_LENGTH * scale)
+	]);
 });
 
 test("a thing leant back by its stance takes three's top away from the eye, up the frame, as three would", async () => {
-	const leant = await setAt(thing.lean({ tilt: 30 }), await cardAt(0), 1);
-	const top = carried(drawnThingIn(leant).placing, { across: 0, down: 1, out: 0 });
-	expect([top.down > 0, top.out < 0]).toEqual([true, true]);
+	const leant = drawnThingIn(await setAt(thing.lean({ tilt: 30 }), await cardAt(0), 1)).inTheEyesSpace;
+	const [top, middle] = [{ across: 0, down: 1, out: 0 }, ITS_MIDDLE].map((spot) => carried(leant, spot));
+	expect([top!.down > middle!.down, top!.out < middle!.out]).toEqual([true, true]);
 });
 
 test('a thing grown by its stance grows toward the eye as much as across and up', async () => {
-	const grown = drawnThingIn(await setAt(thing.to('whole', { scale: 2 }), await cardAt(0), 1)).placing;
+	const grown = drawnThingIn(await setAt(thing.to('whole', { scale: 2 }), await cardAt(0), 1)).inTheEyesSpace;
 	expect(grown.m33).toBeCloseTo(grown.m11);
 });
 

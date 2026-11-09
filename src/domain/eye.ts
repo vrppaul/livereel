@@ -41,6 +41,7 @@ import {
 	perspective,
 	radians,
 	scaledBy,
+	translation,
 	unitOf,
 	wayBetween
 } from './matrix.ts';
@@ -293,11 +294,24 @@ export function distanceBefore(eye: Viewpoint, spot: Spot): number {
 
 /**
  * The matrix that carries a spot of the room, about the frame's middle, to where an eye sees it on a frame of this
- * size: turned and moved as the eye stands, then seen in perspective from its picture plane. At rest, CSS's
- * `perspective()` alone.
+ * size: carried into the eye's own space, moved back to where the eye at rest stands before the frame, then seen in
+ * perspective from its picture plane. At rest, CSS's `perspective()` alone.
  */
 export function seenByTheEye(eye: Eye, frame: Size): Matrix {
-	return chained([perspective(eye.focalLength * frameScaleOf(frame)), viewFrom(eye, frame)]);
+	const eyeDistance = eye.focalLength * frameScaleOf(frame);
+	return chained([perspective(eyeDistance), translation({ ...NO_MOVE, out: eyeDistance }), inTheEyesSpace(eye, frame)]);
+}
+
+/**
+ * The matrix that carries a spot of the room, about the frame's middle, into the eye's own space, in the frame's
+ * pixels: turned and moved as the eye stands, so the eye stands at its middle, across and down run as the eye's own,
+ * and what it looks at stands out of it the other way. A film's own three objects and the window that parts them stand
+ * there, as three's camera space is.
+ */
+export function inTheEyesSpace(eye: Eye, frame: Size): Matrix {
+	const [across, down, out] = axesOf(eye);
+	const at = scaledBy(eye.at, frameScaleOf(frame));
+	return matrixOf(across, down, out, { across: -dotOf(across, at), down: -dotOf(down, at), out: -dotOf(out, at) });
 }
 
 /** The eye's turn alone, which carries the room's axes to the eye's own: none at rest. */
@@ -323,22 +337,6 @@ export function sightOf(eye: Eye, frame: Size, fromTheMiddle: Point): Sight {
 			out: across.out * fromTheMiddle.left + down.out * fromTheMiddle.top + out.out * toThePlane
 		}
 	};
-}
-
-/**
- * The matrix that turns and moves the room as the eye stands, so the eye stands at rest before it: the room's spot the
- * eye stands at carried where the eye at rest stands, in one matrix, so the eye at rest moves nothing at all.
- */
-function viewFrom(eye: Eye, frame: Size): Matrix {
-	const scale = frameScaleOf(frame);
-	const [across, down, out] = axesOf(eye);
-	const at = scaledBy(eye.at, scale);
-	const moved = {
-		across: -dotOf(across, at),
-		down: -dotOf(down, at),
-		out: eye.focalLength * scale - dotOf(out, at)
-	};
-	return matrixOf(across, down, out, moved);
 }
 
 /**

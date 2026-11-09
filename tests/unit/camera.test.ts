@@ -7,17 +7,23 @@ import {
 	covering,
 	drawnCamera,
 	frameShift,
+	inTheEyesSpaceAbout,
 	keptOnTheScreen,
+	leaningOnTheFrame,
 	onTheFrame,
 	onto,
+	seenFromTheEye,
 	underTheFrame,
 	wholePose,
 	wholeView,
 	windowView,
 	zoomPicturedFor
 } from '../../src/domain/camera.ts';
-import { eyeAtRest } from '../../src/domain/eye.ts';
+import { type Eye, eyeAtRest } from '../../src/domain/eye.ts';
 import { type Box, type Format, type Point, type Size, distanceBetween } from '../../src/domain/geometry.ts';
+import type { Sharpness } from '../../src/domain/focus.ts';
+import { type Spot, carried } from '../../src/domain/matrix.ts';
+import { UNSHADED, drawnWindow } from '../../src/props/window.ts';
 import { FOCAL_LENGTH } from './fakes.ts';
 
 // A square frame as large as the stage's look was made on, where a zoom counts the frame's own pixels
@@ -47,6 +53,32 @@ const BOTTOM_RIGHT: Point = { left: 1512, top: 1080 };
 // A window in the square frame's lower right, off its middle, and its bottom right corner
 const WINDOW: Box = { left: 400, top: 500, width: 600, height: 400 };
 const WINDOW_CORNER: Point = { left: 1000, top: 900 };
+// A box on the square frame, off its middle, and how far its middle stands from the frame's; spots of it from its
+// middle: two corners on its plane and one out toward the eye
+const BOX_OFF_THE_MIDDLE: Box = { left: 200, top: 600, width: 300, height: 200 };
+const BOX_MIDDLE_FROM_THE_FRAMES: Point = { left: -190, top: 160 };
+const SPOTS_OF_THE_BOX: readonly Spot[] = [
+	{ across: -150, down: -100, out: 0 },
+	{ across: 150, down: 100, out: 0 },
+	{ across: 40, down: -30, out: 250 }
+];
+// The eye at rest; moved aside and near; and below the frame's middle, looking up at its top
+const EYES: readonly Eye[] = [
+	eyeAtRest(FOCAL_LENGTH),
+	{ ...eyeAtRest(FOCAL_LENGTH), at: { across: 300, down: -150, out: 900 } },
+	{ ...eyeAtRest(FOCAL_LENGTH), at: { across: 0, down: 400, out: 1200 }, aim: { across: 0, down: -540, out: 0 } }
+];
+// The window off the frame's middle leant back and swung, seen by the eye moved aside and near; how far its middle
+// stands from the frame's; spots of it from its middle, in three's axes, up the frame; and every point seen sharp
+const LEANT_WINDOW = { ...windowView(WINDOW), angle: LEANT_BACK };
+const MOVED_EYE: Eye = { ...eyeAtRest(FOCAL_LENGTH), at: { across: 300, down: -150, out: 900 } };
+const WINDOW_MIDDLE_FROM_THE_FRAMES: Point = { left: 160, top: 160 };
+const SPOTS_OF_THE_WINDOW_UP_THE_FRAME: readonly Spot[] = [
+	{ across: -300, down: 200, out: 0 },
+	{ across: 300, down: -200, out: 0 },
+	{ across: 300, down: 200, out: 0 }
+];
+const ALL_SHARP: Sharpness = { focusedAt: FOCAL_LENGTH, focalLength: FOCAL_LENGTH, aperture: 0 };
 
 /** A camera at a pose, its picture the whole of a frame, leant as it is said, seen from the eye at rest. */
 function inTheWhole(pose: Pose, angle: Angle = STRAIGHT, frame: Size = SQUARE.frame): Camera {
@@ -66,6 +98,48 @@ function cutAt(lift: number): Cut {
 function widthBetween(angle: Angle, left: Point, right: Point): number {
 	const camera = inTheWhole(FACE_ON, angle);
 	return onTheFrame(camera, SQUARE.frame, right).left - onTheFrame(camera, SQUARE.frame, left).left;
+}
+
+/**
+ * Where a spot of the off-middle box lands on the square frame, from the box's middle: carried into the eye's own
+ * space, then seen in perspective from the eye standing at that space's middle, as far from its picture plane as its
+ * focal length.
+ */
+function seenInPerspective(eye: Eye, spot: Spot): Point {
+	const inTheEyesSpace = carried(inTheEyesSpaceAbout(BOX_OFF_THE_MIDDLE, eye, SQUARE.frame), spot);
+	const toThePicturePlane = FOCAL_LENGTH / -inTheEyesSpace.out;
+	return {
+		left: inTheEyesSpace.across * toThePicturePlane - BOX_MIDDLE_FROM_THE_FRAMES.left,
+		top: inTheEyesSpace.down * toThePicturePlane - BOX_MIDDLE_FROM_THE_FRAMES.top
+	};
+}
+
+/**
+ * Where a spot of the leant window, in three's axes, lands on the square frame from the window's middle: carried into
+ * the eye's own space as the window is handed the room, then seen in perspective from the eye there, its up turned
+ * back to the frame's down.
+ */
+function windowSeenInPerspective(spot: Spot): Point {
+	const cut = drawnCamera({ pose: FACE_ON, view: LEANT_WINDOW, eye: MOVED_EYE }, SQUARE).cut;
+	const window = drawnWindow(LEANT_WINDOW, cut, MOVED_EYE, UNSHADED, SQUARE.frame, ALL_SHARP);
+	const inTheEyesSpace = carried(window.inTheEyesSpace, spot);
+	const toThePicturePlane = FOCAL_LENGTH / -inTheEyesSpace.out;
+	return {
+		left: inTheEyesSpace.across * toThePicturePlane - WINDOW_MIDDLE_FROM_THE_FRAMES.left,
+		top: -inTheEyesSpace.down * toThePicturePlane - WINDOW_MIDDLE_FROM_THE_FRAMES.top
+	};
+}
+
+/** Where the leant window is drawn on the square frame at a spot of it in three's axes, from its middle. */
+function windowDrawnAt(spot: Spot): Point {
+	const placed = carried(leaningOnTheFrame(LEANT_WINDOW, MOVED_EYE, SQUARE.frame), { ...spot, down: -spot.down });
+	return { left: placed.across, top: placed.down };
+}
+
+/** Where the eye sees a spot of the off-middle box on the square frame, from the box's middle. */
+function seenOnTheFrame(eye: Eye, spot: Spot): Point {
+	const placed = carried(seenFromTheEye(BOX_OFF_THE_MIDDLE, eye, SQUARE.frame), spot);
+	return { left: placed.across, top: placed.down };
 }
 
 function heightBetween(angle: Angle, top: Point, bottom: Point): number {
@@ -254,4 +328,20 @@ test("a picture of the page holds it as close as the closest face-on camera or p
 		zoomPicturedFor(pastTheBound, [], []),
 		zoomPicturedFor(inTheWhole(FACE_ON), [], [3])
 	]).toEqual([1.5, 1.5, 1.8, 2.2, 2.2, 2.2]);
+});
+
+test("a spot of a box carried into the eye's own space and seen in perspective from the eye there lands where the eye sees it on the frame: the eye at rest, moved aside and near, below the frame looking up; on the box's plane and out of it", () => {
+	const missedBy = EYES.flatMap((eye) =>
+		SPOTS_OF_THE_BOX.map((spot) => distanceBetween(seenInPerspective(eye, spot), seenOnTheFrame(eye, spot)))
+	);
+	expect(missedBy).toEqual(
+		Array.from({ length: EYES.length * SPOTS_OF_THE_BOX.length }, () => expect.closeTo(0, DECIMALS))
+	);
+});
+
+test("the window carried into the eye's own space as the room is handed it, in three's axes, and seen from the eye there, lands where the window is drawn on the frame: leant back and swung, the eye moved aside and near", () => {
+	const missedBy = SPOTS_OF_THE_WINDOW_UP_THE_FRAME.map((spot) =>
+		distanceBetween(windowSeenInPerspective(spot), windowDrawnAt(spot))
+	);
+	expect(missedBy).toEqual(SPOTS_OF_THE_WINDOW_UP_THE_FRAME.map(() => expect.closeTo(0, DECIMALS)));
 });

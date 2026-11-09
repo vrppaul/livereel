@@ -9,15 +9,16 @@
  * to its module each frame, which sets the three objects it built whole from them and from how far it has come up, and
  * keeps nothing else; a move of its numbers moves nothing the motion blur counts.
  *
- * The room draws a thing alone, by the matrix that carries it about its box's middle to where the eye sees it, written
- * in three's own axes, up the frame, so its faces turn as three's do; as soft as the eye's focus draws its box's point
- * nearest the focus; and, in the world, hidden point by point where the page's window stands nearer the eye. On the
- * frame, as a caption does, it rides with the eye, stays sharp and stands before the window.
+ * The room draws a thing alone, carried about its box's middle into the eye's own space, written in three's own axes,
+ * up the frame, so its faces turn as three's do, and seen from there in perspective; as soft as the eye's focus draws
+ * its box's point nearest the focus; and, in the world, parted by the page's window, what stands behind it laid under
+ * the window and what stands before it over. On the frame, as a caption does, it rides with the eye, stays
+ * sharp and stands before the window.
  */
 import { type Sharpness, outOfFocusOnTheFrame } from '../domain/focus.ts';
 import { type Box, type Size, frameScaleOf } from '../domain/geometry.ts';
 import { A_NUMBER, A_SIZE, type Kind, OfForm, RecordOf, needed } from '../domain/handed.ts';
-import { type Matrix, chained, scalingAlong } from '../domain/matrix.ts';
+import { type Matrix, chained, inThreesAxes, scalingAlong } from '../domain/matrix.ts';
 import { between } from '../domain/toward.ts';
 
 /** A thing's numbers by name, as its module reads them. */
@@ -40,17 +41,17 @@ export interface Thing {
 /**
  * A thing as the stage draws it: the name its module builds it by, its numbers, how far it has come up and not gone in
  * its own way, from 0 to 1; the matrix that carries a point of it, in three's own axes — x across, y up, z toward the
- * eye — in pixels of a frame 1080 high from its box's middle, to the frame's pixels up from that middle, seen from the
- * eye; how far the eye stands before the frame, in the frame's pixels, which the stage keeps its depth by; how soft the
- * eye's focus draws it on the frame, in pixels of a frame 1080 high, none where sharp; and whether it stands in the
- * world, where the page's window hides what of it stands behind the window.
+ * eye — in pixels of a frame 1080 high from its box's middle, into the eye's own space in the frame's pixels, in
+ * three's axes too, the eye at its middle looking down its z; how far the eye stands before the frame, in the frame's
+ * pixels, which the stage sees it in perspective from; how soft the eye's focus draws it on the frame, in pixels of a
+ * frame 1080 high, none where sharp; and whether it stands in the world, where the page's window parts it.
  */
 export interface DrawnThing {
 	readonly kind: 'thing';
 	readonly made: string;
 	readonly values: ThingValues;
 	readonly shown: number;
-	readonly placing: Matrix;
+	readonly inTheEyesSpace: Matrix;
 	readonly eyeDistance: number;
 	readonly outOfFocus: number | null;
 	readonly inTheWorld: boolean;
@@ -63,12 +64,14 @@ export interface AroundAThing {
 }
 
 /**
- * How a thing stands as it is drawn: its box, the matrix that carries it about the box's middle, which grows it across
- * and down alone as an object's stance does, how much its stance grows it, and where it stands.
+ * How a thing stands as it is drawn: its box; the matrices that carry it about the box's middle to where the eye sees
+ * it on the frame and into the eye's own space, each of which grows it across and down alone, as an object's stance
+ * does; how much its stance grows it; and where it stands.
  */
 export interface ThingStanding {
 	readonly laid: Box;
 	readonly placing: Matrix;
+	readonly inTheEyesSpace: Matrix;
 	readonly scale: number;
 	readonly inTheWorld: boolean;
 }
@@ -80,12 +83,6 @@ export const A_REACH: Kind<Reach> = new OfForm<Reach>(
 	{ width: needed(A_SIZE), height: needed(A_SIZE) },
 	'how far it reaches, whole: { width, height }, in pixels of a frame 1080 high'
 );
-
-// A way kept as it runs, and one turned to run the other way; and the frame's down turned up, as three's axes run
-// against the frame's
-const KEPT = 1;
-const TURNED = -1;
-const UP_THE_FRAME = scalingAlong(KEPT, TURNED, KEPT);
 
 /**
  * A thing's numbers `progress` of the way from those it showed to those a film names, each passing its ends with the
@@ -99,9 +96,9 @@ export function valuesToward(start: ThingValues, named: ThingValues, progress: n
 
 /**
  * A thing as the stage draws it, standing as it does, as far as it has come up and not gone, among what stands round
- * it: its placing written up the frame on both sides, the frame's pixels up from its middle out of three's units up, so
- * it turns a face as it turns, grown toward the eye as much as across, as a stance grows a flat object across and down
- * alone, and in the world blurred as the focus has its box.
+ * it: the eye's own space it stands in written in three's axes, the frame's pixels out of three's units, so it turns a
+ * face as it turns, grown toward the eye as much as across, as a stance grows a flat object across and down alone, and
+ * in the world blurred as the focus has its box.
  */
 export function drawnThing(thing: Thing, standing: ThingStanding, shown: number, around: AroundAThing): DrawnThing {
 	const scale = frameScaleOf(around.frame);
@@ -114,7 +111,7 @@ export function drawnThing(thing: Thing, standing: ThingStanding, shown: number,
 		made: thing.made,
 		values: thing.values,
 		shown,
-		placing: chained([UP_THE_FRAME, standing.placing, UP_THE_FRAME, units]),
+		inTheEyesSpace: chained([inThreesAxes(standing.inTheEyesSpace), units]),
 		eyeDistance: around.sharpness.focalLength * scale,
 		outOfFocus,
 		inTheWorld: standing.inTheWorld

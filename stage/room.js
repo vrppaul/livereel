@@ -23,10 +23,12 @@
  * of its own spread at each point, and laid over the ground. A spread past a few pixels is sampled from the window's
  * smaller copies of itself, so a blur takes as many samples however wide it spreads.
  *
- * A film's own things (`stage/things.js`) are laid in each exposure over the window, under what stands on the frame:
- * each drawn alone in three's linear light, with its own edges smoothed, a thing in the world hidden where the window's
- * opaque surface stands nearer the eye, written back in the screen's colours, and laid over as one blur of its own
- * softens it.
+ * A film's own things (`stage/things.js`) are laid in each exposure among the surfaces: each drawn alone in three's
+ * linear light, with its own edges smoothed, written back in the screen's colours, and laid as one blur of its own
+ * softens it. A thing on the frame is laid over the window, under what stands on the frame; a thing in the world is
+ * parted by the window's surface and laid in two, what stands behind the surface under the window and what stands
+ * before it over, so the window's own clearness, its fade, soft edge and rounded corners, shows or hides what stands
+ * behind it.
  *
  * three.js keeps no camera here: every point is placed by the matrices the engine hands the stage, and the stage
  * decides nothing. The script is a module, three's being modules alone, which the page loads only where the film is
@@ -48,6 +50,7 @@ import {
 	NoBlending,
 	OneFactor,
 	OneMinusSrcAlphaFactor,
+	Plane,
 	PlaneGeometry,
 	ShaderMaterial,
 	Vector2,
@@ -58,9 +61,9 @@ import {
 	WebGLRenderer
 } from 'three';
 import { matrixOf } from './matrices.js';
-import { Things, depthRowOf, isAThing } from './things.js';
+import { Things, isAThing } from './things.js';
 /** @import { DrawnScene } from '../src/scene.ts' */
-/** @import { ThingObject } from './things.js' */
+/** @import { ThingObject, ThingPart, WindowSurface } from './things.js' */
 /** @import { OutOfFocusAt } from '../src/domain/focus.ts' */
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { Matrix } from '../src/domain/matrix.ts' */
@@ -217,19 +220,29 @@ const FOCUS_LAYER = {
 const BLURRED_LAYER = { ...FOCUS_LAYER, type: HalfFloatType };
 // A thing drawn alone, with a depth of its own so its faces hide one another, its light added up linear as three's
 // materials give it and kept in the screen's colours, so a thing laid over the surfaces is laid as the browser lays one;
-// each pixel sampled at four points, so its edges and the window's cut are smoothed as the browser smooths the page's
+// each pixel sampled at four points, so its edges are smoothed as the browser smooths the page's; and a stencil, which
+// marks the samples the window's surface covers as the part of a thing behind it is drawn (`stage/things.js`)
 const SAMPLES_A_PIXEL = 4;
-const THING_LAYER = { depthBuffer: true, colorSpace: SRGBColorSpace, samples: SAMPLES_A_PIXEL };
-// The surface an exposure's things are laid before: what stands on the frame, over the window, which hides what of a
-// thing in the world stands behind it point by point
+const THING_LAYER = { depthBuffer: true, stencilBuffer: true, colorSpace: SRGBColorSpace, samples: SAMPLES_A_PIXEL };
+// A surface's own plane in its own space, in three's axes: across and up it, none out toward the eye; how far from the
+// window's plane the eye stands where it sees the plane edge-on; and a surface not grown toward the eye
+const A_SURFACES_PLANE = new Plane(new Vector3(0, 0, 1), 0);
+const EDGE_ON_TO_THE_EYE = 0;
+const NOT_GROWN_OUT = 1;
+// How far the window's surface is set back from the eye as it parts a thing, in shares of how far it stands: what
+// stands within that share of the window counts as on the page, before it, so a sheet shown in the world at no depth
+// stands over the page, where on the plane itself the rounding alone laid it behind the page or before and it went
+// unseen
+const SET_BACK_BY = 0.001;
+// A thing drawn whole, as one on the frame is
+/** @type {ThingPart} */
+const WHOLE_THING = { kind: 'whole' };
+// The surface what of a thing stands behind the window is laid under, the window itself; and the one what stands
+// before it, or on the frame, is laid under, what stands on the frame
 /** @type {SurfaceName} */
-const THINGS_LAID_BEFORE = 'frame';
-// How opaque the window's surface stands where it hides what stands behind it: more than half
-const HIDES_AT_LEAST = '0.5';
-// The window's depth written alone, its colours left as they stand, nearer hiding farther
-const DEPTH_ONLY = { colorWrite: false, depthTest: true, depthWrite: true, blending: NoBlending };
-// A surface drawn with no depth kept: the window as it is laid over the ground
-const NO_DEPTH_ROW = new Vector2(0, 0);
+const BEHIND_THE_WINDOW_UNDER = 'window';
+/** @type {SurfaceName} */
+const BEFORE_THE_WINDOW_UNDER = 'frame';
 // A film that names no things module builds no things
 /** @type {ThingsLoaded} */
 const NO_THINGS = { kind: 'built', names: [] };
@@ -242,37 +255,25 @@ const SRGB = { lowSlope: '12.92', scale: '1.055', gamma: '2.4', offset: '0.055',
 // A surface placed on the frame by its matrix about a middle, the frame's pixels down from its top: the point a share
 // of the surface's box across and down from its top left, on the frame's plane, carried about the middle as the matrix
 // has it, then seen as far across and down as its fourth value takes it, as the browser draws a matrix3d(); drawn into
-// what holds a box of the frame, the frame itself or as far past it as a blur gathers; its depth kept by the row a
-// thing's depth is kept by (`depthRowOf` in `stage/things.js`), none where nothing is hidden by it
+// what holds a box of the frame, the frame itself or as far past it as a blur gathers
 const PLACED_VERTEX = `
 uniform mat4 placing;
 uniform vec2 middle;
 uniform vec2 boxCorner;
 uniform vec2 boxSize;
 uniform vec4 drawnBox;
-uniform vec2 depthRow;
 varying vec2 shareOfTheSurface;
 void main() {
 	shareOfTheSurface = position.xy;
 	vec4 placed = placing * vec4(boxCorner + position.xy * boxSize - middle, 0.0, 1.0);
 	vec2 inTheDrawn = middle * placed.w + placed.xy - drawnBox.xy * placed.w;
-	float depth = depthRow.x * placed.z + depthRow.y * placed.w;
-	gl_Position = vec4(2.0 * inTheDrawn.x / drawnBox.z - placed.w, placed.w - 2.0 * inTheDrawn.y / drawnBox.w, depth, placed.w);
+	gl_Position = vec4(2.0 * inTheDrawn.x / drawnBox.z - placed.w, placed.w - 2.0 * inTheDrawn.y / drawnBox.w, 0.0, placed.w);
 }`;
 const PLACED_FRAGMENT = `
 uniform sampler2D surface;
 varying vec2 shareOfTheSurface;
 void main() {
 	gl_FragColor = texture2D(surface, shareOfTheSurface);
-}`;
-// The window's depth alone, where its surface stands more opaque than clear, so a thing behind it is hidden there and
-// seen past its edge, where the plane shows nothing
-const DEPTH_FRAGMENT = `
-uniform sampler2D surface;
-varying vec2 shareOfTheSurface;
-void main() {
-	if (texture2D(surface, shareOfTheSurface).a < ${HIDES_AT_LEAST}) discard;
-	gl_FragColor = vec4(0.0);
 }`;
 // A layer holding a box of the frame laid over another box of it as it stands, unblurred
 const LAID_LAYER_FRAGMENT = `
@@ -432,8 +433,7 @@ class Room {
 		this.textures = new Map(
 			SURFACES.map((name) => [name, new SurfaceTexture(this.renderer, SURFACE_TEXTURES[name].shrinks)])
 		);
-		this.placed = placedSurfaceOf(PLACED_FRAGMENT, LAID_OVER);
-		this.windowDepth = placedSurfaceOf(DEPTH_FRAGMENT, DEPTH_ONLY);
+		this.placed = placedSurface();
 		this.layerLaying = overTheWholeOf(laidLayerMaterial());
 		this.weighed = overTheWholeOf(weighedMaterial(this.exposure));
 		this.shown = overTheWholeOf(shownMaterial(this.frame));
@@ -482,8 +482,8 @@ class Room {
 		this.renderer.clear();
 		valuesSet(this.weighed.material, { weight: WHOLE / scenes.length });
 		for (const [place, placings] of exposurePlacings.entries()) {
-			const things = thingsIn(scenesAt(scenes, place));
-			const refused = this.exposureDrawn(surfacesAt(this.exposureSurfaces, place), placings, things, gathered);
+			const scene = scenesAt(scenes, place);
+			const refused = this.exposureDrawn(surfacesAt(this.exposureSurfaces, place), placings, scene, gathered);
 			if (refused !== null) return refused;
 		}
 		this.renderer.setRenderTarget(null);
@@ -494,19 +494,21 @@ class Room {
 	/**
 	 * An exposure drawn and added into the frame: each of its surfaces laid over those under it, where its scene places
 	 * it, as the eye's focus blurs it, those drawn anew for each exposure drawn into their textures first; its things
-	 * laid over the window, each as the eye's focus blurs it, and what stands on the frame over them. What the film is
-	 * told where its module throws building or setting a thing, none where all are drawn.
+	 * posed first, and the parts of them that stand under a surface laid before it, each as the eye's focus blurs it.
+	 * What the film is told where its module throws building or setting a thing, none where all are drawn.
 	 * @param {ReadonlyMap<SurfaceName, Element>} surfaces @param {ReadonlyMap<SurfaceName, Placing>} placings
-	 * @param {readonly ThingObject[]} things @param {Box} gathered @returns {string | null}
+	 * @param {DrawnScene} scene @param {Box} gathered @returns {string | null}
 	 */
-	exposureDrawn(surfaces, placings, things, gathered) {
+	exposureDrawn(surfaces, placings, scene, gathered) {
+		const things = thingsIn(scene);
+		const refused = this.thingsPosed(things);
+		if (refused !== null) return refused;
+		const windowSurface = surfaceOfTheWindow(scene.window.inTheEyesSpace, placingOfThe(placings, 'window'));
+		const parts = things.flatMap((thing) => this.partsOf(thing, windowSurface));
 		this.renderer.setRenderTarget(this.exposure);
 		this.renderer.clear();
 		for (const name of SURFACES) {
-			if (name === THINGS_LAID_BEFORE) {
-				const refused = this.thingsLaid(things, placingOfThe(placings, 'window'), gathered);
-				if (refused !== null) return refused;
-			}
+			for (const part of parts.filter((each) => each.under === name)) this.partLaid(part, gathered);
 			const texture = textureOf(this.textures, name);
 			if (SURFACE_TEXTURES[name].eachExposure) texture.drawnFrom(surfaceOf(surfaces, name));
 			const placing = placingOfThe(placings, name);
@@ -519,49 +521,52 @@ class Room {
 	}
 
 	/**
-	 * An exposure's things laid over what is drawn of it, each in turn; what the film is told where its module throws,
-	 * none where all are drawn.
-	 * @param {readonly ThingObject[]} things @param {Placing} window @param {Box} gathered @returns {string | null}
+	 * An exposure's things posed, each in turn; what the film is told where its module throws building or setting one,
+	 * none where all stand.
+	 * @param {readonly ThingObject[]} things @returns {string | null}
 	 */
-	thingsLaid(things, window, gathered) {
+	thingsPosed(things) {
 		for (const thing of things) {
-			const refused = this.thingLaid(thing, window, gathered);
+			const refused = this.things.posed(thing);
 			if (refused !== null) return refused;
 		}
 		return null;
 	}
 
 	/**
-	 * A thing laid over what is drawn of an exposure: drawn alone where it stands, as far past the frame as the blur
-	 * gathers, hidden where the window stands nearer the eye if it stands in the world, in the screen's colours, then
-	 * laid over as the eye's focus blurs it, by one softness for all of it, or unblurred where sharp. What the film is
-	 * told where its module throws, none where it draws.
-	 * @param {ThingObject} thing @param {Placing} window @param {Box} gathered @returns {string | null}
+	 * The parts a posed thing is laid in: on the frame, whole, under what stands on the frame; in the world, its part
+	 * behind the window's surface under the window, and its part before it over, each only where the thing is drawn in
+	 * it, so a thing on one side of the window is drawn and blurred once.
+	 * @param {ThingObject} thing @param {WindowSurface} windowSurface @returns {readonly LaidPart[]}
 	 */
-	thingLaid(thing, window, gathered) {
-		this.renderer.setRenderTarget(this.thingLayer);
-		this.renderer.clear();
-		if (thing.content.inTheWorld) this.windowDepthDrawn(window, thing.content.eyeDistance, gathered);
-		const refused = this.things.drawn(this.renderer, thing, gathered);
-		if (refused !== null) return refused;
-		this.renderer.setRenderTarget(this.focusLayer);
-		this.renderer.render(this.encoding, this.camera);
-		const spread = thing.content.outOfFocus;
-		if (spread === null) this.layerLaidOver(this.focusLayer, gathered);
-		else this.layerBlurredOver(this.focusLayer, evenlySoft(spread), gathered);
-		return null;
+	partsOf(thing, windowSurface) {
+		if (!thing.content.inTheWorld) return [{ thing, under: BEFORE_THE_WINDOW_UNDER, part: WHOLE_THING }];
+		const sides = this.things.sidesOf(thing, windowSurface);
+		/** @type {ThingPart} */
+		const behind = { kind: 'behind', window: windowSurface, pastTheEdges: sides.pastTheEdges };
+		/** @type {ThingPart} */
+		const before = { kind: 'before', window: windowSurface };
+		return [
+			...(sides.behind ? [{ thing, under: BEHIND_THE_WINDOW_UNDER, part: behind }] : []),
+			...(sides.before ? [{ thing, under: BEFORE_THE_WINDOW_UNDER, part: before }] : [])
+		];
 	}
 
 	/**
-	 * The window's depth drawn into the thing's layer where its surface stands opaque, kept as the thing's depth is, so
-	 * what of a thing stands behind the window there is hidden.
-	 * @param {Placing} window @param {number} eyeDistance @param {Box} gathered
+	 * A part of a thing laid over what is drawn of an exposure: drawn alone where it stands, as far past the frame as
+	 * the blur gathers, in the screen's colours, then laid over as the eye's focus blurs it, by one softness for all of
+	 * it, or unblurred where sharp.
+	 * @param {LaidPart} laid @param {Box} gathered
 	 */
-	windowDepthDrawn(window, eyeDistance, gathered) {
-		const depth = depthRowOf(eyeDistance);
-		placedAs(this.windowDepth, textureOf(this.textures, 'window'), window, gathered);
-		valuesSet(this.windowDepth.material, { depthRow: new Vector2(depth.outward, depth.kept) });
-		this.renderer.render(this.windowDepth, this.camera);
+	partLaid(laid, gathered) {
+		this.renderer.setRenderTarget(this.thingLayer);
+		this.renderer.clear();
+		this.things.drawn(this.renderer, laid.thing, gathered, this.frameBox, laid.part);
+		this.renderer.setRenderTarget(this.focusLayer);
+		this.renderer.render(this.encoding, this.camera);
+		const spread = laid.thing.content.outOfFocus;
+		if (spread === null) this.layerLaidOver(this.focusLayer, gathered);
+		else this.layerBlurredOver(this.focusLayer, evenlySoft(spread), gathered);
 	}
 
 	/**
@@ -654,6 +659,11 @@ class Room {
  *   readonly middle: Vector2,
  *   readonly outOfFocusAt: OutOfFocusAt | null
  * }} Placing
+ */
+
+/**
+ * A part of a thing laid at once: the thing, the surface it is laid under, and how much of it is drawn.
+ * @typedef {{ readonly thing: ThingObject, readonly under: SurfaceName, readonly part: ThingPart }} LaidPart
  */
 
 /**
@@ -889,10 +899,9 @@ function elementDrawingOf(renderer) {
  * The plane a surface is drawn on over the frame, placed by its own matrix about its own middle, laid over what is
  * drawn under it as the browser lays a layer, by how clear it is; drawn whichever side faces the eye, as a window
  * turned half round shows the page mirrored, and the frame's down runs against WebGL's up, which turns every surface's
- * side over. With a fragment that draws its depth alone, the window's plane hides what of a thing stands behind it.
- * @param {string} fragment @param {typeof LAID_OVER | typeof DEPTH_ONLY} laid
+ * side over.
  */
-function placedSurfaceOf(fragment, laid) {
+function placedSurface() {
 	const geometry = new BufferGeometry();
 	geometry.setAttribute('position', new BufferAttribute(SURFACE_TRIANGLES, CORNER_VALUES));
 	const material = new ShaderMaterial({
@@ -902,13 +911,12 @@ function placedSurfaceOf(fragment, laid) {
 			middle: { value: new Vector2() },
 			boxCorner: { value: new Vector2() },
 			boxSize: { value: new Vector2() },
-			drawnBox: { value: new Vector4() },
-			depthRow: { value: NO_DEPTH_ROW }
+			drawnBox: { value: new Vector4() }
 		},
 		vertexShader: PLACED_VERTEX,
-		fragmentShader: fragment,
+		fragmentShader: PLACED_FRAGMENT,
 		side: DoubleSide,
-		...laid
+		...LAID_OVER
 	});
 	return standingAlone(new Mesh(geometry, material));
 }
@@ -951,6 +959,34 @@ function encodedMaterial(layer) {
 /** The things among the objects a scene draws, those standing and those pushed off. @param {DrawnScene} scene */
 function thingsIn(scene) {
 	return [...scene.objects, ...scene.leaving].filter(isAThing);
+}
+
+/**
+ * The window's surface a thing in the world is parted by, in the eye's own space: the box the room draws the window
+ * over, on its plane set back from the eye by a share of how far it stands (`SET_BACK_BY`), the plane keeping the
+ * eye's side.
+ * @param {Matrix} windowInTheEyesSpace @param {Placing} placing @returns {WindowSurface}
+ */
+function surfaceOfTheWindow(windowInTheEyesSpace, placing) {
+	const carried = matrixOf(windowInTheEyesSpace);
+	const facing = A_SURFACES_PLANE.clone().applyMatrix4(carried);
+	if (facing.constant < EDGE_ON_TO_THE_EYE) facing.negate();
+	const setBack = facing.constant * SET_BACK_BY;
+	const plane = facing.clone();
+	plane.constant += setBack;
+	const box = placing.box;
+	const surface = new Matrix4()
+		.makeTranslation(facing.normal.clone().multiplyScalar(-setBack))
+		.multiply(carried)
+		.multiply(
+			new Matrix4().makeTranslation(
+				box.left + box.width * HALF - placing.middle.x,
+				placing.middle.y - (box.top + box.height * HALF),
+				ON_ITS_PLANE
+			)
+		)
+		.multiply(new Matrix4().makeScale(box.width, box.height, NOT_GROWN_OUT));
+	return { plane, surface, fromTheSurface: surface.clone().invert() };
 }
 
 /**

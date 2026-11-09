@@ -17,7 +17,7 @@
  * screen carried by its focus to the view's middle and brought close, the view swung and leant back about its middle,
  * and seen from the eye before the frame's middle, a nearer point larger.
  */
-import { type Eye, type Viewpoint, eyeAtRest, isAtRest, seenByTheEye, sightOf } from './eye.ts';
+import { type Eye, type Viewpoint, eyeAtRest, inTheEyesSpace, isAtRest, seenByTheEye, sightOf } from './eye.ts';
 import type { Format } from './format.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from './fraction.ts';
 import {
@@ -737,6 +737,14 @@ export function fromItsMiddle(box: Size, point: Point): Spot {
  */
 export function seenFromTheEye(box: Box, eye: Eye, frame: Size): Matrix {
 	return aboutTheMiddleOf(seenByTheEye(eye, frame), box, frame);
+}
+
+/**
+ * The matrix that carries what stands in a box on the frame's plane, about the box's middle, into the eye's own space
+ * (`inTheEyesSpace`): where it stands before `seenFromTheEye` sees it in perspective.
+ */
+export function inTheEyesSpaceAbout(box: Box, eye: Eye, frame: Size): Matrix {
+	return chained([inTheEyesSpace(eye, frame), translation(middleInTheRoom(box, frame))]);
 }
 
 /**

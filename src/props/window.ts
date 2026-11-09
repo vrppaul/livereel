@@ -11,10 +11,18 @@
  * so the eye's focus blurs it, with all that lies in it, by where it stands (`src/domain/focus.ts`): the flat stage as
  * one, as soft as its point nearest the focus, and the room each point of it by how far that stands from the focus.
  */
-import { type Cut, type Placing, type View, angledAs, leaningOnTheFrame, pictureReachOf } from '../domain/camera.ts';
+import {
+	type Cut,
+	type Placing,
+	type View,
+	angledAs,
+	inTheEyesSpaceAbout,
+	leaningOnTheFrame,
+	pictureReachOf
+} from '../domain/camera.ts';
 import { type Eye, turnOf } from '../domain/eye.ts';
 import { type OutOfFocusAt, type Sharpness, outOfFocusAt, outOfFocusOnTheFrame } from '../domain/focus.ts';
-import { chained } from '../domain/matrix.ts';
+import { type Matrix, chained, inThreesAxes } from '../domain/matrix.ts';
 import { type Fraction, NONE } from '../domain/fraction.ts';
 import { type Box, type Size, boxAround } from '../domain/geometry.ts';
 import { type Transform, transformOf } from '../domain/stance.ts';
@@ -38,15 +46,17 @@ export interface PageWindow extends Placing, Shade {}
 /**
  * The window as the stage draws it: its box on the frame, how far the camera's picture reaches on its plane, past the
  * box where the screen stands past it, how far it stands off the ground, how it is drawn about its box's middle, leant
- * as it is and seen from the eye, its shade, none where the page is shaded none, and how soft the eye's focus draws it
- * and all in it, none where sharp: as one, on the frame in pixels of a frame 1080 high, for the flat stage, and at each
- * point of the frame, for the room.
+ * as it is and seen from the eye, and the matrix that carries it from that middle into the eye's own space, in three's
+ * axes, by whose surface the room parts a thing in the world; its shade, none where the page is shaded none, and
+ * how soft the eye's focus draws it and all in it, none where sharp: as one, on the frame in pixels of a frame 1080
+ * high, for the flat stage, and at each point of the frame, for the room.
  */
 export interface DrawnWindow {
 	readonly box: Box;
 	readonly reach: Box;
 	readonly lift: Fraction;
 	readonly transform: Transform;
+	readonly inTheEyesSpace: Matrix;
 	readonly shade: Shade | null;
 	readonly outOfFocus: number | null;
 	readonly outOfFocusAt: OutOfFocusAt | null;
@@ -81,6 +91,7 @@ export function drawnWindow(
 		reach,
 		lift: view.lift,
 		transform: transformOf(chained([turnOf(eye), angledAs(view.angle)]), placing),
+		inTheEyesSpace: inThreesAxes(chained([inTheEyesSpaceAbout(view.box, eye, frame), angledAs(view.angle)])),
 		shade: drawnShade(window),
 		outOfFocus: outOfFocusOnTheFrame(placing, view.box, sharpness, frame),
 		outOfFocusAt: outOfFocusAt(placing, view.box, boxAround([view.box, reach]), sharpness, frame)
