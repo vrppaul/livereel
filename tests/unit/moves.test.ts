@@ -46,7 +46,7 @@ import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
 import * as ending from '../../src/moves/ending.ts';
 import { type DrawnObject, type Surroundings, drawnObject, drawnOnTheFrame } from '../../src/props/object.ts';
-import { type Sharpness, focusDistanceOf } from '../../src/domain/focus.ts';
+import { type Sharpness, focusDistanceOf, outOfFocusAt, sharpnessOf } from '../../src/domain/focus.ts';
 import { IN_THE_WINDOW, ON_THE_PAGE } from '../../src/domain/placement.ts';
 import type { Piece } from '../../src/props/piece.ts';
 import { SCREEN_UP } from '../../src/props/screen.ts';
@@ -3195,21 +3195,15 @@ function spreadAt(camera: Camera, focusedAt: number, point: Focus): number {
 	return (OPENED * FOCAL_LENGTH * Math.abs(1 / focusedAt - 1 / distance)) / DISC_WIDTH_IN_SPREADS;
 }
 
-test('the room is handed how the eye sees as the frame is drawn: focused as far as the block it is put on stands, its focal length and how wide it is open', async () => {
-	const leant = await setAt(lean({ tilt: 50 }), OPENING_IN_SMALL, 1);
-	const onTheBlock = await setAt(eye.focus('#block', { aperture: OPENED }), leant, 1);
-	const camera = cameraOf(onTheBlock, SMALL);
-	const blockMiddle: Focus = {
-		kind: 'spot',
-		holder: ON_THE_PAGE,
-		point: { left: BLOCK.left + BLOCK.width / 2, top: BLOCK.top + BLOCK.height / 2 },
-		depth: 0
-	};
-	expect(drawn(onTheBlock, camera, 0, SMALL, NONE_SHARPER).sharpness).toEqual({
-		focusedAt: expect.closeTo(focusDistanceOf(blockMiddle, camera, SMALL.frame)),
-		focalLength: FOCAL_LENGTH,
-		aperture: OPENED
-	});
+test("the room is handed the eye's lens as the engine's law: a point at the focus spreads none, one at half and twice as far as soft as the eye draws a point there; an eye open none hands none", async () => {
+	const opened = await setAt(eye.focus(AS_FAR_AS_THE_FRAME, { aperture: OPENED }), OPENING_IN_SMALL, 1);
+	const camera = cameraOf(opened, SMALL);
+	const lens = drawn(opened, camera, 0, SMALL, NONE_SHARPER).eye.lens!;
+	const distances = [AS_FAR_AS_THE_FRAME, AS_FAR_AS_THE_FRAME / 2, AS_FAR_AS_THE_FRAME * 2];
+	expect(distances.map((distance) => lens.perNearness * Math.abs(lens.inFocus - 1 / distance))).toEqual(
+		distances.map((distance) => expect.closeTo(outOfFocusAt(sharpnessOf(camera, SMALL.frame), distance)))
+	);
+	expect(drawn(OPENING_IN_SMALL, cameraOf(OPENING_IN_SMALL, SMALL), 0, SMALL, NONE_SHARPER).eye.lens).toBeNull();
 });
 
 test('the room is handed the softest point of a window face-on out of focus as soft as the flat stage blurs it whole', async () => {

@@ -1,9 +1,8 @@
 // @ts-check
 /**
  * The eye's lens over the world the room draws as one scene (`stage/room.js`): each pixel blurred by how far what it
- * shows stands from the focus, read off the scene's depth by the engine's own law (`src/domain/focus.ts`), a disc
- * `aperture × focal length × |1/focus − 1/distance|` across on a frame 1080 high, blurred as a Gaussian of a quarter of
- * that.
+ * shows stands from the focus, read off the scene's depth by the engine's own law (`src/domain/focus.ts`), which the
+ * scene's eye hands as a spread per nearness and the focus's nearness (`LensLaw`), or none where the eye is open none.
  *
  * A lens blurs what stands before its focus over what stands behind it, so the scene is split at the focus into two
  * fields:
@@ -49,10 +48,10 @@ import {
 	WebGLRenderTarget
 } from 'three';
 import { depthRangeOf } from './matrices.js';
-import { LAID_OVER, WRITTEN, passOver, valuesOfTheBox, valuesSet } from './passes.js';
+import { LAID_OVER, WRITTEN, WRITTEN_INTO_SEVERAL, passOver, valuesOfTheBox, valuesSet } from './passes.js';
 /** @import { WebGLRenderer, Texture, DepthTexture, Mesh, PlaneGeometry, ShaderMaterial } from 'three' */
 /** @import { Box } from '../src/domain/geometry.ts' */
-/** @import { Sharpness } from '../src/domain/focus.ts' */
+/** @import { DrawnEye } from '../src/domain/eye.ts' */
 
 /**
  * A field of the world the lens blurs: its light, linear and premultiplied, its depth, and its size in the drawing's
@@ -64,10 +63,6 @@ import { LAID_OVER, WRITTEN, passOver, valuesOfTheBox, valuesSet } from './passe
 // past the frame's edge as the room draws the world
 const SAMPLES = 96;
 export const SPREADS_REACHED = 3;
-// A disc's spread along each axis, which a Gaussian blurs as its deviation, is a quarter of the disc's width
-const A_DISCS_WIDTH_IN_SPREADS = 4;
-// An eye open none, a pinhole, draws all sharp
-const A_PINHOLE = 0;
 // A spread under half a pixel of the drawing is drawn sharp, its own pixel alone
 const SHARP_SPREAD = 0.5;
 // What stands before the focus is the near field's from a spread of a whole pixel of the drawing: what stands before
@@ -107,10 +102,8 @@ const THE_DRAWINGS_OWN_SPACING = 1;
 const MOST_LEVELS = 16;
 const WHOLLY_TAKEN = 0.999;
 const A_PIXELS_WORTH = 1;
-// A pass's target before it is first sized, its focus before a field is first laid, and a field's smaller copies
-// before it is first sized
+// A pass's target before it is first sized, and a field's smaller copies before it is first sized
 const A_PIXEL = 1;
-const FOCUSED_NOWHERE_YET = 0;
 const NO_SMALLER_COPY = 0;
 // A field as large as the scene's layer, in half floats, with smaller copies for wide spreads
 const FIELD = {
@@ -125,30 +118,31 @@ const FIELD = {
 const TILES_FOUND = { type: HalfFloatType, depthBuffer: false, minFilter: NearestFilter, magFilter: NearestFilter };
 const TILES_WIDENED = { type: HalfFloatType, depthBuffer: false, minFilter: LinearFilter, magFilter: LinearFilter };
 
-// How the tiles and the split read the scene's depth: how far before the eye a stored depth stands, in the frame's
-// pixels, as three's perspective stores it between the depth's near and far; how wide the engine's law spreads it, in
-// the drawing's pixels; whether anything was drawn there, and whether it is the near field's; and the nearest depth
-// round a pixel
+// How the tiles and the split read the scene's depth: how near the eye a stored depth stands, one over how far before
+// it, in pixels of a frame 1080 high, three's perspective storing it between the depth's near and far, in the frame's
+// pixels (three's own reading, its view's depth negative before the eye); how wide the engine's law, its spread per
+// nearness and the focus's nearness, spreads it, in the drawing's pixels; whether anything was drawn there, and whether
+// it is the near field's, nearer than the focus; and the nearest depth round a pixel
 const DEPTH_READ = `
+#include <packing>
 uniform sampler2D depth;
 uniform vec2 depthRange;
 uniform float frameScale;
 uniform float pixelsOfOne;
 uniform vec2 law;
-uniform float focusDistance;
 const float NOTHING_DRAWN = float(${NOTHING_DRAWN});
 const float NEAR_BLURRED_FROM = float(${NEAR_BLURRED_FROM});
-float distanceOf(float stored) {
-	return depthRange.x * depthRange.y / (depthRange.y - stored * (depthRange.y - depthRange.x));
+float nearnessOf(float stored) {
+	return frameScale / -perspectiveDepthToViewZ(stored, depthRange.x, depthRange.y);
 }
 float spreadOf(float stored) {
-	return law.x * abs(law.y - frameScale / distanceOf(stored)) * pixelsOfOne;
+	return law.x * abs(law.y - nearnessOf(stored)) * pixelsOfOne;
 }
 bool isDrawn(float stored) {
 	return stored < NOTHING_DRAWN;
 }
 bool isNear(float stored) {
-	return isDrawn(stored) && distanceOf(stored) < focusDistance && spreadOf(stored) >= NEAR_BLURRED_FROM;
+	return isDrawn(stored) && nearnessOf(stored) > law.y && spreadOf(stored) >= NEAR_BLURRED_FROM;
 }
 float nearestRound(vec2 share) {
 	vec2 texel = 1.0 / vec2(textureSize(depth, ${FULL_SIZE}));
@@ -178,17 +172,19 @@ float gapFor(float radius) {
 // drawn round it; whether the far field's copies hold its light, whole or none; and how wide its own depth spreads, less
 // than none where the far field has no depth of its own there. A sample's reach is read by the nearest depth round it,
 // a pixel's own blur by its own: read by the nearest, a blurred page's pixel touching a sharp thing stood sharp, a line
-// along the thing's edge
+// along the thing's edge. One pass writes every part, each into its own layer of the split, by its place there: written
+// a pass a part, each pass read the nine depths round each pixel anew
 /** @typedef {'nearLight' | 'farLight' | 'spreadingLight' | 'measures'} SplitPart */
 /** @type {{ readonly [Part in SplitPart]: number }} */
 const SPLIT_PARTS = { nearLight: 0, farLight: 1, spreadingLight: 2, measures: 3 };
-/** @type {readonly SplitPart[]} */
-const SPLIT_PART_NAMES = ['nearLight', 'farLight', 'spreadingLight', 'measures'];
 const SPLIT_FRAGMENT = `
 uniform sampler2D drawnLight;
 uniform sampler2D widened;
-uniform int part;
 varying vec2 shareOfTheFrame;
+layout(location = ${SPLIT_PARTS.nearLight}) out vec4 nearLight;
+layout(location = ${SPLIT_PARTS.farLight}) out vec4 farLight;
+layout(location = ${SPLIT_PARTS.spreadingLight}) out vec4 spreadingLight;
+layout(location = ${SPLIT_PARTS.measures}) out vec4 measures;
 ${DEPTH_READ}
 ${SAMPLES_APART}
 const float NO_FAR_DEPTH_HERE = float(${NO_FAR_DEPTH_HERE});
@@ -207,14 +203,13 @@ void main() {
 	bool drawn = isDrawn(nearest);
 	float spread = drawn ? spreadOf(nearest) : NOTHING_DRAWN_ROUND;
 	bool spreading = !near && spreads(drawn, spread);
-	if (part == ${SPLIT_PARTS.measures}) {
-		float own = texture2D(depth, shareOfTheFrame).x;
-		float ownSpread = isDrawn(own) && !near ? spreadOf(own) : NO_FAR_DEPTH_HERE;
-		gl_FragColor = vec4(near ? 1.0 : 0.0, spread, spreading ? 1.0 : 0.0, ownSpread);
-		return;
-	}
-	bool held = part == ${SPLIT_PARTS.nearLight} ? near : part == ${SPLIT_PARTS.farLight} ? !near : spreading;
-	gl_FragColor = held ? texture2D(drawnLight, shareOfTheFrame) : vec4(0.0);
+	float own = texture2D(depth, shareOfTheFrame).x;
+	float ownSpread = isDrawn(own) && !near ? spreadOf(own) : NO_FAR_DEPTH_HERE;
+	vec4 light = texture2D(drawnLight, shareOfTheFrame);
+	nearLight = near ? light : vec4(0.0);
+	farLight = near ? vec4(0.0) : light;
+	spreadingLight = spreading ? light : vec4(0.0);
+	measures = vec4(near ? 1.0 : 0.0, spread, spreading ? 1.0 : 0.0, ownSpread);
 }`;
 
 // How the passes after the split read its measures of a pixel
@@ -443,16 +438,10 @@ void main() {
 export class Lens {
 	/** @param {number} pixelsOfOne @param {number} frameScale */
 	constructor(pixelsOfOne, frameScale) {
-		this.frameScale = frameScale;
 		// three draws nothing without a camera; every pass here places its own points
 		this.camera = new Camera();
-		/** Each part of the scene split at the focus, by its name @type {{ readonly [Part in SplitPart]: WebGLRenderTarget }} */
-		this.parts = {
-			nearLight: new WebGLRenderTarget(A_PIXEL, A_PIXEL, FIELD),
-			farLight: new WebGLRenderTarget(A_PIXEL, A_PIXEL, FIELD),
-			spreadingLight: new WebGLRenderTarget(A_PIXEL, A_PIXEL, FIELD),
-			measures: new WebGLRenderTarget(A_PIXEL, A_PIXEL, FIELD)
-		};
+		// The scene split at the focus, each part a layer of it in its place
+		this.parts = new WebGLRenderTarget(A_PIXEL, A_PIXEL, { ...FIELD, count: Object.keys(SPLIT_PARTS).length });
 		this.tilesFound = new WebGLRenderTarget(A_PIXEL, A_PIXEL, TILES_FOUND);
 		this.tilesWidenedAlongTheRows = new WebGLRenderTarget(A_PIXEL, A_PIXEL, TILES_FOUND);
 		this.tilesWidened = new WebGLRenderTarget(A_PIXEL, A_PIXEL, TILES_WIDENED);
@@ -461,15 +450,14 @@ export class Lens {
 			{
 				...depthReadValues(pixelsOfOne, frameScale),
 				drawnLight: { value: null },
-				widened: { value: this.tilesWidened.texture },
-				part: { value: SPLIT_PARTS.nearLight }
+				widened: { value: this.tilesWidened.texture }
 			},
 			SPLIT_FRAGMENT,
-			WRITTEN
+			WRITTEN_INTO_SEVERAL
 		);
 		this.farFieldWhole = new WebGLRenderTarget(A_PIXEL, A_PIXEL, FIELD);
-		const measures = { measures: { value: this.parts.measures.texture } };
-		const farLight = { farLight: { value: this.parts.farLight.texture } };
+		const measures = { measures: { value: partOf(this.parts, 'measures') } };
+		const farLight = { farLight: { value: partOf(this.parts, 'farLight') } };
 		this.madeWhole = passOver(
 			{ ...measures, ...farLight, coarsestLevel: { value: NO_SMALLER_COPY } },
 			FAR_FIELD_WHOLE_FRAGMENT,
@@ -484,8 +472,8 @@ export class Lens {
 			{
 				...measures,
 				...farLight,
-				spreadingLight: { value: this.parts.spreadingLight.texture },
-				nearField: { value: this.parts.nearLight.texture },
+				spreadingLight: { value: partOf(this.parts, 'spreadingLight') },
+				nearField: { value: partOf(this.parts, 'nearLight') },
 				farField: { value: this.farFieldWhole.texture },
 				widened: { value: this.tilesWidened.texture },
 				drawnBox: { value: new Vector4() },
@@ -503,29 +491,25 @@ export class Lens {
 	}
 
 	/**
-	 * A field of the world's scene, holding a box of the frame, laid over the frame's box of the target blurred as the
-	 * eye's focus has each pixel, or as it stands where the eye is a pinhole; the field's depth read as the eye that saw
-	 * it, so far before the frame, stored it.
-	 * @param {WebGLRenderer} renderer @param {SceneField} field @param {Box} drawn @param {Box} shown
-	 * @param {Sharpness} sharpness @param {number} eyeDistance @param {WebGLRenderTarget} target
+	 * A field of the world's scene, holding a box of the frame, laid over the frame's box of the target blurred by the
+	 * eye's lens at each pixel, or as it stands where the eye has none, open none; the field's depth read as the eye that
+	 * saw it, so far before the frame, stored it.
+	 * @param {WebGLRenderer} renderer @param {SceneField} field @param {Box} drawn @param {Box} shown @param {DrawnEye} eye
+	 * @param {WebGLRenderTarget} target
 	 */
-	laid(renderer, field, drawn, shown, sharpness, eyeDistance, target) {
+	laid(renderer, field, drawn, shown, eye, target) {
 		const boxes = { drawnBox: valuesOfTheBox(drawn), shownBox: valuesOfTheBox(shown) };
-		if (sharpness.aperture === A_PINHOLE) {
+		if (eye.lens === null) {
 			valuesSet(this.asItStands.material, { drawnLight: field.light, ...boxes });
 			this.drawnInto(renderer, this.asItStands, target);
 			return;
 		}
 		this.sizedFor(field);
-		const range = depthRangeOf(eyeDistance);
+		const range = depthRangeOf(eye.distance);
 		const depthRead = {
 			depth: field.depth,
 			depthRange: new Vector2(range.near, range.far),
-			law: new Vector2(
-				(sharpness.aperture / A_DISCS_WIDTH_IN_SPREADS) * sharpness.focalLength,
-				1 / sharpness.focusedAt
-			),
-			focusDistance: sharpness.focusedAt * this.frameScale
+			law: new Vector2(eye.lens.perNearness, eye.lens.inFocus)
 		};
 		valuesSet(this.found.material, depthRead);
 		this.drawnInto(renderer, this.found, this.tilesFound);
@@ -534,10 +518,7 @@ export class Lens {
 		valuesSet(this.widening.material, { tiles: this.tilesWidenedAlongTheRows.texture, along: ALONG_THE_COLUMNS });
 		this.drawnInto(renderer, this.widening, this.tilesWidened);
 		valuesSet(this.split.material, { ...depthRead, drawnLight: field.light });
-		for (const part of SPLIT_PART_NAMES) {
-			valuesSet(this.split.material, { part: SPLIT_PARTS[part] });
-			this.drawnInto(renderer, this.split, this.parts[part]);
-		}
+		this.drawnInto(renderer, this.split, this.parts);
 		valuesSet(this.madeWhole.material, { coarsestLevel: Math.floor(Math.log2(Math.max(field.width, field.height))) });
 		this.drawnInto(renderer, this.madeWhole, this.farFieldWhole);
 		valuesSet(this.lens.material, boxes);
@@ -546,8 +527,7 @@ export class Lens {
 
 	/** The lens's own layers sized to a field and its tiles. @param {SceneField} field */
 	sizedFor(field) {
-		for (const part of SPLIT_PART_NAMES) this.parts[part].setSize(field.width, field.height);
-		this.farFieldWhole.setSize(field.width, field.height);
+		for (const layer of [this.parts, this.farFieldWhole]) layer.setSize(field.width, field.height);
 		const tilesAcross = Math.ceil(field.width / TILE);
 		const tilesDown = Math.ceil(field.height / TILE);
 		for (const tiles of [this.tilesFound, this.tilesWidenedAlongTheRows, this.tilesWidened]) {
@@ -567,7 +547,7 @@ export class Lens {
 
 /**
  * The values a pass that reads the scene's depth takes (`DEPTH_READ`): the drawing's pixels of a pixel of a frame 1080
- * high and the frame's scale, set once; the depth, its range, the law and the focus set as each field is laid.
+ * high and the frame's scale, set once; the depth, its range and the lens's law set as each field is laid.
  * @param {number} pixelsOfOne @param {number} frameScale
  */
 function depthReadValues(pixelsOfOne, frameScale) {
@@ -576,7 +556,16 @@ function depthReadValues(pixelsOfOne, frameScale) {
 		depthRange: { value: new Vector2() },
 		frameScale: { value: frameScale },
 		pixelsOfOne: { value: pixelsOfOne },
-		law: { value: new Vector2() },
-		focusDistance: { value: FOCUSED_NOWHERE_YET }
+		law: { value: new Vector2() }
 	};
+}
+
+/**
+ * A part of the scene as the split wrote it, the layer of its place.
+ * @param {WebGLRenderTarget} split @param {SplitPart} part
+ */
+function partOf(split, part) {
+	const layer = split.textures[SPLIT_PARTS[part]];
+	if (layer === undefined) throw new Error(`the lens's split holds no ${part}`);
+	return layer;
 }

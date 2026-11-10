@@ -531,12 +531,11 @@ class Room {
 		this.flatLaid('ground', surfaces);
 		const pageTexture = textureOf(this.textures, 'window');
 		pageTexture.drawnFrom(surfaceOf(surfaces, 'window'));
-		const { sharpness, eye } = scene;
 		const fields = this.worldDrawn(scene, pageTexture, standing, things.filter(standsInTheWorld), gathered);
 		this.renderer.setRenderTarget(this.worldSeen);
 		this.renderer.clear();
 		for (const field of fields) {
-			this.lens.laid(this.renderer, field, gathered, this.frameBox, sharpness, eye.distance, this.worldSeen);
+			this.lens.laid(this.renderer, field, gathered, this.frameBox, scene.eye, this.worldSeen);
 		}
 		this.renderer.setRenderTarget(this.exposure);
 		this.renderer.render(this.worldLaying, this.camera);

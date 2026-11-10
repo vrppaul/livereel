@@ -8,6 +8,7 @@
 import {
 	AlwaysDepth,
 	CustomBlending,
+	GLSL3,
 	Mesh,
 	NoBlending,
 	OneFactor,
@@ -50,6 +51,12 @@ export const ADDED = {
 
 /** What a pass draws written as it is, over whatever stood there. */
 export const WRITTEN = { blending: NoBlending, depthTest: false, depthWrite: false };
+
+/**
+ * What a pass draws written so into each layer of a target of several, each of its shader's outputs into the layer of
+ * its place, as GLSL 3 names them.
+ */
+export const WRITTEN_INTO_SEVERAL = { ...WRITTEN, glslVersion: GLSL3 };
 
 /** A pass that writes the depth its shader works out, over whatever depth stood there, and no light. */
 export const DEPTH_WRITTEN = {
@@ -105,7 +112,7 @@ vec4 inTheScreensColours(vec4 drawn) {
  * A pass over the whole of the layer it draws into, by its values and its fragment shader, laid as named, wherever its
  * points fall: its shader places them, not three's camera.
  * @param {Record<string, { value: unknown }>} uniforms @param {string} fragmentShader
- * @param {typeof WRITTEN | typeof LAID_OVER | typeof ADDED | typeof DEPTH_WRITTEN} laid
+ * @param {typeof WRITTEN | typeof WRITTEN_INTO_SEVERAL | typeof LAID_OVER | typeof ADDED | typeof DEPTH_WRITTEN} laid
  */
 export function passOver(uniforms, fragmentShader, laid) {
 	const material = new ShaderMaterial({ uniforms, vertexShader: OVER_THE_WHOLE_VERTEX, fragmentShader, ...laid });

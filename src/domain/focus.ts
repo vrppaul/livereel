@@ -9,9 +9,9 @@
  * each object in the world — as soft as its point nearest the focus: what the eye focuses on is drawn sharp wherever it
  * stands on its plane, and a plane that leans away is as sharp at its far edge as at its near. A plane's distance from
  * the eye goes evenly across it, so its corners bound how near and far it stands. The room blurs each pixel by how far
- * what it shows stands from the focus, by this law read off its own depth (`stage/lens.js`): it is handed how the eye
- * sees (`Sharpness`), and of the window only its softest point the frame shows, which bounds how far past the frame's
- * edge its blur gathers.
+ * what it shows stands from the focus, by this law read off its own depth (`stage/lens.js`): it is handed the law as
+ * its lens reads it (`LensLaw`, on the scene's eye), and of the window only its softest point the frame shows, which
+ * bounds how far past the frame's edge its blur gathers.
  * The window is blurred on the frame, round its cut, so out of focus on the ground it spreads past its edge, and the
  * page past the frame's edge blurs into the frame (probed 2026-11-03: a blur on the view itself, under its cut, kept the
  * window's edge hard). An object is blurred on its own element, which Chrome blurs before its matrix carries it, so its
@@ -51,6 +51,16 @@ export interface Sharpness {
 	readonly focusedAt: number;
 	readonly focalLength: number;
 	readonly aperture: number;
+}
+
+/**
+ * The eye's lens as the room's lens reads it off each pixel's depth: a point whose nearness, one over how far before
+ * the eye it stands in pixels of a frame 1080 high, is `nearness` spreads `perNearness × |inFocus − nearness|` pixels of
+ * a frame 1080 high, as a Gaussian's deviation, and stands nearer than the focus where its nearness passes `inFocus`.
+ */
+export interface LensLaw {
+	readonly perNearness: number;
+	readonly inFocus: number;
 }
 
 /**
@@ -129,9 +139,33 @@ export function outOfFocusOnTheFrame(placing: Matrix, laid: Size, sharpness: Sha
 	if (sharpness.aperture === A_PINHOLE) return null;
 	const distance = distanceNearest(placing, laid, sharpness);
 	if (distance <= AT_THE_EYE) return null;
-	const disc = sharpness.aperture * sharpness.focalLength * Math.abs(1 / sharpness.focusedAt - 1 / distance);
-	const spread = disc / A_DISCS_WIDTH_IN_SPREADS;
+	const spread = outOfFocusAt(sharpness, distance);
 	return spread * frameScaleOf(frame) <= SHARP_WITHIN ? null : spread;
+}
+
+/**
+ * How soft the eye draws a point so far before it, in pixels of a frame 1080 high: the disc it is drawn as, spread as a
+ * Gaussian.
+ */
+export function outOfFocusAt(sharpness: Sharpness, distance: number): number {
+	const law = lawOf(sharpness);
+	return law.perNearness * Math.abs(law.inFocus - 1 / distance);
+}
+
+/** The eye's lens as the room's lens reads it, of an eye that sees so: none where it is open none and draws all sharp. */
+export function lensLawOf(sharpness: Sharpness): LensLaw | null {
+	return sharpness.aperture === A_PINHOLE ? null : lawOf(sharpness);
+}
+
+/**
+ * The law an eye that sees so spreads a point by: a disc `aperture × focal length × |1/focus − 1/distance|` across,
+ * spread as a Gaussian of a quarter of that.
+ */
+function lawOf(sharpness: Sharpness): LensLaw {
+	return {
+		perNearness: (sharpness.aperture * sharpness.focalLength) / A_DISCS_WIDTH_IN_SPREADS,
+		inFocus: 1 / sharpness.focusedAt
+	};
 }
 
 /**

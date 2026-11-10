@@ -1026,7 +1026,7 @@ class LookDrawer {
  * world by how the eye sees (`stage/lens.js`) and sees it from where the eye stands.
  * @typedef {{
  *   readonly root: Staged,
- *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'world' | 'leaving' | 'sharpness' | 'eye'>]: Drawer }
+ *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'world' | 'leaving' | 'eye'>]: Drawer }
  *     & { readonly objects: ObjectsDrawer },
  *   readonly page: Staged,
  *   readonly picture: Staged,

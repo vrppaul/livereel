@@ -46,6 +46,7 @@ import {
 	unitOf,
 	wayBetween
 } from './matrix.ts';
+import type { LensLaw } from './focus.ts';
 import type { Path, PathSpace } from './path.ts';
 import type { LastingHolder } from './placement.ts';
 import { between } from './toward.ts';
@@ -103,14 +104,16 @@ export type EyePlaceOrRest = EyePlace | 'rest';
 
 /**
  * The eye as the stage draws a scene by it, once a scene: how far before the frame it stands at rest, its focal length
- * in the frame's pixels, which the room sees the world in perspective from; and the matrices that carry the room,
- * about the frame's middle in its pixels, into the eye's own space and into the resting eye's, in three's axes, where
- * the world's lights stand for what stands in the world and for what rides with the eye (`src/props/lighting.ts`).
+ * in the frame's pixels, which the room sees the world in perspective from; the matrices that carry the room, about
+ * the frame's middle in its pixels, into the eye's own space and into the resting eye's, in three's axes, where the
+ * world's lights stand for what stands in the world and for what rides with the eye (`src/props/lighting.ts`); and its
+ * lens's law, which the room's lens blurs the world by (`stage/lens.js`), none where it is open none.
  */
 export interface DrawnEye {
 	readonly distance: number;
 	readonly roomInTheEyesSpace: Matrix;
 	readonly roomInTheRestingEyesSpace: Matrix;
+	readonly lens: LensLaw | null;
 }
 
 /** The line an eye sees a point on: where the eye stands, and the way its sight goes from there. */
@@ -325,12 +328,13 @@ export function inTheEyesSpace(eye: Eye, frame: Size): Matrix {
 	return matrixOf(across, down, out, { across: -dotOf(across, at), down: -dotOf(down, at), out: -dotOf(out, at) });
 }
 
-/** The eye as the stage draws a scene by it on a frame of this size. */
-export function drawnEye(eye: Eye, frame: Size): DrawnEye {
+/** The eye as the stage draws a scene by it on a frame of this size, its lens's law as its focus has it then. */
+export function drawnEye(eye: Eye, frame: Size, lens: LensLaw | null): DrawnEye {
 	return {
 		distance: eyeDistanceOn(eye, frame),
 		roomInTheEyesSpace: inThreesAxes(inTheEyesSpace(eye, frame)),
-		roomInTheRestingEyesSpace: inThreesAxes(inTheEyesSpace(eyeAtRest(eye.focalLength), frame))
+		roomInTheRestingEyesSpace: inThreesAxes(inTheEyesSpace(eyeAtRest(eye.focalLength), frame)),
+		lens
 	};
 }
 
