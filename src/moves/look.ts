@@ -8,8 +8,9 @@
  */
 import { type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import { cssNamedIn, themeWritten } from '../direction/theme.ts';
-import { assertWritten } from '../domain/handed.ts';
-import { type LookMoving, type Theme, lookToward, lookWith, namesSetIn } from '../props/look.ts';
+import { assertWritten, namesSetBy } from '../domain/handed.ts';
+import { type ValuesMoving, valuesToward, valuesWith } from '../domain/values.ts';
+import { LOOK_KINDS, LOOK_NAMES, type Look, type Theme } from '../props/look.ts';
 import { withProp } from '../scene.ts';
 
 const PLACE = 'look.to';
@@ -18,16 +19,17 @@ const PLACE = 'look.to';
 export function to(theme: Theme, script: TimingScript = {}): Move {
 	const named = themeWritten(theme, PLACE);
 	assertWritten(script, TIMING_FORM, PLACE);
-	const names = namesSetIn(named, PLACE);
+	const names = namesSetBy(named, LOOK_NAMES, PLACE);
 	return {
 		part: 'look',
 		valueNames: names,
 		timing: timingOf(script),
 		css: cssNamedIn(named, PLACE),
-		begin: (beginning) => changing({ start: beginning.scene.look, end: lookWith(beginning.scene.look, named), names })
+		begin: (beginning) =>
+			changing({ start: beginning.scene.look, end: valuesWith(beginning.scene.look, named, LOOK_KINDS), names })
 	};
 }
 
-function changing(moving: LookMoving): Change {
-	return (scene, progress) => withProp(scene, 'look', lookToward(scene.look, moving, progress));
+function changing(moving: ValuesMoving<Look>): Change {
+	return (scene, progress) => withProp(scene, 'look', valuesToward(scene.look, moving, LOOK_KINDS, progress));
 }

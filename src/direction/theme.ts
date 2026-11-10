@@ -6,8 +6,8 @@
  * (`LOOK_KINDS`) — only a browser reads, so it is handed on with where it stands, and the browser refuses it before the
  * film is shot.
  */
-import { assertWritten } from '../domain/handed.ts';
-import { type CssKind, LOOK_KINDS, type Look, type Theme, namedIn } from '../props/look.ts';
+import { assertWritten, namesGiven } from '../domain/handed.ts';
+import { type CssKind, LOOK_KINDS, LOOK_NAMES, type Look, type Theme } from '../props/look.ts';
 
 // A film that names no theme opens on livereel's own look
 const LIVEREELS_OWN: Theme = {};
@@ -43,7 +43,7 @@ export function themeWritten(written: unknown, place: string): Theme {
 
 /** What a theme writes in CSS, each value by where it stands, in the look's order: none, where it writes none. */
 export function cssNamedIn(theme: Theme, place: string): readonly CssNamed[] {
-	return namedIn(theme).flatMap((name) => cssOfValue(theme, name, place));
+	return namesGiven(theme, LOOK_NAMES).flatMap((name) => cssOfValue(theme, name, place));
 }
 
 /** A value a theme names, by where it stands, where the film writes it in CSS; none, where it is checked as written. */

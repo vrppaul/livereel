@@ -17,6 +17,7 @@ export * as code from './moves/code.ts';
 export * as caption from './moves/caption.ts';
 export * as keys from './moves/keys.ts';
 export * as look from './moves/look.ts';
+export * as world from './moves/world.ts';
 export * as terminal from './moves/terminal.ts';
 export * as piece from './moves/piece.ts';
 export * as outline from './moves/outline.ts';
@@ -41,6 +42,7 @@ export type { KeyboardSound, LivereelSound, LivereelSoundsScript, Music, SoundsI
 export type { TypingScript } from './moves/typing.ts';
 export type { TurnedOff } from './direction/turned-off.ts';
 export type { Theme } from './props/look.ts';
+export type { WorldScript } from './props/world.ts';
 export { keystrokes } from './domain/typing.ts';
 export type { Keystroke, Typist } from './domain/typing.ts';
 export {

@@ -21,6 +21,8 @@ export const NO_PIXELS = 0;
 export const MOVES_AS_A_SHARE = { toward: shareToward };
 export const MOVES_AS_PIXELS = { toward: amountToward };
 export const MOVES_WITH_THE_CURVE = { toward: between };
+// A value with none between its start and its end, as a font, changes half-way
+const HALF_WAY = 0.5;
 
 /** The values named, and no other, each `progress` of the way from where it stood to where it goes, as it moves. */
 export function namedToward<Values>(
@@ -63,6 +65,11 @@ export function standsAtRest<Values>(values: Values, rest: Values, names: readon
 /** A number `progress` of the way from one to another, past either as a curve that bounces takes it. */
 export function between(start: number, end: number, progress: number): number {
 	return start + (end - start) * progress;
+}
+
+/** A value with none between, at its start for the first half of the way and at its end for the rest. */
+export function halfWay<Value>(start: Value, end: Value, progress: number): Value {
+	return progress < HALF_WAY ? start : end;
 }
 
 /** A share `progress` of the way from one to another, held between none and whole. */

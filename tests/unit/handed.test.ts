@@ -26,7 +26,8 @@ import {
 	terminal,
 	title,
 	typing,
-	window as pageWindow
+	window as pageWindow,
+	world
 } from '../../src/index.ts';
 
 const POSE = { focusX: 0, focusY: 0, zoom: 1 };
@@ -354,7 +355,7 @@ test('what a refusal says a film handed is said as it was, whatever JSON cannot 
 	);
 });
 
-test("a move that sets the values a film names refuses one naming none, and each value in no kind it takes: an object's effects, the window's shade", () => {
+test("a move that sets the values a film names refuses one naming none, and each value in no kind it takes: an object's effects, the window's shade, the film's look and the world's", () => {
 	expect(() => title.effects({})).toThrow(
 		new FilmError('title.effects names none of ring, glow, shadow, blur, colour, melt, scale, depth')
 	);
@@ -368,6 +369,7 @@ test("a move that sets the values a film names refuses one naming none, and each
 	);
 	expect(() => pageWindow.shade({})).toThrow(new FilmError('window.shade names none of dim, fade, blur'));
 	expect(() => look.to({})).toThrow(/^look\.to names none of ground, /);
+	expect(() => world.to({})).toThrow(new FilmError('world.to names none of lights, softBoxes, bloom, bloomRadius'));
 	expect(() => piece.effects({ shadow: 1.5 })).toThrow(
 		new FilmError("piece.effects's shadow is 1.5: it is a number from 0 to 1")
 	);

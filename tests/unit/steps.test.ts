@@ -14,6 +14,7 @@ import { shows, sweep } from '../../src/moves/screen.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import * as title from '../../src/moves/title.ts';
 import { lean, shade, to as windowTo } from '../../src/moves/window.ts';
+import { to as worldTo } from '../../src/moves/world.ts';
 
 test("the CSS a film's looks write in its steps is found before it is shot, each value by its move, in a play or a cut: fonts, the ground's layers", () => {
 	const dots = 'radial-gradient(#fff2 1px, transparent 1px) 0 0 / 24px 24px';
@@ -82,6 +83,14 @@ test('two moves of the look at once are refused only on a value both set, named 
 		new FilmError("two moves on the look's glow at once in one step")
 	);
 	expect(play({ seconds: 1, moves: [drifting, lookTo({ ink: '#000000' })] }).moves.length).toBe(2);
+});
+
+test("two moves of the world's look at once are refused only on a value both set, named by it", () => {
+	const glowing = worldTo({ bloom: 0.45 });
+	expect(() => play({ seconds: 1, moves: [glowing, worldTo({ bloom: 0.2, softBoxes: [] })] })).toThrow(
+		new FilmError("two moves on the world's bloom at once in one step")
+	);
+	expect(play({ seconds: 1, moves: [glowing, worldTo({ lights: [] })] }).moves.length).toBe(2);
 });
 
 test("the window travels and leans at once, two moves setting values of it apart; two travels at once are refused, by the window's box", () => {

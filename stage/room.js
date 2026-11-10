@@ -31,7 +31,7 @@
  * softens it. Light brighter than the page's white, as three's lit materials give it, is kept past white all the way
  * to the frame where a thing covers a pixel whole and is not blurred: an edge a share of a pixel wide, and a thing the
  * eye's focus blurs, are laid and blurred in the screen's colours, dimmer than three would lay them (TODO.md). Where the
- * look asks, the frame glows round that light, as a lens blooms, once over the light its exposures gathered: three's
+ * world asks, the frame glows round that light, as a lens blooms, once over the light its exposures gathered: three's
  * own bloom (`UnrealBloomPass`), the reference promo's, its spread a share of a frame 1080 high however large the frame
  * is drawn, and nothing below the page's white blooming, as letters must be read; the glow lies over all the frame,
  * what stands on it too, where the promo drew its pointer after it. A thing on the frame is laid over the window,
@@ -501,7 +501,7 @@ class Room {
 		this.encodingOver = overTheWholeOf(encodedMaterial(this.thingLayer, LAID_OVER));
 		// The glow measured on a frame 1080 high, as the reference promo measured it on one so high, so it spreads over the
 		// same share of any frame drawn at any density, three's bloom gathering it from copies halved from that size; its
-		// strength, spread and threshold set as each frame's look has them
+		// strength, spread and threshold set as each frame's world has them
 		const frame = layout.format.frame;
 		const measuredOn = new Vector2(frame.width / layout.frameScale, frame.height / layout.frameScale);
 		this.bloom = new UnrealBloomPass(measuredOn, NONE, NONE, NONE);
@@ -511,7 +511,7 @@ class Room {
 	 * One frame composed from its exposures: the window's surface of each laid out as far as its scene reaches, and as
 	 * far past the frame as a blur of any of them gathers, the surfaces of those it has painted, and each exposure drawn,
 	 * its surfaces laid over one another, the window where its scene places it, the film's things among them, and added
-	 * into the frame at an equal weight; the frame glowing round its light past white where the look asks, and shown on
+	 * into the frame at an equal weight; the frame glowing round its light past white where the world asks, and shown on
 	 * the canvas once the card has drawn it. What the film is told where its things module throws building or setting a
 	 * thing, none where the frame is drawn.
 	 * @param {readonly DrawnScene[]} scenes @returns {Promise<string | null>}
@@ -542,7 +542,7 @@ class Room {
 			const refused = this.exposureDrawn(surfacesAt(this.exposureSurfaces, place), placings, scene, gathered);
 			if (refused !== null) return refused;
 		}
-		const bloom = scenesAt(scenes, FIRST).bloom;
+		const bloom = scenesAt(scenes, FIRST).world.bloom;
 		if (bloom !== null) this.bloomed(bloom);
 		this.renderer.setRenderTarget(null);
 		this.renderer.render(this.shown, this.camera);
@@ -550,8 +550,8 @@ class Room {
 	}
 
 	/**
-	 * The frame's light past the page's white glowing round itself, as strong and as wide as the look has it: the look
-	 * being the first exposure's, as the ground's is.
+	 * The frame's light past the page's white glowing round itself, as strong and as wide as the world has it: the
+	 * world being the first exposure's, as the look's ground is.
 	 * @param {DrawnBloom} bloom
 	 */
 	bloomed(bloom) {
@@ -573,7 +573,7 @@ class Room {
 		const things = thingsIn(scene);
 		const refused = this.thingsPosed(things);
 		if (refused !== null) return refused;
-		this.lighting.lit(this.renderer, scene.lighting);
+		this.lighting.lit(this.renderer, scene.world.lighting);
 		const windowSurface = surfaceOfTheWindow(scene.window, placingOfThe(placings, 'window'));
 		const parts = things.flatMap((thing) => this.partsOf(thing, windowSurface));
 		const backShown = scene.screen.backUpright !== null;

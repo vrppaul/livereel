@@ -54,7 +54,7 @@ takes the default, said aloud.
 8. **The look**: the theme's ground, accent and type; the colour scheme;
    what the page blurs; motion blur as livereel sets it or none; the eye's
    focus, sharp all over or open on a shot; where the film has things of
-   its own, flat light or the world's lights and soft boxes, a still of
+   its own, flat light or the world's lights, soft boxes and glow, a still of
    each; in a room, the window with a body of metal or its flat edge and
    shadow, a still of each with the window leant.
 9. **Sound**: livereel's clicks and keys, the keyboard, or none; music.
@@ -314,6 +314,7 @@ its end at once.
 | `code.show(text, { at, from, longLines, as, inside })`, `code.to(place, { scale, depth })`, `code.lean({ tilt, turn, roll, over })`, `code.light(line, { through })`, `code.scrollTo(line)`, `code.hide({ toward })` | a dark pane of code `at` a place, beside the page's window or alone, or `inside: 'window'`, a small window of code over the site's that travels and leans with it, grows and rolls flat on it and never leans or nears the eye alone, its `at` a box in the window's shares (a title and the terminal take `inside` too); sliding in `from` past a side of the frame, pushing the code of its name shown off past the side across, or out `toward` one, carried to another place by `to`, grown and brought near as a title is, leant and rolled by `lean` while it travels or lights, its back a blank pane; several panes by name, `as`, as titles; its lines coming up one after another, coloured as TypeScript; a line lit by words only it says (`code.light('light.on')`), or by its number from 1, or lines `line` through `through`, the line from it on that says the other, the rest dimmed; going. `longLines: 'cut'` keeps the letters at `codeSize` and cuts a long line at the pane's edge, where `'shrink'`, the default, makes them smaller until the widest fits. The pane is no taller than its place, and `scrollTo` scrolls longer code, by `as` too, until the line named stands at its top, a line each `codeLineHeight` of the letters' size, blurred as it goes quickly through many |
 | `caption.show(text, { words })`, `caption.hide()` | words coming up one after another, in the way `words` names as a title's do, at the frame's foot, or its top in a format with `captionAt: 'top'`, in place of any shown, over every other object but keys; going |
 | `look.to(theme, { within })` | the film's look moving to any of a theme's values: through the values between in a `play`, at once in a `cut`; two at once in a step where they name no value alike |
+| `world.to(world, { within })` | the world's look moving to any of its values, its lights, soft boxes and glow, as `look.to` moves the look |
 | `terminal.open(title, { at, from, inside })`, `terminal.to(place, { scale, depth })`, `terminal.lean({ tilt, turn, roll, over })` | an agent's terminal coming up `at` a place, read as the window reads one, across most of the frame in its middle where none is named (`{ left: 0.07, top: 0.22, width: 0.86, height: 0.56 }` for a few lines), or sliding in whole `from` a side; in a `cut`, there at once; carried, grown, brought near, leant and rolled as code is; every terminal move takes `as` for a second terminal |
 | `terminal.type(strokes, { keyboard })`, `terminal.submit()` | keys typed into it, heard on the film's keyboard or the one named; Enter |
 | `piece.show(target, { every, air, corner, hole, lines, picture, as, inside })`, `piece.to(place, { scale, depth })`, `piece.onto(target)`, `piece.lean({ tilt, turn, roll, over })`, `piece.back()`, `piece.hide({ toward })` | a piece of the page lifted onto the frame over where the camera shows its target, a selector's first `every` blocks together or a box of the screen, with `air` pixels of the page round them where named, cut to the part it shows, its corners square, or as round as `corner` names, in the page's pixels: a card's own `border-radius` from the page's stylesheet, where the piece lifts the card alone and whole, so a rounded card lifts with its round corners, its shadow, glow, ring and hole following them (with `air`, or cut by the camera, the corners round what is lifted, not the card); a corner standing on a corner of what the window shows is as round as the window there by itself, so a piece of the whole screen, or a header along its top, keeps the window's round corners; drawn from the page's picture, so it shows what the page shows there, a scroll under it too, refused on a `'dynamic'` page and while the window leans, rolls or shows its back; drawn past 2.2 times, flat, it is drawn from a picture of its source alone that close, so it stays sharp grown to the whole frame; lifted `picture: 'held'`, it is drawn from a picture of its source alone taken as it is lifted, as sharp as the page's where the page stands still, so it shows what the page showed there then as the page changes under it, holes other pieces leave over its source still drawn as they stand; it stays where it was lifted as the camera moves; carried `to` a place it stands as large as the place holds it, grown, brought near, leant, rolled and spun as a title is, a blank card when it turns away; carried `onto` a block of the page, the first a selector matches or a box of the screen, it lies on the page there as large as the block holds it, landing on the block however the camera moves on the way and keeping that place on the screen after, so a scroll moves the block from under it; it lies in the window as the page does from the moment it sets off, flat on it and leant as it leans, under what stands on the frame and cut at the window's edge, so a piece setting off from beside a window on the ground is cut at once; a later `to` measures its place on the screen as the move begins; only a piece on the frame goes onto the page, lying flat, face-on and at no depth, while the window faces the frame front on, and from there it rolls and grows but never tilts, turns, turns over, comes near or slides out; `back` puts it over its source as the camera shows it then, face-on and as large as it was; every piece move takes `as` for a second piece. Lifted `inside: 'world'`, it stands over its source on the window's plane wherever the eye stands, aslant too, the eye moving past it as past the window and its focus blurring it as it stands off it; it is never carried onto the page from there. `hole: {}` leaves where it was lifted filled with the ground the page draws behind the block, `hole: { ground: '#rrggbb', line: 'dashed' }` with a colour of the film's, ringed; a box of the screen needs the colour named. `lines: 'solid'` or `'dashed'` draws two lines from its source to it, which stretch as it travels and vanish as it goes back |
@@ -376,41 +377,44 @@ names a family installed on the machine: `font` and `mono`. As CSS's
 lines, a gradient — a colour on the last alone, and no `url()`. And
 `words`, the way every title's, caption's, callout's and note's
 words come up where the film names none: `'rise'`, `'sharp'`, `'fade'`,
-`'blur'`, `'mask'`, `'letters'` or `'scramble'`. And the world's light,
-for a film's own things in a lit material: `lights`, each `{ colour,
-strength, at, aim, angle, softness }`, a spotlight standing `at` a spot
-and aiming at another as the eye does, `strength` how bright a white face
-square to it stands (1 its whole colour), as strong however far it
-reaches, `angle` how far its cone opens from its middle, under 90°, and
-`softness` its edge, 0 sharp to 1; and `softBoxes`, each `{ colour,
-brightness, round, up, width, height, lean }`, a glowing panel faces
-reflect and are lit by, matte ones too, turned `round` from straight toward
-the eye at rest, to the right for more degrees, and `up` from level,
-spanning `width` and `height` degrees, turned `lean` degrees round its own
-middle, brightest along it; each colour hex with no alpha. None of either
-in livereel's own look; a still of a polished sphere shows where each glint
-falls. In a room the page's window may have a body, a slab of metal round
-the page as a tablet has, in place of its edge and shadow:
-`windowThickness` (0, none, livereel's) and `windowRim` in pixels of a
-1080 frame, `windowMetal` in hex with no alpha, `windowRoughness` from
-0 to 1, and `windowGlass` from 0 to 1, how strong the clear coat over its
-page is; its metal and glass show the world's light alone, so give it soft
-boxes, and the glass's glint shows on a dark page. A room's light past the
+`'blur'`, `'mask'`, `'letters'` or `'scramble'`. In a room the page's
+window may have a body, a slab of metal round the page as a tablet has, in
+place of its edge and shadow: `windowThickness` (0, none, livereel's) and
+`windowRim` in pixels of a 1080 frame, `windowMetal` in hex with no alpha,
+`windowRoughness` from 0 to 1, and `windowGlass` from 0 to 1, how strong
+the clear coat over its page is; its metal and glass show the world's light
+alone, so give the world soft boxes, and the glass's glint shows on a dark
+page. Leave out what the user does not name: livereel's own is a dark
+ground, white ink and an amber accent. `look.to(theme)` changes any of these
+as the film goes: in a `play` through the values between (a ground fading
+light, the glow drifting while the camera moves, the dots fading into
+lines), in a `cut` at once; a font changes half-way through a play. Two
+moves of the look share a step at once where they name no value alike, a
+ground named alone naming its glow too: the glow drifting over a whole play
+while the ink changes in a share of it. A run of cuts a beat apart, each
+adding one value, shows a look built up; fade the ink a little after the
+ground, or the words pass through the ground's own grey.
+
+`defineFilm` takes a `world` too, how the world of a room looks, apart from
+the theme: its light, for a film's own things in a lit material and the
+window's body: `lights`, each `{ colour, strength, at, aim, angle,
+softness }`, a spotlight standing `at` a spot and aiming at another as the
+eye does, `strength` how bright a white face square to it stands (1 its
+whole colour), as strong however far it reaches, `angle` how far its cone
+opens from its middle, under 90°, and `softness` its edge, 0 sharp to 1;
+and `softBoxes`, each `{ colour, brightness, round, up, width, height,
+lean }`, a glowing panel faces reflect and are lit by, matte ones too,
+turned `round` from straight toward the eye at rest, to the right for more
+degrees, and `up` from level, spanning `width` and `height` degrees, turned
+`lean` degrees round its own middle, brightest along it; each colour hex
+with no alpha. None of either in livereel's own world; a still of a
+polished sphere shows where each glint falls. A room's light past the
 page's white may glow round itself: `bloom` (0, none, livereel's; the
 reference promo's 0.45) and `bloomRadius` (0.4), from 0 to 1; light far
-past white glows wide, so show the user a still. Leave out
-what the user does not name: livereel's own is a dark ground, white ink
-and an amber accent. `look.to(theme)` changes any of these as the film goes: in a
-`play` through the values between (a ground fading light, the glow
-drifting while the camera moves, the dots fading into lines), in a `cut`
-at once; a font, the lights and the soft boxes change half-way through a
-play. Two moves of the look
-share a step at once where they name no value alike, a ground named alone
-naming its glow too: the glow drifting over a whole play while the ink
-changes in a share of it. A
-run of cuts a beat apart, each adding one value, shows a look built up;
-fade the ink a little after the ground, or the words pass through the
-ground's own grey.
+past white glows wide, so show the user a still. `world.to(world)` changes
+any of these as the film goes, as `look.to` does the look: the glow through
+the values between, the lights and the soft boxes whole, half-way through a
+play. A theme never names the world's values, nor a world the look's.
 
 The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
 person types. Curves of the film's own numbers: `cubicBezier(x1, y1, x2,

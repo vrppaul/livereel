@@ -53,12 +53,12 @@ function stepsGiven(steps: unknown) {
 test('a film in no form of one is refused as it is defined, where it stands: its names, its formats and where their captions stand, its functions', () => {
 	expect(() => defineFilm(null as never)).toThrow(
 		new FilmError(
-			'the film is null: it is an object of formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, framesPerSecond, eye, colourScheme, blurred, page, drawing, things'
+			'the film is null: it is an object of formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, world, framesPerSecond, eye, colourScheme, blurred, page, drawing, things'
 		)
 	);
 	expect(() => filmWritten({ motionblur: {} })).toThrow(
 		new FilmError(
-			'the film names motionblur: it names formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, framesPerSecond, eye, colourScheme, blurred, page, drawing, things, or fewer'
+			'the film names motionblur: it names formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, world, framesPerSecond, eye, colourScheme, blurred, page, drawing, things, or fewer'
 		)
 	);
 	expect(() => filmWritten({ colourScheme: 'night' })).toThrow(
@@ -408,54 +408,20 @@ test("a film's set is shot 3 times as sharp as its page where it names no sharpn
 	);
 });
 
-test("a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, pixels less than none, a share past 1, a size of none, a way words come up it has not, a colour not in hex, a font of no name, a light whose cone opens a half-turn, that aims where it stands or whose colour has an alpha three reads none of, a soft box spanning a half-turn or turned up past straight up, the window's metal with an alpha, a glow of a strength below none", () => {
+test("a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, a value of the world's look by its name, pixels less than none, a share past 1, a size of none, a way words come up it has not, a colour not in hex, a font of no name, the window's metal with an alpha", () => {
 	const names =
-		'ground, glow, groundLayers, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, paneCorner, paneEdge, paneShadow, paneShadowColour, windowThickness, windowRim, windowMetal, windowRoughness, windowGlass, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, codeLineHeight, cursorFill, cursorEdge, words, lights, softBoxes, bloom, bloomRadius';
+		'ground, glow, groundLayers, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, paneCorner, paneEdge, paneShadow, paneShadowColour, windowThickness, windowRim, windowMetal, windowRoughness, windowGlass, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, codeLineHeight, cursorFill, cursorEdge, words';
 	expect(() => filmWritten({ theme: { windowMetal: '#454b5680' } })).toThrow(
 		new FilmError(`the film's theme's windowMetal is "#454b5680": it is a colour in hex with no alpha: #rgb or #rrggbb`)
-	);
-	expect(() => filmWritten({ theme: { bloom: -0.5 } })).toThrow(
-		new FilmError(
-			"the film's theme's bloom is -0.5: it is how strongly light past white glows, a number, 0 or more, as three's bloom takes it"
-		)
-	);
-	const light = {
-		colour: '#fff',
-		strength: 1,
-		at: { across: 0, down: -800, out: 600 },
-		aim: { across: 0, down: 0, out: 0 },
-		angle: 30,
-		softness: 1
-	};
-	const softBox = { colour: '#fff', brightness: 4, round: -15, up: 24, width: 10, height: 40, lean: 24 };
-	expect(() => filmWritten({ theme: { lights: [{ ...light, angle: 90 }] } })).toThrow(
-		new FilmError(
-			"the film's theme's lights[0]'s angle is 90: it is how far its cone opens from its middle, in degrees, more than 0 and less than 90"
-		)
-	);
-	expect(() => filmWritten({ theme: { lights: [light, { ...light, aim: light.at }] } })).toThrow(
-		new FilmError("the film's theme's lights[1] aims at the spot it stands at: it aims away from where it stands")
-	);
-	expect(() => filmWritten({ theme: { lights: [{ ...light, colour: '#ff000080' }] } })).toThrow(
-		new FilmError(
-			`the film's theme's lights[0]'s colour is "#ff000080": it is a colour in hex with no alpha: #rgb or #rrggbb`
-		)
-	);
-	expect(() => filmWritten({ theme: { softBoxes: [{ ...softBox, width: 180 }] } })).toThrow(
-		new FilmError(
-			"the film's theme's softBoxes[0]'s width is 180: it is how far it spans seen from the room's middle, in degrees, more than 0 and less than 180"
-		)
-	);
-	expect(() => filmWritten({ theme: { softBoxes: [{ ...softBox, up: 100 }] } })).toThrow(
-		new FilmError(
-			"the film's theme's softBoxes[0]'s up is 100: it is how far up from level it stands, in degrees, from -90 to 90"
-		)
 	);
 	expect(() => filmWritten({ theme: null })).toThrow(
 		new FilmError(`the film's theme is handed null for an object of ${names}`)
 	);
 	expect(() => filmWritten({ theme: { background: '#000' } })).toThrow(
 		new FilmError(`the film's theme names background: it names ${names}, or fewer`)
+	);
+	expect(() => filmWritten({ theme: { lights: [] } })).toThrow(
+		new FilmError(`the film's theme names lights: it names ${names}, or fewer`)
 	);
 	expect(() => filmWritten({ theme: { paneCorner: -4 } })).toThrow(
 		new FilmError("the film's theme's paneCorner is -4: it is a number of pixels, 0 or more")
@@ -477,6 +443,72 @@ test("a theme in no form of one is refused as the film is defined, where it stan
 	expect(() => filmWritten({ theme: { font: '' } })).toThrow(
 		new FilmError(
 			`the film's theme's font is "": it is a font's family, as CSS names one: 'Inter', or 'Inter, sans-serif'`
+		)
+	);
+});
+
+test("a film opens on livereel's world, with no light and no glow, where it names none, and on the values of the world it names, the rest livereel's", () => {
+	const overhead = {
+		colour: '#fff',
+		strength: 1,
+		at: { across: 0, down: -800, out: 600 },
+		aim: { across: 0, down: 0, out: 0 },
+		angle: 30,
+		softness: 1
+	};
+	const [unnamed, named] = [filmWritten({}), filmWritten({ world: { lights: [overhead], bloom: 0.45 } })];
+	expect([unnamed.formats.get('small')!.world, named.formats.get('small')!.world]).toEqual([
+		{ lights: [], softBoxes: [], bloom: 0, bloomRadius: 0.4 },
+		{ lights: [overhead], softBoxes: [], bloom: 0.45, bloomRadius: 0.4 }
+	]);
+});
+
+test("a world in no form of one is refused as the film is defined, where it stands: not an object, a name the world has not, a value of the film's look by its name, a light whose cone opens a half-turn, that aims where it stands or whose colour has an alpha three reads none of, a soft box spanning a half-turn or turned up past straight up, a glow of a strength below none", () => {
+	const names = 'lights, softBoxes, bloom, bloomRadius';
+	const light = {
+		colour: '#fff',
+		strength: 1,
+		at: { across: 0, down: -800, out: 600 },
+		aim: { across: 0, down: 0, out: 0 },
+		angle: 30,
+		softness: 1
+	};
+	const softBox = { colour: '#fff', brightness: 4, round: -15, up: 24, width: 10, height: 40, lean: 24 };
+	expect(() => filmWritten({ world: null })).toThrow(
+		new FilmError(`the film's world is handed null for an object of ${names}`)
+	);
+	expect(() => filmWritten({ world: { grain: 0.2 } })).toThrow(
+		new FilmError(`the film's world names grain: it names ${names}, or fewer`)
+	);
+	expect(() => filmWritten({ world: { ground: '#000' } })).toThrow(
+		new FilmError(`the film's world names ground: it names ${names}, or fewer`)
+	);
+	expect(() => filmWritten({ world: { bloom: -0.5 } })).toThrow(
+		new FilmError(
+			"the film's world's bloom is -0.5: it is how strongly light past white glows, a number, 0 or more, as three's bloom takes it"
+		)
+	);
+	expect(() => filmWritten({ world: { lights: [{ ...light, angle: 90 }] } })).toThrow(
+		new FilmError(
+			"the film's world's lights[0]'s angle is 90: it is how far its cone opens from its middle, in degrees, more than 0 and less than 90"
+		)
+	);
+	expect(() => filmWritten({ world: { lights: [light, { ...light, aim: light.at }] } })).toThrow(
+		new FilmError("the film's world's lights[1] aims at the spot it stands at: it aims away from where it stands")
+	);
+	expect(() => filmWritten({ world: { lights: [{ ...light, colour: '#ff000080' }] } })).toThrow(
+		new FilmError(
+			`the film's world's lights[0]'s colour is "#ff000080": it is a colour in hex with no alpha: #rgb or #rrggbb`
+		)
+	);
+	expect(() => filmWritten({ world: { softBoxes: [{ ...softBox, width: 180 }] } })).toThrow(
+		new FilmError(
+			"the film's world's softBoxes[0]'s width is 180: it is how far it spans seen from the room's middle, in degrees, more than 0 and less than 180"
+		)
+	);
+	expect(() => filmWritten({ world: { softBoxes: [{ ...softBox, up: 100 }] } })).toThrow(
+		new FilmError(
+			"the film's world's softBoxes[0]'s up is 100: it is how far up from level it stands, in degrees, from -90 to 90"
 		)
 	);
 });

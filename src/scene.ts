@@ -3,13 +3,13 @@
  * the frame — and the speed the take runs the page's own time at, which the stage draws nothing of.
  *
  * A scene is plain values, never changed in place: a move's change hands back a scene with its own prop or object set,
- * and the take keeps the one standing. The film's look is a prop too, changed by moves as any other. A prop is one of
- * livereel's, each in a slot of its own; an object (`src/props/object.ts`) is the film's, known by a name it gives or
- * its kind's own, so several of a kind stand at once, drawn on the layer what each shows sets and, within it, in the
- * order they first came, the last over the rest: one shown again in place of itself keeps its place. One pushed off by
- * another of its name sliding in is held apart while it goes, so the two stand at once, and drawn over every object
- * standing on its layer. A group of objects (`src/props/group.ts`) is known by a name of its own, and holds no more
- * than how the objects in it stand together; they go with it. `drawn` works out everything the stage needs from it —
+ * and the take keeps the one standing. The film's look and the world's are props too, changed by moves as any other. A
+ * prop is one of livereel's, each in a slot of its own; an object (`src/props/object.ts`) is the film's, known by a
+ * name it gives or its kind's own, so several of a kind stand at once, drawn on the layer what each shows sets and,
+ * within it, in the order they first came, the last over the rest: one shown again in place of itself keeps its place.
+ * One pushed off by another of its name sliding in is held apart while it goes, so the two stand at once, and drawn
+ * over every object standing on its layer. A group of objects (`src/props/group.ts`) is known by a name of its own,
+ * and holds no more than how the objects in it stand together; they go with it. `drawn` works out everything the stage needs from it —
  * how far each word of a title, a caption or a callout and each line of code has come, the terminal's spinner, how far
  * keys rise clear of a caption, where a note's line meets the block it names on the frame, the hole a piece of the page
  * leaves and the lines it draws to its source, the part of the screen under a lens, where a band of light sweeping the
@@ -48,7 +48,6 @@ import type { Cursor } from './props/cursor.ts';
 import type { Group, GroupName, Groups } from './props/group.ts';
 import { type DrawnLines, drawnHoles, drawnLines } from './props/lifted.ts';
 import type { Light } from './props/light.ts';
-import { type DrawnBloom, type DrawnLighting, drawnBloom, drawnLighting } from './props/lighting.ts';
 import type { Look } from './props/look.ts';
 import { type DrawnNote, type Note, drawnNote, noteShift } from './props/note.ts';
 import {
@@ -81,9 +80,11 @@ import {
 	sweepShift
 } from './props/screen.ts';
 import { type DrawnWindow, type PageWindow, UNSHADED, drawnWindow } from './props/window.ts';
+import { type DrawnWorld, type WorldLook, drawnWorld } from './props/world.ts';
 
 export interface PropStates {
 	look: Look;
+	world: WorldLook;
 	camera: Aiming;
 	window: PageWindow;
 	screen: Screen;
@@ -118,6 +119,7 @@ export type Scene = { readonly [Name in PropName]: PropStates[Name] } & {
 /** What the stage is handed for each prop: its state, or what is worked out from it to draw. */
 interface DrawnProps {
 	look: Look;
+	world: DrawnWorld;
 	camera: DrawnCamera;
 	window: DrawnWindow;
 	screen: DrawnScreen;
@@ -130,28 +132,26 @@ interface DrawnProps {
 
 /**
  * What the stage is handed of a scene: each prop as drawn, the objects standing and pushed off, and what the pieces of
- * the page among them leave on the page and draw to it, holes on the screen and lines on the frame; and the world's
- * light, as the room lights a film's own things by it, and the glow round the brightest, none where the look has none.
+ * the page among them leave on the page and draw to it, holes on the screen and lines on the frame.
  */
 export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 	readonly objects: readonly DrawnObject[];
 	readonly leaving: readonly DrawnObject[];
 	readonly holes: readonly DrawnHole[];
 	readonly lines: readonly DrawnLines[];
-	readonly lighting: DrawnLighting;
-	readonly bloom: DrawnBloom | null;
 };
 
 // The page's own time running a second for each of the film's
 const THE_FILMS_OWN_SPEED = 1;
 
 /**
- * The scene a film opens on, in its look: the whole screen, face-on, up, unshaded, in the whole frame; nothing over
- * it; the page's time at the film's own speed; the eye of its focal length at rest.
+ * The scene a film opens on, in its look and its world's: the whole screen, face-on, up, unshaded, in the whole frame;
+ * nothing over it; the page's time at the film's own speed; the eye of its focal length at rest.
  */
-export function openingScene(format: Format, look: Look, focalLength: number): Scene {
+export function openingScene(format: Format, look: Look, world: WorldLook, focalLength: number): Scene {
 	return {
 		look,
+		world,
 		camera: standingAt(wholePose(format)),
 		window: { ...placedIn(wholeView(format.frame)), ...UNSHADED },
 		screen: SCREEN_UP,
@@ -285,9 +285,11 @@ const NOTHING_MOVES = 0;
 // cursor's tip on the screen, and a note's words beside the window and its line's end at its block, each where it
 // stands at both, a prop that comes or goes between them moving nowhere. The screen comes up in its place, and a
 // callout and pins lie on the screen, moving only as far as it carries them, which the camera's measures. The look's
-// colours and ground change in place; the sizes it sets, of letters and margins, move words too, which is not counted
+// colours and ground change in place; the sizes it sets, of letters and margins, move words too, which is not counted;
+// the world's light and glow change only how what stands is lit
 const FRAME_SHIFT_OF: { readonly [Name in PropName]: (between: Between) => number } = {
 	look: () => NOTHING_MOVES,
+	world: () => NOTHING_MOVES,
 	camera: ({ seen, format }) => frameShift(seen.start, seen.end, format),
 	window: ({ seen }) => viewShift(seen),
 	screen: ({ start, end, seen, format }) =>
@@ -399,10 +401,12 @@ export function drawn(
 		frame: format.frame,
 		sharpness,
 		look: scene.look,
+		world: scene.world,
 		screenShown: scene.screen.shown
 	});
 	return {
 		look: scene.look,
+		world: drawnWorld(scene.world, format.frame),
 		camera: shown,
 		window,
 		screen: drawnScreen(scene.screen, camera, format, window.facingTheEye),
@@ -414,9 +418,7 @@ export function drawn(
 		objects: drawnObjects(scene.objects, moment, around),
 		leaving: drawnObjects(scene.leaving, moment, around),
 		holes,
-		lines: drawnLines(everyObject, camera, scene.groups, format.frame),
-		lighting: drawnLighting(scene.look.lights, scene.look.softBoxes, format.frame),
-		bloom: drawnBloom(scene.look.bloom, scene.look.bloomRadius)
+		lines: drawnLines(everyObject, camera, scene.groups, format.frame)
 	};
 }
 

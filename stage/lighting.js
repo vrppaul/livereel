@@ -3,7 +3,7 @@
  * The world's light in the room (`src/props/lighting.ts`), which a film's things in a lit material and the window's
  * body are lit by: its lights in a group the matrix each carries takes from the room into the eye's own space that
  * sees it, and its soft boxes drawn once into what three reads reflections from, which the room's turn turns, so a
- * glint stays where its box stands in the room. Each is made anew only as the look changes it, as three keeps what it
+ * glint stays where its box stands in the room. Each is made anew only as the world changes it, as three keeps what it
  * learns of a light for as long as the page stands.
  */
 import * as THREE from 'three';
@@ -24,7 +24,7 @@ const UNBLURRED = 0;
 const NEAREST_REFLECTED = 0.1;
 const PAST_THE_FARTHEST = 2;
 const REFLECTIONS_SHARPNESS = 1024;
-// The world's lights or soft boxes an exposure hands where the film's look has none
+// The world's lights or soft boxes an exposure hands where the film's world has none
 const NONE_HANDED = JSON.stringify([]);
 // A quarter-turn, in radians: half a half-turn
 const HALVES = 2;
@@ -59,7 +59,7 @@ export class WorldLighting {
 
 	/**
 	 * The world's light an exposure is lit by, made anew only where it is not the one made already, as it stands while
-	 * the look does: its lights set where they stand and aim in the room, and its soft boxes drawn into what faces
+	 * the world does: its lights set where they stand and aim in the room, and its soft boxes drawn into what faces
 	 * reflect, so boxes that stand still are drawn once for the whole film.
 	 * @param {THREE.WebGLRenderer} renderer @param {DrawnLighting} lighting
 	 */

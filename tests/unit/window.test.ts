@@ -6,6 +6,7 @@ import type { Sharpness } from '../../src/domain/focus.ts';
 import type { Box, Size } from '../../src/domain/geometry.ts';
 import { ITS_MIDDLE, type Matrix, type Spot, carried, chained, flatOf, translation } from '../../src/domain/matrix.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
+import { LIVEREELS_WORLD } from '../../src/props/world.ts';
 import { type AroundTheWindow, UNSHADED, drawnWindow } from '../../src/props/window.ts';
 import { FOCAL_LENGTH } from './fakes.ts';
 
@@ -34,9 +35,10 @@ const BODY = {
 	windowGlass: 0.4,
 	paneCorner: 24
 };
-// A soft box of the world the glass reflects, overhead
+// A world lit by a soft box the glass reflects, overhead
 const OVERHEAD = { colour: '#ffffff', brightness: 12, round: 0, up: 75, width: 33, height: 33, lean: 0 };
-const WITH_A_BODY = { ...LIVEREELS_LOOK, ...BODY, softBoxes: [OVERHEAD] };
+const WITH_A_BODY = { ...LIVEREELS_LOOK, ...BODY };
+const LIT = { ...LIVEREELS_WORLD, softBoxes: [OVERHEAD] };
 const SHARP: Sharpness = { focusedAt: FOCAL_LENGTH, focalLength: FOCAL_LENGTH, aperture: 0 };
 const AT_REST = eyeAtRest(FOCAL_LENGTH);
 // An eye moved up, to the right and nearer, in pixels of a frame 1080 high; where it stands in the room in three's
@@ -48,6 +50,7 @@ const AROUND: AroundTheWindow = {
 	frame: TWICE_THE_LOOK,
 	sharpness: SHARP,
 	look: WITH_A_BODY,
+	world: LIT,
 	screenShown: 1
 };
 // The window turned about its upright, a little, short of edge-on, past it, and half round
@@ -144,8 +147,7 @@ test("a body comes as far as the window lifts and the screen comes up in it, rou
 });
 
 test('the glass reflects nothing where the world has no light in it, no lights and no soft boxes', () => {
-	const unlit = { ...WITH_A_BODY, softBoxes: [] };
-	expect(drawnWindow(LIFTED, AT_ITS_EDGES, UNSHADED, { ...AROUND, look: unlit }).body!.glass).toBe(0);
+	expect(drawnWindow(LIFTED, AT_ITS_EDGES, UNSHADED, { ...AROUND, world: LIVEREELS_WORLD }).body!.glass).toBe(0);
 });
 
 test('no body where the look has a window of no thickness, where the window is the frame itself, or where the screen has not come up', () => {

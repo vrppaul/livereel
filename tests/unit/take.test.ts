@@ -25,6 +25,7 @@ import type { Sound } from '../../src/direction/sound.ts';
 import type { Keystroke } from '../../src/domain/typing.ts';
 import type { EndingCard } from '../../src/props/ending.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
+import { LIVEREELS_WORLD } from '../../src/props/world.ts';
 import { pageKeyOf } from '../../src/direction/page.ts';
 import { type Scene, openingScene } from '../../src/scene.ts';
 import type { Exposures, PageTime, Stage } from '../../src/studio/ports.ts';
@@ -205,7 +206,7 @@ function takeOf(
 		footage,
 		track,
 		format: SMALL,
-		opening: openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH),
+		opening: openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
 		motionBlur,
 		framesPerSecond: RATE
 	});
@@ -219,7 +220,7 @@ function takeShowingOwnPage(footage: FootageOf, stage: Stage, filmed: PageOfBoxe
 		footage,
 		track: new TrackThatKeeps(),
 		format: SMALL,
-		opening: openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH),
+		opening: openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
 		motionBlur: HALF_OF_FOUR,
 		framesPerSecond: RATE
 	});
@@ -237,7 +238,7 @@ function takeOfTheWholeScreen(footage: FootageOf, stage: Stage): Take {
 		footage,
 		track: new TrackThatKeeps(),
 		format: WHOLE_AT_ZOOM_ONE,
-		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK, FOCAL_LENGTH),
+		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
 		motionBlur: HALF_OF_FOUR,
 		framesPerSecond: RATE
 	});
@@ -515,7 +516,7 @@ test('a frame of a film with no blur is exposed once, however fast the camera cr
 		footage,
 		track: new TrackThatKeeps(),
 		format: SMALL,
-		opening: openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH),
+		opening: openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
 		motionBlur: null,
 		framesPerSecond: RATE
 	});
@@ -572,7 +573,7 @@ test("an act at a moment of a play is done as its share begins, the page's time 
 		footage: new FootageOf([3]),
 		track: new TrackThatKeeps(),
 		format: SMALL,
-		opening: openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH),
+		opening: openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
 		motionBlur: null,
 		framesPerSecond: RATE
 	});
@@ -683,7 +684,7 @@ test("a static page is pictured as close as the frame's camera comes on each fra
 		footage: new FootageOf([...Array(7).keys()]),
 		track: new TrackThatKeeps(),
 		format: WHOLE_AT_ZOOM_ONE,
-		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK, FOCAL_LENGTH),
+		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
 		motionBlur: HALF_OF_FOUR,
 		framesPerSecond: RATE
 	});
@@ -707,7 +708,7 @@ test('a static page is pictured as close as a piece of it shows it on a frame it
 		footage: new FootageOf([0]),
 		track: new TrackThatKeeps(),
 		format: WHOLE_AT_ZOOM_ONE,
-		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK, FOCAL_LENGTH),
+		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
 		motionBlur: HALF_OF_FOUR,
 		framesPerSecond: RATE
 	});
@@ -826,7 +827,7 @@ test("a static page moving under a camera that crosses the frame fast is picture
 		footage: new FootageOf([0]),
 		track: new TrackThatKeeps(),
 		format: WHOLE_AT_ZOOM_ONE,
-		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK, FOCAL_LENGTH),
+		opening: openingScene(WHOLE_AT_ZOOM_ONE, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
 		motionBlur: HALF_OF_FOUR,
 		framesPerSecond: RATE
 	});
@@ -916,7 +917,7 @@ test('each key typed into the page is heard on the frame it is pressed', async (
 		footage,
 		track,
 		format: SMALL,
-		opening: openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH),
+		opening: openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
 		motionBlur: HALF_OF_FOUR,
 		framesPerSecond: RATE
 	});

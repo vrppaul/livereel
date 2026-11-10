@@ -727,7 +727,6 @@ values; what the film leaves out stays livereel's:
 | `windowThickness`, `windowRim` | in a room, how thick the body of the page's window is, `0` none, and how far its rim reaches past the page all round, in pixels | `0`, `6` |
 | `windowMetal`, `windowRoughness` | the colour of the window's body, in hex with no alpha, and how rough its metal is, from `0`, a mirror, to `1`, matte | `#454b56`, `0.45` |
 | `windowGlass` | how strong the clear coat of glass over the page of a window with a body is, from `0`, none, to `1`, a whole coat: 4% reflected face-on, more aslant | `0.4` |
-| `bloom`, `bloomRadius` | in a room, how strongly light brighter than the page's white glows round itself, `0` none, as three's bloom takes its strength, and how far the glow spreads, from `0`, nearest, to `1`, widest | `0`, `0.4` |
 | `terminal`, `terminalInk` | the colour of the terminal, the code's pane, the ending's command and keys' caps, and what is written on them | `#10141c`, `#f4f6fa` |
 | `codeComment`, `codeString`, `codeNumber`, `codeKeyword`, `codeCall`, `codeKey` | the colours of the code's pieces by kind: a comment, a string, a number, a word the language keeps, a function called, a key of an object; livereel's are made for a dark pane | `#8b949e`, `#a5d6ff`, `#79c0ff`, `#ff7b72`, `#d2a8ff`, `#7ee787` |
 | `glowX`, `glowY` | where the ground's glow stands, across and down, each from 0 to 1 | `0.5`, `0.3` |
@@ -764,51 +763,13 @@ and its glow under the layers. No layer takes a picture (`url()`), which
 the stage would draw only once loaded. Layers CSS cannot read, or with a
 picture, are refused before anything is shot.
 
-A film drawn as a room may light the world its own three.js things stand
-in: `lights`, spotlights standing at a spot of the room and aiming at
-another, as the eye does, each in pixels of a frame 1080 high from the
-frame's middle; and `softBoxes`, glowing panels round the room that faces
-reflect and are lit by, rough ones as well as glossy, each turned `round`
-from straight toward the eye at rest, to the right for more degrees, and
-`up` from level. A light is as strong however far it reaches: its
-`strength` is how bright a white face square to it stands, 1 its whole
-colour. A soft box spans `width` and `height` degrees seen from the room's
-middle, brightest along its middle; boxes as bright as below light a matte
-thing strongly too. Each colour is hex with no alpha. Things built of
-three's lit materials take the lights, `MeshStandardMaterial`,
-`MeshPhysicalMaterial`, `MeshLambertMaterial`, `MeshPhongMaterial` and
-`MeshToonMaterial`, and all but the toon the soft boxes; `MeshBasicMaterial`
-and a film's own `ShaderMaterial` see neither. livereel's own look has
-neither:
-
-```ts
-theme: {
-	lights: [
-		{ colour: '#ffffff', strength: 1.2, at: { across: 150, down: -2000, out: 400 }, aim: { across: 0, down: 0, out: 0 }, angle: 30, softness: 1 },
-		{ colour: '#2a5cff', strength: 1, at: { across: -1700, down: -250, out: -1000 }, aim: { across: 0, down: 0, out: 0 }, angle: 35, softness: 1 }
-	],
-	softBoxes: [
-		{ colour: '#ffffff', brightness: 12, round: 0, up: 75, width: 33, height: 33, lean: 0 },  // overhead
-		{ colour: '#ffffff', brightness: 30, round: -15, up: 24, width: 9, height: 39, lean: 24 }  // a key, high on the left
-	]
-}
-```
-
-The lights and the reflections stay where they stand in the room as the
-eye moves; a thing on the frame, which rides with the eye, is lit as the
-eye at rest would see it. A light whose cone opens 90° or more, or that
-aims at the spot it stands at, and a soft box spanning 180° or more, or
-turned up past straight up, are refused as the film is defined. They cast
-no shadow. `look.to` changes them whole, half-way through a play: a light
-does not yet fade in by its strength.
-
 In a room the page's window may have a body, as a tablet has: a slab of
 metal round the page, `windowThickness` thick, its rim reaching
 `windowRim` past the page all round, its corners the page's grown by the
 rim. It takes the place of the window's edge and shadow and comes as they
 do, as far as the window stands off the ground and the screen has come up
 in it, so a page over the whole frame has none. Its metal shows the
-world's light: with no lights and no soft boxes it stands dark. Turned
+world's light (below): with no lights and no soft boxes it stands dark. Turned
 past edge-on, the window shows the body's back. It is open in front, so a
 page that fades shows what stands behind the window. Glass lies over the
 page, a smooth clear coat as strong as `windowGlass` says, which reflects
@@ -820,27 +781,15 @@ light, and stays over a page that fades. A flat film draws the edge and
 shadow in its place.
 
 ```ts
-theme: { windowThickness: 24, windowRim: 6, softBoxes: [...] }
+theme: { windowThickness: 24, windowRim: 6 },
+world: { softBoxes: [...] }
 ```
-
-A room keeps the light of its things and of the window's body as three
-gives it, brighter than white where a glint is, and may let it glow round
-itself as a lens blooms: `bloom` says how strongly, as three's bloom takes
-its strength, `bloomRadius` how far, the same share of the frame however
-large it is shot. Only light brighter than the page's white glows, so a
-white page and its letters never do; a face lit far past white glows wide,
-as three's bloom has it. An edge narrower than a pixel and a glint the
-eye's focus blurs come out dimmer than three would lay them, as a room lays
-them in the screen's colours, and may not glow at all. The glow lies over
-all the frame, titles and the cursor too. livereel's own look has none; the
-reference promo's was `bloom: 0.45, bloomRadius: 0.4`.
 
 The look changes as the film goes, by a move like any other:
 `look.to(theme)`, any of the same values. In a `play` it moves there over
 its share of the step: a colour through the colours between, a size, a
-weight, a corner or a shadow through the values between, a font, `words`,
-the lights or the soft boxes, which have none between, half-way, and the
-ground's layers
+weight, a corner or a shadow through the values between, a font or
+`words`, which have none between, half-way, and the ground's layers
 fading out as the new ones fade in over them; in a `cut`, at once.
 
 ```ts
@@ -860,6 +809,79 @@ play({ seconds: 4, moves: [look.to({ glowX: 0.9 }), look.to({ ink: '#1a1a1a' }, 
 
 Two that name one value at once are refused, by it: `two moves on the
 look's glow at once in one step`.
+
+### The world's look
+
+A film drawn as a room may light the world its own three.js things and the
+window's body stand in, and let the brightest light glow. `defineFilm`
+takes a `world`, how that world looks as the film opens, any of its values;
+what the film leaves out stays livereel's, a world of flat light:
+
+| Value | What it sets | livereel's |
+|---|---|---|
+| `lights` | spotlights standing in the room | none: `[]` |
+| `softBoxes` | glowing panels round the room, which faces reflect and are lit by | none: `[]` |
+| `bloom`, `bloomRadius` | how strongly light brighter than the page's white glows round itself, `0` none, as three's bloom takes its strength, and how far the glow spreads, from `0`, nearest, to `1`, widest | `0`, `0.4` |
+
+A light stands at a spot of the room and aims at another, as the eye does,
+each in pixels of a frame 1080 high from the frame's middle. A soft box
+lights rough faces as well as glossy ones, and stands turned `round` from
+straight toward the eye at rest, to the right for more degrees, and `up`
+from level. A light is as strong however
+far it reaches: its `strength` is how bright a white face square to it
+stands, 1 its whole colour. A soft box spans `width` and `height` degrees
+seen from the room's middle, brightest along its middle; boxes as bright as
+below light a matte thing strongly too. Each colour is hex with no alpha.
+Things built of three's lit materials take the lights,
+`MeshStandardMaterial`, `MeshPhysicalMaterial`, `MeshLambertMaterial`,
+`MeshPhongMaterial` and `MeshToonMaterial`, and all but the toon the soft
+boxes; `MeshBasicMaterial` and a film's own `ShaderMaterial` see neither:
+
+```ts
+world: {
+	lights: [
+		{ colour: '#ffffff', strength: 1.2, at: { across: 150, down: -2000, out: 400 }, aim: { across: 0, down: 0, out: 0 }, angle: 30, softness: 1 },
+		{ colour: '#2a5cff', strength: 1, at: { across: -1700, down: -250, out: -1000 }, aim: { across: 0, down: 0, out: 0 }, angle: 35, softness: 1 }
+	],
+	softBoxes: [
+		{ colour: '#ffffff', brightness: 12, round: 0, up: 75, width: 33, height: 33, lean: 0 },  // overhead
+		{ colour: '#ffffff', brightness: 30, round: -15, up: 24, width: 9, height: 39, lean: 24 }  // a key, high on the left
+	]
+}
+```
+
+The lights and the reflections stay where they stand in the room as the
+eye moves; a thing on the frame, which rides with the eye, is lit as the
+eye at rest would see it. A light whose cone opens 90° or more, or that
+aims at the spot it stands at, and a soft box spanning 180° or more, or
+turned up past straight up, are refused as the film is defined. They cast
+no shadow.
+
+A room keeps the light of its things and of the window's body as three
+gives it, brighter than white where a glint is, and may let it glow round
+itself as a lens blooms: `bloom` says how strongly, as three's bloom takes
+its strength, `bloomRadius` how far, the same share of the frame however
+large it is shot. Only light brighter than the page's white glows, so a
+white page and its letters never do; a face lit far past white glows wide,
+as three's bloom has it. An edge narrower than a pixel and a glint the
+eye's focus blurs come out dimmer than three would lay them, as a room lays
+them in the screen's colours, and may not glow at all. The glow lies over
+all the frame, titles and the cursor too. The reference promo's was
+`bloom: 0.45, bloomRadius: 0.4`.
+
+The world changes as the film goes, as the look does: `world.to(world)`,
+any of the same values. In a `play` the glow's strength and spread move
+through the values between, and the lights and the soft boxes, which have
+none between, change whole half-way: a light does not yet fade in by its
+strength. In a `cut`, at once. Two moves of the world share a step at once
+where they name no value alike; two that name one are refused, by it:
+
+```ts
+play({ seconds: 2, moves: [world.to({ bloom: 0.45 }), world.to({ lights: [KEY] }, { within: { start: 0.5 } })] })
+```
+
+A theme or `look.to` that names a value of the world, or a world that names
+one of the look, is refused by that name.
 
 ### Where the page is, and what serves it
 
@@ -1161,8 +1183,8 @@ page's window parts it, what stands behind the window laid under the page and
 what stands before it over, so a page that fades shows what stands behind it;
 on the frame it rides with the eye, sharp, before the window. Built of
 `MeshBasicMaterial` or a `ShaderMaterial` of its own, it is drawn flat; of
-one of three's lit materials, lit by the theme's `lights` and `softBoxes`,
-as the look says; a see-through `ShaderMaterial` in the
+one of three's lit materials, lit by the world's `lights` and `softBoxes`,
+as the world's look says; a see-through `ShaderMaterial` in the
 world, or one that writes no depth, sets `clipping: true` and includes three's
 clipping chunks, so the window parts it face by face. It comes and goes in
 its own way alone, as its module draws `shown` (a material it fades is

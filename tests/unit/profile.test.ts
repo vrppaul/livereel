@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { Profile, Timings, profileSaid } from '../../src/adapters/profile.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
+import { LIVEREELS_WORLD } from '../../src/props/world.ts';
 import { cameraOf, drawn, openingScene } from '../../src/scene.ts';
 import type { Browser } from '../../src/studio/ports.ts';
 import { FOCAL_LENGTH, PageOfBoxes, PicturedStageThatKeeps, SMALL, openedOn } from './fakes.ts';
@@ -37,7 +38,7 @@ test('a capture of exposures laid over one another at once is timed apart from a
 	const browser: Browser = {
 		open: () => Promise.resolve(openedOn(new PageOfBoxes(new Map()), new StageLayingTwo()))
 	};
-	const opening = openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH);
+	const opening = openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH);
 	const scene = drawn(opening, cameraOf(opening, SMALL), 0, SMALL, []);
 	await profile.shooting(async () => {
 		const opened = await profile.browser(browser).open(undefined as never, { kind: 'static', address: '' }, 1);

@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { colourToward } from '../../src/domain/colour.ts';
-import { LIVEREELS_LOOK, lookToward, lookWith } from '../../src/props/look.ts';
+import { valuesToward, valuesWith } from '../../src/domain/values.ts';
+import { LIVEREELS_LOOK, LOOK_KINDS } from '../../src/props/look.ts';
 
 test('colours mix in each channel and in their alpha, from any form of hex, and stand as written at either end', () => {
 	expect([
@@ -12,71 +13,53 @@ test('colours mix in each channel and in their alpha, from any form of hex, and 
 });
 
 test("a theme's value written as undefined is left out, as a film whose types nobody checked may write it", () => {
-	expect(lookWith(LIVEREELS_LOOK, { font: undefined } as never).font).toBe(LIVEREELS_LOOK.font);
+	expect(valuesWith(LIVEREELS_LOOK, { font: undefined } as never, LOOK_KINDS).font).toBe(LIVEREELS_LOOK.font);
 });
 
-test("a look on its way to a theme's values: a colour mixed, a number between, a font and the world's lights changed half-way, the ground's layers fading into the theme's, what the theme leaves out as the look stands", () => {
+test("a look on its way to a theme's values: a colour mixed, a number between, a font changed half-way, the ground's layers fading into the theme's, what the theme leaves out as the look stands", () => {
 	const dots = 'radial-gradient(#fff2 1px, transparent 1px) 0 0 / 24px 24px';
-	const lights = [
-		{
-			colour: '#fff',
-			strength: 1,
-			at: { across: 0, down: -800, out: 600 },
-			aim: { across: 0, down: 0, out: 0 },
-			angle: 30,
-			softness: 1
-		}
-	];
-	const theme = { ground: '#ffffff', paneShadow: 0, font: 'Georgia', groundLayers: dots, lights };
-	const end = lookWith(LIVEREELS_LOOK, theme);
-	const standing = lookWith(LIVEREELS_LOOK, { ink: '#000000' });
-	const names = ['ground', 'paneShadow', 'font', 'groundLayers', 'lights'] as const;
+	const theme = { ground: '#ffffff', paneShadow: 0, font: 'Georgia', groundLayers: dots };
+	const end = valuesWith(LIVEREELS_LOOK, theme, LOOK_KINDS);
+	const standing = valuesWith(LIVEREELS_LOOK, { ink: '#000000' }, LOOK_KINDS);
+	const names = ['ground', 'paneShadow', 'font', 'groundLayers'] as const;
 	const moving = { start: LIVEREELS_LOOK, end, names };
-	const quarter = lookToward(standing, moving, 0.25);
-	const half = lookToward(standing, moving, 0.5);
-	expect([
-		quarter.ground,
-		quarter.paneShadow,
-		quarter.font,
-		half.font,
-		quarter.lights,
-		half.lights,
-		quarter.groundLayers,
-		quarter.ink
-	]).toEqual([
+	const quarter = valuesToward(standing, moving, LOOK_KINDS, 0.25);
+	const half = valuesToward(standing, moving, LOOK_KINDS, 0.5);
+	expect([quarter.ground, quarter.paneShadow, quarter.font, half.font, quarter.groundLayers, quarter.ink]).toEqual([
 		'#484a4fff',
 		0.75,
 		LIVEREELS_LOOK.font,
 		'Georgia',
-		[],
-		lights,
 		{ going: 'none', coming: dots, come: 0.25 },
 		'#000000'
 	]);
 });
 
 test("the window's metal mixes through opaque colours, written with no alpha, as three reads a colour", () => {
-	const end = lookWith(LIVEREELS_LOOK, { windowMetal: '#fff' });
-	const start = lookWith(LIVEREELS_LOOK, { windowMetal: '#000000' });
+	const end = valuesWith(LIVEREELS_LOOK, { windowMetal: '#fff' }, LOOK_KINDS);
+	const start = valuesWith(LIVEREELS_LOOK, { windowMetal: '#000000' }, LOOK_KINDS);
 	const moving = { start, end, names: ['windowMetal'] as const };
-	expect(lookToward(start, moving, 0.5).windowMetal).toBe('#808080');
+	expect(valuesToward(start, moving, LOOK_KINDS, 0.5).windowMetal).toBe('#808080');
 });
 
 test("the ground's layers fade on from those that came in by a fade before, not from those they faded out", () => {
 	const dots = 'radial-gradient(#fff2 1px, transparent 1px) 0 0 / 24px 24px';
 	const lines = 'repeating-linear-gradient(45deg, #fff1 0 2px, transparent 2px 12px)';
-	const faded = lookToward(
+	const dotted = valuesWith(LIVEREELS_LOOK, { groundLayers: dots }, LOOK_KINDS);
+	const faded = valuesToward(
 		LIVEREELS_LOOK,
-		{ start: LIVEREELS_LOOK, end: lookWith(LIVEREELS_LOOK, { groundLayers: dots }), names: ['groundLayers'] },
+		{ start: LIVEREELS_LOOK, end: dotted, names: ['groundLayers'] as const },
+		LOOK_KINDS,
 		1
 	);
-	const moving = { start: faded, end: lookWith(faded, { groundLayers: lines }), names: ['groundLayers'] } as const;
-	expect(lookToward(faded, moving, 0.5).groundLayers).toEqual({ going: dots, coming: lines, come: 0.5 });
+	const lined = valuesWith(faded, { groundLayers: lines }, LOOK_KINDS);
+	const moving = { start: faded, end: lined, names: ['groundLayers'] } as const;
+	expect(valuesToward(faded, moving, LOOK_KINDS, 0.5).groundLayers).toEqual({ going: dots, coming: lines, come: 0.5 });
 });
 
 test("the ground's layers a theme writes stand whole, as come", () => {
 	const lines = 'repeating-linear-gradient(45deg, #fff1 0 2px, transparent 2px 12px)';
-	expect(lookWith(LIVEREELS_LOOK, { groundLayers: lines }).groundLayers).toEqual({
+	expect(valuesWith(LIVEREELS_LOOK, { groundLayers: lines }, LOOK_KINDS).groundLayers).toEqual({
 		going: lines,
 		coming: lines,
 		come: 1

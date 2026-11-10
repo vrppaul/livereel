@@ -44,6 +44,7 @@ import {
 import { type Fraction, NONE } from '../domain/fraction.ts';
 import { type Box, type Size, boxAround, frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
 import type { Look } from './look.ts';
+import type { WorldLook } from './world.ts';
 import { type Transform, stanceMatrix, transformOf } from '../domain/stance.ts';
 import {
 	MOVES_AS_A_SHARE,
@@ -109,7 +110,7 @@ export interface DrawnBody {
 
 /**
  * What stands round the window as it is drawn: the eye that sees it, the frame, how sharp the eye sees, how the look
- * makes its body — the page's corners, the body's own values and the world's light its glass reflects — and how far
+ * makes its body — the page's corners and the body's own values — the world's light its glass reflects, and how far
  * the screen has come up in it.
  */
 export interface AroundTheWindow {
@@ -118,15 +119,9 @@ export interface AroundTheWindow {
 	readonly sharpness: Sharpness;
 	readonly look: Pick<
 		Look,
-		| 'paneCorner'
-		| 'windowThickness'
-		| 'windowRim'
-		| 'windowMetal'
-		| 'windowRoughness'
-		| 'windowGlass'
-		| 'lights'
-		| 'softBoxes'
+		'paneCorner' | 'windowThickness' | 'windowRim' | 'windowMetal' | 'windowRoughness' | 'windowGlass'
 	>;
+	readonly world: Pick<WorldLook, 'lights' | 'softBoxes'>;
 	readonly screenShown: Fraction;
 }
 
@@ -211,7 +206,7 @@ function drawnBody(view: View, page: Box, window: WindowStanding, around: Around
 		thickness,
 		metal: around.look.windowMetal,
 		roughness: around.look.windowRoughness,
-		glass: isLit(around.look) ? around.look.windowGlass * standing : NONE,
+		glass: isLit(around.world) ? around.look.windowGlass * standing : NONE,
 		placing: inThreesAxes(placing),
 		roomInTheEyesSpace: inThreesAxes(inTheEyesSpace(around.eye, around.frame)),
 		eyeDistance: around.sharpness.focalLength * scale,
@@ -220,8 +215,8 @@ function drawnBody(view: View, page: Box, window: WindowStanding, around: Around
 }
 
 /** Whether the world has light in it, a light or a soft box, which the glass could reflect. */
-function isLit(look: Pick<Look, 'lights' | 'softBoxes'>): boolean {
-	return look.lights.length > NONE || look.softBoxes.length > NONE;
+function isLit(world: Pick<WorldLook, 'lights' | 'softBoxes'>): boolean {
+	return world.lights.length > NONE || world.softBoxes.length > NONE;
 }
 
 /**

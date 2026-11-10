@@ -1,8 +1,8 @@
 /**
- * The world's light, a part of the film's look (`theme.lights`, `theme.softBoxes`): lights standing in the room that
- * light a film's own things in a lit material, and soft boxes round it, glowing panels the things' faces reflect and
- * are lit by, so every glint on them comes from a light the film placed. livereel's own look has neither, as a film of
- * flat light has none to place.
+ * The world's light, a part of the world's look (`world.lights`, `world.softBoxes` in `src/props/world.ts`): lights
+ * standing in the room that light a film's own things in a lit material, and soft boxes round it, glowing panels the
+ * things' faces reflect and are lit by, so every glint on them comes from a light the film placed. livereel's own world
+ * has neither, as a film of flat light has none to place.
  *
  * A light stands at a spot of the room and aims at another, as the eye does, in pixels of a frame 1080 high from the
  * frame's middle, `out` toward whoever watches; it shines in a cone, as strong however far it reaches, so its strength
@@ -10,11 +10,11 @@
  * film could tune. A soft box stands round the room's middle, as far off as reflections take it, seen from there as
  * wide and high as the angles it spans: only its direction counts, as for anything a face reflects from afar.
  *
- * Everything is handed in the room, in three's axes, as it stands while the look does: each thing carries the room
+ * Everything is handed in the room, in three's axes, as it stands while the world does: each thing carries the room
  * into the eye's own space that sees it (`DrawnThing` in `src/props/thing.ts`), so the eye moving moves none of it.
  *
  * Light brighter than the page's white, a glint off the window's metal or glass or off a thing, may glow round itself,
- * as a lens blooms (`theme.bloom`): none in livereel's own look either.
+ * as a lens blooms (`world.bloom`): none in livereel's own world either.
  */
 import { type Size, frameScaleOf } from '../domain/geometry.ts';
 import {

@@ -31,7 +31,9 @@ import { assertOwnPlaces, assertPlacesOf } from '../domain/place.ts';
 import { assertNearerThanTheEye } from '../domain/stance.ts';
 import { leavesRoom } from '../domain/split.ts';
 import { namesOf } from '../domain/toward.ts';
-import { LIVEREELS_LOOK, type Look, type Theme, lookWith } from '../props/look.ts';
+import { valuesWith } from '../domain/values.ts';
+import { LIVEREELS_LOOK, LOOK_KINDS, type Look, type Theme } from '../props/look.ts';
+import { LIVEREELS_WORLD, WORLD_KINDS, type WorldLook, type WorldScript } from '../props/world.ts';
 import { type MotionBlurScript, motionBlurOf } from './blur.ts';
 import type { ActContext } from './page.ts';
 import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf, musicOf } from './sound.ts';
@@ -106,6 +108,11 @@ export interface Script<Name extends string> extends SiteScript {
 	readonly motionBlur?: MotionBlurScript;
 	/** The look the film opens on, livereel's save the values given; `look.to` changes it as the film goes. */
 	readonly theme?: Theme;
+	/**
+	 * How the world the film opens on looks, its lights, soft boxes and glow, livereel's save the values given: none of
+	 * them; `world.to` changes it as the film goes.
+	 */
+	readonly world?: WorldScript;
 	/** How many frames make a second of the film: 60, where none is named. */
 	readonly framesPerSecond?: number;
 	/**
@@ -140,8 +147,9 @@ export interface Script<Name extends string> extends SiteScript {
 
 /**
  * A film in one of its formats, where its page is and the set it is shot on where it names one, where its stage
- * stands, the look it opens on and what its theme writes in CSS, how its page is asked to look and what it blurs, what
- * it says of its sounds and of its blur, and its own code: its wait for the page, and its steps in this format.
+ * stands, the look it opens on and what its theme writes in CSS, the world's look it opens on, how its page is asked to
+ * look and what it blurs, what it says of its sounds and of its blur, and its own code: its wait for the page, and its
+ * steps in this format.
  */
 export interface FilmInFormat {
 	/** A film of steps, beside a film its own page draws (`src/direction/drawn-film.ts`). */
@@ -151,6 +159,7 @@ export interface FilmInFormat {
 	readonly stage: StagePlace;
 	readonly look: Look;
 	readonly css: readonly CssNamed[];
+	readonly world: WorldLook;
 	readonly colourScheme: ColourScheme;
 	readonly blurred: readonly string[];
 	readonly page: PageKind;
@@ -228,7 +237,10 @@ export const FRAMES_PER_SECOND_WHERE_NONE_IS_NAMED = 60;
 // The eye sees so many degrees across the frame's shorter side where a film names none: a long lens, as the
 // claude-review promo's, which grows what nears it little
 const ANGLE_OF_VIEW_WHERE_NONE_IS_NAMED = 24;
-// A film's sounds, music, blur and theme are objects, what is in each read by its own reader, in its own words, first
+// Where a film's world stands, as a refusal names it
+const THE_FILMS_WORLD = "the film's world";
+// A film's sounds, music, blur, theme and world are objects, what is in each read by its own reader, in its own words,
+// first
 const FILM_FORM: Form<AnyScript> = {
 	formats: needed(anObject<AnyScript['formats']>("an object of the film's formats, by name")),
 	...SITE_FORM,
@@ -240,6 +252,7 @@ const FILM_FORM: Form<AnyScript> = {
 	music: anObject<Music>(AN_OBJECT_SAID),
 	motionBlur: anObject<MotionBlurScript>(AN_OBJECT_SAID),
 	theme: anObject<Theme>(AN_OBJECT_SAID),
+	world: anObject<WorldScript>(AN_OBJECT_SAID),
 	framesPerSecond: A_COUNT,
 	eye: new OfForm<EyeScript>({ angleOfView: AN_ANGLE_OF_VIEW }, "the film's eye: { angleOfView }"),
 	colourScheme: A_COLOUR_SCHEME,
@@ -255,6 +268,7 @@ export class ScriptedFilm<Name extends string> implements Film {
 	readonly motionBlur: MotionBlur | null;
 	readonly look: Look;
 	readonly css: readonly CssNamed[];
+	readonly world: WorldLook;
 	readonly stage: StagePlace;
 	readonly colourScheme: ColourScheme;
 	readonly blurred: readonly string[];
@@ -275,8 +289,9 @@ export class ScriptedFilm<Name extends string> implements Film {
 		this.sound = { livereels: livereelSoundsOf(script.sounds), music: musicOf(script.music) };
 		this.motionBlur = motionBlurOf(script.motionBlur);
 		const theme = themeOf(script.theme);
-		this.look = lookWith(LIVEREELS_LOOK, theme);
+		this.look = valuesWith(LIVEREELS_LOOK, theme, LOOK_KINDS);
 		this.css = cssNamedIn(theme, THE_FILMS_THEME);
+		this.world = worldOf(script.world);
 		refuseUnlikeAFilm(script);
 		this.site = siteOf(script);
 		this.set = setOf(script.set);
@@ -301,6 +316,7 @@ export class ScriptedFilm<Name extends string> implements Film {
 			stage: this.stage,
 			look: this.look,
 			css: this.css,
+			world: this.world,
 			colourScheme: this.colourScheme,
 			blurred: this.blurred,
 			page: this.page,
@@ -321,6 +337,17 @@ export class ScriptedFilm<Name extends string> implements Film {
 
 export function defineFilm<Name extends string>(script: Script<Name>): Film {
 	return new ScriptedFilm(script);
+}
+
+/**
+ * The world's look a film opens on, as a film whose types nobody checked may write it: livereel's, with the values the
+ * film names in place of its own; anything but an object of the world's values, or a value of another kind, refused by
+ * where it stands.
+ */
+function worldOf(written: unknown): WorldLook {
+	if (written === undefined) return LIVEREELS_WORLD;
+	assertWritten<WorldScript>(written, WORLD_KINDS, THE_FILMS_WORLD);
+	return valuesWith(LIVEREELS_WORLD, written, WORLD_KINDS);
 }
 
 /** How a film's page is shown: where the stage stands, how the page changes, and how the stage draws a frame. */
