@@ -11,6 +11,7 @@ Beside it, `stage/set.html`, `stage/set.css` and `stage/set.js` are the page a f
 
 - The stage draws the scene as `src/scene.ts` hands it over, and decides nothing: what is shown, where and how far along is the film's.
 - Every prop has its drawer in each exposure of `stage/stage.js` (`exposureOf`), the look in `LOOK`, one for every exposure; the type checker refuses a prop without one.
+- The world's look has no drawer: the room alone draws it (`stage/room.js`, `stage/lighting.js`).
 - A drawer finds its elements once, by the `data-prop` of its root and the `data-part` of each element under it; the look's drawer draws on the stage's root, where every rule reads it.
 - A drawer sets its prop's numbers, and the colours a film gives or the engine reads off the page (a hole's ground), as bare custom properties, and writes its words; the stylesheet makes the numbers places, sizes and shades.
 - The script writes no style, but for the page's pictures, each set whole as a `url()` custom property: the page's on the stage's root, one a piece or a sweep holds on its element; CSS takes no address out of one.
