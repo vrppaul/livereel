@@ -21,7 +21,8 @@ import {
 	type InPlaceShowScript,
 	NAMED_FORM,
 	type NamedScript,
-	type ObjectKind,
+	type ShownKind,
+	THE_STEPS_CURVE,
 	type TakenScript,
 	objectCarriedTo,
 	objectEffects,
@@ -45,7 +46,7 @@ interface Glass {
 	readonly size: number;
 }
 
-const LENS: ObjectKind = 'lens';
+const LENS = 'lens' satisfies ShownKind;
 const LENS_FORM: Form<LensScript> = {
 	magnification: A_MAGNIFICATION,
 	size: A_SIZE,
@@ -70,7 +71,9 @@ export function show(target: Target, script: LensScript = {}): Move {
 		magnification: script.magnification ?? MAGNIFIED_TWICE,
 		size: script.size ?? LENS_ACROSS
 	};
-	return objectShow(LENS, 'lens.show', script, NO_PLACE, (beginning) => over(beginning, target, glass));
+	return objectShow(LENS, 'lens.show', script, NO_PLACE, THE_STEPS_CURVE, (beginning) =>
+		over(beginning, target, glass)
+	);
 }
 
 /** The lens carried round the middle of another block, or a box of the screen, where the camera shows it then. */
@@ -97,7 +100,7 @@ async function over(beginning: Beginning, target: Target, glass: Glass): Promise
 	const camera = cameraOverThePicture(beginning, 'lens.show');
 	const { box } = await sourceOf(beginning, camera, target, ONE_BLOCK, NO_AIR, 'lens.show');
 	const across = glass.size * frameScaleOf(beginning.format.frame);
-	const lens: Lens = { kind: 'lens', magnification: glass.magnification };
+	const lens: Lens = { kind: LENS, magnification: glass.magnification };
 	return { content: lens, box: resizedAbout(box, { width: across, height: across }) };
 }
 

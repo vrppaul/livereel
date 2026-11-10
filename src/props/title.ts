@@ -14,7 +14,7 @@ import { type ComingUp, type DrawnWords, type Said, drawnWordsOnGround } from '.
  * come up, word by word or typed.
  */
 export interface TitleWords extends Said {
-	readonly kind: 'words';
+	readonly kind: 'title';
 	readonly align: Alignment;
 	readonly size: number | null;
 	readonly onGround: boolean;
@@ -22,7 +22,7 @@ export interface TitleWords extends Said {
 }
 
 export interface DrawnTitleWords extends DrawnWords {
-	readonly kind: 'words';
+	readonly kind: 'title';
 	readonly align: Alignment;
 	readonly size: number | null;
 	readonly onGround: boolean;

@@ -48,11 +48,12 @@ import {
 	type InPlaceShowScript,
 	NAMED_FORM,
 	type NamedScript,
-	type ObjectKind,
 	type ObjectLeanScript,
+	READ_AS_THE_WINDOW,
+	type ShownKind,
+	THE_STEPS_CURVE,
 	type TakenScript,
 	type ToScript,
-	contentOf,
 	objectBack,
 	objectEffects,
 	objectHide,
@@ -114,7 +115,7 @@ interface Lifting {
 	readonly picture: PiecePicture['kind'];
 }
 
-const PIECE: ObjectKind = 'piece';
+const PIECE = 'piece' satisfies ShownKind;
 // A piece's corners where the film names none: square, as its box
 const SQUARE = 0;
 // How near, in the page's pixels, an edge of a piece stands to an edge of what the camera shows to stand on it
@@ -163,7 +164,9 @@ export function show(target: Target, script: PieceScript = {}): Move {
 		picture: script.picture ?? FOLLOWING_THE_PAGE.kind
 	};
 	return {
-		...objectShow(PIECE, 'piece.show', script, NO_PLACE, (beginning) => lifted(beginning, target, lifting)),
+		...objectShow(PIECE, 'piece.show', script, NO_PLACE, THE_STEPS_CURVE, (beginning) =>
+			lifted(beginning, target, lifting)
+		),
 		holdsThePage: lifting.picture === 'held'
 	};
 }
@@ -173,7 +176,7 @@ export function show(target: Target, script: PieceScript = {}): Move {
  * the eye on the way where the film names them.
  */
 export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(PIECE, 'piece.to', place, script);
+	return objectTo(PIECE, 'piece.to', place, script, READ_AS_THE_WINDOW);
 }
 
 /**
@@ -203,12 +206,8 @@ export function effects(script: EffectsScript): Move {
  * its source shows there and on the frame's plane.
  */
 export function back(script: TakenScript = {}): Move {
-	return objectBack(PIECE, 'piece.back', script, (beginning, name) =>
-		boxOnTheFrame(
-			cameraOverThePicture(beginning, 'piece.back'),
-			beginning.format.frame,
-			contentOf(beginning, name, 'piece.back', 'piece').source
-		)
+	return objectBack(PIECE, 'piece.back', script, (beginning, shown) =>
+		boxOnTheFrame(cameraOverThePicture(beginning, 'piece.back'), beginning.format.frame, shown.source)
 	);
 }
 
@@ -247,7 +246,7 @@ async function lifted(beginning: Beginning, target: Target, lifting: Lifting): P
 	const corners = cornersOf(source, shown, lifting.corner, windowCorner);
 	const hole = lifting.hole === null ? null : await holeOf(beginning, lifting.hole, lifting.corner);
 	const picture = await pictureOf(beginning, lifting.picture, source);
-	const piece: Piece = { kind: 'piece', source, corners, hole, lines: lifting.lines, picture };
+	const piece: Piece = { kind: PIECE, source, corners, hole, lines: lifting.lines, picture };
 	return { content: piece, box };
 }
 

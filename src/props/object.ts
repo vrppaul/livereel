@@ -190,7 +190,7 @@ export type ObjectEntry = readonly [ObjectName, FrameObject];
 
 // The layer an object is drawn on by what it shows: a caption over every other, keys over the caption's ground
 const LAYER_OF: { readonly [Kind in Content['kind']]: number } = {
-	words: 0,
+	title: 0,
 	code: 0,
 	terminal: 0,
 	ending: 0,
@@ -265,7 +265,7 @@ function shownMoved(start: StandingThen, end: StandingThen, frame: Size): Point 
 			return before.kind === 'code' ? linesScrolled(before, after, end, frame) : UNMOVED;
 		case 'lens':
 			return before.kind === 'lens' ? pageMovedUnder(after, start, end, frame) : UNMOVED;
-		case 'words':
+		case 'title':
 		case 'terminal':
 		case 'ending':
 		case 'caption':
@@ -532,7 +532,7 @@ function pageFitOf(object: FrameObject, laid: Box, camera: Camera, frame: Size):
 			return pageFitOfPiece(content, laid);
 		case 'lens':
 			return lensFit(content, camera, frame);
-		case 'words':
+		case 'title':
 		case 'code':
 		case 'terminal':
 		case 'ending':
@@ -586,7 +586,7 @@ function drawnContent(
 	const figure = presences.figure;
 	const caption = around.caption;
 	switch (content.kind) {
-		case 'words':
+		case 'title':
 			return drawnTitleWords(content, presences, moment);
 		case 'code':
 			return drawnCode(content, figure.shown, figure.gone);

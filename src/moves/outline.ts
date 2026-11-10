@@ -21,11 +21,12 @@ import {
 	type InPlaceShowScript,
 	NAMED_FORM,
 	type NamedScript,
-	type ObjectKind,
 	type ObjectLeanScript,
+	READ_AS_THE_WINDOW,
+	type ShownKind,
+	THE_STEPS_CURVE,
 	type TakenScript,
 	type ToScript,
-	contentOf,
 	objectBack,
 	objectEffects,
 	objectHide,
@@ -44,7 +45,7 @@ export interface OutlineScript extends InPlaceShowScript, NamedScript, GroupedSc
 	readonly line?: Stroke;
 }
 
-const OUTLINE: ObjectKind = 'outline';
+const OUTLINE = 'outline' satisfies ShownKind;
 const OUTLINE_FORM: Form<OutlineScript> = {
 	every: A_COUNT,
 	line: A_STROKE,
@@ -65,12 +66,14 @@ export function show(target: Target, script: OutlineScript = {}): Move {
 	assertWritten(script, OUTLINE_FORM, 'outline.show');
 	const every = script.every ?? ONE_BLOCK;
 	const line = script.line ?? SOLID;
-	return objectShow(OUTLINE, 'outline.show', script, NO_PLACE, (beginning) => ringed(beginning, target, every, line));
+	return objectShow(OUTLINE, 'outline.show', script, NO_PLACE, THE_STEPS_CURVE, (beginning) =>
+		ringed(beginning, target, every, line)
+	);
 }
 
 /** The outline carried to a place, filling it, growing to `scale` and coming `depth` toward the eye on the way. */
 export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(OUTLINE, 'outline.to', place, script);
+	return objectTo(OUTLINE, 'outline.to', place, script, READ_AS_THE_WINDOW);
 }
 
 /** The outline leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled by `roll`. */
@@ -91,12 +94,8 @@ export function effects(script: EffectsScript): Move {
  * its source shows there and on the frame's plane.
  */
 export function back(script: TakenScript = {}): Move {
-	return objectBack(OUTLINE, 'outline.back', script, (beginning, name) =>
-		boxOnTheFrame(
-			cameraFrontOn(beginning, overItsSource('outline.back')),
-			beginning.format.frame,
-			contentOf(beginning, name, 'outline.back', 'outline').source
-		)
+	return objectBack(OUTLINE, 'outline.back', script, (beginning, shown) =>
+		boxOnTheFrame(cameraFrontOn(beginning, overItsSource('outline.back')), beginning.format.frame, shown.source)
 	);
 }
 
@@ -109,6 +108,6 @@ export function hide(script: HideScript = {}): Move {
 async function ringed(beginning: Beginning, target: Target, every: number, line: Stroke): Promise<Coming> {
 	const camera = cameraFrontOn(beginning, overItsSource('outline.show'));
 	const { source, box } = await sourceOf(beginning, camera, target, every, NO_AIR, 'outline.show');
-	const outline: Outline = { kind: 'outline', source, line };
+	const outline: Outline = { kind: OUTLINE, source, line };
 	return { content: outline, box };
 }

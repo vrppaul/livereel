@@ -451,7 +451,9 @@ Several titles or panes of code stand at once by name:
 title, and each move of it names it, `title.hide({ as:
 'heading' })`; a move that names none takes the one called `title`, or
 `code`. A name is one object's, whatever it shows: a title shown `as:
-'code'` stands in place of the code.
+'code'` stands in place of the code, and from then on a move of code
+naming it, `code.light(1)`, is refused as it begins: each kind's moves take
+only what shows that kind.
 
 `piece.show(VISITORS)` lifts a piece of the page onto the frame: the blocks
 a selector matches, the first `every` of them together, or a box of the

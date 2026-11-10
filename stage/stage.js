@@ -686,7 +686,7 @@ class TitleWordsDrawer {
 
 	/** @param {DrawnContent} content */
 	draw(content) {
-		const title = ofKind(content, 'words');
+		const title = ofKind(content, 'title');
 		this.element.toggleAttribute(ON_GROUND, title.onGround);
 		named(this.element, ALIGN, title.align);
 		givenOrNone(this.element, OWN_SIZE, title.size);
@@ -841,7 +841,7 @@ class KeysDrawer {
  * @type {{ readonly [Kind in DrawnContent['kind']]: (element: Staged) => ContentDrawer }}
  */
 const CONTENT_DRAWERS = {
-	words: (element) => new TitleWordsDrawer(element),
+	title: (element) => new TitleWordsDrawer(element),
 	code: (element) => new CodeDrawer(element),
 	terminal: (element) => new TerminalDrawer(element),
 	ending: (element) => new EndingDrawer(element),

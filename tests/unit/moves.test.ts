@@ -1973,7 +1973,7 @@ test('a move of an object that is not on the screen, or a light on lines of what
 		new FilmError('title.lean finds no title on the screen')
 	);
 	await expect(async () => code.light(1).begin(beginningOf(titled))).rejects.toThrow(
-		new FilmError('code.light finds the code showing words, not code')
+		new FilmError('code.light finds the code showing title, not code')
 	);
 });
 
@@ -2459,19 +2459,23 @@ test('a terminal named is typed into, submitted and worked in by its name', asyn
 	expect(done.objects.get('second')!.content.lines).toEqual([{ kind: 'asked', text: 'ls' }, SAID]);
 });
 
-test('what stands over the whole frame — the ending card, a caption, keys — is never carried or leant', async () => {
+test("a kind's move takes only an object of its kind, refusing one that shows another as it begins: a thing laid on the page by a piece's, the card leant, a caption carried, a terminal hidden", async () => {
 	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
 	const carded = await setAt(ending.show(card), OPENING_IN_SMALL, 1);
 	const captioned = await setAt(caption.show('Words'), carded, 1);
-	const pressed = await setAt(keys.show(['⌘', 'K']), captioned, 1);
-	await expect(async () => title.lean({ as: 'ending', tilt: 20 }).begin(beginningOf(pressed))).rejects.toThrow(
-		new FilmError('title.lean would move the ending object: what it shows stands over the whole frame alone')
+	const opened = await setAt(open('claude'), captioned, 1);
+	const built = await setAt(thing.show('card', A_CARD_SHOWN), opened, 1);
+	await expect(async () => piece.onto('#other', { as: 'thing' }).begin(beginningOf(built))).rejects.toThrow(
+		new FilmError('piece.onto finds the thing showing thing, not piece')
 	);
-	await expect(async () => title.to('left', { as: 'caption' }).begin(beginningOf(pressed))).rejects.toThrow(
-		new FilmError('title.to would move the caption object: what it shows stands over the whole frame alone')
+	await expect(async () => title.lean({ as: 'ending', tilt: 20 }).begin(beginningOf(built))).rejects.toThrow(
+		new FilmError('title.lean finds the ending showing ending, not title')
 	);
-	await expect(async () => code.lean({ as: 'keys', tilt: 20 }).begin(beginningOf(pressed))).rejects.toThrow(
-		new FilmError('code.lean would move the keys object: what it shows stands over the whole frame alone')
+	await expect(async () => title.to('left', { as: 'caption' }).begin(beginningOf(built))).rejects.toThrow(
+		new FilmError('title.to finds the caption showing caption, not title')
+	);
+	await expect(async () => code.hide({ as: 'terminal' }).begin(beginningOf(built))).rejects.toThrow(
+		new FilmError('code.hide finds the terminal showing terminal, not code')
 	);
 });
 

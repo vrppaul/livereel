@@ -11,7 +11,8 @@
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
 import { A_COUNT, A_STRING, type Form, type Kind, Plain, assertKind, assertWritten, needed } from '../domain/handed.ts';
-import { A_PLACE, type Place } from '../domain/place.ts';
+import { linear } from '../domain/curves.ts';
+import { A_PLACE, type Place, wordsPlaced } from '../domain/place.ts';
 import { between } from '../domain/toward.ts';
 import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import {
@@ -32,20 +33,21 @@ import {
 	NESTED_FORM,
 	type NamedScript,
 	type NestedScript,
-	type ObjectKind,
 	type ObjectLeanScript,
+	type PlaceReading,
 	SHOW_FORM,
 	type ShowScript,
+	type ShownKind,
 	type ToScript,
 	contentMove,
-	contentOf,
+	fromItsBox,
 	objectEffects,
 	objectHide,
 	objectLean,
 	objectShow,
 	objectTo,
-	placedFor,
-	showing
+	showing,
+	standingOfKind
 } from './object.ts';
 
 /**
@@ -69,7 +71,11 @@ export interface LightScript extends TimingScript, NamedScript {
 /** Which code scrolls, and how. */
 export interface ScrollScript extends TimingScript, NamedScript {}
 
-const CODE: ObjectKind = 'code';
+const CODE = 'code' satisfies ShownKind;
+// Code's lines come up one after another at an even pace in their own way, where the film names no curve
+const LINES_COME_UP_ON = linear;
+// Code reads a place as words do, and sets off toward one from its pane as it stands
+const CODE_READING: PlaceReading<typeof CODE> = { placed: wordsPlaced, settingOff: fromItsBox };
 const A_LINE_NAMED: Kind<LineNamed> = new Plain(
 	isLineNamed,
 	'a line: its number, a whole count from 1, or words it says, a string with something in it'
@@ -99,16 +105,16 @@ export function show(text: string, script: CodeScript): Move {
 	assertWritten(script, CODE_FORM, 'code.show');
 	const { lines, key, columns } = codeOf(text);
 	const code: Code = {
-		kind: 'code',
+		kind: CODE,
 		lines: lines.map((pieces) => ({ pieces, lit: NOT_LIT })),
 		key,
 		columns,
 		longLines: script.longLines ?? SHRINKING,
 		scrolled: NOT_SCROLLED
 	};
-	return objectShow(CODE, 'code.show', script, script.at, (beginning) => ({
+	return objectShow(CODE, 'code.show', script, script.at, LINES_COME_UP_ON, (beginning) => ({
 		content: code,
-		box: placedFor(code, beginning.format, script.at)
+		box: CODE_READING.placed(beginning.format, script.at, code)
 	}));
 }
 
@@ -117,7 +123,7 @@ export function show(text: string, script: CodeScript): Move {
  * the eye on the way where the film names them.
  */
 export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(CODE, 'code.to', place, script);
+	return objectTo(CODE, 'code.to', place, script, CODE_READING);
 }
 
 /**
@@ -165,7 +171,7 @@ export function hide(script: HideScript = {}): Move {
 }
 
 function lighting(beginning: Beginning, name: ObjectName, firstNamed: LineNamed, lastNamed: LineNamed): Change {
-	const shown = contentOf(beginning, name, 'code.light', 'code');
+	const shown = standingOfKind(beginning, name, 'code.light', CODE).content;
 	const count = shown.lines.length;
 	const first = numberShown(shown.lines, firstNamed, LIGHTS);
 	const last = numberOf(shown.lines, lastNamed, first, LIGHTS);
@@ -182,7 +188,7 @@ function lighting(beginning: Beginning, name: ObjectName, firstNamed: LineNamed,
 
 /** The code on its way from where it stood scrolled to the line named standing at its top. */
 function scrolling(beginning: Beginning, name: ObjectName, named: LineNamed): Change {
-	const shown = contentOf(beginning, name, 'code.scrollTo', 'code');
+	const shown = standingOfKind(beginning, name, 'code.scrollTo', CODE).content;
 	const top = numberShown(shown.lines, named, SCROLLS_TO);
 	return showing(name, (progress) => ({ ...shown, scrolled: between(shown.scrolled, top - FIRST_LINE, progress) }));
 }

@@ -9,9 +9,18 @@
  * that size as it sets off, where it reads from, and travels whole: its lines change once, where they would break
  * anew on every frame of the way.
  */
-import { boxOf } from '../domain/geometry.ts';
+import { linear } from '../domain/curves.ts';
+import { type Box, boxOf } from '../domain/geometry.ts';
 import { A_SIZE, type Form, assertKind, assertWritten } from '../domain/handed.ts';
-import { AN_ALIGNMENT, A_PLACE, type Alignment, type Place, alignmentIn } from '../domain/place.ts';
+import {
+	AN_ALIGNMENT,
+	A_PLACE,
+	type Alignment,
+	type Place,
+	alignmentIn,
+	wordsPlaced,
+	wordsResized
+} from '../domain/place.ts';
 import type { Beginning, Move } from '../direction/move.ts';
 import type { TitleWords } from '../props/title.ts';
 import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
@@ -21,17 +30,17 @@ import {
 	type HideScript,
 	NESTED_FORM,
 	type NestedScript,
-	type ObjectKind,
 	type ObjectLeanScript,
+	type PlaceReading,
 	SHOW_FORM,
 	type ShowScript,
+	type ShownKind,
 	type ToScript,
 	objectEffects,
 	objectHide,
 	objectLean,
 	objectShow,
-	objectTo,
-	placedFor
+	objectTo
 } from './object.ts';
 import {
 	A_WORDS_SCRIPT,
@@ -70,7 +79,7 @@ interface Setting {
 	readonly coming: WordsComing;
 }
 
-const TITLE: ObjectKind = 'title';
+const TITLE = 'title' satisfies ShownKind;
 const TITLE_FORM: Form<TitleScript> = {
 	at: A_PLACE,
 	align: AN_ALIGNMENT,
@@ -81,6 +90,10 @@ const TITLE_FORM: Form<TitleScript> = {
 };
 // Words over the whole frame on their ground stand centred
 const OVER_THE_WHOLE: Alignment = 'center';
+// A title's words come up one after another at an even pace in their own way, where the film names no curve
+const WORDS_COME_UP_ON = linear;
+// A title reads a place as words do, and sets off toward one as `settingOff` has it
+const TITLE_READING: PlaceReading<typeof TITLE> = { placed: wordsPlaced, settingOff };
 
 /**
  * A title coming up, its words in the way the film names, typed by a person where it has them typed, each key heard,
@@ -101,7 +114,7 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 		size: script.size ?? null,
 		coming
 	};
-	const showing = objectShow(TITLE, 'title.show', script, setting.place, (beginning) =>
+	const showing = objectShow(TITLE, 'title.show', script, setting.place, WORDS_COME_UP_ON, (beginning) =>
 		titleComing(setting, beginning)
 	);
 	return { ...showing, sounds: coming.sounds };
@@ -112,7 +125,7 @@ export function show(text: Wording, script: TitleScript = {}): Move {
  * `depth` toward the eye on the way where the film names them.
  */
 export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(TITLE, 'title.to', place, script);
+	return objectTo(TITLE, 'title.to', place, script, TITLE_READING);
 }
 
 /** The title going, and its ground with it, or sliding out past a side of the frame; once gone, there is none. */
@@ -146,10 +159,19 @@ function titleComing(setting: Setting, beginning: Beginning): Coming {
 	const format = beginning.format;
 	if (place === null) {
 		const align = setting.align ?? OVER_THE_WHOLE;
-		const card: TitleWords = { kind: 'words', ...said, align, size, onGround: true, comingUp };
+		const card: TitleWords = { kind: TITLE, ...said, align, size, onGround: true, comingUp };
 		return { content: card, box: boxOf(format.frame) };
 	}
 	const align = setting.align ?? alignmentIn(format, place);
-	const placed: TitleWords = { kind: 'words', ...said, align, size, onGround: false, comingUp };
-	return { content: placed, box: placedFor(placed, format, place) };
+	const placed: TitleWords = { kind: TITLE, ...said, align, size, onGround: false, comingUp };
+	return { content: placed, box: TITLE_READING.placed(format, place, placed) };
+}
+
+/**
+ * Where a title sets off from, carried to a box: words in a place at the size of the box they go to, keeping where they
+ * read from, so their lines change once, where they would break anew on every frame of the way; a title card from its
+ * box, growing or shrinking along the way.
+ */
+function settingOff(standing: Box, end: Box, title: TitleWords): Box {
+	return title.onGround ? standing : wordsResized(standing, end, title.align);
 }

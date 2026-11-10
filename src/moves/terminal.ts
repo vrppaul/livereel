@@ -22,20 +22,21 @@ import {
 	NESTED_FORM,
 	type NamedScript,
 	type NestedScript,
-	type ObjectKind,
 	type ObjectLeanScript,
+	READ_AS_THE_WINDOW,
 	SHOW_FORM,
 	type ShowScript,
+	type ShownKind,
+	THE_STEPS_CURVE,
 	type ToScript,
 	contentMove,
-	contentOf,
 	objectEffects,
 	objectHide,
 	objectLean,
 	objectShow,
 	objectTo,
-	placedFor,
-	showing
+	showing,
+	standingOfKind
 } from './object.ts';
 import { TYPING_FORM, type TypingScript } from './typing.ts';
 
@@ -64,7 +65,7 @@ interface Work {
 	readonly thinkingShare: number;
 }
 
-const TERMINAL: ObjectKind = 'terminal';
+const TERMINAL = 'terminal' satisfies ShownKind;
 // Where the terminal opens where the film names no place: across most of the frame and down it, in its middle
 const MOST_OF_THE_FRAME: Place = { left: 0.07, top: 0.11, width: 0.86, height: 0.78 };
 // Of the agent's work, the share it only thinks before its first line
@@ -82,9 +83,9 @@ export function open(title: string, script: TerminalScript = {}): Move {
 	assertWritten(script, TERMINAL_FORM, 'terminal.open');
 	const terminal = openTerminal(title);
 	const named = script.at ?? null;
-	return objectShow(TERMINAL, 'terminal.open', script, named, (beginning) => ({
+	return objectShow(TERMINAL, 'terminal.open', script, named, THE_STEPS_CURVE, (beginning) => ({
 		content: terminal,
-		box: placedFor(terminal, beginning.format, named ?? MOST_OF_THE_FRAME)
+		box: READ_AS_THE_WINDOW.placed(beginning.format, named ?? MOST_OF_THE_FRAME, terminal)
 	}));
 }
 
@@ -119,7 +120,13 @@ export function works(lines: readonly TerminalLine[], thinking: string, script: 
 	const thinkingLine: TerminalLine = { kind: 'thinking', text: thinking };
 	const thinkingShare = script.thinkingShare ?? THINKING_SHARE;
 	return contentMove(name, timingOf({ ease: linear, ...script }), (beginning) =>
-		working({ name, terminal: openOn(beginning, name, 'terminal.works'), lines, thinking: thinkingLine, thinkingShare })
+		working({
+			name,
+			terminal: standingOfKind(beginning, name, 'terminal.works', TERMINAL).content,
+			lines,
+			thinking: thinkingLine,
+			thinkingShare
+		})
 	);
 }
 
@@ -128,7 +135,7 @@ export function works(lines: readonly TerminalLine[], thinking: string, script: 
  * eye on the way where the film names them.
  */
 export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(TERMINAL, 'terminal.to', place, script);
+	return objectTo(TERMINAL, 'terminal.to', place, script, READ_AS_THE_WINDOW);
 }
 
 /**
@@ -156,12 +163,12 @@ export function leave(script: HideScript = {}): Move {
 }
 
 function typingInto(beginning: Beginning, name: ObjectName, strokes: readonly Keystroke[]): Change {
-	const terminal = openOn(beginning, name, 'terminal.type');
+	const terminal = standingOfKind(beginning, name, 'terminal.type', TERMINAL).content;
 	return showing(name, (progress) => ({ ...terminal, typed: typedAlong(strokes, progress) }));
 }
 
 function submitted(beginning: Beginning, name: ObjectName): Change {
-	const terminal = openOn(beginning, name, 'terminal.submit');
+	const terminal = standingOfKind(beginning, name, 'terminal.submit', TERMINAL).content;
 	const asked: TerminalLine = { kind: 'asked', text: terminal.typed };
 	const after = { ...terminal, lines: [...terminal.lines, asked], typed: '' };
 	return showing(name, () => after);
@@ -177,9 +184,4 @@ function workedAt(work: Work, progress: number): Terminal {
 	const writtenLines = work.lines.slice(0, Math.floor(writtenShare * work.lines.length));
 	const working = progress < 1 ? [work.thinking] : [];
 	return { ...work.terminal, lines: [...work.terminal.lines, ...writtenLines, ...working] };
-}
-
-/** The terminal of a name a move of it finds open; one not open is refused, the move named. */
-function openOn(beginning: Beginning, name: ObjectName, move: string): Terminal {
-	return contentOf(beginning, name, move, 'terminal');
 }

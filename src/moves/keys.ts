@@ -12,19 +12,20 @@ import {
 	IN_PLACE_SHOW_FORM,
 	type InPlaceHideScript,
 	type InPlaceShowScript,
-	type ObjectKind,
+	type ShownKind,
+	THE_STEPS_CURVE,
 	objectHide,
 	objectShow
 } from './object.ts';
 
-const KEYS: ObjectKind = 'keys';
+const KEYS = 'keys' satisfies ShownKind;
 
 /** The caps of a shortcut coming up, named as they are written on the keys. */
 export function show(caps: readonly string[], script: InPlaceShowScript = {}): Move {
 	assertKind(caps, A_CAPS, "keys.show's caps");
 	assertWritten(script, IN_PLACE_SHOW_FORM, 'keys.show');
 	const keys = keysOf(caps);
-	return objectShow(KEYS, 'keys.show', script, null, (beginning) => ({
+	return objectShow(KEYS, 'keys.show', script, null, THE_STEPS_CURVE, (beginning) => ({
 		content: keys,
 		box: boxOf(beginning.format.frame)
 	}));

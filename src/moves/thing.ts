@@ -7,9 +7,18 @@
  * which draws nothing of a thing. Every move of it takes the thing named `thing`, or the one the film names `as`.
  */
 import { FilmError } from '../domain/errors.ts';
-import { A_FRAME_SIDE, type FrameSide } from '../domain/geometry.ts';
+import type { Format } from '../domain/format.ts';
+import {
+	A_FRAME_SIDE,
+	type Box,
+	type FrameSide,
+	boxCentredOn,
+	frameScaleOf,
+	middleX,
+	middleY
+} from '../domain/geometry.ts';
 import { A_NAME, type Form, Literal, assertKind, assertWritten, needed } from '../domain/handed.ts';
-import { A_PLACE, type Place } from '../domain/place.ts';
+import { A_PLACE, type Place, windowPlaced } from '../domain/place.ts';
 import { namesOf } from '../domain/toward.ts';
 import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import { A_REACH, type Reach, THING_VALUES, type Thing, type ThingValues, valuesToward } from '../props/thing.ts';
@@ -17,17 +26,19 @@ import {
 	type Coming,
 	NAMED_FORM,
 	type NamedScript,
-	type ObjectKind,
 	type ObjectLeanScript,
+	type PlaceReading,
+	type ShownKind,
+	THE_STEPS_CURVE,
 	type ToScript,
 	contentMove,
-	contentOf,
+	fromItsBox,
 	objectHide,
 	objectLean,
 	objectShow,
 	objectTo,
-	placedFor,
-	showing
+	showing,
+	standingOfKind
 } from './object.ts';
 
 /**
@@ -51,7 +62,7 @@ export interface ThingHideScript extends TimingScript, NamedScript {
 /** Which thing's numbers go to new ones, and when. */
 export interface ThingSetScript extends TimingScript, NamedScript {}
 
-const THING: ObjectKind = 'thing';
+const THING = 'thing' satisfies ShownKind;
 const THING_FORM: Form<ThingScript> = {
 	at: needed(A_PLACE),
 	reach: needed(A_REACH),
@@ -65,6 +76,8 @@ const THING_HIDE_FORM: Form<ThingHideScript> = { toward: A_FRAME_SIDE, ...NAMED_
 const THING_SET_FORM: Form<ThingSetScript> = { ...NAMED_FORM, ...TIMING_FORM };
 // A thing shown with no numbers, as one its module builds whole from nothing
 const NO_VALUES: ThingValues = {};
+// A thing reads a place as `reachedIn` has it, and sets off toward one from its box as it stands
+const THING_READING: PlaceReading<typeof THING> = { placed: reachedIn, settingOff: fromItsBox };
 
 /**
  * A thing its module builds by a name coming up as far as it reaches about a place, in place of any thing of its name,
@@ -74,8 +87,10 @@ const NO_VALUES: ThingValues = {};
 export function show(made: string, script: ThingScript): Move {
 	assertKind(made, A_NAME, "thing.show's made");
 	assertWritten(script, THING_FORM, 'thing.show');
-	const thing: Thing = { kind: 'thing', made, reach: script.reach, values: script.values ?? NO_VALUES };
-	return objectShow(THING, 'thing.show', script, script.at, (beginning) => builtIn(beginning, thing, script.at));
+	const thing: Thing = { kind: THING, made, reach: script.reach, values: script.values ?? NO_VALUES };
+	return objectShow(THING, 'thing.show', script, script.at, THE_STEPS_CURVE, (beginning) =>
+		builtIn(beginning, thing, script.at)
+	);
 }
 
 /** A thing coming up at a place, refused where the film's things module builds none of its name. */
@@ -85,12 +100,12 @@ function builtIn(beginning: Beginning, thing: Thing, at: Place): Coming {
 			`thing.show shows ${thing.made}, which the film's things module builds none of: draw the film as a room, name its things module, and export a builder of ${thing.made} from it`
 		);
 	}
-	return { content: thing, box: placedFor(thing, beginning.format, at) };
+	return { content: thing, box: THING_READING.placed(beginning.format, at, thing) };
 }
 
 /** The thing carried to a place, through the places the film names on its way, growing and coming near as it names. */
 export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(THING, 'thing.to', place, script);
+	return objectTo(THING, 'thing.to', place, script, THING_READING);
 }
 
 /** The thing leant back, swung and rolled as the film names, about its box's middle. */
@@ -117,7 +132,7 @@ export function hide(script: ThingHideScript = {}): Move {
  * as its module reads no other.
  */
 function setting(beginning: Beginning, name: string, values: ThingValues): Change {
-	const thing = contentOf(beginning, name, 'thing.set', 'thing');
+	const thing = standingOfKind(beginning, name, 'thing.set', THING).content;
 	const unknown = namesOf(values).filter((value) => !Object.hasOwn(thing.values, value));
 	if (unknown.length > 0) {
 		throw new FilmError(
@@ -125,4 +140,15 @@ function setting(beginning: Beginning, name: string, values: ThingValues): Chang
 		);
 	}
 	return showing(name, (progress) => ({ ...thing, values: valuesToward(thing.values, values, progress) }));
+}
+
+/**
+ * The box a thing stands in at a place: as far as it reaches, about the middle of where the window would stand there,
+ * its reach in pixels of a frame 1080 high grown to the format's frame.
+ */
+function reachedIn(format: Format, place: Place, thing: Thing): Box {
+	const placed = windowPlaced(format, place);
+	const scale = frameScaleOf(format.frame);
+	const middle = { left: middleX(placed), top: middleY(placed) };
+	return boxCentredOn(middle, { width: thing.reach.width * scale, height: thing.reach.height * scale });
 }

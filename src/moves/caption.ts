@@ -4,6 +4,7 @@
  * go whole, in a way of livereel's. A caption is the object named `caption`, one alone, standing where it comes up: it
  * takes no name and never slides, so keys always know where it stands.
  */
+import { linear } from '../domain/curves.ts';
 import { boxOf } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import type { Move } from '../direction/move.ts';
@@ -14,7 +15,7 @@ import {
 	IN_PLACE_SHOW_FORM,
 	type InPlaceHideScript,
 	type InPlaceShowScript,
-	type ObjectKind,
+	type ShownKind,
 	objectHide,
 	objectShow
 } from './object.ts';
@@ -25,8 +26,10 @@ export interface CaptionScript extends InPlaceShowScript {
 	readonly words?: WordsScript;
 }
 
-const CAPTION: ObjectKind = 'caption';
+const CAPTION = 'caption' satisfies ShownKind;
 const CAPTION_FORM: Form<CaptionScript> = { words: A_WORDS_SCRIPT, ...IN_PLACE_SHOW_FORM };
+// A caption's words come up one after another at an even pace in their own way, where the film names no curve
+const WORDS_COME_UP_ON = linear;
 
 /**
  * A caption coming up, its words in the way the film names, typed by a person where it has them typed, each key heard,
@@ -38,7 +41,7 @@ export function show(text: Wording, script: CaptionScript = {}): Move {
 	refuseWordsBroughtWhole(script, 'caption.show');
 	const said = saidOf(text);
 	const coming = wordsComing(said, script.words);
-	const showing = objectShow(CAPTION, 'caption.show', script, null, (beginning) => ({
+	const showing = objectShow(CAPTION, 'caption.show', script, null, WORDS_COME_UP_ON, (beginning) => ({
 		content: captionOf(said, comingUpAt(coming, said, beginning.scene.look), beginning.format),
 		box: boxOf(beginning.format.frame)
 	}));
