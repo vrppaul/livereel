@@ -4,6 +4,8 @@
  * what stands over it, a piece of the page lifted off, stands clear of it. A film moves the shade as it moves places, by
  * one move that sets the values it names (`window.shade` in `src/moves/window.ts`), the dim and the fade as strong as a
  * share from none to whole, the blur in pixels of a frame 1080 high; the window's edge and shadow keep as they stand.
+ * One table, `SHADE_KINDS`, says of each value what a film may write for it and how it moves (`src/domain/values.ts`),
+ * so a move's shade is checked by it and the window's moved by it, as the body's is by its own (`src/props/body.ts`).
  *
  * The window stands as an object does, placed in the world by a box and a stance (`src/domain/placement.ts`), and the
  * stage draws it by the matrix that places it there, as it draws an object: flat while it faces the frame, in 3D
@@ -35,7 +37,8 @@ import {
 	translation,
 	wayBetween
 } from '../domain/matrix.ts';
-import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
+import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
+import { A_PIXELS, A_SHARE } from '../domain/handed.ts';
 import { type Box, type Size, boxAround, frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
 import {
 	type DrawnPlacement,
@@ -45,14 +48,8 @@ import {
 	windowInTheWorld
 } from '../domain/placement.ts';
 import { type Transform, transformOf } from '../domain/stance.ts';
-import {
-	MOVES_AS_A_SHARE,
-	MOVES_AS_PIXELS,
-	type MovingBy,
-	NO_PIXELS,
-	namesOf,
-	standsAtRest
-} from '../domain/toward.ts';
+import { NO_PIXELS, amountToward, namesOf, shareToward, standsAtRest } from '../domain/toward.ts';
+import { type KindsOf, ValueKind, asWritten } from '../domain/values.ts';
 import type { Slab } from './body.ts';
 import type { Look } from './look.ts';
 import type { WorldLook } from './world.ts';
@@ -62,6 +59,9 @@ export interface Shade {
 	readonly fade: Fraction;
 	readonly blur: number;
 }
+
+/** The shade's values as a film writes them: every one a number. */
+export type ShadeWritten = { readonly [Name in keyof Shade]: number };
 
 export interface PageWindow extends Placing, Shade {
 	readonly body: Slab;
@@ -125,12 +125,19 @@ export interface AroundTheWindow {
 
 export const UNSHADED: Shade = { dim: NONE, fade: NONE, blur: NO_PIXELS };
 
-// How each moves: a share between none and whole and a blur between where it starts and ends, however far past its
-// ends a curve takes them
-export const SHADING: MovingBy<Shade> = { dim: MOVES_AS_A_SHARE, fade: MOVES_AS_A_SHARE, blur: MOVES_AS_PIXELS };
+/**
+ * The kind of each value of the shade, by its name: the dim and the fade shares held between none and whole, the blur
+ * pixels never below none, each between where it starts and ends however far past its ends a curve takes it; the
+ * shares held as fractions, the blur as written.
+ */
+export const SHADE_KINDS: KindsOf<Shade, ShadeWritten> = {
+	dim: new ValueKind(A_SHARE, fractionOf, shareToward),
+	fade: new ValueKind(A_SHARE, fractionOf, shareToward),
+	blur: new ValueKind(A_PIXELS, asWritten, amountToward)
+};
 
-// The names of the shade's values, in the order a refusal says them
-export const SHADE_NAMES = namesOf(SHADING);
+/** The names of the shade's values, in the order a refusal says them. */
+export const SHADE_NAMES = namesOf(SHADE_KINDS);
 
 // A body of no thickness, which is none
 const NO_THICKNESS = 0;

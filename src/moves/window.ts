@@ -28,25 +28,15 @@
  */
 import { type Placing, type View, viewOf, viewOver } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import { fractionOf } from '../domain/fraction.ts';
 import { A_FRAME_SIDE, type Box, type FrameSide, liesOutside, liesWithin } from '../domain/geometry.ts';
-import {
-	A_NUMBER,
-	A_PIXELS,
-	A_SHARE,
-	type Form,
-	assertKind,
-	assertWritten,
-	namesSetBy,
-	needed
-} from '../domain/handed.ts';
+import { A_NUMBER, type Form, assertKind, assertWritten, namesSetBy, needed } from '../domain/handed.ts';
 import { A_PLACE, ONE_FRAME, type Place, pastTheEdge, placesNamed, sideBeyond, windowPlaced } from '../domain/place.ts';
 import { angleToward, depthAsked, depthsNamed } from '../domain/stance.ts';
 import { between, namedToward, shareToward } from '../domain/toward.ts';
 import { type ValuesMoving, valuesToward, valuesWith } from '../domain/values.ts';
 import { SLAB_KINDS, SLAB_NAMES, type Slab, type SlabScript } from '../props/body.ts';
 import { besideTheWindow } from '../props/note.ts';
-import { type PageWindow, SHADE_NAMES, SHADING, type Shade } from '../props/window.ts';
+import { type PageWindow, SHADE_KINDS, SHADE_NAMES, type Shade, type ShadeWritten } from '../props/window.ts';
 import { trackOf } from '../domain/track.ts';
 import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import { withProp } from '../scene.ts';
@@ -72,16 +62,12 @@ export interface WindowHideScript extends TimingScript {
  * How far the page is dimmed, `dim`, and faded into the film's ground, `fade`, each from 0 none to 1 whole, and how far
  * it is blurred, `blur`, in pixels of a frame 1080 high; any left out as it stands.
  */
-export interface ShadeScript extends TimingScript {
-	readonly dim?: number;
-	readonly fade?: number;
-	readonly blur?: number;
-}
+export interface ShadeScript extends TimingScript, Partial<ShadeWritten> {}
 
 const TO_FORM: Form<WindowToScript> = { depth: A_NUMBER, ...TIMING_FORM };
 const SHOW_FORM: Form<WindowShowScript> = { at: needed(A_PLACE), from: needed(A_FRAME_SIDE), ...TIMING_FORM };
 const HIDE_FORM: Form<WindowHideScript> = { toward: needed(A_FRAME_SIDE), ...TIMING_FORM };
-const SHADE_FORM: Form<ShadeScript> = { dim: A_SHARE, fade: A_SHARE, blur: A_PIXELS, ...TIMING_FORM };
+const SHADE_FORM: Form<ShadeScript> = { ...SHADE_KINDS, ...TIMING_FORM };
 // The window's values a move that carries it sets, and one that leans it; what each writes is held to them
 const CARRIED = ['box', 'lift', 'depth'] as const satisfies readonly (keyof Placing)[];
 const LEANT = ['angle'] as const satisfies readonly (keyof Placing)[];
@@ -244,13 +230,9 @@ function leaning(beginning: Beginning, script: LeanScript): Change {
 
 /** The page's shade on its way from how it stands to the film's, the values it names written into the window. */
 function shading(beginning: Beginning, script: ShadeScript, names: readonly (keyof Shade)[]): Change {
-	const from = beginning.scene.window;
-	const to: Shade = {
-		dim: fractionOf(script.dim ?? from.dim),
-		fade: fractionOf(script.fade ?? from.fade),
-		blur: script.blur ?? from.blur
-	};
-	return writing((progress) => namedToward(SHADING, from, to, names, progress));
+	const start: Shade = beginning.scene.window;
+	const end = valuesWith(start, script, SHADE_KINDS);
+	return writing((progress) => namedToward(SHADE_KINDS, start, end, names, progress));
 }
 
 /**
