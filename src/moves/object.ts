@@ -3,9 +3,9 @@
  * one — a title's words, code, the agent's terminal, the ending card, a piece of the page, an outline, a lens, a thing
  * of the film's own: coming up in its box, in its own way or one of livereel's (`src/moves/way.ts`), or sliding in
  * whole from past a side of the frame, pushing the object of its name standing there off past the side across; carried
- * to another place, growing and coming toward the eye on the way, to a box read off the page, or onto a block of the page to lie
- * there; leant and rolled; set apart from what lies under it, ringed and glowing in the accent or a colour of the
- * film's, casting a shadow, blurred, melted toward a side, grown or brought toward the eye where it stands
+ * to another place, growing and coming toward the eye on the way, to a box read off the page, or onto a block of the
+ * page to lie there; leant and rolled; set apart from what lies under it, ringed and glowing in the accent or a colour
+ * of the film's, casting a shadow, blurred, melted toward a side, grown or brought toward the eye where it stands
  * (`src/props/effects.ts`); taken back to stand as its box places it; put away where it stands, in its own way or one
  * of livereel's, or slid out past a side. A move takes the object a film names `as`, or its kind's own name, so a film
  * shows several of a kind at once, each moved by its name; it takes only an object of its kind, and refuses one that
@@ -38,7 +38,15 @@ import { FilmError } from '../domain/errors.ts';
 import { eyeAtRest } from '../domain/eye.ts';
 import type { Format } from '../domain/format.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
-import { A_FRAME_SIDE, BOX_SPACE, type Box, type FrameSide, boxToward, measuredFrom } from '../domain/geometry.ts';
+import {
+	A_FRAME_SIDE,
+	BOX_SPACE,
+	type Box,
+	type FrameSide,
+	type Size,
+	boxToward,
+	measuredFrom
+} from '../domain/geometry.ts';
 import {
 	A_COLOUR,
 	A_NAME,
@@ -699,10 +707,9 @@ async function appearingIn(
 	move: string
 ): Promise<Change> {
 	refuseJoining(beginning, holder, move);
-	const within = seenFrom(beginning, holder);
-	const coming = await comingAt(readFrom(within, holder));
+	const coming = await comingAt(readFrom(seenFrom(beginning, holder), holder));
 	const measured = { ...coming, box: measuredIn(beginning, holder, coming.box, name, move) };
-	return appearing(within, name, holder, measured, arrival, move);
+	return appearing(beginning, name, holder, measured, arrival, move);
 }
 
 /**
@@ -726,8 +733,9 @@ function refuseJoining(beginning: Beginning, holder: Holder, move: string): void
 }
 
 /**
- * An object coming into its box in the way it comes up there, or from a frame past it where it slides in, pushing the
- * one of its name standing: from as many frames past as that one goes, so the two move as one sheet.
+ * An object coming into its box in the way it comes up there, or from a frame past it where it slides in, a frame of
+ * what it stands in, the window's box inside the window, pushing the one of its name standing: from as many frames past
+ * as that one goes, so the two move as one sheet.
  */
 function appearing(
 	beginning: Beginning,
@@ -737,8 +745,8 @@ function appearing(
 	arrival: Arrival,
 	move: string
 ): Change {
-	const frame = beginning.format.frame;
-	const push = pushOf(beginning, name, arrival.from, move);
+	const within = seenFrom(beginning, holder).format.frame;
+	const push = pushOf(beginning, name, arrival.from, within, move);
 	const arrived: FrameObject = {
 		inside: holder,
 		box: coming.box,
@@ -750,7 +758,8 @@ function appearing(
 		way: arrival.way,
 		content: coming.content
 	};
-	const start = enteringFrom(coming.box, arrival.from, frame, framesToComeIn(arrived, arrival.from, push, beginning));
+	const frames = framesToComeIn(arrived, arrival.from, push, within, beginning);
+	const start = enteringFrom(coming.box, arrival.from, within, frames);
 	return (scene, progress) =>
 		withLeaving(
 			withObject(scene, name, {
@@ -764,14 +773,19 @@ function appearing(
 }
 
 /**
- * How many frames past its box an object slides in from, for all of it as drawn to stand past the edge as it sets off,
- * seen as the eye stands, one in the world too; as far as the one it pushes goes where that is farther, so the two
- * move as one sheet. One coming up in its place sets off from none.
+ * How many frames of what it stands in an object slides in from past its box, for all of it as drawn to stand past the
+ * edge there as it sets off, seen as the eye stands, one in the world too; as far as the one it pushes goes where that
+ * is farther, so the two move as one sheet. One coming up in its place sets off from none.
  */
-function framesToComeIn(arrived: FrameObject, from: FrameSide | null, push: Push | null, beginning: Beginning): number {
+function framesToComeIn(
+	arrived: FrameObject,
+	from: FrameSide | null,
+	push: Push | null,
+	within: Size,
+	beginning: Beginning
+): number {
 	if (from === null) return ONE_FRAME;
-	const frame = beginning.format.frame;
-	const own = framesPastTheEdge(arrived, from, frame, holdersAsTheyStand(beginning), frame);
+	const own = framesPastTheEdge(arrived, from, within, holdersAsTheyStand(beginning), beginning.format.frame);
 	return Math.max(own, push?.frames ?? ONE_FRAME);
 }
 
@@ -1044,13 +1058,18 @@ function shownComing(from: FrameSide | null, progress: number): Fraction {
 
 /**
  * What an object of a name sliding in from a side pushes off: the one of its name standing, whole as it stands, and the
- * box a frame past its own on the side across, or farther where it is drawn past its box, until all of it stands past
- * the edge; none where none stands, or nothing slides in. One standing in a group or on the page, which never slides,
- * is refused.
+ * box a frame of what the one sliding in stands in past its own on the side across, or farther where it is drawn past
+ * its box, until all of it stands past the edge; none where none stands, or nothing slides in. One standing in a group
+ * or on the page, which never slides, is refused.
  */
-function pushOf(beginning: Beginning, name: ObjectName, from: FrameSide | null, move: string): Push | null {
+function pushOf(
+	beginning: Beginning,
+	name: ObjectName,
+	from: FrameSide | null,
+	within: Size,
+	move: string
+): Push | null {
 	const standingThere = beginning.scene.objects.get(name);
-	const frame = beginning.format.frame;
 	if (from === null || standingThere === undefined) return null;
 	if (standingThere.inside.kind === 'group') {
 		throw new FilmError(`${move} would push the ${name} off past the frame's edge from its group: hide it first`);
@@ -1059,8 +1078,9 @@ function pushOf(beginning: Beginning, name: ObjectName, from: FrameSide | null, 
 		throw new FilmError(`${move} would push the ${name} off past the frame's edge from the page: hide it first`);
 	}
 	const toward = acrossFrom(from);
-	const frames = framesPastTheEdge(standingThere, toward, frame, holdersAsTheyStand(beginning), frame);
-	return { object: standingThere, end: pastTheEdge(standingThere.box, toward, frame, frames), frames };
+	const holders = holdersAsTheyStand(beginning);
+	const frames = framesPastTheEdge(standingThere, toward, within, holders, beginning.format.frame);
+	return { object: standingThere, end: pastTheEdge(standingThere.box, toward, within, frames), frames };
 }
 
 /** The object pushed off, `progress` of its way; once past the edge, none. */

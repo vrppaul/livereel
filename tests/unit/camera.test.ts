@@ -15,7 +15,7 @@ import {
 	windowView,
 	zoomPicturedFor
 } from '../../src/domain/camera.ts';
-import { inTheEyesSpaceAbout, seenFromTheEye, windowPlaced } from '../../src/domain/placement.ts';
+import { inTheEyesSpaceAbout, seenFromTheEye, windowInTheWorld } from '../../src/domain/placement.ts';
 import { type Eye, eyeAtRest } from '../../src/domain/eye.ts';
 import { type Box, type Format, type Point, type Size, distanceBetween } from '../../src/domain/geometry.ts';
 import type { Sharpness } from '../../src/domain/focus.ts';
@@ -153,7 +153,7 @@ function windowSeenInPerspective(spot: Spot): Point {
 
 /** Where the leant window is drawn on the square frame at a spot of it in three's axes, from its middle. */
 function windowDrawnAt(spot: Spot): Point {
-	const window = windowPlaced(LEANT_WINDOW, MOVED_EYE, SQUARE.frame);
+	const window = windowInTheWorld(LEANT_WINDOW, MOVED_EYE, SQUARE.frame);
 	const placed = carried(window.placing, { ...spot, down: -spot.down });
 	return { left: placed.across, top: placed.down };
 }

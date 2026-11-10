@@ -121,11 +121,12 @@ export const IN_THE_WINDOW: Holder = { kind: 'window' };
 export const IN_THE_WORLD: Holder = { kind: 'world' };
 export const ON_THE_PAGE: Holder = { kind: 'page' };
 
+// How far out of its own plane a spot of a box's plane stands
+export const ON_ITS_PLANE = 0;
+
 // A box read on its plane as it is; and something laid in the frame
 const AS_IT_IS: Measure = { kind: 'asItIs' };
 const IN_THE_FRAME: LaidIn = { kind: 'frame' };
-// How far out of its own plane a spot of a box's plane stands
-const ON_ITS_PLANE = 0;
 
 /** The plane of a holder, as the holders stand. */
 export function planeOf(holder: Holder, holders: Holders, frame: Size): Plane {
@@ -159,7 +160,7 @@ function worldSeenBy(eye: Eye, frame: Size): Plane {
 }
 
 /** The page's window where it stands: the camera's view placed in the world, seen by an eye. */
-export function windowPlaced(view: View, eye: Eye, frame: Size): Placed {
+export function windowInTheWorld(view: View, eye: Eye, frame: Size): Placed {
 	return placed(view, worldSeenBy(eye, frame), frame);
 }
 
@@ -168,7 +169,7 @@ export function windowPlaced(view: View, eye: Eye, frame: Size): Placed {
  * as the window stands in the world.
  */
 function windowsPlane(camera: Camera, frame: Size): Plane {
-	const window = windowPlaced(camera.view, camera.eye, frame);
+	const window = windowInTheWorld(camera.view, camera.eye, frame);
 	return {
 		laidIn: { kind: 'window', window },
 		rides: 'world',

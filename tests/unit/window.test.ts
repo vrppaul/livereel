@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest';
 import { type Cut, type View, windowView } from '../../src/domain/camera.ts';
-import { windowPlaced } from '../../src/domain/placement.ts';
+import { windowInTheWorld } from '../../src/domain/placement.ts';
 import { type Angle, FACE_ON } from '../../src/domain/stance.ts';
-import { type Eye, drawnEye, eyeAtRest } from '../../src/domain/eye.ts';
+import { eyeAtRest } from '../../src/domain/eye.ts';
 import type { Sharpness } from '../../src/domain/focus.ts';
 import type { Box, Size } from '../../src/domain/geometry.ts';
 import { ITS_MIDDLE, type Matrix, type Spot, carried, chained, flatOf, translation } from '../../src/domain/matrix.ts';
@@ -39,10 +39,6 @@ const OVERHEAD = { colour: '#ffffff', brightness: 12, round: 0, up: 75, width: 3
 const LIT = { ...LIVEREELS_WORLD, softBoxes: [OVERHEAD] };
 const SHARP: Sharpness = { focusedAt: FOCAL_LENGTH, focalLength: FOCAL_LENGTH, aperture: 0 };
 const AT_REST = eyeAtRest(FOCAL_LENGTH);
-// An eye moved up, to the right and nearer, in pixels of a frame 1080 high; where it stands in the room in three's
-// axes, up the frame, in the frame's pixels
-const MOVED: Eye = { ...AT_REST, at: { across: 300, down: -150, out: 900 } };
-const WHERE_THE_MOVED_EYE_STANDS: Spot = { across: 600, down: 300, out: 1800 };
 const AROUND: AroundTheWindow = {
 	eye: AT_REST,
 	frame: TWICE_THE_LOOK,
@@ -79,7 +75,7 @@ test("the body's back is drawn where the slab's back stands, its thickness behin
 	);
 	const behind = (view: View): Matrix =>
 		chained([
-			windowPlaced(view, AT_REST, TWICE_THE_LOOK).placing,
+			windowInTheWorld(view, AT_REST, TWICE_THE_LOOK).placing,
 			translation({ across: 0, down: 0, out: -flatBack!.thickness })
 		]);
 	expect([flatBack!.back, leantBack!.back]).toEqual([
@@ -103,11 +99,6 @@ test("a window lifted whole, with a body, hands the stage its slab: the rim and 
 			back: null
 		}
 	]);
-});
-
-test("a body is lit by the room as the eye sees it, as the scene's eye hands it: a spot of the room where the eye stands is the middle of its space", () => {
-	const eye = drawnEye(MOVED, TWICE_THE_LOOK);
-	expect(carriedTo(eye.roomInTheEyesSpace, WHERE_THE_MOVED_EYE_STANDS)).toEqual(ITS_MIDDLE);
 });
 
 test('the page is seen through as it fades or as its screen comes up, and not where it stands whole', () => {

@@ -1,7 +1,7 @@
 /**
  * How an object, whatever it shows, a caption or keys comes up in its place or goes from it in a way of livereel's, in
- * place of the way what it shows comes up of itself — words one after another, lines of code, the terminal growing, the card and keys
- * rising: faded in; out from behind an edge of its figure, as from under a mask, out of nothing; wiped in from an edge;
+ * place of the way what it shows comes up of itself — words one after another, lines of code, the terminal growing, the
+ * card and keys rising: faded in; out from behind an edge of its figure, as from under a mask, out of nothing; wiped in from an edge;
  * opened from the middle of its box, as an iris; grown from the middle of its box. An object goes in a way as it came
  * in one, the way run back: a mask back behind its edge, a wipe back to its edge.
  *

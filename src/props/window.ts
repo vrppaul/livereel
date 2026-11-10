@@ -37,7 +37,13 @@ import {
 } from '../domain/matrix.ts';
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import { type Box, type Size, boxAround, frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
-import { type DrawnPlacement, type Placed, drawnPlacement, windowPlaced } from '../domain/placement.ts';
+import {
+	type DrawnPlacement,
+	ON_ITS_PLANE,
+	type Placed,
+	drawnPlacement,
+	windowInTheWorld
+} from '../domain/placement.ts';
 import { type Transform, transformOf } from '../domain/stance.ts';
 import {
 	MOVES_AS_A_SHARE,
@@ -128,19 +134,17 @@ export const SHADE_NAMES = namesOf(SHADING);
 
 // A body of no thickness, which is none
 const NO_THICKNESS = 0;
-// The way out of the page's face, toward three's z, from its middle; a spot on the page's plane; and the slab's back,
-// moved neither across nor down from the page
+// The way out of the page's face, toward three's z, from its middle; and the slab's back, moved neither across nor
+// down from the page
 const A_UNIT_OUT: Spot = { across: 0, down: 0, out: 1 };
-const ON_ITS_PLANE = 0;
 const UNMOVED = 0;
 // A corner reaches at most half the page's shorter side, as CSS rounds a box no further
 const HALVES = 2;
 
 /**
  * The window as the stage draws it among what stands round it: standing as the camera's view, its picture cut as the
- * camera has it, seen from the eye, its corners rounding as it lifts, shaded as it is, as soft as the eye sees it, the
- * room's blur as soft at most as the window's softest point the frame shows, its box or as far as its picture reaches,
- * and with its body.
+ * camera has it, seen from the eye, its corners rounding as it lifts, shaded as it is, as soft as the eye sees it, its
+ * softest point the frame shows read over its box or as far as its picture reaches, and with its body.
  */
 export function drawnWindow(
 	view: View,
@@ -149,7 +153,7 @@ export function drawnWindow(
 	around: AroundTheWindow
 ): DrawnWindow {
 	const { eye, frame, sharpness } = around;
-	const standing = windowPlaced(view, eye, frame);
+	const standing = windowInTheWorld(view, eye, frame);
 	const placing = standing.placing;
 	const reach = pictureReachOf(view.box, cut);
 	const roundest = Math.min(reach.width, reach.height) / HALVES;

@@ -16,7 +16,7 @@
  * worked out as the stage draws it (`.camera` in `stage/stage.css`, and the view by where it is placed in the world,
  * `src/domain/placement.ts`): the screen carried by its focus to the view's middle and brought close, the view
  * standing about its middle as it stands, and seen from the eye before the frame's middle, a nearer point larger. Where
- * a point of it is seen on the frame, and how far it moves there, is `src/domain/projection.ts`.
+ * a point of it is seen on the frame is `pointOnTheFrame` there; how far it moves on the frame is worked out here.
  */
 import { type Eye, type Viewpoint, eyeAtRest, isAtRest, sightOf } from './eye.ts';
 import type { Format } from './format.ts';
@@ -59,7 +59,7 @@ import {
 	translation,
 	wayBetween
 } from './matrix.ts';
-import { middleInTheRoom, pointOnTheFrame, windowPlaced } from './placement.ts';
+import { middleInTheRoom, pointOnTheFrame, windowInTheWorld } from './placement.ts';
 import { AS_PLACED, type Stance, angledAs, angledBack, stanceMatrix, stanceMatrixBack } from './stance.ts';
 import { between } from './toward.ts';
 import { ARRIVED, type Track, alongTrack, arrivedAt } from './track.ts';
@@ -581,7 +581,7 @@ export function viewShift(seen: SeenBetween): number {
 
 /** Where a corner of a camera's view, in shares of the view's box, stands on the frame as the view stands. */
 function cornerOnTheFrame(camera: Camera, frame: Size, corner: Point): Point {
-	const window = windowPlaced(camera.view, camera.eye, frame);
+	const window = windowInTheWorld(camera.view, camera.eye, frame);
 	return pointOnTheFrame(window, pointAt(boxOf(camera.view.box), corner));
 }
 
@@ -608,7 +608,7 @@ export function screenBoxShift(seen: SeenBetween, start: Box, end: Box): number 
  * window stands and seen from the eye.
  */
 export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
-	return pointOnTheFrame(windowPlaced(camera.view, camera.eye, frame), pointInTheView(camera, frame, point));
+	return pointOnTheFrame(windowInTheWorld(camera.view, camera.eye, frame), pointInTheView(camera, frame, point));
 }
 
 /**

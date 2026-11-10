@@ -8,7 +8,7 @@
  * name it gives or its kind's own, so several of a kind stand at once, drawn in the order they first came, the last
  * over the rest: one shown again in place of itself keeps its place. One pushed off by another of its name sliding in
  * is held apart while it goes, so the two stand at once, and drawn over every object standing. A caption and keys lie
- * over every object, keys over the caption, as the stage lays them. A group of objects (`src/props/group.ts`) is known by a name of its own,
+ * over every object, keys over the caption. A group of objects (`src/props/group.ts`) is known by a name of its own,
  * and holds no more than how the objects in it stand together; they go with it. `drawn` works out everything the stage
  * needs from it — how far each word of a title, a caption or a callout and each line of code has come, the terminal's
  * spinner, how far keys rise clear of a caption, where a note's line meets the block it names on the frame, the hole a

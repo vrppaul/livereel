@@ -8,7 +8,9 @@ import { type Bounds, type Change, type Move, timingOf } from '../../src/directi
 import { cut, hold, play } from '../../src/direction/steps.ts';
 import { act } from '../../src/moves/act.ts';
 import { to as cameraTo } from '../../src/moves/camera.ts';
+import { show as showCaption } from '../../src/moves/caption.ts';
 import { scrollTo as scrollCodeTo, show as showCode } from '../../src/moves/code.ts';
+import { show as showKeys } from '../../src/moves/keys.ts';
 import { show as showLens } from '../../src/moves/lens.ts';
 import { to as lookTo } from '../../src/moves/look.ts';
 import { on, to } from '../../src/moves/light.ts';
@@ -454,6 +456,19 @@ test('a frame a title comes up fast in, wiped in from its left edge while it sta
 	];
 	await takeOf(footage, stage).run(steps);
 	expect(footage.exposed).toEqual([4, 4]);
+});
+
+test('a frame a caption is wiped in fast in from its left edge, or keys come out from under a mask, is drawn again along its way', async () => {
+	const captioned = new FootageOf([0, 1]);
+	const keyed = new FootageOf([0, 1]);
+	const wiped = play({ seconds: 2 / 30, moves: [showCaption('Words', { enter: 'wipe' })], ease: linear });
+	const masked = play({ seconds: 2 / 30, moves: [showKeys(['K'], { enter: 'mask' })], ease: linear });
+	await takeOf(captioned, new FramedStageThatKeeps()).run([wiped]);
+	await takeOf(keyed, new FramedStageThatKeeps()).run([masked]);
+	expect([captioned.exposed, keyed.exposed]).toEqual([
+		[4, 4],
+		[4, 4]
+	]);
 });
 
 test('a frame a light is put on another block in, while its shutter is open, is exposed once: what a move sets as it begins is no move', async () => {
