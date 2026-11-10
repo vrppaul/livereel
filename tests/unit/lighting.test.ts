@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import type { Size } from '../../src/domain/geometry.ts';
 import { ITS_MIDDLE, type Spot, carried } from '../../src/domain/matrix.ts';
-import { type SoftBox, type WorldLight, drawnLighting } from '../../src/props/lighting.ts';
+import { type SoftBox, type WorldLight, drawnBloom, drawnLighting } from '../../src/props/lighting.ts';
 
 // A frame twice as large as the look was made on, so the room stands in its pixels, twice the film's
 const TWICE_THE_LOOK: Size = { width: 3840, height: 2160 };
@@ -75,4 +75,8 @@ test("a soft box stands a unit from the room's middle the way it is turned, towa
 		rounded({ across: 0, down: -HALF_ITS_WIDTH, out: 1 }),
 		expect.closeTo(Math.hypot(1, HALF_ITS_WIDTH, HALF_ITS_HEIGHT))
 	]);
+});
+
+test("a frame glows round its brightest light only where the look gives the glow a strength, as far as the look spreads it, from light brighter than the page's white alone", () => {
+	expect([drawnBloom(0, 0.4), drawnBloom(0.45, 0.4)]).toEqual([null, { strength: 0.45, radius: 0.4, threshold: 1.01 }]);
 });

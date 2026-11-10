@@ -48,7 +48,7 @@ import type { Cursor } from './props/cursor.ts';
 import type { Group, GroupName, Groups } from './props/group.ts';
 import { type DrawnLines, drawnHoles, drawnLines } from './props/lifted.ts';
 import type { Light } from './props/light.ts';
-import { type DrawnLighting, drawnLighting } from './props/lighting.ts';
+import { type DrawnBloom, type DrawnLighting, drawnBloom, drawnLighting } from './props/lighting.ts';
 import type { Look } from './props/look.ts';
 import { type DrawnNote, type Note, drawnNote, noteShift } from './props/note.ts';
 import {
@@ -131,7 +131,7 @@ interface DrawnProps {
 /**
  * What the stage is handed of a scene: each prop as drawn, the objects standing and pushed off, and what the pieces of
  * the page among them leave on the page and draw to it, holes on the screen and lines on the frame; and the world's
- * light, as the room lights a film's own things by it.
+ * light, as the room lights a film's own things by it, and the glow round the brightest, none where the look has none.
  */
 export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 	readonly objects: readonly DrawnObject[];
@@ -139,6 +139,7 @@ export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 	readonly holes: readonly DrawnHole[];
 	readonly lines: readonly DrawnLines[];
 	readonly lighting: DrawnLighting;
+	readonly bloom: DrawnBloom | null;
 };
 
 // The page's own time running a second for each of the film's
@@ -413,7 +414,8 @@ export function drawn(
 		leaving: drawnObjects(scene.leaving, moment, around),
 		holes,
 		lines: drawnLines(everyObject, camera, scene.groups, format.frame),
-		lighting: drawnLighting(scene.look.lights, scene.look.softBoxes, format.frame)
+		lighting: drawnLighting(scene.look.lights, scene.look.softBoxes, format.frame),
+		bloom: drawnBloom(scene.look.bloom, scene.look.bloomRadius)
 	};
 }
 

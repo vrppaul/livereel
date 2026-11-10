@@ -394,7 +394,10 @@ the page as a tablet has, in place of its edge and shadow:
 1080 frame, `windowMetal` in hex with no alpha, `windowRoughness` from
 0 to 1, and `windowGlass` from 0 to 1, how strong the clear coat over its
 page is; its metal and glass show the world's light alone, so give it soft
-boxes, and the glass's glint shows on a dark page. Leave out
+boxes, and the glass's glint shows on a dark page. A room's light past the
+page's white may glow round itself: `bloom` (0, none, livereel's; the
+reference promo's 0.45) and `bloomRadius` (0.4), from 0 to 1; light far
+past white glows wide, so show the user a still. Leave out
 what the user does not name: livereel's own is a dark ground, white ink
 and an amber accent. `look.to(theme)` changes any of these as the film goes: in a
 `play` through the values between (a ground fading light, the glow

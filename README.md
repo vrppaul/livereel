@@ -704,6 +704,7 @@ values; what the film leaves out stays livereel's:
 | `windowThickness`, `windowRim` | in a room, how thick the body of the page's window is, `0` none, and how far its rim reaches past the page all round, in pixels | `0`, `6` |
 | `windowMetal`, `windowRoughness` | the colour of the window's body, in hex with no alpha, and how rough its metal is, from `0`, a mirror, to `1`, matte | `#454b56`, `0.45` |
 | `windowGlass` | how strong the clear coat of glass over the page of a window with a body is, from `0`, none, to `1`, a whole coat: 4% reflected face-on, more aslant | `0.4` |
+| `bloom`, `bloomRadius` | in a room, how strongly light brighter than the page's white glows round itself, `0` none, as three's bloom takes its strength, and how far the glow spreads, from `0`, nearest, to `1`, widest | `0`, `0.4` |
 | `terminal`, `terminalInk` | the colour of the terminal, the code's pane, the ending's command and keys' caps, and what is written on them | `#10141c`, `#f4f6fa` |
 | `codeComment`, `codeString`, `codeNumber`, `codeKeyword`, `codeCall`, `codeKey` | the colours of the code's pieces by kind: a comment, a string, a number, a word the language keeps, a function called, a key of an object; livereel's are made for a dark pane | `#8b949e`, `#a5d6ff`, `#79c0ff`, `#ff7b72`, `#d2a8ff`, `#7ee787` |
 | `glowX`, `glowY` | where the ground's glow stands, across and down, each from 0 to 1 | `0.5`, `0.3` |
@@ -798,6 +799,18 @@ shadow in its place.
 ```ts
 theme: { windowThickness: 24, windowRim: 6, softBoxes: [...] }
 ```
+
+A room keeps the light of its things and of the window's body as three
+gives it, brighter than white where a glint is, and may let it glow round
+itself as a lens blooms: `bloom` says how strongly, as three's bloom takes
+its strength, `bloomRadius` how far, the same share of the frame however
+large it is shot. Only light brighter than the page's white glows, so a
+white page and its letters never do; a face lit far past white glows wide,
+as three's bloom has it. An edge narrower than a pixel and a glint the
+eye's focus blurs come out dimmer than three would lay them, as a room lays
+them in the screen's colours, and may not glow at all. The glow lies over
+all the frame, titles and the cursor too. livereel's own look has none; the
+reference promo's was `bloom: 0.45, bloomRadius: 0.4`.
 
 The look changes as the film goes, by a move like any other:
 `look.to(theme)`, any of the same values. In a `play` it moves there over
@@ -1071,8 +1084,12 @@ What `inside` costs:
   scale, filtered as it shrinks into the distance, and blurred by the eye's
   focus at each point as far as that point stands from it, where flat blurs
   the window as one; the ground and what stands on the frame are drawn as
-  flat draws them. A static page only: a dynamic one stands live in a frame
-  of its own site, which the browser hands WebGL blank.
+  flat draws them. A fast move's blur adds its moments up in linear light,
+  as a camera's shutter gathers light, where flat lays them over one another
+  in the screen's colours: a page blurs as it did, the README film's moving
+  frames alike to an SSIM of 0.9998, and a glint streaks as bright as it
+  shines. A static page only: a dynamic one stands live in a frame of its
+  own site, which the browser hands WebGL blank.
 
 ```ts
 export default defineFilm({ drawing: 'room', ... });

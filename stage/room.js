@@ -9,12 +9,15 @@
  *
  * The browser draws each surface into a texture through HTML-in-Canvas (`texElementImage2D`), once the canvas has
  * painted what the stage drew. The textures hold the browser's own colours, premultiplied, and are laid over one
- * another, and the exposures summed, as the flat stage's layers are, so a frame drawn as a room is the flat one but
- * for where the window stands and how it is filtered. The window's surface reaches as far past the frame as the
- * camera's picture does on its plane, as the eye may see the plane past the frame's edge, and is drawn less densely
- * where its texture would pass the graphics card's largest. One texture of each surface serves every exposure,
- * uploaded anew for each in turn, so the card holds three, not three for each exposure: sixteen exposures of a
- * 3840 × 2160 frame would hold 2 GB.
+ * another as the flat stage's layers are, in the screen's colours, so an exposure drawn as a room is the flat one but
+ * for where the window stands and how it is filtered, and a page's letters and a title's edges are smoothed as the
+ * browser smooths them. The exposures are added up in linear light, as a shutter gathers the light of each moment,
+ * where the flat stage lays each over the last in the screen's colours: a glint that moves draws a streak as bright as
+ * its light, where averaged in the screen's colours it went dark. The window's surface reaches as far past the frame
+ * as the camera's picture does on its plane, as the eye may see the plane past the frame's edge, and is drawn less
+ * densely where its texture would pass the graphics card's largest. One texture of each surface serves every
+ * exposure, uploaded anew for each in turn, so the card holds three, not three for each exposure: sixteen exposures
+ * of a 3840 × 2160 frame would hold 2 GB.
  *
  * Where the eye's focus blurs the window, the room blurs each point of it by how far it stands from the focus, as the
  * engine hands the blur of every point of the frame (`OutOfFocusAt` in `src/domain/focus.ts`), and the stylesheet draws
@@ -25,13 +28,19 @@
  *
  * A film's own things (`stage/things.js`) are laid in each exposure among the surfaces: each drawn alone in three's
  * linear light, with its own edges smoothed, written back in the screen's colours, and laid as one blur of its own
- * softens it. A thing on the frame is laid over the window, under what stands on the frame; a thing in the world is
- * parted by the window's surface and laid in two, what stands behind the surface under the window and what stands
- * before it over, so the window's own clearness, its fade, soft edge and rounded corners, shows or hides what stands
- * behind it. The window's body (`stage/body.js`) is drawn as a thing is and laid with the window as one layer,
- * blurred with it at each point, so the page's edge and the rim round it soften together: under the page where the
- * eye sees the page, as every point of it stands at or behind the page's plane, and over it where the eye sees its
- * back; so it stands nearer than any thing on the window's side.
+ * softens it. Light brighter than the page's white, as three's lit materials give it, is kept past white all the way
+ * to the frame where a thing covers a pixel whole and is not blurred: an edge a share of a pixel wide, and a thing the
+ * eye's focus blurs, are laid and blurred in the screen's colours, dimmer than three would lay them (TODO.md). Where the
+ * look asks, the frame glows round that light, as a lens blooms, once over the light its exposures gathered: three's
+ * own bloom (`UnrealBloomPass`), the reference promo's, its spread a share of a frame 1080 high however large the frame
+ * is drawn, and nothing below the page's white blooming, as letters must be read; the glow lies over all the frame,
+ * what stands on it too, where the promo drew its pointer after it. A thing on the frame is laid over the window,
+ * under what stands on the frame; a thing in the world is parted by the window's surface and laid in two, what stands
+ * behind the surface under the window and what stands before it over, so the window's own clearness, its fade, soft
+ * edge and rounded corners, shows or hides what stands behind it. The window's body (`stage/body.js`) is drawn as a
+ * thing is and laid with the window as one layer, blurred with it at each point, so the page's edge and the rim round
+ * it soften together: under the page where the eye sees the page, as every point of it stands at or behind the page's
+ * plane, and over it where the eye sees its back; so it stands nearer than any thing on the window's side.
  *
  * three.js keeps no camera here: every point is placed by the matrices the engine hands the stage, and the stage
  * decides nothing. The script is a module, three's being modules alone, which the page loads only where the film is
@@ -58,17 +67,18 @@ import {
 	ShaderMaterial,
 	Vector2,
 	Vector3,
-	SRGBColorSpace,
 	Vector4,
 	WebGLRenderTarget,
 	WebGLRenderer
 } from 'three';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { WindowBody } from './body.js';
 import { WorldLighting } from './lighting.js';
 import { matrixOf } from './matrices.js';
 import { Things, isAThing } from './things.js';
 /** @import { DrawnScene } from '../src/scene.ts' */
 /** @import { DrawnBody, DrawnWindow } from '../src/props/window.ts' */
+/** @import { DrawnBloom } from '../src/props/lighting.ts' */
 /** @import { ThingObject, ThingPart, WindowSurface } from './things.js' */
 /** @import { OutOfFocusAt } from '../src/domain/focus.ts' */
 /** @import { Transform } from '../src/domain/stance.ts' */
@@ -215,21 +225,28 @@ const SHARPEST_VARIANCE = 0.000001;
 // The ways a blur goes, in the frame's pixels across and down
 const ACROSS = new Vector2(1, 0);
 const DOWN = new Vector2(0, 1);
-// The window drawn alone to be blurred, and that blurred across, each with its smaller copies made as it is drawn; the
-// blurred one in half floats, so a wide blur's soft slopes are not stepped before it is blurred down
+// What an exposure is drawn into and laid from: in half floats, which keep a thing's light brighter than white, as three
+// gives it, past which eight bits cut it
+const PAST_WHITE = { depthBuffer: false, type: HalfFloatType };
+// The window or a thing drawn alone to be blurred, and that blurred across, each with its smaller copies made as it is
+// drawn, in half floats, so a wide blur's soft slopes are not stepped before it is blurred down and light past white
+// is kept
 const FOCUS_LAYER = {
-	depthBuffer: false,
+	...PAST_WHITE,
 	generateMipmaps: true,
 	minFilter: LinearMipmapLinearFilter,
 	magFilter: LinearFilter
 };
-const BLURRED_LAYER = { ...FOCUS_LAYER, type: HalfFloatType };
 // A thing drawn alone, with a depth of its own so its faces hide one another, its light added up linear as three's
-// materials give it and kept in the screen's colours, so a thing laid over the surfaces is laid as the browser lays one;
-// each pixel sampled at four points, so its edges are smoothed as the browser smooths the page's; and a stencil, which
-// marks the samples the window's surface covers as the part of a thing behind it is drawn (`stage/things.js`)
+// materials give it, in half floats, which keep it past white; each pixel sampled at four points, so its edges are
+// smoothed as the browser smooths the page's; and a stencil, which marks the samples the window's surface covers as
+// the part of a thing behind it is drawn (`stage/things.js`)
 const SAMPLES_A_PIXEL = 4;
-const THING_LAYER = { depthBuffer: true, stencilBuffer: true, colorSpace: SRGBColorSpace, samples: SAMPLES_A_PIXEL };
+const THING_LAYER = { depthBuffer: true, stencilBuffer: true, type: HalfFloatType, samples: SAMPLES_A_PIXEL };
+// The glow round light past the page's white drawn by three's bloom in no time of its own, and over all the frame,
+// which no stencil masks
+const NO_TIME_PASSING = 0;
+const UNMASKED = false;
 // A surface's own plane in its own space, in three's axes: across and up it, none out toward the eye; and a surface not
 // grown toward the eye
 const A_SURFACES_PLANE = new Plane(new Vector3(0, 0, 1), 0);
@@ -301,33 +318,54 @@ void main() {
 	shareOfTheFrame = uv;
 	gl_Position = vec4(position.xy, 0.0, 1.0);
 }`;
-const WEIGHED_FRAGMENT = `
-uniform sampler2D drawn;
-uniform float weight;
-varying vec2 shareOfTheFrame;
-void main() {
-	gl_FragColor = texture2D(drawn, shareOfTheFrame) * weight;
-}`;
-const SHOWN_FRAGMENT = `
-uniform sampler2D drawn;
-varying vec2 shareOfTheFrame;
-void main() {
-	gl_FragColor = texture2D(drawn, shareOfTheFrame);
-}`;
-// A thing's layer, read back linear, written in the screen's colours as the surfaces are, its colours premultiplied by
-// how clear it is as theirs are: each colour encoded as sRGB encodes it, on its own before it is premultiplied
-const ENCODED_FRAGMENT = `
-uniform sampler2D drawn;
-varying vec2 shareOfTheFrame;
+// sRGB's curve both ways: light encoded in the screen's colours, and back, past white as below it, so light brighter
+// than white keeps its share
+const SRGB_CURVES = `
 vec3 encoded(vec3 linear) {
 	vec3 low = linear * ${SRGB.lowSlope};
 	vec3 high = ${SRGB.scale} * pow(linear, vec3(1.0 / ${SRGB.gamma})) - ${SRGB.offset};
 	return mix(high, low, step(linear, vec3(${SRGB.knee})));
 }
+vec3 decoded(vec3 screens) {
+	vec3 low = screens / ${SRGB.lowSlope};
+	vec3 high = pow((screens + ${SRGB.offset}) / ${SRGB.scale}, vec3(${SRGB.gamma}));
+	return mix(high, low, step(screens, vec3(${SRGB.knee} * ${SRGB.lowSlope})));
+}`;
+// An exposure, drawn in the screen's colours, added into the frame at its weight as linear light; and the frame drawn
+// on the canvas in the screen's colours: each as the canvas shows it, opaque, what is clear in it over nothing
+const WEIGHED_FRAGMENT = `
+uniform sampler2D drawn;
+uniform float weight;
+varying vec2 shareOfTheFrame;
+${SRGB_CURVES}
 void main() {
-	vec4 read = texture2D(drawn, shareOfTheFrame);
-	vec3 own = read.a > 0.0 ? read.rgb / read.a : vec3(0.0);
-	gl_FragColor = vec4(encoded(own) * read.a, read.a);
+	gl_FragColor = vec4(decoded(texture2D(drawn, shareOfTheFrame).rgb) * weight, weight);
+}`;
+const SHOWN_FRAGMENT = `
+uniform sampler2D drawn;
+varying vec2 shareOfTheFrame;
+${SRGB_CURVES}
+void main() {
+	gl_FragColor = vec4(encoded(texture2D(drawn, shareOfTheFrame).rgb), 1.0);
+}`;
+// A thing's layer, read back linear, written in the screen's colours as the surfaces are, its colours premultiplied by
+// how clear it is as theirs are: each colour encoded as sRGB encodes it, on its own before it is premultiplied. Here
+// three's light enters the room's layers, so it is held to light that can be first: a film's own shader may write a
+// colour below none or no number at all, which a layer of eight bits cut away and one of half floats keeps, and three's
+// bloom would spread over the whole frame; such a pixel is drawn clear, its light held between none and the most a
+// half float keeps, its clearness between none and whole
+const LARGEST_HALF_FLOAT = '65504.0';
+const ENCODED_FRAGMENT = `
+uniform sampler2D drawn;
+varying vec2 shareOfTheFrame;
+${SRGB_CURVES}
+void main() {
+	vec4 drawnThere = texture2D(drawn, shareOfTheFrame);
+	vec4 read = any(isnan(drawnThere)) ? vec4(0.0) : drawnThere;
+	float clearness = clamp(read.a, 0.0, 1.0);
+	vec3 light = clamp(read.rgb, 0.0, ${LARGEST_HALF_FLOAT});
+	vec3 own = clearness > 0.0 ? light / clearness : vec3(0.0);
+	gl_FragColor = vec4(encoded(own) * clearness, clearness);
 }`;
 // What is drawn of a box of the frame blurred one way at each point of another, the frame's pixels down from its top:
 // as soft as the engine's blur has the point, the size of an even number held to its farthest, and to the softest the
@@ -435,8 +473,8 @@ class Room {
 		this.renderer.autoClear = false;
 		this.renderer.setClearColor(NOTHING, CLEAR);
 		const drawn = this.renderer.getDrawingBufferSize(new Vector2());
-		this.exposure = new WebGLRenderTarget(drawn.width, drawn.height, { depthBuffer: false });
-		this.frame = new WebGLRenderTarget(drawn.width, drawn.height, { type: HalfFloatType, depthBuffer: false });
+		this.exposure = new WebGLRenderTarget(drawn.width, drawn.height, PAST_WHITE);
+		this.frame = new WebGLRenderTarget(drawn.width, drawn.height, PAST_WHITE);
 		/** The texture each surface is drawn into, for every exposure in turn @type {ReadonlyMap<SurfaceName, SurfaceTexture>} */
 		this.textures = new Map(
 			SURFACES.map((name) => [name, new SurfaceTexture(this.renderer, SURFACE_TEXTURES[name].shrinks)])
@@ -450,7 +488,7 @@ class Room {
 		/** The frame's size in the drawing's pixels @type {Vector2} */
 		this.drawnSize = drawn;
 		this.focusLayer = new WebGLRenderTarget(drawn.width, drawn.height, FOCUS_LAYER);
-		this.blurredAcross = new WebGLRenderTarget(drawn.width, drawn.height, BLURRED_LAYER);
+		this.blurredAcross = new WebGLRenderTarget(drawn.width, drawn.height, FOCUS_LAYER);
 		this.blurringAcross = overTheWholeOf(blurredMaterial(ACROSS, WRITTEN, this.pixelsOfOne));
 		this.blurringDown = overTheWholeOf(blurredMaterial(DOWN, LAID_OVER, this.pixelsOfOne));
 		// three draws nothing without a camera; every point here is placed by the room's own shaders, not by it
@@ -461,14 +499,21 @@ class Room {
 		this.thingLayer = new WebGLRenderTarget(drawn.width, drawn.height, THING_LAYER);
 		this.encoding = overTheWholeOf(encodedMaterial(this.thingLayer, WRITTEN));
 		this.encodingOver = overTheWholeOf(encodedMaterial(this.thingLayer, LAID_OVER));
+		// The glow measured on a frame 1080 high, as the reference promo measured it on one so high, so it spreads over the
+		// same share of any frame drawn at any density, three's bloom gathering it from copies halved from that size; its
+		// strength, spread and threshold set as each frame's look has them
+		const frame = layout.format.frame;
+		const measuredOn = new Vector2(frame.width / layout.frameScale, frame.height / layout.frameScale);
+		this.bloom = new UnrealBloomPass(measuredOn, NONE, NONE, NONE);
 	}
 
 	/**
 	 * One frame composed from its exposures: the window's surface of each laid out as far as its scene reaches, and as
 	 * far past the frame as a blur of any of them gathers, the surfaces of those it has painted, and each exposure drawn,
 	 * its surfaces laid over one another, the window where its scene places it, the film's things among them, and added
-	 * into the frame at an equal weight; the frame shown on the canvas once the card has drawn it. What the film is told
-	 * where its things module throws building or setting a thing, none where the frame is drawn.
+	 * into the frame at an equal weight; the frame glowing round its light past white where the look asks, and shown on
+	 * the canvas once the card has drawn it. What the film is told where its things module throws building or setting a
+	 * thing, none where the frame is drawn.
 	 * @param {readonly DrawnScene[]} scenes @returns {Promise<string | null>}
 	 */
 	async compose(scenes) {
@@ -497,9 +542,23 @@ class Room {
 			const refused = this.exposureDrawn(surfacesAt(this.exposureSurfaces, place), placings, scene, gathered);
 			if (refused !== null) return refused;
 		}
+		const bloom = scenesAt(scenes, FIRST).bloom;
+		if (bloom !== null) this.bloomed(bloom);
 		this.renderer.setRenderTarget(null);
 		this.renderer.render(this.shown, this.camera);
 		return null;
+	}
+
+	/**
+	 * The frame's light past the page's white glowing round itself, as strong and as wide as the look has it: the look
+	 * being the first exposure's, as the ground's is.
+	 * @param {DrawnBloom} bloom
+	 */
+	bloomed(bloom) {
+		this.bloom.strength = bloom.strength;
+		this.bloom.radius = bloom.radius;
+		this.bloom.threshold = bloom.threshold;
+		this.bloom.render(this.renderer, this.frame, this.frame, NO_TIME_PASSING, UNMASKED);
 	}
 
 	/**

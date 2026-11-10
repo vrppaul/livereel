@@ -25,7 +25,7 @@
 /** @import { HeldPicture, Layout, Opening, PagePicture, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
-/** A value of the look set whole on the stage, in place of one token: any but the ground's layers, the way words come up, which the moves that bring them read, the world's light, which the room lights its things by, and the window's body, which the room draws with the window @typedef {Exclude<keyof Look, 'groundLayers' | 'words' | 'lights' | 'softBoxes' | 'windowThickness' | 'windowRim' | 'windowMetal' | 'windowRoughness' | 'windowGlass'>} WholeLookName */
+/** A value of the look set whole on the stage, in place of one token: any but the ground's layers, the way words come up, which the moves that bring them read, the world's light, which the room lights its things by, and its glow, which the room draws over a frame, and the window's body, which the room draws with the window @typedef {Exclude<keyof Look, 'groundLayers' | 'words' | 'lights' | 'softBoxes' | 'bloom' | 'bloomRadius' | 'windowThickness' | 'windowRim' | 'windowMetal' | 'windowRoughness' | 'windowGlass'>} WholeLookName */
 /** An element of the stage's markup: the cursor is drawn in SVG, the rest in HTML @typedef {HTMLElement | SVGElement} Staged */
 /** The scene's lists of objects: those standing, and those pushed off while they go @typedef {'objects' | 'leaving'} ObjectList */
 /**
@@ -955,10 +955,11 @@ class LookDrawer {
  * in its screen, by their keys. Every prop but the look is drawn in
  * each exposure, as the camera stood at its moment: the type checker refuses a prop without a drawer. The look is the stage's root's, one for every exposure of a frame; the
  * objects' drawer draws those pushed off too, as both lists lay what stands inside the page's window in its one root;
- * the world's light lights the room's things alone, which the room draws (`stage/things.js`).
+ * the world's light lights the room's things alone, which the room draws (`stage/things.js`), and its glow the room
+ * draws over a frame (`stage/room.js`).
  * @typedef {{
  *   readonly root: Staged,
- *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'leaving' | 'lighting'>]: Drawer },
+ *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'leaving' | 'lighting' | 'bloom'>]: Drawer },
  *   readonly page: Staged,
  *   readonly picture: Staged,
  *   readonly ownPages: Map<string, HTMLIFrameElement>

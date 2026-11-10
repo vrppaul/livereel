@@ -233,6 +233,14 @@ export const AN_OPAQUE_COLOUR = new Plain(isOpaqueHexColour, 'a colour in hex wi
 export const A_PIXELS = new Plain(isNoneOrMore, 'a number of pixels, 0 or more');
 /** How bright a light is: none at least, with no bound above, as a light may outshine white. */
 export const A_BRIGHTNESS = new Plain(isNoneOrMore, 'how bright it is, a number, 0 or more: 1 its whole colour');
+/**
+ * How strongly light past white glows round itself: none at least, three's bloom's own strength, which names no share
+ * of the light, its glow gathered from several spreads of the light added up.
+ */
+export const A_GLOW_STRENGTH = new Plain(
+	isNoneOrMore,
+	"how strongly light past white glows, a number, 0 or more, as three's bloom takes it"
+);
 /** How fast the page's own time runs against the film's: none at least, where it stands. */
 export const A_PAGE_SPEED = new Plain(
 	isNoneOrMore,

@@ -73,7 +73,7 @@ import {
 } from '../domain/handed.ts';
 import { A_SPOT, type Spot, scaledBy } from '../domain/matrix.ts';
 import { type Path, type Through, pathOf } from '../domain/path.ts';
-import { pixelsToward } from '../domain/toward.ts';
+import { amountToward } from '../domain/toward.ts';
 import { trackOf } from '../domain/track.ts';
 import {
 	A_TARGET,
@@ -543,7 +543,7 @@ function refocusingAndOpening(from: Focus, to: Focus, openedFrom: number, opened
 		withEye(scene, {
 			...scene.eye,
 			focusing: trackOf(from, to, progress),
-			aperture: pixelsToward(openedFrom, opened, progress)
+			aperture: amountToward(openedFrom, opened, progress)
 		});
 }
 

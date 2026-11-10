@@ -72,7 +72,9 @@ const ROOT = '/';
 const EVERY_PATH = '**';
 // The room's own script, a module, and the kinds of script the page is given: the module, and the import map that
 // names where three stands for it, which only the room's page is given; where three's files stand under the origin;
-// the files of three's build its module is made of; and its module, as the import map names it
+// the files of three's build its module is made of; and its module, as the import map names it. three's add-ons, as
+// the import map names them and as they stand under the origin; those the room draws with, its glow and what that
+// imports, by their paths among the add-ons; and the folder they stand in
 const ROOM_SCRIPT = 'room.js';
 const MODULE = 'module';
 const IMPORT_MAP = 'importmap';
@@ -81,6 +83,14 @@ const THREE_ENTRY = 'three.module.js';
 const THREE_FILES = [THREE_ENTRY, 'three.core.js'];
 const THREE_MODULE = `./${THREE_PATH}${THREE_ENTRY}`;
 const THREE_FOLDER = new URL('./', import.meta.resolve('three'));
+const THREE_ADDONS = 'three/addons/';
+const THREE_ADDON_FILES = [
+	'postprocessing/UnrealBloomPass.js',
+	'postprocessing/Pass.js',
+	'shaders/CopyShader.js',
+	'shaders/LuminosityHighPassShader.js'
+];
+const THREE_ADDONS_FOLDER = new URL('./', import.meta.resolve('three/addons/Addons.js'));
 // Where the film's things module is served under the origin, and the kind of content it is answered with
 const THINGS_PATH = 'film/things.js';
 const SCRIPT_TYPE = 'text/javascript; charset=utf-8';
@@ -105,7 +115,8 @@ export async function roomOpened(page: Page, things: string | null): Promise<voi
 	await page.route(`${ROOM_ORIGIN}${EVERY_PATH}`, (route) => answered(route, files));
 	await page.goto(new URL(STAGE_PAGE, ROOM_ORIGIN).href);
 	refusedWhereLacking(await page.evaluate(roomLackOf));
-	await page.addScriptTag({ type: IMPORT_MAP, content: JSON.stringify({ imports: { three: THREE_MODULE } }) });
+	const imports = { three: THREE_MODULE, [THREE_ADDONS]: `./${THREE_ADDONS}` };
+	await page.addScriptTag({ type: IMPORT_MAP, content: JSON.stringify({ imports }) });
 	await page.addScriptTag({ type: MODULE, url: new URL(ROOM_SCRIPT, ROOM_ORIGIN).href });
 }
 
@@ -139,10 +150,14 @@ async function drawnInTheRoom(page: Page, exposures: readonly DrawnScene[]): Pro
 	if (refused !== null) throw new FilmError(refused);
 }
 
-/** three's module files, by their path under the room's origin. */
+/** three's module files and the add-ons the room draws with, by their path under the room's origin. */
 async function threeFiles(): Promise<ReadonlyMap<string, ServedFile>> {
-	const files = await filesNamed(THREE_FOLDER, THREE_FILES);
-	return new Map([...files].map(([name, file]) => [`${THREE_PATH}${name}`, file]));
+	const build = await filesNamed(THREE_FOLDER, THREE_FILES);
+	const addons = await filesNamed(THREE_ADDONS_FOLDER, THREE_ADDON_FILES);
+	return new Map([
+		...[...build].map(([name, file]) => [`${THREE_PATH}${name}`, file] as const),
+		...[...addons].map(([name, file]) => [`${THREE_ADDONS}${name}`, file] as const)
+	]);
 }
 
 /** A request to the room's origin answered with the file it names, or as not found. */

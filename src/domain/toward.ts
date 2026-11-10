@@ -19,7 +19,7 @@ export const NO_PIXELS = 0;
 // How a share and pixels move, held at their bounds, and a value passing its ends with its curve, as a table of values
 // by name holds each (`MovingBy`)
 export const MOVES_AS_A_SHARE = { toward: shareToward };
-export const MOVES_AS_PIXELS = { toward: pixelsToward };
+export const MOVES_AS_PIXELS = { toward: amountToward };
 export const MOVES_WITH_THE_CURVE = { toward: between };
 
 /** The values named, and no other, each `progress` of the way from where it stood to where it goes, as it moves. */
@@ -71,9 +71,10 @@ export function shareToward(start: number, end: number, progress: number): Fract
 }
 
 /**
- * Pixels `progress` of the way from one length to another, held between the two however far past its ends a curve
- * takes them, as only places, scales and angles bounce: so never below none.
+ * An amount of none or more — pixels, an eye's opening, a brightness — `progress` of the way from one to another, held
+ * between the two however far past its ends a curve takes them, as only places, scales and angles bounce: so never
+ * below none.
  */
-export function pixelsToward(start: number, end: number, progress: number): number {
+export function amountToward(start: number, end: number, progress: number): number {
 	return Math.min(Math.max(start, end), Math.max(Math.min(start, end), between(start, end, progress)));
 }

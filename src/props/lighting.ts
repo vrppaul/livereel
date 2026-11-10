@@ -12,6 +12,9 @@
  *
  * Everything is handed in the room, in three's axes, as it stands while the look does: each thing carries the room
  * into the eye's own space that sees it (`DrawnThing` in `src/props/thing.ts`), so the eye moving moves none of it.
+ *
+ * Light brighter than the page's white, a glint off the window's metal or glass or off a thing, may glow round itself,
+ * as a lens blooms (`theme.bloom`): none in livereel's own look either.
  */
 import { type Size, frameScaleOf } from '../domain/geometry.ts';
 import {
@@ -106,6 +109,22 @@ export interface DrawnLighting {
 	readonly softBoxesReach: number;
 }
 
+/**
+ * The glow the room draws round a frame's brightest light, once over the light its exposures gathered, as a lens
+ * blooms: how strong, as three's bloom takes its strength, which names no share of the light, its glow gathered from
+ * several spreads of the light added up; how far it spreads, from 0, nearest, to 1, widest, the same share of the
+ * frame however large it is shot; and the light it glows round, past which alone light blooms, in shares of the
+ * page's white.
+ */
+export interface DrawnBloom {
+	readonly strength: number;
+	readonly radius: number;
+	readonly threshold: number;
+}
+
+// Light brighter than the page's own white alone blooms: the glints on the window's edges, its glass and a film's
+// things, never a page's letters and buttons, which must be read (the reference promo's threshold)
+const BRIGHTER_THAN_THE_PAGE = 1.01;
 // How far a cone may open from its middle, in degrees: short of a quarter-turn, past which it is no cone
 const WIDEST_CONE = 90;
 // How far a soft box may span seen from the room's middle, in degrees: short of a half-turn, which no panel spans
@@ -201,6 +220,11 @@ export function drawnLighting(
 		softBoxes: softBoxes.map(drawnSoftBox),
 		softBoxesReach: Math.max(A_UNIT, ...softBoxes.map(cornerReachOf))
 	};
+}
+
+/** The glow round a frame's brightest light as the room draws it, of this strength and spread: none of no strength. */
+export function drawnBloom(strength: number, radius: number): DrawnBloom | null {
+	return strength > NONE ? { strength, radius, threshold: BRIGHTER_THAN_THE_PAGE } : null;
 }
 
 /** A light as the stage draws it, its spots in the frame's pixels, so many times a frame 1080 high's. */

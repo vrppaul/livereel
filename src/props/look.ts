@@ -4,14 +4,15 @@
  * sizes and weights and how they come up, where a title and a caption's ground stand, the accent of the marks, the
  * corners, edge and shadow of what stands on the ground as a pane — the page's window and its screen, the code's pane
  * and the agent's terminal alike — the body of the page's window in a room, the colours of the code by kind, the
- * cursor, and the agent's terminal and the ending card, their colours and sizes, and the lights and soft boxes of the
- * world a film's own things and the window's body stand in. A film opens on livereel's look with its theme's values,
- * and changes it by moves as it goes: in a play, a colour, a size or a shadow moves through the values between, a
- * font, which has none between, and the world's lights or its soft boxes, which a play changes whole, change half-way,
- * and the ground's layers fade into new ones; in a cut, at once. The stage is handed the whole look every frame and
- * sets each value in place of its token (`stage/tokens.css`), the ground's layers part by part; the world's light it
- * is handed as the room lights things by (`DrawnLighting` in `src/props/lighting.ts`), and the window's body with the
- * window (`DrawnBody` in `src/props/window.ts`).
+ * cursor, and the agent's terminal and the ending card, their colours and sizes, the lights and soft boxes of the
+ * world a film's own things and the window's body stand in, and the glow round its brightest light. A film opens on
+ * livereel's look with its theme's values, and changes it by moves as it goes: in a play, a colour, a size or a shadow
+ * moves through the values between, a font, which has none between, and the world's lights or its soft boxes, which a
+ * play changes whole, change half-way, and the ground's layers fade into new ones; in a cut, at once. The stage is
+ * handed the whole look every frame and sets each value in place of its token (`stage/tokens.css`), the ground's
+ * layers part by part; the world's light and its glow it is handed as the room draws them (`DrawnLighting` and
+ * `DrawnBloom` in `src/props/lighting.ts`), and the window's body with the window (`DrawnBody` in
+ * `src/props/window.ts`).
  *
  * One table, `LOOK_KINDS`, says of each value what a film may write for it, how the look holds it and how it moves, so
  * a theme is checked by it and a look moved by it, and livereel's own values stand in `LIVEREELS_LOOK`: a value of the
@@ -25,6 +26,7 @@ import {
 	A_COLOUR,
 	AN_OPAQUE_COLOUR,
 	A_FONT_FAMILY,
+	A_GLOW_STRENGTH,
 	A_GROUND_LAYERS,
 	A_LINE_HEIGHT,
 	A_PIXELS,
@@ -35,8 +37,7 @@ import {
 	namesGiven,
 	namesSetBy
 } from '../domain/handed.ts';
-import { between } from '../domain/toward.ts';
-import { namedToward, namesOf, pixelsToward, shareToward } from '../domain/toward.ts';
+import { amountToward, between, namedToward, namesOf, shareToward } from '../domain/toward.ts';
 import { A_SOFT_BOXES, A_WORLD_LIGHTS, type SoftBox, type WorldLight } from './lighting.ts';
 import { A_WORDS_WAY, type WordsWay } from './words.ts';
 
@@ -142,6 +143,13 @@ export interface Look {
 	 */
 	readonly lights: readonly WorldLight[];
 	readonly softBoxes: readonly SoftBox[];
+	/**
+	 * The glow a room draws round light brighter than the page's white, as a lens blooms (`DrawnBloom` in
+	 * `src/props/lighting.ts`): how strong, 0 none, as three's bloom takes its strength; and how far it spreads, from 0,
+	 * nearest, to 1, widest.
+	 */
+	readonly bloom: number;
+	readonly bloomRadius: number;
 }
 
 /**
@@ -210,15 +218,16 @@ const A_WEIGHT = new Plain(isWeight, 'a weight from 100 to 900');
 // A value checked here, never written in CSS a browser must read
 const CHECKED_HERE = null;
 // The kinds of the look's values: a colour mixed on its way, one three reads mixed with no alpha, as it reads none, a
-// number through the numbers between, pixels never below
-// none and a share between none and whole on a curve that passes its ends, a font or a way of words, which have none
-// between, changed half-way, each held as written; and the ground's layers, held whole as written and faded into new
+// number through the numbers between, pixels and a glow's strength never below none and a share between none and
+// whole on a curve that passes its ends, a font or a way of words, which have none between, changed half-way, each
+// held as written; and the ground's layers, held whole as written and faded into new
 // ones, those going under those coming. A font and the ground's layers are the film's CSS
 const COLOUR = new LookKind(A_COLOUR, asWritten, colourToward, CHECKED_HERE);
 const OPAQUE_COLOUR = new LookKind(AN_OPAQUE_COLOUR, asWritten, opaqueColourToward, CHECKED_HERE);
 const SIZE = new LookKind(A_SIZE, asWritten, between, CHECKED_HERE);
 const LINE_HEIGHT = new LookKind(A_LINE_HEIGHT, asWritten, between, CHECKED_HERE);
-const PIXELS = new LookKind(A_PIXELS, asWritten, pixelsToward, CHECKED_HERE);
+const PIXELS = new LookKind(A_PIXELS, asWritten, amountToward, CHECKED_HERE);
+const GLOW_STRENGTH = new LookKind(A_GLOW_STRENGTH, asWritten, amountToward, CHECKED_HERE);
 const SHARE = new LookKind(A_SHARE, asWritten, shareToward, CHECKED_HERE);
 const WEIGHT = new LookKind(A_WEIGHT, asWritten, between, CHECKED_HERE);
 const FAMILY = new LookKind(A_FONT_FAMILY, asWritten, halfWay, 'font family');
@@ -286,7 +295,9 @@ export const LOOK_KINDS: { readonly [Name in keyof Look]: LookKind<Written<Look[
 	cursorEdge: COLOUR,
 	words: WAY_OF_WORDS,
 	lights: LIGHTS,
-	softBoxes: SOFT_BOXES
+	softBoxes: SOFT_BOXES,
+	bloom: GLOW_STRENGTH,
+	bloomRadius: SHARE
 };
 
 /** livereel's own look: a dark ground lit toward its top middle, light words, an amber accent. */
@@ -339,7 +350,9 @@ export const LIVEREELS_LOOK: Look = {
 	cursorEdge: '#fff',
 	words: 'rise',
 	lights: NONE_PLACED,
-	softBoxes: NONE_PLACED
+	softBoxes: NONE_PLACED,
+	bloom: 0,
+	bloomRadius: 0.4
 };
 
 const LOOK_NAMES = namesOf(LOOK_KINDS);
