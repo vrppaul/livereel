@@ -17,8 +17,6 @@ import {
 	GROUPED_FORM,
 	type GroupedScript,
 	type HideScript,
-	IN_PLACE_SHOW_FORM,
-	type InPlaceShowScript,
 	NAMED_FORM,
 	type NamedScript,
 	type ShownKind,
@@ -30,6 +28,7 @@ import {
 	objectShow
 } from './object.ts';
 import { NO_AIR, NO_PLACE, ONE_BLOCK, cameraOverThePicture, sourceOf } from './source.ts';
+import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
 
 /**
  * How a lens comes: how many times larger it shows the page than the camera does, how wide it is across, in pixels of a

@@ -60,12 +60,23 @@
 						<div class="words note-words" data-part="words"></div>
 					</div>
 				</div>
-				<!-- The objects on the frame, each made from its content's template below, in the scene's order, on the layer the scene gives it, one standing in another laid in that one's element; and those pushed off past the frame's edge while they go -->
+				<!-- The objects on the frame, each made from its content's template below, in the scene's order; and those pushed off past the frame's edge while they go -->
 				<div class="objects" data-scene="objects"></div>
 				<div class="objects" data-scene="leaving"></div>
+				<!-- Over every object, a caption on the ground that darkens the frame's edge under it, its words, and over them a place keys stand in, as tall as the words; and keys, the caps of a shortcut, over the caption, laid in its place over its words while it stands at the frame's foot. Their figure, what a way of livereel's brings, stands in the part the way is drawn on, `way` -->
+				<div class="caption" data-prop="caption">
+					<div class="ground"></div>
+					<div class="foot">
+						<div class="way" data-part="way"><div class="words" data-part="words"></div></div>
+						<div class="over-the-words" data-part="over-the-words"></div>
+					</div>
+				</div>
+				<div class="keys" data-prop="keys">
+					<div class="way" data-part="way"><div class="caps" data-part="caps"></div></div>
+				</div>
 			</div>
 		</div>
-		<!-- An object, by what it shows: a title's words, on a ground of their own over its box where they have one; a pane of code; the agent's terminal; the ending card, its lines on the frame's ground; a caption on the ground that darkens the frame's edge under it, and a place over its words for the keys; the caps of a shortcut. Its figure, what a way of livereel's brings, stands in the part the way is drawn on, `way` -->
+		<!-- An object, by what it shows: a title's words, on a ground of their own over its box where they have one; a pane of code; the agent's terminal; the ending card, its lines on the frame's ground. Its figure, what a way of livereel's brings, stands in the part the way is drawn on, `way` -->
 		<template data-kind="title">
 			<div class="object">
 				<div class="content title" data-part="content">
@@ -112,24 +123,6 @@
 							<div class="command"><span class="prompt">&gt;</span><span data-part="command"></span></div>
 						</div>
 					</div>
-				</div>
-			</div>
-		</template>
-		<template data-kind="caption">
-			<div class="object">
-				<div class="content caption" data-part="content">
-					<div class="ground"></div>
-					<div class="foot">
-						<div class="over-the-words" data-part="over-the-words"></div>
-						<div class="way" data-part="way"><div class="words" data-part="words"></div></div>
-					</div>
-				</div>
-			</div>
-		</template>
-		<template data-kind="keys">
-			<div class="object">
-				<div class="content keys" data-part="content">
-					<div class="way" data-part="way"><div class="caps" data-part="caps"></div></div>
 				</div>
 			</div>
 		</template>

@@ -1,6 +1,6 @@
 /**
- * How an object comes up in its place or goes from it in a way of livereel's, whatever it shows, in place of the way
- * what it shows comes up of itself — words one after another, lines of code, the terminal growing, the card and keys
+ * How an object, whatever it shows, a caption or keys comes up in its place or goes from it in a way of livereel's, in
+ * place of the way what it shows comes up of itself — words one after another, lines of code, the terminal growing, the card and keys
  * rising: faded in; out from behind an edge of its figure, as from under a mask, out of nothing; wiped in from an edge;
  * opened from the middle of its box, as an iris; grown from the middle of its box. An object goes in a way as it came
  * in one, the way run back: a mask back behind its edge, a wipe back to its edge.
@@ -13,10 +13,22 @@
  * shadow, comes with it. The cut stands where the figure stands whole, however far the figure is shifted: it is moved
  * back by the shift here, as the stage cuts the figure in its own place, which the shift carries with it. A way that
  * cuts the figure has its shadow come as strong as the way has come, so the cut, which crosses the shadow with a hard
- * line, crosses a faint one. An object standing whole is drawn on no way at all.
+ * line, crosses a faint one. An object standing whole is drawn on no way at all. How far a figure's points move on its
+ * way is counted here too, for the motion blur, alike for an object and for what lies over the frame.
  */
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
-import { type FrameSide, MIDDLE_SHARE, type Point, type PointMoved, type Size } from '../domain/geometry.ts';
+import {
+	CORNER_SHARES,
+	type FrameSide,
+	MIDDLE_SHARE,
+	type Point,
+	type PointMoved,
+	type Size,
+	UNMOVED,
+	boxOf,
+	distanceBetween,
+	pointAt
+} from '../domain/geometry.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
 import { acrossFrom } from '../domain/place.ts';
 
@@ -204,11 +216,46 @@ function onItsWayAt(way: Way, progress: number): OnItsWay | null {
 }
 
 /**
+ * The points of a figure that move from where it stood on its way to where it stands, in shares of its box of a size:
+ * each corner, as its way shifts and grows it and as what it shows moves in its box by `moved`, and a point on each
+ * side of its cut.
+ */
+export function figureMoved(start: WayCome, end: WayCome, box: Size, moved: Point): readonly PointMoved[] {
+	const startWay = alongItsWay(start.way, presentShare(start));
+	const endWay = alongItsWay(end.way, presentShare(end));
+	return [
+		...CORNER_SHARES.map((corner) => ({
+			start: figurePointOn(startWay, corner),
+			end: movedBy(figurePointOn(endWay, corner), moved)
+		})),
+		...cutMoved(start, end, box)
+	];
+}
+
+/**
+ * How far the figure of what lies over the whole frame, a caption or keys, moves on the frame from where it stood on
+ * its way to where it stands, in the frame's pixels: the farthest any of its points goes.
+ */
+export function figureShiftOver(start: WayCome, end: WayCome, frame: Size): number {
+	const whole = boxOf(frame);
+	return Math.max(
+		...figureMoved(start, end, frame, UNMOVED).map((point) =>
+			distanceBetween(pointAt(whole, point.start), pointAt(whole, point.end))
+		)
+	);
+}
+
+/** A point moved so far, in shares of a box. */
+function movedBy(point: Point, moved: Point): Point {
+	return { left: point.left + moved.left, top: point.top + moved.top };
+}
+
+/**
  * Where a point of a figure, in shares of its box, stands on its way: shifted and grown about the box's middle as far
  * as the way has come, or where it stands whole on none. The shift is counted in shares of the box alone, short of the
  * reach past it the stage draws the shift over, as far as a shadow falls.
  */
-export function figurePointOn(onItsWay: OnItsWay | null, point: Point): Point {
+function figurePointOn(onItsWay: OnItsWay | null, point: Point): Point {
 	const way = onItsWay ?? AS_IT_STANDS;
 	return {
 		left: MIDDLE_SHARE.left + (point.left - MIDDLE_SHARE.left) * way.scale + way.shift.across,
@@ -223,7 +270,7 @@ export function figurePointOn(onItsWay: OnItsWay | null, point: Point): Point {
  * or one in place of another. A mask's cut stands still as its figure rises out of it; a wipe's edge and an iris's ring
  * move over a figure that stands.
  */
-export function cutMoved(start: WayCome, end: WayCome, box: Size): readonly PointMoved[] {
+function cutMoved(start: WayCome, end: WayCome, box: Size): readonly PointMoved[] {
 	const startWay = onItsWayAt(start.way, Math.min(presentShare(start), END_OF_WAY));
 	const endWay = onItsWayAt(end.way, Math.min(presentShare(end), END_OF_WAY));
 	const startCut = startWay?.cut ?? null;

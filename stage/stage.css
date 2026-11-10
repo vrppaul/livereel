@@ -532,14 +532,13 @@ body {
 	pointer-events: none;
 }
 
-/* An object: its box on the frame, in the frame's pixels, on its layer: one on a higher layer stands over every object on a lower, standing or pushed off; as much of it showing as what it stands in lets */
+/* An object: its box on the frame, in the frame's pixels; as much of it showing as what it stands in lets */
 .object {
 	position: absolute;
 	left: calc(var(--left) * 1px);
 	top: calc(var(--top) * 1px);
 	width: calc(var(--width) * 1px);
 	height: calc(var(--height) * 1px);
-	z-index: var(--layer);
 	opacity: var(--held);
 }
 
@@ -783,7 +782,19 @@ body {
 	opacity: calc(var(--caret) * clamp(0, 2 - (var(--typed) - var(--letter)), 1));
 }
 
-/* A caption in its object, over the whole frame: words that rise out of a blur over the frame's foot, on a ground that darkens it, and sink as they go */
+/* A caption and keys, over the whole frame and over every object, keys laid after the caption so they stand over it: sized in pixels of a frame the stage's look was made on and every length of each scaled to the frame shot, as what an object shows is, the frame's size written out as a surface's is; the page is clicked through them */
+.caption,
+.keys {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: calc(var(--frame-width) * 1px / var(--frame-scale));
+	height: calc(var(--frame-height) * 1px / var(--frame-scale));
+	zoom: var(--frame-scale);
+	pointer-events: none;
+}
+
+/* A caption, over the whole frame: words that rise out of a blur over the frame's foot, on a ground that darkens it, and sink as they go */
 .caption {
 	--word-rise: 22px;
 	--word-blur: 10px;
@@ -809,25 +820,10 @@ body {
 	bottom: var(--frame-edge-room);
 }
 
-/* Keys over a caption's words: their object over the place, their caps up off the words' foot as far as the caption has come, by the words' height and a gap */
+/* The place over a caption's words keys are laid in, as tall as the words, laid after them so the keys stand over them */
 .caption .over-the-words {
 	position: absolute;
 	inset: 0;
-}
-
-.over-the-words > .object {
-	left: 0;
-	top: 0;
-	width: 100%;
-	height: 100%;
-}
-
-.over-the-words .content.keys {
-	top: auto;
-	bottom: calc(var(--clearing) * (100% + var(--keys-gap-over-words)));
-	width: 100%;
-	height: auto;
-	zoom: 1;
 }
 
 /* A caption's words stand at the foot's start, as wide as their one line, or as wide as the foot where they break into more */
@@ -1207,7 +1203,7 @@ body {
 	opacity: var(--caret);
 }
 
-/* A title, code or the terminal turned away shows the eye its back: its ground blank, a title card's or a pane's, and words on no ground nothing, never what it shows mirrored; a piece of the page, a blank card of the screen's ground (its rule stands after the piece's own, below). The card, a caption and keys never turn */
+/* A title, code or the terminal turned away shows the eye its back: its ground blank, a title card's or a pane's, and words on no ground nothing, never what it shows mirrored; a piece of the page, a blank card of the screen's ground (its rule stands after the piece's own, below). The card never turns */
 .object[data-face='back'] .title .words,
 .object[data-face='back'] .pane > * {
 	visibility: hidden;
@@ -1346,7 +1342,7 @@ body {
 	border-radius: var(--outline-corner);
 }
 
-/* Keys in their object, over the whole frame: the caps of a shortcut at the frame's foot, rising as they come; over a caption's words they stand in its place for them */
+/* Keys, over the whole frame: the caps of a shortcut at the frame's foot, rising as they come; over a caption's words they stand in its place for them */
 .keys {
 	--keys-rise: 16px;
 	--keys-gap-over-words: 28px;
@@ -1374,7 +1370,15 @@ body {
 	transform: translateY(calc((1 - var(--shown)) * var(--keys-rise)));
 }
 
-/* Over a caption's words the caps stand where their content does, which the caption's place for them lifts */
+/* Keys over a caption's words, laid in its place over them, its whole width: their caps up off the words' foot as far as the caption has come, by the words' height and a gap, already scaled to the frame as the caption is; the caps stand where the keys do, which the place lifts */
+.over-the-words > .keys {
+	top: auto;
+	bottom: calc(var(--clearing) * (100% + var(--keys-gap-over-words)));
+	width: 100%;
+	height: auto;
+	zoom: 1;
+}
+
 .over-the-words .keys .way {
 	position: static;
 }

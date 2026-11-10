@@ -1,17 +1,18 @@
 /**
  * An object on the frame: something that stands in a box, grows, comes near, turns, comes up and goes, and shows what
- * it holds, its content — a title's words, a pane of code, an agent's terminal, the ending card, a caption, the keys
- * of a shortcut, a piece of the page, an outline round a part of it, a lens over it, or a thing of the film's own
- * three.js (`src/props/thing.ts`), which the room draws and the stage's markup does not. Where it stands, how it stands
- * about its middle (`src/domain/stance.ts`), how it stands out (`src/props/effects.ts`) and how far it has come and
- * gone are the object's, alike for every content, so a move that carries, leans, sets apart or slides one is written
- * once (`src/moves/object.ts`); what it shows, how that comes up in its box and what lights in it are its content's.
- * Each of where it stands, which way it faces, how it stands out and what it shows is set by its own moves, so moves
- * of one object that set different values share a step.
+ * it holds, its content — a title's words, a pane of code, an agent's terminal, the ending card, a piece of the page,
+ * an outline round a part of it, a lens over it, or a thing of the film's own three.js (`src/props/thing.ts`), which
+ * the room draws and the stage's markup does not. Where it stands, how it stands about its middle
+ * (`src/domain/stance.ts`), how it stands out (`src/props/effects.ts`) and how far it has come and gone are the
+ * object's, alike for every content, so a move that carries, leans, sets apart or slides one is written once
+ * (`src/moves/object.ts`); what it shows, how that comes up in its box and what lights in it are its content's. Each of
+ * where it stands, which way it faces, how it stands out and what it shows is set by its own moves, so moves of one
+ * object that set different values share a step. A caption and keys are no objects: they lie over the frame alone, over
+ * every object, props of the scene of their own (`src/props/caption.ts`, `src/props/keys.ts`).
  *
  * An object comes up and goes in its own way, as what it shows comes up of itself, or in a way of livereel's, faded,
- * masked, wiped, opened or grown (`src/props/way.ts`): then its figure — its words, its pane, the card's lines, the
- * caps — stands whole and comes as the way has it, while a ground it stands on comes in its own way.
+ * masked, wiped, opened or grown (`src/props/way.ts`): then its figure — its words, its pane, the card's lines —
+ * stands whole and comes as the way has it, while a ground it stands on comes in its own way.
  *
  * An object stands on the frame, in the world, inside the page's window, on the page in it, or in a group of objects
  * (`src/props/group.ts`). On the frame, as a caption does, it rides with the eye (`src/domain/eye.ts`) and is seen as
@@ -25,15 +26,11 @@
  * its box is in the group's pixels, and the group's stance carries its own, so it is drawn on the frame as the two make
  * one matrix, and shows as far as the group has not gone. The window and the page are one each, and never go; a group
  * goes with what stands in it.
- * Keys over a caption's words are only drawn over them, laid out by the caption, as only the page knows how tall the
- * words stand; they stand on the frame, and keep standing when the caption goes.
  *
- * What an object shows sets the layer it is drawn on: a caption stands over every other object, as words said over a
- * film do, and keys over the caption's ground; within a layer the one that came last stands over the rest, but the
- * objects of a group stand together where the first of them came, ordered as the film names: by each one's zIndex, the
- * higher over the lower and as they came where it is alike, so a stack's layers stand as the film lays them however
- * the group leans; or, in a group ordered by depth, the farther behind the nearer, so a ring of cards turning shows
- * the near ones over the far.
+ * The object that came last stands over the rest, but the objects of a group stand together where the first of them
+ * came, ordered as the film names: by each one's zIndex, the higher over the lower and as they came where it is alike,
+ * so a stack's layers stand as the film lays them however the group leans; or, in a group ordered by depth, the farther
+ * behind the nearer, so a ring of cards turning shows the near ones over the far.
  *
  * What a piece drawn from the page's picture, or a lens, shows of the page is the page as it stands; a piece that holds
  * its picture shows it as it stood as the piece was lifted. Each shows the holes other pieces leave in it
@@ -85,17 +82,15 @@ import {
 	pointOnTheFrame
 } from '../domain/placement.ts';
 import { type Face, type Stance, faceOf, transformOf } from '../domain/stance.ts';
-import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
 import { type Code, type DrawnCode, drawnCode, scrolledShareOf } from './code.ts';
 import { type DrawnEffects, type Effects, type Melting, drawnEffects, drawnMelt } from './effects.ts';
 import { type DrawnEnding, type Ending, drawnEnding } from './ending.ts';
 import { type Groups, groupShare } from './group.ts';
-import { type CaptionStanding, type DrawnKeys, type Keys, drawnKeys, standOver } from './keys.ts';
 import { type DrawnLens, type Lens, drawnLens, lensFit, pageMovedIn } from './lens.ts';
 import type { Look } from './look.ts';
 import { type DrawnOutline, type Outline, drawnOutline } from './outline.ts';
 import { type DrawnHole, type DrawnPiece, type Piece, drawnPiece, pageFitOfPiece } from './piece.ts';
-import { type OnItsWay, type Way, alongItsWay, cutMoved, figurePointOn, presencesIn, presentShare } from './way.ts';
+import { type OnItsWay, type Way, alongItsWay, figureMoved, presencesIn, presentShare } from './way.ts';
 import type { Screen } from './screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './terminal.ts';
 import { type DrawnThing, type Thing, drawnThing } from './thing.ts';
@@ -114,15 +109,14 @@ export const AN_INSIDE: Kind<Inside> = new OneOf(
 );
 
 /**
- * What stands round an object as it is drawn: the caption standing on the frame, if any, the window's screen, the
- * frame, which the eye sees it before, the camera the page is seen by, which a lens shows it past and frames what lies
- * on the page, the groups standing, how far each has gone, the holes pieces of the page leave on the screen, which
- * what shows the page shows, how sharp the eye sees as the frame is drawn, and the pictures of parts of the screen the
- * stage holds sharper than the page's, which a piece drawn past it is drawn from.
+ * What stands round an object as it is drawn: the window's screen, the frame, which the eye sees it before, the camera
+ * the page is seen by, which a lens shows it past and frames what lies on the page, the groups standing, how far each
+ * has gone, the holes pieces of the page leave on the screen, which what shows the page shows, how sharp the eye sees
+ * as the frame is drawn, and the pictures of parts of the screen the stage holds sharper than the page's, which a piece
+ * drawn past it is drawn from.
  */
 export interface Surroundings extends Holders {
 	readonly groups: Groups;
-	readonly caption: CaptionStanding | null;
 	readonly screen: Screen;
 	readonly frame: Size;
 	readonly holes: readonly DrawnHole[];
@@ -131,20 +125,11 @@ export interface Surroundings extends Holders {
 }
 
 /** What an object shows. */
-export type Content = TitleWords | Code | Terminal | Ending | Caption | Keys | Piece | Outline | Lens | Thing;
+export type Content = TitleWords | Code | Terminal | Ending | Piece | Outline | Lens | Thing;
 
 /** What an object shows, as the stage draws it. */
 export type DrawnContent =
-	| DrawnTitleWords
-	| DrawnCode
-	| DrawnTerminal
-	| DrawnEnding
-	| DrawnCaption
-	| DrawnKeys
-	| DrawnPiece
-	| DrawnOutline
-	| DrawnLens
-	| DrawnThing;
+	DrawnTitleWords | DrawnCode | DrawnTerminal | DrawnEnding | DrawnPiece | DrawnOutline | DrawnLens | DrawnThing;
 
 /**
  * An object: what it stands inside, its box in the pixels of that from its top left corner, how it stands about the
@@ -165,18 +150,14 @@ export type Objects = ReadonlyMap<ObjectName, FrameObject>;
 
 /**
  * An object as the stage draws it: where it is placed, as the stage draws a placement (`src/domain/placement.ts`); the
- * name it is known by, the object whose words it is laid over by that one — keys over a caption's, its box then the
- * caption's to lay out — or none, the side of it the eye sees in what it is laid in, the layer it is drawn on, the
- * higher over the lower, how much of it what it stands in lets show, from 0 to 1, how far its figure's way has come,
- * none where it is on no way, how it stands out, none where it stands out in no way, how it melts toward a side of its
- * figure, none where it melts none, how soft the eye's focus draws it, in pixels of a frame 1080 high of its box before
- * its matrix, none where sharp, and its content as drawn.
+ * name it is known by, the side of it the eye sees in what it is laid in, how much of it what it stands in lets show,
+ * from 0 to 1, how far its figure's way has come, none where it is on no way, how it stands out, none where it stands
+ * out in no way, how it melts toward a side of its figure, none where it melts none, how soft the eye's focus draws it,
+ * in pixels of a frame 1080 high of its box before its matrix, none where sharp, and its content as drawn.
  */
 export interface DrawnObject extends DrawnPlacement {
 	readonly name: ObjectName;
-	readonly over: ObjectName | null;
 	readonly face: Face;
-	readonly layer: number;
 	readonly held: number;
 	readonly onItsWay: OnItsWay | null;
 	readonly effects: DrawnEffects | null;
@@ -188,19 +169,6 @@ export interface DrawnObject extends DrawnPlacement {
 /** An object and the name it is known by. */
 export type ObjectEntry = readonly [ObjectName, FrameObject];
 
-// The layer an object is drawn on by what it shows: a caption over every other, keys over the caption's ground
-const LAYER_OF: { readonly [Kind in Content['kind']]: number } = {
-	title: 0,
-	code: 0,
-	terminal: 0,
-	ending: 0,
-	caption: 1,
-	keys: 2,
-	piece: 0,
-	outline: 0,
-	lens: 0,
-	thing: 0
-};
 // Where an object in no group stands in a group's order: anywhere, as its place among objects is its own; and the
 // zIndex of one in a group the film names none for, so all such are drawn as they came
 const NO_GROUP_ORDER = 0;
@@ -235,14 +203,9 @@ export function frameShiftOf(start: ObjectThen, end: ObjectThen, frame: Size): n
 	const startThen = { ...start, standing: placedInItsHolder(start.object, start.holders, frame) };
 	const endThen = { ...end, standing: placedInItsHolder(end.object, end.holders, frame) };
 	const moved = shownMoved(startThen, endThen, frame);
-	const startWay = alongItsWay(start.object.way, presentShare(start.object));
-	const endWay = alongItsWay(end.object.way, presentShare(end.object));
 	const points: readonly PointMoved[] = [
-		...CORNER_SHARES.flatMap((corner) => [
-			{ start: corner, end: corner },
-			{ start: figurePointOn(startWay, corner), end: movedBy(figurePointOn(endWay, corner), moved) }
-		]),
-		...cutMoved(start.object, end.object, endThen.standing.laid)
+		...CORNER_SHARES.map((corner) => ({ start: corner, end: corner })),
+		...figureMoved(start.object, end.object, endThen.standing.laid, moved)
 	];
 	return Math.max(
 		...points.map((point) =>
@@ -268,8 +231,6 @@ function shownMoved(start: StandingThen, end: StandingThen, frame: Size): Point 
 		case 'title':
 		case 'terminal':
 		case 'ending':
-		case 'caption':
-		case 'keys':
 		case 'piece':
 		case 'outline':
 		case 'thing':
@@ -288,11 +249,6 @@ function pageMovedUnder(lens: Lens, start: StandingThen, end: StandingThen, fram
 	const endMiddle = shareOnTheFrame(end.standing, MIDDLE_SHARE);
 	const seen = { start: start.holders.camera, end: end.holders.camera, frame };
 	return pageMovedIn(lens, end.standing.laid, startMiddle, endMiddle, seen);
-}
-
-/** A point moved so far, in shares of a box. */
-function movedBy(point: Point, moved: Point): Point {
-	return { left: point.left + moved.left, top: point.top + moved.top };
 }
 
 /**
@@ -368,15 +324,13 @@ function drawnPointOf(standing: Placed, share: Point): Point {
 export function drawnObject(name: ObjectName, object: FrameObject, moment: number, around: Surroundings): DrawnObject {
 	const standing = placedInItsHolder(object, around, around.frame);
 	const face = faceOf(standing.placing);
-	const layer = LAYER_OF[object.content.kind];
 	const held = heldIn(object, around);
 	const onItsWay = alongItsWay(object.way, presentShare(object));
 	const content = drawnContent(name, object, standing, moment, around);
-	const over = drawnOver(object, around.caption);
 	const effects = drawnEffects(object);
 	const melt = drawnMelt(object);
 	const outOfFocus = outOfFocusIn(standing, around);
-	const laid = { ...drawnPlacement(standing), name, over, face, layer, held };
+	const laid = { ...drawnPlacement(standing), name, face, held };
 	return { ...laid, onItsWay, effects, melt, outOfFocus, content };
 }
 
@@ -536,17 +490,10 @@ function pageFitOf(object: FrameObject, laid: Box, camera: Camera, frame: Size):
 		case 'code':
 		case 'terminal':
 		case 'ending':
-		case 'caption':
-		case 'keys':
 		case 'outline':
 		case 'thing':
 			return null;
 	}
-}
-
-/** The object whose words an object is laid over: keys over a caption's standing at the frame's foot; else none. */
-function drawnOver(object: FrameObject, caption: CaptionStanding | null): ObjectName | null {
-	return object.content.kind === 'keys' && standOver(caption) ? caption.name : null;
 }
 
 /**
@@ -570,9 +517,9 @@ function heldIn(object: FrameObject, around: Surroundings): number {
 
 /**
  * What an object of a name shows, standing as it does, drawn as far as its ground and its figure have come up and gone
- * in the way it comes, at a moment of the film, among what stands round it: the caption standing on the frame, if any,
- * which keys rise clear of; the camera, which a lens shows the page past; and the holes on the screen, which a piece or
- * a lens shows but for the piece's own. What has no ground of its own is its figure alone.
+ * in the way it comes, at a moment of the film, among what stands round it: the camera, which a lens shows the page
+ * past, and the holes on the screen, which a piece or a lens shows but for the piece's own. What has no ground of its
+ * own is its figure alone.
  */
 function drawnContent(
 	name: ObjectName,
@@ -584,7 +531,6 @@ function drawnContent(
 	const content = object.content;
 	const presences = presencesIn(object.way, object);
 	const figure = presences.figure;
-	const caption = around.caption;
 	switch (content.kind) {
 		case 'title':
 			return drawnTitleWords(content, presences, moment);
@@ -594,10 +540,6 @@ function drawnContent(
 			return drawnTerminal(content, moment, presentShare(figure));
 		case 'ending':
 			return drawnEnding(content, object.way, object);
-		case 'caption':
-			return drawnCaption(content, presences, moment);
-		case 'keys':
-			return drawnKeys(content, presentShare(figure), caption);
 		case 'piece':
 			return drawnPiece(
 				content,
@@ -617,20 +559,6 @@ function drawnContent(
 			return drawnThing(content, standing, object.scale, presentShare(figure), around);
 		}
 	}
-}
-
-/**
- * The caption among the objects standing on the frame, as keys find it, as far as it has come up and gone, as its
- * ground has, which the keys rise clear of and which comes in its own way whatever way its words come; or none, its
- * moves letting one alone stand.
- */
-export function captionAmong(standing: Objects): CaptionStanding | null {
-	for (const [name, object] of standing) {
-		if (object.content.kind === 'caption') {
-			return { name, caption: object.content, shown: object.shown, gone: object.gone };
-		}
-	}
-	return null;
 }
 
 /** The holes on the screen other objects than one of a name leave: a piece stands over the page in place of its own. */

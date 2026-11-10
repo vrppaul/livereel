@@ -44,8 +44,6 @@ import {
 	GROUPED_FORM,
 	type GroupedScript,
 	type HideScript,
-	IN_PLACE_SHOW_FORM,
-	type InPlaceShowScript,
 	NAMED_FORM,
 	type NamedScript,
 	type ObjectLeanScript,
@@ -63,6 +61,7 @@ import {
 	objectTo
 } from './object.ts';
 import { NO_AIR, NO_PLACE, ONE_BLOCK, cameraOverThePicture, sourceOf } from './source.ts';
+import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
 
 /**
  * What fills the part of the screen a piece is lifted off: the ground the page draws behind its block, `'page'`, where

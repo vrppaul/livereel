@@ -1,37 +1,42 @@
 /**
- * A caption, what an object shows (`src/props/object.ts`) over the whole frame: words at the frame's foot, or at its
- * top where the format puts them there, on a ground that darkens the frame's edge under them. Where it stands is the
- * format's, read as the caption comes up, so one film can caption a square at its top and a wide frame at its foot.
+ * A caption, a prop of the scene over the whole frame: words at the frame's foot, or at its top where the format puts
+ * them there, on a ground that darkens the frame's edge under them. It lies over the frame alone, over every object,
+ * riding with the eye wherever it moves, one at a time and known by no name. Where it stands is the format's, read as
+ * the caption comes up, so one film can caption a square at its top and a wide frame at its foot. It comes up and goes
+ * in its own way, its words one after another, or in a way of livereel's (`src/props/way.ts`), which brings its words
+ * whole while its ground comes in its own way.
  */
 import type { CaptionPlace, Format } from '../domain/format.ts';
-import type { Presences } from './way.ts';
+import { type OnItsWay, type WayCome, alongItsWay, presencesIn, presentShare } from './way.ts';
 import { type ComingUp, type DrawnWords, type Said, drawnWordsOnGround } from './words.ts';
 
-/** A caption: what it says, the edge of the frame it stands at, and how its words come up, word by word or typed. */
-export interface Caption extends Said {
-	readonly kind: 'caption';
+/**
+ * A caption: what it says, the edge of the frame it stands at, how its words come up, word by word or typed, and how
+ * far it has come up and gone, in the way it comes.
+ */
+export interface Caption extends Said, WayCome {
 	readonly at: CaptionPlace;
 	readonly comingUp: ComingUp;
 }
 
-/** A caption as the stage draws it: its words, and the edge of the frame it stands at. */
+/** A caption as the stage draws it: its words, the edge of the frame it stands at, and its words' way, none standing. */
 export interface DrawnCaption extends DrawnWords {
-	readonly kind: 'caption';
 	readonly at: CaptionPlace;
+	readonly onItsWay: OnItsWay | null;
 }
 
 // A caption stands at the frame's foot where its format names no place
 const AT_THE_FOOT: CaptionPlace = 'bottom';
 
-/** A caption saying words, coming up as they do, at the edge of the frame its format puts it at. */
-export function captionOf(said: Said, comingUp: ComingUp, format: Format): Caption {
-	return { kind: 'caption', ...said, at: format.captionAt ?? AT_THE_FOOT, comingUp };
+/** The edge of the frame a format puts its captions at. */
+export function captionPlaceIn(format: Format): CaptionPlace {
+	return format.captionAt ?? AT_THE_FOOT;
 }
 
-/** A caption as the stage draws it at a moment of the film, as far as the object showing it stands. */
-export function drawnCaption(caption: Caption, presences: Presences, moment: number): DrawnCaption {
-	const words = drawnWordsOnGround(caption, caption.comingUp, presences, moment);
-	return { ...words, kind: caption.kind, at: caption.at };
+/** A caption as the stage draws it at a moment of the film, as far as it has come up and gone. */
+export function drawnCaption(caption: Caption, moment: number): DrawnCaption {
+	const words = drawnWordsOnGround(caption, caption.comingUp, presencesIn(caption.way, caption), moment);
+	return { ...words, at: caption.at, onItsWay: alongItsWay(caption.way, presentShare(caption)) };
 }
 
 /** Whether a caption stands at the frame's foot, where keys would stand under it. */

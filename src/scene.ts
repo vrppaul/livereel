@@ -5,10 +5,10 @@
  * A scene is plain values, never changed in place: a move's change hands back a scene with its own prop or object set,
  * and the take keeps the one standing. The film's look and the world's are props too, changed by moves as any other. A
  * prop is one of livereel's, each in a slot of its own; an object (`src/props/object.ts`) is the film's, known by a
- * name it gives or its kind's own, so several of a kind stand at once, drawn on the layer what each shows sets and,
- * within it, in the order they first came, the last over the rest: one shown again in place of itself keeps its place.
- * One pushed off by another of its name sliding in is held apart while it goes, so the two stand at once, and drawn
- * over every object standing on its layer. A group of objects (`src/props/group.ts`) is known by a name of its own,
+ * name it gives or its kind's own, so several of a kind stand at once, drawn in the order they first came, the last
+ * over the rest: one shown again in place of itself keeps its place. One pushed off by another of its name sliding in
+ * is held apart while it goes, so the two stand at once, and drawn over every object standing. A caption and keys lie
+ * over every object, keys over the caption, as the stage lays them. A group of objects (`src/props/group.ts`) is known by a name of its own,
  * and holds no more than how the objects in it stand together; they go with it. `drawn` works out everything the stage
  * needs from it — how far each word of a title, a caption or a callout and each line of code has come, the terminal's
  * spinner, how far keys rise clear of a caption, where a note's line meets the block it names on the frame, the hole a
@@ -44,9 +44,11 @@ import {
 import { namesOf } from './domain/toward.ts';
 import { LIVEREELS_SLAB } from './props/body.ts';
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
+import { type Caption, type DrawnCaption, drawnCaption } from './props/caption.ts';
 import type { Cursor } from './props/cursor.ts';
 import type { GroupName, Holders } from './domain/placement.ts';
 import type { Group, Groups } from './props/group.ts';
+import { type DrawnKeys, type Keys, drawnKeys } from './props/keys.ts';
 import { type DrawnLines, drawnHoles, drawnLines } from './props/lifted.ts';
 import type { Light } from './props/light.ts';
 import type { Look } from './props/look.ts';
@@ -58,7 +60,6 @@ import {
 	type ObjectThen,
 	type Objects,
 	type Surroundings,
-	captionAmong,
 	drawnObject,
 	frameShiftOf,
 	inDrawingOrder,
@@ -79,6 +80,7 @@ import {
 	pictureSweptBy,
 	sweepShift
 } from './props/screen.ts';
+import { figureShiftOver } from './props/way.ts';
 import { type DrawnWindow, type PageWindow, UNSHADED, drawnWindow } from './props/window.ts';
 import { type DrawnWorld, type WorldLook, drawnWorld } from './props/world.ts';
 
@@ -93,6 +95,8 @@ export interface PropStates {
 	pins: Pins | null;
 	cursor: Cursor | null;
 	note: Note | null;
+	caption: Caption | null;
+	keys: Keys | null;
 }
 
 export type PropName = keyof PropStates;
@@ -128,6 +132,8 @@ interface DrawnProps {
 	pins: DrawnPins | null;
 	cursor: Cursor | null;
 	note: DrawnNote | null;
+	caption: DrawnCaption | null;
+	keys: DrawnKeys | null;
 }
 
 /**
@@ -165,6 +171,8 @@ export function openingScene(format: Format, look: Look, world: WorldLook, focal
 		pins: null,
 		cursor: null,
 		note: null,
+		caption: null,
+		keys: null,
 		objects: new Map(),
 		leaving: new Map(),
 		groups: new Map(),
@@ -287,8 +295,9 @@ interface Between {
 const NOTHING_MOVES = 0;
 // How far what each prop draws moves on the frame between two moments, the compiler holding every prop to one: the
 // screen as the camera shows it, the window's edge, the band of light sweeping the screen, the light's box and the
-// cursor's tip on the screen, and a note's words beside the window and its line's end at its block, each where it
-// stands at both, a prop that comes or goes between them moving nowhere. The screen comes up in its place, and a
+// cursor's tip on the screen, a note's words beside the window and its line's end at its block, and the figure of a
+// caption and of keys as a way of livereel's shifts, grows and cuts it over the whole frame, each where it stands at
+// both, a prop that comes or goes between them moving nowhere. The screen comes up in its place, and a
 // callout and pins lie on the screen, moving only as far as it carries them, which the camera's measures. The look's
 // colours and ground change in place; the sizes it sets, of letters and margins, move words too, which is not counted;
 // the world's light and glow change only how what stands is lit
@@ -305,7 +314,11 @@ const FRAME_SHIFT_OF: { readonly [Name in PropName]: (between: Between) => numbe
 	pins: () => NOTHING_MOVES,
 	cursor: ({ start, end, seen }) =>
 		shiftOfBoth(start.cursor, end.cursor, (from, to) => screenPointShift(seen, from, to)),
-	note: ({ start, end, seen }) => shiftOfBoth(start.note, end.note, (from, to) => noteShift(from, to, seen))
+	note: ({ start, end, seen }) => shiftOfBoth(start.note, end.note, (from, to) => noteShift(from, to, seen)),
+	caption: ({ start, end, format }) =>
+		shiftOfBoth(start.caption, end.caption, (from, to) => figureShiftOver(from, to, format.frame)),
+	keys: ({ start, end, format }) =>
+		shiftOfBoth(start.keys, end.keys, (from, to) => figureShiftOver(from, to, format.frame))
 };
 const PROP_NAMES = namesOf(FRAME_SHIFT_OF);
 
@@ -391,7 +404,6 @@ export function drawn(
 	const holes = drawnHoles(everyObject);
 	const sharpness = sharpnessOf(camera, format.frame);
 	const around: Surroundings = {
-		caption: captionAmong(scene.objects),
 		screen: scene.screen,
 		frame: format.frame,
 		camera,
@@ -420,6 +432,8 @@ export function drawn(
 		pins: scene.pins === null ? null : drawnPins(scene.pins, camera, format.frame),
 		cursor: scene.cursor,
 		note: scene.note === null ? null : drawnNote(scene.note, camera, format.frame, moment),
+		caption: scene.caption === null ? null : drawnCaption(scene.caption, moment),
+		keys: scene.keys === null ? null : drawnKeys(scene.keys, scene.caption),
 		objects: drawnObjects(scene.objects, moment, around),
 		leaving: drawnObjects(scene.leaving, moment, around),
 		holes,

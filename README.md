@@ -204,7 +204,7 @@ and the moves of each part of the scene:
   `code.scrollTo(line)`,
   `code.hide({ toward, leave, edge })`; each move of a title or code takes `as` to name which
 - `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
-  whole frame where they come up, over every other object, the keys over the caption, one of each
+  whole frame where they come up, over every object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`, `screen.behind(page, { upright, within })`,
   `screen.sweep({ from, slant, round, width, crest })`
 - `terminal.open(title, { at, from, enter, edge, inside, group, zIndex })`, `terminal.type(strokes, { keyboard })`,

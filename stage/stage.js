@@ -465,6 +465,78 @@ class NoteDrawer {
 }
 
 /**
+ * A caption over the frame: its words at the edge of the frame it stands at, on the ground that darkens it, on their
+ * way as a way of livereel's has them; and over its words a place keys are laid in.
+ */
+class CaptionDrawer {
+	/** @param {Staged} root */
+	constructor(root) {
+		this.root = root;
+		/** The part its words stand in, which a way of livereel's is drawn on */
+		this.way = partOf(root, 'way');
+		/** @type {KeyedList<DrawnWords['words'][number]>} */
+		this.words = new KeyedList(partOf(root, 'words'), wordElement, wordDrawn);
+		/** Where keys stand over its words, as tall as the words, which the page lays out */
+		this.overTheWords = partOf(root, 'over-the-words');
+	}
+
+	/** @param {DrawnScene} scene */
+	draw(scene) {
+		const caption = scene.caption;
+		shown(this.root, caption !== null);
+		if (caption === null) {
+			this.words.clear();
+			return;
+		}
+		named(this.root, CAPTION_EDGE, caption.at);
+		numbered(this.root, { '--darkened': caption.ground, '--gone': caption.gone });
+		wordsDrawn(this.words, caption);
+		wayDrawn(this.way, caption.onItsWay);
+	}
+}
+
+/**
+ * Keys over the frame: the caps of a shortcut at the frame's foot, laid after the caption, so over it; or, where the
+ * scene has them over a caption's words, in the place over its words the caption's drawer it is handed holds, risen
+ * clear of them. Their caps stand on their way as a way of livereel's has them.
+ */
+class KeysDrawer {
+	/** @param {Staged} root @param {CaptionDrawer} caption */
+	constructor(root, caption) {
+		this.root = root;
+		/** Where the keys stand over no caption: where the markup lays them, after it */
+		this.home = found(root.parentElement, 'place for the keys');
+		this.caption = caption;
+		/** The part their caps stand in, which a way of livereel's is drawn on */
+		this.way = partOf(root, 'way');
+		/** @type {KeyedList<string>} */
+		this.caps = new KeyedList(partOf(root, 'caps'), capElement, drawnWithItsList);
+	}
+
+	/** @param {DrawnScene} scene */
+	draw(scene) {
+		const keys = scene.keys;
+		shown(this.root, keys !== null);
+		if (keys === null) {
+			this.caps.clear();
+			return;
+		}
+		laidLastIn(keys.overTheCaption ? this.caption.overTheWords : this.home, this.root);
+		this.caps.draw(keys.key, keys.caps);
+		numbered(this.root, { '--shown': keys.shown, '--clearing': keys.clearing });
+		wayDrawn(this.way, keys.onItsWay);
+	}
+}
+
+/**
+ * An element laid last in a holder, over what the holder lays before it, where it lies anywhere else.
+ * @param {Staged} holder @param {Staged} element
+ */
+function laidLastIn(holder, element) {
+	if (holder.lastElementChild !== element) holder.append(element);
+}
+
+/**
  * A list of the scene's drawn in a root of its own, each item by the name of the piece of the page it is of, laid out
  * anew only as those names change: the holes pieces leave on the screen, the lines they draw to their sources.
  * @template {{ readonly name: string }} Item
@@ -500,8 +572,7 @@ function drawnByName(list, items) {
 /**
  * The objects of a scene, those standing and those pushed off, each an element made from the template of what it shows
  * and kept by its list and name while it shows that. One on the frame is laid in its list's root, one inside the page's
- * window in the window's, keys the scene lays over a caption's words in the caption's place for them: in each, in the
- * scene's order, the last over the rest on its layer.
+ * window in the window's: in each, in the scene's order, the last over the rest.
  */
 class ObjectsDrawer {
 	/** @param {ObjectRoots} roots */
@@ -518,7 +589,8 @@ class ObjectsDrawer {
 			...scene.leaving.map((object) => this.stagedFor('leaving', object))
 		];
 		this.standing = new Map(staged.map((each) => [each.key, each.staged]));
-		const held = holdersOf(this.roots, staged);
+		/** @type {Map<Staged, Staged[]>} */
+		const held = new Map(Object.values(this.roots).map((root) => [root, []]));
 		for (const each of staged) heldBy(held, this.holderOf(each)).push(each.staged.element);
 		for (const [holder, elements] of held) {
 			if (!holdsInOrder(holder, elements)) holder.replaceChildren(...elements);
@@ -527,26 +599,17 @@ class ObjectsDrawer {
 	}
 
 	/**
-	 * The element an object is laid in: the place over the words of the object the scene lays it over, where it names
-	 * one; else its list's root where it stands on the frame, the window's where it stands inside it.
+	 * The element an object is laid in: its list's root where it stands on the frame, the window's where it stands
+	 * inside it.
 	 * @param {ObjectStaged} each @returns {Staged}
 	 */
 	holderOf(each) {
-		const over = each.object.over;
-		if (over !== null) return this.overTheWordsOf(over);
 		switch (each.object.laidIn) {
 			case 'frame':
 				return this.roots[each.list];
 			case 'window':
 				return this.roots.window;
 		}
-	}
-
-	/** The place over the words of the object of a name standing. @param {string} name */
-	overTheWordsOf(name) {
-		const place = this.standing.get(keyOf('objects', name))?.overTheWords ?? null;
-		if (place === null) throw new Error(`the scene lays an object over the words of the ${name}, which has none`);
-		return place;
 	}
 
 	/**
@@ -562,23 +625,21 @@ class ObjectsDrawer {
 	}
 }
 
-/** An object's element on the stage, made from the template of what it shows: its box, layer and angle set every frame. */
+/** An object's element on the stage, made from the template of what it shows: its box and angle set every frame. */
 class StagedObject {
 	/** @param {DrawnContent['kind']} kind */
 	constructor(kind) {
 		this.kind = kind;
 		this.element = madeFrom(kind);
 		this.content = CONTENT_DRAWERS[kind](partOf(this.element, 'content'));
-		/** The part its figure stands in — its words, its pane, the card's lines, the caps — a way of livereel's is drawn on */
+		/** The part its figure stands in — its words, its pane, the card's lines — a way of livereel's is drawn on */
 		this.way = partOf(this.element, 'way');
-		/** Where what stands over its words is laid, where it has words to stand over @type {Staged | null} */
-		this.overTheWords = overTheWordsIn(this.element);
 	}
 
 	/** @param {DrawnObject} object */
 	draw(object) {
 		placed(this.element, object.box);
-		numbered(this.element, { '--layer': object.layer, '--held': object.held });
+		numbered(this.element, { '--held': object.held });
 		transformed(this.element, object.transform);
 		this.element.setAttribute(FACE, object.face);
 		wayDrawn(this.way, object.onItsWay);
@@ -718,24 +779,6 @@ class CodeDrawer {
 	}
 }
 
-/** A caption in its object: its words at the edge of the frame it stands at, on the ground that darkens it. */
-class CaptionDrawer {
-	/** @param {Staged} element */
-	constructor(element) {
-		this.element = element;
-		/** @type {KeyedList<DrawnWords['words'][number]>} */
-		this.words = new KeyedList(partOf(element, 'words'), wordElement, wordDrawn);
-	}
-
-	/** @param {DrawnContent} content */
-	draw(content) {
-		const caption = ofKind(content, 'caption');
-		named(this.element, CAPTION_EDGE, caption.at);
-		numbered(this.element, { '--darkened': caption.ground, '--gone': caption.gone });
-		wordsDrawn(this.words, caption);
-	}
-}
-
 /**
  * A piece of the page in its object: the part of the page's picture over its source, or the picture of its source it
  * holds, as large as its box holds it, its corners as round as the film names, and the holes other pieces leave there,
@@ -813,23 +856,6 @@ class ThingDrawer {
 	}
 }
 
-/** Keys in their object: the caps of a shortcut at the frame's foot, risen clear of a caption there. */
-class KeysDrawer {
-	/** @param {Staged} element */
-	constructor(element) {
-		this.element = element;
-		/** @type {KeyedList<string>} */
-		this.caps = new KeyedList(partOf(element, 'caps'), capElement, drawnWithItsList);
-	}
-
-	/** @param {DrawnContent} content */
-	draw(content) {
-		const keys = ofKind(content, 'keys');
-		this.caps.draw(keys.key, keys.caps);
-		numbered(this.element, { '--shown': keys.shown, '--clearing': keys.clearing });
-	}
-}
-
 /**
  * What draws an object's content in its element.
  * @typedef {{ readonly draw: (content: DrawnContent) => void }} ContentDrawer
@@ -845,8 +871,6 @@ const CONTENT_DRAWERS = {
 	code: (element) => new CodeDrawer(element),
 	terminal: (element) => new TerminalDrawer(element),
 	ending: (element) => new EndingDrawer(element),
-	caption: (element) => new CaptionDrawer(element),
-	keys: (element) => new KeysDrawer(element),
 	piece: (element) => new PieceDrawer(element),
 	outline: (element) => new OutlineDrawer(element),
 	lens: (element) => new LensDrawer(element),
@@ -1012,6 +1036,7 @@ function setup(layout) {
 function exposureOf(root) {
 	/** @type {Map<string, HTMLIFrameElement>} */
 	const ownPages = new Map();
+	const caption = new CaptionDrawer(propRoot(root, 'caption'));
 	return {
 		root,
 		drawers: {
@@ -1023,6 +1048,8 @@ function exposureOf(root) {
 			pins: new PinsDrawer(propRoot(root, 'pins')),
 			cursor: new CursorDrawer(propRoot(root, 'cursor')),
 			note: new NoteDrawer(propRoot(root, 'note')),
+			caption,
+			keys: new KeysDrawer(propRoot(root, 'keys'), caption),
 			objects: new ObjectsDrawer({
 				objects: sceneRoot(root, 'objects'),
 				leaving: sceneRoot(root, 'leaving'),
@@ -1529,33 +1556,13 @@ function keyOf(list, name) {
 }
 
 /**
- * Every element objects are laid in this frame, holding none yet: the roots, and each object's place over its words,
- * where what it shows has one.
- * @param {ObjectRoots} roots @param {readonly ObjectStaged[]} staged @returns {Map<Staged, Staged[]>}
- */
-function holdersOf(roots, staged) {
-	const places = staged.flatMap((each) => (each.staged.overTheWords === null ? [] : [each.staged.overTheWords]));
-	return new Map([...Object.values(roots), ...places].map((holder) => [holder, []]));
-}
-
-/**
- * What an element holds this frame: every root and every place over words holds objects, so another is the stage's
- * fault.
+ * What a root of objects holds this frame: every root holds objects, so another element is the stage's fault.
  * @param {ReadonlyMap<Staged, Staged[]>} held @param {Staged} holder
  */
 function heldBy(held, holder) {
 	const elements = held.get(holder);
 	if (elements === undefined) throw new Error('an object is laid in what holds no objects');
 	return elements;
-}
-
-/**
- * The place over its words an object has, where what it shows has one: a caption's, for the keys over them.
- * @param {Element} element
- */
-function overTheWordsIn(element) {
-	const place = element.querySelector('[data-part="over-the-words"]');
-	return place instanceof HTMLElement ? place : null;
 }
 
 /** Whether an element holds these elements and no other, in this order. @param {Staged} root @param {readonly Staged[]} elements */

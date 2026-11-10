@@ -1,10 +1,9 @@
 /**
  * The moves of an object (`src/props/object.ts`), alike whatever it shows, written once for every kind that makes
- * one — a title's words, code, the agent's terminal, the ending card, a caption, keys, a piece of the page, an outline,
- * a lens, a thing of the film's own: coming up in its box, in its own way or one of livereel's (`src/props/way.ts`), or
- * sliding in whole from past a side of the frame, pushing the object of its name standing there off past the side
- * across; carried to another
- * place, growing and coming toward the eye on the way, to a box read off the page, or onto a block of the page to lie
+ * one — a title's words, code, the agent's terminal, the ending card, a piece of the page, an outline, a lens, a thing
+ * of the film's own: coming up in its box, in its own way or one of livereel's (`src/moves/way.ts`), or sliding in
+ * whole from past a side of the frame, pushing the object of its name standing there off past the side across; carried
+ * to another place, growing and coming toward the eye on the way, to a box read off the page, or onto a block of the page to lie
  * there; leant and rolled; set apart from what lies under it, ringed and glowing in the accent or a colour of the
  * film's, casting a shadow, blurred, melted toward a side, grown or brought toward the eye where it stands
  * (`src/props/effects.ts`); taken back to stand as its box places it; put away where it stands, in its own way or one
@@ -105,11 +104,12 @@ import {
 	type ObjectName,
 	framesPastTheEdge
 } from '../props/object.ts';
-import { A_WAY, OWN_WAY, type Way, type WayName, comesFromAnEdge, wayNamed } from '../props/way.ts';
+import { OWN_WAY, type Way } from '../props/way.ts';
 import { type Scene, cameraOf, withEye, withLeaving, withObject, withProp } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
 import { cameraFrontOn } from './source.ts';
 import { type ThroughScript, throughFormOf, throughWritten } from './through.ts';
+import { ENTER_FORM, type EnterScript, LEAVE_FORM, type LeaveScript, goneIn, wayOf } from './way.ts';
 
 /** A kind of what an object shows, as a film calls its moves, and the name of the object they take where it names none. */
 export type ShownKind = Content['kind'];
@@ -135,36 +135,12 @@ export interface NamedScript {
 }
 
 /**
- * The way an object comes up in its place, `enter`, one of livereel's, where it does not come up in its own; for a
- * mask or a wipe, the `edge` of its box it comes from, the way's own where none is named.
- */
-interface EnterScript {
-	readonly enter?: WayName;
-	readonly edge?: FrameSide;
-}
-
-/** The way an object goes from its place, `leave`, and the `edge` a mask or a wipe goes back to, as it would enter. */
-interface LeaveScript {
-	readonly leave?: WayName;
-	readonly edge?: FrameSide;
-}
-
-/**
  * Which object comes up, and the side of the frame it slides in `from`, past the frame's edge, if any, or the way it
  * comes up in its place.
  */
 export interface ShowScript extends TimingScript, NamedScript, EnterScript {
 	readonly from?: FrameSide;
 }
-
-/**
- * How an object that stands where it comes up, never sliding in, comes up: a caption and keys, the one of their kind,
- * and a piece of the page, over its source.
- */
-export interface InPlaceShowScript extends TimingScript, EnterScript {}
-
-/** How an object that stands where it comes up goes. */
-export interface InPlaceHideScript extends TimingScript, LeaveScript {}
 
 /**
  * The `group` of objects an object comes up standing in, if any, and its `zIndex` there, how high it is drawn among the
@@ -254,11 +230,7 @@ interface Push {
 }
 
 export const NAMED_FORM: Form<NamedScript> = { as: A_NAME };
-const ENTER_FORM: Form<EnterScript> = { enter: A_WAY, edge: A_FRAME_SIDE };
-const LEAVE_FORM: Form<LeaveScript> = { leave: A_WAY, edge: A_FRAME_SIDE };
 export const SHOW_FORM: Form<ShowScript> = { from: A_FRAME_SIDE, ...ENTER_FORM, ...NAMED_FORM, ...TIMING_FORM };
-export const IN_PLACE_SHOW_FORM: Form<InPlaceShowScript> = { ...ENTER_FORM, ...TIMING_FORM };
-export const IN_PLACE_HIDE_FORM: Form<InPlaceHideScript> = { ...LEAVE_FORM, ...TIMING_FORM };
 export const GROUPED_FORM: Form<GroupedScript> = { group: A_NAME, zIndex: A_NUMBER };
 export const NESTED_FORM: Form<NestedScript> = { inside: AN_INSIDE, ...GROUPED_FORM };
 // What an object stands in that a film shows inside what it names
@@ -1038,19 +1010,7 @@ async function laidOnto(
 /** The object going where it stands, in the way it goes; once gone, none. */
 function going(beginning: Beginning, name: ObjectName, kind: ShownKind, way: Way, move: string): Change {
 	const object = standingOfKind(beginning, name, move, kind);
-	return (scene, progress) =>
-		withObject(scene, name, untilTheEnd(progress, { ...object, way, gone: fractionOf(progress) }));
-}
-
-/**
- * The way a film names an object to come up or go, from the edge it names; its own way where it names none. An edge is
- * refused for a way that comes from none, and named for no way at all.
- */
-function wayOf(name: WayName | undefined, edge: FrameSide | undefined, move: string): Way {
-	if (edge !== undefined && (name === undefined || !comesFromAnEdge(name))) {
-		throw new FilmError(`${move} names an edge, which goes only with a mask or a wipe`);
-	}
-	return wayNamed(name ?? null, edge ?? null);
+	return (scene, progress) => withObject(scene, name, goneIn(object, way, progress));
 }
 
 /**

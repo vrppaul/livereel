@@ -17,8 +17,6 @@ import {
 	GROUPED_FORM,
 	type GroupedScript,
 	type HideScript,
-	IN_PLACE_SHOW_FORM,
-	type InPlaceShowScript,
 	NAMED_FORM,
 	type NamedScript,
 	type ObjectLeanScript,
@@ -35,6 +33,7 @@ import {
 	objectTo
 } from './object.ts';
 import { NO_AIR, NO_PLACE, ONE_BLOCK, cameraFrontOn, overItsSource, sourceOf } from './source.ts';
+import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
 
 /**
  * How an outline is drawn: round the first `every` blocks a selector matches, together; in a line; which outline; the

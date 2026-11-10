@@ -84,6 +84,7 @@ import { NO_EFFECTS } from '../../src/props/effects.ts';
 import { OWN_WAY } from '../../src/props/way.ts';
 import { appearedOf, comingUpIn, groundOf, saidOf } from '../../src/props/words.ts';
 import {
+	type DrawnScene,
 	type Scene,
 	cameraOf,
 	drawn,
@@ -166,10 +167,9 @@ const LIT = { box: BLOCK, strength: 1, dim: 0.6 };
 const ALL_SHARP: Sharpness = { focusedAt: FOCAL_LENGTH, focalLength: FOCAL_LENGTH, aperture: 0 };
 // The scene a film shot in the small format opens on: livereel's look and world, the eye of its focal length at rest
 const OPENING_IN_SMALL = openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH);
-// No caption standing round an object drawn alone, the screen up, on the small frame, the camera on the whole screen,
-// no group and no hole, the eye seeing all sharp, and no picture of a part of the screen taken sharper than the page's
+// Round an object drawn alone, the screen up, on the small frame, the camera on the whole screen, no group and no
+// hole, the eye seeing all sharp, and no picture of a part of the screen taken sharper than the page's
 const NOTHING_AROUND: Surroundings = {
-	caption: null,
 	screen: SCREEN_UP,
 	frame: SMALL.frame,
 	camera: cameraOf(OPENING_IN_SMALL, SMALL),
@@ -215,7 +215,6 @@ const SHOWN_AT_TWO = { left: 480, top: 300, width: 120, height: 100 };
 // Nothing standing round an object drawn alone on that frame, the screen up, the camera on the whole screen, the eye
 // seeing all sharp
 const AROUND_IN_FULL_HD: Surroundings = {
-	caption: null,
 	screen: SCREEN_UP,
 	frame: FULL_HD.frame,
 	camera: cameraOf(OPENING_IN_FULL_HD, FULL_HD),
@@ -288,9 +287,14 @@ async function setIn(move: Move, scene: Scene, progress: number, format: Format)
 	return change(scene, progress);
 }
 
+/** A scene as the stage draws it, in a format, by the scene's own camera. */
+function drawnSceneIn(scene: Scene, format: Format): DrawnScene {
+	return drawn(scene, cameraOf(scene, format), 0, format, NONE_SHARPER);
+}
+
 /** The objects of a scene as the stage draws them, in a format, by the scene's own camera. */
 function drawnObjectsIn(scene: Scene, format: Format): readonly DrawnObject[] {
-	return drawn(scene, cameraOf(scene, format), 0, format, NONE_SHARPER).objects;
+	return drawnSceneIn(scene, format).objects;
 }
 
 /** Where the middle of an object of a scene shot in the small format is drawn on the frame. */
@@ -459,13 +463,13 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 		(await setAt(callout.hide(), pointed, 1)).callout,
 		(await setAt(pin.clear(), pinned, 1)).pins,
 		(await setAt(note.hide(), noted, 1)).note,
-		[...(await setAt(caption.hide(), captioned, 1)).objects.keys()],
-		[...(await setAt(keys.hide(), pressed, 1)).objects.keys()],
+		(await setAt(caption.hide(), captioned, 1)).caption,
+		(await setAt(keys.hide(), pressed, 1)).keys,
 		[...(await setAt(leave(), TYPED, 1)).objects.keys()],
 		[...(await setAt(ending.hide(), carded, 1)).objects.keys()],
 		[...(await setAt(title.hide(), titled, 1)).objects.keys()],
 		[...(await setAt(code.hide(), coded, 1)).objects.keys()]
-	]).toEqual([null, null, null, null, [], [], [], [], [], []]);
+	]).toEqual([null, null, null, null, null, null, [], [], [], []]);
 });
 
 test('what comes up or goes stands between none and whole along a curve that passes its ends: the light, the cursor, pins, a callout, a title, a caption, the screen, a line of code lit, the window lifted', async () => {
@@ -484,7 +488,7 @@ test('what comes up or goes stands between none and whole along a curve that pas
 		(await setAt(pin.show('#block', 'Here'), OPENING_IN_SMALL, PAST_ITS_END)).pins,
 		(await setAt(callout.show('#block', 'Words'), OPENING_IN_SMALL, PAST_ITS_END)).callout,
 		(await setAt(title.show('Words'), OPENING_IN_SMALL, PAST_ITS_END)).objects.get('title'),
-		(await setAt(caption.show('Words'), OPENING_IN_SMALL, PAST_ITS_END)).objects.get('caption'),
+		(await setAt(caption.show('Words'), OPENING_IN_SMALL, PAST_ITS_END)).caption,
 		(await setAt(title.hide(), titled, BEFORE_ITS_START)).objects.get('title'),
 		(await setAt(rise(), lowered, PAST_ITS_END)).screen
 	]).toMatchObject([
@@ -561,31 +565,26 @@ test('a title or a caption shown typed shows no letter before its first key, and
 	const keysTyped = keystrokes('ab cd', typed).length;
 	const titled = await setAt(title.show('ab cd', { at: 'left', words }), OPENING_IN_SMALL, 0);
 	const captioned = await setAt(caption.show('ab cd', { words }), OPENING_IN_SMALL, 0);
-	const lettersShown = [titled, captioned].map((scene) =>
-		drawnObjectsIn(scene, SMALL).map((object) => object.content.words.map((word) => word.letters))
-	);
 	expect([
-		lettersShown,
+		drawnObjectsIn(titled, SMALL)[0]!.content.words.map((word) => word.letters),
+		drawnSceneIn(captioned, SMALL).caption!.words.map((word) => word.letters),
 		title.show('ab cd', { words }).sounds!.length,
 		caption.show('ab cd', { words }).sounds!.length
-	]).toEqual([[[[0, 0]], [[0, 0]]], keysTyped, keysTyped]);
+	]).toEqual([[0, 0], [0, 0], keysTyped, keysTyped]);
 });
 
 test("a title's or a caption's words come up in the way the film names, and in the theme's where it names none", async () => {
 	const fading = openingScene(SMALL, { ...LIVEREELS_LOOK, words: 'fade' }, LIVEREELS_WORLD, FOCAL_LENGTH);
-	const shows = [
-		title.show('ab', { words: 'mask' }),
-		caption.show('ab', { words: 'scramble' }),
-		title.show('ab'),
-		caption.show('ab')
-	];
-	const scenes = await Promise.all(shows.map((move) => setAt(move, fading, 0.5)));
-	expect(scenes.map((scene) => drawnObjectsIn(scene, SMALL)[0]!.content.way)).toEqual([
-		'mask',
-		'scramble',
-		'fade',
-		'fade'
-	]);
+	const titles = await Promise.all(
+		[title.show('ab', { words: 'mask' }), title.show('ab')].map((move) => setAt(move, fading, 0.5))
+	);
+	const captions = await Promise.all(
+		[caption.show('ab', { words: 'scramble' }), caption.show('ab')].map((move) => setAt(move, fading, 0.5))
+	);
+	expect([
+		...titles.map((scene) => drawnObjectsIn(scene, SMALL)[0]!.content.way),
+		...captions.map((scene) => drawnSceneIn(scene, SMALL).caption!.way)
+	]).toEqual(['mask', 'fade', 'scramble', 'fade']);
 });
 
 test("a callout's and a note's words come up in the theme's way", async () => {
@@ -2314,34 +2313,35 @@ test('a terminal opened comes up as its move goes on, and one left goes as its m
 	]).toEqual([0.25, 0.75]);
 });
 
-test('every object comes up in a way the film names, and goes in one: a title, code, the terminal, the card, a caption, keys', async () => {
+test('every object, a caption and keys come up in a way the film names, and go in one: a title, code, the terminal, the card, a caption, keys', async () => {
 	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
 	const shows = [
 		title.show('Here', { enter: 'fade' }),
 		code.show('x', { at: 'left', enter: 'fade' }),
 		open('claude', { enter: 'fade' }),
-		ending.show(card, { enter: 'fade' }),
-		caption.show('Here', { enter: 'fade' }),
-		keys.show(['⌘', 'K'], { enter: 'fade' })
+		ending.show(card, { enter: 'fade' })
 	];
 	const hides = [
 		title.hide({ leave: 'fade' }),
 		code.hide({ leave: 'fade' }),
 		leave({ leave: 'fade' }),
-		ending.hide({ leave: 'fade' }),
-		caption.hide({ leave: 'fade' }),
-		keys.hide({ leave: 'fade' })
+		ending.hide({ leave: 'fade' })
 	];
 	const coming = await Promise.all(shows.map((move) => setAt(move, OPENING_IN_SMALL, 0.25)));
 	const standing = await Promise.all(shows.map((move) => setAt(move, OPENING_IN_SMALL, 1)));
 	const going = await Promise.all(hides.map((move, place) => setAt(move, standing[place]!, 0.25)));
+	const captionShown = caption.show('Here', { enter: 'fade' });
+	const keysShown = keys.show(['⌘', 'K'], { enter: 'fade' });
+	const captioned = await setAt(captionShown, OPENING_IN_SMALL, 1);
+	const pressed = await setAt(keysShown, OPENING_IN_SMALL, 1);
 	expect([
 		coming.flatMap((scene) => drawnObjectsIn(scene, SMALL).map((object) => object.onItsWay.clear)),
-		going.flatMap((scene) => drawnObjectsIn(scene, SMALL).map((object) => object.onItsWay.clear))
-	]).toEqual([
-		[0.25, 0.25, 0.25, 0.25, 0.25, 0.25],
-		[0.75, 0.75, 0.75, 0.75, 0.75, 0.75]
-	]);
+		going.flatMap((scene) => drawnObjectsIn(scene, SMALL).map((object) => object.onItsWay.clear)),
+		drawnSceneIn(await setAt(captionShown, OPENING_IN_SMALL, 0.25), SMALL).caption!.onItsWay.clear,
+		drawnSceneIn(await setAt(keysShown, OPENING_IN_SMALL, 0.25), SMALL).keys!.onItsWay.clear,
+		drawnSceneIn(await setAt(caption.hide({ leave: 'fade' }), captioned, 0.25), SMALL).caption!.onItsWay.clear,
+		drawnSceneIn(await setAt(keys.hide({ leave: 'fade' }), pressed, 0.25), SMALL).keys!.onItsWay.clear
+	]).toEqual([[0.25, 0.25, 0.25, 0.25], [0.75, 0.75, 0.75, 0.75], 0.25, 0.25, 0.75, 0.75]);
 });
 
 test('what an object shows stands whole while it comes up or goes in a way: words come up together, and go together', async () => {
@@ -2459,11 +2459,11 @@ test('a terminal named is typed into, submitted and worked in by its name', asyn
 	expect(done.objects.get('second')!.content.lines).toEqual([{ kind: 'asked', text: 'ls' }, SAID]);
 });
 
-test("a kind's move takes only an object of its kind, refusing one that shows another as it begins: a thing laid on the page by a piece's, the card leant, a caption carried, a terminal hidden", async () => {
+test("a kind's move takes only an object of its kind, refusing one that shows another as it begins: a thing laid on the page by a piece's, the card leant, code carried, a terminal hidden", async () => {
 	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
 	const carded = await setAt(ending.show(card), OPENING_IN_SMALL, 1);
-	const captioned = await setAt(caption.show('Words'), carded, 1);
-	const opened = await setAt(open('claude'), captioned, 1);
+	const coded = await setAt(code.show('x', { at: 'left' }), carded, 1);
+	const opened = await setAt(open('claude'), coded, 1);
 	const built = await setAt(thing.show('card', A_CARD_SHOWN), opened, 1);
 	await expect(async () => piece.onto('#other', { as: 'thing' }).begin(beginningOf(built))).rejects.toThrow(
 		new FilmError('piece.onto finds the thing showing thing, not piece')
@@ -2471,8 +2471,8 @@ test("a kind's move takes only an object of its kind, refusing one that shows an
 	await expect(async () => title.lean({ as: 'ending', tilt: 20 }).begin(beginningOf(built))).rejects.toThrow(
 		new FilmError('title.lean finds the ending showing ending, not title')
 	);
-	await expect(async () => title.to('left', { as: 'caption' }).begin(beginningOf(built))).rejects.toThrow(
-		new FilmError('title.to finds the caption showing caption, not title')
+	await expect(async () => title.to('left', { as: 'code' }).begin(beginningOf(built))).rejects.toThrow(
+		new FilmError('title.to finds the code showing code, not title')
 	);
 	await expect(async () => code.hide({ as: 'terminal' }).begin(beginningOf(built))).rejects.toThrow(
 		new FilmError('code.hide finds the terminal showing terminal, not code')
@@ -2546,8 +2546,8 @@ test("inside the page's window a place is a box in its shares, a name of the fra
 test("a caption stands where its format puts it, at the frame's foot where it names no place", async () => {
 	const showing = caption.show('Words');
 	expect([
-		(await setIn(showing, OPENING_IN_SMALL, 1, SMALL)).objects.get('caption')!.content.at,
-		(await setIn(showing, OPENING_IN_SMALL, 1, CAPTIONS_AT_THE_TOP)).objects.get('caption')!.content.at
+		(await setIn(showing, OPENING_IN_SMALL, 1, SMALL)).caption!.at,
+		(await setIn(showing, OPENING_IN_SMALL, 1, CAPTIONS_AT_THE_TOP)).caption!.at
 	]).toEqual(['bottom', 'top']);
 });
 
@@ -2557,10 +2557,9 @@ test("keys rise clear of a caption at the frame's foot as its ground comes up, a
 	const atTheFoot = await setIn(caption.show('Words'), OPENING_IN_SMALL, 0.25, SMALL);
 	const atTheTop = await setIn(caption.show('Words'), OPENING_IN_SMALL, 0.25, CAPTIONS_AT_THE_TOP);
 	expect([
-		drawnObjectsIn(await setIn(pressed, atTheFoot, 1, SMALL), SMALL).at(-1)!.content.clearing,
-		drawnObjectsIn(await setIn(pressed, atTheTop, 1, CAPTIONS_AT_THE_TOP), CAPTIONS_AT_THE_TOP).at(-1)!.content
-			.clearing,
-		drawnObjectsIn(await setAt(pressed, OPENING_IN_SMALL, 1), SMALL).at(-1)!.content.clearing
+		drawnSceneIn(await setIn(pressed, atTheFoot, 1, SMALL), SMALL).keys!.clearing,
+		drawnSceneIn(await setIn(pressed, atTheTop, 1, CAPTIONS_AT_THE_TOP), CAPTIONS_AT_THE_TOP).keys!.clearing,
+		drawnSceneIn(await setAt(pressed, OPENING_IN_SMALL, 1), SMALL).keys!.clearing
 	]).toEqual([0.5, 0, 0]);
 });
 
@@ -2569,18 +2568,10 @@ test("keys shown while a caption stands at the frame's foot are drawn over its w
 	const atTheFoot = await setIn(caption.show('Words'), OPENING_IN_SMALL, 1, SMALL);
 	const atTheTop = await setIn(caption.show('Words'), OPENING_IN_SMALL, 1, CAPTIONS_AT_THE_TOP);
 	expect([
-		drawnObjectsIn(await setIn(pressed, atTheFoot, 1, SMALL), SMALL).at(-1)!.over,
-		drawnObjectsIn(await setIn(pressed, atTheTop, 1, CAPTIONS_AT_THE_TOP), CAPTIONS_AT_THE_TOP).at(-1)!.over,
-		drawnObjectsIn(await setAt(pressed, OPENING_IN_SMALL, 1), SMALL).at(-1)!.over
-	]).toEqual(['caption', null, null]);
-});
-
-test('a caption is drawn over every other object, and keys over it, whenever each came', async () => {
-	const pressed = await setAt(keys.show(['⌘', 'K']), OPENING_IN_SMALL, 1);
-	const captioned = await setAt(caption.show('Words'), pressed, 1);
-	const titled = await setAt(title.show('Here'), captioned, 1);
-	const [pressedKeys, shownCaption, shownTitle] = drawnObjectsIn(titled, SMALL);
-	expect([pressedKeys!.layer > shownCaption!.layer, shownCaption!.layer > shownTitle!.layer]).toEqual([true, true]);
+		drawnSceneIn(await setIn(pressed, atTheFoot, 1, SMALL), SMALL).keys!.overTheCaption,
+		drawnSceneIn(await setIn(pressed, atTheTop, 1, CAPTIONS_AT_THE_TOP), CAPTIONS_AT_THE_TOP).keys!.overTheCaption,
+		drawnSceneIn(await setAt(pressed, OPENING_IN_SMALL, 1), SMALL).keys!.overTheCaption
+	]).toEqual([true, false, false]);
 });
 
 test('words, code and a caption come up in place at an even pace, the terminal, the card and keys on their step’s curve, unless the film names one', () => {

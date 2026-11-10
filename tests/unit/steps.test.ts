@@ -43,8 +43,11 @@ test("the film's own pages its steps show are found before it is shot, each once
 
 test('two moves of one object at once in one step are refused as the step is written', () => {
 	expect(() =>
-		play({ seconds: 1, moves: [hide({ within: { end: 0.5 } }), show('Next', { within: { start: 0.4 } })] })
-	).toThrow(new FilmError('two moves on the caption object at once in one step'));
+		play({
+			seconds: 1,
+			moves: [title.hide({ within: { end: 0.5 } }), title.show('Next', { within: { start: 0.4 } })]
+		})
+	).toThrow(new FilmError('two moves on the title object at once in one step'));
 });
 
 test('two moves of the page at once are refused, as two of one object are, in a play or a cut', () => {
