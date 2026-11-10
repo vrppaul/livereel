@@ -585,24 +585,38 @@ class Room {
 
 	/**
 	 * The window's surface and its body laid over what is drawn of an exposure as one, so the eye's focus blurs the two
-	 * together, as it blurs one thing: the body drawn alone round the page, as far past the frame as the blur gathers,
-	 * and the surface laid over it where the eye sees the page, or under it where the eye sees the body's back, then
-	 * laid over as the eye's focus blurs each point of the window, or unblurred where sharp.
+	 * together, as it blurs one thing: the body's slab drawn alone round the page, as far past the frame as the blur
+	 * gathers, and the surface laid over it where the eye sees the page, the glass over that, or under it where the eye
+	 * sees the slab's back; then laid over as the eye's focus blurs each point of the window, or unblurred where sharp.
 	 * @param {SurfaceTexture} texture @param {Placing} placing @param {DrawnWindow} window @param {DrawnBody} body
 	 * @param {Box} gathered
 	 */
 	laidWithItsBody(texture, placing, window, body, gathered) {
 		this.renderer.setRenderTarget(this.thingLayer);
 		this.renderer.clear();
-		this.body.drawn(this.renderer, window, body, gathered, this.frameBox);
+		this.body.slabDrawn(this.renderer, window, body, gathered, this.frameBox);
 		placedAs(this.placed, texture, placing, gathered);
 		this.renderer.setRenderTarget(this.focusLayer);
 		this.renderer.clear();
 		const [under, over] = window.facingTheEye ? [this.encodingOver, this.placed] : [this.placed, this.encodingOver];
 		this.renderer.render(under, this.camera);
 		this.renderer.render(over, this.camera);
+		if (window.facingTheEye && body.glass > NONE) this.glassLaidOver(window, body, gathered);
 		if (placing.outOfFocusAt === null) this.layerLaidOver(this.focusLayer, gathered);
 		else this.layerBlurredOver(this.focusLayer, placing.outOfFocusAt, gathered);
+	}
+
+	/**
+	 * A window's glass drawn alone, as far past the frame as the blur gathers, and laid over the page in the layer the
+	 * window is laid from: the light it reflects, dimming the page by the share it reflects.
+	 * @param {DrawnWindow} window @param {DrawnBody} body @param {Box} gathered
+	 */
+	glassLaidOver(window, body, gathered) {
+		this.renderer.setRenderTarget(this.thingLayer);
+		this.renderer.clear();
+		this.body.glassDrawn(this.renderer, window, body, gathered, this.frameBox);
+		this.renderer.setRenderTarget(this.focusLayer);
+		this.renderer.render(this.encodingOver, this.camera);
 	}
 
 	/**

@@ -88,16 +88,18 @@ export interface DrawnWindow {
 
 /**
  * The window's body as the room draws it round the page the camera's cut shows (`reach`), in the frame's pixels: how
- * far its rim reaches past the page and how thick it is; its metal's colour and how rough it is; the matrix that
- * carries the page's middle, its face toward three's z, into the eye's own space, in three's axes, the body standing
- * behind its face; the matrix that carries the room into that space, where the world's lights stand; and how far the
- * eye stands before the frame, which the stage sees it in perspective from.
+ * far its rim reaches past the page and how thick it is; its metal's colour and how rough it is; how much of the
+ * world's light the glass over the page reflects; the matrix that carries the page's middle, its face toward three's
+ * z, into the eye's own space, in three's axes, the body standing behind its face; the matrix that carries the room
+ * into that space, where the world's lights stand; and how far the eye stands before the frame, which the stage sees
+ * it in perspective from.
  */
 export interface DrawnBody {
 	readonly rim: number;
 	readonly thickness: number;
 	readonly metal: string;
 	readonly roughness: number;
+	readonly glass: number;
 	readonly placing: Matrix;
 	readonly roomInTheEyesSpace: Matrix;
 	readonly eyeDistance: number;
@@ -105,13 +107,24 @@ export interface DrawnBody {
 
 /**
  * What stands round the window as it is drawn: the eye that sees it, the frame, how sharp the eye sees, how the look
- * makes its body — the page's corners and the body's own values — and how far the screen has come up in it.
+ * makes its body — the page's corners, the body's own values and the world's light its glass reflects — and how far
+ * the screen has come up in it.
  */
 export interface AroundTheWindow {
 	readonly eye: Eye;
 	readonly frame: Size;
 	readonly sharpness: Sharpness;
-	readonly look: Pick<Look, 'paneCorner' | 'windowThickness' | 'windowRim' | 'windowMetal' | 'windowRoughness'>;
+	readonly look: Pick<
+		Look,
+		| 'paneCorner'
+		| 'windowThickness'
+		| 'windowRim'
+		| 'windowMetal'
+		| 'windowRoughness'
+		| 'windowGlass'
+		| 'lights'
+		| 'softBoxes'
+	>;
 	readonly screenShown: Fraction;
 }
 
@@ -161,8 +174,9 @@ export function drawnWindow(view: View, cut: Cut, window: Shade, around: AroundT
 
 /**
  * The window's body as the room draws it, round the page the camera's cut shows, placed by the matrix that carries the
- * window's middle into the eye's own space: as thick, and its rim as wide, as the look has them, so far as the window
- * stands off the ground and the screen has come up in it; none, where that leaves it no thickness.
+ * window's middle into the eye's own space: as thick, its rim as wide and its glass as strong as the look has them, so
+ * far as the window stands off the ground and the screen has come up in it, so no glint comes with it at once, its
+ * glass none where the world has no light to reflect; none, where that leaves it no thickness.
  */
 function drawnBody(view: View, page: Box, intoTheEyesSpace: Matrix, around: AroundTheWindow): DrawnBody | null {
 	const scale = frameScaleOf(around.frame);
@@ -180,10 +194,16 @@ function drawnBody(view: View, page: Box, intoTheEyesSpace: Matrix, around: Arou
 		thickness,
 		metal: around.look.windowMetal,
 		roughness: around.look.windowRoughness,
+		glass: isLit(around.look) ? around.look.windowGlass * standing : NONE,
 		placing: inThreesAxes(placing),
 		roomInTheEyesSpace: inThreesAxes(inTheEyesSpace(around.eye, around.frame)),
 		eyeDistance: around.sharpness.focalLength * scale
 	};
+}
+
+/** Whether the world has light in it, a light or a soft box, which the glass could reflect. */
+function isLit(look: Pick<Look, 'lights' | 'softBoxes'>): boolean {
+	return look.lights.length > NONE || look.softBoxes.length > NONE;
 }
 
 /**

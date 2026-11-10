@@ -25,7 +25,7 @@
 /** @import { HeldPicture, Layout, Opening, PagePicture, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
-/** A value of the look set whole on the stage, in place of one token: any but the ground's layers, the way words come up, which the moves that bring them read, the world's light, which the room lights its things by, and the window's body, which the room draws with the window @typedef {Exclude<keyof Look, 'groundLayers' | 'words' | 'lights' | 'softBoxes' | 'windowThickness' | 'windowRim' | 'windowMetal' | 'windowRoughness'>} WholeLookName */
+/** A value of the look set whole on the stage, in place of one token: any but the ground's layers, the way words come up, which the moves that bring them read, the world's light, which the room lights its things by, and the window's body, which the room draws with the window @typedef {Exclude<keyof Look, 'groundLayers' | 'words' | 'lights' | 'softBoxes' | 'windowThickness' | 'windowRim' | 'windowMetal' | 'windowRoughness' | 'windowGlass'>} WholeLookName */
 /** An element of the stage's markup: the cursor is drawn in SVG, the rest in HTML @typedef {HTMLElement | SVGElement} Staged */
 /** The scene's lists of objects: those standing, and those pushed off while they go @typedef {'objects' | 'leaving'} ObjectList */
 /**

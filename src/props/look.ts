@@ -83,12 +83,14 @@ export interface Look {
 	/**
 	 * The body of the page's window in a room, a slab of metal round the page (`DrawnBody` in `src/props/window.ts`):
 	 * how thick it is, 0 none, and how far its rim reaches past the page all round, each in pixels of a frame 1080 on
-	 * its shorter side; the metal's colour, in hex with no alpha, and how rough it is, from 0, a mirror, to 1, matte.
+	 * its shorter side; the metal's colour, in hex with no alpha, and how rough it is, from 0, a mirror, to 1, matte;
+	 * and how much of the world's light the glass over the page reflects, from 0, none, to 1, a whole coat of it.
 	 */
 	readonly windowThickness: number;
 	readonly windowRim: number;
 	readonly windowMetal: string;
 	readonly windowRoughness: number;
+	readonly windowGlass: number;
 	/**
 	 * The colour of the terminal, of the code's pane, of the ending's command and of a key's cap, and of what is written
 	 * on them, in hex.
@@ -257,6 +259,7 @@ export const LOOK_KINDS: { readonly [Name in keyof Look]: LookKind<Written<Look[
 	windowRim: PIXELS,
 	windowMetal: OPAQUE_COLOUR,
 	windowRoughness: SHARE,
+	windowGlass: SHARE,
 	terminal: COLOUR,
 	terminalInk: COLOUR,
 	codeComment: COLOUR,
@@ -309,6 +312,7 @@ export const LIVEREELS_LOOK: Look = {
 	windowRim: 6,
 	windowMetal: '#454b56',
 	windowRoughness: 0.45,
+	windowGlass: 0.4,
 	terminal: '#10141c',
 	terminalInk: '#f4f6fa',
 	codeComment: '#8b949e',

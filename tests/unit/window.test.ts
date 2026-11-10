@@ -25,8 +25,17 @@ const SHOWN_PAST_ITS_EDGES: Box = { left: 900, top: 560, width: 1900, height: 10
 const SHOWN_MIDDLE_FROM_THE_WINDOWS: Spot = { across: -50, down: 20, out: 0 };
 // A body as the look has it: as thick, as wide a rim and the page's corners as round as these, in pixels of a frame
 // 1080 high, of a dark metal this rough
-const BODY = { windowThickness: 24, windowRim: 6, windowMetal: '#454b56', windowRoughness: 0.45, paneCorner: 24 };
-const WITH_A_BODY = { ...LIVEREELS_LOOK, ...BODY };
+const BODY = {
+	windowThickness: 24,
+	windowRim: 6,
+	windowMetal: '#454b56',
+	windowRoughness: 0.45,
+	windowGlass: 0.4,
+	paneCorner: 24
+};
+// A soft box of the world the glass reflects, overhead
+const OVERHEAD = { colour: '#ffffff', brightness: 12, round: 0, up: 75, width: 33, height: 33, lean: 0 };
+const WITH_A_BODY = { ...LIVEREELS_LOOK, ...BODY, softBoxes: [OVERHEAD] };
 const SHARP: Sharpness = { focusedAt: FOCAL_LENGTH, focalLength: FOCAL_LENGTH, aperture: 0 };
 const AT_REST = eyeAtRest(FOCAL_LENGTH);
 // An eye moved up, to the right and nearer, in pixels of a frame 1080 high; where it stands in the room in three's
@@ -65,7 +74,7 @@ function carriedTo(matrix: Matrix, spot: Spot): Spot {
 	return rounded(carried(matrix, spot));
 }
 
-test("a window lifted whole, of a look with a body, hands the stage its slab: the rim and the thickness in the frame's pixels, the metal, placed as the window is, round a page whose corners are the look's in the frame's pixels", () => {
+test("a window lifted whole, of a look with a body, hands the stage its slab: the rim and the thickness in the frame's pixels, the metal, the glass over the page, placed as the window is, round a page whose corners are the look's in the frame's pixels", () => {
 	const window = drawnWindow(LIFTED, AT_ITS_EDGES, UNSHADED, AROUND);
 	const body = window.body!;
 	expect([
@@ -78,6 +87,7 @@ test("a window lifted whole, of a look with a body, hands the stage its slab: th
 			thickness: BODY.windowThickness * TWICE,
 			metal: BODY.windowMetal,
 			roughness: BODY.windowRoughness,
+			glass: BODY.windowGlass,
 			placing: carriedTo(window.inTheEyesSpace, ITS_TOP_RIGHT),
 			roomInTheEyesSpace: null,
 			eyeDistance: FOCAL_LENGTH * TWICE
@@ -105,6 +115,7 @@ test("a body comes as far as the window lifts and the screen comes up in it, rou
 		window.corner,
 		body.rim,
 		body.thickness,
+		body.glass,
 		carriedTo(body.placing, ITS_MIDDLE),
 		drawnWindow(LOW, AT_ITS_EDGES, UNSHADED, AROUND).corner
 	]).toEqual([
@@ -112,9 +123,15 @@ test("a body comes as far as the window lifts and the screen comes up in it, rou
 		BODY.paneCorner * TWICE * 0.5,
 		BODY.windowRim * TWICE * 0.25,
 		BODY.windowThickness * TWICE * 0.25,
+		BODY.windowGlass * 0.25,
 		carriedTo(window.inTheEyesSpace, SHOWN_MIDDLE_FROM_THE_WINDOWS),
 		LOW.box.height / 2
 	]);
+});
+
+test('the glass reflects nothing where the world has no light in it, no lights and no soft boxes', () => {
+	const unlit = { ...WITH_A_BODY, softBoxes: [] };
+	expect(drawnWindow(LIFTED, AT_ITS_EDGES, UNSHADED, { ...AROUND, look: unlit }).body!.glass).toBe(0);
 });
 
 test('no body where the look has a window of no thickness, where the window is the frame itself, or where the screen has not come up', () => {

@@ -391,9 +391,10 @@ in livereel's own look; a still of a polished sphere shows where each glint
 falls. In a room the page's window may have a body, a slab of metal round
 the page as a tablet has, in place of its edge and shadow:
 `windowThickness` (0, none, livereel's) and `windowRim` in pixels of a
-1080 frame, `windowMetal` in hex with no alpha and `windowRoughness` from
-0 to 1; its metal shows the world's light alone, so give it soft boxes.
-Leave out
+1080 frame, `windowMetal` in hex with no alpha, `windowRoughness` from
+0 to 1, and `windowGlass` from 0 to 1, how strong the clear coat over its
+page is; its metal and glass show the world's light alone, so give it soft
+boxes, and the glass's glint shows on a dark page. Leave out
 what the user does not name: livereel's own is a dark ground, white ink
 and an amber accent. `look.to(theme)` changes any of these as the film goes: in a
 `play` through the values between (a ground fading light, the glow

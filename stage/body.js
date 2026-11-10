@@ -10,6 +10,11 @@
  * the two. Its sides face straight out from its corners' arcs, where their own faces would cut each round into facets
  * a soft box glides over in steps. Its faces are built anew only as its measures change, as the window lifts or
  * travels; standing, it is built once.
+ *
+ * Over the page lies glass, drawn apart: a smooth clear coat on nothing, as three draws one, so all it shows is what
+ * it reflects of the world's light, more as the eye sees it more aslant. Its clearness is what the coat lets through:
+ * three dims what lies under a coat by the share it reflects, so the glass is drawn as clear as that share leaves it,
+ * and the room lays it over the page as a layer, the page dimmed as three dims it.
  */
 import * as THREE from 'three';
 import { matrixOf, projectionOnto } from './matrices.js';
@@ -35,8 +40,22 @@ import { matrixOf, projectionOnto } from './matrices.js';
 const CORNER_SEGMENTS = 16;
 // How far the rim reaches under the page, in the frame's pixels
 const RIM_UNDER_THE_PAGE = 1;
-// The body is metal through and through
+// The body is metal through and through; the glass is a smooth clear coat over a face of no colour that reflects
+// nothing of its own, so the coat alone shows: no specular of its own, and no metal, which three would have reflect
+// wholly at a grazing angle
 const WHOLLY_METAL = 1;
+const GLASS_UNDER_ITS_COAT = { color: 0x000000, metalness: 0, specularIntensity: 0 };
+const GLASS_COAT_ROUGHNESS = 0.03;
+// Where three writes a lit material's colour, and the glass's own: the light its coat reflects, as clear as the share
+// of what lies under it the coat lets through, `Fcc` being how much the coat reflects as the eye sees it (three's
+// physical material, where it lays a coat)
+const THREES_OUTPUT = '#include <opaque_fragment>';
+const THE_GLASS_OUTPUT = `
+#ifdef USE_CLEARCOAT
+gl_FragColor = vec4( outgoingLight, material.clearcoat * Fcc.g );
+#else
+${THREES_OUTPUT}
+#endif`;
 // No turn, a quarter-turn, a half-turn and a whole one, in radians, as a corner's arc runs from the one before; a side
 // and the half of it its edge stands from its middle
 const NO_TURN = 0;
@@ -56,7 +75,7 @@ const ON_THE_PAGES_PLANE = 0;
 // The measures of a body built of nothing yet
 const NONE_BUILT = '';
 
-/** The window's body: its slab of metal, as last built, and the world's light it is lit by. */
+/** The window's body: its slab of metal and the glass over the page, as last built, and the world's light it is lit by. */
 export class WindowBody {
 	/** @param {WorldLighting} lighting */
 	constructor(lighting) {
@@ -65,21 +84,49 @@ export class WindowBody {
 		// three draws nothing without a camera; the room hands only its projection, the body standing in the eye's space
 		this.camera = new THREE.Camera();
 		this.metal = new THREE.MeshStandardMaterial({ metalness: WHOLLY_METAL });
+		this.glassCoat = new THREE.MeshPhysicalMaterial({
+			...GLASS_UNDER_ITS_COAT,
+			clearcoatRoughness: GLASS_COAT_ROUGHNESS
+		});
+		this.glassCoat.onBeforeCompile = asClearAsItsCoatLetsThrough;
 		this.slab = new THREE.Group();
 		this.slab.matrixAutoUpdate = false;
-		/** The slab's faces, and the measures they were last built of, said whole @type {THREE.Mesh[]} */
+		this.glass = new THREE.Group();
+		this.glass.matrixAutoUpdate = false;
+		/** The faces of the slab and of the glass, and the measures they were last built of, said whole @type {THREE.Mesh[]} */
 		this.faces = [];
 		this.builtOf = NONE_BUILT;
 	}
 
 	/**
-	 * A window's body drawn into the layer the renderer draws into, which holds a box of the frame: built round the page
-	 * the window shows, where its measures are not those it was built of, in its metal, where the engine places it,
-	 * seen in perspective from the eye and lit as the eye sees the room.
+	 * A window's slab drawn into the layer the renderer draws into, which holds a box of the frame, in its metal.
 	 * @param {THREE.WebGLRenderer} renderer @param {DrawnWindow} window @param {DrawnBody} body @param {Box} drawn
 	 * @param {Box} frame
 	 */
-	drawn(renderer, window, body, drawn, frame) {
+	slabDrawn(renderer, window, body, drawn, frame) {
+		this.metal.color.set(body.metal);
+		this.metal.roughness = body.roughness;
+		this.drawnAs(this.slab, renderer, window, body, drawn, frame);
+	}
+
+	/**
+	 * The glass over a window's page drawn into the layer the renderer draws into, which holds a box of the frame: what
+	 * it reflects of the world's light, as much as the body's glass reflects.
+	 * @param {THREE.WebGLRenderer} renderer @param {DrawnWindow} window @param {DrawnBody} body @param {Box} drawn
+	 * @param {Box} frame
+	 */
+	glassDrawn(renderer, window, body, drawn, frame) {
+		this.glassCoat.clearcoat = body.glass;
+		this.drawnAs(this.glass, renderer, window, body, drawn, frame);
+	}
+
+	/**
+	 * A part of the body drawn: built round the page the window shows, where its measures are not those it was built
+	 * of, where the engine places it, seen in perspective from the eye and lit as the eye sees the room.
+	 * @param {THREE.Group} part @param {THREE.WebGLRenderer} renderer @param {DrawnWindow} window @param {DrawnBody} body
+	 * @param {Box} drawn @param {Box} frame
+	 */
+	drawnAs(part, renderer, window, body, drawn, frame) {
 		this.builtFor({
 			width: window.reach.width,
 			height: window.reach.height,
@@ -87,30 +134,32 @@ export class WindowBody {
 			rim: body.rim,
 			thickness: body.thickness
 		});
-		this.metal.color.set(body.metal);
-		this.metal.roughness = body.roughness;
-		this.slab.matrix.copy(matrixOf(body.placing));
-		this.slab.matrixWorldNeedsUpdate = true;
+		part.matrix.copy(matrixOf(body.placing));
+		part.matrixWorldNeedsUpdate = true;
 		this.camera.projectionMatrix.copy(projectionOnto(drawn, frame, body.eyeDistance));
 		this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
 		this.scene.clear();
-		this.scene.add(this.slab);
+		this.scene.add(part);
 		this.lighting.shiningIn(this.scene, body.roomInTheEyesSpace);
 		renderer.render(this.scene, this.camera);
 	}
 
 	/**
-	 * The slab built of a body's measures, its faces of the measures it was built of let go; as it stands, where they are
-	 * the same.
+	 * The slab and the glass built of a body's measures, their faces of the measures they were built of let go; as they
+	 * stand, where they are the same.
 	 * @param {Measures} measures
 	 */
 	builtFor(measures) {
 		const builtOf = JSON.stringify(measures);
 		if (builtOf === this.builtOf) return;
 		for (const face of this.faces) face.geometry.dispose();
-		this.faces = facesOf(measures, this.metal);
+		const slabFaces = facesOf(measures, this.metal);
+		const pane = new THREE.Mesh(new THREE.ShapeGeometry(roundedRectangle(measures), CORNER_SEGMENTS), this.glassCoat);
+		this.faces = [...slabFaces, pane];
 		this.slab.clear();
-		this.slab.add(...this.faces);
+		this.slab.add(...slabFaces);
+		this.glass.clear();
+		this.glass.add(pane);
 		this.builtOf = builtOf;
 	}
 }
@@ -176,6 +225,14 @@ function sidesFacingOut(geometry, outline) {
 		facing.normalize();
 		normal.setXYZ(vertex, facing.x, facing.y, facing.z);
 	}
+}
+
+/**
+ * The glass's shader written to draw it as clear as its coat lets through what lies under it.
+ * @param {THREE.WebGLProgramParametersWithUniforms} shader
+ */
+function asClearAsItsCoatLetsThrough(shader) {
+	shader.fragmentShader = shader.fragmentShader.replace(THREES_OUTPUT, THE_GLASS_OUTPUT);
 }
 
 /** A rounded rectangle about its middle, its corners drawn as arcs. @param {Outline} outline */

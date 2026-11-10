@@ -703,6 +703,7 @@ values; what the film leaves out stays livereel's:
 | `paneShadow`, `paneShadowColour` | how strong a pane's shadow is, from `0`, none, to `1`, and its colour | `1`, `#000` |
 | `windowThickness`, `windowRim` | in a room, how thick the body of the page's window is, `0` none, and how far its rim reaches past the page all round, in pixels | `0`, `6` |
 | `windowMetal`, `windowRoughness` | the colour of the window's body, in hex with no alpha, and how rough its metal is, from `0`, a mirror, to `1`, matte | `#454b56`, `0.45` |
+| `windowGlass` | how strong the clear coat of glass over the page of a window with a body is, from `0`, none, to `1`, a whole coat: 4% reflected face-on, more aslant | `0.4` |
 | `terminal`, `terminalInk` | the colour of the terminal, the code's pane, the ending's command and keys' caps, and what is written on them | `#10141c`, `#f4f6fa` |
 | `codeComment`, `codeString`, `codeNumber`, `codeKeyword`, `codeCall`, `codeKey` | the colours of the code's pieces by kind: a comment, a string, a number, a word the language keeps, a function called, a key of an object; livereel's are made for a dark pane | `#8b949e`, `#a5d6ff`, `#79c0ff`, `#ff7b72`, `#d2a8ff`, `#7ee787` |
 | `glowX`, `glowY` | where the ground's glow stands, across and down, each from 0 to 1 | `0.5`, `0.3` |
@@ -785,8 +786,14 @@ do, as far as the window stands off the ground and the screen has come up
 in it, so a page over the whole frame has none. Its metal shows the
 world's light: with no lights and no soft boxes it stands dark. Turned
 past edge-on, the window shows the body's back. It is open in front, so a
-page that fades shows what stands behind the window. A flat film draws the
-edge and shadow in its place.
+page that fades shows what stands behind the window. Glass lies over the
+page, a smooth clear coat as strong as `windowGlass` says, which reflects
+the soft boxes and the lights, more as the eye sees it aslant, and dims the
+page under it by as much: a glint glides over a dark page as the window
+turns toward a box, and hardly shows on a white one. It comes with the
+body, as far as the body has come, reflects nothing where the world has no
+light, and stays over a page that fades. A flat film draws the edge and
+shadow in its place.
 
 ```ts
 theme: { windowThickness: 24, windowRim: 6, softBoxes: [...] }
