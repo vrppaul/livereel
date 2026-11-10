@@ -23,6 +23,7 @@ import { type Eye, eyeAtRest } from '../../src/domain/eye.ts';
 import { type Box, type Format, type Point, type Size, distanceBetween } from '../../src/domain/geometry.ts';
 import type { Sharpness } from '../../src/domain/focus.ts';
 import { type Spot, carried } from '../../src/domain/matrix.ts';
+import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { UNSHADED, drawnWindow } from '../../src/props/window.ts';
 import { FOCAL_LENGTH } from './fakes.ts';
 
@@ -121,7 +122,8 @@ function seenInPerspective(eye: Eye, spot: Spot): Point {
  */
 function windowSeenInPerspective(spot: Spot): Point {
 	const cut = drawnCamera({ pose: FACE_ON, view: LEANT_WINDOW, eye: MOVED_EYE }, SQUARE).cut;
-	const window = drawnWindow(LEANT_WINDOW, cut, MOVED_EYE, UNSHADED, SQUARE.frame, ALL_SHARP);
+	const around = { eye: MOVED_EYE, frame: SQUARE.frame, sharpness: ALL_SHARP, look: LIVEREELS_LOOK, screenShown: 1 };
+	const window = drawnWindow(LEANT_WINDOW, cut, UNSHADED, around);
 	const inTheEyesSpace = carried(window.inTheEyesSpace, spot);
 	const toThePicturePlane = FOCAL_LENGTH / -inTheEyesSpace.out;
 	return {

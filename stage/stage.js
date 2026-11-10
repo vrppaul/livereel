@@ -25,7 +25,7 @@
 /** @import { HeldPicture, Layout, Opening, PagePicture, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
-/** A value of the look set whole on the stage, in place of one token: any but the ground's layers, the way words come up, which the moves that bring them read, and the world's light, which the room lights its things by @typedef {Exclude<keyof Look, 'groundLayers' | 'words' | 'lights' | 'softBoxes'>} WholeLookName */
+/** A value of the look set whole on the stage, in place of one token: any but the ground's layers, the way words come up, which the moves that bring them read, the world's light, which the room lights its things by, and the window's body, which the room draws with the window @typedef {Exclude<keyof Look, 'groundLayers' | 'words' | 'lights' | 'softBoxes' | 'windowThickness' | 'windowRim' | 'windowMetal' | 'windowRoughness'>} WholeLookName */
 /** An element of the stage's markup: the cursor is drawn in SVG, the rest in HTML @typedef {HTMLElement | SVGElement} Staged */
 /** The scene's lists of objects: those standing, and those pushed off while they go @typedef {'objects' | 'leaving'} ObjectList */
 /**
@@ -111,6 +111,8 @@ const MELT_TOWARD = 'data-melt-toward';
 // The attribute what the eye's focus blurs is drawn with, which what it draws sharp has not, so that is drawn with no
 // filter at all
 const OUT_OF_FOCUS = 'data-out-of-focus';
+// The attribute the window is drawn with where the room draws its body, which takes the place of its edge and shadow
+const WITH_A_BODY = 'data-body';
 // The custom property a title's own size is set as, where it has one; the stylesheet takes the look's where it has not
 const OWN_SIZE = '--title-own-size';
 // The attribute that names the edge of the frame a caption stands at: its foot, or its top
@@ -210,9 +212,9 @@ class CameraDrawer {
 }
 
 /**
- * The page's window: where on the frame the camera's picture shows, how far it stands off the ground, how it is drawn
- * about its middle as it leans, by the matrix the engine sees it through, how it shades the page, and how soft the
- * eye's focus draws it.
+ * The page's window: where on the frame the camera's picture shows, how round its corners are, how far it stands off
+ * the ground, how it is drawn about its middle as it leans, by the matrix the engine sees it through, how it shades the
+ * page, how soft the eye's focus draws it, and whether it has a body, which the room draws (`stage/body.js`).
  */
 class WindowDrawer {
 	/** @param {Staged} root */
@@ -228,11 +230,13 @@ class WindowDrawer {
 			'--view-top': view.box.top,
 			'--view-width': view.box.width,
 			'--view-height': view.box.height,
+			'--view-corner': view.corner,
 			'--lift': view.lift
 		});
 		transformed(this.root, view.transform);
 		shadeDrawn(this.root, view.shade);
 		focusDrawn(this.root, view.outOfFocus);
+		this.root.toggleAttribute(WITH_A_BODY, view.body !== null);
 	}
 }
 

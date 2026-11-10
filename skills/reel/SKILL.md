@@ -55,7 +55,8 @@ takes the default, said aloud.
    what the page blurs; motion blur as livereel sets it or none; the eye's
    focus, sharp all over or open on a shot; where the film has things of
    its own, flat light or the world's lights and soft boxes, a still of
-   each.
+   each; in a room, the window with a body of metal or its flat edge and
+   shadow, a still of each with the window leant.
 9. **Sound**: livereel's clicks and keys, the keyboard, or none; music.
 10. **The loop**: say how each shot will be checked, as section 4 has it, a
    still of each shot first, then a clip of its span, then the whole film,
@@ -387,7 +388,12 @@ the eye at rest, to the right for more degrees, and `up` from level,
 spanning `width` and `height` degrees, turned `lean` degrees round its own
 middle, brightest along it; each colour hex with no alpha. None of either
 in livereel's own look; a still of a polished sphere shows where each glint
-falls. Leave out
+falls. In a room the page's window may have a body, a slab of metal round
+the page as a tablet has, in place of its edge and shadow:
+`windowThickness` (0, none, livereel's) and `windowRim` in pixels of a
+1080 frame, `windowMetal` in hex with no alpha and `windowRoughness` from
+0 to 1; its metal shows the world's light alone, so give it soft boxes.
+Leave out
 what the user does not name: livereel's own is a dark ground, white ink
 and an amber accent. `look.to(theme)` changes any of these as the film goes: in a
 `play` through the values between (a ground fading light, the glow

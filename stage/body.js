@@ -1,0 +1,191 @@
+// @ts-check
+/**
+ * The body of the page's window in the room (`DrawnBody` in `src/props/window.ts`): a slab of metal round the page, as
+ * a tablet is made — its sides flat and square to the page, only its corners round, a rim round the page on its front
+ * and a back behind — drawn alone into a layer of its own, lit by the world's light as the eye sees the room
+ * (`stage/lighting.js`). It is open in front, where the page lies, and each face is drawn on its outer side alone, so a
+ * page that fades shows what stands behind the window through it, as it does with no body.
+ *
+ * Its rim reaches a pixel under the page, so the page's smoothed edge is laid over metal, not over the ground between
+ * the two. Its sides face straight out from its corners' arcs, where their own faces would cut each round into facets
+ * a soft box glides over in steps. Its faces are built anew only as its measures change, as the window lifts or
+ * travels; standing, it is built once.
+ */
+import * as THREE from 'three';
+import { matrixOf, projectionOnto } from './matrices.js';
+/** @import { DrawnBody, DrawnWindow } from '../src/props/window.ts' */
+/** @import { Box } from '../src/domain/geometry.ts' */
+/** @import { WorldLighting } from './lighting.js' */
+
+/**
+ * The body's measures, as its faces are built from them, in the frame's pixels: the page's width, height and corners,
+ * the rim and the thickness.
+ * @typedef {{
+ *   readonly width: number,
+ *   readonly height: number,
+ *   readonly corner: number,
+ *   readonly rim: number,
+ *   readonly thickness: number
+ * }} Measures
+ */
+
+/** A rounded rectangle about its middle: its width, its height, and how round its corners are. @typedef {{ readonly width: number, readonly height: number, readonly corner: number }} Outline */
+
+// How finely a corner is cut, in straight lines a quarter-turn
+const CORNER_SEGMENTS = 16;
+// How far the rim reaches under the page, in the frame's pixels
+const RIM_UNDER_THE_PAGE = 1;
+// The body is metal through and through
+const WHOLLY_METAL = 1;
+// No turn, a quarter-turn, a half-turn and a whole one, in radians, as a corner's arc runs from the one before; a side
+// and the half of it its edge stands from its middle
+const NO_TURN = 0;
+const HALVES = 2;
+const QUARTER_TURN = Math.PI / HALVES;
+const HALF_TURN = Math.PI;
+const THREE_QUARTERS = HALF_TURN + QUARTER_TURN;
+const WHOLE_TURN = HALF_TURN * HALVES;
+// What three draws an extruded outline in: its two lids, then its sides
+const EXTRUDED_SIDES = 1;
+// A corner of no roundness; and how far a point of an outline with such corners stands out of the rectangle inside
+// its arcs, which it stands on, so it faces as its own face does
+const SQUARE = 0;
+const ON_THE_RECTANGLE = 0;
+// Where the page's plane stands, which the rim lies on and the sides go back from
+const ON_THE_PAGES_PLANE = 0;
+// The measures of a body built of nothing yet
+const NONE_BUILT = '';
+
+/** The window's body: its slab of metal, as last built, and the world's light it is lit by. */
+export class WindowBody {
+	/** @param {WorldLighting} lighting */
+	constructor(lighting) {
+		this.lighting = lighting;
+		this.scene = new THREE.Scene();
+		// three draws nothing without a camera; the room hands only its projection, the body standing in the eye's space
+		this.camera = new THREE.Camera();
+		this.metal = new THREE.MeshStandardMaterial({ metalness: WHOLLY_METAL });
+		this.slab = new THREE.Group();
+		this.slab.matrixAutoUpdate = false;
+		/** The slab's faces, and the measures they were last built of, said whole @type {THREE.Mesh[]} */
+		this.faces = [];
+		this.builtOf = NONE_BUILT;
+	}
+
+	/**
+	 * A window's body drawn into the layer the renderer draws into, which holds a box of the frame: built round the page
+	 * the window shows, where its measures are not those it was built of, in its metal, where the engine places it,
+	 * seen in perspective from the eye and lit as the eye sees the room.
+	 * @param {THREE.WebGLRenderer} renderer @param {DrawnWindow} window @param {DrawnBody} body @param {Box} drawn
+	 * @param {Box} frame
+	 */
+	drawn(renderer, window, body, drawn, frame) {
+		this.builtFor({
+			width: window.reach.width,
+			height: window.reach.height,
+			corner: window.corner,
+			rim: body.rim,
+			thickness: body.thickness
+		});
+		this.metal.color.set(body.metal);
+		this.metal.roughness = body.roughness;
+		this.slab.matrix.copy(matrixOf(body.placing));
+		this.slab.matrixWorldNeedsUpdate = true;
+		this.camera.projectionMatrix.copy(projectionOnto(drawn, frame, body.eyeDistance));
+		this.camera.projectionMatrixInverse.copy(this.camera.projectionMatrix).invert();
+		this.scene.clear();
+		this.scene.add(this.slab);
+		this.lighting.shiningIn(this.scene, body.roomInTheEyesSpace);
+		renderer.render(this.scene, this.camera);
+	}
+
+	/**
+	 * The slab built of a body's measures, its faces of the measures it was built of let go; as it stands, where they are
+	 * the same.
+	 * @param {Measures} measures
+	 */
+	builtFor(measures) {
+		const builtOf = JSON.stringify(measures);
+		if (builtOf === this.builtOf) return;
+		for (const face of this.faces) face.geometry.dispose();
+		this.faces = facesOf(measures, this.metal);
+		this.slab.clear();
+		this.slab.add(...this.faces);
+		this.builtOf = builtOf;
+	}
+}
+
+/**
+ * A body's faces in its metal, the page's middle at their origin, the page's face toward three's z: its sides, the
+ * page's outline grown by the rim and drawn back as deep as the body is thick; its back, that outline at their foot,
+ * facing away; and its rim, the outline round the page and a pixel under it, on the page's plane, facing the eye.
+ * @param {Measures} measures @param {THREE.Material} metal
+ */
+function facesOf(measures, metal) {
+	const outer = {
+		width: measures.width + measures.rim * HALVES,
+		height: measures.height + measures.rim * HALVES,
+		corner: measures.corner + measures.rim
+	};
+	const page = {
+		width: measures.width - RIM_UNDER_THE_PAGE * HALVES,
+		height: measures.height - RIM_UNDER_THE_PAGE * HALVES,
+		corner: Math.max(SQUARE, measures.corner - RIM_UNDER_THE_PAGE)
+	};
+	const sides = new THREE.ExtrudeGeometry(roundedRectangle(outer), {
+		depth: measures.thickness,
+		bevelEnabled: false,
+		curveSegments: CORNER_SEGMENTS
+	});
+	sidesFacingOut(sides, outer);
+	sides.translate(ON_THE_PAGES_PLANE, ON_THE_PAGES_PLANE, -measures.thickness);
+	const back = new THREE.ShapeGeometry(roundedRectangle(outer), CORNER_SEGMENTS)
+		.rotateY(HALF_TURN)
+		.translate(ON_THE_PAGES_PLANE, ON_THE_PAGES_PLANE, -measures.thickness);
+	const ring = roundedRectangle(outer);
+	ring.holes.push(roundedRectangle(page));
+	const rim = new THREE.ShapeGeometry(ring, CORNER_SEGMENTS);
+	return [new THREE.Mesh(sides, metal), new THREE.Mesh(back, metal), new THREE.Mesh(rim, metal)];
+}
+
+/**
+ * An extruded outline's sides alone drawn, each point facing straight out from the outline inside its corners' arcs:
+ * along a straight side as its face does, round a corner turning smoothly.
+ * @param {THREE.ExtrudeGeometry} geometry @param {Outline} outline
+ */
+function sidesFacingOut(geometry, outline) {
+	const sides = geometry.groups[EXTRUDED_SIDES];
+	if (sides === undefined) throw new Error("three's extruded outline has no sides");
+	geometry.setDrawRange(sides.start, sides.count);
+	const insideTheArcs = {
+		across: outline.width / HALVES - outline.corner,
+		up: outline.height / HALVES - outline.corner
+	};
+	const position = geometry.getAttribute('position');
+	const normal = geometry.getAttribute('normal');
+	const facing = new THREE.Vector3();
+	for (let vertex = sides.start; vertex < sides.start + sides.count; vertex++) {
+		const across = position.getX(vertex);
+		const up = position.getY(vertex);
+		facing.set(
+			across - THREE.MathUtils.clamp(across, -insideTheArcs.across, insideTheArcs.across),
+			up - THREE.MathUtils.clamp(up, -insideTheArcs.up, insideTheArcs.up),
+			ON_THE_PAGES_PLANE
+		);
+		if (facing.lengthSq() === ON_THE_RECTANGLE) continue;
+		facing.normalize();
+		normal.setXYZ(vertex, facing.x, facing.y, facing.z);
+	}
+}
+
+/** A rounded rectangle about its middle, its corners drawn as arcs. @param {Outline} outline */
+function roundedRectangle(outline) {
+	const right = outline.width / HALVES - outline.corner;
+	const top = outline.height / HALVES - outline.corner;
+	const shape = new THREE.Shape();
+	shape.absarc(right, top, outline.corner, NO_TURN, QUARTER_TURN);
+	shape.absarc(-right, top, outline.corner, QUARTER_TURN, HALF_TURN);
+	shape.absarc(-right, -top, outline.corner, HALF_TURN, THREE_QUARTERS);
+	shape.absarc(right, -top, outline.corner, THREE_QUARTERS, WHOLE_TURN);
+	return shape;
+}

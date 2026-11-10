@@ -224,8 +224,11 @@ export const A_GROUND_LAYERS = new Plain(
 );
 /** A colour a film gives its words or its ground, in the one form checked here rather than in a browser: hex. */
 export const A_COLOUR = new Plain(isHexColour, 'a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa');
-/** A colour of light, which three reads in hex with no alpha, as light is not laid over anything. */
-export const A_LIGHTS_COLOUR = new Plain(isOpaqueHexColour, 'a colour in hex with no alpha: #rgb or #rrggbb');
+/**
+ * A colour three reads, in hex with no alpha: a light's, which is laid over nothing, and the metal of the window's
+ * body, which is not seen through.
+ */
+export const AN_OPAQUE_COLOUR = new Plain(isOpaqueHexColour, 'a colour in hex with no alpha: #rgb or #rrggbb');
 /** A length a film sizes or spaces something by, in pixels: none at least. */
 export const A_PIXELS = new Plain(isNoneOrMore, 'a number of pixels, 0 or more');
 /** How bright a light is: none at least, with no bound above, as a light may outshine white. */

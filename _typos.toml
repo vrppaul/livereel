@@ -1,4 +1,7 @@
 # Names of other tongues the code writes as they are: GLSL's `textureLod`, a texture read at a level of its smaller
-# copies, which typos takes for a misspelt "load" and rewrites, breaking the room's shader (`stage/room.js`)
+# copies, which typos takes for a misspelt "load" and rewrites, breaking the room's shader (`stage/room.js`); and
+# three's `metalness`, how much a material is metal, which typos rewrites as "metallicity", naming no value three has
+# (`stage/body.js`)
 [default.extend-identifiers]
 textureLod = "textureLod"
+metalness = "metalness"

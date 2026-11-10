@@ -396,7 +396,13 @@ export function drawn(
 	return {
 		look: scene.look,
 		camera: shown,
-		window: drawnWindow(camera.view, shown.cut, camera.eye, scene.window, format.frame, sharpness),
+		window: drawnWindow(camera.view, shown.cut, scene.window, {
+			eye: camera.eye,
+			frame: format.frame,
+			sharpness,
+			look: scene.look,
+			screenShown: scene.screen.shown
+		}),
 		screen: drawnScreen(scene.screen, camera, format),
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout, moment),

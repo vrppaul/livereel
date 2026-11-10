@@ -1,7 +1,8 @@
 /**
  * Colours a film writes in hex, mixed on their way from one to another: each channel and the alpha moved as far as the
  * way has gone, so a ground fades from dark to light through the colours between. A colour stands as it was written
- * at either end of its way; between them it is written whole, `#rrggbbaa`, as is a colour read off the page.
+ * at either end of its way; between them it is written whole, `#rrggbbaa`, as is a colour read off the page, or, for
+ * a colour three reads, which has no alpha, `#rrggbb`.
  */
 import { between } from './toward.ts';
 
@@ -37,14 +38,27 @@ const ARRIVED = 1;
 export function colourToward(start: string, end: string, progress: number): string {
 	if (progress <= NOT_ON_ITS_WAY || start === end) return start;
 	if (progress >= ARRIVED) return end;
+	return hexOf(channelsToward(start, end, progress));
+}
+
+/** A colour with no alpha `progress` of the way from one to another, written with none, as three reads a colour. */
+export function opaqueColourToward(start: string, end: string, progress: number): string {
+	if (progress <= NOT_ON_ITS_WAY || start === end) return start;
+	if (progress >= ARRIVED) return end;
+	const channels = channelsToward(start, end, progress);
+	return HASH + [channels.red, channels.green, channels.blue].map(twoDigits).join('');
+}
+
+/** The channels of a colour `progress` of the way from one to another. */
+function channelsToward(start: string, end: string, progress: number): Channels {
 	const from = channelsOf(start);
 	const to = channelsOf(end);
-	return hexOf({
+	return {
 		red: between(from.red, to.red, progress),
 		green: between(from.green, to.green, progress),
 		blue: between(from.blue, to.blue, progress),
 		alpha: between(from.alpha, to.alpha, progress)
-	});
+	};
 }
 
 /** A colour's channels, from any form of hex a film writes: `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`. */

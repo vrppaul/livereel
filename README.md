@@ -701,6 +701,8 @@ values; what the film leaves out stays livereel's:
 | `paneCorner` | how round the corners of a pane are — the page's window, the code's pane and the terminal alike — in pixels; `0`, square | `24` |
 | `paneEdge` | the faint edge round a pane, its alpha how faint | `#ffffff1a` |
 | `paneShadow`, `paneShadowColour` | how strong a pane's shadow is, from `0`, none, to `1`, and its colour | `1`, `#000` |
+| `windowThickness`, `windowRim` | in a room, how thick the body of the page's window is, `0` none, and how far its rim reaches past the page all round, in pixels | `0`, `6` |
+| `windowMetal`, `windowRoughness` | the colour of the window's body, in hex with no alpha, and how rough its metal is, from `0`, a mirror, to `1`, matte | `#454b56`, `0.45` |
 | `terminal`, `terminalInk` | the colour of the terminal, the code's pane, the ending's command and keys' caps, and what is written on them | `#10141c`, `#f4f6fa` |
 | `codeComment`, `codeString`, `codeNumber`, `codeKeyword`, `codeCall`, `codeKey` | the colours of the code's pieces by kind: a comment, a string, a number, a word the language keeps, a function called, a key of an object; livereel's are made for a dark pane | `#8b949e`, `#a5d6ff`, `#79c0ff`, `#ff7b72`, `#d2a8ff`, `#7ee787` |
 | `glowX`, `glowY` | where the ground's glow stands, across and down, each from 0 to 1 | `0.5`, `0.3` |
@@ -774,6 +776,21 @@ aims at the spot it stands at, and a soft box spanning 180° or more, or
 turned up past straight up, are refused as the film is defined. They cast
 no shadow. `look.to` changes them whole, half-way through a play: a light
 does not yet fade in by its strength.
+
+In a room the page's window may have a body, as a tablet has: a slab of
+metal round the page, `windowThickness` thick, its rim reaching
+`windowRim` past the page all round, its corners the page's grown by the
+rim. It takes the place of the window's edge and shadow and comes as they
+do, as far as the window stands off the ground and the screen has come up
+in it, so a page over the whole frame has none. Its metal shows the
+world's light: with no lights and no soft boxes it stands dark. Turned
+past edge-on, the window shows the body's back. It is open in front, so a
+page that fades shows what stands behind the window. A flat film draws the
+edge and shadow in its place.
+
+```ts
+theme: { windowThickness: 24, windowRim: 6, softBoxes: [...] }
+```
 
 The look changes as the film goes, by a move like any other:
 `look.to(theme)`, any of the same values. In a `play` it moves there over

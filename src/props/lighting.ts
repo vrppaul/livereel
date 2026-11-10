@@ -16,7 +16,7 @@
 import { type Size, frameScaleOf } from '../domain/geometry.ts';
 import {
 	A_BRIGHTNESS,
-	A_LIGHTS_COLOUR,
+	AN_OPAQUE_COLOUR,
 	A_NUMBER,
 	A_SHARE,
 	type Kind,
@@ -156,7 +156,7 @@ export const A_WORLD_LIGHTS = new ListOf(
 	new LightKind(
 		new OfForm<WorldLight>(
 			{
-				colour: needed(A_LIGHTS_COLOUR),
+				colour: needed(AN_OPAQUE_COLOUR),
 				strength: needed(A_BRIGHTNESS),
 				at: needed(A_SPOT),
 				aim: needed(A_SPOT),
@@ -173,7 +173,7 @@ export const A_WORLD_LIGHTS = new ListOf(
 export const A_SOFT_BOXES = new ListOf(
 	new OfForm<SoftBox>(
 		{
-			colour: needed(A_LIGHTS_COLOUR),
+			colour: needed(AN_OPAQUE_COLOUR),
 			brightness: needed(A_BRIGHTNESS),
 			round: needed(A_NUMBER),
 			up: needed(AN_ELEVATION),

@@ -116,7 +116,6 @@ body {
 .view-shadow {
 	/* Drawn in the frame's own pixels: a pane's lengths, in a frame 1080's, scaled to the frame shot */
 	--pane-scale: var(--frame-scale);
-	--view-corner: calc(var(--pane-corner) * var(--pane-scale) * 1px);
 
 	position: absolute;
 	left: calc(var(--view-left) * 1px);
@@ -125,17 +124,17 @@ body {
 	height: calc(var(--view-height) * 1px);
 }
 
-/* The view's picture cut where the engine says (`drawnCamera`): at the screen's edges flat on the frame, closing in on the view's as it lifts into a window, the corners rounding with it, as its shadow's do */
+/* The view's picture cut where the engine says (`drawnCamera`): at the screen's edges flat on the frame, closing in on the view's as it lifts into a window, the corners rounding with it as the engine rounds them (`DrawnWindow`), as its shadow's do and the room's body stands round them */
 .view {
 	clip-path: inset(
 		calc(var(--cut-top) * 1px) calc(var(--cut-right) * 1px) calc(var(--cut-bottom) * 1px) calc(var(--cut-left) * 1px)
-			round calc(var(--lift) * var(--view-corner))
+			round calc(var(--view-corner) * 1px)
 	);
 }
 
 /* The window's shadow and edge, as far as it stands off the ground and the screen has come up in it */
 .view-shadow {
-	border-radius: calc(var(--lift) * var(--view-corner));
+	border-radius: calc(var(--view-corner) * 1px);
 	box-shadow: var(--pane-shadow);
 	opacity: calc(var(--lift) * var(--screen-shown));
 }
@@ -563,6 +562,11 @@ body {
 /* In the room the window's surface draws the window face-on, as the frame shows a window that faces it, whatever its matrix: the room places it as that matrix sees it (`room.js`) */
 .room .window[data-transform] :is(.view, .view-shadow) {
 	transform: none;
+}
+
+/* In the room a window with a body has no edge or shadow of its own: the body is its edge, and a shadow drawn on the window's plane would lie over the body's sides (`body.js`) */
+.room .window[data-body] .view-shadow {
+	box-shadow: none;
 }
 
 /* In the room the window's surface stands over the frame and as far past it as the camera's picture reaches on the window's plane, where the eye may see it leant or from aside, as densely as the graphics card holds it (`room.js`); what it holds stays where the frame has it, uncut at the frame's edge */
