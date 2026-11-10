@@ -47,6 +47,7 @@ import {
 	wayBetween
 } from './matrix.ts';
 import type { Path, PathSpace } from './path.ts';
+import type { LastingHolder } from './placement.ts';
 import { between } from './toward.ts';
 import { type Track, arrivedAt } from './track.ts';
 
@@ -61,15 +62,15 @@ export interface Viewpoint {
 }
 
 /**
- * Where the eye focuses, placed where it stands as each frame is drawn: so far before the eye along where it looks, in
- * pixels of a frame 1080 high; at a spot of the world; at a point of the page's window, in its box's pixels from its
- * top left corner; or at a point of the page, in the screen's pixels.
+ * Where the eye focuses: so far before it along where it looks, in pixels of a frame 1080 high; or at a spot of
+ * something that holds a placement and lasts the whole film, the frame, the world, the page's window or the page, a
+ * point of its plane in its pixels from its top left corner (`src/domain/placement.ts`) and how far out of that plane
+ * toward the eye, in the frame's pixels, as a placement's depth: placed where it stands as each frame is drawn, as
+ * anything placed there is.
  */
 export type Focus =
 	| { readonly kind: 'distance'; readonly distance: number }
-	| { readonly kind: 'world'; readonly spot: Spot }
-	| { readonly kind: 'window'; readonly point: Point }
-	| { readonly kind: 'page'; readonly point: Point };
+	| { readonly kind: 'spot'; readonly holder: LastingHolder; readonly point: Point; readonly depth: number };
 
 /** What the eye's place is read in: the room, or the page's window as it stands. */
 type EyeHolder = 'world' | 'window';
@@ -295,14 +296,6 @@ export function isAtRest(eye: Eye): boolean {
  */
 export function looksStraightAtTheFrame(eye: Viewpoint): boolean {
 	return carriesEveryPointWhereItStands(turnOf(eye)) && eye.at.out > THE_FRAMES_PLANE;
-}
-
-/**
- * How far before an eye a spot of the room stands, along where it looks, in pixels of a frame 1080 high: none or less
- * at it or behind it.
- */
-export function distanceBefore(eye: Viewpoint, spot: Spot): number {
-	return dotOf(unitOf(wayBetween(eye.at, eye.aim)), wayBetween(eye.at, spot));
 }
 
 /**

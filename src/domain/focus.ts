@@ -20,25 +20,27 @@
  * stands on the frame, or in a group on it, rides with the eye and stays sharp, as words laid over a film do.
  *
  * Where the eye focuses is placed as each frame is drawn (`Focus` in `src/domain/eye.ts`), at both ends of its way: a
- * spot of the world from where the eye stands then, a point of the window or of the page as the window, the camera and
- * the eye stand, so a focus holds on what it was put on while they move. A focus going from one to another goes evenly
- * in the reciprocal of its distance, as a lens's ring turns, so what it leaves softer softens evenly; it goes no farther
- * than as far as can be, where a spot it was put on stands behind the eye.
+ * spot of the frame, the world, the window or the page placed on that holder's plane as the window, the camera and the
+ * eye stand then, as anything placed there is (`src/domain/placement.ts`), so a focus holds on what it was put on while
+ * they move. A focus going from one to another goes evenly in the reciprocal of its distance, as a lens's ring turns,
+ * so what it leaves softer softens evenly; it goes no farther than as far as can be, where a spot it was put on stands
+ * behind the eye.
  */
 import type { Camera } from './camera.ts';
-import { pointInTheView } from './framing.ts';
-import { fromItsMiddle, windowInTheWorld } from './placement.ts';
-import { A_PINHOLE, type Focus, distanceBefore } from './eye.ts';
+import { type Placed, type Placement, fromItsMiddle, lastingPlaneOf, placed } from './placement.ts';
+import { A_PINHOLE, type Focus } from './eye.ts';
 import { type Box, type Point, type Size, boxOf, cornersOf, frameScaleOf, middleX, middleY } from './geometry.ts';
 import {
 	ITS_MIDDLE,
 	type Matrix,
 	type Spot,
+	carried,
 	longestScaleAtItsMiddle,
 	nearnessOfItsPlane,
 	seenFromOf,
 	seenWithin
 } from './matrix.ts';
+import { AS_PLACED } from './stance.ts';
 import { between } from './toward.ts';
 
 /**
@@ -79,6 +81,8 @@ const AS_FAR_AS_CAN_BE = 0;
 const ITS_CORNER = 0;
 // How many points of the frame show a plane that is not seen
 const NONE_SEEN = 0;
+// How wide and tall a box is that stands for a point
+const NO_SIZE = 0;
 
 /**
  * How the eye of a camera sees as a frame of this size is drawn: where it sees sharp, its focal length, and how wide it
@@ -96,21 +100,24 @@ export function focusDistanceOf(focus: Focus, camera: Camera, frame: Size): numb
 	switch (focus.kind) {
 		case 'distance':
 			return focus.distance;
-		case 'world':
-			return distanceBefore(camera.eye, focus.spot);
-		case 'window':
-			return distanceOnTheWindow(camera, frame, focus.point);
-		case 'page':
-			return distanceOnTheWindow(camera, frame, pointInTheView(camera, frame, focus.point));
+		case 'spot': {
+			const plane = lastingPlaneOf(focus.holder, camera, frame);
+			return distanceOfItsMiddle(placed(placementAt(focus.point, focus.depth), plane, frame), frame);
+		}
 	}
 }
 
 /**
- * How far before an eye of a focal length the middle of what a matrix carries about its middle, to where the eye sees
- * it, stands along where the eye looks, in pixels of a frame 1080 high: none or less at the eye or behind it.
+ * How far before the eye the middle of something placed stands along where the eye looks, on a frame of this size, in
+ * pixels of a frame 1080 high: none or less at the eye or behind it. In the eye's own space it looks against `out`.
  */
-export function distanceOfItsMiddle(placing: Matrix, focalLength: number): number {
-	return distanceAt(placing, ITS_MIDDLE, focalLength);
+export function distanceOfItsMiddle(standing: Placed, frame: Size): number {
+	return -carried(standing.inTheEyesSpace, ITS_MIDDLE).out / frameScaleOf(frame);
+}
+
+/** A point of a plane, brought out of it toward the eye by a depth, as a placement there: a box of no size at it. */
+function placementAt(point: Point, depth: number): Placement {
+	return { box: { ...point, width: NO_SIZE, height: NO_SIZE }, ...AS_PLACED, depth };
 }
 
 /**
@@ -206,14 +213,6 @@ function distanceNearest(placing: Matrix, laid: Size, sharpness: Sharpness): num
 	const corners = cornersOf({ left: ITS_CORNER, top: ITS_CORNER, width: laid.width, height: laid.height });
 	const distances = corners.map((corner) => distanceAt(placing, fromItsMiddle(laid, corner), sharpness.focalLength));
 	return Math.min(Math.max(sharpness.focusedAt, Math.min(...distances)), Math.max(...distances));
-}
-
-/**
- * How far before the eye a point of the page's window stands, in its box's pixels, as the window stands and is seen.
- */
-function distanceOnTheWindow(camera: Camera, frame: Size, point: Point): number {
-	const placing = windowInTheWorld(camera.view, camera.eye, frame).placing;
-	return distanceAt(placing, fromItsMiddle(camera.view.box, point), camera.eye.focalLength);
 }
 
 /**

@@ -65,7 +65,7 @@ import {
 	pointAt
 } from '../domain/geometry.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
-import { ITS_MIDDLE, type Spot, carried } from '../domain/matrix.ts';
+import { ITS_MIDDLE, carried } from '../domain/matrix.ts';
 import { ONE_FRAME, pastTheEdge } from '../domain/place.ts';
 import {
 	type DrawnPlacement,
@@ -76,7 +76,6 @@ import {
 	carriedAboutItsMiddle,
 	drawnPlacement,
 	groupNamed,
-	middleInTheRoom,
 	placed,
 	planeOf,
 	pointOnTheFrame
@@ -347,35 +346,16 @@ function outOfFocusIn(standing: Placed, around: Surroundings): number | null {
 }
 
 /**
- * Where the eye focuses to see an object sharp, its middle where it stands now: on the frame or in a group, which ride
- * with the eye, so far before it; in the world, at that spot of it; inside the window or on the page, at that point of
- * it, where the window it lies in is placed as each frame is drawn.
+ * Where the eye focuses to see an object sharp, its middle where it stands now: at that spot of what it stands in, its
+ * box's middle brought out by its depth, placed as each frame is drawn; in a group, which goes with what stands in it,
+ * so far before the eye, as the group rides with it.
  */
 export function focusOn(object: FrameObject, holders: Holders, frame: Size): Focus {
-	const middle: Point = { left: middleX(object.box), top: middleY(object.box) };
-	switch (object.inside.kind) {
-		case 'frame':
-		case 'group': {
-			const placing = placedInItsHolder(object, holders, frame).placing;
-			return { kind: 'distance', distance: distanceOfItsMiddle(placing, holders.camera.eye.focalLength) };
-		}
-		case 'world':
-			return { kind: 'world', spot: spotInTheWorld(object, frame) };
-		case 'window':
-			return { kind: 'window', point: middle };
-		case 'page':
-			return { kind: 'page', point: middle };
+	const holder = object.inside;
+	if (holder.kind === 'group') {
+		return { kind: 'distance', distance: distanceOfItsMiddle(placedInItsHolder(object, holders, frame), frame) };
 	}
-}
-
-/**
- * The spot of the world an object in it stands at, its box's middle brought out by its depth, in pixels of a frame 1080
- * high from the frame's middle, as an eye's spots are.
- */
-function spotInTheWorld(object: FrameObject, frame: Size): Spot {
-	const scale = frameScaleOf(frame);
-	const middle = middleInTheRoom(object.box, frame);
-	return { across: middle.across / scale, down: middle.down / scale, out: object.depth / scale };
+	return { kind: 'spot', holder, point: { left: middleX(object.box), top: middleY(object.box) }, depth: object.depth };
 }
 
 /**

@@ -35,7 +35,7 @@ import {
 } from '../domain/eye.ts';
 import { type Camera, eyeInTheWindow } from '../domain/camera.ts';
 import { pointInTheView } from '../domain/framing.ts';
-import { fromItsMiddle } from '../domain/placement.ts';
+import { IN_THE_WORLD, ON_ITS_PLANE, ON_THE_PAGE, fromItsMiddle } from '../domain/placement.ts';
 import { FilmError } from '../domain/errors.ts';
 import {
 	AN_OWN_FIGURE,
@@ -52,7 +52,7 @@ import {
 	wayOf
 } from '../domain/flight.ts';
 import { AT_THE_EYE, focusDistanceOf } from '../domain/focus.ts';
-import { frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
+import { HALVES, type Size, frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
 import {
 	A_NAME,
 	A_NUMBER,
@@ -258,7 +258,7 @@ const NO_KEYS: readonly never[] = [];
 // and the bounds of a tip, in degrees
 const ITS_START = 0;
 const THE_FIRST_LEG = 0;
-const ON_THE_PAGE = 0;
+const LEVEL_WITH_THE_PAGE = 0;
 const STRAIGHT_DOWN = -90;
 const STRAIGHT_UP = 90;
 // How near over a block, on the page's plane, the eye stands to have no heading toward it, in pixels of a frame 1080
@@ -464,7 +464,7 @@ async function headingRead(
 	const share = shareOf(way, key.by);
 	if ('degrees' in key) return { share, rule: { kind: 'degrees', degrees: key.degrees } };
 	if ('along' in key) return { share, rule: { kind: 'along' } };
-	const spot = await spotOver(beginning, camera, key.toward, ON_THE_PAGE);
+	const spot = await spotOver(beginning, camera, key.toward, LEVEL_WITH_THE_PAGE);
 	const standing = pointOnTheWay(way, share);
 	if (Math.hypot(spot.across - standing.across, spot.down - standing.down) < RIGHT_OVER) {
 		throw new FilmError(
@@ -478,7 +478,7 @@ async function headingRead(
 async function tipRead(beginning: Beginning, camera: Camera, way: Way, key: TipKeyScript): Promise<GazeKey> {
 	const share = shareOf(way, key.by);
 	if ('degrees' in key) return { share, rule: { kind: 'degrees', degrees: key.degrees } };
-	const spot = await spotOver(beginning, camera, key.holding, ON_THE_PAGE);
+	const spot = await spotOver(beginning, camera, key.holding, LEVEL_WITH_THE_PAGE);
 	return { share, rule: { kind: 'holding', spot, downTheFrame: key.at } };
 }
 
@@ -511,22 +511,34 @@ function askedOf(on: FocusOn): FocusAsked {
 }
 
 /**
- * Where the eye focuses on what a film names, read as the move begins: a distance, or a spot of the world, as it is; a
- * block of the page, at its middle as the page lays it out; an object, at its middle where it stands, refused where none
- * of its name stands.
+ * Where the eye focuses on what a film names, read as the move begins: a distance as it is; a spot of the world, on
+ * its plane; a block of the page, at its middle as the page lays it out; an object, at its middle where it stands,
+ * refused where none of its name stands.
  */
 async function focusRead(beginning: Beginning, asked: FocusAsked): Promise<Focus> {
 	switch (asked.kind) {
 		case 'distance':
-		case 'world':
 			return asked;
+		case 'world':
+			return focusInTheWorld(asked.spot, beginning.format.frame);
 		case 'block': {
 			const block = await shownBox(beginning, asked.target, THE_FIRST, EYE_FOCUS);
-			return { kind: 'page', point: { left: middleX(block), top: middleY(block) } };
+			const point = { left: middleX(block), top: middleY(block) };
+			return { kind: 'spot', holder: ON_THE_PAGE, point, depth: ON_ITS_PLANE };
 		}
 		case 'object':
 			return focusOn(standing(beginning, asked.name, EYE_FOCUS), holdersAsTheyStand(beginning), beginning.format.frame);
 	}
+}
+
+/**
+ * A focus at a spot of the room, as the eye's spots are written, in pixels of a frame 1080 high from the frame's
+ * middle: on the world's plane, in the frame's pixels from its top left corner, and as far out of it.
+ */
+function focusInTheWorld(spot: Spot, frame: Size): Focus {
+	const inTheFrame = scaledBy(spot, frameScaleOf(frame));
+	const point = { left: frame.width / HALVES + inTheFrame.across, top: frame.height / HALVES + inTheFrame.down };
+	return { kind: 'spot', holder: IN_THE_WORLD, point, depth: inTheFrame.out };
 }
 
 /** The eye's focus `progress` of the way from where it focused to where it focuses. */

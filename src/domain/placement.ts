@@ -37,16 +37,19 @@ export interface Placement extends Stance {
 export type GroupName = string;
 
 /**
- * What a placement is read in: the frame, which rides with the eye, the world, which the eye moves through, the page's
- * window, the page in it, or a group of objects by its name, with the zIndex of what stands in it there, how high it
- * is drawn among the others of the group, where the film names one.
+ * What a placement is read in: one that lasts the whole film, or a group of objects by its name, with the zIndex of
+ * what stands in it there, how high it is drawn among the others of the group, where the film names one; a group goes
+ * with what stands in it.
  */
 export type Holder =
-	| { readonly kind: 'frame' }
-	| { readonly kind: 'world' }
-	| { readonly kind: 'window' }
-	| { readonly kind: 'page' }
-	| { readonly kind: 'group'; readonly name: GroupName; readonly zIndex: number | null };
+	LastingHolder | { readonly kind: 'group'; readonly name: GroupName; readonly zIndex: number | null };
+
+/**
+ * What a placement is read in that lasts the whole film, its plane worked out from the camera alone: the frame, which
+ * rides with the eye, the world, which the eye moves through, the page's window, or the page in it.
+ */
+export type LastingHolder =
+	{ readonly kind: 'frame' } | { readonly kind: 'world' } | { readonly kind: 'window' } | { readonly kind: 'page' };
 
 /**
  * What the flat stage lays something in: the frame; or the page's window, placed in the world, which carries what is
@@ -116,10 +119,10 @@ export interface DrawnPlacement {
 
 // Where something stands that a film shows inside nothing, one it shows inside the page's window or the world, and
 // one carried onto a block of the page
-export const ON_THE_FRAME: Holder = { kind: 'frame' };
-export const IN_THE_WINDOW: Holder = { kind: 'window' };
-export const IN_THE_WORLD: Holder = { kind: 'world' };
-export const ON_THE_PAGE: Holder = { kind: 'page' };
+export const ON_THE_FRAME: LastingHolder = { kind: 'frame' };
+export const IN_THE_WINDOW: LastingHolder = { kind: 'window' };
+export const IN_THE_WORLD: LastingHolder = { kind: 'world' };
+export const ON_THE_PAGE: LastingHolder = { kind: 'page' };
 
 // How far out of its own plane a spot of a box's plane stands
 export const ON_ITS_PLANE = 0;
@@ -128,21 +131,24 @@ export const ON_ITS_PLANE = 0;
 const AS_IT_IS: Measure = { kind: 'asItIs' };
 const IN_THE_FRAME: LaidIn = { kind: 'frame' };
 
-/** The plane of a holder, as the holders stand. */
+/** The plane of a holder, as the holders stand: a group's, the frame's carried by the group's box and stance. */
 export function planeOf(holder: Holder, holders: Holders, frame: Size): Plane {
+	if (holder.kind !== 'group') return lastingPlaneOf(holder, holders.camera, frame);
+	const group = groupNamed(holders.groups, holder.name);
+	return { ...lastingPlaneOf(ON_THE_FRAME, holders.camera, frame), box: group.box, stance: group };
+}
+
+/** The plane of a holder that lasts the whole film, as the camera shows the page and its eye sees. */
+export function lastingPlaneOf(holder: LastingHolder, camera: Camera, frame: Size): Plane {
 	switch (holder.kind) {
 		case 'frame':
-			return { ...worldSeenBy(eyeAtRest(holders.camera.eye.focalLength), frame), rides: 'eye' };
+			return { ...worldSeenBy(eyeAtRest(camera.eye.focalLength), frame), rides: 'eye' };
 		case 'world':
-			return worldSeenBy(holders.camera.eye, frame);
+			return worldSeenBy(camera.eye, frame);
 		case 'window':
-			return windowsPlane(holders.camera, frame);
+			return windowsPlane(camera, frame);
 		case 'page':
-			return { ...windowsPlane(holders.camera, frame), measures: { kind: 'framed', camera: holders.camera } };
-		case 'group': {
-			const group = groupNamed(holders.groups, holder.name);
-			return { ...planeOf(ON_THE_FRAME, holders, frame), box: group.box, stance: group };
-		}
+			return { ...windowsPlane(camera, frame), measures: { kind: 'framed', camera } };
 	}
 }
 

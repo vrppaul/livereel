@@ -47,6 +47,7 @@ import * as code from '../../src/moves/code.ts';
 import * as ending from '../../src/moves/ending.ts';
 import { type DrawnObject, type Surroundings, drawnObject, drawnOnTheFrame } from '../../src/props/object.ts';
 import { type Sharpness, focusDistanceOf } from '../../src/domain/focus.ts';
+import { IN_THE_WINDOW, ON_THE_PAGE } from '../../src/domain/placement.ts';
 import type { Piece } from '../../src/props/piece.ts';
 import { SCREEN_UP } from '../../src/props/screen.ts';
 import type { DrawnWindow } from '../../src/props/window.ts';
@@ -3192,8 +3193,10 @@ test('the room is handed how the eye sees as the frame is drawn: focused as far 
 	const onTheBlock = await setAt(eye.focus('#block', { aperture: OPENED }), leant, 1);
 	const camera = cameraOf(onTheBlock, SMALL);
 	const blockMiddle: Focus = {
-		kind: 'page',
-		point: { left: BLOCK.left + BLOCK.width / 2, top: BLOCK.top + BLOCK.height / 2 }
+		kind: 'spot',
+		holder: ON_THE_PAGE,
+		point: { left: BLOCK.left + BLOCK.width / 2, top: BLOCK.top + BLOCK.height / 2 },
+		depth: 0
 	};
 	expect(drawn(onTheBlock, camera, 0, SMALL, NONE_SHARPER).sharpness).toEqual({
 		focusedAt: expect.closeTo(focusDistanceOf(blockMiddle, camera, SMALL.frame)),
@@ -3211,7 +3214,7 @@ test('the room is handed the softest point of a window face-on out of focus as s
 test("the room is handed as the softest point of a window turned nearly edge-on its near edge, the frame's corner seeing the plane past it nearer still", async () => {
 	const edgeOn = await setAt(lean({ turn: 89.8 }), OPENING_IN_SMALL, 1);
 	const focused = await setAt(eye.focus(AS_FAR_AS_THE_FRAME, { aperture: OPENED }), edgeOn, 1);
-	const nearEdge: Focus = { kind: 'window', point: { left: 0, top: 200 } };
+	const nearEdge: Focus = { kind: 'spot', holder: IN_THE_WINDOW, point: { left: 0, top: 200 }, depth: 0 };
 	const softest = spreadAt(cameraOf(focused, SMALL), AS_FAR_AS_THE_FRAME, nearEdge);
 	expect(drawnWindowIn(focused).softestOutOfFocus).toBeCloseTo(softest);
 });
