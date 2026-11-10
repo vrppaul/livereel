@@ -1209,8 +1209,17 @@ page that fades shows what stands behind it; on the frame it rides with the
 eye, sharp, before the window. Built of `MeshBasicMaterial` or a
 `ShaderMaterial` of its own, it is drawn flat; of one of three's lit
 materials, lit by the world's `lights` and `softBoxes`, as the world's look
-says. A see-through material writes no depth, so the focus blurs it by what
-stands behind it (TODO.md). It comes and goes in
+says. A thing in a material that writes no depth, as glass, is seen
+through: the room draws it apart, with the page while the page fades or
+comes up, over what writes depth, and blurs it by its own depth, so a glass
+before a sharp page blurs while the page stays sharp, and one passing
+through a fading page is laid under the page behind its plane and over it
+before. Three lays a mesh's faces in the order of its materials, so a
+see-through box of six materials shows its far faces over its near ones:
+give glass one material drawn on both sides (`side: DoubleSide`), which
+three lays its far faces first. A see-through `ShaderMaterial` of the
+film's own is cut at a fading page's plane only where it sets
+`clipping: true` with three's clipping chunks. It comes and goes in
 its own way alone, as its module draws `shown` (a material it fades is
 `transparent`), and takes no effects. `set` is handed the stage's `three`
 for what it makes anew. Refused: things in a film not drawn as a room and a
@@ -1228,6 +1237,12 @@ What `room` costs:
   card, 300 frames of a lit window with a body, a thing through it and the
   eye's focus opening took 80.5 and 83.6 s (`--profile`, 2026-11-10), the
   browser's capture of each frame the slowest step.
+- What is seen through, a page fading or coming up and a thing of glass,
+  is drawn and blurred as a field of its own while it stands: the same
+  300 frames with the page fading over their last 3 s took 113.9 and
+  146.3 s against 82.2 and 105.4 s without the field, and with a glass
+  cube in place of the solid one 125.4 and 115.6 s against 88.7 and 88.2 s
+  (`--profile`, 2026-11-10, the card shared with other shoots).
 - Where the frame shows more of the window's plane than the graphics card
   holds in one texture, as the eye flying low over a tall screen does, the
   plane is drawn less densely, softer than flat near the eye.

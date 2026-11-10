@@ -110,6 +110,13 @@ test("a body is lit by the room as the eye sees it, as the scene's eye hands it:
 	expect(carriedTo(eye.roomInTheEyesSpace, WHERE_THE_MOVED_EYE_STANDS)).toEqual(ITS_MIDDLE);
 });
 
+test('the page is seen through as it fades or as its screen comes up, and not where it stands whole', () => {
+	const faded = drawnWindow(LIFTED, AT_ITS_EDGES, { ...WITH_LIVEREELS_BODY, fade: 0.5 }, AROUND);
+	const comingUp = drawnWindow(LIFTED, AT_ITS_EDGES, WITH_LIVEREELS_BODY, { ...AROUND, screenShown: 0.5 });
+	const whole = drawnWindow(LIFTED, AT_ITS_EDGES, WITH_LIVEREELS_BODY, AROUND);
+	expect([faded.seeThrough, comingUp.seeThrough, whole.seeThrough]).toEqual([true, true, false]);
+});
+
 test('a window turned past edge-on shows the eye its back, not its page', () => {
 	const turned = TURNED.map((angle) => drawnWindow({ ...LIFTED, angle }, AT_ITS_EDGES, WITH_A_BODY, AROUND));
 	expect(turned.map((window) => window.facingTheEye)).toEqual([true, true, false, false]);

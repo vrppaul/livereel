@@ -6,6 +6,7 @@
  * browser draws a page; light leaves three's linear layers for the screen's colours by one rule, written here once.
  */
 import {
+	AlwaysDepth,
 	CustomBlending,
 	Mesh,
 	NoBlending,
@@ -49,6 +50,15 @@ export const ADDED = {
 
 /** What a pass draws written as it is, over whatever stood there. */
 export const WRITTEN = { blending: NoBlending, depthTest: false, depthWrite: false };
+
+/** A pass that writes the depth its shader works out, over whatever depth stood there, and no light. */
+export const DEPTH_WRITTEN = {
+	blending: NoBlending,
+	colorWrite: false,
+	depthTest: true,
+	depthFunc: AlwaysDepth,
+	depthWrite: true
+};
 
 // A pass's square over the whole of a layer, each point of it a share of the layer across and up from its bottom left
 const OVER_THE_WHOLE_VERTEX = `
@@ -95,7 +105,7 @@ vec4 inTheScreensColours(vec4 drawn) {
  * A pass over the whole of the layer it draws into, by its values and its fragment shader, laid as named, wherever its
  * points fall: its shader places them, not three's camera.
  * @param {Record<string, { value: unknown }>} uniforms @param {string} fragmentShader
- * @param {typeof WRITTEN | typeof LAID_OVER | typeof ADDED} laid
+ * @param {typeof WRITTEN | typeof LAID_OVER | typeof ADDED | typeof DEPTH_WRITTEN} laid
  */
 export function passOver(uniforms, fragmentShader, laid) {
 	const material = new ShaderMaterial({ uniforms, vertexShader: OVER_THE_WHOLE_VERTEX, fragmentShader, ...laid });

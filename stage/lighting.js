@@ -110,6 +110,8 @@ function spotlightOf(light) {
 	const strength = light.strength * STRENGTH_IN_THREES;
 	const angle = THREE.MathUtils.degToRad(light.angle);
 	const spotlight = new THREE.SpotLight(light.colour, strength, REACHES_ENDLESSLY, angle, light.softness, NO_FALLOFF);
+	// Shining in every part of the world the room draws apart, as three lights a face only by lights in its part
+	spotlight.layers.enableAll();
 	return [placedBy(spotlight, light.standing), placedBy(spotlight.target, light.aimedAt)];
 }
 

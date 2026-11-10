@@ -155,13 +155,18 @@ function letGo(built) {
 function partLetGo(part) {
 	if (!isDrawnPart(part)) return;
 	part.geometry.dispose();
-	for (const material of [/** @type {THREE.Material | THREE.Material[]} */ (part.material)].flat()) material.dispose();
+	for (const material of materialsOf(part)) material.dispose();
+}
+
+/** The materials three draws a part in, one or one for each group of its faces. @param {THREE.Mesh | THREE.Line | THREE.Points} part */
+export function materialsOf(part) {
+	return [/** @type {THREE.Material | THREE.Material[]} */ (part.material)].flat();
 }
 
 /**
  * Whether three draws a part, of a geometry and materials of its own: a mesh, lines or points.
  * @param {THREE.Object3D} part @returns {part is THREE.Mesh | THREE.Line | THREE.Points}
  */
-function isDrawnPart(part) {
+export function isDrawnPart(part) {
 	return part instanceof THREE.Mesh || part instanceof THREE.Line || part instanceof THREE.Points;
 }

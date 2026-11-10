@@ -35,7 +35,7 @@ import {
 	translation,
 	wayBetween
 } from '../domain/matrix.ts';
-import { type Fraction, NONE } from '../domain/fraction.ts';
+import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import { type Box, type Size, boxAround, frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
 import { type DrawnPlacement, type Placed, drawnPlacement, windowPlaced } from '../domain/placement.ts';
 import { type Transform, transformOf } from '../domain/stance.ts';
@@ -70,7 +70,8 @@ export interface PageWindow extends Placing, Shade {
  * pixels, which the stylesheet cuts the page by and the body stands round; its shade, none where the page is shaded
  * none, and how soft the eye's focus draws it and all in it, none where sharp: as one, on the frame in pixels of a frame
  * 1080 high, for the flat stage, and at its softest point the frame shows, as far as the room's blur of it gathers past
- * the frame's edge; and its body, none where it has none.
+ * the frame's edge; whether the page is seen through, faded by its shade or still coming up on the screen, so the room
+ * draws it apart from what writes depth (`stage/see-through.js`); and its body, none where it has none.
  */
 export interface DrawnWindow extends DrawnPlacement {
 	readonly reach: Box;
@@ -80,6 +81,7 @@ export interface DrawnWindow extends DrawnPlacement {
 	readonly shade: Shade | null;
 	readonly outOfFocus: number | null;
 	readonly softestOutOfFocus: number | null;
+	readonly seeThrough: boolean;
 	readonly body: DrawnBody | null;
 }
 
@@ -160,6 +162,8 @@ export function drawnWindow(
 		shade: drawnShade(window),
 		outOfFocus: outOfFocusOnTheFrame(placing, view.box, sharpness, frame),
 		softestOutOfFocus: softestOutOfFocusSeen(placing, view.box, boxAround([view.box, reach]), sharpness, frame),
+		// As clear as the stylesheet draws the screen, as far as it has come up and not faded
+		seeThrough: around.screenShown * (WHOLE - window.fade) < WHOLE,
 		body: drawnBody(view, reach, standing, window.body, around)
 	};
 }
