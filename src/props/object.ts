@@ -52,9 +52,9 @@ import {
 	boxInTheView,
 	carriedAboutItsMiddle,
 	inTheEyesSpaceAbout,
-	leantOnTheFrame,
 	middleInTheRoom,
-	seenFromTheEye
+	seenFromTheEye,
+	windowPointOnTheFrame
 } from '../domain/camera.ts';
 import { type Eye, type Focus, eyeAtRest, inTheEyesSpace, turnOf } from '../domain/eye.ts';
 import { type Sharpness, distanceOfItsMiddle, outOfFocusBeforeItsMatrix } from '../domain/focus.ts';
@@ -517,7 +517,7 @@ function onTheFrameOf(holder: Holder, standing: Standing, camera: Camera, frame:
 			return drawn;
 		case 'window':
 		case 'page':
-			return leantOnTheFrame(camera.view, camera.eye, frame, drawn);
+			return windowPointOnTheFrame(camera.view, camera.eye, frame, drawn);
 	}
 }
 

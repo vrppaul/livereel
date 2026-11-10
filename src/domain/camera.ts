@@ -14,7 +14,7 @@
  * frame's middle, as much ground showing on either side of it. It stands so leant or not, so a lean never moves what
  * it frames; a view leant far over the whole frame may show ground at its far corners. What the camera shows where is
  * worked out as the stage draws it (`.camera` in `stage/stage.css`, and the view by the matrix worked out here,
- * `leaningOnTheFrame`): the screen carried by its focus to the view's middle and brought close, the view standing
+ * `windowOnTheFrame`): the screen carried by its focus to the view's middle and brought close, the view standing
  * about its middle as it stands, and seen from the eye before the frame's middle, a nearer point larger.
  */
 import { type Eye, type Viewpoint, eyeAtRest, inTheEyesSpace, isAtRest, seenByTheEye, sightOf } from './eye.ts';
@@ -404,23 +404,25 @@ export function keptOnTheScreen(pose: Pose, format: Format, view: View): Pose {
  * How close a picture of the page must hold it, as a pose's zoom has it, for a frame's cameras and pieces of the page to
  * show it as sharp as it stands: its own camera, those along its way it is also exposed at, and how close each piece
  * shows it. Face-on, a camera shows a page's pixel as large anywhere on the frame, so the picture holds it as close as
- * the closest of them comes. A camera in a view leant, brought near or grown, or seen by an eye that has moved, shows
- * the page, or its nearer part, larger than its zoom, so the picture holds it at livereel's bound, `ZOOM_AT_MOST`; no
- * picture holds it closer than that.
+ * the closest of them comes, and a view drawn back from the eye or made smaller shows the page smaller still. A camera
+ * in a view leant, brought near or grown, or seen by an eye that has moved, shows the page, or its nearer part, larger
+ * than its zoom, so the picture holds it at livereel's bound, `ZOOM_AT_MOST`; no picture holds it closer than that.
  */
 export function zoomPicturedFor(own: Camera, along: readonly Camera[], pieces: readonly number[]): number {
 	const cameras = [own, ...along];
-	if (!cameras.every((camera) => showsThePageAtItsZoom(camera.view) && isAtRest(camera.eye))) return ZOOM_AT_MOST;
+	if (!cameras.every((camera) => showsThePageNoLargerThanItsZoom(camera.view) && isAtRest(camera.eye))) {
+		return ZOOM_AT_MOST;
+	}
 	return Math.min(ZOOM_AT_MOST, Math.max(...cameras.map((camera) => camera.pose.zoom), ...pieces));
 }
 
 /**
- * Whether a view, seen from the eye at rest, shows the page as large as its camera's zoom has it: on the frame's plane,
- * as large as its box, and in a plane facing the frame, neither tilted, turned nor turned over, or by whole or half
- * turns alone, which show its front or its back, rolled any way.
+ * Whether a view, seen from the eye at rest, shows the page no larger than its camera's zoom has it: on the frame's
+ * plane or farther from the eye, no larger than its box, and in a plane facing the frame, neither tilted, turned nor
+ * turned over, or by whole or half turns alone, which show its front or its back, rolled any way.
  */
-function showsThePageAtItsZoom(view: View): boolean {
-	return view.depth === AS_PLACED.depth && view.scale === AS_PLACED.scale && facesTheFrame(stanceMatrix(view));
+function showsThePageNoLargerThanItsZoom(view: View): boolean {
+	return view.depth <= AS_PLACED.depth && view.scale <= AS_PLACED.scale && facesTheFrame(stanceMatrix(view));
 }
 
 /** Whether a stance leaves what stands so facing the frame with its front, upright: by whole turns alone. */
@@ -565,7 +567,7 @@ export function frameShift(start: Camera, end: Camera, format: Format): number {
 
 /**
  * How far the window's edge moves on the frame from one camera's view to another's: the farthest any corner of it
- * goes, as each view leans before the eye that sees it, so a window carried or grown while the camera holds the page
+ * goes, as each view stands before the eye that sees it, so a window carried or grown while the camera holds the page
  * still is measured as it moves.
  */
 export function viewShift(seen: SeenBetween): number {
@@ -576,9 +578,9 @@ export function viewShift(seen: SeenBetween): number {
 	);
 }
 
-/** Where a corner of a camera's view, in shares of the view's box, stands on the frame as the view leans. */
+/** Where a corner of a camera's view, in shares of the view's box, stands on the frame as the view stands. */
 function cornerOnTheFrame(camera: Camera, frame: Size, corner: Point): Point {
-	return leantOnTheFrame(camera.view, camera.eye, frame, pointAt(boxOf(camera.view.box), corner));
+	return windowPointOnTheFrame(camera.view, camera.eye, frame, pointAt(boxOf(camera.view.box), corner));
 }
 
 /**
@@ -626,12 +628,13 @@ function keptWithin(focus: number, halfSeen: number, length: number): number {
  * view set where it stands, and seen from the eye.
  */
 export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
-	return leantOnTheFrame(camera.view, camera.eye, frame, pointInTheView(camera, frame, point));
+	return windowPointOnTheFrame(camera.view, camera.eye, frame, pointInTheView(camera, frame, point));
 }
 
 /**
- * Where a point of the screen stands in a camera's view as the camera frames the page, before the view leans: in the
- * view's pixels from its top left corner, as far from the view's middle as the camera's zoom takes it from its focus.
+ * Where a point of the screen stands in a camera's view as the camera frames the page, before the view's stance carries
+ * it: in the view's pixels from its top left corner, as far from the view's middle as the camera's zoom takes it from
+ * its focus.
  */
 export function pointInTheView(camera: Camera, frame: Size, point: Point): Point {
 	const pose = camera.pose;
@@ -644,8 +647,9 @@ export function pointInTheView(camera: Camera, frame: Size, point: Point): Point
 }
 
 /**
- * The part of the screen a camera's view shows as the camera frames the page, before the view leans: in the screen's
- * pixels, as large as the view at the camera's zoom, its middle at the camera's focus, wherever the screen's edges are.
+ * The part of the screen a camera's view shows as the camera frames the page, before the view's stance carries it: in
+ * the screen's pixels, as large as the view at the camera's zoom, its middle at the camera's focus, wherever the
+ * screen's edges are.
  */
 export function viewOnTheScreen(camera: Camera, frame: Size): Box {
 	const frameZoom = frameZoomOf(camera.pose, frame);
@@ -677,8 +681,8 @@ export function boxOnTheScreen(camera: Camera, frame: Size, box: Box): Box {
 }
 
 /**
- * Where a box of the screen stands in a camera's view as the camera frames the page, before the view leans: in the
- * view's pixels from its top left corner.
+ * Where a box of the screen stands in a camera's view as the camera frames the page, before the view's stance carries
+ * it: in the view's pixels from its top left corner.
  */
 export function boxInTheView(camera: Camera, frame: Size, box: Box): Box {
 	return boxBetween(
@@ -715,8 +719,8 @@ function seenOnTheScreen(camera: Camera, frame: Size, point: Point): Point {
  * Where a point of the window stands on the frame, the point in its box's own pixels from the top left corner: carried
  * into the room about the box's middle as the window stands, and seen from the eye, as the stage draws it.
  */
-export function leantOnTheFrame(view: View, eye: Eye, frame: Size, point: Point): Point {
-	return carriedAboutItsMiddle(leaningOnTheFrame(view, eye, frame), view.box, point);
+export function windowPointOnTheFrame(view: View, eye: Eye, frame: Size, point: Point): Point {
+	return carriedAboutItsMiddle(windowOnTheFrame(view, eye, frame), view.box, point);
 }
 
 /**
@@ -765,7 +769,7 @@ export function aboutTheMiddleOf(matrix: Matrix, box: Box, within: Size): Matrix
  * The matrix of the window on the frame, about its box's middle: standing as it stands, seen from the eye. The stage
  * draws the window by it, so where the engine sees a point of the window is where it is drawn.
  */
-export function leaningOnTheFrame(view: View, eye: Eye, frame: Size): Matrix {
+export function windowOnTheFrame(view: View, eye: Eye, frame: Size): Matrix {
 	return chained([seenFromTheEye(view.box, eye, frame), stanceMatrix(view)]);
 }
 

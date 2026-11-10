@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { type Cut, type View, leaningOnTheFrame, windowView } from '../../src/domain/camera.ts';
+import { type Cut, type View, windowOnTheFrame, windowView } from '../../src/domain/camera.ts';
 import { type Angle, FACE_ON } from '../../src/domain/stance.ts';
 import { type Eye, eyeAtRest } from '../../src/domain/eye.ts';
 import type { Sharpness } from '../../src/domain/focus.ts';
@@ -81,7 +81,7 @@ test("the body's back is drawn where the slab's back stands, its thickness behin
 	);
 	const behind = (view: View): Matrix =>
 		chained([
-			leaningOnTheFrame(view, AT_REST, TWICE_THE_LOOK),
+			windowOnTheFrame(view, AT_REST, TWICE_THE_LOOK),
 			translation({ across: 0, down: 0, out: -flatBack!.thickness })
 		]);
 	expect([flatBack!.back, leantBack!.back]).toEqual([

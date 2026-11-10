@@ -8,13 +8,13 @@ import {
 	frameShift,
 	inTheEyesSpaceAbout,
 	keptOnTheScreen,
-	leaningOnTheFrame,
 	onTheFrame,
 	onto,
 	seenFromTheEye,
 	underTheFrame,
 	wholePose,
 	wholeView,
+	windowOnTheFrame,
 	windowView,
 	zoomPicturedFor
 } from '../../src/domain/camera.ts';
@@ -154,7 +154,7 @@ function windowSeenInPerspective(spot: Spot): Point {
 
 /** Where the leant window is drawn on the square frame at a spot of it in three's axes, from its middle. */
 function windowDrawnAt(spot: Spot): Point {
-	const placed = carried(leaningOnTheFrame(LEANT_WINDOW, MOVED_EYE, SQUARE.frame), { ...spot, down: -spot.down });
+	const placed = carried(windowOnTheFrame(LEANT_WINDOW, MOVED_EYE, SQUARE.frame), { ...spot, down: -spot.down });
 	return { left: placed.across, top: placed.down };
 }
 
@@ -338,22 +338,22 @@ test('a screen too short to fill the frame along a side stands in its middle alo
 	expect([covered.focusX, covered.focusY]).toEqual([675, 540]);
 });
 
-test("a picture of the page holds it as close as the closest face-on camera or piece of it comes, a view turned a whole turn face-on too, as close as livereel's bound where one is angled, brought near or grown, and never closer", () => {
+test("a picture of the page holds it as close as the closest face-on camera or piece of it comes, a view turned a whole turn or drawn back from the eye face-on too, as close as livereel's bound where one is angled or brought near, and never closer", () => {
 	const closer = inTheWhole({ ...FACE_ON, zoom: 1.5 });
 	const pastTheBound = inTheWhole({ ...FACE_ON, zoom: 3 });
 	const turnedWhole = inTheWhole({ ...FACE_ON, zoom: 1.5 }, { ...STRAIGHT, tilt: 360, turn: -360 });
+	const drawnBackFromTheEye: Camera = { ...inTheWindow(FACE_ON), view: { ...windowView(WINDOW), depth: -500 } };
 	const broughtNear: Camera = { ...inTheWhole(FACE_ON), view: { ...wholeView(SQUARE.frame), depth: 500 } };
-	const grown: Camera = { ...inTheWhole(FACE_ON), view: { ...wholeView(SQUARE.frame), scale: 1.5 } };
 	expect([
 		zoomPicturedFor(inTheWhole(FACE_ON), [closer], []),
 		zoomPicturedFor(inTheWhole(FACE_ON), [turnedWhole], []),
+		zoomPicturedFor(drawnBackFromTheEye, [], []),
 		zoomPicturedFor(inTheWhole(FACE_ON), [], [1.8]),
 		zoomPicturedFor(inTheWhole(FACE_ON), [inTheWhole(DRAWN_BACK, LEANT_BACK)], []),
 		zoomPicturedFor(broughtNear, [], []),
-		zoomPicturedFor(grown, [], []),
 		zoomPicturedFor(pastTheBound, [], []),
 		zoomPicturedFor(inTheWhole(FACE_ON), [], [3])
-	]).toEqual([1.5, 1.5, 1.8, 2.2, 2.2, 2.2, 2.2, 2.2]);
+	]).toEqual([1.5, 1.5, 1, 1.8, 2.2, 2.2, 2.2, 2.2]);
 });
 
 test("a spot of a box carried into the eye's own space and seen in perspective from the eye there lands where the eye sees it on the frame: the eye at rest, moved aside and near, below the frame looking up; on the box's plane and out of it", () => {

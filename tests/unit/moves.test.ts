@@ -2168,24 +2168,31 @@ test("a window brought half way to the eye is drawn twice as large about its mid
 	]);
 });
 
-test("the window's depth goes on its move's own curve, past its end where the curve takes it past, shares a step with a lean, and is kept where a move names none", async () => {
+test("the window's depth goes on its move's own curve, past its end where the curve takes it past, shares a step with a lean, and is kept where a move names none: carried to a place, slid out and shown again", async () => {
 	const opening = OPENING_IN_SMALL;
 	const nearing = windowTo('right', { depth: 400 });
 	const leaning = lean({ tilt: 10 });
 	const leantMeanwhile = await setAt(leaning, await setAt(nearing, opening, 0.5), 1);
 	const pastItsEnd = await setAt(nearing, opening, PAST_ITS_END);
-	const carriedOn = await setAt(windowTo('left'), await setAt(nearing, opening, 1), 1);
+	const near = await setAt(nearing, opening, 1);
+	const carriedOn = await setAt(windowTo('left'), near, 1);
+	const slidOut = await setAt(windowHide({ toward: 'left' }), near, 1);
+	const shownAgain = await setAt(windowShow({ at: 'right', from: 'left' }), slidOut, 1);
 	const inTheFramesPixels = frameScaleOf(SMALL.frame);
 	expect(() => play({ seconds: 1, moves: [nearing, leaning] })).not.toThrow();
 	expect([
 		leantMeanwhile.window.depth,
 		leantMeanwhile.window.angle,
 		pastItsEnd.window.depth,
-		carriedOn.window.depth
+		carriedOn.window.depth,
+		slidOut.window.depth,
+		shownAgain.window.depth
 	]).toEqual([
 		200 * inTheFramesPixels,
 		{ ...FACE_ON, tilt: 10 },
 		expect.closeTo(400 * PAST_ITS_END * inTheFramesPixels),
+		400 * inTheFramesPixels,
+		400 * inTheFramesPixels,
 		400 * inTheFramesPixels
 	]);
 });

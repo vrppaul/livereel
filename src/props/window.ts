@@ -6,7 +6,7 @@
  * share from none to whole, the blur in pixels of a frame 1080 high; the window's edge and shadow keep as they stand.
  *
  * The window stands as an object does, by a stance (`src/domain/stance.ts`), and the stage draws it by the matrix the
- * engine sees its points through (`leaningOnTheFrame`), as it draws an object: flat while it faces the frame, in 3D
+ * engine sees its points through (`windowOnTheFrame`), as it draws an object: flat while it faces the frame, in 3D
  * only where it leans, so its projection is written once and a face-on window costs the graphics card no 3D layer in
  * an exposure. The window stands in the world, so the eye's focus blurs it, with all that lies in it, by where it
  * stands (`src/domain/focus.ts`): the flat stage as one, as soft as its point nearest the focus, and the room each
@@ -25,8 +25,8 @@ import {
 	type Placing,
 	type View,
 	inTheEyesSpaceAbout,
-	leaningOnTheFrame,
-	pictureReachOf
+	pictureReachOf,
+	windowOnTheFrame
 } from '../domain/camera.ts';
 import { type Eye, inTheEyesSpace, turnOf } from '../domain/eye.ts';
 import { type OutOfFocusAt, type Sharpness, outOfFocusAt, outOfFocusOnTheFrame } from '../domain/focus.ts';
@@ -152,7 +152,7 @@ const HALVES = 2;
  */
 export function drawnWindow(view: View, cut: Cut, window: Shade, around: AroundTheWindow): DrawnWindow {
 	const { eye, frame, sharpness } = around;
-	const placing = leaningOnTheFrame(view, eye, frame);
+	const placing = windowOnTheFrame(view, eye, frame);
 	const own = stanceMatrix(view);
 	const stood = chained([turnOf(eye), own]);
 	const reach = pictureReachOf(view.box, cut);

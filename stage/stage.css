@@ -111,7 +111,7 @@ body {
 	inset: 0;
 }
 
-/* The camera's view, and its shadow under it: the whole frame, or a window on the ground, drawn about its middle by the matrix of its lean the engine sees it through (`leaningOnTheFrame` in `src/domain/camera.ts`), with the objects' rules below */
+/* The camera's view, and its shadow under it: the whole frame, or a window on the ground, drawn about its middle by the matrix of its stance the engine sees it through (`windowOnTheFrame` in `src/domain/camera.ts`), with the objects' rules below */
 .view,
 .view-shadow {
 	/* Drawn in the frame's own pixels: a pane's lengths, in a frame 1080's, scaled to the frame shot */
@@ -543,7 +543,7 @@ body {
 	opacity: var(--held);
 }
 
-/* Drawn about its middle by a matrix the engine works out, seen from the eye, flat or leant in 3D as the engine names it: an object by its stance, how large, how near, rolled and leant (`src/domain/stance.ts`), and the page's window with its shadow by its lean (`leaningOnTheFrame` in `src/domain/camera.ts`), set on the window's root, which its view and its shadow both read. Each entry is named as CSS orders them, and a flat matrix's two last are its shift in pixels */
+/* Drawn about its middle by a matrix the engine works out, seen from the eye, flat or leant in 3D as the engine names it: an object by its stance, how large, how near, rolled and leant (`src/domain/stance.ts`), and the page's window with its shadow by its stance alike (`windowOnTheFrame` in `src/domain/camera.ts`), set on the window's root, which its view and its shadow both read. Each entry is named as CSS orders them, and a flat matrix's two last are its shift in pixels */
 .object[data-transform='flat'],
 .window[data-transform='flat'] :is(.view, .view-shadow) {
 	transform: matrix(var(--m11), var(--m12), var(--m21), var(--m22), var(--m41), var(--m42));

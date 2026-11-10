@@ -7,11 +7,12 @@
  * over the whole frame, however the place names it, it is the frame itself, flat on it, at any depth. So the page draws
  * back off the frame's edges into a window, travels from one place to another, and grows back out to fill the frame.
  * Brought toward the eye it is drawn larger and farther from the frame's middle, as an object is: a slab coming at the
- * eye with its body, or, at a depth less than none, drawn back from it. A depth as near as the eye at rest or nearer is refused before the
- * film is shot, as an object's is. What slides moves a whole frame, as words do, so a window and words sliding in one
- * step move as one sheet; a window slid out stays past the edge until a move brings it back. The window holds where it
- * goes, so what comes up beside it while it moves is placed beside where it goes; a note's words keep beside it as it
- * moves, so they come with it on its way, and a move that would carry them off the frame, or under it, is refused.
+ * eye with its body, or, at a depth less than none, drawn back from it. A depth as near as the eye at rest or nearer is
+ * refused before the film is shot, as an object's is. What slides moves a whole frame, as words do, so a window and
+ * words sliding in one step move as one sheet; a window slid out stays past the edge until a move brings it back. The
+ * window holds where it goes, so what comes up beside it while it moves is placed beside where it goes; a note's words
+ * keep beside it as it moves, so they come with it on its way, and a move that would carry them off the frame, or under
+ * it, is refused.
  *
  * The page in the window is shaded while something stands clear of it: dimmed, faded into the film's ground and
  * blurred, the window's edge and shadow standing as they are (`src/props/window.ts`).
