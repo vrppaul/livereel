@@ -16,9 +16,10 @@
  * window.
  */
 import { type Sharpness, outOfFocusOnTheFrame } from '../domain/focus.ts';
-import { type Box, type Size, frameScaleOf } from '../domain/geometry.ts';
+import { type Size, frameScaleOf } from '../domain/geometry.ts';
 import { A_NUMBER, A_SIZE, type Kind, OfForm, RecordOf, needed } from '../domain/handed.ts';
 import { type Matrix, chained, inThreesAxes, scalingAlong } from '../domain/matrix.ts';
+import type { Placed } from '../domain/placement.ts';
 import { between } from '../domain/toward.ts';
 
 /** A thing's numbers by name, as its module reads them. */
@@ -65,20 +66,6 @@ export interface AroundAThing {
 	readonly frame: Size;
 }
 
-/**
- * How a thing stands as it is drawn: its box; the matrices that carry it about the box's middle to where the eye sees
- * it on the frame and into the eye's own space, each of which grows it across and down alone, as an object's stance
- * does; the matrix that carries the room into that eye's own space; how much its stance grows it; and where it stands.
- */
-export interface ThingStanding {
-	readonly laid: Box;
-	readonly placing: Matrix;
-	readonly inTheEyesSpace: Matrix;
-	readonly roomInTheEyesSpace: Matrix;
-	readonly scale: number;
-	readonly inTheWorld: boolean;
-}
-
 /** A thing's numbers by name, as a film hands them. */
 export const THING_VALUES = new RecordOf(A_NUMBER, "numbers by name, as the thing's module reads them");
 /** How far a thing reaches, as a film hands it. */
@@ -98,25 +85,34 @@ export function valuesToward(start: ThingValues, named: ThingValues, progress: n
 }
 
 /**
- * A thing as the stage draws it, standing as it does, as far as it has come up and not gone, among what stands round
- * it: the eye's own space it stands in written in three's axes, the frame's pixels out of three's units, so it turns a
- * face as it turns, grown toward the eye as much as across, as a stance grows a flat object across and down alone, and
- * in the world blurred as the focus has its box.
+ * A thing as the stage draws it, placed as it stands (`src/domain/placement.ts`), grown by its stance's scale, the
+ * room in the space of the eye that sees it, as far as it has come up and not gone, among what stands round it: the
+ * eye's own space it stands in written in three's axes, the frame's pixels out of three's units, so it turns a face as
+ * it turns, grown toward the eye as much as across, as a stance grows a flat object across and down alone, and in the
+ * world blurred as the focus has its box. `thing.show` stands it on the frame or in the world alone.
  */
-export function drawnThing(thing: Thing, standing: ThingStanding, shown: number, around: AroundAThing): DrawnThing {
+export function drawnThing(
+	thing: Thing,
+	standing: Placed,
+	grown: number,
+	room: Matrix,
+	shown: number,
+	around: AroundAThing
+): DrawnThing {
 	const scale = frameScaleOf(around.frame);
-	const outOfFocus = standing.inTheWorld
+	const inTheWorld = standing.rides === 'world';
+	const outOfFocus = inTheWorld
 		? outOfFocusOnTheFrame(standing.placing, standing.laid, around.sharpness, around.frame)
 		: null;
-	const units = scalingAlong(scale, scale, scale * standing.scale);
+	const units = scalingAlong(scale, scale, scale * grown);
 	return {
 		kind: 'thing',
 		made: thing.made,
 		values: thing.values,
 		shown,
 		inTheEyesSpace: chained([inThreesAxes(standing.inTheEyesSpace), units]),
-		roomInTheEyesSpace: inThreesAxes(standing.roomInTheEyesSpace),
+		roomInTheEyesSpace: inThreesAxes(room),
 		outOfFocus,
-		inTheWorld: standing.inTheWorld
+		inTheWorld
 	};
 }

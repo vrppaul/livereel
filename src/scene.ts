@@ -45,7 +45,8 @@ import { namesOf } from './domain/toward.ts';
 import { LIVEREELS_SLAB } from './props/body.ts';
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
 import type { Cursor } from './props/cursor.ts';
-import type { Group, GroupName, Groups } from './props/group.ts';
+import type { GroupName, Holders } from './domain/placement.ts';
+import type { Group, Groups } from './props/group.ts';
 import { type DrawnLines, drawnHoles, drawnLines } from './props/lifted.ts';
 import type { Light } from './props/light.ts';
 import type { Look } from './props/look.ts';
@@ -53,7 +54,6 @@ import { type DrawnNote, type Note, drawnNote, noteShift } from './props/note.ts
 import {
 	type DrawnObject,
 	type FrameObject,
-	type Holders,
 	type ObjectName,
 	type ObjectThen,
 	type Objects,
@@ -428,5 +428,5 @@ export function drawn(
 
 /** Objects as the stage draws them, in the order it draws them, among what stands round them in the scene. */
 function drawnObjects(objects: Objects, moment: number, around: Surroundings): readonly DrawnObject[] {
-	return inDrawingOrder(objects, around.groups).map(([name, object]) => drawnObject(name, object, moment, around));
+	return inDrawingOrder(objects, around).map(([name, object]) => drawnObject(name, object, moment, around));
 }

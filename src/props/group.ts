@@ -10,17 +10,13 @@
  * frame is where it stands in the group, measured from the group's corner: nothing is carried from one holder to
  * another. A group goes with every object in it, fading them as it goes; the scene holds no object of a group gone.
  */
-import { aboutTheMiddleOf } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import { type Fraction, WHOLE } from '../domain/fraction.ts';
-import type { Box, Point } from '../domain/geometry.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
-import { type Matrix, carriesEveryPointWhereItStands } from '../domain/matrix.ts';
-import { type Stance, stanceMatrix } from '../domain/stance.ts';
+import { carriesEveryPointWhereItStands } from '../domain/matrix.ts';
+import type { GroupName, Placement } from '../domain/placement.ts';
+import { stanceMatrix } from '../domain/stance.ts';
 import { presentShare } from './way.ts';
-
-/** The name a film gives a group. */
-export type GroupName = string;
 
 /**
  * How a group orders what stands in it as it is drawn: by each object's zIndex, the higher over the lower and as they
@@ -32,11 +28,10 @@ const GROUP_ORDERS = ['zIndex', 'depth'] as const;
 export type GroupOrder = (typeof GROUP_ORDERS)[number];
 
 /**
- * A group: its box on the frame, in the frame's pixels, how it stands about the box's middle, how far it has gone, and
- * how it orders what stands in it.
+ * A group: where it stands on the frame, its box in the frame's pixels and how it stands about the box's middle
+ * (`src/domain/placement.ts`), how far it has gone, and how it orders what stands in it.
  */
-export interface Group extends Stance {
-	readonly box: Box;
+export interface Group extends Placement {
 	readonly gone: Fraction;
 	readonly order: GroupOrder;
 }
@@ -48,11 +43,6 @@ export const A_GROUP_ORDER: Kind<GroupOrder> = new OneOf(
 
 /** Groups by name. */
 export type Groups = ReadonlyMap<GroupName, Group>;
-
-/** How a group stands about its middle, as a matrix about the middle of a box standing in it, in its pixels. */
-export function groupStanceAbout(group: Group, box: Box): Matrix {
-	return aboutTheMiddleOf(stanceMatrix(group), box, group.box);
-}
 
 /**
  * Whether a group stands as it was placed: its stance carries every point where it stands, as large as its box, on the
@@ -68,18 +58,6 @@ export function groupFound(groups: Groups, name: GroupName, move: string): Group
 	const group = groups.get(name);
 	if (group === undefined) throw new FilmError(`${move} finds no group "${name}" standing`);
 	return group;
-}
-
-/** The group of a name an object stands in: none is gone while anything stands in it, as it goes with all of it. */
-export function groupNamed(groups: Groups, name: GroupName): Group {
-	const group = groups.get(name);
-	if (group === undefined) throw new Error(`an object stands in the group "${name}", which is gone`);
-	return group;
-}
-
-/** The top left corner of a group's box on the frame, which a box in the group is measured from. */
-export function cornerOf(group: Group): Point {
-	return { left: group.box.left, top: group.box.top };
 }
 
 /** How much of what stands in a group the group lets show: all of it, but as far as it has gone. */

@@ -100,17 +100,22 @@ import {
 	untilTheEnd
 } from '../direction/move.ts';
 import { EFFECTS_IN_PLACE, EFFECTS_IN_PLACE_NAMES, type EffectsInPlace, NO_EFFECTS } from '../props/effects.ts';
-import { type Group, type GroupName, cornerOf, groupFound, groupNamed, standsAsPlaced } from '../props/group.ts';
+import {
+	type GroupName,
+	type Holder,
+	type Holders,
+	IN_THE_WINDOW,
+	IN_THE_WORLD,
+	ON_THE_FRAME,
+	ON_THE_PAGE,
+	groupNamed
+} from '../domain/placement.ts';
+import { type Group, groupFound, standsAsPlaced } from '../props/group.ts';
 import {
 	type Content,
 	type FrameObject,
 	AN_INSIDE,
-	type Holder,
-	IN_THE_WINDOW,
-	IN_THE_WORLD,
 	type Inside,
-	ON_THE_FRAME,
-	ON_THE_PAGE,
 	type ObjectName,
 	framesPastTheEdge
 } from '../props/object.ts';
@@ -562,6 +567,11 @@ export function objectOnto(kind: ObjectKind, move: string, target: Target, scrip
 	};
 }
 
+/** What objects stand in as a move begins: the camera as the scene shows it, and the groups standing. */
+export function holdersAsTheyStand(beginning: Beginning): Holders {
+	return { camera: cameraOf(beginning.scene, beginning.format), groups: beginning.scene.groups };
+}
+
 /** An object as a move finds it as it begins; one not on the screen is refused, the move named. */
 export function standing(beginning: Beginning, name: ObjectName, move: string): FrameObject {
 	const object = beginning.scene.objects.get(name);
@@ -627,7 +637,7 @@ function measuredIn(beginning: Beginning, holder: Holder, box: Box, name: Object
 			return boxOnTheScreen(camera, beginning.format.frame, box);
 		}
 		case 'group':
-			return measuredFrom(box, cornerOf(groupNamed(beginning.scene.groups, holder.name)), AS_LARGE);
+			return measuredFrom(box, groupNamed(beginning.scene.groups, holder.name).box, AS_LARGE);
 	}
 }
 
@@ -824,8 +834,8 @@ function appearing(
  */
 function framesToComeIn(arrived: FrameObject, from: FrameSide | null, push: Push | null, beginning: Beginning): number {
 	if (from === null) return ONE_FRAME;
-	const eye = cameraOf(beginning.scene, beginning.format).eye;
-	const own = framesPastTheEdge(arrived, from, beginning.format.frame, eye);
+	const frame = beginning.format.frame;
+	const own = framesPastTheEdge(arrived, from, frame, holdersAsTheyStand(beginning), frame);
 	return Math.max(own, push?.frames ?? ONE_FRAME);
 }
 
@@ -1058,9 +1068,9 @@ function slidingOut(beginning: Beginning, name: ObjectName, toward: FrameSide, m
 	if (object.inside.kind === 'page') {
 		throw new FilmError(`${move} would slide the ${name} out toward a side from the page: it goes in its place`);
 	}
-	const frame = seenFrom(beginning, object.inside).format.frame;
-	const frames = framesPastTheEdge(object, toward, frame, cameraOf(beginning.scene, beginning.format).eye);
-	const end = pastTheEdge(object.box, toward, frame, frames);
+	const within = seenFrom(beginning, object.inside).format.frame;
+	const frames = framesPastTheEdge(object, toward, within, holdersAsTheyStand(beginning), beginning.format.frame);
+	const end = pastTheEdge(object.box, toward, within, frames);
 	return (scene, progress) =>
 		withObject(scene, name, untilTheEnd(progress, { ...object, box: boxToward(object.box, end, progress) }));
 }
@@ -1117,7 +1127,7 @@ function pushOf(beginning: Beginning, name: ObjectName, from: FrameSide | null, 
 		throw new FilmError(`${move} would push the ${name} off past the frame's edge from the page: hide it first`);
 	}
 	const toward = acrossFrom(from);
-	const frames = framesPastTheEdge(standingThere, toward, frame, cameraOf(beginning.scene, beginning.format).eye);
+	const frames = framesPastTheEdge(standingThere, toward, frame, holdersAsTheyStand(beginning), frame);
 	return { object: standingThere, end: pastTheEdge(standingThere.box, toward, frame, frames), frames };
 }
 

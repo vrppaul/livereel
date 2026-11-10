@@ -27,7 +27,7 @@ import {
 } from '../domain/handed.ts';
 import { A_CURVE, type Ease } from '../domain/curves.ts';
 import type { CssNamed } from './theme.ts';
-import type { GroupName } from '../props/group.ts';
+import type { GroupName } from '../domain/placement.ts';
 import type { ObjectName } from '../props/object.ts';
 import { THE_FILMED_PAGE } from '../props/screen.ts';
 import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';

@@ -5,8 +5,8 @@
  * one move that sets the values it names (`window.shade` in `src/moves/window.ts`), the dim and the fade as strong as a
  * share from none to whole, the blur in pixels of a frame 1080 high; the window's edge and shadow keep as they stand.
  *
- * The window stands as an object does, by a stance (`src/domain/stance.ts`), and the stage draws it by the matrix the
- * engine sees its points through (`windowOnTheFrame`), as it draws an object: flat while it faces the frame, in 3D
+ * The window stands as an object does, placed in the world by a box and a stance (`src/domain/placement.ts`), and the
+ * stage draws it by the matrix that places it there, as it draws an object: flat while it faces the frame, in 3D
  * only where it leans, so its projection is written once and a face-on window costs the graphics card no 3D layer in
  * an exposure. The window stands in the world, so the eye's focus blurs it, with all that lies in it, by where it
  * stands (`src/domain/focus.ts`): the flat stage as one, as soft as its point nearest the focus, and the room each
@@ -21,15 +21,8 @@
  * axes, and the room stands it round the page in its one scene, where depth hides the page behind the slab or the slab
  * behind the page; the flat stage draws the window's edge and shadow in its place.
  */
-import {
-	type Cut,
-	type Placing,
-	type View,
-	inTheEyesSpaceAbout,
-	pictureReachOf,
-	windowOnTheFrame
-} from '../domain/camera.ts';
-import { type Eye, inTheEyesSpace, turnOf } from '../domain/eye.ts';
+import { type Cut, type Placing, type View, pictureReachOf } from '../domain/camera.ts';
+import { type Eye, inTheEyesSpace } from '../domain/eye.ts';
 import { type Sharpness, outOfFocusOnTheFrame, softestOutOfFocusSeen } from '../domain/focus.ts';
 import {
 	ITS_MIDDLE,
@@ -44,7 +37,8 @@ import {
 } from '../domain/matrix.ts';
 import { type Fraction, NONE } from '../domain/fraction.ts';
 import { type Box, type Size, boxAround, frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
-import { type Transform, stanceMatrix, transformOf } from '../domain/stance.ts';
+import { type Placed, placed, worldSeenBy } from '../domain/placement.ts';
+import { type Transform, transformOf } from '../domain/stance.ts';
 import {
 	MOVES_AS_A_SHARE,
 	MOVES_AS_PIXELS,
@@ -157,35 +151,23 @@ export function drawnWindow(
 	around: AroundTheWindow
 ): DrawnWindow {
 	const { eye, frame, sharpness } = around;
-	const placing = windowOnTheFrame(view, eye, frame);
-	const own = stanceMatrix(view);
-	const stood = chained([turnOf(eye), own]);
+	const standing = placed(view, worldSeenBy(eye, frame), frame);
+	const placing = standing.placing;
 	const reach = pictureReachOf(view.box, cut);
-	const intoTheEyesSpace = chained([inTheEyesSpaceAbout(view.box, eye, frame), own]);
 	const roundest = Math.min(reach.width, reach.height) / HALVES;
 	return {
 		box: view.box,
 		reach,
 		lift: view.lift,
-		transform: transformOf(stood, placing),
-		inTheEyesSpace: inThreesAxes(intoTheEyesSpace),
-		facingTheEye: facesTheEye(intoTheEyesSpace),
+		transform: transformOf(standing.stood, placing),
+		inTheEyesSpace: inThreesAxes(standing.inTheEyesSpace),
+		facingTheEye: facesTheEye(standing.inTheEyesSpace),
 		corner: Math.min(around.look.paneCorner * frameScaleOf(frame) * view.lift, roundest),
 		shade: drawnShade(window),
 		outOfFocus: outOfFocusOnTheFrame(placing, view.box, sharpness, frame),
 		softestOutOfFocus: softestOutOfFocusSeen(placing, view.box, boxAround([view.box, reach]), sharpness, frame),
-		body: drawnBody(view, reach, { intoTheEyesSpace, stood, placing }, window.body, around)
+		body: drawnBody(view, reach, standing, window.body, around)
 	};
-}
-
-/**
- * How the window stands for its body: the matrix that carries its middle into the eye's own space; how it stands before
- * the eye, and the matrix the stage draws it by, as `transformOf` reads them.
- */
-interface WindowStanding {
-	readonly intoTheEyesSpace: Matrix;
-	readonly stood: Matrix;
-	readonly placing: Matrix;
 }
 
 /**
@@ -194,13 +176,7 @@ interface WindowStanding {
  * them, so far as the window stands off the ground and the screen has come up in it, so no glint comes with it at once,
  * its glass none where the world has no light to reflect; none, where that leaves it no thickness.
  */
-function drawnBody(
-	view: View,
-	page: Box,
-	window: WindowStanding,
-	slab: Slab,
-	around: AroundTheWindow
-): DrawnBody | null {
+function drawnBody(view: View, page: Box, window: Placed, slab: Slab, around: AroundTheWindow): DrawnBody | null {
 	const scale = frameScaleOf(around.frame);
 	const standing = view.lift * around.screenShown;
 	const thickness = slab.thickness * scale * standing;
@@ -210,7 +186,7 @@ function drawnBody(
 		down: middleY(page) - middleY(view.box),
 		out: ON_ITS_PLANE
 	};
-	const placing = chained([window.intoTheEyesSpace, translation(pageMiddle)]);
+	const placing = chained([window.inTheEyesSpace, translation(pageMiddle)]);
 	const behind = translation({ across: UNMOVED, down: UNMOVED, out: -thickness });
 	return {
 		rim: slab.rim * scale * standing,

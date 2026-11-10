@@ -11,7 +11,8 @@
 import { type Camera, onTheFrame } from '../domain/camera.ts';
 import { type Box, type Point, type Segment, type Size, segmentBetween } from '../domain/geometry.ts';
 import type { Groups } from './group.ts';
-import { type FrameObject, type Holders, type ObjectEntry, type ObjectName, drawnOnTheFrame } from './object.ts';
+import type { Holders } from '../domain/placement.ts';
+import { type FrameObject, type ObjectEntry, type ObjectName, drawnOnTheFrame } from './object.ts';
 import { type DrawnHole, type Piece, figureIn } from './piece.ts';
 import type { Stroke } from './stroke.ts';
 import { presentShare } from './way.ts';

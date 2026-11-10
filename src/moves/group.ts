@@ -22,7 +22,8 @@ import {
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
-import { A_GROUP_ORDER, type Group, type GroupName, type GroupOrder, groupFound } from '../props/group.ts';
+import type { GroupName } from '../domain/placement.ts';
+import { A_GROUP_ORDER, type Group, type GroupOrder, groupFound } from '../props/group.ts';
 import { type Scene, withGroup } from '../scene.ts';
 import {
 	type Carried,

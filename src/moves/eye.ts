@@ -89,7 +89,7 @@ import {
 } from '../direction/move.ts';
 import { type ObjectName, focusOn } from '../props/object.ts';
 import { cameraOf, withEye } from '../scene.ts';
-import { standing } from './object.ts';
+import { holdersAsTheyStand, standing } from './object.ts';
 import { type ThroughScript, throughFormOf, throughWritten } from './through.ts';
 
 /** The places the eye passes on its way to its own, and how its path goes through them. */
@@ -522,10 +522,8 @@ async function focusRead(beginning: Beginning, asked: FocusAsked): Promise<Focus
 			const block = await shownBox(beginning, asked.target, THE_FIRST, EYE_FOCUS);
 			return { kind: 'page', point: { left: middleX(block), top: middleY(block) } };
 		}
-		case 'object': {
-			const holders = { camera: cameraOf(beginning.scene, beginning.format), groups: beginning.scene.groups };
-			return focusOn(standing(beginning, asked.name, EYE_FOCUS), holders, beginning.format.frame);
-		}
+		case 'object':
+			return focusOn(standing(beginning, asked.name, EYE_FOCUS), holdersAsTheyStand(beginning), beginning.format.frame);
 	}
 }
 
