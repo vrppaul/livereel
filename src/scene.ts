@@ -9,18 +9,17 @@
  * within it, in the order they first came, the last over the rest: one shown again in place of itself keeps its place.
  * One pushed off by another of its name sliding in is held apart while it goes, so the two stand at once, and drawn
  * over every object standing on its layer. A group of objects (`src/props/group.ts`) is known by a name of its own,
- * and holds no more than how the objects in it stand together; they go with it. `drawn` works out everything the stage needs from it —
- * how far each word of a title, a caption or a callout and each line of code has come, the terminal's spinner, how far
- * keys rise clear of a caption, where a note's line meets the block it names on the frame, the hole a piece of the page
- * leaves and the lines it draws to its source, the part of the screen under a lens, where a band of light sweeping the
- * screen stands across what the window shows of it, where an object in a group, or on the page as the camera frames it
- * then, is drawn and in what order, how soft the eye's focus draws the window and each object in the world, where the
- * world's lights stand in the room and how the eye that sees each thing sees the room — so the stage draws numbers and
- * words and decides nothing, and draws no group of its own.
- * What the camera shows is worked out from what it aims at and the window that stands (`cameraOf`), so a
- * camera moving and a window moving in one step make the same frame whichever is set first; a frame is drawn by such a
- * camera, or by the flat one an act is done in. A prop that may be absent is `null`; the
- * compiler holds every prop to a drawn form here and to a drawer on the stage.
+ * and holds no more than how the objects in it stand together; they go with it. `drawn` works out everything the stage
+ * needs from it — how far each word of a title, a caption or a callout and each line of code has come, the terminal's
+ * spinner, how far keys rise clear of a caption, where a note's line meets the block it names on the frame, the hole a
+ * piece of the page leaves and the lines it draws to its source, the part of the screen under a lens, where a band of
+ * light sweeping the screen stands across what the window shows of it, where an object in a group, or on the page as
+ * the camera frames it then, is drawn and in what order, how soft the eye's focus draws the window and each object in
+ * the world, where the world's lights stand in the room and how the eye that sees each thing sees the room — so the
+ * stage draws numbers and words and decides nothing, and draws no group of its own. What the camera shows is worked out
+ * from what it aims at and the window that stands (`cameraOf`), so a camera moving and a window moving in one step make
+ * the same frame whichever is set first; a frame is drawn by such a camera, or by the flat one an act is done in. A
+ * prop that may be absent is `null`; the compiler holds every prop to a drawn form here and to a drawer on the stage.
  */
 import { type Eye, eyeAtRest } from './domain/eye.ts';
 import { sharpnessOf } from './domain/focus.ts';

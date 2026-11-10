@@ -43,8 +43,6 @@ import {
 } from '../domain/matrix.ts';
 import { type Fraction, NONE } from '../domain/fraction.ts';
 import { type Box, type Size, boxAround, frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
-import type { Look } from './look.ts';
-import type { WorldLook } from './world.ts';
 import { type Transform, stanceMatrix, transformOf } from '../domain/stance.ts';
 import {
 	MOVES_AS_A_SHARE,
@@ -54,6 +52,8 @@ import {
 	namesOf,
 	standsAtRest
 } from '../domain/toward.ts';
+import type { Look } from './look.ts';
+import type { WorldLook } from './world.ts';
 
 export interface Shade {
 	readonly dim: Fraction;

@@ -430,23 +430,22 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 });
 
 test('what comes up or goes stands between none and whole along a curve that passes its ends: the light, the cursor, pins, a callout, a title, a caption, the screen, a line of code lit, the window lifted', async () => {
-	const opening = OPENING_IN_SMALL;
-	const lit = withProp(opening, 'light', LIT);
-	const pointed = withProp(opening, 'cursor', { left: 10, top: 10, press: 0 });
-	const titled = await setAt(title.show('Words'), opening, 1);
-	const lowered = await setAt(lower(), opening, 1);
-	const coded = await setAt(code.show('first\nsecond', { at: 'left' }), opening, 1);
+	const lit = withProp(OPENING_IN_SMALL, 'light', LIT);
+	const pointed = withProp(OPENING_IN_SMALL, 'cursor', { left: 10, top: 10, press: 0 });
+	const titled = await setAt(title.show('Words'), OPENING_IN_SMALL, 1);
+	const lowered = await setAt(lower(), OPENING_IN_SMALL, 1);
+	const coded = await setAt(code.show('first\nsecond', { at: 'left' }), OPENING_IN_SMALL, 1);
 	const firstLit = await setAt(code.light(1), coded, 1);
 	expect([
 		(await setAt(code.light(2), firstLit, PAST_ITS_END)).objects.get('code'),
-		cameraOf(await setAt(windowTo('left'), opening, PAST_ITS_END), SMALL).view,
-		(await setAt(lightOn('#block'), opening, PAST_ITS_END)).light,
+		cameraOf(await setAt(windowTo('left'), OPENING_IN_SMALL, PAST_ITS_END), SMALL).view,
+		(await setAt(lightOn('#block'), OPENING_IN_SMALL, PAST_ITS_END)).light,
 		(await setAt(off(), lit, BEFORE_ITS_START)).light,
 		(await setAt(press(), pointed, PAST_ITS_END)).cursor,
-		(await setAt(pin.show('#block', 'Here'), opening, PAST_ITS_END)).pins,
-		(await setAt(callout.show('#block', 'Words'), opening, PAST_ITS_END)).callout,
-		(await setAt(title.show('Words'), opening, PAST_ITS_END)).objects.get('title'),
-		(await setAt(caption.show('Words'), opening, PAST_ITS_END)).objects.get('caption'),
+		(await setAt(pin.show('#block', 'Here'), OPENING_IN_SMALL, PAST_ITS_END)).pins,
+		(await setAt(callout.show('#block', 'Words'), OPENING_IN_SMALL, PAST_ITS_END)).callout,
+		(await setAt(title.show('Words'), OPENING_IN_SMALL, PAST_ITS_END)).objects.get('title'),
+		(await setAt(caption.show('Words'), OPENING_IN_SMALL, PAST_ITS_END)).objects.get('caption'),
 		(await setAt(title.hide(), titled, BEFORE_ITS_START)).objects.get('title'),
 		(await setAt(rise(), lowered, PAST_ITS_END)).screen
 	]).toMatchObject([
@@ -465,10 +464,9 @@ test('what comes up or goes stands between none and whole along a curve that pas
 });
 
 test("a value of the look, or the page's speed, along a curve that passes its ends stays within what its kind takes: a share, pixels, a speed", async () => {
-	const opening = OPENING_IN_SMALL;
 	expect([
-		(await setAt(look.to({ paneShadow: 0, titleMargin: 0 }), opening, PAST_ITS_END)).look,
-		await setAt(speed(0), opening, PAST_ITS_END)
+		(await setAt(look.to({ paneShadow: 0, titleMargin: 0 }), OPENING_IN_SMALL, PAST_ITS_END)).look,
+		await setAt(speed(0), OPENING_IN_SMALL, PAST_ITS_END)
 	]).toMatchObject([{ paneShadow: 0, titleMargin: 0 }, { pageSpeed: 0 }]);
 });
 
@@ -985,17 +983,16 @@ test('a lens and a sweep of the screen are refused on a page framed live, which 
 });
 
 test("a sweep holds a picture of the whole screen as it begins, which its band sweeps away as far as it has come, from the side, at the slant and as wide as the film names, its crest in the colours it names, and none, the look's accent as it stands, at an end it names none for; gone at its end; from the left, slanted 30° and 160 wide where the film names none of these", async () => {
-	const opening = OPENING_IN_FULL_HD;
 	const pictures = new PicturesHeld();
 	const named = await screenSweep({ from: 'right', slant: -28, width: 90, crest: { start: '#5b8def' } }).begin(
-		beginningHolding(opening, FULL_HD, pictures)
+		beginningHolding(OPENING_IN_FULL_HD, FULL_HD, pictures)
 	);
-	const plain = await screenSweep().begin(beginningHolding(opening, FULL_HD, pictures));
+	const plain = await screenSweep().begin(beginningHolding(OPENING_IN_FULL_HD, FULL_HD, pictures));
 	expect([
 		pictures.parts,
-		(await named(opening, 0.25)).screen.sweep,
-		(await named(opening, 1)).screen.sweep,
-		(await plain(opening, 0.5)).screen.sweep
+		(await named(OPENING_IN_FULL_HD, 0.25)).screen.sweep,
+		(await named(OPENING_IN_FULL_HD, 1)).screen.sweep,
+		(await plain(OPENING_IN_FULL_HD, 0.5)).screen.sweep
 	]).toEqual([
 		[WHOLE_SCREEN, WHOLE_SCREEN],
 		{
@@ -1013,10 +1010,11 @@ test("a sweep holds a picture of the whole screen as it begins, which its band s
 });
 
 test('a sweep opening round a block of the page holds a picture of the whole screen and opens round the middle of the block as far as it has come, as wide as the film names', async () => {
-	const opening = OPENING_IN_FULL_HD;
 	const pictures = new PicturesHeld();
-	const begun = await screenSweep({ round: '#block', width: 90 }).begin(beginningHolding(opening, FULL_HD, pictures));
-	expect([pictures.parts, (await begun(opening, 0.25)).screen.sweep]).toEqual([
+	const begun = await screenSweep({ round: '#block', width: 90 }).begin(
+		beginningHolding(OPENING_IN_FULL_HD, FULL_HD, pictures)
+	);
+	expect([pictures.parts, (await begun(OPENING_IN_FULL_HD, 0.25)).screen.sweep]).toEqual([
 		[WHOLE_SCREEN],
 		{
 			kind: 'disc',
@@ -1038,23 +1036,21 @@ test('a sweep named both a block to open round and a side or a slant to come fro
 
 test("a disc sweeping the screen moves on the frame as far as its ring grows, so a fast one is drawn at moments of a frame's time", async () => {
 	// Its ring grows from 45 inside the block's middle to 45 past the screen's farthest corner, a quarter of that way
-	const opening = OPENING_IN_FULL_HD;
 	const begun = await screenSweep({ round: '#block', width: 90 }).begin(
-		beginningHolding(opening, FULL_HD, new PicturesHeld())
+		beginningHolding(OPENING_IN_FULL_HD, FULL_HD, new PicturesHeld())
 	);
 	const quarterOfTheWay = (Math.hypot(1920 - 150, 1080 - 120) + 90) / 4;
-	expect(frameShiftBetween(await begun(opening, 0.25), await begun(opening, 0.5), FULL_HD)).toBeCloseTo(
-		quarterOfTheWay
-	);
+	expect(
+		frameShiftBetween(await begun(OPENING_IN_FULL_HD, 0.25), await begun(OPENING_IN_FULL_HD, 0.5), FULL_HD)
+	).toBeCloseTo(quarterOfTheWay);
 });
 
 test("a disc's ring growing while the camera pans down moves on the frame as far as its point that goes farthest, its top", async () => {
 	// The camera at a zoom of 2 over the screen's middle, the disc 160 wide round it, its ring 40 of the screen's pixels
 	// half: at a quarter of its way with the camera at 540, its radius 117.68 and its top at 304.64 on the frame; at
 	// 0.28 with the camera 30 lower, 140.89 and 198.22. Its top goes 106.42; its point right of its middle 75.86
-	const opening = OPENING_IN_FULL_HD;
-	const atTheMiddle = await setIn(cameraTo({ focusX: 960, focusY: 540, zoom: 2 }), opening, 1, FULL_HD);
-	const lower = await setIn(cameraTo({ focusX: 960, focusY: 570, zoom: 2 }), opening, 1, FULL_HD);
+	const atTheMiddle = await setIn(cameraTo({ focusX: 960, focusY: 540, zoom: 2 }), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lower = await setIn(cameraTo({ focusX: 960, focusY: 570, zoom: 2 }), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const round = { left: 940, top: 520, width: 40, height: 40 };
 	const begun = await screenSweep({ round }).begin(beginningHolding(atTheMiddle, FULL_HD, new PicturesHeld()));
 	expect(frameShiftBetween(await begun(atTheMiddle, 0.25), await begun(lower, 0.28), FULL_HD)).toBeCloseTo(106.42);
@@ -1063,9 +1059,12 @@ test("a disc's ring growing while the camera pans down moves on the frame as far
 test("a band sweeping the screen moves on the frame as far as it crosses the window, so a fast one is drawn at moments of a frame's time", async () => {
 	// The whole screen, 1920 × 1080, on a frame as large, the band 160 wide: from 80 past the window's left side to 80
 	// past its right, 2080 in all, a quarter of it 520
-	const opening = OPENING_IN_FULL_HD;
-	const begun = await screenSweep({ slant: 0 }).begin(beginningHolding(opening, FULL_HD, new PicturesHeld()));
-	expect(frameShiftBetween(await begun(opening, 0.25), await begun(opening, 0.5), FULL_HD)).toBeCloseTo(520);
+	const begun = await screenSweep({ slant: 0 }).begin(
+		beginningHolding(OPENING_IN_FULL_HD, FULL_HD, new PicturesHeld())
+	);
+	expect(
+		frameShiftBetween(await begun(OPENING_IN_FULL_HD, 0.25), await begun(OPENING_IN_FULL_HD, 0.5), FULL_HD)
+	).toBeCloseTo(520);
 });
 
 test("a piece, a lens and a sweep of the screen are refused while the screen shows the film's own page, as they are drawn from the filmed page's picture", async () => {
@@ -1403,8 +1402,7 @@ test("an object in a group turned toward the eye is drawn in 3D, and one turned 
 });
 
 test('an object joins a group only as it comes, while the group stands as it was placed: none standing, or one leant, grown or brought near, is refused, one spun whole turns round, or half turns that cancel, taken', async () => {
-	const opening = OPENING_IN_SMALL;
-	const grouped = await setAt(group.show({ as: 'stack' }), opening, 1);
+	const grouped = await setAt(group.show({ as: 'stack' }), OPENING_IN_SMALL, 1);
 	const joining = code.show(THREE_LINES, { at: 'left', group: 'stack' });
 	const unplaced = await Promise.all(
 		[
@@ -1419,7 +1417,7 @@ test('an object joins a group only as it comes, while the group stands as it was
 			group.lean({ as: 'stack', tilt: 180, turn: 180, roll: 180 })
 		].map((move) => setAt(move, grouped, 1))
 	);
-	await expect(async () => joining.begin(beginningOf(opening))).rejects.toThrow(
+	await expect(async () => joining.begin(beginningOf(OPENING_IN_SMALL))).rejects.toThrow(
 		new FilmError('code.show finds no group "stack" standing')
 	);
 	await Promise.all(
@@ -1785,13 +1783,12 @@ test('how strongly an object stands out, and how far the page is dimmed and fade
 });
 
 test('the page is shaded as far as its move has come toward the values the film names, the rest as they stood, and stays so as the window travels; one shaded none is drawn with no shade', async () => {
-	const opening = OPENING_IN_SMALL;
-	const dimming = await setAt(windowShade({ dim: 0.6 }), opening, 0.5);
+	const dimming = await setAt(windowShade({ dim: 0.6 }), OPENING_IN_SMALL, 0.5);
 	const blurred = await setAt(windowShade({ blur: 8, fade: 0.5 }), dimming, 1);
 	const travelled = await setAt(windowTo('right'), blurred, 1);
 	const cleared = await setAt(windowShade({ dim: 0, fade: 0, blur: 0 }), travelled, 1);
 	expect(
-		[opening, dimming, blurred, travelled, cleared].map(
+		[OPENING_IN_SMALL, dimming, blurred, travelled, cleared].map(
 			(scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).window.shade
 		)
 	).toEqual([
@@ -1804,8 +1801,7 @@ test('the page is shaded as far as its move has come toward the values the film 
 });
 
 test("the page's window is drawn flat and unmoved while it faces the frame, wherever it stands and a whole turn round, and in 3D where it leans", async () => {
-	const opening = OPENING_IN_SMALL;
-	const inAWindow = await setAt(windowTo('right'), opening, 1);
+	const inAWindow = await setAt(windowTo('right'), OPENING_IN_SMALL, 1);
 	const leant = await setAt(lean({ tilt: 12, turn: -8 }), inAWindow, 1);
 	const turnedWhole = await setAt(lean({ tilt: 360, turn: -360 }), inAWindow, 1);
 	const unmoved = { m11: 1, m12: 0, m21: 0, m22: 1, m41: 0, m42: 0 };
@@ -1818,7 +1814,7 @@ test("the page's window is drawn flat and unmoved while it faces the frame, wher
 		m42: expect.closeTo(0, 9)
 	};
 	expect(
-		[opening, inAWindow, leant, turnedWhole].map(
+		[OPENING_IN_SMALL, inAWindow, leant, turnedWhole].map(
 			(scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).window.transform
 		)
 	).toEqual([
@@ -1830,9 +1826,8 @@ test("the page's window is drawn flat and unmoved while it faces the frame, wher
 });
 
 test('the camera taken onto a block through another frames the other on its way, where a pace by keys puts it', async () => {
-	const opening = OPENING_IN_SMALL;
-	const halfWay = await setAt(onto('#block', { through: ['#card'], pace: 'keys' }), opening, 0.5);
-	const onTheCard = await setAt(onto('#card'), opening, 1);
+	const halfWay = await setAt(onto('#block', { through: ['#card'], pace: 'keys' }), OPENING_IN_SMALL, 0.5);
+	const onTheCard = await setAt(onto('#card'), OPENING_IN_SMALL, 1);
 	expect(cameraOf(halfWay, SMALL).pose).toEqual(cameraOf(onTheCard, SMALL).pose);
 });
 
@@ -1858,9 +1853,8 @@ test('a camera zooming goes by even steps of scale, the point of the page that s
 	// From the whole screen at 1 to 4 round a point of it: the page's point 1600 across and 900 down stands 640 and 360
 	// from the frame's middle at both ends, a page's pixel a frame's at 1
 	const nearTheCorner = { focusX: 1440, focusY: 810, zoom: 4 };
-	const opening = OPENING_IN_FULL_HD;
 	const [aQuarterOn, halfWay] = await Promise.all(
-		[0.25, 0.5].map((progress) => setIn(cameraTo(nearTheCorner), opening, progress, FULL_HD))
+		[0.25, 0.5].map((progress) => setIn(cameraTo(nearTheCorner), OPENING_IN_FULL_HD, progress, FULL_HD))
 	);
 	const poses = [aQuarterOn!, halfWay!].map((scene) => cameraOf(scene, FULL_HD).pose);
 	const pointOnTheFrame = poses.flatMap((pose) => [(1600 - pose.focusX) * pose.zoom, (900 - pose.focusY) * pose.zoom]);
@@ -2120,10 +2114,9 @@ test('a note with no window to stand beside, with its words over the window, or 
 });
 
 test('what has nothing to start from is refused as it begins: a screen raised that is up, lowered that is down, a window hidden that is off the frame', async () => {
-	const opening = OPENING_IN_SMALL;
-	const lowered = await setAt(lower(), opening, 1);
-	const offTheFrame = await setAt(windowHide({ toward: 'left' }), opening, 1);
-	await expect(async () => rise().begin(beginningOf(opening))).rejects.toThrow(FilmError);
+	const lowered = await setAt(lower(), OPENING_IN_SMALL, 1);
+	const offTheFrame = await setAt(windowHide({ toward: 'left' }), OPENING_IN_SMALL, 1);
+	await expect(async () => rise().begin(beginningOf(OPENING_IN_SMALL))).rejects.toThrow(FilmError);
 	await expect(async () => lower().begin(beginningOf(lowered))).rejects.toThrow(FilmError);
 	await expect(async () => windowHide({ toward: 'left' }).begin(beginningOf(offTheFrame))).rejects.toThrow(FilmError);
 });
@@ -2142,13 +2135,12 @@ test('the window moves to a place, lifted off the ground, and back over the whol
 });
 
 test("a window brought half way to the eye is drawn twice as large about its middle and twice as far from the frame's middle, the point of the screen under each point of the frame the one drawn there; over the whole frame it stays the frame itself", async () => {
-	const opening = OPENING_IN_SMALL;
-	const near = await setAt(windowTo('right', { depth: 1000 }), opening, 1);
+	const near = await setAt(windowTo('right', { depth: 1000 }), OPENING_IN_SMALL, 1);
 	const camera = cameraOf(near, SMALL);
 	const box = windowOn(SMALL, 'right');
 	const drawnAs = drawn(near, camera, 0, SMALL, NONE_SHARPER).window.transform;
 	const point: Point = { left: 330, top: 180 };
-	const wholeNear = await setAt(windowTo('whole', { depth: 1000 }), opening, 1);
+	const wholeNear = await setAt(windowTo('whole', { depth: 1000 }), OPENING_IN_SMALL, 1);
 	expect([
 		drawnAs.kind,
 		drawnAs.matrix.m11,
@@ -2169,12 +2161,11 @@ test("a window brought half way to the eye is drawn twice as large about its mid
 });
 
 test("the window's depth goes on its move's own curve, past its end where the curve takes it past, shares a step with a lean, and is kept where a move names none: carried to a place, slid out and shown again", async () => {
-	const opening = OPENING_IN_SMALL;
 	const nearing = windowTo('right', { depth: 400 });
 	const leaning = lean({ tilt: 10 });
-	const leantMeanwhile = await setAt(leaning, await setAt(nearing, opening, 0.5), 1);
-	const pastItsEnd = await setAt(nearing, opening, PAST_ITS_END);
-	const near = await setAt(nearing, opening, 1);
+	const leantMeanwhile = await setAt(leaning, await setAt(nearing, OPENING_IN_SMALL, 0.5), 1);
+	const pastItsEnd = await setAt(nearing, OPENING_IN_SMALL, PAST_ITS_END);
+	const near = await setAt(nearing, OPENING_IN_SMALL, 1);
 	const carriedOn = await setAt(windowTo('left'), near, 1);
 	const slidOut = await setAt(windowHide({ toward: 'left' }), near, 1);
 	const shownAgain = await setAt(windowShow({ at: 'right', from: 'left' }), slidOut, 1);
@@ -2218,11 +2209,10 @@ test('the screen rises and goes down into the ground from where it stands, over 
 });
 
 test('a block the camera frames stands across the middle of whatever window stands: one moved after it, or in the same step, set before it or after', async () => {
-	const opening = OPENING_IN_SMALL;
-	const framing = await onto('#block').begin(beginningOf(opening));
-	const moving = await windowTo('right').begin(beginningOf(opening));
-	const cameraFirst = await moving(await framing(opening, 1), 1);
-	const windowFirst = await framing(await moving(opening, 1), 1);
+	const framing = await onto('#block').begin(beginningOf(OPENING_IN_SMALL));
+	const moving = await windowTo('right').begin(beginningOf(OPENING_IN_SMALL));
+	const cameraFirst = await moving(await framing(OPENING_IN_SMALL, 1), 1);
+	const windowFirst = await framing(await moving(OPENING_IN_SMALL, 1), 1);
 	const blockMiddle: Point = { left: middleX(BLOCK), top: middleY(BLOCK) };
 	const windowMiddle = middleX(windowOn(SMALL, 'right'));
 	expect(
@@ -2287,7 +2277,6 @@ test('a terminal opened comes up as its move goes on, and one left goes as its m
 
 test('every object comes up in a way the film names, and goes in one: a title, code, the terminal, the card, a caption, keys', async () => {
 	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
-	const opening = OPENING_IN_SMALL;
 	const shows = [
 		title.show('Here', { enter: 'fade' }),
 		code.show('x', { at: 'left', enter: 'fade' }),
@@ -2304,8 +2293,8 @@ test('every object comes up in a way the film names, and goes in one: a title, c
 		caption.hide({ leave: 'fade' }),
 		keys.hide({ leave: 'fade' })
 	];
-	const coming = await Promise.all(shows.map((move) => setAt(move, opening, 0.25)));
-	const standing = await Promise.all(shows.map((move) => setAt(move, opening, 1)));
+	const coming = await Promise.all(shows.map((move) => setAt(move, OPENING_IN_SMALL, 0.25)));
+	const standing = await Promise.all(shows.map((move) => setAt(move, OPENING_IN_SMALL, 1)));
 	const going = await Promise.all(hides.map((move, place) => setAt(move, standing[place]!, 0.25)));
 	expect([
 		coming.flatMap((scene) => drawnObjectsIn(scene, SMALL).map((object) => object.onItsWay.clear)),
@@ -2317,9 +2306,11 @@ test('every object comes up in a way the film names, and goes in one: a title, c
 });
 
 test('what an object shows stands whole while it comes up or goes in a way: words come up together, and go together', async () => {
-	const opening = OPENING_IN_SMALL;
-	const masked = drawnObjectsIn(await setAt(title.show('Two words', { enter: 'mask' }), opening, 0.5), SMALL)[0]!;
-	const standing = await setAt(title.show('Two words'), opening, 1);
+	const masked = drawnObjectsIn(
+		await setAt(title.show('Two words', { enter: 'mask' }), OPENING_IN_SMALL, 0.5),
+		SMALL
+	)[0]!;
+	const standing = await setAt(title.show('Two words'), OPENING_IN_SMALL, 1);
 	const leaving = drawnObjectsIn(await setAt(title.hide({ leave: 'iris' }), standing, 0.25), SMALL)[0]!;
 	expect([masked.content.words.map((word) => word.appeared), leaving.content.gone]).toEqual([[1, 1], 0]);
 });
@@ -2339,10 +2330,12 @@ test('the ending card coming up in its own way comes up whole, its ground and it
 });
 
 test('a title card or the ending card coming up in a way has its ground come up twice as fast as the way, under what the way brings whole', async () => {
-	const opening = OPENING_IN_SMALL;
 	const card = { name: 'livereel', line: 'Film your app', command: 'npx livereel' };
-	const titled = drawnObjectsIn(await setAt(title.show('Two words', { enter: 'mask' }), opening, 0.25), SMALL)[0]!;
-	const ended = drawnObjectsIn(await setAt(ending.show(card, { enter: 'mask' }), opening, 0.25), SMALL)[0]!;
+	const titled = drawnObjectsIn(
+		await setAt(title.show('Two words', { enter: 'mask' }), OPENING_IN_SMALL, 0.25),
+		SMALL
+	)[0]!;
+	const ended = drawnObjectsIn(await setAt(ending.show(card, { enter: 'mask' }), OPENING_IN_SMALL, 0.25), SMALL)[0]!;
 	expect([
 		titled.content.ground,
 		titled.content.words.map((word) => word.appeared),
@@ -2352,11 +2345,10 @@ test('a title card or the ending card coming up in a way has its ground come up 
 });
 
 test('a mask comes from the foot and a wipe from the left where the film names no edge, and from the edge it names', async () => {
-	const opening = OPENING_IN_SMALL;
-	const masked = drawnObjectsIn(await setAt(title.show('ab', { enter: 'mask' }), opening, 0.25), SMALL)[0]!;
-	const wiped = drawnObjectsIn(await setAt(title.show('ab', { enter: 'wipe' }), opening, 0.25), SMALL)[0]!;
+	const masked = drawnObjectsIn(await setAt(title.show('ab', { enter: 'mask' }), OPENING_IN_SMALL, 0.25), SMALL)[0]!;
+	const wiped = drawnObjectsIn(await setAt(title.show('ab', { enter: 'wipe' }), OPENING_IN_SMALL, 0.25), SMALL)[0]!;
 	const fromTheLeft = drawnObjectsIn(
-		await setAt(title.show('ab', { enter: 'mask', edge: 'left' }), opening, 0.25),
+		await setAt(title.show('ab', { enter: 'mask', edge: 'left' }), OPENING_IN_SMALL, 0.25),
 		SMALL
 	)[0]!;
 	expect([masked.onItsWay.shift, wiped.onItsWay.cut, fromTheLeft.onItsWay.shift]).toEqual([
@@ -2629,31 +2621,30 @@ async function cameraOnto(target: string): Promise<Camera> {
 }
 
 test('a box of the screen stands for a block a page names by no selector: the camera frames it, the light lights it, the cursor rests on it, a pin, a callout and a note go to it, as on the block a selector names there, and one off the screen is refused alike', async () => {
-	const opening = OPENING_IN_SMALL;
-	const windowed = await setAt(windowTo('right'), opening, 1);
+	const windowed = await setAt(windowTo('right'), OPENING_IN_SMALL, 1);
 	const byBox = [
-		cameraOf(await setAt(onto(BLOCK), opening, 1), SMALL),
-		(await setAt(lightOn(BLOCK), opening, 1)).light,
-		(await setAt(cursorTo(BLOCK), opening, 1)).cursor,
-		(await setAt(pin.show(BLOCK, 'Here'), opening, 1)).pins,
-		(await setAt(callout.show(BLOCK, 'Here'), opening, 1)).callout,
+		cameraOf(await setAt(onto(BLOCK), OPENING_IN_SMALL, 1), SMALL),
+		(await setAt(lightOn(BLOCK), OPENING_IN_SMALL, 1)).light,
+		(await setAt(cursorTo(BLOCK), OPENING_IN_SMALL, 1)).cursor,
+		(await setAt(pin.show(BLOCK, 'Here'), OPENING_IN_SMALL, 1)).pins,
+		(await setAt(callout.show(BLOCK, 'Here'), OPENING_IN_SMALL, 1)).callout,
 		(await setAt(note.show(BLOCK, 'Here'), windowed, 1)).note
 	];
 	const bySelector = [
-		cameraOf(await setAt(onto('#block'), opening, 1), SMALL),
-		(await setAt(lightOn('#block'), opening, 1)).light,
-		(await setAt(cursorTo('#block'), opening, 1)).cursor,
-		(await setAt(pin.show('#block', 'Here'), opening, 1)).pins,
-		(await setAt(callout.show('#block', 'Here'), opening, 1)).callout,
+		cameraOf(await setAt(onto('#block'), OPENING_IN_SMALL, 1), SMALL),
+		(await setAt(lightOn('#block'), OPENING_IN_SMALL, 1)).light,
+		(await setAt(cursorTo('#block'), OPENING_IN_SMALL, 1)).cursor,
+		(await setAt(pin.show('#block', 'Here'), OPENING_IN_SMALL, 1)).pins,
+		(await setAt(callout.show('#block', 'Here'), OPENING_IN_SMALL, 1)).callout,
 		(await setAt(note.show('#block', 'Here'), windowed, 1)).note
 	];
 	expect(byBox).toEqual(bySelector);
-	await expect(onto(BELOW).begin(beginningOf(opening))).rejects.toThrow(
+	await expect(onto(BELOW).begin(beginningOf(OPENING_IN_SMALL))).rejects.toThrow(
 		new FilmError(
 			`camera.onto's box {"left":100,"top":900.4,"width":100,"height":40} stands off the page's screen, at left 100, top 900 of a screen 600 × 400: give a box that stands on it, in the screen's pixels`
 		)
 	);
-	await expect(lightOn(HIDDEN).begin(beginningOf(opening))).rejects.toThrow(
+	await expect(lightOn(HIDDEN).begin(beginningOf(OPENING_IN_SMALL))).rejects.toThrow(
 		new FilmError(`light.on's box {"left":0,"top":0,"width":0,"height":0} has no size: give it a width or a height`)
 	);
 	expect(() => onto(BLOCK, { every: 2 })).toThrow(
@@ -2746,10 +2737,13 @@ test('the eye keeps where it stands, what it looks at, or the way its top points
 });
 
 test('an eye sent to look at where it stands, straight down with its top up the frame, or along its up, is refused as its move begins; an up of no way, as it is made', async () => {
-	const opening = OPENING_IN_SMALL;
-	await expect(setAt(eye.to({ aim: { across: 0, down: 0, out: 2000 } }), opening, 1)).rejects.toThrow(EYE_REFUSAL);
-	await expect(setAt(eye.to({ at: { across: 0, down: -900, out: 0 } }), opening, 1)).rejects.toThrow(EYE_REFUSAL);
-	await expect(setAt(eye.to({ up: { across: 0, down: 0, out: 1 } }), opening, 1)).rejects.toThrow(EYE_REFUSAL);
+	await expect(setAt(eye.to({ aim: { across: 0, down: 0, out: 2000 } }), OPENING_IN_SMALL, 1)).rejects.toThrow(
+		EYE_REFUSAL
+	);
+	await expect(setAt(eye.to({ at: { across: 0, down: -900, out: 0 } }), OPENING_IN_SMALL, 1)).rejects.toThrow(
+		EYE_REFUSAL
+	);
+	await expect(setAt(eye.to({ up: { across: 0, down: 0, out: 1 } }), OPENING_IN_SMALL, 1)).rejects.toThrow(EYE_REFUSAL);
 	expect(() => eye.to({ up: { across: 0, down: 0, out: 0 } })).toThrow(
 		new FilmError(
 			`eye.to's place's up is {"across":0,"down":0,"out":0}: it is a direction: { across, down, out }, not all 0`
@@ -2768,9 +2762,8 @@ test('an eye sent back to rest stands where it rests for its focal length, exact
 });
 
 test('an eye rolled a quarter round has rolled half of it half way, its up turning evenly', async () => {
-	const opening = OPENING_IN_SMALL;
-	const rolling = await eye.to({ up: LEFTWARD }).begin(beginningOf(opening));
-	const halfWay = (await rolling(opening, 0.5)).eye.up;
+	const rolling = await eye.to({ up: LEFTWARD }).begin(beginningOf(OPENING_IN_SMALL));
+	const halfWay = (await rolling(OPENING_IN_SMALL, 0.5)).eye.up;
 	expect([halfWay.across, halfWay.down, halfWay.out]).toEqual([
 		expect.closeTo(-Math.SQRT1_2),
 		expect.closeTo(-Math.SQRT1_2),
@@ -2824,11 +2817,10 @@ test('an eye flown over a block, looking straight down as it set off, ends with 
 });
 
 test('an eye flown over the window rides it: the window leant in the same step, set first or after, carries it, the block still in the middle of the frame', async () => {
-	const opening = OPENING_IN_SMALL;
-	const flying = await eye.fly([{ to: OVER_THE_BLOCK }]).begin(beginningOf(opening));
-	const leaning = await lean({ tilt: 30, turn: -20 }).begin(beginningOf(opening));
-	const flownFirst = await leaning(await flying(opening, 1), 1);
-	const leantFirst = await flying(await leaning(opening, 1), 1);
+	const flying = await eye.fly([{ to: OVER_THE_BLOCK }]).begin(beginningOf(OPENING_IN_SMALL));
+	const leaning = await lean({ tilt: 30, turn: -20 }).begin(beginningOf(OPENING_IN_SMALL));
+	const flownFirst = await leaning(await flying(OPENING_IN_SMALL, 1), 1);
+	const leantFirst = await flying(await leaning(OPENING_IN_SMALL, 1), 1);
 	expect([pagePointDrawn(flownFirst, BLOCKS_MIDDLE), pagePointDrawn(leantFirst, BLOCKS_MIDDLE)]).toEqual([
 		FRAMES_MIDDLE,
 		FRAMES_MIDDLE
@@ -2843,17 +2835,16 @@ test('an eye flown over the window rides it as the window is brought toward the 
 });
 
 test("an eye flown turning toward a block and lifting its sight to hold it three quarters down the frame draws it there, on the frame's middle line, and holds it there flying on ahead", async () => {
-	const opening = OPENING_IN_SMALL;
 	const flying = await eye
 		.fly([{ to: OVER_THE_BLOCK }, { ahead: 0.5 }], {
 			heading: [{ by: 0, toward: '#card' }],
 			tip: [{ by: 0, holding: '#card', at: 0.75 }]
 		})
-		.begin(beginningOf(opening));
-	const overTheBlock = await setAt(eye.fly([{ to: OVER_THE_BLOCK }]), opening, 1);
+		.begin(beginningOf(OPENING_IN_SMALL));
+	const overTheBlock = await setAt(eye.fly([{ to: OVER_THE_BLOCK }]), OPENING_IN_SMALL, 1);
 	const legsEnd = 1 / 1.5;
-	const atTheKey = await flying(opening, legsEnd);
-	const flownOn = await flying(opening, 1);
+	const atTheKey = await flying(OPENING_IN_SMALL, legsEnd);
+	const flownOn = await flying(OPENING_IN_SMALL, 1);
 	expect([
 		overTheBlock.eye.at.across,
 		pagePointDrawn(atTheKey, CARDS_MIDDLE),
@@ -2877,23 +2868,21 @@ test('an eye rolled as a flight sets off flies on from it as it stood, the page 
 });
 
 test('an eye flown on a curve that passes its end, as one that bounces, goes on past its way and back, never stopping there', async () => {
-	const opening = OPENING_IN_SMALL;
-	const flying = await eye.fly([{ to: OVER_THE_BLOCK }]).begin(beginningOf(opening));
-	const [atTheEnd, past] = [(await flying(opening, 1)).eye.at, (await flying(opening, 1.1)).eye.at];
+	const flying = await eye.fly([{ to: OVER_THE_BLOCK }]).begin(beginningOf(OPENING_IN_SMALL));
+	const [atTheEnd, past] = [(await flying(OPENING_IN_SMALL, 1)).eye.at, (await flying(OPENING_IN_SMALL, 1.1)).eye.at];
 	expect(past.out).toBeLessThan(atTheEnd.out);
 });
 
 test('an eye flown on a bend arrives heading as the film names it, and goes on ahead as far again, passing over the block half way', async () => {
-	const opening = OPENING_IN_SMALL;
 	const flying = await eye
 		.fly([{ to: OVER_THE_BLOCK, arriving: 90, bend: 0.5 }, { ahead: 1 }])
-		.begin(beginningOf(opening));
-	const overTheBlock = await setAt(eye.fly([{ to: OVER_THE_BLOCK }]), opening, 1);
-	const [nearTheEnd, atTheEnd] = [(await flying(opening, 0.99)).eye, (await flying(opening, 1)).eye];
+		.begin(beginningOf(OPENING_IN_SMALL));
+	const overTheBlock = await setAt(eye.fly([{ to: OVER_THE_BLOCK }]), OPENING_IN_SMALL, 1);
+	const [nearTheEnd, atTheEnd] = [(await flying(OPENING_IN_SMALL, 0.99)).eye, (await flying(OPENING_IN_SMALL, 1)).eye];
 	const legLength = Math.hypot(
-		overTheBlock.eye.at.across - opening.eye.at.across,
-		overTheBlock.eye.at.down - opening.eye.at.down,
-		overTheBlock.eye.at.out - opening.eye.at.out
+		overTheBlock.eye.at.across - OPENING_IN_SMALL.eye.at.across,
+		overTheBlock.eye.at.down - OPENING_IN_SMALL.eye.at.down,
+		overTheBlock.eye.at.out - OPENING_IN_SMALL.eye.at.out
 	);
 	expect([
 		Math.sign(atTheEnd.at.across - nearTheEnd.at.across),
@@ -2911,9 +2900,11 @@ test("an eye flown along a film's own curve sets off along it from where it stan
 		new Vector3(1000, 500, 7),
 		new Vector3(1300, 500, 7)
 	);
-	const opening = OPENING_IN_SMALL;
-	const flying = await eye.fly([{ along: bunched }]).begin(beginningOf(opening));
-	const [halfWay, atTheEnd] = [(await flying(opening, 0.5)).eye.at, (await flying(opening, 1)).eye.at];
+	const flying = await eye.fly([{ along: bunched }]).begin(beginningOf(OPENING_IN_SMALL));
+	const [halfWay, atTheEnd] = [
+		(await flying(OPENING_IN_SMALL, 0.5)).eye.at,
+		(await flying(OPENING_IN_SMALL, 1)).eye.at
+	];
 	expect([halfWay.across, halfWay.down, halfWay.out, atTheEnd.across]).toEqual([
 		expect.closeTo(150, 0),
 		expect.closeTo(0),
@@ -2961,37 +2952,34 @@ test('a flight refused as it is made: a way of no leg, a leg in no form of one, 
 });
 
 test('a flight refused as it begins: a leg ahead with none before it, a leg to where the eye stands, a heading toward the block the eye stands right over', async () => {
-	const opening = OPENING_IN_SMALL;
 	await expect(
-		setAt(eye.fly([{ to: OVER_THE_BLOCK }], { heading: [{ by: 0, toward: '#block' }] }), opening, 1)
+		setAt(eye.fly([{ to: OVER_THE_BLOCK }], { heading: [{ by: 0, toward: '#block' }] }), OPENING_IN_SMALL, 1)
 	).rejects.toThrow(
 		new FilmError(
 			"eye.fly's heading key 0 turns toward a block the eye stands right over there: turn it toward one ahead of it"
 		)
 	);
-	await expect(setAt(eye.fly([{ ahead: 1 }]), opening, 1)).rejects.toThrow(
+	await expect(setAt(eye.fly([{ ahead: 1 }]), OPENING_IN_SMALL, 1)).rejects.toThrow(
 		new FilmError("eye.fly's leg 0 goes ahead with no leg before it: send the eye somewhere first")
 	);
-	await expect(setAt(eye.fly([{ to: OVER_THE_BLOCK }, { to: OVER_THE_BLOCK }]), opening, 1)).rejects.toThrow(
+	await expect(setAt(eye.fly([{ to: OVER_THE_BLOCK }, { to: OVER_THE_BLOCK }]), OPENING_IN_SMALL, 1)).rejects.toThrow(
 		new FilmError("eye.fly's leg 1 goes nowhere: send it somewhere the eye does not stand")
 	);
 });
 
 test('an eye sent back to rest after a flight stands in the room again, where it rests', async () => {
-	const opening = OPENING_IN_SMALL;
-	const flown = await setAt(eye.fly([{ to: OVER_THE_BLOCK }]), opening, 1);
-	expect((await setAt(eye.to('rest'), flown, 1)).eye).toEqual(opening.eye);
+	const flown = await setAt(eye.fly([{ to: OVER_THE_BLOCK }]), OPENING_IN_SMALL, 1);
+	expect((await setAt(eye.to('rest'), flown, 1)).eye).toEqual(OPENING_IN_SMALL.eye);
 });
 
 test('a piece is lifted off the page while the eye looks straight ahead, moved aside or not, and refused while it looks aslant', async () => {
-	const opening = OPENING_IN_FULL_HD;
 	const steppedAside = await setIn(
 		eye.to({ at: { across: 300, down: 0, out: 2000 }, aim: { across: 300, down: 0, out: 0 } }),
-		opening,
+		OPENING_IN_FULL_HD,
 		1,
 		FULL_HD
 	);
-	const aslant = await setIn(eye.to(EYE_ASIDE), opening, 1, FULL_HD);
+	const aslant = await setIn(eye.to(EYE_ASIDE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	expect((await setIn(piece.show('#card'), steppedAside, 1, FULL_HD)).objects.has('piece')).toBe(true);
 	await expect(setIn(piece.show('#card'), aslant, 1, FULL_HD)).rejects.toThrow(
 		new FilmError(
@@ -3001,10 +2989,9 @@ test('a piece is lifted off the page while the eye looks straight ahead, moved a
 });
 
 test('an eye half as far from the window shows it twice as large, and sees under each point of the frame the point of the screen drawn there, aslant too', async () => {
-	const opening = OPENING_IN_SMALL;
-	const atRest = cameraOf(opening, SMALL);
-	const near = cameraOf(await setAt(eye.to({ at: { across: 0, down: 0, out: 1000 } }), opening, 1), SMALL);
-	const aslant = cameraOf(await setAt(eye.to(EYE_ASIDE), opening, 1), SMALL);
+	const atRest = cameraOf(OPENING_IN_SMALL, SMALL);
+	const near = cameraOf(await setAt(eye.to({ at: { across: 0, down: 0, out: 1000 } }), OPENING_IN_SMALL, 1), SMALL);
+	const aslant = cameraOf(await setAt(eye.to(EYE_ASIDE), OPENING_IN_SMALL, 1), SMALL);
 	const point: Point = { left: atRest.pose.focusX + 30, top: atRest.pose.focusY - 20 };
 	const shownNear = onTheFrame(near, SMALL.frame, point);
 	const shownAtRest = onTheFrame(atRest, SMALL.frame, point);
@@ -3030,12 +3017,11 @@ test('a window the eye stands behind is handed to the stage in 3D, which cuts aw
 });
 
 test('an eye sent over the top of what it looks at, or just beside it, its top kept up the frame, is refused as its move begins, as the picture would spin round', async () => {
-	const opening = OPENING_IN_SMALL;
-	const overhead = await setAt(eye.to({ at: { across: 0, down: -2000, out: 300 } }), opening, 1);
+	const overhead = await setAt(eye.to({ at: { across: 0, down: -2000, out: 300 } }), OPENING_IN_SMALL, 1);
 	// Its sight within 5° of its up while it stands less than 175 out either side of the top
 	await expect(setAt(eye.to({ at: { across: 0, down: -2000, out: -300 } }), overhead, 1)).rejects.toThrow(EYE_REFUSAL);
 	// Passing 60 beside the top, 2000 above it, its across would turn 152° in two frames of two seconds
-	const besideTheTop = await setAt(eye.to({ at: { across: 60, down: -2000, out: 1000 } }), opening, 1);
+	const besideTheTop = await setAt(eye.to({ at: { across: 60, down: -2000, out: 1000 } }), OPENING_IN_SMALL, 1);
 	await expect(setAt(eye.to({ at: { across: 60, down: -2000, out: -1000 } }), besideTheTop, 1)).rejects.toThrow(
 		EYE_REFUSAL
 	);
@@ -3227,29 +3213,34 @@ test('the room blurs a point of the frame beside a window turned nearly edge-on 
 });
 
 test('the room blurs no point of the window where the eye is open none, or so little no point of the frame spreads past a tenth of a pixel', async () => {
-	const opening = OPENING_IN_SMALL;
-	const barelyOpen = await setAt(eye.focus(HALF_AS_FAR, { aperture: 0.001 }), opening, 1);
-	expect([opening, barelyOpen].map((scene) => drawnWindowIn(scene).outOfFocusAt)).toEqual([null, null]);
+	const barelyOpen = await setAt(eye.focus(HALF_AS_FAR, { aperture: 0.001 }), OPENING_IN_SMALL, 1);
+	expect([OPENING_IN_SMALL, barelyOpen].map((scene) => drawnWindowIn(scene).outOfFocusAt)).toEqual([null, null]);
 });
 
 test('eye.to and eye.focus share a step, the eye standing where one sends it and focused where the other does', async () => {
-	const opening = OPENING_IN_SMALL;
 	const steps = play({ seconds: 1, moves: [eye.to(EYE_ASIDE), eye.focus(1000, { aperture: OPENED })] });
-	const both = await setAt(eye.focus(1000, { aperture: OPENED }), await setAt(eye.to(EYE_ASIDE), opening, 1), 1);
+	const both = await setAt(
+		eye.focus(1000, { aperture: OPENED }),
+		await setAt(eye.to(EYE_ASIDE), OPENING_IN_SMALL, 1),
+		1
+	);
 	expect(steps.kind).toBe('play');
 	expect([both.eye.at, both.eye.aim, both.eye.aperture]).toEqual([EYE_ASIDE.at, EYE_ASIDE.aim, OPENED]);
 });
 
 test('a focus on an object that does not stand, or on what stands behind the eye, is refused as its move begins', async () => {
-	const opening = OPENING_IN_SMALL;
 	const behind = new FilmError(
 		'eye.focus focuses on what stands behind the eye, which it never sees: focus on what stands before it'
 	);
-	const pastTheTitle = await setAt(eye.to({ at: { across: 0, down: 0, out: 900 } }), await withNearTitles(opening), 1);
-	await expect(setAt(eye.focus({ object: 'gone' }), opening, 1)).rejects.toThrow(
+	const pastTheTitle = await setAt(
+		eye.to({ at: { across: 0, down: 0, out: 900 } }),
+		await withNearTitles(OPENING_IN_SMALL),
+		1
+	);
+	await expect(setAt(eye.focus({ object: 'gone' }), OPENING_IN_SMALL, 1)).rejects.toThrow(
 		new FilmError('eye.focus finds no gone on the screen')
 	);
-	await expect(setAt(eye.focus({ across: 0, down: 0, out: 2500 }), opening, 1)).rejects.toThrow(behind);
+	await expect(setAt(eye.focus({ across: 0, down: 0, out: 2500 }), OPENING_IN_SMALL, 1)).rejects.toThrow(behind);
 	await expect(setAt(eye.focus({ object: 'near' }), pastTheTitle, 1)).rejects.toThrow(behind);
 });
 
@@ -3301,8 +3292,7 @@ const A_CARD_SHOWN = { at: 'whole', reach: CARD_REACH, values: A_CARD } as const
 
 /** A scene with a card shown in the world at the frame's middle, brought so far toward the eye. */
 async function cardAt(depth: number): Promise<Scene> {
-	const opening = OPENING_IN_SMALL;
-	const shown = await setAt(thing.show('card', { ...A_CARD_SHOWN, inside: 'world' }), opening, 1);
+	const shown = await setAt(thing.show('card', { ...A_CARD_SHOWN, inside: 'world' }), OPENING_IN_SMALL, 1);
 	return setAt(thing.to('whole', { depth }), shown, 1);
 }
 
@@ -3337,9 +3327,12 @@ test("a thing shown in the world is drawn as one the page's window may hide, and
 });
 
 test('a thing in the world carries the room as the eye sees it, and one on the frame as the eye at rest does, so a light standing where that eye stands and aiming where it looks is seen at its middle, straight down its sight', async () => {
-	const opening = OPENING_IN_SMALL;
 	const inTheWorld = await setAt(eye.to(EYE_ASIDE), await cardAt(0), 1);
-	const onTheFrame = await setAt(eye.to(EYE_ASIDE), await setAt(thing.show('card', A_CARD_SHOWN), opening, 1), 1);
+	const onTheFrame = await setAt(
+		eye.to(EYE_ASIDE),
+		await setAt(thing.show('card', A_CARD_SHOWN), OPENING_IN_SMALL, 1),
+		1
+	);
 	const atRest = eyeAtRest(FOCAL_LENGTH);
 	const light = { colour: '#fff', strength: 1, angle: 20, softness: 1 };
 	const lights = [

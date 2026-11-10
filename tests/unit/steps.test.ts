@@ -77,19 +77,16 @@ test("an act on the page at the moment a move that holds the page's picture begi
 	expect(cut(piece.show('#card'), actedAt(0)).moves.length).toBe(2);
 });
 
-test('two moves of the look at once are refused only on a value both set, named by it: a ground named alone sets its glow', () => {
+test("two moves of the look, or of the world's look, at once are refused only on a value both set, named by it: a ground named alone sets its glow", () => {
 	const drifting = lookTo({ glowX: 0.9, glow: '#222222' });
+	const glowing = worldTo({ bloom: 0.45 });
 	expect(() => play({ seconds: 1, moves: [drifting, lookTo({ ground: '#ffffff' })] })).toThrow(
 		new FilmError("two moves on the look's glow at once in one step")
 	);
-	expect(play({ seconds: 1, moves: [drifting, lookTo({ ink: '#000000' })] }).moves.length).toBe(2);
-});
-
-test("two moves of the world's look at once are refused only on a value both set, named by it", () => {
-	const glowing = worldTo({ bloom: 0.45 });
 	expect(() => play({ seconds: 1, moves: [glowing, worldTo({ bloom: 0.2, softBoxes: [] })] })).toThrow(
 		new FilmError("two moves on the world's bloom at once in one step")
 	);
+	expect(play({ seconds: 1, moves: [drifting, lookTo({ ink: '#000000' })] }).moves.length).toBe(2);
 	expect(play({ seconds: 1, moves: [glowing, worldTo({ lights: [] })] }).moves.length).toBe(2);
 });
 
