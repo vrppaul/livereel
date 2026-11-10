@@ -189,7 +189,7 @@ and the moves of each part of the scene:
   stays sharp. It shares a step with `eye.to`, and holds on what it was put on as the eye moves; a focus pulled from
   one to another goes evenly in how sharp it leaves things. A focus on what stands behind the eye is refused
 - `window.to(place, { depth })`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn, roll, over })`,
-  `window.shade({ dim, fade, blur })`
+  `window.shade({ dim, fade, blur })`, `window.body({ thickness, rim, metal, roughness, glass }, { within })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
 - `callout.show(target, text, { side })`, `callout.hide()`
 - `note.show(target, text, { at })`, `note.hide()`
@@ -724,9 +724,6 @@ values; what the film leaves out stays livereel's:
 | `paneCorner` | how round the corners of a pane are — the page's window, the code's pane and the terminal alike — in pixels; `0`, square | `24` |
 | `paneEdge` | the faint edge round a pane, its alpha how faint | `#ffffff1a` |
 | `paneShadow`, `paneShadowColour` | how strong a pane's shadow is, from `0`, none, to `1`, and its colour | `1`, `#000` |
-| `windowThickness`, `windowRim` | in a room, how thick the body of the page's window is, `0` none, and how far its rim reaches past the page all round, in pixels | `0`, `6` |
-| `windowMetal`, `windowRoughness` | the colour of the window's body, in hex with no alpha, and how rough its metal is, from `0`, a mirror, to `1`, matte | `#454b56`, `0.45` |
-| `windowGlass` | how strong the clear coat of glass over the page of a window with a body is, from `0`, none, to `1`, a whole coat: 4% reflected face-on, more aslant | `0.4` |
 | `terminal`, `terminalInk` | the colour of the terminal, the code's pane, the ending's command and keys' caps, and what is written on them | `#10141c`, `#f4f6fa` |
 | `codeComment`, `codeString`, `codeNumber`, `codeKeyword`, `codeCall`, `codeKey` | the colours of the code's pieces by kind: a comment, a string, a number, a word the language keeps, a function called, a key of an object; livereel's are made for a dark pane | `#8b949e`, `#a5d6ff`, `#79c0ff`, `#ff7b72`, `#d2a8ff`, `#7ee787` |
 | `glowX`, `glowY` | where the ground's glow stands, across and down, each from 0 to 1 | `0.5`, `0.3` |
@@ -763,28 +760,6 @@ and its glow under the layers. No layer takes a picture (`url()`), which
 the stage would draw only once loaded. Layers CSS cannot read, or with a
 picture, are refused before anything is shot.
 
-In a room the page's window may have a body, as a tablet has: a slab of
-metal round the page, `windowThickness` thick, its rim reaching
-`windowRim` past the page all round, its corners the page's grown by the
-rim. It takes the place of the window's edge and shadow and comes as they
-do, as far as the window stands off the ground and the screen has come up
-in it, so a page over the whole frame has none. Its metal shows the
-world's light (below): with no lights and no soft boxes it stands dark. Turned
-past edge-on, the window shows the body's back. It is open in front, so a
-page that fades shows what stands behind the window. Glass lies over the
-page, a smooth clear coat as strong as `windowGlass` says, which reflects
-the soft boxes and the lights, more as the eye sees it aslant, and dims the
-page under it by as much: a glint glides over a dark page as the window
-turns toward a box, and hardly shows on a white one. It comes with the
-body, as far as the body has come, reflects nothing where the world has no
-light, and stays over a page that fades. A flat film draws the edge and
-shadow in its place.
-
-```ts
-theme: { windowThickness: 24, windowRim: 6 },
-world: { softBoxes: [...] }
-```
-
 The look changes as the film goes, by a move like any other:
 `look.to(theme)`, any of the same values. In a `play` it moves there over
 its share of the step: a colour through the colours between, a size, a
@@ -809,6 +784,50 @@ play({ seconds: 4, moves: [look.to({ glowX: 0.9 }), look.to({ ink: '#1a1a1a' }, 
 
 Two that name one value at once are refused, by it: `two moves on the
 look's glow at once in one step`.
+
+### The window's body
+
+In a room the page's window may have a body, as a tablet has: a slab of
+metal round the page, its corners the page's grown by its rim. It is the
+window's own, set by a move of the window, `window.body(body, { within })`,
+any of its values; what a move leaves out stays as the body stands, and the
+window opens on livereel's, of no thickness, which is none:
+
+| Value | What it sets | livereel's |
+|---|---|---|
+| `thickness`, `rim` | how thick the slab is, `0` none, and how far its rim reaches past the page all round, in pixels | `0`, `6` |
+| `metal`, `roughness` | the colour of its metal, in hex with no alpha, and how rough it is, from `0`, a mirror, to `1`, matte | `#454b56`, `0.45` |
+| `glass` | how strong the clear coat of glass over the page is, from `0`, none, to `1`, a whole coat: 4% reflected face-on, more aslant | `0.4` |
+
+A film whose window has a body from its start sets it in a `cut` as its
+first step. The body takes the place of the window's edge and shadow and
+comes as they do, as far as the window stands off the ground and the
+screen has come up in it, so a page over the whole frame has none. Its
+metal shows the world's light (below): with no lights and no soft boxes it
+stands dark. Turned past edge-on, the window shows the body's back. It is
+open in front, so a page that fades shows what stands behind the window.
+The glass is a smooth clear coat, which reflects the soft boxes and the
+lights, more as the eye sees it aslant, and dims the page under it by as
+much: a glint glides over a dark page as the window turns toward a box, and
+hardly shows on a white one. It comes with the body, as far as the body has
+come, reflects nothing where the world has no light, and stays over a page
+that fades. A flat film draws the edge and shadow in its place.
+
+```ts
+world: { softBoxes: [...] },
+steps: () => [
+	cut(window.body({ thickness: 24, rim: 6 })),
+	...
+]
+```
+
+In a `play` the body moves to the values named over its share of the step,
+a length or a share through the values between and the metal through the
+colours between; in a `cut`, at once. It sets only what it names, so it
+shares a `play` with `window.to`, `window.lean`, `window.shade` and another
+body naming others; two that name one value at once are refused, by it:
+`two moves on the window's rim at once in one step`. The body is the
+window's, not the look's: a theme or `look.to` names none of its values.
 
 ### The world's look
 

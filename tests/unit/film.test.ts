@@ -408,12 +408,9 @@ test("a film's set is shot 3 times as sharp as its page where it names no sharpn
 	);
 });
 
-test("a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, a value of the world's look by its name, pixels less than none, a share past 1, a size of none, a way words come up it has not, a colour not in hex, a font of no name, the window's metal with an alpha", () => {
+test("a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, a value of the world's look or of the window's body by its name, pixels less than none, a share past 1, a size of none, a way words come up it has not, a colour not in hex, a font of no name", () => {
 	const names =
-		'ground, glow, groundLayers, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, paneCorner, paneEdge, paneShadow, paneShadowColour, windowThickness, windowRim, windowMetal, windowRoughness, windowGlass, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, codeLineHeight, cursorFill, cursorEdge, words';
-	expect(() => filmWritten({ theme: { windowMetal: '#454b5680' } })).toThrow(
-		new FilmError(`the film's theme's windowMetal is "#454b5680": it is a colour in hex with no alpha: #rgb or #rrggbb`)
-	);
+		'ground, glow, groundLayers, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, paneCorner, paneEdge, paneShadow, paneShadowColour, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, codeLineHeight, cursorFill, cursorEdge, words';
 	expect(() => filmWritten({ theme: null })).toThrow(
 		new FilmError(`the film's theme is handed null for an object of ${names}`)
 	);
@@ -422,6 +419,9 @@ test("a theme in no form of one is refused as the film is defined, where it stan
 	);
 	expect(() => filmWritten({ theme: { lights: [] } })).toThrow(
 		new FilmError(`the film's theme names lights: it names ${names}, or fewer`)
+	);
+	expect(() => filmWritten({ theme: { windowThickness: 24 } })).toThrow(
+		new FilmError(`the film's theme names windowThickness: it names ${names}, or fewer`)
 	);
 	expect(() => filmWritten({ theme: { paneCorner: -4 } })).toThrow(
 		new FilmError("the film's theme's paneCorner is -4: it is a number of pixels, 0 or more")

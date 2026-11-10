@@ -13,7 +13,7 @@ import * as piece from '../../src/moves/piece.ts';
 import { shows, sweep } from '../../src/moves/screen.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import * as title from '../../src/moves/title.ts';
-import { lean, shade, to as windowTo } from '../../src/moves/window.ts';
+import { body, lean, shade, to as windowTo } from '../../src/moves/window.ts';
 import { to as worldTo } from '../../src/moves/world.ts';
 
 test("the CSS a film's looks write in its steps is found before it is shot, each value by its move, in a play or a cut: fonts, the ground's layers", () => {
@@ -97,13 +97,21 @@ test("the window travels and leans at once, two moves setting values of it apart
 	);
 });
 
-test('the window shades the page while it travels and leans, a move setting the values it names; two at once are refused on a value both set', () => {
-	expect(
-		play({ seconds: 1, moves: [windowTo('right'), lean({ tilt: 6 }), shade({ dim: 0.6 }), shade({ blur: 8 })] }).moves
-			.length
-	).toBe(4);
+test('the window shades the page and changes its body while it travels and leans, a move setting the values it names; two shades or two bodies at once are refused on a value both set', () => {
+	const moves = [
+		windowTo('right'),
+		lean({ tilt: 6 }),
+		shade({ dim: 0.6 }),
+		shade({ blur: 8 }),
+		body({ thickness: 24 }),
+		body({ metal: '#8a2eff' })
+	];
+	expect(play({ seconds: 1, moves }).moves.length).toBe(6);
 	expect(() => play({ seconds: 1, moves: [shade({ dim: 0.6, fade: 0.2 }), shade({ fade: 0.5 })] })).toThrow(
 		new FilmError("two moves on the window's fade at once in one step")
+	);
+	expect(() => play({ seconds: 1, moves: [body({ thickness: 24, rim: 8 }), body({ rim: 4 })] })).toThrow(
+		new FilmError("two moves on the window's rim at once in one step")
 	);
 });
 

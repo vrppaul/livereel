@@ -5,6 +5,7 @@ import { type Eye, eyeAtRest } from '../../src/domain/eye.ts';
 import type { Sharpness } from '../../src/domain/focus.ts';
 import type { Box, Size } from '../../src/domain/geometry.ts';
 import { ITS_MIDDLE, type Matrix, type Spot, carried, chained, flatOf, translation } from '../../src/domain/matrix.ts';
+import { LIVEREELS_SLAB, type Slab } from '../../src/props/body.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { LIVEREELS_WORLD } from '../../src/props/world.ts';
 import { type AroundTheWindow, UNSHADED, drawnWindow } from '../../src/props/window.ts';
@@ -25,19 +26,15 @@ const STANDING_OUT: Cut = { top: -40, right: 0, bottom: 0, left: -100 };
 // The page the cut standing out shows, and how far its middle stands from the window's, in three's axes, up the frame
 const SHOWN_PAST_ITS_EDGES: Box = { left: 900, top: 560, width: 1900, height: 1040 };
 const SHOWN_MIDDLE_FROM_THE_WINDOWS: Spot = { across: -50, down: 20, out: 0 };
-// A body as the look has it: as thick, as wide a rim and the page's corners as round as these, in pixels of a frame
-// 1080 high, of a dark metal this rough
-const BODY = {
-	windowThickness: 24,
-	windowRim: 6,
-	windowMetal: '#454b56',
-	windowRoughness: 0.45,
-	windowGlass: 0.4,
-	paneCorner: 24
-};
+// A window's body: as thick and as wide a rim as these, in pixels of a frame 1080 high, of a dark metal this rough,
+// glass this strong over the page; and a window unshaded with it, and with livereel's, of no thickness
+const BODY: Slab = { thickness: 24, rim: 6, metal: '#454b56', roughness: 0.45, glass: 0.4 };
+const WITH_A_BODY = { ...UNSHADED, body: BODY };
+const WITH_LIVEREELS_BODY = { ...UNSHADED, body: LIVEREELS_SLAB };
+// The page's corners as round as livereel's look has them, in pixels of a frame 1080 high
+const CORNER = LIVEREELS_LOOK.paneCorner;
 // A world lit by a soft box the glass reflects, overhead
 const OVERHEAD = { colour: '#ffffff', brightness: 12, round: 0, up: 75, width: 33, height: 33, lean: 0 };
-const WITH_A_BODY = { ...LIVEREELS_LOOK, ...BODY };
 const LIT = { ...LIVEREELS_WORLD, softBoxes: [OVERHEAD] };
 const SHARP: Sharpness = { focusedAt: FOCAL_LENGTH, focalLength: FOCAL_LENGTH, aperture: 0 };
 const AT_REST = eyeAtRest(FOCAL_LENGTH);
@@ -49,7 +46,7 @@ const AROUND: AroundTheWindow = {
 	eye: AT_REST,
 	frame: TWICE_THE_LOOK,
 	sharpness: SHARP,
-	look: WITH_A_BODY,
+	look: LIVEREELS_LOOK,
 	world: LIT,
 	screenShown: 1
 };
@@ -77,7 +74,7 @@ test("the body's back is drawn where the slab's back stands, its thickness behin
 	const turnedOver: View = { ...LIFTED, angle: { ...FACE_ON, over: 180 } };
 	const leant: View = { ...LIFTED, angle: { ...FACE_ON, over: 160 } };
 	const [flatBack, leantBack] = [turnedOver, leant].map(
-		(view) => drawnWindow(view, AT_ITS_EDGES, UNSHADED, AROUND).body!
+		(view) => drawnWindow(view, AT_ITS_EDGES, WITH_A_BODY, AROUND).body!
 	);
 	const behind = (view: View): Matrix =>
 		chained([
@@ -90,20 +87,20 @@ test("the body's back is drawn where the slab's back stands, its thickness behin
 	]);
 });
 
-test("a window lifted whole, of a look with a body, hands the stage its slab: the rim and the thickness in the frame's pixels, the metal, the glass over the page, placed as the window is, round a page whose corners are the look's in the frame's pixels", () => {
-	const window = drawnWindow(LIFTED, AT_ITS_EDGES, UNSHADED, AROUND);
+test("a window lifted whole, with a body, hands the stage its slab: the rim and the thickness in the frame's pixels, the metal, the glass over the page, placed as the window is, round a page whose corners are the look's in the frame's pixels", () => {
+	const window = drawnWindow(LIFTED, AT_ITS_EDGES, WITH_A_BODY, AROUND);
 	const body = window.body!;
 	expect([
 		window.corner,
 		{ ...body, placing: carriedTo(body.placing, ITS_TOP_RIGHT), roomInTheEyesSpace: null, back: null }
 	]).toEqual([
-		BODY.paneCorner * TWICE,
+		CORNER * TWICE,
 		{
-			rim: BODY.windowRim * TWICE,
-			thickness: BODY.windowThickness * TWICE,
-			metal: BODY.windowMetal,
-			roughness: BODY.windowRoughness,
-			glass: BODY.windowGlass,
+			rim: BODY.rim * TWICE,
+			thickness: BODY.thickness * TWICE,
+			metal: BODY.metal,
+			roughness: BODY.roughness,
+			glass: BODY.glass,
 			placing: carriedTo(window.inTheEyesSpace, ITS_TOP_RIGHT),
 			roomInTheEyesSpace: null,
 			back: null
@@ -112,19 +109,19 @@ test("a window lifted whole, of a look with a body, hands the stage its slab: th
 });
 
 test('a body is lit by the room as the eye sees it: a spot of the room where the eye stands is the middle of its space', () => {
-	const body = drawnWindow(LIFTED, AT_ITS_EDGES, UNSHADED, { ...AROUND, eye: MOVED }).body!;
+	const body = drawnWindow(LIFTED, AT_ITS_EDGES, WITH_A_BODY, { ...AROUND, eye: MOVED }).body!;
 	expect(carriedTo(body.roomInTheEyesSpace, WHERE_THE_MOVED_EYE_STANDS)).toEqual(ITS_MIDDLE);
 });
 
 test('a window turned past edge-on shows the eye its back, not its page', () => {
-	const turned = TURNED.map((angle) => drawnWindow({ ...LIFTED, angle }, AT_ITS_EDGES, UNSHADED, AROUND));
+	const turned = TURNED.map((angle) => drawnWindow({ ...LIFTED, angle }, AT_ITS_EDGES, WITH_A_BODY, AROUND));
 	expect(turned.map((window) => window.facingTheEye)).toEqual([true, true, false, false]);
 });
 
 test("a body comes as far as the window lifts and the screen comes up in it, round the page the cut shows, whose corners round as the window lifts, no rounder than half the page's shorter side", () => {
 	const view = { ...LIFTED, lift: 0.5 };
 	const around = { ...AROUND, screenShown: 0.5 };
-	const window = drawnWindow(view, STANDING_OUT, UNSHADED, around);
+	const window = drawnWindow(view, STANDING_OUT, WITH_A_BODY, around);
 	const body = window.body!;
 	expect([
 		window.reach,
@@ -133,26 +130,26 @@ test("a body comes as far as the window lifts and the screen comes up in it, rou
 		body.thickness,
 		body.glass,
 		carriedTo(body.placing, ITS_MIDDLE),
-		drawnWindow(LOW, AT_ITS_EDGES, UNSHADED, AROUND).corner
+		drawnWindow(LOW, AT_ITS_EDGES, WITH_A_BODY, AROUND).corner
 	]).toEqual([
 		SHOWN_PAST_ITS_EDGES,
-		BODY.paneCorner * TWICE * 0.5,
-		BODY.windowRim * TWICE * 0.25,
-		BODY.windowThickness * TWICE * 0.25,
-		BODY.windowGlass * 0.25,
+		CORNER * TWICE * 0.5,
+		BODY.rim * TWICE * 0.25,
+		BODY.thickness * TWICE * 0.25,
+		BODY.glass * 0.25,
 		carriedTo(window.inTheEyesSpace, SHOWN_MIDDLE_FROM_THE_WINDOWS),
 		LOW.box.height / 2
 	]);
 });
 
 test('the glass reflects nothing where the world has no light in it, no lights and no soft boxes', () => {
-	expect(drawnWindow(LIFTED, AT_ITS_EDGES, UNSHADED, { ...AROUND, world: LIVEREELS_WORLD }).body!.glass).toBe(0);
+	expect(drawnWindow(LIFTED, AT_ITS_EDGES, WITH_A_BODY, { ...AROUND, world: LIVEREELS_WORLD }).body!.glass).toBe(0);
 });
 
-test('no body where the look has a window of no thickness, where the window is the frame itself, or where the screen has not come up', () => {
+test("no body where the window's is of no thickness, livereel's own, where the window is the frame itself, or where the screen has not come up", () => {
 	expect([
-		drawnWindow(LIFTED, AT_ITS_EDGES, UNSHADED, { ...AROUND, look: LIVEREELS_LOOK }).body,
-		drawnWindow({ ...LIFTED, lift: 0 }, AT_ITS_EDGES, UNSHADED, AROUND).body,
-		drawnWindow(LIFTED, AT_ITS_EDGES, UNSHADED, { ...AROUND, screenShown: 0 }).body
+		drawnWindow(LIFTED, AT_ITS_EDGES, WITH_LIVEREELS_BODY, AROUND).body,
+		drawnWindow({ ...LIFTED, lift: 0 }, AT_ITS_EDGES, WITH_A_BODY, AROUND).body,
+		drawnWindow(LIFTED, AT_ITS_EDGES, WITH_A_BODY, { ...AROUND, screenShown: 0 }).body
 	]).toEqual([null, null, null]);
 });

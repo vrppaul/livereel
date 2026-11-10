@@ -23,6 +23,7 @@ import { type Box, type Format, type Point, type Size, distanceBetween } from '.
 import type { Sharpness } from '../../src/domain/focus.ts';
 import { type Spot, carried } from '../../src/domain/matrix.ts';
 import { type Angle, angledAs } from '../../src/domain/stance.ts';
+import { LIVEREELS_SLAB } from '../../src/props/body.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { LIVEREELS_WORLD } from '../../src/props/world.ts';
 import { UNSHADED, drawnWindow } from '../../src/props/window.ts';
@@ -143,7 +144,7 @@ function windowSeenInPerspective(spot: Spot): Point {
 		world: LIVEREELS_WORLD,
 		screenShown: 1
 	};
-	const window = drawnWindow(LEANT_WINDOW, cut, UNSHADED, around);
+	const window = drawnWindow(LEANT_WINDOW, cut, { ...UNSHADED, body: LIVEREELS_SLAB }, around);
 	const inTheEyesSpace = carried(window.inTheEyesSpace, spot);
 	const toThePicturePlane = FOCAL_LENGTH / -inTheEyesSpace.out;
 	return {

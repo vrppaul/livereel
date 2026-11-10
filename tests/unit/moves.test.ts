@@ -27,6 +27,7 @@ import * as lens from '../../src/moves/lens.ts';
 import * as outline from '../../src/moves/outline.ts';
 import * as piece from '../../src/moves/piece.ts';
 import {
+	body as windowBody,
 	hide as windowHide,
 	lean,
 	shade as windowShade,
@@ -61,6 +62,7 @@ import * as world from '../../src/moves/world.ts';
 import type { DrawnThing } from '../../src/props/thing.ts';
 import { drawnLighting } from '../../src/props/lighting.ts';
 import { ITS_MIDDLE, type Matrix, carried, chained } from '../../src/domain/matrix.ts';
+import { LIVEREELS_SLAB } from '../../src/props/body.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { LIVEREELS_WORLD } from '../../src/props/world.ts';
 import { drawnNote } from '../../src/props/note.ts';
@@ -342,12 +344,49 @@ test('a look moves to the values named and keeps the rest; a ground named alone 
 	expect(looked.look).toEqual({ ...LIVEREELS_LOOK, ground: '#ffffff', glow: '#ffffff', titleSize: 120 });
 });
 
-test("a look in no form of one is refused as its move is made, where it stands: none, a colour not in hex, a value of the world's look by its name", () => {
+test("a look in no form of one is refused as its move is made, where it stands: none, a colour not in hex, a value of the world's look or of the window's body by its name", () => {
 	expect(() => look.to(null as never)).toThrow(FilmError);
 	expect(() => look.to({ ground: 'navy' })).toThrow(
 		new FilmError(`look.to's ground is "navy": it is a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa`)
 	);
 	expect(() => look.to({ bloom: 0.5 } as never)).toThrow(/^look\.to names bloom: it names ground, .*, or fewer$/);
+	expect(() => look.to({ windowMetal: '#000' } as never)).toThrow(
+		/^look\.to names windowMetal: it names ground, .*, or fewer$/
+	);
+});
+
+test("window.body sets the values of the window's body it names and keeps the rest, over the window as it stands each frame, so a travel and a lean share its step whichever is set first: its numbers through the values between, its metal through the colours between, with no alpha", async () => {
+	const beginning = beginningOf(OPENING_IN_SMALL);
+	const [reshaping, travelling, leaning] = await Promise.all(
+		[windowBody({ thickness: 40, metal: '#ffffff' }), windowTo('right'), lean({ tilt: 10 })].map((move) =>
+			move.begin(beginning)
+		)
+	);
+	const reshapedFirst = await leaning(await travelling(await reshaping(OPENING_IN_SMALL, 0.5), 0.5), 0.5);
+	const reshapedLast = await reshaping(await leaning(await travelling(OPENING_IN_SMALL, 0.5), 0.5), 0.5);
+	expect(reshapedFirst.window).toEqual(reshapedLast.window);
+	expect([reshapedLast.window.body, reshapedLast.window.angle]).toEqual([
+		{ ...LIVEREELS_SLAB, thickness: 20, metal: '#a2a5ab' },
+		{ ...FACE_ON, tilt: 5 }
+	]);
+});
+
+test('a body in no form of one is refused as its move is made, where it stands: none, a thickness below none, a metal with an alpha, a name the look gave it, one that names none', () => {
+	expect(() => windowBody(null as never)).toThrow(
+		new FilmError('window.body is handed null for an object of thickness, rim, metal, roughness, glass')
+	);
+	expect(() => windowBody({ thickness: -1 })).toThrow(
+		new FilmError("window.body's thickness is -1: it is a number of pixels, 0 or more")
+	);
+	expect(() => windowBody({ metal: '#454b5680' })).toThrow(
+		new FilmError(`window.body's metal is "#454b5680": it is a colour in hex with no alpha: #rgb or #rrggbb`)
+	);
+	expect(() => windowBody({ windowThickness: 24 } as never)).toThrow(
+		new FilmError('window.body names windowThickness: it names thickness, rim, metal, roughness, glass, or fewer')
+	);
+	expect(() => windowBody({})).toThrow(
+		new FilmError('window.body names none of thickness, rim, metal, roughness, glass')
+	);
 });
 
 test("the world's look moves to the values named and keeps the rest: its glow through the strengths between, its lights changed half-way", async () => {

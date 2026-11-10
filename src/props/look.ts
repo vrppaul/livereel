@@ -3,25 +3,24 @@
  * glow and the layers a film lays over them in CSS, the ink of the words livereel writes over the frame, their fonts,
  * sizes and weights and how they come up, where a title and a caption's ground stand, the accent of the marks, the
  * corners, edge and shadow of what stands on the ground as a pane — the page's window and its screen, the code's pane
- * and the agent's terminal alike — the body of the page's window in a room, the colours of the code by kind, the
- * cursor, and the agent's terminal and the ending card, their colours and sizes. How the world looks, its light and
- * the glow round it, is a prop of its own (`src/props/world.ts`). A film opens on livereel's look with its theme's
- * values, and changes it by moves as it goes: in a play, a colour, a size or a shadow moves through the values between,
- * a font, which has none between, changes half-way, and the ground's layers fade into new ones; in a cut, at once. The
- * stage is handed the whole look every frame and sets each value in place of its token (`stage/tokens.css`), the
- * ground's layers part by part; the window's body it is handed with the window (`DrawnBody` in `src/props/window.ts`).
+ * and the agent's terminal alike — the colours of the code by kind, the cursor, and the agent's terminal and the
+ * ending card, their colours and sizes. How the world looks, its light and the glow round it, is a prop of its own
+ * (`src/props/world.ts`), and the body of the page's window in a room is the window's own (`src/props/body.ts`). A film
+ * opens on livereel's look with its theme's values, and changes it by moves as it goes: in a play, a colour, a size or
+ * a shadow moves through the values between, a font, which has none between, changes half-way, and the ground's layers
+ * fade into new ones; in a cut, at once. The stage is handed the whole look every frame and sets each value in place of
+ * its token (`stage/tokens.css`), the ground's layers part by part.
  *
  * One table, `LOOK_KINDS`, says of each value what a film may write for it, how the look holds it, how it moves
  * (`src/domain/values.ts`) and what CSS reads it as, so a theme is checked by it and a look moved by it, and livereel's
  * own values stand in `LIVEREELS_LOOK`: a value of the look is its line in the type, in the two tables and in the
- * stage's (`LOOK_TOKENS` in `stage/stage.js`; the ground's layers apart in `LAYERS_SET_AS`, the window's body in the
- * room), and the compiler refuses one left out of any.
+ * stage's (`LOOK_TOKENS` in `stage/stage.js`; the ground's layers apart in `LAYERS_SET_AS`), and the compiler refuses
+ * one left out of any.
  */
-import { colourToward, opaqueColourToward } from '../domain/colour.ts';
+import { colourToward } from '../domain/colour.ts';
 import { type Fraction, WHOLE, fractionOf } from '../domain/fraction.ts';
 import {
 	A_COLOUR,
-	AN_OPAQUE_COLOUR,
 	A_FONT_FAMILY,
 	A_GROUND_LAYERS,
 	A_LINE_HEIGHT,
@@ -75,17 +74,6 @@ export interface Look {
 	/** How strong a pane's shadow is, from 0, none, to 1, livereel's; its colour, in hex. */
 	readonly paneShadow: number;
 	readonly paneShadowColour: string;
-	/**
-	 * The body of the page's window in a room, a slab of metal round the page (`DrawnBody` in `src/props/window.ts`):
-	 * how thick it is, 0 none, and how far its rim reaches past the page all round, each in pixels of a frame 1080 on
-	 * its shorter side; the metal's colour, in hex with no alpha, and how rough it is, from 0, a mirror, to 1, matte;
-	 * and how much of the world's light the glass over the page reflects, from 0, none, to 1, a whole coat of it.
-	 */
-	readonly windowThickness: number;
-	readonly windowRim: number;
-	readonly windowMetal: string;
-	readonly windowRoughness: number;
-	readonly windowGlass: number;
 	/**
 	 * The colour of the terminal, of the code's pane, of the ending's command and of a key's cap, and of what is written
 	 * on them, in hex.
@@ -175,13 +163,11 @@ const HEAVIEST = 900;
 const A_WEIGHT = new Plain(isWeight, 'a weight from 100 to 900');
 // A value checked here, never written in CSS a browser must read
 const CHECKED_HERE = null;
-// The kinds of the look's values: a colour mixed on its way, one three reads mixed with no alpha, as it reads none, a
-// number through the numbers between, pixels never below none and a share between none and whole on a curve that
-// passes its ends, a font or a way of words, which have none between, changed half-way, each held as written; and the
-// ground's layers, held whole as written and faded into new ones, those going under those coming. A font and the
-// ground's layers are the film's CSS
+// The kinds of the look's values: a colour mixed on its way, a number through the numbers between, pixels never below
+// none and a share between none and whole on a curve that passes its ends, a font or a way of words, which have none
+// between, changed half-way, each held as written; and the ground's layers, held whole as written and faded into new
+// ones, those going under those coming. A font and the ground's layers are the film's CSS
 const COLOUR = new LookKind(A_COLOUR, asWritten, colourToward, CHECKED_HERE);
-const OPAQUE_COLOUR = new LookKind(AN_OPAQUE_COLOUR, asWritten, opaqueColourToward, CHECKED_HERE);
 const SIZE = new LookKind(A_SIZE, asWritten, between, CHECKED_HERE);
 const LINE_HEIGHT = new LookKind(A_LINE_HEIGHT, asWritten, between, CHECKED_HERE);
 const PIXELS = new LookKind(A_PIXELS, asWritten, amountToward, CHECKED_HERE);
@@ -215,11 +201,6 @@ export const LOOK_KINDS: { readonly [Name in keyof Look]: LookKind<LookWritten[N
 	paneEdge: COLOUR,
 	paneShadow: SHARE,
 	paneShadowColour: COLOUR,
-	windowThickness: PIXELS,
-	windowRim: PIXELS,
-	windowMetal: OPAQUE_COLOUR,
-	windowRoughness: SHARE,
-	windowGlass: SHARE,
 	terminal: COLOUR,
 	terminalInk: COLOUR,
 	codeComment: COLOUR,
@@ -266,11 +247,6 @@ export const LIVEREELS_LOOK: Look = {
 	paneEdge: '#ffffff1a',
 	paneShadow: 1,
 	paneShadowColour: '#000',
-	windowThickness: 0,
-	windowRim: 6,
-	windowMetal: '#454b56',
-	windowRoughness: 0.45,
-	windowGlass: 0.4,
 	terminal: '#10141c',
 	terminalInk: '#f4f6fa',
 	codeComment: '#8b949e',

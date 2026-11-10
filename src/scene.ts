@@ -42,6 +42,7 @@ import {
 	wholeView
 } from './domain/camera.ts';
 import { namesOf } from './domain/toward.ts';
+import { LIVEREELS_SLAB } from './props/body.ts';
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
 import type { Cursor } from './props/cursor.ts';
 import type { Group, GroupName, Groups } from './props/group.ts';
@@ -146,15 +147,16 @@ export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 const THE_FILMS_OWN_SPEED = 1;
 
 /**
- * The scene a film opens on, in its look and its world's: the whole screen, face-on, up, unshaded, in the whole frame;
- * nothing over it; the page's time at the film's own speed; the eye of its focal length at rest.
+ * The scene a film opens on, in its look and its world's: the whole screen, face-on, up, unshaded, in the whole frame,
+ * the window's body livereel's, none; nothing over it; the page's time at the film's own speed; the eye of its focal
+ * length at rest.
  */
 export function openingScene(format: Format, look: Look, world: WorldLook, focalLength: number): Scene {
 	return {
 		look,
 		world,
 		camera: standingAt(wholePose(format)),
-		window: { ...placedIn(wholeView(format.frame)), ...UNSHADED },
+		window: { ...placedIn(wholeView(format.frame)), ...UNSHADED, body: LIVEREELS_SLAB },
 		screen: SCREEN_UP,
 		light: null,
 		callout: null,

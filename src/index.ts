@@ -43,6 +43,7 @@ export type { TypingScript } from './moves/typing.ts';
 export type { TurnedOff } from './direction/turned-off.ts';
 export type { Theme } from './props/look.ts';
 export type { WorldScript } from './props/world.ts';
+export type { SlabScript } from './props/body.ts';
 export { keystrokes } from './domain/typing.ts';
 export type { Keystroke, Typist } from './domain/typing.ts';
 export {

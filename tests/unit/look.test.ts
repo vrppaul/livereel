@@ -35,13 +35,6 @@ test("a look on its way to a theme's values: a colour mixed, a number between, a
 	]);
 });
 
-test("the window's metal mixes through opaque colours, written with no alpha, as three reads a colour", () => {
-	const end = valuesWith(LIVEREELS_LOOK, { windowMetal: '#fff' }, LOOK_KINDS);
-	const start = valuesWith(LIVEREELS_LOOK, { windowMetal: '#000000' }, LOOK_KINDS);
-	const moving = { start, end, names: ['windowMetal'] as const };
-	expect(valuesToward(start, moving, LOOK_KINDS, 0.5).windowMetal).toBe('#808080');
-});
-
 test("the ground's layers fade on from those that came in by a fade before, not from those they faded out", () => {
 	const dots = 'radial-gradient(#fff2 1px, transparent 1px) 0 0 / 24px 24px';
 	const lines = 'repeating-linear-gradient(45deg, #fff1 0 2px, transparent 2px 12px)';

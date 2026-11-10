@@ -12,14 +12,14 @@
  * stands (`src/domain/focus.ts`): the flat stage as one, as soft as its point nearest the focus, and the room each
  * pixel of it by how far what it shows stands from the focus.
  *
- * In a room the window may have a body, as the look has it: a slab of metal round the page, as a tablet is made, its
- * sides square to the page and its corners as round as the page's grown by its rim, lit by the world's light
- * (`src/props/lighting.ts`). It comes as the window's edge and shadow do, as far as the window stands off the ground
- * and the screen has come up in it, growing thicker and its rim wider, where they grow darker; and it takes their
- * place, as the slab is the window's edge, and a shadow drawn on the window's plane would lie over its sides. The
- * engine hands it as the window stands, in three's axes, and the room stands it round the page in its one scene, where
- * depth hides the page behind the slab or the slab behind the page; the flat stage draws the window's edge and shadow
- * in its place.
+ * In a room the window may have a body, which it holds as it holds its shade, set by a move of its own (`window.body`;
+ * `src/props/body.ts`): a slab of metal round the page, as a tablet is made, its sides square to the page and its
+ * corners as round as the page's grown by its rim, lit by the world's light (`src/props/lighting.ts`). It comes as the
+ * window's edge and shadow do, as far as the window stands off the ground and the screen has come up in it, growing
+ * thicker and its rim wider, where they grow darker; and it takes their place, as the slab is the window's edge, and a
+ * shadow drawn on the window's plane would lie over its sides. The engine hands it as the window stands, in three's
+ * axes, and the room stands it round the page in its one scene, where depth hides the page behind the slab or the slab
+ * behind the page; the flat stage draws the window's edge and shadow in its place.
  */
 import {
 	type Cut,
@@ -53,6 +53,7 @@ import {
 	namesOf,
 	standsAtRest
 } from '../domain/toward.ts';
+import type { Slab } from './body.ts';
 import type { Look } from './look.ts';
 import type { WorldLook } from './world.ts';
 
@@ -62,7 +63,9 @@ export interface Shade {
 	readonly blur: number;
 }
 
-export interface PageWindow extends Placing, Shade {}
+export interface PageWindow extends Placing, Shade {
+	readonly body: Slab;
+}
 
 /**
  * The window as the stage draws it: its box on the frame, how far the camera's picture reaches on its plane, past the
@@ -109,18 +112,15 @@ export interface DrawnBody {
 }
 
 /**
- * What stands round the window as it is drawn: the eye that sees it, the frame, how sharp the eye sees, how the look
- * makes its body — the page's corners and the body's own values — the world's light its glass reflects, and how far
- * the screen has come up in it.
+ * What stands round the window as it is drawn: the eye that sees it, the frame, how sharp the eye sees, how round the
+ * look has the page's corners, which its body stands round, the world's light its glass reflects, and how far the
+ * screen has come up in it.
  */
 export interface AroundTheWindow {
 	readonly eye: Eye;
 	readonly frame: Size;
 	readonly sharpness: Sharpness;
-	readonly look: Pick<
-		Look,
-		'paneCorner' | 'windowThickness' | 'windowRim' | 'windowMetal' | 'windowRoughness' | 'windowGlass'
-	>;
+	readonly look: Pick<Look, 'paneCorner'>;
 	readonly world: Pick<WorldLook, 'lights' | 'softBoxes'>;
 	readonly screenShown: Fraction;
 }
@@ -150,7 +150,12 @@ const HALVES = 2;
  * room's blur as soft at most as the window's softest point the frame shows, its box or as far as its picture reaches,
  * and with its body.
  */
-export function drawnWindow(view: View, cut: Cut, window: Shade, around: AroundTheWindow): DrawnWindow {
+export function drawnWindow(
+	view: View,
+	cut: Cut,
+	window: Omit<PageWindow, keyof Placing>,
+	around: AroundTheWindow
+): DrawnWindow {
 	const { eye, frame, sharpness } = around;
 	const placing = windowOnTheFrame(view, eye, frame);
 	const own = stanceMatrix(view);
@@ -169,7 +174,7 @@ export function drawnWindow(view: View, cut: Cut, window: Shade, around: AroundT
 		shade: drawnShade(window),
 		outOfFocus: outOfFocusOnTheFrame(placing, view.box, sharpness, frame),
 		softestOutOfFocus: softestOutOfFocusSeen(placing, view.box, boxAround([view.box, reach]), sharpness, frame),
-		body: drawnBody(view, reach, { intoTheEyesSpace, stood, placing }, around)
+		body: drawnBody(view, reach, { intoTheEyesSpace, stood, placing }, window.body, around)
 	};
 }
 
@@ -185,14 +190,20 @@ interface WindowStanding {
 
 /**
  * The window's body as the room draws it, round the page the camera's cut shows, placed by the matrix that carries the
- * window's middle into the eye's own space: as thick, its rim as wide and its glass as strong as the look has them, so
- * far as the window stands off the ground and the screen has come up in it, so no glint comes with it at once, its
- * glass none where the world has no light to reflect; none, where that leaves it no thickness.
+ * window's middle into the eye's own space: as thick, its rim as wide and its glass as strong as the window's slab has
+ * them, so far as the window stands off the ground and the screen has come up in it, so no glint comes with it at once,
+ * its glass none where the world has no light to reflect; none, where that leaves it no thickness.
  */
-function drawnBody(view: View, page: Box, window: WindowStanding, around: AroundTheWindow): DrawnBody | null {
+function drawnBody(
+	view: View,
+	page: Box,
+	window: WindowStanding,
+	slab: Slab,
+	around: AroundTheWindow
+): DrawnBody | null {
 	const scale = frameScaleOf(around.frame);
 	const standing = view.lift * around.screenShown;
-	const thickness = around.look.windowThickness * scale * standing;
+	const thickness = slab.thickness * scale * standing;
 	if (thickness <= NO_THICKNESS) return null;
 	const pageMiddle: Spot = {
 		across: middleX(page) - middleX(view.box),
@@ -202,11 +213,11 @@ function drawnBody(view: View, page: Box, window: WindowStanding, around: Around
 	const placing = chained([window.intoTheEyesSpace, translation(pageMiddle)]);
 	const behind = translation({ across: UNMOVED, down: UNMOVED, out: -thickness });
 	return {
-		rim: around.look.windowRim * scale * standing,
+		rim: slab.rim * scale * standing,
 		thickness,
-		metal: around.look.windowMetal,
-		roughness: around.look.windowRoughness,
-		glass: isLit(around.world) ? around.look.windowGlass * standing : NONE,
+		metal: slab.metal,
+		roughness: slab.roughness,
+		glass: isLit(around.world) ? slab.glass * standing : NONE,
 		placing: inThreesAxes(placing),
 		roomInTheEyesSpace: inThreesAxes(inTheEyesSpace(around.eye, around.frame)),
 		back: transformOf(chained([window.stood, behind]), chained([window.placing, behind]))

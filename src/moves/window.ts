@@ -17,10 +17,14 @@
  * The page in the window is shaded while something stands clear of it: dimmed, faded into the film's ground and
  * blurred, the window's edge and shadow standing as they are (`src/props/window.ts`).
  *
- * Where the window stands, how it leans and how it shades the page are its own values: a move that carries it sets its
- * box, lift and depth, the depth kept as it stands but where `window.to` names one, as only that move brings the window
- * near; one that leans it its angle, one that shades the page those of the shade it names, each writing only its own
- * into the window as it stands, so they share a step, each as far along as its own share.
+ * In a room the window may have a body, a slab of metal round the page with glass over it (`src/props/body.ts`),
+ * changed to the values a film names, through the values between in a play, at once in a cut.
+ *
+ * Where the window stands, how it leans, how it shades the page and its body are its own values: a move that carries
+ * it sets its box, lift and depth, the depth kept as it stands but where `window.to` names one, as only that move brings
+ * the window near; one that leans it its angle, one that shades the page those of the shade it names, one that changes
+ * its body those of the body it names, each writing only its own into the window as it stands, so they share a step,
+ * each as far along as its own share.
  */
 import { type Placing, type View, viewOf, viewOver } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -39,6 +43,8 @@ import {
 import { A_PLACE, ONE_FRAME, type Place, pastTheEdge, placesNamed, sideBeyond, windowPlaced } from '../domain/place.ts';
 import { angleToward, depthAsked, depthsNamed } from '../domain/stance.ts';
 import { between, namedToward, shareToward } from '../domain/toward.ts';
+import { type ValuesMoving, valuesToward, valuesWith } from '../domain/values.ts';
+import { SLAB_KINDS, SLAB_NAMES, type Slab, type SlabScript } from '../props/body.ts';
 import { besideTheWindow } from '../props/note.ts';
 import { type PageWindow, SHADE_NAMES, SHADING, type Shade } from '../props/window.ts';
 import { trackOf } from '../domain/track.ts';
@@ -79,6 +85,8 @@ const SHADE_FORM: Form<ShadeScript> = { dim: A_SHARE, fade: A_SHARE, blur: A_PIX
 // The window's values a move that carries it sets, and one that leans it; what each writes is held to them
 const CARRIED = ['box', 'lift', 'depth'] as const satisfies readonly (keyof Placing)[];
 const LEANT = ['angle'] as const satisfies readonly (keyof Placing)[];
+// The move of the window's body, as its refusals name it
+const BODY_MOVE = 'window.body';
 
 /** The window's values a move that carries it writes, and one that leans it. */
 type Carried = Pick<Placing, (typeof CARRIED)[number]>;
@@ -136,6 +144,19 @@ export function shade(script: ShadeScript): Move {
 		valueNames: names,
 		timing: timingOf(script),
 		begin: (beginning) => shading(beginning, script, names)
+	};
+}
+
+/** The window's body on its way to the values a film names, those it names alone. */
+export function body(slab: SlabScript, script: TimingScript = {}): Move {
+	assertWritten<SlabScript>(slab, SLAB_KINDS, BODY_MOVE);
+	assertWritten(script, TIMING_FORM, BODY_MOVE);
+	const names = namesSetBy(slab, SLAB_NAMES, BODY_MOVE);
+	return {
+		part: 'window',
+		valueNames: names,
+		timing: timingOf(script),
+		begin: (beginning) => reshaping(beginning, slab, names)
 	};
 }
 
@@ -230,6 +251,17 @@ function shading(beginning: Beginning, script: ShadeScript, names: readonly (key
 		blur: script.blur ?? from.blur
 	};
 	return writing((progress) => namedToward(SHADING, from, to, names, progress));
+}
+
+/**
+ * The window's body on its way from how it stands to the film's values, those it names alone written into the body as
+ * it stands each frame, so another move of the body naming others shares the step.
+ */
+function reshaping(beginning: Beginning, slab: SlabScript, names: readonly (keyof Slab)[]): Change {
+	const start = beginning.scene.window.body;
+	const moving: ValuesMoving<Slab> = { start, end: valuesWith(start, slab, SLAB_KINDS), names };
+	return (scene, progress) =>
+		withProp(scene, 'window', { ...scene.window, body: valuesToward(scene.window.body, moving, SLAB_KINDS, progress) });
 }
 
 /** A change that writes some of the window's values into it as it stands, leaving the rest as they go. */
