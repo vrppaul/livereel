@@ -53,7 +53,7 @@ import {
 	middleInTheRoom,
 	windowPointOnTheFrame
 } from '../domain/camera.ts';
-import { type Focus, inTheEyesSpace } from '../domain/eye.ts';
+import type { Focus } from '../domain/eye.ts';
 import { type Sharpness, distanceOfItsMiddle, outOfFocusBeforeItsMatrix } from '../domain/focus.ts';
 import type { Fraction } from '../domain/fraction.ts';
 import type { PartAsked, SharperPicture } from '../domain/picture.ts';
@@ -75,16 +75,17 @@ import { type Kind, OneOf } from '../domain/handed.ts';
 import { ITS_MIDDLE, type Spot, carried } from '../domain/matrix.ts';
 import { ONE_FRAME, pastTheEdge } from '../domain/place.ts';
 import {
+	type DrawnPlacement,
 	type GroupName,
 	type Holder,
 	type Holders,
-	type Laid,
 	type Placed,
+	drawnPlacement,
 	groupNamed,
 	placed,
 	planeOf
 } from '../domain/placement.ts';
-import { type DrawnStance, type Stance, drawnStance } from '../domain/stance.ts';
+import { type Face, type Stance, faceOf, transformOf } from '../domain/stance.ts';
 import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
 import { type Code, type DrawnCode, drawnCode, scrolledShareOf } from './code.ts';
 import { type DrawnEffects, type Effects, type Melting, drawnEffects, drawnMelt } from './effects.ts';
@@ -164,19 +165,18 @@ export interface FrameObject extends Stance, Effects {
 export type Objects = ReadonlyMap<ObjectName, FrameObject>;
 
 /**
- * An object as the stage draws it: the name it is known by, what it is laid in, the object whose words it is laid over
- * by that one — keys over a caption's, its box then the caption's to lay out — or none, its box in what it is laid in,
- * its transform about the box's middle and the side of it the eye sees, the layer it is drawn on, the higher over the
- * lower, how much of it what it stands in lets show, from 0 to 1, how far its figure's way has come, none where it is
- * on no way, how it stands out, none where it stands out in no way, how it melts toward a side of its figure, none
- * where it melts none, how soft the eye's focus draws it, in pixels of a frame 1080 high of its box before its matrix,
- * none where sharp, and its content as drawn.
+ * An object as the stage draws it: where it is placed, as the stage draws a placement (`src/domain/placement.ts`); the
+ * name it is known by, the object whose words it is laid over by that one — keys over a caption's, its box then the
+ * caption's to lay out — or none, the side of it the eye sees in what it is laid in, the layer it is drawn on, the
+ * higher over the lower, how much of it what it stands in lets show, from 0 to 1, how far its figure's way has come,
+ * none where it is on no way, how it stands out, none where it stands out in no way, how it melts toward a side of its
+ * figure, none where it melts none, how soft the eye's focus draws it, in pixels of a frame 1080 high of its box before
+ * its matrix, none where sharp, and its content as drawn.
  */
-export interface DrawnObject extends DrawnStance {
+export interface DrawnObject extends DrawnPlacement {
 	readonly name: ObjectName;
-	readonly inside: Laid;
 	readonly over: ObjectName | null;
-	readonly box: Box;
+	readonly face: Face;
 	readonly layer: number;
 	readonly held: number;
 	readonly onItsWay: OnItsWay | null;
@@ -378,7 +378,7 @@ function drawnPointOf(standing: Placed, share: Point): Point {
 /** An object as the stage draws it at a moment of the film, among what stands round it. */
 export function drawnObject(name: ObjectName, object: FrameObject, moment: number, around: Surroundings): DrawnObject {
 	const standing = placedInItsHolder(object, around, around.frame);
-	const stance = drawnStance(standing.stood, standing.placing);
+	const face = faceOf(standing.placing);
 	const layer = LAYER_OF[object.content.kind];
 	const held = heldIn(object, around);
 	const onItsWay = alongItsWay(object.way, presentShare(object));
@@ -387,7 +387,7 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	const effects = drawnEffects(object);
 	const melt = drawnMelt(object);
 	const outOfFocus = outOfFocusIn(standing, around);
-	const laid = { name, inside: standing.laidIn, over, box: standing.laid, ...stance, layer, held };
+	const laid = { ...drawnPlacement(standing), name, over, face, layer, held };
 	return { ...laid, onItsWay, effects, melt, outOfFocus, content };
 }
 
@@ -514,7 +514,7 @@ function pageZoomOf(object: FrameObject, holders: Holders, frame: Size): number 
 	const standing = placedInItsHolder(object, holders, frame);
 	const fit = pageFitOf(object, standing.laid, holders.camera, frame);
 	if (fit === null) return null;
-	const transform = drawnStance(standing.stood, standing.placing).transform;
+	const transform = transformOf(standing.stood, standing.placing);
 	switch (transform.kind) {
 		case 'flat': {
 			const grown = Math.hypot(transform.matrix.m11, transform.matrix.m12);
@@ -625,8 +625,7 @@ function drawnContent(
 			return drawnLens(content, standing.laid, middle, around.camera, around.frame, shown, around.holes);
 		}
 		case 'thing': {
-			const room = inTheEyesSpace(planeOf(object.inside, around, around.frame).eye, around.frame);
-			return drawnThing(content, standing, object.scale, room, presentShare(figure), around);
+			return drawnThing(content, standing, object.scale, presentShare(figure), around);
 		}
 	}
 }

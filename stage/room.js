@@ -59,7 +59,6 @@ import { matrixOf, projectionOnto } from './matrices.js';
 import { ADDED, LAID_OVER, SRGB_CURVES, WRITTEN, passOver, valuesSet } from './passes.js';
 import { Things, isAThing } from './things.js';
 /** @import { DrawnScene } from '../src/scene.ts' */
-/** @import { DrawnWindow } from '../src/props/window.ts' */
 /** @import { DrawnBloom } from '../src/props/lighting.ts' */
 /** @import { ThingObject } from './things.js' */
 /** @import { SceneField } from './lens.js' */
@@ -282,7 +281,6 @@ class Room {
 	constructor(layout, things, lighting) {
 		/** The frame's box, in its own pixels @type {Box} */
 		this.frameBox = { left: NOWHERE, top: NOWHERE, ...layout.format.frame };
-		this.frameScale = layout.frameScale;
 		this.canvas = roomCanvas();
 		/** Each exposure's surfaces, by name, in the order the stage's exposures stand @type {ReadonlyMap<SurfaceName, Element>[]} */
 		this.exposureSurfaces = [...document.querySelectorAll('[data-exposure]')].map((exposure) =>
@@ -414,7 +412,8 @@ class Room {
 		const pageTexture = textureOf(this.textures, 'window');
 		pageTexture.drawnFrom(surfaceOf(surfaces, 'window'));
 		this.worldDrawn(scene, pageTexture, placing, things.filter(standsInTheWorld), gathered);
-		this.lens.laid(this.renderer, fieldOf(this.worldLayer), gathered, this.frameBox, scene.sharpness, this.exposure);
+		const field = fieldOf(this.worldLayer);
+		this.lens.laid(this.renderer, field, gathered, this.frameBox, scene.sharpness, scene.eye.distance, this.exposure);
 		const onTheFrame = things.filter((thing) => !standsInTheWorld(thing));
 		if (onTheFrame.length > NONE) this.onTheFrameLaid(onTheFrame, scene);
 		this.flatLaid('frame', surfaces);
@@ -458,8 +457,7 @@ class Room {
 	 */
 	worldDrawn(scene, pageTexture, placing, things, gathered) {
 		const window = scene.window;
-		const eyeDistance = scene.sharpness.focalLength * this.frameScale;
-		seenThrough(this.worldCamera, projectionOnto(gathered, this.frameBox, eyeDistance));
+		seenThrough(this.worldCamera, projectionOnto(gathered, this.frameBox, scene.eye.distance));
 		this.world.clear();
 		const behindBy = window.body !== null && scene.screen.backUpright !== null ? window.body.thickness : ON_ITS_PLANE;
 		valuesSet(this.page.material, { surface: pageTexture.texture });
@@ -470,8 +468,7 @@ class Room {
 			this.world.add(body.slab, body.glass);
 		}
 		for (const thing of things) this.world.add(this.things.posedAs(thing).placed);
-		const room = roomSeenIn(window, things);
-		if (room !== null) this.lighting.shiningIn(this.world, room);
+		this.lighting.shiningIn(this.world, scene.eye.roomInTheEyesSpace);
 		this.renderer.setRenderTarget(this.worldLayer);
 		this.renderer.clear();
 		this.renderer.render(this.world, this.worldCamera);
@@ -485,10 +482,8 @@ class Room {
 	onTheFrameLaid(things, scene) {
 		this.onTheFrame.clear();
 		for (const thing of things) this.onTheFrame.add(this.things.posedAs(thing).placed);
-		const [first] = things;
-		if (first !== undefined) this.lighting.shiningIn(this.onTheFrame, first.content.roomInTheEyesSpace);
-		const eyeDistance = scene.sharpness.focalLength * this.frameScale;
-		seenThrough(this.worldCamera, projectionOnto(this.frameBox, this.frameBox, eyeDistance));
+		this.lighting.shiningIn(this.onTheFrame, scene.eye.roomInTheRestingEyesSpace);
+		seenThrough(this.worldCamera, projectionOnto(this.frameBox, this.frameBox, scene.eye.distance));
 		this.renderer.setRenderTarget(this.onTheFrameLayer);
 		this.renderer.clear();
 		this.renderer.render(this.onTheFrame, this.worldCamera);
@@ -786,16 +781,6 @@ function seenThrough(camera, projection) {
 	camera.projectionMatrixInverse.copy(projection).invert();
 }
 
-/**
- * Where the room stands in the eye's own space, as the eye that sees the world sees it, which the world's lights are
- * carried by: as the window's body or a thing in the world hands it; none where neither stands, as nothing then takes
- * the world's light.
- * @param {DrawnWindow} window @param {readonly ThingObject[]} things @returns {Matrix | null}
- */
-function roomSeenIn(window, things) {
-	return window.body?.roomInTheEyesSpace ?? things[FIRST]?.content.roomInTheEyesSpace ?? null;
-}
-
 /** A layer of the world as the lens reads it: its light, and its depth. @param {WebGLRenderTarget} layer @returns {SceneField} */
 function fieldOf(layer) {
 	if (layer.depthTexture === null) throw new Error("the room's world keeps no depth");
@@ -809,7 +794,7 @@ function thingsIn(scene) {
 
 /** Whether a thing stands in the world, where the eye sees it, not on the frame. @param {ThingObject} thing */
 function standsInTheWorld(thing) {
-	return thing.content.inTheWorld;
+	return thing.rides === 'world';
 }
 
 /** @param {readonly DrawnScene[]} scenes @param {number} place */

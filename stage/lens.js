@@ -422,11 +422,12 @@ export class Lens {
 
 	/**
 	 * A field of the world's scene, holding a box of the frame, laid over the frame's box of the target blurred as the
-	 * eye's focus has each pixel, or as it stands where the eye is a pinhole.
+	 * eye's focus has each pixel, or as it stands where the eye is a pinhole; the field's depth read as the eye that saw
+	 * it, so far before the frame, stored it.
 	 * @param {WebGLRenderer} renderer @param {SceneField} field @param {Box} drawn @param {Box} shown
-	 * @param {Sharpness} sharpness @param {WebGLRenderTarget} target
+	 * @param {Sharpness} sharpness @param {number} eyeDistance @param {WebGLRenderTarget} target
 	 */
-	laid(renderer, field, drawn, shown, sharpness, target) {
+	laid(renderer, field, drawn, shown, sharpness, eyeDistance, target) {
 		const boxes = { drawnBox: valuesOfTheBox(drawn), shownBox: valuesOfTheBox(shown) };
 		if (sharpness.aperture === A_PINHOLE) {
 			valuesSet(this.asItStands.material, { drawnLight: field.light, ...boxes });
@@ -434,7 +435,7 @@ export class Lens {
 			return;
 		}
 		this.sizedFor(field);
-		const range = depthRangeOf(sharpness.focalLength * this.frameScale);
+		const range = depthRangeOf(eyeDistance);
 		valuesSet(this.split.material, {
 			depth: field.depth,
 			drawnLight: field.light,

@@ -534,7 +534,7 @@ class ObjectsDrawer {
 	holderOf(each) {
 		const over = each.object.over;
 		if (over !== null) return this.overTheWordsOf(over);
-		switch (each.object.inside) {
+		switch (each.object.laidIn) {
 			case 'frame':
 				return this.roots[each.list];
 			case 'window':
@@ -961,10 +961,10 @@ class LookDrawer {
  * of a frame; the objects' drawer draws those pushed off too, as both lists lay what stands inside the page's window in
  * its one root; the world's light lights the room's things and the window's body alone, which the room draws
  * (`stage/things.js`, `stage/body.js`), and its glow the room draws over a frame (`stage/room.js`), as it blurs the
- * world by how the eye sees (`stage/lens.js`).
+ * world by how the eye sees (`stage/lens.js`) and sees it from where the eye stands.
  * @typedef {{
  *   readonly root: Staged,
- *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'world' | 'leaving' | 'sharpness'>]: Drawer },
+ *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'world' | 'leaving' | 'sharpness' | 'eye'>]: Drawer },
  *   readonly page: Staged,
  *   readonly picture: Staged,
  *   readonly ownPages: Map<string, HTMLIFrameElement>

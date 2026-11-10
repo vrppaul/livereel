@@ -37,6 +37,7 @@ import {
 	chained,
 	crossOf,
 	dotOf,
+	inThreesAxes,
 	lengthOf,
 	perspective,
 	radians,
@@ -98,6 +99,18 @@ export interface EyePlace {
 
 /** Where a film sends the eye: a place, or `'rest'`, back where it rests for its focal length, exactly. */
 export type EyePlaceOrRest = EyePlace | 'rest';
+
+/**
+ * The eye as the stage draws a scene by it, once a scene: how far before the frame it stands at rest, its focal length
+ * in the frame's pixels, which the room sees the world in perspective from; and the matrices that carry the room,
+ * about the frame's middle in its pixels, into the eye's own space and into the resting eye's, in three's axes, where
+ * the world's lights stand for what stands in the world and for what rides with the eye (`src/props/lighting.ts`).
+ */
+export interface DrawnEye {
+	readonly distance: number;
+	readonly roomInTheEyesSpace: Matrix;
+	readonly roomInTheRestingEyesSpace: Matrix;
+}
 
 /** The line an eye sees a point on: where the eye stands, and the way its sight goes from there. */
 export interface Sight {
@@ -298,8 +311,13 @@ export function distanceBefore(eye: Viewpoint, spot: Spot): number {
  * perspective from its picture plane. At rest, CSS's `perspective()` alone.
  */
 export function seenByTheEye(eye: Eye, frame: Size): Matrix {
-	const eyeDistance = eye.focalLength * frameScaleOf(frame);
+	const eyeDistance = eyeDistanceOn(eye, frame);
 	return chained([perspective(eyeDistance), translation({ ...NO_MOVE, out: eyeDistance }), inTheEyesSpace(eye, frame)]);
+}
+
+/** How far before a frame of this size an eye stands at rest, its focal length, in the frame's own pixels. */
+function eyeDistanceOn(eye: Eye, frame: Size): number {
+	return eye.focalLength * frameScaleOf(frame);
 }
 
 /**
@@ -312,6 +330,15 @@ export function inTheEyesSpace(eye: Eye, frame: Size): Matrix {
 	const [across, down, out] = axesOf(eye);
 	const at = scaledBy(eye.at, frameScaleOf(frame));
 	return matrixOf(across, down, out, { across: -dotOf(across, at), down: -dotOf(down, at), out: -dotOf(out, at) });
+}
+
+/** The eye as the stage draws a scene by it on a frame of this size. */
+export function drawnEye(eye: Eye, frame: Size): DrawnEye {
+	return {
+		distance: eyeDistanceOn(eye, frame),
+		roomInTheEyesSpace: inThreesAxes(inTheEyesSpace(eye, frame)),
+		roomInTheRestingEyesSpace: inThreesAxes(inTheEyesSpace(eyeAtRest(eye.focalLength), frame))
+	};
 }
 
 /** The eye's turn alone, which carries the room's axes to the eye's own: none at rest. */
@@ -328,7 +355,7 @@ export function turnOf(eye: Viewpoint): Matrix {
 export function sightOf(eye: Eye, frame: Size, fromTheMiddle: Point): Sight {
 	const scale = frameScaleOf(frame);
 	const [across, down, out] = axesOf(eye);
-	const toThePlane = -eye.focalLength * scale;
+	const toThePlane = -eyeDistanceOn(eye, frame);
 	return {
 		from: scaledBy(eye.at, scale),
 		along: {

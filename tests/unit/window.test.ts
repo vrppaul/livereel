@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { type Cut, type View, windowOnTheFrame, windowView } from '../../src/domain/camera.ts';
 import { type Angle, FACE_ON } from '../../src/domain/stance.ts';
-import { type Eye, eyeAtRest } from '../../src/domain/eye.ts';
+import { type Eye, drawnEye, eyeAtRest } from '../../src/domain/eye.ts';
 import type { Sharpness } from '../../src/domain/focus.ts';
 import type { Box, Size } from '../../src/domain/geometry.ts';
 import { ITS_MIDDLE, type Matrix, type Spot, carried, chained, flatOf, translation } from '../../src/domain/matrix.ts';
@@ -90,10 +90,7 @@ test("the body's back is drawn where the slab's back stands, its thickness behin
 test("a window lifted whole, with a body, hands the stage its slab: the rim and the thickness in the frame's pixels, the metal, the glass over the page, placed as the window is, round a page whose corners are the look's in the frame's pixels", () => {
 	const window = drawnWindow(LIFTED, AT_ITS_EDGES, WITH_A_BODY, AROUND);
 	const body = window.body!;
-	expect([
-		window.corner,
-		{ ...body, placing: carriedTo(body.placing, ITS_TOP_RIGHT), roomInTheEyesSpace: null, back: null }
-	]).toEqual([
+	expect([window.corner, { ...body, placing: carriedTo(body.placing, ITS_TOP_RIGHT), back: null }]).toEqual([
 		CORNER * TWICE,
 		{
 			rim: BODY.rim * TWICE,
@@ -102,15 +99,14 @@ test("a window lifted whole, with a body, hands the stage its slab: the rim and 
 			roughness: BODY.roughness,
 			glass: BODY.glass,
 			placing: carriedTo(window.inTheEyesSpace, ITS_TOP_RIGHT),
-			roomInTheEyesSpace: null,
 			back: null
 		}
 	]);
 });
 
-test('a body is lit by the room as the eye sees it: a spot of the room where the eye stands is the middle of its space', () => {
-	const body = drawnWindow(LIFTED, AT_ITS_EDGES, WITH_A_BODY, { ...AROUND, eye: MOVED }).body!;
-	expect(carriedTo(body.roomInTheEyesSpace, WHERE_THE_MOVED_EYE_STANDS)).toEqual(ITS_MIDDLE);
+test("a body is lit by the room as the eye sees it, as the scene's eye hands it: a spot of the room where the eye stands is the middle of its space", () => {
+	const eye = drawnEye(MOVED, TWICE_THE_LOOK);
+	expect(carriedTo(eye.roomInTheEyesSpace, WHERE_THE_MOVED_EYE_STANDS)).toEqual(ITS_MIDDLE);
 });
 
 test('a window turned past edge-on shows the eye its back, not its page', () => {

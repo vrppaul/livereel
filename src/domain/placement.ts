@@ -18,8 +18,8 @@
 import { type Camera, aboutTheMiddleOf, boxInTheView, middleInTheRoom, seenFromTheEye } from './camera.ts';
 import { type Eye, eyeAtRest, inTheEyesSpace, turnOf } from './eye.ts';
 import { type Box, type Size, boxOf, placedFrom } from './geometry.ts';
-import { type Matrix, chained, translation } from './matrix.ts';
-import { AS_PLACED, type Stance, stanceMatrix } from './stance.ts';
+import { type Matrix, chained, inThreesAxes, translation } from './matrix.ts';
+import { AS_PLACED, type Stance, type Transform, stanceMatrix, transformOf } from './stance.ts';
 
 /** Where something stands on the plane of what holds it: its box, in that plane's own pixels, and its stance. */
 export interface Placement extends Stance {
@@ -42,7 +42,7 @@ export type Holder =
 	| { readonly kind: 'group'; readonly name: GroupName; readonly zIndex: number | null };
 
 /** What the flat stage lays something in: the frame, or the page's window, which carries what is laid in it. */
-export type Laid = 'frame' | 'window';
+type Laid = 'frame' | 'window';
 
 /** What a plane rides with: the eye, for the frame and what stands on it; else the world, which the eye moves past. */
 type Rider = 'eye' | 'world';
@@ -87,6 +87,19 @@ export interface Placed {
 	readonly laid: Box;
 	readonly stood: Matrix;
 	readonly placing: Matrix;
+	readonly inTheEyesSpace: Matrix;
+	readonly rides: Rider;
+}
+
+/**
+ * Something placed, as the stage draws it: what the flat stage lays it in, its box there and how it draws it about that
+ * box's middle (`src/domain/stance.ts`); the matrix that carries a spot of it, from its middle, into the eye's own
+ * space in three's axes, where the room stands it; and what it rides with, the eye or the world.
+ */
+export interface DrawnPlacement {
+	readonly laidIn: Laid;
+	readonly box: Box;
+	readonly transform: Transform;
 	readonly inTheEyesSpace: Matrix;
 	readonly rides: Rider;
 }
@@ -175,6 +188,17 @@ export function placed(placement: Placement, plane: Plane, frame: Size): Placed 
 				inTheEyesSpace: chained([plane.inTheEyesSpace, translation(middleInTheRoom(laid, plane.box)), own])
 			};
 	}
+}
+
+/** Something placed as the stage draws it: flat or leant as how it stands before the eye has it, in three's axes. */
+export function drawnPlacement(standing: Placed): DrawnPlacement {
+	return {
+		laidIn: standing.laidIn,
+		box: standing.laid,
+		transform: transformOf(standing.stood, standing.placing),
+		inTheEyesSpace: inThreesAxes(standing.inTheEyesSpace),
+		rides: standing.rides
+	};
 }
 
 /** A box of a holder in its plane's own pixels: as it is, or, on the page, framed by the camera in the window. */

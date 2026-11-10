@@ -22,7 +22,7 @@
  * behind the page; the flat stage draws the window's edge and shadow in its place.
  */
 import { type Cut, type Placing, type View, pictureReachOf } from '../domain/camera.ts';
-import { type Eye, inTheEyesSpace } from '../domain/eye.ts';
+import type { Eye } from '../domain/eye.ts';
 import { type Sharpness, outOfFocusOnTheFrame, softestOutOfFocusSeen } from '../domain/focus.ts';
 import {
 	ITS_MIDDLE,
@@ -37,7 +37,7 @@ import {
 } from '../domain/matrix.ts';
 import { type Fraction, NONE } from '../domain/fraction.ts';
 import { type Box, type Size, boxAround, frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
-import { type Placed, placed, worldSeenBy } from '../domain/placement.ts';
+import { type DrawnPlacement, type Placed, drawnPlacement, placed, worldSeenBy } from '../domain/placement.ts';
 import { type Transform, transformOf } from '../domain/stance.ts';
 import {
 	MOVES_AS_A_SHARE,
@@ -62,22 +62,19 @@ export interface PageWindow extends Placing, Shade {
 }
 
 /**
- * The window as the stage draws it: its box on the frame, how far the camera's picture reaches on its plane, past the
- * box where the screen stands past it, how far it stands off the ground, how it is drawn about its box's middle,
- * standing as it stands and seen from the eye, and the matrix that carries it from that middle into the eye's own
- * space, in three's axes, where the room stands the page in its one scene, and whether the eye sees the page's side of
- * it or its back; how round the corners of the page the camera's cut shows are, in the frame's
+ * The window as the stage draws it: where it is placed in the world, as the stage draws a placement
+ * (`src/domain/placement.ts`), its box on the frame, drawn about its middle, and the matrix the room stands the page by
+ * in its one scene; how far the camera's picture reaches on its plane, past the box where the screen stands past it,
+ * how far it stands off the ground, and whether the eye sees the page's side of it or its back, read where it stands
+ * before the eye, behind the eye too; how round the corners of the page the camera's cut shows are, in the frame's
  * pixels, which the stylesheet cuts the page by and the body stands round; its shade, none where the page is shaded
  * none, and how soft the eye's focus draws it and all in it, none where sharp: as one, on the frame in pixels of a frame
  * 1080 high, for the flat stage, and at its softest point the frame shows, as far as the room's blur of it gathers past
  * the frame's edge; and its body, none where it has none.
  */
-export interface DrawnWindow {
-	readonly box: Box;
+export interface DrawnWindow extends DrawnPlacement {
 	readonly reach: Box;
 	readonly lift: Fraction;
-	readonly transform: Transform;
-	readonly inTheEyesSpace: Matrix;
 	readonly facingTheEye: boolean;
 	readonly corner: number;
 	readonly shade: Shade | null;
@@ -90,9 +87,9 @@ export interface DrawnWindow {
  * The window's body as the room draws it round the page the camera's cut shows (`reach`), in the frame's pixels: how
  * far its rim reaches past the page and how thick it is; its metal's colour and how rough it is; how much of the
  * world's light the glass over the page reflects; the matrix that carries the page's middle, its face toward three's
- * z, into the eye's own space, in three's axes, the body standing behind its face; the matrix that carries the room
- * into that space, where the world's lights stand; and the slab's back as the stage draws a plane, as the window's
- * transform draws the page, its thickness behind it, where a page on the window's back lies.
+ * z, into the eye's own space, in three's axes, the body standing behind its face, lit by the world's lights where the
+ * scene's eye hands the room (`DrawnEye` in `src/domain/eye.ts`); and the slab's back as the stage draws a plane, as
+ * the window's transform draws the page, its thickness behind it, where a page on the window's back lies.
  */
 export interface DrawnBody {
 	readonly rim: number;
@@ -101,7 +98,6 @@ export interface DrawnBody {
 	readonly roughness: number;
 	readonly glass: number;
 	readonly placing: Matrix;
-	readonly roomInTheEyesSpace: Matrix;
 	readonly back: Transform;
 }
 
@@ -156,11 +152,9 @@ export function drawnWindow(
 	const reach = pictureReachOf(view.box, cut);
 	const roundest = Math.min(reach.width, reach.height) / HALVES;
 	return {
-		box: view.box,
+		...drawnPlacement(standing),
 		reach,
 		lift: view.lift,
-		transform: transformOf(standing.stood, placing),
-		inTheEyesSpace: inThreesAxes(standing.inTheEyesSpace),
 		facingTheEye: facesTheEye(standing.inTheEyesSpace),
 		corner: Math.min(around.look.paneCorner * frameScaleOf(frame) * view.lift, roundest),
 		shade: drawnShade(window),
@@ -195,7 +189,6 @@ function drawnBody(view: View, page: Box, window: Placed, slab: Slab, around: Ar
 		roughness: slab.roughness,
 		glass: isLit(around.world) ? slab.glass * standing : NONE,
 		placing: inThreesAxes(placing),
-		roomInTheEyesSpace: inThreesAxes(inTheEyesSpace(around.eye, around.frame)),
 		back: transformOf(chained([window.stood, behind]), chained([window.placing, behind]))
 	};
 }

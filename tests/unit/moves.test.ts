@@ -878,7 +878,7 @@ test("a piece lying on the page is laid in the page's window where the camera fr
 	// The window, 960 × 540 in the frame's middle, shows the screen from 480 across and 270 down at 1: the other block,
 	// from 1200 and 600, stands at 720 and 330 in it
 	expect(drawnObjectsIn(landed, FULL_HD)[0]).toEqual(
-		expect.objectContaining({ inside: 'window', box: closeToBox({ left: 720, top: 330, width: 100, height: 60 }) })
+		expect.objectContaining({ laidIn: 'window', box: closeToBox({ left: 720, top: 330, width: 100, height: 60 }) })
 	);
 });
 
@@ -3332,10 +3332,11 @@ test("a thing stands as far as it reaches about its place's middle, and is carri
 
 test("a thing shown in the world is drawn as one the page's window may hide, and one on the frame as one it never hides", async () => {
 	const onTheFrame = await setAt(thing.show('card', A_CARD_SHOWN), OPENING_IN_SMALL, 1);
-	expect([await cardAt(0), onTheFrame].map((scene) => drawnThingIn(scene).inTheWorld)).toEqual([true, false]);
+	const [inTheWorld, ridingTheEye] = [await cardAt(0), onTheFrame].map((scene) => drawnObjectsIn(scene, SMALL)[0]!);
+	expect([inTheWorld!.rides, ridingTheEye!.rides]).toEqual(['world', 'eye']);
 });
 
-test('a thing in the world carries the room as the eye sees it, and one on the frame as the eye at rest does, so a light standing where that eye stands and aiming where it looks is seen at its middle, straight down its sight', async () => {
+test('a scene hands the room as the eye sees it, for a thing in the world, and as the eye at rest does, for one on the frame, so a light standing where that eye stands and aiming where it looks is seen at its middle, straight down its sight', async () => {
 	const inTheWorld = await setAt(eye.to(EYE_ASIDE), await cardAt(0), 1);
 	const onTheFrame = await setAt(
 		eye.to(EYE_ASIDE),
@@ -3349,7 +3350,11 @@ test('a thing in the world carries the room as the eye sees it, and one on the f
 		{ ...light, at: atRest.at, aim: atRest.aim }
 	];
 	const [atTheEye, atTheEyeAtRest] = drawnLighting(lights, [], SMALL.frame).lights;
-	const [worldsRoom, framesRoom] = [inTheWorld, onTheFrame].map((scene) => drawnThingIn(scene).roomInTheEyesSpace);
+	const [inTheWorldsEye, onTheFramesEye] = [inTheWorld, onTheFrame].map(
+		(scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).eye
+	);
+	const worldsRoom = inTheWorldsEye!.roomInTheEyesSpace;
+	const framesRoom = onTheFramesEye!.roomInTheRestingEyesSpace;
 	const scale = SMALL.frame.height / 1080;
 	const atItsMiddle = { across: expect.closeTo(0), down: expect.closeTo(0), out: expect.closeTo(0) };
 	expect([

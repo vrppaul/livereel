@@ -66,13 +66,7 @@ interface LeantTransform {
 }
 
 /** The side of something the eye sees. */
-type Face = 'front' | 'back';
-
-/** Something as the stage draws it about its middle: its transform, and the side of it the eye sees. */
-export interface DrawnStance {
-	readonly transform: Transform;
-	readonly face: Face;
-}
+export type Face = 'front' | 'back';
 
 // As large as its box
 const AS_LARGE = 1;
@@ -181,11 +175,11 @@ export function angleToward(start: Angle, end: Angle, progress: number): Angle {
 }
 
 /**
- * Something as the stage draws it, carried about its middle by its placing — how it stands, seen from the eye where it
- * stands on the frame —: its transform, and the side of it the eye sees.
+ * The side the stage draws of something its placing carries about its middle in what it is laid in, seen from the eye:
+ * its back where the placing shows it mirrored.
  */
-export function drawnStance(stood: Matrix, placing: Matrix): DrawnStance {
-	return { transform: transformOf(stood, placing), face: showsItsFront(placing) ? 'front' : 'back' };
+export function faceOf(placing: Matrix): Face {
+	return showsItsFront(placing) ? 'front' : 'back';
 }
 
 /**
