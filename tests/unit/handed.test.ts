@@ -75,6 +75,9 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => pageWindow.lean({ tilt: 'up' as never })).toThrow(
 		new FilmError('window.lean\'s tilt is "up": it is a number')
 	);
+	expect(() => pageWindow.lean({ over: 'half' as never })).toThrow(
+		new FilmError('window.lean\'s over is "half": it is a number')
+	);
 	expect(() => light.on(null as never)).toThrow(new FilmError(`light.on's target is null: it is ${TARGET}`));
 	expect(() => light.on('#block', { dim: null as never })).toThrow(
 		new FilmError("light.on's dim is null: it is a number from 0 to 1")
@@ -215,6 +218,14 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		new FilmError(`screen.shows's page's html is "": it is a page in HTML, a string with something in it`)
 	);
 	expect(() => screen.shows('filmed', { within: { end: 1 } as never })).toThrow(FilmError);
+	expect(() => screen.behind('filmed' as never)).toThrow(
+		new FilmError(`screen.behind's page is "filmed": it is a page of the film's own, { html }, or none, "none"`)
+	);
+	expect(() => screen.behind({ html: '<p>Behind</p>' }, { upright: 'up' as never })).toThrow(
+		new FilmError(
+			`screen.behind's upright is "up": it is how the page stands upright: once the window is turned over round its width, "over", or round its upright, "round"`
+		)
+	);
 	expect(() => screen.sweep({ from: 'middle' as never })).toThrow(
 		new FilmError(`screen.sweep's from is "middle": it is a side of the frame: "left", "right", "top" or "bottom"`)
 	);

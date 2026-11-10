@@ -1,9 +1,9 @@
 import { expect, test } from 'vitest';
-import { type Angle, type Cut, type View, windowView } from '../../src/domain/camera.ts';
+import { type Angle, type Cut, FACE_ON, type View, leaningOnTheFrame, windowView } from '../../src/domain/camera.ts';
 import { type Eye, eyeAtRest } from '../../src/domain/eye.ts';
 import type { Sharpness } from '../../src/domain/focus.ts';
 import type { Box, Size } from '../../src/domain/geometry.ts';
-import { ITS_MIDDLE, type Matrix, type Spot, carried } from '../../src/domain/matrix.ts';
+import { ITS_MIDDLE, type Matrix, type Spot, carried, chained, flatOf, translation } from '../../src/domain/matrix.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { type AroundTheWindow, UNSHADED, drawnWindow } from '../../src/props/window.ts';
 import { FOCAL_LENGTH } from './fakes.ts';
@@ -50,12 +50,7 @@ const AROUND: AroundTheWindow = {
 	screenShown: 1
 };
 // The window turned about its upright, a little, short of edge-on, past it, and half round
-const TURNED: readonly Angle[] = [
-	{ tilt: 0, turn: 30 },
-	{ tilt: 0, turn: 80 },
-	{ tilt: 0, turn: 100 },
-	{ tilt: 0, turn: 180 }
-];
+const TURNED: readonly Angle[] = [30, 80, 100, 180].map((turn) => ({ ...FACE_ON, turn }));
 // A corner of the window, from its middle, in three's axes, up the frame
 const ITS_TOP_RIGHT: Spot = { across: 900, down: 500, out: 0 };
 const DECIMALS = 6;
@@ -74,12 +69,29 @@ function carriedTo(matrix: Matrix, spot: Spot): Spot {
 	return rounded(carried(matrix, spot));
 }
 
+test("the body's back is drawn where the slab's back stands, its thickness behind the page: leant in 3D, and flat where it faces the frame from behind, smaller as it stands farther from the eye", () => {
+	const turnedOver: View = { ...LIFTED, angle: { ...FACE_ON, over: 180 } };
+	const leant: View = { ...LIFTED, angle: { ...FACE_ON, over: 160 } };
+	const [flatBack, leantBack] = [turnedOver, leant].map(
+		(view) => drawnWindow(view, AT_ITS_EDGES, UNSHADED, AROUND).body!
+	);
+	const behind = (view: View): Matrix =>
+		chained([
+			leaningOnTheFrame(view, AT_REST, TWICE_THE_LOOK),
+			translation({ across: 0, down: 0, out: -flatBack!.thickness })
+		]);
+	expect([flatBack!.back, leantBack!.back]).toEqual([
+		{ kind: 'flat', matrix: flatOf(behind(turnedOver)) },
+		{ kind: 'leant', matrix: behind(leant) }
+	]);
+});
+
 test("a window lifted whole, of a look with a body, hands the stage its slab: the rim and the thickness in the frame's pixels, the metal, the glass over the page, placed as the window is, round a page whose corners are the look's in the frame's pixels", () => {
 	const window = drawnWindow(LIFTED, AT_ITS_EDGES, UNSHADED, AROUND);
 	const body = window.body!;
 	expect([
 		window.corner,
-		{ ...body, placing: carriedTo(body.placing, ITS_TOP_RIGHT), roomInTheEyesSpace: null }
+		{ ...body, placing: carriedTo(body.placing, ITS_TOP_RIGHT), roomInTheEyesSpace: null, back: null }
 	]).toEqual([
 		BODY.paneCorner * TWICE,
 		{
@@ -90,7 +102,8 @@ test("a window lifted whole, of a look with a body, hands the stage its slab: th
 			glass: BODY.windowGlass,
 			placing: carriedTo(window.inTheEyesSpace, ITS_TOP_RIGHT),
 			roomInTheEyesSpace: null,
-			eyeDistance: FOCAL_LENGTH * TWICE
+			eyeDistance: FOCAL_LENGTH * TWICE,
+			back: null
 		}
 	]);
 });

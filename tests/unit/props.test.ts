@@ -2,13 +2,17 @@ import { expect, test } from 'vitest';
 import { codeOf } from '../../src/props/code.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
-import { SCREEN_UP, type Sweep, drawnScreen, drawnSweep } from '../../src/props/screen.ts';
+import { SCREEN_UP, type Screen, type Shows, type Sweep, drawnScreen, drawnSweep } from '../../src/props/screen.ts';
 import { cameraOf, openingScene } from '../../src/scene.ts';
 import { alongItsWay } from '../../src/props/way.ts';
 import { NONE, WHOLE, fractionOf } from '../../src/domain/fraction.ts';
 import { type DrawnWords, type Piece, comingUpIn, drawnWords, saidOf, typedComingUp } from '../../src/props/words.ts';
 import { type Keystroke, lettersOf } from '../../src/domain/typing.ts';
 import { FOCAL_LENGTH, SMALL } from './fakes.ts';
+
+// The side of the page's window the eye sees: its front, or its back
+const SEES_THE_FRONT = true;
+const SEES_THE_BACK = false;
 
 /** How much of a word stands typed, and whether the caret follows it. */
 interface StandingTyped {
@@ -272,12 +276,30 @@ test("a band sweeping the screen crosses what the window shows of the screen, no
 	const drawn = drawnScreen(
 		{ ...SCREEN_UP, sweep },
 		cameraOf(openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH), SMALL),
-		SMALL
+		SMALL,
+		SEES_THE_FRONT
 	);
 	expect(drawn.sweep!.shape.band).toEqual({
 		start: { left: expect.closeTo(-60.56), top: expect.closeTo(-44.44) },
 		end: { left: expect.closeTo(660.56), top: expect.closeTo(-44.44) }
 	});
+});
+
+test("the screen shows the page on the window's back where the eye sees the window's back, standing as its mount says, the page in front where the eye sees the front, and the front seen through where the back shows none", () => {
+	const camera = cameraOf(openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH), SMALL);
+	const front: Shows = { kind: 'own', key: 'front' };
+	const backed: Screen = { ...SCREEN_UP, shows: front, back: { kind: 'own', key: 'behind', upright: 'over' } };
+	const bare: Screen = { ...SCREEN_UP, shows: front };
+	const drawn = [
+		drawnScreen(backed, camera, SMALL, SEES_THE_BACK),
+		drawnScreen(backed, camera, SMALL, SEES_THE_FRONT),
+		drawnScreen(bare, camera, SMALL, SEES_THE_BACK)
+	];
+	expect(drawn.map((screen) => [screen.shows, screen.backUpright])).toEqual([
+		[{ kind: 'own', key: 'behind' }, 'over'],
+		[front, null],
+		[front, null]
+	]);
 });
 
 // A disc 90 wide, its crest in the look's accent, round a point of a part of the screen a window shows, 600 × 800 from

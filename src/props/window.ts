@@ -91,8 +91,9 @@ export interface DrawnWindow {
  * far its rim reaches past the page and how thick it is; its metal's colour and how rough it is; how much of the
  * world's light the glass over the page reflects; the matrix that carries the page's middle, its face toward three's
  * z, into the eye's own space, in three's axes, the body standing behind its face; the matrix that carries the room
- * into that space, where the world's lights stand; and how far the eye stands before the frame, which the stage sees
- * it in perspective from.
+ * into that space, where the world's lights stand; how far the eye stands before the frame, which the stage sees it in
+ * perspective from; and the slab's back as the stage draws a plane, as the window's transform draws the page, its
+ * thickness behind it, where a page on the window's back lies.
  */
 export interface DrawnBody {
 	readonly rim: number;
@@ -103,6 +104,7 @@ export interface DrawnBody {
 	readonly placing: Matrix;
 	readonly roomInTheEyesSpace: Matrix;
 	readonly eyeDistance: number;
+	readonly back: Transform;
 }
 
 /**
@@ -139,9 +141,11 @@ export const SHADE_NAMES = namesOf(SHADING);
 
 // A body of no thickness, which is none
 const NO_THICKNESS = 0;
-// The way out of the page's face, toward three's z, from its middle; and a spot on the page's plane
+// The way out of the page's face, toward three's z, from its middle; a spot on the page's plane; and the slab's back,
+// moved neither across nor down from the page
 const A_UNIT_OUT: Spot = { across: 0, down: 0, out: 1 };
 const ON_ITS_PLANE = 0;
+const UNMOVED = 0;
 // A corner reaches at most half the page's shorter side, as CSS rounds a box no further
 const HALVES = 2;
 
@@ -154,6 +158,7 @@ const HALVES = 2;
 export function drawnWindow(view: View, cut: Cut, window: Shade, around: AroundTheWindow): DrawnWindow {
 	const { eye, frame, sharpness } = around;
 	const placing = leaningOnTheFrame(view, eye, frame);
+	const stood = chained([turnOf(eye), angledAs(view.angle)]);
 	const reach = pictureReachOf(view.box, cut);
 	const intoTheEyesSpace = chained([inTheEyesSpaceAbout(view.box, eye, frame), angledAs(view.angle)]);
 	const roundest = Math.min(reach.width, reach.height) / HALVES;
@@ -161,15 +166,25 @@ export function drawnWindow(view: View, cut: Cut, window: Shade, around: AroundT
 		box: view.box,
 		reach,
 		lift: view.lift,
-		transform: transformOf(chained([turnOf(eye), angledAs(view.angle)]), placing),
+		transform: transformOf(stood, placing),
 		inTheEyesSpace: inThreesAxes(intoTheEyesSpace),
 		facingTheEye: facesTheEye(intoTheEyesSpace),
 		corner: Math.min(around.look.paneCorner * frameScaleOf(frame) * view.lift, roundest),
 		shade: drawnShade(window),
 		outOfFocus: outOfFocusOnTheFrame(placing, view.box, sharpness, frame),
 		outOfFocusAt: outOfFocusAt(placing, view.box, boxAround([view.box, reach]), sharpness, frame),
-		body: drawnBody(view, reach, intoTheEyesSpace, around)
+		body: drawnBody(view, reach, { intoTheEyesSpace, stood, placing }, around)
 	};
+}
+
+/**
+ * How the window stands for its body: the matrix that carries its middle into the eye's own space; how it stands before
+ * the eye, and the matrix the stage draws it by, as `transformOf` reads them.
+ */
+interface WindowStanding {
+	readonly intoTheEyesSpace: Matrix;
+	readonly stood: Matrix;
+	readonly placing: Matrix;
 }
 
 /**
@@ -178,7 +193,7 @@ export function drawnWindow(view: View, cut: Cut, window: Shade, around: AroundT
  * far as the window stands off the ground and the screen has come up in it, so no glint comes with it at once, its
  * glass none where the world has no light to reflect; none, where that leaves it no thickness.
  */
-function drawnBody(view: View, page: Box, intoTheEyesSpace: Matrix, around: AroundTheWindow): DrawnBody | null {
+function drawnBody(view: View, page: Box, window: WindowStanding, around: AroundTheWindow): DrawnBody | null {
 	const scale = frameScaleOf(around.frame);
 	const standing = view.lift * around.screenShown;
 	const thickness = around.look.windowThickness * scale * standing;
@@ -188,7 +203,8 @@ function drawnBody(view: View, page: Box, intoTheEyesSpace: Matrix, around: Arou
 		down: middleY(page) - middleY(view.box),
 		out: ON_ITS_PLANE
 	};
-	const placing = chained([intoTheEyesSpace, translation(pageMiddle)]);
+	const placing = chained([window.intoTheEyesSpace, translation(pageMiddle)]);
+	const behind = translation({ across: UNMOVED, down: UNMOVED, out: -thickness });
 	return {
 		rim: around.look.windowRim * scale * standing,
 		thickness,
@@ -197,7 +213,8 @@ function drawnBody(view: View, page: Box, intoTheEyesSpace: Matrix, around: Arou
 		glass: isLit(around.look) ? around.look.windowGlass * standing : NONE,
 		placing: inThreesAxes(placing),
 		roomInTheEyesSpace: inThreesAxes(inTheEyesSpace(around.eye, around.frame)),
-		eyeDistance: around.sharpness.focalLength * scale
+		eyeDistance: around.sharpness.focalLength * scale,
+		back: transformOf(chained([window.stood, behind]), chained([window.placing, behind]))
 	};
 }
 

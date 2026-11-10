@@ -4,6 +4,7 @@ import {
 	type Camera,
 	type Cut,
 	type Pose,
+	angledAs,
 	covering,
 	drawnCamera,
 	frameShift,
@@ -35,9 +36,9 @@ const HALF_SQUARE: Format = { frame: { width: 540, height: 540 }, screen: SQUARE
 const FACE_ON: Pose = { focusX: 756, focusY: 540, zoom: 1 };
 const DRAWN_BACK: Pose = { focusX: 648, focusY: 432, zoom: 0.7 };
 // How a view leans: not at all, back and swung a little, and edge-on, where no corner of the frame shows the screen
-const STRAIGHT: Angle = { tilt: 0, turn: 0 };
-const LEANT_BACK: Angle = { tilt: 14, turn: -9 };
-const EDGE_ON: Angle = { tilt: 0, turn: 90 };
+const STRAIGHT: Angle = { tilt: 0, turn: 0, roll: 0, over: 0 };
+const LEANT_BACK: Angle = { ...STRAIGHT, tilt: 14, turn: -9 };
+const EDGE_ON: Angle = { ...STRAIGHT, turn: 90 };
 // How far a corner of a square frame of 1080 stands from its middle
 const CORNER_FROM_MIDDLE = Math.hypot(540, 540);
 // The screen's corners at half its size in the frame, then at 0.55 of it: each moves 37.8 across and 27 down
@@ -80,6 +81,18 @@ const SPOTS_OF_THE_WINDOW_UP_THE_FRAME: readonly Spot[] = [
 	{ across: 300, down: 200, out: 0 }
 ];
 const ALL_SHARP: Sharpness = { focusedAt: FOCAL_LENGTH, focalLength: FOCAL_LENGTH, aperture: 0 };
+// Spots of what leans from its middle: the middle of its top edge and of its right side
+const ITS_TOP: Spot = { across: 0, down: -100, out: 0 };
+const ITS_RIGHT: Spot = { across: 100, down: 0, out: 0 };
+
+/** A spot rounded to so many decimals each way, so arithmetic's last digits and a zero's sign do not count. */
+function roundedSpot(spot: Spot): Spot {
+	return {
+		across: Number(spot.across.toFixed(DECIMALS)) + 0,
+		down: Number(spot.down.toFixed(DECIMALS)) + 0,
+		out: Number(spot.out.toFixed(DECIMALS)) + 0
+	};
+}
 
 /** A camera at a pose, its picture the whole of a frame, leant as it is said, seen from the eye at rest. */
 function inTheWhole(pose: Pose, angle: Angle = STRAIGHT, frame: Size = SQUARE.frame): Camera {
@@ -211,12 +224,12 @@ test('a window drawn back off the frame moves what it shows by how far its corne
 });
 
 test('a screen leant back shows its top edge narrower than its bottom', () => {
-	const leant = { tilt: 20, turn: 0 };
+	const leant = { ...STRAIGHT, tilt: 20 };
 	expect(widthBetween(leant, TOP_LEFT, TOP_RIGHT)).toBeLessThan(widthBetween(leant, BOTTOM_LEFT, BOTTOM_RIGHT));
 });
 
 test('a screen swung by a turn shows its right edge shorter than its left', () => {
-	const swung = { tilt: 0, turn: 20 };
+	const swung = { ...STRAIGHT, turn: 20 };
 	expect(heightBetween(swung, TOP_RIGHT, BOTTOM_RIGHT)).toBeLessThan(heightBetween(swung, TOP_LEFT, BOTTOM_LEFT));
 });
 
@@ -321,7 +334,7 @@ test('a screen too short to fill the frame along a side stands in its middle alo
 test("a picture of the page holds it as close as the closest face-on camera or piece of it comes, a view turned a whole turn face-on too, as close as livereel's bound where one is angled, and never closer", () => {
 	const closer = inTheWhole({ ...FACE_ON, zoom: 1.5 });
 	const pastTheBound = inTheWhole({ ...FACE_ON, zoom: 3 });
-	const turnedWhole = inTheWhole({ ...FACE_ON, zoom: 1.5 }, { tilt: 360, turn: -360 });
+	const turnedWhole = inTheWhole({ ...FACE_ON, zoom: 1.5 }, { ...STRAIGHT, tilt: 360, turn: -360 });
 	expect([
 		zoomPicturedFor(inTheWhole(FACE_ON), [closer], []),
 		zoomPicturedFor(inTheWhole(FACE_ON), [turnedWhole], []),
@@ -346,4 +359,18 @@ test("the window carried into the eye's own space as the room is handed it, in t
 		distanceBetween(windowSeenInPerspective(spot), windowDrawnAt(spot))
 	);
 	expect(missedBy).toEqual(SPOTS_OF_THE_WINDOW_UP_THE_FRAME.map(() => expect.closeTo(0, DECIMALS)));
+});
+
+test('what leans turns over round its own width after it is leant back, swung and rolled: rolled a quarter turn and turned over a quarter, its top goes back from the eye and its right side down the frame, where leant back a quarter and rolled its top would go right', () => {
+	const rolledThenOver = angledAs({ tilt: 0, turn: 0, roll: 90, over: 90 });
+	const leantThenRolled = angledAs({ tilt: 90, turn: 0, roll: 90, over: 0 });
+	expect(
+		[carried(rolledThenOver, ITS_TOP), carried(rolledThenOver, ITS_RIGHT), carried(leantThenRolled, ITS_TOP)].map(
+			roundedSpot
+		)
+	).toEqual([
+		{ across: 0, down: 0, out: -100 },
+		{ across: 0, down: 100, out: 0 },
+		{ across: 100, down: 0, out: 0 }
+	]);
 });

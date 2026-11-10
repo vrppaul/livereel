@@ -2,9 +2,10 @@
  * What stands over a part of the page, read off it as a move begins: a piece of the page (`src/moves/piece.ts`), an
  * outline round it (`src/moves/outline.ts`), a lens over it (`src/moves/lens.ts`). Each is born on the frame over its
  * source as the camera shows it then, cut to the part the camera shows, and stands on the frame after, the camera
- * moving on without it. A source shows as a box only through a window that faces the frame with its front, so each is
- * refused while the window leans or shows its back; what is drawn from the page's picture is refused too where the
- * stage shows the page live, with no picture, and while the screen shows a page of the film's own in its place.
+ * moving on without it. A source shows as a box only through a window that faces the frame with its front, upright, so
+ * each is refused while the window leans, rolls or shows its back; what is drawn from the page's picture is refused
+ * too where the stage shows the page live, with no picture, and while the screen shows a page of the film's own in its
+ * place.
  */
 import { type Camera, boxOnTheFrame, isFrontOn, screenShownBy } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -53,16 +54,16 @@ export async function sourceOf(
 }
 
 /**
- * The scene's camera as a move begins that does what a refusal says it does, refused where its window leans or shows
- * its back, or the eye looks at it aslant or from behind its plane, as a box of the screen then shows on the frame as
- * no box, or a box turned over, and a box of the frame stands on the screen as none. An eye moved but looking straight
+ * The scene's camera as a move begins that does what a refusal says it does, refused where its window leans, rolls or
+ * shows its back, or the eye looks at it aslant or from behind its plane, as a box of the screen then shows on the
+ * frame as no box, or a box turned over or rolled, and a box of the frame stands on the screen as none. An eye moved but looking straight
  * ahead from before the plane sees the window's plane as it is, only nearer, farther or aside.
  */
 export function cameraFrontOn(beginning: Beginning, doing: string): Camera {
 	const camera = cameraOf(beginning.scene, beginning.format);
 	if (!isFrontOn(camera.view.angle)) {
 		throw new FilmError(
-			`${doing} only while the window faces the frame front on: bring it face-on, window.lean({ tilt: 0, turn: 0 })`
+			`${doing} only while the window faces the frame front on, upright: bring it so, window.lean({ tilt: 0, turn: 0, roll: 0, over: 0 })`
 		);
 	}
 	if (!looksStraightAtTheFrame(camera.eye)) {

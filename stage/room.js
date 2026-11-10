@@ -576,6 +576,7 @@ class Room {
 		this.lighting.lit(this.renderer, scene.lighting);
 		const windowSurface = surfaceOfTheWindow(scene.window, placingOfThe(placings, 'window'));
 		const parts = things.flatMap((thing) => this.partsOf(thing, windowSurface));
+		const backShown = scene.screen.backUpright !== null;
 		this.renderer.setRenderTarget(this.exposure);
 		this.renderer.clear();
 		for (const name of SURFACES) {
@@ -584,7 +585,7 @@ class Room {
 			if (SURFACE_TEXTURES[name].eachExposure) texture.drawnFrom(surfaceOf(surfaces, name));
 			const placing = placingOfThe(placings, name);
 			const body = name === THE_BODYS_SURFACE ? scene.window.body : null;
-			if (body !== null) this.laidWithItsBody(texture, placing, scene.window, body, gathered);
+			if (body !== null) this.laidWithItsBody(texture, placing, scene.window, body, backShown, gathered);
 			else if (placing.outOfFocusAt === null) this.laidOver(texture, placing);
 			else this.blurredOver(texture, placing, placing.outOfFocusAt, gathered);
 		}
@@ -645,19 +646,21 @@ class Room {
 	/**
 	 * The window's surface and its body laid over what is drawn of an exposure as one, so the eye's focus blurs the two
 	 * together, as it blurs one thing: the body's slab drawn alone round the page, as far past the frame as the blur
-	 * gathers, and the surface laid over it where the eye sees the page, the glass over that, or under it where the eye
-	 * sees the slab's back; then laid over as the eye's focus blurs each point of the window, or unblurred where sharp.
+	 * gathers, and the surface laid over it where the eye sees the page, the glass over that, or a page on the window's
+	 * back on the slab's back, or under it where the eye sees the slab's bare back; then laid over as the eye's focus
+	 * blurs each point of the window, or unblurred where sharp.
 	 * @param {SurfaceTexture} texture @param {Placing} placing @param {DrawnWindow} window @param {DrawnBody} body
-	 * @param {Box} gathered
+	 * @param {boolean} backShown @param {Box} gathered
 	 */
-	laidWithItsBody(texture, placing, window, body, gathered) {
+	laidWithItsBody(texture, placing, window, body, backShown, gathered) {
 		this.renderer.setRenderTarget(this.thingLayer);
 		this.renderer.clear();
 		this.body.slabDrawn(this.renderer, window, body, gathered, this.frameBox);
 		placedAs(this.placed, texture, placing, gathered);
 		this.renderer.setRenderTarget(this.focusLayer);
 		this.renderer.clear();
-		const [under, over] = window.facingTheEye ? [this.encodingOver, this.placed] : [this.placed, this.encodingOver];
+		const pageSeen = window.facingTheEye || backShown;
+		const [under, over] = pageSeen ? [this.encodingOver, this.placed] : [this.placed, this.encodingOver];
 		this.renderer.render(under, this.camera);
 		this.renderer.render(over, this.camera);
 		if (window.facingTheEye && body.glass > NONE) this.glassLaidOver(window, body, gathered);
@@ -777,16 +780,17 @@ class Room {
 
 /**
  * Where each surface of an exposure stands, as its scene places it: the ground and what stands on the frame where the
- * frame stands, sharp; the window by the engine's matrix about its view's middle, blurred by the eye's focus as the
- * engine has it, over as much of its plane as the frame shows of what stands there, the frame's own box, and as far
- * past it as a blur gathers there and as the camera's picture reaches, where the eye may see it leant or from aside,
- * and a little clear round it, so the plane's edge falls inside its texture and is filtered as the browser smooths an
- * edge, not cut stepped by its triangles.
+ * frame stands, sharp; the window by the engine's matrix about its view's middle, on the slab's back where the eye sees
+ * a page on the window's back on a body, blurred by the eye's focus as the engine has it, over as much of its plane as
+ * the frame shows of what stands there, the frame's own box, and as far past it as a blur gathers there and as the
+ * camera's picture reaches, where the eye may see it leant or from aside, and a little clear round it, so the plane's
+ * edge falls inside its texture and is filtered as the browser smooths an edge, not cut stepped by its triangles.
  * @param {DrawnScene} scene @param {Box} frame @param {Box} gathered @returns {ReadonlyMap<SurfaceName, Placing>}
  */
 function placingsOf(scene, frame, gathered) {
 	const view = scene.window.box;
-	const entries = entriesOf(scene.window.transform);
+	const onTheBack = scene.screen.backUpright !== null && scene.window.body !== null;
+	const entries = entriesOf(onTheBack ? scene.window.body.back : scene.window.transform);
 	const middle = new Vector2(view.left + view.width * HALF, view.top + view.height * HALF);
 	const standing = boxAround(gathered, scene.window.reach);
 	const asTheWindow = {

@@ -11,6 +11,11 @@
  * and goes as far past the far one, so its light comes onto the page and leaves it whole. Or a disc opens round a point
  * of the screen, its ring of light growing from its middle to past the farthest corner of what the window shows, the
  * picture kept outside it alone.
+ *
+ * The window's back may show a page of the film's own too, as a slab's back wears a picture of its own: where the eye
+ * sees the window's back, the screen shows it in place of what it shows in front, framed by the camera as the front
+ * is, mounted so it stands upright once the window is turned over round its width or round its upright; with none,
+ * the eye sees the screen through the window's back, mirrored, as before.
  */
 import { type Camera, type SeenBetween, screenPointShift, viewOnTheScreen } from '../domain/camera.ts';
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
@@ -29,11 +34,29 @@ import {
 	middleY,
 	overlapOf
 } from '../domain/geometry.ts';
-import { A_NUMBER, type Kind, Plain } from '../domain/handed.ts';
+import { A_NUMBER, type Kind, OneOf, Plain } from '../domain/handed.ts';
 import { between } from '../domain/toward.ts';
 
 /** What the screen shows: the filmed page, or a page of the film's own by its key. */
 export type Shows = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string };
+
+/**
+ * How a page on the window's back is mounted: upright once the window is turned over round its width, or round its
+ * upright.
+ */
+export type Upright = 'over' | 'round';
+
+/**
+ * What the window's back shows: the screen seen through it, or a page of the film's own by its key, mounted as named.
+ */
+export type Back =
+	{ readonly kind: 'seen through' } | { readonly kind: 'own'; readonly key: string; readonly upright: Upright };
+
+/** How a film mounts a page on the window's back. */
+export const AN_UPRIGHT: Kind<Upright> = new OneOf<Upright>(
+	['over', 'round'],
+	'how the page stands upright: once the window is turned over round its width, "over", or round its upright, "round"'
+);
 
 /**
  * The colours a sweep's crest runs through: a band's from its start, the end nearer the top, or its left where it lies
@@ -77,11 +100,15 @@ interface SweepOfAnyShape {
 type BandSweep = BandShape & SweepOfAnyShape;
 type DiscSweep = DiscShape & SweepOfAnyShape;
 
-/** How far the screen has come up, as a film may open on the ground alone, what it shows, and the sweep over it, if any. */
+/**
+ * How far the screen has come up, as a film may open on the ground alone, what it shows, the sweep over it, if any, and
+ * what the window's back shows.
+ */
 export interface Screen {
 	readonly shown: Fraction;
 	readonly shows: Shows;
 	readonly sweep: Sweep | null;
+	readonly back: Back;
 }
 
 /** A band's line across the window, in the screen's pixels: from its start, the end nearer the top, to its end. */
@@ -107,11 +134,16 @@ type DrawnSweepShape =
 	| { readonly kind: 'band'; readonly band: DrawnBand; readonly ahead: Point }
 	| { readonly kind: 'disc'; readonly middle: Point; readonly radius: number };
 
-/** The screen as the stage draws it: how far it has come up, what it shows, and the sweep over it as drawn, if any. */
+/**
+ * The screen as the stage draws it: how far it has come up, what it shows on the side of the window the eye sees, the
+ * sweep over it as drawn, if any; and how the page it shows is mounted where it is the window's back's, which then shows
+ * it alone, none where the eye sees the front or the screen through the back.
+ */
 export interface DrawnScreen {
 	readonly shown: Fraction;
 	readonly shows: Shows;
 	readonly sweep: DrawnSweep | null;
+	readonly backUpright: Upright | null;
 }
 
 // How far a band may stand slanted from the side it comes from, either way: short of a quarter turn, where it would lie
@@ -125,8 +157,9 @@ export const A_SLANT: Kind<number> = new Plain(
 );
 
 export const THE_FILMED_PAGE: Shows = { kind: 'filmed' };
-export const SCREEN_UP: Screen = { shown: WHOLE, shows: THE_FILMED_PAGE, sweep: null };
-export const SCREEN_DOWN: Screen = { shown: NONE, shows: THE_FILMED_PAGE, sweep: null };
+export const SEEN_THROUGH: Back = { kind: 'seen through' };
+export const SCREEN_UP: Screen = { shown: WHOLE, shows: THE_FILMED_PAGE, sweep: null, back: SEEN_THROUGH };
+export const SCREEN_DOWN: Screen = { shown: NONE, shows: THE_FILMED_PAGE, sweep: null, back: SEEN_THROUGH };
 
 // Which way a band coming from each side of the window goes across it, before it is slanted
 const CROSSING_FROM: { readonly [Side in FrameSide]: Point } = {
@@ -147,10 +180,18 @@ const RING_WAYS: readonly Point[] = [
 // No picture a screen swept by none holds
 const NO_PICTURE: readonly number[] = [];
 
-/** The screen as the stage draws it, the camera that shows it framing the page in its view, in a format. */
-export function drawnScreen(screen: Screen, camera: Camera, format: Format): DrawnScreen {
+/**
+ * The screen as the stage draws it, the camera that shows it framing the page in its view, in a format, the eye seeing
+ * the window's front or its back: the page on the back, with no sweep, where the eye sees the back and the back has a
+ * page of its own; the screen as it stands where not.
+ */
+export function drawnScreen(screen: Screen, camera: Camera, format: Format, facingTheEye: boolean): DrawnScreen {
+	if (!facingTheEye && screen.back.kind === 'own') {
+		const shows: Shows = { kind: 'own', key: screen.back.key };
+		return { shown: screen.shown, shows, sweep: null, backUpright: screen.back.upright };
+	}
 	const sweep = screen.sweep === null ? null : drawnSweep(screen.sweep, partSwept(camera, format), camera.pose.zoom);
-	return { shown: screen.shown, shows: screen.shows, sweep };
+	return { shown: screen.shown, shows: screen.shows, sweep, backUpright: null };
 }
 
 /**

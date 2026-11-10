@@ -348,6 +348,14 @@ export function facesTheFrame(matrix: Matrix): boolean {
 }
 
 /**
+ * Whether a matrix leaves the room's across where it stood, unrolled: it carries no share of across down the frame,
+ * nor turns it back on itself.
+ */
+export function keepsItsAcross(matrix: Matrix): boolean {
+	return Math.abs(matrix.m12) <= FACING_WITHIN * Math.hypot(matrix.m11, matrix.m12, matrix.m13) && matrix.m11 > EDGE_ON;
+}
+
+/**
  * A matrix that carries the room's plane onto one facing the frame, written as it carries that plane: flat, every
  * point of it seen from one distance.
  */

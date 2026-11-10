@@ -50,9 +50,11 @@ import {
 	chained,
 	dotOf,
 	facesTheFrame,
+	keepsItsAcross,
 	movedAlong,
 	rotationX,
 	rotationY,
+	rotationZ,
 	scaledBy,
 	showsItsFront,
 	translation,
@@ -61,10 +63,16 @@ import {
 import { between } from './toward.ts';
 import { ARRIVED, type Track, alongTrack, arrivedAt } from './track.ts';
 
-/** How the screen leans back from its top edge, `tilt`, and swings about its middle, `turn`: degrees, 0 face-on. */
+/**
+ * How the window, or anything on the frame, faces, in degrees, 0 face-on: leant back from its top edge, `tilt`, swung
+ * about its middle, `turn`, rolled clockwise in its own plane, `roll`, and turned over round its own width as it then
+ * stands, top away from the eye, `over`, as a slab turned over in the hand.
+ */
 export interface Angle {
 	readonly tilt: number;
 	readonly turn: number;
+	readonly roll: number;
+	readonly over: number;
 }
 
 /**
@@ -198,7 +206,7 @@ const NO_ZOOM = 0;
 const FLAT: Fraction = NONE;
 const LIFTED: Fraction = WHOLE;
 // A view, or anything on the frame, as it stands until a move leans it
-export const FACE_ON: Angle = { tilt: 0, turn: 0 };
+export const FACE_ON: Angle = { tilt: 0, turn: 0, roll: 0, over: 0 };
 // The whole of a view, in shares of it
 const WHOLE_SHARE: Box = { left: 0, top: 0, width: 1, height: 1 };
 // A move the other way: so many times as far back
@@ -342,7 +350,12 @@ export function flatCamera(format: Format, focalLength: number): Camera {
 
 /** An angle `progress` of the way to another. */
 export function angleToward(start: Angle, end: Angle, progress: number): Angle {
-	return { tilt: between(start.tilt, end.tilt, progress), turn: between(start.turn, end.turn, progress) };
+	return {
+		tilt: between(start.tilt, end.tilt, progress),
+		turn: between(start.turn, end.turn, progress),
+		roll: between(start.roll, end.roll, progress),
+		over: between(start.over, end.over, progress)
+	};
 }
 
 /** The camera as the stage draws it, its cut worked out from where the screen stands in its view. */
@@ -415,17 +428,17 @@ export function zoomPicturedFor(own: Camera, along: readonly Camera[], pieces: r
 }
 
 /**
- * Whether an angle leaves what leans in a plane facing the frame: neither tilted nor turned, or by whole or half turns
- * alone, which show its front or its back.
+ * Whether an angle leaves what leans in a plane facing the frame: neither tilted, turned nor turned over, or by whole
+ * or half turns alone, which show its front or its back, rolled any way.
  */
 function isFaceOn(angle: Angle): boolean {
 	return facesTheFrame(angledAs(angle));
 }
 
-/** Whether an angle leaves what leans facing the frame with its front, as it stood: by whole turns alone. */
+/** Whether an angle leaves what leans facing the frame with its front, upright, as it stood: by whole turns alone. */
 export function isFrontOn(angle: Angle): boolean {
 	const angled = angledAs(angle);
-	return facesTheFrame(angled) && showsItsFront(angled);
+	return facesTheFrame(angled) && showsItsFront(angled) && keepsItsAcross(angled);
 }
 
 /** The pose an aim comes to in a view, kept off the screen's edge there: the film's own, or a block framed there. */
@@ -807,16 +820,17 @@ function poseZoomFor(frameZoom: number, frame: Size): number {
 }
 
 /**
- * The matrix that carries a spot of what leans, on its own plane, to its angle: swung about its middle by its turn,
- * then leant back by its tilt, as CSS's `rotateX() rotateY()` would.
+ * The matrix that carries a spot of what leans, on its own plane, to its angle: turned over round its own width, rolled
+ * in its plane, swung about its middle by its turn, then leant back by its tilt, as CSS's
+ * `rotateX() rotateY() rotateZ() rotateX()` would; so it turns over round its width as it stands rolled and swung.
  */
 export function angledAs(angle: Angle): Matrix {
-	return chained([rotationX(angle.tilt), rotationY(angle.turn)]);
+	return chained([rotationX(angle.tilt), rotationY(angle.turn), rotationZ(angle.roll), rotationX(angle.over)]);
 }
 
 /** The matrix that takes a spot of the room back from an angle to the plane's own. */
 function angledBack(angle: Angle): Matrix {
-	return chained([rotationY(-angle.turn), rotationX(-angle.tilt)]);
+	return chained([rotationX(-angle.over), rotationZ(-angle.roll), rotationY(-angle.turn), rotationX(-angle.tilt)]);
 }
 
 function isZoom(written: unknown): written is number {

@@ -11,7 +11,7 @@
  */
 import {
 	type ActContext,
-	type Angle,
+	type LeanScript,
 	type Pose,
 	type Step,
 	type TerminalLine,
@@ -51,7 +51,7 @@ const OPENS_FROM = 0.86;
 // How far the camera draws back over the whole page, and how the page leans back and swings to the left meanwhile,
 // all of it behind where the terminal's window comes up
 const DRAWN_BACK_BY = 0.7;
-const LEANING_BACK: Angle = { tilt: 14, turn: -9 };
+const LEANING_BACK: LeanScript = { tilt: 14, turn: -9 };
 const TITLE = 'acme — claude';
 const TASK = 'make a 20-second promo of my app';
 const THINKING = 'Working…';

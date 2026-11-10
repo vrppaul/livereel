@@ -78,6 +78,8 @@ const OWN_PAGE = 'data-own-page';
 const OWN_PAGE_TITLE = "A page of the film's own";
 const SHOWN = 'data-shown';
 const SHOWS_OWN = 'data-shows-own';
+// How the page the screen shows is mounted where it is the window's back's, which the stylesheet turns it by
+const BACK_UPRIGHT = 'data-back-upright';
 // The exposure the stage's markup lays out, whose pages of the film's own are named, so moves measure blocks on them,
 // and the name a page of the film's own in any other takes: none
 const FIRST_EXPOSURE = 0;
@@ -253,7 +255,8 @@ function shadeDrawn(root, shade) {
 
 /**
  * The screen: how far it has come up, what it shows, the filmed page or one of the film's own laid on it, and the
- * picture light sweeps away over it, a band or a disc.
+ * picture light sweeps away over it, a band or a disc; where the eye sees a page on the window's back, how it is
+ * mounted, so the stylesheet turns it to stand upright from behind and leaves unseen what lies on the front.
  */
 class ScreenDrawer {
 	/** @param {Staged} root @param {ReadonlyMap<string, HTMLIFrameElement>} ownPages */
@@ -270,6 +273,7 @@ class ScreenDrawer {
 		const shownKey = ownPageShown(scene.screen.shows);
 		this.root.toggleAttribute(SHOWS_OWN, shownKey !== NAMELESS);
 		for (const [key, frame] of this.ownPages) frame.toggleAttribute(SHOWN, key === shownKey);
+		named(this.root, BACK_UPRIGHT, scene.screen.backUpright);
 		sweepDrawn(this.sweep, this.swept, scene.screen.sweep);
 	}
 }

@@ -394,17 +394,18 @@ export function drawn(
 		sharper
 	};
 	const shown = drawnCamera(camera, format);
+	const window = drawnWindow(camera.view, shown.cut, scene.window, {
+		eye: camera.eye,
+		frame: format.frame,
+		sharpness,
+		look: scene.look,
+		screenShown: scene.screen.shown
+	});
 	return {
 		look: scene.look,
 		camera: shown,
-		window: drawnWindow(camera.view, shown.cut, scene.window, {
-			eye: camera.eye,
-			frame: format.frame,
-			sharpness,
-			look: scene.look,
-			screenShown: scene.screen.shown
-		}),
-		screen: drawnScreen(scene.screen, camera, format),
+		window,
+		screen: drawnScreen(scene.screen, camera, format, window.facingTheEye),
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout, moment),
 		pins: scene.pins === null ? null : drawnPins(scene.pins, camera, format.frame),

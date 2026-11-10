@@ -1,7 +1,15 @@
 import { CubicBezierCurve3, Vector3 } from 'three';
 import { expect, test } from 'vitest';
 import { AS_PLACED } from '../../src/domain/stance.ts';
-import { type Camera, onTheFrame, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
+import {
+	type Camera,
+	FACE_ON,
+	onTheFrame,
+	placedIn,
+	underTheFrame,
+	wholeView,
+	windowView
+} from '../../src/domain/camera.ts';
 import { type EyePlace, type Focus, eyeAtRest } from '../../src/domain/eye.ts';
 import * as eye from '../../src/moves/eye.ts';
 import { linear } from '../../src/domain/curves.ts';
@@ -19,7 +27,7 @@ import {
 	middleY
 } from '../../src/domain/geometry.ts';
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
-import type { Beginning, Move } from '../../src/direction/move.ts';
+import { type Beginning, type Move, ownPagesOf } from '../../src/direction/move.ts';
 import { play } from '../../src/direction/steps.ts';
 import { onto, to as cameraTo } from '../../src/moves/camera.ts';
 import * as group from '../../src/moves/group.ts';
@@ -33,7 +41,13 @@ import {
 	show as windowShow,
 	to as windowTo
 } from '../../src/moves/window.ts';
-import { lower, rise, shows as screenShows, sweep as screenSweep } from '../../src/moves/screen.ts';
+import {
+	behind as screenBehind,
+	lower,
+	rise,
+	shows as screenShows,
+	sweep as screenSweep
+} from '../../src/moves/screen.ts';
 import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
@@ -688,7 +702,7 @@ test('an object rolls as it leans, and grows and comes toward the eye as it is c
 	const carried = (await setAt(code.to('left'), grown, 1)).objects.get('code')!;
 	// A depth given in pixels of a frame 1080 high stands in the frame's own
 	expect([carried.angle, carried.scale, carried.depth, carried.box]).toEqual([
-		{ tilt: 10, turn: 20, roll: 30 },
+		{ ...FACE_ON, tilt: 10, turn: 20, roll: 30 },
 		2,
 		100 * frameScaleOf(SMALL.frame),
 		wordsPlaced(SMALL, 'left')
@@ -820,7 +834,7 @@ test('a piece, or an outline, goes back over its block as the camera shows it th
 		{ kind: 'piece', source: SHOWN_AT_TWO, corners: SQUARE_CORNERS, hole: null, lines: null, picture: FOLLOWING },
 		1,
 		0,
-		{ tilt: 0, turn: 360, roll: 0 },
+		{ ...FACE_ON, turn: 360 },
 		SHOWN_AT_TWO
 	]);
 });
@@ -891,10 +905,11 @@ test('a piece lying on the page goes back over its source there, wherever the ca
 	]);
 });
 
-test('a piece is carried onto the page only from the frame, lying flat there, while the window faces the frame front on: leant or near, in a group, or under a leant window, it is refused', async () => {
+test('a piece is carried onto the page only from the frame, lying flat there, while the window faces the frame front on: leant, turned over or near, in a group, or under a leant window, it is refused', async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), openingScene(FULL_HD, LIVEREELS_LOOK, FOCAL_LENGTH), 1, FULL_HD);
 	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
 	const tilted = await setIn(piece.lean({ tilt: 10 }), lifted, 1, FULL_HD);
+	const turnedOver = await setIn(piece.lean({ over: 40 }), lifted, 1, FULL_HD);
 	const near = await setIn(piece.effects({ depth: 100 }), lifted, 1, FULL_HD);
 	const grouped = await setIn(group.show({ as: 'stack' }), wide, 1, FULL_HD);
 	const stacked = await setIn(piece.show('#card', { group: 'stack' }), grouped, 1, FULL_HD);
@@ -903,13 +918,14 @@ test('a piece is carried onto the page only from the frame, lying flat there, wh
 		'piece.onto would lay the piece flat on the page while it leans or stands near the eye: bring it face-on and to no depth first'
 	);
 	await expect(async () => piece.onto('#other').begin(beginningIn(tilted, FULL_HD))).rejects.toThrow(notFlat);
+	await expect(async () => piece.onto('#other').begin(beginningIn(turnedOver, FULL_HD))).rejects.toThrow(notFlat);
 	await expect(async () => piece.onto('#other').begin(beginningIn(near, FULL_HD))).rejects.toThrow(notFlat);
 	await expect(async () => piece.onto('#other').begin(beginningIn(stacked, FULL_HD))).rejects.toThrow(
 		new FilmError('piece.onto would carry the piece out of its group onto the page: it goes with its group')
 	);
 	await expect(async () => piece.onto('#other').begin(beginningIn(underALeantWindow, FULL_HD))).rejects.toThrow(
 		new FilmError(
-			'piece.onto measures the piece on the page only while the window faces the frame front on: bring it face-on, window.lean({ tilt: 0, turn: 0 })'
+			'piece.onto measures the piece on the page only while the window faces the frame front on, upright: bring it so, window.lean({ tilt: 0, turn: 0, roll: 0, over: 0 })'
 		)
 	);
 });
@@ -920,7 +936,7 @@ test('a piece lying on the page leans with the window, flat on it: a tilt, a tur
 	const landed = await setIn(piece.onto('#other'), lifted, 1, FULL_HD);
 	await expect(async () => piece.lean({ turn: 30 }).begin(beginningIn(landed, FULL_HD))).rejects.toThrow(
 		new FilmError(
-			'piece.lean would tilt or turn the piece alone: it lies on the page, and leans as it does; it rolls in it'
+			'piece.lean would tilt, turn or turn over the piece alone: it lies on the page, and leans as it does; it rolls in it'
 		)
 	);
 	await expect(async () => piece.effects({ depth: 100 }).begin(beginningIn(landed, FULL_HD))).rejects.toThrow(
@@ -942,7 +958,7 @@ test('a piece lying on the page never slides: out toward a side, or pushed off b
 	);
 });
 
-test('what stands over a block of the page stands there only while the window faces the frame front on: leant, or turned half round, it is refused', async () => {
+test('what stands over a block of the page stands there only while the window faces the frame front on, upright: leant, turned half round, rolled or turned over, it is refused', async () => {
 	const lifted = await setIn(
 		piece.show(PAST_THE_SHOWN_EDGE),
 		openingScene(FULL_HD, LIVEREELS_LOOK, FOCAL_LENGTH),
@@ -952,10 +968,18 @@ test('what stands over a block of the page stands there only while the window fa
 	const magnified = await setIn(lens.show('#card'), lifted, 1, FULL_HD);
 	const leant = await setIn(lean({ turn: 20 }), magnified, 1, FULL_HD);
 	const turnedHalfRound = await setIn(lean({ turn: 180 }), magnified, 1, FULL_HD);
+	const rolled = await setIn(lean({ roll: 90 }), magnified, 1, FULL_HD);
+	const turnedOver = await setIn(lean({ over: 180 }), magnified, 1, FULL_HD);
 	const refusal = (move: string) =>
 		new FilmError(
-			`${move} stands over its source only while the window faces the frame front on: bring it face-on, window.lean({ tilt: 0, turn: 0 })`
+			`${move} stands over its source only while the window faces the frame front on, upright: bring it so, window.lean({ tilt: 0, turn: 0, roll: 0, over: 0 })`
 		);
+	await expect(async () => piece.show(PAST_THE_SHOWN_EDGE).begin(beginningIn(rolled, FULL_HD))).rejects.toThrow(
+		refusal('piece.show')
+	);
+	await expect(async () => lens.to('#card').begin(beginningIn(turnedOver, FULL_HD))).rejects.toThrow(
+		refusal('lens.to')
+	);
 	await expect(async () => piece.show(PAST_THE_SHOWN_EDGE).begin(beginningIn(leant, FULL_HD))).rejects.toThrow(
 		refusal('piece.show')
 	);
@@ -1092,6 +1116,21 @@ test("the screen showing the film's own page is refused while a lens stands, whi
 			"screen.shows shows the film's own page while a lens stands, which shows the filmed page under it: hide the lens first, with lens.hide()"
 		)
 	);
+});
+
+test("the window's back shows a page of the film's own, laid by the stage as the screen's are, standing as its mount says, until it shows none and the screen is seen through it; it shares a step with what the screen shows", async () => {
+	const backed = await setAt(
+		screenBehind(OWN_PAGE, { upright: 'round' }),
+		openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH),
+		1
+	);
+	const bare = await setAt(screenBehind('none'), backed, 1);
+	expect([
+		ownPagesOf(screenBehind(OWN_PAGE, { upright: 'over' })).length,
+		backed.screen.back,
+		bare.screen.back
+	]).toEqual([1, { kind: 'own', key: expect.any(String), upright: 'round' }, { kind: 'seen through' }]);
+	expect(() => play({ seconds: 1, moves: [screenShows(OWN_PAGE), screenBehind('none')] })).not.toThrow();
 });
 
 test('the screen coming up or going down keeps showing what it shows, and shares a step with a move that changes it and one that sweeps it', async () => {
@@ -1349,7 +1388,7 @@ test('an object leans by a move of its own while another carries it and its cont
 		object.content.lines.map((line) => line.lit),
 		play({ seconds: 1, moves }).moves
 	]).toEqual([
-		{ tilt: 10, turn: -10, roll: 0 },
+		{ ...FACE_ON, tilt: 10, turn: -10 },
 		boxToward(wordsPlaced(SMALL, 'left'), wordsPlaced(SMALL, 'right'), 0.5),
 		[0, 0.5, 0],
 		moves
@@ -2201,7 +2240,7 @@ test('the window moves to a place, lifted off the ground, and back over the whol
 	const backAsABox = await setAt(windowTo({ of: 'whole' }), windowed, 1);
 	expect([windowed, halfWay, back, backAsABox].map((scene) => cameraOf(scene, SMALL).view)).toEqual([
 		windowView(windowOn(SMALL, 'right')),
-		{ box: boxToward(windowOn(SMALL, 'right'), boxOf(SMALL.frame), 0.5), lift: 0.5, angle: { tilt: 0, turn: 0 } },
+		{ box: boxToward(windowOn(SMALL, 'right'), boxOf(SMALL.frame), 0.5), lift: 0.5, angle: FACE_ON },
 		wholeView(SMALL.frame),
 		wholeView(SMALL.frame)
 	]);
@@ -2529,7 +2568,7 @@ test("an object inside the page's window grows and rolls in the window's plane, 
 	expect([grown.angle.roll, grown.scale]).toEqual([15, 1.5]);
 	await expect(async () => code.lean({ turn: 10 }).begin(beginningOf(nested))).rejects.toThrow(
 		new FilmError(
-			'code.lean would tilt or turn the code alone: it stands inside the window, and leans as it does; it rolls in it'
+			'code.lean would tilt, turn or turn over the code alone: it stands inside the window, and leans as it does; it rolls in it'
 		)
 	);
 	await expect(async () => code.to(LOWER_RIGHT, { depth: 50 }).begin(beginningOf(nested))).rejects.toThrow(
@@ -2734,7 +2773,7 @@ test('a block is framed in a leant window as in a face-on one, the window leant 
 	const faceOn = cameraOf(await setAt(onto('#half-on'), windowed, 1), SMALL);
 	const leant = await setAt(lean({ tilt: 6, turn: -16 }), windowed, 1);
 	const angled = cameraOf(await setAt(onto('#half-on'), leant, 1), SMALL);
-	expect(angled).toEqual({ ...faceOn, view: { ...faceOn.view, angle: { tilt: 6, turn: -16 } } });
+	expect(angled).toEqual({ ...faceOn, view: { ...faceOn.view, angle: { ...FACE_ON, tilt: 6, turn: -16 } } });
 });
 
 test("a block is framed on a page leant over the whole frame as on a face-on one, kept off the screen's edge", async () => {
@@ -2750,8 +2789,8 @@ test('the window leans by a move of its own while another carries it, each its o
 	const halfCarried = await setAt(windowTo('right'), openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH), 0.5);
 	const leantAfter = await setAt(lean({ tilt: 6 }), halfCarried, 1);
 	expect([cameraOf(carried, SMALL).view, cameraOf(leantAfter, SMALL).view]).toEqual([
-		{ ...windowView(windowOn(SMALL, 'right')), angle: { tilt: 10, turn: -10 } },
-		{ box: boxToward(boxOf(SMALL.frame), windowOn(SMALL, 'right'), 0.5), lift: 0.5, angle: { tilt: 6, turn: 0 } }
+		{ ...windowView(windowOn(SMALL, 'right')), angle: { ...FACE_ON, tilt: 10, turn: -10 } },
+		{ box: boxToward(boxOf(SMALL.frame), windowOn(SMALL, 'right'), 0.5), lift: 0.5, angle: { ...FACE_ON, tilt: 6 } }
 	]);
 });
 

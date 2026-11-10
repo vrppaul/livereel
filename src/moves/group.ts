@@ -5,13 +5,14 @@
  * it, and put away with everything in it, which fades as it goes. A group shows nothing of its own, so it stands whole from the
  * start of the move that places it. Every move of it takes the group named `group`, or the one the film names `as`.
  */
+import { angleToward } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import { NONE, fractionOf } from '../domain/fraction.ts';
 import { BOX_SPACE, type Box, resizedAbout } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { A_PLACE, type Place, placesNamed, windowPlaced } from '../domain/place.ts';
 import { pathOf } from '../domain/path.ts';
-import { AS_PLACED, depthsNamed, orientationToward } from '../domain/stance.ts';
+import { AS_PLACED, depthsNamed } from '../domain/stance.ts';
 import {
 	type Beginning,
 	type Change,
@@ -37,9 +38,9 @@ import {
 	carriedOnPath,
 	carryingWritten,
 	depthAsked,
-	orientedFrom,
 	placesOnTheWay
 } from './object.ts';
+import { leantFrom } from './lean.ts';
 
 /**
  * Which group comes, the place it stands in, `at`, the whole frame where the film names none, and how it orders what
@@ -163,11 +164,11 @@ function aboutAPlace(beginning: Beginning, place: Place, group: Group): Box {
 	return resizedAbout(windowPlaced(beginning.format, place), group.box);
 }
 
-/** The group's orientation on its way from how it faces to the film's. */
+/** The group's angle on its way from how it faces to the film's. */
 function leaning(beginning: Beginning, name: GroupName, script: ObjectLeanScript): Change {
 	const group = groupFound(beginning.scene.groups, name, 'group.lean');
-	const to = orientedFrom(group.angle, script);
-	return writing(name, (progress): Leant => ({ angle: orientationToward(group.angle, to, progress) }));
+	const to = leantFrom(group.angle, script);
+	return writing(name, (progress): Leant => ({ angle: angleToward(group.angle, to, progress) }));
 }
 
 /** The group going, everything in it fading with it; once gone, none, with all of it. */

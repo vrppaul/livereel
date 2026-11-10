@@ -51,18 +51,30 @@ import {
 } from '../direction/move.ts';
 import { ownPageOf } from '../direction/page.ts';
 import {
+	AN_UPRIGHT,
 	A_SLANT,
+	type Back,
 	SCREEN_DOWN,
 	SCREEN_UP,
+	SEEN_THROUGH,
 	type Screen,
 	type Shows,
 	type SweepShape,
-	THE_FILMED_PAGE
+	THE_FILMED_PAGE,
+	type Upright
 } from '../props/screen.ts';
 import { withProp } from '../scene.ts';
 
 /** What a film names the screen to show: the filmed page, `'filmed'`, or a page of its own, its HTML whole. */
 export type ScreenPage = typeof FILMED | { readonly html: string };
+
+/** What a film names the window's back to show: a page of its own, its HTML whole, or none, `'none'`. */
+export type BackPage = typeof NONE_ON_THE_BACK | { readonly html: string };
+
+/** How a page on the window's back is mounted, `upright` as `AN_UPRIGHT` says, and the moment of a play it comes. */
+export interface BackScript extends MomentScript {
+	readonly upright: Upright;
+}
 
 /**
  * The crest of a sweep's light as a film names it: its colour at its `start` and its `end`, a band's ends, the start
@@ -103,10 +115,20 @@ const A_SCREEN_PAGE: Kind<ScreenPage> = new NameOrForm(
 	new OfForm<{ readonly html: string }>({ html: needed(AN_HTML_PAGE) }, "a page of the film's own, { html }"),
 	`the filmed page, "filmed", or a page of the film's own, { html }`
 );
-// The screen's values a move that raises or lowers it sets, one that changes what it shows, and a sweep
+// No page on the window's back, as a film names it, the screen seen through it
+const NONE_ON_THE_BACK = 'none';
+const A_BACK_PAGE: Kind<BackPage> = new NameOrForm(
+	new Literal(NONE_ON_THE_BACK),
+	new OfForm<{ readonly html: string }>({ html: needed(AN_HTML_PAGE) }, "a page of the film's own, { html }"),
+	`a page of the film's own, { html }, or none, "none"`
+);
+const BACK_FORM: Form<BackScript> = { upright: needed(AN_UPRIGHT), ...MOMENT_FORM };
+// The screen's values a move that raises or lowers it sets, one that changes what it shows, a sweep, and one that
+// changes what the window's back shows
 const HOW_FAR_UP = ['shown'] as const satisfies readonly (keyof Screen)[];
 const SHOWING = ['shows'] as const satisfies readonly (keyof Screen)[];
 const SWEEPING = ['sweep'] as const satisfies readonly (keyof Screen)[];
+const BACKING = ['back'] as const satisfies readonly (keyof Screen)[];
 const SWEEP_FORM: Form<SweepScript> = {
 	round: A_TARGET,
 	from: A_FRAME_SIDE,
@@ -169,6 +191,35 @@ export function shows(page: ScreenPage, script: MomentScript = {}): Move {
 		ownPages: [own],
 		begin: (beginning) => showingOwn(beginning, { kind: 'own', key: own.key })
 	};
+}
+
+/**
+ * The window's back showing a page of the film's own, `{ html }`, laid out at the screen's size, mounted `upright` as
+ * the film names it, or none, `'none'`, the screen seen through it: at once, or at the moment of a play
+ * `within: { start }` names.
+ */
+export function behind(page: typeof NONE_ON_THE_BACK, script?: MomentScript): Move;
+export function behind(page: { readonly html: string }, script: BackScript): Move;
+export function behind(page: BackPage, script: MomentScript | BackScript = {}): Move {
+	assertKind(page, A_BACK_PAGE, "screen.behind's page");
+	if (page === NONE_ON_THE_BACK) {
+		assertWritten(script, MOMENT_FORM, 'screen.behind');
+		return { part: 'screen', valueNames: BACKING, timing: momentTimingOf(script), begin: () => backing(SEEN_THROUGH) };
+	}
+	assertWritten(script, BACK_FORM, 'screen.behind');
+	const own = ownPageOf(page.html);
+	return {
+		part: 'screen',
+		valueNames: BACKING,
+		timing: momentTimingOf(script),
+		ownPages: [own],
+		begin: () => backing({ kind: 'own', key: own.key, upright: script.upright })
+	};
+}
+
+/** The window's back showing a page, or the screen seen through it, whatever else the screen stands as. */
+function backing(shown: Back): Change {
+	return (scene) => withProp(scene, 'screen', { ...scene.screen, back: shown });
 }
 
 /**

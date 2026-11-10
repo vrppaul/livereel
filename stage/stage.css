@@ -139,8 +139,11 @@ body {
 	opacity: calc(var(--lift) * var(--screen-shown));
 }
 
-/* The camera moves the screen, laid out at its own size, about its top left corner: the point looked at to the view's middle, brought close, its zoom counted as on a frame the stage's look was made on */
+/* The camera moves the screen, laid out at its own size, about its top left corner: the point looked at to the view's middle, brought close, its zoom counted as on a frame the stage's look was made on; and turned over about the view's middle where the eye sees a page on the window's back, as it is mounted, so seen through the window's back it stands upright, framed as the front is: top to bottom for one upright once the window is turned over round its width, side to side for one upright once it is turned round its upright */
 .camera {
+	--mirrored-across: 1;
+	--mirrored-down: 1;
+
 	position: absolute;
 	left: 0;
 	top: 0;
@@ -148,7 +151,16 @@ body {
 	height: calc(var(--screen-height) * 1px);
 	transform-origin: 0 0;
 	transform: translate(calc(var(--view-width) * 1px / 2), calc(var(--view-height) * 1px / 2))
-		scale(calc(var(--zoom) * var(--frame-scale))) translate(calc(var(--focus-x) * -1px), calc(var(--focus-y) * -1px));
+		scale(var(--mirrored-across), var(--mirrored-down)) scale(calc(var(--zoom) * var(--frame-scale)))
+		translate(calc(var(--focus-x) * -1px), calc(var(--focus-y) * -1px));
+}
+
+[data-back-upright='over'] .camera {
+	--mirrored-down: -1;
+}
+
+[data-back-upright='round'] .camera {
+	--mirrored-across: -1;
 }
 
 /* The screen the page is shown on: a pane lifted off the ground, as far up as it has come. It is drawn under the camera's scale, so a pane's lengths are taken back by the camera's zoom */
@@ -1467,6 +1479,11 @@ body {
 .page[data-own-page]:not([data-shown]),
 [data-shows-own] .page:not([data-own-page]),
 [data-shows-own] .holes {
+	visibility: hidden;
+}
+
+/* While the eye sees a page on the window's back, all in the window's view but that page stands unseen, as all else lies on the front: whatever stands beside the camera, beside the screen in it, or on the screen over the page */
+[data-back-upright] :is(.view > :not(.camera), .camera > :not(.screen), .screen > :not(.page[data-shown])) {
 	visibility: hidden;
 }
 

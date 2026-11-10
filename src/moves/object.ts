@@ -33,7 +33,8 @@
  * the window faces the frame front on, as only then does a box of the frame stand on the screen as a box. It never
  * slides from there, as the page's plane may stand leant from the frame's: it goes in its place.
  */
-import { boxOnTheScreen, standingAt, viewOf } from '../domain/camera.ts';
+import { angleToward, angledAs, boxOnTheScreen, standingAt, viewOf } from '../domain/camera.ts';
+import { facesTheFrame, showsItsFront } from '../domain/matrix.ts';
 import { FilmError } from '../domain/errors.ts';
 import { eyeAtRest } from '../domain/eye.ts';
 import type { Format } from '../domain/format.ts';
@@ -65,14 +66,7 @@ import {
 	namesSetBy,
 	needed
 } from '../domain/handed.ts';
-import {
-	AS_PLACED,
-	A_SCALE,
-	type Orientation,
-	depthsNamed,
-	faceOnNearest,
-	orientationToward
-} from '../domain/stance.ts';
+import { AS_PLACED, A_SCALE, depthsNamed, faceOnNearest } from '../domain/stance.ts';
 import {
 	A_PLACE,
 	type Place,
@@ -206,10 +200,8 @@ export interface HideScript extends TimingScript, NamedScript, LeaveScript {
 /** Which object a move takes to a box the move works out: back where its box places it, or to a block of the page. */
 export interface TakenScript extends TimingScript, NamedScript {}
 
-/** Which object leans, and how: as the window leans, and rolled clockwise in its own plane by `roll`, in degrees. */
-export interface ObjectLeanScript extends LeanScript, NamedScript {
-	readonly roll?: number;
-}
+/** Which object leans, and how: as the window leans. */
+export interface ObjectLeanScript extends LeanScript, NamedScript {}
 
 /**
  * Which object stands out, and how: a `ring` along its edge, a `glow` round it and a `shadow` under it, each from 0
@@ -279,7 +271,7 @@ export const TO_FORM: Form<ToScript> = {
 	...TIMING_FORM
 };
 const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...LEAVE_FORM, ...TIMING_FORM, ...NAMED_FORM };
-export const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { roll: A_NUMBER, ...LEAN_FORM, ...NAMED_FORM };
+export const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { ...LEAN_FORM, ...NAMED_FORM };
 const TAKEN_FORM: Form<TakenScript> = { ...NAMED_FORM, ...TIMING_FORM };
 const EFFECTS_FORM: Form<EffectsScript> = {
 	ring: A_SHARE,
@@ -498,8 +490,8 @@ export function objectHide(kind: ObjectKind, move: string, script: HideScript): 
 }
 
 /**
- * An object of a kind leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled in its own
- * plane by `roll`.
+ * An object of a kind leant back from its top edge by `tilt`, swung about its middle by `turn`, rolled in its own plane
+ * by `roll` and turned over round its own width by `over`.
  */
 export function objectLean(kind: ObjectKind, move: string, script: ObjectLeanScript): Move {
 	assertWritten(script, LEAN_OBJECT_FORM, move);
@@ -665,12 +657,12 @@ function onThePage(beginning: Beginning, object: FrameObject, name: ObjectName, 
 }
 
 /**
- * Whether an object lies flat on its plane: facing the frame by whole turns or none, at no depth of its own; it may be
- * grown, or rolled in its plane.
+ * Whether an object lies flat on its plane: facing the frame with its front, at no depth of its own, as its matrix
+ * says, so every value of its angle counts; it may be grown, or rolled in its plane.
  */
 function liesFlat(object: FrameObject): boolean {
-	const faceOn = faceOnNearest(object.angle);
-	return object.angle.tilt === faceOn.tilt && object.angle.turn === faceOn.turn && object.depth === AS_PLACED.depth;
+	const angled = angledAs(object.angle);
+	return facesTheFrame(angled) && showsItsFront(angled) && object.depth === AS_PLACED.depth;
 }
 
 /**
@@ -953,19 +945,21 @@ function refuseNearingInside(object: FrameObject, depth: number, name: ObjectNam
 }
 
 /**
- * The object's orientation on its way from how it faces to the film's. Inside the page's window, or on the page in it,
- * it leans as the window does, and a lean of its own would only lie flat on the window's, so a tilt or a turn is
- * refused there: it rolls.
+ * The object's angle on its way from how it faces to the film's. Inside the page's window, or on the page in it, it
+ * leans as the window does, and a lean of its own would only lie flat on the window's, so a tilt, a turn or a turn
+ * over is refused there: it rolls.
  */
 function leaning(beginning: Beginning, name: ObjectName, script: ObjectLeanScript, move: string): Change {
 	const object = movable(beginning, name, move);
 	const from = object.angle;
-	const to = orientedFrom(from, script);
+	const to = leantFrom(from, script);
 	const flat = flatOnTheWindowSaid(object.inside);
-	if (flat !== null && (to.tilt !== from.tilt || to.turn !== from.turn)) {
-		throw new FilmError(`${move} would tilt or turn the ${name} alone: ${flat}, and leans as it does; it rolls in it`);
+	if (flat !== null && (to.tilt !== from.tilt || to.turn !== from.turn || to.over !== from.over)) {
+		throw new FilmError(
+			`${move} would tilt, turn or turn over the ${name} alone: ${flat}, and leans as it does; it rolls in it`
+		);
 	}
-	return writing(name, (progress): Leant => ({ angle: orientationToward(from, to, progress) }));
+	return writing(name, (progress): Leant => ({ angle: angleToward(from, to, progress) }));
 }
 
 /**
@@ -983,14 +977,6 @@ function flatOnTheWindowSaid(holder: Holder): string | null {
 		case 'group':
 			return null;
 	}
-}
-
-/**
- * The orientation a lean goes to from how an object, or a group, faces: the film's, each value it leaves out as it
- * stood.
- */
-export function orientedFrom(standing: Orientation, script: ObjectLeanScript): Orientation {
-	return { ...leantFrom(standing, script), roll: script.roll ?? standing.roll };
 }
 
 /**
@@ -1020,7 +1006,7 @@ function goingBack(
 	const faceOn = faceOnNearest(object.angle);
 	return writing(name, (progress): Partial<Carried> & Leant => ({
 		...carriedAlong(object, to, CARRIED, progress),
-		angle: orientationToward(object.angle, faceOn, progress)
+		angle: angleToward(object.angle, faceOn, progress)
 	}));
 }
 
