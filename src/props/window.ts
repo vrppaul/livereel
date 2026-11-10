@@ -1,15 +1,16 @@
 /**
- * The page's window as a scene holds it: where it stands and how it leans, as the camera reads it (`Placing` in
+ * The page's window as a scene holds it: where it stands and how it stands, as the camera reads it (`Placing` in
  * `src/domain/camera.ts`), and how the page in it is shaded — dimmed, faded into the film's ground and blurred — so
  * what stands over it, a piece of the page lifted off, stands clear of it. A film moves the shade as it moves places, by
  * one move that sets the values it names (`window.shade` in `src/moves/window.ts`), the dim and the fade as strong as a
  * share from none to whole, the blur in pixels of a frame 1080 high; the window's edge and shadow keep as they stand.
  *
- * The stage draws the window by the matrix the engine sees its points through (`leaningOnTheFrame`), as it draws an
- * object (`src/domain/stance.ts`): flat while it faces the frame, in 3D only where it leans, so its projection is
- * written once and a face-on window costs the graphics card no 3D layer in an exposure. The window stands in the world,
- * so the eye's focus blurs it, with all that lies in it, by where it stands (`src/domain/focus.ts`): the flat stage as
- * one, as soft as its point nearest the focus, and the room each point of it by how far that stands from the focus.
+ * The window stands as an object does, by a stance (`src/domain/stance.ts`), and the stage draws it by the matrix the
+ * engine sees its points through (`leaningOnTheFrame`), as it draws an object: flat while it faces the frame, in 3D
+ * only where it leans, so its projection is written once and a face-on window costs the graphics card no 3D layer in
+ * an exposure. The window stands in the world, so the eye's focus blurs it, with all that lies in it, by where it
+ * stands (`src/domain/focus.ts`): the flat stage as one, as soft as its point nearest the focus, and the room each
+ * point of it by how far that stands from the focus.
  *
  * In a room the window may have a body, as the look has it: a slab of metal round the page, as a tablet is made, its
  * sides square to the page and its corners as round as the page's grown by its rim, lit by the world's light
@@ -23,7 +24,6 @@ import {
 	type Cut,
 	type Placing,
 	type View,
-	angledAs,
 	inTheEyesSpaceAbout,
 	leaningOnTheFrame,
 	pictureReachOf
@@ -44,7 +44,7 @@ import {
 import { type Fraction, NONE } from '../domain/fraction.ts';
 import { type Box, type Size, boxAround, frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
 import type { Look } from './look.ts';
-import { type Transform, transformOf } from '../domain/stance.ts';
+import { type Transform, stanceMatrix, transformOf } from '../domain/stance.ts';
 import {
 	MOVES_AS_A_SHARE,
 	MOVES_AS_PIXELS,
@@ -64,13 +64,13 @@ export interface PageWindow extends Placing, Shade {}
 
 /**
  * The window as the stage draws it: its box on the frame, how far the camera's picture reaches on its plane, past the
- * box where the screen stands past it, how far it stands off the ground, how it is drawn about its box's middle, leant
- * as it is and seen from the eye, and the matrix that carries it from that middle into the eye's own space, in three's
- * axes, by whose surface the room parts a thing in the world, and whether the eye sees the page's side of that
- * surface or its back; how round the corners of the page the camera's cut shows are, in the frame's pixels, which the
- * stylesheet cuts the page by and the body stands round; its shade, none where the page is shaded none, and how soft
- * the eye's focus draws it and all in it, none where sharp: as one, on the frame in pixels of a frame 1080 high, for the
- * flat stage, and at each point of the frame, for the room; and its body, none where it has none.
+ * box where the screen stands past it, how far it stands off the ground, how it is drawn about its box's middle,
+ * standing as it stands and seen from the eye, and the matrix that carries it from that middle into the eye's own
+ * space, in three's axes, by whose surface the room parts a thing in the world, and whether the eye sees the page's
+ * side of that surface or its back; how round the corners of the page the camera's cut shows are, in the frame's
+ * pixels, which the stylesheet cuts the page by and the body stands round; its shade, none where the page is shaded
+ * none, and how soft the eye's focus draws it and all in it, none where sharp: as one, on the frame in pixels of a frame
+ * 1080 high, for the flat stage, and at each point of the frame, for the room; and its body, none where it has none.
  */
 export interface DrawnWindow {
 	readonly box: Box;
@@ -158,9 +158,10 @@ const HALVES = 2;
 export function drawnWindow(view: View, cut: Cut, window: Shade, around: AroundTheWindow): DrawnWindow {
 	const { eye, frame, sharpness } = around;
 	const placing = leaningOnTheFrame(view, eye, frame);
-	const stood = chained([turnOf(eye), angledAs(view.angle)]);
+	const own = stanceMatrix(view);
+	const stood = chained([turnOf(eye), own]);
 	const reach = pictureReachOf(view.box, cut);
-	const intoTheEyesSpace = chained([inTheEyesSpaceAbout(view.box, eye, frame), angledAs(view.angle)]);
+	const intoTheEyesSpace = chained([inTheEyesSpaceAbout(view.box, eye, frame), own]);
 	const roundest = Math.min(reach.width, reach.height) / HALVES;
 	return {
 		box: view.box,

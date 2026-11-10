@@ -33,7 +33,7 @@
  * the window faces the frame front on, as only then does a box of the frame stand on the screen as a box. It never
  * slides from there, as the page's plane may stand leant from the frame's: it goes in its place.
  */
-import { angleToward, angledAs, boxOnTheScreen, standingAt, viewOf } from '../domain/camera.ts';
+import { boxOnTheScreen, standingAt, viewOf } from '../domain/camera.ts';
 import { facesTheFrame, showsItsFront } from '../domain/matrix.ts';
 import { FilmError } from '../domain/errors.ts';
 import { eyeAtRest } from '../domain/eye.ts';
@@ -66,7 +66,7 @@ import {
 	namesSetBy,
 	needed
 } from '../domain/handed.ts';
-import { AS_PLACED, A_SCALE, depthsNamed, faceOnNearest } from '../domain/stance.ts';
+import { AS_PLACED, A_SCALE, angleToward, angledAs, depthsNamed, faceOnNearest } from '../domain/stance.ts';
 import {
 	A_PLACE,
 	type Place,

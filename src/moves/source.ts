@@ -61,7 +61,7 @@ export async function sourceOf(
  */
 export function cameraFrontOn(beginning: Beginning, doing: string): Camera {
 	const camera = cameraOf(beginning.scene, beginning.format);
-	if (!isFrontOn(camera.view.angle)) {
+	if (!isFrontOn(camera.view)) {
 		throw new FilmError(
 			`${doing} only while the window faces the frame front on, upright: bring it so, window.lean({ tilt: 0, turn: 0, roll: 0, over: 0 })`
 		);

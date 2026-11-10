@@ -1,15 +1,7 @@
 import { CubicBezierCurve3, Vector3 } from 'three';
 import { expect, test } from 'vitest';
-import { AS_PLACED } from '../../src/domain/stance.ts';
-import {
-	type Camera,
-	FACE_ON,
-	onTheFrame,
-	placedIn,
-	underTheFrame,
-	wholeView,
-	windowView
-} from '../../src/domain/camera.ts';
+import { AS_PLACED, FACE_ON } from '../../src/domain/stance.ts';
+import { type Camera, onTheFrame, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
 import { type EyePlace, type Focus, eyeAtRest } from '../../src/domain/eye.ts';
 import * as eye from '../../src/moves/eye.ts';
 import { linear } from '../../src/domain/curves.ts';
@@ -2240,7 +2232,7 @@ test('the window moves to a place, lifted off the ground, and back over the whol
 	const backAsABox = await setAt(windowTo({ of: 'whole' }), windowed, 1);
 	expect([windowed, halfWay, back, backAsABox].map((scene) => cameraOf(scene, SMALL).view)).toEqual([
 		windowView(windowOn(SMALL, 'right')),
-		{ box: boxToward(windowOn(SMALL, 'right'), boxOf(SMALL.frame), 0.5), lift: 0.5, angle: FACE_ON },
+		{ ...AS_PLACED, box: boxToward(windowOn(SMALL, 'right'), boxOf(SMALL.frame), 0.5), lift: 0.5 },
 		wholeView(SMALL.frame),
 		wholeView(SMALL.frame)
 	]);
@@ -2790,7 +2782,12 @@ test('the window leans by a move of its own while another carries it, each its o
 	const leantAfter = await setAt(lean({ tilt: 6 }), halfCarried, 1);
 	expect([cameraOf(carried, SMALL).view, cameraOf(leantAfter, SMALL).view]).toEqual([
 		{ ...windowView(windowOn(SMALL, 'right')), angle: { ...FACE_ON, tilt: 10, turn: -10 } },
-		{ box: boxToward(boxOf(SMALL.frame), windowOn(SMALL, 'right'), 0.5), lift: 0.5, angle: { ...FACE_ON, tilt: 6 } }
+		{
+			...AS_PLACED,
+			box: boxToward(boxOf(SMALL.frame), windowOn(SMALL, 'right'), 0.5),
+			lift: 0.5,
+			angle: { ...FACE_ON, tilt: 6 }
+		}
 	]);
 });
 

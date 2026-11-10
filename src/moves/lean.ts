@@ -3,7 +3,7 @@
  * about its middle by `turn`, rolled in its plane by `roll` and turned over round its own width by `over`, written once
  * for both.
  */
-import type { Angle } from '../domain/camera.ts';
+import type { Angle } from '../domain/stance.ts';
 import { A_NUMBER, type Form } from '../domain/handed.ts';
 import { TIMING_FORM, type TimingScript } from '../direction/move.ts';
 

@@ -1,10 +1,8 @@
 import { expect, test } from 'vitest';
 import {
-	type Angle,
 	type Camera,
 	type Cut,
 	type Pose,
-	angledAs,
 	covering,
 	drawnCamera,
 	frameShift,
@@ -24,6 +22,7 @@ import { type Eye, eyeAtRest } from '../../src/domain/eye.ts';
 import { type Box, type Format, type Point, type Size, distanceBetween } from '../../src/domain/geometry.ts';
 import type { Sharpness } from '../../src/domain/focus.ts';
 import { type Spot, carried } from '../../src/domain/matrix.ts';
+import { type Angle, angledAs } from '../../src/domain/stance.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { UNSHADED, drawnWindow } from '../../src/props/window.ts';
 import { FOCAL_LENGTH } from './fakes.ts';

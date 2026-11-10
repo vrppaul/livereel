@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
-import { type Angle, type Cut, FACE_ON, type View, leaningOnTheFrame, windowView } from '../../src/domain/camera.ts';
+import { type Cut, type View, leaningOnTheFrame, windowView } from '../../src/domain/camera.ts';
+import { type Angle, FACE_ON } from '../../src/domain/stance.ts';
 import { type Eye, eyeAtRest } from '../../src/domain/eye.ts';
 import type { Sharpness } from '../../src/domain/focus.ts';
 import type { Box, Size } from '../../src/domain/geometry.ts';

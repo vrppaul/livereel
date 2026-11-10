@@ -24,7 +24,8 @@ import { fractionOf } from '../domain/fraction.ts';
 import { A_FRAME_SIDE, type Box, type FrameSide, liesOutside, liesWithin } from '../domain/geometry.ts';
 import { A_PIXELS, A_SHARE, type Form, assertKind, assertWritten, namesSetBy, needed } from '../domain/handed.ts';
 import { A_PLACE, ONE_FRAME, type Place, pastTheEdge, placesNamed, sideBeyond, windowPlaced } from '../domain/place.ts';
-import { namedToward } from '../domain/toward.ts';
+import { angleToward } from '../domain/stance.ts';
+import { namedToward, shareToward } from '../domain/toward.ts';
 import { besideTheWindow } from '../props/note.ts';
 import { type PageWindow, SHADE_NAMES, SHADING, type Shade } from '../props/window.ts';
 import { trackOf } from '../domain/track.ts';
@@ -176,15 +177,15 @@ function placed(beginning: Beginning, place: Place): Standing {
 function carried(from: Standing, to: Standing): Change {
 	return writing((progress): Carried => ({
 		box: trackOf(from.box, to.box, progress),
-		lift: trackOf(from.lift, to.lift, progress)
+		lift: shareToward(from.lift, to.lift, progress)
 	}));
 }
 
 /** The window's angle on its way from how it leans to the film's, written into the window as it stands. */
 function leaning(beginning: Beginning, script: LeanScript): Change {
-	const from = viewOf(beginning.scene.window).angle;
+	const from = beginning.scene.window.angle;
 	const to = leantFrom(from, script);
-	return writing((progress): Leant => ({ angle: trackOf(from, to, progress) }));
+	return writing((progress): Leant => ({ angle: angleToward(from, to, progress) }));
 }
 
 /** The page's shade on its way from how it stands to the film's, the values it names written into the window. */

@@ -2,9 +2,8 @@
  * How something stands about its box's middle — how large, how far out toward the eye, which way it faces — and how the
  * stage draws it so: one matrix (`src/domain/matrix.ts`), which the stage draws with and the engine reads where the
  * thing stands on the frame, so a film turns, rolls, grows or brings near anything that stands so by its values alone,
- * with no move of its own for each. An object stands so (`src/props/object.ts`); the window, which leans and never
- * grows, has an angle alone, of the same four values (`Angle` in `src/domain/camera.ts`), and is drawn by the matrix
- * of its lean as flat or leant alike (`src/props/window.ts`).
+ * with no move of its own for each. An object stands so (`src/props/object.ts`), and the page's window
+ * (`src/props/window.ts`), drawn by the one matrix as flat or leant alike.
  *
  * The stage is handed a flat 2D matrix where the thing faces the frame, at any size, depth or roll, and a 3D one only
  * where it leans: a 3D transform, of no angle too, costs the graphics card a layer in every exposure of a frame, and a
@@ -13,7 +12,6 @@
  * the matrix, so the stage draws the back of one that has turned away, never what it shows mirrored; the window turned
  * half round shows the page mirrored, or a page of the film's own on its back (`Back` in `src/props/screen.ts`).
  */
-import { type Angle, FACE_ON, angledAs } from './camera.ts';
 import { FilmError } from './errors.ts';
 import { A_NUMBER, type Kind, Plain } from './handed.ts';
 import {
@@ -22,14 +20,30 @@ import {
 	chained,
 	facesTheFrame,
 	flatOf,
+	rotationX,
+	rotationY,
+	rotationZ,
 	scaling,
 	showsItsFront,
 	translation
 } from './matrix.ts';
+import { between } from './toward.ts';
+
+/**
+ * How something faces, in degrees, 0 face-on: leant back from its top edge, `tilt`, swung about its middle, `turn`,
+ * rolled clockwise in its own plane, `roll`, and turned over round its own width as it then stands, top away from the
+ * eye, `over`, as a slab turned over in the hand.
+ */
+export interface Angle {
+	readonly tilt: number;
+	readonly turn: number;
+	readonly roll: number;
+	readonly over: number;
+}
 
 /**
  * How something stands about its box's middle: `scale` times as large, `depth` out toward the eye in the frame's
- * pixels, facing as `angle`, as the window faces.
+ * pixels, facing as `angle`.
  */
 export interface Stance {
 	readonly scale: number;
@@ -72,6 +86,9 @@ const DEGREES_IN_A_TURN = 360;
 const BEHIND_THE_EYE = 0;
 // A refusal says how far the eye stands from the frame to a tenth of a pixel: 2540.5 at 24°
 const DIGITS_OF_A_DEPTH = 1;
+
+/** How something faces until a move leans it: face-on and upright. */
+export const FACE_ON: Angle = { tilt: 0, turn: 0, roll: 0, over: 0 };
 
 /** How something stands until a move changes it: as large as its box, on its plane, face-on and upright. */
 export const AS_PLACED: Stance = { scale: AS_LARGE, depth: ON_ITS_PLANE, angle: FACE_ON };
@@ -116,6 +133,42 @@ export function stanceMatrix(stance: Stance): Matrix {
 		angledAs(stance.angle),
 		scaling(stance.scale)
 	]);
+}
+
+/**
+ * The matrix that takes a spot where a stance carried it back to where it stood about its box's middle: brought back
+ * from its depth, turned back from its angle, then shrunk back from its scale, `stanceMatrix` undone.
+ */
+export function stanceMatrixBack(stance: Stance): Matrix {
+	return chained([
+		scaling(AS_LARGE / stance.scale),
+		angledBack(stance.angle),
+		translation({ across: UNMOVED, down: UNMOVED, out: -stance.depth })
+	]);
+}
+
+/**
+ * The matrix that carries a spot of what faces as an angle, on its own plane, to that angle: turned over round its
+ * own width, rolled in its plane, swung about its middle by its turn, then leant back by its tilt, as CSS's
+ * `rotateX() rotateY() rotateZ() rotateX()` would; so it turns over round its width as it stands rolled and swung.
+ */
+export function angledAs(angle: Angle): Matrix {
+	return chained([rotationX(angle.tilt), rotationY(angle.turn), rotationZ(angle.roll), rotationX(angle.over)]);
+}
+
+/** The matrix that takes a spot of the room back from an angle to the plane's own: `angledAs` undone. */
+export function angledBack(angle: Angle): Matrix {
+	return chained([rotationX(-angle.over), rotationZ(-angle.roll), rotationY(-angle.turn), rotationX(-angle.tilt)]);
+}
+
+/** An angle `progress` of the way to another. */
+export function angleToward(start: Angle, end: Angle, progress: number): Angle {
+	return {
+		tilt: between(start.tilt, end.tilt, progress),
+		turn: between(start.turn, end.turn, progress),
+		roll: between(start.roll, end.roll, progress),
+		over: between(start.over, end.over, progress)
+	};
 }
 
 /**

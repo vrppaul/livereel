@@ -6,20 +6,20 @@
  * film's ground. The window moves apart from the camera, so the camera holds what it aims at — a pose, or a block
  * framed with air round it — and comes to it in whatever window stands as each frame is drawn: a block it frames
  * stays framed as the window travels or grows, in the part of the window on the frame where it runs off the frame's
- * edge. The window leans, not the camera: its angle is its own, the screen in it face-on to it, so a window travels
- * and leans by moves of their own, and the camera frames a block alike at any angle. In a window the camera comes as
- * close as it takes for the screen to fill it, so the window shows part of the page and no ground, and moves as
- * little as it takes to keep it so; in the whole frame it moves as little as it takes to show no edge of the screen
- * face-on, along a side the screen is too short to fill at that zoom the screen standing in the frame's middle, as much
- * ground showing on either side of it. It stands so leant or not, so a lean never moves what it frames; a view leant
- * far over the whole frame may show ground at its far corners. What the camera shows where is worked out as the stage
- * draws it (`.camera` in `stage/stage.css`, and the view by the matrix worked out here, `leaningOnTheFrame`): the
- * screen carried by its focus to the view's middle and brought close, the view swung and leant back about its middle,
- * and seen from the eye before the frame's middle, a nearer point larger.
+ * edge. The window leans, not the camera: how it stands is its own (`src/domain/stance.ts`), the screen in it face-on
+ * to it, so a window travels and leans by moves of their own, and the camera frames a block alike at any angle. In a
+ * window the camera comes as close as it takes for the screen to fill it, so the window shows part of the page and no
+ * ground, and moves as little as it takes to keep it so; in the whole frame it moves as little as it takes to show no
+ * edge of the screen face-on, along a side the screen is too short to fill at that zoom the screen standing in the
+ * frame's middle, as much ground showing on either side of it. It stands so leant or not, so a lean never moves what
+ * it frames; a view leant far over the whole frame may show ground at its far corners. What the camera shows where is
+ * worked out as the stage draws it (`.camera` in `stage/stage.css`, and the view by the matrix worked out here,
+ * `leaningOnTheFrame`): the screen carried by its focus to the view's middle and brought close, the view standing
+ * about its middle as it stands, and seen from the eye before the frame's middle, a nearer point larger.
  */
 import { type Eye, type Viewpoint, eyeAtRest, inTheEyesSpace, isAtRest, seenByTheEye, sightOf } from './eye.ts';
 import type { Format } from './format.ts';
-import { type Fraction, NONE, WHOLE, fractionOf } from './fraction.ts';
+import { type Fraction, NONE, WHOLE } from './fraction.ts';
 import {
 	type Box,
 	CORNER_SHARES,
@@ -52,28 +52,14 @@ import {
 	facesTheFrame,
 	keepsItsAcross,
 	movedAlong,
-	rotationX,
-	rotationY,
-	rotationZ,
 	scaledBy,
 	showsItsFront,
 	translation,
 	wayBetween
 } from './matrix.ts';
+import { AS_PLACED, type Stance, angledAs, angledBack, stanceMatrix, stanceMatrixBack } from './stance.ts';
 import { between } from './toward.ts';
 import { ARRIVED, type Track, alongTrack, arrivedAt } from './track.ts';
-
-/**
- * How the window, or anything on the frame, faces, in degrees, 0 face-on: leant back from its top edge, `tilt`, swung
- * about its middle, `turn`, rolled clockwise in its own plane, `roll`, and turned over round its own width as it then
- * stands, top away from the eye, `over`, as a slab turned over in the hand.
- */
-export interface Angle {
-	readonly tilt: number;
-	readonly turn: number;
-	readonly roll: number;
-	readonly over: number;
-}
 
 /**
  * The point of the screen at the view's middle, and how close. `zoom` is the frame's pixels a page's pixel takes on a
@@ -89,16 +75,11 @@ export interface Pose {
 /**
  * Where on the frame the camera's picture shows, in the frame's pixels; how far it stands off the film's ground: at 0
  * it is the frame itself, edge to edge, at 1 a window, its corners rounded, its edge and shadow on the ground; and how
- * it leans, swung and leant back about its middle.
+ * it stands about its middle (`src/domain/stance.ts`).
  */
-export interface View extends Leaning {
-	readonly lift: Fraction;
-}
-
-/** What leans on the frame as the window does: its box, in the frame's pixels, and how it leans about its middle. */
-export interface Leaning {
+export interface View extends Stance {
 	readonly box: Box;
-	readonly angle: Angle;
+	readonly lift: Fraction;
 }
 
 /**
@@ -131,14 +112,13 @@ export interface Aiming {
 }
 
 /**
- * The window as a scene holds it: its box, its lift and its angle, each on its own way, so a move that carries the
- * window and one that leans it share a step, each as far along as its own share. What comes up beside the window is
- * placed beside where its box goes.
+ * The window as a scene holds it, all the camera reads of it: its box on its way, as the camera keeps what it frames in
+ * the part of the window on the frame as the window goes, and what comes up beside the window is placed beside where it
+ * goes; and how far it stands off the ground and how it stands, as far along as the moves that set them have come.
  */
-export interface Placing {
+export interface Placing extends Stance {
 	readonly box: Track<Box>;
-	readonly lift: Track<number>;
-	readonly angle: Track<Angle>;
+	readonly lift: Fraction;
 }
 
 /**
@@ -205,21 +185,19 @@ const NO_ZOOM = 0;
 // How far a view stands off the ground: the frame itself, or a window
 const FLAT: Fraction = NONE;
 const LIFTED: Fraction = WHOLE;
-// A view, or anything on the frame, as it stands until a move leans it
-export const FACE_ON: Angle = { tilt: 0, turn: 0, roll: 0, over: 0 };
 // The whole of a view, in shares of it
 const WHOLE_SHARE: Box = { left: 0, top: 0, width: 1, height: 1 };
 // A move the other way: so many times as far back
 const BACK = -1;
 
-/** The whole frame as the camera's view, edge to edge, face-on. */
+/** The whole frame as the camera's view, edge to edge, standing as placed. */
 export function wholeView(frame: Size): View {
-	return { box: boxOf(frame), lift: FLAT, angle: FACE_ON };
+	return { box: boxOf(frame), lift: FLAT, ...AS_PLACED };
 }
 
-/** A window as the camera's view, standing on the film's ground, face-on. */
+/** A window as the camera's view, standing on the film's ground as placed. */
 export function windowView(box: Box): View {
-	return { box, lift: LIFTED, angle: FACE_ON };
+	return { box, lift: LIFTED, ...AS_PLACED };
 }
 
 /** The camera's view over a box of the frame: the frame itself, flat, where the box is the whole of it; else a window. */
@@ -227,17 +205,19 @@ export function viewOver(box: Box, frame: Size): View {
 	return isTheWholeOf(box, frame) ? wholeView(frame) : windowView(box);
 }
 
-/** The window standing in a view: there already, its box, lift and angle each. */
+/** The window standing in a view: its box there already, lifted and standing as the view. */
 export function placedIn(view: View): Placing {
-	return { box: arrivedAt(view.box), lift: arrivedAt(view.lift), angle: arrivedAt(view.angle) };
+	return { ...view, box: arrivedAt(view.box) };
 }
 
-/** Where the window stands, so far on its way: its box, lift and angle, each as far along as its own move. */
+/** Where the window stands, so far on its way: its box as far along as its move, lifted and standing as it is. */
 export function viewOf(placing: Placing): View {
 	return {
 		box: alongTrack(placing.box, boxToward),
-		lift: fractionOf(alongTrack(placing.lift, between)),
-		angle: alongTrack(placing.angle, angleToward)
+		lift: placing.lift,
+		scale: placing.scale,
+		depth: placing.depth,
+		angle: placing.angle
 	};
 }
 
@@ -279,10 +259,8 @@ function eyeInTheRoom(eye: Eye, view: View, frame: Size): Eye {
 	switch (eye.inside) {
 		case 'world':
 			return eye;
-		case 'window': {
-			const placing = chained([translation(windowsMiddle(view, frame)), angledAs(view.angle)]);
-			return { ...eye, ...viewpointCarried(placing, angledAs(view.angle), eye), inside: 'world' };
-		}
+		case 'window':
+			return { ...eye, ...viewpointCarried(windowInTheRoom(view, frame), angledAs(view.angle), eye), inside: 'world' };
 	}
 }
 
@@ -291,13 +269,32 @@ function eyeInTheRoom(eye: Eye, view: View, frame: Size): Eye {
  * window's own plane, in pixels of a frame 1080 high from the window's middle, `out` away from its face.
  */
 export function eyeInTheWindow(eye: Eye, view: View, frame: Size): Eye {
-	const back = chained([angledBack(view.angle), translation(scaledBy(windowsMiddle(view, frame), BACK))]);
+	const back = chained([
+		stanceMatrixBack(stanceAsTheEyeMeasures(view, frame)),
+		translation(scaledBy(windowsMiddle(view, frame), BACK))
+	]);
 	return { ...eye, ...viewpointCarried(back, angledBack(view.angle), eye), inside: 'window' };
 }
 
-/** Where the middle of the window stands in the room as it stands on a frame of this size, in pixels of a frame 1080 high. */
+/**
+ * The matrix that carries a spot of the window's own plane, from its middle, into the room as the window stands on a
+ * frame of this size, in pixels of a frame 1080 high, as the eye's spots are.
+ */
+function windowInTheRoom(view: View, frame: Size): Matrix {
+	return chained([translation(windowsMiddle(view, frame)), stanceMatrix(stanceAsTheEyeMeasures(view, frame))]);
+}
+
+/**
+ * Where the middle of the window's box stands on the frame's plane on a frame of this size, in pixels of a frame 1080
+ * high.
+ */
 function windowsMiddle(view: View, frame: Size): Spot {
 	return scaledBy(middleInTheRoom(view.box, frame), 1 / frameScaleOf(frame));
+}
+
+/** How the window stands on a frame of this size, its depth in pixels of a frame 1080 high, as the eye's spots are. */
+function stanceAsTheEyeMeasures(view: View, frame: Size): Stance {
+	return { scale: view.scale, depth: view.depth / frameScaleOf(frame), angle: view.angle };
 }
 
 /** Where an eye stands and looks carried by a matrix, and the way its top points turned by the matrix's turn alone. */
@@ -346,16 +343,6 @@ function shownShareOf(box: Box, frame: Size): Box | null {
  */
 export function flatCamera(format: Format, focalLength: number): Camera {
 	return { pose: flatPose(format), view: wholeView(format.screen), eye: eyeAtRest(focalLength) };
-}
-
-/** An angle `progress` of the way to another. */
-export function angleToward(start: Angle, end: Angle, progress: number): Angle {
-	return {
-		tilt: between(start.tilt, end.tilt, progress),
-		turn: between(start.turn, end.turn, progress),
-		roll: between(start.roll, end.roll, progress),
-		over: between(start.over, end.over, progress)
-	};
 }
 
 /** The camera as the stage draws it, its cut worked out from where the screen stands in its view. */
@@ -423,22 +410,22 @@ export function keptOnTheScreen(pose: Pose, format: Format, view: View): Pose {
  */
 export function zoomPicturedFor(own: Camera, along: readonly Camera[], pieces: readonly number[]): number {
 	const cameras = [own, ...along];
-	if (!cameras.every((camera) => isFaceOn(camera.view.angle) && isAtRest(camera.eye))) return ZOOM_AT_MOST;
+	if (!cameras.every((camera) => isFaceOn(camera.view) && isAtRest(camera.eye))) return ZOOM_AT_MOST;
 	return Math.min(ZOOM_AT_MOST, Math.max(...cameras.map((camera) => camera.pose.zoom), ...pieces));
 }
 
 /**
- * Whether an angle leaves what leans in a plane facing the frame: neither tilted, turned nor turned over, or by whole
- * or half turns alone, which show its front or its back, rolled any way.
+ * Whether a stance leaves what stands so in a plane facing the frame: neither tilted, turned nor turned over, or by
+ * whole or half turns alone, which show its front or its back, rolled any way.
  */
-function isFaceOn(angle: Angle): boolean {
-	return facesTheFrame(angledAs(angle));
+function isFaceOn(stance: Stance): boolean {
+	return facesTheFrame(stanceMatrix(stance));
 }
 
-/** Whether an angle leaves what leans facing the frame with its front, upright, as it stood: by whole turns alone. */
-export function isFrontOn(angle: Angle): boolean {
-	const angled = angledAs(angle);
-	return facesTheFrame(angled) && showsItsFront(angled) && keepsItsAcross(angled);
+/** Whether a stance leaves what stands so facing the frame with its front, upright: by whole turns alone. */
+export function isFrontOn(stance: Stance): boolean {
+	const stood = stanceMatrix(stance);
+	return facesTheFrame(stood) && showsItsFront(stood) && keepsItsAcross(stood);
 }
 
 /** The pose an aim comes to in a view, kept off the screen's edge there: the film's own, or a block framed there. */
@@ -724,11 +711,11 @@ function seenOnTheScreen(camera: Camera, frame: Size, point: Point): Point {
 }
 
 /**
- * Where a point of what leans stands on the frame, the point in its box's own pixels from the top left corner: carried
- * into the room about the box's middle as it leans, and seen from the eye, as the stage draws the window.
+ * Where a point of the window stands on the frame, the point in its box's own pixels from the top left corner: carried
+ * into the room about the box's middle as the window stands, and seen from the eye, as the stage draws it.
  */
-export function leantOnTheFrame(leaning: Leaning, eye: Eye, frame: Size, point: Point): Point {
-	return carriedAboutItsMiddle(leaningOnTheFrame(leaning, eye, frame), leaning.box, point);
+export function leantOnTheFrame(view: View, eye: Eye, frame: Size, point: Point): Point {
+	return carriedAboutItsMiddle(leaningOnTheFrame(view, eye, frame), view.box, point);
 }
 
 /**
@@ -774,11 +761,11 @@ export function aboutTheMiddleOf(matrix: Matrix, box: Box, within: Size): Matrix
 }
 
 /**
- * The matrix of what leans on the frame as the window does, about its box's middle: leant as it is, seen from the eye.
- * The stage draws the window by it, so where the engine sees a point of the window is where it is drawn.
+ * The matrix of the window on the frame, about its box's middle: standing as it stands, seen from the eye. The stage
+ * draws the window by it, so where the engine sees a point of the window is where it is drawn.
  */
-export function leaningOnTheFrame(leaning: Leaning, eye: Eye, frame: Size): Matrix {
-	return chained([seenFromTheEye(leaning.box, eye, frame), angledAs(leaning.angle)]);
+export function leaningOnTheFrame(view: View, eye: Eye, frame: Size): Matrix {
+	return chained([seenFromTheEye(view.box, eye, frame), stanceMatrix(view)]);
 }
 
 /** Where a spot of a box, from its middle, stands once a matrix carries it about that middle: in the box's pixels. */
@@ -789,22 +776,23 @@ function aboutItsMiddle(matrix: Matrix, box: Box, fromItsMiddle: Spot): Point {
 
 /**
  * The point of the screen's plane a point of the frame shows from a camera: where the eye's line through it meets the
- * plane, which passes through the view's middle facing as the view leans, carried back to the screen. None
- * where the line meets the plane behind the eye, or never: the point sees past it.
+ * plane, which passes through the view's middle brought out by its depth, facing as the view leans, carried back to
+ * the screen. None where the line meets the plane behind the eye, or never: the point sees past it.
  */
 export function underTheFrame(camera: Camera, frame: Size, point: Point): Point | null {
 	const pose = camera.pose;
 	const facingNow = carried(angledAs(camera.view.angle), FACING_OUT);
 	const middle = middleInTheRoom(camera.view.box, frame);
+	const planesMiddle = { ...middle, out: camera.view.depth };
 	const sight = sightOf(camera.eye, frame, {
 		left: point.left - frame.width / HALVES,
 		top: point.top - frame.height / HALVES
 	});
 	// How far along the sight from the eye the plane is met: at the point itself, where the screen is face-on to the
-	// eye at rest
-	const reach = dotOf(facingNow, wayBetween(sight.from, middle)) / dotOf(facingNow, sight.along);
+	// eye at rest on the frame's plane
+	const reach = dotOf(facingNow, wayBetween(sight.from, planesMiddle)) / dotOf(facingNow, sight.along);
 	if (!(reach > 0 && Number.isFinite(reach))) return null;
-	const met = carried(angledBack(camera.view.angle), wayBetween(middle, movedAlong(sight.from, sight.along, reach)));
+	const met = carried(stanceMatrixBack(camera.view), wayBetween(middle, movedAlong(sight.from, sight.along, reach)));
 	const frameZoom = frameZoomOf(pose, frame);
 	return { left: pose.focusX + met.across / frameZoom, top: pose.focusY + met.down / frameZoom };
 }
@@ -817,20 +805,6 @@ export function frameZoomOf(pose: Pose, frame: Size): number {
 /** The zoom of a pose in which a page's pixel takes so many of the frame's own pixels, on a frame of this size. */
 function poseZoomFor(frameZoom: number, frame: Size): number {
 	return frameZoom / frameScaleOf(frame);
-}
-
-/**
- * The matrix that carries a spot of what leans, on its own plane, to its angle: turned over round its own width, rolled
- * in its plane, swung about its middle by its turn, then leant back by its tilt, as CSS's
- * `rotateX() rotateY() rotateZ() rotateX()` would; so it turns over round its width as it stands rolled and swung.
- */
-export function angledAs(angle: Angle): Matrix {
-	return chained([rotationX(angle.tilt), rotationY(angle.turn), rotationZ(angle.roll), rotationX(angle.over)]);
-}
-
-/** The matrix that takes a spot of the room back from an angle to the plane's own. */
-function angledBack(angle: Angle): Matrix {
-	return chained([rotationX(-angle.over), rotationZ(-angle.roll), rotationY(-angle.turn), rotationX(-angle.tilt)]);
 }
 
 function isZoom(written: unknown): written is number {
