@@ -46,13 +46,7 @@
  * stands as the focus is put on it, in what it stands in, so the focus holds there as the eye, the window and the
  * camera move, and stays there as the object moves on.
  */
-import {
-	type Camera,
-	ZOOM_AT_MOST,
-	carriedAboutItsMiddle,
-	middleInTheRoom,
-	windowPointOnTheFrame
-} from '../domain/camera.ts';
+import { type Camera, ZOOM_AT_MOST } from '../domain/camera.ts';
 import type { Focus } from '../domain/eye.ts';
 import { type Sharpness, distanceOfItsMiddle, outOfFocusBeforeItsMatrix } from '../domain/focus.ts';
 import type { Fraction } from '../domain/fraction.ts';
@@ -66,10 +60,12 @@ import {
 	type PointMoved,
 	type Size,
 	UNMOVED,
+	boxOf,
 	distanceBetween,
 	frameScaleOf,
 	middleX,
-	middleY
+	middleY,
+	pointAt
 } from '../domain/geometry.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
 import { ITS_MIDDLE, type Spot, carried } from '../domain/matrix.ts';
@@ -80,10 +76,13 @@ import {
 	type Holder,
 	type Holders,
 	type Placed,
+	carriedAboutItsMiddle,
 	drawnPlacement,
 	groupNamed,
+	middleInTheRoom,
 	placed,
-	planeOf
+	planeOf,
+	pointOnTheFrame
 } from '../domain/placement.ts';
 import { type Face, type Stance, faceOf, transformOf } from '../domain/stance.ts';
 import { type Caption, type DrawnCaption, drawnCaption } from './caption.ts';
@@ -247,10 +246,7 @@ export function frameShiftOf(start: ObjectThen, end: ObjectThen, frame: Size): n
 	];
 	return Math.max(
 		...points.map((point) =>
-			distanceBetween(
-				onTheFrameOf(startThen.standing, start.holders.camera, frame, point.start),
-				onTheFrameOf(endThen.standing, end.holders.camera, frame, point.end)
-			)
+			distanceBetween(shareOnTheFrame(startThen.standing, point.start), shareOnTheFrame(endThen.standing, point.end))
 		)
 	);
 }
@@ -288,8 +284,8 @@ function linesScrolled(before: Code, after: Code, end: StandingThen, frame: Size
 
 /** How far the page a lens shows moves in it, as far as the point of the screen under its middle moves. */
 function pageMovedUnder(lens: Lens, start: StandingThen, end: StandingThen, frame: Size): Point {
-	const startMiddle = onTheFrameOf(start.standing, start.holders.camera, frame, MIDDLE_SHARE);
-	const endMiddle = onTheFrameOf(end.standing, end.holders.camera, frame, MIDDLE_SHARE);
+	const startMiddle = shareOnTheFrame(start.standing, MIDDLE_SHARE);
+	const endMiddle = shareOnTheFrame(end.standing, MIDDLE_SHARE);
 	const seen = { start: start.holders.camera, end: end.holders.camera, frame };
 	return pageMovedIn(lens, end.standing.laid, startMiddle, endMiddle, seen);
 }
@@ -352,27 +348,20 @@ function shareOfTheWayToTheEdge(here: Point, there: Point, side: FrameSide, with
  * point of its plane.
  */
 export function drawnOnTheFrame(object: FrameObject, holders: Holders, frame: Size, share: Point): Point {
-	return onTheFrameOf(placedInItsHolder(object, holders, frame), holders.camera, frame, share);
+	return shareOnTheFrame(placedInItsHolder(object, holders, frame), share);
+}
+
+/** Where a point of something placed, in shares of its box, stands on the frame (`pointOnTheFrame`). */
+function shareOnTheFrame(standing: Placed, share: Point): Point {
+	return pointOnTheFrame(standing, pointAt(boxOf(standing.laid), share));
 }
 
 /**
- * Where a point of something placed, in shares of its box, stands on the frame: where it is drawn there, laid in the
- * frame; laid in the window, as the page's window shows that point of its plane from the eye.
+ * Where a point of something placed, in shares of its box, is drawn in what it is laid in, the frame or the window,
+ * which a slide past that's edge is measured in.
  */
-function onTheFrameOf(standing: Placed, camera: Camera, frame: Size, share: Point): Point {
-	const drawn = drawnPointOf(standing, share);
-	switch (standing.laidIn) {
-		case 'frame':
-			return drawn;
-		case 'window':
-			return windowPointOnTheFrame(camera.view, camera.eye, frame, drawn);
-	}
-}
-
-/** Where a point of something placed, in shares of its box, is drawn in what it is laid in. */
 function drawnPointOf(standing: Placed, share: Point): Point {
-	const laid = standing.laid;
-	return carriedAboutItsMiddle(standing.placing, laid, { left: share.left * laid.width, top: share.top * laid.height });
+	return carriedAboutItsMiddle(standing.placing, standing.laid, pointAt(boxOf(standing.laid), share));
 }
 
 /** An object as the stage draws it at a moment of the film, among what stands round it. */
@@ -397,7 +386,7 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
  * a group does.
  */
 function outOfFocusIn(standing: Placed, around: Surroundings): number | null {
-	const standsInTheWorld = standing.rides === 'world' && standing.laidIn === 'frame';
+	const standsInTheWorld = standing.rides === 'world' && standing.laidIn.kind === 'frame';
 	return standsInTheWorld
 		? outOfFocusBeforeItsMatrix(standing.placing, standing.laid, around.sharpness, around.frame)
 		: null;
@@ -620,7 +609,7 @@ function drawnContent(
 		case 'outline':
 			return drawnOutline(content, presentShare(figure));
 		case 'lens': {
-			const middle = onTheFrameOf(standing, around.camera, around.frame, MIDDLE_SHARE);
+			const middle = shareOnTheFrame(standing, MIDDLE_SHARE);
 			const shown = presentShare(figure);
 			return drawnLens(content, standing.laid, middle, around.camera, around.frame, shown, around.holes);
 		}

@@ -37,7 +37,7 @@ import {
 } from '../domain/matrix.ts';
 import { type Fraction, NONE } from '../domain/fraction.ts';
 import { type Box, type Size, boxAround, frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
-import { type DrawnPlacement, type Placed, drawnPlacement, placed, worldSeenBy } from '../domain/placement.ts';
+import { type DrawnPlacement, type Placed, drawnPlacement, windowPlaced } from '../domain/placement.ts';
 import { type Transform, transformOf } from '../domain/stance.ts';
 import {
 	MOVES_AS_A_SHARE,
@@ -147,7 +147,7 @@ export function drawnWindow(
 	around: AroundTheWindow
 ): DrawnWindow {
 	const { eye, frame, sharpness } = around;
-	const standing = placed(view, worldSeenBy(eye, frame), frame);
+	const standing = windowPlaced(view, eye, frame);
 	const placing = standing.placing;
 	const reach = pictureReachOf(view.box, cut);
 	const roundest = Math.min(reach.width, reach.height) / HALVES;

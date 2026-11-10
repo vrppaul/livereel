@@ -33,7 +33,9 @@ import {
 	placesThatRollOneWay,
 	viewpointOf
 } from '../domain/eye.ts';
-import { type Camera, eyeInTheWindow, fromItsMiddle, pointInTheView } from '../domain/camera.ts';
+import { type Camera, eyeInTheWindow } from '../domain/camera.ts';
+import { pointInTheView } from '../domain/framing.ts';
+import { fromItsMiddle } from '../domain/placement.ts';
 import { FilmError } from '../domain/errors.ts';
 import {
 	AN_OWN_FIGURE,

@@ -25,7 +25,9 @@
  * in the reciprocal of its distance, as a lens's ring turns, so what it leaves softer softens evenly; it goes no farther
  * than as far as can be, where a spot it was put on stands behind the eye.
  */
-import { type Camera, fromItsMiddle, pointInTheView, windowOnTheFrame } from './camera.ts';
+import type { Camera } from './camera.ts';
+import { pointInTheView } from './framing.ts';
+import { fromItsMiddle, windowPlaced } from './placement.ts';
 import { A_PINHOLE, type Focus, distanceBefore } from './eye.ts';
 import { type Box, type Point, type Size, boxOf, cornersOf, frameScaleOf, middleX, middleY } from './geometry.ts';
 import {
@@ -210,7 +212,7 @@ function distanceNearest(placing: Matrix, laid: Size, sharpness: Sharpness): num
  * How far before the eye a point of the page's window stands, in its box's pixels, as the window stands and is seen.
  */
 function distanceOnTheWindow(camera: Camera, frame: Size, point: Point): number {
-	const placing = windowOnTheFrame(camera.view, camera.eye, frame);
+	const placing = windowPlaced(camera.view, camera.eye, frame).placing;
 	return distanceAt(placing, fromItsMiddle(camera.view.box, point), camera.eye.focalLength);
 }
 

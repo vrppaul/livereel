@@ -9,16 +9,23 @@
  * the frame, in its box's pixels from its corner. Something placed on a plane stands about its box's middle as the
  * plane's stance carries it there and as its own stance does. The flat stage lays it in the frame, seen from the eye
  * in perspective about its box's middle, or, on the window's plane, in the window, by those stances alone, as the
- * window's element carries what is laid in it; the room reads where it stands in the eye's own space.
+ * window's element carries what is laid in it; the room reads where it stands in the eye's own space. Where a point of
+ * anything placed is seen on the frame is one function, `pointOnTheFrame`, which the motion blur, a lens, a note, the
+ * pins and a piece's lines read through the camera's module or the object's.
+ *
+ * The camera's module builds on this one, as it reads where the window stands; this one reads of the camera only how
+ * it frames the page in its view (`src/domain/framing.ts`), and holds the arithmetic of a box about its middle on the
+ * frame's plane, which both use.
  *
  * Each matrix is chained in the one order its products have always had, the plane's stance about the box's middle
  * before the box's own and the eye after both: chained otherwise, an entry moves by its last bit, and a box a move
  * works out from it, a slide past the frame's edge, moves with it.
  */
-import { type Camera, aboutTheMiddleOf, boxInTheView, middleInTheRoom, seenFromTheEye } from './camera.ts';
-import { type Eye, eyeAtRest, inTheEyesSpace, turnOf } from './eye.ts';
-import { type Box, type Size, boxOf, placedFrom } from './geometry.ts';
-import { type Matrix, chained, inThreesAxes, translation } from './matrix.ts';
+import type { Camera, View } from './camera.ts';
+import { type Eye, eyeAtRest, inTheEyesSpace, seenByTheEye, turnOf } from './eye.ts';
+import { boxInTheView } from './framing.ts';
+import { type Box, HALVES, type Point, type Size, boxOf, middleX, middleY, placedFrom } from './geometry.ts';
+import { type Matrix, type Spot, carried, chained, inThreesAxes, translation } from './matrix.ts';
 import { AS_PLACED, type Stance, type Transform, stanceMatrix, transformOf } from './stance.ts';
 
 /** Where something stands on the plane of what holds it: its box, in that plane's own pixels, and its stance. */
@@ -41,8 +48,11 @@ export type Holder =
 	| { readonly kind: 'page' }
 	| { readonly kind: 'group'; readonly name: GroupName; readonly zIndex: number | null };
 
-/** What the flat stage lays something in: the frame, or the page's window, which carries what is laid in it. */
-type Laid = 'frame' | 'window';
+/**
+ * What the flat stage lays something in: the frame; or the page's window, placed in the world, which carries what is
+ * laid in it as it stands.
+ */
+type LaidIn = { readonly kind: 'frame' } | { readonly kind: 'window'; readonly window: Placed };
 
 /** What a plane rides with: the eye, for the frame and what stands on it; else the world, which the eye moves past. */
 type Rider = 'eye' | 'world';
@@ -67,7 +77,7 @@ type Measure = { readonly kind: 'asItIs' } | { readonly kind: 'framed'; readonly
  * middle, the frame's pixels, across, down and out): the frame's, or the window's as it stands in the world.
  */
 export interface Plane {
-	readonly laidIn: Laid;
+	readonly laidIn: LaidIn;
 	readonly rides: Rider;
 	readonly eye: Eye;
 	readonly box: Box;
@@ -83,7 +93,7 @@ export interface Plane {
  * space; and what it rides with.
  */
 export interface Placed {
-	readonly laidIn: Laid;
+	readonly laidIn: LaidIn;
 	readonly laid: Box;
 	readonly stood: Matrix;
 	readonly placing: Matrix;
@@ -97,7 +107,7 @@ export interface Placed {
  * space in three's axes, where the room stands it; and what it rides with, the eye or the world.
  */
 export interface DrawnPlacement {
-	readonly laidIn: Laid;
+	readonly laidIn: LaidIn['kind'];
 	readonly box: Box;
 	readonly transform: Transform;
 	readonly inTheEyesSpace: Matrix;
@@ -111,8 +121,11 @@ export const IN_THE_WINDOW: Holder = { kind: 'window' };
 export const IN_THE_WORLD: Holder = { kind: 'world' };
 export const ON_THE_PAGE: Holder = { kind: 'page' };
 
-// A box read on its plane as it is
+// A box read on its plane as it is; and something laid in the frame
 const AS_IT_IS: Measure = { kind: 'asItIs' };
+const IN_THE_FRAME: LaidIn = { kind: 'frame' };
+// How far out of its own plane a spot of a box's plane stands
+const ON_ITS_PLANE = 0;
 
 /** The plane of a holder, as the holders stand. */
 export function planeOf(holder: Holder, holders: Holders, frame: Size): Plane {
@@ -133,9 +146,9 @@ export function planeOf(holder: Holder, holders: Holders, frame: Size): Plane {
 }
 
 /** The world as an eye sees it: the frame's plane, laid in the frame, the eye moving past it. */
-export function worldSeenBy(eye: Eye, frame: Size): Plane {
+function worldSeenBy(eye: Eye, frame: Size): Plane {
 	return {
-		laidIn: 'frame',
+		laidIn: IN_THE_FRAME,
 		rides: 'world',
 		eye,
 		box: boxOf(frame),
@@ -145,19 +158,25 @@ export function worldSeenBy(eye: Eye, frame: Size): Plane {
 	};
 }
 
+/** The page's window where it stands: the camera's view placed in the world, seen by an eye. */
+export function windowPlaced(view: View, eye: Eye, frame: Size): Placed {
+	return placed(view, worldSeenBy(eye, frame), frame);
+}
+
 /**
  * The page's window's own plane, in its box's own pixels, laid in the window, whose element carries what is laid in it
  * as the window stands in the world.
  */
 function windowsPlane(camera: Camera, frame: Size): Plane {
+	const window = windowPlaced(camera.view, camera.eye, frame);
 	return {
-		laidIn: 'window',
+		laidIn: { kind: 'window', window },
 		rides: 'world',
 		eye: camera.eye,
 		box: boxOf(camera.view.box),
 		stance: AS_PLACED,
 		measures: AS_IT_IS,
-		inTheEyesSpace: placed(camera.view, worldSeenBy(camera.eye, frame), frame).inTheEyesSpace
+		inTheEyesSpace: window.inTheEyesSpace
 	};
 }
 
@@ -172,7 +191,7 @@ export function placed(placement: Placement, plane: Plane, frame: Size): Placed 
 	const laid = placedFrom(onThePlane, plane.box);
 	const own = chained([aboutTheMiddleOf(stanceMatrix(plane.stance), onThePlane, plane.box), stanceMatrix(placement)]);
 	const standing = { laidIn: plane.laidIn, laid, rides: plane.rides };
-	switch (plane.laidIn) {
+	switch (plane.laidIn.kind) {
 		case 'frame':
 			return {
 				...standing,
@@ -193,12 +212,82 @@ export function placed(placement: Placement, plane: Plane, frame: Size): Placed 
 /** Something placed as the stage draws it: flat or leant as how it stands before the eye has it, in three's axes. */
 export function drawnPlacement(standing: Placed): DrawnPlacement {
 	return {
-		laidIn: standing.laidIn,
+		laidIn: standing.laidIn.kind,
 		box: standing.laid,
 		transform: transformOf(standing.stood, standing.placing),
 		inTheEyesSpace: inThreesAxes(standing.inTheEyesSpace),
 		rides: standing.rides
 	};
+}
+
+/**
+ * Where a point of something placed, in its box's pixels from the top left corner, stands on the frame: carried about
+ * the box's middle as it is drawn in what it is laid in, and, laid in the window, on as the window is drawn, so where
+ * the engine sees a point is where the stage draws it.
+ */
+export function pointOnTheFrame(standing: Placed, point: Point): Point {
+	const drawn = carriedAboutItsMiddle(standing.placing, standing.laid, point);
+	switch (standing.laidIn.kind) {
+		case 'frame':
+			return drawn;
+		case 'window':
+			return pointOnTheFrame(standing.laidIn.window, drawn);
+	}
+}
+
+/**
+ * Where a point of a box, in its pixels from the box's top left corner, stands once a matrix carries it about the box's
+ * middle, as CSS carries an element about its middle: in the pixels the box is placed in.
+ */
+export function carriedAboutItsMiddle(matrix: Matrix, box: Box, point: Point): Point {
+	const spot = carried(matrix, fromItsMiddle(box, point));
+	return { left: middleX(box) + spot.across, top: middleY(box) + spot.down };
+}
+
+/** A point of a box, in its pixels from the box's top left corner, as a spot of its plane from the box's middle. */
+export function fromItsMiddle(box: Size, point: Point): Spot {
+	return { across: point.left - box.width / HALVES, down: point.top - box.height / HALVES, out: ON_ITS_PLANE };
+}
+
+/**
+ * Where the middle of a box on the frame, or in anything else it stands in, stands in the room: across and down from
+ * that's middle, on its plane.
+ */
+export function middleInTheRoom(box: Box, frame: Size): Spot {
+	return {
+		across: middleX(box) - frame.width / HALVES,
+		down: middleY(box) - frame.height / HALVES,
+		out: ON_ITS_PLANE
+	};
+}
+
+/**
+ * The matrix that carries what stands in a box on the frame's plane, about the box's middle, to where an eye sees it:
+ * at rest, from before the frame's middle, a nearer spot larger and farther from that middle.
+ */
+export function seenFromTheEye(box: Box, eye: Eye, frame: Size): Matrix {
+	return aboutTheMiddleOf(seenByTheEye(eye, frame), box, frame);
+}
+
+/**
+ * The matrix that carries what stands in a box on the frame's plane, about the box's middle, into the eye's own space
+ * (`inTheEyesSpace`): where it stands before `seenFromTheEye` sees it in perspective.
+ */
+export function inTheEyesSpaceAbout(box: Box, eye: Eye, frame: Size): Matrix {
+	return chained([inTheEyesSpace(eye, frame), translation(middleInTheRoom(box, frame))]);
+}
+
+/**
+ * A matrix that acts about the middle of what a box stands in, as a matrix about the box's own middle: moved from the
+ * box's middle to that middle, acted, and moved back.
+ */
+function aboutTheMiddleOf(matrix: Matrix, box: Box, within: Size): Matrix {
+	const middle = middleInTheRoom(box, within);
+	return chained([
+		translation({ across: -middle.across, down: -middle.down, out: ON_ITS_PLANE }),
+		matrix,
+		translation(middle)
+	]);
 }
 
 /** A box of a holder in its plane's own pixels: as it is, or, on the page, framed by the camera in the window. */

@@ -13,12 +13,14 @@
  * edge of the screen face-on, along a side the screen is too short to fill at that zoom the screen standing in the
  * frame's middle, as much ground showing on either side of it. It stands so leant or not, so a lean never moves what
  * it frames; a view leant far over the whole frame may show ground at its far corners. What the camera shows where is
- * worked out as the stage draws it (`.camera` in `stage/stage.css`, and the view by the matrix worked out here,
- * `windowOnTheFrame`): the screen carried by its focus to the view's middle and brought close, the view standing
- * about its middle as it stands, and seen from the eye before the frame's middle, a nearer point larger.
+ * worked out as the stage draws it (`.camera` in `stage/stage.css`, and the view by where it is placed in the world,
+ * `src/domain/placement.ts`): the screen carried by its focus to the view's middle and brought close, the view
+ * standing about its middle as it stands, and seen from the eye before the frame's middle, a nearer point larger. Where
+ * a point of it is seen on the frame, and how far it moves there, is `src/domain/projection.ts`.
  */
-import { type Eye, type Viewpoint, eyeAtRest, inTheEyesSpace, isAtRest, seenByTheEye, sightOf } from './eye.ts';
+import { type Eye, type Viewpoint, eyeAtRest, isAtRest, sightOf } from './eye.ts';
 import type { Format } from './format.ts';
+import { frameZoomOf, pointInTheView } from './framing.ts';
 import { type Fraction, NONE, WHOLE } from './fraction.ts';
 import {
 	type Box,
@@ -57,6 +59,7 @@ import {
 	translation,
 	wayBetween
 } from './matrix.ts';
+import { middleInTheRoom, pointOnTheFrame, windowPlaced } from './placement.ts';
 import { AS_PLACED, type Stance, angledAs, angledBack, stanceMatrix, stanceMatrixBack } from './stance.ts';
 import { between } from './toward.ts';
 import { ARRIVED, type Track, alongTrack, arrivedAt } from './track.ts';
@@ -174,8 +177,6 @@ export const ZOOM_AT_MOST = 2.2;
 const HALVES = 2;
 // Where the screen faces before the window leans it: straight out at the eye
 const FACING_OUT: Spot = { across: 0, down: 0, out: 1 };
-// How far out of its own plane a point of what leans stands
-const ON_ITS_PLANE = 0;
 // How far the screen moves on a frame that shows none of it
 const NOTHING = 0;
 // Where the frame's left and top edges stand, in its own pixels
@@ -580,7 +581,8 @@ export function viewShift(seen: SeenBetween): number {
 
 /** Where a corner of a camera's view, in shares of the view's box, stands on the frame as the view stands. */
 function cornerOnTheFrame(camera: Camera, frame: Size, corner: Point): Point {
-	return windowPointOnTheFrame(camera.view, camera.eye, frame, pointAt(boxOf(camera.view.box), corner));
+	const window = windowPlaced(camera.view, camera.eye, frame);
+	return pointOnTheFrame(window, pointAt(boxOf(camera.view.box), corner));
 }
 
 /**
@@ -601,49 +603,33 @@ export function screenBoxShift(seen: SeenBetween, start: Box, end: Box): number 
 	);
 }
 
-function facing(screen: Size, zoom: number): Pose {
-	return { focusX: screen.width / HALVES, focusY: screen.height / HALVES, zoom };
+/**
+ * Where a point of the screen stands on the frame from a camera: where the camera frames it in its view, carried as the
+ * window stands and seen from the eye.
+ */
+export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
+	return pointOnTheFrame(windowPlaced(camera.view, camera.eye, frame), pointInTheView(camera, frame, point));
 }
 
 /**
- * Where the middle of a box on the frame, or in anything else it stands in, stands in the room: across and down from
- * that's middle, on its plane.
+ * Where a box of the screen stands on the frame as a camera shows it through a view that faces the frame: between where
+ * its top left and bottom right corners stand.
  */
-export function middleInTheRoom(box: Box, frame: Size): Spot {
-	return {
-		across: middleX(box) - frame.width / HALVES,
-		down: middleY(box) - frame.height / HALVES,
-		out: ON_ITS_PLANE
-	};
+export function boxOnTheFrame(camera: Camera, frame: Size, box: Box): Box {
+	return boxBetween(
+		onTheFrame(camera, frame, { left: box.left, top: box.top }),
+		onTheFrame(camera, frame, { left: box.left + box.width, top: box.top + box.height })
+	);
+}
+
+function facing(screen: Size, zoom: number): Pose {
+	return { focusX: screen.width / HALVES, focusY: screen.height / HALVES, zoom };
 }
 
 /** A focus moved so that as much as is seen either side of it stays on the screen; the screen's middle where it cannot. */
 function keptWithin(focus: number, halfSeen: number, length: number): number {
 	if (HALVES * halfSeen > length) return length / HALVES;
 	return Math.min(Math.max(focus, halfSeen), length - halfSeen);
-}
-
-/**
- * Where a point of the screen stands on the frame from a camera: carried into the room about its view's middle, the
- * view set where it stands, and seen from the eye.
- */
-export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
-	return windowPointOnTheFrame(camera.view, camera.eye, frame, pointInTheView(camera, frame, point));
-}
-
-/**
- * Where a point of the screen stands in a camera's view as the camera frames the page, before the view's stance carries
- * it: in the view's pixels from its top left corner, as far from the view's middle as the camera's zoom takes it from
- * its focus.
- */
-export function pointInTheView(camera: Camera, frame: Size, point: Point): Point {
-	const pose = camera.pose;
-	const frameZoom = frameZoomOf(pose, frame);
-	const view = camera.view.box;
-	return {
-		left: view.width / HALVES + frameZoom * (point.left - pose.focusX),
-		top: view.height / HALVES + frameZoom * (point.top - pose.focusY)
-	};
 }
 
 /**
@@ -659,17 +645,6 @@ export function viewOnTheScreen(camera: Camera, frame: Size): Box {
 }
 
 /**
- * Where a box of the screen stands on the frame as a camera shows it through a view that faces the frame: between where
- * its top left and bottom right corners stand.
- */
-export function boxOnTheFrame(camera: Camera, frame: Size, box: Box): Box {
-	return boxBetween(
-		onTheFrame(camera, frame, { left: box.left, top: box.top }),
-		onTheFrame(camera, frame, { left: box.left + box.width, top: box.top + box.height })
-	);
-}
-
-/**
  * Where a box of the frame stands on the screen as a camera shows it through a view that faces the frame: between the
  * points of the screen its top left and bottom right corners show.
  */
@@ -677,17 +652,6 @@ export function boxOnTheScreen(camera: Camera, frame: Size, box: Box): Box {
 	return boxBetween(
 		seenOnTheScreen(camera, frame, { left: box.left, top: box.top }),
 		seenOnTheScreen(camera, frame, { left: box.left + box.width, top: box.top + box.height })
-	);
-}
-
-/**
- * Where a box of the screen stands in a camera's view as the camera frames the page, before the view's stance carries
- * it: in the view's pixels from its top left corner.
- */
-export function boxInTheView(camera: Camera, frame: Size, box: Box): Box {
-	return boxBetween(
-		pointInTheView(camera, frame, { left: box.left, top: box.top }),
-		pointInTheView(camera, frame, { left: box.left + box.width, top: box.top + box.height })
 	);
 }
 
@@ -716,70 +680,6 @@ function seenOnTheScreen(camera: Camera, frame: Size, point: Point): Point {
 }
 
 /**
- * Where a point of the window stands on the frame, the point in its box's own pixels from the top left corner: carried
- * into the room about the box's middle as the window stands, and seen from the eye, as the stage draws it.
- */
-export function windowPointOnTheFrame(view: View, eye: Eye, frame: Size, point: Point): Point {
-	return carriedAboutItsMiddle(windowOnTheFrame(view, eye, frame), view.box, point);
-}
-
-/**
- * Where a point of a box, in its pixels from the box's top left corner, stands once a matrix carries it about the box's
- * middle, as CSS carries an element about its middle: in the pixels the box is placed in.
- */
-export function carriedAboutItsMiddle(matrix: Matrix, box: Box, point: Point): Point {
-	return aboutItsMiddle(matrix, box, fromItsMiddle(box, point));
-}
-
-/** A point of a box, in its pixels from the box's top left corner, as a spot of its plane from the box's middle. */
-export function fromItsMiddle(box: Size, point: Point): Spot {
-	return { across: point.left - box.width / HALVES, down: point.top - box.height / HALVES, out: ON_ITS_PLANE };
-}
-
-/**
- * The matrix that carries what stands in a box on the frame's plane, about the box's middle, to where an eye sees it:
- * at rest, from before the frame's middle, a nearer spot larger and farther from that middle.
- */
-export function seenFromTheEye(box: Box, eye: Eye, frame: Size): Matrix {
-	return aboutTheMiddleOf(seenByTheEye(eye, frame), box, frame);
-}
-
-/**
- * The matrix that carries what stands in a box on the frame's plane, about the box's middle, into the eye's own space
- * (`inTheEyesSpace`): where it stands before `seenFromTheEye` sees it in perspective.
- */
-export function inTheEyesSpaceAbout(box: Box, eye: Eye, frame: Size): Matrix {
-	return chained([inTheEyesSpace(eye, frame), translation(middleInTheRoom(box, frame))]);
-}
-
-/**
- * A matrix that acts about the middle of what a box stands in, as a matrix about the box's own middle: moved from the
- * box's middle to that middle, acted, and moved back.
- */
-export function aboutTheMiddleOf(matrix: Matrix, box: Box, within: Size): Matrix {
-	const middle = middleInTheRoom(box, within);
-	return chained([
-		translation({ across: -middle.across, down: -middle.down, out: ON_ITS_PLANE }),
-		matrix,
-		translation(middle)
-	]);
-}
-
-/**
- * The matrix of the window on the frame, about its box's middle: standing as it stands, seen from the eye. The stage
- * draws the window by it, so where the engine sees a point of the window is where it is drawn.
- */
-export function windowOnTheFrame(view: View, eye: Eye, frame: Size): Matrix {
-	return chained([seenFromTheEye(view.box, eye, frame), stanceMatrix(view)]);
-}
-
-/** Where a spot of a box, from its middle, stands once a matrix carries it about that middle: in the box's pixels. */
-function aboutItsMiddle(matrix: Matrix, box: Box, fromItsMiddle: Spot): Point {
-	const spot = carried(matrix, fromItsMiddle);
-	return { left: middleX(box) + spot.across, top: middleY(box) + spot.down };
-}
-
-/**
  * The point of the screen's plane a point of the frame shows from a camera: where the eye's line through it meets the
  * plane, which passes through the view's middle brought out by its depth, facing as the view leans, carried back to
  * the screen. None where the line meets the plane behind the eye, or never: the point sees past it.
@@ -800,11 +700,6 @@ export function underTheFrame(camera: Camera, frame: Size, point: Point): Point 
 	const met = carried(stanceMatrixBack(camera.view), wayBetween(middle, movedAlong(sight.from, sight.along, reach)));
 	const frameZoom = frameZoomOf(pose, frame);
 	return { left: pose.focusX + met.across / frameZoom, top: pose.focusY + met.down / frameZoom };
-}
-
-/** The frame's own pixels a page's pixel takes in a pose, on a frame of this size. */
-export function frameZoomOf(pose: Pose, frame: Size): number {
-	return pose.zoom * frameScaleOf(frame);
 }
 
 /** The zoom of a pose in which a page's pixel takes so many of the frame's own pixels, on a frame of this size. */

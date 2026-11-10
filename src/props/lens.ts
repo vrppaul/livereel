@@ -4,7 +4,8 @@
  * the page's picture, as a piece of the page is (`src/props/piece.ts`), filling its box, the holes pieces leave there
  * with it; it is what an object shows (`src/props/object.ts`), and comes up, travels and goes as one.
  */
-import { type Camera, type SeenBetween, frameZoomOf, underTheFrame } from '../domain/camera.ts';
+import { type Camera, type SeenBetween, underTheFrame } from '../domain/camera.ts';
+import { frameZoomOf } from '../domain/framing.ts';
 import { type Box, type Point, type Size, UNMOVED, boxCentredOn, boxOf } from '../domain/geometry.ts';
 import { A_NUMBER, type Kind, Plain } from '../domain/handed.ts';
 import { type DrawnHole, holesShown } from './piece.ts';
