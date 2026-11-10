@@ -9,8 +9,9 @@
  * the engine's matrix places it in the eye's own space, its texture read back into linear light; the window's body and
  * glass round it (`stage/body.js`); the film's things in the world (`stage/things.js`); all seen in perspective from
  * the eye and lit as it sees the room (`stage/lighting.js`), hiding one another by depth alone. The eye's lens blurs
- * each pixel of the world by how far what it shows stands from the focus and lays it over the ground
- * (`stage/lens.js`); over that stand the film's things on the frame, sharp, then the frame's surface.
+ * each pixel of the world by how far what it shows stands from the focus (`stage/lens.js`), its fields laid over one
+ * another in linear light and the whole laid over the ground; over that stand the film's things on the frame, sharp,
+ * then the frame's surface.
  *
  * The page's surface is drawn from a picture of it as sharp as the browser draws a page face-on, and filtered as it
  * shrinks into the distance: the browser draws a layer leant in 3D at about one of its pixels a page's pixel, however
@@ -214,8 +215,9 @@ varying vec2 shareOfTheFrame;
 void main() {
 	gl_FragColor = texture2D(surface, vec2(shareOfTheFrame.x, 1.0 - shareOfTheFrame.y));
 }`;
-// What stands on the frame, drawn by three in linear light, laid over the exposure in the screen's colours
-const ON_THE_FRAME_FRAGMENT = `
+// What three draws in linear light, the world through the eye's lens and what stands on the frame, laid over the
+// exposure in the screen's colours
+const LINEAR_LAID_FRAGMENT = `
 uniform sampler2D drawn;
 varying vec2 shareOfTheFrame;
 ${SRGB_CURVES}
@@ -339,11 +341,15 @@ class Room {
 		});
 		this.seeThrough = new SeeThroughField(THREES_LAYER);
 		this.lens = new Lens(this.pixelsOfOne, layout.frameScale);
+		// The world as the eye's lens sees it, each field laid over the one before in linear light, as three's one layer
+		// lays what is seen through over what stands behind it; then laid over the exposure in the screen's colours once
+		this.worldSeen = new WebGLRenderTarget(drawnWidth, drawnHeight, PAST_WHITE);
+		this.worldLaying = passOver({ drawn: { value: this.worldSeen.texture } }, LINEAR_LAID_FRAGMENT, LAID_OVER);
 		this.onTheFrame = new Scene();
 		this.onTheFrameLayer = new WebGLRenderTarget(drawnWidth, drawnHeight, THREES_LAYER);
 		this.onTheFrameLaying = passOver(
 			{ drawn: { value: this.onTheFrameLayer.texture } },
-			ON_THE_FRAME_FRAGMENT,
+			LINEAR_LAID_FRAGMENT,
 			LAID_OVER
 		);
 		// The glow measured on a frame 1080 high, as the reference promo measured it on one so high, so it spreads over the
@@ -423,9 +429,14 @@ class Room {
 		const pageTexture = textureOf(this.textures, 'window');
 		pageTexture.drawnFrom(surfaceOf(surfaces, 'window'));
 		const { sharpness, eye } = scene;
-		for (const field of this.worldDrawn(scene, pageTexture, placing, things.filter(standsInTheWorld), gathered)) {
-			this.lens.laid(this.renderer, field, gathered, this.frameBox, sharpness, eye.distance, this.exposure);
+		const fields = this.worldDrawn(scene, pageTexture, placing, things.filter(standsInTheWorld), gathered);
+		this.renderer.setRenderTarget(this.worldSeen);
+		this.renderer.clear();
+		for (const field of fields) {
+			this.lens.laid(this.renderer, field, gathered, this.frameBox, sharpness, eye.distance, this.worldSeen);
 		}
+		this.renderer.setRenderTarget(this.exposure);
+		this.renderer.render(this.worldLaying, this.camera);
 		const onTheFrame = things.filter((thing) => !standsInTheWorld(thing));
 		if (onTheFrame.length > NONE) this.onTheFrameLaid(onTheFrame, scene);
 		this.flatLaid('frame', surfaces);

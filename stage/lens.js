@@ -28,8 +28,10 @@
  * farther one's or nothing's. The split writes beside the fields what every later pass reads of each pixel: whether the
  * near field holds it, how wide it spreads, and whether anything was drawn there; read off each sample's own depth
  * instead, a sharp thing's smoothed edge under a blurred page's depth spread the thing's colour over the page. The lens
- * reads the scene's light linear, premultiplied by how clear it is, and lays it over what is drawn of an exposure in
- * the screen's colours, as the browser's surfaces are laid.
+ * reads the scene's light linear, premultiplied by how clear it is, and lays it so over what the fields before it laid,
+ * as three's one layer lays what is seen through over what stands behind it: the room turns the world into the
+ * screen's colours once all its fields are laid. Each field turned into them as it was laid, a glass over a page and a
+ * page half faded over what stood behind it came out in another tone than in one layer (2026-11-10).
  */
 import {
 	Camera,
@@ -42,7 +44,7 @@ import {
 	WebGLRenderTarget
 } from 'three';
 import { depthRangeOf } from './matrices.js';
-import { LAID_OVER, SRGB_CURVES, WRITTEN, passOver, valuesOfTheBox, valuesSet } from './passes.js';
+import { LAID_OVER, WRITTEN, passOver, valuesOfTheBox, valuesSet } from './passes.js';
 /** @import { WebGLRenderer, Texture, DepthTexture, Mesh, PlaneGeometry, ShaderMaterial } from 'three' */
 /** @import { Box } from '../src/domain/geometry.ts' */
 /** @import { Sharpness } from '../src/domain/focus.ts' */
@@ -270,7 +272,7 @@ void main() {
 	gl_FragColor = vec4(widest, 0.0, 1.0);
 }`;
 
-// The near field laid over the far one, each blurred as its law has it, in the screen's colours
+// The near field laid over the far one, each blurred as its law has it, in linear light
 const LENS_FRAGMENT = `
 uniform sampler2D nearField;
 uniform sampler2D farField;
@@ -280,7 +282,6 @@ uniform vec4 shownBox;
 uniform float pixelsOfAFramePixel;
 varying vec2 shareOfTheFrame;
 ${MEASURES_READ}
-${SRGB_CURVES}
 const int SAMPLES = ${SAMPLES};
 const float SPREADS_REACHED = float(${SPREADS_REACHED});
 const float SHARP_SPREAD = ${SHARP_SPREAD};
@@ -367,20 +368,19 @@ void main() {
 	// at the edge as it stands
 	float hidden = clamp((near.cover - EDGE_COVER) / (1.0 - EDGE_COVER), 0.0, 1.0) * widest.x;
 	vec4 far = farBlurred(point, here, measured.a >= 0.0 ? measured.a : max(widest.y, hidden), turn);
-	gl_FragColor = inTheScreensColours(near.light + (1.0 - min(near.cover, 1.0)) * far);
+	gl_FragColor = near.light + (1.0 - min(near.cover, 1.0)) * far;
 }`;
 
-// A field laid as it stands, where the eye blurs nothing, in the screen's colours
+// A field laid as it stands, where the eye blurs nothing, in linear light
 const LAID_AS_IT_STANDS_FRAGMENT = `
 uniform sampler2D drawnLight;
 uniform vec4 drawnBox;
 uniform vec4 shownBox;
 varying vec2 shareOfTheFrame;
-${SRGB_CURVES}
 void main() {
 	vec2 point = shownBox.xy + vec2(shareOfTheFrame.x, 1.0 - shareOfTheFrame.y) * shownBox.zw;
 	vec2 share = (point - drawnBox.xy) / drawnBox.zw;
-	gl_FragColor = inTheScreensColours(texture2D(drawnLight, vec2(share.x, 1.0 - share.y)));
+	gl_FragColor = texture2D(drawnLight, vec2(share.x, 1.0 - share.y));
 }`;
 
 /** The lens: the passes over the frame that read a field of the world's scene and its depth. */
