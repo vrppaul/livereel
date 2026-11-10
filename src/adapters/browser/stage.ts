@@ -83,9 +83,24 @@ export interface HeldPicture extends PagePicture {
 	readonly number: number;
 }
 
+/**
+ * Where the room lays an object of markup standing in the world (`stage/room.js`): a holder of its own in a surface of
+ * the room's, by the place of the exposure it is drawn in among the stage's, its list, standing or pushed off, and its
+ * name.
+ */
+export type HolderInTheWorld = (exposure: number, list: ObjectList, name: string) => HTMLElement;
+
+/** The scene's lists of objects: those standing, and those pushed off while they go. */
+export type ObjectList = 'objects' | 'leaving';
+
 export interface StageApi {
 	/** The stage laid out: the frame and the screen in it, as large as it draws, and its exposures. */
 	readonly setup: (layout: Layout) => void;
+	/**
+	 * Markup standing in the world laid apart from the frame's objects in every exposure, each object in the holder the
+	 * room gives it, where it lay among them as the flat stage draws it.
+	 */
+	readonly layApart: (holderOf: HolderInTheWorld) => void;
 	/** The filmed page opened in the screen's frame. */
 	readonly open: (opening: Opening) => void;
 	/** A picture of the filmed page, shown in the frame's place once it is decoded. */

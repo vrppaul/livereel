@@ -22,15 +22,21 @@
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
 /** @import { OwnPage } from '../src/direction/page.ts' */
-/** @import { HeldPicture, Layout, Opening, PagePicture, StageApi } from '../src/adapters/browser/stage.ts' */
+/** @import { HeldPicture, HolderInTheWorld, Layout, ObjectList, Opening, PagePicture, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
 /** A value of the look set whole on the stage, in place of one token: any but the ground's layers, and the way words come up, which the moves that bring them read @typedef {Exclude<keyof Look, 'groundLayers' | 'words'>} WholeLookName */
 /** An element of the stage's markup: the cursor is drawn in SVG, the rest in HTML @typedef {HTMLElement | SVGElement} Staged */
-/** The scene's lists of objects: those standing, and those pushed off while they go @typedef {'objects' | 'leaving'} ObjectList */
 /**
  * Where objects are laid in an exposure's markup: those on the frame by their list, and those inside the page's window.
  * @typedef {{ readonly [Root in ObjectList | 'window']: Staged }} ObjectRoots
+ */
+/**
+ * Where an exposure lays markup standing in the world: among the objects on the frame, in their list's root, as the
+ * flat stage draws it; or apart, in the holder the room gives it by the exposure's place among the stage's, its list and
+ * its name (`HolderInTheWorld` in `src/adapters/browser/stage.ts`).
+ * @typedef {{ readonly kind: 'among those on the frame' }
+ *   | { readonly kind: 'apart', readonly exposure: number, readonly holderOf: HolderInTheWorld }} LaidInTheWorld
  */
 /**
  * An object as its drawer lays it this frame: the key it is kept by, its list, the object, and its element.
@@ -138,6 +144,9 @@ const SIGN = 'data-sign';
 // The class of a pin, and of one whose label a later pin has quietened
 const PIN = 'pin';
 const QUIET = 'quiet';
+// Markup standing in the world laid among the objects on the frame, as the flat stage draws it
+/** @type {LaidInTheWorld} */
+const AMONG_THOSE_ON_THE_FRAME = { kind: 'among those on the frame' };
 // The class of a line of code; each piece of it is classed by its kind; and the attribute that names how a pane fits
 // a line too long
 const CODE_LINE = 'code-line';
@@ -574,7 +583,9 @@ function drawnByName(list, items) {
 /**
  * The objects of a scene, those standing and those pushed off, each an element made from the template of what it shows
  * and kept by its list and name while it shows that. One on the frame is laid in its list's root, one inside the page's
- * window in the window's: in each, in the scene's order, the last over the rest.
+ * window in the window's: in each, in the scene's order, the last over the rest. One of markup standing in the world is
+ * laid among those on the frame, as the flat stage draws it, or apart, in a holder of its own the room gives it, where
+ * the room stands each in its one scene by its own matrix.
  */
 class ObjectsDrawer {
 	/** @param {ObjectRoots} roots */
@@ -582,6 +593,8 @@ class ObjectsDrawer {
 		this.roots = roots;
 		/** The objects in the markup, by their list and name @type {Map<string, StagedObject>} */
 		this.standing = new Map();
+		/** Where markup standing in the world is laid @type {LaidInTheWorld} */
+		this.inTheWorld = AMONG_THOSE_ON_THE_FRAME;
 	}
 
 	/** @param {DrawnScene} scene */
@@ -602,15 +615,29 @@ class ObjectsDrawer {
 
 	/**
 	 * The element an object is laid in: its list's root where it stands on the frame, the window's where it stands
-	 * inside it.
+	 * inside it, and where markup standing in the world is laid, for such markup.
 	 * @param {ObjectStaged} each @returns {Staged}
 	 */
 	holderOf(each) {
 		switch (each.object.laidIn) {
 			case 'frame':
-				return this.roots[each.list];
+				return isMarkupInTheWorld(each.object) ? this.holderInTheWorld(each) : this.roots[each.list];
 			case 'window':
 				return this.roots.window;
+		}
+	}
+
+	/**
+	 * The element markup standing in the world is laid in: its list's root, or the holder the room gives it by its list
+	 * and name.
+	 * @param {ObjectStaged} each @returns {Staged}
+	 */
+	holderInTheWorld(each) {
+		switch (this.inTheWorld.kind) {
+			case 'among those on the frame':
+				return this.roots[each.list];
+			case 'apart':
+				return this.inTheWorld.holderOf(this.inTheWorld.exposure, each.list, each.object.name);
 		}
 	}
 
@@ -625,6 +652,15 @@ class ObjectsDrawer {
 		const staged = standing?.kind === object.content.kind ? standing : new StagedObject(object.content.kind);
 		return { key, list, object, staged };
 	}
+}
+
+/**
+ * Whether an object laid in the frame is markup standing in the world: riding the world, not the eye, and drawn by the
+ * stage's markup, as a thing's element draws nothing, the room drawing the thing itself.
+ * @param {DrawnObject} object
+ */
+function isMarkupInTheWorld(object) {
+	return object.rides === 'world' && object.content.kind !== 'thing';
 }
 
 /** An object's element on the stage, made from the template of what it shows: its box and angle set every frame. */
@@ -990,7 +1026,8 @@ class LookDrawer {
  * world by how the eye sees (`stage/lens.js`) and sees it from where the eye stands.
  * @typedef {{
  *   readonly root: Staged,
- *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'world' | 'leaving' | 'sharpness' | 'eye'>]: Drawer },
+ *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'world' | 'leaving' | 'sharpness' | 'eye'>]: Drawer }
+ *     & { readonly objects: ObjectsDrawer },
  *   readonly page: Staged,
  *   readonly picture: Staged,
  *   readonly ownPages: Map<string, HTMLIFrameElement>
@@ -1081,6 +1118,17 @@ function addedCopy(original) {
  */
 function isOfTheLook(name) {
 	return Object.hasOwn(LOOK_TOKENS, name);
+}
+
+/**
+ * Markup standing in the world laid apart in every exposure, each object in the holder the room gives it, where the
+ * stage is drawn as a room.
+ * @param {HolderInTheWorld} holderOf
+ */
+function layApart(holderOf) {
+	for (const [exposure, { drawers }] of EXPOSURES.entries()) {
+		drawers.objects.inTheWorld = { kind: 'apart', exposure, holderOf };
+	}
 }
 
 /**
@@ -1558,12 +1606,13 @@ function keyOf(list, name) {
 }
 
 /**
- * What a root of objects holds this frame: every root holds objects, so another element is the stage's fault.
- * @param {ReadonlyMap<Staged, Staged[]>} held @param {Staged} holder
+ * What a holder of objects holds this frame: a root of the stage's, which holds none where no object is laid in it, or
+ * a holder of the room's, met as the first object is laid in it.
+ * @param {Map<Staged, Staged[]>} held @param {Staged} holder
  */
 function heldBy(held, holder) {
-	const elements = held.get(holder);
-	if (elements === undefined) throw new Error('an object is laid in what holds no objects');
+	const elements = held.get(holder) ?? [];
+	held.set(holder, elements);
 	return elements;
 }
 
@@ -1615,5 +1664,5 @@ function found(element, name) {
 }
 
 /** @type {StageApi} */
-const STAGE = { setup, open, show, hold, letGo, layOwnPages, apply };
+const STAGE = { setup, layApart, open, show, hold, letGo, layOwnPages, apply };
 window.stage = STAGE;

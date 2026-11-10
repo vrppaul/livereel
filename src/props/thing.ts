@@ -5,9 +5,9 @@
  * world, travels, grows, comes near and turns as any object does. How far it reaches across and up from its middle is
  * the film's, `reach`, in pixels of a frame 1080 high: its box is that footprint about the place's middle, from whose
  * middle it is built, one of its units a pixel of a frame 1080 high; the box's corners say how far it moves for the
- * motion blur and how far from the eye's focus it reaches. What it shows is the film's: numbers by name, `values`, handed
- * to its module each frame, which sets the three objects it built whole from them and from how far it has come up, and
- * keeps nothing else; a move of its numbers moves nothing the motion blur counts.
+ * motion blur and how far from the eye's focus it reaches. What it shows is the film's: numbers by name, `values`,
+ * handed to its module each frame, which sets the three objects it built whole from them and from how far it has come
+ * up, and keeps nothing else; a move of its numbers moves nothing the motion blur counts.
  *
  * The room draws a thing carried about its box's middle into the eye's own space, written in three's own axes, up the
  * frame, so its faces turn as three's do, and seen from there in perspective. In the world it stands in the room's one
@@ -15,7 +15,6 @@
  * stands from the focus. On the frame, as a caption does, it rides with the eye, stays sharp and stands before the
  * window.
  */
-import { type Sharpness, softestOutOfFocusSeen } from '../domain/focus.ts';
 import { type Size, frameScaleOf } from '../domain/geometry.ts';
 import { A_NUMBER, A_SIZE, type Kind, OfForm, RecordOf, needed } from '../domain/handed.ts';
 import { type Matrix, chained, inThreesAxes, scalingAlong } from '../domain/matrix.ts';
@@ -44,11 +43,10 @@ export interface Thing {
  * its own way, from 0 to 1; the matrix that carries a point of it, in three's own axes — x across, y up, z toward the
  * eye — in pixels of a frame 1080 high from its box's middle, into the eye's own space in the frame's pixels, in
  * three's axes too, the eye at its middle looking down its z, the room standing there as the scene's eye hands it
- * (`DrawnEye` in `src/domain/eye.ts`); and, in the world, how soft the eye's focus draws the softest point of its box
- * the frame shows, in pixels of a frame 1080 high, none where sharp or on the frame, which bounds how far past the
- * frame's edge the room's lens gathers it, as the window's softest point does. What it reaches toward or away from the
- * eye past its box's plane is the film's module's and is not counted. Whether it stands in the world, where the eye
- * sees it among the window and every other thing there, is what its object rides.
+ * (`DrawnEye` in `src/domain/eye.ts`). How soft the eye's focus draws it is its object's, as of any object in the
+ * world, by its box: what it reaches toward or away from the eye past its box's plane is the film's module's and is not
+ * counted. Whether it stands in the world, where the eye sees it among the window and every other thing there, is what
+ * its object rides.
  */
 export interface DrawnThing {
 	readonly kind: 'thing';
@@ -56,12 +54,10 @@ export interface DrawnThing {
 	readonly values: ThingValues;
 	readonly shown: number;
 	readonly inTheEyesSpace: Matrix;
-	readonly softestOutOfFocus: number | null;
 }
 
-/** What stands round a thing as it is drawn: how sharp the eye sees, and the frame. */
+/** What stands round a thing as it is drawn: the frame. */
 export interface AroundAThing {
-	readonly sharpness: Sharpness;
 	readonly frame: Size;
 }
 
@@ -87,8 +83,8 @@ export function valuesToward(start: ThingValues, named: ThingValues, progress: n
  * A thing as the stage draws it, placed as it stands (`src/domain/placement.ts`), grown by its stance's scale, as far
  * as it has come up and not gone, among what stands round it: the eye's own space it stands in written in three's
  * axes, the frame's pixels out of three's units, so it turns a face as it turns, grown toward the eye as much as
- * across, as a stance grows a flat object across and down alone, and in the world as soft at most as the focus draws
- * its box where the frame shows it. `thing.show` stands it on the frame or in the world alone.
+ * across, as a stance grows a flat object across and down alone. `thing.show` stands it on the frame or in the world
+ * alone.
  */
 export function drawnThing(
 	thing: Thing,
@@ -98,16 +94,12 @@ export function drawnThing(
 	around: AroundAThing
 ): DrawnThing {
 	const scale = frameScaleOf(around.frame);
-	const { placing, laid } = standing;
-	const softestOutOfFocus =
-		standing.rides === 'world' ? softestOutOfFocusSeen(placing, laid, laid, around.sharpness, around.frame) : null;
 	const units = scalingAlong(scale, scale, scale * grown);
 	return {
 		kind: 'thing',
 		made: thing.made,
 		values: thing.values,
 		shown,
-		inTheEyesSpace: chained([inThreesAxes(standing.inTheEyesSpace), units]),
-		softestOutOfFocus
+		inTheEyesSpace: chained([inThreesAxes(standing.inTheEyesSpace), units])
 	};
 }

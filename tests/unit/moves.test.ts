@@ -3099,6 +3099,13 @@ test('an eye focused on a title in the world draws it sharp, and the page twice 
 	expect(outOfFocusIn(focused)).toEqual([expect.closeTo(A_QUARTER_OF_THE_DISC), null, null]);
 });
 
+test('the room is handed the softest point the frame shows of a title in the world nearer than the focus, on the frame, and none of one riding on it', async () => {
+	const near = await withNearTitles(OPENING_IN_SMALL);
+	const onThePage = await setAt(eye.focus('#block', { aperture: OPENED }), near, 1);
+	const objects = drawn(onThePage, cameraOf(onThePage, SMALL), 0, SMALL, NONE_SHARPER).objects;
+	expect(objects.map((object) => object.softestOutOfFocus)).toEqual([expect.closeTo(A_QUARTER_OF_THE_DISC), null]);
+});
+
 test('a title in the world nearer than the focus is blurred in its own pixels, the less the larger it is drawn; what rides on the frame stays sharp', async () => {
 	const near = await withNearTitles(OPENING_IN_SMALL);
 	const onThePage = await setAt(eye.focus('#block', { aperture: OPENED }), near, 1);
@@ -3400,7 +3407,7 @@ test("the room is handed as the softest point of a thing in the world its box's 
 	const focused = await setAt(eye.focus(FOCAL_LENGTH, { aperture: OPENED }), turned, 1);
 	const nearEdge = FOCAL_LENGTH - (CARD_REACH.width / 2) * Math.sin((80 * Math.PI) / 180);
 	const spread = (OPENED * FOCAL_LENGTH * (1 / nearEdge - 1 / FOCAL_LENGTH)) / 4;
-	expect(drawnThingIn(focused).softestOutOfFocus).toBeCloseTo(spread);
+	expect(drawnObjectsIn(focused, SMALL)[0]!.softestOutOfFocus).toBeCloseTo(spread);
 });
 
 test("a thing is refused standing inside the window, built by a name the film's module builds none of, and setting a number it was not shown with", async () => {

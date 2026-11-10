@@ -45,7 +45,12 @@
  */
 import { type Camera, ZOOM_AT_MOST } from '../domain/camera.ts';
 import type { Focus } from '../domain/eye.ts';
-import { type Sharpness, distanceOfItsMiddle, outOfFocusBeforeItsMatrix } from '../domain/focus.ts';
+import {
+	type Sharpness,
+	distanceOfItsMiddle,
+	outOfFocusBeforeItsMatrix,
+	softestOutOfFocusSeen
+} from '../domain/focus.ts';
 import type { Fraction } from '../domain/fraction.ts';
 import type { PartAsked, SharperPicture } from '../domain/picture.ts';
 import {
@@ -152,7 +157,10 @@ export type Objects = ReadonlyMap<ObjectName, FrameObject>;
  * name it is known by, the side of it the eye sees in what it is laid in, how much of it what it stands in lets show,
  * from 0 to 1, how far its figure's way has come, none where it is on no way, how it stands out, none where it stands
  * out in no way, how it melts toward a side of its figure, none where it melts none, how soft the eye's focus draws it,
- * in pixels of a frame 1080 high of its box before its matrix, none where sharp, and its content as drawn.
+ * in pixels of a frame 1080 high of its box before its matrix, none where sharp, for the flat stage; how soft it draws
+ * the softest point of its box the frame shows, on the frame in pixels of a frame 1080 high, none where sharp, which
+ * bounds how far past the frame's edge the room's lens gathers it, as the window's softest point does; and its content
+ * as drawn. Both blurs are none but for what stands in the world.
  */
 export interface DrawnObject extends DrawnPlacement {
 	readonly name: ObjectName;
@@ -162,6 +170,7 @@ export interface DrawnObject extends DrawnPlacement {
 	readonly effects: DrawnEffects | null;
 	readonly melt: Melting | null;
 	readonly outOfFocus: number | null;
+	readonly softestOutOfFocus: number | null;
 	readonly content: DrawnContent;
 }
 
@@ -328,21 +337,22 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	const content = drawnContent(name, object, standing, moment, around);
 	const effects = drawnEffects(object);
 	const melt = drawnMelt(object);
-	const outOfFocus = outOfFocusIn(standing, around);
-	const laid = { ...drawnPlacement(standing), name, face, held };
-	return { ...laid, onItsWay, effects, melt, outOfFocus, content };
+	const { placing, laid } = standing;
+	const inTheWorld = standsInTheWorld(standing);
+	const { sharpness, frame } = around;
+	const outOfFocus = inTheWorld ? outOfFocusBeforeItsMatrix(placing, laid, sharpness, frame) : null;
+	const softestOutOfFocus = inTheWorld ? softestOutOfFocusSeen(placing, laid, laid, sharpness, frame) : null;
+	const drawn = { ...drawnPlacement(standing), name, face, held };
+	return { ...drawn, onItsWay, effects, melt, outOfFocus, softestOutOfFocus, content };
 }
 
 /**
- * How soft the eye's focus draws something placed: by where its middle stands in the world, laid in the frame; none
- * laid in the window, which the window's blur takes with it, nor riding with the eye, as what stands on the frame or in
- * a group does.
+ * Whether something placed stands in the world, where the eye's focus blurs it by where it stands: laid in the frame
+ * and not riding with the eye; laid in the window, the window's blur takes it with it, and what stands on the frame or
+ * in a group rides with the eye.
  */
-function outOfFocusIn(standing: Placed, around: Surroundings): number | null {
-	const standsInTheWorld = standing.rides === 'world' && standing.laidIn.kind === 'frame';
-	return standsInTheWorld
-		? outOfFocusBeforeItsMatrix(standing.placing, standing.laid, around.sharpness, around.frame)
-		: null;
+function standsInTheWorld(standing: Placed): boolean {
+	return standing.rides === 'world' && standing.laidIn.kind === 'frame';
 }
 
 /**

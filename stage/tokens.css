@@ -5,6 +5,14 @@
  * cursor, the terminal and the ending — is set on the root every frame from the scene (`LookDrawer` in `stage.js`,
  * livereel's own in `src/props/look.ts`), so a film changes it as it goes; what is worked out from it here follows.
  */
+
+/* A length the room's script reads, worked out to pixels as it is registered */
+@property --reach-past-the-box {
+	syntax: '<length>';
+	inherits: true;
+	initial-value: 0;
+}
+
 :root {
 	/* The film's ground, its glow fading out to its colour; the layers a film lays over it are drawn apart (`stage.css`) */
 	--ground-light: radial-gradient(
@@ -47,6 +55,9 @@
 	--pane-shadow-darkest: 55%;
 	--pane-shadow-drop: 60px;
 	--pane-shadow-blur: 140px;
+
+	/* How far past its box anything an object shows draws at most, in pixels of a frame 1080 high: a pane's shadow, dropped and blurred below it. A surface the room stands an object in covers it (`room.js`) */
+	--reach-past-the-box: calc(var(--pane-shadow-drop) + var(--pane-shadow-blur));
 
 	/* How far a key's shadow drops below its cap, and blurs */
 	--key-shadow-drop: 24px;

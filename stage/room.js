@@ -7,7 +7,9 @@
  *
  * An exposure is its ground; over it the world, one three.js scene with one depth: the page's surface on a plane where
  * the engine's matrix places it in the eye's own space, its texture read back into linear light; the window's body and
- * glass round it (`stage/body.js`); the film's things in the world (`stage/things.js`); all seen in perspective from
+ * glass round it (`stage/body.js`); the film's things in the world (`stage/things.js`); each object of markup standing
+ * in the world, a title, code, the terminal or a piece, on a surface of its own the stage lays it in apart from the
+ * frame's, drawn face-on into a texture and stood where the engine's matrix places its box; all seen in perspective from
  * the eye and lit as it sees the room (`stage/lighting.js`), hiding one another by depth alone. The eye's lens blurs
  * each pixel of the world by how far what it shows stands from the focus (`stage/lens.js`), its fields laid over one
  * another in linear light and the whole laid over the ground; over that stand the film's things on the frame, sharp,
@@ -59,9 +61,10 @@ import { Lens, SPREADS_REACHED } from './lens.js';
 import { WorldLighting } from './lighting.js';
 import { matrixOf, projectionOnto } from './matrices.js';
 import { ADDED, LAID_OVER, SRGB_CURVES, WRITTEN, passOver, valuesSet } from './passes.js';
-import { SeeThroughField, WORLD_PARTS, hasAPartSeenThrough, partDrawn, sortedBySeeingThrough } from './see-through.js';
+import { SeeThroughField, WORLD_PARTS, hasAPartSeenThrough, partsDrawn, sortedBySeeingThrough } from './see-through.js';
 import { Things, isAThing } from './things.js';
 /** @import { DrawnScene } from '../src/scene.ts' */
+/** @import { DrawnObject } from '../src/props/object.ts' */
 /** @import { DrawnWindow } from '../src/props/window.ts' */
 /** @import { DrawnBloom } from '../src/props/lighting.ts' */
 /** @import { ThingObject } from './things.js' */
@@ -70,7 +73,7 @@ import { Things, isAThing } from './things.js';
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { Matrix } from '../src/domain/matrix.ts' */
 /** @import { Box } from '../src/domain/geometry.ts' */
-/** @import { Layout } from '../src/adapters/browser/stage.ts' */
+/** @import { Layout, ObjectList } from '../src/adapters/browser/stage.ts' */
 /** @import { RoomApi, ThingsLoaded } from '../src/adapters/browser/room.ts' */
 
 /**
@@ -91,6 +94,16 @@ import { Things, isAThing } from './things.js';
 /** @type {readonly SurfaceName[]} */
 const SURFACES = ['ground', 'window', 'frame'];
 const SURFACE = 'data-surface';
+// The class every surface takes, the name a surface of markup standing in the world is marked by, and the class of the
+// holder the stage lays its object in
+const SURFACE_CLASS = 'surface';
+const IN_THE_WORLD = 'world';
+const OBJECTS_HOLDER = 'objects';
+// The token of how far past its box anything an object shows draws (`tokens.css`)
+const REACH_PAST_THE_BOX = '--reach-past-the-box';
+// A surface of markup in the world drawn with smaller copies of itself, as it shrinks into the distance as the window
+// does
+const SHRINKS = true;
 // The attribute a surface of an exposure a frame has none of is hidden by, so the canvas paints it not
 const HIDDEN = 'hidden';
 // The custom properties a surface is laid out by in the room, its box on the frame and how densely it is drawn
@@ -159,7 +172,7 @@ const ON_ITS_PLANE = 0;
 const UNSCALED = 1;
 // A page shown whole, which nothing is seen through
 const WHOLLY_SHOWN = 1;
-// A blur of none, which the eye's focus draws sharp; a box of no size; and a list of things of which none stands
+// A blur of none, which the eye's focus draws sharp; a box of no size; and a list of which nothing stands
 const SHARP = 0;
 const NO_SIZE = 0;
 const NONE_STANDING = 0;
@@ -179,10 +192,12 @@ const SET_BY_EACH_FRAME = 0;
 /** @type {ThingsLoaded} */
 const NO_THINGS = { kind: 'built', names: [] };
 // The page's surface drawn nearer than what lies on its plane, the body's rim under its edge and the slab's back under
-// a page on the window's back, by depth's offset, in three's polygon offset steps
-const PAGE_NEARER = -1;
-// A share of the page so clear none of it is drawn there, nor its depth, the clear past its rounded corners: under a
-// level of the browser's eight bits
+// a page on the window's back, by depth's offset, in three's polygon offset steps; and a surface of markup standing in
+// the world nearer still, as such an object stands over the window it shares a plane with
+const PAGE_NEARER = { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 };
+const MARKUP_NEARER = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
+// A share of a surface so clear none of it is drawn there, nor its depth, the clear past the page's rounded corners and
+// round what markup draws: under a level of the browser's eight bits
 const EIGHT_BIT_LEVELS = 255;
 const DRAWN_AT_LEAST = 1 / EIGHT_BIT_LEVELS;
 // The page's surface laid in the world over what it hides, by how clear it is, its colours premultiplied, its depth
@@ -194,26 +209,37 @@ const PAGE_LAID = {
 	blendSrcAlpha: OneFactor,
 	blendDstAlpha: OneMinusSrcAlphaFactor,
 	transparent: true,
-	depthWrite: true
+	depthWrite: true,
+	...PAGE_NEARER
 };
 // The page seen through laid so too, but writing no depth, as nothing seen through does; and its depth alone
 const PAGE_SEEN_THROUGH = { ...PAGE_LAID, depthWrite: false };
-const PAGE_DEPTH_ALONE = { blending: NoBlending, colorWrite: false, depthWrite: true };
+const PAGE_DEPTH_ALONE = { blending: NoBlending, colorWrite: false, depthWrite: true, ...PAGE_NEARER };
+// A surface of markup standing in the world laid as the page seen through is, and its depth alone, each cut at a
+// fading page's plane as a thing seen through is (`see-through.js`)
+const MARKUP_SEEN_THROUGH = { ...PAGE_SEEN_THROUGH, ...MARKUP_NEARER, clipping: true };
+const MARKUP_DEPTH_ALONE = { ...PAGE_DEPTH_ALONE, ...MARKUP_NEARER, clipping: true };
 
-// The page's surface in the world: its texture where the plane's share of it falls, the texture's rows from its top,
-// read back from the screen's colours into linear light, premultiplied by how clear it is; none drawn, nor its depth,
-// where it is clear
-const PAGE_IN_THE_WORLD_VERTEX = `
+// A surface drawn from markup in the world, the page's or an object's: its texture where the plane's share of it falls,
+// the texture's rows from its top, read back from the screen's colours into linear light, premultiplied by how clear it
+// is; none drawn, nor its depth, where it is clear; cut by three's clipping planes where its material asks
+const SURFACE_IN_THE_WORLD_VERTEX = `
+#include <clipping_planes_pars_vertex>
 varying vec2 shareOfTheSurface;
 void main() {
 	shareOfTheSurface = vec2(uv.x, 1.0 - uv.y);
 	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+	// Where three's clipping planes cut it, which reads the point in the eye's space as mvPosition
+	vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+	#include <clipping_planes_vertex>
 }`;
-const PAGE_IN_THE_WORLD_FRAGMENT = `
+const SURFACE_IN_THE_WORLD_FRAGMENT = `
+#include <clipping_planes_pars_fragment>
 uniform sampler2D surface;
 varying vec2 shareOfTheSurface;
 ${SRGB_CURVES}
 void main() {
+	#include <clipping_planes_fragment>
 	vec4 drawn = texture2D(surface, shareOfTheSurface);
 	if (drawn.a < ${DRAWN_AT_LEAST}) discard;
 	gl_FragColor = vec4(decoded(drawn.rgb / drawn.a) * drawn.a, drawn.a);
@@ -294,6 +320,52 @@ class SurfaceTexture {
 	}
 }
 
+/**
+ * A surface an object of markup standing in the world is laid in: its element, a child of the room's canvas, which the
+ * canvas draws into a texture of its own; the holder of the frame's size the stage lays the object in, so it stands
+ * where the frame has it; and the object's list and name.
+ * @typedef {{ readonly element: HTMLElement, readonly holder: HTMLElement, readonly list: ObjectList, readonly name: string }} WorldSurface
+ */
+
+/**
+ * The surfaces an exposure's markup standing in the world is laid in, one for each object, made as the stage first lays
+ * an object in one and let go once a frame lays nothing in it.
+ */
+class WorldSurfaces {
+	/** @param {PaintingCanvas} canvas */
+	constructor(canvas) {
+		this.canvas = canvas;
+		/** Each surface, by its object's list and name @type {Map<string, WorldSurface>} */
+		this.surfaces = new Map();
+		/** The surfaces the stage has laid an object in since the frame before @type {Set<WorldSurface>} */
+		this.laid = new Set();
+	}
+
+	/**
+	 * The holder an object of a list and a name is laid in, its surface made the first time.
+	 * @param {ObjectList} list @param {string} name
+	 */
+	holderFor(list, name) {
+		const key = `${list} ${name}`;
+		const surface = this.surfaces.get(key) ?? worldSurfaceIn(this.canvas, list, name);
+		this.surfaces.set(key, surface);
+		this.laid.add(surface);
+		return surface.holder;
+	}
+
+	/** The surfaces the stage laid an object in this frame, the rest let go. @returns {readonly WorldSurface[]} */
+	laidThisFrame() {
+		const laid = [...this.laid];
+		for (const [key, surface] of this.surfaces) {
+			if (this.laid.has(surface)) continue;
+			surface.element.remove();
+			this.surfaces.delete(key);
+		}
+		this.laid.clear();
+		return laid;
+	}
+}
+
 /** The room: the canvas each exposure's surfaces are laid in, the world's one scene, and what composes a frame. */
 class Room {
 	/** @param {Layout} layout @param {Things} things @param {WorldLighting} lighting */
@@ -342,9 +414,21 @@ class Room {
 		this.body = new WindowBody();
 		this.world = new Scene();
 		// The page as it writes depth, where it is drawn whole; and where it is seen through, its light and its depth apart
-		this.page = pageInTheWorld(PAGE_LAID, 'opaque');
-		this.pageSeenThrough = pageInTheWorld(PAGE_SEEN_THROUGH, 'pageSeenThrough');
-		this.pageDepth = pageInTheWorld(PAGE_DEPTH_ALONE, 'pageDepth');
+		this.page = surfaceInTheWorld(PAGE_LAID, 'opaque');
+		this.pageSeenThrough = surfaceInTheWorld(PAGE_SEEN_THROUGH, 'pageSeenThrough');
+		this.pageDepth = surfaceInTheWorld(PAGE_DEPTH_ALONE, 'surfacesDepth');
+		/** The surfaces markup standing in the world is laid in, each exposure's apart @type {WorldSurfaces[]} */
+		this.worldSurfaces = this.exposureSurfaces.map(() => new WorldSurfaces(this.canvas));
+		/**
+		 * Each surface of markup in the world as the world draws it, by its place among an exposure's
+		 * @type {MarkupInTheWorld[]}
+		 */
+		this.markup = [];
+		// How far past its box anything an object shows draws, in the frame's pixels
+		this.reachPastTheBox = reachPastTheBox() * layout.frameScale;
+		window.stage.layApart((exposure, list, name) =>
+			worldSurfacesAt(this.worldSurfaces, exposure).holderFor(list, name)
+		);
 		this.worldLayer = new WebGLRenderTarget(drawnWidth, drawnHeight, {
 			...THREES_LAYER,
 			depthTexture: new DepthTexture(drawnWidth, drawnHeight)
@@ -372,10 +456,11 @@ class Room {
 
 	/**
 	 * One frame composed from its exposures: the window's surface of each laid out as far as its scene reaches, and as
-	 * far past the frame as the lens's blur of any of them gathers, the surfaces of those it has painted, each exposure
-	 * drawn and added into the frame at an equal weight; the frame glowing round its light past white where the world
-	 * asks, and shown on the canvas once the card has drawn it. What the film is told where its things module throws
-	 * building or setting a thing, none where the frame is drawn.
+	 * far past the frame as the lens's blur of any of them gathers, and a surface over each object of markup standing in
+	 * the world where the stage laid it; the surfaces of those it has painted, each exposure drawn and added into the
+	 * frame at an equal weight; the frame glowing round its light past white where the world asks, and shown on the
+	 * canvas once the card has drawn it. What the film is told where its things module throws building or setting a
+	 * thing, none where the frame is drawn.
 	 * @param {readonly DrawnScene[]} scenes @returns {Promise<string | null>}
 	 */
 	async compose(scenes) {
@@ -388,6 +473,14 @@ class Room {
 			const surface = surfaceOf(surfacesAt(this.exposureSurfaces, place), 'window');
 			laidOutAs(surface, placing.box, this.densityOf(placing.box));
 		}
+		const standings = pagePlacings.map((placing, place) => ({
+			placing,
+			markup: worldSurfacesAt(this.worldSurfaces, place)
+				.laidThisFrame()
+				.map((surface) => this.markupLaidOut(surface, scenesAt(scenes, place)))
+		}));
+		// An exposure the frame has none of lays no markup: its surfaces are let go
+		for (const surfaces of this.worldSurfaces.slice(scenes.length)) surfaces.laidThisFrame();
 		await paintedOf(this.canvas);
 		const first = surfacesAt(this.exposureSurfaces, FIRST);
 		for (const name of SURFACES.filter((each) => !SURFACE_TEXTURES[each].eachExposure)) {
@@ -397,9 +490,9 @@ class Room {
 		this.renderer.setRenderTarget(this.frame);
 		this.renderer.clear();
 		valuesSet(this.weighed.material, { weight: WHOLE / scenes.length });
-		for (const [place, placing] of pagePlacings.entries()) {
+		for (const [place, standing] of standings.entries()) {
 			const scene = scenesAt(scenes, place);
-			const refused = this.exposureDrawn(surfacesAt(this.exposureSurfaces, place), placing, scene, gathered);
+			const refused = this.exposureDrawn(surfacesAt(this.exposureSurfaces, place), standing, scene, gathered);
 			if (refused !== null) return refused;
 		}
 		const bloom = scenesAt(scenes, FIRST).world.bloom;
@@ -425,10 +518,10 @@ class Room {
 	 * An exposure drawn and added into the frame: its ground; the world as one scene, through the eye's lens; the film's
 	 * things on the frame; the frame's surface. What the film is told where its module throws building or setting a
 	 * thing, none where all are drawn.
-	 * @param {ReadonlyMap<SurfaceName, Element>} surfaces @param {PagePlacing} placing @param {DrawnScene} scene
+	 * @param {ReadonlyMap<SurfaceName, Element>} surfaces @param {ExposureStanding} standing @param {DrawnScene} scene
 	 * @param {Box} gathered @returns {string | null}
 	 */
-	exposureDrawn(surfaces, placing, scene, gathered) {
+	exposureDrawn(surfaces, standing, scene, gathered) {
 		const things = thingsIn(scene);
 		const refused = this.thingsPosed(things);
 		if (refused !== null) return refused;
@@ -439,7 +532,7 @@ class Room {
 		const pageTexture = textureOf(this.textures, 'window');
 		pageTexture.drawnFrom(surfaceOf(surfaces, 'window'));
 		const { sharpness, eye } = scene;
-		const fields = this.worldDrawn(scene, pageTexture, placing, things.filter(standsInTheWorld), gathered);
+		const fields = this.worldDrawn(scene, pageTexture, standing, things.filter(standsInTheWorld), gathered);
 		this.renderer.setRenderTarget(this.worldSeen);
 		this.renderer.clear();
 		for (const field of fields) {
@@ -483,22 +576,24 @@ class Room {
 
 	/**
 	 * The world drawn as one scene, over the box of the frame the lens's blur gathers: the page's surface on the plane
-	 * the engine lays it on; the window's body and glass; and the film's posed things in the world; seen from the eye,
-	 * lit as it sees the room. What writes depth is drawn into the world's layer, and what is seen through, where it has
-	 * something of the world behind it to show, into a field of its own over it (`see-through.js`). A page seen through
-	 * with nothing of the world but its own body standing round it shows the ground behind it, which the lens does not
-	 * blur, and its body's rim under its edge, on its own plane: it is drawn with what writes depth, so its edge and the
-	 * rim under it blur as one, where blurred apart they left a light band round a blurred page, and the lens runs once.
-	 * The fields the lens lays, the lowest first.
-	 * @param {DrawnScene} scene @param {SurfaceTexture} pageTexture @param {PagePlacing} placing
+	 * the engine lays it on; the window's body and glass; the film's posed things in the world; and the surface of each
+	 * object of markup standing there; seen from the eye, lit as it sees the room. What writes depth is drawn into the
+	 * world's layer, and what is seen through, where it has something of the world behind it to show, into a field of its
+	 * own over it (`see-through.js`). Markup is seen through, round its letters and in its shadows, so it stands in that
+	 * field. A page seen through with nothing of the world but its own body standing round it shows the ground behind it,
+	 * which the lens does not blur, and its body's rim under its edge, on its own plane: it is drawn with what writes
+	 * depth, so its edge and the rim under it blur as one, where blurred apart they left a light band round a blurred
+	 * page, and the lens runs once. The fields the lens lays, the lowest first.
+	 * @param {DrawnScene} scene @param {SurfaceTexture} pageTexture @param {ExposureStanding} standing
 	 * @param {readonly ThingObject[]} things @param {Box} gathered @returns {readonly SceneField[]}
 	 */
-	worldDrawn(scene, pageTexture, placing, things, gathered) {
+	worldDrawn(scene, pageTexture, standing, things, gathered) {
 		const window = scene.window;
 		seenThrough(this.worldCamera, projectionOnto(gathered, this.frameBox, scene.eye.distance));
 		this.world.clear();
-		const pageMatrix = surfaceMatrixOf(window.pageSurface.inTheEyesSpace, placing);
-		const pageSeenThrough = window.pageShown < WHOLLY_SHOWN && things.length > NONE_STANDING;
+		const pageMatrix = surfaceMatrixOf(window.pageSurface.inTheEyesSpace, standing.placing);
+		const standsBesideThePage = things.length + standing.markup.length > NONE_STANDING;
+		const pageSeenThrough = window.pageShown < WHOLLY_SHOWN && standsBesideThePage;
 		const pages = pageSeenThrough ? [this.pageSeenThrough, this.pageDepth] : [this.page];
 		for (const page of pages) {
 			valuesSet(page.material, { surface: pageTexture.texture });
@@ -512,12 +607,13 @@ class Room {
 			this.world.add(placed);
 		}
 		const thingsSeenThrough = posed.some(hasAPartSeenThrough);
+		for (const [place, markup] of standing.markup.entries()) this.markupAdded(place, markup);
 		this.lighting.shiningIn(this.world, scene.eye.roomInTheEyesSpace);
 		this.renderer.setRenderTarget(this.worldLayer);
 		this.renderer.clear();
-		partDrawn(this.renderer, this.world, this.worldCamera, 'opaque');
+		partsDrawn(this.renderer, this.world, this.worldCamera, ['opaque']);
 		const opaque = fieldOf(this.worldLayer);
-		if (!pageSeenThrough && !thingsSeenThrough) return [opaque];
+		if (!pageSeenThrough && !thingsSeenThrough && standing.markup.length === NONE_STANDING) return [opaque];
 		const seenThroughPage = pageSeenThrough ? pageMatrix : null;
 		this.seeThrough.drawn(this.renderer, this.world, this.worldCamera, this.worldLayer, seenThroughPage);
 		return [opaque, fieldOf(this.seeThrough.layer)];
@@ -534,6 +630,36 @@ class Room {
 		const pagesPart = WORLD_PARTS[pageSeenThrough ? 'pageSeenThrough' : 'opaque'];
 		body.glass.traverse((part) => part.layers.set(pagesPart));
 		this.world.add(body.slab, body.glass);
+	}
+
+	/**
+	 * An object of markup standing in the world laid out where the stage laid it: its surface over its box and as far
+	 * past it as anything it shows draws, as densely as the card holds it.
+	 * @param {WorldSurface} surface @param {DrawnScene} scene @returns {MarkupStanding}
+	 */
+	markupLaidOut(surface, scene) {
+		const object = objectNamed(scene[surface.list], surface.name);
+		const box = clearRound(grownBy(object.box, this.reachPastTheBox));
+		laidOutAs(surface.element, box, this.densityOf(box));
+		return { object, element: surface.element, placing: { box, middle: middleOf(object.box) } };
+	}
+
+	/**
+	 * An object of markup standing in the world added to the world, by its place among the exposure's: its surface
+	 * drawn into a texture of its own and stood where the engine's matrix places the object's box's middle, its light
+	 * and its depth apart, as what is seen through is drawn.
+	 * @param {number} place @param {MarkupStanding} markup
+	 */
+	markupAdded(place, markup) {
+		while (this.markup.length <= place) this.markup.push(markupInTheWorld(this.renderer));
+		const inTheWorld = markupAt(this.markup, place);
+		inTheWorld.texture.drawnFrom(markup.element);
+		const matrix = surfaceMatrixOf(markup.object.inTheEyesSpace, markup.placing);
+		for (const surface of [inTheWorld.light, inTheWorld.depth]) {
+			valuesSet(surface.material, { surface: inTheWorld.texture.texture });
+			placedBy(surface, matrix);
+			this.world.add(surface);
+		}
 	}
 
 	/**
@@ -557,7 +683,7 @@ class Room {
 
 	/**
 	 * The box of the frame the world is drawn into for a frame's exposures: as far past each edge of the frame as the
-	 * lens's blur gathers there, from the softest point the frame shows of its window or of a thing in it, in whole
+	 * lens's blur gathers there, from the softest point the frame shows of its window or of an object in it, in whole
 	 * pixels of the drawing, and no farther than the graphics card's largest texture leaves room for, past which a blur
 	 * by the frame's edge gathers nothing; the frame itself where the eye's focus blurs none.
 	 * @param {readonly DrawnScene[]} scenes @returns {Box}
@@ -566,7 +692,7 @@ class Room {
 		const softest = Math.max(
 			SHARP,
 			...scenes.map((scene) => scene.window.softestOutOfFocus ?? SHARP),
-			...scenes.flatMap(thingsIn).map((thing) => thing.content.softestOutOfFocus ?? SHARP)
+			...scenes.flatMap(objectsIn).map((object) => object.softestOutOfFocus ?? SHARP)
 		);
 		if (softest === SHARP) return this.frameBox;
 		const roomLeft = (this.renderer.capabilities.maxTextureSize - Math.max(this.drawnSize.x, this.drawnSize.y)) * HALF;
@@ -586,9 +712,27 @@ class Room {
 }
 
 /**
- * Where the page's surface stands on the window's plane: its box there, in the frame's pixels, and the middle of the
- * window's view, which the engine's matrix carries into the eye's own space.
- * @typedef {{ readonly box: Box, readonly middle: Vector2 }} PagePlacing
+ * Where a surface drawn from markup stands on its plane, the page's on the window's or an object's on its own: its box
+ * there, in the frame's pixels, and the middle of the box the engine's matrix carries into the eye's own space, the
+ * window's view's or the object's.
+ * @typedef {{ readonly box: Box, readonly middle: Vector2 }} SurfacePlacing
+ */
+/**
+ * An object of markup standing in the world as the room lays it: the object, the surface's element, and where the
+ * surface stands on the object's plane.
+ * @typedef {{ readonly object: DrawnObject, readonly element: Element, readonly placing: SurfacePlacing }} MarkupStanding
+ */
+/**
+ * What stands in an exposure's world drawn from markup: the page's surface, and each object's.
+ * @typedef {{ readonly placing: SurfacePlacing, readonly markup: readonly MarkupStanding[] }} ExposureStanding
+ */
+/**
+ * A surface of markup standing in the world as the world draws it: its texture, its light and its depth.
+ * @typedef {{
+ *   readonly texture: SurfaceTexture,
+ *   readonly light: Mesh<PlaneGeometry, ShaderMaterial>,
+ *   readonly depth: Mesh<PlaneGeometry, ShaderMaterial>
+ * }} MarkupInTheWorld
  */
 
 /**
@@ -596,20 +740,24 @@ class Room {
  * drawn over shows of what stands there, as far as the camera's picture reaches, where the eye may see it leant or from
  * aside, and a little clear round it, so the plane's edge falls inside its texture and is filtered as the browser
  * smooths an edge, not cut stepped by its triangles.
- * @param {DrawnScene} scene @param {Box} gathered @returns {PagePlacing}
+ * @param {DrawnScene} scene @param {Box} gathered @returns {SurfacePlacing}
  */
 function pagePlacingOf(scene, gathered) {
-	const view = scene.window.box;
 	const entries = entriesOf(scene.window.pageSurface.transform);
-	const middle = new Vector2(view.left + view.width * HALF, view.top + view.height * HALF);
+	const middle = middleOf(scene.window.box);
 	const standing = boxAround(gathered, scene.window.reach);
 	return { box: clearRound(seenOf(standing, entries, middle, gathered)), middle };
 }
 
+/** Where a box's middle stands. @param {Box} box */
+function middleOf(box) {
+	return new Vector2(box.left + box.width * HALF, box.top + box.height * HALF);
+}
+
 /**
- * The matrix that carries a square of one side about its middle onto the page's surface in the eye's own space: the
- * box it is drawn over, on the plane the engine's matrix carries from the view's middle into that space.
- * @param {Matrix} inTheEyesSpace @param {PagePlacing} placing
+ * The matrix that carries a square of one side about its middle onto a surface in the eye's own space: the box it is
+ * drawn over, on the plane the engine's matrix carries from the middle it names into that space.
+ * @param {Matrix} inTheEyesSpace @param {SurfacePlacing} placing
  */
 function surfaceMatrixOf(inTheEyesSpace, placing) {
 	const box = placing.box;
@@ -809,27 +957,25 @@ function elementDrawingOf(renderer) {
 }
 
 /**
- * The page's surface as the world draws it: a square the room places, drawn whichever side faces the eye, as a window
- * turned half round shows the page mirrored, laid as named, drawn nearer than what shares its plane, in a part of the
- * world.
- * @param {typeof PAGE_LAID | typeof PAGE_SEEN_THROUGH | typeof PAGE_DEPTH_ALONE} laid @param {WorldPart} part
+ * A surface drawn from markup as the world draws it, the page's or an object's: a square the room places, drawn
+ * whichever side faces the eye, as a window turned half round shows the page mirrored, laid as named, drawn nearer than
+ * what shares its plane, in a part of the world.
+ * @param {typeof PAGE_LAID | typeof PAGE_SEEN_THROUGH | typeof PAGE_DEPTH_ALONE | typeof MARKUP_SEEN_THROUGH | typeof MARKUP_DEPTH_ALONE} laid
+ * @param {WorldPart} part
  */
-function pageInTheWorld(laid, part) {
+function surfaceInTheWorld(laid, part) {
 	const material = new ShaderMaterial({
 		uniforms: { surface: { value: null } },
-		vertexShader: PAGE_IN_THE_WORLD_VERTEX,
-		fragmentShader: PAGE_IN_THE_WORLD_FRAGMENT,
+		vertexShader: SURFACE_IN_THE_WORLD_VERTEX,
+		fragmentShader: SURFACE_IN_THE_WORLD_FRAGMENT,
 		side: DoubleSide,
-		...laid,
-		polygonOffset: true,
-		polygonOffsetFactor: PAGE_NEARER,
-		polygonOffsetUnits: PAGE_NEARER
+		...laid
 	});
-	const page = new Mesh(new PlaneGeometry(), material);
-	page.matrixAutoUpdate = false;
-	page.frustumCulled = false;
-	page.layers.set(WORLD_PARTS[part]);
-	return page;
+	const surface = new Mesh(new PlaneGeometry(), material);
+	surface.matrixAutoUpdate = false;
+	surface.frustumCulled = false;
+	surface.layers.set(WORLD_PARTS[part]);
+	return surface;
 }
 
 /** A mesh placed by a matrix of the room's alone. @param {Mesh} mesh @param {Matrix4} matrix */
@@ -850,9 +996,76 @@ function fieldOf(layer) {
 	return { light: layer.texture, depth: layer.depthTexture, width: layer.width, height: layer.height };
 }
 
-/** The things among the objects a scene draws, those standing and those pushed off. @param {DrawnScene} scene */
+/** The objects a scene draws, those standing and those pushed off. @param {DrawnScene} scene */
+function objectsIn(scene) {
+	return [...scene.objects, ...scene.leaving];
+}
+
+/** The things among the objects a scene draws. @param {DrawnScene} scene */
 function thingsIn(scene) {
-	return [...scene.objects, ...scene.leaving].filter(isAThing);
+	return objectsIn(scene).filter(isAThing);
+}
+
+/**
+ * The object of a name in a list a scene draws: the stage laid it in its surface as it drew the scene, so one missing is
+ * the room's fault.
+ * @param {readonly DrawnObject[]} objects @param {string} name
+ */
+function objectNamed(objects, name) {
+	const object = objects.find((each) => each.name === name);
+	if (object === undefined) throw new Error(`the room lays ${name} in the world, which its scene does not draw`);
+	return object;
+}
+
+/**
+ * A surface an object of markup standing in the world is laid in, laid in the canvas: a surface of the stage's, marked
+ * as standing in the world, holding a holder of objects.
+ * @param {PaintingCanvas} canvas @param {ObjectList} list @param {string} name @returns {WorldSurface}
+ */
+function worldSurfaceIn(canvas, list, name) {
+	const element = document.createElement('div');
+	element.classList.add(SURFACE_CLASS);
+	element.setAttribute(SURFACE, IN_THE_WORLD);
+	const holder = document.createElement('div');
+	holder.classList.add(OBJECTS_HOLDER);
+	element.append(holder);
+	canvas.append(element);
+	return { element, holder, list, name };
+}
+
+/**
+ * A surface of markup standing in the world as the world draws it: its texture, filtered as it shrinks into the
+ * distance; its light, seen through, and its depth, where it is drawn.
+ * @param {WebGLRenderer} renderer @returns {MarkupInTheWorld}
+ */
+function markupInTheWorld(renderer) {
+	return {
+		texture: new SurfaceTexture(renderer, SHRINKS),
+		light: surfaceInTheWorld(MARKUP_SEEN_THROUGH, 'surfacesSeenThrough'),
+		depth: surfaceInTheWorld(MARKUP_DEPTH_ALONE, 'surfacesDepth')
+	};
+}
+
+/**
+ * How far past its box anything an object shows draws at most, in pixels of a frame 1080 high: the stylesheet's token,
+ * registered as a length so the browser works it out to pixels.
+ */
+function reachPastTheBox() {
+	return Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue(REACH_PAST_THE_BOX));
+}
+
+/** @param {readonly MarkupInTheWorld[]} markup @param {number} place */
+function markupAt(markup, place) {
+	const inTheWorld = markup[place];
+	if (inTheWorld === undefined) throw new Error(`the room has drawn no surface ${place + 1} of markup in the world`);
+	return inTheWorld;
+}
+
+/** @param {readonly WorldSurfaces[]} exposures @param {number} place */
+function worldSurfacesAt(exposures, place) {
+	const surfaces = exposures[place];
+	if (surfaces === undefined) throw new Error(`the room has no exposure ${place + 1} to lay markup in`);
+	return surfaces;
 }
 
 /** Whether a thing stands in the world, where the eye sees it, not on the frame. @param {ThingObject} thing */

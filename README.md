@@ -533,8 +533,12 @@ A title, code, the terminal or a piece of the page stands on the frame where
 it names nothing, and rides with the eye as it moves; shown `inside:
 'world'`, it stands where it is placed while the eye moves past it, as the
 page's window does, and the eye's focus blurs it as it stands off it. Its
-place is read as from the eye at rest, and it is drawn over the window
-wherever it stands; its `depth` still counts from the eye at rest, so an eye
+place is read as from the eye at rest. Flat, it is drawn over the window
+wherever it stands; drawn as a room, it stands in the world's one scene,
+hidden by the window and its body where it stands behind them and over them
+where it stands before, and the eye's focus blurs each point of it by how
+far it stands, its shadow and its letters' edges seen through to the page
+behind. Its `depth` still counts from the eye at rest, so an eye
 moved near or past it is not kept in front of it. A piece lifted `inside:
 'world'`, `piece.show('#why', { inside: 'world' })`, stands over its source
 on the window's plane wherever the eye stands, aslant too.
@@ -1249,7 +1253,10 @@ What `room` costs:
   115.6 s against 88.7 and 88.2 s (`--profile`, 2026-11-10, the card shared
   with other shoots). A page fading with nothing else in the world is drawn
   with the rest, in one field: those frames without the cube took 83.3 and
-  100.8 s where two fields took 108.6 and 108.6 s.
+  100.8 s where two fields took 108.6 and 108.6 s. Markup standing in the
+  world, a title or a pane, is seen through round its letters and in its
+  shadow, so it is drawn in that field: the frames with a title and code in
+  the world in place of the cube took 119.4 and 121.5 s.
 - Where the frame shows more of the window's plane than the graphics card
   holds in one texture, as the eye flying low over a tall screen does, the
   plane is drawn less densely, softer than flat near the eye.
