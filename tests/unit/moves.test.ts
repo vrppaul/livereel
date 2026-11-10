@@ -2238,6 +2238,55 @@ test('the window moves to a place, lifted off the ground, and back over the whol
 	]);
 });
 
+test("a window brought half way to the eye is drawn twice as large about its middle and twice as far from the frame's middle, the point of the screen under each point of the frame the one drawn there; over the whole frame it stays the frame itself", async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH);
+	const near = await setAt(windowTo('right', { depth: 1000 }), opening, 1);
+	const camera = cameraOf(near, SMALL);
+	const box = windowOn(SMALL, 'right');
+	const drawnAs = drawn(near, camera, 0, SMALL, NONE_SHARPER).window.transform;
+	const point: Point = { left: 330, top: 180 };
+	const wholeNear = await setAt(windowTo('whole', { depth: 1000 }), opening, 1);
+	expect([
+		drawnAs.kind,
+		drawnAs.matrix.m11,
+		drawnAs.matrix.m22,
+		drawnAs.matrix.m41,
+		drawnAs.matrix.m42,
+		underTheFrame(camera, SMALL.frame, onTheFrame(camera, SMALL.frame, point)),
+		cameraOf(wholeNear, SMALL).view.lift
+	]).toEqual([
+		'flat',
+		expect.closeTo(2),
+		expect.closeTo(2),
+		expect.closeTo(middleX(box) - SMALL.frame.width / 2),
+		expect.closeTo(middleY(box) - SMALL.frame.height / 2),
+		closeToPoint(point),
+		0
+	]);
+});
+
+test("the window's depth goes on its move's own curve, past its end where the curve takes it past, shares a step with a lean, and is kept where a move names none", async () => {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH);
+	const nearing = windowTo('right', { depth: 400 });
+	const leaning = lean({ tilt: 10 });
+	const leantMeanwhile = await setAt(leaning, await setAt(nearing, opening, 0.5), 1);
+	const pastItsEnd = await setAt(nearing, opening, PAST_ITS_END);
+	const carriedOn = await setAt(windowTo('left'), await setAt(nearing, opening, 1), 1);
+	const inTheFramesPixels = frameScaleOf(SMALL.frame);
+	expect(() => play({ seconds: 1, moves: [nearing, leaning] })).not.toThrow();
+	expect([
+		leantMeanwhile.window.depth,
+		leantMeanwhile.window.angle,
+		pastItsEnd.window.depth,
+		carriedOn.window.depth
+	]).toEqual([
+		200 * inTheFramesPixels,
+		{ ...FACE_ON, tilt: 10 },
+		expect.closeTo(400 * PAST_ITS_END * inTheFramesPixels),
+		400 * inTheFramesPixels
+	]);
+});
+
 test('the window shown from a side slides in whole from a frame past its place, and one hidden toward a side slides out as far and stays there', async () => {
 	const room = windowOn(SMALL, 'right');
 	const coming = await setAt(
@@ -2939,6 +2988,13 @@ test('an eye flown over the window rides it: the window leant in the same step, 
 		FRAMES_MIDDLE,
 		FRAMES_MIDDLE
 	]);
+});
+
+test('an eye flown over the window rides it as the window is brought toward the eye, a point of the page drawn where it was', async () => {
+	const flown = await setAt(eye.fly([{ to: OVER_THE_BLOCK }]), openingScene(SMALL, LIVEREELS_LOOK, FOCAL_LENGTH), 1);
+	const near = await setAt(windowTo('whole', { depth: 500 }), flown, 1);
+	const blocksCorner: Point = { left: BLOCK.left, top: BLOCK.top };
+	expect(pagePointDrawn(near, blocksCorner)).toEqual(pagePointDrawn(flown, blocksCorner));
 });
 
 test("an eye flown turning toward a block and lifting its sight to hold it three quarters down the frame draws it there, on the frame's middle line, and holds it there flying on ahead", async () => {

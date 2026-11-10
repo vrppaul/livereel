@@ -13,6 +13,7 @@
  * half round shows the page mirrored, or a page of the film's own on its back (`Back` in `src/props/screen.ts`).
  */
 import { FilmError } from './errors.ts';
+import { type Size, frameScaleOf } from './geometry.ts';
 import { A_NUMBER, type Kind, Plain } from './handed.ts';
 import {
 	type FlatMatrix,
@@ -108,6 +109,14 @@ export interface DepthNamed {
 /** The depth a move's value names, for the film's eye to be read for: none where the move names none. */
 export function depthsNamed(by: string, depth: number | undefined): readonly DepthNamed[] {
 	return depth === undefined ? [] : [{ depth, by }];
+}
+
+/**
+ * The depth a film gives an object, a group or the window, in pixels of a frame 1080 high, as the frame's own pixels;
+ * as it stands, where the film gives none.
+ */
+export function depthAsked(depth: number | undefined, standing: number, frame: Size): number {
+	return depth === undefined ? standing : depth * frameScaleOf(frame);
 }
 
 /**

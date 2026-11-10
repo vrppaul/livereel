@@ -188,7 +188,7 @@ and the moves of each part of the scene:
   it, so a window leant back is sharp where the eye focuses and melts beyond; what stands on the frame or in a group
   stays sharp. It shares a step with `eye.to`, and holds on what it was put on as the eye moves; a focus pulled from
   one to another goes evenly in how sharp it leaves things. A focus on what stands behind the eye is refused
-- `window.to(place)`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn, roll, over })`,
+- `window.to(place, { depth })`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn, roll, over })`,
   `window.shade({ dim, fade, blur })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
 - `callout.show(target, text, { side })`, `callout.hide()`
@@ -554,6 +554,16 @@ it from one place to another, and, `window.to('whole')`, brings it back to
 fill the frame. The window moves apart from the camera: the camera keeps
 what it frames framed in whatever window stands, as the window travels or
 grows, so `window.to` and `camera.onto` share a step in either order.
+`window.to(place, { depth: 700 })` brings the window 700 pixels of a frame
+1080 high toward the eye on its way, as an object's `to` brings it, less
+than the eye's focal length, refused before anything is shot where it
+would stand at the eye or behind it: larger and farther from the frame's
+middle as the eye sees it, a slab coming at the eye with its body, and a
+depth less than none takes it back from the eye. A depth goes on the
+move's curve, is kept as it stands where a move names none, and shares a
+`play` with `window.lean`. Over the whole frame the window stays the frame
+itself, flat on it, at any depth. A window off its plane, as one leant,
+has the page's picture taken as sharp as livereel's bound, 2.2.
 `window.show({ at: 'whole', from: 'right' })` slides the window in whole
 from a frame past its place, `window.hide({ toward: 'left' })` slides it
 out as far, where it stays until a move brings it back: with words sliding

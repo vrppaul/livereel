@@ -66,7 +66,7 @@ import {
 	namesSetBy,
 	needed
 } from '../domain/handed.ts';
-import { AS_PLACED, A_SCALE, angleToward, angledAs, depthsNamed, faceOnNearest } from '../domain/stance.ts';
+import { AS_PLACED, A_SCALE, angleToward, angledAs, depthAsked, depthsNamed, faceOnNearest } from '../domain/stance.ts';
 import {
 	A_PLACE,
 	type Place,
@@ -977,14 +977,6 @@ function flatOnTheWindowSaid(holder: Holder): string | null {
 		case 'group':
 			return null;
 	}
-}
-
-/**
- * The depth a film gives an object, or a group, in pixels of a frame 1080 high, as the frame's own pixels; as it
- * stands, where the film gives none.
- */
-export function depthAsked(depth: number | undefined, standing: number, frame: Size): number {
-	return depth === undefined ? standing : depth * frameScaleOf(frame);
 }
 
 /**

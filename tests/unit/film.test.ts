@@ -10,6 +10,7 @@ import { play } from '../../src/direction/steps.ts';
 import { act } from '../../src/moves/act.ts';
 import * as camera from '../../src/moves/camera.ts';
 import * as title from '../../src/moves/title.ts';
+import { to as windowTo } from '../../src/moves/window.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import type { KeyboardSound, LivereelSoundsScript, Music } from '../../src/direction/sound.ts';
 import { SMALL } from './fakes.ts';
@@ -356,7 +357,7 @@ test("a film's eye sees 24° across the frame's shorter side where it names no a
 	);
 });
 
-test("a depth that brings something as near as the film's eye at rest or nearer is refused as the steps are read, before anything is shot, by the eye's focal length", () => {
+test("a depth that brings something as near as the film's eye at rest or nearer is refused as the steps are read, before anything is shot, by the eye's focal length: an object's, the window's", () => {
 	const nearing = (depth: number) => [play({ seconds: 1, moves: [title.to('left', { depth })] })];
 	expect(() => stepsGiven(nearing(2600))).toThrow(
 		new FilmError(
@@ -366,6 +367,11 @@ test("a depth that brings something as near as the film's eye at rest or nearer 
 	expect(() => stepsGiven([play({ seconds: 1, moves: [title.effects({ depth: 2541 })] })])).toThrow(
 		new FilmError(
 			"title.effects's depth is 2541: it brings it as near as the eye at rest or nearer, 2540.5 from the frame, where it is never seen; bring it less near"
+		)
+	);
+	expect(() => stepsGiven([play({ seconds: 1, moves: [windowTo('right', { depth: 2541 })] })])).toThrow(
+		new FilmError(
+			"window.to's depth is 2541: it brings it as near as the eye at rest or nearer, 2540.5 from the frame, where it is never seen; bring it less near"
 		)
 	);
 	const wide = filmWritten({ eye: { angleOfView: 90 }, steps: () => nearing(600) });

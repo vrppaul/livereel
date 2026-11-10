@@ -404,22 +404,23 @@ export function keptOnTheScreen(pose: Pose, format: Format, view: View): Pose {
  * How close a picture of the page must hold it, as a pose's zoom has it, for a frame's cameras and pieces of the page to
  * show it as sharp as it stands: its own camera, those along its way it is also exposed at, and how close each piece
  * shows it. Face-on, a camera shows a page's pixel as large anywhere on the frame, so the picture holds it as close as
- * the closest of them comes. A camera in a leant view, or seen by an eye that has moved, shows the nearer part of the
- * screen larger than its zoom, so the picture holds it at livereel's bound, `ZOOM_AT_MOST`; no picture holds it closer
- * than that.
+ * the closest of them comes. A camera in a view leant, brought near or grown, or seen by an eye that has moved, shows
+ * the page, or its nearer part, larger than its zoom, so the picture holds it at livereel's bound, `ZOOM_AT_MOST`; no
+ * picture holds it closer than that.
  */
 export function zoomPicturedFor(own: Camera, along: readonly Camera[], pieces: readonly number[]): number {
 	const cameras = [own, ...along];
-	if (!cameras.every((camera) => isFaceOn(camera.view) && isAtRest(camera.eye))) return ZOOM_AT_MOST;
+	if (!cameras.every((camera) => showsThePageAtItsZoom(camera.view) && isAtRest(camera.eye))) return ZOOM_AT_MOST;
 	return Math.min(ZOOM_AT_MOST, Math.max(...cameras.map((camera) => camera.pose.zoom), ...pieces));
 }
 
 /**
- * Whether a stance leaves what stands so in a plane facing the frame: neither tilted, turned nor turned over, or by
- * whole or half turns alone, which show its front or its back, rolled any way.
+ * Whether a view, seen from the eye at rest, shows the page as large as its camera's zoom has it: on the frame's plane,
+ * as large as its box, and in a plane facing the frame, neither tilted, turned nor turned over, or by whole or half
+ * turns alone, which show its front or its back, rolled any way.
  */
-function isFaceOn(stance: Stance): boolean {
-	return facesTheFrame(stanceMatrix(stance));
+function showsThePageAtItsZoom(view: View): boolean {
+	return view.depth === AS_PLACED.depth && view.scale === AS_PLACED.scale && facesTheFrame(stanceMatrix(view));
 }
 
 /** Whether a stance leaves what stands so facing the frame with its front, upright: by whole turns alone. */

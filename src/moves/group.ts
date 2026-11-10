@@ -11,7 +11,7 @@ import { BOX_SPACE, type Box, resizedAbout } from '../domain/geometry.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { A_PLACE, type Place, placesNamed, windowPlaced } from '../domain/place.ts';
 import { pathOf } from '../domain/path.ts';
-import { AS_PLACED, angleToward, depthsNamed } from '../domain/stance.ts';
+import { AS_PLACED, angleToward, depthAsked, depthsNamed } from '../domain/stance.ts';
 import {
 	type Beginning,
 	type Change,
@@ -36,7 +36,6 @@ import {
 	type ToScript,
 	carriedOnPath,
 	carryingWritten,
-	depthAsked,
 	placesOnTheWay
 } from './object.ts';
 import { leantFrom } from './lean.ts';

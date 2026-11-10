@@ -1,37 +1,54 @@
 /**
- * The page's window: where on the frame the camera's picture shows, moved to a place (`src/domain/place.ts`), slid in
- * from past a side of the frame or out past one, and leant, apart from the camera, which keeps what it aims at inside
- * it as it goes.
+ * The page's window: where on the frame the camera's picture shows, moved to a place (`src/domain/place.ts`) and
+ * brought toward the eye or away from it there, slid in from past a side of the frame or out past one, and leant, apart
+ * from the camera, which keeps what it aims at inside it as it goes.
  *
  * In a place the window stands on the film's ground, lifted off it, its corners rounded, its edge and shadow under it;
- * over the whole frame, however the place names it, it is the frame itself, flat on it. So the page draws back off the
- * frame's edges into a window, travels from one place to another, and grows back out to fill the frame. What slides
- * moves a whole frame, as words do, so a window and words sliding in one step move as one sheet; a window slid out
- * stays past the edge until a move brings it back. The window holds where it goes, so what comes up beside it while
- * it moves is placed beside where it goes; a note's words keep beside it as it moves, so they come with it on its way,
- * and a move that would carry them off the frame, or under it, is refused.
+ * over the whole frame, however the place names it, it is the frame itself, flat on it, at any depth. So the page draws
+ * back off the frame's edges into a window, travels from one place to another, and grows back out to fill the frame.
+ * Brought toward the eye it is drawn larger and farther from the frame's middle, as an object is: a slab coming at the
+ * eye with its body, or, at a depth less than none, drawn back from it. A depth as near as the eye at rest or nearer is refused before the
+ * film is shot, as an object's is. What slides moves a whole frame, as words do, so a window and words sliding in one
+ * step move as one sheet; a window slid out stays past the edge until a move brings it back. The window holds where it
+ * goes, so what comes up beside it while it moves is placed beside where it goes; a note's words keep beside it as it
+ * moves, so they come with it on its way, and a move that would carry them off the frame, or under it, is refused.
  *
  * The page in the window is shaded while something stands clear of it: dimmed, faded into the film's ground and
  * blurred, the window's edge and shadow standing as they are (`src/props/window.ts`).
  *
  * Where the window stands, how it leans and how it shades the page are its own values: a move that carries it sets its
- * box and lift, one that leans it its angle, one that shades the page those of the shade it names, each writing only
- * its own into the window as it stands, so they share a step, each as far along as its own share.
+ * box, lift and depth, the depth kept as it stands but where `window.to` names one, as only that move brings the window
+ * near; one that leans it its angle, one that shades the page those of the shade it names, each writing only its own
+ * into the window as it stands, so they share a step, each as far along as its own share.
  */
 import { type Placing, type View, viewOf, viewOver } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
 import { A_FRAME_SIDE, type Box, type FrameSide, liesOutside, liesWithin } from '../domain/geometry.ts';
-import { A_PIXELS, A_SHARE, type Form, assertKind, assertWritten, namesSetBy, needed } from '../domain/handed.ts';
+import {
+	A_NUMBER,
+	A_PIXELS,
+	A_SHARE,
+	type Form,
+	assertKind,
+	assertWritten,
+	namesSetBy,
+	needed
+} from '../domain/handed.ts';
 import { A_PLACE, ONE_FRAME, type Place, pastTheEdge, placesNamed, sideBeyond, windowPlaced } from '../domain/place.ts';
-import { angleToward } from '../domain/stance.ts';
-import { namedToward, shareToward } from '../domain/toward.ts';
+import { angleToward, depthAsked, depthsNamed } from '../domain/stance.ts';
+import { between, namedToward, shareToward } from '../domain/toward.ts';
 import { besideTheWindow } from '../props/note.ts';
 import { type PageWindow, SHADE_NAMES, SHADING, type Shade } from '../props/window.ts';
 import { trackOf } from '../domain/track.ts';
 import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import { withProp } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
+
+/** How far a move that carries the window to a place brings it toward the eye, `depth`, in pixels of a frame 1080 high. */
+export interface WindowToScript extends TimingScript {
+	readonly depth?: number;
+}
 
 /** Where the window slides in to, `at` a place, and the side of the frame it comes `from`. */
 export interface WindowShowScript extends TimingScript {
@@ -54,30 +71,35 @@ export interface ShadeScript extends TimingScript {
 	readonly blur?: number;
 }
 
+const TO_FORM: Form<WindowToScript> = { depth: A_NUMBER, ...TIMING_FORM };
 const SHOW_FORM: Form<WindowShowScript> = { at: needed(A_PLACE), from: needed(A_FRAME_SIDE), ...TIMING_FORM };
 const HIDE_FORM: Form<WindowHideScript> = { toward: needed(A_FRAME_SIDE), ...TIMING_FORM };
 const SHADE_FORM: Form<ShadeScript> = { dim: A_SHARE, fade: A_SHARE, blur: A_PIXELS, ...TIMING_FORM };
 // The window's values a move that carries it sets, and one that leans it; what each writes is held to them
-const CARRIED = ['box', 'lift'] as const satisfies readonly (keyof Placing)[];
+const CARRIED = ['box', 'lift', 'depth'] as const satisfies readonly (keyof Placing)[];
 const LEANT = ['angle'] as const satisfies readonly (keyof Placing)[];
 
 /** The window's values a move that carries it writes, and one that leans it. */
 type Carried = Pick<Placing, (typeof CARRIED)[number]>;
 type Leant = Pick<Placing, (typeof LEANT)[number]>;
 
-/** Where a window stands and how far off the ground, which a move that carries it takes from a view. */
-type Standing = Pick<View, 'box' | 'lift'>;
+/** Where a window stands, how far off the ground and how near the eye, which a move that carries it sets. */
+type Standing = Pick<View, (typeof CARRIED)[number]>;
 
-/** The window to a place: the frame itself over the whole frame, a window standing on the ground anywhere else. */
-export function to(place: Place, script: TimingScript = {}): Move {
+/**
+ * The window to a place: the frame itself over the whole frame, a window standing on the ground anywhere else; brought
+ * to the film's depth toward the eye on the way, where it names one.
+ */
+export function to(place: Place, script: WindowToScript = {}): Move {
 	assertKind(place, A_PLACE, "window.to's place");
-	assertWritten(script, TIMING_FORM, 'window.to');
+	assertWritten(script, TO_FORM, 'window.to');
 	return {
 		part: 'window',
 		valueNames: CARRIED,
 		timing: timingOf(script),
 		places: placesNamed("window.to's place", place),
-		begin: (beginning) => travelling(beginning, place)
+		depths: depthsNamed("window.to's depth", script.depth),
+		begin: (beginning) => travelling(beginning, place, script.depth)
 	};
 }
 
@@ -128,13 +150,15 @@ export function lean(script: LeanScript): Move {
 }
 
 /**
- * The window on its way from where it stands to a place; refused where a note's words standing beside it would keep
- * beside it off the frame, or under it.
+ * The window on its way from where it stands to a place, and to the film's depth from its own where it names one, a
+ * depth given in pixels of a frame 1080 high; refused where a note's words standing beside it would keep beside it off
+ * the frame, or under it.
  */
-function travelling(beginning: Beginning, place: Place): Change {
-	const to = placed(beginning, place);
+function travelling(beginning: Beginning, place: Place, depth: number | undefined): Change {
+	const from = viewOf(beginning.scene.window);
+	const to = placed(beginning, place, depthAsked(depth, from.depth, beginning.format.frame));
 	refuseCarryingTheNoteOff(beginning, to.box);
-	return carried(viewOf(beginning.scene.window), to);
+	return carried(from, to);
 }
 
 /** Refuses a window's place where the words of a note standing beside it would stand off the frame, or under it. */
@@ -148,16 +172,19 @@ function refuseCarryingTheNoteOff(beginning: Beginning, window: Box): void {
 	);
 }
 
-/** The window on its way to its place from a frame past it on a side, lifted as it will stand there. */
+/**
+ * The window on its way to its place from a frame past it on a side, lifted as it will stand there, as near the eye as
+ * it stands.
+ */
 function arriving(beginning: Beginning, script: WindowShowScript): Change {
-	const to = placed(beginning, script.at);
+	const to = placed(beginning, script.at, beginning.scene.window.depth);
 	const from = { ...to, box: pastTheEdge(to.box, script.from, beginning.format.frame, ONE_FRAME) };
 	return carried(from, to);
 }
 
 /**
- * The window on its way from where it stands to a frame past it on a side, lifted as it stands; refused where it is
- * off the frame already, as it would slide on a frame further.
+ * The window on its way from where it stands to a frame past it on a side, lifted and as near the eye as it stands;
+ * refused where it is off the frame already, as it would slide on a frame further.
  */
 function leaving(beginning: Beginning, toward: FrameSide): Change {
 	const from = viewOf(beginning.scene.window);
@@ -168,16 +195,21 @@ function leaving(beginning: Beginning, toward: FrameSide): Change {
 	return carried(from, to);
 }
 
-/** Where the window stands in a place, and how far off the ground. */
-function placed(beginning: Beginning, place: Place): Standing {
-	return viewOver(windowPlaced(beginning.format, place), beginning.format.frame);
+/** Where the window stands in a place, how far off the ground the place lifts it, at a depth. */
+function placed(beginning: Beginning, place: Place, depth: number): Standing {
+	const { box, lift } = viewOver(windowPlaced(beginning.format, place), beginning.format.frame);
+	return { box, lift, depth };
 }
 
-/** The window's box and lift on their way from where it stood to where it goes, written into the window as it stands. */
+/**
+ * The window's box, lift and depth on their way from where it stood to where it goes, written into the window as it
+ * stands: its depth passing its ends with the move's curve, as an object's does.
+ */
 function carried(from: Standing, to: Standing): Change {
 	return writing((progress): Carried => ({
 		box: trackOf(from.box, to.box, progress),
-		lift: shareToward(from.lift, to.lift, progress)
+		lift: shareToward(from.lift, to.lift, progress),
+		depth: between(from.depth, to.depth, progress)
 	}));
 }
 
