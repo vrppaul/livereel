@@ -8,11 +8,10 @@
  * The flat stage blurs what stands in the world by one number each — the page's window, with all that lies in it, and
  * each object in the world — as soft as its point nearest the focus: what the eye focuses on is drawn sharp wherever it
  * stands on its plane, and a plane that leans away is as sharp at its far edge as at its near. A plane's distance from
- * the eye goes evenly across it, so its corners bound how near and far it stands. The room blurs each point of the
- * window by how far it stands from the focus (`OutOfFocusAt`): how near a plane stands, the reciprocal of its distance,
- * goes evenly across the frame it is seen on, and the disc is as wide as that stands from the focus's, so the engine
- * hands the room the blur of every point of the frame as an even number of three values, its bound at the plane's
- * horizon, and the softest point of the window the frame shows, which holds it.
+ * the eye goes evenly across it, so its corners bound how near and far it stands. The room blurs each pixel by how far
+ * what it shows stands from the focus, by this law read off its own depth (`stage/lens.js`): it is handed how the eye
+ * sees (`Sharpness`), and of the window only its softest point the frame shows, which bounds how far past the frame's
+ * edge its blur gathers.
  * The window is blurred on the frame, round its cut, so out of focus on the ground it spreads past its edge, and the
  * page past the frame's edge blurs into the frame (probed 2026-11-03: a blur on the view itself, under its cut, kept the
  * window's edge hard). An object is blurred on its own element, which Chrome blurs before its matrix carries it, so its
@@ -51,27 +50,17 @@ export interface Sharpness {
 }
 
 /**
- * How soft the eye draws each point of the frame the page's window is seen at, in pixels of a frame 1080 high, for a
- * stage that blurs each point by how far it stands from the focus, as the room does: at a point of the frame, in its
- * own pixels from its top left corner, the size of `atTheCorner + across × left + down × top`, held to `farthest`, and
- * no softer than `atMost`. The number goes evenly across the frame, as how near the plane stands does: none where the
- * plane stands at the focus, less than none nearer, more farther, and `farthest` where it stands as far as can be, at
- * its horizon, so a point of the frame the eye sees past the horizon, where none of the plane stands, is as soft as its
- * farthest. `atMost` is the softest point of the window the frame shows: a point of the frame the window does not stand
- * at blurs what lies round it, and the plane past the window may stand far nearer the eye, or behind it; held so, the
- * window spreads no farther than its own softest point does, which also sets how far past the frame's edge a blur
- * gathers.
+ * How soft the eye draws each point of the frame a plane is seen at, in pixels of a frame 1080 high: at a point of the
+ * frame, in its own pixels from its top left corner, the size of `atTheCorner + across × left + down × top`, held to
+ * `farthest`. The number goes evenly across the frame, as how near the plane stands does: none where the plane stands
+ * at the focus, less than none nearer, more farther, and `farthest` where it stands as far as can be, at its horizon.
  */
-export interface OutOfFocusAt {
+interface BlurAcrossTheFrame {
 	readonly atTheCorner: number;
 	readonly across: number;
 	readonly down: number;
 	readonly farthest: number;
-	readonly atMost: number;
 }
-
-/** The blur across the frame alone, before it is held to the softest point of the window the frame shows. */
-type BlurAcrossTheFrame = Omit<OutOfFocusAt, 'atMost'>;
 
 /** How far before the eye stands what stands at it, or behind it at none or less. */
 export const AT_THE_EYE = 0;
@@ -152,19 +141,20 @@ export function outOfFocusBeforeItsMatrix(
 }
 
 /**
- * How soft the eye draws each point of the frame what a matrix carries about the middle of a box on the frame is seen
- * at (`OutOfFocusAt`), what it shows standing in another box of its plane: a disc as wide as the eye is open times how
- * far apart the plane's nearness there and the focus's stand, as `aperture × focal length × |1/focus − 1/distance|` is, spread
- * as a Gaussian. None where the eye is open none, sees the plane edge-on, the frame shows none of what it shows, or no
- * point of it the frame shows spreads enough to show.
+ * How soft the eye draws the softest point the frame shows of what a matrix carries about the middle of a box on the
+ * frame, what it shows standing in another box of its plane, in pixels of a frame 1080 high: a disc as wide as the eye
+ * is open times how far apart the plane's nearness there and the focus's stand, as `aperture × focal length × |1/focus
+ * − 1/distance|` is, spread as a Gaussian, softest at a corner of what the frame shows. None where the eye is open none,
+ * sees the plane edge-on, the frame shows none of what it shows, or no point of it the frame shows spreads enough to
+ * show.
  */
-export function outOfFocusAt(
+export function softestOutOfFocusSeen(
 	placing: Matrix,
 	laid: Box,
 	shows: Box,
 	sharpness: Sharpness,
 	frame: Size
-): OutOfFocusAt | null {
+): number | null {
 	if (sharpness.aperture === A_PINHOLE) return null;
 	const nearness = nearnessOfItsPlane(placing);
 	if (nearness === null) return null;
@@ -182,19 +172,11 @@ export function outOfFocusAt(
 	};
 	// The blur goes evenly across what the frame shows but where it is held to its farthest, so it is softest at a
 	// corner of it
-	const atMost = Math.max(...seen.map((point) => blurAt(blur, point)));
-	return atMost * frameScaleOf(frame) <= SHARP_WITHIN ? null : { ...blur, atMost };
+	const softest = Math.max(...seen.map((point) => blurAt(blur, point)));
+	return softest * frameScaleOf(frame) <= SHARP_WITHIN ? null : softest;
 }
 
-/** How soft the eye draws a point of the frame, in its pixels from its top left corner, by how soft it draws each. */
-export function outOfFocusAtThePoint(outOfFocus: OutOfFocusAt, point: Point): number {
-	return Math.min(blurAt(outOfFocus, point), outOfFocus.atMost);
-}
-
-/**
- * How soft the eye draws a point of the frame by the blur across it alone: the size of its even number there, held to
- * its farthest. The room's shader reads it so too (`stage/room.js`).
- */
+/** How soft the eye draws a point of the frame: the size of the blur's even number there, held to its farthest. */
 function blurAt(blur: BlurAcrossTheFrame, point: Point): number {
 	return Math.abs(Math.min(blur.atTheCorner + blur.across * point.left + blur.down * point.top, blur.farthest));
 }

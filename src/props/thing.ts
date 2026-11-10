@@ -9,11 +9,11 @@
  * to its module each frame, which sets the three objects it built whole from them and from how far it has come up, and
  * keeps nothing else; a move of its numbers moves nothing the motion blur counts.
  *
- * The room draws a thing alone, carried about its box's middle into the eye's own space, written in three's own axes,
- * up the frame, so its faces turn as three's do, and seen from there in perspective; as soft as the eye's focus draws
- * its box's point nearest the focus; and, in the world, parted by the page's window, what stands behind it laid under
- * the window and what stands before it over. On the frame, as a caption does, it rides with the eye, stays
- * sharp and stands before the window.
+ * The room draws a thing carried about its box's middle into the eye's own space, written in three's own axes, up the
+ * frame, so its faces turn as three's do, and seen from there in perspective. In the world it stands in the room's one
+ * scene, hidden by and hiding the window and every other thing there by depth, each point of it blurred by how far it
+ * stands from the focus. On the frame, as a caption does, it rides with the eye, stays sharp and stands before the
+ * window.
  */
 import { type Sharpness, outOfFocusOnTheFrame } from '../domain/focus.ts';
 import { type Box, type Size, frameScaleOf } from '../domain/geometry.ts';
@@ -44,9 +44,9 @@ export interface Thing {
  * eye — in pixels of a frame 1080 high from its box's middle, into the eye's own space in the frame's pixels, in
  * three's axes too, the eye at its middle looking down its z; the matrix that carries the room, about the frame's
  * middle in its pixels, into the same space, in three's axes, where the world's lights stand
- * (`src/props/lighting.ts`); how far the eye stands before the frame, in the frame's pixels, which the stage sees it
- * in perspective from; how soft the eye's focus draws it on the frame, in pixels of a frame 1080 high, none where
- * sharp; and whether it stands in the world, where the page's window parts it.
+ * (`src/props/lighting.ts`); how soft the eye's focus draws its box's point nearest the focus, in pixels of a frame
+ * 1080 high, none where sharp, as far as the room's blur of it gathers past the frame's edge; and whether it stands in
+ * the world, where the eye sees it among the window and every other thing there.
  */
 export interface DrawnThing {
 	readonly kind: 'thing';
@@ -55,7 +55,6 @@ export interface DrawnThing {
 	readonly shown: number;
 	readonly inTheEyesSpace: Matrix;
 	readonly roomInTheEyesSpace: Matrix;
-	readonly eyeDistance: number;
 	readonly outOfFocus: number | null;
 	readonly inTheWorld: boolean;
 }
@@ -117,7 +116,6 @@ export function drawnThing(thing: Thing, standing: ThingStanding, shown: number,
 		shown,
 		inTheEyesSpace: chained([inThreesAxes(standing.inTheEyesSpace), units]),
 		roomInTheEyesSpace: inThreesAxes(standing.roomInTheEyesSpace),
-		eyeDistance: around.sharpness.focalLength * scale,
 		outOfFocus,
 		inTheWorld: standing.inTheWorld
 	};

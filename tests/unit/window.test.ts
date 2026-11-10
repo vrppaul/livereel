@@ -106,7 +106,6 @@ test("a window lifted whole, of a look with a body, hands the stage its slab: th
 			glass: BODY.windowGlass,
 			placing: carriedTo(window.inTheEyesSpace, ITS_TOP_RIGHT),
 			roomInTheEyesSpace: null,
-			eyeDistance: FOCAL_LENGTH * TWICE,
 			back: null
 		}
 	]);

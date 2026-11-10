@@ -863,9 +863,10 @@ itself as a lens blooms: `bloom` says how strongly, as three's bloom takes
 its strength, `bloomRadius` how far, the same share of the frame however
 large it is shot. Only light brighter than the page's white glows, so a
 white page and its letters never do; a face lit far past white glows wide,
-as three's bloom has it. An edge narrower than a pixel and a glint the
-eye's focus blurs come out dimmer than three would lay them, as a room lays
-them in the screen's colours, and may not glow at all. The glow lies over
+as three's bloom has it. A glint covering a share of a pixel at the
+world's edge over the ground comes out dimmer than three would lay it, as a
+room lays the world over the ground in the screen's colours, and may not
+glow at all. The glow lies over
 all the frame, titles and the cursor too. The reference promo's was
 `bloom: 0.45, bloomRadius: 0.4`.
 
@@ -1124,12 +1125,17 @@ What `inside` costs:
   each object on a layer of their own. A leant one is drawn as soft as the
   browser draws a layer in 3D, at about one of its pixels a page's pixel
   however near the eye comes.
-- `room`: the window drawn in WebGL, a plane where the eye sees it, from a
-  picture of what the frame shows of it as dense as the page's device
-  scale, filtered as it shrinks into the distance, and blurred by the eye's
-  focus at each point as far as that point stands from it, where flat blurs
-  the window as one; the ground and what stands on the frame are drawn as
-  flat draws them. A fast move's blur adds its moments up in linear light,
+- `room`: the world drawn in WebGL as one scene with one depth, as a 3D
+  program draws it: the page a plane where the eye sees it, from a picture
+  of what the frame shows of it as dense as the page's device scale,
+  filtered as it shrinks into the distance; the window's body round it and
+  the film's things beside it, each hiding the others by depth alone; and
+  each pixel blurred by the eye's focus as far as what it shows stands from
+  it, where flat blurs the window as one. The blur adds light up in linear
+  light, as a lens does, so light words on a dark page blur brighter than a
+  blur in the screen's colours draws them. The ground and what stands on
+  the frame are drawn as flat draws them. A fast move's blur adds its
+  moments up in linear light,
   as a camera's shutter gathers light, where flat lays them over one another
   in the screen's colours: a page blurs as it did, the README film's moving
   frames alike to an SSIM of 0.9998, and a glint streaks as bright as it
@@ -1177,16 +1183,15 @@ built, a unit of it a pixel of a frame 1080 high, its axes three's own, up
 the frame, its faces turning as three's do. Its box's corners say how near
 the eye's focus it stands and how far it moves for the motion blur; a move
 of its numbers moves nothing the blur counts, so a fast turn by `set` is
-shot unblurred. It is drawn alone, with a depth of its own, blurred by the
-eye's focus as one, by its box's point nearest the focus; in the world, the
-page's window parts it, what stands behind the window laid under the page and
-what stands before it over, so a page that fades shows what stands behind it;
-on the frame it rides with the eye, sharp, before the window. Built of
-`MeshBasicMaterial` or a `ShaderMaterial` of its own, it is drawn flat; of
-one of three's lit materials, lit by the world's `lights` and `softBoxes`,
-as the world's look says; a see-through `ShaderMaterial` in the
-world, or one that writes no depth, sets `clipping: true` and includes three's
-clipping chunks, so the window parts it face by face. It comes and goes in
+shot unblurred. In the world it stands in the room's one scene, with the
+window and every other thing there, each hiding the others by depth, and
+each point of it is blurred by how far it stands from the eye's focus, so a
+page that fades shows what stands behind it; on the frame it rides with the
+eye, sharp, before the window. Built of `MeshBasicMaterial` or a
+`ShaderMaterial` of its own, it is drawn flat; of one of three's lit
+materials, lit by the world's `lights` and `softBoxes`, as the world's look
+says. A see-through material writes no depth, so the focus blurs it by what
+stands behind it (TODO.md). It comes and goes in
 its own way alone, as its module draws `shown` (a material it fades is
 `transparent`), and takes no effects. `set` is handed the stage's `three`
 for what it makes anew. Refused: things in a film not drawn as a room and a
@@ -1199,9 +1204,11 @@ module throws building or setting one, as the frame is drawn; and
 
 What `room` costs:
 
-- A frame takes longer to draw: the README film took 231 s on the graphics
-  card against 211 s flat, and in software about a third of a second a
-  frame more, which livereel says as it starts.
+- A frame takes longer to draw than flat, and in software about a third of
+  a second a frame more, which livereel says as it starts: on the graphics
+  card, 300 frames of a lit window with a body, a thing through it and the
+  eye's focus opening took 80.5 and 83.6 s (`--profile`, 2026-11-10), the
+  browser's capture of each frame the slowest step.
 - Where the frame shows more of the window's plane than the graphics card
   holds in one texture, as the eye flying low over a tall screen does, the
   plane is drawn less densely, softer than flat near the eye.

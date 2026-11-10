@@ -1493,7 +1493,7 @@ body {
 	filter: blur(calc(var(--out-of-focus) * var(--frame-scale) * 1px));
 }
 
-/* In the room the window is drawn unblurred: the room blurs each point of it by how far it stands from the focus (`room.js`) */
+/* In the room the window is drawn unblurred: the room's lens blurs each pixel of it by how far it stands from the focus (`lens.js`) */
 .room .window[data-out-of-focus] .sharpness {
 	filter: none;
 }

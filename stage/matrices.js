@@ -49,7 +49,8 @@ export function matrixOf(matrix) {
  * @param {Box} drawn @param {Box} frame @param {number} eyeDistance
  */
 export function projectionOnto(drawn, frame, eyeDistance) {
-	const toTheNearest = NEAREST / eyeDistance;
+	const range = depthRangeOf(eyeDistance);
+	const toTheNearest = range.near / eyeDistance;
 	const leftOfTheMiddle = drawn.left - (frame.left + frame.width / HALVES);
 	const topOverTheMiddle = frame.top + frame.height / HALVES - drawn.top;
 	return new Matrix4().makePerspective(
@@ -57,7 +58,16 @@ export function projectionOnto(drawn, frame, eyeDistance) {
 		(leftOfTheMiddle + drawn.width) * toTheNearest,
 		topOverTheMiddle * toTheNearest,
 		(topOverTheMiddle - drawn.height) * toTheNearest,
-		NEAREST,
-		eyeDistance * FARTHEST_IN_EYE_DISTANCES
+		range.near,
+		range.far
 	);
+}
+
+/**
+ * How near and far before the eye the depth a layer keeps reaches, in the frame's pixels, as the projection keeps it,
+ * so the eye's lens reads a stored depth back as a distance.
+ * @param {number} eyeDistance
+ */
+export function depthRangeOf(eyeDistance) {
+	return { near: NEAREST, far: eyeDistance * FARTHEST_IN_EYE_DISTANCES };
 }

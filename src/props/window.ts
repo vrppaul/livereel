@@ -10,15 +10,16 @@
  * only where it leans, so its projection is written once and a face-on window costs the graphics card no 3D layer in
  * an exposure. The window stands in the world, so the eye's focus blurs it, with all that lies in it, by where it
  * stands (`src/domain/focus.ts`): the flat stage as one, as soft as its point nearest the focus, and the room each
- * point of it by how far that stands from the focus.
+ * pixel of it by how far what it shows stands from the focus.
  *
  * In a room the window may have a body, as the look has it: a slab of metal round the page, as a tablet is made, its
  * sides square to the page and its corners as round as the page's grown by its rim, lit by the world's light
  * (`src/props/lighting.ts`). It comes as the window's edge and shadow do, as far as the window stands off the ground
  * and the screen has come up in it, growing thicker and its rim wider, where they grow darker; and it takes their
  * place, as the slab is the window's edge, and a shadow drawn on the window's plane would lie over its sides. The
- * engine hands it as the window stands, in three's axes, and which of its sides the eye sees, so the stage lays it
- * under the page or over it; the flat stage draws the window's edge and shadow in its place.
+ * engine hands it as the window stands, in three's axes, and the room stands it round the page in its one scene, where
+ * depth hides the page behind the slab or the slab behind the page; the flat stage draws the window's edge and shadow
+ * in its place.
  */
 import {
 	type Cut,
@@ -29,7 +30,7 @@ import {
 	windowOnTheFrame
 } from '../domain/camera.ts';
 import { type Eye, inTheEyesSpace, turnOf } from '../domain/eye.ts';
-import { type OutOfFocusAt, type Sharpness, outOfFocusAt, outOfFocusOnTheFrame } from '../domain/focus.ts';
+import { type Sharpness, outOfFocusOnTheFrame, softestOutOfFocusSeen } from '../domain/focus.ts';
 import {
 	ITS_MIDDLE,
 	type Matrix,
@@ -67,11 +68,12 @@ export interface PageWindow extends Placing, Shade {}
  * The window as the stage draws it: its box on the frame, how far the camera's picture reaches on its plane, past the
  * box where the screen stands past it, how far it stands off the ground, how it is drawn about its box's middle,
  * standing as it stands and seen from the eye, and the matrix that carries it from that middle into the eye's own
- * space, in three's axes, by whose surface the room parts a thing in the world, and whether the eye sees the page's
- * side of that surface or its back; how round the corners of the page the camera's cut shows are, in the frame's
+ * space, in three's axes, where the room stands the page in its one scene, and whether the eye sees the page's side of
+ * it or its back; how round the corners of the page the camera's cut shows are, in the frame's
  * pixels, which the stylesheet cuts the page by and the body stands round; its shade, none where the page is shaded
  * none, and how soft the eye's focus draws it and all in it, none where sharp: as one, on the frame in pixels of a frame
- * 1080 high, for the flat stage, and at each point of the frame, for the room; and its body, none where it has none.
+ * 1080 high, for the flat stage, and at its softest point the frame shows, as far as the room's blur of it gathers past
+ * the frame's edge; and its body, none where it has none.
  */
 export interface DrawnWindow {
 	readonly box: Box;
@@ -83,7 +85,7 @@ export interface DrawnWindow {
 	readonly corner: number;
 	readonly shade: Shade | null;
 	readonly outOfFocus: number | null;
-	readonly outOfFocusAt: OutOfFocusAt | null;
+	readonly softestOutOfFocus: number | null;
 	readonly body: DrawnBody | null;
 }
 
@@ -92,9 +94,8 @@ export interface DrawnWindow {
  * far its rim reaches past the page and how thick it is; its metal's colour and how rough it is; how much of the
  * world's light the glass over the page reflects; the matrix that carries the page's middle, its face toward three's
  * z, into the eye's own space, in three's axes, the body standing behind its face; the matrix that carries the room
- * into that space, where the world's lights stand; how far the eye stands before the frame, which the stage sees it in
- * perspective from; and the slab's back as the stage draws a plane, as the window's transform draws the page, its
- * thickness behind it, where a page on the window's back lies.
+ * into that space, where the world's lights stand; and the slab's back as the stage draws a plane, as the window's
+ * transform draws the page, its thickness behind it, where a page on the window's back lies.
  */
 export interface DrawnBody {
 	readonly rim: number;
@@ -104,7 +105,6 @@ export interface DrawnBody {
 	readonly glass: number;
 	readonly placing: Matrix;
 	readonly roomInTheEyesSpace: Matrix;
-	readonly eyeDistance: number;
 	readonly back: Transform;
 }
 
@@ -168,7 +168,7 @@ export function drawnWindow(view: View, cut: Cut, window: Shade, around: AroundT
 		corner: Math.min(around.look.paneCorner * frameScaleOf(frame) * view.lift, roundest),
 		shade: drawnShade(window),
 		outOfFocus: outOfFocusOnTheFrame(placing, view.box, sharpness, frame),
-		outOfFocusAt: outOfFocusAt(placing, view.box, boxAround([view.box, reach]), sharpness, frame),
+		softestOutOfFocus: softestOutOfFocusSeen(placing, view.box, boxAround([view.box, reach]), sharpness, frame),
 		body: drawnBody(view, reach, { intoTheEyesSpace, stood, placing }, around)
 	};
 }
@@ -209,7 +209,6 @@ function drawnBody(view: View, page: Box, window: WindowStanding, around: Around
 		glass: isLit(around.world) ? around.look.windowGlass * standing : NONE,
 		placing: inThreesAxes(placing),
 		roomInTheEyesSpace: inThreesAxes(inTheEyesSpace(around.eye, around.frame)),
-		eyeDistance: around.sharpness.focalLength * scale,
 		back: transformOf(chained([window.stood, behind]), chained([window.placing, behind]))
 	};
 }

@@ -1,0 +1,125 @@
+// @ts-check
+/**
+ * What the room's passes over a whole layer share (`stage/room.js`, `stage/lens.js`): a square over all a layer holds,
+ * how a pass lays what it draws over what stands there, sRGB's curve in GLSL, and a material's values set. The room
+ * holds light in two ways: linear, as three adds it up, in half floats past white, and in the screen's colours, as the
+ * browser draws a page; light leaves three's linear layers for the screen's colours by one rule, written here once.
+ */
+import {
+	CustomBlending,
+	Mesh,
+	NoBlending,
+	OneFactor,
+	OneMinusSrcAlphaFactor,
+	PlaneGeometry,
+	ShaderMaterial,
+	Vector4
+} from 'three';
+/** @import { Box } from '../src/domain/geometry.ts' */
+
+// How wide and high WebGL's own space is, from -1 to 1 either way: a square as large covers the whole of a layer
+const WEBGL_SPAN = 2;
+
+/**
+ * What a pass draws laid over what stands under it, as the browser lays a layer: by how clear it is, its colours
+ * premultiplied by it.
+ */
+export const LAID_OVER = {
+	blending: CustomBlending,
+	blendSrc: OneFactor,
+	blendDst: OneMinusSrcAlphaFactor,
+	blendSrcAlpha: OneFactor,
+	blendDstAlpha: OneMinusSrcAlphaFactor,
+	depthTest: false,
+	depthWrite: false,
+	transparent: true
+};
+
+/** What a pass draws added to what stands under it, as an exposure's light is added into the frame. */
+export const ADDED = {
+	blending: CustomBlending,
+	blendSrc: OneFactor,
+	blendDst: OneFactor,
+	blendSrcAlpha: OneFactor,
+	blendDstAlpha: OneFactor,
+	depthTest: false,
+	depthWrite: false,
+	transparent: true
+};
+
+/** What a pass draws written as it is, over whatever stood there. */
+export const WRITTEN = { blending: NoBlending, depthTest: false, depthWrite: false };
+
+// A pass's square over the whole of a layer, each point of it a share of the layer across and up from its bottom left
+const OVER_THE_WHOLE_VERTEX = `
+varying vec2 shareOfTheFrame;
+void main() {
+	shareOfTheFrame = uv;
+	gl_Position = vec4(position.xy, 0.0, 1.0);
+}`;
+
+// sRGB's curve, as IEC 61966-2-1 writes it: straight below its knee, a power of a gamma above it, scaled and offset to
+// meet the straight part there; and the most a half float holds
+const SRGB = { lowSlope: '12.92', scale: '1.055', gamma: '2.4', offset: '0.055', knee: '0.0031308' };
+const LARGEST_HALF_FLOAT = '65504.0';
+
+/**
+ * sRGB's curve both ways, past white as below it, so light brighter than white keeps its share: light encoded in the
+ * screen's colours, and back. And three's linear light, premultiplied by how clear it is, written in the screen's
+ * colours as the browser's surfaces are, premultiplied as theirs are: each colour encoded on its own before it is
+ * premultiplied. Here three's light enters the screen's colours, so it is held to light that can be: a film's own
+ * shader may write a colour below none or no number at all, which three's bloom would spread over the whole frame;
+ * such a pixel is drawn clear, its light held between none and the most a half float keeps, its clearness between none
+ * and whole.
+ */
+export const SRGB_CURVES = `
+vec3 encoded(vec3 linear) {
+	vec3 low = linear * ${SRGB.lowSlope};
+	vec3 high = ${SRGB.scale} * pow(linear, vec3(1.0 / ${SRGB.gamma})) - ${SRGB.offset};
+	return mix(high, low, step(linear, vec3(${SRGB.knee})));
+}
+vec3 decoded(vec3 screens) {
+	vec3 low = screens / ${SRGB.lowSlope};
+	vec3 high = pow((screens + ${SRGB.offset}) / ${SRGB.scale}, vec3(${SRGB.gamma}));
+	return mix(high, low, step(screens, vec3(${SRGB.knee} * ${SRGB.lowSlope})));
+}
+vec4 inTheScreensColours(vec4 drawn) {
+	vec4 read = any(isnan(drawn)) ? vec4(0.0) : drawn;
+	float clearness = clamp(read.a, 0.0, 1.0);
+	vec3 light = clamp(read.rgb, 0.0, ${LARGEST_HALF_FLOAT});
+	vec3 own = clearness > 0.0 ? light / clearness : vec3(0.0);
+	return vec4(encoded(own) * clearness, clearness);
+}`;
+
+/**
+ * A pass over the whole of the layer it draws into, by its values and its fragment shader, laid as named, wherever its
+ * points fall: its shader places them, not three's camera.
+ * @param {Record<string, { value: unknown }>} uniforms @param {string} fragmentShader
+ * @param {typeof WRITTEN | typeof LAID_OVER | typeof ADDED} laid
+ */
+export function passOver(uniforms, fragmentShader, laid) {
+	const material = new ShaderMaterial({ uniforms, vertexShader: OVER_THE_WHOLE_VERTEX, fragmentShader, ...laid });
+	const pass = new Mesh(new PlaneGeometry(WEBGL_SPAN, WEBGL_SPAN), material);
+	pass.frustumCulled = false;
+	pass.matrixAutoUpdate = false;
+	return pass;
+}
+
+/** A box of the frame as a shader takes it: its left, top, width and height. @param {Box} box */
+export function valuesOfTheBox(box) {
+	return new Vector4(box.left, box.top, box.width, box.height);
+}
+
+/**
+ * A material's values set, and sent to the card as it is next drawn: three sends a material's values only as it takes
+ * up the material, not when it draws it again.
+ * @param {ShaderMaterial} material @param {Readonly<Record<string, unknown>>} values
+ */
+export function valuesSet(material, values) {
+	for (const [name, value] of Object.entries(values)) {
+		const uniform = material.uniforms[name];
+		if (uniform === undefined) throw new Error(`the room's material has no value named ${name}`);
+		uniform.value = value;
+	}
+	material.uniformsNeedUpdate = true;
+}

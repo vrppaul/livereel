@@ -22,7 +22,7 @@
  * prop that may be absent is `null`; the compiler holds every prop to a drawn form here and to a drawer on the stage.
  */
 import { type Eye, eyeAtRest } from './domain/eye.ts';
-import { sharpnessOf } from './domain/focus.ts';
+import { type Sharpness, sharpnessOf } from './domain/focus.ts';
 import type { Format } from './domain/format.ts';
 import type { Size } from './domain/geometry.ts';
 import {
@@ -130,14 +130,16 @@ interface DrawnProps {
 }
 
 /**
- * What the stage is handed of a scene: each prop as drawn, the objects standing and pushed off, and what the pieces of
- * the page among them leave on the page and draw to it, holes on the screen and lines on the frame.
+ * What the stage is handed of a scene: each prop as drawn, the objects standing and pushed off, what the pieces of the
+ * page among them leave on the page and draw to it, holes on the screen and lines on the frame, and how the eye sees as
+ * the frame is drawn, which the room's lens blurs each pixel of the world by (`stage/lens.js`).
  */
 export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 	readonly objects: readonly DrawnObject[];
 	readonly leaving: readonly DrawnObject[];
 	readonly holes: readonly DrawnHole[];
 	readonly lines: readonly DrawnLines[];
+	readonly sharpness: Sharpness;
 };
 
 // The page's own time running a second for each of the film's
@@ -417,7 +419,8 @@ export function drawn(
 		objects: drawnObjects(scene.objects, moment, around),
 		leaving: drawnObjects(scene.leaving, moment, around),
 		holes,
-		lines: drawnLines(everyObject, camera, scene.groups, format.frame)
+		lines: drawnLines(everyObject, camera, scene.groups, format.frame),
+		sharpness
 	};
 }
 

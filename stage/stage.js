@@ -960,10 +960,11 @@ class LookDrawer {
  * its moment: the type checker refuses a prop without a drawer. The look is the stage's root's, one for every exposure
  * of a frame; the objects' drawer draws those pushed off too, as both lists lay what stands inside the page's window in
  * its one root; the world's light lights the room's things and the window's body alone, which the room draws
- * (`stage/things.js`, `stage/body.js`), and its glow the room draws over a frame (`stage/room.js`).
+ * (`stage/things.js`, `stage/body.js`), and its glow the room draws over a frame (`stage/room.js`), as it blurs the
+ * world by how the eye sees (`stage/lens.js`).
  * @typedef {{
  *   readonly root: Staged,
- *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'world' | 'leaving'>]: Drawer },
+ *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'world' | 'leaving' | 'sharpness'>]: Drawer },
  *   readonly page: Staged,
  *   readonly picture: Staged,
  *   readonly ownPages: Map<string, HTMLIFrameElement>
