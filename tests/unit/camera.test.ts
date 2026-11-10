@@ -23,6 +23,7 @@ import { type Spot, carried } from '../../src/domain/matrix.ts';
 import { type Angle, angledAs } from '../../src/domain/stance.ts';
 import { LIVEREELS_SLAB } from '../../src/props/body.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
+import { SCREEN_UP } from '../../src/props/screen.ts';
 import { LIVEREELS_WORLD } from '../../src/props/world.ts';
 import { UNSHADED, drawnWindow } from '../../src/props/window.ts';
 import { FOCAL_LENGTH } from './fakes.ts';
@@ -140,7 +141,7 @@ function windowSeenInPerspective(spot: Spot): Point {
 		sharpness: ALL_SHARP,
 		look: LIVEREELS_LOOK,
 		world: LIVEREELS_WORLD,
-		screenShown: 1
+		screen: SCREEN_UP
 	};
 	const window = drawnWindow(LEANT_WINDOW, cut, { ...UNSHADED, body: LIVEREELS_SLAB }, around);
 	const inTheEyesSpace = carried(window.inTheEyesSpace, spot);

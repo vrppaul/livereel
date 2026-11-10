@@ -1212,8 +1212,10 @@ eye, sharp, before the window. Built of `MeshBasicMaterial` or a
 `ShaderMaterial` of its own, it is drawn flat; of one of three's lit
 materials, lit by the world's `lights` and `softBoxes`, as the world's look
 says. A thing in a material that writes no depth, as glass, is seen
-through: the room draws it apart, with the page while the page fades or
-comes up, over what writes depth, and blurs it by its own depth, so a glass
+through: give its material `depthWrite: false`, as three's `transparent:
+true` alone still writes depth, which hides what stands behind it. The room
+draws it apart, with the page while the page fades or comes up, over what
+writes depth, and blurs it by its own depth, so a glass
 before a sharp page blurs while the page stays sharp, and one passing
 through a fading page is laid under the page behind its plane and over it
 before. Three lays a mesh's faces in the order of its materials, so a
@@ -1239,12 +1241,15 @@ What `room` costs:
   card, 300 frames of a lit window with a body, a thing through it and the
   eye's focus opening took 80.5 and 83.6 s (`--profile`, 2026-11-10), the
   browser's capture of each frame the slowest step.
-- What is seen through, a page fading or coming up and a thing of glass,
-  is drawn and blurred as a field of its own while it stands: the same
-  300 frames with the page fading over their last 3 s took 113.9 and
-  146.3 s against 82.2 and 105.4 s without the field, and with a glass
-  cube in place of the solid one 125.4 and 115.6 s against 88.7 and 88.2 s
-  (`--profile`, 2026-11-10, the card shared with other shoots).
+- What is seen through, a thing of glass, and a page fading or coming up
+  while a thing stands in the world, is drawn and blurred as a field of
+  its own while it stands: the same 300 frames with the page fading over
+  their last 3 s took 113.9 and 146.3 s against 82.2 and 105.4 s without
+  the field, and with a glass cube in place of the solid one 125.4 and
+  115.6 s against 88.7 and 88.2 s (`--profile`, 2026-11-10, the card shared
+  with other shoots). A page fading with nothing else in the world is drawn
+  with the rest, in one field: those frames without the cube took 83.3 and
+  100.8 s where two fields took 108.6 and 108.6 s.
 - Where the frame shows more of the window's plane than the graphics card
   holds in one texture, as the eye flying low over a tall screen does, the
   plane is drawn less densely, softer than flat near the eye.

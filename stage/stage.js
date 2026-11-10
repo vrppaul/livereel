@@ -215,8 +215,9 @@ class CameraDrawer {
 
 /**
  * The page's window: where on the frame the camera's picture shows, how round its corners are, how far it stands off
- * the ground, how it is drawn about its middle as it leans, by the matrix the engine sees it through, how it shades the
- * page, how soft the eye's focus draws it, and whether it has a body, which the room draws (`stage/body.js`).
+ * the ground, how much of the page shows, how it is drawn about its middle as it leans, by the matrix the engine sees it
+ * through, how it shades the page, how soft the eye's focus draws it, and whether it has a body, which the room draws
+ * (`stage/body.js`).
  */
 class WindowDrawer {
 	/** @param {Staged} root */
@@ -233,7 +234,8 @@ class WindowDrawer {
 			'--view-width': view.box.width,
 			'--view-height': view.box.height,
 			'--view-corner': view.corner,
-			'--lift': view.lift
+			'--lift': view.lift,
+			'--page-shown': view.pageShown
 		});
 		transformed(this.root, view.transform);
 		shadeDrawn(this.root, view.shade);
@@ -243,14 +245,14 @@ class WindowDrawer {
 }
 
 /**
- * How the window shades the page, drawn on its root: how far the page is dimmed, faded and blurred; with no filter at
- * all, where it is unshaded.
+ * How the window shades the page, drawn on its root: how far the page is dimmed and blurred, as far as it fades being
+ * how much of it shows (`WindowDrawer`); with no filter at all, where it is unshaded.
  * @param {Staged} root @param {DrawnScene['window']['shade']} shade
  */
 function shadeDrawn(root, shade) {
 	root.toggleAttribute(SHADED, shade !== null);
 	if (shade === null) return;
-	numbered(root, { '--shade-dim': shade.dim, '--shade-fade': shade.fade, '--shade-blur': shade.blur });
+	numbered(root, { '--shade-dim': shade.dim, '--shade-blur': shade.blur });
 }
 
 /**

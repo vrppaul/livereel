@@ -3395,6 +3395,14 @@ test('a thing grown by its stance grows toward the eye as much as across and up'
 	expect(grown.m33).toBeCloseTo(grown.m11);
 });
 
+test("the room is handed as the softest point of a thing in the world its box's point the frame shows farthest from the focus: turned toward edge-on about the focus, its near edge", async () => {
+	const turned = await setAt(thing.lean({ turn: 80 }), await cardAt(0), 1);
+	const focused = await setAt(eye.focus(FOCAL_LENGTH, { aperture: OPENED }), turned, 1);
+	const nearEdge = FOCAL_LENGTH - (CARD_REACH.width / 2) * Math.sin((80 * Math.PI) / 180);
+	const spread = (OPENED * FOCAL_LENGTH * (1 / nearEdge - 1 / FOCAL_LENGTH)) / 4;
+	expect(drawnThingIn(focused).softestOutOfFocus).toBeCloseTo(spread);
+});
+
 test("a thing is refused standing inside the window, built by a name the film's module builds none of, and setting a number it was not shown with", async () => {
 	expect(() => thing.show('card', { ...A_CARD_SHOWN, inside: 'window' as never })).toThrow(
 		new FilmError('thing.show\'s inside is "window": it is "world"')

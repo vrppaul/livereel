@@ -163,7 +163,7 @@ body {
 	--mirrored-across: -1;
 }
 
-/* The screen the page is shown on: a pane lifted off the ground, as far up as it has come. It is drawn under the camera's scale, so a pane's lengths are taken back by the camera's zoom */
+/* The screen the page is shown on: a pane lifted off the ground, as far up as it has come and as far as the window's shade has not faded it into the film's ground, as much as the engine says the page shows (`DrawnWindow`). It is drawn under the camera's scale, so a pane's lengths are taken back by the camera's zoom */
 .screen {
 	--pane-scale: calc(1 / var(--zoom));
 
@@ -171,7 +171,7 @@ body {
 	height: 100%;
 	overflow: hidden;
 	background: var(--screen-ground);
-	opacity: var(--screen-shown);
+	opacity: var(--page-shown);
 }
 
 /* A pane on the ground — the screen, the code's pane, the agent's terminal — its corners, edge and shadow as the look has them, at its own scale, as the page's window's are */
@@ -1460,11 +1460,7 @@ body {
 	outline: var(--stroke-width) solid var(--ring-line);
 }
 
-/* The page shaded as the window has it (`src/props/window.ts`): the screen faded into the film's ground, with all it holds; the page, the picture light sweeps away and the holes in it blurred, in pixels of a frame 1080 high, which the camera's zoom would scale, the sweep's own light kept sharp as the light is; and the dark laid over the screen as far as it is dimmed. The window's edge and shadow keep as they stand, and an unshaded page is drawn with none of it */
-[data-shaded] .screen {
-	opacity: calc(var(--screen-shown) * (1 - var(--shade-fade)));
-}
-
+/* The page shaded as the window has it (`src/props/window.ts`), faded with all the screen holds as the screen's own rule draws it: the page, the picture light sweeps away and the holes in it blurred, in pixels of a frame 1080 high, which the camera's zoom would scale, the sweep's own light kept sharp as the light is; and the dark laid over the screen as far as it is dimmed. The window's edge and shadow keep as they stand, and an unshaded page is drawn with none of it */
 [data-shaded] .page,
 [data-shaded] .swept,
 [data-shaded] .holes {

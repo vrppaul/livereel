@@ -8,6 +8,7 @@ import type { Box, Size } from '../../src/domain/geometry.ts';
 import { ITS_MIDDLE, type Matrix, type Spot, carried, chained, flatOf, translation } from '../../src/domain/matrix.ts';
 import { LIVEREELS_SLAB, type Slab } from '../../src/props/body.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
+import { SCREEN_DOWN, SCREEN_UP } from '../../src/props/screen.ts';
 import { LIVEREELS_WORLD } from '../../src/props/world.ts';
 import { type AroundTheWindow, UNSHADED, drawnWindow } from '../../src/props/window.ts';
 import { FOCAL_LENGTH } from './fakes.ts';
@@ -45,8 +46,15 @@ const AROUND: AroundTheWindow = {
 	sharpness: SHARP,
 	look: LIVEREELS_LOOK,
 	world: LIT,
-	screenShown: 1
+	screen: SCREEN_UP
 };
+// The window's back showing a page of the film's own, upright once turned over
+const SHOWING_A_BACK: AroundTheWindow = {
+	...AROUND,
+	screen: { ...SCREEN_UP, back: { kind: 'own', key: 'back', upright: 'over' } }
+};
+// The screen half come up
+const HALF_UP = { ...SCREEN_UP, shown: 0.5 };
 // The window turned about its upright, a little, short of edge-on, past it, and half round
 const TURNED: readonly Angle[] = [30, 80, 100, 180].map((turn) => ({ ...FACE_ON, turn }));
 // A corner of the window, from its middle, in three's axes, up the frame
@@ -67,27 +75,43 @@ function carriedTo(matrix: Matrix, spot: Spot): Spot {
 	return rounded(carried(matrix, spot));
 }
 
-test("the body's back is drawn where the slab's back stands, its thickness behind the page: leant in 3D, and flat where it faces the frame from behind, smaller as it stands farther from the eye", () => {
+test("a page the window's back shows lies on its body's back, its thickness behind the page's plane: leant in 3D, and flat where it faces the frame from behind, smaller as it stands farther from the eye", () => {
 	const turnedOver: View = { ...LIFTED, angle: { ...FACE_ON, over: 180 } };
 	const leant: View = { ...LIFTED, angle: { ...FACE_ON, over: 160 } };
-	const [flatBack, leantBack] = [turnedOver, leant].map(
-		(view) => drawnWindow(view, AT_ITS_EDGES, WITH_A_BODY, AROUND).body!
+	const [flatBack, leantBack] = [turnedOver, leant].map((view) =>
+		drawnWindow(view, AT_ITS_EDGES, WITH_A_BODY, SHOWING_A_BACK)
 	);
-	const behind = (view: View): Matrix =>
-		chained([
-			windowInTheWorld(view, AT_REST, TWICE_THE_LOOK).placing,
-			translation({ across: 0, down: 0, out: -flatBack!.thickness })
-		]);
-	expect([flatBack!.back, leantBack!.back]).toEqual([
-		{ kind: 'flat', matrix: flatOf(behind(turnedOver)) },
-		{ kind: 'leant', matrix: behind(leant) }
+	const thickness = flatBack!.body!.thickness;
+	const behind = translation({ across: 0, down: 0, out: -thickness });
+	const placedBehind = (view: View): Matrix =>
+		chained([windowInTheWorld(view, AT_REST, TWICE_THE_LOOK).placing, behind]);
+	expect([
+		flatBack!.pageSurface.transform,
+		leantBack!.pageSurface.transform,
+		carriedTo(leantBack!.pageSurface.inTheEyesSpace, ITS_TOP_RIGHT)
+	]).toEqual([
+		{ kind: 'flat', matrix: flatOf(placedBehind(turnedOver)) },
+		{ kind: 'leant', matrix: placedBehind(leant) },
+		carriedTo(leantBack!.inTheEyesSpace, { ...ITS_TOP_RIGHT, out: -thickness })
 	]);
+});
+
+test("a page lies on the window's own plane where the eye sees the window's front, or its back with no body, or its back showing no page of its own", () => {
+	const turnedOver: View = { ...LIFTED, angle: { ...FACE_ON, over: 180 } };
+	const windows = [
+		drawnWindow(LIFTED, AT_ITS_EDGES, WITH_A_BODY, SHOWING_A_BACK),
+		drawnWindow(turnedOver, AT_ITS_EDGES, WITH_LIVEREELS_BODY, SHOWING_A_BACK),
+		drawnWindow(turnedOver, AT_ITS_EDGES, WITH_A_BODY, AROUND)
+	];
+	expect(windows.map((window) => window.pageSurface)).toEqual(
+		windows.map((window) => ({ transform: window.transform, inTheEyesSpace: window.inTheEyesSpace }))
+	);
 });
 
 test("a window lifted whole, with a body, hands the stage its slab: the rim and the thickness in the frame's pixels, the metal, the glass over the page, placed as the window is, round a page whose corners are the look's in the frame's pixels", () => {
 	const window = drawnWindow(LIFTED, AT_ITS_EDGES, WITH_A_BODY, AROUND);
 	const body = window.body!;
-	expect([window.corner, { ...body, placing: carriedTo(body.placing, ITS_TOP_RIGHT), back: null }]).toEqual([
+	expect([window.corner, { ...body, placing: carriedTo(body.placing, ITS_TOP_RIGHT) }]).toEqual([
 		CORNER * TWICE,
 		{
 			rim: BODY.rim * TWICE,
@@ -95,17 +119,21 @@ test("a window lifted whole, with a body, hands the stage its slab: the rim and 
 			metal: BODY.metal,
 			roughness: BODY.roughness,
 			glass: BODY.glass,
-			placing: carriedTo(window.inTheEyesSpace, ITS_TOP_RIGHT),
-			back: null
+			placing: carriedTo(window.inTheEyesSpace, ITS_TOP_RIGHT)
 		}
 	]);
 });
 
-test('the page is seen through as it fades or as its screen comes up, and not where it stands whole', () => {
-	const faded = drawnWindow(LIFTED, AT_ITS_EDGES, { ...WITH_LIVEREELS_BODY, fade: 0.5 }, AROUND);
-	const comingUp = drawnWindow(LIFTED, AT_ITS_EDGES, WITH_LIVEREELS_BODY, { ...AROUND, screenShown: 0.5 });
+test('the page shows as far as its screen has come up and its shade has not faded it, whole where it stands whole', () => {
+	const faded = drawnWindow(
+		LIFTED,
+		AT_ITS_EDGES,
+		{ ...WITH_LIVEREELS_BODY, fade: 0.25 },
+		{ ...AROUND, screen: HALF_UP }
+	);
+	const comingUp = drawnWindow(LIFTED, AT_ITS_EDGES, WITH_LIVEREELS_BODY, { ...AROUND, screen: HALF_UP });
 	const whole = drawnWindow(LIFTED, AT_ITS_EDGES, WITH_LIVEREELS_BODY, AROUND);
-	expect([faded.seeThrough, comingUp.seeThrough, whole.seeThrough]).toEqual([true, true, false]);
+	expect([faded.pageShown, comingUp.pageShown, whole.pageShown]).toEqual([0.375, 0.5, 1]);
 });
 
 test('a window turned past edge-on shows the eye its back, not its page', () => {
@@ -115,7 +143,7 @@ test('a window turned past edge-on shows the eye its back, not its page', () => 
 
 test("a body comes as far as the window lifts and the screen comes up in it, round the page the cut shows, whose corners round as the window lifts, no rounder than half the page's shorter side", () => {
 	const view = { ...LIFTED, lift: 0.5 };
-	const around = { ...AROUND, screenShown: 0.5 };
+	const around = { ...AROUND, screen: HALF_UP };
 	const window = drawnWindow(view, STANDING_OUT, WITH_A_BODY, around);
 	const body = window.body!;
 	expect([
@@ -145,6 +173,6 @@ test("no body where the window's is of no thickness, livereel's own, where the w
 	expect([
 		drawnWindow(LIFTED, AT_ITS_EDGES, WITH_LIVEREELS_BODY, AROUND).body,
 		drawnWindow({ ...LIFTED, lift: 0 }, AT_ITS_EDGES, WITH_A_BODY, AROUND).body,
-		drawnWindow(LIFTED, AT_ITS_EDGES, WITH_A_BODY, { ...AROUND, screenShown: 0 }).body
+		drawnWindow(LIFTED, AT_ITS_EDGES, WITH_A_BODY, { ...AROUND, screen: SCREEN_DOWN }).body
 	]).toEqual([null, null, null]);
 });

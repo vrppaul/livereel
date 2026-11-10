@@ -1,7 +1,7 @@
 // @ts-check
 /**
- * What the eye sees through in the room's one scene (`stage/room.js`): the page where it fades or is still coming up,
- * and a film's things whose material writes no depth. The lens reads one depth a pixel, and what is seen through shows
+ * What the eye sees through in the room's one scene (`stage/room.js`): the page where it fades or is still coming up
+ * and a film's thing stands in the world to be seen through it, and a film's things whose material writes no depth. The lens reads one depth a pixel, and what is seen through shows
  * two things at a pixel, itself and what stands behind it: drawn in the world with the rest, a thing of glass was
  * blurred by the depth of what stood behind it, and a fading page, which writes its depth, hid what of such a thing
  * stood behind it and had what stood behind it blurred as the page. So the world is drawn as two fields, each blurred
@@ -90,7 +90,8 @@ export class SeeThroughField {
 }
 
 /**
- * A part of the world's scene drawn, as the camera sees it.
+ * A part of the world's scene drawn, as the camera sees it: the camera set to see that part alone, as every draw with
+ * a camera sets the parts it sees.
  * @param {WebGLRenderer} renderer @param {Scene} world @param {Camera} seen @param {WorldPart} part
  */
 export function partDrawn(renderer, world, seen, part) {
@@ -100,14 +101,18 @@ export function partDrawn(renderer, world, seen, part) {
 
 /**
  * Each part of a thing of the film's put in the part of the world it is drawn in: seen through where a material of it
- * writes no depth. Whether any is.
+ * writes no depth. A film's module may set its materials anew each exposure, so it is sorted each exposure.
  * @param {Object3D} thing
  */
 export function sortedBySeeingThrough(thing) {
+	thing.traverse((part) => part.layers.set(WORLD_PARTS[isSeenThrough(part) ? 'thingsSeenThrough' : 'opaque']));
+}
+
+/** Whether a part of a thing of the film's is seen through. @param {Object3D} thing */
+export function hasAPartSeenThrough(thing) {
 	/** @type {Object3D[]} */
 	const parts = [];
 	thing.traverse((part) => parts.push(part));
-	for (const part of parts) part.layers.set(WORLD_PARTS[isSeenThrough(part) ? 'thingsSeenThrough' : 'opaque']);
 	return parts.some(isSeenThrough);
 }
 

@@ -47,11 +47,12 @@ import {
 	drawnPlacement,
 	windowInTheWorld
 } from '../domain/placement.ts';
-import { type Transform, transformOf } from '../domain/stance.ts';
+import { transformOf } from '../domain/stance.ts';
 import { NO_PIXELS, amountToward, namesOf, shareToward, standsAtRest } from '../domain/toward.ts';
 import { type KindsOf, ValueKind, asWritten } from '../domain/values.ts';
 import type { Slab } from './body.ts';
 import type { Look } from './look.ts';
+import { type Screen, backPageSeen } from './screen.ts';
 import type { WorldLook } from './world.ts';
 
 export interface Shade {
@@ -69,35 +70,44 @@ export interface PageWindow extends Placing, Shade {
 
 /**
  * The window as the stage draws it: where it is placed in the world, as the stage draws a placement
- * (`src/domain/placement.ts`), its box on the frame, drawn about its middle, and the matrix the room stands the page by
- * in its one scene; how far the camera's picture reaches on its plane, past the box where the screen stands past it,
- * how far it stands off the ground, and whether the eye sees the page's side of it or its back, read where it stands
- * before the eye, behind the eye too; how round the corners of the page the camera's cut shows are, in the frame's
+ * (`src/domain/placement.ts`), its box on the frame, drawn about its middle; how far the camera's picture reaches on
+ * its plane, past the box where the screen stands past it, how far it stands off the ground, and whether the eye sees
+ * the page's side of it or its back, read where it stands before the eye, behind the eye too; the plane the room lays
+ * the page's surface on in its one scene; how round the corners of the page the camera's cut shows are, in the frame's
  * pixels, which the stylesheet cuts the page by and the body stands round; its shade, none where the page is shaded
  * none, and how soft the eye's focus draws it and all in it, none where sharp: as one, on the frame in pixels of a frame
  * 1080 high, for the flat stage, and at its softest point the frame shows, as far as the room's blur of it gathers past
- * the frame's edge; whether the page is seen through, faded by its shade or still coming up on the screen, so the room
- * draws it apart from what writes depth (`stage/see-through.js`); and its body, none where it has none.
+ * the frame's edge; how much of the page shows, from 0 to 1, as far as the screen has come up and its shade has not
+ * faded it, which the stylesheet draws the screen as clear as, and the room reads whether the page is seen through by
+ * (`stage/see-through.js`); and its body, none where it has none.
  */
 export interface DrawnWindow extends DrawnPlacement {
 	readonly reach: Box;
 	readonly lift: Fraction;
 	readonly facingTheEye: boolean;
+	readonly pageSurface: PlaneDrawn;
 	readonly corner: number;
 	readonly shade: Shade | null;
 	readonly outOfFocus: number | null;
 	readonly softestOutOfFocus: number | null;
-	readonly seeThrough: boolean;
+	readonly pageShown: Fraction;
 	readonly body: DrawnBody | null;
 }
 
 /**
+ * A plane as the stage draws one, about the middle of the window's box: by the flat stage's matrix, and by the matrix
+ * that carries a spot of it into the eye's own space, in three's axes. The page's surface lies on the window's own
+ * plane, or, where the eye sees a page of the film's own on the window's back and the window has a body, on the slab's
+ * back, its thickness behind.
+ */
+type PlaneDrawn = Pick<DrawnPlacement, 'transform' | 'inTheEyesSpace'>;
+
+/**
  * The window's body as the room draws it round the page the camera's cut shows (`reach`), in the frame's pixels: how
  * far its rim reaches past the page and how thick it is; its metal's colour and how rough it is; how much of the
- * world's light the glass over the page reflects; the matrix that carries the page's middle, its face toward three's
- * z, into the eye's own space, in three's axes, the body standing behind its face, lit by the world's lights where the
- * scene's eye hands the room (`DrawnEye` in `src/domain/eye.ts`); and the slab's back as the stage draws a plane, as
- * the window's transform draws the page, its thickness behind it, where a page on the window's back lies.
+ * world's light the glass over the page reflects; and the matrix that carries the page's middle, its face toward
+ * three's z, into the eye's own space, in three's axes, the body standing behind its face, lit by the world's lights
+ * where the scene's eye hands the room (`DrawnEye` in `src/domain/eye.ts`).
  */
 export interface DrawnBody {
 	readonly rim: number;
@@ -106,13 +116,12 @@ export interface DrawnBody {
 	readonly roughness: number;
 	readonly glass: number;
 	readonly placing: Matrix;
-	readonly back: Transform;
 }
 
 /**
  * What stands round the window as it is drawn: the eye that sees it, the frame, how sharp the eye sees, how round the
- * look has the page's corners, which its body stands round, the world's light its glass reflects, and how far the
- * screen has come up in it.
+ * look has the page's corners, which its body stands round, the world's light its glass reflects, and the screen: how
+ * far it has come up in the window, and what the window's back shows.
  */
 export interface AroundTheWindow {
 	readonly eye: Eye;
@@ -120,7 +129,7 @@ export interface AroundTheWindow {
 	readonly sharpness: Sharpness;
 	readonly look: Pick<Look, 'paneCorner'>;
 	readonly world: Pick<WorldLook, 'lights' | 'softBoxes'>;
-	readonly screenShown: Fraction;
+	readonly screen: Pick<Screen, 'shown' | 'back'>;
 }
 
 export const UNSHADED: Shade = { dim: NONE, fade: NONE, blur: NO_PIXELS };
@@ -150,8 +159,9 @@ const HALVES = 2;
 
 /**
  * The window as the stage draws it among what stands round it: standing as the camera's view, its picture cut as the
- * camera has it, seen from the eye, its corners rounding as it lifts, shaded as it is, as soft as the eye sees it, its
- * softest point the frame shows read over its box or as far as its picture reaches, and with its body.
+ * camera has it, seen from the eye, the page on the plane it lies on, its corners rounding as it lifts, shaded as it
+ * is, as soft as the eye sees it, its softest point the frame shows read over its box or as far as its picture reaches,
+ * and with its body.
  */
 export function drawnWindow(
 	view: View,
@@ -164,18 +174,23 @@ export function drawnWindow(
 	const placing = standing.placing;
 	const reach = pictureReachOf(view.box, cut);
 	const roundest = Math.min(reach.width, reach.height) / HALVES;
+	const drawn = drawnPlacement(standing);
+	const facingTheEye = facesTheEye(standing.inTheEyesSpace);
+	const body = drawnBody(view, reach, standing, window.body, around);
+	const onTheBack = body !== null && backPageSeen(around.screen.back, facingTheEye) !== null;
+	const ownPlane = { transform: drawn.transform, inTheEyesSpace: drawn.inTheEyesSpace };
 	return {
-		...drawnPlacement(standing),
+		...drawn,
 		reach,
 		lift: view.lift,
-		facingTheEye: facesTheEye(standing.inTheEyesSpace),
+		facingTheEye,
+		pageSurface: onTheBack ? behindItsPlane(standing, body.thickness) : ownPlane,
 		corner: Math.min(around.look.paneCorner * frameScaleOf(frame) * view.lift, roundest),
 		shade: drawnShade(window),
 		outOfFocus: outOfFocusOnTheFrame(placing, view.box, sharpness, frame),
 		softestOutOfFocus: softestOutOfFocusSeen(placing, view.box, boxAround([view.box, reach]), sharpness, frame),
-		// As clear as the stylesheet draws the screen, as far as it has come up and not faded
-		seeThrough: around.screenShown * (WHOLE - window.fade) < WHOLE,
-		body: drawnBody(view, reach, standing, window.body, around)
+		pageShown: fractionOf(around.screen.shown * (WHOLE - window.fade)),
+		body
 	};
 }
 
@@ -187,7 +202,7 @@ export function drawnWindow(
  */
 function drawnBody(view: View, page: Box, window: Placed, slab: Slab, around: AroundTheWindow): DrawnBody | null {
 	const scale = frameScaleOf(around.frame);
-	const standing = view.lift * around.screenShown;
+	const standing = view.lift * around.screen.shown;
 	const thickness = slab.thickness * scale * standing;
 	if (thickness <= NO_THICKNESS) return null;
 	const pageMiddle: Spot = {
@@ -195,16 +210,22 @@ function drawnBody(view: View, page: Box, window: Placed, slab: Slab, around: Ar
 		down: middleY(page) - middleY(view.box),
 		out: ON_ITS_PLANE
 	};
-	const placing = chained([window.inTheEyesSpace, translation(pageMiddle)]);
-	const behind = translation({ across: UNMOVED, down: UNMOVED, out: -thickness });
 	return {
 		rim: slab.rim * scale * standing,
 		thickness,
 		metal: slab.metal,
 		roughness: slab.roughness,
 		glass: isLit(around.world) ? slab.glass * standing : NONE,
-		placing: inThreesAxes(placing),
-		back: transformOf(chained([window.stood, behind]), chained([window.placing, behind]))
+		placing: inThreesAxes(chained([window.inTheEyesSpace, translation(pageMiddle)]))
+	};
+}
+
+/** The plane so far behind the window's own, as the stage draws a plane: where the slab's back stands. */
+function behindItsPlane(window: Placed, depth: number): PlaneDrawn {
+	const behind = translation({ across: UNMOVED, down: UNMOVED, out: -depth });
+	return {
+		transform: transformOf(chained([window.stood, behind]), chained([window.placing, behind])),
+		inTheEyesSpace: inThreesAxes(chained([window.inTheEyesSpace, behind]))
 	};
 }
 

@@ -419,7 +419,7 @@ export function drawn(
 		sharpness,
 		look: scene.look,
 		world: scene.world,
-		screenShown: scene.screen.shown
+		screen: scene.screen
 	});
 	return {
 		look: scene.look,

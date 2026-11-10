@@ -49,8 +49,10 @@ export type Upright = 'over' | 'round';
 /**
  * What the window's back shows: the screen seen through it, or a page of the film's own by its key, mounted as named.
  */
-export type Back =
-	{ readonly kind: 'seen through' } | { readonly kind: 'own'; readonly key: string; readonly upright: Upright };
+export type Back = { readonly kind: 'seen through' } | BackPage;
+
+/** A page of the film's own on the window's back, by its key, mounted as named. */
+type BackPage = { readonly kind: 'own'; readonly key: string; readonly upright: Upright };
 
 /** How a film mounts a page on the window's back. */
 export const AN_UPRIGHT: Kind<Upright> = new OneOf<Upright>(
@@ -186,12 +188,21 @@ const NO_PICTURE: readonly number[] = [];
  * page of its own; the screen as it stands where not.
  */
 export function drawnScreen(screen: Screen, camera: Camera, format: Format, facingTheEye: boolean): DrawnScreen {
-	if (!facingTheEye && screen.back.kind === 'own') {
-		const shows: Shows = { kind: 'own', key: screen.back.key };
-		return { shown: screen.shown, shows, sweep: null, backUpright: screen.back.upright };
+	const backPage = backPageSeen(screen.back, facingTheEye);
+	if (backPage !== null) {
+		const shows: Shows = { kind: 'own', key: backPage.key };
+		return { shown: screen.shown, shows, sweep: null, backUpright: backPage.upright };
 	}
 	const sweep = screen.sweep === null ? null : drawnSweep(screen.sweep, partSwept(camera, format), camera.pose.zoom);
 	return { shown: screen.shown, shows: screen.shows, sweep, backUpright: null };
+}
+
+/**
+ * The page of the film's own the screen shows on the window's back, where the eye sees the back and the back has one;
+ * none where the eye sees the window's front, or the screen through its back.
+ */
+export function backPageSeen(back: Back, facingTheEye: boolean): BackPage | null {
+	return !facingTheEye && back.kind === 'own' ? back : null;
 }
 
 /**

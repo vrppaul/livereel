@@ -59,7 +59,7 @@ import { Lens, SPREADS_REACHED } from './lens.js';
 import { WorldLighting } from './lighting.js';
 import { matrixOf, projectionOnto } from './matrices.js';
 import { ADDED, LAID_OVER, SRGB_CURVES, WRITTEN, passOver, valuesSet } from './passes.js';
-import { SeeThroughField, WORLD_PARTS, partDrawn, sortedBySeeingThrough } from './see-through.js';
+import { SeeThroughField, WORLD_PARTS, hasAPartSeenThrough, partDrawn, sortedBySeeingThrough } from './see-through.js';
 import { Things, isAThing } from './things.js';
 /** @import { DrawnScene } from '../src/scene.ts' */
 /** @import { DrawnWindow } from '../src/props/window.ts' */
@@ -136,24 +136,33 @@ const SURFACE_TEXTURES = {
 };
 // Half of a box's width or height, which its middle stands at
 const HALF = 0.5;
-// The entries a flat matrix leaves out, as one that leaves a point on the frame's plane, out none, its fourth value its
-// own, has them
-const NONE = 0;
-const ITS_OWN = 1;
+// The entries a flat matrix leaves out, as the identity has them: none of one axis carried into another, and out and
+// the fourth value each kept its own
+const CARRIES_NONE = 0;
+const KEEPS_ITS_OWN = 1;
 const STAYS_ON_ITS_PLANE = {
-	m13: NONE,
-	m14: NONE,
-	m23: NONE,
-	m24: NONE,
-	m31: NONE,
-	m32: NONE,
-	m33: ITS_OWN,
-	m34: NONE,
-	m43: NONE,
-	m44: ITS_OWN
+	m13: CARRIES_NONE,
+	m14: CARRIES_NONE,
+	m23: CARRIES_NONE,
+	m24: CARRIES_NONE,
+	m31: CARRIES_NONE,
+	m32: CARRIES_NONE,
+	m33: KEEPS_ITS_OWN,
+	m34: CARRIES_NONE,
+	m43: CARRIES_NONE,
+	m44: KEEPS_ITS_OWN
 };
-// A page lying on the window's own plane, set back from it by none
+// A point of the frame as a matrix carries it, its fourth value its own; and a square on the plane a matrix carries,
+// out of it by none, its depth unscaled
+const ITS_OWN_FOURTH_VALUE = 1;
 const ON_ITS_PLANE = 0;
+const UNSCALED = 1;
+// A page shown whole, which nothing is seen through
+const WHOLLY_SHOWN = 1;
+// A blur of none, which the eye's focus draws sharp; a box of no size; and a list of things of which none stands
+const SHARP = 0;
+const NO_SIZE = 0;
+const NONE_STANDING = 0;
 // What the world and what stands on the frame are drawn into: their light linear, premultiplied, in half floats, which
 // keep it past white; each pixel sampled at four points, so their edges are smoothed as the browser smooths the
 // page's; the world's depth kept for the lens
@@ -162,9 +171,10 @@ const THREES_LAYER = { type: HalfFloatType, samples: SAMPLES_A_PIXEL, depthBuffe
 // What an exposure and the frame are drawn into and laid from: in half floats, which keep light past white
 const PAST_WHITE = { depthBuffer: false, type: HalfFloatType };
 // The glow round light past the page's white drawn by three's bloom in no time of its own, and over all the frame,
-// which no stencil masks
+// which no stencil masks; its strength, spread and threshold none until a frame's world sets them
 const NO_TIME_PASSING = 0;
 const UNMASKED = false;
+const SET_BY_EACH_FRAME = 0;
 // A film that names no things module builds no things
 /** @type {ThingsLoaded} */
 const NO_THINGS = { kind: 'built', names: [] };
@@ -357,7 +367,7 @@ class Room {
 		// strength, spread and threshold set as each frame's world has them
 		const frame = layout.format.frame;
 		const measuredOn = new Vector2(frame.width / layout.frameScale, frame.height / layout.frameScale);
-		this.bloom = new UnrealBloomPass(measuredOn, NONE, NONE, NONE);
+		this.bloom = new UnrealBloomPass(measuredOn, SET_BY_EACH_FRAME, SET_BY_EACH_FRAME, SET_BY_EACH_FRAME);
 	}
 
 	/**
@@ -438,7 +448,7 @@ class Room {
 		this.renderer.setRenderTarget(this.exposure);
 		this.renderer.render(this.worldLaying, this.camera);
 		const onTheFrame = things.filter((thing) => !standsInTheWorld(thing));
-		if (onTheFrame.length > NONE) this.onTheFrameLaid(onTheFrame, scene);
+		if (onTheFrame.length > NONE_STANDING) this.onTheFrameLaid(onTheFrame, scene);
 		this.flatLaid('frame', surfaces);
 		this.renderer.setRenderTarget(this.frame);
 		this.renderer.render(this.weighed, this.camera);
@@ -472,10 +482,13 @@ class Room {
 	}
 
 	/**
-	 * The world drawn as one scene, over the box of the frame the lens's blur gathers: the page's surface where the
-	 * engine places it, on the slab's back where a page on the window's back shows; the window's body and glass; and the
-	 * film's posed things in the world; seen from the eye, lit as it sees the room. What writes depth is drawn into the
-	 * world's layer, and what is seen through, where anything is, into a field of its own over it (`see-through.js`).
+	 * The world drawn as one scene, over the box of the frame the lens's blur gathers: the page's surface on the plane
+	 * the engine lays it on; the window's body and glass; and the film's posed things in the world; seen from the eye,
+	 * lit as it sees the room. What writes depth is drawn into the world's layer, and what is seen through, where it has
+	 * something of the world behind it to show, into a field of its own over it (`see-through.js`). A page seen through
+	 * with nothing of the world but its own body standing round it shows the ground behind it, which the lens does not
+	 * blur, and its body's rim under its edge, on its own plane: it is drawn with what writes depth, so its edge and the
+	 * rim under it blur as one, where blurred apart they left a light band round a blurred page, and the lens runs once.
 	 * The fields the lens lays, the lowest first.
 	 * @param {DrawnScene} scene @param {SurfaceTexture} pageTexture @param {PagePlacing} placing
 	 * @param {readonly ThingObject[]} things @param {Box} gathered @returns {readonly SceneField[]}
@@ -484,38 +497,41 @@ class Room {
 		const window = scene.window;
 		seenThrough(this.worldCamera, projectionOnto(gathered, this.frameBox, scene.eye.distance));
 		this.world.clear();
-		const behindBy = window.body !== null && scene.screen.backUpright !== null ? window.body.thickness : ON_ITS_PLANE;
-		const pageMatrix = surfaceMatrixOf(window.inTheEyesSpace, placing, behindBy);
-		const pages = window.seeThrough ? [this.pageSeenThrough, this.pageDepth] : [this.page];
+		const pageMatrix = surfaceMatrixOf(window.pageSurface.inTheEyesSpace, placing);
+		const pageSeenThrough = window.pageShown < WHOLLY_SHOWN && things.length > NONE_STANDING;
+		const pages = pageSeenThrough ? [this.pageSeenThrough, this.pageDepth] : [this.page];
 		for (const page of pages) {
 			valuesSet(page.material, { surface: pageTexture.texture });
 			placedBy(page, pageMatrix);
 			this.world.add(page);
 		}
-		this.bodyAdded(window);
+		this.bodyAdded(window, pageSeenThrough);
 		const posed = things.map((thing) => this.things.posedAs(thing).placed);
-		const thingsSeenThrough = posed.map(sortedBySeeingThrough).includes(true);
-		for (const placed of posed) this.world.add(placed);
+		for (const placed of posed) {
+			sortedBySeeingThrough(placed);
+			this.world.add(placed);
+		}
+		const thingsSeenThrough = posed.some(hasAPartSeenThrough);
 		this.lighting.shiningIn(this.world, scene.eye.roomInTheEyesSpace);
 		this.renderer.setRenderTarget(this.worldLayer);
 		this.renderer.clear();
 		partDrawn(this.renderer, this.world, this.worldCamera, 'opaque');
 		const opaque = fieldOf(this.worldLayer);
-		if (!window.seeThrough && !thingsSeenThrough) return [opaque];
-		const seenThroughPage = window.seeThrough ? pageMatrix : null;
+		if (!pageSeenThrough && !thingsSeenThrough) return [opaque];
+		const seenThroughPage = pageSeenThrough ? pageMatrix : null;
 		this.seeThrough.drawn(this.renderer, this.world, this.worldCamera, this.worldLayer, seenThroughPage);
 		return [opaque, fieldOf(this.seeThrough.layer)];
 	}
 
 	/**
 	 * The window's body posed and added to the world, where it has one: its glass in the page's part of the world, as it
-	 * lies over the page.
-	 * @param {DrawnWindow} window
+	 * lies over the page, seen through or with what writes depth.
+	 * @param {DrawnWindow} window @param {boolean} pageSeenThrough
 	 */
-	bodyAdded(window) {
+	bodyAdded(window, pageSeenThrough) {
 		if (window.body === null) return;
 		const body = this.body.posed(window, window.body);
-		const pagesPart = WORLD_PARTS[window.seeThrough ? 'pageSeenThrough' : 'opaque'];
+		const pagesPart = WORLD_PARTS[pageSeenThrough ? 'pageSeenThrough' : 'opaque'];
 		body.glass.traverse((part) => part.layers.set(pagesPart));
 		this.world.add(body.slab, body.glass);
 	}
@@ -541,18 +557,18 @@ class Room {
 
 	/**
 	 * The box of the frame the world is drawn into for a frame's exposures: as far past each edge of the frame as the
-	 * lens's blur gathers there, from the softest point of its window the frame shows or its softest thing, in whole
+	 * lens's blur gathers there, from the softest point the frame shows of its window or of a thing in it, in whole
 	 * pixels of the drawing, and no farther than the graphics card's largest texture leaves room for, past which a blur
 	 * by the frame's edge gathers nothing; the frame itself where the eye's focus blurs none.
 	 * @param {readonly DrawnScene[]} scenes @returns {Box}
 	 */
 	gatheredFor(scenes) {
 		const softest = Math.max(
-			NONE,
-			...scenes.map((scene) => scene.window.softestOutOfFocus ?? NONE),
-			...scenes.flatMap(thingsIn).map((thing) => thing.content.outOfFocus ?? NONE)
+			SHARP,
+			...scenes.map((scene) => scene.window.softestOutOfFocus ?? SHARP),
+			...scenes.flatMap(thingsIn).map((thing) => thing.content.softestOutOfFocus ?? SHARP)
 		);
-		if (softest === NONE) return this.frameBox;
+		if (softest === SHARP) return this.frameBox;
 		const roomLeft = (this.renderer.capabilities.maxTextureSize - Math.max(this.drawnSize.x, this.drawnSize.y)) * HALF;
 		const reach = Math.min(Math.ceil(SPREADS_REACHED * softest * this.pixelsOfOne), Math.floor(roomLeft));
 		return grownBy(this.frameBox, reach / window.devicePixelRatio);
@@ -576,17 +592,15 @@ class Room {
  */
 
 /**
- * Where the page's surface of an exposure stands: over as much of the window's plane as the box the world is drawn
- * over shows of what stands there — on the slab's back where the eye sees a page on the window's back on a body — as
- * far as the camera's picture reaches, where the eye may see it leant or from aside, and a little clear round it, so
- * the plane's edge falls inside its texture and is filtered as the browser smooths an edge, not cut stepped by its
- * triangles.
+ * Where the page's surface of an exposure stands: over as much of the plane the page lies on as the box the world is
+ * drawn over shows of what stands there, as far as the camera's picture reaches, where the eye may see it leant or from
+ * aside, and a little clear round it, so the plane's edge falls inside its texture and is filtered as the browser
+ * smooths an edge, not cut stepped by its triangles.
  * @param {DrawnScene} scene @param {Box} gathered @returns {PagePlacing}
  */
 function pagePlacingOf(scene, gathered) {
 	const view = scene.window.box;
-	const onTheBack = scene.screen.backUpright !== null && scene.window.body !== null;
-	const entries = entriesOf(onTheBack ? scene.window.body.back : scene.window.transform);
+	const entries = entriesOf(scene.window.pageSurface.transform);
 	const middle = new Vector2(view.left + view.width * HALF, view.top + view.height * HALF);
 	const standing = boxAround(gathered, scene.window.reach);
 	return { box: clearRound(seenOf(standing, entries, middle, gathered)), middle };
@@ -594,20 +608,19 @@ function pagePlacingOf(scene, gathered) {
 
 /**
  * The matrix that carries a square of one side about its middle onto the page's surface in the eye's own space: the
- * box it is drawn over, on the plane the engine's matrix carries from the view's middle into that space, or so far
- * behind it, where a page on the window's back lies on the slab's back.
- * @param {Matrix} inTheEyesSpace @param {PagePlacing} placing @param {number} behindBy
+ * box it is drawn over, on the plane the engine's matrix carries from the view's middle into that space.
+ * @param {Matrix} inTheEyesSpace @param {PagePlacing} placing
  */
-function surfaceMatrixOf(inTheEyesSpace, placing, behindBy) {
+function surfaceMatrixOf(inTheEyesSpace, placing) {
 	const box = placing.box;
 	const fromTheMiddle = new Vector3(
 		box.left + box.width * HALF - placing.middle.x,
 		placing.middle.y - (box.top + box.height * HALF),
-		-behindBy
+		ON_ITS_PLANE
 	);
 	return matrixOf(inTheEyesSpace)
 		.multiply(new Matrix4().makeTranslation(fromTheMiddle))
-		.multiply(new Matrix4().makeScale(box.width, box.height, ITS_OWN));
+		.multiply(new Matrix4().makeScale(box.width, box.height, UNSCALED));
 }
 
 /**
@@ -632,14 +645,14 @@ function seenOf(standing, entries, middle, shown) {
 	if (carried.determinant() === EDGE_ON) return standing;
 	const seenBack = carried.invert();
 	const corners = cornersOf(shown).map((corner) =>
-		new Vector3(corner.x - middle.x, corner.y - middle.y, ITS_OWN).applyMatrix3(seenBack)
+		new Vector3(corner.x - middle.x, corner.y - middle.y, ITS_OWN_FOURTH_VALUE).applyMatrix3(seenBack)
 	);
 	if (corners.some((corner) => corner.z <= BEHIND_THE_EYE)) return standing;
 	const onThePlane = corners.map(
 		(corner) => new Vector2(corner.x / corner.z + middle.x, corner.y / corner.z + middle.y)
 	);
 	const seen = boxWithin(boxOfPoints(onThePlane), standing);
-	return seen.width > NONE && seen.height > NONE ? seen : standing;
+	return seen.width > NO_SIZE && seen.height > NO_SIZE ? seen : standing;
 }
 
 /** A box's four corners. @param {Box} box */
