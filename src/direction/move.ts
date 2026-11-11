@@ -203,16 +203,20 @@ export interface Beginning {
 	readonly pageShown: PageShown;
 	/** The moment the share begins, how long it lasts, none in a cut, and the curve the move goes along it on. */
 	readonly stretch: Stretch;
-	/** A page of the film's own the stage laid, by its key, as a move measures it, whether or not the screen shows it. */
-	readonly ownPage: (key: string) => MeasuredPage;
+	/**
+	 * A page of the film's own, by its key, as a move measures it, whether or not the screen shows it: as it stands at
+	 * the move's moment.
+	 */
+	readonly ownPage: (key: string) => Promise<MeasuredPage>;
 	/**
 	 * The page acted on as an `act` acts on it: the film's time standing while the page answers, the stage laid flat for
 	 * it where it shows the page live.
 	 */
 	readonly act: (action: Action) => Promise<void>;
 	/**
-	 * A picture of a part of the screen, in its pixels, taken as the page stands now and held by the stage, which draws
-	 * a piece or a sweep from it by the number handed back; only where the stage shows the page's picture.
+	 * A picture of a part of the screen, in its pixels, taken of the page the screen shows as it stands now, the filmed
+	 * page or one of the film's own, and held by the stage, which draws a piece or a sweep from it by the number handed
+	 * back; only where the stage shows the filmed page's picture, not the page live.
 	 */
 	readonly holdPicture: (part: Box) => Promise<number>;
 	/** The names the film's things module builds a thing by: none where the film draws no things of its own. */
@@ -340,15 +344,23 @@ function refused(refusal: string): never {
 }
 
 /**
- * A move drawn from the filmed page's picture refused as it begins where the stage shows none of it: a page framed
- * live, which has no picture, and one the screen shows a page of the film's own in place of.
+ * A move drawn from a picture of the page the screen shows, which the take holds as it begins, refused where the stage
+ * shows the filmed page live, with no picture: a picture of a page of the film's own is taken on its copy apart.
  */
-export function refuseWithoutThePicture(beginning: Beginning, move: string): void {
+export function refuseWhereLive(beginning: Beginning, move: string): void {
 	if (beginning.pageShown !== 'pictured') {
 		throw new FilmError(
 			`${move} draws from the page's picture, which a page framed live has none of: the film's page is 'dynamic'`
 		);
 	}
+}
+
+/**
+ * A move drawn from the filmed page's picture as it changes refused as it begins where the stage shows none of it: a
+ * page framed live, which has no picture, and one the screen shows a page of the film's own in place of.
+ */
+export function refuseWithoutThePicture(beginning: Beginning, move: string): void {
+	refuseWhereLive(beginning, move);
 	if (beginning.scene.screen.shows.kind !== THE_FILMED_PAGE.kind) {
 		throw new FilmError(
 			`${move} draws from the filmed page's picture, and the screen shows the film's own page: show the filmed page first, with screen.shows('filmed')`

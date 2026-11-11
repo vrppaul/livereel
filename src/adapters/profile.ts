@@ -30,7 +30,9 @@ import type {
 	FramedStage,
 	Opened,
 	OpenedDrawnPage,
+	OwnPages,
 	PageTime,
+	PicturedPage,
 	PicturedStage,
 	Setting,
 	Stage
@@ -249,7 +251,7 @@ class TimedOpened implements Opened {
 	readonly timings: Timings;
 	readonly stage: Stage;
 	readonly page: FilmedPage;
-	readonly ownPages: ReadonlyMap<string, MeasuredPage>;
+	readonly ownPages: OwnPages;
 	readonly act: ActContext;
 	readonly time: PageTime;
 	readonly thingsBuilt: readonly string[];
@@ -260,7 +262,7 @@ class TimedOpened implements Opened {
 		this.timings = timings;
 		this.stage = timedStage(opened.stage, timings);
 		this.page = new TimedPage(opened.page, timings);
-		this.ownPages = opened.ownPages;
+		this.ownPages = new TimedOwnPages(opened.ownPages, timings);
 		this.act = opened.act;
 		this.time = new TimedPageTime(opened.time, timings);
 		this.thingsBuilt = opened.thingsBuilt;
@@ -269,6 +271,23 @@ class TimedOpened implements Opened {
 
 	[Symbol.asyncDispose](): Promise<void> {
 		return this.timings.timed('browser.close', () => this.opened[Symbol.asyncDispose]());
+	}
+}
+
+/** The pages of the film's own as moves read them, each stand timed; a block measured on one is not. */
+class TimedOwnPages implements OwnPages {
+	readonly ownPages: OwnPages;
+	readonly timings: Timings;
+	readonly laid: ReadonlyMap<string, MeasuredPage>;
+
+	constructor(ownPages: OwnPages, timings: Timings) {
+		this.ownPages = ownPages;
+		this.timings = timings;
+		this.laid = ownPages.laid;
+	}
+
+	stand(standing: OwnPageStanding): Promise<void> {
+		return this.timings.timed('ownPages.stand', () => this.ownPages.stand(standing));
 	}
 }
 
@@ -326,10 +345,6 @@ class TimedDrawingStage<Timed extends Stage> {
 		const part = this.drawnAtOnce === ITS_OWN ? 'stage.capture' : `stage.capture of ${this.drawnAtOnce}`;
 		return this.timings.timed(part, () => this.stage.capture());
 	}
-
-	standOwnPage(standing: OwnPageStanding): Promise<void> {
-		return this.timings.timed('stage.standOwnPage', () => this.stage.standOwnPage(standing));
-	}
 }
 
 class TimedFramedStage extends TimedDrawingStage<FramedStage> implements FramedStage {
@@ -351,8 +366,8 @@ class TimedPicturedStage extends TimedDrawingStage<PicturedStage> implements Pic
 		return this.timings.timed('stage.retakePage', () => this.stage.retakePage(zoom));
 	}
 
-	holdPicture(part: Box, zoom: number): Promise<number> {
-		return this.timings.timed('stage.holdPicture', () => this.stage.holdPicture(part, zoom));
+	holdPicture(part: Box, zoom: number, page: PicturedPage): Promise<number> {
+		return this.timings.timed(`stage.holdPicture of the ${page} page`, () => this.stage.holdPicture(part, zoom, page));
 	}
 
 	letGo(number: number): Promise<void> {

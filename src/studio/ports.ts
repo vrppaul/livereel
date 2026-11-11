@@ -38,13 +38,13 @@ interface DrawingStage {
 	readonly absence: () => Promise<Error | undefined>;
 	/** The frame as the stage shows it now, as a JPEG. */
 	readonly capture: () => Promise<Uint8Array>;
-	/**
-	 * A page of the film's own stood as it stands at a moment, where moves read it: in a copy of its own the stage lays
-	 * apart from every exposure, at no scale, which no frame shows, so it stands as the moment has it whatever the frame
-	 * last drawn showed.
-	 */
-	readonly standOwnPage: (standing: OwnPageStanding) => Promise<void>;
 }
+
+/**
+ * The page a picture of a part of the screen is taken of: the filmed page, in its tab, or the page of the film's own
+ * last stood (`OwnPages`), in the tab its copies stand in.
+ */
+export type PicturedPage = 'filmed' | 'own';
 
 /** The stage with the page live in its frame, which every frame shows as it is. */
 export interface FramedStage extends DrawingStage {
@@ -64,11 +64,11 @@ export interface PicturedStage extends DrawingStage {
 	 */
 	readonly retakePage: (zoom: number) => Promise<boolean>;
 	/**
-	 * A picture of a part of the screen, in its pixels, taken as the page stands now, as sharp as a camera at this zoom
-	 * shows it, and held apart from the page's picture, which may be retaken, until it is let go: its number, by which a
-	 * drawn piece names it.
+	 * A picture of a part of the screen, in its pixels, taken of a page as it stands now, as sharp as a camera at this
+	 * zoom shows it, and held apart from the page's picture, which may be retaken, until it is let go: its number, by
+	 * which a drawn piece names it.
 	 */
-	readonly holdPicture: (part: Box, zoom: number) => Promise<number>;
+	readonly holdPicture: (part: Box, zoom: number, page: PicturedPage) => Promise<number>;
 	/** A picture of a part of the screen the stage holds let go, by its number: no frame drawn after names it. */
 	readonly letGo: (number: number) => Promise<void>;
 	/**
@@ -124,15 +124,24 @@ export interface Track {
 }
 
 /**
- * A browser with the stage and the filmed page open in it, for one take, the page's time standing; and each page of
- * the film's own the stage laid, by its key, which a move measures blocks on as the stage last stood it; and the names
- * the film's things module builds a thing by, none where the stage draws no things; and the film's own pictures the
- * stage laid, by their paths, each as large as its file decoded.
+ * The pages of the film's own as moves read them and pictures of parts of them are taken: one copy of each, apart from
+ * the stage's, at the screen's size and no scale, which no frame shows, by its key; and a copy stood as its page stands
+ * at a moment, the only one shown, whatever the frame last drawn showed.
+ */
+export interface OwnPages {
+	readonly laid: ReadonlyMap<string, MeasuredPage>;
+	readonly stand: (standing: OwnPageStanding) => Promise<void>;
+}
+
+/**
+ * A browser with the stage and the filmed page open in it, for one take, the page's time standing; and the pages of
+ * the film's own as moves read them; and the names the film's things module builds a thing by, none where the stage
+ * draws no things; and the film's own pictures the stage laid, by their paths, each as large as its file decoded.
  */
 export interface Opened extends AsyncDisposable {
 	readonly stage: Stage;
 	readonly page: FilmedPage;
-	readonly ownPages: ReadonlyMap<string, MeasuredPage>;
+	readonly ownPages: OwnPages;
 	readonly act: ActContext;
 	readonly time: PageTime;
 	readonly thingsBuilt: readonly string[];

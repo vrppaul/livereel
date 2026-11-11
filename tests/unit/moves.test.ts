@@ -370,7 +370,7 @@ function scrollingFrom(scene: Scene, moment: number, seconds: number): Beginning
 	return {
 		...beginningIn(scene, FULL_HD),
 		stretch: { moment, seconds, ease: linear },
-		ownPage: () => new PageOfBoxes(OWN_PAGE_BLOCKS, new Map(), OWN_PAGE_LENGTH)
+		ownPage: () => Promise.resolve(new PageOfBoxes(OWN_PAGE_BLOCKS, new Map(), OWN_PAGE_LENGTH))
 	};
 }
 
@@ -378,7 +378,7 @@ function scrollingFrom(scene: Scene, moment: number, seconds: number): Beginning
 function typingFrom(scene: Scene): Beginning {
 	return {
 		...beginningIn(scene, FULL_HD),
-		ownPage: () => new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH, TYPED_BLOCKS_HOLD)
+		ownPage: () => Promise.resolve(new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH, TYPED_BLOCKS_HOLD))
 	};
 }
 
@@ -394,7 +394,8 @@ function typingWrapped(): Move {
 function typingWrappedFrom(scene: Scene, moment: number): Beginning {
 	return {
 		...scrollingFrom(scene, moment, 0),
-		ownPage: () => new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH, TYPED_BLOCKS_HOLD, grownByLines)
+		ownPage: () =>
+			Promise.resolve(new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH, TYPED_BLOCKS_HOLD, grownByLines))
 	};
 }
 
@@ -1501,16 +1502,35 @@ test("a band sweeping the screen moves on the frame as far as it crosses the win
 	).toBeCloseTo(520);
 });
 
-test("a piece, a lens and a sweep of the screen are refused while the screen shows the film's own page, as they are drawn from the filmed page's picture", async () => {
+test("a piece following the page's picture and a lens are refused while the screen shows the film's own page, as they are drawn from the filmed page's picture, the piece told to hold its picture", async () => {
 	const own = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	await expect(async () => piece.show('#card').begin(beginningIn(own, FULL_HD))).rejects.toThrow(
-		ownPageRefusal('piece.show')
+		new FilmError(
+			"piece.show follows the filmed page's picture, and the screen shows the film's own page: lift it holding a picture of its source, picture: 'held'"
+		)
 	);
 	await expect(async () => lens.show('#card').begin(beginningIn(own, FULL_HD))).rejects.toThrow(
 		ownPageRefusal('lens.show')
 	);
-	await expect(async () => screenSweep().begin(beginningIn(own, FULL_HD))).rejects.toThrow(
-		ownPageRefusal('screen.sweep')
+});
+
+test("a piece holding its picture and a sweep of the screen are drawn from pictures the take holds while the screen shows the film's own page", async () => {
+	const own = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const pictures = new PicturesHeld();
+	const held = await heldIn(piece.show('#card', { picture: 'held' }), own, FULL_HD, pictures);
+	await screenSweep().begin(beginningHolding(own, FULL_HD, pictures));
+	expect([held.objects.get('piece')!.content, pictures.parts]).toEqual([
+		expect.objectContaining({ picture: { kind: 'held', number: 1 } }),
+		[CARD, { left: 0, top: 0, ...FULL_HD.screen }]
+	]);
+});
+
+test('a piece holding its picture is refused on a page framed live, which has no picture to draw it from', async () => {
+	const framed: Beginning = { ...beginningIn(OPENING_IN_FULL_HD, FULL_HD), pageShown: 'framed' };
+	await expect(async () => piece.show('#card', { picture: 'held' }).begin(framed)).rejects.toThrow(
+		new FilmError(
+			"piece.show draws from the page's picture, which a page framed live has none of: the film's page is 'dynamic'"
+		)
 	);
 });
 
@@ -1706,7 +1726,7 @@ test('screen.type refuses, as it begins, a block that holds elements of its own,
 	]);
 	const holding: Beginning = {
 		...beginningIn(front, FULL_HD),
-		ownPage: () => new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH, holdings)
+		ownPage: () => Promise.resolve(new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH, holdings))
 	};
 	const intoTheLine = screenType(OWN_PAGE, keystrokes('ls', TEN_A_SECOND), { into: '#line' }).begin(holding);
 	const intoTheField = screenType(OWN_PAGE, keystrokes('ls', TEN_A_SECOND), { into: '#field' }).begin(holding);

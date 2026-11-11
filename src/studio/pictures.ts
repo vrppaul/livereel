@@ -9,17 +9,17 @@ import { ZOOM_AT_MOST } from '../domain/camera.ts';
 import type { Box } from '../domain/geometry.ts';
 import { type PartAsked, type SharperPicture, serves } from '../domain/picture.ts';
 import { type Scene, picturesHeldIn } from '../scene.ts';
-import type { PicturedStage, Stage } from './ports.ts';
+import type { PicturedPage, PicturedStage, Stage } from './ports.ts';
 
 /** The pictures of parts of the screen a take has its stage hold for pieces and sweeps. */
 export interface PartPictures {
 	/** The pictures held sharper than the page's, as the last frame made asked them. */
 	readonly sharper: readonly SharperPicture[];
 	/**
-	 * A picture of a part of the screen a piece or a sweep holds, taken as the page stands now, as sharp as the page's
-	 * picture is where the page stands still: its number.
+	 * A picture of a part of the screen a piece or a sweep holds, taken of a page as it stands now, as sharp as the
+	 * page's picture is where the page stands still: its number.
 	 */
-	readonly hold: (part: Box) => Promise<number>;
+	readonly hold: (part: Box, page: PicturedPage) => Promise<number>;
 	/**
 	 * One picture for each part asked sharper for a frame, as close as it is asked: one held before kept where it holds
 	 * the part as close and the page's picture came out as it did before, so the page stands as it stood; else one taken
@@ -33,8 +33,10 @@ export interface PartPictures {
 	readonly letGoUnnamedBy: (scene: Scene) => Promise<void>;
 }
 
-// No picture of a part of the screen held sharper than the page's
+// No picture of a part of the screen held sharper than the page's; and the page those held so are of, as a piece drawn
+// past livereel's bound follows the filmed page's picture alone
 const NONE_SHARPER: readonly SharperPicture[] = [];
+const THE_FILMED_PAGE: PicturedPage = 'filmed';
 
 /** The pictures of parts of the screen a stage holds for pieces and sweeps: none, where it shows the page live. */
 export function picturesOn(stage: Stage): PartPictures {
@@ -61,8 +63,8 @@ class PicturesOnTheStage implements PartPictures {
 		return this.heldSharper;
 	}
 
-	async hold(part: Box): Promise<number> {
-		const number = await this.stage.holdPicture(part, ZOOM_AT_MOST);
+	async hold(part: Box, page: PicturedPage): Promise<number> {
+		const number = await this.stage.holdPicture(part, ZOOM_AT_MOST, page);
 		this.held.push(number);
 		return number;
 	}
@@ -72,7 +74,7 @@ class PicturesOnTheStage implements PartPictures {
 		const kept = pageChanged ? [] : before.filter((picture) => asked.some((part) => serves(picture, part)));
 		const taken: SharperPicture[] = [];
 		for (const part of asked.filter((wanted) => !kept.some((picture) => serves(picture, wanted)))) {
-			taken.push({ ...part, number: await this.stage.holdPicture(part.part, part.zoom) });
+			taken.push({ ...part, number: await this.stage.holdPicture(part.part, part.zoom, THE_FILMED_PAGE) });
 		}
 		for (const gone of before.filter((picture) => !kept.includes(picture))) await this.stage.letGo(gone.number);
 		this.heldSharper = [...kept, ...taken];

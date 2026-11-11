@@ -66,7 +66,7 @@ import {
 	type Target,
 	type TimingScript,
 	momentTimingOf,
-	refuseWithoutThePicture,
+	refuseWhereLive,
 	shownPart,
 	timingOf,
 	untilTheEnd
@@ -400,7 +400,7 @@ async function typingInto(
 	into: string,
 	strokes: readonly Keystroke[]
 ): Promise<Change> {
-	const page = beginning.ownPage(key);
+	const page = await beginning.ownPage(key);
 	refuseUnshown(await page.holdingOf(into), into);
 	const standing = documentOf(beginning.scene.screen, key).typed;
 	const scrollLengths = await scrollLengthsTyped(page, standing, into, textsTypedAlong(strokes));
@@ -500,7 +500,8 @@ export function scrollTo(page: OwnPageNamed, target: string, script: ScrollToScr
 async function comingToRest(beginning: Beginning, key: string, target: string, top: number): Promise<Change> {
 	const screen = beginning.scene.screen;
 	const length = documentOf(screen, key).scrollLength;
-	const rest = (await beginning.ownPage(key).documentTop(target)) - top;
+	const page = await beginning.ownPage(key);
+	const rest = (await page.documentTop(target)) - top;
 	if (rest < AT_ITS_TOP || rest > length) {
 		throw new FilmError(
 			`${SCROLL_TO} would bring ${target} ${top} pixels below the screen's top with its page scrolled ${Math.round(rest)} down, and it scrolls from ${AT_ITS_TOP} to ${Math.round(length)}: name a top it reaches`
@@ -578,11 +579,11 @@ function showing(shows: Shows): Change {
 }
 
 /**
- * The picture the screen shows as the move begins, held, swept away by light over the move's share, the page as it
- * stands showing behind it: so an act on the page at a moment of the play, or a page of the film's own shown then,
- * comes in behind the light. A band comes from the side of the window the film names, slanted, or a disc opens round
- * the block it names, as wide and its crest in the colours it names; refused as it is made where the film names both,
- * and as it begins where the stage shows no picture of the filmed page.
+ * The picture the screen shows as the move begins, of the filmed page or a page of the film's own, held, swept away by
+ * light over the move's share, the page as it stands showing behind it: so an act on the page at a moment of the play,
+ * or another page shown then, comes in behind the light. A band comes from the side of the window the film names,
+ * slanted, or a disc opens round the block it names, as wide and its crest in the colours it names; refused as it is
+ * made where the film names both, and as it begins where the stage shows the filmed page live, with no picture.
  */
 export function sweep(script: SweepScript = {}): Move {
 	assertWritten(script, SWEEP_FORM, SWEEP);
@@ -602,7 +603,7 @@ export function sweep(script: SweepScript = {}): Move {
  * far as the move has come; gone at its end, the page showing whole.
  */
 async function sweeping(beginning: Beginning, script: SweepScript, named: ShapeNamed): Promise<Change> {
-	refuseWithoutThePicture(beginning, SWEEP);
+	refuseWhereLive(beginning, SWEEP);
 	const shape = await shapePlaced(beginning, named);
 	const picture = await beginning.holdPicture(boxOf(beginning.format.screen));
 	const begun = {

@@ -391,13 +391,13 @@ test("a block a page of the film's own is brought to rest by is measured down it
 	);
 });
 
-test("a block of a page of the film's own is measured where the stage last stood the page, whatever frame it last drew", async () => {
+test("a block of a page of the film's own is measured where its copy was last stood, whatever frame the stage last drew", async () => {
 	// The page stood 1500 down: #far, 2000 down its document, 500 below the screen's top; no frame drawn stood it at 0
 	const tall = ownPageOf(TALL_OWN_PAGE.html, false);
 	const setting = { ...filmOf([]), ownPages: [tall], pictures: NO_PICTURES, framesHanded: SCALED };
 	await using opened = await new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER).open(setting, liveAt(PAGE), 1);
-	await opened.stage.standOwnPage({ key: tall.key, scrolled: 1500, typed: [] });
-	expect((await opened.ownPages.get(tall.key)!.box('#far', 1)).top).toBe(500);
+	await opened.ownPages.stand({ key: tall.key, scrolled: 1500, typed: [] });
+	expect((await opened.ownPages.laid.get(tall.key)!.box('#far', 1)).top).toBe(500);
 });
 
 test("a typing into a block a page of the film's own lacks, into one that holds elements of its own, or into an input, which shows its value, not its text, is refused as it begins, naming the block; a text area shows its text", async () => {

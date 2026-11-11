@@ -35,6 +35,7 @@ import { Take } from '../../src/studio/take.ts';
 import {
 	FootageOf,
 	FramedStageThatKeeps,
+	OwnPagesThatKeep,
 	PageOfBoxes,
 	PageTimeLogged,
 	FOCAL_LENGTH,
@@ -214,15 +215,14 @@ function takeOf(
 	});
 }
 
-/** A take of a film that shows a page of its own, the page the stage lays for it given, blurred as named. */
+/** A take of a film that shows a page of its own, the copy moves read of it given, blurred as named. */
 function takeShowingOwnPage(
 	footage: FootageOf,
 	stage: Stage,
 	filmed: PageOfBoxes,
-	own: PageOfBoxes,
+	ownPages: OwnPagesThatKeep,
 	motionBlur: MotionBlur | null = HALF_OF_FOUR
 ): Take {
-	const ownPages = new Map([[pageKeyOf(OWN_PAGE.html), own]]);
 	return new Take({
 		opened: openedOn(filmed, stage, new PageTimeLogged(), ownPages),
 		footage,
@@ -232,6 +232,11 @@ function takeShowingOwnPage(
 		motionBlur,
 		framesPerSecond: RATE
 	});
+}
+
+/** The film's own page as a take reads it, its copy given. */
+function ownPageRead(own: PageOfBoxes): OwnPagesThatKeep {
+	return new OwnPagesThatKeep(new Map([[pageKeyOf(OWN_PAGE.html), own]]));
 }
 
 /** A take of a film shot unblurred, so each frame it keeps is one drawing. */
@@ -512,7 +517,7 @@ test("the screen shows a page of the film's own from a moment of a play: the exp
 	const footage = new FootageOf([0, 1]);
 	// The camera fast over two frames, the second's exposures a sixteenth of the step apart from 0.8125 on
 	const moves = [cameraTo(CLOSE_AT_THE_RIGHT), screenShows(OWN_PAGE, { within: { start: 0.875 } })];
-	const take = takeShowingOwnPage(footage, stage, new PageOfBoxes(PAGE), new PageOfBoxes(PAGE));
+	const take = takeShowingOwnPage(footage, stage, new PageOfBoxes(PAGE), ownPageRead(new PageOfBoxes(PAGE)));
 	await take.run([play({ seconds: 2 / 30, moves, ease: linear })]);
 	expect(stage.drawn.map((scene) => scene.screen.shows.kind)).toEqual([
 		'filmed',
@@ -534,7 +539,7 @@ test("a page of the film's own runs from the moment its move begins: from a cut'
 	// from a frame before the first, 1500 × t² pixels down t seconds on
 	const fromACut = [shown, cut(scrollsScreen(OWN_PAGE, { pace: 300 })), hold({ seconds: 3 / 30 })];
 	const inAPlay = [shown, play({ seconds: 3 / 30, moves: [scrollsScreen(OWN_PAGE, { pace: 300 })], ease: linear })];
-	const ownPage = new PageOfBoxes(PAGE);
+	const ownPage = ownPageRead(new PageOfBoxes(PAGE));
 	await takeShowingOwnPage(new FootageOf([0, 1, 2]), cutStage, new PageOfBoxes(PAGE), ownPage, UNBLURRED).run(fromACut);
 	await takeShowingOwnPage(new FootageOf([0, 1, 2]), playStage, new PageOfBoxes(PAGE), ownPage, UNBLURRED).run(inAPlay);
 	expect([cutStage, playStage].map((stage) => stage.drawn.map((scene) => scene.screen.shows.scrolled))).toEqual([
@@ -547,14 +552,14 @@ test("a page of the film's own runs as far as the stage laid it to scroll, measu
 	// At 300 pixels a second from the cut, 10 a frame, on a page that scrolls 15 pixels at most
 	const stage = new FramedStageThatKeeps();
 	const steps = [cut(screenShows(OWN_PAGE)), cut(scrollsScreen(OWN_PAGE, { pace: 300 })), hold({ seconds: 3 / 30 })];
-	const shortPage = new PageOfBoxes(PAGE, new Map(), 15);
+	const shortPage = ownPageRead(new PageOfBoxes(PAGE, new Map(), 15));
 	await takeShowingOwnPage(new FootageOf([0, 1, 2]), stage, new PageOfBoxes(PAGE), shortPage, UNBLURRED).run(steps);
 	expect(stage.drawn.map((scene) => scene.screen.shows.scrolled)).toEqual([0, 10, 15]);
 });
 
 test("a block a move names is measured on the page the screen shows: the film's own, where it shows it", async () => {
 	const stage = new FramedStageThatKeeps();
-	const ownPage = new PageOfBoxes(new Map([['#first', SECOND]]));
+	const ownPage = ownPageRead(new PageOfBoxes(new Map([['#first', SECOND]])));
 	const steps = [cut(screenShows(OWN_PAGE)), cut(on('#first')), hold({ seconds: 1 / 30 })];
 	await takeShowingOwnPage(new FootageOf([0]), stage, new PageOfBoxes(PAGE), ownPage).run(steps);
 	expect(stage.drawn[0]!.light!.box).toEqual(SECOND);
@@ -569,23 +574,40 @@ test("a move begun while a page of the film's own runs reads it stood as it stan
 		hold({ seconds: 3 / 30 }),
 		play({ seconds: 4 / 30, moves: [on('#first', { within: { start: 0.5 } })], ease: linear })
 	];
-	const ownPage = new PageOfBoxes(PAGE);
+	const ownPage = ownPageRead(new PageOfBoxes(PAGE));
 	await takeShowingOwnPage(new FootageOf([4]), stage, new PageOfBoxes(PAGE), ownPage, UNBLURRED).run(steps);
-	expect(stage.stood).toEqual([{ key: pageKeyOf(OWN_PAGE.html), scrolled: expect.closeTo(40), typed: [] }]);
+	expect(ownPage.stood.at(-1)).toEqual({ key: pageKeyOf(OWN_PAGE.html), scrolled: expect.closeTo(40), typed: [] });
+});
+
+test("a piece lifted holding its picture while a page of the film's own runs has the stage hold a picture of that page, stood as it stands at the move's moment", async () => {
+	// At 300 pixels a second from the cut, 10 a frame; the piece lifted by a cut after three frames held, at the film's
+	// 3/30 s, 30 pixels down: the page stood so as the piece begins, which measures its block and pictures it
+	const stage = new PicturedStageThatKeeps();
+	const steps = [
+		cut(screenShows(OWN_PAGE), scrollsScreen(OWN_PAGE, { pace: 300 })),
+		hold({ seconds: 3 / 30 }),
+		cut(showPiece('#first', { picture: 'held' }))
+	];
+	const ownPage = ownPageRead(new PageOfBoxes(PAGE));
+	await takeShowingOwnPage(new FootageOf([3]), stage, new PageOfBoxes(PAGE), ownPage, UNBLURRED).run(steps);
+	const standing = { key: pageKeyOf(OWN_PAGE.html), scrolled: expect.closeTo(30), typed: [] };
+	expect([stage.held.map((asked) => asked.page), ownPage.stood.at(-1)]).toEqual([['own'], standing]);
 });
 
 test("keys typed into the page while the screen shows the film's own go to the filmed page behind it", async () => {
 	const filmedPage = new PageOfBoxes(PAGE);
 	const ownPage = new PageOfBoxes(PAGE);
 	const steps = [cut(screenShows(OWN_PAGE)), play({ seconds: 2 / 30, moves: [typeIntoThePage(STROKES)] })];
-	await takeShowingOwnPage(new FootageOf([1]), new FramedStageThatKeeps(), filmedPage, ownPage).run(steps);
+	await takeShowingOwnPage(new FootageOf([1]), new FramedStageThatKeeps(), filmedPage, ownPageRead(ownPage)).run(steps);
 	expect([filmedPage.typed, ownPage.typed]).toEqual([['a', 'b'], []]);
 });
 
 test("a page framed live is acted on laid flat as the filmed page, while the screen shows the film's own", async () => {
 	const stage = new FramedStageThatKeeps();
 	const steps = [cut(screenShows(OWN_PAGE)), act(() => Promise.resolve())];
-	await takeShowingOwnPage(new FootageOf([0]), stage, new PageOfBoxes(PAGE), new PageOfBoxes(PAGE)).run(steps);
+	await takeShowingOwnPage(new FootageOf([0]), stage, new PageOfBoxes(PAGE), ownPageRead(new PageOfBoxes(PAGE))).run(
+		steps
+	);
 	expect(stage.laidFlat.map((scene) => scene.screen.shows.kind)).toEqual(['filmed']);
 });
 
@@ -815,7 +837,7 @@ test("a piece holding its picture has the stage hold one of its source as the pa
 		hold({ seconds: 1 / 30 })
 	]);
 	expect([stage.held, stage.drawn.at(OWN)!.objects[0]!.content]).toEqual([
-		[{ part: FIRST, zoom: 2.2 }],
+		[{ part: FIRST, zoom: 2.2, page: 'filmed' }],
 		expect.objectContaining({ picture: { kind: 'own', number: 1 } })
 	]);
 });
@@ -829,7 +851,7 @@ test("a piece drawn from the page's picture past livereel's bound has the stage 
 		hold({ seconds: 1 / 30 })
 	]);
 	expect([stage.held, stage.drawn.at(OWN)!.objects[0]!.content]).toEqual([
-		[{ part: FIRST, zoom: expect.closeTo(5.4) }],
+		[{ part: FIRST, zoom: expect.closeTo(5.4), page: 'filmed' }],
 		expect.objectContaining({ picture: { kind: 'own', number: 1 } })
 	]);
 });
@@ -893,7 +915,7 @@ test("a sweep of the screen has the stage hold a picture of the whole screen as 
 		hold({ seconds: 1 / 30 })
 	]);
 	expect([stage.held, stage.drawn.at(0)!.screen.sweep, stage.drawn.at(OWN)!.screen.sweep, stage.letGone]).toEqual([
-		[{ part: { left: 0, top: 0, width: 600, height: 400 }, zoom: 2.2 }],
+		[{ part: { left: 0, top: 0, width: 600, height: 400 }, zoom: 2.2, page: 'filmed' }],
 		expect.objectContaining({ picture: 1 }),
 		null,
 		[1]

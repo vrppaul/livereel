@@ -23,7 +23,8 @@
  * still without it (probed 2026-10-30). A picture of a part of the screen a piece is drawn from, the one it holds or
  * one sharper than the page's, is taken the same way, clipped to that part, and handed to the stage by its number,
  * which keeps it until the take lets it go: Chrome draws the part anew at the clip's scale, a clip at 12 of a page at
- * 4.4 alike to a tab at 12 (SSIM 1.0, probed 2026-11-02). Every picture is taken no larger than Chrome takes one whole
+ * 4.4 alike to a tab at 12 (SSIM 1.0, probed 2026-11-02); one of a page of the film's own, from the tab its copy
+ * stands in (`own-pages.ts`). Every picture is taken no larger than Chrome takes one whole
  * where it draws (`bounds.ts`): one asked larger, of a tall screen or a part grown far, is taken as large as it may,
  * softer, and the person is told so once.
  *
@@ -44,9 +45,8 @@ import type { Format } from '../../domain/format.ts';
 import { type Box, type Size, boxOf, frameScaleOf } from '../../domain/geometry.ts';
 import type { Drawing } from '../../direction/film.ts';
 import type { OwnPage } from '../../direction/page.ts';
-import type { OwnPageStanding } from '../../domain/own-page.ts';
 import type { DrawnScene, ObjectList } from '../../scene.ts';
-import type { FramedStage, FramesHanded, PicturedStage } from '../../studio/ports.ts';
+import type { FramedStage, FramesHanded, PicturedPage, PicturedStage } from '../../studio/ports.ts';
 import { type PictureBound, scaleWithin } from './bounds.ts';
 import type { ChangesHeard } from './changes.ts';
 import type { FrameWatch, TabWatch } from './watch.ts';
@@ -138,13 +138,10 @@ export interface StageApi {
 	/** A picture of a part of the screen held let go, by its number, its address with it. */
 	readonly letGo: (number: number) => void;
 	/**
-	 * The pages of the film's own laid out in the screen's place in every exposure, hidden until a frame shows one, and
-	 * once more beside the frame at no scale, the copy moves read, named by its key; each loaded with its fonts, its
-	 * scripts kept from running. The keys of those that move of themselves, by an animation or a transition of their own.
+	 * The pages of the film's own laid out in the screen's place in every exposure, hidden until a frame shows one, each
+	 * loaded with its fonts, its scripts kept from running; moves read them in a tab of their own (`own-pages.ts`).
 	 */
-	readonly layOwnPages: (pages: readonly OwnPage[]) => Promise<readonly string[]>;
-	/** The copy of a page of the film's own moves read, by its key, written and scrolled as it stands at a moment. */
-	readonly standOwnPage: (standing: OwnPageStanding) => void;
+	readonly layOwnPages: (pages: readonly OwnPage[]) => Promise<void>;
 	/**
 	 * The film's own pictures held by their paths, each once it is decoded, so every frame drawn after shows it whole:
 	 * the size each decoded at.
@@ -272,10 +269,6 @@ export class PlaywrightFramedStage implements FramedStage {
 		return capturedOf(this.page, boxOf(this.format.frame));
 	}
 
-	standOwnPage(standing: OwnPageStanding): Promise<void> {
-		return this.page.evaluate(ownPageStood, standing);
-	}
-
 	private async sizedTo(format: Format): Promise<void> {
 		await this.page.setViewportSize(format.frame);
 		const layout = layoutOf(format, this.exposuresAtOnce, DRAWN_FLAT, boxOf(format.frame));
@@ -283,14 +276,17 @@ export class PlaywrightFramedStage implements FramedStage {
 	}
 }
 
-/**
- * The tab a static page stands in, as its pictures are taken: on livereel's own CDP session with it, at the screen's
- * size, a page's pixel taking so many of a picture's for a camera at a zoom of 1, within the bounds Chrome takes a
- * picture whole in (`bounds.ts`).
- */
-export interface FilmedTab {
+/** A tab a page stands in as pictures of it are taken: the tab, and livereel's own CDP session with it. */
+export interface PictureTab {
 	readonly tab: Page;
 	readonly session: CDPSession;
+}
+
+/**
+ * The tab a static page stands in, as its pictures are taken, at the screen's size, a page's pixel taking so many of a
+ * picture's for a camera at a zoom of 1, within the bounds Chrome takes a picture whole in (`bounds.ts`).
+ */
+export interface FilmedTab extends PictureTab {
 	readonly screen: Size;
 	readonly pixelsAtZoomOne: number;
 	readonly bounds: readonly PictureBound[];
@@ -299,12 +295,14 @@ export interface FilmedTab {
 
 /**
  * The stage showing a picture of the filmed page, which stands in a tab of its own, drawing as many exposures of a
- * frame at once as it was set up to, flat or as a room.
+ * frame at once as it was set up to, flat or as a room; and holding pictures of parts of the filmed page, or of the
+ * film's own pages, taken in the tab their copies stand in, at the same device scale, none where the film has none.
  */
 export class PlaywrightPicturedStage implements PicturedStage {
 	readonly kind = 'pictured';
 	readonly page: Page;
 	readonly filmedTab: FilmedTab;
+	readonly ownPagesTab: PictureTab | null;
 	readonly watch: TabWatch;
 	readonly exposuresAtOnce: number;
 	readonly drawing: StageDrawing;
@@ -320,6 +318,7 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	constructor(
 		page: Page,
 		filmedTab: FilmedTab,
+		ownPagesTab: PictureTab | null,
 		watch: TabWatch,
 		exposuresAtOnce: number,
 		drawing: StageDrawing,
@@ -328,6 +327,7 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	) {
 		this.page = page;
 		this.filmedTab = filmedTab;
+		this.ownPagesTab = ownPagesTab;
 		this.watch = watch;
 		this.exposuresAtOnce = exposuresAtOnce;
 		this.drawing = drawing;
@@ -345,16 +345,16 @@ export class PlaywrightPicturedStage implements PicturedStage {
 
 	/** The page's picture taken anew, and shown where it came out otherwise than the last. */
 	async retakePage(zoom: number): Promise<boolean> {
-		const picture = await this.pictureAt(boxOf(this.filmedTab.screen), zoom);
+		const picture = await this.pictureAt(this.filmedTab, boxOf(this.filmedTab.screen), zoom);
 		const alike = this.picture === picture;
 		this.picture = picture;
 		if (!alike) await this.page.evaluate(pictureShown, { base64: picture, type: PICTURE_TYPE });
 		return alike;
 	}
 
-	/** A picture of a part of the screen taken and handed to the stage to hold, by the next number. */
-	async holdPicture(part: Box, zoom: number): Promise<number> {
-		const picture = await this.pictureAt(part, zoom);
+	/** A picture of a part of the screen taken of a page and handed to the stage to hold, by the next number. */
+	async holdPicture(part: Box, zoom: number, page: PicturedPage): Promise<number> {
+		const picture = await this.pictureAt(this.tabOf(page), part, zoom);
 		this.picturesHeld += 1;
 		await this.page.evaluate(pictureHeld, { base64: picture, type: PICTURE_TYPE, number: this.picturesHeld });
 		return this.picturesHeld;
@@ -364,33 +364,28 @@ export class PlaywrightPicturedStage implements PicturedStage {
 		return this.page.evaluate(pictureLetGo, number);
 	}
 
+	/** The tab a page is pictured in: the filmed page's, or the one the film's own pages stand in. */
+	private tabOf(page: PicturedPage): PictureTab {
+		switch (page) {
+			case 'filmed':
+				return this.filmedTab;
+			case 'own':
+				if (this.ownPagesTab === null) throw new Error('the film laid no page of its own to picture a part of');
+				return this.ownPagesTab;
+		}
+	}
+
 	/**
-	 * A part of the screen as the page's tab shows it once its fonts have loaded, as a JPEG as sharp as a camera at this
-	 * zoom shows it, or as the tightest bound Chrome takes it whole in lets it, its text caret kept: its bytes in base64.
+	 * A part of the screen as a tab shows it, as sharp as a camera at this zoom shows it, or as the tightest bound Chrome
+	 * takes it whole in lets it: its bytes in base64.
 	 */
-	private async pictureAt(part: Box, zoom: number): Promise<string> {
-		const { tab, session, pixelsAtZoomOne, bounds } = this.filmedTab;
+	private pictureAt(source: PictureTab, part: Box, zoom: number): Promise<string> {
+		const { pixelsAtZoomOne, bounds } = this.filmedTab;
 		const taken = scaleWithin(part, pixelsAtZoomOne * zoom, bounds);
 		if (taken.heldBy !== null && !this.softerSaid) {
 			this.saySofter(part, zoom, taken.scale / pixelsAtZoomOne, taken.heldBy);
 		}
-		await tab.evaluate(fontsLoaded);
-		const { cssVisualViewport } = await session.send('Page.getLayoutMetrics');
-		const clip = {
-			// eslint-disable-next-line id-length -- CDP names the corner a picture is clipped at `x` and `y`
-			x: cssVisualViewport.pageX + part.left,
-			// eslint-disable-next-line id-length -- as above
-			y: cssVisualViewport.pageY + part.top,
-			width: part.width,
-			height: part.height,
-			scale: taken.scale
-		};
-		const { data } = await session.send('Page.captureScreenshot', {
-			format: PICTURE_FORMAT,
-			quality: JPEG_QUALITY,
-			clip
-		});
-		return data;
+		return partPictured(source, part, taken.scale);
 	}
 
 	/**
@@ -418,10 +413,6 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	capture(): Promise<Uint8Array> {
 		return capturedOf(this.page, this.handedIn);
 	}
-
-	standOwnPage(standing: OwnPageStanding): Promise<void> {
-		return this.page.evaluate(ownPageStood, standing);
-	}
 }
 
 /**
@@ -444,6 +435,30 @@ export async function stageApartOpened(page: Page): Promise<void> {
 /** A zoom as the person is told it, to two places. */
 function saidOf(zoom: number): number {
 	return Number(zoom.toFixed(PLACES_SAID));
+}
+
+/**
+ * A part of the screen as a tab shows it once its fonts have loaded, as a JPEG at a scale of its pixels to the page's,
+ * which Chrome draws the page anew at, its text caret kept: its bytes in base64.
+ */
+async function partPictured(source: PictureTab, part: Box, scale: number): Promise<string> {
+	await source.tab.evaluate(fontsLoaded);
+	const { cssVisualViewport } = await source.session.send('Page.getLayoutMetrics');
+	const clip = {
+		// eslint-disable-next-line id-length -- CDP names the corner a picture is clipped at `x` and `y`
+		x: cssVisualViewport.pageX + part.left,
+		// eslint-disable-next-line id-length -- as above
+		y: cssVisualViewport.pageY + part.top,
+		width: part.width,
+		height: part.height,
+		scale
+	};
+	const { data } = await source.session.send('Page.captureScreenshot', {
+		format: PICTURE_FORMAT,
+		quality: JPEG_QUALITY,
+		clip
+	});
+	return data;
 }
 
 /** A part of a page as it shows now, as a JPEG at its device scale, its text caret kept. */
@@ -487,13 +502,9 @@ export function fontsLaid(fonts: readonly FilmsFontHanded[]): Promise<readonly s
 	return window.stage.layFonts(fonts);
 }
 
-/** The pages of the film's own laid on the stage: the keys of those that move of themselves. */
-export function ownPagesLaid(pages: readonly OwnPage[]): Promise<readonly string[]> {
+/** The pages of the film's own laid on the stage. */
+export function ownPagesLaid(pages: readonly OwnPage[]): Promise<void> {
 	return window.stage.layOwnPages(pages);
-}
-
-function ownPageStood(standing: OwnPageStanding): void {
-	window.stage.standOwnPage(standing);
 }
 
 function applyExposures(exposures: readonly DrawnScene[]): void {

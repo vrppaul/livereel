@@ -11,7 +11,9 @@ import type {
 	Footage,
 	FramedStage,
 	Opened,
+	OwnPages,
 	PageTime,
+	PicturedPage,
 	PicturedStage,
 	Stage,
 	Track
@@ -106,15 +108,13 @@ export class PageScrollingBy extends PageOfBoxes {
 }
 
 /**
- * A stage of either kind, drawing one exposure of a frame at a time, that keeps every scene drawn on it, how many each
- * drawing was of, and how each page of the film's own was stood, in turn, and counts its captures and the times it was
- * waited on to finish drawing.
+ * A stage of either kind, drawing one exposure of a frame at a time, that keeps every scene drawn on it and how many
+ * each drawing was of, and counts its captures and the times it was waited on to finish drawing.
  */
 export abstract class StageThatKeeps {
 	readonly exposuresAtOnce: number = 1;
 	readonly drawn: DrawnScene[] = [];
 	readonly draws: number[] = [];
-	readonly stood: OwnPageStanding[] = [];
 	captured = 0;
 	waitedOn = 0;
 	private lost: Error | undefined = undefined;
@@ -144,8 +144,18 @@ export abstract class StageThatKeeps {
 		this.captured += 1;
 		return Promise.resolve(new Uint8Array());
 	}
+}
 
-	standOwnPage(standing: OwnPageStanding): Promise<void> {
+/** The pages of the film's own as a take reads them, each by its key, keeping how each was stood, in turn. */
+export class OwnPagesThatKeep implements OwnPages {
+	readonly laid: ReadonlyMap<string, PageOfBoxes>;
+	readonly stood: OwnPageStanding[] = [];
+
+	constructor(laid: ReadonlyMap<string, PageOfBoxes>) {
+		this.laid = laid;
+	}
+
+	stand(standing: OwnPageStanding): Promise<void> {
 		this.stood.push(standing);
 		return Promise.resolve();
 	}
@@ -166,10 +176,14 @@ export class FramedStageThatKeeps extends StageThatKeeps implements FramedStage 
 	}
 }
 
-/** A picture of a part of the screen a stage was asked to hold, and the zoom it was to be as sharp as. */
+/**
+ * A picture of a part of the screen a stage was asked to hold, the zoom it was to be as sharp as, and the page it was
+ * to be of.
+ */
 export interface PictureAsked {
 	readonly part: Box;
 	readonly zoom: number;
+	readonly page: PicturedPage;
 }
 
 /**
@@ -188,8 +202,8 @@ export class PicturedStageThatKeeps extends StageThatKeeps implements PicturedSt
 		return Promise.resolve(true);
 	}
 
-	holdPicture(part: Box, zoom: number): Promise<number> {
-		this.held.push({ part, zoom });
+	holdPicture(part: Box, zoom: number, page: PicturedPage): Promise<number> {
+		this.held.push({ part, zoom, page });
 		return Promise.resolve(this.held.length);
 	}
 
@@ -306,7 +320,7 @@ export function openedOn(
 	page: PageOfBoxes,
 	stage: Stage,
 	time: PageTime = new PageTimeLogged(),
-	ownPages: ReadonlyMap<string, PageOfBoxes> = new Map()
+	ownPages: OwnPagesThatKeep = new OwnPagesThatKeep(new Map())
 ): Opened {
 	const act: ActContext = { page: NO_PAGE, motion: new MotionSwitch(), set: NO_SET };
 	return { stage, page, ownPages, act, time, [Symbol.asyncDispose]: () => Promise.resolve() };

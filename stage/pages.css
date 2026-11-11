@@ -1,0 +1,20 @@
+/* The tab the pages of the film's own are read and pictured in (`pages.js`): as large as the screen, its ground the screen's, as the stage lays one under such a page */
+body {
+	margin: 0;
+	background: var(--screen-ground);
+}
+
+/* A copy of a page, filling the tab as the page fills the screen: a frame is replaced content, which its sides do not stretch, so its size is written out; seen only once stood */
+[data-own-page] {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100vw;
+	height: 100vh;
+	border: 0;
+	visibility: hidden;
+}
+
+[data-own-page][data-stood] {
+	visibility: visible;
+}

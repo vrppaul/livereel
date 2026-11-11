@@ -8,7 +8,8 @@
  * refused; and it stands over its source only on a window that faces the frame, where the source shows as a box.
  * Lifted `picture: 'held'`, it is drawn from a picture of its source alone, which the take holds as it is lifted, as
  * sharp as the page's picture is where the page stands still: it shows what the page showed there then, as the page
- * changes under it.
+ * changes under it. So it alone is lifted off a page of the film's own, which the filmed page's picture is not of: the
+ * take pictures its source on the page's copy apart, as the page stands at the moment it is lifted.
  * Lifted inside the world, it stands there over its source on the window's plane, wherever the eye stands, and the eye
  * moves past it as it moves past the window, the eye's focus blurring it as it stands off it; carried onto a block of
  * the page from there, it sets off from where it stands, while it lies on the window's plane. There alone it may have
@@ -22,7 +23,7 @@
  * film names, square where it names none: the film knows how round a block of its page is drawn, which no box read off
  * the page says. Every move of it takes the piece named `piece`, or the one the film names `as`.
  */
-import { boxOnTheFrame } from '../domain/camera.ts';
+import { type Camera, boxOnTheFrame } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import { type Box, frameScaleOf } from '../domain/geometry.ts';
 import {
@@ -44,7 +45,7 @@ import {
 } from '../domain/handed.ts';
 import type { Place } from '../domain/place.ts';
 import { screenBoxUnder } from '../domain/placement.ts';
-import { A_TARGET, type Beginning, type Move, type Target } from '../direction/move.ts';
+import { A_TARGET, type Beginning, type Move, type Target, refuseWhereLive } from '../direction/move.ts';
 import {
 	type Body,
 	type Corners,
@@ -54,6 +55,7 @@ import {
 	type PiecePicture,
 	type Pit
 } from '../props/piece.ts';
+import { THE_FILMED_PAGE } from '../props/screen.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
@@ -85,7 +87,8 @@ import {
 	NO_PLACE,
 	ONE_BLOCK,
 	type Taking,
-	cameraOverThePicture,
+	cameraFrontOn,
+	overItsSource,
 	sourceOf
 } from './source.ts';
 import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
@@ -294,11 +297,39 @@ export function effects(script: EffectsScript): Move {
 export function back(script: TakenScript = {}): Move {
 	return objectBack(PIECE, 'piece.back', script, (beginning, piece) =>
 		boxOnTheFrame(
-			cameraOverThePicture(beginning, 'piece.back'),
+			cameraOverItsPicture(beginning, piece.content.picture.kind, 'piece.back'),
 			beginning.format.frame,
 			screenBoxUnder(piece.content.source, piece.inside, beginning.scene.scrolled)
 		)
 	);
+}
+
+/**
+ * The scene's camera as a move of a piece over its source begins, refused as the picture the piece is drawn from asks:
+ * one following the page's picture where the stage shows no picture of the filmed page, and told to hold its own where
+ * the screen shows a page of the film's own, which the filmed page's picture is not of; one holding its picture where
+ * the stage shows the page live; and either where its window does not face the frame front on.
+ */
+function cameraOverItsPicture(beginning: Beginning, picture: PiecePicture['kind'], move: string): Camera {
+	refuseWhereLive(beginning, move);
+	refuseFollowingOverOwnPage(beginning, picture, move);
+	return cameraFrontOn(beginning, overItsSource(move));
+}
+
+/**
+ * A piece following the filmed page's picture refused while the screen shows a page of the film's own in its place; one
+ * holding its picture, taken of whichever page the screen shows, never.
+ */
+function refuseFollowingOverOwnPage(beginning: Beginning, picture: PiecePicture['kind'], move: string): void {
+	switch (picture) {
+		case 'held':
+			return;
+		case 'following':
+			if (beginning.scene.screen.shows.kind === THE_FILMED_PAGE.kind) return;
+			throw new FilmError(
+				`${move} follows the filmed page's picture, and the screen shows the film's own page: lift it holding a picture of its source, picture: 'held'`
+			);
+	}
 }
 
 /** The piece going where it stands, or sliding out past a side of the frame; once gone, there is none. */
@@ -359,7 +390,7 @@ function bodyAsked(body: BodyScript, inside: PieceScript['inside']): Body {
  * body it names, and the box of the frame it shows there.
  */
 async function lifted(beginning: Beginning, target: Target, lifting: Lifting): Promise<Coming> {
-	const camera = cameraOverThePicture(beginning, 'piece.show');
+	const camera = cameraOverItsPicture(beginning, lifting.picture, 'piece.show');
 	const { source, shown, box } = await sourceOf(beginning, camera, target, lifting, 'piece.show');
 	// The window's corner as the look rounds it on the frame, in the page's pixels as the camera shows them there
 	const windowCorner =

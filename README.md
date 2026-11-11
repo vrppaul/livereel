@@ -559,7 +559,10 @@ to the whole frame keeps its edges crisp. Lifted `picture:
 picture of its source alone, taken as it is lifted, as sharp as the page's
 picture where the page stands still: it shows what the page showed there
 then, so a thread lifted off a review stays as it was while the diff under
-it is shot anew. It does not follow the camera after:
+it is shot anew. So it alone is lifted off a page of the film's own, whose
+picture is taken as the page stands at the moment it is lifted: a line of a
+terminal's diff, `piece.show(ROW, { inside: 'world', picture: 'held', body:
+{ thickness: 100, walls: '#2ea043' } })`. It does not follow the camera after:
 carried `to` a place it stands as large as the place holds its source, in
 its middle, and grows, comes near, leans, rolls and spins as a title does,
 a blank card when it turns away. `piece.onto('#agent-panel')` carries it
@@ -745,9 +748,10 @@ finds blocks on it by their selectors, where they stand at the moment the
 move begins, as far as the film has run the page and with what it typed
 into it then, so a light laid on a running page lands on its block; the
 filmed page behind it is still acted on, scrolled and typed into; a piece
-of the page and a lens, drawn from the filmed page's picture, are
-refused, and so is the swap while
-a lens stands. `screen.behind({ html }, { upright: 'over' })` puts a page
+lifted `picture: 'held'` and a sweep are drawn from a picture of it, taken
+as it stands then; a piece following the page's picture and a lens, drawn
+from the filmed page's picture, are refused, and so is the swap while a
+lens stands. `screen.behind({ html }, { upright: 'over' })` puts a page
 of the film's own on the window's back, as a slab wears one: where the eye
 sees the window's back, the screen shows it in place of its front, mounted
 so it stands upright once the window is turned over round its width,
@@ -839,9 +843,9 @@ is under it too. The band crosses the window, not the page: a camera panning
 against it faster than it goes brings the picture back over page it had
 swept. A piece drawn from the page's picture and a lens show the page as it
 stands, behind the band already. In a `cut` a sweep ends as it begins, and
-nothing of it shows. A sweep is refused on a page framed live, and while the
-screen shows a page of the film's own, as it draws from the filmed page's
-picture. The
+nothing of it shows. A sweep is refused on a page framed live, which has no
+picture; while the screen shows a page of the film's own, it sweeps away a
+picture of that page. The
 words take about a third of the frame, set as large as their share lets, or the share
 a format's `split` gives them (see Formats); the window takes the whole
 rest, whatever the page's shape, and shows the part of it the camera
