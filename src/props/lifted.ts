@@ -1,14 +1,15 @@
 /**
  * What a piece of the page (`src/props/piece.ts`) leaves on the page and draws to it, worked out from the objects as
  * the stage draws them. A hole is left in the page the piece was lifted off, and drawn only while the screen shows that
- * page. It stands on the screen, where the piece was lifted, so the camera and the window carry it
- * with the page, as the light: the piece keeps a box of the screen, not a block, and the hole keeps it too, as far past
- * it as it reaches; but a piece riding a block's scroll keeps the block, and its hole and its source are carried up the
- * screen with it. Lines run on the frame from the piece's source, as the camera shows it now, to the piece, as it is
- * drawn now, grown, turned or leant, as an inset's are drawn on a chart or a map: along the two edges of the outline
- * round both that join one to the other, so they cross neither box nor each other and move without a jump as the piece
- * travels. There are none while one holds the other, as while the piece stands over its source, nor while the two cross
- * as a bar across a bar, where the outline round both joins them four times. Both come and go with the piece.
+ * page. It stands on the screen, where the piece was lifted, so the camera and the window carry it with the page, as
+ * the light: the piece keeps a box of the screen, not a block, and the hole keeps it too, as far past it as it
+ * reaches; but a piece riding its block keeps the blocks whose scrolls carry its source, and its hole and its source
+ * are carried up the screen as far as those have scrolled in all. Lines run on the frame from the piece's source, as
+ * the camera shows it now, to the piece, as it is drawn now, grown, turned or leant, as an inset's are drawn on a
+ * chart or a map: along the two edges of the outline round both that join one to the other, so they cross neither box
+ * nor each other and move without a jump as the piece travels. There are none while one holds the other, as while the
+ * piece stands over its source, nor while the two cross as a bar across a bar, where the outline round both joins them
+ * four times. Both come and go with the piece.
  */
 import type { Camera } from '../domain/camera.ts';
 import { type Box, type Point, type Segment, type Size, segmentBetween, withAir } from '../domain/geometry.ts';
@@ -66,8 +67,8 @@ const BEFORE_THE_LAST = -2;
 
 /**
  * The holes the pieces among objects leave on the screen while it shows a page, each where its piece was lifted, or,
- * riding a block's scroll, as far up the screen as the film has scrolled the block since: those alone of pieces lifted
- * off that page, as a hole is left in the page, not the screen.
+ * riding its block, as far up the screen as the film has scrolled the blocks that carry its source since, in all:
+ * those alone of pieces lifted off that page, as a hole is left in the page, not the screen.
  */
 export function drawnHoles(
 	objects: readonly ObjectEntry[],

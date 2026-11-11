@@ -271,9 +271,9 @@ and the moves of each part of the scene:
   at a corner standing on a corner of what the window shows, leaving a `hole: { ground, line, reach, pit }` and drawing `lines` to its
   source where named; drawn from the page's picture as it changes, or, `picture: 'held'`, from a picture of its source
   held as it is lifted; `inside: 'world'`, with a `body: { thickness, walls, glow }` where named, riding its block as
-  the page scrolls, `rides: 'its block'`, where named; carried `onto` another
-  block, it lies on the page there, in the window, and keeps that place on the screen as the camera moves, one standing
-  off the page in the world falling onto it on the curve `fall` names; each move of it takes `as` to name which
+  the page scrolls, `rides: 'its block'`, where named; carried `onto` another block, it lies on the page there: from
+  the frame in the window, keeping that place on the screen as the camera moves; from the world on the page in the
+  world, keeping its body and falling onto it on the curve `fall` names; each move of it takes `as` to name which
 - `outline.show(target, { every, line, enter, edge, as, group, zIndex })`, `outline.to(place, { scale, depth })`,
   `outline.lean({ tilt, turn, roll, over, about })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a
   selector's blocks or a box of the screen, `'solid'` or `'dashed'`; each move of it takes `as` to name which
@@ -698,7 +698,8 @@ moment it sets off, as nothing of it falls. It stands
 on the page in the world, on the page's plane as the camera frames the
 page, so it keeps its body and its shadow, and is not cut at the window's
 edge nor shaded with the page as what lies in the window is; it goes down
-with the screen as the page does.
+with the screen as the page does, its walls shrinking into its face and its
+shadow fading with it, and so does a hole's pit.
 
 A piece lifted `inside: 'world'` rides its block as the page scrolls where the
 film asks: `piece.show(TASK, { inside: 'world', rides: 'its block' })`, then

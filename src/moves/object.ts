@@ -498,9 +498,9 @@ export function objectShowRiding(
 
 /**
  * The page's scrolls as something is placed riding them as a move begins, over its source: every block whose scroll
- * carries the source, as the page finds them then, from as far as the film has scrolled them in all then, carrying what rides
- * them as many of the world's pixels a pixel of the scrolls as the camera shows a pixel of the screen then, from the
- * eye at rest, as what stands in the world reads the page.
+ * carries the source, as the page finds them then, from as far as the film has scrolled them in all then, carrying
+ * what rides them as many of the world's pixels a pixel of the scrolls as the camera shows a pixel of the screen then,
+ * from the eye at rest, as what stands in the world reads the page.
  */
 async function rideHeld(beginning: Beginning, source: Target, every: number): Promise<Holder> {
 	const blocks = await beginning.page.blocksHolding(source, every);
@@ -1387,8 +1387,8 @@ function crossedAt(
 
 /**
  * What an object of a name stands in, where it stands on the frame's own plane, to be handed into the world from: the
- * frame, or a point beside which it stands. One in the world already, riding a block's scroll there or not or over the
- * page, is refused, and one inside the window, on the page or in a group, as it goes with what it stands in.
+ * frame, or a point beside which it stands. One in the world already, riding a block's scroll there or not or on the
+ * page in the world, is refused, and one inside the window, on the page or in a group, as it goes with its holder.
  */
 function onTheFramesPlane(holder: Holder, name: ObjectName, move: string): OnTheFramesPlane {
 	switch (holder.kind) {

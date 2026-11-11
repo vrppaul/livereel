@@ -1421,6 +1421,19 @@ test('a piece in the world fallen onto a block goes down with the screen, as one
 	expect(drawnObjectsIn(halfLowered, FULL_HD)[0]!.held).toEqual(0.5);
 });
 
+test("a piece in the world fallen onto a block draws its walls as far as the screen has come up, as the window's body: half as thick half way through screen.lower(), none once the screen is down", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const bodied = piece.show('#card', { inside: 'world', body: { thickness: 12, walls: '#1d2a44' } });
+	const raised = await setIn(piece.effects({ depth: 150 }), await setIn(bodied, wide, 1, FULL_HD), 1, FULL_HD);
+	const landed = await setIn(piece.onto('#other'), raised, 1, FULL_HD);
+	const bodyIn = (scene: Scene) => (drawnObjectsIn(scene, FULL_HD)[0]!.content as DrawnPiece).body;
+	const thickness = bodyIn(landed)!.thickness;
+	expect([
+		bodyIn(await setIn(lower(), landed, 0.5, FULL_HD))!.thickness,
+		bodyIn(await setIn(lower(), landed, 1, FULL_HD))
+	]).toEqual([thickness / 2, null]);
+});
+
 /** Where the corners of the piece of a scene shot full HD are drawn on the frame. */
 function cornersDrawnIn(scene: Scene): readonly Point[] {
 	const holders = holdersIn(scene, cameraOf(scene, FULL_HD));

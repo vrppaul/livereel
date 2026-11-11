@@ -354,7 +354,7 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	const face = faceOf(standing.placing);
 	const held = heldIn(object, around);
 	const onItsWay = alongItsWay(object.way, presentShare(object));
-	const content = drawnContent(name, object, standing, moment, around);
+	const content = drawnContent(name, object, standing, held, moment, around);
 	const effects = drawnEffects(object);
 	const melt = drawnMelt(object);
 	const { placing, laid } = standing;
@@ -547,8 +547,8 @@ function pageFitOf(object: FrameObject, laid: Box, camera: Camera, frame: Size):
  * How much of an object what it stands in lets show, among what stands round it: all of it on the frame, in the world,
  * riding a block's scroll there, and beside a point; in the page's window, on the page in it, or on the page in the
  * world, as a piece falls onto a block, as much as the screen has come up out of the ground; in a group, as much as
- * the group has not gone. It fades the object whole, and what it shows stands as far along as its own moves have it:
- * words typed stay typed as their key was heard.
+ * the group has not gone. It fades the object whole, a piece's body as it grows, and what it shows stands as far along
+ * as its own moves have it: words typed stay typed as their key was heard.
  */
 function heldIn(object: FrameObject, around: Surroundings): number {
 	switch (object.inside.kind) {
@@ -567,16 +567,18 @@ function heldIn(object: FrameObject, around: Surroundings): number {
 }
 
 /**
- * What an object of a name shows, standing as it does, drawn as far as its ground and its figure have come up and gone
- * in the way it comes, at a moment of the film, among what stands round it: the camera, which a lens shows the page
- * past, the holes on the screen, which a piece or a lens shows but for the piece's own, and how far the film has
- * scrolled each block, which carries the source of a piece riding one. What has no ground of its own is its figure
- * alone.
+ * What an object of a name shows, standing as it does and as much of it as what it stands in lets show, drawn as far
+ * as its ground and its figure have come up and gone in the way it comes, at a moment of the film, among what stands
+ * round it: the camera, which a lens shows the page past, the holes on the screen, which a piece or a lens shows but
+ * for the piece's own, and how far the film has scrolled each block, which carries the source of a piece riding one.
+ * What has no ground of its own is its figure alone. What it shows fades whole with it, but a piece's body, which the
+ * room draws apart from its face and grows as far as the piece shows.
  */
 function drawnContent(
 	name: ObjectName,
 	object: FrameObject,
 	standing: Placed,
+	held: number,
 	moment: number,
 	around: Surroundings
 ): DrawnContent {
@@ -598,6 +600,7 @@ function drawnContent(
 				standing.laid,
 				object,
 				presentShare(figure),
+				held,
 				holesOfOthers(name, around.holes),
 				around.sharper
 			);

@@ -14,12 +14,13 @@
  * Standing in the world, it may have a body, fixed as it is lifted: walls of a colour the film names going back from
  * its face as thick as the film names, matte, lit from within as faintly as it names, which the room draws in its one
  * scene (`stage/piece-body.js`). The walls grow back from the face as the piece comes up, as the window's body grows
- * as the screen does, so none comes whole at once; standing on the plane it was lifted from, they lie behind it, and
- * come up out of it as the piece stands out toward the eye. Its shadow then lies on that plane, under it, where the
- * room draws it; the flat stage draws the face and its shadow alone, as it draws no body for the window. Its hole may
- * reach past its edge, a socket the walls come up out of; or be sunk into the page as a pit with walls of the body's
- * colour, which the room draws behind the window's plane, the page cleared over its mouth, and the flat stage draws as
- * a hole of its colour.
+ * as the screen does, so none comes whole at once, and shrink into it as what it stands in lets less of it show, as a
+ * piece on the page in the world does as the screen goes down; standing on the plane it was lifted from, they lie
+ * behind it, and come up out of it as the piece stands out toward the eye. Its shadow then lies on that plane, under
+ * it, where the room draws it, fading as the face does; the flat stage draws the face and its shadow alone, as it draws
+ * no body for the window. Its hole may reach past its edge, a socket the walls come up out of; or be sunk into the page
+ * as a pit with walls of the body's colour, which the room draws behind the window's plane, the page cleared over its
+ * mouth, going down with the screen, and the flat stage draws as a hole of its colour.
  */
 import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
 import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
@@ -131,7 +132,7 @@ export interface Piece {
  * A piece as the stage draws it: its source, how many of the frame's pixels a screen's pixel takes in its box, the part
  * of its box the source is drawn in, in the frame's pixels from the box's top left corner, how round each of its
  * corners is, in the same pixels, the holes it shows there, how far it has come up and not gone in its own way, fading
- * whole, from 0 to 1, the picture it is drawn from, and its body, none where it has none or none of it has come.
+ * whole, from 0 to 1, the picture it is drawn from, and its body, none where it has none or none of it shows.
  */
 export interface DrawnPiece {
 	readonly kind: 'piece';
@@ -151,14 +152,16 @@ const SHOWN_FLAT = null;
 
 /**
  * A piece as the stage draws it in a box, standing as large and as far out as it stands, as far as it has come up and
- * not gone, showing those of the holes on the screen in its source, drawn from the picture it holds, or from one of its
- * source the stage holds sharper than the page's where it is drawn from the page's.
+ * not gone, and as much of it as what it stands in lets show, showing those of the holes on the screen in its source,
+ * drawn from the picture it holds, or from one of its source the stage holds sharper than the page's where it is drawn
+ * from the page's.
  */
 export function drawnPiece(
 	piece: Piece,
 	box: Box,
 	stance: Pick<Stance, 'scale' | 'depth'>,
 	shown: number,
+	held: number,
 	holes: readonly DrawnHole[],
 	sharper: readonly SharperPicture[]
 ): DrawnPiece {
@@ -173,14 +176,15 @@ export function drawnPiece(
 		holes: holesShown(holes, source, fit),
 		shown,
 		picture: drawnPictureOf(piece, sharper),
-		body: piece.body === null ? null : drawnBody(piece.body, fit, stance, shown)
+		body: piece.body === null ? null : drawnBody(piece.body, fit, stance, shown * held)
 	};
 }
 
 /**
  * A piece's body as the room draws it: as thick as the piece's fit and scale show its thickness, as the walls stand
- * back along the eye's way, which a scale does not stretch, and as far as the piece has come; its face as high as it
- * stands out. None, where that leaves it no thickness.
+ * back along the eye's way, which a scale does not stretch, and as far as the piece shows, come up and let show by
+ * what it stands in, as the window's body is as thick as the screen has come up; its face as high as it stands out.
+ * None, where that leaves it no thickness.
  */
 function drawnBody(body: Body, fit: number, stance: Pick<Stance, 'scale' | 'depth'>, shown: number): DrawnBody | null {
 	const thickness = body.thickness * fit * stance.scale * shown;

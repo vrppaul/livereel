@@ -15,18 +15,22 @@
  * the walls it has.
  *
  * The shadow lies as far behind the face as the face stands out, on the plane the piece was lifted from, as dark as
- * the piece's shadow is strong, and dropped toward its foot and soft as far as the face stands high, as the promo's
- * column cast it: the stylesheet's shadow of an object standing out is measured in the object's own pixels, so a
- * button seen four times as large cast it four times as far and as soft, spread too thin to show (the asking beats'
- * Story button at 26.6 s). The stylesheet drops the markup's shadow where the room draws a body, as it would lie on the
- * face's own plane over the walls (`stage/stage.css`). It is laid over what lies there in linear light, as three lays a
- * film's light, writing no depth, nearer by depth's offset than the page it lies on.
+ * the piece's shadow is strong and as much as what it stands in lets the face show, and dropped toward its foot and
+ * soft as far as the face stands high, as the promo's column cast it: the stylesheet's shadow of an object standing out
+ * is measured in the object's own pixels, so a button seen four times as large cast it four times as far and as soft,
+ * spread too thin to show (the asking beats' Story button at 26.6 s). The stylesheet drops the markup's shadow where
+ * the room draws a body, as it would lie on the face's own plane over the walls (`stage/stage.css`). It is laid over
+ * what lies there in linear light, as three lays a film's light, writing no depth, nearer by depth's offset than the
+ * page it lies on.
  *
  * A piece's hole may be sunk into the page as a pit: its outline drawn back behind the window's plane as deep as the
  * film names, seen from inside alone, so it stands open at its mouth, where the page's surface lays nothing and writes
  * no depth (`stage/page-picture.js`). Its walls are the body's matter too, of the body's colour darker the deeper, and
  * lit from within by the same law, written once for both. A piece lying on its plane stands in its pit, as the promo's
- * plates fill the pits they left (`story-parts.js`).
+ * plates fill the pits they left (`story-parts.js`). It is a hole in the screen, not in the page's picture: a shade
+ * fading the page leaves it, as the promo's pits stand dark in a faded page, and nothing lies over its mouth to hide it
+ * as the screen goes down, so its walls are laid over what lies behind them as far as the screen has come up, as the
+ * window's body stands as thick.
  */
 import {
 	BackSide,
@@ -68,14 +72,16 @@ import { WORLD_PARTS } from './see-through.js';
 /**
  * A pit sunk into the page as the room draws it, on the window's plane where the screen lies there, in the frame's
  * pixels as large as the screen shows there: its mouth, how round its corners are, how far it is open, as far as its
- * hole has come, and how deep it is; its walls' colour; and their glow.
+ * hole has come, and how deep it is; its walls' colour; their glow; and how far the screen it is sunk into has come
+ * up, from 0 to 1, which its walls show as far as.
  * @typedef {{
  *   readonly mouth: Box,
  *   readonly corner: number,
  *   readonly open: number,
  *   readonly depth: number,
  *   readonly walls: string,
- *   readonly glow: number
+ *   readonly glow: number,
+ *   readonly shown: number
  * }} SunkPit
  */
 
@@ -135,6 +141,8 @@ const SHADOW_NEARER = -2;
 const LAID_AFTER_THE_PAGE = 0.5;
 // The measures of walls built of nothing yet
 const NONE_BUILT = '';
+// Walls shown whole, opaque
+const WHOLLY_SHOWN = 1;
 /** What a piece of markup with no body brings into the world: nothing. @type {readonly Object3D[]} */
 const NO_PARTS = [];
 /** The pits under the screen where it shows a page of the film's own, or under a hole with none. @type {readonly SunkPit[]} */
@@ -184,7 +192,8 @@ export class PieceBodies {
 	/**
 	 * What an object of markup standing in the world brings into the world beside its surface, by its place among an
 	 * exposure's: a piece with a body its walls, placed by its matrix, and its shadow where it casts one, standing out
-	 * of its plane with a shadow of some strength, in the look's shadow colour; anything else nothing.
+	 * of its plane with a shadow of some strength, as strong as what it stands in lets it show, as the stylesheet fades
+	 * the face and the shadow it drops for this one, in the look's shadow colour; anything else nothing.
 	 * @param {number} place @param {DrawnObject} object @param {Look} look @returns {readonly Object3D[]}
 	 */
 	posed(place, object, look) {
@@ -194,7 +203,7 @@ export class PieceBodies {
 		const body = bodyAt(this.bodies, place);
 		const placing = matrixOf(object.inTheEyesSpace);
 		const walls = body.wallsPosed(piece, piece.body, placing);
-		const strength = object.effects?.shadow ?? NO_SHADOW;
+		const strength = (object.effects?.shadow ?? NO_SHADOW) * object.held;
 		if (strength === NO_SHADOW || piece.body.height <= ON_ITS_PLANE) return [walls];
 		return [walls, body.shadowPosed(piece, piece.body, placing, { strength, colour: look.paneShadowColour })];
 	}
@@ -212,7 +221,8 @@ export class PagePits {
 
 	/**
 	 * A pit posed by its place among an exposure's: its walls seen from inside, built of its mouth and depth where those
-	 * are not what they were built of, and placed by a matrix, its mouth's middle at its origin.
+	 * are not what they were built of, placed by a matrix, its mouth's middle at its origin, and shown as far as the
+	 * screen it is sunk into has come up.
 	 * @param {number} place @param {SunkPit} pit @param {Matrix4} placing @returns {Object3D}
 	 */
 	posed(place, pit, placing) {
@@ -220,29 +230,32 @@ export class PagePits {
 		const { width, height } = pit.mouth;
 		const corners = { topLeft: pit.corner, topRight: pit.corner, bottomRight: pit.corner, bottomLeft: pit.corner };
 		const measures = { width, height, corners, depth: pit.depth, walls: pit.walls, glow: pit.glow };
-		return wallsAt(this.pits, place).posed(measures, placing);
+		const walls = wallsAt(this.pits, place);
+		walls.shownAsFarAs(pit.shown);
+		return walls.posed(measures, placing);
 	}
 }
 
 /**
  * The pits sunk into the page under the holes on the screen, where it shows the filmed page, which the holes are left
- * in, each where the screen lies on the window's plane, as large as it shows there; none where it shows a page of the
- * film's own.
+ * in, each where the screen lies on the window's plane, as large as it shows there, and shown as far as the screen
+ * has come up; none where it shows a page of the film's own.
  * @param {DrawnScene} scene @param {Size} screen @returns {readonly SunkPit[]}
  */
 export function pitsSunkIn(scene, screen) {
 	const filmed = scene.screen.filmed;
 	if (filmed === null) return NO_PITS;
 	const scale = filmed.box.width / screen.width;
-	return scene.holes.flatMap((hole) => pitUnder(hole, filmed.box, scale));
+	return scene.holes.flatMap((hole) => pitUnder(hole, filmed.box, scale, scene.screen.shown));
 }
 
 /**
  * The pit a hole on the screen is sunk into the page as, where it has one: where it lies on the window's plane, the
- * screen lying there in a box at a scale.
- * @param {DrawnHole} hole @param {Box} screenBox @param {number} scale @returns {readonly SunkPit[]}
+ * screen lying there in a box at a scale, come up so far.
+ * @param {DrawnHole} hole @param {Box} screenBox @param {number} scale @param {number} screenShown
+ * @returns {readonly SunkPit[]}
  */
-function pitUnder(hole, screenBox, scale) {
+function pitUnder(hole, screenBox, scale, screenShown) {
 	if (hole.pit === null) return NO_PITS;
 	const mouth = {
 		left: screenBox.left + hole.box.left * scale,
@@ -257,7 +270,8 @@ function pitUnder(hole, screenBox, scale) {
 			open: hole.shown,
 			depth: hole.pit.depth * scale,
 			walls: hole.pit.walls,
-			glow: hole.pit.glow
+			glow: hole.pit.glow,
+			shown: screenShown
 		}
 	];
 }
@@ -269,7 +283,8 @@ function pitUnder(hole, screenBox, scale) {
 class Walls {
 	/** @param {WallsKind} kind */
 	constructor(kind) {
-		this.mesh = new Mesh(new BufferGeometry(), [new MeshBasicMaterial({ vertexColors: true, side: kind.seenFrom })]);
+		this.material = new MeshBasicMaterial({ vertexColors: true, side: kind.seenFrom });
+		this.mesh = new Mesh(new BufferGeometry(), [this.material]);
 		this.mesh.matrixAutoUpdate = false;
 		this.mesh.layers.set(WORLD_PARTS.opaque);
 		this.kind = kind;
@@ -290,6 +305,21 @@ class Walls {
 		}
 		placedBy(this.mesh, placing);
 		return this.mesh;
+	}
+
+	/**
+	 * The walls shown as far as a share: opaque where wholly shown, else laid over what lies behind them as far as the
+	 * share, as the screen a pit is sunk into goes down. Three compiles a material anew as it comes to be seen through,
+	 * or stops, only when told.
+	 * @param {number} shown
+	 */
+	shownAsFarAs(shown) {
+		const seenThrough = shown < WHOLLY_SHOWN;
+		if (this.material.transparent !== seenThrough) {
+			this.material.transparent = seenThrough;
+			this.material.needsUpdate = true;
+		}
+		this.material.opacity = shown;
 	}
 }
 
