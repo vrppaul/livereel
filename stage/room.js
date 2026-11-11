@@ -9,8 +9,9 @@
  * the engine's matrix places it in the eye's own space, its texture read back into linear light; the window's body and
  * glass round it (`stage/body.js`); the film's things in the world (`stage/things.js`); each object of markup standing
  * in the world, a title, code, the terminal or a piece, on a surface of its own the stage lays it in apart from the
- * frame's, drawn face-on into a texture and stood where the engine's matrix places its box, a piece's body standing
- * with it (`stage/piece-body.js`); all seen in perspective from the eye and lit as it sees the room
+ * frame's, drawn face-on into a texture as many times as densely as the eye magnifies it (`DrawnObject.magnified`), so
+ * brought near it is as sharp as the page beside it, and stood where the engine's matrix places its box, a piece's body
+ * standing with it (`stage/piece-body.js`); all seen in perspective from the eye and lit as it sees the room
  * (`stage/lighting.js`), hiding one another by depth alone; but what stands before
  * all the rest while the eye's focus blurs it near, a world of its own drawn apart and laid over the rest
  * (`worldBuilt`). The eye's lens blurs each pixel of the world by how far what it shows stands from the focus
@@ -160,8 +161,8 @@ const REACH_STEP = 128;
 // plane where it sees no point of it before the eye
 const EDGE_ON = 0;
 const BEHIND_THE_EYE = 0;
-// A surface drawn as densely as the page's device scale draws it, and the pixel the browser may round its texture's
-// side up by
+// The window's surfaces drawn as densely as the page's device scale draws them, however near the eye sees the window;
+// and the pixel the browser may round a texture's side up by
 const AS_THE_PAGE = 1;
 const ROUNDED_UP = 1;
 // The canvas's class, and the attribute that has it draw what is laid in it
@@ -522,7 +523,7 @@ class Room {
 		}
 		for (const [place, placing] of pagePlacings.entries()) {
 			const surfaces = surfacesAt(this.exposureSurfaces, place);
-			const density = this.densityOf(placing.box);
+			const density = this.densityOf(placing.box, AS_THE_PAGE);
 			for (const name of ON_THE_PAGE) laidOutAs(surfaceOf(surfaces, name), placing.box, density);
 		}
 		const standings = pagePlacings.map((placing, place) => ({
@@ -777,14 +778,15 @@ class Room {
 
 	/**
 	 * An object of markup standing in the world laid out where the stage laid it apart: its surface laid in the canvas,
-	 * where it is not yet, over its box and as far past it as anything it shows draws, as densely as the card holds it.
+	 * where it is not yet, over its box and as far past it as anything it shows draws, as many times as densely as the
+	 * eye magnifies it, so the eye sees none of its pixels larger than the frame's, or as densely as the card holds it.
 	 * @param {SurfaceApart} apart @param {DrawnScene} scene @returns {MarkupStanding}
 	 */
 	markupLaidOut(apart, scene) {
 		const object = objectNamed(scene[apart.list], apart.name);
 		const box = clearRound(grownBy(object.box, this.reachPastTheBox));
 		if (apart.element.parentElement !== this.canvas) this.canvas.append(apart.element);
-		laidOutAs(apart.element, box, this.densityOf(box));
+		laidOutAs(apart.element, box, this.densityOf(box, object.magnified));
 		const laidAt = placeInTheWorld(scene, apart);
 		return { object, element: apart.element, placing: { box, middle: middleOf(object.box) }, laidAt };
 	}
@@ -865,13 +867,13 @@ class Room {
 	}
 
 	/**
-	 * How densely a surface of a box is drawn: at the page's device scale, or less, where its texture would pass the
-	 * graphics card's largest on a side.
-	 * @param {Box} box
+	 * How densely a surface of a box is drawn, in times the page's device scale: as many as asked, or fewer, where its
+	 * texture would pass the graphics card's largest on a side.
+	 * @param {Box} box @param {number} asked
 	 */
-	densityOf(box) {
+	densityOf(box, asked) {
 		const largestSide = this.renderer.capabilities.maxTextureSize - ROUNDED_UP;
-		return Math.min(AS_THE_PAGE, largestSide / (Math.max(box.width, box.height) * window.devicePixelRatio));
+		return Math.min(asked, largestSide / (Math.max(box.width, box.height) * window.devicePixelRatio));
 	}
 }
 

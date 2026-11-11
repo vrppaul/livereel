@@ -89,7 +89,15 @@ import * as world from '../../src/moves/world.ts';
 import type { DrawnThing } from '../../src/props/thing.ts';
 import type { DrawnTitleWords } from '../../src/props/title.ts';
 import { drawnLighting } from '../../src/props/lighting.ts';
-import { ITS_MIDDLE, type Matrix, type Spot, carried, chained } from '../../src/domain/matrix.ts';
+import {
+	ITS_MIDDLE,
+	type Matrix,
+	type Spot,
+	carried,
+	chained,
+	longestScaleAtItsMiddle,
+	translation
+} from '../../src/domain/matrix.ts';
 import { LIVEREELS_SLAB } from '../../src/props/body.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { LIVEREELS_WORLD } from '../../src/props/world.ts';
@@ -4007,6 +4015,58 @@ test('a title in the world nearer than the focus is blurred in its own pixels, t
 	const near = await withNearTitles(OPENING_IN_SMALL);
 	const onThePage = await setAt(eye.focus('#block', { aperture: OPENED }), near, 1);
 	expect(outOfFocusIn(onThePage)).toEqual([null, expect.closeTo(A_QUARTER_OF_THE_DISC / 2), null]);
+});
+
+// A title in the world in the frame's middle, as large as a fifth of the frame high; leant back, its foot nearer the
+// eye, and leant back so far, and brought so near, that its foot passes behind the eye
+const IN_THE_MIDDLE = { left: 0.3, top: 0.4, width: 0.4, height: 0.2 } as const;
+const LEANT_BACK = 50;
+const LEANT_FAR_BACK = 80;
+const ALMOST_AT_THE_EYE = FOCAL_LENGTH - 40;
+
+/** How many times the eye magnifies each object of a scene shot in the small format, as the room is handed it. */
+function magnifiedIn(scene: Scene): readonly number[] {
+	return drawnObjectsIn(scene, SMALL).map((object) => object.magnified);
+}
+
+/** A scene with a title in the world in the frame's middle. */
+function withATitleInTheMiddle(): Promise<Scene> {
+	return setAt(title.show('Near', { at: IN_THE_MIDDLE, inside: 'world' }), OPENING_IN_SMALL, 1);
+}
+
+test("the room is handed how many times the eye magnifies a title in the world: twice brought half-way to the eye, once on the frame's plane; and once riding on the frame brought as near, or grown twice in the window", async () => {
+	const near = await withNearTitles(OPENING_IN_SMALL);
+	const onItsPlane = await setAt(title.show('Here', { inside: 'world' }), OPENING_IN_SMALL, 1);
+	const inTheWindow = await setAt(title.show('In', { inside: 'window' }), OPENING_IN_SMALL, 1);
+	const grownInTheWindow = await setAt(title.effects({ scale: 2 }), inTheWindow, 1);
+	expect([...magnifiedIn(near), ...magnifiedIn(onItsPlane), ...magnifiedIn(grownInTheWindow)]).toEqual([
+		expect.closeTo(2),
+		1,
+		expect.closeTo(1),
+		1
+	]);
+});
+
+test('a title in the world grown by its stance is magnified as much: one and a half times grown, one and a half; shrunk to a half, once, never less', async () => {
+	const titled = await withATitleInTheMiddle();
+	const [grown, shrunk] = await Promise.all([1.5, 0.5].map((scale) => setAt(title.effects({ scale }), titled, 1)));
+	expect([...magnifiedIn(grown!), ...magnifiedIn(shrunk!)]).toEqual([expect.closeTo(1.5), 1]);
+});
+
+test('a title in the world leant back is magnified as the eye sees its foot, the nearer edge, at its corner', async () => {
+	const leant = await setAt(title.lean({ tilt: LEANT_BACK }), await withATitleInTheMiddle(), 1);
+	const drawnTitle = drawnObjectsIn(leant, SMALL)[0]!;
+	const footsCorner = translation({ across: -drawnTitle.box.width / 2, down: drawnTitle.box.height / 2, out: 0 });
+	const atItsCorner = longestScaleAtItsMiddle(chained([drawnTitle.transform.matrix as Matrix, footsCorner]));
+	expect(drawnTitle.magnified).toBeCloseTo(atItsCorner);
+});
+
+test("a title in the world whose foot passes behind the eye is magnified as much as what the frame shows of it, finite; one wholly past the frame's edge, once", async () => {
+	const leant = await setAt(title.lean({ tilt: LEANT_FAR_BACK }), await withATitleInTheMiddle(), 1);
+	const passing = await setAt(title.effects({ depth: ALMOST_AT_THE_EYE }), leant, 1);
+	const pastTheEdge = await setAt(title.show('Words', { from: 'left', inside: 'world' }), OPENING_IN_SMALL, 0);
+	const [passingTitle] = magnifiedIn(passing);
+	expect([Number.isFinite(passingTitle), passingTitle! > 1, ...magnifiedIn(pastTheEdge)]).toEqual([true, true, 1]);
 });
 
 test('a focus pulled from a near title to the page goes evenly in how sharp it leaves things: half way, the page is half as soft', async () => {

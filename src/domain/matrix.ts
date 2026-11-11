@@ -168,6 +168,10 @@ const FROM_THE_RIGHT: Way = { across: -1, down: 0 };
 const FROM_THE_BOTTOM: Way = { across: 0, down: -1 };
 // How a point is seen from nearer as it comes out toward the eye: by all it comes out, for the eye's distance
 const NEARER_BY_ITS_OUT = -1;
+// The middle a matrix carries a plane about, as a point of that plane; and how many points of the frame show a plane
+// that is not seen
+const FROM_ITS_MIDDLE: Way = { across: 0, down: 0 };
+const NONE_SEEN = 0;
 
 // How far an entry of a matrix may stand from the one that carries every point where it stands, while it is still
 // taken to: whole turns leave 2.4e-16, a pixel moved leaves 1
@@ -337,12 +341,34 @@ export function turnTo(across: Spot, down: Spot, out: Spot): Matrix {
  * side the eye still sees whole, never shrinking to none.
  */
 export function longestScaleAtItsMiddle(matrix: Matrix): number {
-	const seenFrom = matrix.m44;
-	const seenFromSquared = seenFrom * seenFrom;
-	const acrossOfAcross = (matrix.m11 * seenFrom - matrix.m41 * matrix.m14) / seenFromSquared;
-	const acrossOfDown = (matrix.m21 * seenFrom - matrix.m41 * matrix.m24) / seenFromSquared;
-	const downOfAcross = (matrix.m12 * seenFrom - matrix.m42 * matrix.m14) / seenFromSquared;
-	const downOfDown = (matrix.m22 * seenFrom - matrix.m42 * matrix.m24) / seenFromSquared;
+	return longestScaleAt(matrix, carriedPointOf(matrix, FROM_ITS_MIDDLE));
+}
+
+/**
+ * How many times as long a matrix draws a box of the plane it carries about the middle of another box of it, along the
+ * way it draws it longest, where it draws it largest of all the part a box of the frame shows: a plane brought near or
+ * leant toward the eye as large as its nearest part the frame shows. It is read at the corners of that part, past which
+ * no point is drawn larger (no point inside drew larger in 2,703 random stances seen, 2026-11-11). None where the frame
+ * shows none of the box, or the matrix sees the plane edge-on, through the eye, where a point is seen from no distance.
+ */
+export function longestScaleSeen(matrix: Matrix, laid: Box, part: Box, within: Box): number | null {
+	if (nearnessOfItsPlane(matrix) === null) return null;
+	const seen = carriedWithin(matrix, { left: middleX(laid), top: middleY(laid) }, part, within);
+	if (seen.length === NONE_SEEN) return null;
+	return Math.max(...seen.map((point) => longestScaleAt(matrix, point)));
+}
+
+/**
+ * How many times as long a matrix draws, at a point of the plane it carries, what it carries there, along the way it
+ * draws it longest: how far the point seen moves for a step across and a step down the plane, the point and its
+ * neighbour each divided by how far it is seen from.
+ */
+function longestScaleAt(matrix: Matrix, point: CarriedPoint): number {
+	const seenFromSquared = point.seenFrom * point.seenFrom;
+	const acrossOfAcross = (matrix.m11 * point.seenFrom - point.across * matrix.m14) / seenFromSquared;
+	const acrossOfDown = (matrix.m21 * point.seenFrom - point.across * matrix.m24) / seenFromSquared;
+	const downOfAcross = (matrix.m12 * point.seenFrom - point.down * matrix.m14) / seenFromSquared;
+	const downOfDown = (matrix.m22 * point.seenFrom - point.down * matrix.m24) / seenFromSquared;
 	// The longer half-axis of the ellipse those four entries draw a circle of radius one as, by the two halves of the
 	// drawing that turn and that mirror it
 	const turning = Math.hypot(acrossOfAcross + downOfDown, downOfAcross - acrossOfDown);
@@ -376,14 +402,22 @@ export function nearnessOfItsPlane(matrix: Matrix): Nearness | null {
  */
 export function seenWithin(matrix: Matrix, laid: Box, part: Box, within: Box): readonly Point[] {
 	const middle = { left: middleX(laid), top: middleY(laid) };
-	const corners = cornersAround(part).map((corner) =>
-		carriedPointOf(matrix, { across: corner.left - middle.left, down: corner.top - middle.top })
-	);
-	const kept = edgesOf(within, middle).reduce(cutAt, corners);
-	return kept.map((point) => ({
+	return carriedWithin(matrix, middle, part, within).map((point) => ({
 		left: middle.left + point.across / point.seenFrom,
 		top: middle.top + point.down / point.seenFrom
 	}));
+}
+
+/**
+ * The points of a box of a plane a matrix carries about a middle of that plane, out none, that stand within a box of
+ * the frame, as the matrix carries them before they are seen: a polygon going round, cut through the eye at the box's
+ * edges (`seenWithin`).
+ */
+function carriedWithin(matrix: Matrix, middle: Point, part: Box, within: Box): readonly CarriedPoint[] {
+	const corners = cornersAround(part).map((corner) =>
+		carriedPointOf(matrix, { across: corner.left - middle.left, down: corner.top - middle.top })
+	);
+	return edgesOf(within, middle).reduce(cutAt, corners);
 }
 
 /**

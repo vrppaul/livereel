@@ -71,7 +71,7 @@ import {
 	pointAt
 } from '../domain/geometry.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
-import { ITS_MIDDLE, carried } from '../domain/matrix.ts';
+import { ITS_MIDDLE, carried, longestScaleSeen } from '../domain/matrix.ts';
 import { ONE_FRAME, pastTheEdge } from '../domain/place.ts';
 import {
 	type DrawnPlacement,
@@ -170,8 +170,10 @@ export type Objects = ReadonlyMap<ObjectName, FrameObject>;
  * out in no way, how it melts toward a side of its figure, none where it melts none, how soft the eye's focus draws it,
  * in pixels of a frame 1080 high of its box before its matrix, none where sharp, for the flat stage; how soft it draws
  * the softest point of its box the frame shows, on the frame in pixels of a frame 1080 high, none where sharp, which
- * bounds how far past the frame's edge the room's lens gathers it, as the window's softest point does; and its content
- * as drawn. Both blurs are none but for what stands in the world.
+ * bounds how far past the frame's edge the room's lens gathers it, as the window's softest point does; how many times
+ * the eye magnifies it, the most of the frame's pixels a pixel of its box takes where the frame shows it, so the room
+ * draws its surface that many times as densely; and its content as drawn. Both blurs are none, and it is magnified
+ * once, but for what stands in the world.
  */
 export interface DrawnObject extends DrawnPlacement {
 	readonly name: ObjectName;
@@ -182,6 +184,7 @@ export interface DrawnObject extends DrawnPlacement {
 	readonly melt: Melting | null;
 	readonly outOfFocus: number | null;
 	readonly softestOutOfFocus: number | null;
+	readonly magnified: number;
 	readonly content: DrawnContent;
 }
 
@@ -196,6 +199,8 @@ const AS_THEY_CAME = 0;
 const WHOLLY_HELD = 1;
 // Where the left and top edges of what an object stands in are, in its own pixels
 const NEAR_EDGE = 0;
+// An object the eye sees no larger than its box: a pixel of its box takes one of the frame's, or fewer
+const UNMAGNIFIED = 1;
 
 /**
  * An object as it stood or stands at a moment of a frame's time: itself, what it stood in then, and the look it was
@@ -354,8 +359,19 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	const { sharpness, frame } = around;
 	const outOfFocus = inTheWorld ? outOfFocusBeforeItsMatrix(placing, laid, sharpness, frame) : null;
 	const softestOutOfFocus = inTheWorld ? softestOutOfFocusSeen(placing, laid, laid, sharpness, frame) : null;
+	const magnified = inTheWorld ? magnifiedSeen(standing, frame) : UNMAGNIFIED;
 	const drawn = { ...drawnPlacement(standing), name, face, held };
-	return { ...drawn, onItsWay, effects, melt, outOfFocus, softestOutOfFocus, content };
+	return { ...drawn, onItsWay, effects, melt, outOfFocus, softestOutOfFocus, magnified, content };
+}
+
+/**
+ * How many times the eye magnifies something placed on a frame of a size: the most of the frame's pixels a pixel of its
+ * box takes where the frame shows it, at its nearest part there; once where it is drawn no larger, or the frame shows
+ * none of it.
+ */
+function magnifiedSeen(standing: Placed, frame: Size): number {
+	const longest = longestScaleSeen(standing.placing, standing.laid, standing.laid, boxOf(frame));
+	return Math.max(UNMAGNIFIED, longest ?? UNMAGNIFIED);
 }
 
 /**

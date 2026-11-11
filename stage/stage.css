@@ -627,13 +627,12 @@ body {
 	box-shadow: none;
 }
 
-/* In the room the window's surface, and the surface of what lies over the page in the window, stand over the frame and as far past it as the camera's picture reaches on the window's plane, where the eye may see it leant or from aside; an object standing in the world stands in a surface of its own over its box and as far past it as anything it shows draws; each as densely as the graphics card holds it (`room.js`). What it holds stays where the frame has it, uncut at the frame's edge */
+/* In the room the window's surface, and the surface of what lies over the page in the window, stand over the frame and as far past it as the camera's picture reaches on the window's plane, where the eye may see it leant or from aside; an object standing in the world stands in a surface of its own over its box and as far past it as anything it shows draws; each as densely as the room has it (`room.js`), the surface that many times as large and what it holds scaled from the surface's corner, which lays nothing out anew, as `zoom` would. What it holds stays where the frame has it, uncut at the frame's edge */
 .room > :is([data-surface='window'], [data-surface='over-the-page'], [data-surface='world']) {
 	left: calc(var(--surface-left) * 1px);
 	top: calc(var(--surface-top) * 1px);
-	width: calc(var(--surface-width) * 1px);
-	height: calc(var(--surface-height) * 1px);
-	zoom: var(--surface-density);
+	width: calc(var(--surface-width) * var(--surface-density) * 1px);
+	height: calc(var(--surface-height) * var(--surface-density) * 1px);
 }
 
 .room > :is([data-surface='window'], [data-surface='over-the-page']) > [data-prop='screen'],
@@ -643,6 +642,8 @@ body {
 	top: calc(var(--surface-top) * -1px);
 	width: calc(var(--frame-width) * 1px);
 	height: calc(var(--frame-height) * 1px);
+	transform-origin: calc(var(--surface-left) * 1px) calc(var(--surface-top) * 1px);
+	transform: scale(var(--surface-density));
 }
 
 .room .stage {

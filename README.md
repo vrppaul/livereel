@@ -255,8 +255,9 @@ and the moves of each part of the scene:
   mark or a logo, from an image file by its path from the film's file (PNG, JPEG, WebP, AVIF, GIF, or an SVG that
   names its width and height), over the whole frame or `at` a place, read as the window reads one, drawn as large as
   the place holds all of it, in its middle, as wide against as tall as its file; a file that is not there, or decodes
-  to no picture, is refused before the first frame. It is drawn at the frame's density wherever it stands, as all
-  markup is: brought near the eye in the world it is magnified, as a title is; each move of it takes `as` to name which
+  to no picture, is refused before the first frame. Brought near the eye in the world, a room draws it as densely as
+  the eye magnifies it, as all markup there: give it a file at least as large as the frame shows it; each move of it
+  takes `as` to name which
 - `thing.show(made, { at, reach, values, inside: 'world', from, as })`, `thing.to(place, { through, scale, depth })`,
   `thing.lean({ tilt, turn, roll, over, about })`, `thing.set(values)`, `thing.hide({ toward })`: a thing of the film's own
   three.js, built by the film's things module by the name `made`, in a room alone ("Flat, or a room")
@@ -1553,6 +1554,10 @@ What `room` costs:
   to fit it.
 - What lies over the page in the window stays as dense as the frame: a
   window brought near shows it magnified, softer than the page under it.
+  Markup standing in the world, a title, code or a piece shown `inside:
+  'world'`, is drawn as many times as densely as the eye magnifies it, so
+  brought near it is as sharp as the page beside it, up to the graphics
+  card's largest texture.
 - It draws through Chrome's HTML-in-Canvas, an experiment of Chrome's behind
   a flag livereel turns on, renamed twice before: livereel pins the browser
   `npx livereel setup` installs, and refuses a browser without it, or one
