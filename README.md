@@ -1171,8 +1171,11 @@ What `inside` costs:
   and blurred apart and laid over the rest, so its blurred edge shows what
   it hides. The blur adds light up in linear
   light, as a lens does, so light words on a dark page blur brighter than a
-  blur in the screen's colours draws them. The ground and what stands on
-  the frame are drawn as flat draws them. A fast move's blur adds its
+  blur in the screen's colours draws them. Markup standing in the world, a
+  title or a pane, is laid over what stands behind it in the screen's
+  colours, as the browser lays it, so a pane's shadow over a page is as
+  dark as flat draws it. The ground and what stands on the frame are drawn
+  as flat draws them. A fast move's blur adds its
   moments up in linear light,
   as a camera's shutter gathers light, where flat lays them over one another
   in the screen's colours: a page blurs as it did, the README film's moving
@@ -1272,8 +1275,11 @@ What `room` costs:
   with the rest, in one field: those frames without the cube took 83.3 and
   100.8 s where two fields took 108.6 and 108.6 s. Markup standing in the
   world, a title or a pane, is seen through round its letters and in its
-  shadow, so it is drawn in that field: the frames with a title and code in
-  the world in place of the cube took 119.4 and 121.5 s. While the page is
+  shadow, so it is drawn in a field of its own, laid as the browser lays
+  it: the frames with a title and code in the world in place of the cube
+  took 119.4 and 121.5 s; the page, laid in linear light, is a field apart
+  from it, which made those frames 138.8 and 146.4 s against 122.6 and
+  123.7 s (2026-11-11). While the page is
   seen through and a glass or markup stands beside it, what stands behind
   the page's plane is a field of its own, so it blurs by its own depth: one
   run of the lens more, about 80 ms a frame of 3840 × 2160 (2026-11-11).
