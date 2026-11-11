@@ -52,6 +52,10 @@ const PICTURE_TYPE = 'png';
 const STANDS_AS_SHOT =
 	"the film's set shows its states as its scenario left them: scroll and type in the scenario, and show the state " +
 	'they leave with context.set.show(name)';
+// What a piece riding its block lifted off the set is told
+const NO_RIDE_ON_THE_SET =
+	"the film's set shows each state as its scenario left it and never scrolls, which carries no piece riding its " +
+	'block: lift it riding nothing';
 const NO_APP =
 	"a film shot on its set acts on no app, and an act's context.page is livereel's page of the set: show a state " +
 	'with context.set.show(name)';
@@ -144,7 +148,7 @@ class SetPage implements FilmedPage {
 
 	/** Nothing on the set scrolls, so nothing on it rides a scroll. */
 	blocksHolding(): Promise<readonly BlockKey[]> {
-		return Promise.reject(new FilmError(STANDS_AS_SHOT));
+		return Promise.reject(new FilmError(NO_RIDE_ON_THE_SET));
 	}
 
 	type(): Promise<void> {

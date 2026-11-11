@@ -4,11 +4,20 @@
 		<meta charset="utf-8" />
 		<title>Scrolling</title>
 	</head>
+	<!-- Beside the column's rows, out of its flow: a note placed absolutely from the page, a row in a block fixed to the
+	screen, and a row fixed in a block turned by a transform, which the browser places it from -->
 	<body style="margin: 0; height: 2000px">
 		<div id="column" data-testid="column" style="height: 200px; overflow-y: auto">
 			<p data-testid="first" style="height: 150px">A row</p>
 			<p id="row" data-testid="row" style="height: 150px">Another row</p>
 			<p style="height: 150px">A last row</p>
+			<p data-testid="placed" style="position: absolute; top: 0; left: 400px; margin: 0">A note</p>
+			<div data-testid="pinned" style="position: fixed; left: 0; bottom: 0">
+				<p data-testid="pinned-row" style="margin: 0">A pinned row</p>
+			</div>
+			<div data-testid="turned" style="transform: translateX(0)">
+				<p data-testid="turned-row" style="position: fixed; top: 0; left: 400px; margin: 0">A turned row</p>
+			</div>
 		</div>
 	</body>
 </html>

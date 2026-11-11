@@ -156,7 +156,7 @@ test('a film shot on its set needs no app: a target is read where the set shot i
 			"the film's set shot no block of p: add it to the set's targets, and shoot the set again",
 			`the film's set has no state "refreshed": its states are opened, added`,
 			"the film's set shows its states as its scenario left them: scroll and type in the scenario, and show the state they leave with context.set.show(name)",
-			"the film's set shows its states as its scenario left them: scroll and type in the scenario, and show the state they leave with context.set.show(name)",
+			"the film's set shows each state as its scenario left it and never scrolls, which carries no piece riding its block: lift it riding nothing",
 			"a film shot on its set acts on no app, and an act's context.page is livereel's page of the set: show a state with context.set.show(name)",
 			"context.set shows a state of the film's set, and the film names none: give it set: { scenario, targets }"
 		].map((said) => String(new TakeError(new FilmError(said), 0, 1)))

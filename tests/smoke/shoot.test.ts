@@ -697,6 +697,58 @@ test('the page keys a block alike however a film selects it, by a scroll of it, 
 	});
 });
 
+/** The keys of the blocks whose scrolls carry blocks placed out of the column's flow, and a ride off the page refused. */
+interface CarriersRead {
+	readonly holdingTheRow: readonly number[];
+	readonly holdingThePinnedRow: readonly number[];
+	readonly underThePinnedRowsBox: readonly number[];
+	readonly holdingTheTurnedRow: readonly number[];
+	readonly holdingTheNote: readonly number[];
+	readonly toTheNote: number;
+	readonly offThePage: string;
+}
+
+// A box of the screen wholly above and left of it, where the page shows no block
+const OFF_THE_PAGE = { left: -200, top: -200, width: 100, height: 100 };
+
+test('a source rides the scrolls of the blocks the browser places it from alone: a row of a block fixed to the screen none, one fixed in a block turned by a transform that block and those it stands in, a note placed absolutely from the page the page alone, past the column round it, which a scroll to it leaves too; a box where the page shows no block is refused, naming it', async () => {
+	const read: CarriersRead[] = [];
+	const steps = [
+		act(async (context: ActContext) => {
+			const page = new PlaywrightPage(context.page, context.page.page().keyboard);
+			read.push({
+				holdingTheRow: await page.blocksHolding('[data-testid=row]', 1),
+				holdingThePinnedRow: await page.blocksHolding('[data-testid=pinned-row]', 1),
+				underThePinnedRowsBox: await page.blocksHolding(await page.box('[data-testid=pinned-row]', 1), 1),
+				holdingTheTurnedRow: await page.blocksHolding('[data-testid=turned-row]', 1),
+				holdingTheNote: await page.blocksHolding('[data-testid=placed]', 1),
+				toTheNote: (await page.scrollCourse('[data-testid=placed]', { kind: 'to', top: 0 })).block,
+				offThePage: await page.blocksHolding(OFF_THE_PAGE, 1).then(String, String)
+			});
+		})
+	];
+	const film = defineFilm({
+		formats: { small: SMALL },
+		address: SCROLLING,
+		ready: (context) => context.page.locator('#column').waitFor(),
+		steps: () => steps
+	}).formats.get('small')!;
+	await shoot(film, shootingInto(new EveryFrameCounted(), 'software'));
+	const [keys] = read;
+	// The row stands in the column, the body and the document's root, which scrolls the page; the pinned row in its
+	// block alone, a box over it in the row shown at its middle too; the turned row in its turned block, then as the row
+	const [column, body, root] = keys!.holdingTheRow;
+	expect(keys).toEqual({
+		holdingTheRow: [column, body, root],
+		holdingThePinnedRow: [expect.toSatisfy((key: number) => !keys!.holdingTheRow.includes(key))],
+		underThePinnedRowsBox: [expect.any(Number), ...keys!.holdingThePinnedRow],
+		holdingTheTurnedRow: [expect.any(Number), column, body, root],
+		holdingTheNote: [body, root],
+		toTheNote: root,
+		offThePage: String(new FilmError(`the page shows no block at the middle of box ${JSON.stringify(OFF_THE_PAGE)}`))
+	});
+});
+
 // A page that keeps time of its own: it echoes what is typed into it a moment after the typing stops, and says it is
 // ready a moment after it opens
 const TIMED = new URL('./timed.html', import.meta.url).href;

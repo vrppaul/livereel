@@ -73,9 +73,10 @@ export interface FilmedPage {
 	/** The scroll a target takes to reach its aim; a target the page lacks is refused at once. */
 	readonly scrollCourse: (target: string, aim: ScrollAim) => Promise<ScrollCourse>;
 	/**
-	 * Every block whose scroll carries a source, up to the page's root, by the keys the page knows them by: those the
-	 * first `every` blocks a selector matches all stand in; for a box of the screen, the block the page shows at its
-	 * middle and those it stands in. A source the page lacks is refused at once.
+	 * Every block whose scroll carries a source, up to the page's root, by the keys the page knows them by: those whose
+	 * scrolls carry all of the first `every` blocks a selector matches, as the page lays them out; for a box of the
+	 * screen, the block the page shows at its middle and those whose scrolls carry it. A source the page lacks is
+	 * refused at once.
 	 */
 	readonly blocksHolding: (source: string | Box, every: number) => Promise<readonly BlockKey[]>;
 	/** Keys a person types into whatever holds the page's keyboard. */

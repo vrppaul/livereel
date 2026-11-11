@@ -706,13 +706,17 @@ film asks: `piece.show(TASK, { inside: 'world', rides: 'its block' })`, then
 carries it up the world as far as the scroll moves the column it stands in, as
 many of the world's pixels to a pixel of the scroll as the camera showed the
 page as it was lifted, so it stays over its block as the story slides under the
-parts lifted off it. The page finds, as it is lifted, every block its source
-stands in (for a box of the screen, the block shown at its middle too), and a
-`page.scrollBy` or `page.scrollTo` of any of them carries it, however the film
-selects that block: `page.scrollTo(TASK, { top: 0 })` scrolls the column that
-holds the task, and carries it. Its hole and its pit, its lines to its source,
-what it draws from the page's picture, its body's shadow and words standing
-beside it go with it. A scroll an act does, or the page does by itself,
+parts lifted off it. The page finds, as it is lifted, every block whose scroll
+carries its source (for a box of the screen, the block shown at its middle
+too), and a `page.scrollBy` or `page.scrollTo` of any of them carries it,
+however the film selects that block: `page.scrollTo(TASK, { top: 0 })` scrolls
+the column that holds the task, and carries it. Those are the blocks the source
+stands in as the browser lays it out: past a block placed `absolute` or
+`fixed`, the block the browser places it from and none between, so a row of a
+column fixed to the screen rides no scroll of the page. A block placed `sticky`
+is taken as carried, though it stops once it sticks. Its hole and its pit, its
+lines to its source, what it draws from the page's picture, its body's shadow
+and words standing beside it go with it. A scroll an act does, or the page does by itself,
 carries it nowhere. Carried `to` a place, it stands there however far the block
 has scrolled and rides on from there; `back` takes it over its source where
 the block stands then; carried `onto` the page, it lies there and rides no

@@ -7,11 +7,17 @@
  * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a
  * canvas of the page's own, which turns any colour CSS writes, in whatever form, into its channels.
  *
- * A block a scroll moves, and every block a piece riding its block stands in, is told by a key the take gives it, the
- * same however a film selects the block, so a scroll and a ride meet on the block itself, never on a selector's text.
- * The keys are held in the frame's document, keyed by the elements themselves, by a handle the take keeps: the page is
- * not changed to name a block, and a document the frame goes on to starts with none, its blocks keyed past the last
- * key given.
+ * A block a scroll moves, and every block whose scroll carries the source of a piece riding its block, is told by a key
+ * the take gives it, the same however a film selects the block, so a scroll and a ride meet on the block itself, never
+ * on a selector's text. The keys are held in the frame's document, keyed by the elements themselves, by a handle the
+ * take keeps: the page is not changed to name a block, and a document the frame goes on to starts with none, its
+ * blocks keyed past the last key given.
+ *
+ * Which blocks' scrolls carry a block the page reads off how the browser lays the block out, not off the blocks it
+ * stands in: a block placed apart, absolutely or fixed, is laid out from the block the browser places it from, and the
+ * scrolls of the blocks between leave it where it stands, as a column fixed to the screen stays as the page scrolls. A
+ * block placed `sticky` is carried by its scrolls until it sticks, which no reading of its style tells, and is taken as
+ * carried.
  */
 import type { Frame, JSHandle, Keyboard } from 'playwright-core';
 import { type Channels, hexOf } from '../../domain/colour.ts';
@@ -60,11 +66,20 @@ interface GroundAsked {
  */
 type BlockKeys = WeakMap<Element, BlockKey>;
 
-/** What the page is handed to key blocks: the keys its document holds, the blocks, and the key a new block takes first. */
+/** What the page is handed to key blocks: the keys its document holds, the blocks, and the next key to give. */
 interface KeysAsked {
 	readonly keys: BlockKeys;
 	readonly blocks: Element[];
 	readonly next: BlockKey;
+}
+
+/**
+ * What the page is handed to find the blocks whose scrolls carry blocks: the blocks, and the positions that place a
+ * block apart from the flow of the block it stands in.
+ */
+interface HoldersAsked {
+	readonly blocks: Node[];
+	readonly placedApart: string[];
 }
 
 /** The keys of the blocks asked, in their order, and how many of them were given anew. */
@@ -75,10 +90,10 @@ interface BlocksKeyed {
 
 // What a block's overflow is when it scrolls of itself
 const SCROLLS = new Set(['auto', 'scroll']);
+// The positions that place a block from the block the browser picks, its offset parent, not the one it stands in
+const PLACED_APART = new Set(['absolute', 'fixed']);
 // The keys of the frame's document before a move asks for one
 const NONE_KEPT = null;
-// How many blocks the page shows at a point where it shows none
-const NONE_SHOWN = 0;
 // What the page answers where a CSS selector selects no block
 const NONE_SELECTED = null;
 // A canvas of one pixel reads a colour's alpha from 0 to 255, the most, where the colour is drawn whole
@@ -128,7 +143,10 @@ export class PlaywrightPage implements FilmedPage {
 	}
 
 	async blocksHolding(source: string | Box, every: number): Promise<readonly BlockKey[]> {
-		return this.keysOf(await this.holdersOf(source, every));
+		if (typeof source === 'string') return this.keysOf(await this.holdersOf(await this.selected(source, every)));
+		const shown = await this.shownAt(source);
+		const shownKeys = await this.keysOf(await shown.evaluateHandle(alone));
+		return [...shownKeys, ...(await this.keysOf(await this.holdersOf([shown])))];
 	}
 
 	/**
@@ -169,27 +187,35 @@ export class PlaywrightPage implements FilmedPage {
 		return blocks.first().evaluateHandle(itself);
 	}
 
+	/** The first `every` blocks a selector matches, refused at once where it matches none. */
+	private async selected(target: string, every: number): Promise<readonly JSHandle<Node>[]> {
+		const blocks = (await this.frame.locator(target).elementHandles()).slice(0, every);
+		if (blocks.length === 0) throw nothingMatches(target);
+		return blocks;
+	}
+
 	/**
-	 * Every block whose scroll carries a source: those the first `every` blocks a selector matches all stand in; for a
-	 * box of the screen, the block the page shows at its middle, whose own scroll moves what shows there, and those it
-	 * stands in. Refused at once where the page has no such source.
+	 * The block the page shows at the middle of a box of the screen, the innermost drawn there, whose own scroll moves
+	 * what shows there; refused at once where it shows none, as past the screen's edge.
 	 */
-	private async holdersOf(source: string | Box, every: number): Promise<JSHandle<Element[]>> {
-		if (typeof source === 'string') {
-			const blocks = (await this.frame.locator(source).elementHandles()).slice(0, every);
-			if (blocks.length === 0) throw nothingMatches(source);
-			return this.frame.evaluateHandle(holdersOfAll, blocks);
-		}
-		const shown = await this.frame.evaluateHandle(shownAndHoldersAt, pointAt(source, MIDDLE_SHARE));
-		if ((await shown.evaluate(countOf)) === NONE_SHOWN) {
-			throw new FilmError(`the page shows no block at the middle of box ${described(source)}`);
-		}
+	private async shownAt(box: Box): Promise<JSHandle<Element>> {
+		const shown = (await this.frame.evaluateHandle(shownAt, pointAt(box, MIDDLE_SHARE))).asElement();
+		if (shown === null) throw new FilmError(`the page shows no block at the middle of box ${described(box)}`);
 		return shown;
 	}
 
-	/** The nearest block that scrolls the target, scrolled until the target stands `top` below its top. */
+	/** Every block whose scroll carries all the blocks, nearest first, as the page lays them out (`holdersOfAll`). */
+	private holdersOf(blocks: readonly JSHandle<Node>[]): Promise<JSHandle<Element[]>> {
+		return this.frame.evaluateHandle(holdersOfAll, { blocks: [...blocks], placedApart: [...PLACED_APART] });
+	}
+
+	/**
+	 * The nearest block whose scroll carries the target and that scrolls of itself, or the page's own scroll, scrolled
+	 * until the target stands `top` below its top.
+	 */
 	private async courseTo(block: JSHandle<Element>, top: number): Promise<ScrollCourse> {
-		const scroller = await block.evaluateHandle(scrollerOf, [...SCROLLS]);
+		const holders = await this.holdersOf([block]);
+		const scroller = await holders.evaluateHandle(firstScrolling, [...SCROLLS]);
 		return this.courseOn(scroller, await scroller.evaluate(courseTo, { target: block, top }));
 	}
 
@@ -323,21 +349,9 @@ function alone(block: Element): Element[] {
 	return [block];
 }
 
-/**
- * The block the page shows at a point of the screen, the innermost drawn there, and every block it stands in, nearest
- * first; none where it shows none.
- */
-function shownAndHoldersAt(point: Point): Element[] {
-	const blocks: Element[] = [];
-	for (let block = document.elementFromPoint(point.left, point.top); block !== null; block = block.parentElement) {
-		blocks.push(block);
-	}
-	return blocks;
-}
-
-/** How many blocks a list the page holds has, read without handing the blocks out of it. */
-function countOf(blocks: Element[]): number {
-	return blocks.length;
+/** The block the page shows at a point of the screen, the innermost drawn there; none where it shows none. */
+function shownAt(point: Point): Element | null {
+	return document.elementFromPoint(point.left, point.top);
 }
 
 /** No key given yet in a document: each block of it keyed as it is first asked for. */
@@ -346,18 +360,38 @@ function newKeys(): BlockKeys {
 }
 
 /**
- * Every block that all the blocks stand in, nearest first, up to the document's root: the blocks whose scrolls carry
- * them, the page's own scroll among them, as the document's root or its body is what scrolls the page.
+ * Every block whose scroll carries all the blocks, nearest first: the block each is laid out in, the block that one is
+ * laid out in, and so on up to the document's root, which with its body scrolls the page. A block in the page's flow,
+ * or offset from its place there, is laid out in the block it stands in; one placed apart, absolutely or fixed, in the
+ * block the browser places it from, its offset parent, past the blocks between, whose scrolls leave it where it
+ * stands; one fixed to the screen in none, so no scroll carries it. The offset parent is the browser's own reading, so
+ * it knows every block that places what is fixed in it: a transform, a filter, containment. An SVG element has none,
+ * and is taken as laid out in the block it stands in.
  */
-function holdersOfAll(blocks: Node[]): Element[] {
-	const holders: Element[] = [];
-	let holder = blocks[0]?.parentElement ?? null;
-	while (holder !== null) {
-		const standing = holder;
-		if (blocks.every((block) => standing.contains(block))) holders.push(standing);
-		holder = standing.parentElement;
+function holdersOfAll(asked: HoldersAsked): Element[] {
+	let carryingAll: Element[] | null = null;
+	for (const block of asked.blocks) {
+		const holders: Element[] = [];
+		let held: Node | null = block;
+		while (held !== null) {
+			const holder: Element | null =
+				held instanceof HTMLElement && asked.placedApart.includes(getComputedStyle(held).position)
+					? held.offsetParent
+					: held.parentElement;
+			if (holder !== null) holders.push(holder);
+			held = holder;
+		}
+		carryingAll = carryingAll === null ? holders : carryingAll.filter((holder) => holders.includes(holder));
 	}
-	return holders;
+	return carryingAll ?? [];
+}
+
+/** The nearest of the blocks carrying a target that scrolls of itself, or the page's own scroll where none does. */
+function firstScrolling(holders: Element[], scrolls: string[]): Element {
+	const scroller = holders.find(
+		(holder) => holder.scrollHeight > holder.clientHeight && scrolls.includes(getComputedStyle(holder).overflowY)
+	);
+	return scroller ?? document.scrollingElement ?? document.documentElement;
 }
 
 /** The keys of blocks: each the one its document holds for it, or the next new one, which the document then holds. */
@@ -375,17 +409,6 @@ function blocksKeyed(asked: KeysAsked): BlocksKeyed {
 		}
 	}
 	return { keys, given: next - asked.next };
-}
-
-/** The nearest block above a target that scrolls of itself, or the page's own scroll. */
-function scrollerOf(target: Element, scrolls: string[]): Element {
-	let scroller = target.parentElement;
-	while (scroller !== null) {
-		const overflows = scroller.scrollHeight > scroller.clientHeight;
-		if (overflows && scrolls.includes(getComputedStyle(scroller).overflowY)) return scroller;
-		scroller = scroller.parentElement;
-	}
-	return document.scrollingElement ?? document.documentElement;
 }
 
 /**
