@@ -1,7 +1,8 @@
 // @ts-check
 /**
  * What the room's passes over a whole layer share (`stage/room.js`, `stage/lens.js`): a square over all a layer holds,
- * how a pass lays what it draws over what stands there, sRGB's curve in GLSL, and a material's values set. The room
+ * how a pass lays what it draws over what stands there, sRGB's curve in GLSL, and a material's values set; and the
+ * blend premultiplied light is laid by, a pass's, the page's surface's and the window's glass's (`stage/body.js`). The room
  * holds light in two ways: linear, as three adds it up, in half floats past white, and in the screen's colours, as the
  * browser draws a page; light leaves three's linear layers for the screen's colours by one rule, written here once.
  */
@@ -23,15 +24,20 @@ import {
 const WEBGL_SPAN = 2;
 
 /**
- * What a pass draws laid over what stands under it, as the browser lays a layer: by how clear it is, its colours
- * premultiplied by it.
+ * Light laid over what stands under it as the browser lays a layer, its colours premultiplied: added whole, what stands
+ * under it dimmed by how opaque it is. A pass, the page's surface in the world and the window's glass lay so.
  */
-export const LAID_OVER = {
+export const PREMULTIPLIED = {
 	blending: CustomBlending,
 	blendSrc: OneFactor,
 	blendDst: OneMinusSrcAlphaFactor,
 	blendSrcAlpha: OneFactor,
-	blendDstAlpha: OneMinusSrcAlphaFactor,
+	blendDstAlpha: OneMinusSrcAlphaFactor
+};
+
+/** What a pass draws laid over what stands under it, as the browser lays a layer, premultiplied. */
+export const LAID_OVER = {
+	...PREMULTIPLIED,
 	depthTest: false,
 	depthWrite: false,
 	transparent: true

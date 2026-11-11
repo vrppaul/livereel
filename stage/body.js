@@ -12,13 +12,14 @@
  * standing, it is built once.
  *
  * Over the page lies glass: a smooth clear coat on nothing, as three draws one, so all it shows is what it reflects of
- * the world's light, more as the eye sees it more aslant. Its clearness is what the coat lets through: three dims what
- * lies under a coat by the share it reflects, so the glass is drawn as clear as that share leaves it, over the page
- * drawn before it, and writes no depth. It lies on the page's plane, drawn nearer by depth's offset, so it wins the
- * plane the page shares with it.
+ * the world's light, more as the eye sees it more aslant. It is laid over the page drawn before it as three lays a coat
+ * over what lies under it: what it reflects added whole, the page under it dimmed by the share the coat reflects, as
+ * premultiplied light is laid, and it writes no depth. It lies on the page's plane, drawn nearer by depth's offset, so
+ * it wins the plane the page shares with it.
  */
 import * as THREE from 'three';
 import { matrixOf } from './matrices.js';
+import { PREMULTIPLIED } from './passes.js';
 /** @import { DrawnBody, DrawnWindow } from '../src/props/window.ts' */
 
 /**
@@ -51,9 +52,9 @@ const GLASS_NEARER = -2;
 const GLASS_DRAWN_LAST = 1;
 // A coat of none, which is no coat: three would draw the black face under it whole
 const NO_COAT = 0;
-// Where three writes a lit material's colour, and the glass's own: the light its coat reflects, as clear as the share
-// of what lies under it the coat lets through, `Fcc` being how much the coat reflects as the eye sees it (three's
-// physical material, where it lays a coat)
+// Where three writes a lit material's colour, and the glass's own: the light its coat reflects, premultiplied, and as
+// opaque as the share of what lies under it the coat holds back, `Fcc` being how much the coat reflects as the eye sees
+// it (three's physical material, where it lays a coat)
 const THREES_OUTPUT = '#include <opaque_fragment>';
 const THE_GLASS_OUTPUT = `
 #ifdef USE_CLEARCOAT
@@ -87,6 +88,7 @@ export class WindowBody {
 		this.glassCoat = new THREE.MeshPhysicalMaterial({
 			...GLASS_UNDER_ITS_COAT,
 			clearcoatRoughness: GLASS_COAT_ROUGHNESS,
+			...PREMULTIPLIED,
 			transparent: true,
 			depthWrite: false,
 			polygonOffset: true,

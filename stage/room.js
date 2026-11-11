@@ -44,7 +44,6 @@
 import {
 	Box3,
 	Camera,
-	CustomBlending,
 	DepthTexture,
 	DoubleSide,
 	ExternalTexture,
@@ -53,8 +52,6 @@ import {
 	Matrix4,
 	Mesh,
 	NoBlending,
-	OneFactor,
-	OneMinusSrcAlphaFactor,
 	PlaneGeometry,
 	Scene,
 	ShaderMaterial,
@@ -69,7 +66,7 @@ import { Lens, SPREADS_REACHED } from './lens.js';
 import { WorldLighting } from './lighting.js';
 import { matrixOf, projectionOnto } from './matrices.js';
 import { PAGE_SURFACE_FRAGMENT, PagePicture, pageSurfaceValues } from './page-picture.js';
-import { ADDED, LAID_OVER, SRGB_CURVES, passOver, valuesSet } from './passes.js';
+import { ADDED, LAID_OVER, PREMULTIPLIED, SRGB_CURVES, passOver, valuesSet } from './passes.js';
 import { FrameShown } from './shown.js';
 import { WorldSeen } from './laying.js';
 import {
@@ -263,11 +260,7 @@ const DRAWN_AT_LEAST = 1 / EIGHT_BIT_LEVELS;
 // The page's surface laid in the world over what it hides, by how clear it is, its colours premultiplied, its depth
 // written where it is drawn
 const PAGE_LAID = {
-	blending: CustomBlending,
-	blendSrc: OneFactor,
-	blendDst: OneMinusSrcAlphaFactor,
-	blendSrcAlpha: OneFactor,
-	blendDstAlpha: OneMinusSrcAlphaFactor,
+	...PREMULTIPLIED,
 	transparent: true,
 	depthWrite: true,
 	...PAGE_NEARER
