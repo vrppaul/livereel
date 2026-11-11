@@ -44,6 +44,11 @@ export class PageOfBoxes implements FilmedPage {
 		return Promise.resolve(this.boxes.get(target)!);
 	}
 
+	/** A test's page stands at its top, so a block's top on its screen is its top in the document. */
+	documentTop(target: string): Promise<number> {
+		return Promise.resolve(this.boxes.get(target)!.top);
+	}
+
 	/** A test names only the blocks whose ground its page has. */
 	groundBehind(target: string): Promise<string> {
 		return Promise.resolve(this.grounds.get(target)!);

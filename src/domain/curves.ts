@@ -8,7 +8,8 @@
  * the same (`src/domain/fraction.ts`). A film makes its own as a designer's tool hands one, `cubicBezier` as CSS draws
  * `cubic-bezier()`; one that sets off and arrives at the speeds it names, each in times its mean speed, `atSpeeds`; and
  * one that sets off softly and holds its speed from a share of its time on, `softThenHeld`, as a flight that dives and
- * runs on along a page does. Each is checked as it is made, as a film's types are stripped.
+ * runs on along a page does. Each is checked as it is made, as a film's types are stripped. The cubic Hermite curve
+ * `atSpeeds` draws runs between any two ends too, as a page's run goes from knot to knot (`src/props/screen.ts`).
  */
 import { A_NUMBER, type Form, type Kind, Plain, aFunction, assertKind, assertWritten, needed } from './handed.ts';
 
@@ -31,6 +32,15 @@ export interface Speeds {
 	readonly arriving: number;
 }
 
+/**
+ * An end of a cubic Hermite curve: where its value stands there, and how fast it goes, so much of it over the curve's
+ * whole time.
+ */
+export interface HermiteEnd {
+	readonly value: number;
+	readonly speed: number;
+}
+
 // A curve's start and end, by its own parameter and as shares of time and of the way; and its half-way point
 const ITS_START = 0;
 const ITS_END = 1;
@@ -50,13 +60,15 @@ const PENNERS_BACK = 1.70158;
 const HALVINGS = 52;
 // The weights of a cubic's Bernstein form, in which a Bézier is drawn through its handles
 const BERNSTEINS_WEIGHT = 3;
-// The weights of a cubic Hermite curve of its two speeds
+// The weights of a cubic Hermite curve's ends and speeds
 const SPEEDS_SQUARE_WEIGHT = 2;
 const ENDS_SQUARE_WEIGHT = 3;
 const ENDS_CUBE_WEIGHT = 2;
+// How fast a share of time grows by itself: the slope of the share in a Hermite weight, where it is differentiated
+const TIMES_OWN_SLOPE = 1;
 // The fastest a curve of speeds sets off or arrives, in times its mean speed: faster, it runs past its end or back
 // before its start; and the slowest, at rest
-const FASTEST_SPEED = 3;
+export const FASTEST_SPEED = 3;
 const AT_REST = 0;
 // A sine's quarter turn, in which a soft start comes from rest to its fastest
 const A_QUARTER_TURN = Math.PI / HALVES;
@@ -118,8 +130,39 @@ export function cubicBezier(firstTime: number, firstWay: number, secondTime: num
  */
 export function atSpeeds(speeds: Speeds): Ease {
 	assertWritten(speeds, SPEEDS_FORM, 'atSpeeds');
-	const { settingOff, arriving } = speeds;
-	return (progress) => hermiteAt(progress, settingOff, arriving);
+	const start = { value: ITS_START, speed: speeds.settingOff };
+	const end = { value: ITS_END, speed: speeds.arriving };
+	return (progress) => hermiteBetween(start, end, progress);
+}
+
+/**
+ * A cubic Hermite curve between two ends at a share of its time, from 0 to 1: its value going smoothly from where it
+ * stands at its start to where it stands at its end, as fast at each as that end names.
+ */
+export function hermiteBetween(start: HermiteEnd, end: HermiteEnd, progress: number): number {
+	const squared = progress ** SQUARE;
+	const cubed = progress ** CUBE;
+	const towardTheEnd = ENDS_SQUARE_WEIGHT * squared - ENDS_CUBE_WEIGHT * cubed;
+	return (
+		(ITS_END - towardTheEnd) * start.value +
+		(cubed - SPEEDS_SQUARE_WEIGHT * squared + progress) * start.speed +
+		towardTheEnd * end.value +
+		(cubed - squared) * end.speed
+	);
+}
+
+/**
+ * How fast a cubic Hermite curve between two ends goes at a share of its time: so much of its value over its whole
+ * time, each of `hermiteBetween`'s weights differentiated by the power rule.
+ */
+export function hermiteSpeedBetween(start: HermiteEnd, end: HermiteEnd, progress: number): number {
+	const squared = progress ** SQUARE;
+	const towardTheEnd = SQUARE * ENDS_SQUARE_WEIGHT * progress - CUBE * ENDS_CUBE_WEIGHT * squared;
+	return (
+		towardTheEnd * (end.value - start.value) +
+		(CUBE * squared - SQUARE * SPEEDS_SQUARE_WEIGHT * progress + TIMES_OWN_SLOPE) * start.speed +
+		(CUBE * squared - SQUARE * progress) * end.speed
+	);
 }
 
 /**
@@ -153,17 +196,6 @@ function bezierAt(along: number, first: number, second: number): number {
 		BERNSTEINS_WEIGHT * rest ** SQUARE * along * first +
 		BERNSTEINS_WEIGHT * rest * along ** SQUARE * second +
 		along ** CUBE
-	);
-}
-
-/** A cubic Hermite curve from 0 to 1, setting off and arriving at its speeds, at a share of time. */
-function hermiteAt(progress: number, settingOff: number, arriving: number): number {
-	const squared = progress ** SQUARE;
-	const cubed = progress ** CUBE;
-	return (
-		(cubed - SPEEDS_SQUARE_WEIGHT * squared + progress) * settingOff +
-		(ENDS_SQUARE_WEIGHT * squared - ENDS_CUBE_WEIGHT * cubed) +
-		(cubed - squared) * arriving
 	);
 }
 

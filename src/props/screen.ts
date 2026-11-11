@@ -18,12 +18,15 @@
  * the eye sees the screen through the window's back, mirrored, as before.
  *
  * A page of the film's own runs down its scroll as the film runs it, never of itself: its run is the page's, held by
- * its key, so it goes on as the page is shown on the other face. Where it stands is worked out from the moment, as
- * what else changes with time of itself is, so each exposure of a frame draws it where it stood then and a fast run
- * smears; a run changing pace over a move's share keeps its curve as paces at even points of it.
+ * its key, so it goes on as the page is shown on the other face. The run is the knots of the film's time it passes
+ * through, where the page stands and how fast it runs at each, joined by a cubic Hermite curve: a pace changing over a
+ * move's share lays knots at even points of it, a run brought to rest lays two, the pace it sets off at and rest where
+ * it ends, so a move that takes the run over goes on from where it stands and as fast. Where it stands is worked out
+ * from the moment, as what else changes with time of itself is, so each exposure of a frame draws it where it stood then
+ * and a fast run smears.
  */
 import { type Camera, type SeenBetween, screenInTheView, screenPointShift, viewOnTheScreen } from '../domain/camera.ts';
-import type { Stretch } from '../domain/curves.ts';
+import { type Stretch, hermiteBetween, hermiteSpeedBetween } from '../domain/curves.ts';
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import type { Format } from '../domain/format.ts';
 import {
@@ -55,16 +58,23 @@ type DrawnShows =
 	{ readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string; readonly scrolled: number };
 
 /**
- * How a page of the film's own runs down its scroll, which it moves by only as the film runs it: where it stood, in its
- * pixels, at the moment of the film it set off at; how fast it runs from then, its pixels a second, at even points of
- * the stretch its pace changes over, the last held after it, one alone where its pace changed at once; how long that
- * stretch is; and how far it scrolls at most, measured as its move began. Between two points its pace changes evenly.
+ * A point of the film's time a page's run passes through: the moment, how far down its scroll the page stands then, in
+ * its pixels, and how fast it runs there, its pixels a second. A run's knots may lie past its top or its end, where the
+ * page is held.
+ */
+export interface Knot {
+	readonly moment: number;
+	readonly top: number;
+	readonly pace: number;
+}
+
+/**
+ * How a page of the film's own runs down its scroll, which it moves by only as the film runs it: the knots its run
+ * passes through, the earliest first, as a cubic Hermite curve in time between each two, standing at the first before
+ * it and running on at the last's pace after it; and how far it scrolls at most, measured as its move began.
  */
 export interface Scroll {
-	readonly top: number;
-	readonly since: number;
-	readonly paces: readonly number[];
-	readonly seconds: number;
+	readonly knots: readonly [Knot, ...Knot[]];
 	readonly length: number;
 }
 
@@ -218,24 +228,22 @@ export const SCREEN_UP: Screen = {
 export const SCREEN_DOWN: Screen = { ...SCREEN_UP, shown: NONE };
 
 // A page's top, where one the film never ran stands, and the pace it stands still at
-const AT_ITS_TOP = 0;
+export const AT_ITS_TOP = 0;
 const STANDING = 0;
-// How many even stretches a pace changing over a move's share is held at, its curve read at the end of each: the pace
-// changes evenly between two, so the page's run strays from the curve's by at most its change in pace times its seconds
-// times a curve's sharpest bend over 8 × 64², 0.06 pixels for 480 pixels a second gathered over 0.8 s on easeInOutSine
+// How many even stretches a pace changing over a move's share is laid in knots at, its curve read at each knot, each
+// knot as far down as a pace changing evenly from the knot before carries it, which the Hermite curve between them then
+// runs exactly: the page's run strays from the curve's by at most its change in pace times its seconds times a curve's
+// sharpest bend over 8 × 64², 0.06 pixels for 480 pixels a second gathered over 0.8 s on easeInOutSine
 const STRETCHES_OF_A_CHANGE = 64;
-// A change of pace has a point more than its stretches, each stretch between a point and the next, the first point
-// where it sets off; and a stretch of no seconds, as a pace changed at once has
-const ONE_POINT = 1;
-const FIRST_POINT = 0;
+// The knot a change of pace sets off from and the first one past it; and a stretch of no seconds, as a pace changed at
+// once has
+const SETTING_OFF = 0;
+const FIRST_ONWARD = 1;
 const NO_SECONDS = 0;
 // A page the film never ran: at its top since the film began, standing still, scrolling nowhere
 const THE_FILMS_START = 0;
 const STANDING_AT_ITS_TOP: Scroll = {
-	top: AT_ITS_TOP,
-	since: THE_FILMS_START,
-	paces: [STANDING],
-	seconds: NO_SECONDS,
+	knots: [{ moment: THE_FILMS_START, top: AT_ITS_TOP, pace: STANDING }],
 	length: AT_ITS_TOP
 };
 // How far a page runs on the frame where none of the screen's runs
@@ -296,7 +304,7 @@ function frontDrawn(screen: Screen, moment: number): DrawnShows {
 
 /** A page of the film's own, by its key, as the stage draws it at a moment: as far down as the film has run it. */
 function ownPageDrawn(screen: Screen, key: string, moment: number): DrawnShows {
-	return { kind: 'own', key, scrolled: scrolledAt(runOf(screen, key), moment) };
+	return { kind: 'own', key, scrolled: standingAt(runOf(screen, key), moment).top };
 }
 
 /** How a page of the film's own runs on the screen, by its key: standing at its top where the film never ran it. */
@@ -305,76 +313,77 @@ export function runOf(screen: Screen, key: string): Scroll {
 }
 
 /**
- * A page set off running at a pace, as its move begins over a stretch of the film's time: from where it stands then,
- * its pace changing from what it is there to the one named along the stretch, on its curve, at once where the stretch
- * takes no time; as far as it scrolls at most, measured as it sets off.
+ * Where a running page stands at a moment and how fast it runs there: on its run, held between its top and its end,
+ * standing still where it is held at an end it runs into.
  */
-export function setOff(run: Scroll, stretch: Stretch, pace: number, length: number): Scroll {
-	const from = paceAt(run, stretch.moment);
-	const paces =
-		stretch.seconds === NO_SECONDS
-			? [pace]
-			: [...Array(STRETCHES_OF_A_CHANGE + ONE_POINT).keys()].map((point) =>
-					between(from, pace, stretch.ease(point / STRETCHES_OF_A_CHANGE))
-				);
-	return { top: scrolledAt(run, stretch.moment), since: stretch.moment, paces, seconds: stretch.seconds, length };
+export function standingAt(run: Scroll, moment: number): Knot {
+	const unheld = unheldAt(run, moment);
+	const top = Math.min(Math.max(unheld.top, AT_ITS_TOP), run.length);
+	const heldAtAnEnd = (top >= run.length && unheld.pace > STANDING) || (top <= AT_ITS_TOP && unheld.pace < STANDING);
+	return { moment, top, pace: heldAtAnEnd ? STANDING : unheld.pace };
 }
 
 /**
- * How far down its scroll a running page stands at a moment, in its pixels: where it set off and as far as it has run
- * since, held between its top and its end; where it set off, at a moment before.
+ * A page set off running at a pace from where it stands as its move begins, over a stretch of the film's time: its
+ * pace changing from what it is there to the one named along the stretch, on its curve, in knots at even points of
+ * it, at once where the stretch takes no time; as far as it scrolls at most, measured as it sets off.
  */
-function scrolledAt(run: Scroll, moment: number): number {
-	const ranTo = run.top + ranOver(run, moment - run.since);
-	return Math.min(Math.max(ranTo, AT_ITS_TOP), run.length);
-}
-
-/**
- * How fast a running page runs at a moment, its pixels a second: as its pace stands along the stretch it changes over,
- * its last after it, its first before; none where it is held at an end it runs into.
- */
-function paceAt(run: Scroll, moment: number): number {
-	const pace = paceAlong(run, moment - run.since);
-	const standsAt = scrolledAt(run, moment);
-	const heldAtAnEnd = (standsAt >= run.length && pace > STANDING) || (standsAt <= AT_ITS_TOP && pace < STANDING);
-	return heldAtAnEnd ? STANDING : pace;
-}
-
-/** A running page's pace so many seconds after it set off: its last after its stretch, its first before. */
-function paceAlong(run: Scroll, elapsed: number): number {
-	const stretches = run.paces.length - ONE_POINT;
-	if (elapsed >= run.seconds) return paceOf(run.paces, stretches);
-	if (elapsed <= NO_SECONDS) return paceOf(run.paces, FIRST_POINT);
-	const along = (elapsed / run.seconds) * stretches;
-	const point = Math.floor(along);
-	return between(paceOf(run.paces, point), paceOf(run.paces, point + ONE_POINT), along - point);
-}
-
-/**
- * How far a running page has run so many seconds after it set off: none before; along its stretch, its pace changing
- * evenly between each two points of it; on at its last pace after.
- */
-function ranOver(run: Scroll, elapsed: number): number {
-	const stretches = run.paces.length - ONE_POINT;
-	const stretchSeconds = run.seconds / stretches;
-	const within = Math.min(Math.max(elapsed, NO_SECONDS), run.seconds);
-	let ran = NOTHING_RUN;
-	for (let point = FIRST_POINT; point < stretches; point += 1) {
-		const into = Math.min(Math.max(within - point * stretchSeconds, NO_SECONDS), stretchSeconds);
-		const from = paceOf(run.paces, point);
-		const change = paceOf(run.paces, point + ONE_POINT) - from;
-		// Its pace changing evenly over the stretch, it runs its pace there over the time, and half the change over it
-		ran += from * into + (change * into * into) / (HALVES * stretchSeconds);
+export function setOff(from: Knot, stretch: Stretch, pace: number, length: number): Scroll {
+	if (stretch.seconds === NO_SECONDS) return { knots: [{ ...from, pace }], length };
+	const knotSeconds = stretch.seconds / STRETCHES_OF_A_CHANGE;
+	const first: Knot = { ...from, pace: paceOfAChange(from.pace, pace, stretch, SETTING_OFF) };
+	const later: Knot[] = [];
+	let before = first;
+	for (let point = FIRST_ONWARD; point <= STRETCHES_OF_A_CHANGE; point += 1) {
+		const pacedAt = paceOfAChange(from.pace, pace, stretch, point);
+		// The pace changing evenly from the knot before, the page runs the mean of the two paces over the time
+		const top = before.top + ((before.pace + pacedAt) / HALVES) * knotSeconds;
+		const knot = { moment: stretch.moment + point * knotSeconds, top, pace: pacedAt };
+		later.push(knot);
+		before = knot;
 	}
-	const after = Math.max(elapsed - run.seconds, NO_SECONDS);
-	return ran + paceOf(run.paces, stretches) * after;
+	return { knots: [first, ...later], length };
 }
 
-/** A page's pace at a point of the stretch it changes over, which its paces hold. */
-function paceOf(paces: readonly number[], point: number): number {
-	const pace = paces[point];
-	if (pace === undefined) throw new Error(`a running page has no pace at point ${point} of its change`);
-	return pace;
+/**
+ * A page brought to rest at a scroll from where it stands as its move begins, over a stretch of the film's time:
+ * setting off at the pace it runs there and slowing on a cubic Hermite curve to stand still there as the stretch ends;
+ * at once where the stretch takes no time; as far as it scrolls at most, measured as it sets off.
+ */
+export function runToRest(from: Knot, stretch: Stretch, rest: number, length: number): Scroll {
+	const resting: Knot = { moment: stretch.moment + stretch.seconds, top: rest, pace: STANDING };
+	if (stretch.seconds === NO_SECONDS) return { knots: [resting], length };
+	return { knots: [from, resting], length };
+}
+
+/** A page's pace at an even point of a change from one pace to another over a stretch, on the stretch's curve. */
+function paceOfAChange(from: number, to: number, stretch: Stretch, point: number): number {
+	return between(from, to, stretch.ease(point / STRETCHES_OF_A_CHANGE));
+}
+
+/**
+ * Where a running page stands at a moment and how fast it runs, unheld by its top or its end: at its first knot
+ * before it, on the curve between the two knots around it, and on at its last knot's pace after it.
+ */
+function unheldAt(run: Scroll, moment: number): Knot {
+	const [first, ...later] = run.knots;
+	if (moment <= first.moment) return { ...first, moment };
+	let before = first;
+	for (const knot of later) {
+		if (moment < knot.moment) return betweenKnots(before, knot, moment);
+		before = knot;
+	}
+	return { moment, top: before.top + before.pace * (moment - before.moment), pace: before.pace };
+}
+
+/** Where a running page stands and how fast it runs at a moment between two knots: on a cubic Hermite curve in time. */
+function betweenKnots(start: Knot, end: Knot, moment: number): Knot {
+	const seconds = end.moment - start.moment;
+	const progress = (moment - start.moment) / seconds;
+	// The curve's speeds are so much of the page's way over its whole time
+	const from = { value: start.top, speed: start.pace * seconds };
+	const to = { value: end.top, speed: end.pace * seconds };
+	return { moment, top: hermiteBetween(from, to, progress), pace: hermiteSpeedBetween(from, to, progress) / seconds };
 }
 
 /**
@@ -387,7 +396,7 @@ export function runShift(camera: Camera, format: Format, start: Screen, end: Scr
 	const shown = viewOnTheScreen(camera, format.frame);
 	const middle: Point = { left: middleX(shown), top: middleY(shown) };
 	const ran = pagesOnItsFaces(end).map(
-		(key) => scrolledAt(runOf(end, key), moments.end) - scrolledAt(runOf(start, key), moments.start)
+		(key) => standingAt(runOf(end, key), moments.end).top - standingAt(runOf(start, key), moments.start).top
 	);
 	return Math.max(NOTHING_RUN, ...ran.map((pixels) => ranOnTheFrame(camera, format, middle, pixels)));
 }

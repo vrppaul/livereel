@@ -321,7 +321,7 @@ test("the screen shows the page on the window's back where the eye sees the wind
 test("a page of the film's own keeps its run whichever face of the window shows it", () => {
 	const camera = cameraOf(openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH), SMALL);
 	// One page in front and behind, run 40 pixels down by 0 s and on at 10 a second: 60 down at 2 s
-	const running: Scroll = { top: 40, since: 0, paces: [10], seconds: 0, length: 1000 };
+	const running: Scroll = { knots: [{ moment: 0, top: 40, pace: 10 }], length: 1000 };
 	const both: Screen = {
 		...SCREEN_UP,
 		shows: { kind: 'own', key: 'page' },

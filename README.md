@@ -206,7 +206,8 @@ and the moves of each part of the scene:
 - `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
   whole frame where they come up, over every object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`, `screen.behind(page, { upright, within })`,
-  `screen.scrolls(page, { pace })`, `screen.sweep({ from, slant, round, width, crest })`
+  `screen.scrolls(page, { pace })`, `screen.scrollTo(page, selector, { top })`,
+  `screen.sweep({ from, slant, round, width, crest })`
 - `terminal.open(title, { at, from, enter, edge, inside, group, zIndex })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
   `terminal.lean({ tilt, turn, roll, over, about })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
@@ -638,10 +639,20 @@ move of its run, its pace changing from what it was to the new one over
 the move's share of a `play` on the move's curve, or at once in a `cut`;
 `pace: 0` stops it, a pace below none runs it back up, and it holds at its
 top and its end. The run is the page's, so the same page keeps it on
-either face of the window, or on none. Each exposure of a frame draws it
-where it stood then, so a fast run smears; the filmed page scrolls by
-`page.scrollBy` and `page.scrollTo`, and `screen.scrolls('filmed')` is
-refused. So is the run of a page that scrolls nowhere, one the screen
+either face of the window, or on none. `screen.scrollTo({ html }, '#input',
+{ top: 600 })` brings it to rest with a block 600 of its pixels below the
+screen's top as the move's share of a `play` ends: it goes on at the pace
+the page runs and comes smoothly to stand there, on a cubic Hermite curve
+of its own, so it takes no `ease`; in a `cut` it stands there at once. The
+block is measured where it stands in the page's document, however far the
+page has run. It is refused as it begins where the page cannot scroll so
+far, and where it would turn back on its way: running away from its rest,
+or so fast that it would pass it, more than three times the mean pace of
+its way; stop the page first, or give the move a longer share. Each
+exposure of a frame draws the page where it stood then, so a fast run
+smears; the filmed page scrolls by `page.scrollBy` and `page.scrollTo`, and
+`screen.scrolls('filmed')` and `screen.scrollTo('filmed', …)` are refused.
+So is the run of a page that scrolls nowhere, one the screen
 holds all of or whose own styles hide what runs past the screen
 (`overflow: hidden` on its body). `screen.sweep()` in a `play` sweeps the picture the screen
 shows away by a band of light, the page as it stands showing behind it: an

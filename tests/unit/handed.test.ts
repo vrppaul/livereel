@@ -236,6 +236,17 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		new FilmError(`screen.scrolls's pace is "fast": it is a number`)
 	);
 	expect(() => screen.scrolls({ html: '<p>Runs</p>' }, {} as never)).toThrow(FilmError);
+	expect(() => screen.scrollTo('filmed' as never, '#input', { top: 0 })).toThrow(
+		new FilmError(
+			`screen.scrollTo's page is "filmed": it is a page of the film's own, { html }; the filmed page scrolls by page.scrollBy or page.scrollTo`
+		)
+	);
+	expect(() => screen.scrollTo({ html: '<p>Runs</p>' }, 7 as never, { top: 0 })).toThrow(
+		new FilmError(`screen.scrollTo's target is 7: it is a selector: a string that names blocks of the page`)
+	);
+	expect(() =>
+		screen.scrollTo({ html: '<p>Runs</p>' }, '#input', { top: 0, ease: (progress: number) => progress } as never)
+	).toThrow(new FilmError(`screen.scrollTo names ease: it names top, within, or fewer`));
 	expect(() => screen.sweep({ from: 'middle' as never })).toThrow(
 		new FilmError(`screen.sweep's from is "middle": it is a side of the frame: "left", "right", "top" or "bottom"`)
 	);

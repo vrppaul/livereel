@@ -41,6 +41,7 @@ import {
 	behind as screenBehind,
 	lower,
 	rise,
+	scrollTo as screenScrollTo,
 	scrolls as screenScrolls,
 	shows as screenShows,
 	sweep as screenSweep
@@ -228,8 +229,10 @@ const FULL_HD: Format = { frame: { width: 1920, height: 1080 }, screen: { width:
 const OPENING_IN_FULL_HD = openingScene(FULL_HD, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH);
 // A page of the film's own
 const OWN_PAGE = { html: '<p id="card">Ours</p>' };
-// How much longer than the screen that page is, as far as it scrolls
+// How much longer than the screen that page is, as far as it scrolls, and a block of it, its top 900 down the page
 const OWN_PAGE_LENGTH = 1000;
+const INPUT = '#input';
+const OWN_PAGE_BLOCKS = new Map([[INPUT, { left: 0, top: 900, width: 1920, height: 60 }]]);
 // A page the screen holds all of: it scrolls nowhere
 const NO_LONGER_THAN_THE_SCREEN = 0;
 const WHOLE_AT_ONE = { focusX: 960, focusY: 540, zoom: 1 };
@@ -316,14 +319,20 @@ async function setIn(move: Move, scene: Scene, progress: number, format: Format)
 
 /**
  * A beginning in full HD at a moment, its move's share so many seconds long on a straight curve, the film's own page
- * it names 1000 pixels longer than the screen.
+ * it names 1000 pixels longer than the screen, its block 900 down it.
  */
 function scrollingFrom(scene: Scene, moment: number, seconds: number): Beginning {
 	return {
 		...beginningIn(scene, FULL_HD),
 		stretch: { moment, seconds, ease: linear },
-		ownPage: () => new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH)
+		ownPage: () => new PageOfBoxes(OWN_PAGE_BLOCKS, new Map(), OWN_PAGE_LENGTH)
 	};
+}
+
+/** A scene whose page of the film's own runs at 100 pixels a second from the film's start, 300 down at 3 s. */
+async function runningFromTheStart(): Promise<Scene> {
+	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	return (await screenScrolls(OWN_PAGE, { pace: 100 }).begin(scrollingFrom(shown, 0, 0)))(shown, 1);
 }
 
 /** How far down the page of the film's own a scene's screen shows stands at a moment, as the stage draws it. */
@@ -1408,6 +1417,58 @@ test("a page of the film's own that runs moves on the frame as far as it runs wh
 	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const running = await (await screenScrolls(OWN_PAGE, { pace: 100 }).begin(scrollingFrom(shown, 0, 0)))(shown, 1);
 	expect(frameShiftBetween({ scene: running, moment: 3 }, { scene: running, moment: 3.1 }, FULL_HD)).toBeCloseTo(10);
+});
+
+test("a page of the film's own comes to rest with a block that far below the screen's top as its move's share ends, at once in a cut", async () => {
+	// 300 down at 3 s; #input, 900 down the page, brought 200 below the screen's top: the page 700 down
+	const running = await runningFromTheStart();
+	const toRest = screenScrollTo(OWN_PAGE, INPUT, { top: 200 });
+	const inAPlay = await (await toRest.begin(scrollingFrom(running, 3, 2)))(running, 1);
+	const inACut = await (await toRest.begin(scrollingFrom(running, 3, 0)))(running, 1);
+	expect([3, 5, 9].map((moment) => scrolledIn(inAPlay, moment))).toEqual([300, 700, 700]);
+	expect([3, 9].map((moment) => scrolledIn(inACut, moment))).toEqual([700, 700]);
+});
+
+test("a page of the film's own coming to rest sets off at the pace it ran", async () => {
+	// At 100 pixels a second, a tenth of a pixel over the first thousandth of a second of its way to rest 400 on
+	const running = await runningFromTheStart();
+	const toRest = await screenScrollTo(OWN_PAGE, INPUT, { top: 200 }).begin(scrollingFrom(running, 3, 2));
+	const resting = await toRest(running, 1);
+	expect(scrolledIn(resting, 3.001) - scrolledIn(resting, 3)).toBeCloseTo(0.1, 3);
+});
+
+test('screen.scrollTo refuses a rest past where its page scrolls, above its top or past its end, as it begins', async () => {
+	const running = await runningFromTheStart();
+	const aboveItsTop = screenScrollTo(OWN_PAGE, INPUT, { top: 1000 }).begin(scrollingFrom(running, 3, 2));
+	const pastItsEnd = screenScrollTo(OWN_PAGE, INPUT, { top: -200 }).begin(scrollingFrom(running, 3, 2));
+	await expect(aboveItsTop).rejects.toThrow(
+		new FilmError(
+			"screen.scrollTo would bring #input 1000 pixels below the screen's top with its page scrolled -100 down, and it scrolls from 0 to 1000: name a top it reaches"
+		)
+	);
+	await expect(pastItsEnd).rejects.toThrow(
+		new FilmError(
+			"screen.scrollTo would bring #input -200 pixels below the screen's top with its page scrolled 1100 down, and it scrolls from 0 to 1000: name a top it reaches"
+		)
+	);
+});
+
+test('screen.scrollTo refuses, as it begins, a run that would turn back to come to rest: one running away from its rest, and one too fast to stop short of it', async () => {
+	// Running 100 pixels a second down from 300 at 3 s: a rest at 100 lies behind it; one at 350, over 2 s, at a mean of
+	// 25 a second, is too near for a run that sets off at more than 3 times that
+	const running = await runningFromTheStart();
+	const behindIt = screenScrollTo(OWN_PAGE, INPUT, { top: 800 }).begin(scrollingFrom(running, 3, 2));
+	const tooNear = screenScrollTo(OWN_PAGE, INPUT, { top: 550 }).begin(scrollingFrom(running, 3, 2));
+	await expect(behindIt).rejects.toThrow(
+		new FilmError(
+			'screen.scrollTo would turn the page back: it runs 100 pixels a second down its scroll, and the rest that brings #input there lies 200 up it: stop it first, with screen.scrolls(page, { pace: 0 })'
+		)
+	);
+	await expect(tooNear).rejects.toThrow(
+		new FilmError(
+			'screen.scrollTo would carry the page past the rest that brings #input there and back: it runs 100 pixels a second, more than 3 times the 25 a second its way to rest takes on average: give the move a longer share, or slow the page first'
+		)
+	);
 });
 
 test('the screen coming up or going down keeps showing what it shows, and shares a step with a move that changes it and one that sweeps it', async () => {

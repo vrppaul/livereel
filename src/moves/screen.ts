@@ -15,11 +15,13 @@
  * at a moment after it comes in behind the light. A sweep sets a value of its own, so it shares a step with a move that
  * raises or lowers the screen, or changes what it shows.
  *
- * A page of the film's own runs down its scroll at a pace the film sets: the move reads where the page stands and how
- * fast it runs as it begins, and sets its run on the film's time, its pace changing over the move's share on its curve;
- * where the page stands at any moment is worked out from that run (`src/props/screen.ts`). Its runs are a value of the
- * screen's own, so it shares a step with what the screen shows.
+ * A page of the film's own runs down its scroll at a pace the film sets, or comes to rest with a block of it where the
+ * film names: the move reads where the page stands and how fast it runs as it begins, and sets its run on the film's
+ * time, its pace changing over the move's share on its curve, or slowing from it to stand still at the rest as the
+ * share ends, refused where it would turn back on its way; where the page stands at any moment is worked out from that
+ * run (`src/props/screen.ts`). Its runs are a value of the screen's own, so it shares a step with what the screen shows.
  */
+import { FASTEST_SPEED, type Stretch } from '../domain/curves.ts';
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
 import { A_FRAME_SIDE, type FrameSide, boxOf, middleX, middleY } from '../domain/geometry.ts';
@@ -27,6 +29,7 @@ import {
 	AN_HTML_PAGE,
 	A_COLOUR,
 	A_NUMBER,
+	A_SELECTOR,
 	A_SIZE,
 	type Form,
 	type Kind,
@@ -41,6 +44,7 @@ import { between } from '../domain/toward.ts';
 import {
 	A_TARGET,
 	type Beginning,
+	type Bounds,
 	type Change,
 	MOMENT_FORM,
 	type MomentScript,
@@ -58,18 +62,22 @@ import {
 import { ownPageOf } from '../direction/page.ts';
 import {
 	AN_UPRIGHT,
+	AT_ITS_TOP,
 	A_SLANT,
 	type Back,
 	SCREEN_DOWN,
 	SCREEN_UP,
 	SEEN_THROUGH,
 	type Screen,
+	type Scroll,
 	type Shows,
 	type SweepShape,
 	THE_FILMED_PAGE,
 	type Upright,
 	runOf,
-	setOff
+	runToRest,
+	setOff,
+	standingAt
 } from '../props/screen.ts';
 import { withProp } from '../scene.ts';
 
@@ -87,6 +95,15 @@ export type BackPage = typeof NONE_ON_THE_BACK | OwnPageNamed;
 /** How fast a film runs a page of its own, its pixels a second, and over what share of the step, on what curve. */
 export interface ScrollsScript extends TimingScript {
 	readonly pace: number;
+}
+
+/**
+ * Where a film brings a page of its own to rest, its block's top so many pixels below the screen's top, and over what
+ * share of the step: its curve is the run's own.
+ */
+export interface ScrollToScript {
+	readonly top: number;
+	readonly within?: Bounds;
 }
 
 /** How a page on the window's back is mounted, `upright` as `AN_UPRIGHT` says, and the moment of a play it comes. */
@@ -131,6 +148,15 @@ const DOWN_ALREADY = 'screen.lower lowers a screen already down';
 const SCROLLS_NOWHERE =
 	'screen.scrolls runs a page that scrolls nowhere: the screen holds all of it, or its own styles hide what runs past the screen, as overflow: hidden on its body does; give it more than the screen holds and let it scroll';
 const NO_LENGTH = 0;
+// The move that brings a page of the film's own to rest, as its refusals name it; a move done at once, as in a cut,
+// which takes no seconds and runs nowhere on its way; the product of the signs of a pace and a way that go opposite
+// ways; and how a way along a page's scroll is said, down where it is more than none
+const SCROLL_TO = 'screen.scrollTo';
+const NO_SECONDS = 0;
+const OPPOSITE_WAYS = -1;
+const NO_WAY = 0;
+const TOWARD_ITS_END = 'down';
+const TOWARD_ITS_TOP = 'up';
 // A page of the film's own, as a film names it
 const OWN_PAGE_FORM: Form<OwnPageNamed> = { html: needed(AN_HTML_PAGE) };
 const OWN_PAGE_SAID = "a page of the film's own, { html }";
@@ -154,6 +180,7 @@ const A_PAGE_RUN: Kind<OwnPageNamed> = new OfForm<OwnPageNamed>(
 	`${OWN_PAGE_SAID}; the filmed page scrolls by page.scrollBy or page.scrollTo`
 );
 const SCROLLS_FORM: Form<ScrollsScript> = { pace: needed(A_NUMBER), ...TIMING_FORM };
+const SCROLL_TO_FORM: Form<ScrollToScript> = { top: needed(A_NUMBER), within: TIMING_FORM.within };
 const BACK_FORM: Form<BackScript> = { upright: needed(AN_UPRIGHT), ...MOMENT_FORM };
 // The screen's values a move that raises or lowers it sets, one that changes what it shows, a sweep, and one that
 // changes what the window's back shows
@@ -277,7 +304,76 @@ export function scrolls(page: OwnPageNamed, script: ScrollsScript): Move {
 async function running(beginning: Beginning, key: string, pace: number): Promise<Change> {
 	const length = await beginning.ownPage(key).scrollLength();
 	if (length === NO_LENGTH) throw new FilmError(SCROLLS_NOWHERE);
-	const run = setOff(runOf(beginning.scene.screen, key), beginning.stretch, pace, length);
+	const from = standingAt(runOf(beginning.scene.screen, key), beginning.stretch.moment);
+	return runSet(key, setOff(from, beginning.stretch, pace, length));
+}
+
+/**
+ * A page of the film's own, `{ html }`, brought to rest where a block of it, by its selector, stands `top` pixels
+ * below the screen's top: from where the page stands as the move begins, setting off at the pace it runs there and
+ * slowing smoothly to stand still there as the move's share ends, in a play, or at once, in a cut. The block is
+ * measured where it stands in the page's document. Its curve is the run's own, a cubic Hermite curve from its pace to
+ * rest, so it takes no `ease`. It runs whichever face of the window shows the page, or none.
+ */
+export function scrollTo(page: OwnPageNamed, target: string, script: ScrollToScript): Move {
+	assertKind(page, A_PAGE_RUN, "screen.scrollTo's page");
+	assertKind(target, A_SELECTOR, "screen.scrollTo's target");
+	assertWritten(script, SCROLL_TO_FORM, SCROLL_TO);
+	const own = ownPageOf(page.html);
+	return {
+		part: 'screen',
+		valueNames: RUNNING,
+		timing: timingOf(script),
+		ownPages: [own],
+		begin: (beginning) => comingToRest(beginning, own.key, target, script.top)
+	};
+}
+
+/**
+ * A page of the film's own, by its key, brought to rest with a block of it so far below the screen's top as its move
+ * begins: refused where the page cannot scroll there, and where, in a play, it would turn back to come to rest, running
+ * away from its rest or too fast to stop short of it.
+ */
+async function comingToRest(beginning: Beginning, key: string, target: string, top: number): Promise<Change> {
+	const measured = beginning.ownPage(key);
+	const length = await measured.scrollLength();
+	const rest = (await measured.documentTop(target)) - top;
+	if (rest < AT_ITS_TOP || rest > length) {
+		throw new FilmError(
+			`${SCROLL_TO} would bring ${target} ${top} pixels below the screen's top with its page scrolled ${Math.round(rest)} down, and it scrolls from ${AT_ITS_TOP} to ${Math.round(length)}: name a top it reaches`
+		);
+	}
+	const from = standingAt(runOf(beginning.scene.screen, key), beginning.stretch.moment);
+	if (beginning.stretch.seconds > NO_SECONDS) refuseTurningBack(from.pace, rest - from.top, beginning.stretch, target);
+	return runSet(key, runToRest(from, beginning.stretch, rest, length));
+}
+
+/**
+ * A run to rest refused where it would turn back on its way: setting off away from its rest, or faster than a cubic
+ * Hermite curve arriving at rest sets off without running past its end, so many times its mean speed.
+ */
+function refuseTurningBack(pace: number, way: number, stretch: Stretch, target: string): void {
+	const rest = `the rest that brings ${target} there`;
+	if (Math.sign(pace) * Math.sign(way) === OPPOSITE_WAYS) {
+		throw new FilmError(
+			`${SCROLL_TO} would turn the page back: it runs ${Math.round(Math.abs(pace))} pixels a second ${downOrUp(pace)} its scroll, and ${rest} lies ${Math.round(Math.abs(way))} ${downOrUp(way)} it: stop it first, with screen.scrolls(page, { pace: 0 })`
+		);
+	}
+	const meanPace = Math.abs(way) / stretch.seconds;
+	if (Math.abs(pace) > FASTEST_SPEED * meanPace) {
+		throw new FilmError(
+			`${SCROLL_TO} would carry the page past ${rest} and back: it runs ${Math.round(Math.abs(pace))} pixels a second, more than ${FASTEST_SPEED} times the ${Math.round(meanPace)} a second its way to rest takes on average: give the move a longer share, or slow the page first`
+		);
+	}
+}
+
+/** Which way down a page's scroll so many pixels go: down where more than none, up where less. */
+function downOrUp(pixels: number): string {
+	return pixels > NO_WAY ? TOWARD_ITS_END : TOWARD_ITS_TOP;
+}
+
+/** A page of the film's own, by its key, running as named, whatever else the screen stands as. */
+function runSet(key: string, run: Scroll): Change {
 	return (scene) =>
 		withProp(scene, 'screen', { ...scene.screen, scrolls: new Map([...scene.screen.scrolls, [key, run]]) });
 }

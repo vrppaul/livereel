@@ -371,6 +371,33 @@ test("a piece drawn past livereel's bound is shot whole as the page changes unde
 	expect([shot.frames, footage.kept]).toEqual([6, [0, 1, 2, 3, 4, 5]]);
 });
 
+// A page of the film's own 3040 pixels tall, 2720 longer than the screen: a block 2000 down it
+const TALL_OWN_PAGE = {
+	html: '<!doctype html><body style="margin: 0"><div style="height: 2000px"></div><h2 id="far" style="margin: 0; height: 40px">Far</h2><div style="height: 1000px"></div></body>'
+};
+
+test("a block a page of the film's own is brought to rest by is measured down its document, wherever the page has run", async () => {
+	// The page run some 600 down by 0.2 s; #far 800 above the screen's top asks it 2800 down, past its 2720
+	const steps = [
+		cut(screen.shows(TALL_OWN_PAGE), screen.scrolls(TALL_OWN_PAGE, { pace: 3000 })),
+		hold({ seconds: 0.2 }),
+		play({ seconds: 0.1, moves: [screen.scrollTo(TALL_OWN_PAGE, '#far', { top: -800 })] })
+	];
+	await expect(shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
+		"screen.scrollTo would bring #far -800 pixels below the screen's top with its page scrolled 2800 down, and it scrolls from 0 to 2720: name a top it reaches"
+	);
+});
+
+test("a block a page of the film's own lacks is refused as a run to rest by it begins, naming the block", async () => {
+	const steps = [
+		cut(screen.shows(TALL_OWN_PAGE)),
+		play({ seconds: 0.1, moves: [screen.scrollTo(TALL_OWN_PAGE, '#nowhere', { top: 0 })] })
+	];
+	await expect(shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
+		'nothing on the page matches #nowhere'
+	);
+});
+
 test("a page of the film's own that moves of itself is refused before the film is shot, naming how it begins", async () => {
 	const spinning = '<style>h2 { animation: spin 1s infinite } @keyframes spin { to { rotate: 1turn } }</style>';
 	const steps = [cut(screen.shows({ html: `${spinning}<h2>Spinning</h2>` }))];
