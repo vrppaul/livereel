@@ -122,6 +122,10 @@ const SEGMENTS = 'segments';
 // drawn on no way at all; and the one that names how the figure is cut there, from its sides or round its middle
 const ON_ITS_WAY = 'data-on-its-way';
 const WAY_CUT = 'data-way-cut';
+// The attribute an object trailing a wipe's sheen is drawn with, naming the side the wipe cuts from, and the custom
+// property the sheen's colour is set as, where the film gives one; the stylesheet takes the look's accent where not
+const SHEEN_FROM = 'data-sheen-from';
+const SHEEN_COLOUR = '--sheen-colour';
 // The attribute an object is drawn with its effects by, which one standing out in no way has not, and the one the
 // window shades the page by, which it has not where the page is unshaded: so neither is drawn with a filter at all
 const EFFECTS = 'data-effects';
@@ -902,6 +906,7 @@ class StagedObject {
 		transformed(this.element, object.transform);
 		this.element.setAttribute(FACE, object.face);
 		wayDrawn(this.way, object.onItsWay);
+		sheenDrawn(this.element, object.sheen);
 		meltDrawn(this.way, object.melt);
 		effectsDrawn(this.element, object.effects);
 		focusDrawn(this.element, object.outOfFocus);
@@ -968,6 +973,26 @@ function wayDrawn(way, onItsWay) {
 		'--way-shadow': onItsWay.shadow
 	});
 	cutDrawn(way, onItsWay.cut);
+}
+
+/**
+ * The sheen a wipe trails behind its edge, drawn on an object's element, apart from what it shows, so it casts none of
+ * its shadow: over the part of the box its figure stands in, named by the side the wipe cuts from, in the colour the
+ * film gave or the look's accent; none, where the object trails none.
+ * @param {Staged} element @param {DrawnObject['sheen']} sheen
+ */
+function sheenDrawn(element, sheen) {
+	named(element, SHEEN_FROM, sheen === null ? null : sheen.from);
+	if (sheen === null) return;
+	numbered(element, {
+		'--sheen-left': sheen.over.left,
+		'--sheen-top': sheen.over.top,
+		'--sheen-width': sheen.over.width,
+		'--sheen-height': sheen.over.height,
+		'--sheen-faded': sheen.faded,
+		'--sheen-edge': sheen.edge
+	});
+	givenOrNone(element, SHEEN_COLOUR, sheen.colour);
 }
 
 /**

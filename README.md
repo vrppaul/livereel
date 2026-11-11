@@ -265,7 +265,7 @@ and the moves of each part of the scene:
   name which
 - `piece.show(target, { every, air, corner, hole, lines, picture, body, rides, enter, edge, as, inside, group,
   zIndex })`, `piece.to(place, { scale, depth })`, `piece.onto(target, { fall })`, `piece.lean({ tilt, turn, roll, over, about })`, `piece.back()`,
-  `piece.hide({ toward, leave, edge })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
+  `piece.hide({ toward, leave, edge, sheen })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
   in the page's pixels (a rounded card's own `border-radius`), square where it names none, and as round as the window
   at a corner standing on a corner of what the window shows, leaving a `hole: { ground, line, reach, pit }` and drawing `lines` to its
@@ -700,6 +700,21 @@ page, so it keeps its body and its shadow, and is not cut at the window's
 edge nor shaded with the page as what lies in the window is; it goes down
 with the screen as the page does, its walls shrinking into its face and its
 shadow fading with it, and so does a hole's pit.
+
+Wiped away, a piece may trail a sheen behind the wipe's edge, a light over
+the page it leaves: `piece.hide({ leave: 'wipe', edge: 'right', sheen: {
+colour: '#59c470' } })` runs a band along a line that has landed on its row,
+the line gone from its left behind it and the page's own row there, a green
+light trailing the edge, as the claude-review promo's third beat does along
+each of its diff lines; six such hides in one `play`, each with its own
+`within`, run at once. The light rises from nothing at the edge to its
+brightest just behind it and fades over `width`, 48 pixels of a frame 1080
+high where none is named, across the piece's figure, brightest down its
+middle; its colour is the look's accent where none is named. The edge goes on
+past the figure's far side as far as the light trails, so the light runs off
+the piece before it is gone. The light lies on the piece's object, over its
+figure alone, so it is blurred and held as the piece is, and casts none of
+its shadow. A sheen with any other way of going is refused.
 
 A piece lifted `inside: 'world'` rides its block as the page scrolls where the
 film asks: `piece.show(TASK, { inside: 'world', rides: 'its block' })`, then

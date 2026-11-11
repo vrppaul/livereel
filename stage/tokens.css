@@ -142,6 +142,29 @@
 		)
 		var(--glow-and-blur);
 	--ring-line: color-mix(in srgb, var(--effect-drawn-in) calc(var(--effect-ring) * 100%), transparent);
+
+	/*
+	 * The sheen a wipe trails behind its edge (`src/props/way.ts`), worked out on the object too, where the stage sets
+	 * how far in from the side the wipe cuts from the light has faded and where the edge stands, in shares of the figure:
+	 * from nothing where it has faded, rising to its brightest just behind the edge, a share of its trail, and to nothing
+	 * again at the edge itself, so no line of it shows there; across the way, brightest down the figure's middle and
+	 * fading to nothing at its sides. Its colour is the film's or the accent, at its brightest laid as strongly, and as
+	 * near the edge, as the claude-review promo's band along a line of its review: 0.18 of its colour, 0.004 of the page
+	 * behind the edge of a trail of 0.03 (into-review.js SHEEN).
+	 */
+	--sheen-drawn-in: var(--sheen-colour, var(--accent));
+	--sheen-strongest: 18%;
+	--sheen-brightest-behind: 0.133;
+	--sheen-brightest-at: calc(
+		var(--sheen-edge) - var(--sheen-brightest-behind) * (var(--sheen-edge) - var(--sheen-faded))
+	);
+	--sheen-light: linear-gradient(
+		var(--sheen-direction),
+		transparent calc(var(--sheen-faded) * 100%),
+		color-mix(in srgb, var(--sheen-drawn-in) var(--sheen-strongest), transparent) calc(var(--sheen-brightest-at) * 100%),
+		transparent calc(var(--sheen-edge) * 100%)
+	);
+	--sheen-across-the-way: linear-gradient(var(--sheen-across), transparent, #000, transparent);
 }
 
 /*
@@ -267,4 +290,25 @@
 
 [data-melt-toward='bottom'] {
 	--melt-direction: to bottom;
+}
+
+/* The way a sheen's light is laid, from the side the wipe cuts from toward its edge, and the way across it */
+[data-sheen-from='left'] {
+	--sheen-direction: to right;
+	--sheen-across: to bottom;
+}
+
+[data-sheen-from='right'] {
+	--sheen-direction: to left;
+	--sheen-across: to bottom;
+}
+
+[data-sheen-from='top'] {
+	--sheen-direction: to bottom;
+	--sheen-across: to right;
+}
+
+[data-sheen-from='bottom'] {
+	--sheen-direction: to top;
+	--sheen-across: to right;
 }

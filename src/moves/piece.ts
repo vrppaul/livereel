@@ -25,7 +25,7 @@
  */
 import { type Camera, boxOnTheFrame } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import { type Box, frameScaleOf } from '../domain/geometry.ts';
+import { type Box, type FrameSide, type Size, frameScaleOf } from '../domain/geometry.ts';
 import {
 	AN_OPAQUE_COLOUR,
 	A_COLOUR,
@@ -52,7 +52,8 @@ import {
 	type Hole,
 	type Piece,
 	type PiecePicture,
-	type Pit
+	type Pit,
+	figureIn
 } from '../props/piece.ts';
 import { THE_FILMED_PAGE, pageShownBy } from '../props/screen.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
@@ -62,18 +63,21 @@ import {
 	GOES_AS_IT_STANDS,
 	GROUPED_FORM,
 	type GroupedScript,
+	HIDE_FORM,
 	type HideScript,
 	NAMED_FORM,
 	type NamedScript,
 	type ObjectLeanScript,
 	type OntoScript,
 	READ_AS_THE_WINDOW,
+	type ShowingOf,
 	type ShownKind,
 	THE_STEPS_CURVE,
 	type TakenScript,
 	type ToScript,
 	objectBack,
 	objectEffects,
+	objectGoing,
 	objectHide,
 	objectLean,
 	objectOnto,
@@ -91,7 +95,8 @@ import {
 	overItsSource,
 	sourceOf
 } from './source.ts';
-import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
+import type { Sheen } from '../props/way.ts';
+import { IN_PLACE_SHOW_FORM, type InPlaceShowScript, wayOf } from './way.ts';
 
 /**
  * What fills the part of the screen a piece is lifted off: the ground the page draws behind its block, `'page'`, where
@@ -148,6 +153,21 @@ export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScri
 	readonly rides?: 'its block';
 }
 
+/** How a piece goes: as any object does, and with the sheen a wipe trails, where the film names one. */
+export interface PieceHideScript extends HideScript {
+	readonly sheen?: SheenScript;
+}
+
+/**
+ * The light a piece wiped away trails behind the wipe's edge, over the page it leaves, as a film writes it: its
+ * `colour`, in hex with no alpha, the look's accent where the film names none; and how far it trails, `width`, in
+ * pixels of a frame 1080 high, as all a piece shows is drawn: on the page, the page's own pixels in a frame 1080 high.
+ */
+export interface SheenScript {
+	readonly colour?: string;
+	readonly width?: number;
+}
+
 /** How a hole is filled, as a piece is made: with the ground the page draws behind a block a selector names, or a colour. */
 type Filling =
 	{ readonly kind: 'behind'; readonly selector: string } | { readonly kind: 'colour'; readonly colour: string };
@@ -177,6 +197,24 @@ interface Lifting extends Taking {
 }
 
 const PIECE = 'piece' satisfies ShownKind;
+const PIECE_HIDE = 'piece.hide';
+const SHEEN_FORM: Form<SheenScript> = { colour: AN_OPAQUE_COLOUR, width: A_PIXELS };
+const PIECE_HIDE_FORM: Form<PieceHideScript> = {
+	...HIDE_FORM,
+	sheen: new OfForm(SHEEN_FORM, 'a sheen: { colour, width }')
+};
+// How far a sheen trails where the film names no width: as far as the claude-review promo's band running along a line
+// of its review trails its edge, 0.03 of the review's 1600 pixels (into-review.js SHEEN); and in the look's accent where
+// it names no colour
+const SHEEN_TRAILS = 48;
+const ACCENTED = null;
+// The length of a figure a wipe from each of its edges crosses
+const LENGTH_ACROSS_FROM: { readonly [Edge in FrameSide]: keyof Size } = {
+	left: 'width',
+	right: 'width',
+	top: 'height',
+	bottom: 'height'
+};
 // A piece's corners where the film names none: square, as its box
 const SQUARE = 0;
 // How near, in the page's pixels, an edge of a piece stands to an edge of what the camera shows to stand on it
@@ -333,9 +371,42 @@ function refuseFollowingOverOwnPage(beginning: Beginning, picture: PiecePicture[
 	}
 }
 
-/** The piece going where it stands, or sliding out past a side of the frame; once gone, there is none. */
-export function hide(script: HideScript = {}): Move {
-	return objectHide(PIECE, 'piece.hide', script, GOES_AS_IT_STANDS);
+/**
+ * The piece going where it stands, or sliding out past a side of the frame; once gone, there is none. Wiped away, it
+ * may trail a sheen behind the wipe's edge, as far as the film names across its figure as it stands as it sets off. A
+ * sheen in any other way of going is refused as the move is made.
+ */
+export function hide(script: PieceHideScript = {}): Move {
+	assertWritten(script, PIECE_HIDE_FORM, PIECE_HIDE);
+	const { sheen, ...going } = script;
+	const hiding = objectHide(PIECE, PIECE_HIDE, going, GOES_AS_IT_STANDS);
+	if (sheen === undefined) return hiding;
+	const wipe = wayOf(going.leave, going.edge, PIECE_HIDE);
+	if (wipe.kind !== 'wipe')
+		throw new FilmError(`${PIECE_HIDE} names a sheen, which trails a wipe's edge: leave: 'wipe'`);
+	return {
+		...hiding,
+		begin: (beginning) =>
+			objectGoing(
+				beginning,
+				script.as ?? PIECE,
+				PIECE,
+				(piece) => ({ ...wipe, sheen: sheenAcross(piece, wipe.edge, sheen, beginning.format.frame) }),
+				GOES_AS_IT_STANDS.shownAsItGoes,
+				PIECE_HIDE
+			)
+	};
+}
+
+/**
+ * The sheen a piece trails as the film names it, as far across its figure as the piece stands as it sets off: its
+ * width in pixels of a frame 1080 high, as all an object shows is drawn, a share of the figure's length across a wipe
+ * from an edge.
+ */
+function sheenAcross(piece: ShowingOf<'piece'>, edge: FrameSide, sheen: SheenScript, frame: Size): Sheen {
+	const figure = figureIn(piece.content.source, piece.box);
+	const width = (sheen.width ?? SHEEN_TRAILS) * frameScaleOf(frame);
+	return { colour: sheen.colour ?? ACCENTED, trail: width / figure[LENGTH_ACROSS_FROM[edge]] };
 }
 
 /**

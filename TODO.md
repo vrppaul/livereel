@@ -165,7 +165,11 @@ soft past 2.2, the infographics.
 - A tag as an object's content: a mark and a word on a pill.
 - A change of the whole frame from one scene to the next: a new ground opening as a disc, or rising as a wave, not the
   ground's colour faded alone.
-- A line of light sweeping across the page or an object, apart from the light's spot on a block.
+- A line of light sweeping across the page or an object that stays, apart from the light's spot on a block: a piece
+  wiped away trails one behind its edge (`piece.hide({ leave: 'wipe', sheen })`), over its own figure alone. The
+  claude-review promo's band along a diff line lights the review's whole row, from its line number on, where beats
+  3–4's draft lights the code the line covers; and the promo's rows stand empty under the falling lines until each
+  lands, where the draft shows the review's own rows under them (2026-11-11, `waveP/band`, session cc0f17ef).
 - A vignette over the frame. Grain that changes from frame to frame, as film's does: the ground's grain (`world.grain`)
   stands still, as the reference promo's did.
 - The flat stage lays the grain's filter over every exposure's ground as it captures, though every exposure's ground is

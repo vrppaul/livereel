@@ -711,6 +711,18 @@ body {
 	clip-path: circle(calc(var(--way-cut-radius) * (var(--to-the-corners) + var(--widest-reach))) at 50% 50%);
 }
 
+/* The sheen a wipe trails behind its edge over what the figure no longer covers (`--sheen-light` in `tokens.css`), over the part of the object's box the figure stands in and cut to it: on the object, after what it shows, so the light lies over the page the figure leaves, as blurred and as clear as the object is, and casts none of the shadow its effects draw */
+.object[data-sheen-from]::after {
+	content: '';
+	position: absolute;
+	left: calc(var(--sheen-left) * 100%);
+	top: calc(var(--sheen-top) * 100%);
+	width: calc(var(--sheen-width) * 100%);
+	height: calc(var(--sheen-height) * 100%);
+	background: var(--sheen-light);
+	mask-image: var(--sheen-across-the-way);
+}
+
 /* A title's, a caption's, a callout's or a note's word as it comes up: the space before it, then its own box, which rises out of a blur and sinks as it goes, each word as far as its own `--appeared` and `--gone` have it, so words that came one after another go so */
 .words .word {
 	display: inline-block;

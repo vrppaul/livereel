@@ -377,7 +377,7 @@ export interface OwnGoing<Kind extends ShownKind> {
 }
 
 /** What a kind shows as it goes, from what it showed: a title's words at the pace the hide names. */
-type ShownAsItGoes<Kind extends ShownKind> = (shown: ShownOf<Kind>) => ShownOf<Kind>;
+export type ShownAsItGoes<Kind extends ShownKind> = (shown: ShownOf<Kind>) => ShownOf<Kind>;
 
 /** How a kind whose module reads how far it has gone goes in its own way: showing what it showed, on its step's curve. */
 export const GOES_AS_IT_STANDS = { curve: THE_STEPS_CURVE, shownAsItGoes: asItShowed } as const;
@@ -683,7 +683,7 @@ export function objectHide<Kind extends ShownKind>(
 		timing: timingOf(curve === null ? script : { ease: curve, ...script }),
 		begin: (beginning) =>
 			toward === null
-				? going(beginning, name, kind, way, own.shownAsItGoes, move)
+				? objectGoing(beginning, name, kind, () => way, own.shownAsItGoes, move)
 				: slidingOut(beginning, name, kind, toward, move)
 	};
 }
@@ -1408,16 +1408,20 @@ function onTheFramesPlane(holder: Holder, name: ObjectName, move: string): OnThe
 	}
 }
 
-/** The object going where it stands, in the way it goes, showing what its kind has it show as it goes; once gone, none. */
-function going<Kind extends ShownKind>(
+/**
+ * The object going where it stands, in the way `wayFor` names for it as it stands as it sets off, showing what its kind
+ * has it show as it goes; once gone, none.
+ */
+export function objectGoing<Kind extends ShownKind>(
 	beginning: Beginning,
 	name: ObjectName,
 	kind: Kind,
-	way: Way,
+	wayFor: (object: ShowingOf<Kind>) => Way,
 	shownAsItGoes: ShownAsItGoes<Kind>,
 	move: string
 ): Change {
 	const object = standingOfKind(beginning, name, move, kind);
+	const way = wayFor(object);
 	const setOff = { ...object, content: shownAsItGoes(object.content) };
 	return (scene, progress) => withObject(scene, name, goneIn(setOff, way, progress));
 }

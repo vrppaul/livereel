@@ -17,7 +17,7 @@ import {
 	pastTheScreen
 } from '../../src/props/screen.ts';
 import { cameraOf, drawn, openingScene } from '../../src/scene.ts';
-import { alongItsWay } from '../../src/props/way.ts';
+import { type Way, alongItsWay, sheenAlong } from '../../src/props/way.ts';
 import { NONE, WHOLE, fractionOf } from '../../src/domain/fraction.ts';
 import {
 	type DrawnWords,
@@ -275,7 +275,7 @@ test("a figure a quarter of its way in a way of livereel's stands as the way has
 		alongItsWay({ kind: 'fade' }, 0.25),
 		alongItsWay({ kind: 'mask', edge: 'bottom' }, 0.25),
 		alongItsWay({ kind: 'mask', edge: 'left' }, 0.25),
-		alongItsWay({ kind: 'wipe', edge: 'left' }, 0.25),
+		alongItsWay({ kind: 'wipe', edge: 'left', sheen: null }, 0.25),
 		alongItsWay({ kind: 'iris' }, 0.25),
 		alongItsWay({ kind: 'grow' }, 0.25),
 		alongItsWay({ kind: 'mask', edge: 'top' }, 1),
@@ -299,6 +299,21 @@ test("a figure a quarter of its way in a way of livereel's stands as the way has
 		{ shift: unshifted, scale: 1, clear: 1, shadow: 0.25, cut: { ...uncut, right: 0.75 } },
 		{ shift: unshifted, scale: 1, clear: 1, shadow: 0.25, cut: { kind: 'circle', radius: 0.25 } },
 		{ shift: unshifted, scale: 0.25, clear: 1, shadow: 1, cut: null },
+		null,
+		null
+	]);
+});
+
+test('a wipe with a sheen cuts its figure on past its far side as far as the light trails, so the light runs off it: a quarter gone back to its right edge, trailing a quarter of the figure, its edge 0.3125 in from the left and the light back to 0.0625; a wipe with none, and one at the end of its way, has no light', () => {
+	const lit: Way = { kind: 'wipe', edge: 'right', sheen: { colour: '#59c470', trail: 0.25 } };
+	expect([
+		alongItsWay(lit, 0.75)?.cut,
+		sheenAlong(lit, 0.75),
+		sheenAlong({ kind: 'wipe', edge: 'right', sheen: null }, 0.75),
+		sheenAlong(lit, 1)
+	]).toEqual([
+		{ kind: 'inset', top: 0, right: 0, bottom: 0, left: 0.3125 },
+		{ from: 'left', faded: 0.0625, edge: 0.3125, colour: '#59c470' },
 		null,
 		null
 	]);

@@ -1270,6 +1270,32 @@ test("a piece lying on the page is laid in the page's window where the camera fr
 	);
 });
 
+test("a piece wiped away with a sheen trails the light as far as the film names, or 48 pixels and in the look's accent where it names neither, a share of its figure as it lies on the page, over the part of its box the figure stands in", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	const landed = await setIn(piece.onto('#other'), lifted, 1, FULL_HD);
+	const named = { leave: 'wipe', edge: 'right', sheen: { colour: '#59c470', width: 25 } } as const;
+	const lit = drawnObjectsIn(await setIn(piece.hide(named), landed, 0.25, FULL_HD), FULL_HD)[0]!;
+	const accented = drawnObjectsIn(
+		await setIn(piece.hide({ leave: 'wipe', edge: 'right', sheen: {} }), landed, 0.25, FULL_HD),
+		FULL_HD
+	)[0]!;
+	// The card, 200 × 100, lies in the other block, 100 × 60, at half its size, 5 pixels down it: 25 pixels trail a
+	// quarter of its width, 48 pixels 0.48; a quarter gone, the edge stands 0.3125 and 0.37 in from its left
+	const overTheFigure = closeToBox({ left: 0, top: 5 / 60, width: 1, height: 50 / 60 });
+	expect([lit.onItsWay?.cut, lit.sheen, accented.sheen]).toEqual([
+		{ kind: 'inset', top: 0, right: 0, bottom: 0, left: 0.3125 },
+		{ from: 'left', faded: 0.0625, edge: 0.3125, colour: '#59c470', over: overTheFigure },
+		{ from: 'left', faded: expect.closeTo(-0.11), edge: expect.closeTo(0.37), colour: null, over: overTheFigure }
+	]);
+});
+
+test("a sheen trails a wipe's edge alone", () => {
+	const trailsAWipe = new FilmError("piece.hide names a sheen, which trails a wipe's edge: leave: 'wipe'");
+	expect(() => piece.hide({ sheen: {} })).toThrow(trailsAWipe);
+	expect(() => piece.hide({ leave: 'fade', sheen: {} })).toThrow(trailsAWipe);
+});
+
 test('a piece lying on the page shows its source as large as the camera frames the block it lies on, and has the picture taken as close', async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);

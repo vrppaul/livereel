@@ -100,7 +100,16 @@ import type { Look } from './look.ts';
 import { type DrawnOutline, type Outline, drawnOutline } from './outline.ts';
 import { type DrawnHole, type DrawnPiece, type Piece, drawnPiece, pageFitOfPiece } from './piece.ts';
 import { type DrawnFilmPicture, type FilmPicture, drawnFilmPicture } from './picture.ts';
-import { type OnItsWay, type Way, alongItsWay, figureMoved, presencesIn, presentShare } from './way.ts';
+import {
+	type OnItsWay,
+	type SheenOnItsWay,
+	type Way,
+	alongItsWay,
+	figureMoved,
+	presencesIn,
+	presentShare,
+	sheenAlong
+} from './way.ts';
 import type { Screen } from './screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './terminal.ts';
 import { type DrawnThing, type Thing, drawnThing } from './thing.ts';
@@ -169,26 +178,35 @@ export type Objects = ReadonlyMap<ObjectName, FrameObject>;
 /**
  * An object as the stage draws it: where it is placed, as the stage draws a placement (`src/domain/placement.ts`); the
  * name it is known by, the side of it the eye sees in what it is laid in, how much of it what it stands in lets show,
- * from 0 to 1, how far its figure's way has come, none where it is on no way, how it stands out, none where it stands
- * out in no way, how it melts toward a side of its figure, none where it melts none, how soft the eye's focus draws it,
- * in pixels of a frame 1080 high of its box before its matrix, none where sharp, for the flat stage; how soft it draws
- * the softest point of its box the frame shows, on the frame in pixels of a frame 1080 high, none where sharp, which
- * bounds how far past the frame's edge the room's lens gathers it, as the window's softest point does; how many times
- * the eye magnifies it, the most of the frame's pixels a pixel of its box takes where the frame shows it, so the room
- * draws its surface that many times as densely; and its content as drawn. Both blurs are none, and it is magnified
- * once, but for what stands in the world.
+ * from 0 to 1, how far its figure's way has come, none where it is on no way, the sheen its wipe trails, none where it
+ * trails none, how it stands out, none where it stands out in no way, how it melts toward a side of its figure, none
+ * where it melts none, how soft the eye's focus draws it, in pixels of a frame 1080 high of its box before its matrix,
+ * none where sharp, for the flat stage; how soft it draws the softest point of its box the frame shows, on the frame in
+ * pixels of a frame 1080 high, none where sharp, which bounds how far past the frame's edge the room's lens gathers it,
+ * as the window's softest point does; how many times the eye magnifies it, the most of the frame's pixels a pixel of
+ * its box takes where the frame shows it, so the room draws its surface that many times as densely; and its content as
+ * drawn. Both blurs are none, and it is magnified once, but for what stands in the world.
  */
 export interface DrawnObject extends DrawnPlacement {
 	readonly name: ObjectName;
 	readonly face: Face;
 	readonly held: number;
 	readonly onItsWay: OnItsWay | null;
+	readonly sheen: DrawnSheen | null;
 	readonly effects: DrawnEffects | null;
 	readonly melt: Melting | null;
 	readonly outOfFocus: number | null;
 	readonly softestOutOfFocus: number | null;
 	readonly magnified: number;
 	readonly content: DrawnContent;
+}
+
+/**
+ * A wipe's sheen as the stage draws it on an object: as far as the wipe has come, over the part of the object's box its
+ * figure stands in, in shares of the box, which the light is cut to.
+ */
+interface DrawnSheen extends SheenOnItsWay {
+	readonly over: Box;
 }
 
 /** An object and the name it is known by. */
@@ -204,6 +222,8 @@ const WHOLLY_HELD = 1;
 const NEAR_EDGE = 0;
 // An object the eye sees no larger than its box: a pixel of its box takes one of the frame's, or fewer
 const UNMAGNIFIED = 1;
+// All of an object's box, in shares of it
+const ALL_OF_THE_BOX: Box = { left: 0, top: 0, width: 1, height: 1 };
 
 /**
  * An object as it stood or stands at a moment of a frame's time: itself, what it stood in then, and the look it was
@@ -353,18 +373,55 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	const standing = placedInItsHolder(object, around, around.frame);
 	const face = faceOf(standing.placing);
 	const held = heldIn(object, around);
+	const { placing, laid } = standing;
 	const onItsWay = alongItsWay(object.way, presentShare(object));
 	const content = drawnContent(name, object, standing, held, moment, around);
+	const sheen = drawnSheen(object, content, laid);
 	const effects = drawnEffects(object);
 	const melt = drawnMelt(object);
-	const { placing, laid } = standing;
 	const inTheWorld = whereItStands(standing) === 'world';
 	const { sharpness, frame } = around;
 	const outOfFocus = inTheWorld ? outOfFocusBeforeItsMatrix(placing, laid, sharpness, frame) : null;
 	const softestOutOfFocus = inTheWorld ? softestOutOfFocusSeen(placing, laid, laid, sharpness, frame) : null;
 	const magnified = inTheWorld ? magnifiedSeen(standing, frame) : UNMAGNIFIED;
 	const drawn = { ...drawnPlacement(standing), name, face, held };
-	return { ...drawn, onItsWay, effects, melt, outOfFocus, softestOutOfFocus, magnified, content };
+	return { ...drawn, onItsWay, sheen, effects, melt, outOfFocus, softestOutOfFocus, magnified, content };
+}
+
+/** The sheen an object's wipe trails as far as it has come, over its figure in a box; none where it trails none. */
+function drawnSheen(object: FrameObject, content: DrawnContent, box: Box): DrawnSheen | null {
+	const sheen = sheenAlong(object.way, presentShare(object));
+	return sheen === null ? null : { ...sheen, over: figureShareOf(content, box) };
+}
+
+/**
+ * The part of an object's box what it shows stands in, in shares of the box: a piece's, a lens's or a picture's own
+ * part of it, drawn as large as the box holds it; all of it for the rest, which fill their box.
+ */
+function figureShareOf(content: DrawnContent, box: Box): Box {
+	switch (content.kind) {
+		case 'piece':
+		case 'lens':
+		case 'picture':
+			return shareOfABox(content.figure, box);
+		case 'title':
+		case 'code':
+		case 'terminal':
+		case 'ending':
+		case 'outline':
+		case 'thing':
+			return ALL_OF_THE_BOX;
+	}
+}
+
+/** A box in another, measured from that one's top left corner, in shares of it. */
+function shareOfABox(part: Box, box: Box): Box {
+	return {
+		left: part.left / box.width,
+		top: part.top / box.height,
+		width: part.width / box.width,
+		height: part.height / box.height
+	};
 }
 
 /**
