@@ -224,6 +224,32 @@
 	);
 }
 
+/*
+ * The part of the page the shade's blur leaves sharp (`src/props/window.ts`), worked out on the page's picture laid over
+ * the screen, where the stage sets the part's box in the screen's pixels and its edge in a frame's, which the camera's
+ * zoom would scale: a mask whole over the part, clear from as far past each side of it as its edge, one across and one
+ * down, laid one in the other.
+ */
+.sharp-part {
+	--sharp-edge-on-the-screen: calc(var(--sharp-edge) * 1px / var(--zoom));
+	--sharp-right: calc(var(--sharp-left) + var(--sharp-width));
+	--sharp-bottom: calc(var(--sharp-top) + var(--sharp-height));
+	--sharp-across: linear-gradient(
+		to right,
+		transparent calc(var(--sharp-left) * 1px - var(--sharp-edge-on-the-screen)),
+		#000 calc(var(--sharp-left) * 1px),
+		#000 calc(var(--sharp-right) * 1px),
+		transparent calc(var(--sharp-right) * 1px + var(--sharp-edge-on-the-screen))
+	);
+	--sharp-down: linear-gradient(
+		to bottom,
+		transparent calc(var(--sharp-top) * 1px - var(--sharp-edge-on-the-screen)),
+		#000 calc(var(--sharp-top) * 1px),
+		#000 calc(var(--sharp-bottom) * 1px),
+		transparent calc(var(--sharp-bottom) * 1px + var(--sharp-edge-on-the-screen))
+	);
+}
+
 /* The way a melt runs: toward the side of the figure it melts into nothing at */
 [data-melt-toward='left'] {
 	--melt-direction: to left;

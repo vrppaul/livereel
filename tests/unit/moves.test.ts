@@ -2398,6 +2398,40 @@ test('the page is shaded as far as its move has come toward the values the film 
 	]);
 });
 
+test("the shade's blur leaves a part of the screen sharp, a block or a box, the new part from the move's start as the blur goes on through the values between, and none where the film names none", async () => {
+	const box = { left: 300, top: 50, width: 120, height: 60 };
+	const onTheBlock = await setAt(windowShade({ blur: 8, sharp: '#block' }), OPENING_IN_SMALL, 0.5);
+	const handedOn = await setAt(windowShade({ sharp: box }), onTheBlock, 0);
+	const noneKept = await setAt(windowShade({ sharp: 'none' }), handedOn, 0);
+	expect([onTheBlock, handedOn, noneKept].map((scene) => [scene.window.blur, scene.window.sharp])).toEqual([
+		[4, BLOCK],
+		[4, box],
+		[4, null]
+	]);
+});
+
+test("the stage is handed the part the shade's blur leaves sharp, its edge softening over half as far as the blur; none where the page is blurred none", async () => {
+	const blurred = await setAt(windowShade({ blur: 8, sharp: '#block' }), OPENING_IN_SMALL, 1);
+	const unblurred = await setAt(windowShade({ blur: 0 }), blurred, 1);
+	expect(
+		[blurred, unblurred].map((scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).window.sharp)
+	).toEqual([{ box: BLOCK, edge: 4 }, null]);
+});
+
+test("a part of the page kept sharp in the shade's blur is refused where the stage draws no picture of the filmed page to draw it from", async () => {
+	const framed: Beginning = { ...beginningIn(OPENING_IN_SMALL, SMALL), pageShown: 'framed' };
+	await expect(async () => windowShade({ sharp: '#block' }).begin(framed)).rejects.toThrow(
+		new FilmError(
+			"window.shade's sharp draws from the page's picture, which a page framed live has none of: the film's page is 'dynamic'"
+		)
+	);
+	expect(() => windowShade({ sharp: 3 as unknown as string })).toThrow(
+		new FilmError(
+			"window.shade's sharp is 3: it is a selector: a string that names blocks of the page, or a box of the page's screen: { left, top, width, height }, in its pixels"
+		)
+	);
+});
+
 test("the page's window is drawn flat and unmoved while it faces the frame, wherever it stands and a whole turn round, and in 3D where it leans", async () => {
 	const inAWindow = await setAt(windowTo('right'), OPENING_IN_SMALL, 1);
 	const leant = await setAt(lean({ tilt: 12, turn: -8 }), inAWindow, 1);

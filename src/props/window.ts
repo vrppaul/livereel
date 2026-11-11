@@ -4,6 +4,9 @@
  * what stands over it, a piece of the page lifted off, stands clear of it. A film moves the shade as it moves places, by
  * one move that sets the values it names (`window.shade` in `src/moves/window.ts`), the dim and the fade as strong as a
  * share from none to whole, the blur in pixels of a frame 1080 high; the window's edge and shadow keep as they stand.
+ * The blur may leave a part of the screen sharp, as a lens keeps sharp what the eye is drawn to: it is the page's own,
+ * not the eye's, as the eye's lens blurs by depth and a page lies at one, and so what stands over the page, a title
+ * carried with it or a piece lifted off it, stays as sharp as it stands wherever it stands over the blur.
  * One table, `SHADE_KINDS`, says of each value what a film may write for it and how it moves (`src/domain/values.ts`),
  * so a move's shade is checked by it and the window's moved by it, as the body's is by its own (`src/props/body.ts`).
  *
@@ -55,8 +58,19 @@ export interface Shade {
 /** The shade's values as a film writes them: every one a number. */
 export type ShadeWritten = { readonly [Name in keyof Shade]: number };
 
+/** The window: where it stands, how it shades the page, the part of the screen its blur leaves sharp, and its body. */
 export interface PageWindow extends Placing, Shade {
+	readonly sharp: Box | null;
 	readonly body: Slab;
+}
+
+/**
+ * The part of the screen the shade's blur leaves sharp as the stage draws it: its box, in the screen's pixels, and how
+ * far past it the page softens into the blur, in pixels of a frame 1080 high, as the blur is.
+ */
+interface SharpPart {
+	readonly box: Box;
+	readonly edge: number;
 }
 
 /**
@@ -66,11 +80,12 @@ export interface PageWindow extends Placing, Shade {
  * whether the eye sees the page's side of it or its back, read where it stands before the eye, behind the eye too; the
  * plane the room lays the page's surface on in its one scene; how round the corners of the page the camera's cut shows
  * are, in the frame's pixels, which the stylesheet cuts the page by and the body stands round; its shade, none where
- * the page is shaded none, and how soft the eye's focus draws it and all in it, none where sharp: as one, on the frame
- * in pixels of a frame 1080 high, for the flat stage, and at its softest point the frame shows, as far as the room's
- * blur of it gathers past the frame's edge; how much of the page shows, from 0 to 1, as far as the screen has come up
- * and its shade has not faded it, which the stylesheet draws the screen as clear as, and the room reads whether the
- * page is seen through by (`stage/see-through.js`); and its body, none where it has none.
+ * the page is shaded none, and the part of the screen its blur leaves sharp, none where it blurs none or leaves none;
+ * how soft the eye's focus draws it and all in it, none where sharp: as one, on the frame in pixels of a frame 1080
+ * high, for the flat stage, and at its softest point the frame shows, as far as the room's blur of it gathers past the
+ * frame's edge; how much of the page shows, from 0 to 1, as far as the screen has come up and its shade has not faded
+ * it, which the stylesheet draws the screen as clear as, and the room reads whether the page is seen through by
+ * (`stage/see-through.js`); and its body, none where it has none.
  */
 export interface DrawnWindow extends DrawnPlacement {
 	readonly reach: Box;
@@ -79,6 +94,7 @@ export interface DrawnWindow extends DrawnPlacement {
 	readonly pageSurface: PlaneDrawn;
 	readonly corner: number;
 	readonly shade: Shade | null;
+	readonly sharp: SharpPart | null;
 	readonly outOfFocus: number | null;
 	readonly softestOutOfFocus: number | null;
 	readonly pageShown: Fraction;
@@ -139,6 +155,10 @@ export const SHADE_KINDS: KindsOf<Shade, ShadeWritten> = {
 /** The names of the shade's values, in the order a refusal says them. */
 export const SHADE_NAMES = namesOf(SHADE_KINDS);
 
+// How far past the part the shade's blur leaves sharp the page softens into the blur, as a share of the blur: half, as
+// the claude-review promo softens it, so a part whose edge lies between two rows of words is blurred whole before the
+// next row's letters, and no row is sharp at one end and soft at the other
+const SHARP_EDGE_PER_BLUR = 0.5;
 // A body of no thickness, which is none
 const NO_THICKNESS = 0;
 // The slab's back, moved neither across nor down from the page
@@ -176,6 +196,7 @@ export function drawnWindow(
 		pageSurface: onTheBack ? behindItsPlane(standing, body.thickness) : ownPlane,
 		corner: Math.min(around.look.paneCorner * frameScaleOf(frame) * view.lift, roundest),
 		shade: drawnShade(window),
+		sharp: sharpPartDrawn(window),
 		outOfFocus: outOfFocusOnTheFrame(placing, view.box, sharpness, frame),
 		softestOutOfFocus: softestOutOfFocusSeen(placing, view.box, boxAround([view.box, reach]), sharpness, frame),
 		pageShown: fractionOf(around.screen.shown * (WHOLE - window.fade)),
@@ -227,4 +248,13 @@ function isLit(world: Pick<WorldLook, 'lights' | 'softBoxes'>): boolean {
 function drawnShade(window: Shade): Shade | null {
 	if (standsAtRest(window, UNSHADED, SHADE_NAMES)) return null;
 	return { dim: window.dim, fade: window.fade, blur: window.blur };
+}
+
+/**
+ * The part of the screen the shade's blur leaves sharp as the stage draws it, its edge softening over a share of the
+ * blur; none where the blur leaves none, or blurs none, as the whole page is sharp then.
+ */
+function sharpPartDrawn(window: Pick<PageWindow, 'blur' | 'sharp'>): SharpPart | null {
+	if (window.sharp === null || window.blur <= NO_PIXELS) return null;
+	return { box: window.sharp, edge: window.blur * SHARP_EDGE_PER_BLUR };
 }

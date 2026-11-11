@@ -13,7 +13,8 @@
  * the window shades the page with a blur, the picture is blurred as the stylesheet blurs it, a Gaussian whose deviation
  * is the shade's blur, nothing past the picture's edge, so the screen's ground shows there: drawn from the smaller copy
  * of the picture whose pixels stand no more than a share of the blur apart, across and then down, and kept while the
- * picture and the blur stand.
+ * picture and the blur stand. Over a part of the screen the blur leaves sharp the picture is laid unblurred, softening
+ * into the blurred one past the part's edge as the flat stage's mask has it (`.sharp-part` in `stage.css`).
  *
  * The page's surface lays, as the browser lays them in the window's view: the screen's ground and the picture, cut to
  * the screen's rounded box and the view's, showing as far as the screen is clear less how clear its own markup is
@@ -43,7 +44,20 @@ import { SRGB_CURVES, WRITTEN, passOver, valuesOfTheBox, valuesSet } from './pas
  *   readonly shownCorner: number,
  *   readonly shown: number,
  *   readonly ground: Vector4
- * }} PageLaid
+ * } & SharpPartLaid} PageLaid
+ */
+
+/**
+ * What the page's surface lays of the part of the screen the shade's blur leaves sharp, as the shader takes it:
+ * whether it lays one; the picture laid unblurred over the part; how large the screen is, in its pixels; and the
+ * part's box and how far past it the page softens into the blur, in the screen's pixels.
+ * @typedef {{
+ *   readonly keepsAPartSharp: boolean,
+ *   readonly sharpPicture: Texture | null,
+ *   readonly screenSize: Vector2,
+ *   readonly sharpBox: Vector4,
+ *   readonly sharpEdge: number
+ * }} SharpPartLaid
  */
 
 // A share of a surface so clear none of it is drawn there, nor its depth: under a level of the browser's eight bits
@@ -73,6 +87,16 @@ const ACROSS = new Vector2(1, 0);
 const DOWN = new Vector2(0, 1);
 // One pixel: a layer's side before it is first sized, and a blur's spread before it is first set
 const A_PIXEL = 1;
+// No part of the screen kept sharp in the shade's blur, as the page's surface lays it: nothing laid unblurred, over a
+// part of no size with no edge
+const NO_EDGE = 0;
+const NO_PART_KEPT_SHARP = {
+	keepsAPartSharp: false,
+	sharpPicture: null,
+	screenSize: new Vector2(),
+	sharpBox: new Vector4(),
+	sharpEdge: NO_EDGE
+};
 // The picture blurred across alone, and then down too, in the screen's colours as the picture is, the second with
 // smaller copies of itself
 const BLURRED_ACROSS_LAYER = { depthBuffer: false };
@@ -98,6 +122,11 @@ uniform vec4 shownBox;
 uniform float shownCorner;
 uniform float shown;
 uniform vec4 ground;
+uniform bool keepsAPartSharp;
+uniform sampler2D sharpPicture;
+uniform vec2 screenSize;
+uniform vec4 sharpBox;
+uniform float sharpEdge;
 varying vec2 shareOfTheSurface;
 ${SRGB_CURVES}
 float pastTheEdge(vec2 point, vec4 box, float corner) {
@@ -106,6 +135,14 @@ float pastTheEdge(vec2 point, vec4 box, float corner) {
 	vec2 fromTheCorner = abs(point - box.xy - halfSize) - halfSize + rounding;
 	return length(max(fromTheCorner, 0.0)) + min(max(fromTheCorner.x, fromTheCorner.y), 0.0) - rounding;
 }
+// How much of the unblurred picture shows at a point of the screen, in its pixels: whole over the part kept sharp,
+// none from as far past each side of it as its edge, across and down apart and one in the other, as the flat stage's
+// mask has it (\`--sharp-across\`, \`--sharp-down\` in \`tokens.css\`)
+float sharpAt(vec2 onTheScreen) {
+	vec2 past = max(max(sharpBox.xy - onTheScreen, onTheScreen - sharpBox.xy - sharpBox.zw), 0.0);
+	vec2 kept = clamp(1.0 - past / sharpEdge, 0.0, 1.0);
+	return kept.x * kept.y;
+}
 void main() {
 	vec4 screen = texture2D(surface, shareOfTheSurface);
 	vec4 under = vec4(0.0);
@@ -113,7 +150,11 @@ void main() {
 		vec2 point = surfaceBox.xy + shareOfTheSurface * surfaceBox.zw;
 		float past = max(pastTheEdge(point, screenBox, screenCorner), pastTheEdge(point, shownBox, shownCorner));
 		float inside = clamp(${HALF_A_PIXEL} - past / max(fwidth(past), ${NARROWEST_PIXEL}), 0.0, 1.0);
-		vec4 page = texture2D(picture, (point - screenBox.xy) / screenBox.zw);
+		vec2 shareOfTheScreen = (point - screenBox.xy) / screenBox.zw;
+		vec4 page = texture2D(picture, shareOfTheScreen);
+		if (keepsAPartSharp) {
+			page = mix(page, texture2D(sharpPicture, shareOfTheScreen), sharpAt(shareOfTheScreen * screenSize));
+		}
 		under = inside * max(shown - screen.a, 0.0) * (page + (1.0 - page.a) * ground);
 	}
 	vec4 over = anythingOver ? texture2D(overThePage, shareOfTheSurface) : vec4(0.0);
@@ -159,7 +200,30 @@ export function pageSurfaceValues() {
 		shownBox: { value: new Vector4() },
 		shownCorner: { value: SQUARE },
 		shown: { value: WHOLE },
-		ground: { value: new Vector4() }
+		ground: { value: new Vector4() },
+		keepsAPartSharp: { value: false },
+		sharpPicture: { value: null },
+		screenSize: { value: new Vector2() },
+		sharpBox: { value: new Vector4() },
+		sharpEdge: { value: NO_EDGE }
+	};
+}
+
+/**
+ * What the page's surface lays of the part of the screen the shade's blur leaves sharp: the picture unblurred, laid
+ * over the blurred one there, the screen's size, the part and its edge, the edge in the screen's pixels as the blur is
+ * (`seenBlurred`); none where the blur leaves none.
+ * @param {Texture} picture @param {Size} screen @param {DrawnScene['window']['sharp']} sharp @param {number} zoom
+ * @returns {SharpPartLaid}
+ */
+function sharpPartLaid(picture, screen, sharp, zoom) {
+	if (sharp === null) return NO_PART_KEPT_SHARP;
+	return {
+		keepsAPartSharp: true,
+		sharpPicture: picture,
+		screenSize: new Vector2(screen.width, screen.height),
+		sharpBox: valuesOfTheBox(sharp.box),
+		sharpEdge: sharp.edge / zoom
 	};
 }
 
@@ -217,10 +281,23 @@ export class PagePicture {
 			ground: this.ground
 		};
 		if (filmed === null) {
-			return { ...laid, picture: null, pictured: false, screenBox: new Vector4(), screenCorner: SQUARE };
+			return {
+				...laid,
+				picture: null,
+				pictured: false,
+				screenBox: new Vector4(),
+				screenCorner: SQUARE,
+				...NO_PART_KEPT_SHARP
+			};
 		}
-		const screenBox = valuesOfTheBox(filmed.box);
-		return { ...laid, picture: this.seenBlurred(scene), pictured: true, screenBox, screenCorner: filmed.corner };
+		return {
+			...laid,
+			picture: this.seenBlurred(scene),
+			pictured: true,
+			screenBox: valuesOfTheBox(filmed.box),
+			screenCorner: filmed.corner,
+			...sharpPartLaid(this.texture, this.screen, scene.window.sharp, scene.camera.pose.zoom)
+		};
 	}
 
 	/**

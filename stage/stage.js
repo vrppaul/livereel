@@ -132,6 +132,9 @@ const WAY_CUT = 'data-way-cut';
 // window shades the page by, which it has not where the page is unshaded: so neither is drawn with a filter at all
 const EFFECTS = 'data-effects';
 const SHADED = 'data-shaded';
+// The attribute the window bears while the shade's blur leaves a part of the page sharp, which it has not where the
+// blur leaves none, so no second picture of the page is drawn
+const SHARP_PART = 'data-sharp-part';
 // The colour of an object's ring and glow the film gave it, which one in the look's accent has not; and the side of
 // its figure an object melts toward, which one melting none has not, so it is drawn with no mask at all
 const EFFECT_COLOUR = '--effect-colour';
@@ -269,8 +272,8 @@ class CameraDrawer {
 /**
  * The page's window: where on the frame the camera's picture shows, how round its corners are, how far it stands off
  * the ground, how much of the page shows, how it is drawn about its middle as it leans, by the matrix the engine sees it
- * through, how it shades the page, how soft the eye's focus draws it, and whether it has a body, which the room draws
- * (`stage/body.js`): on each of its roots, one in each surface its view stands in.
+ * through, how it shades the page and the part its blur leaves sharp, how soft the eye's focus draws it, and whether
+ * it has a body, which the room draws (`stage/body.js`): on each of its roots, one in each surface its view stands in.
  */
 class WindowDrawer {
 	/** @param {readonly Staged[]} roots */
@@ -293,6 +296,7 @@ class WindowDrawer {
 			});
 			transformed(root, view.transform);
 			shadeDrawn(root, view.shade);
+			sharpPartDrawn(root, view.sharp);
 			focusDrawn(root, view.outOfFocus);
 			root.toggleAttribute(WITH_A_BODY, view.body !== null);
 		}
@@ -308,6 +312,23 @@ function shadeDrawn(root, shade) {
 	root.toggleAttribute(SHADED, shade !== null);
 	if (shade === null) return;
 	numbered(root, { '--shade-dim': shade.dim, '--shade-blur': shade.blur });
+}
+
+/**
+ * The part of the page the shade's blur leaves sharp, drawn on the window's root: its box in the screen's pixels and
+ * how far past it the page softens into the blur; none drawn where the blur leaves none.
+ * @param {Staged} root @param {DrawnScene['window']['sharp']} sharp
+ */
+function sharpPartDrawn(root, sharp) {
+	root.toggleAttribute(SHARP_PART, sharp !== null);
+	if (sharp === null) return;
+	numbered(root, {
+		'--sharp-left': sharp.box.left,
+		'--sharp-top': sharp.box.top,
+		'--sharp-width': sharp.box.width,
+		'--sharp-height': sharp.box.height,
+		'--sharp-edge': sharp.edge
+	});
 }
 
 /**

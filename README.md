@@ -204,7 +204,7 @@ and the moves of each part of the scene:
   under a point off the frame, or where the eye sees past the window's plane as the move begins; where the window
   turns so the eye sees past its plane there later, the focus stands as far as can be
 - `window.to(place, { depth })`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn, roll, over, about })`,
-  `window.shade({ dim, fade, blur })`, `window.body({ thickness, rim, metal, roughness, glass }, { within })`
+  `window.shade({ dim, fade, blur, sharp })`, `window.body({ thickness, rim, metal, roughness, glass }, { within })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
 - `callout.show(target, text, { side })`, `callout.hide()`
 - `note.show(target, text, { at })`, `note.hide()`
@@ -768,6 +768,20 @@ and the holes in it, in pixels of a frame 1080 high. The window's edge and
 shadow stay as they stand, and what stands over the page stands clear. It
 sets only what it names, so it shares a `play` with `window.to` and
 `window.lean`, and `window.shade({ dim: 0 })` takes the dark away again.
+`window.shade({ blur: 6, sharp: '.thread' })` keeps a part of the page
+sharp in the blur, a block or a box of the screen, the page softening into
+the blur over half as far as the blur past it, as the eye of a promo is drawn
+to the line asked about: the part lies on the page, so the camera, the
+window and the eye carry it, and a title over the blur stays as sharp as it
+stands. A move naming another part, `window.shade({ sharp: '#send' })`,
+keeps it sharp from the move's start, as a part slid across the page would
+slide its edge over the words; to hand the sharp part on in a glide, bring
+the blur to 0 over its first half and back over its second with the new
+part, and `sharp: 'none'` keeps none. The blur, like the page, is seen
+larger by an eye brought near. It is drawn from the page's picture, so a
+page framed live is refused, as one the screen shows a page of the film's
+own in place of; the picture the sweep holds and the holes over the part
+blur with the rest.
 Start the words once the window has drawn back, so they come up on the
 ground, not over the page. A film shot in several formats names places of
 its own in each format and writes them once (below, "Formats").

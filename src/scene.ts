@@ -188,7 +188,7 @@ export function openingScene(format: Format, look: Look, world: WorldLook, focal
 		look,
 		world,
 		camera: standingAt(wholePose(format)),
-		window: { ...placedIn(wholeView(format.frame)), ...UNSHADED, body: LIVEREELS_SLAB },
+		window: { ...placedIn(wholeView(format.frame)), ...UNSHADED, sharp: null, body: LIVEREELS_SLAB },
 		screen: SCREEN_UP,
 		light: null,
 		callout: null,
