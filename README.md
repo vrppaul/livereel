@@ -597,7 +597,11 @@ far it stands, its shadow and its letters' edges seen through to the page
 behind. Its `depth` still counts from the eye at rest, so an eye
 moved near or past it is not kept in front of it. A piece lifted `inside:
 'world'`, `piece.show('#why', { inside: 'world' })`, stands over its source
-on the window's plane wherever the eye stands, aslant too. `piece.onto`
+on the window's plane wherever the eye stands, aslant too, so it is taken
+off any part of the screen the window's picture holds: an eye moved close
+to a window that reaches past the frame's foot lifts a button it sees
+there, which the eye at rest does not. On the frame, a piece is taken off
+what the camera shows there alone. `piece.onto`
 carries it from the world onto the page where it stands, wherever the eye
 stands and however the window is brought near or rolled, while it lies on
 the window's plane, face-on to the window and at its depth, as what lies

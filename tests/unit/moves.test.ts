@@ -4022,6 +4022,41 @@ test('a piece in the world lifted while the camera passes through a key stands o
 	expect(drawnOverItsSource(lifted)).toBe(true);
 });
 
+// A window standing lower than the frame, its foot past the frame's: the camera fills it with the whole screen at 0.8,
+// so the frame shows its top 675 pixels of the screen; a part of the screen it shows below the frame's foot, and where
+// that part stands on the window's plane; and the camera at twice that, its picture of the screen's middle half alone
+const PAST_THE_FRAMES_FOOT = { left: 0.1, top: 0.5, width: 0.8, height: 0.8 } as const;
+const THE_WHOLE_SCREEN_LOW = { focusX: 960, focusY: 540, zoom: 0.8 };
+const BELOW_THE_FRAMES_FOOT = { left: 100, top: 900, width: 200, height: 100 };
+const ON_THE_PLANE_BELOW = { left: 272, top: 1260, width: 160, height: 80 };
+const AT_TWICE = { focusX: 960, focusY: 540, zoom: 1.6 };
+const IN_THE_SCREENS_CORNER = { left: 0, top: 0, width: 100, height: 100 };
+
+test("a piece lifted in the world is taken off any part of the screen the window's picture holds, wherever the eye stands; on the frame, off what the camera shows there alone", async () => {
+	const placed = await setIn(windowTo(PAST_THE_FRAMES_FOOT), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const low = await setIn(cameraTo(THE_WHOLE_SCREEN_LOW), placed, 1, FULL_HD);
+	const lifted = await setIn(piece.show(BELOW_THE_FRAMES_FOOT, { inside: 'world' }), low, 1, FULL_HD);
+	expect([lifted.objects.get('piece')!.box, (lifted.objects.get('piece')!.content as Piece).source]).toEqual([
+		closeToBox(ON_THE_PLANE_BELOW),
+		BELOW_THE_FRAMES_FOOT
+	]);
+	await expect(setIn(piece.show(BELOW_THE_FRAMES_FOOT), low, 1, FULL_HD)).rejects.toThrow(
+		new FilmError(
+			`piece.show's box ${JSON.stringify(BELOW_THE_FRAMES_FOOT)} stands outside what the camera shows: frame it first`
+		)
+	);
+});
+
+test("a piece lifted in the world off a part of the screen the window's picture does not hold is refused", async () => {
+	const low = await setIn(windowTo(PAST_THE_FRAMES_FOOT), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const close = await setIn(cameraTo(AT_TWICE), low, 1, FULL_HD);
+	await expect(setIn(piece.show(IN_THE_SCREENS_CORNER, { inside: 'world' }), close, 1, FULL_HD)).rejects.toThrow(
+		new FilmError(
+			`piece.show's box ${JSON.stringify(IN_THE_SCREENS_CORNER)} stands outside what the window shows of the screen: frame it first`
+		)
+	);
+});
+
 /**
  * Whether the piece of a scene shot full HD is drawn with its middle on the frame where the camera shows its source's
  * middle, to the pixel.

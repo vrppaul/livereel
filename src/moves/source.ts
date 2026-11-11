@@ -2,12 +2,16 @@
  * What stands over a part of the page, read off it as a move begins: a piece of the page (`src/moves/piece.ts`), an
  * outline round it (`src/moves/outline.ts`), a lens over it (`src/moves/lens.ts`). Each is born on the frame over its
  * source as the camera shows it then, cut to the part the camera shows, and stands on the frame after, the camera
- * moving on without it. A source shows as a box only through a window that faces the frame with its front, upright, so
- * each is refused while the window leans, rolls or shows its back; what is drawn from the page's picture is refused
+ * moving on without it. One born in the world stands over its source on the window's plane wherever the eye stands, so
+ * it is cut to the part of the screen the window's picture holds there, which an eye moved near or aside sees past
+ * what the frame shows from where the eye rests. A source shows as a box only through a window that faces the frame
+ * with its front, upright, so each is refused while the window leans, rolls or shows its back; what is drawn from the
+ * page's picture is refused
  * too where the stage shows the page live, with no picture, and while the screen shows a page of the film's own in its
  * place.
  */
-import { type Camera, boxOnTheFrame, screenShownBy } from '../domain/camera.ts';
+import { type Camera, boxOnTheFrame, screenPicturedBy, screenShownBy } from '../domain/camera.ts';
+import type { Format } from '../domain/format.ts';
 import { FilmError } from '../domain/errors.ts';
 import { looksStraightAtTheFrame } from '../domain/eye.ts';
 import { type Box, overlapOf, withAir } from '../domain/geometry.ts';
@@ -16,7 +20,7 @@ import { type Beginning, type Target, refuseWithoutThePicture, shownBox, targetS
 import { cameraOf } from '../scene.ts';
 
 /**
- * A source read off the page: the part of the screen it is, the part of the screen the camera shows, which the window's
+ * A source read off the page: the part of the screen it is, the part of the screen it was cut to, which the window's
  * corners round, and the box of the frame the camera shows the source in.
  */
 export interface Source {
@@ -33,9 +37,24 @@ export const NO_AIR = 0;
 export const NO_PLACE = null;
 
 /**
+ * Where what stands over a source is born: on the frame, riding with the eye, over what the camera shows there; or in
+ * the world, over its source on the window's plane wherever the eye stands, so over what the window's picture holds.
+ */
+export type BornIn = 'frame' | 'world';
+
+// What is born over a source where the film stands it inside nothing, an outline and a lens always
+export const BORN_ON_THE_FRAME: BornIn = 'frame';
+// The part of the screen what is born over a source may stand over, as a refusal names it, by where it is born
+const SHOWN_SAID: { readonly [Where in BornIn]: string } = {
+	frame: 'what the camera shows',
+	world: 'what the window shows of the screen'
+};
+
+/**
  * The part of the screen a target stands over, the first `every` blocks a selector matches together or a box of the
- * screen, with so much air clear round it in the page's pixels, cut to the part a camera shows, and where the camera
- * shows that on the frame; refused where the camera shows none of it.
+ * screen, with so much air clear round it in the page's pixels, cut to the part of the screen what is born over it
+ * stands over where it is born, and where the camera shows that on the frame, as from the eye at rest for what is born
+ * in the world; refused where that part holds none of it.
  */
 export async function sourceOf(
 	beginning: Beginning,
@@ -43,15 +62,29 @@ export async function sourceOf(
 	target: Target,
 	every: number,
 	air: number,
-	move: string
+	move: string,
+	bornIn: BornIn
 ): Promise<Source> {
-	const shown = screenShownBy(camera, beginning.format);
+	const shown = screenUnder(camera, beginning.format, bornIn);
 	const block = withAir(await shownBox(beginning, target, every, move), air);
 	const source = shown === null ? null : overlapOf(block, shown);
 	if (shown === null || source === null) {
-		throw new FilmError(`${move}'s ${targetSaid(target)} stands outside what the camera shows: frame it first`);
+		throw new FilmError(`${move}'s ${targetSaid(target)} stands outside ${SHOWN_SAID[bornIn]}: frame it first`);
 	}
 	return { source, shown, box: boxOnTheFrame(camera, beginning.format.frame, source) };
+}
+
+/**
+ * The part of the screen what is born over a source may stand over: on the frame, what the camera shows there; in the
+ * world, what the window's picture holds on its plane, wherever the eye stands. None where it is none of the screen.
+ */
+function screenUnder(camera: Camera, format: Format, bornIn: BornIn): Box | null {
+	switch (bornIn) {
+		case 'frame':
+			return screenShownBy(camera, format);
+		case 'world':
+			return screenPicturedBy(camera, format);
+	}
 }
 
 /**

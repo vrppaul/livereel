@@ -62,7 +62,15 @@ import {
 	objectShow,
 	objectTo
 } from './object.ts';
-import { NO_AIR, NO_PLACE, ONE_BLOCK, cameraOverThePicture, sourceOf } from './source.ts';
+import {
+	BORN_ON_THE_FRAME,
+	type BornIn,
+	NO_AIR,
+	NO_PLACE,
+	ONE_BLOCK,
+	cameraOverThePicture,
+	sourceOf
+} from './source.ts';
 import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
 
 /**
@@ -105,7 +113,7 @@ interface HoleAsked {
 
 /**
  * What a piece is lifted with, as it is made: how many blocks, how much air round them, how round its corners are, the
- * hole it leaves, if any, its lines, if any, and the kind of picture it is drawn from.
+ * hole it leaves, if any, its lines, if any, the kind of picture it is drawn from, and where it is born.
  */
 interface Lifting {
 	readonly every: number;
@@ -114,6 +122,7 @@ interface Lifting {
 	readonly hole: HoleAsked | null;
 	readonly lines: Stroke | null;
 	readonly picture: PiecePicture['kind'];
+	readonly bornIn: BornIn;
 }
 
 const PIECE = 'piece' satisfies ShownKind;
@@ -162,7 +171,8 @@ export function show(target: Target, script: PieceScript = {}): Move {
 		corner: script.corner ?? SQUARE,
 		hole: script.hole === undefined ? null : holeAsked(target, script.hole),
 		lines: script.lines ?? null,
-		picture: script.picture ?? FOLLOWING_THE_PAGE.kind
+		picture: script.picture ?? FOLLOWING_THE_PAGE.kind,
+		bornIn: script.inside ?? BORN_ON_THE_FRAME
 	};
 	return {
 		...objectShow(PIECE, 'piece.show', script, NO_PLACE, THE_STEPS_CURVE, (beginning) =>
@@ -240,7 +250,8 @@ function holeAsked(target: Target, hole: HoleScript): HoleAsked {
  */
 async function lifted(beginning: Beginning, target: Target, lifting: Lifting): Promise<Coming> {
 	const camera = cameraOverThePicture(beginning, 'piece.show');
-	const { source, shown, box } = await sourceOf(beginning, camera, target, lifting.every, lifting.air, 'piece.show');
+	const { every, air, bornIn } = lifting;
+	const { source, shown, box } = await sourceOf(beginning, camera, target, every, air, 'piece.show', bornIn);
 	// The window's corner as the look rounds it on the frame, in the page's pixels as the camera shows them there
 	const windowCorner =
 		(beginning.scene.look.paneCorner * frameScaleOf(beginning.format.frame) * source.width) / box.width;

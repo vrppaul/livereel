@@ -681,6 +681,25 @@ export function screenShownBy(camera: Camera, format: Format): Box | null {
 	return overlapOf(seen, boxOf(format.screen));
 }
 
+/**
+ * The part of the screen a camera's picture holds on the window's plane, in the screen's pixels, wherever the eye
+ * stands: what its view shows of the screen, and past the view's edges as far as its cut stands out there; none where
+ * it holds nothing of the screen.
+ */
+export function screenPicturedBy(camera: Camera, format: Format): Box | null {
+	const screen = boxOf(format.screen);
+	const { cut } = drawnCamera(camera, format, screen);
+	const frameZoom = frameZoomOf(camera.pose, format.frame);
+	const view = viewOnTheScreen(camera, format.frame);
+	const reach = {
+		left: view.left + cut.left / frameZoom,
+		top: view.top + cut.top / frameZoom,
+		width: view.width - (cut.left + cut.right) / frameZoom,
+		height: view.height - (cut.top + cut.bottom) / frameZoom
+	};
+	return overlapOf(reach, screen);
+}
+
 /** The point of the screen a camera facing the frame sees at a point of the frame, which it sees the screen's plane at. */
 function seenOnTheScreen(camera: Camera, frame: Size, point: Point): Point {
 	const seen = underTheFrame(camera, frame, point);
