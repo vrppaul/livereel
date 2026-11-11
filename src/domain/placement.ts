@@ -25,7 +25,20 @@ import type { Camera, View } from './camera.ts';
 import { type Eye, eyeAtRest, inTheEyesSpace, seenByTheEye, turnOf } from './eye.ts';
 import { boxInTheView } from './framing.ts';
 import { type Box, HALVES, type Point, type Size, boxOf, middleX, middleY, placedFrom } from './geometry.ts';
-import { type Matrix, type Spot, carried, chained, inThreesAxes, translation } from './matrix.ts';
+import {
+	ITS_MIDDLE,
+	type Matrix,
+	type Spot,
+	carried,
+	chained,
+	crossOf,
+	dotOf,
+	inThreesAxes,
+	lengthOf,
+	translation,
+	unitOf,
+	wayBetween
+} from './matrix.ts';
 import { AS_PLACED, type Stance, type Transform, stanceMatrix, transformOf } from './stance.ts';
 
 /** Where something stands on the plane of what holds it: its box, in that plane's own pixels, and its stance. */
@@ -130,6 +143,15 @@ export const ON_ITS_PLANE = 0;
 // A box read on its plane as it is; and something laid in the frame
 const AS_IT_IS: Measure = { kind: 'asItIs' };
 const IN_THE_FRAME: LaidIn = { kind: 'frame' };
+// Two things laid in the order they come; a step across a plane and down it from its middle; and how much farther from
+// the eye one plane may stand than another, in the frame's pixels, while the two are taken as one plane, and how far
+// two planes' facings may stand apart, as a sine, while they are taken to face alike: arithmetic leaves under a
+// millionth of a pixel and 1e-12
+const AS_THEY_COME = 0;
+const A_STEP_ACROSS: Spot = { across: 1, down: 0, out: ON_ITS_PLANE };
+const A_STEP_DOWN: Spot = { across: 0, down: 1, out: ON_ITS_PLANE };
+const ON_ONE_PLANE_WITHIN = 1e-6;
+const FACING_ALIKE_WITHIN = 1e-9;
 
 /** The plane of a holder, as the holders stand: a group's, the frame's carried by the group's box and stance. */
 export function planeOf(holder: Holder, holders: Holders, frame: Size): Plane {
@@ -305,6 +327,42 @@ function boxOnThePlane(box: Box, measure: Measure, frame: Size): Box {
 		case 'framed':
 			return boxInTheView(measure.camera, frame, box);
 	}
+}
+
+/**
+ * How two things placed are laid one over the other where neither hides the other by depth, as the room lays what is
+ * seen through: the farther first. Of two whose planes face alike or opposite ways, the farther is the one whose plane
+ * stands farther from the eye, wherever on its plane each stands: a middle seen from aside stands farther before the
+ * eye than another on a plane behind it. So two on one plane are laid as they come, the later over the earlier,
+ * wherever the eye stands. Of two whose planes cross, the farther is the one whose middle stands farther before the eye
+ * along where it looks. Less than none where the first is laid first, none where they keep the order they come in.
+ */
+export function laidFartherFirst(first: Placed, second: Placed): number {
+	const firstFacing = facingOf(first.inTheEyesSpace);
+	const secondFacing = facingOf(second.inTheEyesSpace);
+	if (lengthOf(crossOf(firstFacing, secondFacing)) > FACING_ALIKE_WITHIN) {
+		return depthOfItsMiddle(second) - depthOfItsMiddle(first);
+	}
+	const fartherPlane = eyesDistanceToItsPlane(second, secondFacing) - eyesDistanceToItsPlane(first, firstFacing);
+	return Math.abs(fartherPlane) <= ON_ONE_PLANE_WITHIN ? AS_THEY_COME : fartherPlane;
+}
+
+/** How far the eye stands from the plane of something placed, which faces this way, in the frame's pixels. */
+function eyesDistanceToItsPlane(standing: Placed, facing: Spot): number {
+	return Math.abs(dotOf(facing, carried(standing.inTheEyesSpace, ITS_MIDDLE)));
+}
+
+/** The way a plane carried into the eye's own space faces, as long as one: square to its across and its down. */
+function facingOf(inTheEyesSpace: Matrix): Spot {
+	const middle = carried(inTheEyesSpace, ITS_MIDDLE);
+	const across = wayBetween(middle, carried(inTheEyesSpace, A_STEP_ACROSS));
+	const down = wayBetween(middle, carried(inTheEyesSpace, A_STEP_DOWN));
+	return unitOf(crossOf(across, down));
+}
+
+/** How far before the eye the middle of something placed stands along where it looks, in the frame's pixels. */
+function depthOfItsMiddle(standing: Placed): number {
+	return -carried(standing.inTheEyesSpace, ITS_MIDDLE).out;
 }
 
 /** The group of a name something stands in: none is gone while anything stands in it, as it goes with all of it. */

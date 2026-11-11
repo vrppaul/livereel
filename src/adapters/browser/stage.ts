@@ -40,7 +40,7 @@ import type { CDPSession, Frame, Page } from 'playwright-core';
 import type { Format } from '../../domain/format.ts';
 import { type Box, type Size, boxOf, frameScaleOf } from '../../domain/geometry.ts';
 import type { OwnPage } from '../../direction/page.ts';
-import type { DrawnScene } from '../../scene.ts';
+import type { DrawnScene, ObjectList } from '../../scene.ts';
 import type { FramedStage, PicturedStage } from '../../studio/ports.ts';
 import { type PictureBound, scaleWithin } from './bounds.ts';
 import type { ChangesHeard } from './changes.ts';
@@ -89,9 +89,6 @@ export interface HeldPicture extends PagePicture {
  * name.
  */
 export type HolderInTheWorld = (exposure: number, list: ObjectList, name: string) => HTMLElement;
-
-/** The scene's lists of objects: those standing, and those pushed off while they go. */
-export type ObjectList = 'objects' | 'leaving';
 
 export interface StageApi {
 	/** The stage laid out: the frame and the screen in it, as large as it draws, and its exposures. */

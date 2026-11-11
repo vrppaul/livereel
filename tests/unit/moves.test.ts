@@ -3087,6 +3087,49 @@ async function withNearTitles(scene: Scene): Promise<Scene> {
 	return setAt(title.effects({ as: 'riding', depth: HALF_WAY_TO_THE_EYE }), near, 1);
 }
 
+// Code in the world, and a title shown after it over its left part, both on the frame's plane; the eye moved to the
+// right of the frame, and to its left, the title's middle farther from it than the code's, then nearer
+const CODES_BOX = { left: 0.05, top: 0.25, width: 0.6, height: 0.5 } as const;
+const OVER_ITS_LEFT = { left: 0.08, top: 0.42, width: 0.3, height: 0.12 } as const;
+const EYE_MOVED_RIGHT: EyePlace = { at: { across: 700, down: 0, out: 2400 }, aim: { across: 0, down: 0, out: 0 } };
+const EYE_MOVED_LEFT: EyePlace = { at: { across: -700, down: 0, out: 2400 }, aim: { across: 0, down: 0, out: 0 } };
+const NEARER_THAN_THE_FRAMES_PLANE = 300;
+// A title at the frame's left edge over the code's, on a plane a little nearer than the frame's: seen from the right
+// its middle stands farther from the eye than the code's and the other title's, its plane nearer than theirs
+const AT_THE_LEFT_EDGE = { left: 0.02, top: 0.42, width: 0.1, height: 0.12 } as const;
+const A_LITTLE_NEARER = 20;
+
+/** What stands in the world of a scene shot in the small format, by name, in the order the room lays it. */
+function laidInTheWorldIn(scene: Scene): readonly string[] {
+	return drawnSceneIn(scene, SMALL).laidInTheWorld.map((laid) => laid.name);
+}
+
+test("what stands in the world is laid in the scene's order on one plane wherever the eye stands, and of two planes apart the farther first, the farther plane where the two face alike", async () => {
+	const pane = await setAt(
+		code.show('const shown = await review(diff);', { at: CODES_BOX, inside: 'world' }),
+		OPENING_IN_SMALL,
+		1
+	);
+	const over = await setAt(title.show('Over the code', { at: OVER_ITS_LEFT, inside: 'world' }), pane, 1);
+	const seenFromTheRight = await setAt(eye.to(EYE_MOVED_RIGHT), over, 1);
+	const seenFromTheLeft = await setAt(eye.to(EYE_MOVED_LEFT), over, 1);
+	const titleFirst = await setAt(title.show('Nearer', { at: OVER_ITS_LEFT, inside: 'world' }), OPENING_IN_SMALL, 1);
+	const titleNearer = await setAt(title.effects({ depth: NEARER_THAN_THE_FRAMES_PLANE }), titleFirst, 1);
+	const paneAfter = await setAt(code.show('await done();', { at: CODES_BOX, inside: 'world' }), titleNearer, 1);
+	const aside = await setAt(
+		title.show('Near', { at: AT_THE_LEFT_EDGE, inside: 'world', as: 'near' }),
+		seenFromTheRight,
+		1
+	);
+	const asideNearer = await setAt(title.effects({ as: 'near', depth: A_LITTLE_NEARER }), aside, 1);
+	expect([seenFromTheRight, seenFromTheLeft, paneAfter, asideNearer].map(laidInTheWorldIn)).toEqual([
+		['code', 'title'],
+		['code', 'title'],
+		['code', 'title'],
+		['code', 'title', 'near']
+	]);
+});
+
 /** How soft the stage blurs the window and each object of a scene shot in the small format, by its own camera. */
 function outOfFocusIn(scene: Scene): readonly (number | null)[] {
 	const shown = drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER);

@@ -63,7 +63,7 @@ import { matrixOf, projectionOnto } from './matrices.js';
 import { ADDED, LAID_OVER, SRGB_CURVES, WRITTEN, passOver, valuesSet } from './passes.js';
 import { SeeThroughField, WORLD_PARTS, hasAPartSeenThrough, partsDrawn, sortedBySeeingThrough } from './see-through.js';
 import { Things, isAThing } from './things.js';
-/** @import { DrawnScene } from '../src/scene.ts' */
+/** @import { DrawnScene, ObjectList } from '../src/scene.ts' */
 /** @import { DrawnObject } from '../src/props/object.ts' */
 /** @import { DrawnWindow } from '../src/props/window.ts' */
 /** @import { DrawnBloom } from '../src/props/lighting.ts' */
@@ -73,7 +73,8 @@ import { Things, isAThing } from './things.js';
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { Matrix } from '../src/domain/matrix.ts' */
 /** @import { Box } from '../src/domain/geometry.ts' */
-/** @import { Layout, ObjectList } from '../src/adapters/browser/stage.ts' */
+/** @import { Layout } from '../src/adapters/browser/stage.ts' */
+/** @import { Object3D, RenderItem } from 'three' */
 /** @import { RoomApi, ThingsLoaded } from '../src/adapters/browser/room.ts' */
 
 /**
@@ -99,6 +100,8 @@ const SURFACE = 'data-surface';
 const SURFACE_CLASS = 'surface';
 const IN_THE_WORLD = 'world';
 const OBJECTS_HOLDER = 'objects';
+// The place none stands at among what stands in the world
+const NOWHERE_LAID = -1;
 // The token of how far past its box anything an object shows draws (`tokens.css`)
 const REACH_PAST_THE_BOX = '--reach-past-the-box';
 // A surface of markup in the world drawn with smaller copies of itself, as it shrinks into the distance as the window
@@ -387,6 +390,7 @@ class Room {
 		this.renderer.setSize(layout.format.frame.width, layout.format.frame.height, false);
 		this.renderer.autoClear = false;
 		this.renderer.setClearColor(NOTHING, CLEAR);
+		this.renderer.setTransparentSort(this.laidSeenThrough.bind(this));
 		/** The frame's size in the drawing's pixels @type {Vector2} */
 		this.drawnSize = this.renderer.getDrawingBufferSize(new Vector2());
 		const { x: drawnWidth, y: drawnHeight } = this.drawnSize;
@@ -424,6 +428,12 @@ class Room {
 		 * @type {MarkupInTheWorld[]}
 		 */
 		this.markup = [];
+		/**
+		 * The light of each surface of markup in the world by its place among what stands in the world, in the order the
+		 * scene lays it, as the exposure drawn last set it
+		 * @type {Map<Object3D, number>}
+		 */
+		this.laidAt = new Map();
 		// How far past its box anything an object shows draws, in the frame's pixels
 		this.reachPastTheBox = reachPastTheBox() * layout.frameScale;
 		window.stage.layApart((exposure, list, name) =>
@@ -640,13 +650,14 @@ class Room {
 		const object = objectNamed(scene[surface.list], surface.name);
 		const box = clearRound(grownBy(object.box, this.reachPastTheBox));
 		laidOutAs(surface.element, box, this.densityOf(box));
-		return { object, element: surface.element, placing: { box, middle: middleOf(object.box) } };
+		const laidAt = placeInTheWorld(scene, surface);
+		return { object, element: surface.element, placing: { box, middle: middleOf(object.box) }, laidAt };
 	}
 
 	/**
 	 * An object of markup standing in the world added to the world, by its place among the exposure's: its surface
 	 * drawn into a texture of its own and stood where the engine's matrix places the object's box's middle, its light
-	 * and its depth apart, as what is seen through is drawn.
+	 * and its depth apart, as what is seen through is drawn, its light laid at its place in the scene's order.
 	 * @param {number} place @param {MarkupStanding} markup
 	 */
 	markupAdded(place, markup) {
@@ -659,6 +670,20 @@ class Room {
 			placedBy(surface, matrix);
 			this.world.add(surface);
 		}
+		this.laidAt.set(inTheWorld.light, markup.laidAt);
+	}
+
+	/**
+	 * Two things three draws seen through, laid one over the other: markup standing in the world in the order the scene
+	 * lays it, as it writes no depth, where three would lay two on one plane by which middle stands nearer the eye;
+	 * anything else as three lays it.
+	 * @param {RenderItem} first @param {RenderItem} second
+	 */
+	laidSeenThrough(first, second) {
+		const firstPlace = this.laidAt.get(first.object);
+		const secondPlace = this.laidAt.get(second.object);
+		if (firstPlace === undefined || secondPlace === undefined) return laidAsThreeLaysThem(first, second);
+		return firstPlace - secondPlace;
 	}
 
 	/**
@@ -717,9 +742,14 @@ class Room {
  * @typedef {{ readonly box: Box, readonly middle: Vector2 }} SurfacePlacing
  */
 /**
- * An object of markup standing in the world as the room lays it: the object, the surface's element, and where the
- * surface stands on the object's plane.
- * @typedef {{ readonly object: DrawnObject, readonly element: Element, readonly placing: SurfacePlacing }} MarkupStanding
+ * An object of markup standing in the world as the room lays it: the object, the surface's element, where the surface
+ * stands on the object's plane, and its place among what stands in the world in the order the scene lays it.
+ * @typedef {{
+ *   readonly object: DrawnObject,
+ *   readonly element: Element,
+ *   readonly placing: SurfacePlacing,
+ *   readonly laidAt: number
+ * }} MarkupStanding
  */
 /**
  * What stands in an exposure's world drawn from markup: the page's surface, and each object's.
@@ -1030,6 +1060,30 @@ function worldSurfaceIn(canvas, list, name) {
 	element.append(holder);
 	canvas.append(element);
 	return { element, holder, list, name };
+}
+
+/**
+ * The place of an object of markup standing in the world among all that stands there, in the order the scene lays it:
+ * the stage laid it in its surface as it drew the scene, so one missing is the room's fault.
+ * @param {DrawnScene} scene @param {WorldSurface} surface
+ */
+function placeInTheWorld(scene, surface) {
+	const place = scene.laidInTheWorld.findIndex((laid) => laid.list === surface.list && laid.name === surface.name);
+	if (place === NOWHERE_LAID) throw new Error(`the room lays ${surface.name} in the world, where the scene lays none`);
+	return place;
+}
+
+/**
+ * Two things three draws seen through as three lays them one over the other: by their order, then the farther first.
+ * @param {RenderItem} first @param {RenderItem} second
+ */
+function laidAsThreeLaysThem(first, second) {
+	return (
+		first.groupOrder - second.groupOrder ||
+		first.renderOrder - second.renderOrder ||
+		second.z - first.z ||
+		first.id - second.id
+	);
 }
 
 /**

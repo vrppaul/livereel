@@ -46,7 +46,7 @@ import { LIVEREELS_SLAB } from './props/body.ts';
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
 import { type Caption, type DrawnCaption, drawnCaption } from './props/caption.ts';
 import type { Cursor } from './props/cursor.ts';
-import type { GroupName, Holders } from './domain/placement.ts';
+import { type GroupName, type Holders, type Placed, laidFartherFirst } from './domain/placement.ts';
 import type { Group, Groups } from './props/group.ts';
 import { type DrawnKeys, type Keys, drawnKeys } from './props/keys.ts';
 import { type DrawnLines, drawnHoles, drawnLines } from './props/lifted.ts';
@@ -66,6 +66,7 @@ import {
 	partAskedSharper,
 	pictureHeldBy,
 	pictureZoomOf,
+	standingInTheWorld,
 	standsIn
 } from './props/object.ts';
 import type { PartAsked, SharperPicture } from './domain/picture.ts';
@@ -136,14 +137,31 @@ interface DrawnProps {
 	keys: DrawnKeys | null;
 }
 
+/** The scene's lists of objects: those standing, and those pushed off while they go. */
+export type ObjectList = 'objects' | 'leaving';
+
+/** An object of a list of the scene's, by its name. */
+interface ListedObject {
+	readonly list: ObjectList;
+	readonly name: ObjectName;
+}
+
+/** An object of a list of the scene's standing in the world, and where it stands there as the frame is drawn. */
+interface StandingListed extends ListedObject {
+	readonly standing: Placed;
+}
+
 /**
- * What the stage is handed of a scene: each prop as drawn, the objects standing and pushed off, what the pieces of the
- * page among them leave on the page and draw to it, holes on the screen and lines on the frame, and the eye as the room
- * sees the world and the frame by it and blurs each pixel of the world by its lens, once a scene.
+ * What the stage is handed of a scene: each prop as drawn, the objects standing and pushed off, those of them standing
+ * in the world in the order the room lays them one over the other (`laidFartherFirst` in `src/domain/placement.ts`),
+ * what the pieces of the page among them leave on the page and draw to it, holes on the screen and lines on the frame,
+ * and the eye as the room sees the world and the frame by it and blurs each pixel of the world by its lens, once a
+ * scene.
  */
 export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 	readonly objects: readonly DrawnObject[];
 	readonly leaving: readonly DrawnObject[];
+	readonly laidInTheWorld: readonly ListedObject[];
 	readonly holes: readonly DrawnHole[];
 	readonly lines: readonly DrawnLines[];
 	readonly eye: DrawnEye;
@@ -434,10 +452,41 @@ export function drawn(
 		keys: scene.keys === null ? null : drawnKeys(scene.keys, scene.caption),
 		objects: drawnObjects(scene.objects, moment, around),
 		leaving: drawnObjects(scene.leaving, moment, around),
+		laidInTheWorld: laidInTheWorldOf(scene, around),
 		holes,
 		lines: drawnLines(everyObject, camera, scene.groups, format.frame),
 		eye: drawnEye(camera.eye, format.frame, lensLawOf(sharpness))
 	};
+}
+
+/**
+ * The objects of a scene standing in the world, standing and pushed off, in the order the room lays them one over the
+ * other: as the stage draws them, the later over the earlier, where they stand on one plane; the farther first where
+ * they stand apart.
+ */
+function laidInTheWorldOf(scene: Scene, around: Surroundings): readonly ListedObject[] {
+	const standing = [
+		...standingInTheWorldOf('objects', scene.objects, around),
+		...standingInTheWorldOf('leaving', scene.leaving, around)
+	];
+	return standing
+		.toSorted((first, second) => laidFartherFirst(first.standing, second.standing))
+		.map(({ list, name }) => ({ list, name }));
+}
+
+/**
+ * The objects of a list of the scene's standing in the world, in the order the stage draws them, and where each
+ * stands.
+ */
+function standingInTheWorldOf(list: ObjectList, objects: Objects, around: Surroundings): readonly StandingListed[] {
+	return inDrawingOrder(objects, around)
+		.map(([name, object]) => ({ list, name, standing: standingInTheWorld(object, around, around.frame) }))
+		.filter(isInTheWorld);
+}
+
+/** Whether a listed object stands in the world. */
+function isInTheWorld(listed: ListedObject & { readonly standing: Placed | null }): listed is StandingListed {
+	return listed.standing !== null;
 }
 
 /** Objects as the stage draws them, in the order it draws them, among what stands round them in the scene. */

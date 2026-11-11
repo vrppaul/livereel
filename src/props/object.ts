@@ -347,6 +347,15 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 }
 
 /**
+ * Where an object stands in the world as a frame is drawn, among the holders as they stand; none where it stands
+ * elsewhere.
+ */
+export function standingInTheWorld(object: FrameObject, holders: Holders, frame: Size): Placed | null {
+	const standing = placedInItsHolder(object, holders, frame);
+	return standsInTheWorld(standing) ? standing : null;
+}
+
+/**
  * Whether something placed stands in the world, where the eye's focus blurs it by where it stands: laid in the frame
  * and not riding with the eye; laid in the window, the window's blur takes it with it, and what stands on the frame or
  * in a group rides with the eye.

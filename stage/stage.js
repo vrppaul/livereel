@@ -9,7 +9,7 @@
  * reads, run by the page as it stands: nothing is built. It is a plain script, not a module, since Chrome loads no
  * module from a file; nothing else runs in the stage page, so its names stand alone there.
  */
-/** @import { DrawnScene, PropName } from '../src/scene.ts' */
+/** @import { DrawnScene, ObjectList, PropName } from '../src/scene.ts' */
 /** @import { DrawnSweep } from '../src/props/screen.ts' */
 /** @import { ShownLine } from '../src/props/terminal.ts' */
 /** @import { DrawnPin } from '../src/props/pins.ts' */
@@ -22,7 +22,7 @@
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
 /** @import { OwnPage } from '../src/direction/page.ts' */
-/** @import { HeldPicture, HolderInTheWorld, Layout, ObjectList, Opening, PagePicture, StageApi } from '../src/adapters/browser/stage.ts' */
+/** @import { HeldPicture, HolderInTheWorld, Layout, Opening, PagePicture, StageApi } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
 /** A value of the look set whole on the stage, in place of one token: any but the ground's layers, and the way words come up, which the moves that bring them read @typedef {Exclude<keyof Look, 'groundLayers' | 'words'>} WholeLookName */
@@ -1023,10 +1023,11 @@ class LookDrawer {
  * of a frame; the objects' drawer draws those pushed off too, as both lists lay what stands inside the page's window in
  * its one root; the world's light lights the room's things and the window's body alone, which the room draws
  * (`stage/things.js`, `stage/body.js`), and its glow the room draws over a frame (`stage/room.js`), as it blurs the
- * world by how the eye sees (`stage/lens.js`) and sees it from where the eye stands.
+ * world by how the eye sees (`stage/lens.js`) and sees it from where the eye stands, laying what stands in the world in
+ * the order the scene hands.
  * @typedef {{
  *   readonly root: Staged,
- *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'world' | 'leaving' | 'eye'>]: Drawer }
+ *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'world' | 'leaving' | 'laidInTheWorld' | 'eye'>]: Drawer }
  *     & { readonly objects: ObjectsDrawer },
  *   readonly page: Staged,
  *   readonly picture: Staged,
