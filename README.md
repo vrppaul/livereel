@@ -161,7 +161,10 @@ and the moves of each part of the scene:
   leg's chord before the spot, `{ ahead: 2 }` straight on, twice as long as the leg before, and `{ along: figure }`
   along a figure of the film's own, any three.js `Curve` with its x across, y down and z out in pixels of a frame
   1080 high, closed or open, set off from where the leg starts wherever the film drew it, and never changed after it
-  is handed. A leg after another leaves heading as that one arrived, but a figure, which leaves as the film drew it.
+  is handed; and `{ onto: '#corner', fills: 1, middleAt: { left: 0.6, top: 0.89 } }` to where `eye.onto` would stand
+  square before the block, framed as it frames it, the leg itself setting the gaze there as it ends, straight down
+  onto the page, its top up the page, so a flight comes to rest standing as the eye onto that block stands.
+  A leg after another leaves heading as that one arrived, but a figure, which leaves as the film drew it.
   Legs to spots join smoothly, `shape: 'smooth'`, never higher or lower than the spots either side, a leg to a spot
   before a figure arriving heading the way the figure leaves; or at corners, `'straight'`. The eye goes as far in
   each equal share of the move's own curve, and straight on past the way's end on a curve that bounces; or, where
@@ -183,8 +186,8 @@ and the moves of each part of the scene:
   leg, a leg ahead first or one to where the eye stands, a figure that gives a point of no numbers, flat or of no
   length, a way that reaches
   the page, a height of none, a tip past ±90, a heading toward the block the eye arrives right over, a key by a leg
-  the way has not or no later than the key before, a leg that takes no time, one naming none beside one that names
-  how long it takes, and an `ease` beside legs that name it
+  the way has not, by a leg onto a block or no later than the key before, a leg that takes no time, one naming none
+  beside one that names how long it takes, and an `ease` beside legs that name it
 - `eye.onto(target, { fills, middleAt, turned })`: the eye brought before a block of the page, a selector or a box of
   the screen: so near that, seen square, the block fills `fills` of the frame along the side it fills most,
   `eye.onto('#thread', { fills: 0.94 })`; its middle at `middleAt` of the frame, `{ left: 0.5, top: 0.64 }` in shares

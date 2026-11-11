@@ -10,7 +10,9 @@
  * and nothing the eye passes moves under it.
  *
  * The eye flies over the page's window by a move of its own (`src/domain/flight.ts`): from where it stands, along legs
- * to spots over blocks of the page, its gaze turned by keys of its own. The blocks are read once, as the move begins,
+ * to spots over blocks of the page, its gaze turned by keys of its own; or to where it stands square before a block as
+ * the eye coming before it would, the leg setting the gaze square there as it ends, so no key of the film's may be
+ * reached by it. The blocks are read once, as the move begins,
  * as the camera shows the page in the window then, and the eye rides the window from then on, so a window that leans
  * or travels carries it, until `eye.to` sends it into the room again. Its legs are timed apart where every one names
  * how long it takes: then their times alone pace it, and its share of the step goes on its own time, on no curve.
@@ -165,29 +167,44 @@ interface LegAlong extends TimedLeg {
 	readonly along: OwnFigure;
 }
 
+/**
+ * How a film frames a block the eye stands before: so near that, seen square, the block fills `fills` of the frame
+ * along the side it fills most; its middle at `middleAt` of the frame, in shares of it from its top left corner, the
+ * frame's middle where none is named.
+ */
+interface FramingScript {
+	readonly fills: number;
+	readonly middleAt?: Point;
+}
+
+/** A leg flown to where the eye stands square before a block as the film frames it, as `eye.onto` stands it. */
+interface LegOnto extends TimedLeg, FramingScript {
+	readonly onto: Target;
+}
+
 /** A leg of a flight's way, as a film writes it. */
-export type LegScript = LegTo | LegBending | LegAhead | LegAlong;
+export type LegScript = LegTo | LegBending | LegAhead | LegAlong | LegOnto;
 
 /** A key of the eye's gaze, reached as the eye reaches the end of its way's leg `by`, from 0 for the first. */
 interface GazeKeyScript {
 	readonly by: number;
 }
 
+/** A key of the eye's gaze of so many degrees. */
+type DegreesKeyScript = GazeKeyScript & { readonly degrees: number };
+
 /**
  * A heading the eye follows: so many degrees from up the page clockwise; toward a block of the page, wherever it
  * stands; or along the way it flies, `along: 'way'`.
  */
 export type HeadingKeyScript =
-	| (GazeKeyScript & { readonly degrees: number })
-	| (GazeKeyScript & { readonly toward: Target })
-	| (GazeKeyScript & { readonly along: 'way' });
+	DegreesKeyScript | (GazeKeyScript & { readonly toward: Target }) | (GazeKeyScript & { readonly along: 'way' });
 
 /**
  * A tip the eye follows: so many degrees off the page's plane, -90 looking straight down onto it, 0 level; or as far as
  * holds a block `at` a share down the frame wherever it stands, heading toward it.
  */
-export type TipKeyScript =
-	(GazeKeyScript & { readonly degrees: number }) | (GazeKeyScript & { readonly holding: Target; readonly at: number });
+export type TipKeyScript = DegreesKeyScript | (GazeKeyScript & { readonly holding: Target; readonly at: number });
 
 /**
  * How a flight goes: its legs joined smoothly where none is named, or straight; and its gaze's keys, heading and tip
@@ -209,13 +226,10 @@ interface TurnedScript {
 }
 
 /**
- * How the eye stands before a block: so near that, seen square, the block fills `fills` of the frame along the side it
- * fills most; its middle at `middleAt` of the frame, in shares of it from its top left corner, the frame's middle where
- * none is named; and turned from square about that middle as `turned` says, square where it says nothing.
+ * How the eye stands before a block: framed so, and turned from square about the block's middle as `turned` says,
+ * square where it says nothing.
  */
-export interface OntoScript extends TimingScript {
-	readonly fills: number;
-	readonly middleAt?: Point;
+export interface OntoScript extends TimingScript, FramingScript {
 	readonly turned?: TurnedScript;
 }
 
@@ -264,10 +278,12 @@ const A_TURN_FROM_SQUARE: Kind<number> = new Plain(
 	isTurnFromSquare,
 	'degrees turned from square, more than -90 and less than 90'
 );
+const A_SHARE_FILLED = new Plain(
+	isMoreThanNone,
+	'the share of the frame the block fills along the side it fills most, more than 0'
+);
 const ONTO_FORM: Form<OntoScript> = {
-	fills: needed(
-		new Plain(isMoreThanNone, 'the share of the frame the block fills along the side it fills most, more than 0')
-	),
+	fills: needed(A_SHARE_FILLED),
 	middleAt: A_POINT_OF_THE_FRAME,
 	turned: new OfForm<TurnedScript>(
 		{ round: A_TURN_FROM_SQUARE, up: A_TURN_FROM_SQUARE },
@@ -310,11 +326,18 @@ const A_LEG: Kind<LegScript> = new FormByName<LegScript>(
 				'a leg along a figure: { along, takes }'
 			)
 		],
+		[
+			'onto',
+			new OfForm<LegOnto>(
+				{ onto: needed(A_TARGET), fills: needed(A_SHARE_FILLED), middleAt: A_POINT_OF_THE_FRAME, takes: A_LEGS_TIME },
+				'a leg onto a block: { onto, fills, middleAt, takes }'
+			)
+		],
 		['arriving', A_LEG_BENDING],
 		['bend', A_LEG_BENDING]
 	],
 	new OfForm<LegTo>({ to: needed(AN_OVER), takes: A_LEGS_TIME }, 'a leg: { to, takes }'),
-	'a leg: { to }, { to, arriving, bend }, { ahead } or { along }, each with how long it takes where the legs are timed'
+	'a leg: { to }, { to, arriving, bend }, { ahead }, { along } or { onto, fills }, each with how long it takes where the legs are timed'
 );
 const A_LEG_NUMBER: Kind<number> = new Plain(isLegNumber, "a leg's number, 0 for the first");
 const A_TIP: Kind<number> = new Plain(isTip, 'degrees from -90, looking straight down onto the page, to 90');
@@ -356,12 +379,16 @@ const THE_FIRST_LEG = 0;
 const LEVEL_WITH_THE_PAGE = 0;
 const STRAIGHT_DOWN = -90;
 const STRAIGHT_UP = 90;
+// The gaze of the eye standing square before a block, as `viewpointBefore` stands it: heading up the page, its top
+// pointing so, and tipped straight down onto the page
+const UP_THE_PAGE = 0;
 // How near over a block, on the page's plane, the eye stands to have no heading toward it, in pixels of a frame 1080
 // high
 const RIGHT_OVER = 1e-6;
 // How far the eye stands turned from square where a film names no turn, and the quarter turn it stays within, in
 // degrees: turned so far, it would stand on the page's plane
 const SQUARE = 0;
+const NOT_TURNED: EyeFraming['turned'] = { round: SQUARE, up: SQUARE };
 const A_QUARTER_TURN = 90;
 // What a refusal names each move by
 const EYE_TO = 'eye.to';
@@ -415,7 +442,8 @@ export function to(place: EyePlaceOrRest, script: EyeToScript = {}): Move {
 
 /**
  * The eye flown over the page's window along a way of legs, from where it stands, its gaze turned by the keys the film
- * names, riding the window from then on; paced by the move's curve, or by its legs' times where the film names them.
+ * names and set square by each leg onto a block as it ends, riding the window from then on; paced by the move's curve,
+ * or by its legs' times where the film names them.
  */
 export function fly(way: readonly LegScript[], script: FlyScript = {}): Move {
 	assertKind(way, A_FLIGHTS_WAY, `${EYE_FLY}'s way`);
@@ -426,11 +454,13 @@ export function fly(way: readonly LegScript[], script: FlyScript = {}): Move {
 	refuseKeysOff(heading, way, 'heading');
 	refuseKeysOff(tip, way, 'tip');
 	const timed = legsTimedOf(way);
+	const headingWithStands = keysWithStands(heading, way, UP_THE_PAGE);
+	const tipWithStands = keysWithStands(tip, way, STRAIGHT_DOWN);
 	return {
 		part: 'eye',
 		valueNames: STANDING,
 		timing: flightsTiming(script, timed),
-		begin: (beginning) => flown(beginning, way, script.shape ?? SMOOTH, timed, heading, tip)
+		begin: (beginning) => flown(beginning, way, script.shape ?? SMOOTH, timed, headingWithStands, tipWithStands)
 	};
 }
 
@@ -441,11 +471,7 @@ export function fly(way: readonly LegScript[], script: FlyScript = {}): Move {
 export function onto(target: Target, script: OntoScript): Move {
 	assertKind(target, A_TARGET, `${EYE_ONTO}'s target`);
 	assertWritten(script, ONTO_FORM, EYE_ONTO);
-	const framing: EyeFraming = {
-		fills: script.fills,
-		middleAt: script.middleAt ?? MIDDLE_SHARE,
-		turned: { round: script.turned?.round ?? SQUARE, up: script.turned?.up ?? SQUARE }
-	};
+	const framing = framingOf(script, { round: script.turned?.round ?? SQUARE, up: script.turned?.up ?? SQUARE });
 	return {
 		part: 'eye',
 		valueNames: STANDING,
@@ -508,12 +534,31 @@ function sentAlong(eye: Eye, through: Through<EyePlace>, place: EyePlaceOrRest):
  */
 async function broughtBefore(beginning: Beginning, target: Target, framing: EyeFraming): Promise<Change> {
 	const camera = cameraOf(beginning.scene, beginning.format);
-	const frame = beginning.format.frame;
-	const setOffFrom = viewpointOf(eyeInTheWindow(camera.eye, camera.view, frame));
-	const block = await shownBox(beginning, target, THE_FIRST, EYE_ONTO);
-	const end = viewpointBefore(boxOnTheWindowsPlane(camera, frame, block), framing, camera.eye.focalLength, frame);
+	const setOffFrom = viewpointOf(eyeInTheWindow(camera.eye, camera.view, beginning.format.frame));
+	const end = await standBefore(beginning, camera, target, framing, EYE_ONTO);
 	placesThatRollOneWay([setOffFrom, end], EYE_ONTO);
 	return travelling(pathThatSees(pathOf(setOffFrom, NO_KEYS, end, EYE_SPACE), EYE_ONTO), 'window');
+}
+
+/**
+ * Where the eye stands before a block of the page as a film frames it, the block read as the move begins where the
+ * camera shows it in the window then: in the window's own pixels of a frame 1080 high, `out` away from its face.
+ */
+async function standBefore(
+	beginning: Beginning,
+	camera: Camera,
+	target: Target,
+	framing: EyeFraming,
+	move: string
+): Promise<Viewpoint> {
+	const frame = beginning.format.frame;
+	const block = await shownBox(beginning, target, THE_FIRST, move);
+	return viewpointBefore(boxOnTheWindowsPlane(camera, frame, block), framing, camera.eye.focalLength, frame);
+}
+
+/** How a film frames a block the eye stands before, turned from square as named: its middle the frame's where unnamed. */
+function framingOf(script: FramingScript, turned: EyeFraming['turned']): EyeFraming {
+	return { fills: script.fills, middleAt: script.middleAt ?? MIDDLE_SHARE, turned };
 }
 
 /**
@@ -556,13 +601,22 @@ function flightsTiming(script: FlyScript, timed: LegsTimed): Timing {
 	}
 }
 
-/** Refuses gaze keys that name no leg of the way, or a leg no farther along than the key before. */
+/**
+ * Refuses gaze keys that name no leg of the way, a leg onto a block, which sets the gaze at its end, or a leg no
+ * farther along than the key before.
+ */
 function refuseKeysOff(keys: readonly GazeKeyScript[], way: readonly LegScript[], named: string): void {
 	let legBefore: number | null = null;
 	for (const [index, key] of keys.entries()) {
-		if (key.by >= way.length) {
+		const leg = way[key.by];
+		if (leg === undefined) {
 			throw new FilmError(
 				`${EYE_FLY}'s ${named} key ${String(index)} is reached by leg ${String(key.by)}, and the way's legs go from 0 to ${String(way.length - 1)}`
+			);
+		}
+		if ('onto' in leg) {
+			throw new FilmError(
+				`${EYE_FLY}'s ${named} key ${String(index)} is reached by leg ${String(key.by)}, which stands before a block and sets the gaze at its end: name no key by it`
 			);
 		}
 		if (legBefore !== null && key.by <= legBefore) {
@@ -572,6 +626,19 @@ function refuseKeysOff(keys: readonly GazeKeyScript[], way: readonly LegScript[]
 		}
 		legBefore = key.by;
 	}
+}
+
+/**
+ * A gaze's keys with one of so many degrees by each leg onto a block, the gaze square before it there, in the order of
+ * the legs they are reached by.
+ */
+function keysWithStands<Key extends GazeKeyScript>(
+	keys: readonly Key[],
+	way: readonly LegScript[],
+	degrees: number
+): readonly (Key | DegreesKeyScript)[] {
+	const stands = way.flatMap((leg, by) => ('onto' in leg ? [{ by, degrees }] : []));
+	return [...keys, ...stands].toSorted((first, second) => first.by - second.by);
 }
 
 /**
@@ -611,10 +678,17 @@ async function flown(
 	return (scene, progress) => withEye(scene, { ...scene.eye, ...flownAt(flight, progress), inside: 'window' });
 }
 
-/** A leg of the way as the film writes it, its point read over the block it names. */
+/**
+ * A leg of the way as the film writes it, its point read over the block it names, or where the eye stands square before
+ * it as the film frames it.
+ */
 async function legRead(beginning: Beginning, camera: Camera, leg: LegScript): Promise<Leg> {
 	if ('ahead' in leg) return { kind: 'ahead', times: leg.ahead };
 	if ('along' in leg) return { kind: 'along', figure: leg.along };
+	if ('onto' in leg) {
+		const stand = await standBefore(beginning, camera, leg.onto, framingOf(leg, NOT_TURNED), EYE_FLY);
+		return { kind: 'to', to: stand.at };
+	}
 	const to = await spotOver(beginning, camera, leg.to.over, leg.to.height);
 	if ('arriving' in leg) return { kind: 'bending', to, arriving: leg.arriving, bend: leg.bend };
 	return { kind: 'to', to };

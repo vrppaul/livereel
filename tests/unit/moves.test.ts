@@ -3893,6 +3893,38 @@ test('an eye onto a block refused as the move is made: no share of the frame to 
 	);
 });
 
+// A flight over the block, then onto the card as the eye onto it frames it
+const FLOWN_ONTO_THE_CARD = [{ to: OVER_THE_BLOCK }, { onto: '#card', ...HALF_THE_FRAME_LOW }];
+
+test('an eye flown onto a block as its last leg stands as the eye onto it stands, square before it, its middle where the film names, whatever gaze it flew with before', async () => {
+	const flown = await setAt(
+		eye.fly(FLOWN_ONTO_THE_CARD, { heading: [{ by: 0, toward: '#card' }], tip: [{ by: 0, degrees: -60 }] }),
+		OPENING_IN_SMALL,
+		1
+	);
+	expect([flown.eye.inside, pagePointDrawn(flown, CARDS_TOP_LEFT), pagePointDrawn(flown, CARDS_FOOT_RIGHT)]).toEqual([
+		'window',
+		{ left: 100, top: 250 },
+		{ left: 300, top: 350 }
+	]);
+});
+
+test('a leg onto a block refused as the flight is made: no share of the frame to fill, a middle off the frame, a key of the gaze by it, whose end the stand sets the gaze at', () => {
+	expect(() => eye.fly([{ onto: '#card', fills: 0 }])).toThrow(
+		new FilmError(
+			"eye.fly's way[0]'s fills is 0: it is the share of the frame the block fills along the side it fills most, more than 0"
+		)
+	);
+	expect(() => eye.fly([{ onto: '#card', fills: 0.5, middleAt: { left: -0.1, top: 0.5 } }])).toThrow(
+		new FilmError("eye.fly's way[0]'s middleAt's left is -0.1: it is a number from 0 to 1")
+	);
+	expect(() => eye.fly(FLOWN_ONTO_THE_CARD, { tip: [{ by: 1, degrees: -60 }] })).toThrow(
+		new FilmError(
+			"eye.fly's tip key 0 is reached by leg 1, which stands before a block and sets the gaze at its end: name no key by it"
+		)
+	);
+});
+
 test('a piece is lifted off the page while the eye looks straight ahead, moved aside or not, and refused while it looks aslant', async () => {
 	const steppedAside = await setIn(
 		eye.to({ at: { across: 300, down: 0, out: 2000 }, aim: { across: 300, down: 0, out: 0 } }),
