@@ -72,13 +72,7 @@ import { WindowBlurred, WindowBody } from './body.js';
 import { Lens, SPREADS_REACHED, sceneFieldOf, sideHalvedEvenly } from './lens.js';
 import { WorldLighting } from './lighting.js';
 import { matrixOf, placedBy, projectionOnto } from './matrices.js';
-import {
-	PAGE_SURFACE_FRAGMENT,
-	PagePicture,
-	blurredWithTheWindow,
-	compiledForThePits,
-	pageSurfaceValues
-} from './page-picture.js';
+import { PAGE_SURFACE_FRAGMENT, PagePicture, compiledForThePits, pageSurfaceValues } from './page-picture.js';
 import { PagePits, PieceBodies, pitsSunkIn } from './piece-body.js';
 import { ADDED, LAID_OVER, PREMULTIPLIED, SRGB_CURVES, passOver, valuesSet } from './passes.js';
 import { FrameShown } from './shown.js';
@@ -844,13 +838,13 @@ class Room {
 
 	/**
 	 * How wide the window's shade blurs the whole window at each pixel of a field that holds the window, its page or its
-	 * body, as the lens takes it, where the shade blurs the whole window (`blurredWithTheWindow`); none where it does
-	 * not, or the field holds none of the window.
+	 * body, as the lens takes it, where the shade blurs the window's body, which the room blurs the page with; none where
+	 * it blurs none of it, or the field holds none of the window.
 	 * @param {SceneField} field @param {DrawnScene} scene @param {boolean} holdsTheWindow @returns {Texture | null}
 	 */
 	windowSpreadsOver(field, scene, holdsTheWindow) {
 		const body = scene.window.body;
-		if (!holdsTheWindow || !blurredWithTheWindow(scene.window) || body === null || body.shade === null) {
+		if (!holdsTheWindow || body === null || body.shade === null || body.shade.blur <= SHARP) {
 			return NO_SPREADS_OF_THEIR_OWN;
 		}
 		const toTheEye = this.worldCamera.projectionMatrixInverse;

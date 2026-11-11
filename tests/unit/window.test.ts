@@ -215,11 +215,20 @@ test("a shade's blur seen on the frame is as wide on the frame wherever the eye 
 		onThePage.body!.shade
 	]).toEqual([
 		4,
-		{ box: part, edge: 2, blur: 2 },
+		{ box: part, edge: 2, blur: 2, softens: 0.5 },
 		{ fade: 0, blur: 8, blurSeen: 'on the frame', softestBlur: 8 },
 		8,
 		{ fade: 0, blur: 8, blurSeen: 'on the page', softestBlur: 16 }
 	]);
+});
+
+test("the page's picture is blurred apart by the shade's blur on the window's plane, and none where the shade reaching a window with a body blurs it, as the room blurs the page with its body through the eye's lens then", () => {
+	const blurred = { ...WITH_A_BODY, blur: 8, reaching: 'window' };
+	expect([
+		drawnWindow(LIFTED, AT_ITS_EDGES, { ...blurred, reaching: 'page' }, AROUND).shade!.pictureBlur,
+		drawnWindow(LIFTED, AT_ITS_EDGES, blurred, AROUND).shade!.pictureBlur,
+		drawnWindow(LIFTED, AT_ITS_EDGES, { ...blurred, body: LIVEREELS_SLAB }, AROUND).shade!.pictureBlur
+	]).toEqual([8, 0, 8]);
 });
 
 test('the glass reflects nothing where the world has no light in it, no lights and no soft boxes', () => {

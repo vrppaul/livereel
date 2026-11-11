@@ -12,11 +12,12 @@
  * four times. Both come and go with the piece.
  */
 import type { Camera } from '../domain/camera.ts';
+import type { Fraction } from '../domain/fraction.ts';
 import { type Box, type Point, type Segment, type Size, segmentBetween, withAir } from '../domain/geometry.ts';
 import { type Holders, type Scrolled, onTheFrame, screenBoxUnder } from '../domain/placement.ts';
 import { type FrameObject, type ObjectEntry, type ObjectName, drawnOnTheFrame } from './object.ts';
 import { type DrawnHole, type Hole, type Piece, figureIn } from './piece.ts';
-import { type PageOfTheScreen, isOnePage } from './screen.ts';
+import { type Screen, isOnePage, pageShownBy } from './screen.ts';
 import type { Stroke } from './stroke.ts';
 import { presentShare } from './way.ts';
 
@@ -68,27 +69,37 @@ const BEFORE_THE_LAST = -2;
 /**
  * The holes the pieces among objects leave on the screen while it shows a page, each where its piece was lifted, or,
  * riding its block, as far up the screen as the film has scrolled the blocks that carry its source since, in all:
- * those alone of pieces lifted off that page, as a hole is left in the page, not the screen.
+ * those alone of pieces lifted off that page, as a hole is left in the page, not the screen; each pit as clear as the
+ * screen has come up.
  */
 export function drawnHoles(
 	objects: readonly ObjectEntry[],
 	scrolled: Scrolled,
-	shown: PageOfTheScreen
+	screen: Pick<Screen, 'shows' | 'shown'>
 ): readonly DrawnHole[] {
+	const page = pageShownBy(screen.shows);
 	return piecesAmong(objects).flatMap(({ name, object, piece }) =>
-		piece.hole === null || !isOnePage(piece.liftedOff, shown)
+		piece.hole === null || !isOnePage(piece.liftedOff, page)
 			? []
-			: [drawnHole(name, screenBoxUnder(piece.source, object.inside, scrolled), piece.hole, presentShare(object))]
+			: [drawnHole(name, screenBoxUnder(piece.source, object.inside, scrolled), piece.hole, object, screen.shown)]
 	);
 }
 
 /**
  * A hole as the stage draws it on the screen: over its piece's source and as far past it each way as it reaches, its
- * corners as much rounder, as far as its piece has come and not gone.
+ * corners as much rounder, as far as its piece has come and not gone; its pit, if any, as clear as the screen has come
+ * up.
  */
-function drawnHole(name: ObjectName, source: Box, hole: Hole, shown: number): DrawnHole {
-	const { reach, ...drawn } = hole;
-	return { ...drawn, name, box: withAir(source, reach), corner: hole.corner + reach, shown };
+function drawnHole(name: ObjectName, source: Box, hole: Hole, object: FrameObject, screenShown: Fraction): DrawnHole {
+	const { reach, pit, ...drawn } = hole;
+	return {
+		...drawn,
+		name,
+		box: withAir(source, reach),
+		corner: hole.corner + reach,
+		shown: presentShare(object),
+		pit: pit === null ? null : { ...pit, clear: screenShown }
+	};
 }
 
 /**

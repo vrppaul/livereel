@@ -26,9 +26,9 @@
  * slab stands at about one depth with the page, so the window is handed the lens as spreads of its own
  * (`WindowBlurred`): each pixel of a field holding the window whose depth falls within the slab, read back onto it,
  * spreads as wide as the shade blurs it there. Read off the depth, what stands before the slab keeps its own spread, as
- * the depth hides the slab there. The page's picture is laid unblurred then (`blurredWithTheWindow`): blurred in its
- * picture, the page's outline stood sharp round a soft page, a bright line on beats 7–8 of the promo's draft at film
- * seconds 4 and 15.8 where the cut has none.
+ * the depth hides the slab there. The engine hands the page's picture unblurred then (`pictureBlur` in its window):
+ * blurred in its picture, the page's outline stood sharp round a soft page, a bright line on beats 7–8 of the promo's
+ * draft at film seconds 4 and 15.8 where the cut has none.
  */
 import * as THREE from 'three';
 import { matrixOf } from './matrices.js';
@@ -171,10 +171,8 @@ const SPREADS_LAYER = {
 	magFilter: THREE.NearestFilter
 };
 const A_PIXEL = 1;
-// A value of the spreads' pass before the spreads are first drawn, which sets every one; and the share of the blur
-// the part of the screen it leaves sharp softens by where that part is wholly sharp
+// A value of the spreads' pass before the spreads are first drawn, which sets every one
 const SET_AS_DRAWN = 0;
-const SOFTENS_NONE = 0;
 // The depth a layer keeps where nothing was drawn, the farthest it holds
 const NOTHING_DRAWN = 1;
 // How far off a face of the slab a point read back off the depth still lies on it, in the frame's pixels: past the
@@ -400,9 +398,7 @@ export class WindowBlurred {
 				window.reach.left + window.reach.width / HALVES,
 				window.reach.top + window.reach.height / HALVES
 			),
-			...(filmed === null || sharp === null || window.shade === null
-				? {}
-				: sharpPartValues(filmed.box, sharp, window.shade, scene.camera.pose.zoom))
+			...(filmed === null || sharp === null ? {} : sharpPartValues(filmed.box, sharp, scene.camera.pose.zoom))
 		});
 		drawnInto(renderer, this.pass, this.spreads);
 		return this.spreads.texture;
@@ -412,16 +408,15 @@ export class WindowBlurred {
 /**
  * The part of the screen the shade's blur leaves sharp, as the window's spreads keep it: the screen's box on the
  * window's plane, the part's box and edge in the screen's pixels, the edge as the camera's zoom frames it, and the
- * share of the page's blur the part softens by, both on the window's plane.
- * @param {Box} screen @param {NonNullable<DrawnWindow['sharp']>} sharp
- * @param {NonNullable<DrawnWindow['shade']>} pageShade @param {number} zoom
+ * share of the page's blur the part softens by.
+ * @param {Box} screen @param {NonNullable<DrawnWindow['sharp']>} sharp @param {number} zoom
  */
-function sharpPartValues(screen, sharp, pageShade, zoom) {
+function sharpPartValues(screen, sharp, zoom) {
 	return {
 		screenBox: valuesOfTheBox(screen),
 		sharpBox: valuesOfTheBox(sharp.box),
 		sharpEdge: sharp.edge / zoom,
-		partSoftens: (sharp.blur ?? SOFTENS_NONE) / pageShade.blur
+		partSoftens: sharp.softens
 	};
 }
 

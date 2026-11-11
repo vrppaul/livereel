@@ -21,9 +21,9 @@
  * sharp the picture is laid unblurred, or blurred apart by as much as the part softens, softening into the page's past
  * the part's edge as the flat stage's mask has it (`.sharp-part` in `stage.css`): never a sharp picture faded into a
  * blurred one, which reads as two pictures at once. Where the shade reaching the whole window blurs the window's body,
- * the picture is laid unblurred and the eye's lens blurs the page with its body as one (`blurredWithTheWindow`,
- * `stage/body.js`): blurred apart, the page's outline stood sharp round a soft page, a bright line where the
- * claude-review promo's lens softened all of its slab.
+ * the engine hands the picture's blur as none (`pictureBlur` in `src/props/window.ts`), and the eye's lens blurs the
+ * page with its body as one (`stage/body.js`): blurred apart, the page's outline stood sharp round a soft page, a
+ * bright line where the claude-review promo's lens softened all of its slab.
  *
  * The page's surface lays, as the browser lays them in the window's view: the screen's ground and the picture, cut to
  * the screen's rounded box and the view's, showing as far as the screen is clear less how clear its own markup is
@@ -488,22 +488,21 @@ export class PagePicture {
 		}
 		this.uploadedAnew();
 		const zoom = scene.camera.pose.zoom;
-		const shade = scene.window.shade;
-		const blurredHere = shade !== null && !blurredWithTheWindow(scene.window);
+		const blur = scene.window.shade?.pictureBlur ?? UNBLURRED;
 		return {
 			...laid,
-			picture: this.seenBlurred(this.pageBlurred, blurredHere ? shade.blur : UNBLURRED, zoom),
+			picture: this.seenBlurred(this.pageBlurred, blur, zoom),
 			pictured: true,
 			screenBox: valuesOfTheBox(filmed.box),
 			screenCorner: filmed.corner,
-			...(blurredHere ? this.sharpPartLaid(scene.window.sharp, zoom) : NO_PART_KEPT_SHARP)
+			...(blur > UNBLURRED ? this.sharpPartLaid(scene.window.sharp, zoom) : NO_PART_KEPT_SHARP)
 		};
 	}
 
 	/**
-	 * What the page's surface lays of the part of the screen the shade's blur leaves sharp: the picture, unblurred or
-	 * blurred as far as the part softens, laid over the page's there, the screen's size, the part and its edge, the edge
-	 * in the screen's pixels as the blur is (`seenBlurred`); none where the blur leaves none.
+	 * What the page's surface lays of the part of the screen the shade's blur leaves sharp, over a picture it blurs: the
+	 * picture, unblurred or blurred as far as the part softens, laid over the page's there, the screen's size, the part
+	 * and its edge, the edge in the screen's pixels as the blur is (`seenBlurred`); none where the blur leaves none.
 	 * @param {DrawnScene['window']['sharp']} sharp @param {number} zoom @returns {SharpPartLaid}
 	 */
 	sharpPartLaid(sharp, zoom) {
@@ -539,17 +538,6 @@ export class PagePicture {
 		}
 		this.uploaded = address;
 	}
-}
-
-/**
- * Whether the room blurs the page with the window's body, through the eye's lens, where the shade reaching the whole
- * window blurs the body (`stage/body.js`): the page's picture is laid unblurred then, and the part the blur leaves
- * sharp is kept so by the body's spreads, as the page and its body blurred apart left the page's outline sharp round a
- * soft page.
- * @param {DrawnScene['window']} window
- */
-export function blurredWithTheWindow(window) {
-	return window.body !== null && window.body.shade !== null && window.body.shade.blur > UNBLURRED;
 }
 
 /**

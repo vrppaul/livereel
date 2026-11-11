@@ -2243,7 +2243,7 @@ test("a piece's hole reaching past it is as much wider each way and as much roun
 				line: null,
 				corner: 2,
 				shown: 1,
-				pit: { depth: 14, walls: '#1d2a44', glow: 0 }
+				pit: { depth: 14, walls: '#1d2a44', glow: 0, clear: 1 }
 			}
 		],
 		[
@@ -2290,8 +2290,8 @@ test('a piece lifted into the world with a body is drawn with walls as thick as 
 	const risenBody = bodyOf(risen);
 	// The screen's pixels are the frame's at the camera at 1: 12 thick, half come up 6, twice as large 24
 	expect([bodyOf(coming), risenBody]).toEqual([
-		{ thickness: 6, walls: '#e6e8ec', glow: 0, height: 0, clear: 1 },
-		{ thickness: 24, walls: '#e6e8ec', glow: 0, height: 40, clear: 1 }
+		{ thickness: 6, walls: '#e6e8ec', glow: 0, height: 0, clear: 1, shadow: 0 },
+		{ thickness: 24, walls: '#e6e8ec', glow: 0, height: 40, clear: 1, shadow: 0 }
 	]);
 });
 
@@ -2893,6 +2893,29 @@ test('a piece with a body draws its walls as clear as it has not faded, as thick
 	]);
 });
 
+test('a piece with a body casts its shadow as strong as its own and as far as the piece is clear, none while its face stands on its plane', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const bodied = piece.show('#card', { inside: 'world', body: { thickness: 12, walls: '#1d2a44' } });
+	const onItsPlane = await setIn(piece.effects({ shadow: 0.8 }), await setIn(bodied, wide, 1, FULL_HD), 1, FULL_HD);
+	const raised = await setIn(piece.effects({ depth: 150 }), onItsPlane, 1, FULL_HD);
+	const faded = await setIn(piece.effects({ fade: 0.75 }), raised, 1, FULL_HD);
+	const shadowIn = (scene: Scene) => (drawnObjectsIn(scene, FULL_HD)[0]!.content as DrawnPiece).body!.shadow;
+	expect([shadowIn(onItsPlane), shadowIn(raised), shadowIn(faded)]).toEqual([0, 0.8, 0.2]);
+});
+
+test("a hole's pit is as clear as the screen it is sunk into has come up, as its walls go down with it: half way through screen.lower(), half; none once the screen is down", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const body = { thickness: 14, walls: '#1d2a44' };
+	const hole = { ground: '#112233', pit: { depth: 14 } };
+	const sunk = await setIn(piece.show(OTHER, { inside: 'world', body, hole }), wide, 1, FULL_HD);
+	const pitIn = (scene: Scene) => drawn(scene, cameraOf(scene, FULL_HD), 0, FULL_HD, NONE_SHARPER).holes[0]!.pit!.clear;
+	expect([
+		pitIn(sunk),
+		pitIn(await setIn(lower(), sunk, 0.5, FULL_HD)),
+		pitIn(await setIn(lower(), sunk, 1, FULL_HD))
+	]).toEqual([1, 0.5, 0]);
+});
+
 test('an object brought toward the eye by its effects stands in its box, as near as a carry brings it, and a carry naming no depth, to a place or to a block, leaves the depth they set, whichever is written first', async () => {
 	const titled = await setAt(title.show('Near', { at: 'left' }), OPENING_IN_SMALL, 1);
 	const near = await setAt(title.effects({ depth: 1000 }), titled, 1);
@@ -2984,9 +3007,9 @@ test('the page is shaded as far as its move has come toward the values the film 
 		)
 	).toEqual([
 		null,
-		{ dim: 0.3, fade: 0, blur: 0, reaching: 'page' },
-		{ dim: 0.3, fade: 0.5, blur: 8, reaching: 'page' },
-		{ dim: 0.3, fade: 0.5, blur: 8, reaching: 'page' },
+		{ dim: 0.3, fade: 0, blur: 0, reaching: 'page', pictureBlur: 0 },
+		{ dim: 0.3, fade: 0.5, blur: 8, reaching: 'page', pictureBlur: 8 },
+		{ dim: 0.3, fade: 0.5, blur: 8, reaching: 'page', pictureBlur: 8 },
 		null,
 		null
 	]);
@@ -3002,8 +3025,8 @@ test("the shade reaches the page alone till a film has it reach the whole window
 		])
 	).toEqual([
 		['page', null],
-		['window', { dim: 0, fade: 0, blur: 4, reaching: 'window' }],
-		['page', { dim: 0, fade: 0, blur: 4, reaching: 'page' }]
+		['window', { dim: 0, fade: 0, blur: 4, reaching: 'window', pictureBlur: 4 }],
+		['page', { dim: 0, fade: 0, blur: 4, reaching: 'page', pictureBlur: 4 }]
 	]);
 });
 
@@ -3036,10 +3059,10 @@ test("the stage is handed the part the shade's blur leaves sharp, its edge softe
 	const unblurred = await setAt(windowShade({ blur: 0 }), blurred, 1);
 	expect(
 		[blurred, unblurred].map((scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).window.sharp)
-	).toEqual([{ box: BLOCK, edge: 4, blur: null }, null]);
+	).toEqual([{ box: BLOCK, edge: 4, blur: null, softens: 0 }, null]);
 });
 
-test("the part the shade's blur leaves sharp softens toward the blur as far as the film names, a share of the way through the values between, and the stage is handed it blurred by that share of the page's blur; wholly sharp where it softens none", async () => {
+test("the part the shade's blur leaves sharp softens toward the blur as far as the film names, a share of the way through the values between, and the stage is handed the share and the part blurred by that share of the page's blur; wholly sharp where it softens none", async () => {
 	const kept = await setAt(windowShade({ blur: 8, sharp: '#block' }), OPENING_IN_SMALL, 1);
 	const softening = await setAt(windowShade({ sharpSoftens: 0.75 }), kept, 0.5);
 	const softened = await setAt(windowShade({ sharpSoftens: 0.75 }), kept, 1);
@@ -3050,9 +3073,9 @@ test("the part the shade's blur leaves sharp softens toward the blur as far as t
 			drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).window.sharp
 		])
 	).toEqual([
-		[0.375, { box: BLOCK, edge: 4, blur: 3 }],
-		[0.75, { box: BLOCK, edge: 4, blur: 6 }],
-		[0, { box: BLOCK, edge: 4, blur: null }]
+		[0.375, { box: BLOCK, edge: 4, blur: 3, softens: 0.375 }],
+		[0.75, { box: BLOCK, edge: 4, blur: 6, softens: 0.75 }],
+		[0, { box: BLOCK, edge: 4, blur: null, softens: 0 }]
 	]);
 });
 

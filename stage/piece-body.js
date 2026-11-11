@@ -85,8 +85,8 @@ import { WORLD_PARTS } from './see-through.js';
 /**
  * A pit sunk into the page as the room draws it, on the window's plane where the screen lies there, in the frame's
  * pixels as large as the screen shows there: its mouth, how round its corners are, how far it is open, as far as its
- * hole has come, and how deep it is; its walls' colour; their glow; and how far the screen it is sunk into has come
- * up, from 0 to 1, which its walls show as far as.
+ * hole has come, and how deep it is; its walls' colour; their glow; and how clear they are, from 0 to 1, as far as the
+ * screen it is sunk into has come up.
  * @typedef {{
  *   readonly mouth: Box,
  *   readonly corner: number,
@@ -94,7 +94,7 @@ import { WORLD_PARTS } from './see-through.js';
  *   readonly depth: number,
  *   readonly walls: string,
  *   readonly glow: number,
- *   readonly shown: number
+ *   readonly clear: number
  * }} SunkPit
  */
 
@@ -140,10 +140,8 @@ const WHOLE_TURN = HALF_TURN * HALVES;
 const UNSHRUNK = 1;
 // The values a colour's three channels are kept in, one after another, for each point of the walls
 const CHANNELS = 3;
-// A shadow of no strength, and a face standing no higher than its plane, which cast none; and the shadow's square, its
-// depth unscaled
+// A shadow of no strength, which is drawn none; and the shadow's square, its depth unscaled
 const NO_SHADOW = 0;
-const ON_ITS_PLANE = 0;
 const UNSCALED = 1;
 // How far depth's offset draws the shadow nearer than the page it lies on, in three's polygon offset steps, past the
 // page's own (`PAGE_NEARER` in `room.js`); and when three draws it among what is seen through in the field of what
@@ -207,9 +205,8 @@ export class PieceBodies {
 
 	/**
 	 * What an object of markup standing in the world brings into the world beside its surface, by its place among an
-	 * exposure's: a piece with a body its walls, placed by its matrix, and its shadow where it casts one, standing out
-	 * of its plane with a shadow of some strength, as strong as the piece is clear, as the stylesheet fades the face and
-	 * the shadow it drops for this one, in the look's shadow colour; anything else nothing.
+	 * exposure's: a piece with a body its walls, placed by its matrix, and its shadow where it casts one, in the look's
+	 * shadow colour; anything else nothing.
 	 * @param {number} place @param {DrawnObject} object @param {Look} look @returns {readonly Object3D[]}
 	 */
 	posed(place, object, look) {
@@ -219,9 +216,8 @@ export class PieceBodies {
 		const body = bodyAt(this.bodies, place);
 		const placing = matrixOf(object.inTheEyesSpace);
 		const walls = body.wallsPosed(piece, piece.body, placing);
-		const strength = (object.effects?.shadow ?? NO_SHADOW) * object.clear;
-		if (strength === NO_SHADOW || piece.body.height <= ON_ITS_PLANE) return [walls];
-		return [walls, body.shadowPosed(piece, piece.body, placing, { strength, colour: look.paneShadowColour })];
+		if (piece.body.shadow === NO_SHADOW) return [walls];
+		return [walls, body.shadowPosed(piece, piece.body, placing, look.paneShadowColour)];
 	}
 }
 
@@ -237,8 +233,7 @@ export class PagePits {
 
 	/**
 	 * A pit posed by its place among an exposure's: its walls seen from inside, built of its mouth and depth where those
-	 * are not what they were built of, placed by a matrix, its mouth's middle at its origin, and shown as far as the
-	 * screen it is sunk into has come up.
+	 * are not what they were built of, placed by a matrix, its mouth's middle at its origin, and as clear as the pit is.
 	 * @param {number} place @param {SunkPit} pit @param {Matrix4} placing @returns {Object3D}
 	 */
 	posed(place, pit, placing) {
@@ -247,31 +242,30 @@ export class PagePits {
 		const corners = { topLeft: pit.corner, topRight: pit.corner, bottomRight: pit.corner, bottomLeft: pit.corner };
 		const measures = { width, height, corners, depth: pit.depth, walls: pit.walls, glow: pit.glow };
 		const walls = wallsAt(this.pits, place);
-		walls.shownAsFarAs(pit.shown);
+		walls.shownAsFarAs(pit.clear);
 		return walls.posed(measures, placing);
 	}
 }
 
 /**
  * The pits sunk into the page under the holes on the screen, where it shows the filmed page, which the holes are left
- * in, each where the screen lies on the window's plane, as large as it shows there, and shown as far as the screen
- * has come up; none where it shows a page of the film's own.
+ * in, each where the screen lies on the window's plane, as large as it shows there; none where it shows a page of the
+ * film's own.
  * @param {DrawnScene} scene @param {Size} screen @returns {readonly SunkPit[]}
  */
 export function pitsSunkIn(scene, screen) {
 	const filmed = scene.screen.filmed;
 	if (filmed === null) return NO_PITS;
 	const scale = filmed.box.width / screen.width;
-	return scene.holes.flatMap((hole) => pitUnder(hole, filmed.box, scale, scene.screen.shown));
+	return scene.holes.flatMap((hole) => pitUnder(hole, filmed.box, scale));
 }
 
 /**
  * The pit a hole on the screen is sunk into the page as, where it has one: where it lies on the window's plane, the
- * screen lying there in a box at a scale, come up so far.
- * @param {DrawnHole} hole @param {Box} screenBox @param {number} scale @param {number} screenShown
- * @returns {readonly SunkPit[]}
+ * screen lying there in a box at a scale.
+ * @param {DrawnHole} hole @param {Box} screenBox @param {number} scale @returns {readonly SunkPit[]}
  */
-function pitUnder(hole, screenBox, scale, screenShown) {
+function pitUnder(hole, screenBox, scale) {
 	if (hole.pit === null) return NO_PITS;
 	const mouth = {
 		left: screenBox.left + hole.box.left * scale,
@@ -287,7 +281,7 @@ function pitUnder(hole, screenBox, scale, screenShown) {
 			depth: hole.pit.depth * scale,
 			walls: hole.pit.walls,
 			glow: hole.pit.glow,
-			shown: screenShown
+			clear: hole.pit.clear
 		}
 	];
 }
@@ -383,11 +377,10 @@ class PieceBody {
 
 	/**
 	 * The shadow posed for a piece: its outline, as far behind its face as the face stands out, dropped toward its foot
-	 * and soft as far as the face stands high, as dark as its strength has it, in a colour.
-	 * @param {DrawnPiece} piece @param {DrawnBody} body @param {Matrix4} placing
-	 * @param {{ readonly strength: number, readonly colour: string }} cast
+	 * and soft as far as the face stands high, as dark as the body has it cast, in a colour.
+	 * @param {DrawnPiece} piece @param {DrawnBody} body @param {Matrix4} placing @param {string} colour
 	 */
-	shadowPosed(piece, body, placing, cast) {
+	shadowPosed(piece, body, placing, colour) {
 		const blur = body.height * SHADOW_SOFT_A_HEIGHT;
 		const width = piece.figure.width + blur * HALVES;
 		const height = piece.figure.height + blur * HALVES;
@@ -397,8 +390,8 @@ class PieceBody {
 			halfSize: new Vector2(piece.figure.width / HALVES, piece.figure.height / HALVES),
 			corners: new Vector4(corners.topRight, corners.bottomRight, corners.topLeft, corners.bottomLeft),
 			blur,
-			darkness: SHADOW_DARKEST * cast.strength,
-			colour: new Color(cast.colour)
+			darkness: SHADOW_DARKEST * body.shadow,
+			colour: new Color(colour)
 		});
 		const under = placing
 			.clone()

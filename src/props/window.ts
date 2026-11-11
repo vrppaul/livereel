@@ -115,21 +115,27 @@ export interface PageWindow extends Placing, Shade {
 }
 
 /**
- * The page's shade as the stage draws it: dimmed, faded, and blurred on the window's plane, and how far it reaches.
+ * The page's shade as the stage draws it: dimmed, faded, and blurred on the window's plane, and how far it reaches;
+ * and how far a room blurs the page's picture apart, on the window's plane: by the blur, but none where the shade
+ * blurs the window's body, as the room then blurs the page with its body as one, through the eye's lens
+ * (`stage/body.js`): blurred apart, the page's outline stood sharp round a soft page.
  */
 interface DrawnShade extends PageShade {
 	readonly reaching: ShadeReach;
+	readonly pictureBlur: number;
 }
 
 /**
  * The part of the screen the shade's blur leaves sharp as the stage draws it: its box, in the screen's pixels; how far
  * past it the page softens into the blur, and how far the part itself is blurred, none where it is wholly sharp, each
- * in pixels of a frame 1080 high, as the blur is.
+ * in pixels of a frame 1080 high, as the blur is; and the share of the page's blur it softens by, as a room's lens
+ * blurs it where it blurs the page with the window's body.
  */
 interface SharpPart {
 	readonly box: Box;
 	readonly edge: number;
 	readonly blur: number | null;
+	readonly softens: Fraction;
 }
 
 /**
@@ -286,7 +292,7 @@ export function drawnWindow(
 		facingTheEye,
 		pageSurface: onTheBack ? behindItsPlane(standing, body.thickness) : ownPlane,
 		corner: Math.min(around.look.paneCorner * frameScaleOf(frame) * view.lift, roundest),
-		shade: drawnShade(shadedOnItsPlane),
+		shade: drawnShade(shadedOnItsPlane, body),
 		sharp: sharpPartDrawn(shadedOnItsPlane),
 		outOfFocus: outOfFocusOnTheFrame(placing, view.box, sharpness, frame),
 		softestOutOfFocus: softestOutOfFocusSeen(placing, view.box, boxAround([view.box, reach]), sharpness, frame),
@@ -392,12 +398,19 @@ function isLit(world: Pick<WorldLook, 'lights' | 'softBoxes'>): boolean {
 }
 
 /**
- * The page's shade as the stage draws it, and how far it reaches; none where it is shaded none, so the stage draws no
+ * The page's shade as the stage draws it, how far it reaches, and how far a room blurs the page's picture apart: as the
+ * shade blurs the page, or none where it blurs the window's body; none where it is shaded none, so the stage draws no
  * filter, however far the part its blur would leave sharp softens.
  */
-function drawnShade(window: PageShade & Pick<PageWindow, 'reaching'>): DrawnShade | null {
+function drawnShade(window: PageShade & Pick<PageWindow, 'reaching'>, body: DrawnBody | null): DrawnShade | null {
 	if (!shadesThePage(window)) return null;
-	return { dim: window.dim, fade: window.fade, blur: window.blur, reaching: window.reaching };
+	const { dim, fade, blur, reaching } = window;
+	return { dim, fade, blur, reaching, pictureBlur: blursTheBody(body) ? NO_PIXELS : blur };
+}
+
+/** Whether the window's shade blurs its body, which a room blurs with the page through the eye's lens. */
+function blursTheBody(body: DrawnBody | null): boolean {
+	return body !== null && body.shade !== null && body.shade.blur > NO_PIXELS;
 }
 
 /** Whether the window shades the page at all: dims, fades or blurs it. */
@@ -416,6 +429,7 @@ function sharpPartDrawn(window: Pick<PageWindow, 'blur' | 'sharp' | 'sharpSoften
 	return {
 		box: window.sharp,
 		edge: window.blur * SHARP_EDGE_PER_BLUR,
-		blur: blur > NO_PIXELS ? blur : null
+		blur: blur > NO_PIXELS ? blur : null,
+		softens: window.sharpSoftens
 	};
 }

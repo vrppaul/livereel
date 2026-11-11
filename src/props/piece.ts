@@ -27,7 +27,8 @@
  */
 import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
 import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
-import type { Fraction } from '../domain/fraction.ts';
+import { type Fraction, NONE, fractionOf } from '../domain/fraction.ts';
+import { ON_ITS_PLANE } from '../domain/placement.ts';
 import type { Stance } from '../domain/stance.ts';
 import { type Effects, unfaded } from './effects.ts';
 import type { ObjectName } from './object.ts';
@@ -65,10 +66,19 @@ export interface Hole {
  * — as far as it reaches, its colour, the line round its edge, if any, how round its corners are, in the pixels its box
  * is in, how far it has come and not gone, as its piece has, and its pit, if any: a figure of the page shows it flat.
  */
-export interface DrawnHole extends Omit<Hole, 'reach'> {
+export interface DrawnHole extends Omit<Hole, 'reach' | 'pit'> {
 	readonly name: ObjectName;
 	readonly box: Box;
 	readonly shown: number;
+	readonly pit: DrawnPit | null;
+}
+
+/**
+ * A hole's pit as the room draws it: as deep, its walls' colour and glow, and how clear its walls are, as far as the
+ * screen it is sunk into has come up, from 0 to 1: nothing lies over its mouth to hide it as the screen goes down.
+ */
+interface DrawnPit extends Pit {
+	readonly clear: Fraction;
 }
 
 /** How round each corner of a piece is: a radius, in the pixels its box is in. */
@@ -109,12 +119,15 @@ export interface Body {
 
 /**
  * A piece's body as the room draws it: as thick as it shows, in the frame's pixels, its walls' colour and glow; how
- * high its face stands over the plane it was lifted from, in the same pixels, where its shadow lies; and how clear its
- * walls are, as far as the piece has not faded, from 0 to 1, as the stylesheet draws its face.
+ * high its face stands over the plane it was lifted from, in the same pixels, where its shadow lies; how clear its
+ * walls are, as far as the piece has not faded, from 0 to 1, as the stylesheet draws its face; and how strong the
+ * shadow it casts there is, from 0 to 1, as strong as the piece's shadow and as far as the piece is clear, as the
+ * stylesheet fades the face and the shadow it drops for one with no body, none while its face stands on that plane.
  */
 export interface DrawnBody extends Body {
 	readonly height: number;
 	readonly clear: Fraction;
+	readonly shadow: Fraction;
 }
 
 /**
@@ -155,8 +168,8 @@ export interface DrawnPiece {
 	readonly body: DrawnBody | null;
 }
 
-/** How large a piece stands and how far out toward the eye, and how far it has faded. */
-type Standing = Pick<Stance, 'scale' | 'depth'> & Pick<Effects, 'fade'>;
+/** How large a piece stands and how far out toward the eye, how far it has faded, and how strong its shadow is. */
+type Standing = Pick<Stance, 'scale' | 'depth'> & Pick<Effects, 'fade' | 'shadow'>;
 
 // A body of no thickness, which is none; and a hole a figure of the page shows, with no pit sunk under it
 const NO_THICKNESS = 0;
@@ -188,7 +201,7 @@ export function drawnPiece(
 		holes: holesShown(holes, source, fit),
 		shown,
 		picture: drawnPictureOf(piece, sharper),
-		body: piece.body === null ? null : drawnBody(piece.body, fit, standing, shown * held)
+		body: piece.body === null ? null : drawnBody(piece.body, fit, standing, shown, held)
 	};
 }
 
@@ -196,12 +209,15 @@ export function drawnPiece(
  * A piece's body as the room draws it: as thick as the piece's fit and scale show its thickness, as the walls stand
  * back along the eye's way, which a scale does not stretch, and as far as the piece shows, come up and let show by
  * what it stands in, as the window's body is as thick as the screen has come up; its face as high as it stands out;
- * its walls as clear as the piece has not faded. None, where that leaves it no thickness.
+ * its walls as clear as the piece has not faded; its shadow as strong as the piece's, as far as it is let show and has
+ * not faded, where its face stands out of its plane. None, where that leaves it no thickness.
  */
-function drawnBody(body: Body, fit: number, standing: Standing, shown: number): DrawnBody | null {
-	const thickness = body.thickness * fit * standing.scale * shown;
+function drawnBody(body: Body, fit: number, standing: Standing, shown: number, held: number): DrawnBody | null {
+	const thickness = body.thickness * fit * standing.scale * (shown * held);
 	if (thickness <= NO_THICKNESS) return null;
-	return { thickness, walls: body.walls, glow: body.glow, height: standing.depth, clear: unfaded(standing) };
+	const clear = unfaded(standing);
+	const shadow = standing.depth > ON_ITS_PLANE ? fractionOf(standing.shadow * (held * clear)) : NONE;
+	return { thickness, walls: body.walls, glow: body.glow, height: standing.depth, clear, shadow };
 }
 
 /**
