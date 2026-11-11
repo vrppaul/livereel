@@ -842,8 +842,8 @@ the film's time as `seconds` names, on `ease`, `easeInOutSine` where it
 names none, on past its step. Written first in a `cut`, with a camera move
 after it in the same cut, the page going stands as it stood while the
 camera frames the page coming at once, closer or farther: one page fading
-over another, each at its own scale. The page going lies over the screen,
-the light and the cursor, under a callout and the pins, and the window's
+over another, each at its own scale. The page going lies over the screen
+and the light, under a callout, the pins and the cursor, and the window's
 shade dims and fades the page coming alone, so `window.shade({ fade: 1 })`
 in the same cut, brought to `0` over the next play, brings the page coming
 up out of the dark under the one going. A fade is refused on a page framed
@@ -990,10 +990,12 @@ to show no edge of a face-on screen, leant or not, so a lean never moves
 what it frames; leant far, ground may show at the frame's far corners.
 `window.shade({ dim: 0.6 })` dims the page while something stands clear of
 it, a piece lifted off it, a title or code: `dim` lays the dark over the
-screen, the light and the cursor on it included, and `fade` fades the screen
-into the film's ground, each from 0 none to 1 whole; `blur` blurs the page
-and the holes in it, in pixels of a frame 1080 high. The window's edge and
-shadow stay as they stand, and what stands over the page stands clear. It
+screen, the light on it included, and `fade` fades the screen into the
+film's ground, each from 0 none to 1 whole; `blur` blurs the page and the
+holes in it, in pixels of a frame 1080 high. The window's edge and shadow
+stay as they stand, and what stands over the page stands clear, the cursor
+too: it lies over the screen, not in it, so a shaded page leaves it white
+and sharp, as the claude-review promo draws its pointer over a soft page. It
 sets only what it names, so it shares a `play` with `window.to` and
 `window.lean`, and `window.shade({ dim: 0 })` takes the dark away again.
 `window.shade({ blur: 6, sharp: '.thread' })` keeps a part of the page
@@ -1591,7 +1593,11 @@ What `inside` costs:
   brought near or leant toward the eye stays as sharp, and what lies over
   the page in the window (the light, the cursor, a callout, an object in
   the window, a page of the film's own) as dense as the page's device
-  scale, filtered as it shrinks into the distance; the window's body round it and
+  scale, filtered as it shrinks into the distance; the cursor laid over all
+  the world drawn, where the eye sees it on the page but over whatever
+  stands nearer, a piece lifted off the page and its shadow among them, and
+  never blurred by the eye's focus, as the claude-review promo drew its
+  pointer past its lens; the window's body round it and
   the film's things beside it, each hiding the others by depth alone; and
   each pixel blurred by the eye's focus as far as what it shows stands from
   it, where flat blurs the window as one; what stands nearer the eye than

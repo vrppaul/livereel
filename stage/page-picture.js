@@ -5,7 +5,7 @@
  * itself and as sharply at a slant as the card filters, so a window brought near the eye or leant toward it shows the
  * page as sharp as the picture was taken. Markup, which would reflow drawn denser, stays in the surfaces the browser
  * draws at the frame's own density: the window's, which holds the screen's own markup over the page — the sweep, the
- * holes, the light, the cursor, the dim — or a page of the film's own; and the surface of what lies over the page in
+ * holes, the light, the dim — or a page of the film's own; and the surface of what lies over the page in
  * the window, apart — a callout, pins, an object inside the window — which the stage lays apart where a frame is drawn
  * as a room, as it lies over the faded screen whole, not faded with it.
  *

@@ -21,7 +21,7 @@
 		<div class="exposure" data-exposure>
 			<!-- The ground, and the layers the film lays over it, under all else -->
 			<div class="surface" data-surface="ground"><div class="layers"></div></div>
-			<!-- The screen, up out of the ground as far as it has come, with its window's shadow and edge: its root stands round the window, so the shadow beside the view reads how far it has come; the page's window, where the camera's picture shows: the whole frame or a window on the ground with its shadow under it; in it the camera moves the screen, which the window shades. The page sits in the screen's frame, the light and the cursor lie on it, and a callout stands beside it, past its edge where it reaches there -->
+			<!-- The screen, up out of the ground as far as it has come, with its window's shadow and edge: its root stands round the window, so the shadow beside the view reads how far it has come; the page's window, where the camera's picture shows: the whole frame or a window on the ground with its shadow under it; in it the camera moves the screen, which the window shades. The page sits in the screen's frame, the light lies on it, a callout stands beside it, past its edge where it reaches there, and the cursor over all of them -->
 			<div class="surface" data-surface="window">
 				<div data-prop="screen">
 					<div class="window" data-prop="window">
@@ -45,9 +45,6 @@
 											<!-- The holes pieces of the page leave where they were lifted, on the page, under the light -->
 											<div class="holes" data-scene="holes"></div>
 											<div class="light" data-prop="light"></div>
-											<svg class="cursor" data-prop="cursor" viewBox="0 0 30 40" aria-hidden="true">
-												<path d="M3 3 L3 31 L10.5 24 L16 36.5 L21 34.5 L15.5 22.5 L25.5 22.5 Z" />
-											</svg>
 										</div>
 										<!-- The page the screen fades from: its picture, held as the fade began, laid as the camera framed it then, over the screen and all it holds, under the callout and the pins -->
 										<div class="faded-page" data-part="faded-page" hidden></div>
@@ -55,6 +52,10 @@
 											<div class="card"><div class="words" data-part="words"></div></div>
 										</div>
 										<div class="pins" data-prop="pins"></div>
+										<!-- The pointer, over all the camera shows, not in the screen, so the window's shade, which shades the screen, never reaches it -->
+										<svg class="cursor" data-prop="cursor" viewBox="0 0 30 40" aria-hidden="true">
+											<path d="M3 3 L3 31 L10.5 24 L16 36.5 L21 34.5 L15.5 22.5 L25.5 22.5 Z" />
+										</svg>
 									</div>
 									<!-- The objects standing in the page's window, over its picture, leaning and travelling with it -->
 									<div class="objects" data-scene="window"></div>
@@ -93,9 +94,9 @@
 		<template data-apart>
 			<div class="surface" data-surface="world"><div class="objects" data-part="objects"></div></div>
 		</template>
-		<!-- The surface of what lies over the page in the window — the callout, the pins, the objects standing in the window — laid apart from the window's surface after it, where a frame is drawn as a room, which lays it over the screen and the page's picture: in a screen, a window, a camera and a view of its own, drawn by the same numbers as the window's surface's, so all it holds stands, and is cut, where it does there -->
-		<template data-over-the-page>
-			<div class="surface" data-surface="over-the-page">
+		<!-- A surface laid out over the page's plane apart from the window's surface, after it, where a frame is drawn as a room: in a screen, a window, a camera and a view of its own, drawn by the same numbers as the window's surface's, so all it holds stands, and is cut, where it does there. The stage names each it makes: the surface of what lies over the page in the window — the page the screen fades from, the callout, the pins, the objects standing in the window — which the room lays over the screen and the page's picture; and the surface over the world, the cursor's, which the room lays over all the world it draws -->
+		<template data-on-the-page>
+			<div class="surface">
 				<div data-prop="screen">
 					<div class="window" data-prop="window">
 						<div class="stage" data-prop="camera">

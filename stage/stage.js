@@ -179,10 +179,12 @@ const QUIET = 'quiet';
 const AMONG_THOSE_ON_THE_FRAME = { kind: 'among those on the frame' };
 /** @type {ReadonlyMap<string, Staged>} */
 const NONE_LAID_APART = new Map();
-// The template a surface an object is laid in apart is made from; the one the surface of what lies over the page is
-// made from; and the window's surface, which it is laid after
+// The template a surface an object is laid in apart is made from; the one a surface laid out over the page's plane apart
+// from the window's is made from, the attribute it is named by, and the window's surface, which such surfaces are laid
+// after
 const SURFACE_APART = 'template[data-apart]';
-const OVER_THE_PAGE = 'template[data-over-the-page]';
+const ON_THE_PAGE = 'template[data-on-the-page]';
+const SURFACE_NAME = 'data-surface';
 const WINDOWS_SURFACE = '[data-surface="window"]';
 // The class of a line of code; each piece of it is classed by its kind; and the attribute that names how a pane fits
 // a line too long
@@ -1392,11 +1394,11 @@ function setup(layout) {
 
 /**
  * An exposure of the frame by its root, laid out as it is drawn: laying markup standing in the world as that has it,
- * and, drawn as a room, what lies over the page in the window in a surface apart.
+ * and, drawn as a room, what lies over the page in the window, and the cursor, each in a surface apart.
  * @param {Staged} root @param {Drawing} drawing @returns {Exposure}
  */
 function exposureOf(root, drawing) {
-	if (drawing === 'room') overThePageLaidApart(root);
+	if (drawing === 'room') laidApartOverThePage(root);
 	/** @type {OwnFrames} */
 	const ownPages = { onTheScreen: new Map(), sheets: new Map() };
 	const caption = new CaptionDrawer(propRoot(root, 'caption'));
@@ -1427,22 +1429,35 @@ function exposureOf(root, drawing) {
 }
 
 /**
- * What lies over the page in an exposure's window — the page the screen fades from, the callout, the pins, the objects
- * standing in the window — laid in a surface of its own after the window's, made from the stage's template, where the
- * room lays it over the screen and the page's picture: as the screen fades whole, what lies over it does not, and the
- * room lays the picture under the screen's own markup alone.
+ * What lies over the page in an exposure's window, and its cursor, each laid in a surface of its own after the
+ * window's, where the room draws them: what lies over the page — the page the screen fades from, the callout, the
+ * pins, the objects standing in the window — which the room lays over the screen and the page's picture, as the screen
+ * fades whole, what lies over it does not, and the room lays the picture under the screen's own markup alone; and the
+ * cursor, which the room lays over all the world it draws, as nothing standing there, nor the eye's lens, reaches it.
  * @param {Staged} root
  */
-function overThePageLaidApart(root) {
-	const template = document.querySelector(OVER_THE_PAGE);
+function laidApartOverThePage(root) {
+	const overThePage = surfaceOnThePage('over-the-page');
+	const overTheWorld = surfaceOnThePage('over-the-world');
+	found(root.querySelector(WINDOWS_SURFACE), "window's surface").after(overThePage, overTheWorld);
+	partOf(overThePage, 'camera').append(partOf(root, 'faded-page'), propRoot(root, 'callout'), propRoot(root, 'pins'));
+	partOf(overThePage, 'view').append(sceneRoot(root, 'window'));
+	partOf(overTheWorld, 'camera').append(propRoot(root, 'cursor'));
+}
+
+/**
+ * A surface laid out over the page's plane apart from the window's, made from the stage's template and named.
+ * @param {string} name @returns {HTMLElement}
+ */
+function surfaceOnThePage(name) {
+	const template = document.querySelector(ON_THE_PAGE);
 	if (!(template instanceof HTMLTemplateElement))
-		throw new Error("the stage's markup has no template of what lies over the page");
+		throw new Error("the stage's markup has no template of a surface on the page's plane");
 	const surface = document.importNode(template.content, true).firstElementChild;
 	if (!(surface instanceof HTMLElement))
-		throw new Error("the stage's template of what lies over the page holds no element");
-	found(root.querySelector(WINDOWS_SURFACE), "window's surface").after(surface);
-	partOf(surface, 'camera').append(partOf(root, 'faded-page'), propRoot(root, 'callout'), propRoot(root, 'pins'));
-	partOf(surface, 'view').append(sceneRoot(root, 'window'));
+		throw new Error("the stage's template of a surface on the page's plane holds no element");
+	surface.setAttribute(SURFACE_NAME, name);
+	return surface;
 }
 
 /**

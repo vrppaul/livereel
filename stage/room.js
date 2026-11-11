@@ -16,7 +16,10 @@
  * all the rest while the eye's focus blurs it near, a world of its own drawn apart and laid over the rest
  * (`worldBuilt`). The eye's lens blurs each pixel of the world by how far what it shows stands from the focus
  * (`stage/lens.js`), its fields laid over one another each by its law (`stage/laying.js`) and the whole laid over the
- * ground; over that stand the film's things on the frame, sharp, then the frame's surface.
+ * ground; over that the cursor, on the page's plane where the eye sees it but over whatever stands nearer, unblurred,
+ * as the reference promo drew its pointer over its world past its lens (`pointer.js` of the film): laid in the world, a
+ * piece lifted off the page and its shadow lay over it, grey and soft (beats 5–6's draft at 4.4 s, 2026-11-11); then
+ * the film's things on the frame, sharp, then the frame's surface.
  *
  * The window's surface is drawn from a picture of it as sharp as the browser draws a page face-on, and filtered as it
  * shrinks into the distance: the browser draws a layer leant in 3D at about one of its pixels a page's pixel, however
@@ -25,7 +28,8 @@
  * past the frame's edge, and is drawn less densely where its texture would pass the graphics card's largest. It holds
  * the screen's own markup over the page; what lies over the page in the window, a callout, pins, an object in it, stands
  * in a surface of its own laid out alike; the page's surface lays the screen's ground and the page's picture under the
- * one, as dense as the picture was taken, and the other over all (`stage/page-picture.js`). The world is drawn as far
+ * one, as dense as the picture was taken, and the other over all (`stage/page-picture.js`). The cursor stands in a
+ * third surface laid out alike, which the room lays over the world. The world is drawn as far
  * past the frame as the lens's blur gathers at its edges, to a step, so the layers it is drawn into keep their size
  * while the blur gathers alike, and a little farther, so each side of them halves evenly down to the coarsest copy the
  * lens reads.
@@ -126,15 +130,15 @@ import { Things, isAThing } from './things.js';
  * @typedef {Event & { readonly changedElements: readonly Element[] }} CanvasPaintEvent
  */
 /**
- * The surfaces of an exposure, one over the other in the order named: what lies over the page in the window stands
- * apart where a frame is drawn as a room
- * @typedef {'ground' | 'window' | 'over-the-page' | 'frame'} SurfaceName
+ * The surfaces of an exposure, one over the other in the order named: what lies over the page in the window, and the
+ * cursor over the world, stand apart where a frame is drawn as a room
+ * @typedef {'ground' | 'window' | 'over-the-page' | 'over-the-world' | 'frame'} SurfaceName
  */
-/** The surfaces laid flat over the frame, as it stands @typedef {Exclude<SurfaceName, 'window' | 'over-the-page'>} FlatSurfaceName */
+/** The surfaces laid flat over the frame, as it stands @typedef {'ground' | 'frame'} FlatSurfaceName */
 
 // The surfaces of an exposure, the lowest first, and the attribute each is marked with in the stage's markup
 /** @type {readonly SurfaceName[]} */
-const SURFACES = ['ground', 'window', 'over-the-page', 'frame'];
+const SURFACES = ['ground', 'window', 'over-the-page', 'over-the-world', 'frame'];
 const SURFACE = 'data-surface';
 // The stage's picture of the page in the window's surface, which the room lays under it itself (`page-picture.js`)
 const PICTURE = '[data-part="picture"]';
@@ -189,8 +193,9 @@ const WHOLE = 1;
 const FIRST = 0;
 // How each surface's texture is drawn: anew for each exposure, or once a frame, as every exposure's ground is alike,
 // the look being the first exposure's (`apply` in `stage.js`); with smaller copies of itself where the room shrinks
-// it, as it shrinks the window and what lies over its page alone, which are laid out over the page's plane; and in
-// what scene it holds anything to draw: what lies over the page only where the scene says anything does
+// it, as it shrinks the window, what lies over its page and the cursor alone, which are laid out over the page's
+// plane; and in what scene it holds anything to draw: what lies over the page only where the scene says anything does,
+// the cursor's surface only where the scene has a cursor
 /**
  * @type {{ readonly [Name in SurfaceName]: {
  *   readonly eachExposure: boolean,
@@ -203,9 +208,15 @@ const SURFACE_TEXTURES = {
 	ground: { eachExposure: false, shrinks: false, onThePage: false, holdsAnything: () => true },
 	window: { eachExposure: true, shrinks: true, onThePage: true, holdsAnything: () => true },
 	'over-the-page': { eachExposure: true, shrinks: true, onThePage: true, holdsAnything: (scene) => scene.overThePage },
+	'over-the-world': {
+		eachExposure: true,
+		shrinks: true,
+		onThePage: true,
+		holdsAnything: (scene) => scene.cursor !== null
+	},
 	frame: { eachExposure: true, shrinks: false, onThePage: false, holdsAnything: () => true }
 };
-// The surfaces laid out over the page's plane, the window's and what lies over its page
+// The surfaces laid out over the page's plane, the window's, what lies over its page and the cursor's
 const ON_THE_PAGE = SURFACES.filter((name) => SURFACE_TEXTURES[name].onThePage);
 // Half of a box's width or height, which its middle stands at
 const HALF = 0.5;
@@ -289,7 +300,7 @@ const PAGE_DEPTH_ALONE = { blending: NoBlending, colorWrite: false, depthWrite: 
 const MARKUP_SEEN_THROUGH = { ...PAGE_SEEN_THROUGH, ...MARKUP_NEARER, clipping: true };
 const MARKUP_DEPTH_ALONE = { ...PAGE_DEPTH_ALONE, ...MARKUP_NEARER, clipping: true };
 
-// A surface drawn from markup in the world, the page's or an object's: placed where the plane's share of it falls, the
+// A surface drawn from markup, the page's, an object's or the cursor's: placed where the plane's share of it falls, the
 // texture's rows from its top; cut by three's clipping planes where its material asks
 const SURFACE_IN_THE_WORLD_VERTEX = `
 #include <clipping_planes_pars_vertex>
@@ -301,10 +312,10 @@ void main() {
 	vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
 	#include <clipping_planes_vertex>
 }`;
-// An object's surface: its texture as the browser drew it, in the screen's colours, premultiplied by how clear it is, so
-// three lays it over what its field holds as the browser lays it (`see-through.js`); none drawn, nor its depth, where it
-// is clear; cut where its material asks. The page's lays the window's surface over the page's picture
-// (`page-picture.js`)
+// An object's surface, or the cursor's: its texture as the browser drew it, in the screen's colours, premultiplied by
+// how clear it is, so three lays it over what its field holds, or the cursor's over the world laid, as the browser
+// lays it (`see-through.js`); none drawn, nor its depth, where it is clear; cut where its material asks. The page's
+// lays the window's surface over the page's picture (`page-picture.js`)
 const OBJECTS_SURFACE_FRAGMENT = `
 #include <clipping_planes_pars_fragment>
 uniform sampler2D surface;
@@ -455,6 +466,8 @@ class Room {
 		);
 		this.pageDepth = surfaceInTheWorld(PAGE_DEPTH_ALONE, 'pageDepth', PAGE_SURFACE_FRAGMENT, pageSurfaceValues());
 		this.pageSurfaces = [this.page, this.pageSeenThrough, this.pageDepth];
+		// The cursor's surface, on the page's plane, laid over all the world drawn
+		this.cursor = surfaceDrawn(LAID_OVER, OBJECTS_SURFACE_FRAGMENT, objectsSurfaceValues());
 		/** The screen's size, in its pixels @type {Size} */
 		this.screen = layout.format.screen;
 		this.pagePicture = new PagePicture(
@@ -575,9 +588,9 @@ class Room {
 	}
 
 	/**
-	 * An exposure drawn and added into the frame: its ground; the world as one scene, through the eye's lens; the film's
-	 * things on the frame; the frame's surface. What the film is told where its module throws building or setting a
-	 * thing, none where all are drawn.
+	 * An exposure drawn and added into the frame: its ground; the world as one scene, through the eye's lens; the cursor
+	 * over it, where the scene has one; the film's things on the frame; the frame's surface. What the film is told where
+	 * its module throws building or setting a thing, none where all are drawn.
 	 * @param {ReadonlyMap<SurfaceName, Element>} surfaces @param {ExposureStanding} standing @param {DrawnScene} scene
 	 * @param {Box} gathered @returns {string | null}
 	 */
@@ -592,12 +605,14 @@ class Room {
 		const inTheWorld = things.filter((thing) => thing.standsIn === 'world');
 		const pits = pitsSunkIn(scene, this.screen);
 		const pageLaid = this.pageLaid(surfaces, standing, scene, pits);
-		const worlds = this.worldBuilt(scene, pageLaid, standing, inTheWorld, pits);
+		const pageMatrix = surfaceMatrixOf(scene.window.pageSurface.inTheEyesSpace, standing.placing);
+		const worlds = this.worldBuilt(scene, pageLaid, pageMatrix, standing, inTheWorld, pits);
 		this.worldSeen.cleared(this.renderer);
 		this.worldDrawn(scene, worlds, gathered);
 		valuesSet(this.worldLaying.material, { drawn: this.worldSeen.seen.texture });
 		this.renderer.setRenderTarget(this.exposure);
 		this.renderer.render(this.worldLaying, this.camera);
+		if (SURFACE_TEXTURES['over-the-world'].holdsAnything(scene)) this.cursorLaid(surfaces, pageMatrix, scene);
 		const onTheFrame = things.filter((thing) => thing.standsIn === 'frame');
 		if (onTheFrame.length > NONE_STANDING) this.onTheFrameLaid(onTheFrame, scene);
 		this.flatLaid('frame', surfaces);
@@ -619,6 +634,24 @@ class Room {
 			? textureOf(this.textures, 'over-the-page').drawnFrom(surfaceOf(surfaces, 'over-the-page'), this.repainted)
 			: null;
 		return { surface, ...this.pagePicture.laidWith(scene, standing.placing.box, overThePage, pits) };
+	}
+
+	/**
+	 * The cursor laid over all the world drawn of an exposure: its surface drawn anew, stood where the matrix places the
+	 * window's surfaces, laid out over the same box of the page's plane, seen from the eye over the frame, and laid in the
+	 * screen's colours whatever stands nearer the eye.
+	 * @param {ReadonlyMap<SurfaceName, Element>} surfaces @param {Matrix4} pageMatrix @param {DrawnScene} scene
+	 */
+	cursorLaid(surfaces, pageMatrix, scene) {
+		const surface = surfaceOf(surfaces, 'over-the-world');
+		valuesSet(this.cursor.material, {
+			surface: textureOf(this.textures, 'over-the-world').drawnFrom(surface, this.repainted)
+		});
+		placedBy(this.cursor, pageMatrix);
+		seenThrough(this.worldCamera, projectionOnto(this.frameBox, this.frameBox, scene.eye.distance));
+		this.worldCamera.layers.enableAll();
+		this.renderer.setRenderTarget(this.exposure);
+		this.renderer.render(this.cursor, this.worldCamera);
 	}
 
 	/**
@@ -658,15 +691,15 @@ class Room {
 	 * at the focus, a page crossing it was cut in two, and laid by its clearness on both sides drew a line where it was
 	 * cut, or a band where the two sides lay over one another. Each world is built by `worldApartBuilt`; the worlds the
 	 * room draws, the rest first, none that holds nothing.
-	 * @param {DrawnScene} scene @param {PageSurfaceLaid} pageLaid @param {ExposureStanding} standing
-	 * @param {readonly ThingObject[]} things @param {readonly SunkPit[]} pits @returns {readonly WorldApart[]}
+	 * @param {DrawnScene} scene @param {PageSurfaceLaid} pageLaid @param {Matrix4} pageMatrix the matrix that places the
+	 * page's square @param {ExposureStanding} standing @param {readonly ThingObject[]} things
+	 * @param {readonly SunkPit[]} pits @returns {readonly WorldApart[]}
 	 */
-	worldBuilt(scene, pageLaid, standing, things, pits) {
+	worldBuilt(scene, pageLaid, pageMatrix, standing, things, pits) {
 		const window = scene.window;
 		const eye = scene.eye;
 		this.world.clear();
 		this.beforeTheRest.clear();
-		const pageMatrix = surfaceMatrixOf(window.pageSurface.inTheEyesSpace, standing.placing);
 		for (const page of this.pageSurfaces) {
 			compiledForThePits(page.material, pageLaid);
 			valuesSet(page.material, pageLaid);
@@ -1275,13 +1308,24 @@ function elementDrawingOf(renderer) {
 }
 
 /**
- * A surface drawn from markup as the world draws it, the page's or an object's: a square the room places, drawn
- * whichever side faces the eye, as a window turned half round shows the page mirrored, laid as named, drawn nearer than
- * what shares its plane, in a part of the world.
+ * A surface drawn from markup as the world draws it, the page's or an object's, drawn nearer than what shares its
+ * plane, in a part of the world.
  * @param {typeof PAGE_LAID | typeof PAGE_SEEN_THROUGH | typeof PAGE_DEPTH_ALONE | typeof MARKUP_SEEN_THROUGH | typeof MARKUP_DEPTH_ALONE} laid
  * @param {WorldPart} part @param {string} fragmentShader @param {Record<string, { value: unknown }>} uniforms
  */
 function surfaceInTheWorld(laid, part, fragmentShader, uniforms) {
+	const surface = surfaceDrawn(laid, fragmentShader, uniforms);
+	surface.layers.set(WORLD_PARTS[part]);
+	return surface;
+}
+
+/**
+ * A surface drawn from markup: a square the room places, drawn whichever side faces the eye, as a window turned half
+ * round shows the page mirrored, laid as named.
+ * @param {typeof PAGE_LAID | typeof PAGE_SEEN_THROUGH | typeof PAGE_DEPTH_ALONE | typeof MARKUP_SEEN_THROUGH | typeof MARKUP_DEPTH_ALONE | typeof LAID_OVER} laid
+ * @param {string} fragmentShader @param {Record<string, { value: unknown }>} uniforms
+ */
+function surfaceDrawn(laid, fragmentShader, uniforms) {
 	const material = new ShaderMaterial({
 		uniforms,
 		vertexShader: SURFACE_IN_THE_WORLD_VERTEX,
@@ -1292,7 +1336,6 @@ function surfaceInTheWorld(laid, part, fragmentShader, uniforms) {
 	const surface = new Mesh(new PlaneGeometry(), material);
 	surface.matrixAutoUpdate = false;
 	surface.frustumCulled = false;
-	surface.layers.set(WORLD_PARTS[part]);
 	return surface;
 }
 
