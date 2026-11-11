@@ -67,11 +67,13 @@ export interface Viewpoint {
  * something that holds a placement and lasts the whole film, the frame, the world, the page's window or the page, a
  * point of its plane in its pixels from its top left corner (`src/domain/placement.ts`) and how far out of that plane
  * toward the eye, in the frame's pixels, as a placement's depth: placed where it stands as each frame is drawn, as
- * anything placed there is.
+ * anything placed there is; or under a point of the frame, in its pixels from its top left corner, where the eye sees
+ * the page's window's plane there as each frame is drawn, so it stays under that point as the window moves under it.
  */
 export type Focus =
 	| { readonly kind: 'distance'; readonly distance: number }
-	| { readonly kind: 'spot'; readonly holder: LastingHolder; readonly point: Point; readonly depth: number };
+	| { readonly kind: 'spot'; readonly holder: LastingHolder; readonly point: Point; readonly depth: number }
+	| { readonly kind: 'under'; readonly point: Point };
 
 /** What the eye's place is read in: the room, or the page's window as it stands. */
 type EyeHolder = 'world' | 'window';

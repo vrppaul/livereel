@@ -180,14 +180,19 @@ and the moves of each part of the scene:
   the page, a height of none, a tip past ±90, a heading toward the block the eye arrives right over, a key by a leg
   the way has not or no later than the key before
 - `eye.focus(on, { aperture })`: the eye focused so far before it, `eye.focus(1800)`, at a spot of the world, on a
-  block of the page, `eye.focus('#thread')`, or on an object, `eye.focus({ object: 'why' })`, and open `aperture`
+  block of the page, `eye.focus('#thread')`, on an object, `eye.focus({ object: 'why' })`, or under a point of the
+  frame, `eye.focus({ under: { left: 0.25, top: 0.26 } })` in shares of it, where the eye sees the window's plane
+  there as each frame is drawn, so the focus stays under that point while the window leans and turns beneath it;
+  and open `aperture`
   pixels of a frame 1080 high wide; it rests open none, all sharp. What stands in the world nearer or farther than the
   focus is drawn as a disc `aperture × focal length × |1/focus − 1/distance|` across, as a camera's lens draws it:
   the window, with all in it, and each object shown `inside: 'world'`, each as soft as its point nearest the focus, so
   what the eye focuses on is drawn sharp; drawn as a room, each point of the window and of each such object as soft
   as its own distance has it, so a window leant back is sharp where the eye focuses and melts beyond; what stands on
   the frame or in a group stays sharp. It shares a step with `eye.to`, and holds on what it was put on as the eye moves; a focus pulled from
-  one to another goes evenly in how sharp it leaves things. A focus on what stands behind the eye is refused
+  one to another goes evenly in how sharp it leaves things. A focus on what stands behind the eye is refused, and one
+  under a point off the frame, or where the eye sees past the window's plane as the move begins; where the window
+  turns so the eye sees past its plane there later, the focus stands as far as can be
 - `window.to(place, { depth })`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn, roll, over, about })`,
   `window.shade({ dim, fade, blur })`, `window.body({ thickness, rim, metal, roughness, glass }, { within })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`

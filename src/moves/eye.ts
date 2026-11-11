@@ -17,7 +17,9 @@
  * The eye focuses, and opens as wide as a film names, by a move of its own, which shares a step with one that sends it
  * somewhere (`src/domain/focus.ts`): so far before it; at a spot of the world; on a block of the page; or on an object,
  * where its middle stands. What it focuses on is read once, as the move begins, and placed where it stands as each
- * frame is drawn, so the focus holds on it while the eye, the window and the camera move.
+ * frame is drawn, so the focus holds on it while the eye, the window and the camera move. Or it focuses under a point
+ * of the frame, where it sees the window's plane there as each frame is drawn, so the focus stays under the point
+ * while the window leans and turns beneath it.
  */
 import {
 	AN_EYE_PLACE,
@@ -33,7 +35,7 @@ import {
 	placesThatRollOneWay,
 	viewpointOf
 } from '../domain/eye.ts';
-import { type Camera, eyeInTheWindow } from '../domain/camera.ts';
+import { type Camera, eyeInTheWindow, underTheFrame } from '../domain/camera.ts';
 import { pointInTheView } from '../domain/framing.ts';
 import { IN_THE_WORLD, ON_ITS_PLANE, ON_THE_PAGE, fromItsMiddle } from '../domain/placement.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -52,7 +54,7 @@ import {
 	wayOf
 } from '../domain/flight.ts';
 import { AT_THE_EYE, focusDistanceOf } from '../domain/focus.ts';
-import { HALVES, type Size, frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
+import { HALVES, type Point, type Size, boxOf, frameScaleOf, middleX, middleY, pointAt } from '../domain/geometry.ts';
 import {
 	A_NAME,
 	A_NUMBER,
@@ -170,12 +172,17 @@ interface ObjectFocus {
 	readonly object: ObjectName;
 }
 
+/** A point of the frame a film focuses the eye under, in shares of the frame from its top left corner. */
+interface UnderFocus {
+	readonly under: Point;
+}
+
 /**
  * Where a film focuses the eye: so far before it along where it looks, in pixels of a frame 1080 high; at a spot of the
- * world; on a block of the page, the first a selector matches or a box of the screen, at its middle; or on an object,
- * `{ object }` by its name, at its middle.
+ * world; on a block of the page, the first a selector matches or a box of the screen, at its middle; on an object,
+ * `{ object }` by its name, at its middle; or under a point of the frame, `{ under }`.
  */
-export type FocusOn = number | Spot | Target | ObjectFocus;
+export type FocusOn = number | Spot | Target | ObjectFocus | UnderFocus;
 
 /** How wide the eye opens as it focuses, `aperture`, in pixels of a frame 1080 high; left out, as wide as it stands. */
 export interface FocusScript extends TimingScript {
@@ -187,13 +194,22 @@ type FocusAsked =
 	| { readonly kind: 'distance'; readonly distance: number }
 	| { readonly kind: 'world'; readonly spot: Spot }
 	| { readonly kind: 'block'; readonly target: Target }
-	| { readonly kind: 'object'; readonly name: ObjectName };
+	| { readonly kind: 'object'; readonly name: ObjectName }
+	| { readonly kind: 'under'; readonly share: Point };
 
 const TO_FORM: Form<EyeToScript> = { ...throughFormOf(AN_EYE_PLACE, 'a list of places of the eye'), ...TIMING_FORM };
 const FOCUS_FORM: Form<FocusScript> = { aperture: A_PIXELS, ...TIMING_FORM };
 const AN_OBJECT_FOCUS = new OfForm<ObjectFocus>({ object: needed(A_NAME) }, 'an object by its name: { object }');
+const A_POINT_OF_THE_FRAME = new OfForm<Point>(
+	{ left: needed(A_SHARE), top: needed(A_SHARE) },
+	'a point of the frame: { left, top }, each a share of it'
+);
+const AN_UNDER_FOCUS = new OfForm<UnderFocus>(
+	{ under: needed(A_POINT_OF_THE_FRAME) },
+	'under a point of the frame: { under: { left, top } }'
+);
 const FOCUS_ON_SAID =
-	'a distance before the eye in pixels of a frame 1080 high, more than 0; a spot { across, down, out }; a selector or a box of the screen; or an object, { object }';
+	'a distance before the eye in pixels of a frame 1080 high, more than 0; a spot { across, down, out }; a selector or a box of the screen; an object, { object }; or under a point of the frame, { under: { left, top } } in shares of it';
 const AN_OVER = new OfForm<Over>(
 	{ over: needed(A_TARGET), height: needed(A_SIZE) },
 	'a spot over the page: { over, height }, a block and how high over it in pixels of a frame 1080 high, more than 0'
@@ -293,6 +309,7 @@ class FocusOnKind implements Kind<FocusOn> {
 		if (typeof written === 'string') return A_TARGET.faultOf(written, place);
 		if (!isObjectOfValues(written)) return `${place} is ${described(written)}: it is ${FOCUS_ON_SAID}`;
 		if ('object' in written) return AN_OBJECT_FOCUS.faultOf(written, place);
+		if ('under' in written) return AN_UNDER_FOCUS.faultOf(written, place);
 		if ('across' in written) return A_SPOT.faultOf(written, place);
 		return A_TARGET.faultOf(written, place);
 	}
@@ -501,11 +518,15 @@ async function spotOver(beginning: Beginning, camera: Camera, target: Target, he
 	return { ...onThePlane, out: height };
 }
 
-/** What a film focuses the eye on, told apart: a distance, a spot of the world, a block of the page, an object. */
+/**
+ * What a film focuses the eye on, told apart: a distance, a spot of the world, a block of the page, an object, or a
+ * point of the frame it focuses under.
+ */
 function askedOf(on: FocusOn): FocusAsked {
 	if (typeof on === 'number') return { kind: 'distance', distance: on };
 	if (typeof on === 'string') return { kind: 'block', target: on };
 	if ('object' in on) return { kind: 'object', name: on.object };
+	if ('under' in on) return { kind: 'under', share: on.under };
 	if ('across' in on) return { kind: 'world', spot: on };
 	return { kind: 'block', target: on };
 }
@@ -513,7 +534,7 @@ function askedOf(on: FocusOn): FocusAsked {
 /**
  * Where the eye focuses on what a film names, read as the move begins: a distance as it is; a spot of the world, on
  * its plane; a block of the page, at its middle as the page lays it out; an object, at its middle where it stands,
- * refused where none of its name stands.
+ * refused where none of its name stands; a point of the frame, under it.
  */
 async function focusRead(beginning: Beginning, asked: FocusAsked): Promise<Focus> {
 	switch (asked.kind) {
@@ -528,7 +549,24 @@ async function focusRead(beginning: Beginning, asked: FocusAsked): Promise<Focus
 		}
 		case 'object':
 			return focusOn(standing(beginning, asked.name, EYE_FOCUS), holdersAsTheyStand(beginning), beginning.format.frame);
+		case 'under':
+			return focusUnder(beginning, asked.share);
 	}
+}
+
+/**
+ * A focus under a point of the frame, written in shares of it, at that point in the frame's pixels: refused where the
+ * eye sees past the window's plane there as the move begins, where it would focus on nothing.
+ */
+function focusUnder(beginning: Beginning, share: Point): Focus {
+	const frame = beginning.format.frame;
+	const point = pointAt(boxOf(frame), share);
+	if (underTheFrame(cameraOf(beginning.scene, beginning.format), frame, point) === null) {
+		throw new FilmError(
+			`${EYE_FOCUS} focuses under a point of the frame where the eye sees past the window's plane: focus under a point where it sees that plane`
+		);
+	}
+	return { kind: 'under', point };
 }
 
 /**

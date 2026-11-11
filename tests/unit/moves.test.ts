@@ -3670,7 +3670,7 @@ test('a focus on an object that does not stand, or on what stands behind the eye
 
 test('a focus at no distance, or in no form a focus takes, is refused as the move is made', () => {
 	const forms =
-		'a distance before the eye in pixels of a frame 1080 high, more than 0; a spot { across, down, out }; a selector or a box of the screen; or an object, { object }';
+		'a distance before the eye in pixels of a frame 1080 high, more than 0; a spot { across, down, out }; a selector or a box of the screen; an object, { object }; or under a point of the frame, { under: { left, top } } in shares of it';
 	expect(() => eye.focus(0)).toThrow(new FilmError(`eye.focus's focus is 0: it is ${forms}`));
 	expect(() => eye.focus(true as never)).toThrow(new FilmError(`eye.focus's focus is true: it is ${forms}`));
 });
@@ -3904,6 +3904,46 @@ test('the eye focused on an object leant about its foot focuses where its middle
 	const object = leant.objects.get('title')!;
 	const middle = distanceOfItsMiddle(standingInTheWorld(object, holders, SMALL.frame)!, SMALL.frame);
 	expect(focusDistanceOf(focusOn(object, holders, SMALL.frame), holders.camera, SMALL.frame)).toBeCloseTo(middle);
+});
+
+// A point of the page a focus is put under, as the frame shows it; the crawl's turn away, rolled and lain back about a
+// point under the window's foot; and a lean far back on its foot, whose plane the frame's top sees past
+const UNDER_THE_LINE: Point = { left: 330, top: 120 };
+const TURNED_AWAY = { tilt: 64, roll: 36, about: { left: 0.5, top: 1.02 } } as const;
+const LYING_FAR_BACK = { tilt: 80, about: 'bottom' } as const;
+
+/** A point of the small frame in shares of it. */
+function shareOfTheSmallFrame(point: Point): Point {
+	return { left: point.left / SMALL.frame.width, top: point.top / SMALL.frame.height };
+}
+
+/** How far before the eye a scene shot in the small format is focused, by its own camera. */
+function focusedAtIn(scene: Scene): number {
+	return sharpnessOf(cameraOf(scene, SMALL), SMALL.frame).focusedAt;
+}
+
+test("a focus under a point of the frame stands where the eye sees the window's plane there as each frame is drawn: on the frame's plane face-on, and on the block of the page drawn there once the window turns away under it", async () => {
+	const turnedCamera = cameraOf(await setAt(lean(TURNED_AWAY), OPENING_IN_SMALL, 1), SMALL);
+	const under = shareOfTheSmallFrame(onTheFrame(turnedCamera, SMALL.frame, UNDER_THE_LINE));
+	const focused = await setAt(eye.focus({ under }, { aperture: OPENED }), OPENING_IN_SMALL, 1);
+	const turnedUnderIt = await setAt(lean(TURNED_AWAY), focused, 1);
+	const onTheBlock: Focus = { kind: 'spot', holder: ON_THE_PAGE, point: UNDER_THE_LINE, depth: 0 };
+	expect([focusedAtIn(focused), focusedAtIn(turnedUnderIt)]).toEqual([
+		expect.closeTo(FOCAL_LENGTH),
+		expect.closeTo(focusDistanceOf(onTheBlock, turnedCamera, SMALL.frame))
+	]);
+});
+
+test("a focus under a point off the frame is refused as the move is made, and under one where the eye sees past the window's plane as it begins", async () => {
+	const lyingBack = await setAt(lean(LYING_FAR_BACK), OPENING_IN_SMALL, 1);
+	expect(() => eye.focus({ under: { left: 1.2, top: 0.5 } })).toThrow(
+		new FilmError("eye.focus's focus's under's left is 1.2: it is a number from 0 to 1")
+	);
+	await expect(setAt(eye.focus({ under: { left: 0.5, top: 0 } }), lyingBack, 1)).rejects.toThrow(
+		new FilmError(
+			"eye.focus focuses under a point of the frame where the eye sees past the window's plane: focus under a point where it sees that plane"
+		)
+	);
 });
 
 test('a piece in the world rolled about its foot, carried onto the page, stands where it stood as it sets off and still turns about its foot', async () => {

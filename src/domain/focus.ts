@@ -22,12 +22,22 @@
  * Where the eye focuses is placed as each frame is drawn (`Focus` in `src/domain/eye.ts`), at both ends of its way: a
  * spot of the frame, the world, the window or the page placed on that holder's plane as the window, the camera and the
  * eye stand then, as anything placed there is (`src/domain/placement.ts`), so a focus holds on what it was put on while
- * they move. A focus going from one to another goes evenly in the reciprocal of its distance, as a lens's ring turns,
- * so what it leaves softer softens evenly; it goes no farther than as far as can be, where a spot it was put on stands
- * behind the eye.
+ * they move; or under a point of the frame, where the eye's line through that point meets the window's plane as the
+ * window stands then (`underTheFrame` in `src/domain/camera.ts`), so the focus stays under the point while the window
+ * leans and turns beneath it. A focus going from one to another goes evenly in the reciprocal of its distance, as a
+ * lens's ring turns, so what it leaves softer softens evenly; it goes no farther than as far as can be, where a spot it
+ * was put on stands behind the eye or the eye sees past the window's plane under the point.
  */
-import type { Camera } from './camera.ts';
-import { type Placed, type Placement, fromItsMiddle, lastingPlaneOf, placed } from './placement.ts';
+import { type Camera, underTheFrame } from './camera.ts';
+import {
+	ON_ITS_PLANE,
+	ON_THE_PAGE,
+	type Placed,
+	type Placement,
+	fromItsMiddle,
+	lastingPlaneOf,
+	placed
+} from './placement.ts';
 import { A_PINHOLE, type Focus } from './eye.ts';
 import { type Box, type Point, type Size, boxOf, cornersOf, frameScaleOf, middleX, middleY } from './geometry.ts';
 import {
@@ -87,6 +97,9 @@ const A_DISCS_WIDTH_IN_SPREADS = 4;
 const SHARP_WITHIN = 0.1;
 // The reciprocal of a focus's distance as far as can be: a focus goes no farther
 const AS_FAR_AS_CAN_BE = 0;
+// How far a focus stands under a point of the frame where the eye sees past the window's plane there: as far as can
+// be, where the point the sight meets the plane at runs off to as the plane turns to lie along the sight
+const ENDLESSLY_FAR = Number.POSITIVE_INFINITY;
 // A box's top left corner, in its own pixels
 const ITS_CORNER = 0;
 // How many points of the frame show a plane that is not seen
@@ -104,7 +117,8 @@ export function sharpnessOf(camera: Camera, frame: Size): Sharpness {
 
 /**
  * How far before the eye of a camera a focus stands as a frame of this size is drawn, in pixels of a frame 1080 high:
- * none or less behind the eye.
+ * none or less behind the eye. A focus under a point of the frame stands where a focus on the point of the page the
+ * frame shows there does, and as far as can be where the eye sees past the window's plane there.
  */
 export function focusDistanceOf(focus: Focus, camera: Camera, frame: Size): number {
 	switch (focus.kind) {
@@ -113,6 +127,15 @@ export function focusDistanceOf(focus: Focus, camera: Camera, frame: Size): numb
 		case 'spot': {
 			const plane = lastingPlaneOf(focus.holder, camera, frame);
 			return distanceOfItsMiddle(placed(placementAt(focus.point, focus.depth), plane, frame), frame);
+		}
+		case 'under': {
+			const onThePage = underTheFrame(camera, frame, focus.point);
+			if (onThePage === null) return ENDLESSLY_FAR;
+			return focusDistanceOf(
+				{ kind: 'spot', holder: ON_THE_PAGE, point: onThePage, depth: ON_ITS_PLANE },
+				camera,
+				frame
+			);
 		}
 	}
 }
