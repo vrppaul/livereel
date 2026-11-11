@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import type { Camera, Pose } from '../../src/domain/camera.ts';
 import { drawnPlacement, windowInTheWorld } from '../../src/domain/placement.ts';
-import type { Format } from '../../src/domain/geometry.ts';
+import type { Box, Format } from '../../src/domain/geometry.ts';
 import type { MotionBlur } from '../../src/domain/shutter.ts';
 import { FilmError, TakeError } from '../../src/domain/errors.ts';
 import { easeOutCubic, linear } from '../../src/domain/curves.ts';
@@ -93,6 +93,8 @@ const LEFT_HALF = { left: 0, top: 0, width: 0.5, height: 1 };
 const MIDDLE_QUARTER = { left: 0.25, top: 0.25, width: 0.5, height: 0.5 };
 const WIDER_MIDDLE = { left: 0.175, top: 0.175, width: 0.65, height: 0.65 };
 const RIGHT_HALF = { left: 0.5, top: 0, width: 0.5, height: 1 };
+// The name the title stands in the scene by
+const THE_TITLE = 'title';
 const DEGREES_IN_A_HALF_TURN = 180;
 // Why a stage's page is gone, as a stage says it
 const GONE = new FilmError('the page at http://app/refusing/ refuses to be framed');
@@ -150,6 +152,22 @@ class WindowLoggedAsItBegins implements Move {
 
 	begin(): Change {
 		this.log.push('begun');
+		return (scene) => scene;
+	}
+}
+
+/** A move of the eye that keeps, as it begins, the box of the title as the scene it begins on holds it. */
+class EyeReadingTheTitle implements Move {
+	readonly part = 'eye';
+	readonly timing;
+	readonly read: Box[] = [];
+
+	constructor(within: Bounds) {
+		this.timing = timingOf({ within });
+	}
+
+	begin(beginning: Beginning): Change {
+		this.read.push(beginning.scene.objects.get(THE_TITLE)!.box);
 		return (scene) => scene;
 	}
 }
@@ -679,6 +697,35 @@ test('a move of the window begun ahead of its share, as a move asking where the 
 	const moves = [new AskingTheFrame({ start: 0 }, [5 / RATE]), new WindowLoggedAsItBegins({ start: 0.5 }, log)];
 	await unblurredTakeOf(new FootageOf([5]), new FramedStageThatKeeps()).run([play({ seconds: 6 / RATE, moves })]);
 	expect(log).toEqual(['begun']);
+});
+
+test('keys typed into the page beside a move asking where the frame will stand are pressed once each, as each is due', async () => {
+	// The typing begins first, so it runs as the move asking begins and asks where the frame stands at the play's end
+	const page = new PageOfBoxes(PAGE);
+	const take = new Take({
+		opened: openedOn(page, new FramedStageThatKeeps()),
+		footage: new FootageOf([5]),
+		track: new TrackThatKeeps(),
+		format: SMALL,
+		opening: openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
+		motionBlur: UNBLURRED,
+		framesPerSecond: RATE
+	});
+	const moves = [typeIntoThePage(STROKES), new AskingTheFrame({ start: 0 }, [5 / RATE])];
+	await take.run([play({ seconds: 6 / RATE, moves })]);
+	expect(page.typed).toEqual(['a', 'b']);
+});
+
+test('a move of the eye begun ahead of its share reads an object where a move running as the run began will have carried it by its share', async () => {
+	// The title goes from the left half to the right over the play; the eye's move begins half way, on the fourth frame
+	const stage = new FramedStageThatKeeps();
+	const reading = new EyeReadingTheTitle({ start: 0.5 });
+	const moves = [titleTo(RIGHT_HALF), new AskingTheFrame({ start: 0 }, [5 / RATE]), reading];
+	await unblurredTakeOf(new FootageOf([2]), stage).run([
+		cut(showTitle('Words', { at: LEFT_HALF })),
+		play({ seconds: 6 / RATE, ease: linear, moves })
+	]);
+	expect(reading.read).toEqual(stage.drawn.map((scene) => scene.objects[0]!.box));
 });
 
 test('a move of the window that reads the page is refused where it would be begun ahead of its share, as a move asking where the frame will stand asks', async () => {

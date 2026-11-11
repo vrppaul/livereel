@@ -847,7 +847,11 @@ move of the camera, the window and the eye that starts within the run's
 share as the run begins; begun so early, such a move reads the scene
 alone, and one that reads the page there, a block it goes to, is
 refused. So is a point where the eye sees past the window's plane while
-the page runs, and a run that would pass its rest across the frame. Each
+the page runs, and a run that would pass its rest across the frame. A
+move begun ahead reads the scene as the moves already running will have
+left it: an object they carry, which the eye focuses on, is read where
+it will stand, but not where a move beginning after the run and before
+it, or a scroll of the page, would carry it. Each
 exposure of a frame draws the page where it stood then, so a fast run
 smears; the filmed page scrolls by `page.scrollBy` and `page.scrollTo`, and
 `screen.scrolls('filmed')` and `screen.scrollTo('filmed', …)` are refused.

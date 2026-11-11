@@ -13,32 +13,34 @@
  * heard. A move judged on the frame, as a page's run brought to rest, asks as it begins where the frame will stand at
  * moments of its share: every move of the camera, the window and the eye that starts by then is begun ahead, in order,
  * on the scene as foreseen where its share starts, and kept for its share, never begun again; begun so early it may
- * read the scene alone, and one that reads the page is refused. A play that asks nothing begins each move at its share.
- * The page is acted
- * on one way: as a move that acts begins, by the way the take hands every move. A move begins on the page the screen
- * shows: where that is a page of the film's own, it measures blocks there, and pictures parts of it, on its copy apart
- * from the stage's stood as the page stands at the move's moment, and its scroll and keys go to the filmed page behind
- * it. A sound a move makes is heard
- * as the move is set at or past its point, on the frame being made.
+ * read the scene alone, and one that reads the page is refused. The scene is foreseen by every move begun by then but
+ * the page's, each set as far as it will have come: the camera follows from the camera, the window and the eye alone,
+ * and what a move begun ahead reads, an object the eye focuses on, stands where the moves running will have carried
+ * it, but not where a move yet to begin before it, or the page's own scroll, would. A play that asks nothing begins
+ * each move at its share. The page is acted on one way: as a move that acts begins, by the way the take hands every
+ * move. A move begins on the page the screen shows: where that is a page of the film's own, it measures blocks there,
+ * and pictures parts of it, on its copy apart from the stage's stood as the page stands at the move's moment, and its
+ * scroll and keys go to the filmed page behind it. A sound a move makes is heard as the move is set at or past its
+ * point, on the frame being made.
  * A frame is drawn only when the footage keeps it, and drawn again where anything on it moved fast while its shutter
  * was open — the camera, its window, the cursor, the light, an object or what it shows — as the scene stood at moments
  * of that time: the scene the frame before left, every move begun by then set as far as it had come, and what is worked
- * out from the moment, as a terminal's spinner, worked out at that one. How far is
- * measured from where things stood as the shutter opened to where they stand, apart on each side of a moment a move
- * begins at, so what a move sets as it begins is not taken for a move. Each drawing is an exposure of the frame
- * (`src/domain/shutter.ts`), so what slides in and what it pushes off are each drawn along their own way. A move's
- * change follows from its progress alone, so asking it what it set at an earlier moment changes nothing; a move of the
- * page, which sets the page itself, is never asked. A stage that draws all of a frame's exposures at once lays them
- * over one another and is captured once, the frame; one that draws fewer is captured at each, the footage blending them: a
- * capture is near all a frame costs. The page's own time — its timers, animation frames and date — is the film's: run
- * on with each frame, kept or not, before the frame is shot, as far as the film went since the last at the speed the
- * scene set on the way, the mean of where it stood and where it stands; so a page's timer set at a speed of 2 runs
- * out in half its delay into the film, however long the browser takes. It runs as the wall's only while an act waits
- * on the page, which needs it to answer, the film's time standing. The take does with the page what the stage's kind
- * asks. A stage that shows a picture of the page, as it shows a static one, takes it anew when the take asks: on a
- * frame after an act, a move of the page or a change the page made of itself, and on every frame until two pictures
- * in a row come out alike, nothing done to the page between them and its own motion not let go, so what it brings —
- * results, an image, a scroll that eases out, a note its timer takes away — is seen.
+ * out from the moment, as a terminal's spinner, worked out at that one. How far is measured from where things stood as
+ * the shutter opened to where they stand, apart on each side of a moment a move begins at, so what a move sets as it
+ * begins is not taken for a move. Each drawing is an exposure of the frame (`src/domain/shutter.ts`), so what slides in
+ * and what it pushes off are each drawn along their own way. A move's change follows from its progress alone, so
+ * asking it what it set at an earlier moment changes nothing; a move of the page, which sets the page itself, is never
+ * asked, nor foreseen. A stage that draws all of a frame's exposures at once lays them over one another and is
+ * captured once, the frame; one that draws fewer is captured at each, the footage blending them: a capture is near all
+ * a frame costs. The page's own time — its timers, animation frames and date — is the film's: run on with each frame,
+ * kept or not, before the frame is shot, as far as the film went since the last at the speed the scene set on the way,
+ * the mean of where it stood and where it stands; so a page's timer set at a speed of 2 runs out in half its delay into
+ * the film, however long the browser takes. It runs as the wall's only while an act waits on the page, which needs it
+ * to answer, the film's time standing. The take does with the page what the stage's kind asks. A stage that shows a
+ * picture of the page, as it shows a static one, takes it anew when the take asks: on a frame after an act, a move of
+ * the page or a change the page made of itself, and on every frame until two pictures in a row come out alike, nothing
+ * done to the page between them and its own motion not let go, so what it brings — results, an image, a scroll that
+ * eases out, a note its timer takes away — is seen.
  * Once it stands still, a frame the stage would draw as it drew the last one captured is that capture, neither drawn
  * nor captured again: holds are near half a film's frames. A picture is taken as sharp as a camera as close as
  * livereel's bound shows it, so it serves every frame after it; on a frame a move of the page runs on past, or while
@@ -154,8 +156,8 @@ interface PlayTime {
 
 /**
  * A play as a move of it begins, which may ask where the frame will stand later in it: the scene the move begins on,
- * the moves running then and those yet to begin, the moves of the frame begun ahead of their share and kept for it, and
- * the play's time.
+ * the moves running then but the page's and those yet to begin, the moves of the frame begun ahead of their share and
+ * kept for it, and the play's time.
  */
 interface Foresight {
 	readonly scene: Scene;
@@ -318,14 +320,15 @@ export class Take {
 			for (const [place, move] of due.entries()) {
 				running = await this.endedBy(running, move.timing.within.start);
 				const unbegun = [...due.slice(place + 1), ...waiting];
-				const foresight: Foresight = { scene: this.scene, running: [...running], unbegun, ahead, playTime };
+				const foreseen = askableAtAnyMoment(running);
+				const foresight: Foresight = { scene: this.scene, running: foreseen, unbegun, ahead, playTime };
 				const begun = await this.begunInPlay(move, foresight);
 				running.push(begun);
 				ranOver.push(begun);
 			}
 			running = await this.endedBy(running, progress);
 			running = await this.setAlong(running, progress);
-			const moves = ranOver.filter((current) => !current.movesThePage);
+			const moves = askableAtAnyMoment(ranOver);
 			await this.frame(
 				{ before, moves, progress, frameShare: 1 / frames },
 				running.some((current) => current.movesThePage)
@@ -426,8 +429,8 @@ export class Take {
 
 	/**
 	 * The camera a play's frame will be seen by at a moment of it, foreseen as a move of it begins: every move of the
-	 * frame due to begin by then begun ahead, then the scene the move begins on with each move running and each begun
-	 * ahead by then set as far as it will have come.
+	 * frame due to begin by then begun ahead, then the scene the move begins on with each move running but the page's and
+	 * each begun ahead by then set as far as it will have come.
 	 */
 	private async cameraForeseen(foresight: Foresight, moment: number): Promise<Camera> {
 		const progress = (moment - foresight.playTime.start) / foresight.playTime.seconds;
@@ -439,7 +442,7 @@ export class Take {
 	/**
 	 * Every move of the camera, the window and the eye a play has yet to begin whose share starts by a point of it,
 	 * begun ahead of its share in the order they begin, each on the scene as foreseen where its share starts, with the
-	 * moves begun before it set as far as they will have come, and kept for its share.
+	 * moves begun before it but the page's set as far as they will have come, and kept for its share.
 	 */
 	private async begunAhead(foresight: Foresight, progress: number): Promise<void> {
 		const due = foresight.unbegun
@@ -827,8 +830,16 @@ function runningOf(move: Move, stretch: Stretch, change: Change): Running {
 }
 
 /**
- * The moves a play's frame is foreseen by, in the order they begin: those running as the move asking begins, then
- * those begun ahead, each foresight reaching past the last, so the later begin after.
+ * The moves of a play that may be asked what they set at another moment than their frame's: every one but the page's,
+ * whose change scrolls the page or presses its keys as it is asked, so the frames it runs over alone set it.
+ */
+function askableAtAnyMoment(moves: readonly Running[]): Running[] {
+	return moves.filter((current) => !current.movesThePage);
+}
+
+/**
+ * The moves a play's frame is foreseen by, in the order they begin: those running as the move asking begins but the
+ * page's, then those begun ahead, each foresight reaching past the last, so the later begin after.
  */
 function movesForeseen(foresight: Foresight): readonly Running[] {
 	return [...foresight.running, ...foresight.ahead.values()];
