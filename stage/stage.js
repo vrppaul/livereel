@@ -144,7 +144,8 @@ const MELT_TOWARD = 'data-melt-toward';
 // The attribute what the eye's focus blurs is drawn with, which what it draws sharp has not, so that is drawn with no
 // filter at all
 const OUT_OF_FOCUS = 'data-out-of-focus';
-// The attribute the window is drawn with where the room draws its body, which takes the place of its edge and shadow
+// The attribute the window, or a piece of the page, is drawn with where it has a body the room draws, which takes the
+// place of its edge and shadow
 const WITH_A_BODY = 'data-body';
 // The custom properties a title's own size, letter spacing and line height are set as, where it has each; the
 // stylesheet takes the look's where it has not
@@ -1039,7 +1040,7 @@ class CodeDrawer {
 /**
  * A piece of the page in its object: the part of the page's picture over its source, or the picture of its source it
  * holds, as large as its box holds it, its corners as round as the film names, and the holes other pieces leave there,
- * in its figure.
+ * in its figure; marked where it has a body, which the room draws with the shadow it casts (`stage/piece-body.js`).
  */
 class PieceDrawer {
 	/** @param {Staged} element */
@@ -1055,6 +1056,7 @@ class PieceDrawer {
 		figureDrawn(this.element, piece);
 		sourceDrawn(this.element, piece.source, piece.fit);
 		pictureDrawn(this.element, piece.picture);
+		this.element.toggleAttribute(WITH_A_BODY, piece.body !== null);
 		numbered(this.element, {
 			'--corner-top-left': piece.corners.topLeft,
 			'--corner-top-right': piece.corners.topRight,

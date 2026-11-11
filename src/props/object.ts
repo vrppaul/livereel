@@ -557,6 +557,7 @@ function drawnContent(
 			return drawnPiece(
 				content,
 				standing.laid,
+				object,
 				presentShare(figure),
 				holesOfOthers(name, around.holes),
 				around.sharper

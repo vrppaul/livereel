@@ -11,7 +11,9 @@
  * changes under it.
  * Lifted inside the world, it stands there over its source on the window's plane, wherever the eye stands, and the eye
  * moves past it as it moves past the window, the eye's focus blurring it as it stands off it; carried onto a block of
- * the page from there, it sets off from where it stands, while it lies on the window's plane.
+ * the page from there, it sets off from where it stands, while it lies on the window's plane. There alone it may have
+ * a body (`src/props/piece.ts`), which the room draws in its one scene: the frame, a group and the window are drawn
+ * flat over everything there, so a body anywhere else is refused.
  *
  * Lifted, it may leave a hole: the ground the page draws behind its block, read as it is lifted, or a colour the film
  * names, where a box of the screen, with no block behind it, needs one; and draw lines from itself to its source. Its
@@ -23,9 +25,11 @@ import { boxOnTheFrame } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import { type Box, frameScaleOf } from '../domain/geometry.ts';
 import {
+	AN_OPAQUE_COLOUR,
 	A_COLOUR,
 	A_COUNT,
 	A_PIXELS,
+	A_SHARE,
 	type Form,
 	type Kind,
 	Literal,
@@ -33,11 +37,19 @@ import {
 	OneOf,
 	Plain,
 	assertKind,
-	assertWritten
+	assertWritten,
+	needed
 } from '../domain/handed.ts';
 import type { Place } from '../domain/place.ts';
 import { A_TARGET, type Beginning, type Move, type Target } from '../direction/move.ts';
-import { type Corners, FOLLOWING_THE_PAGE, type Hole, type Piece, type PiecePicture } from '../props/piece.ts';
+import {
+	type Body,
+	type Corners,
+	FOLLOWING_THE_PAGE,
+	type Hole,
+	type Piece,
+	type PiecePicture
+} from '../props/piece.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
@@ -83,13 +95,24 @@ export interface HoleScript {
 }
 
 /**
+ * A piece's body as a film writes it: how thick it is back from its face, in the page's pixels, as its corners are;
+ * its walls' colour, in hex with no alpha; and how strongly a light in their own hue shows through them, from 0 to 1,
+ * none where the film names none.
+ */
+export interface BodyScript {
+	readonly thickness: number;
+	readonly walls: string;
+	readonly glow?: number;
+}
+
+/**
  * How a piece is lifted: off the first `every` blocks a selector matches, together, with `air` clear round them, in the
  * page's pixels; how round the corners of what it lifts are, `corner`, a radius in the page's pixels: a rounded card's
  * own `border-radius`, where it lifts the card alone and whole;
  * the hole it leaves and the line the lines from it to its source are drawn in, where the film names them; the
  * `picture` it is drawn from, the page's as it changes, `'following'`, where the film names none, or one of its source
  * held as it is lifted, `'held'`; how it comes up; which piece; the world it stands `inside`, which the eye moves
- * through, or the group it stands in, if either.
+ * through, or the group it stands in, if either; and its `body` in the world, if the film names one.
  */
 export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript {
 	readonly every?: number;
@@ -99,6 +122,7 @@ export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScri
 	readonly lines?: Stroke;
 	readonly picture?: PiecePicture['kind'];
 	readonly inside?: 'world';
+	readonly body?: BodyScript;
 }
 
 /** How a hole is filled, as a piece is made: with the ground the page draws behind a block a selector names, or a colour. */
@@ -113,7 +137,8 @@ interface HoleAsked {
 
 /**
  * What a piece is lifted with, as it is made: how many blocks, how much air round them, how round its corners are, the
- * hole it leaves, if any, its lines, if any, the kind of picture it is drawn from, and where it is born.
+ * hole it leaves, if any, its lines, if any, the kind of picture it is drawn from, where it is born, and its body, if
+ * any.
  */
 interface Lifting {
 	readonly every: number;
@@ -123,6 +148,7 @@ interface Lifting {
 	readonly lines: Stroke | null;
 	readonly picture: PiecePicture['kind'];
 	readonly bornIn: BornIn;
+	readonly body: Body | null;
 }
 
 const PIECE = 'piece' satisfies ShownKind;
@@ -142,6 +168,9 @@ const A_PIECE_PICTURE: Kind<PiecePicture['kind']> = new OneOf(
 	PIECE_PICTURES,
 	`what a piece is drawn from: "following", the page's picture as it changes, or "held", a picture of its source held as it is lifted`
 );
+const BODY_FORM: Form<BodyScript> = { thickness: needed(A_PIXELS), walls: needed(AN_OPAQUE_COLOUR), glow: A_SHARE };
+// A body's walls lit from within by no light where the film names none
+const NO_GLOW = 0;
 const PIECE_FORM: Form<PieceScript> = {
 	every: A_COUNT,
 	air: A_PIXELS,
@@ -151,6 +180,7 @@ const PIECE_FORM: Form<PieceScript> = {
 	picture: A_PIECE_PICTURE,
 	// A piece stands inside the world alone: it lies in the window only where it is carried onto the page (`onto`)
 	inside: new Literal('world'),
+	body: new OfForm(BODY_FORM, 'a body: { thickness, walls, glow }'),
 	...IN_PLACE_SHOW_FORM,
 	...NAMED_FORM,
 	...GROUPED_FORM
@@ -159,8 +189,8 @@ const PIECE_FORM: Form<PieceScript> = {
  * A piece of the page lifted off a target, a selector's first `every` blocks together or a box of the screen, over
  * where the camera shows it, cut to the part it shows, its corners as round as the film names, leaving the hole and
  * drawing the lines the film names, drawn from the picture the film names: in place of any piece of its name, in its
- * own way, fading up whole, or in a way of livereel's the film names. A hole over a box of the screen, which has no
- * block to read the ground behind, is refused unless the film names its colour.
+ * own way, fading up whole, or in a way of livereel's the film names, with the body the film names. A hole over a box
+ * of the screen, which has no block to read the ground behind, is refused unless the film names its colour.
  */
 export function show(target: Target, script: PieceScript = {}): Move {
 	assertKind(target, A_TARGET, "piece.show's target");
@@ -172,7 +202,8 @@ export function show(target: Target, script: PieceScript = {}): Move {
 		hole: script.hole === undefined ? null : holeAsked(target, script.hole),
 		lines: script.lines ?? null,
 		picture: script.picture ?? FOLLOWING_THE_PAGE.kind,
-		bornIn: script.inside ?? BORN_ON_THE_FRAME
+		bornIn: script.inside ?? BORN_ON_THE_FRAME,
+		body: script.body === undefined ? null : bodyAsked(script.body, script.inside)
 	};
 	return {
 		...objectShow(PIECE, 'piece.show', script, NO_PLACE, THE_STEPS_CURVE, (beginning) =>
@@ -244,9 +275,22 @@ function holeAsked(target: Target, hole: HoleScript): HoleAsked {
 }
 
 /**
+ * A body as the film names it, its walls lit from within by none where it names no glow; refused but inside the world,
+ * as the frame, a group and the window are drawn flat over everything in the room.
+ */
+function bodyAsked(body: BodyScript, inside: PieceScript['inside']): Body {
+	if (inside !== 'world') {
+		throw new FilmError(
+			"piece.show draws a piece's body inside the world alone, as the frame, a group and the window are drawn flat over everything: lift it inside: 'world'"
+		);
+	}
+	return { thickness: body.thickness, walls: body.walls, glow: body.glow ?? NO_GLOW };
+}
+
+/**
  * A piece of the page over a target, cut to the part of it the camera shows, its corners as round as the film names,
- * the hole it leaves filled as the page draws it now and as round, drawn from the picture the film names, and the box
- * of the frame it shows there.
+ * the hole it leaves filled as the page draws it now and as round, drawn from the picture the film names, with the
+ * body it names, and the box of the frame it shows there.
  */
 async function lifted(beginning: Beginning, target: Target, lifting: Lifting): Promise<Coming> {
 	const camera = cameraOverThePicture(beginning, 'piece.show');
@@ -258,7 +302,7 @@ async function lifted(beginning: Beginning, target: Target, lifting: Lifting): P
 	const corners = cornersOf(source, shown, lifting.corner, windowCorner);
 	const hole = lifting.hole === null ? null : await holeOf(beginning, lifting.hole, lifting.corner);
 	const picture = await pictureOf(beginning, lifting.picture, source);
-	const piece: Piece = { kind: PIECE, source, corners, hole, lines: lifting.lines, picture };
+	const piece: Piece = { kind: PIECE, source, corners, hole, lines: lifting.lines, picture, body: lifting.body };
 	return { content: piece, box };
 }
 

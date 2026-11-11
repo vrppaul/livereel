@@ -228,15 +228,16 @@ and the moves of each part of the scene:
   `terminal.lean({ tilt, turn, roll, over, about })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
-- `piece.show(target, { every, air, corner, hole, lines, picture, enter, edge, as, inside, group, zIndex })`,
+- `piece.show(target, { every, air, corner, hole, lines, picture, body, enter, edge, as, inside, group, zIndex })`,
   `piece.to(place, { scale, depth })`, `piece.onto(target)`, `piece.lean({ tilt, turn, roll, over, about })`, `piece.back()`,
   `piece.hide({ toward, leave, edge })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
   in the page's pixels (a rounded card's own `border-radius`), square where it names none, and as round as the window
   at a corner standing on a corner of what the window shows, leaving a `hole: { ground, line }` and drawing `lines` to its
   source where named; drawn from the page's picture as it changes, or, `picture: 'held'`, from a picture of its source
-  held as it is lifted; carried `onto` another block, it lies on the page there, in the window, and keeps that place on
-  the screen as the camera moves; each move of it takes `as` to name which
+  held as it is lifted; `inside: 'world'`, with a `body: { thickness, walls, glow }` where named; carried `onto` another
+  block, it lies on the page there, in the window, and keeps that place on the screen as the camera moves; each move of
+  it takes `as` to name which
 - `outline.show(target, { every, line, enter, edge, as, group, zIndex })`, `outline.to(place, { scale, depth })`,
   `outline.lean({ tilt, turn, roll, over, about })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a
   selector's blocks or a box of the screen, `'solid'` or `'dashed'`; each move of it takes `as` to name which
@@ -634,6 +635,24 @@ carries it from the world onto the page where it stands, wherever the eye
 stands and however the window is brought near or rolled, while it lies on
 the window's plane, face-on to the window and at its depth, as what lies
 in the window is drawn flat on it: standing off that plane, it is refused.
+
+A piece lifted `inside: 'world'` may have a body, as a real button rises out
+of the page as a column: `piece.show(STORY, { inside: 'world', corner: 6,
+body: { thickness: 12, walls: '#222935' }, hole: { ground: '#07090d' } })`,
+then `piece.effects({ depth: 11.25, shadow: 1 })`. Its walls go back from its
+face as thick as `thickness` names, in the page's pixels as `corner` is,
+matte, in the colour `walls` names at the face, darkening to 0.35 of it at
+the back, and that colour added over them as strongly as `glow` names, from
+0, none, to 1, so a line of the diff glows green. On the plane it was lifted
+from they stand behind the page, which hides them; as `depth` brings the face
+toward the eye, they come up out of the page, and its shadow lies on that
+plane under it, as dark as its `shadow` is strong, dropped toward its foot
+and soft as far as the face stands high, as the promo's column cast it,
+where flat draws it on the face's own plane. The walls grow back from the face as
+the piece comes up, so none come whole at once. The room draws the body; the
+flat stage draws the face and its shadow alone, as it draws no body for the
+window. A body anywhere but inside the world is refused, as the frame, a
+group and the window are drawn flat over everything in a room.
 
 A title, code or the terminal stands `inside` the page's window, as a small
 window of code over the site's: `code.show(LINES, { at: { left: 0.45, top:

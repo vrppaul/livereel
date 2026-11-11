@@ -123,9 +123,15 @@
  * glow round it; how far it is blurred; and the ring along its edge, the ring and the glow in the colour the film
  * gives them, or the accent where it gives none. Worked out on each object, where the stage sets its strengths, as a
  * token on the root would take none; its lengths are pixels of a frame 1080 high, as what an object shows is drawn in.
+ * The same without the shadow, for a piece whose body the room draws, the shadow on what lies under it with it.
  */
 .object {
 	--effect-drawn-in: var(--effect-colour, var(--accent));
+	--effects-but-the-shadow: drop-shadow(
+			0 0 calc(var(--effect-glow) * var(--glow-reach))
+				color-mix(in srgb, var(--effect-drawn-in) calc(var(--effect-glow) * var(--glow-strongest)), transparent)
+		)
+		blur(calc(var(--effect-blur) * 1px));
 	--effects: drop-shadow(
 			0 calc(var(--effect-shadow) * var(--lifted-shadow-drop)) calc(var(--effect-shadow) * var(--lifted-shadow-blur))
 				color-mix(
@@ -134,11 +140,7 @@
 					transparent
 				)
 		)
-		drop-shadow(
-			0 0 calc(var(--effect-glow) * var(--glow-reach))
-				color-mix(in srgb, var(--effect-drawn-in) calc(var(--effect-glow) * var(--glow-strongest)), transparent)
-		)
-		blur(calc(var(--effect-blur) * 1px));
+		var(--effects-but-the-shadow);
 	--ring-line: color-mix(in srgb, var(--effect-drawn-in) calc(var(--effect-ring) * 100%), transparent);
 }
 

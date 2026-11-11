@@ -9,7 +9,8 @@
  * the engine's matrix places it in the eye's own space, its texture read back into linear light; the window's body and
  * glass round it (`stage/body.js`); the film's things in the world (`stage/things.js`); each object of markup standing
  * in the world, a title, code, the terminal or a piece, on a surface of its own the stage lays it in apart from the
- * frame's, drawn face-on into a texture and stood where the engine's matrix places its box; all seen in perspective from
+ * frame's, drawn face-on into a texture and stood where the engine's matrix places its box, a piece's body standing
+ * with it (`stage/piece-body.js`); all seen in perspective from
  * the eye and lit as it sees the room (`stage/lighting.js`), hiding one another by depth alone; but what stands before
  * all the rest while the eye's focus blurs it near, a world of its own drawn apart and laid over the rest
  * (`worldBuilt`). The eye's lens blurs each pixel of the world by how far what it shows stands from the focus
@@ -65,8 +66,9 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { WindowBody } from './body.js';
 import { Lens, SPREADS_REACHED, sceneFieldOf, sideHalvedEvenly } from './lens.js';
 import { WorldLighting } from './lighting.js';
-import { matrixOf, projectionOnto } from './matrices.js';
+import { matrixOf, placedBy, projectionOnto } from './matrices.js';
 import { PAGE_SURFACE_FRAGMENT, PagePicture, pageSurfaceValues } from './page-picture.js';
+import { PieceBodies } from './piece-body.js';
 import { ADDED, LAID_OVER, PREMULTIPLIED, SRGB_CURVES, passOver, valuesSet } from './passes.js';
 import { FrameShown } from './shown.js';
 import { WorldSeen } from './laying.js';
@@ -461,6 +463,8 @@ class Room {
 		this.laidAt = new Map();
 		// How far past its box anything an object shows draws, in the frame's pixels
 		this.reachPastTheBox = reachPastTheBox() * layout.frameScale;
+		// The bodies of the pieces of the page standing in the world, which stand with their surfaces of markup
+		this.pieceBodies = new PieceBodies();
 		this.worldLayer = new WebGLRenderTarget(drawnWidth, drawnHeight, {
 			...THREES_LAYER,
 			depthTexture: new DepthTexture(drawnWidth, drawnHeight)
@@ -657,8 +661,11 @@ class Room {
 		/** @type {readonly StandingApart[]} */
 		const standingApart = [
 			...posed.map((placed) => standingOf([placed], seenThroughIn(placed))),
-			...[...standing.markup.keys()].map((place) =>
-				standingOf(markupPartsAt(this.markup, place), MARKUP_BESIDE_THE_PAGE)
+			...standing.markup.map((markup, place) =>
+				standingOf(
+					[...markupPartsAt(this.markup, place), ...this.pieceBodies.posed(place, markup.object, scene.look)],
+					MARKUP_BESIDE_THE_PAGE
+				)
 			)
 		];
 		const apart = this.lens.apartBeforeTheRest(eye, [windowStanding, ...standingApart]);
@@ -1180,12 +1187,6 @@ function surfaceInTheWorld(laid, part, fragmentShader, uniforms) {
 	surface.frustumCulled = false;
 	surface.layers.set(WORLD_PARTS[part]);
 	return surface;
-}
-
-/** A mesh placed by a matrix of the room's alone. @param {Mesh} mesh @param {Matrix4} matrix */
-function placedBy(mesh, matrix) {
-	mesh.matrix.copy(matrix);
-	mesh.matrixWorldNeedsUpdate = true;
 }
 
 /** three's camera seeing through a projection the room hands it, and nothing else. @param {Camera} camera @param {Matrix4} projection */

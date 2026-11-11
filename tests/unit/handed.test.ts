@@ -153,8 +153,14 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => piece.show(5 as never)).toThrow(new FilmError(`piece.show's target is 5: it is ${TARGET}`));
 	expect(() => piece.show('#chart', { from: 'left' } as never)).toThrow(
 		new FilmError(
-			'piece.show names from: it names every, air, corner, hole, lines, picture, inside, enter, edge, within, ease, as, group, zIndex, or fewer'
+			'piece.show names from: it names every, air, corner, hole, lines, picture, inside, body, enter, edge, within, ease, as, group, zIndex, or fewer'
 		)
+	);
+	expect(() => piece.show('#chart', { inside: 'world', body: { walls: '#e6e8ec' } as never })).toThrow(
+		new FilmError("piece.show's body's thickness is undefined: it is a number of pixels, 0 or more")
+	);
+	expect(() => piece.show('#chart', { inside: 'world', body: { thickness: 12, walls: '#e6e8ec80' } })).toThrow(
+		new FilmError(`piece.show's body's walls is "#e6e8ec80": it is a colour in hex with no alpha: #rgb or #rrggbb`)
 	);
 	expect(() => piece.show('#chart', { picture: 'frozen' as never })).toThrow(
 		new FilmError(

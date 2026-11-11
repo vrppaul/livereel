@@ -10,9 +10,17 @@
  * where it stood, and draw lines from itself to its source (`src/props/lifted.ts`). The holes other pieces leave in its
  * part of the screen are drawn over it as they stand, as a lens draws them (`src/props/lens.ts`), whichever picture it
  * is drawn from.
+ *
+ * Standing in the world, it may have a body, fixed as it is lifted: walls of a colour the film names going back from
+ * its face as thick as the film names, matte, lit from within as faintly as it names, which the room draws in its one
+ * scene (`stage/piece-body.js`). The walls grow back from the face as the piece comes up, as the window's body grows
+ * as the screen does, so none comes whole at once; standing on the plane it was lifted from, they lie behind it, and
+ * come up out of it as the piece stands out toward the eye. Its shadow then lies on that plane, under it, where the
+ * room draws it; the flat stage draws the face and its shadow alone, as it draws no body for the window.
  */
 import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
 import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
+import type { Stance } from '../domain/stance.ts';
 import type { ObjectName } from './object.ts';
 import type { Stroke } from './stroke.ts';
 
@@ -64,10 +72,29 @@ export type DrawnPicture = { readonly kind: 'page' } | { readonly kind: 'own'; r
 const DRAWN_FROM_THE_PAGE: DrawnPicture = { kind: 'page' };
 
 /**
+ * A piece's body: how thick it is, back from its face, in the screen's pixels, as its corners are; the colour of its
+ * walls, in hex with no alpha, at its face, darkening toward its back; and how strongly a light in its walls' own hue
+ * shows through them, a share from 0 none to 1.
+ */
+export interface Body {
+	readonly thickness: number;
+	readonly walls: string;
+	readonly glow: number;
+}
+
+/**
+ * A piece's body as the room draws it: as thick as it shows, in the frame's pixels, its walls' colour and glow; and how
+ * high its face stands over the plane it was lifted from, in the same pixels, where its shadow lies.
+ */
+export interface DrawnBody extends Body {
+	readonly height: number;
+}
+
+/**
  * A piece of the page: the part of the screen it shows, in the screen's pixels, how round each of its corners is, in
  * the same pixels — as the film names for a rounded block, and as the window where the corner stands on a corner of
  * what the window shows — the hole it leaves there, if any, the line the lines from it to its source are drawn in, if
- * it draws any, and the picture it is drawn from.
+ * it draws any, the picture it is drawn from, and its body, if it has one.
  */
 export interface Piece {
 	readonly kind: 'piece';
@@ -76,13 +103,14 @@ export interface Piece {
 	readonly hole: Hole | null;
 	readonly lines: Stroke | null;
 	readonly picture: PiecePicture;
+	readonly body: Body | null;
 }
 
 /**
  * A piece as the stage draws it: its source, how many of the frame's pixels a screen's pixel takes in its box, the part
  * of its box the source is drawn in, in the frame's pixels from the box's top left corner, how round each of its
  * corners is, in the same pixels, the holes it shows there, how far it has come up and not gone in its own way, fading
- * whole, from 0 to 1, and the picture it is drawn from.
+ * whole, from 0 to 1, the picture it is drawn from, and its body, none where it has none or none of it has come.
  */
 export interface DrawnPiece {
 	readonly kind: 'piece';
@@ -93,16 +121,21 @@ export interface DrawnPiece {
 	readonly holes: readonly DrawnHole[];
 	readonly shown: number;
 	readonly picture: DrawnPicture;
+	readonly body: DrawnBody | null;
 }
 
+// A body of no thickness, which is none
+const NO_THICKNESS = 0;
+
 /**
- * A piece as the stage draws it in a box, as far as it has come up and not gone, showing those of the holes on the
- * screen in its source, drawn from the picture it holds, or from one of its source the stage holds sharper than the
- * page's where it is drawn from the page's.
+ * A piece as the stage draws it in a box, standing as large and as far out as it stands, as far as it has come up and
+ * not gone, showing those of the holes on the screen in its source, drawn from the picture it holds, or from one of its
+ * source the stage holds sharper than the page's where it is drawn from the page's.
  */
 export function drawnPiece(
 	piece: Piece,
 	box: Box,
+	stance: Pick<Stance, 'scale' | 'depth'>,
 	shown: number,
 	holes: readonly DrawnHole[],
 	sharper: readonly SharperPicture[]
@@ -117,8 +150,20 @@ export function drawnPiece(
 		corners: cornersAt(piece.corners, fit),
 		holes: holesShown(holes, source, fit),
 		shown,
-		picture: drawnPictureOf(piece, sharper)
+		picture: drawnPictureOf(piece, sharper),
+		body: piece.body === null ? null : drawnBody(piece.body, fit, stance, shown)
 	};
+}
+
+/**
+ * A piece's body as the room draws it: as thick as the piece's fit and scale show its thickness, as the walls stand
+ * back along the eye's way, which a scale does not stretch, and as far as the piece has come; its face as high as it
+ * stands out. None, where that leaves it no thickness.
+ */
+function drawnBody(body: Body, fit: number, stance: Pick<Stance, 'scale' | 'depth'>, shown: number): DrawnBody | null {
+	const thickness = body.thickness * fit * stance.scale * shown;
+	if (thickness <= NO_THICKNESS) return null;
+	return { thickness, walls: body.walls, glow: body.glow, height: stance.depth };
 }
 
 /**

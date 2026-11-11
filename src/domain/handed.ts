@@ -227,7 +227,7 @@ export const A_GROUND_LAYERS = new Plain(
 export const A_COLOUR = new Plain(isHexColour, 'a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa');
 /**
  * A colour three reads, in hex with no alpha: a light's, which is laid over nothing, and the metal of the window's
- * body, which is not seen through.
+ * body and the walls of a piece's, which are not seen through.
  */
 export const AN_OPAQUE_COLOUR = new Plain(isOpaqueHexColour, 'a colour in hex with no alpha: #rgb or #rrggbb');
 /** A length a film sizes or spaces something by, in pixels: none at least. */

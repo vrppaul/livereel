@@ -6,6 +6,7 @@
  * room sees what it places in the eye's own space through, as the engine hands no camera, only how far the eye stands.
  */
 import { Matrix4 } from 'three';
+/** @import { Mesh } from 'three' */
 /** @import { Matrix } from '../src/domain/matrix.ts' */
 /** @import { Box } from '../src/domain/geometry.ts' */
 
@@ -40,6 +41,12 @@ const ENTRIES = [
 /** An engine's matrix as three's. @param {Matrix} matrix */
 export function matrixOf(matrix) {
 	return new Matrix4().fromArray(ENTRIES.map((entry) => matrix[entry]));
+}
+
+/** A mesh placed by a matrix of the room's alone. @param {Mesh} mesh @param {Matrix4} matrix */
+export function placedBy(mesh, matrix) {
+	mesh.matrix.copy(matrix);
+	mesh.matrixWorldNeedsUpdate = true;
 }
 
 /**

@@ -1061,7 +1061,15 @@ test('a piece of the page is born over its block as the camera shows it, cut to 
 	// Of 400 to 600 across the camera shows 480 to 600, at twice its size from the frame's left edge
 	expect([lifted.box, lifted.content]).toEqual([
 		{ left: 0, top: 60, width: 240, height: 200 },
-		{ kind: 'piece', source: SHOWN_AT_TWO, corners: SQUARE_CORNERS, hole: null, lines: null, picture: FOLLOWING }
+		{
+			kind: 'piece',
+			source: SHOWN_AT_TWO,
+			corners: SQUARE_CORNERS,
+			hole: null,
+			lines: null,
+			picture: FOLLOWING,
+			body: null
+		}
 	]);
 });
 
@@ -1152,7 +1160,15 @@ test('a piece, or an outline, goes back over its block as the camera shows it th
 	// The camera at 1 shows the screen's pixels as the frame's: each stands over the part it was cut to
 	expect([back.box, back.content, back.scale, back.depth, back.angle, ringBack.box]).toEqual([
 		SHOWN_AT_TWO,
-		{ kind: 'piece', source: SHOWN_AT_TWO, corners: SQUARE_CORNERS, hole: null, lines: null, picture: FOLLOWING },
+		{
+			kind: 'piece',
+			source: SHOWN_AT_TWO,
+			corners: SQUARE_CORNERS,
+			hole: null,
+			lines: null,
+			picture: FOLLOWING,
+			body: null
+		},
 		1,
 		0,
 		{ ...FACE_ON, turn: 360 },
@@ -1735,7 +1751,8 @@ test("a piece is drawn as large as its box holds all of its source, in its middl
 			corners: SQUARE_CORNERS,
 			holes: [],
 			shown: 1,
-			picture: DRAWN_FROM_THE_PAGE
+			picture: DRAWN_FROM_THE_PAGE,
+			body: null
 		},
 		[{ part: PAST_THE_SHOWN_EDGE, zoom: 19.2 }],
 		[],
@@ -1772,6 +1789,29 @@ test('a piece lifted with a corner is drawn with its corners so round, as large 
 		expect.objectContaining({ holes: [expect.objectContaining({ name: 'piece', corner: 4.5 })] }),
 		[expect.objectContaining({ name: 'piece', corner: 18 })]
 	]);
+});
+
+test('a piece lifted into the world with a body is drawn with walls as thick as its fit and scale show its thickness and as far as it has come, its face as high over where it was lifted as it stands out', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const bodied = piece.show(PAST_THE_SHOWN_EDGE, { inside: 'world', body: { thickness: 12, walls: '#e6e8ec' } });
+	const coming = await setIn(bodied, wide, 0.5, FULL_HD);
+	const risen = await setIn(piece.effects({ depth: 40, scale: 2 }), await setIn(bodied, wide, 1, FULL_HD), 1, FULL_HD);
+	const bodyOf = (scene: Scene) => drawnObject('piece', scene.objects.get('piece')!, 0, AROUND_IN_FULL_HD).content.body;
+	const risenBody = bodyOf(risen);
+	// The screen's pixels are the frame's at the camera at 1: 12 thick, half come up 6, twice as large 24
+	expect([bodyOf(coming), risenBody]).toEqual([
+		{ thickness: 6, walls: '#e6e8ec', glow: 0, height: 0 },
+		{ thickness: 24, walls: '#e6e8ec', glow: 0, height: 40 }
+	]);
+});
+
+test("a piece's body is refused anywhere but inside the world, as the frame, a group and the window are drawn flat", () => {
+	const body = { thickness: 12, walls: '#e6e8ec' };
+	const flatOnly = new FilmError(
+		"piece.show draws a piece's body inside the world alone, as the frame, a group and the window are drawn flat over everything: lift it inside: 'world'"
+	);
+	expect(() => piece.show('#card', { body })).toThrow(flatOnly);
+	expect(() => piece.show('#card', { body, group: 'stack' })).toThrow(flatOnly);
 });
 
 test("a piece whose corner stands on a corner of what the window shows is as round there as the window, the film's own corner where it is rounder", async () => {
