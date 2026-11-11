@@ -391,14 +391,28 @@ test("a block a page of the film's own is brought to rest by is measured down it
 	);
 });
 
-test("a typing into a block a page of the film's own lacks, into one that holds elements of its own, or into one that shows a value, not its text, is refused as it begins, naming the block", async () => {
-	// The filmed page's field is measured as a page of the film's own is, in the first film's act
-	const holdings: BlockHolding[] = [];
-	const fieldMeasured = act(async (context: ActContext) => {
-		holdings.push(await new PlaywrightPage(context.page, context.page.page().keyboard).holdingOf(FIELD));
+test("a typing into a block a page of the film's own lacks, into one that holds elements of its own, or into an input, which shows its value, not its text, is refused as it begins, naming the block; a text area shows its text", async () => {
+	// In the first film's act, the filmed page's input and a text area laid beside it are written as the stage writes a
+	// block typed into, measured as a page of the film's own is, and what each shows is read back
+	const measured: (BlockHolding | string)[] = [];
+	const fieldsMeasured = act(async (context: ActContext) => {
+		const read = new PlaywrightPage(context.page, context.page.page().keyboard);
+		await context.page.locator('body').evaluate((body, typed) => {
+			const area = document.createElement('textarea');
+			area.id = 'area';
+			body.append(area);
+			area.textContent = typed;
+			body.querySelector('input')!.textContent = typed;
+		}, '/review-ui');
+		measured.push(
+			await read.holdingOf(FIELD),
+			await read.holdingOf('#area'),
+			await context.page.locator(FIELD).inputValue(),
+			await context.page.locator('#area').inputValue()
+		);
 	});
 	const intoNothing = [
-		fieldMeasured,
+		fieldsMeasured,
 		cut(screen.shows(OWN_PAGE)),
 		...typing(screen.type(OWN_PAGE, LS, { into: '#nowhere' }))
 	];
@@ -409,7 +423,7 @@ test("a typing into a block a page of the film's own lacks, into one that holds 
 	await expect(shoot(filmOf(intoItsBody), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
 		'screen.type types into body, which holds elements of its own that what it types would take the place of: name a span of text alone, as <span id="typed"></span> beside <span class="caret"></span>'
 	);
-	expect(holdings).toEqual(['a value']);
+	expect(measured).toEqual(['its value', 'text alone', '', '/review-ui']);
 });
 
 test("a page of the film's own that moves of itself is refused before the film is shot, naming how it begins", async () => {

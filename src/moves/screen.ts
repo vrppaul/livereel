@@ -24,9 +24,9 @@
  * Keys are typed into a block of a page of the film's own, as into the terminal: what stands typed at each progress is
  * set whole, so the block shows it as its text in each exposure. The block is found by a CSS selector, as the stage
  * finds it in each exposure's copy of the page, and measured as the move begins; a block whose text would not show
- * what is typed is refused: one that holds elements, which its text would take the place of, and a field that shows a
- * value, not its text, an input or a text area. What stands typed is another value of the screen's own, so a typing
- * shares a step with what the screen shows and how its page runs.
+ * what is typed is refused: one that holds elements, which its text would take the place of, and an input, which shows
+ * its value, not its text; a text area shows its text. What stands typed is another value of the screen's own, so a
+ * typing shares a step with what the screen shows and how its page runs.
  */
 import { FASTEST_SPEED, type Stretch, linear } from '../domain/curves.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -369,8 +369,8 @@ async function running(beginning: Beginning, key: string, pace: number): Promise
  * Keys typed into a block of a page of the film's own, `{ html }`, `into` by its CSS selector, key by key, each
  * heard on the film's keyboard or the one named, at the times the strokes have them unless the film names a curve:
  * the block shows what stands typed as its text, in place of what the page wrote there, from the move's start; a block
- * that holds elements of its own, or shows a value, not its text, is refused as it begins. It types whichever face of
- * the window shows the page, or none.
+ * that holds elements of its own, or an input, which shows its value, not its text, is refused as it begins. It types
+ * whichever face of the window shows the page, or none.
  */
 export function type(page: OwnPageNamed, strokes: readonly Keystroke[], script: ScreenTypingScript): Move & Typed {
 	assertKind(page, A_PAGE_TYPED_INTO, "screen.type's page");
@@ -409,7 +409,7 @@ async function typingInto(
 
 /**
  * A block a typing is refused for where its text would not show what is typed: one that holds elements, which the text
- * would take the place of, and one that shows a value, not its text, where the text would show nothing.
+ * would take the place of, and an input, which shows its value, not its text, where the text would show nothing.
  */
 function refuseUnshown(holding: BlockHolding, into: string): void {
 	switch (holding) {
@@ -419,9 +419,9 @@ function refuseUnshown(holding: BlockHolding, into: string): void {
 			throw new FilmError(
 				`${SCREEN_TYPE} types into ${into}, which holds elements of its own that what it types would take the place of: ${NAME_A_SPAN}`
 			);
-		case 'a value':
+		case 'its value':
 			throw new FilmError(
-				`${SCREEN_TYPE} types into ${into}, which shows a value, not its text, so what it types would show nothing: ${NAME_A_SPAN}`
+				`${SCREEN_TYPE} types into ${into}, an <input>, which shows its value, not its text, so what it types would show nothing: ${NAME_A_SPAN}`
 			);
 	}
 }

@@ -1621,11 +1621,11 @@ test("a typing into another block of a page of the film's own keeps what stands 
 	]);
 });
 
-test('screen.type refuses, as it begins, a block that holds elements of its own, which what it types would take the place of, and one that shows a value, not its text, where what it types would show nothing', async () => {
+test('screen.type refuses, as it begins, a block that holds elements of its own, which what it types would take the place of, and an input, which shows its value, not its text, where what it types would show nothing', async () => {
 	const front = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const holdings = new Map([
 		['#line', 'elements'],
-		['#field', 'a value']
+		['#field', 'its value']
 	]);
 	const holding: Beginning = {
 		...beginningIn(front, FULL_HD),
@@ -1640,7 +1640,7 @@ test('screen.type refuses, as it begins, a block that holds elements of its own,
 	);
 	await expect(intoTheField).rejects.toThrow(
 		new FilmError(
-			'screen.type types into #field, which shows a value, not its text, so what it types would show nothing: name a span of text alone, as <span id="typed"></span> beside <span class="caret"></span>'
+			'screen.type types into #field, an <input>, which shows its value, not its text, so what it types would show nothing: name a span of text alone, as <span id="typed"></span> beside <span class="caret"></span>'
 		)
 	);
 });

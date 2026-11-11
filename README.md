@@ -700,10 +700,11 @@ keyboard or the `keyboard` named. What stands typed is the page's, kept on
 either face of the window, or on none, until the film types into that
 block again, which types it anew from nothing; typing into another block
 keeps it. A block that holds elements of its own, which its text would take
-the place of, is refused as the move begins, as is an `<input>` or a
-`<textarea>`, which shows a value, not its text, and one the page lacks:
-type into a span of text alone, the caret an element beside it, as
-`<span id="typed"></span><span class="caret"></span>`.
+the place of, is refused as the move begins, as is an `<input>`, which
+shows its value, not its text, and one the page lacks: type into a span of
+text alone, the caret an element beside it, as
+`<span id="typed"></span><span class="caret"></span>`. A `<textarea>`
+shows its text, so it is typed into as a span is.
 `screen.type('filmed', …)` is refused: the filmed page is typed into by
 `page.type`. `screen.sweep()` in a `play` sweeps the picture the screen
 shows away by a band of light, the page as it stands showing behind it: an

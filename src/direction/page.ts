@@ -28,10 +28,11 @@ export interface ScrollCourse {
 export type PageShown = 'framed' | 'pictured';
 
 /**
- * What a block of a page shows as its text: the text it holds alone; elements of its own, which a text written into it
- * would take the place of; or a value, as a field a person types into shows, not the text it holds.
+ * What a block of a page shows as its text: the text it holds alone, as a text area does too, whose value its text sets
+ * while nobody has edited it; elements of its own, which a text written into it would take the place of; or its value,
+ * as an input shows, which holds no text.
  */
-export type BlockHolding = 'text alone' | 'elements' | 'a value';
+export type BlockHolding = 'text alone' | 'elements' | 'its value';
 
 /**
  * A page as a move measures it: where its blocks stand and the ground behind them, in its pixels how far down it scrolls

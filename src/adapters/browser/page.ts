@@ -175,15 +175,15 @@ function scrollLengthOfThePage(): number {
 }
 
 /**
- * What the first block a CSS selector matches shows as its text: a value, where it is a field a person edits a text of
- * its own in, as HTML gives such a field alone a way to set a range of that text (an input or a text area); elements
- * of its own; or its text alone. None selected where it matches none, or is no CSS selector.
+ * What the first block a CSS selector matches shows as its text: its value, where it is an input, told by the element's
+ * own interface, which holds no text and shows its value alone; elements of its own; or its text alone, as a text area
+ * shows it while nobody has edited it. None selected where it matches none, or is no CSS selector.
  */
 function holdingOfTheBlock(target: string): BlockHolding | null {
 	if (!CSS.supports(`selector(${target})`)) return null;
 	const block = document.querySelector(target);
 	if (block === null) return null;
-	if ('setRangeText' in block) return 'a value';
+	if (block instanceof HTMLInputElement) return 'its value';
 	return block.childElementCount > 0 ? 'elements' : 'text alone';
 }
 
