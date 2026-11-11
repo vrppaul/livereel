@@ -201,6 +201,27 @@ test('a shade reaching the window fades its body as far as the page and blurs it
 	]);
 });
 
+test("a shade's blur seen on the frame is as wide on the frame wherever the eye stands: on the window's plane, the page's and the part kept sharp's, as many times narrower as the frame shows the page larger, the body's as wide at every point; seen on the page, as written, the body's grown as the frame shows it larger", () => {
+	const part = { left: 100, top: 50, width: 300, height: 40 };
+	const shaded = { ...WITH_A_BODY, blur: 8, sharpSoftens: 0.5, sharp: part, reaching: 'window' };
+	const halfWayToTheFrame = { ...AROUND, eye: { ...AT_REST, at: { across: 0, down: 0, out: FOCAL_LENGTH / 2 } } };
+	const onTheFrame = drawnWindow(LIFTED, AT_ITS_EDGES, { ...shaded, blurSeen: 'on the frame' }, halfWayToTheFrame);
+	const onThePage = drawnWindow(LIFTED, AT_ITS_EDGES, { ...shaded, blurSeen: 'on the page' }, halfWayToTheFrame);
+	expect([
+		onTheFrame.shade!.blur,
+		onTheFrame.sharp,
+		onTheFrame.body!.shade,
+		onThePage.shade!.blur,
+		onThePage.body!.shade
+	]).toEqual([
+		4,
+		{ box: part, edge: 2, blur: 2 },
+		{ fade: 0, blur: 8, blurSeen: 'on the frame', softestBlur: 8 },
+		8,
+		{ fade: 0, blur: 8, blurSeen: 'on the page', softestBlur: 16 }
+	]);
+});
+
 test('the glass reflects nothing where the world has no light in it, no lights and no soft boxes', () => {
 	expect(drawnWindow(LIFTED, AT_ITS_EDGES, WITH_A_BODY, { ...AROUND, world: LIVEREELS_WORLD }).body!.glass).toBe(0);
 });

@@ -88,17 +88,35 @@ export const A_SHADE_REACH = new OneOf(SHADE_REACHES, 'how far the shade reaches
 /** livereel's own reach of the shade: the page alone. */
 export const LIVEREELS_REACH: ShadeReach = 'page';
 
+// Where the shade's blur is as wide as written: on the page, so the frame shows it wider as it shows the page larger;
+// or on the frame, as wide wherever the window and the eye stand
+const BLUR_SEEN = ['on the page', 'on the frame'] as const;
+
+/** Where the shade's blur is as wide as written: on the page, or on the frame. */
+export type BlurSeen = (typeof BLUR_SEEN)[number];
+
+export const A_BLUR_SEEN = new OneOf(
+	BLUR_SEEN,
+	'where the shade\'s blur is as wide as written: "on the page" or "on the frame"'
+);
+
+/** livereel's own blur of the shade: as wide as written on the page. */
+export const LIVEREELS_BLUR_SEEN: BlurSeen = 'on the page';
+
 /**
  * The window: where it stands, how it shades the page, the part of the screen its blur leaves sharp, how far its shade
- * reaches, and its body.
+ * reaches, where its blur is as wide as written, and its body.
  */
 export interface PageWindow extends Placing, Shade {
 	readonly sharp: Box | null;
 	readonly reaching: ShadeReach;
+	readonly blurSeen: BlurSeen;
 	readonly body: Slab;
 }
 
-/** The page's shade as the stage draws it: dimmed, faded and blurred, and how far it reaches. */
+/**
+ * The page's shade as the stage draws it: dimmed, faded, and blurred on the window's plane, and how far it reaches.
+ */
 interface DrawnShade extends PageShade {
 	readonly reaching: ShadeReach;
 }
@@ -122,7 +140,7 @@ interface SharpPart {
  * plane the room lays the page's surface on in its one scene; how round the corners of the page the camera's cut shows
  * are, in the frame's pixels, which the stylesheet cuts the page by and the body stands round; its shade and how far it
  * reaches, none where the page is shaded none, and the part of the screen its blur leaves sharp, none where it blurs
- * none or leaves none;
+ * none or leaves none, the blur and the part's edge on the window's plane;
  * how soft the eye's focus draws it and all in it, none where sharp: as one, on the frame in pixels of a frame 1080
  * high, for the flat stage, and at its softest point the frame shows, as far as the room's blur of it gathers past the
  * frame's edge; how much of the page shows, from 0 to 1, as far as the screen has come up and its shade has not faded
@@ -175,13 +193,15 @@ export interface DrawnBody {
 
 /**
  * The window's shade as it reaches its body: how far the body has faded into what stands behind it, as far as the page
- * has; and how soft it is drawn, in pixels of a frame 1080 high on the window's plane, as the page's blur is, which the
- * room grows as the eye sees each point of the slab nearer, and at the softest the frame shows of the slab, as far as
- * the room's blur of it gathers past the frame's edge.
+ * has; how soft it is drawn, in pixels of a frame 1080 high as the shade's blur is written, and where it is as wide as
+ * that: on the window's plane, which the room grows as the eye sees each point of the slab nearer, or on the frame, at
+ * every point; and how soft at the softest the frame shows of the slab, as far as the room's blur of it gathers past
+ * the frame's edge.
  */
 export interface BodyShade {
 	readonly fade: Fraction;
 	readonly blur: number;
+	readonly blurSeen: BlurSeen;
 	readonly softestBlur: number;
 }
 
@@ -221,6 +241,9 @@ const PAGE_SHADE_NAMES = ['dim', 'fade', 'blur'] as const satisfies readonly (ke
 const BODY_SHADE_NAMES = ['fade', 'blur'] as const satisfies readonly (keyof PageShade)[];
 // How many times as large a slab the frame shows none of is drawn: none, so its blur gathers nothing past the frame
 const NOT_SEEN = 0;
+// How many times as large a page the frame shows none of is taken to be drawn, its blur seen on the frame: once, so
+// its blur on its plane stands as written till the frame shows some of it
+const SEEN_AS_WRITTEN = 1;
 
 // How far past the part the shade's blur leaves sharp the page softens into the blur, as a share of the blur: half, as
 // the claude-review promo softens it, so a part whose edge lies between two rows of words is blurred whole before the
@@ -236,8 +259,8 @@ const HALVES = 2;
 /**
  * The window as the stage draws it among what stands round it: standing as the camera's view, its picture cut as the
  * camera has it, seen from the eye, the page on the plane it lies on, its corners rounding as it lifts, shaded as it
- * is, as soft as the eye sees it, its softest point the frame shows read over its box or as far as its picture reaches,
- * and with its body.
+ * is, its blur on its plane as the frame sees it where the film has it seen so, as soft as the eye sees it, its softest
+ * point the frame shows read over its box or as far as its picture reaches, and with its body.
  */
 export function drawnWindow(
 	view: View,
@@ -252,6 +275,7 @@ export function drawnWindow(
 	const roundest = Math.min(reach.width, reach.height) / HALVES;
 	const drawn = drawnPlacement(standing);
 	const facingTheEye = facesTheEye(standing.inTheEyesSpace);
+	const shadedOnItsPlane = blurredOnItsPlane(window, standing, reach, frame);
 	const body = drawnBody(view, reach, standing, window, around);
 	const onTheBack = body !== null && backPageSeen(around.screen.back, facingTheEye) !== null;
 	const ownPlane = { transform: drawn.transform, inTheEyesSpace: drawn.inTheEyesSpace };
@@ -262,8 +286,8 @@ export function drawnWindow(
 		facingTheEye,
 		pageSurface: onTheBack ? behindItsPlane(standing, body.thickness) : ownPlane,
 		corner: Math.min(around.look.paneCorner * frameScaleOf(frame) * view.lift, roundest),
-		shade: drawnShade(window),
-		sharp: sharpPartDrawn(window),
+		shade: drawnShade(shadedOnItsPlane),
+		sharp: sharpPartDrawn(shadedOnItsPlane),
 		outOfFocus: outOfFocusOnTheFrame(placing, view.box, sharpness, frame),
 		softestOutOfFocus: softestOutOfFocusSeen(placing, view.box, boxAround([view.box, reach]), sharpness, frame),
 		pageShown: fractionOf(around.screen.shown * (WHOLE - window.fade)),
@@ -314,18 +338,43 @@ function drawnBody(
 
 /**
  * The window's shade as it reaches the slab standing over a box of the window's plane: faded as the page, blurred by
- * the page's blur and at its softest by as many times as the frame shows the slab larger at its nearest part, none
- * where the frame shows none of it; none where the shade reaches the page alone or neither fades nor blurs.
+ * the shade's blur as written, on the page or on the frame as the film has it seen; at its softest, the blur itself
+ * where it is seen on the frame, and where it is seen on the page as many times the blur as the frame shows the slab
+ * larger at its nearest part, none where the frame shows none of it; none where the shade reaches the page alone or
+ * neither fades nor blurs.
  */
 function bodyShaded(
-	window: PageShade & Pick<PageWindow, 'reaching'>,
+	window: PageShade & Pick<PageWindow, 'reaching' | 'blurSeen'>,
 	placed: Placed,
 	slab: Box,
 	frame: Size
 ): BodyShade | null {
 	if (window.reaching !== 'window' || standsAtRest<PageShade>(window, UNSHADED, BODY_SHADE_NAMES)) return null;
-	const largestSeen = longestScaleSeen(placed.placing, placed.laid, slab, boxOf(frame)) ?? NOT_SEEN;
-	return { fade: window.fade, blur: window.blur, softestBlur: window.blur * largestSeen };
+	const softestBlur =
+		window.blurSeen === 'on the frame'
+			? window.blur
+			: window.blur * (longestScaleSeen(placed.placing, placed.laid, slab, boxOf(frame)) ?? NOT_SEEN);
+	return { fade: window.fade, blur: window.blur, blurSeen: window.blurSeen, softestBlur };
+}
+
+/**
+ * The window with its shade's blur as wide on its plane as the stage blurs the page by: as written where the blur is
+ * seen on the page; where it is seen on the frame, as many times narrower as the frame shows the page larger at its
+ * nearest point the frame shows, so the blur is as wide as written there, and as written where the frame shows none of
+ * it. One width for the whole page, as the flat stage and a picture blurred whole draw it: a page the eye sees aslant
+ * is drawn softer on the frame where it stands farther; the room blurring the whole window draws each point as written.
+ */
+function blurredOnItsPlane<Shaded extends Pick<PageWindow, 'blur' | 'blurSeen'>>(
+	window: Shaded,
+	placed: Placed,
+	page: Box,
+	frame: Size
+): Shaded {
+	if (window.blurSeen === 'on the frame') {
+		const largestSeen = longestScaleSeen(placed.placing, placed.laid, page, boxOf(frame)) ?? SEEN_AS_WRITTEN;
+		return { ...window, blur: window.blur / largestSeen };
+	}
+	return window;
 }
 
 /** The plane so far behind the window's own, as the stage draws a plane: where the slab's back stands. */

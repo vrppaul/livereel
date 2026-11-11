@@ -20,14 +20,15 @@
  * Where the window's shade reaches the whole window (`BodyShade` in `src/props/window.ts`), the body is shaded as the
  * page is: its metal faded in light into what stands behind it as far as the page has faded (`WHAT_STANDS_BEHIND` in
  * `stage/page-picture.js`); and the page and its body blurred as one by the eye's lens, as wide as the shade's blur,
- * grown as the eye sees each point nearer, but the part of the screen the blur leaves sharp, so the slab's rim and
- * sides and the page's outline soften with the page, as the claude-review promo's lens softened all of its slab. The
- * lens blurs by depth (`stage/lens.js`), and the slab stands at about one depth with the page, so the window is handed
- * the lens as spreads of its own (`WindowBlurred`): each pixel of a field holding the window whose depth falls within
- * the slab, read back onto it, spreads as wide as the shade blurs it there. Read off the depth, what stands before the
- * slab keeps its own spread, as the depth hides the slab there. The page's picture is laid unblurred then
- * (`blurredWithTheWindow`): blurred in its picture, the page's outline stood sharp round a soft page, a bright line on
- * beats 7–8 of the promo's draft at film seconds 4 and 15.8 where the cut has none.
+ * grown as the eye sees each point nearer or as wide on the frame at every point, as the shade has its blur seen, but
+ * the part of the screen the blur leaves sharp, so the slab's rim and sides and the page's outline soften with the
+ * page, as the claude-review promo's lens softened all of its slab. The lens blurs by depth (`stage/lens.js`), and the
+ * slab stands at about one depth with the page, so the window is handed the lens as spreads of its own
+ * (`WindowBlurred`): each pixel of a field holding the window whose depth falls within the slab, read back onto it,
+ * spreads as wide as the shade blurs it there. Read off the depth, what stands before the slab keeps its own spread, as
+ * the depth hides the slab there. The page's picture is laid unblurred then (`blurredWithTheWindow`): blurred in its
+ * picture, the page's outline stood sharp round a soft page, a bright line on beats 7–8 of the promo's draft at film
+ * seconds 4 and 15.8 where the cut has none.
  */
 import * as THREE from 'three';
 import { matrixOf } from './matrices.js';
@@ -184,11 +185,12 @@ const ON_A_FACE = 2;
 // How wide each pixel of a field spreads where its depth falls within the window's slab, on the page, in a pit sunk
 // into it, on the rim, the sides or the back: none where nothing was drawn or what was drawn stands off the slab; else
 // as wide as the shade blurs the window's plane, grown as the eye sees the point nearer, its spread a pixel away over
-// how far before the eye the point stands, but over the part of the screen the blur leaves sharp, so far from it as
-// the part is kept, the part softening by its share of the blur. A point of the field is read back into the eye's space
-// by the field's projection undone, onto the slab by its placing undone, and onto the screen from the page's middle on
-// the window's plane, down the plane where the slab's axes go up; the slab's outline is a rounded rectangle about the
-// page's middle, its half width, half height and corner
+// how far before the eye the point stands, or as wide on the frame at every point, where the shade has its blur seen
+// so; but over the part of the screen the blur leaves sharp, so far from it as the part is kept, the part softening by
+// its share of the blur. A point of the field is read back into the eye's space by the field's projection undone, onto
+// the slab by its placing undone, and onto the screen from the page's middle on the window's plane, down the plane
+// where the slab's axes go up; the slab's outline is a rounded rectangle about the page's middle, its half width, half
+// height and corner
 const SPREADS_FRAGMENT = `
 uniform sampler2D depth;
 uniform mat4 fieldToTheEye;
@@ -196,6 +198,8 @@ uniform mat4 eyeToTheSlab;
 uniform vec3 slabOutline;
 uniform float thickness;
 uniform float spreadAPixelAway;
+uniform bool seenOnTheFrame;
+uniform float spreadOnTheFrame;
 uniform bool keepsAPartSharp;
 uniform vec2 pageMiddle;
 uniform vec4 screenBox;
@@ -229,8 +233,11 @@ void main() {
 		vec2 onThePlane = pageMiddle + vec2(onTheSlab.x, -onTheSlab.y);
 		share = mix(1.0, partSoftens, sharpAt((onThePlane - screenBox.xy) / screenBox.zw * screenSize));
 	}
-	gl_FragColor = vec4(share * spreadAPixelAway / -inTheEyesSpace.z, 0.0, 0.0, 0.0);
+	float spread = seenOnTheFrame ? spreadOnTheFrame : spreadAPixelAway / -inTheEyesSpace.z;
+	gl_FragColor = vec4(share * spread, 0.0, 0.0, 0.0);
 }`;
+// Where the shade's blur is as wide as written, read off it: on the frame, at every point
+const SEEN_ON_THE_FRAME = 'on the frame';
 
 /** The window's body: its slab of metal and the glass over the page, as last built. */
 export class WindowBody {
@@ -347,6 +354,8 @@ export class WindowBlurred {
 				slabOutline: { value: new THREE.Vector3() },
 				thickness: { value: SET_AS_DRAWN },
 				spreadAPixelAway: { value: SET_AS_DRAWN },
+				seenOnTheFrame: { value: false },
+				spreadOnTheFrame: { value: SET_AS_DRAWN },
 				keepsAPartSharp: { value: false },
 				pageMiddle: { value: new THREE.Vector2() },
 				screenBox: { value: new THREE.Vector4() },
@@ -363,9 +372,9 @@ export class WindowBlurred {
 	/**
 	 * How wide each pixel of a field spreads, in the drawing's pixels, where its depth falls within the window's slab,
 	 * the window blurred whole by the shade as it reaches it: as many times the shade's blur as the eye sees the point
-	 * nearer than the frame, the page standing on the frame seen at its own size; but for the part of the screen the
-	 * blur leaves sharp, its edge in the screen's pixels as the camera frames it. The field is seen from the scene's eye
-	 * through a projection.
+	 * nearer than the frame, the page standing on the frame seen at its own size, or the shade's blur at every point,
+	 * where it is seen on the frame; but for the part of the screen the blur leaves sharp, its edge in the screen's
+	 * pixels as the camera frames it. The field is seen from the scene's eye through a projection.
 	 * @param {THREE.WebGLRenderer} renderer @param {SceneField} field @param {THREE.Matrix4} fieldToTheEye the field's
 	 * projection undone @param {DrawnScene} scene @param {DrawnBody} body @param {BodyShade} shade
 	 * @returns {THREE.Texture}
@@ -375,6 +384,7 @@ export class WindowBlurred {
 		const outer = outerOutlineOf(measuresOf(window, body));
 		const filmed = scene.screen.filmed;
 		const sharp = filmed === null ? null : window.sharp;
+		const spread = shade.blur * this.pixelsOfOne;
 		this.spreads.setSize(field.width, field.height);
 		valuesSet(this.pass.material, {
 			depth: field.depth,
@@ -382,13 +392,17 @@ export class WindowBlurred {
 			eyeToTheSlab: matrixOf(body.placing).invert(),
 			slabOutline: new THREE.Vector3(outer.width / HALVES, outer.height / HALVES, outer.corner),
 			thickness: body.thickness,
-			spreadAPixelAway: shade.blur * this.pixelsOfOne * scene.eye.distance,
+			spreadAPixelAway: spread * scene.eye.distance,
+			seenOnTheFrame: shade.blurSeen === SEEN_ON_THE_FRAME,
+			spreadOnTheFrame: spread,
 			keepsAPartSharp: sharp !== null,
 			pageMiddle: new THREE.Vector2(
 				window.reach.left + window.reach.width / HALVES,
 				window.reach.top + window.reach.height / HALVES
 			),
-			...(filmed === null || sharp === null ? {} : sharpPartValues(filmed.box, sharp, shade, scene.camera.pose.zoom))
+			...(filmed === null || sharp === null || window.shade === null
+				? {}
+				: sharpPartValues(filmed.box, sharp, window.shade, scene.camera.pose.zoom))
 		});
 		drawnInto(renderer, this.pass, this.spreads);
 		return this.spreads.texture;
@@ -398,15 +412,16 @@ export class WindowBlurred {
 /**
  * The part of the screen the shade's blur leaves sharp, as the window's spreads keep it: the screen's box on the
  * window's plane, the part's box and edge in the screen's pixels, the edge as the camera's zoom frames it, and the
- * share of the blur the part softens by.
- * @param {Box} screen @param {NonNullable<DrawnWindow['sharp']>} sharp @param {BodyShade} shade @param {number} zoom
+ * share of the page's blur the part softens by, both on the window's plane.
+ * @param {Box} screen @param {NonNullable<DrawnWindow['sharp']>} sharp
+ * @param {NonNullable<DrawnWindow['shade']>} pageShade @param {number} zoom
  */
-function sharpPartValues(screen, sharp, shade, zoom) {
+function sharpPartValues(screen, sharp, pageShade, zoom) {
 	return {
 		screenBox: valuesOfTheBox(screen),
 		sharpBox: valuesOfTheBox(sharp.box),
 		sharpEdge: sharp.edge / zoom,
-		partSoftens: (sharp.blur ?? SOFTENS_NONE) / shade.blur
+		partSoftens: (sharp.blur ?? SOFTENS_NONE) / pageShade.blur
 	};
 }
 

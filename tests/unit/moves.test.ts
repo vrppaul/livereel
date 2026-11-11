@@ -2969,6 +2969,18 @@ test("the shade reaches the page alone till a film has it reach the whole window
 	]);
 });
 
+test("the shade's blur is seen on the page till a film has it seen on the frame, from the move's start as its values go on through those between", async () => {
+	const onTheFrame = await setAt(windowShade({ blur: 8, blurSeen: 'on the frame' }), OPENING_IN_SMALL, 0.5);
+	const backOnThePage = await setAt(windowShade({ blurSeen: 'on the page' }), onTheFrame, 0);
+	expect(
+		[OPENING_IN_SMALL, onTheFrame, backOnThePage].map((scene) => [scene.window.blurSeen, scene.window.blur])
+	).toEqual([
+		['on the page', 0],
+		['on the frame', 4],
+		['on the page', 4]
+	]);
+});
+
 test("the shade's blur leaves a part of the screen sharp, a block or a box, the new part from the move's start as the blur goes on through the values between, and none where the film names none", async () => {
 	const box = { left: 300, top: 50, width: 120, height: 60 };
 	const onTheBlock = await setAt(windowShade({ blur: 8, sharp: '#block' }), OPENING_IN_SMALL, 0.5);

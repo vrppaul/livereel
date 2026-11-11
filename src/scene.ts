@@ -100,7 +100,14 @@ import {
 	sweepShift
 } from './props/screen.ts';
 import { figureShiftOver } from './props/way.ts';
-import { type DrawnWindow, LIVEREELS_REACH, type PageWindow, UNSHADED, drawnWindow } from './props/window.ts';
+import {
+	type DrawnWindow,
+	LIVEREELS_BLUR_SEEN,
+	LIVEREELS_REACH,
+	type PageWindow,
+	UNSHADED,
+	drawnWindow
+} from './props/window.ts';
 import { type DrawnWorld, type WorldLook, drawnWorld } from './props/world.ts';
 
 export interface PropStates {
@@ -198,8 +205,8 @@ const THE_FILMS_OWN_SPEED = 1;
 
 /**
  * The scene a film opens on, in its look and its world's: the whole screen, face-on, up, unshaded, in the whole frame,
- * the shade reaching the page alone, the window's body livereel's, none; nothing over it; the page's time at the
- * film's own speed; the eye of its focal length at rest.
+ * the shade reaching the page alone, its blur as wide as written on the page, the window's body livereel's, none;
+ * nothing over it; the page's time at the film's own speed; the eye of its focal length at rest.
  */
 export function openingScene(format: Format, look: Look, world: WorldLook, focalLength: number): Scene {
 	return {
@@ -211,6 +218,7 @@ export function openingScene(format: Format, look: Look, world: WorldLook, focal
 			...UNSHADED,
 			sharp: null,
 			reaching: LIVEREELS_REACH,
+			blurSeen: LIVEREELS_BLUR_SEEN,
 			body: LIVEREELS_SLAB
 		},
 		screen: SCREEN_UP,

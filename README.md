@@ -234,7 +234,7 @@ and the moves of each part of the scene:
   under a point off the frame, or where the eye sees past the window's plane as the move begins; where the window
   turns so the eye sees past its plane there later, the focus stands as far as can be
 - `window.to(place, { depth })`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn, roll, over, about })`,
-  `window.shade({ dim, fade, blur, sharp, sharpSoftens, reaching })`,
+  `window.shade({ dim, fade, blur, sharp, sharpSoftens, reaching, blurSeen })`,
   `window.body({ thickness, rim, metal, roughness, glass, glint }, { within })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
 - `callout.show(target, text, { side })`, `callout.hide()`
@@ -1027,8 +1027,19 @@ its curve and in its time, the part softens as far as the button has risen,
 and `sharpSoftens: 0` makes it sharp again. A share, not pixels, so the part
 is never softer than the page round it and follows the blur as it moves;
 with no part kept, the whole page goes soft round a lift by `blur` alone.
-The blur, like the page, is seen larger by an eye brought near. A room
-blurs the page's picture in linear light, as its eye's lens blurs the world,
+The blur, like the page, is seen larger by an eye brought near.
+`window.shade({ blur: 8, blurSeen: 'on the frame' })` has it as wide on
+the frame wherever the window and the eye stand, as a promo's lens softens
+its page by a share of the frame's width: a page going soft as the eye comes
+in is as soft on the frame at each moment of the move, and an eye diving
+close over a soft page sees no blur grown wide round it. A room blurring
+the whole window, its body and `reaching: 'window'`, draws it so at every
+point; the flat stage, and a room blurring the page alone, blur the page by
+one width, as written where the frame shows the page largest, so a page
+seen aslant is softer where it stands farther. Like `reaching`, it is named
+from the move's start, and `blurSeen: 'on the page'`, livereel's, takes it
+back. A room blurs the page's picture in linear light, as its eye's lens
+blurs the world,
 so light words on a dark page spread their light where the flat stage, which
 blurs in the screen's colours as the browser does, spreads them dark; the
 holes and the picture a sweep holds, markup, blur in the screen's colours on
@@ -1047,7 +1058,8 @@ softens and fades all of its slab: in a room its blur and fade reach the
 window's body, its rim and sides fading into what stands behind them as far
 as the page and the whole window blurred as one by the eye's lens, the page,
 its outline and the body, each point as wide as the shade blurs the page and
-wider as the eye sees it nearer, but the part kept sharp; on the flat stage
+wider as the eye sees it nearer, or as wide on the frame where the blur is
+seen there, but the part kept sharp; on the flat stage
 they reach the window's edge and shadow. The dim stays the screen's, and
 what lies over the page in a room's window, a callout or pins, blurs with
 it. Like `sharp`, `reaching` is named from the move's start, and
