@@ -411,12 +411,12 @@ interface Between {
 const NOTHING_MOVES = 0;
 // How far what each prop draws moves on the frame between two moments, the compiler holding every prop to one: the
 // screen as the camera shows it, the window's edge, the band of light sweeping the screen and a page of the film's own
-// running on it, the light's box and the cursor's tip on the screen, a note's words beside the window and its line's end at its block, and the figure of a
-// caption and of keys as a way of livereel's shifts, grows and cuts it over the whole frame, each where it stands at
-// both, a prop that comes or goes between them moving nowhere. The screen comes up in its place, and a
-// callout and pins lie on the screen, moving only as far as it carries them, which the camera's measures. The look's
-// colours and ground change in place; the sizes it sets, of letters and margins, move words too, which is not counted;
-// the world's light and glow change only how what stands is lit
+// running on it, the light's box and the cursor's tip on the screen, a note's words beside the window and its line's
+// end at its block, and the figure of a caption and of keys as a way of livereel's shifts, grows and cuts it over the
+// whole frame, each where it stands at both, a prop that comes or goes between them moving nowhere. The screen comes up
+// in its place, and a callout and pins lie on the screen, moving only as far as it carries them, which the camera's
+// measures. The look's colours and ground change in place; the sizes it sets, of letters and margins, move words too,
+// which is not counted; the world's light and glow change only how what stands is lit
 const FRAME_SHIFT_OF: { readonly [Name in PropName]: (between: Between) => number } = {
 	look: () => NOTHING_MOVES,
 	world: () => NOTHING_MOVES,

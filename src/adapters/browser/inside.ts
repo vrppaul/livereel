@@ -72,7 +72,9 @@ export async function stagedInside(page: Page, address: string, warn: Warn): Pro
 	return { address, sandbox: SANDBOX };
 }
 
-/** Where the stage stands for a page: on the page's own origin, at livereel's path; a page no server serves has none. */
+/**
+ * Where the stage stands for a page: on the page's own origin, at livereel's path; a page no server serves has none.
+ */
 export function stageAddressOf(address: string): string {
 	const served = URL.parse(address);
 	if (served === null || !SERVED.has(served.protocol)) {

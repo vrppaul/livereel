@@ -259,7 +259,9 @@ export interface Move {
 	readonly sounds?: readonly Cue[];
 	/** What the move writes in CSS, which the browser reads before the film is shot; a move that writes none has none. */
 	readonly css?: readonly CssNamed[];
-	/** The places the move names, which its format is read for before the film is shot; a move that names none has none. */
+	/**
+	 * The places the move names, which its format is read for before the film is shot; a move that names none has none.
+	 */
 	readonly places?: readonly PlaceNamed[];
 	/**
 	 * The depths the move brings something to, which the film's eye is read for before the film is shot; a move that
@@ -268,7 +270,10 @@ export interface Move {
 	readonly depths?: readonly DepthNamed[];
 	/** The pages of the film's own the move shows, which the stage lays before the film is shot; most show none. */
 	readonly ownPages?: readonly OwnPage[];
-	/** The film's own pictures the move shows, by their paths, which the stage lays before the film is shot; most show none. */
+	/**
+	 * The film's own pictures the move shows, by their paths, which the stage lays before the film is shot; most show
+	 * none.
+	 */
 	readonly pictures?: readonly string[];
 	/**
 	 * Whether the move holds a picture of the page as it begins, as a sweep of the screen and a piece holding its

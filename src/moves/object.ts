@@ -153,7 +153,9 @@ import { cameraFrontOn } from './source.ts';
 import { type ThroughScript, throughFormOf, throughWritten } from './through.ts';
 import { ENTER_FORM, type EnterScript, LEAVE_FORM, type LeaveScript, goneIn, wayOf } from './way.ts';
 
-/** A kind of what an object shows, as a film calls its moves, and the name of the object they take where it names none. */
+/**
+ * A kind of what an object shows, as a film calls its moves, and the name of the object they take where it names none.
+ */
 export type ShownKind = Content['kind'];
 
 /** What an object of a kind shows. */
@@ -411,7 +413,9 @@ export interface OwnGoing<Kind extends ShownKind> {
 /** What a kind shows as it goes, from what it showed: a title's words at the pace the hide names. */
 export type ShownAsItGoes<Kind extends ShownKind> = (shown: ShownOf<Kind>) => ShownOf<Kind>;
 
-/** How a kind whose module reads how far it has gone goes in its own way: showing what it showed, on its step's curve. */
+/**
+ * How a kind whose module reads how far it has gone goes in its own way: showing what it showed, on its step's curve.
+ */
 export const GOES_AS_IT_STANDS = { curve: THE_STEPS_CURVE, shownAsItGoes: asItShowed } as const;
 
 /**

@@ -100,10 +100,10 @@ export type Focus =
 type EyeHolder = 'world' | 'window';
 
 /**
- * The eye: where it stands and looks, in what it stands in; how far before it its picture plane stands, `focalLength`, in pixels of a frame
- * 1080 high, as far as it stands from the frame at rest; where it focuses, on its way from where it focused as its move
- * began, each end placed where it stands as each frame is drawn; and how wide it is open, `aperture`, in pixels of a
- * frame 1080 high, open none seeing all sharp.
+ * The eye: where it stands and looks, in what it stands in; how far before it its picture plane stands, `focalLength`,
+ * in pixels of a frame 1080 high, as far as it stands from the frame at rest; where it focuses, on its way from where
+ * it focused as its move began, each end placed where it stands as each frame is drawn; and how wide it is open,
+ * `aperture`, in pixels of a frame 1080 high, open none seeing all sharp.
  */
 export interface Eye extends Viewpoint {
 	readonly inside: EyeHolder;

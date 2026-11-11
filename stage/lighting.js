@@ -52,9 +52,16 @@ export class WorldLighting {
 	constructor() {
 		const lightsPlaced = new THREE.Group();
 		lightsPlaced.matrixAutoUpdate = false;
-		/** The world's lights as last handed, and the group in the room they shine from @type {{ readonly of: string, readonly group: THREE.Group }} */
+		/**
+		 * The world's lights as last handed, and the group in the room they shine from
+		 * @type {{ readonly of: string, readonly group: THREE.Group }}
+		 */
 		this.lights = { of: NONE_HANDED, group: lightsPlaced };
-		/** The soft boxes as last handed, and what faces reflect of them, drawn into a target of the card's: nothing, where none stands @type {{ readonly of: string, readonly target: THREE.WebGLRenderTarget | null }} */
+		/**
+		 * The soft boxes as last handed, and what faces reflect of them, drawn into a target of the card's: nothing, where
+		 * none stands
+		 * @type {{ readonly of: string, readonly target: THREE.WebGLRenderTarget | null }}
+		 */
 		this.reflections = { of: NONE_HANDED, target: null };
 	}
 
@@ -124,7 +131,13 @@ function spotlightOf(light) {
 	return [placedBy(spotlight, light.standing), placedBy(spotlight.target, light.aimedAt)];
 }
 
-/** An object of three placed by the engine's matrix alone. @template {THREE.Object3D} Placed @param {Placed} object @param {Matrix} matrix @returns {Placed} */
+/**
+ * An object of three placed by the engine's matrix alone.
+ * @template {THREE.Object3D} Placed
+ * @param {Placed} object
+ * @param {Matrix} matrix
+ * @returns {Placed}
+ */
 function placedBy(object, matrix) {
 	object.matrixAutoUpdate = false;
 	object.matrix.copy(matrixOf(matrix));
@@ -133,8 +146,8 @@ function placedBy(object, matrix) {
 
 /**
  * What faces reflect of the soft boxes round the room, and are lit by: the boxes, each a glowing square on the dark,
- * drawn round the room's middle into a map three reads them from, sharp, rough faces blurring it as they read it; looked
- * for past the farthest corner of a box, so none is cut.
+ * drawn round the room's middle into a map three reads them from, sharp, rough faces blurring it as they read it;
+ * looked for past the farthest corner of a box, so none is cut.
  * @param {THREE.WebGLRenderer} renderer @param {DrawnLighting} lighting
  */
 function reflectionsOf(renderer, lighting) {

@@ -396,7 +396,9 @@ export class Take {
 		return running.filter((current) => current.within.end > point);
 	}
 
-	/** Every running move set at its eased progress, and the share of its time gone, when its step is `progress` along. */
+	/**
+	 * Every running move set at its eased progress, and the share of its time gone, when its step is `progress` along.
+	 */
 	private async setAlong(running: readonly Running[], progress: number): Promise<Running[]> {
 		const moved: Running[] = [];
 		for (const current of running) {
@@ -464,7 +466,9 @@ export class Take {
 		}
 	}
 
-	/** A move begun as the scene stands, over a stretch of the film's time, where the frame will stand along it foreseen. */
+	/**
+	 * A move begun as the scene stands, over a stretch of the film's time, where the frame will stand along it foreseen.
+	 */
 	private async changeOf(move: Move, stretch: Stretch, cameraAt: (moment: number) => Promise<Camera>): Promise<Change> {
 		const scene = this.scene;
 		return move.begin({
@@ -833,7 +837,9 @@ function stretchIn(move: Move, playTime: PlayTime): Stretch {
 	};
 }
 
-/** A move begun over a stretch of a play: its share, its curve, what it sets and whether that is the page, its sounds. */
+/**
+ * A move begun over a stretch of a play: its share, its curve, what it sets and whether that is the page, its sounds.
+ */
 function runningOf(move: Move, stretch: Stretch, change: Change): Running {
 	return {
 		within: move.timing.within,

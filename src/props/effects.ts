@@ -69,7 +69,9 @@ export interface Effects extends StandingOut {
 export type EffectsInPlace = StandingOut & { readonly colour: string } & Pick<Effects, 'melt' | 'fade'> &
 	Pick<Stance, 'scale' | 'depth'>;
 
-/** An object's effects as the stage draws them, its filter's: how it stands out, and the colour of its ring and glow. */
+/**
+ * An object's effects as the stage draws them, its filter's: how it stands out, and the colour of its ring and glow.
+ */
 export type DrawnEffects = Omit<Effects, 'melt' | 'fade'>;
 
 // An object standing out in no way, the colour of its ring and glow where the film names none, the accent's, an object

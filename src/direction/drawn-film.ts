@@ -4,11 +4,11 @@
  * the whole, made into a video — while every frame's picture is the page's own. A film of steps is livereel's to draw;
  * this one is for a film that outgrows its steps, written in plain JavaScript.
  *
- * The page answers livereel by one global, `globalThis.livereelDrawnFilm` (`DrawnFilmPage`): a promise settled once it is
- * ready to draw, how long the film is, and the frame drawn at a moment. It must draw a moment the same however it was
- * asked before, as any frame is shot alone, a still or a clip from its middle. The page draws at the frame's size, as
- * finely as it wants, and is shot at that size. No motion blur and no sound yet: a film of this kind shot so far needs
- * neither.
+ * The page answers livereel by one global, `globalThis.livereelDrawnFilm` (`DrawnFilmPage`): a promise settled once it
+ * is ready to draw, how long the film is, and the frame drawn at a moment. It must draw a moment the same however it
+ * was asked before, as any frame is shot alone, a still or a clip from its middle. The page draws at the frame's size,
+ * as finely as it wants, and is shot at that size. No motion blur and no sound yet: a film of this kind shot so far
+ * needs neither.
  */
 import { FilmError } from '../domain/errors.ts';
 import type { Size } from '../domain/geometry.ts';
@@ -39,7 +39,9 @@ export interface DrawnFilmPage {
 	readonly ready: Promise<void>;
 	/** How long the film is, in seconds, read once `ready` settles, so the page may set it then. */
 	duration: number;
-	/** The frame drawn at a moment of the film, in seconds from its start; settled once drawn, where it hands a promise. */
+	/**
+	 * The frame drawn at a moment of the film, in seconds from its start; settled once drawn, where it hands a promise.
+	 */
 	readonly at: (seconds: number) => void | Promise<void>;
 }
 

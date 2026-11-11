@@ -1,9 +1,10 @@
 /**
- * Groups of objects (`src/props/group.ts`): one placed in a box of the frame, the whole frame where the film names none,
- * before anything stands in it, as an object comes up in it only as it is shown (`group: 'stack'`). Then carried, its
- * middle to another place's, grown, brought near and leant, as an object is (`src/moves/object.ts`), with everything in
- * it, and put away with everything in it, which fades as it goes. A group shows nothing of its own, so it stands whole from the
- * start of the move that places it. Every move of it takes the group named `group`, or the one the film names `as`.
+ * Groups of objects (`src/props/group.ts`): one placed in a box of the frame, the whole frame where the film names
+ * none, before anything stands in it, as an object comes up in it only as it is shown (`group: 'stack'`). Then carried,
+ * its middle to another place's, grown, brought near and leant, as an object is (`src/moves/object.ts`), with
+ * everything in it, and put away with everything in it, which fades as it goes. A group shows nothing of its own, so it
+ * stands whole from the start of the move that places it. Every move of it takes the group named `group`, or the one
+ * the film names `as`.
  */
 import { FilmError } from '../domain/errors.ts';
 import { NONE, fractionOf } from '../domain/fraction.ts';
@@ -120,7 +121,9 @@ export function lean(script: ObjectLeanScript): Move {
 	};
 }
 
-/** The group going with everything in it, which fades as it goes; once gone, there is none, nor anything that was in it. */
+/**
+ * The group going with everything in it, which fades as it goes; once gone, there is none, nor anything that was in it.
+ */
 export function hide(script: GroupHideScript = {}): Move {
 	assertWritten(script, HIDE_FORM, 'group.hide');
 	const name = script.as ?? GROUP;
@@ -131,7 +134,9 @@ export function hide(script: GroupHideScript = {}): Move {
 	};
 }
 
-/** A group standing in a place as the move begins, ordering what stands in it so; refused where one of its name stands. */
+/**
+ * A group standing in a place as the move begins, ordering what stands in it so; refused where one of its name stands.
+ */
 function placed(beginning: Beginning, name: GroupName, place: Place, order: GroupOrder): Change {
 	if (beginning.scene.groups.has(name)) {
 		throw new FilmError(

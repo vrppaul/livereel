@@ -4,20 +4,20 @@
  * Arithmetic on poses and boxes alone, so a film's framing is worked out before a browser is asked anything. The
  * camera's picture shows in a view, the page's window: the whole frame, edge to edge, or a window standing on the
  * film's ground. The window moves apart from the camera, so the camera holds what it aims at — a pose, or a block
- * framed with air round it — and comes to it in whatever window stands as each frame is drawn: a block it frames
- * stays framed as the window travels or grows, in the part of the window on the frame where it runs off the frame's
- * edge. The window leans, not the camera: how it stands is its own (`src/domain/stance.ts`), the screen in it face-on
- * to it, so a window travels and leans by moves of their own, and the camera frames a block alike at any angle. In a
- * window the camera comes as close as it takes for the screen to fill it, so the window shows part of the page and no
- * ground, and moves as little as it takes to keep it so; in the whole frame it moves as little as it takes to show no
- * edge of the screen face-on, along a side the screen is too short to fill at that zoom the screen standing in the
- * frame's middle, as much ground showing on either side of it. It stands so leant or not, so a lean never moves what
- * it frames; a view leant far over the whole frame may show ground at its far corners. What the camera shows where is
- * worked out as the stage draws it (`.camera` in `stage/stage.css`, and the view by where it is placed in the world,
- * `src/domain/placement.ts`): the screen carried by its focus to the view's middle and brought close, the view
- * standing about its middle as it stands, and seen from the eye before the frame's middle, a nearer point larger. Where
- * a point of it is seen on the frame is `pointOnTheFrame` there, a point of the screen `onTheFrame`; how far it moves on
- * the frame is worked out here.
+ * framed with air round it — and comes to it in whatever window stands as each frame is drawn: a block it frames stays
+ * framed as the window travels or grows, in the part of the window on the frame where it runs off the frame's edge. The
+ * window leans, not the camera: how it stands is its own (`src/domain/stance.ts`), the screen in it face-on to it, so a
+ * window travels and leans by moves of their own, and the camera frames a block alike at any angle. In a window the
+ * camera comes as close as it takes for the screen to fill it, so the window shows part of the page and no ground, and
+ * moves as little as it takes to keep it so; in the whole frame it moves as little as it takes to show no edge of the
+ * screen face-on, along a side the screen is too short to fill at that zoom the screen standing in the frame's middle,
+ * as much ground showing on either side of it. It stands so leant or not, so a lean never moves what it frames; a view
+ * leant far over the whole frame may show ground at its far corners. What the camera shows where is worked out as the
+ * stage draws it (`.camera` in `stage/stage.css`, and the view by where it is placed in the world,
+ * `src/domain/placement.ts`): the screen carried by its focus to the view's middle and brought close, the view standing
+ * about its middle as it stands, and seen from the eye before the frame's middle, a nearer point larger. Where a point
+ * of it is seen on the frame is `pointOnTheFrame` there, a point of the screen `onTheFrame`; how far it moves on the
+ * frame is worked out here.
  */
 import { type Eye, type Viewpoint, eyeAtRest, isAtRest, sightOf } from './eye.ts';
 import type { Format } from './format.ts';
@@ -171,7 +171,9 @@ export interface DrawnCamera {
 	readonly cut: Cut;
 }
 
-/** How a block is framed: `air` clear on its every side, in the page's pixels; the camera no closer than `zoomAtMost`. */
+/**
+ * How a block is framed: `air` clear on its every side, in the page's pixels; the camera no closer than `zoomAtMost`.
+ */
 export interface Framing {
 	readonly air: number;
 	readonly zoomAtMost: number;
@@ -210,7 +212,9 @@ export function windowView(box: Box): View {
 	return { box, lift: LIFTED, ...AS_PLACED };
 }
 
-/** The camera's view over a box of the frame: the frame itself, flat, where the box is the whole of it; else a window. */
+/**
+ * The camera's view over a box of the frame: the frame itself, flat, where the box is the whole of it; else a window.
+ */
 export function viewOver(box: Box, frame: Size): View {
 	return isTheWholeOf(box, frame) ? wholeView(frame) : windowView(box);
 }
@@ -240,10 +244,10 @@ export function standingAt(pose: Pose): Aiming {
 /**
  * The camera as a frame shows it through the window where it stands so far: on its path from where it stood, through
  * the aims on its way, to its aim, each come to in that view and kept off the screen's edge there, as is every pose on
- * its path: a path through keys may bow past the edge between them, and a zoom from a screen too short to fill the frame
- * would show the screen's edge where it kept its still point still. A block is framed in the part of the window on the
- * frame, its share of the window going from where the window stood to where it goes as the window does, so a window
- * sliding whole carries the page with it. The window's plane is seen from the eye where it stands.
+ * its path: a path through keys may bow past the edge between them, and a zoom from a screen too short to fill the
+ * frame would show the screen's edge where it kept its still point still. A block is framed in the part of the window
+ * on the frame, its share of the window going from where the window stood to where it goes as the window does, so a
+ * window sliding whole carries the page with it. The window's plane is seen from the eye where it stands.
  */
 export function seenThrough(aiming: Aiming, window: Placing, eye: Eye, format: Format): Camera {
 	const view = viewOf(window);
@@ -436,8 +440,8 @@ export function keptOnTheScreen(pose: Pose, format: Format, view: View): Pose {
 }
 
 /**
- * How close a picture of the page must hold it, as a pose's zoom has it, for a frame's cameras and pieces of the page to
- * show it as sharp as it stands: its own camera, those along its way it is also exposed at, and how close each piece
+ * How close a picture of the page must hold it, as a pose's zoom has it, for a frame's cameras and pieces of the page
+ * to show it as sharp as it stands: its own camera, those along its way it is also exposed at, and how close each piece
  * shows it. Face-on, a camera shows a page's pixel as large anywhere on the frame, so the picture holds it as close as
  * the closest of them comes, and a view drawn back from the eye or made smaller shows the page smaller still. A camera
  * in a view leant, brought near or grown, or seen by an eye that has moved, shows the page, or its nearer part, larger
@@ -635,7 +639,9 @@ function facing(screen: Size, zoom: number): Pose {
 	return { focusX: screen.width / HALVES, focusY: screen.height / HALVES, zoom };
 }
 
-/** A focus moved so that as much as is seen either side of it stays on the screen; the screen's middle where it cannot. */
+/**
+ * A focus moved so that as much as is seen either side of it stays on the screen; the screen's middle where it cannot.
+ */
 function keptWithin(focus: number, halfSeen: number, length: number): number {
 	if (HALVES * halfSeen > length) return length / HALVES;
 	return Math.min(Math.max(focus, halfSeen), length - halfSeen);
@@ -700,7 +706,9 @@ export function screenPicturedBy(camera: Camera, format: Format): Box | null {
 	return overlapOf(reach, screen);
 }
 
-/** The point of the screen a camera facing the frame sees at a point of the frame, which it sees the screen's plane at. */
+/**
+ * The point of the screen a camera facing the frame sees at a point of the frame, which it sees the screen's plane at.
+ */
 function seenOnTheScreen(camera: Camera, frame: Size, point: Point): Point {
 	const seen = underTheFrame(camera, frame, point);
 	if (seen === null) throw new Error('a camera facing the frame sees the plane of its screen at every point');

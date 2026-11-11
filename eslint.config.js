@@ -1,6 +1,8 @@
 // What the package and its films are held to that the type checker does not hold: which part may build on which,
 // the code rules of claude-review's page (whole-word names, no helper inside a function, no number without a name),
-// and, in a film, a number only as the value of its script's timing. Formatting is Prettier's.
+// and, in a film, a number only as the value of its script's timing. Formatting is Prettier's, but for how wide a
+// comment's lines run, which it never wraps.
+import { readFileSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
@@ -194,6 +196,16 @@ const NUMBERS_ONLY_IN_THE_SCRIPT = {
 	message: "A film's number is the value of a timing keyword in place, or a constant named at the top."
 };
 
+// A comment's lines run no wider than Prettier's width, a tab as wide as Prettier counts it: Prettier wraps code to it
+// but never a comment's words. Code is Prettier's alone, which runs a line past the width only where it cannot break
+// it, as a long string. ESLint keeps its own `max-len` until ESLint 11, which leaves it to `@stylistic/max-len`
+const FORMATTING = JSON.parse(readFileSync(`${import.meta.dirname}/.prettierrc`, 'utf8'));
+const COMMENTS_WITHIN_THE_WIDTH = {
+	code: Number.MAX_SAFE_INTEGER,
+	comments: FORMATTING.printWidth,
+	tabWidth: FORMATTING.tabWidth
+};
+
 export default tseslint.config(
 	// No linter reads the tests (.claude/rules/tests.md); what is built is not the source
 	{ ignores: ['tests/', 'dist/', 'node_modules/'] },
@@ -208,6 +220,7 @@ export default tseslint.config(
 		...tseslint.configs.disableTypeChecked,
 		languageOptions: { ...tseslint.configs.disableTypeChecked.languageOptions, globals: { process: 'readonly' } }
 	},
+	{ rules: { 'max-len': ['error', COMMENTS_WITHIN_THE_WIDTH] } },
 	...layerRules,
 	{
 		files: ['src/**/*.ts', 'stage/*.js', 'examples/**/*.ts', 'scripts/*.ts'],

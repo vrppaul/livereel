@@ -16,7 +16,10 @@ import { SRGB_CURVES, WRITTEN, passOver } from './passes.js';
 
 /**
  * A pass that shows the frame, and what it draws into: a layer of its own, or the canvas.
- * @typedef {{ readonly pass: Mesh<PlaneGeometry, ShaderMaterial>, readonly into: WebGLRenderTarget | null }} ShowingPass
+ * @typedef {{
+ *   readonly pass: Mesh<PlaneGeometry, ShaderMaterial>,
+ *   readonly into: WebGLRenderTarget | null
+ * }} ShowingPass
  */
 /**
  * Lanczos's filter for a frame scaled down by a whole number: the first of the drawing's pixels it weighs, from the

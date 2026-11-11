@@ -125,7 +125,9 @@ export const EVENLY = { kind: 'evenly' } as const;
 /** How a film times a flight's legs: not at all, or each leg's time apart, in proportion to the others'. */
 export type LegsTimed = typeof EVENLY | { readonly kind: 'apart'; readonly takes: readonly number[] };
 
-/** Where a leg of a flight timed apart ends, or the flight starts: a share of the move's time and of the way's length. */
+/**
+ * Where a leg of a flight timed apart ends, or the flight starts: a share of the move's time and of the way's length.
+ */
 interface PaceMark {
 	readonly time: number;
 	readonly way: number;
@@ -272,8 +274,8 @@ export function gazeKeysOf(setOffAt: number, named: readonly GazeKey[]): GazeKey
 }
 
 /**
- * A flight's pace along its way as a film times its legs: evenly; or through a knot where each leg ends, at the share of
- * the move's time it and the legs before it take.
+ * A flight's pace along its way as a film times its legs: evenly; or through a knot where each leg ends, at the share
+ * of the move's time it and the legs before it take.
  */
 export function paceOf(timed: LegsTimed, way: Way): Pace {
 	switch (timed.kind) {
@@ -316,7 +318,8 @@ function slopeBetween(start: PaceMark, end: PaceMark): number {
 
 /**
  * The share of its way's length a flight has flown `progress` of its move along: as much on an even pace; through the
- * knots of legs timed apart, on the cubic Hermite curve from the knot before to the knot after, at the end once past it.
+ * knots of legs timed apart, on the cubic Hermite curve from the knot before to the knot after, at the end once past
+ * it.
  */
 function wayFlown(pace: Pace, progress: number): number {
 	switch (pace.kind) {
@@ -599,7 +602,9 @@ function goesNowhere(leg: Leg, legsCurve: Curve<Vector3>, start: Vector3): boole
 	return start.distanceTo(legsCurve.getPoint(ITS_END)) < NOWHERE;
 }
 
-/** How the way goes on past a leg, as the next leg sets off: toward its point, the way its figure leaves, or neither. */
+/**
+ * How the way goes on past a leg, as the next leg sets off: toward its point, the way its figure leaves, or neither.
+ */
 function onwardAfter(next: Leg | undefined): Onward {
 	switch (next?.kind) {
 		case 'to':

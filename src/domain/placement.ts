@@ -179,7 +179,9 @@ export interface Holders {
 	readonly scrolled: Scrolled;
 }
 
-/** How a box of a holder is read on its plane: in the plane's own pixels, or, on the page, framed by the camera there. */
+/**
+ * How a box of a holder is read on its plane: in the plane's own pixels, or, on the page, framed by the camera there.
+ */
 type Measure = { readonly kind: 'asItIs' } | { readonly kind: 'framed'; readonly camera: Camera };
 
 /**
@@ -665,7 +667,10 @@ function boxOnThePlane(box: Box, measure: Measure, frame: Size): Box {
 	}
 }
 
-/** A box of a plane's own pixels in its holder's: as it is, or, on the page, the box of the screen the camera frames there. */
+/**
+ * A box of a plane's own pixels in its holder's: as it is, or, on the page, the box of the screen the camera frames
+ * there.
+ */
 function boxOfItsHolder(box: Box, measure: Measure, frame: Size): Box {
 	switch (measure.kind) {
 		case 'asItIs':

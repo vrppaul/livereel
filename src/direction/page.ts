@@ -12,7 +12,10 @@ import { A_FUNCTION_SAID, type Kind, aFunction } from '../domain/handed.ts';
 import type { BlockKey } from '../domain/placement.ts';
 import type { TypedText } from '../domain/typing.ts';
 
-/** How far a scroll goes: so many pixels down the target's own scroll, or until the target stands `top` below the top of what scrolls it. */
+/**
+ * How far a scroll goes: so many pixels down the target's own scroll, or until the target stands `top` below the top of
+ * what scrolls it.
+ */
 export type ScrollAim =
 	{ readonly kind: 'by'; readonly pixels: number } | { readonly kind: 'to'; readonly top: number };
 

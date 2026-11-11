@@ -29,9 +29,9 @@
  * time, its pace changing over the move's share on its curve, or slowing from it to stand still at the rest as the
  * share ends, refused where it would turn back on its way; where the page stands at any moment is worked out from that
  * run, held at its document's end as it stands then (`src/props/screen.ts`). Its runs are a value of the screen's own,
- * so it shares a step with what the screen shows. A run to rest judged at a point of the frame slows on its curve across
- * the frame there: as it begins it asks where the frame will stand at each moment of its share, which the take works
- * out with every move of the camera, the window and the eye that begins meanwhile (`src/studio/take.ts`).
+ * so it shares a step with what the screen shows. A run to rest judged at a point of the frame slows on its curve
+ * across the frame there: as it begins it asks where the frame will stand at each moment of its share, which the take
+ * works out with every move of the camera, the window and the eye that begins meanwhile (`src/studio/take.ts`).
  *
  * Keys are typed into a block of a page of the film's own, as into the terminal: what stands typed at each progress is
  * set whole, so the block shows it as its text in each exposure, with how far the page scrolls at most with that text
@@ -672,8 +672,8 @@ async function comingToRest(
 /**
  * A page of the film's own brought to rest from where it stands, its pace judged at a point of the frame, in shares of
  * it: the frame measured where it will stand at each moment the run is judged at, one after another, as the take may
- * begin moves of the frame ahead to answer each; refused where the eye sees past the window's plane there, and where the
- * run would turn back across the frame there.
+ * begin moves of the frame ahead to answer each; refused where the eye sees past the window's plane there, and where
+ * the run would turn back across the frame there.
  */
 async function judgedRun(
 	beginning: Beginning,
@@ -826,7 +826,10 @@ function shapeNamedBy(script: SweepScript): ShapeNamed {
 	return { kind: 'disc', round: script.round };
 }
 
-/** A sweep's shape placed on the screen as the move begins: a disc round the middle of what the screen shows of its block. */
+/**
+ * A sweep's shape placed on the screen as the move begins: a disc round the middle of what the screen shows of its
+ * block.
+ */
 async function shapePlaced(beginning: Beginning, named: ShapeNamed): Promise<SweepShape> {
 	switch (named.kind) {
 		case 'band':

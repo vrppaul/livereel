@@ -1,10 +1,11 @@
 /**
  * Things, shown by an object (`src/moves/object.ts`): a film's own, built in three.js by the module the film names
- * (`src/props/thing.ts`), standing in a box at a place on the frame, where it rides with the eye, or in the world, where
- * the eye moves past it. As any object it is carried, grown, brought near, leant and taken away by the moves objects
- * share; its numbers go to new ones by `set`, each from where it stood. It comes up and goes in its own way alone,
- * which its module draws from how far it has come, as livereel's ways and effects are drawn by the stage's markup,
- * which draws nothing of a thing. Every move of it takes the thing named `thing`, or the one the film names `as`.
+ * (`src/props/thing.ts`), standing in a box at a place on the frame, where it rides with the eye, or in the world,
+ * where the eye moves past it. As any object it is carried, grown, brought near, leant and taken away by the moves
+ * objects share; its numbers go to new ones by `set`, each from where it stood. It comes up and goes in its own way
+ * alone, which its module draws from how far it has come, as livereel's ways and effects are drawn by the stage's
+ * markup, which draws nothing of a thing. Every move of it takes the thing named `thing`, or the one the film names
+ * `as`.
  */
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';

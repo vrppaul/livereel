@@ -63,12 +63,24 @@ import { WORLD_PARTS } from './see-through.js';
  * What walls are built of, in the frame's pixels: the size of the outline they are drawn back from and its corners, how
  * deep they are drawn back, their colour and their glow. A piece's are its figure's and its body's: not how high its
  * face stands, which moves the shadow alone, so a piece rising keeps its walls.
- * @typedef {{ readonly width: number, readonly height: number, readonly corners: Corners, readonly depth: number, readonly walls: string, readonly glow: number }} Measures
+ * @typedef {{
+ *   readonly width: number,
+ *   readonly height: number,
+ *   readonly corners: Corners,
+ *   readonly depth: number,
+ *   readonly walls: string,
+ *   readonly glow: number
+ * }} Measures
  */
 /**
  * How walls of a kind are drawn: the side of their faces the eye sees, how dark they are, a share of their colour, at
  * their face and at their back, and whether a lid closes their back.
- * @typedef {{ readonly seenFrom: Side, readonly face: number, readonly back: number, readonly floored: boolean }} WallsKind
+ * @typedef {{
+ *   readonly seenFrom: Side,
+ *   readonly face: number,
+ *   readonly back: number,
+ *   readonly floored: boolean
+ * }} WallsKind
  */
 /**
  * A pit sunk into the page as the room draws it, on the window's plane where the screen lies there, in the frame's
@@ -146,7 +158,10 @@ const NONE_BUILT = '';
 const WHOLLY_SHOWN = 1;
 /** What a piece of markup with no body brings into the world: nothing. @type {readonly Object3D[]} */
 const NO_PARTS = [];
-/** The pits under the screen where it shows a page of the film's own, or under a hole with none. @type {readonly SunkPit[]} */
+/**
+ * The pits under the screen where it shows a page of the film's own, or under a hole with none.
+ * @type {readonly SunkPit[]}
+ */
 const NO_PITS = [];
 
 // The shadow's square, its points placed from its middle in the frame's pixels as its size has them

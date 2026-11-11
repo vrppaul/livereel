@@ -26,13 +26,12 @@
  * close the eye comes, so text near the eye of a window leant back came out soft (SSIM 0.79–0.85 at 4–9×, probed
  * 2026-11-02). It reaches as far past the frame as the camera's picture does on its plane, as the eye may see the plane
  * past the frame's edge, and is drawn less densely where its texture would pass the graphics card's largest. It holds
- * the screen's own markup over the page; what lies over the page in the window, a callout, pins, an object in it, stands
- * in a surface of its own laid out alike; the page's surface lays the screen's ground and the page's picture under the
- * one, as dense as the picture was taken, and the other over all (`stage/page-picture.js`). The cursor stands in a
- * third surface laid out alike, which the room lays over the world. The world is drawn as far
- * past the frame as the lens's blur gathers at its edges, to a step, so the layers it is drawn into keep their size
- * while the blur gathers alike, and a little farther, so each side of them halves evenly down to the coarsest copy the
- * lens reads.
+ * the screen's own markup over the page; what lies over the page in the window, a callout, pins, an object in it,
+ * stands in a surface of its own laid out alike; the page's surface lays the screen's ground and the page's picture
+ * under the one, as dense as the picture was taken, and the other over all (`stage/page-picture.js`). The cursor stands
+ * in a third surface laid out alike, which the room lays over the world. The world is drawn as far past the frame as
+ * the lens's blur gathers at its edges, to a step, so the layers it is drawn into keep their size while the blur
+ * gathers alike, and a little farther, so each side of them halves evenly down to the coarsest copy the lens reads.
  *
  * The exposures are added up in linear light, as a shutter gathers the light of each moment: a glint that moves draws a
  * streak as bright as its light, where averaged in the screen's colours it went dark. Where the world asks, the frame
@@ -412,7 +411,10 @@ class Room {
 		/** The frame's box, in its own pixels @type {Box} */
 		this.frameBox = { left: NOWHERE, top: NOWHERE, ...layout.format.frame };
 		this.canvas = roomCanvas();
-		/** Each exposure's surfaces, by name, in the order the stage's exposures stand @type {ReadonlyMap<SurfaceName, Element>[]} */
+		/**
+		 * Each exposure's surfaces, by name, in the order the stage's exposures stand
+		 * @type {ReadonlyMap<SurfaceName, Element>[]}
+		 */
 		this.exposureSurfaces = [...document.querySelectorAll('[data-exposure]')].map((exposure) =>
 			surfacesLaidIn(exposure, this.canvas)
 		);
@@ -432,7 +434,10 @@ class Room {
 		const { x: drawnWidth, y: drawnHeight } = this.drawnSize;
 		this.exposure = new WebGLRenderTarget(drawnWidth, drawnHeight, PAST_WHITE);
 		this.frame = new WebGLRenderTarget(drawnWidth, drawnHeight, PAST_WHITE);
-		/** The texture each surface is drawn into, for every exposure in turn @type {ReadonlyMap<SurfaceName, SurfaceTexture>} */
+		/**
+		 * The texture each surface is drawn into, for every exposure in turn
+		 * @type {ReadonlyMap<SurfaceName, SurfaceTexture>}
+		 */
 		this.textures = new Map(
 			SURFACES.map((name) => [name, new SurfaceTexture(this.renderer, SURFACE_TEXTURES[name].shrinks)])
 		);
@@ -638,8 +643,8 @@ class Room {
 
 	/**
 	 * The cursor laid over all the world drawn of an exposure: its surface drawn anew, stood where the matrix places the
-	 * window's surfaces, laid out over the same box of the page's plane, seen from the eye over the frame, and laid in the
-	 * screen's colours whatever stands nearer the eye.
+	 * window's surfaces, laid out over the same box of the page's plane, seen from the eye over the frame, and laid in
+	 * the screen's colours whatever stands nearer the eye.
 	 * @param {ReadonlyMap<SurfaceName, Element>} surfaces @param {Matrix4} pageMatrix @param {DrawnScene} scene
 	 */
 	cursorLaid(surfaces, pageMatrix, scene) {
@@ -854,8 +859,8 @@ class Room {
 
 	/**
 	 * What the page's surface and the window's body read of what stands behind them, where the shade fades them
-	 * (`page-picture.js`, `body.js`), set as the room has laid the world so far: that world, the film's ground, and where a pixel of the layers the world is drawn
-	 * into over the box the lens gathers stands on the frame.
+	 * (`page-picture.js`, `body.js`), set as the room has laid the world so far: that world, the film's ground, and where
+	 * a pixel of the layers the world is drawn into over the box the lens gathers stands on the frame.
 	 * @param {Box} gathered
 	 */
 	behindThePageSet(gathered) {
@@ -1013,7 +1018,10 @@ class Room {
  *   readonly pits: readonly Object3D[]
  * }} WindowBuilt
  */
-/** The window's body as posed: its slab, and the glass over the page. @typedef {ReturnType<WindowBody['posed']>} BodyPosed */
+/**
+ * The window's body as posed: its slab, and the glass over the page.
+ * @typedef {ReturnType<WindowBody['posed']>} BodyPosed
+ */
 /**
  * A thing or an object of markup standing in the world, as the room parts the world: its parts in the world's scene,
  * what of it is seen through beside the page, markup always, and the box all its parts stand in.
@@ -1139,7 +1147,12 @@ function boxOfPoints(points) {
 	return { left, top, width: right - left, height: bottom - top };
 }
 
-/** The part of one box inside another, of a size of none or less where they do not meet. @param {Box} first @param {Box} second @returns {Box} */
+/**
+ * The part of one box inside another, of a size of none or less where they do not meet.
+ * @param {Box} first
+ * @param {Box} second
+ * @returns {Box}
+ */
 function boxWithin(first, second) {
 	const left = Math.max(first.left, second.left);
 	const top = Math.max(first.top, second.top);
@@ -1186,7 +1199,13 @@ function grownBy(box, pixels) {
 	};
 }
 
-/** A box grown about its middle to a size. @param {Box} box @param {number} width @param {number} height @returns {Box} */
+/**
+ * A box grown about its middle to a size.
+ * @param {Box} box
+ * @param {number} width
+ * @param {number} height
+ * @returns {Box}
+ */
 function grownTo(box, width, height) {
 	return { left: box.left - (width - box.width) * HALF, top: box.top - (height - box.height) * HALF, width, height };
 }
@@ -1310,7 +1329,8 @@ function elementDrawingOf(renderer) {
 /**
  * A surface drawn from markup as the world draws it, the page's or an object's, drawn nearer than what shares its
  * plane, in a part of the world.
- * @param {typeof PAGE_LAID | typeof PAGE_SEEN_THROUGH | typeof PAGE_DEPTH_ALONE | typeof MARKUP_SEEN_THROUGH | typeof MARKUP_DEPTH_ALONE} laid
+ * @param {typeof PAGE_LAID | typeof PAGE_SEEN_THROUGH | typeof PAGE_DEPTH_ALONE | typeof MARKUP_SEEN_THROUGH
+ *   | typeof MARKUP_DEPTH_ALONE} laid
  * @param {WorldPart} part @param {string} fragmentShader @param {Record<string, { value: unknown }>} uniforms
  */
 function surfaceInTheWorld(laid, part, fragmentShader, uniforms) {
@@ -1322,7 +1342,8 @@ function surfaceInTheWorld(laid, part, fragmentShader, uniforms) {
 /**
  * A surface drawn from markup: a square the room places, drawn whichever side faces the eye, as a window turned half
  * round shows the page mirrored, laid as named.
- * @param {typeof PAGE_LAID | typeof PAGE_SEEN_THROUGH | typeof PAGE_DEPTH_ALONE | typeof MARKUP_SEEN_THROUGH | typeof MARKUP_DEPTH_ALONE | typeof LAID_OVER} laid
+ * @param {typeof PAGE_LAID | typeof PAGE_SEEN_THROUGH | typeof PAGE_DEPTH_ALONE | typeof MARKUP_SEEN_THROUGH
+ *   | typeof MARKUP_DEPTH_ALONE | typeof LAID_OVER} laid
  * @param {string} fragmentShader @param {Record<string, { value: unknown }>} uniforms
  */
 function surfaceDrawn(laid, fragmentShader, uniforms) {
@@ -1339,7 +1360,11 @@ function surfaceDrawn(laid, fragmentShader, uniforms) {
 	return surface;
 }
 
-/** three's camera seeing through a projection the room hands it, and nothing else. @param {Camera} camera @param {Matrix4} projection */
+/**
+ * three's camera seeing through a projection the room hands it, and nothing else.
+ * @param {Camera} camera
+ * @param {Matrix4} projection
+ */
 function seenThrough(camera, projection) {
 	camera.projectionMatrix.copy(projection);
 	camera.projectionMatrixInverse.copy(projection).invert();
@@ -1403,8 +1428,8 @@ function thingsIn(scene) {
 }
 
 /**
- * The object of a name in a list a scene draws: the stage laid it in its surface as it drew the scene, so one missing is
- * the room's fault.
+ * The object of a name in a list a scene draws: the stage laid it in its surface as it drew the scene, so one missing
+ * is the room's fault.
  * @param {readonly DrawnObject[]} objects @param {string} name
  */
 function objectNamed(objects, name) {

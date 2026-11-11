@@ -144,8 +144,8 @@ export class OneOf<Name extends string> implements Kind<Name> {
 
 /**
  * A kind of one value of a few by its name, or an object of a form, or of one of a few, for a value a name cannot say:
- * how words come up, `'mask'`, `{ typed: { seed } }` or `{ way, atOnce }`; a string is told by its names, an object down
- * to the value at fault.
+ * how words come up, `'mask'`, `{ typed: { seed } }` or `{ way, atOnce }`; a string is told by its names, an object
+ * down to the value at fault.
  */
 export class NameOrForm<Name extends string, Value> implements Kind<Name | Value> {
 	readonly name: OneOf<Name>;

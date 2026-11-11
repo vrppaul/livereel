@@ -192,7 +192,9 @@ function refusedWhereLacking(lack: RoomLack): void {
 
 // What follows runs in the stage page, each function handed over alone
 
-/** What the page lacks of what the room draws with: WebGL 2 first, then HTML-in-Canvas in it; none where it has both. */
+/**
+ * What the page lacks of what the room draws with: WebGL 2 first, then HTML-in-Canvas in it; none where it has both.
+ */
 function roomLackOf(): RoomLack {
 	const context = document.createElement('canvas').getContext('webgl2');
 	if (context === null) return 'webgl';

@@ -372,8 +372,8 @@ function actTheFile(): readonly Step[] {
 }
 
 /**
- * The window and its code pushed off by this film's acts over most of the frame, scrolled through slowly, never to their
- * end: the look comes in as they still scroll.
+ * The window and its code pushed off by this film's acts over most of the frame, scrolled through slowly, never to
+ * their end: the look comes in as they still scroll.
  */
 function actTheCode(): readonly Step[] {
 	return [

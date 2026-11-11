@@ -178,7 +178,8 @@ function cardsShown(context: ActContext): Promise<void> {
 
 /**
  * A group, and in it the whole screen and the layers lifted off it, each leaving its place empty; then the screen gone
- * under them at once, as the piece of the whole screen stands where it stood, so the page shows once as the stack leans.
+ * under them at once, as the piece of the whole screen stands where it stood, so the page shows once as the stack
+ * leans.
  */
 function layersShown(stack: string, layers: readonly LiftedLayer[]): readonly Step[] {
 	return [

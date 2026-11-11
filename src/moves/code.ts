@@ -198,7 +198,9 @@ function scrolling(beginning: Beginning, name: ObjectName, named: LineNamed): Ch
 	return showing(name, (progress) => ({ ...shown, scrolled: between(shown.scrolled, top - FIRST_LINE, progress) }));
 }
 
-/** The number of a line a film names, as `numberOf` finds it from the first line on; a line past the last is refused. */
+/**
+ * The number of a line a film names, as `numberOf` finds it from the first line on; a line past the last is refused.
+ */
 function numberShown(lines: readonly CodeLine[], named: LineNamed, moveSays: string): number {
 	const count = lines.length;
 	const number = numberOf(lines, named, FIRST_LINE, moveSays);

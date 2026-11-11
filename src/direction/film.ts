@@ -93,7 +93,9 @@ export interface Script<Name extends string> extends SiteScript {
 	 * framed. A static page stands in a tab of its own, on no stage's frame.
 	 */
 	readonly stage?: StagePlace;
-	/** Wait until the page stands as the first frame shows it; for a film shot on its set, as its scenario starts on it. */
+	/**
+	 * Wait until the page stands as the first frame shows it; for a film shot on its set, as its scenario starts on it.
+	 */
 	readonly ready: (context: ActContext) => Promise<void>;
 	/**
 	 * The app's states shot once ahead of the film by `livereel set`, its scenario marking each, and where the film's

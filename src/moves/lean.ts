@@ -1,7 +1,7 @@
 /**
  * How a film leans what stands on the frame, the page's window or an object: back from its top edge by `tilt`, swung
- * about its middle by `turn`, rolled in its plane by `roll` and turned over round its own width by `over`, about a point
- * of its box, `about`, written once for both.
+ * about its middle by `turn`, rolled in its plane by `roll` and turned over round its own width by `over`, about a
+ * point of its box, `about`, written once for both.
  */
 import { FilmError } from '../domain/errors.ts';
 import { samePoint } from '../domain/geometry.ts';

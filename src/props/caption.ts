@@ -19,7 +19,9 @@ export interface Caption extends Said, WayCome {
 	readonly comingUp: ComingUp;
 }
 
-/** A caption as the stage draws it: its words, the edge of the frame it stands at, and its words' way, none standing. */
+/**
+ * A caption as the stage draws it: its words, the edge of the frame it stands at, and its words' way, none standing.
+ */
 export interface DrawnCaption extends DrawnWords {
 	readonly at: CaptionPlace;
 	readonly onItsWay: OnItsWay | null;

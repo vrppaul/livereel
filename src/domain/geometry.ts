@@ -38,7 +38,9 @@ export const A_POINT_OF_THE_FRAME: Kind<Point> = new OfForm<Point>(
 	'a point of the frame: { left, top }, each a share of it'
 );
 
-/** Where a block of the page stands on the screen, or a part of the frame: its left and top edges, and how big it is. */
+/**
+ * Where a block of the page stands on the screen, or a part of the frame: its left and top edges, and how big it is.
+ */
 export interface Box {
 	readonly left: number;
 	readonly top: number;

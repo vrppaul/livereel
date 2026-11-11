@@ -46,7 +46,9 @@ function isNamedIn(code: string, name: string): boolean {
 	return new RegExp(`${STANDS_ALONE}${name.replace(SPECIAL, '\\$&')}\\b`).test(code);
 }
 
-/** Every move a document's code names by its prop, as `light.on`; a member of something else, `context.page.x`, aside. */
+/**
+ * Every move a document's code names by its prop, as `light.on`; a member of something else, `context.page.x`, aside.
+ */
 function movesNamedIn(code: string, props: readonly string[]): string[] {
 	const named = new RegExp(`${STANDS_ALONE}(?:${props.join('|')})\\.[A-Za-z]+`, 'g');
 	return [...new Set(code.match(named))];

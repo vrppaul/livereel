@@ -7,9 +7,9 @@
  * into a stance too (`stanceCarriedBy`), where something carried into another holder stands there as it stood.
  *
  * It grows about its box's middle and turns about a point of its box, its middle until a lean names another, as a slab
- * leans back on its foot: the point, of the box as grown, stays where it stood as the angle turns. The point is a
- * share of the box, so it goes with the box as the box travels or grows, and the box's middle is where it stands face-on;
- * it moves nothing while the angle turns nothing, so a lean names another only then, where it cannot jump.
+ * leans back on its foot: the point, of the box as grown, stays where it stood as the angle turns. The point is a share
+ * of the box, so it goes with the box as the box travels or grows, and the box's middle is where it stands face-on; it
+ * moves nothing while the angle turns nothing, so a lean names another only then, where it cannot jump.
  *
  * The stage is handed a flat 2D matrix where the thing faces the frame, at any size, depth or roll, and a 3D one only
  * where it leans: a 3D transform, of no angle too, costs the graphics card a layer in every exposure of a frame, and a
@@ -109,7 +109,8 @@ const DEGREES_IN_A_TURN = 360;
 const BEHIND_THE_EYE = 0;
 // A refusal says how far the eye stands from the frame to a tenth of a pixel: 2540.5 at 24°
 const DIGITS_OF_A_DEPTH = 1;
-// The order three reads the turns of an angle with no turn over in: tilted, swung, then rolled, as `angledAs` chains them
+// The order three reads the turns of an angle with no turn over in: tilted, swung, then rolled, as `angledAs` chains
+// them
 const TILT_TURN_ROLL = 'XYZ';
 const NO_TURN_OVER = 0;
 // How far a step across and one down a matrix draws may stand unlike in length, for their length, or off square, as a
@@ -295,9 +296,9 @@ function turnNearest(degrees: number, stood: number): number {
  * How a matrix stands what it carries about the middle of a box of this size, as a stance does (`stanceMatrix`),
  * wherever it carries that middle across and down: as large as it draws a step across, facing as it turns the plane's
  * across and down, with no turn over, each value of the angle at its nearest whole turn to that value of the angle it
- * stood at, so what is carried on from there spins no whole turn back; turned about the point it stood turned about, and
- * as far out as it carries the middle, less how far turning about that point moves it out. None where the matrix draws
- * a step across and one down unlike in length or off square, stretching what it carries, as no stance does.
+ * stood at, so what is carried on from there spins no whole turn back; turned about the point it stood turned about,
+ * and as far out as it carries the middle, less how far turning about that point moves it out. None where the matrix
+ * draws a step across and one down unlike in length or off square, stretching what it carries, as no stance does.
  */
 export function stanceCarriedBy(matrix: Matrix, stood: Stance, box: Size): Stance | null {
 	const ways = waysAlongItsPlane(matrix);
@@ -326,7 +327,9 @@ export function isFrontOn(angle: Angle): boolean {
 	return facesTheFrame(angled) && showsItsFront(angled) && keepsItsAcross(angled);
 }
 
-/** Whether a matrix draws a step across its plane and one down it alike in length and square, the step across so long. */
+/**
+ * Whether a matrix draws a step across its plane and one down it alike in length and square, the step across so long.
+ */
 function growsAlike(ways: PlanesWays, acrossLength: number): boolean {
 	const alikeInLength = Math.abs(lengthOf(ways.down) - acrossLength) <= ALIKE_WITHIN * acrossLength;
 	const square = Math.abs(dotOf(ways.across, ways.down)) <= ALIKE_WITHIN * acrossLength * lengthOf(ways.down);

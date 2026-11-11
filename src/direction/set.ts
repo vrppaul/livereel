@@ -34,7 +34,9 @@ export interface SetContext extends Omit<ActContext, 'set'> {
 
 /** A film's set as its author writes it. */
 export interface SetScript {
-	/** The app acted on, Playwright code, every state the film shows marked by `context.state(name)` as it stands in it. */
+	/**
+	 * The app acted on, Playwright code, every state the film shows marked by `context.state(name)` as it stands in it.
+	 */
 	readonly scenario: (context: SetContext) => Promise<void>;
 	/** The blocks the film reads on the set, by selector: where each stands is shot with every state. */
 	readonly targets: readonly string[];
@@ -52,7 +54,8 @@ export interface FilmSet {
 // A set's pictures where a film names no sharpness: as sharp as the claude-review promo's, whose lines read crisp as
 // the camera came close (the review page shot at 3, 2026-11-06)
 const SHARPNESS_WHERE_NONE_IS_NAMED = 3;
-// A state's name names its picture's file too: letters, digits, dashes and underscores, beginning with a letter or digit
+// A state's name names its picture's file too: letters, digits, dashes and underscores, beginning with a letter or
+// digit
 const STATE_NAME = /^[A-Za-z0-9][\w-]*$/;
 export const A_STATE_NAME: Kind<string> = new Plain(
 	isStateName,

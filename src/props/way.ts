@@ -1,9 +1,9 @@
 /**
  * How an object, whatever it shows, a caption or keys comes up in its place or goes from it in a way of livereel's, in
  * place of the way what it shows comes up of itself — words one after another, lines of code, the terminal growing, the
- * card and keys rising: faded in; out from behind an edge of its figure, as from under a mask, out of nothing; wiped in from an edge;
- * opened from the middle of its box, as an iris; grown from the middle of its box. An object goes in a way as it came
- * in one, the way run back: a mask back behind its edge, a wipe back to its edge.
+ * card and keys rising: faded in; out from behind an edge of its figure, as from under a mask, out of nothing; wiped in
+ * from an edge; opened from the middle of its box, as an iris; grown from the middle of its box. An object goes in a
+ * way as it came in one, the way run back: a mask back behind its edge, a wipe back to its edge.
  *
  * A way brings an object's figure — its words, its pane, the card's lines, the caps — whole, and only that: the ground
  * some objects stand on, a title card's, a caption's, the card's, comes up and goes in its own way meanwhile. A way is
@@ -156,7 +156,8 @@ const AS_IT_STANDS: OnItsWay = {
 };
 // What comes up and goes there whole: come up, and not going
 const PRESENT_WHOLE: Presence = { shown: WHOLE, gone: NONE };
-// The sides a cut is measured on; the far edge of a box, in shares of it from its near one; and a cut that moves nowhere
+// The sides a cut is measured on; the far edge of a box, in shares of it from its near one; and a cut that moves
+// nowhere
 const SIDES_CUT: readonly FrameSide[] = ['top', 'right', 'bottom', 'left'];
 const FAR_EDGE = 1;
 const NO_CUT_MOVED: readonly PointMoved[] = [];

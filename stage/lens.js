@@ -63,7 +63,12 @@ import { LAID_OVER, WRITTEN, WRITTEN_INTO_SEVERAL, drawnInto, passOver, valuesOf
 /**
  * A field of the world the lens blurs: its light, linear and premultiplied, its depth, and its size in the drawing's
  * pixels.
- * @typedef {{ readonly light: Texture, readonly depth: DepthTexture, readonly width: number, readonly height: number }} SceneField
+ * @typedef {{
+ *   readonly light: Texture,
+ *   readonly depth: DepthTexture,
+ *   readonly width: number,
+ *   readonly height: number
+ * }} SceneField
  */
 
 // How many samples a pixel gathers, on a golden-angle spiral, and how many spreads of its Gaussian they reach, as far
@@ -72,12 +77,13 @@ const SAMPLES = 96;
 export const SPREADS_REACHED = 3;
 // A spread under half a pixel of the drawing is drawn sharp, its own pixel alone
 const SHARP_SPREAD = 0.5;
-// What stands before the focus is the near field's from a spread of a whole pixel of the drawing: what stands before
-// it sharper stays with the far field, each pixel there blurred by its own spread, where the near field's would blur it
-// as wide as the widest near spread round it, and an in-focus page a hair nearer than the focus with it. What reaches it
+// What stands before the focus is the near field's from a spread of a whole pixel of the drawing: what stands before it
+// sharper stays with the far field, each pixel there blurred by its own spread, where the near field's would blur it as
+// wide as the widest near spread round it, and an in-focus page a hair nearer than the focus with it. What reaches it
 // standing before all the rest is a world of its own (`apartBeforeTheRest`)
 const NEAR_BLURRED_FROM = 1;
-// None of what stands in the world stands apart, and how many that is; and the place of the nearest of it, nearest first
+// None of what stands in the world stands apart, and how many that is; and the place of the nearest of it, nearest
+// first
 /** @type {readonly never[]} */
 const NOTHING_APART = [];
 const NONE_APART = 0;
@@ -195,11 +201,11 @@ float gapFor(float radius) {
 // The parts the scene is split into at the focus: the near field's light, the far field's, the far field's light its
 // copies hold, and the measures every later pass reads of each pixel — by the nearest depth round it, whether the near
 // field holds it, whole or none, and how wide it spreads, in the drawing's pixels, less than none where nothing was
-// drawn round it; whether the far field's copies hold its light, whole or none; and how wide its own depth spreads, less
-// than none where the far field has no depth of its own there. A sample's reach is read by the nearest depth round it,
-// a pixel's own blur by its own: read by the nearest, a blurred page's pixel touching a sharp thing stood sharp, a line
-// along the thing's edge. One pass writes every part, each into its own layer of the split, by its place there: written
-// a pass a part, each pass read the nine depths round each pixel anew
+// drawn round it; whether the far field's copies hold its light, whole or none; and how wide its own depth spreads,
+// less than none where the far field has no depth of its own there. A sample's reach is read by the nearest depth round
+// it, a pixel's own blur by its own: read by the nearest, a blurred page's pixel touching a sharp thing stood sharp, a
+// line along the thing's edge. One pass writes every part, each into its own layer of the split, by its place there:
+// written a pass a part, each pass read the nine depths round each pixel anew
 /** @typedef {'nearLight' | 'farLight' | 'spreadingLight' | 'measures'} SplitPart */
 /** @type {{ readonly [Part in SplitPart]: number }} */
 const SPLIT_PARTS = { nearLight: 0, farLight: 1, spreadingLight: 2, measures: 3 };
@@ -530,14 +536,14 @@ export class Lens {
 	 * stands nearer than every point of all the rest, so it is laid over the rest exactly, wherever the focus stands; the
 	 * nearest of it while any of it stands in the near field, and each farther one while all of it does; nearest first.
 	 * Parted so, a cube before a page stays apart while the focus is pulled through it, and joins the rest only where
-	 * nothing of it is blurred near, where the two drawings agree: parted by whether all of it stood in the near field, it
-	 * joined the rest while its near face was still blurred wide, and the fill's guess of what it hid came back at once,
-	 * 48 levels between two frames where the frames round them step 19 (a probe film, `n-pull` at 0.9667 s,
+	 * nothing of it is blurred near, where the two drawings agree: parted by whether all of it stood in the near field,
+	 * it joined the rest while its near face was still blurred wide, and the fill's guess of what it hid came back at
+	 * once, 48 levels between two frames where the frames round them step 19 (a probe film, `n-pull` at 0.9667 s,
 	 * 2026-11-11). And a window whose near corner alone is blurred stays with the rest behind a title blurred before it:
 	 * taken apart with the title, what the title's blur hides of the window is guessed, and the page under the title's
-	 * shadow, drawn in one field with it, was blurred as the title (`w-titles` at 1.3 s, 2026-11-11). What stands
-	 * among the rest's depths, a cube through a page, is never apart. Nothing is where the eye blurs nothing, nor all
-	 * that stands.
+	 * shadow, drawn in one field with it, was blurred as the title (`w-titles` at 1.3 s, 2026-11-11). What stands among
+	 * the rest's depths, a cube through a page, is never apart. Nothing is where the eye blurs nothing, nor all that
+	 * stands.
 	 * @template {{ readonly box: Box3 }} Standing
 	 * @param {DrawnEye} eye @param {readonly Standing[]} standing @returns {readonly Standing[]}
 	 */
@@ -573,9 +579,9 @@ export class Lens {
 	 * pixel by the eye's lens or by a spread of its own the field is handed, whichever is wider, or as it stands where
 	 * the eye has no lens, open none, and the field no spreads of its own; the field's depth read as the eye that saw
 	 * it, so far before the frame, stored it.
-	 * @param {WebGLRenderer} renderer @param {SceneField} field @param {Box} drawn @param {Box} shown @param {DrawnEye} eye
-	 * @param {WebGLRenderTarget} target @param {Texture | null} ownSpreads how wide each pixel of the field spreads of
-	 * its own, in the drawing's pixels, as the field lies; none where none does
+	 * @param {WebGLRenderer} renderer @param {SceneField} field @param {Box} drawn @param {Box} shown
+	 * @param {DrawnEye} eye @param {WebGLRenderTarget} target @param {Texture | null} ownSpreads how wide each pixel of
+	 * the field spreads of its own, in the drawing's pixels, as the field lies; none where none does
 	 */
 	laid(renderer, field, drawn, shown, eye, target, ownSpreads) {
 		const boxes = { drawnBox: valuesOfTheBox(drawn), shownBox: valuesOfTheBox(shown) };

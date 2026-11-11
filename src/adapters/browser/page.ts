@@ -168,7 +168,10 @@ export class PlaywrightPage implements FilmedPage {
 		return this.frame.evaluate(scrollLengthTyped, typed);
 	}
 
-	/** How far down the page's document the first block a target matches stands, in its pixels, however far it is scrolled. */
+	/**
+	 * How far down the page's document the first block a target matches stands, in its pixels, however far it is
+	 * scrolled.
+	 */
 	async documentTop(target: string): Promise<number> {
 		return (await this.found(target)).evaluate(documentTopOf);
 	}

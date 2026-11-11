@@ -53,7 +53,10 @@ function copyOf(key) {
 	return copy;
 }
 
-/** Whether a page of the film's own moves of itself, by an animation or a transition of its own. @param {HTMLIFrameElement} frame */
+/**
+ * Whether a page of the film's own moves of itself, by an animation or a transition of its own.
+ * @param {HTMLIFrameElement} frame
+ */
 function movesOfItself(frame) {
 	return window.ownPage.documentOf(frame).getAnimations().length > NO_ANIMATIONS;
 }

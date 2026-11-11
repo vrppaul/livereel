@@ -133,8 +133,9 @@ export interface HoleScript {
 }
 
 /**
- * A hole's pit as a film writes it: how deep it is sunk into the page, in the page's pixels; and how strongly a light in
- * its walls' own hue shows in it, from 0 to 1, none where the film names none. Its walls are the piece's body's colour.
+ * A hole's pit as a film writes it: how deep it is sunk into the page, in the page's pixels; and how strongly a light
+ * in its walls' own hue shows in it, from 0 to 1, none where the film names none. Its walls are the piece's body's
+ * colour.
  */
 export interface PitScript {
 	readonly depth: number;
@@ -191,7 +192,10 @@ export interface SheenScript {
 	readonly width?: number;
 }
 
-/** How a hole is filled, as a piece is made: with the ground the page draws behind a block a selector names, or a colour. */
+/**
+ * How a hole is filled, as a piece is made: with the ground the page draws behind a block a selector names, or a
+ * colour.
+ */
 type Filling =
 	{ readonly kind: 'behind'; readonly selector: string } | { readonly kind: 'colour'; readonly colour: string };
 
@@ -228,8 +232,8 @@ const PIECE_HIDE_FORM: Form<PieceHideScript> = {
 	sheen: new OfForm(SHEEN_FORM, 'a sheen: { colour, width }')
 };
 // How far a sheen trails where the film names no width: as far as the claude-review promo's band running along a line
-// of its review trails its edge, 0.03 of the review's 1600 pixels (into-review.js SHEEN); and in the look's accent where
-// it names no colour
+// of its review trails its edge, 0.03 of the review's 1600 pixels (into-review.js SHEEN); and in the look's accent
+// where it names no colour
 const SHEEN_TRAILS = 48;
 const ACCENTED = null;
 // The length of a figure a wipe from each of its edges crosses

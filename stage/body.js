@@ -51,7 +51,10 @@ import { PREMULTIPLIED, SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOfTheBo
  * }} Measures
  */
 
-/** A rounded rectangle about its middle: its width, its height, and how round its corners are. @typedef {{ readonly width: number, readonly height: number, readonly corner: number }} Outline */
+/**
+ * A rounded rectangle about its middle: its width, its height, and how round its corners are.
+ * @typedef {{ readonly width: number, readonly height: number, readonly corner: number }} Outline
+ */
 
 // How finely a corner is cut, in straight lines a quarter-turn
 const CORNER_SEGMENTS = 16;
@@ -204,7 +207,10 @@ export class WindowBody {
 		this.slab.matrixAutoUpdate = false;
 		this.glass = new THREE.Group();
 		this.glass.matrixAutoUpdate = false;
-		/** The faces of the slab and of the glass, and the measures they were last built of, said whole @type {THREE.Mesh[]} */
+		/**
+		 * The faces of the slab and of the glass, and the measures they were last built of, said whole
+		 * @type {THREE.Mesh[]}
+		 */
 		this.faces = [];
 		this.builtOf = NONE_BUILT;
 	}
@@ -334,8 +340,8 @@ export class WindowBlurred {
 
 /**
  * The part of the screen the shade's blur leaves sharp, as the window's spreads keep it: the screen's box on the
- * window's plane, the part's box and edge in the screen's pixels, the edge as the camera's zoom frames it, and the share
- * of the blur the part softens by.
+ * window's plane, the part's box and edge in the screen's pixels, the edge as the camera's zoom frames it, and the
+ * share of the blur the part softens by.
  * @param {Box} screen @param {NonNullable<DrawnWindow['sharp']>} sharp @param {BodyShade} shade @param {number} zoom
  */
 function sharpPartValues(screen, sharp, shade, zoom) {

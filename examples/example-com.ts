@@ -80,7 +80,9 @@ function linkShown(context: ActContext): Promise<void> {
 	return context.page.locator(LINK).waitFor();
 }
 
-/** A title card says what this page is; it gives way to the screen coming up, and the camera goes to the page's mark. */
+/**
+ * A title card says what this page is; it gives way to the screen coming up, and the camera goes to the page's mark.
+ */
 function actOpening(whole: Pose): readonly Step[] {
 	return [
 		cut(screen.lower(), camera.to(fromAfar(whole))),

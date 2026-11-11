@@ -21,13 +21,20 @@ import { matrixOf } from './matrices.js';
  * three for what it makes anew, a colour or a vector.
  * @typedef {{
  *   readonly build: (three: typeof THREE) => THREE.Object3D,
- *   readonly set: (built: THREE.Object3D, values: Readonly<Record<string, number>>, shown: number, three: typeof THREE) => void
+ *   readonly set: (built: THREE.Object3D, values: Readonly<Record<string, number>>, shown: number,
+ *     three: typeof THREE) => void
  * }} ThingBuilder
  */
 
-/** A thing among the objects a scene draws: its name, and what it shows. @typedef {DrawnObject & { readonly content: DrawnThing }} ThingObject */
+/**
+ * A thing among the objects a scene draws: its name, and what it shows.
+ * @typedef {DrawnObject & { readonly content: DrawnThing }} ThingObject
+ */
 
-/** How a thing stands built: the name it was built by, the group the engine's matrix places, and its own objects. @typedef {{ readonly made: string, readonly placed: THREE.Group, readonly built: THREE.Object3D }} Standing */
+/**
+ * How a thing stands built: the name it was built by, the group the engine's matrix places, and its own objects.
+ * @typedef {{ readonly made: string, readonly placed: THREE.Group, readonly built: THREE.Object3D }} Standing
+ */
 
 // The name a module's default export stands under, and what a builder holds; and what the film is told where its
 // things module exports no builders there
@@ -40,7 +47,10 @@ const NO_BUILDERS =
 /** The film's things: its module's builders, and each thing built, by its name, with the name it was built by. */
 export class Things {
 	constructor() {
-		/** The builders of the film's module, by the name a thing is built by; none where it names none @type {Readonly<Record<string, ThingBuilder>>} */
+		/**
+		 * The builders of the film's module, by the name a thing is built by; none where it names none
+		 * @type {Readonly<Record<string, ThingBuilder>>}
+		 */
 		this.builders = {};
 		/** Each thing built, by the object's name @type {Map<string, Standing>} */
 		this.built = new Map();
@@ -141,7 +151,11 @@ function areBuilders(exported) {
 	);
 }
 
-/** What an object holds by a name, as read from what a film hands; none where it is no object. @param {unknown} held @param {string} name */
+/**
+ * What an object holds by a name, as read from what a film hands; none where it is no object.
+ * @param {unknown} held
+ * @param {string} name
+ */
 function valueOf(held, name) {
 	return typeof held === 'object' && held !== null ? /** @type {Record<string, unknown>} */ (held)[name] : undefined;
 }
@@ -158,7 +172,10 @@ function partLetGo(part) {
 	for (const material of materialsOf(part)) material.dispose();
 }
 
-/** The materials three draws a part in, one or one for each group of its faces. @param {THREE.Mesh | THREE.Line | THREE.Points} part */
+/**
+ * The materials three draws a part in, one or one for each group of its faces.
+ * @param {THREE.Mesh | THREE.Line | THREE.Points} part
+ */
 export function materialsOf(part) {
 	return [/** @type {THREE.Material | THREE.Material[]} */ (part.material)].flat();
 }

@@ -3,16 +3,16 @@
  * retaken where it is a picture, a frame captured. `StageApi` is what the stage's script, `stage/stage.js`, answers
  * under `window.stage`.
  *
- * The stage shows the filmed page one of two ways. A dynamic page, which changes of itself, stands live in the
- * screen's frame (`PlaywrightFramedStage`): every frame shows it as it is, and an act lays the screen flat first, as a
- * browser finds the point it clicks wrongly on a screen the camera has scaled. A static page stands in a tab of its
- * own, at the screen's size, and the stage shows a picture of it (`PlaywrightPicturedStage`), taken anew as the take
- * asks, after the page was acted on or moved: a frame then costs one capture of the stage, the page's picture standing
- * as it was, and an act is done in the page's own tab, at no scale. Such a stage draws a frame flat, by its markup
- * alone (`DRAWN_FLAT`), or as a room, its markup composed in WebGL (`room.ts`). The picture is taken as sharp as a camera at the
- * zoom the take names shows the page, up to as far as a camera comes in where a film names no bound (`ZOOM_AT_MOST`),
- * so text the camera comes close to stays as crisp as the live frame shows it: the README film's close shots at 4×
- * against the live frame, SSIM 0.990–0.992, alike to the eye at twice their size (2026-10-30).
+ * The stage shows the filmed page one of two ways. A dynamic page, which changes of itself, stands live in the screen's
+ * frame (`PlaywrightFramedStage`): every frame shows it as it is, and an act lays the screen flat first, as a browser
+ * finds the point it clicks wrongly on a screen the camera has scaled. A static page stands in a tab of its own, at the
+ * screen's size, and the stage shows a picture of it (`PlaywrightPicturedStage`), taken anew as the take asks, after
+ * the page was acted on or moved: a frame then costs one capture of the stage, the page's picture standing as it was,
+ * and an act is done in the page's own tab, at no scale. Such a stage draws a frame flat, by its markup alone
+ * (`DRAWN_FLAT`), or as a room, its markup composed in WebGL (`room.ts`). The picture is taken as sharp as a camera at
+ * the zoom the take names shows the page, up to as far as a camera comes in where a film names no bound
+ * (`ZOOM_AT_MOST`), so text the camera comes close to stays as crisp as the live frame shows it: the README film's
+ * close shots at 4× against the live frame, SSIM 0.990–0.992, alike to the eye at twice their size (2026-10-30).
  *
  * The page's picture is taken by CDP's capture on livereel's own session with its tab, clipped to the screen at a
  * scale of the picture's pixels to the page's, which Chrome draws the page anew at: on a tab at 4.4×, at a scale of 2
@@ -81,7 +81,9 @@ export interface Opening {
 	readonly sandbox: string | null;
 }
 
-/** A picture of the filmed page as the stage is handed it: its bytes in base64, as CDP takes it, and its image's type. */
+/**
+ * A picture of the filmed page as the stage is handed it: its bytes in base64, as CDP takes it, and its image's type.
+ */
 export interface PagePicture {
 	readonly base64: string;
 	readonly type: string;
@@ -97,7 +99,10 @@ export interface FilmsPictureHanded extends PagePicture {
 	readonly path: string;
 }
 
-/** A picture of the film's own as the stage decoded it, by its path: its size, none across and down where it decodes to none. */
+/**
+ * A picture of the film's own as the stage decoded it, by its path: its size, none across and down where it decodes to
+ * none.
+ */
 export interface FilmsPictureDecoded extends Size {
 	readonly path: string;
 }
@@ -251,7 +256,10 @@ export class PlaywrightFramedStage implements FramedStage {
 		return DRAWN_FLAT.finished(this.page);
 	}
 
-	/** A browser finds the point it clicks wrongly on a screen the camera has scaled; at no scale, every point is the page's own. */
+	/**
+	 * A browser finds the point it clicks wrongly on a screen the camera has scaled; at no scale, every point is the
+	 * page's own.
+	 */
 	async layFlat(scene: DrawnScene): Promise<void> {
 		await this.sizedTo({ frame: this.format.screen, screen: this.format.screen });
 		await this.draw([scene]);

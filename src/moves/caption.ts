@@ -32,7 +32,10 @@ import {
 	wordsComing
 } from './words.ts';
 
-/** How a caption comes up: its timing, the way it comes up, and how its `words` come up, the theme's where none is named. */
+/**
+ * How a caption comes up: its timing, the way it comes up, and how its `words` come up, the theme's where none is
+ * named.
+ */
 export interface CaptionScript extends InPlaceShowScript {
 	readonly words?: WordsScript;
 }

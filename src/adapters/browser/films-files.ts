@@ -34,7 +34,10 @@ const TOLD_BY_ITS_BYTES = '';
 // A picture that decodes to no size across or down
 const NO_SIZE = 0;
 
-/** The film's own pictures read from the film's folder, by the paths the film names them by; refused where one is not there. */
+/**
+ * The film's own pictures read from the film's folder, by the paths the film names them by; refused where one is not
+ * there.
+ */
 export async function filmsPicturesRead(
 	filmFolder: string,
 	paths: readonly string[]
@@ -79,7 +82,9 @@ async function fontRead(filmFolder: string, font: FilmFont): Promise<FilmsFontHa
 	return { family: font.family, path: font.file, base64: await fileRead(filmFolder, font.file, 'font') };
 }
 
-/** A file of the film's in base64, by its path from the film's folder; refused as the film's where it cannot be read. */
+/**
+ * A file of the film's in base64, by its path from the film's folder; refused as the film's where it cannot be read.
+ */
 async function fileRead(filmFolder: string, path: string, kind: FilesKind): Promise<string> {
 	try {
 		return (await readFile(resolve(filmFolder, path))).toString(BASE64);

@@ -1,7 +1,7 @@
 /**
  * A group of objects (`src/props/object.ts`): how it stands is shared by every object standing in it, so a film turns,
- * grows or brings near a stack of pieces of the page, a ring of cards or a fan as one, while each object stands in it as
- * its own moves have it, as a layer stands under its parent in After Effects or three.js. A group holds objects and
+ * grows or brings near a stack of pieces of the page, a ring of cards or a fan as one, while each object stands in it
+ * as its own moves have it, as a layer stands under its parent in After Effects or three.js. A group holds objects and
  * nothing of its own, never another group. It stands on the frame in a box, which it grows, turns and comes near about
  * the middle of, and an object in it has its box in the group's pixels, from the box's top left corner; the box is as
  * large as the group was placed, so a group grows by its scale alone.

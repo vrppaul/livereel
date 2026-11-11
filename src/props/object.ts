@@ -180,12 +180,13 @@ export type Objects = ReadonlyMap<ObjectName, FrameObject>;
  * name it is known by, the side of it the eye sees in what it is laid in, how clear it is, from 0 to 1, as much as what
  * it stands in lets show of it and as far as it has not faded, how far its figure's way has come, none where it is on
  * no way, the sheen its wipe trails, none where it trails none, how it stands out, none where it stands out in no way,
- * how it melts toward a side of its figure, none where it melts none, how soft the eye's focus draws it, in pixels of a frame 1080 high of its box before its matrix,
- * none where sharp, for the flat stage; how soft it draws the softest point of its box the frame shows, on the frame in
- * pixels of a frame 1080 high, none where sharp, which bounds how far past the frame's edge the room's lens gathers it,
- * as the window's softest point does; how many times the eye magnifies it, the most of the frame's pixels a pixel of
- * its box takes where the frame shows it, so the room draws its surface that many times as densely; and its content as
- * drawn. Both blurs are none, and it is magnified once, but for what stands in the world.
+ * how it melts toward a side of its figure, none where it melts none, how soft the eye's focus draws it, in pixels of a
+ * frame 1080 high of its box before its matrix, none where sharp, for the flat stage; how soft it draws the softest
+ * point of its box the frame shows, on the frame in pixels of a frame 1080 high, none where sharp, which bounds how far
+ * past the frame's edge the room's lens gathers it, as the window's softest point does; how many times the eye
+ * magnifies it, the most of the frame's pixels a pixel of its box takes where the frame shows it, so the room draws its
+ * surface that many times as densely; and its content as drawn. Both blurs are none, and it is magnified once, but for
+ * what stands in the world.
  */
 export interface DrawnObject extends DrawnPlacement {
 	readonly name: ObjectName;

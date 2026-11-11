@@ -18,15 +18,15 @@
  * The page's own motion is stilled, by the reduced motion it is asked for, so every move in the film is the film's; its
  * own time is the film's, on a clock installed before it opens (`clock.ts`), and a static page tells of every change
  * it makes to its document (`changes.ts`), so its picture is taken anew.
- * Launched headless, Playwright starts Chromium's headless shell, which draws every frame in software unless asked to draw on the graphics card,
- * through ANGLE onto the system's own graphics interface; it stays headless, and needs no screen. On Linux, Vulkan
- * reached an Intel Iris Xe with no screen named, and the promo, wide and blurred, took 271 s against 495 s in
- * software, its frames alike (SSIM 0.998 on average, 0.996 at the least; measured 2026-10-26). Metal on macOS and
- * Direct3D 11 on Windows are untried. Where it reaches no graphics card, the shell draws in software all the same:
- * where Vulkan finds no driver at all, through SwiftShader, WebGL drawn; where it finds Mesa's software Vulkan alone
- * (lavapipe), the page has no WebGL (both measured on Linux 2026-10-27). The person is warned, as Chrome tells it, and
- * the film is shot. A page that cannot be reached, or refuses its frame, is refused as it is opened, by why, rather
- * than when the film first waits on it.
+ * Launched headless, Playwright starts Chromium's headless shell, which draws every frame in software unless asked to
+ * draw on the graphics card, through ANGLE onto the system's own graphics interface; it stays headless, and needs no
+ * screen. On Linux, Vulkan reached an Intel Iris Xe with no screen named, and the promo, wide and blurred, took 271 s
+ * against 495 s in software, its frames alike (SSIM 0.998 on average, 0.996 at the least; measured 2026-10-26). Metal
+ * on macOS and Direct3D 11 on Windows are untried. Where it reaches no graphics card, the shell draws in software all
+ * the same: where Vulkan finds no driver at all, through SwiftShader, WebGL drawn; where it finds Mesa's software
+ * Vulkan alone (lavapipe), the page has no WebGL (both measured on Linux 2026-10-27). The person is warned, as Chrome
+ * tells it, and the film is shot. A page that cannot be reached, or refuses its frame, is refused as it is opened, by
+ * why, rather than when the film first waits on it.
  *
  * On the graphics card, a stage showing a static page's picture draws a frame's exposures at once, each a copy of its
  * drawing laid over the ones before so each weighs the same, and is captured once: 16 exposures of a fast camera on
@@ -37,8 +37,8 @@
  * copies, or it leaves parts of them undrawn.
  *
  * A static page's stage draws a frame flat, as the browser draws its markup, or, where the film names it, as a room:
- * launched, opened, laid out and drawn as `room.ts` has it, which the person who asks for software is told costs a frame
- * about 150 times as long there. A framed page is drawn flat.
+ * launched, opened, laid out and drawn as `room.ts` has it, which the person who asks for software is told costs a
+ * frame about 150 times as long there. A framed page is drawn flat.
  */
 import { resolve } from 'node:path';
 import { type Browser as Playwright, type Frame, type Page, chromium } from 'playwright-core';
@@ -556,7 +556,9 @@ function liveIn(frame: Frame, tab: Page): FilmedShown {
 	};
 }
 
-/** A dynamic page opened live in the stage's frame, the stage standing where the film asks; refused where it is gone. */
+/**
+ * A dynamic page opened live in the stage's frame, the stage standing where the film asks; refused where it is gone.
+ */
 async function framedLive(
 	browser: Playwright,
 	stage: Page,

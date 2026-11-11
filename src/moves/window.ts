@@ -21,8 +21,8 @@
  * In a room the window may have a body, a slab of metal round the page with glass over it (`src/props/body.ts`),
  * changed to the values a film names, through the values between in a play, at once in a cut.
  *
- * Where the window stands, how it leans, how it shades the page and its body are its own values: a move that carries
- * it sets its box, lift and depth, the depth kept as it stands but where `window.to` names one, as only that move brings
+ * Where the window stands, how it leans, how it shades the page and its body are its own values: a move that carries it
+ * sets its box, lift and depth, the depth kept as it stands but where `window.to` names one, as only that move brings
  * the window near; one that leans it its angle and the point of its box it turns about, one that shades the page those
  * of the shade it names, one that changes its body those of the body it names, each writing only its own into the
  * window as it stands, so they share a step, each as far along as its own share.
@@ -63,7 +63,9 @@ import {
 import { withProp } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
 
-/** How far a move that carries the window to a place brings it toward the eye, `depth`, in pixels of a frame 1080 high. */
+/**
+ * How far a move that carries the window to a place brings it toward the eye, `depth`, in pixels of a frame 1080 high.
+ */
 export interface WindowToScript extends TimingScript {
 	readonly depth?: number;
 }

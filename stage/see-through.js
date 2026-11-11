@@ -13,11 +13,11 @@
  * A film's things seen through and markup stand in fields apart, as they are laid by two laws: a film's light in linear
  * light, as three lays one thing over another, and markup, the page seen through with it, as the browser lays it
  * (`stage/laying.js`). Of the two, the farther is laid first (`kindsFartherFirst` in `stage/room.js`). Within its field
- * markup is laid by its law too: drawn in the screen's colours, as the browser drew it, three lays its surfaces over one
- * another there as the browser lays them, and the field is turned into light once drawn, for the lens. The page lies
- * alone in its field with the window's glass over it, both drawn as light, the glass a film's light laid over the page
- * as three lays a coat, so its reflection past white stays whole for the glow; the field is laid as the browser lays
- * the page. Drawn with the page in its field, markup before it had the page under its faint shadow blurred by the
+ * markup is laid by its law too: drawn in the screen's colours, as the browser drew it, three lays its surfaces over
+ * one another there as the browser lays them, and the field is turned into light once drawn, for the lens. The page
+ * lies alone in its field with the window's glass over it, both drawn as light, the glass a film's light laid over the
+ * page as three lays a coat, so its reflection past white stays whole for the glow; the field is laid as the browser
+ * lays the page. Drawn with the page in its field, markup before it had the page under its faint shadow blurred by the
  * shadow's depth, not the page's: a title in focus before a page blurred by the focus left a band of the page sharp
  * under its shadow, cut hard where the shadow ends (a probe film, `w-titles` at 1.8 s, 2026-11-11).
  *
@@ -45,7 +45,8 @@ import { isDrawnPart, materialsOf } from './things.js';
  * The parts of the world the room draws apart, each a layer of three's: what writes depth; a film's things seen
  * through; markup standing in the world; the page where it is seen through, and the glass over it; the depth alone of
  * markup, where it is drawn; and the depth alone of the page seen through.
- * @typedef {'opaque' | 'thingsSeenThrough' | 'surfacesSeenThrough' | 'pageSeenThrough' | 'surfacesDepth' | 'pageDepth'} WorldPart
+ * @typedef {'opaque' | 'thingsSeenThrough' | 'surfacesSeenThrough' | 'pageSeenThrough' | 'surfacesDepth'
+ *   | 'pageDepth'} WorldPart
  */
 /** @type {{ readonly [Part in WorldPart]: number }} */
 export const WORLD_PARTS = {
@@ -84,7 +85,9 @@ const NOTHING_SEEN_THROUGH = [];
  * window's shade fades it by the page's surface lays in light itself, from what the room has laid behind it
  * (`stage/page-picture.js`): the field holds the page as clear as its screen has come up, and the browser's law lays
  * that alone.
- * @type {{ readonly [Holding in SeenThroughHolding]: { readonly inTheScreensColours: boolean, readonly laid: Laying } }}
+ * @type {{
+ *   readonly [Holding in SeenThroughHolding]: { readonly inTheScreensColours: boolean, readonly laid: Laying }
+ * }}
  */
 const DRAWN = {
 	pageSeenThrough: { inTheScreensColours: false, laid: 'asTheBrowser' },
@@ -132,7 +135,9 @@ void main() {
 	gl_FragColor = inLinearLight(texture2D(drawn, shareOfTheFrame));
 }`;
 
-/** The layer each field of what is seen through is drawn into in turn, what draws its depth, and what turns its light. */
+/**
+ * The layer each field of what is seen through is drawn into in turn, what draws its depth, and what turns its light.
+ */
 export class SeeThroughLayer {
 	/**
 	 * @param {RenderTargetOptions} drawnAs how the room draws three's layers, as the opaque field is drawn

@@ -106,7 +106,9 @@ function messageOf(fault: unknown): string {
 // What the page says is wrong with its global: there is none
 const MISSING = 'missing';
 
-/** In the page: what is wrong with the global it answers livereel by, `missing` where it has none; null where nothing. */
+/**
+ * In the page: what is wrong with the global it answers livereel by, `missing` where it has none; null where nothing.
+ */
 function faultInTheGlobal(): string | null {
 	// `MISSING`, written here again as a function handed to the page calls nothing of its module
 	const missing = 'missing';

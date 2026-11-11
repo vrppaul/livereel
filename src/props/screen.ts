@@ -50,10 +50,10 @@
  * past the screen's top and foot as a sheet longer than the hand that holds it: as far as its document runs on there,
  * above what has run past the screen's top and below its foot, and as far as the frame sees the window's plane, which
  * bounds how much the stage lays. Its sides are the screen's, as a document laid out at the screen's width has nothing
- * past them. The page's run is where the screen's top stands in its document, as when it is cut, so a run and a rest are
- * the same either way; what is drawn above has run past already, and the stage lays it in a frame of its own, scrolled
- * that much less, what is typed into it written there as on the screen. The camera cuts its picture at the sheet's
- * edges where it cut it at the screen's.
+ * past them. The page's run is where the screen's top stands in its document, as when it is cut, so a run and a rest
+ * are the same either way; what is drawn above has run past already, and the stage lays it in a frame of its own,
+ * scrolled that much less, what is typed into it written there as on the screen. The camera cuts its picture at the
+ * sheet's edges where it cut it at the screen's.
  */
 import {
 	type Camera,
@@ -189,7 +189,9 @@ export interface WayOnTheFrame {
 	readonly way: number;
 }
 
-/** A page brought to rest with its pace judged on the frame: its run, and its way across the frame where it is judged. */
+/**
+ * A page brought to rest with its pace judged on the frame: its run, and its way across the frame where it is judged.
+ */
 export interface JudgedRun {
 	readonly run: Scroll;
 	readonly onTheFrame: WayOnTheFrame;
@@ -407,7 +409,9 @@ const NO_WAY_YET = 0;
 const STILL_AT_NONE: HermiteEnd = { value: 0, speed: 0 };
 const STILL_AT_ONE: HermiteEnd = { value: 1, speed: 0 };
 const SETTING_OFF_AT_ONE: HermiteEnd = { value: 0, speed: 1 };
-/** A stretch of no seconds, as a move done at once has, in a cut: its run changes at once and runs nowhere on its way. */
+/**
+ * A stretch of no seconds, as a move done at once has, in a cut: its run changes at once and runs nowhere on its way.
+ */
 export const NO_SECONDS = 0;
 // A page the film never ran: at its top since the film began, standing still
 const THE_FILMS_START = 0;
@@ -657,12 +661,12 @@ export function momentsJudgedAt(stretch: Stretch): readonly number[] {
 
 /**
  * A page brought to rest at a scroll from where it stands as its move begins, over a stretch of the film's time, its
- * pace judged at a point of the frame: what the point shows sets off across the frame as fast as the page's pace carries
- * it there, and slows to rest on a cubic Hermite curve; each piece of that way is run on the page as far as the frame
- * then carries a pixel of the page there, so the page comes to rest at the scroll as the stretch ends however the frame
- * moves meanwhile. How far the frame carries a pixel is given at each of `momentsJudgedAt`. The page's run is laid in
- * knots at even points of the stretch, each as far down as the run's way there, summed by Simpson's rule, and running as
- * fast as its way across the frame goes there over how far the frame carries a pixel.
+ * pace judged at a point of the frame: what the point shows sets off across the frame as fast as the page's pace
+ * carries it there, and slows to rest on a cubic Hermite curve; each piece of that way is run on the page as far as the
+ * frame then carries a pixel of the page there, so the page comes to rest at the scroll as the stretch ends however the
+ * frame moves meanwhile. How far the frame carries a pixel is given at each of `momentsJudgedAt`. The page's run is
+ * laid in knots at even points of the stretch, each as far down as the run's way there, summed by Simpson's rule, and
+ * running as fast as its way across the frame goes there over how far the frame carries a pixel.
  */
 export function judgedToRest(from: Knot, stretch: Stretch, rest: number, carried: readonly number[]): JudgedRun {
 	const perPixel: CurveWays = {
@@ -688,8 +692,8 @@ export function judgedToRest(from: Knot, stretch: Stretch, rest: number, carried
 
 /**
  * A judged run's way across the frame where it is judged, as it comes to rest at a scroll: setting off as fast as the
- * page's pace and how far the frame carries a pixel of it as it sets off take it, and going as far as brings the page to
- * rest there, the page running so far for each pixel of the curve's way, beside so far for each of its setting off.
+ * page's pace and how far the frame carries a pixel of it as it sets off take it, and going as far as brings the page
+ * to rest there, the page running so far for each pixel of the curve's way, beside so far for each of its setting off.
  */
 function wayJudged(
 	from: Knot,
@@ -728,7 +732,10 @@ function endsSpeedAt(share: number): number {
 	return hermiteSpeedBetween(STILL_AT_NONE, STILL_AT_ONE, share);
 }
 
-/** How fast a cubic Hermite curve from none back to none, setting off at 1 and arriving still, goes at a share of its time. */
+/**
+ * How fast a cubic Hermite curve from none back to none, setting off at 1 and arriving still, goes at a share of its
+ * time.
+ */
 function startsSpeedAt(share: number): number {
 	return hermiteSpeedBetween(SETTING_OFF_AT_ONE, STILL_AT_NONE, share);
 }
@@ -915,7 +922,10 @@ function lightPointsOf(sweep: Sweep, camera: Camera, format: Format): readonly P
 	}
 }
 
-/** The point of a sweep's light where it stands that one where it stood measures its shift by: its light's shape is kept. */
+/**
+ * The point of a sweep's light where it stands that one where it stood measures its shift by: its light's shape is
+ * kept.
+ */
 function pointAt(points: readonly Point[], place: number): Point {
 	const point = points[place];
 	if (point === undefined) throw new Error(`a sweep's light has no point ${place}: its shape changed as it swept`);
@@ -923,8 +933,9 @@ function pointAt(points: readonly Point[], place: number): Point {
 }
 
 /**
- * The part of the screen a sweep's light crosses, in its pixels: what a camera's view shows of it as the camera frames the
- * page, not the ground past its edges; the view's own part where it shows none of the screen, as nothing swept shows.
+ * The part of the screen a sweep's light crosses, in its pixels: what a camera's view shows of it as the camera frames
+ * the page, not the ground past its edges; the view's own part where it shows none of the screen, as nothing swept
+ * shows.
  */
 function partSwept(camera: Camera, format: Format): Box {
 	const view = viewOnTheScreen(camera, format.frame);

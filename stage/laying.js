@@ -46,7 +46,10 @@ export class WorldSeen {
 	constructor(width, height, drawnAs) {
 		/** The layer the world is laid in so far @type {WebGLRenderTarget} */
 		this.seen = new WebGLRenderTarget(width, height, drawnAs);
-		/** The layer a field of markup is laid into with all under it, then the one laid so far @type {WebGLRenderTarget} */
+		/**
+		 * The layer a field of markup is laid into with all under it, then the one laid so far
+		 * @type {WebGLRenderTarget}
+		 */
 		this.next = new WebGLRenderTarget(width, height, drawnAs);
 		// A field of markup as the lens lays it, alone, before it is laid over the rest
 		this.markup = new WebGLRenderTarget(width, height, drawnAs);

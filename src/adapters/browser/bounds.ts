@@ -78,7 +78,9 @@ export function picturePixelsAtMost(page: PageKind, screen: Size, pixelsAtZoomOn
 	}
 }
 
-/** The GPU memory Chrome is told of for pictures of so many pixels, in megabytes: none where it draws them by itself. */
+/**
+ * The GPU memory Chrome is told of for pictures of so many pixels, in megabytes: none where it draws them by itself.
+ */
 export function picturesMemoryOf(pixels: number): number {
 	if (pixels <= PIXELS_DRAWN_BY_ITSELF) return NO_MEMORY;
 	return Math.ceil((MEMORY_FOR_A_PICTURE_BYTE * pixels * BYTES_A_PIXEL) / BYTES_A_MEGABYTE);

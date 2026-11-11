@@ -18,8 +18,8 @@
  * how long it takes: then their times alone pace it, and its share of the step goes on its own time, on no curve.
  *
  * The eye comes before a block of the page by a move of its own, square to it or turned from square, the block filling
- * a share of the frame, its middle at a point of the frame: the block is read once, as the move begins, where the camera
- * shows it in the window then, and the eye rides the window from then on, as a flight leaves it.
+ * a share of the frame, its middle at a point of the frame: the block is read once, as the move begins, where the
+ * camera shows it in the window then, and the eye rides the window from then on, as a flight leaves it.
  *
  * The eye focuses, and opens as wide as a film names, by a move of its own, which shares a step with one that sends it
  * somewhere (`src/domain/focus.ts`): so far before it; at a spot of the world; on a block of the page; or on an object,
@@ -613,7 +613,9 @@ async function standBefore(
 	return viewpointBefore(boxOnTheWindowsPlane(camera, frame, block), framing, camera.eye.focalLength, frame);
 }
 
-/** How a film frames a block the eye stands before, turned from square as named: its middle the frame's where unnamed. */
+/**
+ * How a film frames a block the eye stands before, turned from square as named: its middle the frame's where unnamed.
+ */
 function framingOf(script: FramingScript, turned: EyeFraming['turned']): EyeFraming {
 	return { fills: script.fills, middleAt: script.middleAt ?? MIDDLE_SHARE, turned };
 }

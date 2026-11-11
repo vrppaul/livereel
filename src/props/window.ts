@@ -1,9 +1,10 @@
 /**
  * The page's window as a scene holds it: where it stands and how it stands, as the camera reads it (`Placing` in
  * `src/domain/camera.ts`), and how the page in it is shaded — dimmed, faded into the film's ground and blurred — so
- * what stands over it, a piece of the page lifted off, stands clear of it. A film moves the shade as it moves places, by
- * one move that sets the values it names (`window.shade` in `src/moves/window.ts`), the dim and the fade as strong as a
- * share from none to whole, the blur in pixels of a frame 1080 high; the window's edge and shadow keep as they stand.
+ * what stands over it, a piece of the page lifted off, stands clear of it. A film moves the shade as it moves places,
+ * by one move that sets the values it names (`window.shade` in `src/moves/window.ts`), the dim and the fade as strong
+ * as a share from none to whole, the blur in pixels of a frame 1080 high; the window's edge and shadow keep as they
+ * stand.
  * The blur may leave a part of the screen sharp, as a lens keeps sharp what the eye is drawn to: it is the page's own,
  * not the eye's, as the eye's lens blurs by depth and a page lies at one, and so what stands over the page, a title
  * carried with it or a piece lifted off it, stays as sharp as it stands wherever it stands over the blur. The part may

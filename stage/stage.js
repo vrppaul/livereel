@@ -3,13 +3,13 @@
  * The stage's script: it draws the scenes it is handed, a frame at a time, each an exposure of it, and decides nothing.
  *
  * Every number and every word comes from the film, worked out there; nothing here keeps time, so a frame is the same
- * whenever it is shot. A prop's drawer sets the prop's numbers as custom properties of its element, which
- * `stage.css` turns into places, sizes and shades, and writes the prop's words where it has any. The script answers
- * the browser adapter, and the room the surfaces it lays apart, under `window.stage` (`src/adapters/browser/stage.ts`):
- * each element it draws is its own, made and let go by it, the room laying its surfaces in the room's canvas. It is
- * JavaScript the type checker reads, run by the page as it stands: nothing is built. It is a plain script, not a module,
- * since Chrome loads no module from a file; nothing else runs in the stage page but `own-page.js`, which it shares
- * with the tab the film's own pages are read in, and whose names stand in one scope with these.
+ * whenever it is shot. A prop's drawer sets the prop's numbers as custom properties of its element, which `stage.css`
+ * turns into places, sizes and shades, and writes the prop's words where it has any. The script answers the browser
+ * adapter, and the room the surfaces it lays apart, under `window.stage` (`src/adapters/browser/stage.ts`): each
+ * element it draws is its own, made and let go by it, the room laying its surfaces in the room's canvas. It is
+ * JavaScript the type checker reads, run by the page as it stands: nothing is built. It is a plain script, not a
+ * module, since Chrome loads no module from a file; nothing else runs in the stage page but `own-page.js`, which it
+ * shares with the tab the film's own pages are read in, and whose names stand in one scope with these.
  */
 /** @import { DrawnScene, ObjectList, PropName } from '../src/scene.ts' */
 /** @import { DrawnSheet, DrawnSweep } from '../src/props/screen.ts' */
@@ -25,16 +25,38 @@
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
 /** @import { OwnPage } from '../src/direction/page.ts' */
 /** @import { Drawing } from '../src/direction/film.ts' */
-/** @import { FilmsFontHanded, FilmsPictureDecoded, FilmsPictureHanded, HeldPicture, Layout, Opening, PagePicture, StageApi, SurfaceApart } from '../src/adapters/browser/stage.ts' */
+/**
+ * @import {
+ *   FilmsFontHanded,
+ *   FilmsPictureDecoded,
+ *   FilmsPictureHanded,
+ *   HeldPicture,
+ *   Layout,
+ *   Opening,
+ *   PagePicture,
+ *   StageApi,
+ *   SurfaceApart
+ * } from '../src/adapters/browser/stage.ts'
+ */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
 /**
  * The frames an exposure lays the film's own pages in, by their keys: each at the screen's size, and, for one a move
  * draws past its screen, a sheet as tall as it is drawn.
- * @typedef {{ readonly onTheScreen: Map<string, HTMLIFrameElement>, readonly sheets: Map<string, HTMLIFrameElement> }} OwnFrames
+ * @typedef {{
+ *   readonly onTheScreen: Map<string, HTMLIFrameElement>,
+ *   readonly sheets: Map<string, HTMLIFrameElement>
+ * }} OwnFrames
  */
-/** A value of the look set whole on the stage, in place of one token: any but the ground's layers, and the way words come up, which the moves that bring them read @typedef {Exclude<keyof Look, 'groundLayers' | 'words'>} WholeLookName */
-/** An element of the stage's markup: the cursor is drawn in SVG, the rest in HTML @typedef {HTMLElement | SVGElement} Staged */
+/**
+ * A value of the look set whole on the stage, in place of one token: any but the ground's layers, and the way words
+ * come up, which the moves that bring them read
+ * @typedef {Exclude<keyof Look, 'groundLayers' | 'words'>} WholeLookName
+ */
+/**
+ * An element of the stage's markup: the cursor is drawn in SVG, the rest in HTML
+ * @typedef {HTMLElement | SVGElement} Staged
+ */
 /**
  * Where objects are laid in an exposure's markup: those on the frame by their list, and those inside the page's window.
  * @typedef {{ readonly [Root in ObjectList | 'window']: Staged }} ObjectRoots
@@ -43,7 +65,8 @@
  * Where an exposure lays markup standing in the world: among the objects on the frame, in their list's root, as the
  * flat stage draws it; or apart, each object in a surface of its own the exposure makes, which the room lays in its
  * canvas and stands where the object stands in its one scene.
- * @typedef {{ readonly kind: 'among those on the frame' } | { readonly kind: 'apart', readonly surfaces: SurfacesApart }} LaidInTheWorld
+ * @typedef {{ readonly kind: 'among those on the frame' }
+ *   | { readonly kind: 'apart', readonly surfaces: SurfacesApart }} LaidInTheWorld
  */
 /**
  * A surface an object is laid apart in, as the room is handed it, and the holder in it the object is laid in.
@@ -179,9 +202,9 @@ const QUIET = 'quiet';
 const AMONG_THOSE_ON_THE_FRAME = { kind: 'among those on the frame' };
 /** @type {ReadonlyMap<string, Staged>} */
 const NONE_LAID_APART = new Map();
-// The template a surface an object is laid in apart is made from; the one a surface laid out over the page's plane apart
-// from the window's is made from, the attribute it is named by, and the window's surface, which such surfaces are laid
-// after
+// The template a surface an object is laid in apart is made from; the one a surface laid out over the page's plane
+// apart from the window's is made from, the attribute it is named by, and the window's surface, which such surfaces are
+// laid after
 const SURFACE_APART = 'template[data-apart]';
 const ON_THE_PAGE = 'template[data-on-the-page]';
 const SURFACE_NAME = 'data-surface';
@@ -277,8 +300,8 @@ class CameraDrawer {
 
 /**
  * The page's window: where on the frame the camera's picture shows, how round its corners are, how far it stands off
- * the ground, how much of the page shows, how it is drawn about its middle as it leans, by the matrix the engine sees it
- * through, how it shades the page and the part its blur leaves sharp, how soft the eye's focus draws it, and whether
+ * the ground, how much of the page shows, how it is drawn about its middle as it leans, by the matrix the engine sees
+ * it through, how it shades the page and the part its blur leaves sharp, how soft the eye's focus draws it, and whether
  * it has a body, which the room draws (`stage/body.js`): on each of its roots, one in each surface its view stands in.
  */
 class WindowDrawer {
@@ -461,10 +484,10 @@ function sheetShown(shows) {
 }
 
 /**
- * The picture light sweeps away, from the held picture it is, cut where the light has still to sweep, and the light over
- * it in its shape, a band or a disc's ring, as wide as the film has it, its crest in its colours; neither where none
- * sweeps the screen. The shape is named on the part they stand in, and its numbers and the crest's colours set there,
- * which they are drawn by.
+ * The picture light sweeps away, from the held picture it is, cut where the light has still to sweep, and the light
+ * over it in its shape, a band or a disc's ring, as wide as the film has it, its crest in its colours; neither where
+ * none sweeps the screen. The shape is named on the part they stand in, and its numbers and the crest's colours set
+ * there, which they are drawn by.
  * @param {Staged} part @param {Staged} swept @param {DrawnScene['screen']['sweep']} sweep
  */
 function sweepDrawn(part, swept, sweep) {
@@ -814,7 +837,10 @@ class ObjectsDrawer {
 		}
 	}
 
-	/** The surfaces markup standing in the world was laid in apart as the exposure last drew. @returns {readonly SurfaceApart[]} */
+	/**
+	 * The surfaces markup standing in the world was laid in apart as the exposure last drew.
+	 * @returns {readonly SurfaceApart[]}
+	 */
 	surfacesApart() {
 		switch (this.inTheWorld.kind) {
 			case 'among those on the frame':
@@ -859,7 +885,10 @@ class SurfacesApart {
 	constructor() {
 		/** Each surface, by its object's list and name @type {ReadonlyMap<string, SurfaceHolding>} */
 		this.surfaces = new Map();
-		/** The surfaces laid in as the exposure last drew, in the order its objects are drawn @type {readonly SurfaceApart[]} */
+		/**
+		 * The surfaces laid in as the exposure last drew, in the order its objects are drawn
+		 * @type {readonly SurfaceApart[]}
+		 */
 		this.laid = [];
 	}
 
@@ -1322,15 +1351,17 @@ class WorldDrawer {
  * in its screen, by their keys. Every prop but the look and the world is drawn in each exposure, as the camera stood at
  * its moment: the type checker refuses a prop without a drawer. The look is the stage's root's, one for every exposure
  * of a frame; the objects' drawer draws those pushed off too, as both lists lay what stands inside the page's window in
- * its one root; the world's grain is drawn on the stage's root, one for every exposure, as the look is; its light lights
- * the room's things and the window's body alone, which the room draws
- * (`stage/things.js`, `stage/body.js`), and its glow the room draws over a frame (`stage/room.js`), as it blurs the
- * world by how the eye sees (`stage/lens.js`) and sees it from where the eye stands, laying what stands in the world in
- * the order the scene hands, and drawing what lies over the page in the window into a texture where anything does.
+ * its one root; the world's grain is drawn on the stage's root, one for every exposure, as the look is; its light
+ * lights the room's things and the window's body alone, which the room draws (`stage/things.js`, `stage/body.js`), and
+ * its glow the room draws over a frame (`stage/room.js`), as it blurs the world by how the eye sees (`stage/lens.js`)
+ * and sees it from where the eye stands, laying what stands in the world in the order the scene hands, and drawing what
+ * lies over the page in the window into a texture where anything does.
  * @typedef {{
  *   readonly root: Staged,
- *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'world' | 'leaving' | 'laidInTheWorld' | 'overThePage' | 'eye'>]: Drawer }
- *     & { readonly objects: ObjectsDrawer },
+ *   readonly drawers: {
+ *     readonly [Name in Exclude<keyof DrawnScene,
+ *       'look' | 'world' | 'leaving' | 'laidInTheWorld' | 'overThePage' | 'eye'>]: Drawer
+ *   } & { readonly objects: ObjectsDrawer },
  *   readonly page: Staged,
  *   readonly picture: Staged,
  *   readonly ownPages: OwnFrames
@@ -1345,7 +1376,10 @@ const WORLD = new WorldDrawer(
 const FIRST_ROOT = found(document.querySelector('[data-exposure]'), 'exposure');
 // The first exposure's root as the markup lays it out, before anything is drawn: every further exposure copies it
 const UNDRAWN_ROOT = FIRST_ROOT.cloneNode(true);
-/** The exposures the stage draws a frame as, made as it is laid out, the first of them its markup's own. @type {Exposure[]} */
+/**
+ * The exposures the stage draws a frame as, made as it is laid out, the first of them its markup's own.
+ * @type {Exposure[]}
+ */
 const EXPOSURES = [];
 /**
  * The pictures of parts of the screen pieces are drawn from, decoded, by their numbers: those they hold, and those
@@ -1574,7 +1608,10 @@ async function laidPicture(picture) {
 	return { path: picture.path, ...(await decodedSize(image)) };
 }
 
-/** The size an image decodes at: none across and down where it decodes to no picture. @param {HTMLImageElement} image */
+/**
+ * The size an image decodes at: none across and down where it decodes to no picture.
+ * @param {HTMLImageElement} image
+ */
 async function decodedSize(image) {
 	try {
 		await image.decode();
@@ -1616,7 +1653,10 @@ function filmsPicture(path) {
 	return held;
 }
 
-/** A picture handed to the stage at an address of the stage's own, which holds its bytes. @param {PagePicture} picture */
+/**
+ * A picture handed to the stage at an address of the stage's own, which holds its bytes.
+ * @param {PagePicture} picture
+ */
 function addressOf(picture) {
 	return URL.createObjectURL(new Blob([Uint8Array.fromBase64(picture.base64)], { type: picture.type }));
 }
@@ -1776,7 +1816,10 @@ function wordOf(word, pieceOf) {
 	return element;
 }
 
-/** A piece of a word laid out letter by letter, set as its run is, each of its letters in an element of its own. @param {Piece} piece */
+/**
+ * A piece of a word laid out letter by letter, set as its run is, each of its letters in an element of its own.
+ * @param {Piece} piece
+ */
 function letteredPieceElement(piece) {
 	const element = pieceElement(piece);
 	element.replaceChildren(...piece.letters.map(letterElement));
@@ -1807,7 +1850,10 @@ function classed(element, name) {
 	return element;
 }
 
-/** A piece of a word: its styles its classes, its ink and its marker the colours the stylesheet draws them in. @param {Piece} piece */
+/**
+ * A piece of a word: its styles its classes, its ink and its marker the colours the stylesheet draws them in.
+ * @param {Piece} piece
+ */
 function pieceElement(piece) {
 	const element = document.createElement('span');
 	element.textContent = piece.text;
@@ -1874,7 +1920,11 @@ function signsDrawn(word, signs) {
 	}
 }
 
-/** How far a line of code has come up, and how far it is lit. @param {HTMLElement} element @param {DrawnCode['lines'][number]} line */
+/**
+ * How far a line of code has come up, and how far it is lit.
+ * @param {HTMLElement} element
+ * @param {DrawnCode['lines'][number]} line
+ */
 function codeLineDrawn(element, line) {
 	numbered(element, { '--appeared': line.appeared, '--lit': line.lit });
 }
@@ -2057,7 +2107,11 @@ function heldBy(held, holder) {
 	return elements;
 }
 
-/** Whether an element holds these elements and no other, in this order. @param {Staged} root @param {readonly Staged[]} elements */
+/**
+ * Whether an element holds these elements and no other, in this order.
+ * @param {Staged} root
+ * @param {readonly Staged[]} elements
+ */
 function holdsInOrder(root, elements) {
 	return (
 		root.children.length === elements.length &&

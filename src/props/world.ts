@@ -47,7 +47,9 @@ export interface WorldLook {
 	readonly grain: number;
 }
 
-/** The world's values as a film writes them, every one: the grain turned off or of so many levels, any other as held. */
+/**
+ * The world's values as a film writes them, every one: the grain turned off or of so many levels, any other as held.
+ */
 type WorldWritten = { readonly [Name in keyof WorldLook]: Name extends 'grain' ? GrainScript : WorldLook[Name] };
 
 /** The world's look as a film writes it: any of its values, the rest as they stand. */

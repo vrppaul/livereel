@@ -88,7 +88,10 @@ interface Way {
 	readonly down: number;
 }
 
-/** The ways a matrix carries a step across and a step down the plane it carries, from its middle, as long as it draws them. */
+/**
+ * The ways a matrix carries a step across and a step down the plane it carries, from its middle, as long as it draws
+ * them.
+ */
 export interface PlanesWays {
 	readonly across: Spot;
 	readonly down: Spot;
@@ -233,7 +236,9 @@ export function perspective(eyeDistance: number): Matrix {
 	return { ...IDENTITY, m34: NEARER_BY_ITS_OUT / eyeDistance };
 }
 
-/** A point rotated about the line across the room's middle, as CSS's `rotateX()`: the top goes back for more degrees. */
+/**
+ * A point rotated about the line across the room's middle, as CSS's `rotateX()`: the top goes back for more degrees.
+ */
 export function rotationX(degrees: number): Matrix {
 	const cosine = Math.cos(radians(degrees));
 	const sine = Math.sin(radians(degrees));
@@ -259,7 +264,9 @@ export function scaling(factor: number): Matrix {
 	return { ...IDENTITY, m11: factor, m22: factor };
 }
 
-/** A point carried from the middle so many times as far along each way, as CSS's `scale3d()`; less than none turns it. */
+/**
+ * A point carried from the middle so many times as far along each way, as CSS's `scale3d()`; less than none turns it.
+ */
 export function scalingAlong(across: number, down: number, out: number): Matrix {
 	return { ...IDENTITY, m11: across, m22: down, m33: out };
 }
@@ -319,7 +326,9 @@ export function threesMatrixOf(matrix: Matrix): Matrix4 {
 	return new Matrix4().fromArray(ENTRIES.map((entry) => matrix[entry]));
 }
 
-/** The matrix that turns the room's across, down and out to three ways, each as long as one and square to the others. */
+/**
+ * The matrix that turns the room's across, down and out to three ways, each as long as one and square to the others.
+ */
 export function turnTo(across: Spot, down: Spot, out: Spot): Matrix {
 	return {
 		...IDENTITY,
