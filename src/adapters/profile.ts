@@ -21,6 +21,7 @@ import type { ActContext, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } fr
 import type { DrawnScene } from '../scene.ts';
 import type { Box, Size } from '../domain/geometry.ts';
 import type { OwnPageStanding } from '../domain/own-page.ts';
+import type { BlockKey } from '../domain/placement.ts';
 import type {
 	Browser,
 	DrawnBrowser,
@@ -424,6 +425,10 @@ class TimedPage implements FilmedPage {
 	async scrollCourse(target: string, aim: ScrollAim): Promise<ScrollCourse> {
 		const course = await this.timings.timed('page.scrollCourse', () => this.page.scrollCourse(target, aim));
 		return { ...course, scroll: (top) => this.timings.timed('page.scroll', () => course.scroll(top)) };
+	}
+
+	blocksHolding(source: string | Box, every: number): Promise<readonly BlockKey[]> {
+		return this.timings.timed('page.blocksHolding', () => this.page.blocksHolding(source, every));
 	}
 
 	type(text: string): Promise<void> {

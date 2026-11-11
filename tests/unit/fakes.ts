@@ -1,6 +1,14 @@
 // Stand-ins for the browser in the unit tests: a page whose blocks stand where a table says, and a stage, footage and
 // a track that keep what they were handed
-import type { ActContext, BlockHolding, FilmedPage, PageMotionSwitch, ScrollCourse } from '../../src/direction/page.ts';
+import type {
+	ActContext,
+	BlockHolding,
+	FilmedPage,
+	PageMotionSwitch,
+	ScrollAim,
+	ScrollCourse
+} from '../../src/direction/page.ts';
+import type { BlockKey } from '../../src/domain/placement.ts';
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Box, Format } from '../../src/domain/geometry.ts';
 import type { TypedText } from '../../src/domain/typing.ts';
@@ -28,6 +36,8 @@ export const FOCAL_LENGTH = 2000;
 // whatever is typed into it
 const A_LONG_PAGE = 100000;
 const NOTHING_GROWS = (): number => 0;
+// The key a test's page knows the block that scrolls the page itself by
+export const THE_PAGES_OWN_SCROLL: BlockKey = 0;
 
 /**
  * A page whose blocks stand where a table says, the ground behind each as another says, as far as it scrolls with
@@ -80,7 +90,12 @@ export class PageOfBoxes implements FilmedPage {
 	}
 
 	scrollCourse(): Promise<ScrollCourse> {
-		return Promise.resolve({ start: 0, end: 0, scroll: () => Promise.resolve() });
+		return Promise.resolve({ start: 0, end: 0, block: THE_PAGES_OWN_SCROLL, scroll: () => Promise.resolve() });
+	}
+
+	/** Every block of a test's page stands in the page's own scroll alone. */
+	blocksHolding(): Promise<readonly BlockKey[]> {
+		return Promise.resolve([THE_PAGES_OWN_SCROLL]);
 	}
 
 	type(text: string): Promise<void> {
@@ -93,17 +108,39 @@ export class PageOfBoxes implements FilmedPage {
 	}
 }
 
-/** A page of boxes whose every scroll runs so many pixels down from where it stands. */
+/**
+ * Where a test page's blocks stand among the blocks that scroll, each by the key the page knows it by: the block a
+ * scroll of a target moves, by `page.scrollBy`, the target's own, and by `page.scrollTo`, the one that scrolls it; and
+ * the blocks each target stands in.
+ */
+export interface ScrollingBlocks {
+	readonly moved: Readonly<Record<ScrollAim['kind'], ReadonlyMap<string, BlockKey>>>;
+	readonly holding: ReadonlyMap<string | Box, readonly BlockKey[]>;
+}
+
+/**
+ * A page of boxes whose blocks stand among the blocks that scroll as a table says, and whose every scroll runs so many
+ * pixels down the block it moves from where it stands.
+ */
 export class PageScrollingBy extends PageOfBoxes {
 	readonly pixels: number;
+	readonly scrolling: ScrollingBlocks;
 
-	constructor(boxes: ReadonlyMap<string, Box>, pixels: number) {
+	constructor(boxes: ReadonlyMap<string, Box>, pixels: number, scrolling: ScrollingBlocks) {
 		super(boxes);
 		this.pixels = pixels;
+		this.scrolling = scrolling;
 	}
 
-	scrollCourse(): Promise<ScrollCourse> {
-		return Promise.resolve({ start: 0, end: this.pixels, scroll: () => Promise.resolve() });
+	/** A test scrolls only the blocks its table names for the scroll. */
+	scrollCourse(target: string, aim: ScrollAim): Promise<ScrollCourse> {
+		const block = this.scrolling.moved[aim.kind].get(target)!;
+		return Promise.resolve({ start: 0, end: this.pixels, block, scroll: () => Promise.resolve() });
+	}
+
+	/** A test lifts only the selectors and the boxes, the very objects, its table names. */
+	blocksHolding(source: string | Box): Promise<readonly BlockKey[]> {
+		return Promise.resolve(this.scrolling.holding.get(source)!);
 	}
 }
 

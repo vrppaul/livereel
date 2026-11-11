@@ -4,12 +4,13 @@
  *
  * The scroll and the keys change the page: each frame sets the page's scroll, or presses the keys due by then, so the
  * page renders a little each frame as a person's scroll and typing make it. Of the scene, a scroll changes only how far
- * the film has scrolled the block, which carries a piece riding it (`src/domain/placement.ts`). An act is done once, at
- * its moment, as its move begins, the film's time standing while the page answers and every other move going on round
- * it, so a camera need not stop at a click. It takes no time, so it clashes only with a scroll or a typing running
- * across its moment, which it would pull the page out from under, and the take does it before any move that begins
- * at that moment reads the page. The speed is the scene's, which the take runs the page's time by, so its time runs
- * ever faster or slower through a play, at once from a cut.
+ * the film has scrolled the block it moves, by the key the page knows it by, which carries a piece riding a block
+ * standing in it (`src/domain/placement.ts`). An act is done once, at its moment, as its move begins, the film's time
+ * standing while the page answers and every other move going on round it, so a camera need not stop at a click. It
+ * takes no time, so it clashes only with a scroll or a typing running across its moment, which it would pull the page
+ * out from under, and the take does it before any move that begins at that moment reads the page. The speed is the
+ * scene's, which the take runs the page's time by, so its time runs ever faster or slower through a play, at once from
+ * a cut.
  */
 import {
 	A_NUMBER,
@@ -128,24 +129,24 @@ async function actedAsItBegins(beginning: Beginning, action: Action): Promise<Ch
 
 /**
  * A block's scroll on its course: the page scrolled so far each frame, and the scene told how far the film has
- * scrolled the block in all, from how far it had as the move began.
+ * scrolled the block the course truly moves in all, by the key the page knows it by, from how far it had as the move
+ * began.
  */
 async function scrolling(beginning: Beginning, target: string, aim: ScrollAim): Promise<Change> {
 	const course = await beginning.page.scrollCourse(target, aim);
-	const scrolledBefore = scrolledSoFar(beginning.scene.scrolled, target);
-	return (scene, progress) => scrolledAlong(course, target, scrolledBefore, scene, progress);
+	const scrolledBefore = scrolledSoFar(beginning.scene.scrolled, course.block);
+	return (scene, progress) => scrolledAlong(course, scrolledBefore, scene, progress);
 }
 
 async function scrolledAlong(
 	course: ScrollCourse,
-	target: string,
 	scrolledBefore: number,
 	scene: Scene,
 	progress: number
 ): Promise<Scene> {
 	const top = between(course.start, course.end, progress);
 	await course.scroll(top);
-	return withScrolled(scene, target, scrolledBefore + top - course.start);
+	return withScrolled(scene, course.block, scrolledBefore + top - course.start);
 }
 
 function keysInto(page: FilmedPage, strokes: readonly Keystroke[]): Change {

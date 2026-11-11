@@ -15,7 +15,7 @@ import { shootSet } from '../../src/studio/set.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
 import { FILMS_FOLDER, NO_SET, NoFrames } from './app.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
-import { type ActContext, type SetContext, type Step, act, camera, defineFilm, page, play } from 'livereel';
+import { type ActContext, type SetContext, type Step, act, camera, cut, defineFilm, page, piece, play } from 'livereel';
 
 // The app, served on a port of this file's own, the screen it is laid out on, and how sharp its set's pictures are;
 // and the page it serves, on the disk, for a film of it live
@@ -136,7 +136,7 @@ test("a film's set is opened on its first state's picture, and an act shows anot
 	]);
 });
 
-test('a film shot on its set needs no app: a target is read where the set shot it in the state an act shows; one not in that state or not among the targets, a state the set has not, a scroll, and an act on the page are refused, and on the live page, an act that shows a state', async () => {
+test('a film shot on its set needs no app: a target is read where the set shot it in the state an act shows; one not in that state or not among the targets, a state the set has not, a scroll, a piece riding its block, and an act on the page are refused, and on the live page, an act that shows a state', async () => {
 	const shown = (name: string) => act(({ set }: ActContext) => set.show(name));
 	const toTheLine = play({ seconds: 0.1, moves: [camera.onto(ADDED)] });
 	const set = await setShot([]);
@@ -146,6 +146,7 @@ test('a film shot on its set needs no app: a target is read where the set shot i
 		shotOnSet([play({ seconds: 0.1, moves: [camera.onto('p')] })], set).catch(String),
 		shotOnSet([shown('refreshed')], set).catch(String),
 		shotOnSet([play({ seconds: 0.1, moves: [page.scrollBy(HEADING, { pixels: 10 })] })], set).catch(String),
+		shotOnSet([cut(piece.show(HEADING, { inside: 'world', rides: 'its block' }))], set).catch(String),
 		shotOnSet([act(({ page: frame }: ActContext) => frame.locator(HEADING).click())], set).catch(String),
 		shoot(filmLive([shown('added')]), shootingLive()).catch(String)
 	]);
@@ -154,6 +155,7 @@ test('a film shot on its set needs no app: a target is read where the set shot i
 			"nothing matched #added in the set's state opened",
 			"the film's set shot no block of p: add it to the set's targets, and shoot the set again",
 			`the film's set has no state "refreshed": its states are opened, added`,
+			"the film's set shows its states as its scenario left them: scroll and type in the scenario, and show the state they leave with context.set.show(name)",
 			"the film's set shows its states as its scenario left them: scroll and type in the scenario, and show the state they leave with context.set.show(name)",
 			"a film shot on its set acts on no app, and an act's context.page is livereel's page of the set: show a state with context.set.show(name)",
 			"context.set shows a state of the film's set, and the film names none: give it set: { scenario, targets }"

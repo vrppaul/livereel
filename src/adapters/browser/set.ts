@@ -15,6 +15,7 @@
 import type { Browser as Playwright, Frame, Page } from 'playwright-core';
 import { FilmError } from '../../domain/errors.ts';
 import { type Box, boxAround } from '../../domain/geometry.ts';
+import type { BlockKey } from '../../domain/placement.ts';
 import type { ActContext, FilmedPage, PageMotionSwitch, ScrollCourse, SetShown } from '../../direction/page.ts';
 import type { OpenedForSet, SetShot, StateShot, StateTaken, TargetShot } from '../../studio/ports.ts';
 import { PageMotion } from './motion.ts';
@@ -138,6 +139,11 @@ class SetPage implements FilmedPage {
 	}
 
 	scrollCourse(): Promise<ScrollCourse> {
+		return Promise.reject(new FilmError(STANDS_AS_SHOT));
+	}
+
+	/** Nothing on the set scrolls, so nothing on it rides a scroll. */
+	blocksHolding(): Promise<readonly BlockKey[]> {
 		return Promise.reject(new FilmError(STANDS_AS_SHOT));
 	}
 

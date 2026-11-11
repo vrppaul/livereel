@@ -49,7 +49,14 @@ import { LIVEREELS_SLAB } from './props/body.ts';
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
 import { type Caption, type DrawnCaption, drawnCaption } from './props/caption.ts';
 import type { Cursor } from './props/cursor.ts';
-import { type GroupName, type Holders, type Placed, type Scrolled, laidFartherFirst } from './domain/placement.ts';
+import {
+	type BlockKey,
+	type GroupName,
+	type Holders,
+	type Placed,
+	type Scrolled,
+	laidFartherFirst
+} from './domain/placement.ts';
 import type { Group, Groups } from './props/group.ts';
 import { type DrawnKeys, type Keys, drawnKeys } from './props/keys.ts';
 import { type DrawnLines, drawnHoles, drawnLines } from './props/lifted.ts';
@@ -125,9 +132,9 @@ export type Scene = { readonly [Name in PropName]: PropStates[Name] } & {
 	 */
 	readonly pageSpeed: number;
 	/**
-	 * How far the film's own scrolls have scrolled each block of the page, by the selector they name it by
-	 * (`src/domain/placement.ts`): what carries a piece riding a block's scroll. The page holds the scroll itself; the
-	 * stage draws nothing of this.
+	 * How far the film's own scrolls have scrolled each block of the page, by the key the page knows it by
+	 * (`src/domain/placement.ts`): what carries a piece riding a block standing in it. The page holds the scroll
+	 * itself; the stage draws nothing of this.
 	 */
 	readonly scrolled: Scrolled;
 	/**
@@ -250,9 +257,9 @@ export function withPageSpeed(scene: Scene, pageSpeed: number): Scene {
 	return { ...scene, pageSpeed };
 }
 
-/** The scene with a block of the page, by the selector the film names it by, scrolled so far by the film's scrolls. */
-export function withScrolled(scene: Scene, scroller: string, scrolledSoFar: number): Scene {
-	return { ...scene, scrolled: new Map([...scene.scrolled, [scroller, scrolledSoFar]]) };
+/** The scene with a block of the page, by the key the page knows it by, scrolled so far by the film's scrolls. */
+export function withScrolled(scene: Scene, block: BlockKey, scrolledSoFar: number): Scene {
+	return { ...scene, scrolled: new Map([...scene.scrolled, [block, scrolledSoFar]]) };
 }
 
 /**

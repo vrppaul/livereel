@@ -129,7 +129,7 @@ import {
 	groupNamed,
 	handedIntoTheWorld,
 	planeOf,
-	scrolledSoFar
+	scrolledInAll
 } from '../domain/placement.ts';
 import { type Group, groupFound } from '../props/group.ts';
 import {
@@ -459,35 +459,39 @@ export function objectShowBeside(
 }
 
 /**
- * An object of a kind coming up in the world riding the scroll of the block a selector names, as `objectShow` brings
- * one inside the world: carried up the world from then on as far as the film scrolls the block by its scrolls, as many
- * of the world's pixels a pixel of the scroll as the camera shows a pixel of the screen as the move begins. One named
- * to stand anywhere but inside the world is refused: the world's plane is what the scroll carries.
+ * An object of a kind coming up in the world riding the blocks its source stands in, a selector's first `every` blocks
+ * or a box of the screen, as `objectShow` brings one inside the world: carried up the world from then on as far as the
+ * film scrolls any of those blocks, as the source is, as many of the world's pixels a pixel of the scrolls as the
+ * camera shows a pixel of the screen as the move begins. One named to stand anywhere but inside the world is refused:
+ * the world's plane is what the scrolls carry.
  */
 export function objectShowRiding(
 	kind: ShownKind,
 	move: string,
 	script: ShowScript & NestedScript,
-	scroller: string,
+	source: Target,
+	every: number,
 	place: Place | null,
 	ownCurve: Ease | null,
 	comingAt: (beginning: Beginning) => Coming | Promise<Coming>
 ): Move {
 	if (holderNamed(script, move).kind !== IN_THE_WORLD.kind) {
-		throw new FilmError(`${move} rides a block's scroll inside the world alone: name inside: 'world'`);
+		throw new FilmError(`${move} rides its block inside the world alone: name inside: 'world'`);
 	}
-	return objectComing(kind, move, script, place, ownCurve, (beginning) => rideHeld(beginning, scroller), comingAt);
+	return objectComing(kind, move, script, place, ownCurve, (beginning) => rideHeld(beginning, source, every), comingAt);
 }
 
 /**
- * The scroll of the block a selector names as something is placed riding it as a move begins: from as far as the film
- * has scrolled the block then, carrying what rides it as many of the world's pixels a pixel of the scroll as the camera
- * shows a pixel of the screen then, from the eye at rest, as what stands in the world reads the page.
+ * The page's scrolls as something is placed riding them as a move begins, over its source: every block whose scroll
+ * carries the source, as the page finds them then, from as far as the film has scrolled them in all then, carrying what rides
+ * them as many of the world's pixels a pixel of the scrolls as the camera shows a pixel of the screen then, from the
+ * eye at rest, as what stands in the world reads the page.
  */
-function rideHeld(beginning: Beginning, scroller: string): Holder {
+async function rideHeld(beginning: Beginning, source: Target, every: number): Promise<Holder> {
+	const blocks = await beginning.page.blocksHolding(source, every);
 	const camera = cameraOf(readFrom(beginning, IN_THE_WORLD).scene, beginning.format);
 	const scale = boxOnTheFrame(camera, beginning.format.frame, A_PIXEL_OF_THE_SCREEN).height;
-	const ride: Ride = { scroller, from: scrolledSoFar(beginning.scene.scrolled, scroller), scale };
+	const ride: Ride = { blocks, from: scrolledInAll(beginning.scene.scrolled, blocks), scale };
 	return { kind: 'scroll', ride };
 }
 

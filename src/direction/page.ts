@@ -9,16 +9,21 @@
 import type { Frame } from 'playwright-core';
 import type { Box } from '../domain/geometry.ts';
 import { A_FUNCTION_SAID, type Kind, aFunction } from '../domain/handed.ts';
+import type { BlockKey } from '../domain/placement.ts';
 import type { TypedText } from '../domain/typing.ts';
 
 /** How far a scroll goes: so many pixels down the target's own scroll, or until the target stands `top` below the top of what scrolls it. */
 export type ScrollAim =
 	{ readonly kind: 'by'; readonly pixels: number } | { readonly kind: 'to'; readonly top: number };
 
-/** Where a scroll starts and ends, as far as the block that scrolls goes, and the way to set it. */
+/**
+ * Where a scroll starts and ends, as far as the block that scrolls goes, the key the page knows that block by, and the
+ * way to set it.
+ */
 export interface ScrollCourse {
 	readonly start: number;
 	readonly end: number;
+	readonly block: BlockKey;
 	readonly scroll: (top: number) => Promise<void>;
 }
 
@@ -67,6 +72,12 @@ export interface FilmedPage {
 	readonly groundBehind: (target: string) => Promise<string>;
 	/** The scroll a target takes to reach its aim; a target the page lacks is refused at once. */
 	readonly scrollCourse: (target: string, aim: ScrollAim) => Promise<ScrollCourse>;
+	/**
+	 * Every block whose scroll carries a source, up to the page's root, by the keys the page knows them by: those the
+	 * first `every` blocks a selector matches all stand in; for a box of the screen, the block the page shows at its
+	 * middle and those it stands in. A source the page lacks is refused at once.
+	 */
+	readonly blocksHolding: (source: string | Box, every: number) => Promise<readonly BlockKey[]>;
 	/** Keys a person types into whatever holds the page's keyboard. */
 	readonly type: (text: string) => Promise<void>;
 	readonly press: (key: string) => Promise<void>;

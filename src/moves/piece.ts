@@ -31,7 +31,6 @@ import {
 	A_COLOUR,
 	A_COUNT,
 	A_PIXELS,
-	A_SELECTOR,
 	A_SHARE,
 	type Form,
 	type Kind,
@@ -133,8 +132,8 @@ export interface BodyScript {
  * the hole it leaves and the line the lines from it to its source are drawn in, where the film names them; the
  * `picture` it is drawn from, the page's as it changes, `'following'`, where the film names none, or one of its source
  * held as it is lifted, `'held'`; how it comes up; which piece; the world it stands `inside`, which the eye moves
- * through, or the group it stands in, if either; its `body` in the world, if the film names one; and the block of
- * the page whose scroll it `rides` in the world, a selector, as the film names it to `page.scrollBy`, if it names one.
+ * through, or the group it stands in, if either; its `body` in the world, if the film names one; and whether it
+ * `rides` its block in the world, `'its block'`, carried up by the film's scrolls of every block its source stands in.
  */
 export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript {
 	readonly every?: number;
@@ -145,7 +144,7 @@ export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScri
 	readonly picture?: PiecePicture['kind'];
 	readonly inside?: 'world';
 	readonly body?: BodyScript;
-	readonly rides?: string;
+	readonly rides?: 'its block';
 }
 
 /** How a hole is filled, as a piece is made: with the ground the page draws behind a block a selector names, or a colour. */
@@ -214,7 +213,8 @@ const PIECE_FORM: Form<PieceScript> = {
 	// A piece stands inside the world alone: it lies in the window only where it is carried onto the page (`onto`)
 	inside: new Literal('world'),
 	body: new OfForm(BODY_FORM, 'a body: { thickness, walls, glow }'),
-	rides: A_SELECTOR,
+	// The page finds the blocks a piece's source stands in, so the film names none, and none by a selector it mistypes
+	rides: new Literal('its block'),
 	...IN_PLACE_SHOW_FORM,
 	...NAMED_FORM,
 	...GROUPED_FORM
@@ -224,9 +224,9 @@ const PIECE_FORM: Form<PieceScript> = {
  * where the camera shows it, cut to the part it shows, its corners as round as the film names, leaving the hole and
  * drawing the lines the film names, drawn from the picture the film names: in place of any piece of its name, in its
  * own way, fading up whole, or in a way of livereel's the film names, with the body the film names; in the world,
- * riding the scroll of the block a selector `rides` names, where the film names one. A hole over a box of the screen,
- * which has no block to read the ground behind, is refused unless the film names its colour; a pit on a piece with no
- * body, whose colour its walls take, is refused.
+ * riding its block as the film scrolls any block the target stands in, where the film asks. A hole over a box of the
+ * screen, which has no block to read the ground behind, is refused unless the film names its colour; a pit on a piece
+ * with no body, whose colour its walls take, is refused.
  */
 export function show(target: Target, script: PieceScript = {}): Move {
 	assertKind(target, A_TARGET, "piece.show's target");
@@ -246,8 +246,8 @@ export function show(target: Target, script: PieceScript = {}): Move {
 }
 
 /**
- * A piece coming up lifted off a target as the film asks: riding the scroll of the block it names, where it names one,
- * standing where it comes up else.
+ * A piece coming up lifted off a target as the film asks: riding its block, the blocks it stands in, where the film
+ * asks so, standing where it comes up else.
  */
 function pieceComing(target: Target, script: PieceScript, lifting: Lifting): Move {
 	if (script.rides === undefined) {
@@ -255,7 +255,7 @@ function pieceComing(target: Target, script: PieceScript, lifting: Lifting): Mov
 			lifted(beginning, target, lifting)
 		);
 	}
-	return objectShowRiding(PIECE, 'piece.show', script, script.rides, NO_PLACE, THE_STEPS_CURVE, (beginning) =>
+	return objectShowRiding(PIECE, 'piece.show', script, target, lifting.every, NO_PLACE, THE_STEPS_CURVE, (beginning) =>
 		lifted(beginning, target, lifting)
 	);
 }

@@ -645,6 +645,58 @@ test('the ground behind a block is the first the blocks it stands in draw whole,
 	expect(grounds).toEqual(['#f6f7f9ff', '#123456ff', '#ffffffff']);
 });
 
+// A page whose column scrolls of itself, a row in it, and the page tall enough to scroll the column away
+const SCROLLING = new URL('./scrolling.html', import.meta.url).href;
+
+/** The keys a page reads off itself as a take keys blocks: blocks scrolled, and the blocks a row stands in. */
+interface KeysRead {
+	readonly byTheColumn: number;
+	readonly byItsTestId: number;
+	readonly toTheRow: number;
+	readonly toTheColumn: number;
+	readonly holdingTheRow: readonly number[];
+	readonly underTheFirstRowsBox: readonly number[];
+	readonly afterGoingOn: number;
+}
+
+test('the page keys a block alike however a film selects it, by a scroll of it, a scroll to a block it scrolls, and among the blocks one stands in, by its selector or a box of the screen; a block of a document the frame goes on to takes a new key', async () => {
+	const read: KeysRead[] = [];
+	const steps = [
+		act(async (context: ActContext) => {
+			const page = new PlaywrightPage(context.page, context.page.page().keyboard);
+			const byTheColumn = (await page.scrollCourse('#column', { kind: 'by', pixels: 10 })).block;
+			const byItsTestId = (await page.scrollCourse('[data-testid=column]', { kind: 'by', pixels: 10 })).block;
+			const toTheRow = (await page.scrollCourse('#row', { kind: 'to', top: 0 })).block;
+			const toTheColumn = (await page.scrollCourse('#column', { kind: 'to', top: 0 })).block;
+			const holdingTheRow = await page.blocksHolding('[data-testid=row]', 1);
+			const underTheFirstRowsBox = await page.blocksHolding(await page.box('[data-testid=first]', 1), 1);
+			await context.page.goto(SCROLLING);
+			const afterGoingOn = (await page.scrollCourse('#column', { kind: 'by', pixels: 10 })).block;
+			read.push({ byTheColumn, byItsTestId, toTheRow, toTheColumn, holdingTheRow, underTheFirstRowsBox, afterGoingOn });
+		})
+	];
+	const film = defineFilm({
+		formats: { small: SMALL },
+		address: SCROLLING,
+		ready: (context) => context.page.locator('#column').waitFor(),
+		steps: () => steps
+	}).formats.get('small')!;
+	await shoot(film, shootingInto(new EveryFrameCounted(), 'software'));
+	const [keys] = read;
+	// Each row stands in the column, the body and the document's root, which scrolls the page; a box over the first row
+	// rides the row shown at its middle too
+	const [column, , root] = keys!.holdingTheRow;
+	expect(keys).toEqual({
+		byTheColumn: column,
+		byItsTestId: column,
+		toTheRow: column,
+		toTheColumn: root,
+		holdingTheRow: [column, expect.any(Number), root],
+		underTheFirstRowsBox: [expect.any(Number), ...keys!.holdingTheRow],
+		afterGoingOn: expect.toSatisfy((key: number) => !keys!.holdingTheRow.includes(key))
+	});
+});
+
 // A page that keeps time of its own: it echoes what is typed into it a moment after the typing stops, and says it is
 // ready a moment after it opens
 const TIMED = new URL('./timed.html', import.meta.url).href;

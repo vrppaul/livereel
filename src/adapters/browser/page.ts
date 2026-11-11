@@ -6,12 +6,20 @@
  * The functions handed to the page run there, each alone: none may call another of this module. The block a scroll
  * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a
  * canvas of the page's own, which turns any colour CSS writes, in whatever form, into its channels.
+ *
+ * A block a scroll moves, and every block a piece riding its block stands in, is told by a key the take gives it, the
+ * same however a film selects the block, so a scroll and a ride meet on the block itself, never on a selector's text.
+ * The keys are held in the frame's document, keyed by the elements themselves, by a handle the take keeps: the page is
+ * not changed to name a block, and a document the frame goes on to starts with none, its blocks keyed past the last
+ * key given.
  */
 import type { Frame, JSHandle, Keyboard } from 'playwright-core';
 import { type Channels, hexOf } from '../../domain/colour.ts';
 import { FilmError } from '../../domain/errors.ts';
-import { type Box, boxAround } from '../../domain/geometry.ts';
+import { type Box, MIDDLE_SHARE, type Point, boxAround, pointAt } from '../../domain/geometry.ts';
+import { described } from '../../domain/handed.ts';
 import type { ActContext, BlockHolding, FilmedPage, ScrollAim, ScrollCourse } from '../../direction/page.ts';
+import type { BlockKey } from '../../domain/placement.ts';
 import type { TypedText } from '../../domain/typing.ts';
 
 /** The page a take films as moves read it, and as an act is handed it: live, or the film's set (`set.ts`). */
@@ -46,8 +54,31 @@ interface GroundAsked {
 	readonly whole: number;
 }
 
+/**
+ * The keys a take gave blocks of one document of the frame, held in that document by a handle alone: no global, no
+ * attribute, nothing the page or a selector sees, and gone with the document.
+ */
+type BlockKeys = WeakMap<Element, BlockKey>;
+
+/** What the page is handed to key blocks: the keys its document holds, the blocks, and the key a new block takes first. */
+interface KeysAsked {
+	readonly keys: BlockKeys;
+	readonly blocks: Element[];
+	readonly next: BlockKey;
+}
+
+/** The keys of the blocks asked, in their order, and how many of them were given anew. */
+interface BlocksKeyed {
+	readonly keys: BlockKey[];
+	readonly given: number;
+}
+
 // What a block's overflow is when it scrolls of itself
 const SCROLLS = new Set(['auto', 'scroll']);
+// The keys of the frame's document before a move asks for one
+const NONE_KEPT = null;
+// How many blocks the page shows at a point where it shows none
+const NONE_SHOWN = 0;
 // What the page answers where a CSS selector selects no block
 const NONE_SELECTED = null;
 // A canvas of one pixel reads a colour's alpha from 0 to 255, the most, where the colour is drawn whole
@@ -59,6 +90,11 @@ const WHITE: Channels = { red: 255, green: 255, blue: 255, alpha: 255 };
 export class PlaywrightPage implements FilmedPage {
 	readonly frame: Frame;
 	readonly keyboard: Keyboard;
+	// The keys of the blocks of the frame's document, made as a move first asks for one, and anew in each document the
+	// frame comes to after
+	private keys: JSHandle<BlockKeys> | null = NONE_KEPT;
+	// How many keys the take has given, in every document, which the next new block's key follows
+	private keysGiven = 0;
 
 	constructor(frame: Frame, keyboard: Keyboard) {
 		this.frame = frame;
@@ -85,10 +121,14 @@ export class PlaywrightPage implements FilmedPage {
 		const block = await this.found(target);
 		switch (aim.kind) {
 			case 'by':
-				return courseOn(block, await block.evaluate(courseBy, aim.pixels));
+				return this.courseOn(block, await block.evaluate(courseBy, aim.pixels));
 			case 'to':
 				return this.courseTo(block, aim.top);
 		}
+	}
+
+	async blocksHolding(source: string | Box, every: number): Promise<readonly BlockKey[]> {
+		return this.keysOf(await this.holdersOf(source, every));
 	}
 
 	/**
@@ -129,10 +169,58 @@ export class PlaywrightPage implements FilmedPage {
 		return blocks.first().evaluateHandle(itself);
 	}
 
+	/**
+	 * Every block whose scroll carries a source: those the first `every` blocks a selector matches all stand in; for a
+	 * box of the screen, the block the page shows at its middle, whose own scroll moves what shows there, and those it
+	 * stands in. Refused at once where the page has no such source.
+	 */
+	private async holdersOf(source: string | Box, every: number): Promise<JSHandle<Element[]>> {
+		if (typeof source === 'string') {
+			const blocks = (await this.frame.locator(source).elementHandles()).slice(0, every);
+			if (blocks.length === 0) throw nothingMatches(source);
+			return this.frame.evaluateHandle(holdersOfAll, blocks);
+		}
+		const shown = await this.frame.evaluateHandle(shownAndHoldersAt, pointAt(source, MIDDLE_SHARE));
+		if ((await shown.evaluate(countOf)) === NONE_SHOWN) {
+			throw new FilmError(`the page shows no block at the middle of box ${described(source)}`);
+		}
+		return shown;
+	}
+
 	/** The nearest block that scrolls the target, scrolled until the target stands `top` below its top. */
 	private async courseTo(block: JSHandle<Element>, top: number): Promise<ScrollCourse> {
 		const scroller = await block.evaluateHandle(scrollerOf, [...SCROLLS]);
-		return courseOn(scroller, await scroller.evaluate(courseTo, { target: block, top }));
+		return this.courseOn(scroller, await scroller.evaluate(courseTo, { target: block, top }));
+	}
+
+	/** A course found on a block that scrolls, with the key the page knows that block by. */
+	private async courseOn(scroller: JSHandle<Element>, course: CourseFound): Promise<ScrollCourse> {
+		const [block] = await this.keysOf(await scroller.evaluateHandle(alone));
+		// The page hands back a key for each block it is handed: one here, which the type checker cannot see
+		if (block === undefined) throw new Error('the page keyed no block it was handed');
+		return { start: course.start, end: course.end, block, scroll: (top) => scroller.evaluate(scrollTopSet, top) };
+	}
+
+	/**
+	 * The keys of blocks of the frame's document, in their order: each the one the take gave it, or the next the take
+	 * has not given, in any document, so no two blocks of a take share one.
+	 */
+	private async keysOf(blocks: JSHandle<Element[]>): Promise<readonly BlockKey[]> {
+		const keyed = await this.frame.evaluate(blocksKeyed, { keys: await this.keysNow(), blocks, next: this.keysGiven });
+		this.keysGiven += keyed.given;
+		return keyed.keys;
+	}
+
+	/**
+	 * The keys of the blocks of the frame's document as it stands: those kept while their document is still the frame's,
+	 * new ones once the frame has come to another document, where a handle into the one it left is refused.
+	 */
+	private async keysNow(): Promise<JSHandle<BlockKeys>> {
+		const kept = this.keys;
+		if (kept !== NONE_KEPT && (await stillOpen(kept))) return kept;
+		const made = await this.frame.evaluateHandle(newKeys);
+		this.keys = made;
+		return made;
 	}
 }
 
@@ -140,8 +228,14 @@ function nothingMatches(target: string): FilmError {
 	return new FilmError(`nothing on the page matches ${target}`);
 }
 
-function courseOn(scroller: JSHandle<Element>, course: CourseFound): ScrollCourse {
-	return { start: course.start, end: course.end, scroll: (top) => scroller.evaluate(scrollTopSet, top) };
+/** Whether a handle is into the document its frame shows still: one into a document the frame has left is refused. */
+async function stillOpen(handle: JSHandle): Promise<boolean> {
+	try {
+		await handle.evaluate(() => undefined);
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 // What follows runs in the page, each function handed over alone
@@ -222,6 +316,65 @@ function scrollTopSet(block: Element, top: number): void {
 function courseBy(block: Element, pixels: number): CourseFound {
 	const furthest = block.scrollHeight - block.clientHeight;
 	return { start: block.scrollTop, end: Math.max(0, Math.min(block.scrollTop + pixels, furthest)) };
+}
+
+/** A block alone in a list, as the blocks a key is asked for are handed. */
+function alone(block: Element): Element[] {
+	return [block];
+}
+
+/**
+ * The block the page shows at a point of the screen, the innermost drawn there, and every block it stands in, nearest
+ * first; none where it shows none.
+ */
+function shownAndHoldersAt(point: Point): Element[] {
+	const blocks: Element[] = [];
+	for (let block = document.elementFromPoint(point.left, point.top); block !== null; block = block.parentElement) {
+		blocks.push(block);
+	}
+	return blocks;
+}
+
+/** How many blocks a list the page holds has, read without handing the blocks out of it. */
+function countOf(blocks: Element[]): number {
+	return blocks.length;
+}
+
+/** No key given yet in a document: each block of it keyed as it is first asked for. */
+function newKeys(): BlockKeys {
+	return new WeakMap();
+}
+
+/**
+ * Every block that all the blocks stand in, nearest first, up to the document's root: the blocks whose scrolls carry
+ * them, the page's own scroll among them, as the document's root or its body is what scrolls the page.
+ */
+function holdersOfAll(blocks: Node[]): Element[] {
+	const holders: Element[] = [];
+	let holder = blocks[0]?.parentElement ?? null;
+	while (holder !== null) {
+		const standing = holder;
+		if (blocks.every((block) => standing.contains(block))) holders.push(standing);
+		holder = standing.parentElement;
+	}
+	return holders;
+}
+
+/** The keys of blocks: each the one its document holds for it, or the next new one, which the document then holds. */
+function blocksKeyed(asked: KeysAsked): BlocksKeyed {
+	const keys: BlockKey[] = [];
+	let next = asked.next;
+	for (const block of asked.blocks) {
+		const kept = asked.keys.get(block);
+		if (kept === undefined) {
+			asked.keys.set(block, next);
+			keys.push(next);
+			next += 1;
+		} else {
+			keys.push(kept);
+		}
+	}
+	return { keys, given: next - asked.next };
 }
 
 /** The nearest block above a target that scrolls of itself, or the page's own scroll. */
