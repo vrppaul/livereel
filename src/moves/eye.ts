@@ -12,7 +12,8 @@
  * The eye flies over the page's window by a move of its own (`src/domain/flight.ts`): from where it stands, along legs
  * to spots over blocks of the page, its gaze turned by keys of its own. The blocks are read once, as the move begins,
  * as the camera shows the page in the window then, and the eye rides the window from then on, so a window that leans
- * or travels carries it, until `eye.to` sends it into the room again.
+ * or travels carries it, until `eye.to` sends it into the room again. Its legs are timed apart where every one names
+ * how long it takes: then their times alone pace it, and its share of the step goes on its own time, on no curve.
  *
  * The eye comes before a block of the page by a move of its own, square to it or turned from square, the block filling
  * a share of the frame, its middle at a point of the frame: the block is read once, as the move begins, where the camera
@@ -47,18 +48,22 @@ import { IN_THE_WORLD, ON_ITS_PLANE, ON_THE_PAGE, fromItsMiddle } from '../domai
 import { FilmError } from '../domain/errors.ts';
 import {
 	AN_OWN_FIGURE,
+	EVENLY,
 	type Flight,
 	type GazeKey,
 	JOININGS,
 	type Joining,
 	type Leg,
+	type LegsTimed,
 	type OwnFigure,
 	type Way,
 	flownAt,
 	gazeOf,
+	paceOf,
 	pointOnTheWay,
 	wayOf
 } from '../domain/flight.ts';
+import { linear } from '../domain/curves.ts';
 import { AT_THE_EYE, focusDistanceOf } from '../domain/focus.ts';
 import {
 	type Box,
@@ -106,6 +111,7 @@ import {
 	THE_FIRST,
 	TIMING_FORM,
 	type Target,
+	type Timing,
 	type TimingScript,
 	shownBox,
 	timingOf
@@ -124,8 +130,16 @@ export interface Over {
 	readonly height: number;
 }
 
+/**
+ * How long a leg takes beside the flight's other legs, in proportion to theirs: legs that take 2, 2.5 and 3 split a
+ * move of 7.5 s into those seconds. Every leg names it, or none.
+ */
+interface TimedLeg {
+	readonly takes?: number;
+}
+
 /** A leg flown straight to a point over the page, or smoothly through it, as the way joins its legs. */
-interface LegTo {
+interface LegTo extends TimedLeg {
 	readonly to: Over;
 }
 
@@ -139,7 +153,7 @@ interface LegBending extends LegTo {
 }
 
 /** A leg flown straight on along the way's last heading, `ahead` times as long as the leg before. */
-interface LegAhead {
+interface LegAhead extends TimedLeg {
 	readonly ahead: number;
 }
 
@@ -147,7 +161,7 @@ interface LegAhead {
  * A leg flown along a figure the film draws in three.js, its points x across, y down and z out in pixels of a frame
  * 1080 high, set off from where the leg starts.
  */
-interface LegAlong {
+interface LegAlong extends TimedLeg {
 	readonly along: OwnFigure;
 }
 
@@ -267,11 +281,13 @@ const AN_OVER = new OfForm<Over>(
 	{ over: needed(A_TARGET), height: needed(A_SIZE) },
 	'a spot over the page: { over, height }, a block and how high over it in pixels of a frame 1080 high, more than 0'
 );
+const A_LEGS_TIME = new Plain(isMoreThanNone, 'how long the leg takes beside the others, more than 0');
 const A_LEG_BENDING = new OfForm<LegBending>(
 	{
 		to: needed(AN_OVER),
 		arriving: needed(A_NUMBER),
-		bend: needed(new Plain(isMoreThanNone, "a share of the leg's chord, more than 0"))
+		bend: needed(new Plain(isMoreThanNone, "a share of the leg's chord, more than 0")),
+		takes: A_LEGS_TIME
 	},
 	'a leg bending: { to, arriving, bend }'
 );
@@ -280,15 +296,21 @@ const A_LEG: Kind<LegScript> = new FormByName<LegScript>(
 		[
 			'ahead',
 			new OfForm<LegAhead>(
-				{ ahead: needed(new Plain(isMoreThanNone, 'how many times as long as the leg before, more than 0')) },
+				{
+					ahead: needed(new Plain(isMoreThanNone, 'how many times as long as the leg before, more than 0')),
+					takes: A_LEGS_TIME
+				},
 				'a leg ahead: { ahead }'
 			)
 		],
-		['along', new OfForm<LegAlong>({ along: needed(AN_OWN_FIGURE) }, 'a leg along a figure: { along }')],
+		[
+			'along',
+			new OfForm<LegAlong>({ along: needed(AN_OWN_FIGURE), takes: A_LEGS_TIME }, 'a leg along a figure: { along }')
+		],
 		['arriving', A_LEG_BENDING],
 		['bend', A_LEG_BENDING]
 	],
-	new OfForm<LegTo>({ to: needed(AN_OVER) }, 'a leg: { to }'),
+	new OfForm<LegTo>({ to: needed(AN_OVER), takes: A_LEGS_TIME }, 'a leg: { to }'),
 	'a leg: { to }, { to, arriving, bend }, { ahead } or { along }'
 );
 const A_LEG_NUMBER: Kind<number> = new Plain(isLegNumber, "a leg's number, 0 for the first");
@@ -390,7 +412,7 @@ export function to(place: EyePlaceOrRest, script: EyeToScript = {}): Move {
 
 /**
  * The eye flown over the page's window along a way of legs, from where it stands, its gaze turned by the keys the film
- * names, riding the window from then on.
+ * names, riding the window from then on; paced by the move's curve, or by its legs' times where the film names them.
  */
 export function fly(way: readonly LegScript[], script: FlyScript = {}): Move {
 	assertKind(way, A_FLIGHTS_WAY, `${EYE_FLY}'s way`);
@@ -400,11 +422,12 @@ export function fly(way: readonly LegScript[], script: FlyScript = {}): Move {
 	const tip = script.tip ?? NO_GAZE_KEYS;
 	refuseKeysOff(heading, way, 'heading');
 	refuseKeysOff(tip, way, 'tip');
+	const timed = legsTimedOf(way);
 	return {
 		part: 'eye',
 		valueNames: STANDING,
-		timing: timingOf(script),
-		begin: (beginning) => flown(beginning, way, script.shape ?? SMOOTH, heading, tip)
+		timing: flightsTiming(script, timed),
+		begin: (beginning) => flown(beginning, way, script.shape ?? SMOOTH, timed, heading, tip)
 	};
 }
 
@@ -498,6 +521,38 @@ function travelling(path: Path<Viewpoint>, inside: Eye['inside']): Change {
 	return (scene, progress) => withEye(scene, { ...scene.eye, ...path.at(progress), inside });
 }
 
+/**
+ * How a film times a flight's legs: not at all where no leg names how long it takes, apart where every leg does;
+ * refused where some legs name it and some do not.
+ */
+function legsTimedOf(way: readonly LegScript[]): LegsTimed {
+	const takes = way.flatMap((leg) => (leg.takes === undefined ? [] : [leg.takes]));
+	if (takes.length === 0) return EVENLY;
+	if (takes.length === way.length) return { kind: 'apart', takes };
+	const untimed = way.findIndex((leg) => leg.takes === undefined);
+	throw new FilmError(
+		`${EYE_FLY}'s leg ${String(untimed)} names no time it takes, beside legs that do: name takes for every leg, or for none`
+	);
+}
+
+/**
+ * A flight's timing: its share of its step, on the move's curve where its legs are not timed; where they are, on its
+ * share's time unbent, as its legs' times pace it from rest to rest, and refused where the film names a curve too.
+ */
+function flightsTiming(script: FlyScript, timed: LegsTimed): Timing {
+	switch (timed.kind) {
+		case 'evenly':
+			return timingOf(script);
+		case 'apart':
+			if (script.ease !== undefined) {
+				throw new FilmError(
+					`${EYE_FLY}'s legs name how long each takes, which paces the flight from rest to rest: leave its ease out`
+				);
+			}
+			return timingOf({ ...script, ease: linear });
+	}
+}
+
 /** Refuses gaze keys that name no leg of the way, or a leg no farther along than the key before. */
 function refuseKeysOff(keys: readonly GazeKeyScript[], way: readonly LegScript[], named: string): void {
 	let legBefore: number | null = null;
@@ -518,13 +573,14 @@ function refuseKeysOff(keys: readonly GazeKeyScript[], way: readonly LegScript[]
 
 /**
  * The eye flying from where it stands as the move begins, read riding the window as it stands then: its legs' points
- * over the blocks they name, read off the page then, its way, and its gaze from how it looks then through the rules its
- * keys name, the blocks they name read then too.
+ * over the blocks they name, read off the page then, its way and its pace along it, and its gaze from how it looks then
+ * through the rules its keys name, the blocks they name read then too.
  */
 async function flown(
 	beginning: Beginning,
 	way: readonly LegScript[],
 	joining: Joining,
+	timed: LegsTimed,
 	heading: readonly HeadingKeyScript[],
 	tip: readonly TipKeyScript[]
 ): Promise<Change> {
@@ -543,6 +599,7 @@ async function flown(
 	for (const key of tip) tips.push(await tipRead(beginning, camera, flightsWay, key));
 	const flight: Flight = {
 		way: flightsWay,
+		pace: paceOf(timed, flightsWay),
 		heading: [{ share: ITS_START, rule: { kind: 'degrees', degrees: gaze.heading } }, ...headings],
 		tip: [{ share: ITS_START, rule: { kind: 'degrees', degrees: gaze.tip } }, ...tips],
 		roll: gaze.roll,

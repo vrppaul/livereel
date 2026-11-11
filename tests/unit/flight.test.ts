@@ -3,7 +3,7 @@ import { CatmullRomCurve3, EllipseCurve, LineCurve3, Vector3 } from 'three';
 import { expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
 import { eyeAtRest } from '../../src/domain/eye.ts';
-import { type Flight, type Leg, type Way, flownAt, gazeOf, wayOf } from '../../src/domain/flight.ts';
+import { EVENLY, type Flight, type Leg, type Way, flownAt, gazeOf, paceOf, wayOf } from '../../src/domain/flight.ts';
 import { FOCAL_LENGTH } from './fakes.ts';
 
 const SETTING_OFF = { across: 0, down: 0, out: 1000 };
@@ -20,6 +20,12 @@ const STEPS = 400;
 const THE_EYE = { focalLength: FOCAL_LENGTH, frameHeight: 1080 };
 // Looking straight down, its top up the page
 const STRAIGHT_DOWN = { kind: 'degrees', degrees: -90 } as const;
+const UP_THE_PAGE = { kind: 'degrees', degrees: 0 } as const;
+// Two legs straight across, a long one and a short one after it
+const LONG_THEN_SHORT: readonly Leg[] = [
+	{ kind: 'to', to: { across: 1000, down: 0, out: 1000 } },
+	{ kind: 'to', to: { across: 1100, down: 0, out: 1000 } }
+];
 
 /** How near a way's heading just before its first leg's end points along its heading just after: 1 for one way. */
 function headingKeptThrough(way: Way): number {
@@ -32,9 +38,19 @@ function lowestOf(way: Way): number {
 	return Math.min(...[...Array(STEPS + 1).keys()].map((step) => way.curve.getPoint(step / STEPS).z));
 }
 
-/** A flight along a way, heading as its keys say, looking straight down all the way. */
+/** A flight along a way, heading as its keys say, looking straight down all the way, as far in each share of its time. */
 function flightAlong(way: Way, heading: Flight['heading']): Flight {
-	return { way, heading, tip: [{ share: 0, rule: STRAIGHT_DOWN }], roll: 0, eye: THE_EYE };
+	return { way, pace: EVENLY, heading, tip: [{ share: 0, rule: STRAIGHT_DOWN }], roll: 0, eye: THE_EYE };
+}
+
+/** A flight along a way, looking straight down up the page, each leg taking its time beside the others'. */
+function flightTimed(way: Way, takes: readonly number[]): Flight {
+	return { ...flightAlong(way, [{ share: 0, rule: UP_THE_PAGE }]), pace: paceOf({ kind: 'apart', takes }, way) };
+}
+
+/** How far across the eye stands flying a flight, at each of so many even steps of its time, its ends among them. */
+function acrossAtSteps(flight: Flight, steps: number): readonly number[] {
+	return [...Array(steps + 1).keys()].map((step) => flownAt(flight, step / steps).at.across);
 }
 
 test("a smooth way passes a leg's end heading on through it, where a straight one turns there at a corner", () => {
@@ -124,6 +140,31 @@ test('a heading along the way turns the top of an eye looking down the way it fl
 	const way = wayOf(SETTING_OFF, [TURNING[0]!], 'straight', 'eye.fly');
 	const top = flownAt(flightAlong(way, [{ share: 0, rule: { kind: 'along' } }]), 0.5).up;
 	expect([top.across, top.down]).toEqual([expect.closeTo(1), expect.closeTo(0)]);
+});
+
+test("a flight whose legs take their time apart passes each leg's end at its share of the time, however long the leg: a leg of 1000 taking 3, one of 100 taking 1", () => {
+	const timed = flightTimed(wayOf(SETTING_OFF, LONG_THEN_SHORT, 'straight', 'eye.fly'), [3, 1]);
+	expect([flownAt(timed, 0.75).at.across, flownAt(timed, 1).at.across]).toEqual([
+		expect.closeTo(1000),
+		expect.closeTo(1100)
+	]);
+});
+
+test('a flight whose legs take their time apart sets off from rest and comes to rest: a thousandth of its time from either end, it stands within a twentieth of a pixel of it', () => {
+	const timed = flightTimed(wayOf(SETTING_OFF, LONG_THEN_SHORT, 'straight', 'eye.fly'), [3, 1]);
+	expect([flownAt(timed, 0.001).at.across, 1100 - flownAt(timed, 0.999).at.across]).toEqual([
+		expect.closeTo(0, 1),
+		expect.closeTo(0, 1)
+	]);
+});
+
+test('a flight whose legs take their time apart never goes back along its way: a leg of 10 after one of 1000, each taking as long, is flown on to its end and no farther', () => {
+	const longThenTiny: readonly Leg[] = [LONG_THEN_SHORT[0]!, { kind: 'to', to: { across: 1010, down: 0, out: 1000 } }];
+	const across = acrossAtSteps(flightTimed(wayOf(SETTING_OFF, longThenTiny, 'straight', 'eye.fly'), [1, 1]), STEPS);
+	expect([across, Math.max(...across)]).toEqual([
+		[...across].sort((before, after) => before - after),
+		expect.closeTo(1010)
+	]);
 });
 
 test('the eye at rest, read as it rides a window standing whole and face-on, heads up the page looking straight down onto it, unrolled', () => {

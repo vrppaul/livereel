@@ -3672,6 +3672,36 @@ test("an eye flown along a film's own curve sets off along it from where it stan
 	]);
 });
 
+test("an eye flown on legs that take their time apart stands over the first leg's spot as that leg's share of the move ends, the move's progress its time unbent", async () => {
+	const timed = eye.fly([
+		{ to: OVER_THE_BLOCK, takes: 1 },
+		{ ahead: 0.5, takes: 3 }
+	]);
+	const flying = await timed.begin(beginningOf(OPENING_IN_SMALL));
+	const overTheBlock = await setAt(eye.fly([{ to: OVER_THE_BLOCK }]), OPENING_IN_SMALL, 1);
+	const firstLegEnds = (await flying(OPENING_IN_SMALL, 0.25)).eye.at;
+	expect([firstLegEnds.across, firstLegEnds.down, firstLegEnds.out, timed.timing.ease]).toEqual([
+		expect.closeTo(overTheBlock.eye.at.across),
+		expect.closeTo(overTheBlock.eye.at.down),
+		expect.closeTo(overTheBlock.eye.at.out),
+		linear
+	]);
+});
+
+test('a flight on legs timed apart refused as it is made: a leg taking no time, a leg naming none beside one that does, a curve of its own', () => {
+	expect(() => eye.fly([{ to: OVER_THE_BLOCK, takes: 0 }])).toThrow(
+		new FilmError("eye.fly's way[0]'s takes is 0: it is how long the leg takes beside the others, more than 0")
+	);
+	expect(() => eye.fly([{ to: OVER_THE_BLOCK, takes: 2 }, { ahead: 1 }])).toThrow(
+		new FilmError("eye.fly's leg 1 names no time it takes, beside legs that do: name takes for every leg, or for none")
+	);
+	expect(() => eye.fly([{ to: OVER_THE_BLOCK, takes: 2 }], { ease: linear })).toThrow(
+		new FilmError(
+			"eye.fly's legs name how long each takes, which paces the flight from rest to rest: leave its ease out"
+		)
+	);
+});
+
 test('a flight refused as it is made: a way of no leg, a leg in no form of one, a tip past straight down, a key by a leg past the way or no farther than the key before', () => {
 	expect(() => eye.fly([])).toThrow(new FilmError("eye.fly's way has no leg: name one or more"));
 	expect(() => eye.fly([{ to: { over: '#block', height: 0 } }])).toThrow(

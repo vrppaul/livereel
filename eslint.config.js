@@ -181,7 +181,9 @@ const SCRIPT_KEYWORDS = [
 	'pixels',
 	'top',
 	// The leg of a flight a key of the eye's gaze is reached by, counted in place as the legs are listed
-	'by'
+	'by',
+	// How long a leg of a flight takes beside the others
+	'takes'
 ];
 const KEYWORD = `/^(${SCRIPT_KEYWORDS.join('|')})$/`;
 const A_NUMBER = 'Literal[raw=/^[0-9.]/]';

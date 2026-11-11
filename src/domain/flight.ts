@@ -6,16 +6,20 @@
  *
  * The way is three.js's curves, flown by its length, so the eye goes as far in each equal share of the flight's own
  * progress, whatever bends the way takes; past either end, as a curve that bounces takes it, it goes straight on along
- * the way there. A leg goes straight to a point; or bends, arriving at its point heading the way the film names, as a
- * parabola does, its turn as far before the point as `bend` shares of the leg's chord; or goes on ahead, straight along
- * the way's last heading, so many times as long as the leg before; or goes along a figure the film draws itself in
- * three.js, its points across, down and out, set off from where the leg starts wherever the film drew it, for a shape
- * no leg of livereel's draws. A leg after another leaves heading as that one arrived, but a figure, which leaves as the
- * film drew it. Where the way is smooth, a leg to a point arrives heading the way a figure after it leaves, or from
- * where it starts toward the next leg's point, as a Catmull-Rom curve does, but never higher or lower than the two
- * points either side of it: where the way sinks to a point and runs on level, it flattens there, as a smooth way that
- * sinks to a point and runs on low dipped under the page (the review of the flight, 2026-11-09). A way that reaches the
- * page's plane anywhere is refused.
+ * the way there. Or the film times its legs apart, each taking its share of the move's time, as the promo's run to the
+ * Story button flies legs of 2, 2.5 and 3 s (`to-the-story.js`): the eye passes each leg's end as its share ends, on a
+ * cubic Hermite curve of the way's length over the time through those knots, from rest to rest, as fast through each
+ * knot as from the knot before to the knot after but never running past the next and back. A leg goes straight to a
+ * point; or bends, arriving at its point heading the way the film names, as a parabola does, its turn as far before
+ * the point as `bend` shares of the leg's chord; or goes on ahead, straight along the way's last heading, so many
+ * times as long as the leg before; or goes along a figure the film draws itself in three.js, its points across, down
+ * and out, set off from where the leg starts wherever the film drew it, for a shape no leg of livereel's draws. A leg
+ * after another leaves heading as that one arrived, but a figure, which leaves as the film drew it. Where the way is
+ * smooth, a leg to a point arrives heading the way a figure after it leaves, or from where it starts toward the next
+ * leg's point, as a Catmull-Rom curve does, but never higher or lower than the two points either side of it: where
+ * the way sinks to a point and runs on level, it flattens there, as a smooth way that sinks to a point and runs on low
+ * dipped under the page (the review of the flight, 2026-11-09). A way that reaches the page's plane anywhere is
+ * refused.
  *
  * The gaze is two values apart, as a person flying low over a page turns and tips their head: the heading, which way
  * on the window's plane the eye looks, in degrees from up the page clockwise, and the tip, how far its sight lifts off
@@ -31,7 +35,7 @@ import { FilmError } from './errors.ts';
 import type { Viewpoint } from './eye.ts';
 import { type Kind, Plain, isObjectOfValues } from './handed.ts';
 import { type Spot, radians } from './matrix.ts';
-import { easeInOutSine } from './curves.ts';
+import { easeInOutSine, hermiteBetween } from './curves.ts';
 import { between } from './toward.ts';
 
 /**
@@ -92,6 +96,29 @@ export interface Way {
 	readonly legsEnd: readonly number[];
 }
 
+/** A flight whose legs a film does not time: the eye goes as far along its way in each equal share of the move. */
+export const EVENLY = { kind: 'evenly' } as const;
+
+/** How a film times a flight's legs: not at all, or each leg's time apart, in proportion to the others'. */
+export type LegsTimed = typeof EVENLY | { readonly kind: 'apart'; readonly takes: readonly number[] };
+
+/** Where a leg of a flight timed apart ends, or the flight starts: a share of the move's time and of the way's length. */
+interface PaceMark {
+	readonly time: number;
+	readonly way: number;
+}
+
+/** A mark of a flight timed apart, and how fast the eye goes through it: shares of the way a share of the time. */
+interface PaceKnot extends PaceMark {
+	readonly speed: number;
+}
+
+/**
+ * How a flight goes along its way as its move goes on: as far in each equal share of the move; or through the knots of
+ * its legs timed apart, from rest to rest.
+ */
+type Pace = typeof EVENLY | { readonly kind: 'apart'; readonly knots: readonly PaceKnot[] };
+
 /**
  * How the eye sees as it flies: its focal length, how far ahead of it its aim stands, and how high the frame is in
  * pixels of a frame 1080 high, which a tip that holds a spot reads.
@@ -101,9 +128,10 @@ interface FlyingEye {
 	readonly frameHeight: number;
 }
 
-/** A flight worked out: its way, its gaze's keys, the roll it set off with, and the eye that flies it. */
+/** A flight worked out: its way, its pace along it, its gaze's keys, the roll it set off with, the eye that flies it. */
 export interface Flight {
 	readonly way: Way;
+	readonly pace: Pace;
 	readonly heading: GazeKeys;
 	readonly tip: GazeKeys;
 	readonly roll: number;
@@ -139,8 +167,10 @@ const A_PARABOLAS_TANGENT = 2;
 // A Catmull-Rom curve's tangent at a point is half the way from the point before it to the point after it
 const HALVES = 2;
 // A Hermite curve between two heights stays between them while its tangents are no steeper than three times the rise
-// (Fritsch and Carlson)
+// (Fritsch and Carlson); so too a pace between two knots
 const STEEPEST_AND_MONOTONE = 3;
+// How fast a flight timed by its legs goes as it sets off and as it comes to rest
+const AT_REST = 0;
 // How short a leg is to go nowhere, in pixels of a frame 1080 high
 const NOWHERE = 1e-6;
 // How many steps of a way are checked for a point on the page's plane or under it, its ends among them
@@ -196,10 +226,86 @@ export function gazeOf(eye: Viewpoint): Gaze {
 }
 
 /**
- * Where the eye flying stands, looks and its top points, a share of its way's length along, straight on past either
- * end: on its way, its gaze as its rules have it there, rolled as it set off till the first leg's end.
+ * A flight's pace along its way as a film times its legs: evenly; or through a knot where each leg ends, at the share of
+ * the move's time it and the legs before it take.
  */
-export function flownAt(flight: Flight, share: number): Viewpoint {
+export function paceOf(timed: LegsTimed, way: Way): Pace {
+	switch (timed.kind) {
+		case 'evenly':
+			return EVENLY;
+		case 'apart':
+			return { kind: 'apart', knots: knotsOf(timed.takes, way.legsEnd) };
+	}
+}
+
+/**
+ * The knots of legs timed apart: the flight's start, and each leg's end at the share of the time it and the legs before
+ * it take, beside the way's share it ends at; and how fast the eye goes through each.
+ */
+function knotsOf(takes: readonly number[], legsEnd: readonly number[]): readonly PaceKnot[] {
+	const whole = sumOf(takes);
+	const marks: readonly PaceMark[] = [
+		{ time: ITS_START, way: ITS_START },
+		...legsEnd.map((way, leg) => ({ time: sumOf(takes.slice(0, leg + 1)) / whole, way }))
+	];
+	return marks.map((mark, index) => ({ ...mark, speed: speedThrough(marks[index - 1], mark, marks[index + 1]) }));
+}
+
+/**
+ * How fast the eye goes through a mark of its pace, in shares of the way a share of the time: at rest at either end,
+ * where no mark stands before or after it; between, as fast as from the mark before to the mark after, as a Catmull-Rom
+ * curve goes, but no faster than three times the slower of the two legs either side, so it never runs past the next
+ * mark and back (Fritsch and Carlson).
+ */
+function speedThrough(before: PaceMark | undefined, mark: PaceMark, after: PaceMark | undefined): number {
+	if (before === undefined || after === undefined) return AT_REST;
+	const steepest = STEEPEST_AND_MONOTONE * Math.min(slopeBetween(before, mark), slopeBetween(mark, after));
+	return Math.min(slopeBetween(before, after), steepest);
+}
+
+/** How fast the eye goes from one mark of its pace to another, on average: shares of the way a share of the time. */
+function slopeBetween(start: PaceMark, end: PaceMark): number {
+	return (end.way - start.way) / (end.time - start.time);
+}
+
+/**
+ * The share of its way's length a flight has flown `progress` of its move along: as much on an even pace; through the
+ * knots of legs timed apart, on the cubic Hermite curve from the knot before to the knot after, at the end once past it.
+ */
+function wayFlown(pace: Pace, progress: number): number {
+	switch (pace.kind) {
+		case 'evenly':
+			return progress;
+		case 'apart':
+			return wayThroughKnots(pace.knots, progress);
+	}
+}
+
+/** The share of its way flown through the knots of legs timed apart, `progress` of its move along. */
+function wayThroughKnots(knots: readonly PaceKnot[], progress: number): number {
+	for (const [index, end] of knots.entries()) {
+		const start = knots[index - 1];
+		if (start !== undefined && progress <= end.time) {
+			const span = end.time - start.time;
+			const setOff = { value: start.way, speed: start.speed * span };
+			const arriving = { value: end.way, speed: end.speed * span };
+			return hermiteBetween(setOff, arriving, (progress - start.time) / span);
+		}
+	}
+	return ITS_END;
+}
+
+function sumOf(numbers: readonly number[]): number {
+	return numbers.reduce((sum, number) => sum + number, 0);
+}
+
+/**
+ * Where the eye flying stands, looks and its top points, `progress` of its move along, straight on past either end of
+ * its way: on its way as far as its pace has it then, its gaze as its rules have it there, rolled as it set off till the
+ * first leg's end.
+ */
+export function flownAt(flight: Flight, progress: number): Viewpoint {
+	const share = wayFlown(flight.pace, progress);
 	const onTheWay = Math.min(ITS_END, Math.max(ITS_START, share));
 	const way = flight.way.curve;
 	const at = way.getPointAt(onTheWay).addScaledVector(way.getTangentAt(onTheWay), (share - onTheWay) * way.getLength());

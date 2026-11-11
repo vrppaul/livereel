@@ -164,9 +164,14 @@ and the moves of each part of the scene:
   is handed. A leg after another leaves heading as that one arrived, but a figure, which leaves as the film drew it.
   Legs to spots join smoothly, `shape: 'smooth'`, never higher or lower than the spots either side, a leg to a spot
   before a figure arriving heading the way the figure leaves; or at corners, `'straight'`. The eye goes as far in
-  each equal share of the move's own curve, and straight on past the way's end on a curve that bounces. Its gaze is
-  two values apart: the heading, degrees from up the page clockwise, and the tip, how far its sight lifts off the
-  page, -90 looking straight down onto it, 0 level.
+  each equal share of the move's own curve, and straight on past the way's end on a curve that bounces; or, where
+  every leg names how long it `takes` beside the others, it passes each leg's end at that leg's share of the move's
+  time: `[{ to: A, takes: 2 }, { to: B, takes: 2.5 }, { to: C, takes: 3 }]` in a move of 7.5 s passes over A at 2 s
+  and B at 4.5 s, whatever their lengths, setting off from rest and coming to rest, through each leg's end as fast as
+  from the end before it to the end after it, but never so fast it would run past the next end and back. Timed so,
+  the flight takes its share of the step's time unbent, and names no `ease`. Its gaze is two values apart: the
+  heading, degrees from up the page clockwise, and the tip, how far its sight lifts off the page, -90 looking
+  straight down onto it, 0 level.
   Each follows rules reached by the end of a leg: degrees, a heading `toward` a block or `along: 'way'`, a tip
   `holding` a block that share down the frame, each read where the eye stands as it flies, so a block held stays held
   all along and on past the last key; between two rules the gaze eases from one to the other by the way flown, a
@@ -178,7 +183,8 @@ and the moves of each part of the scene:
   leg, a leg ahead first or one to where the eye stands, a figure that gives a point of no numbers, flat or of no
   length, a way that reaches
   the page, a height of none, a tip past ±90, a heading toward the block the eye arrives right over, a key by a leg
-  the way has not or no later than the key before
+  the way has not or no later than the key before, a leg that takes no time, one naming none beside one that names
+  how long it takes, and an `ease` beside legs that name it
 - `eye.onto(target, { fills, middleAt, turned })`: the eye brought before a block of the page, a selector or a box of
   the screen: so near that, seen square, the block fills `fills` of the frame along the side it fills most,
   `eye.onto('#thread', { fills: 0.94 })`; its middle at `middleAt` of the frame, `{ left: 0.5, top: 0.64 }` in shares
