@@ -4,13 +4,15 @@ import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { LIVEREELS_WORLD } from '../../src/props/world.ts';
 import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
 import {
+	CUT_AT_THE_SCREEN,
 	SCREEN_UP,
 	type Screen,
 	type Scroll,
 	type Shows,
 	type Sweep,
 	drawnScreen,
-	drawnSweep
+	drawnSweep,
+	pastTheScreen
 } from '../../src/props/screen.ts';
 import { cameraOf, openingScene } from '../../src/scene.ts';
 import { alongItsWay } from '../../src/props/way.ts';
@@ -27,7 +29,10 @@ import {
 import { easeOutCubic } from '../../src/domain/curves.ts';
 import { type Keystroke, lettersOf } from '../../src/domain/typing.ts';
 import { FOCAL_LENGTH, SMALL } from './fakes.ts';
-import type { Camera } from '../../src/domain/camera.ts';
+import { type Camera, onTheFrame, wholeView } from '../../src/domain/camera.ts';
+import { eyeAtRest } from '../../src/domain/eye.ts';
+import type { Format } from '../../src/domain/format.ts';
+import { FACE_ON } from '../../src/domain/stance.ts';
 
 // The side of the page's window the eye sees: its front, or its back
 const SEES_THE_FRONT = true;
@@ -38,6 +43,8 @@ const PANE_CORNER = 24;
 const AT_THE_START = 0;
 // Words on their way two at a time
 const TWO_AT_ONCE = 2;
+// A page drawn on the screen alone, nothing of it past
+const NOTHING_PAST = null;
 
 /** How much of a word stands typed, and whether the caret follows it. */
 interface StandingTyped {
@@ -332,7 +339,8 @@ test("a band sweeping the screen crosses what the window shows of the screen, no
 		SMALL,
 		SEES_THE_FRONT,
 		PANE_CORNER,
-		AT_THE_START
+		AT_THE_START,
+		NOTHING_PAST
 	);
 	expect(drawn.sweep!.shape.band).toEqual({
 		start: { left: expect.closeTo(-60.56), top: expect.closeTo(-44.44) },
@@ -342,18 +350,18 @@ test("a band sweeping the screen crosses what the window shows of the screen, no
 
 test("the screen shows the page on the window's back where the eye sees the window's back, standing as its mount says, the page in front where the eye sees the front, and the front seen through where the back shows none", () => {
 	const camera = cameraOf(openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH), SMALL);
-	const front: Shows = { kind: 'own', key: 'front' };
+	const front: Shows = { kind: 'own', key: 'front', reach: CUT_AT_THE_SCREEN };
 	const backed: Screen = { ...SCREEN_UP, shows: front, back: { kind: 'own', key: 'behind', upright: 'over' } };
 	const bare: Screen = { ...SCREEN_UP, shows: front };
 	const drawn = [
-		drawnScreen(backed, camera, SMALL, SEES_THE_BACK, PANE_CORNER, AT_THE_START),
-		drawnScreen(backed, camera, SMALL, SEES_THE_FRONT, PANE_CORNER, AT_THE_START),
-		drawnScreen(bare, camera, SMALL, SEES_THE_BACK, PANE_CORNER, AT_THE_START)
+		drawnScreen(backed, camera, SMALL, SEES_THE_BACK, PANE_CORNER, AT_THE_START, NOTHING_PAST),
+		drawnScreen(backed, camera, SMALL, SEES_THE_FRONT, PANE_CORNER, AT_THE_START, NOTHING_PAST),
+		drawnScreen(bare, camera, SMALL, SEES_THE_BACK, PANE_CORNER, AT_THE_START, NOTHING_PAST)
 	];
 	expect(drawn.map((screen) => [screen.shows, screen.backUpright])).toEqual([
-		[{ kind: 'own', key: 'behind', scrolled: 0, typed: [] }, 'over'],
-		[{ ...front, scrolled: 0, typed: [] }, null],
-		[{ ...front, scrolled: 0, typed: [] }, null]
+		[{ kind: 'own', key: 'behind', scrolled: 0, typed: [], sheet: null }, 'over'],
+		[{ kind: 'own', key: 'front', scrolled: 0, typed: [], sheet: null }, null],
+		[{ kind: 'own', key: 'front', scrolled: 0, typed: [], sheet: null }, null]
 	]);
 });
 
@@ -363,17 +371,75 @@ test("a page of the film's own keeps its run whichever face of the window shows 
 	const running: Scroll = { knots: [{ moment: 0, top: 40, pace: 10 }], length: 1000 };
 	const both: Screen = {
 		...SCREEN_UP,
-		shows: { kind: 'own', key: 'page' },
+		shows: { kind: 'own', key: 'page', reach: CUT_AT_THE_SCREEN },
 		back: { kind: 'own', key: 'page', upright: 'over' },
 		scrolls: new Map([['page', running]])
 	};
 	expect([
-		drawnScreen(both, camera, SMALL, SEES_THE_FRONT, PANE_CORNER, 2).shows,
-		drawnScreen(both, camera, SMALL, SEES_THE_BACK, PANE_CORNER, 2).shows
+		drawnScreen(both, camera, SMALL, SEES_THE_FRONT, PANE_CORNER, 2, NOTHING_PAST).shows,
+		drawnScreen(both, camera, SMALL, SEES_THE_BACK, PANE_CORNER, 2, NOTHING_PAST).shows
 	]).toEqual([
-		{ kind: 'own', key: 'page', scrolled: 60, typed: [] },
-		{ kind: 'own', key: 'page', scrolled: 60, typed: [] }
+		{ kind: 'own', key: 'page', scrolled: 60, typed: [], sheet: null },
+		{ kind: 'own', key: 'page', scrolled: 60, typed: [], sheet: null }
 	]);
+});
+
+// A frame whose screen is as large: the camera at a zoom of 1 on its middle shows the whole screen edge to edge
+const SCREEN_AS_LARGE: Format = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } };
+const ON_THE_WHOLE_SCREEN = { focusX: 960, focusY: 540, zoom: 1 };
+// The whole frame face-on; and leant back 64° about its foot's middle, as the promo's crawl leans
+const FACE_ON_WHOLE: Camera = {
+	pose: ON_THE_WHOLE_SCREEN,
+	view: wholeView(SCREEN_AS_LARGE.frame),
+	eye: eyeAtRest(FOCAL_LENGTH)
+};
+const LEANT_BACK: Camera = {
+	...FACE_ON_WHOLE,
+	view: { ...FACE_ON_WHOLE.view, angle: { ...FACE_ON, tilt: 64 }, about: { left: 0.5, top: 1 } }
+};
+// A page drawn as far as its document runs, 200000 of its pixels longer than the screen holds, run so far down
+const LONG_DOCUMENT = 200000;
+const DRAWN_TO_ITS_DOCUMENT: Shows = {
+	kind: 'own',
+	key: 'sheet',
+	reach: { kind: 'document', scrollLength: LONG_DOCUMENT }
+};
+
+/** A screen showing the long page drawn as far as its document runs, standing so far down it. */
+function sheetRunTo(top: number): Screen {
+	const standing: Scroll = { knots: [{ moment: AT_THE_START, top, pace: 0 }], length: LONG_DOCUMENT };
+	return { ...SCREEN_UP, shows: DRAWN_TO_ITS_DOCUMENT, scrolls: new Map([['sheet', standing]]) };
+}
+
+test("a page of the film's own drawn as far as its document runs is drawn on the screen alone where the frame sees nothing past the screen, face-on and whole", () => {
+	expect(pastTheScreen(sheetRunTo(100000), FACE_ON_WHOLE, SCREEN_AS_LARGE, AT_THE_START)).toBeNull();
+});
+
+test("a page of the film's own drawn as far as its document runs, leant back, is drawn above the screen as far as the frame sees, its top standing at the frame's top edge, and no farther than what has run past the screen's top", () => {
+	const far = pastTheScreen(sheetRunTo(100000), LEANT_BACK, SCREEN_AS_LARGE, AT_THE_START)!;
+	const near = pastTheScreen(sheetRunTo(300), LEANT_BACK, SCREEN_AS_LARGE, AT_THE_START)!;
+	const sheetsTop = onTheFrame(LEANT_BACK, SCREEN_AS_LARGE.frame, { left: 960, top: -far.above });
+	expect([sheetsTop.top, near.above]).toEqual([expect.closeTo(0), 300]);
+});
+
+test("a page of the film's own drawn as far as its document runs is drawn below the screen no farther than its document's end, and on the screen alone run to its end where the frame sees nothing above", () => {
+	const leantAboutItsTop: Camera = { ...LEANT_BACK, view: { ...LEANT_BACK.view, about: { left: 0.5, top: 0 } } };
+	const nearItsEnd = pastTheScreen(sheetRunTo(LONG_DOCUMENT - 40), leantAboutItsTop, SCREEN_AS_LARGE, AT_THE_START)!;
+	const atItsEnd = pastTheScreen(sheetRunTo(LONG_DOCUMENT), leantAboutItsTop, SCREEN_AS_LARGE, AT_THE_START);
+	expect([nearItsEnd.below, atItsEnd]).toEqual([40, null]);
+});
+
+test('what a film typed into a page of its own drawn past its screen is handed with its sheet, so the stage writes it there too', () => {
+	const typedInto: Screen = { ...sheetRunTo(100000), typed: new Map([['sheet', new Map([['#typed', 'ls']])]]) };
+	const past = pastTheScreen(typedInto, LEANT_BACK, SCREEN_AS_LARGE, AT_THE_START);
+	const drawn = drawnScreen(typedInto, LEANT_BACK, SCREEN_AS_LARGE, SEES_THE_FRONT, PANE_CORNER, AT_THE_START, past);
+	expect(drawn.shows).toEqual({
+		kind: 'own',
+		key: 'sheet',
+		scrolled: 100000,
+		typed: [{ into: '#typed', text: 'ls' }],
+		sheet: { ...past, scrolled: 100000 - past!.above }
+	});
 });
 
 test("the filmed page lies on the window's plane where the camera frames it, as round as a pane at the frame's scale; nowhere where the screen shows a page of the film's own, in front or on the window's back", () => {
@@ -384,16 +450,17 @@ test("the filmed page lies on the window's plane where the camera frames it, as 
 	const close: Camera = { ...camera, pose: { focusX: 150, focusY: 200, zoom: 2.7 } };
 	const backed: Screen = { ...SCREEN_UP, back: { kind: 'own', key: 'behind', upright: 'round' } };
 	const drawn = [
-		drawnScreen(SCREEN_UP, camera, SMALL, SEES_THE_FRONT, PANE_CORNER, AT_THE_START),
-		drawnScreen(SCREEN_UP, close, SMALL, SEES_THE_FRONT, PANE_CORNER, AT_THE_START),
-		drawnScreen(backed, close, SMALL, SEES_THE_BACK, PANE_CORNER, AT_THE_START),
+		drawnScreen(SCREEN_UP, camera, SMALL, SEES_THE_FRONT, PANE_CORNER, AT_THE_START, NOTHING_PAST),
+		drawnScreen(SCREEN_UP, close, SMALL, SEES_THE_FRONT, PANE_CORNER, AT_THE_START, NOTHING_PAST),
+		drawnScreen(backed, close, SMALL, SEES_THE_BACK, PANE_CORNER, AT_THE_START, NOTHING_PAST),
 		drawnScreen(
-			{ ...SCREEN_UP, shows: { kind: 'own', key: 'front' } },
+			{ ...SCREEN_UP, shows: { kind: 'own', key: 'front', reach: CUT_AT_THE_SCREEN } },
 			close,
 			SMALL,
 			SEES_THE_FRONT,
 			PANE_CORNER,
-			AT_THE_START
+			AT_THE_START,
+			NOTHING_PAST
 		)
 	];
 	expect(drawn.map((screen) => screen.filmed)).toEqual([

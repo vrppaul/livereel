@@ -26,17 +26,7 @@
 import { type Cut, type Placing, type View, pictureReachOf } from '../domain/camera.ts';
 import type { Eye } from '../domain/eye.ts';
 import { type Sharpness, outOfFocusOnTheFrame, softestOutOfFocusSeen } from '../domain/focus.ts';
-import {
-	ITS_MIDDLE,
-	type Matrix,
-	type Spot,
-	carried,
-	chained,
-	dotOf,
-	inThreesAxes,
-	translation,
-	wayBetween
-} from '../domain/matrix.ts';
+import { type Matrix, type Spot, chained, inThreesAxes, translation } from '../domain/matrix.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
 import { A_PIXELS, A_SHARE } from '../domain/handed.ts';
 import { type Box, type Size, boxAround, frameScaleOf, middleX, middleY } from '../domain/geometry.ts';
@@ -45,6 +35,7 @@ import {
 	ON_ITS_PLANE,
 	type Placed,
 	drawnPlacement,
+	facesTheEye,
 	windowInTheWorld
 } from '../domain/placement.ts';
 import { transformOf } from '../domain/stance.ts';
@@ -71,8 +62,8 @@ export interface PageWindow extends Placing, Shade {
 /**
  * The window as the stage draws it: where it is placed in the world, as the stage draws a placement
  * (`src/domain/placement.ts`), its box on the frame, drawn about its middle; how far the camera's picture reaches on
- * its plane, past the box where the screen stands past it, how far it stands off the ground, and whether the eye sees
- * the page's side of it or its back, read where it stands before the eye, behind the eye too; the plane the room lays
+ * its plane, past the box where the page the screen shows stands past it, how far it stands off the ground, and
+ * whether the eye sees the page's side of it or its back, read where it stands before the eye, behind the eye too; the plane the room lays
  * the page's surface on in its one scene; how round the corners of the page the camera's cut shows are, in the frame's
  * pixels, which the stylesheet cuts the page by and the body stands round; its shade, none where the page is shaded
  * none, and how soft the eye's focus draws it and all in it, none where sharp: as one, on the frame in pixels of a frame
@@ -150,9 +141,7 @@ export const SHADE_NAMES = namesOf(SHADE_KINDS);
 
 // A body of no thickness, which is none
 const NO_THICKNESS = 0;
-// The way out of the page's face, toward three's z, from its middle; and the slab's back, moved neither across nor
-// down from the page
-const A_UNIT_OUT: Spot = { across: 0, down: 0, out: 1 };
+// The slab's back, moved neither across nor down from the page
 const UNMOVED = 0;
 // A corner reaches at most half the page's shorter side, as CSS rounds a box no further
 const HALVES = 2;
@@ -232,16 +221,6 @@ function behindItsPlane(window: Placed, depth: number): PlaneDrawn {
 /** Whether the world has light in it, a light or a soft box, which the glass could reflect. */
 function isLit(world: Pick<WorldLook, 'lights' | 'softBoxes'>): boolean {
 	return world.lights.length > NONE || world.softBoxes.length > NONE;
-}
-
-/**
- * Whether the eye sees a face, by the matrix that carries the face's middle into the eye's own space: the eye stands at
- * that space's middle, on the side the face looks out to; edge-on, it sees neither.
- */
-function facesTheEye(intoTheEyesSpace: Matrix): boolean {
-	const middle = carried(intoTheEyesSpace, ITS_MIDDLE);
-	const outward = wayBetween(middle, carried(intoTheEyesSpace, A_UNIT_OUT));
-	return dotOf(outward, middle) < NONE;
 }
 
 /** The page's shade as the stage draws it; none where it is shaded none, so the stage draws no filter. */

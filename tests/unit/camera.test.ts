@@ -17,7 +17,7 @@ import {
 } from '../../src/domain/camera.ts';
 import { inTheEyesSpaceAbout, seenFromTheEye, windowInTheWorld } from '../../src/domain/placement.ts';
 import { type Eye, eyeAtRest } from '../../src/domain/eye.ts';
-import { type Box, type Format, type Point, type Size, distanceBetween } from '../../src/domain/geometry.ts';
+import { type Box, type Format, type Point, type Size, boxOf, distanceBetween } from '../../src/domain/geometry.ts';
 import type { Sharpness } from '../../src/domain/focus.ts';
 import { type Spot, carried } from '../../src/domain/matrix.ts';
 import { type Angle, angledAs } from '../../src/domain/stance.ts';
@@ -106,7 +106,7 @@ function inTheWindow(pose: Pose, angle: Angle = STRAIGHT): Camera {
 /** Where a face-on camera's picture is cut, its view the whole square frame lifted so far. */
 function cutAt(lift: number): Cut {
 	const view = { box: { left: 0, top: 0, width: 1080, height: 1080 }, lift, angle: STRAIGHT };
-	return drawnCamera({ pose: FACE_ON, view, eye: eyeAtRest(FOCAL_LENGTH) }, SQUARE).cut;
+	return drawnCamera({ pose: FACE_ON, view, eye: eyeAtRest(FOCAL_LENGTH) }, SQUARE, boxOf(SQUARE.screen)).cut;
 }
 
 function widthBetween(angle: Angle, left: Point, right: Point): number {
@@ -134,7 +134,7 @@ function seenInPerspective(eye: Eye, spot: Spot): Point {
  * back to the frame's down.
  */
 function windowSeenInPerspective(spot: Spot): Point {
-	const cut = drawnCamera({ pose: FACE_ON, view: LEANT_WINDOW, eye: MOVED_EYE }, SQUARE).cut;
+	const cut = drawnCamera({ pose: FACE_ON, view: LEANT_WINDOW, eye: MOVED_EYE }, SQUARE, boxOf(SQUARE.screen)).cut;
 	const around = {
 		eye: MOVED_EYE,
 		frame: SQUARE.frame,
@@ -331,7 +331,12 @@ test("a flat view slid off the frame's edge is cut at its own edge where it stan
 		view: { box: { left: 540, top: 0, width: 1080, height: 1080 }, lift: 0, angle: STRAIGHT },
 		eye: eyeAtRest(FOCAL_LENGTH)
 	};
-	expect(drawnCamera(slidHalfAcross, SQUARE).cut).toEqual({ top: -540, right: -972, bottom: -540, left: 0 });
+	expect(drawnCamera(slidHalfAcross, SQUARE, boxOf(SQUARE.screen)).cut).toEqual({
+		top: -540,
+		right: -972,
+		bottom: -540,
+		left: 0
+	});
 });
 
 test('a screen too short to fill the frame along a side stands in its middle along that side', () => {

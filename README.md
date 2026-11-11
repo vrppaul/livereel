@@ -211,7 +211,7 @@ and the moves of each part of the scene:
 - `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge, words })`; a caption and keys stand over the
   whole frame where they come up, over every object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`, `screen.behind(page, { upright, within })`,
-  `screen.scrolls(page, { pace })`, `screen.scrollTo(page, selector, { top })`,
+  `screen.shows(page, { reaches })`, `screen.scrolls(page, { pace })`, `screen.scrollTo(page, selector, { top })`,
   `screen.type(page, strokes, { into, keyboard })`, `screen.sweep({ from, slant, round, width, crest })`
 - `terminal.open(title, { at, from, enter, edge, inside, group, zIndex })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
@@ -675,7 +675,23 @@ smears; the filmed page scrolls by `page.scrollBy` and `page.scrollTo`, and
 `screen.scrolls('filmed')` and `screen.scrollTo('filmed', …)` are refused.
 So is the run of a page that scrolls nowhere, one the screen
 holds all of or whose own styles hide what runs past the screen
-(`overflow: hidden` on its body). `screen.type({ html }, keystrokes('/review-ui',
+(`overflow: hidden` on its body). A page of the film's own is cut at
+the screen's edges; `screen.shows({ html }, { reaches: 'document' })`
+draws it on past the screen's top and foot, as a sheet longer than the
+hand that holds it, as far as its document runs there and the frame
+sees the window's plane: a window leant back shows what has run past
+the screen's top on up the frame, on the screen's ground, its edge and
+shadow round the sheet, and what the film types into it wherever the
+block stands. Its sides are the screen's, as a page laid out at the
+screen's width has nothing past them, so lay the window close enough
+for the sheet to cover the frame's width where it should. Its run is
+where the screen's top stands, as before, so `screen.scrolls` and
+`screen.scrollTo` mean the same either way. Face-on and whole, where
+the frame sees nothing past the screen, it draws the same bytes as cut.
+The window's own edge, lifted, still cuts it, and a page on the
+window's back is cut at the screen. Refused: a page with nothing past
+its screen, and `reaches` on the filmed page.
+`screen.type({ html }, keystrokes('/review-ui',
 { lettersPerSecond: 12 }), { into: '#typed' })`, in `typing()`, types into a
 block of a page of the film's own, the first its CSS selector `into`
 matches: from the move's start the block shows what stands typed as its

@@ -177,6 +177,10 @@ const IN_THE_FRAME: LaidIn = { kind: 'frame' };
 const AS_THEY_COME = 0;
 const ON_ONE_PLANE_WITHIN = 1e-6;
 const FACING_ALIKE_WITHIN = 1e-9;
+// The way out of a face, toward three's z, from its middle; and the sign of a way's share along another that turns
+// from it
+const A_UNIT_OUT: Spot = { across: 0, down: 0, out: 1 };
+const TURNED_AWAY = 0;
 
 /** The plane of a holder, as the holders stand: a group's, the frame's carried by the group's box and stance. */
 export function planeOf(holder: Holder, holders: Holders, frame: Size): Plane {
@@ -215,6 +219,16 @@ function worldSeenBy(eye: Eye, frame: Size): Plane {
 /** The page's window where it stands: the camera's view placed in the world, seen by an eye. */
 export function windowInTheWorld(view: View, eye: Eye, frame: Size): Placed {
 	return placed(view, worldSeenBy(eye, frame), frame);
+}
+
+/**
+ * Whether the eye sees a face, by the matrix that carries the face's middle into the eye's own space: the eye stands at
+ * that space's middle, on the side the face looks out to; edge-on, it sees neither.
+ */
+export function facesTheEye(intoTheEyesSpace: Matrix): boolean {
+	const middle = carried(intoTheEyesSpace, ITS_MIDDLE);
+	const outward = wayBetween(middle, carried(intoTheEyesSpace, A_UNIT_OUT));
+	return dotOf(outward, middle) < TURNED_AWAY;
 }
 
 /**

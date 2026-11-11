@@ -28,11 +28,22 @@
  * A film may type into a block of a page of its own, which then shows what stands typed as its text in place of what
  * the page wrote there. What stands typed is the page's too, held by its key and the block's selector until the film
  * types into that block again, so it stays as the page is shown on the other face, or not at all.
+ *
+ * A page of the film's own the screen shows in front is cut at the screen's edges, or, where the film asks, drawn on
+ * past the screen's top and foot as a sheet longer than the hand that holds it: as far as its document runs on there,
+ * above what has run past the screen's top and below its foot, and as far as the frame sees the window's plane, which
+ * bounds how much the stage lays. Its sides are the screen's, as a document laid out at the screen's width has nothing
+ * past them. The page's run is where the screen's top stands in its document, as when it is cut, so a run and a rest are
+ * the same either way; what is drawn above has run past already, and the stage lays it in a frame of its own, scrolled
+ * that much less, what is typed into it written there as on the screen. The camera cuts its picture at the sheet's
+ * edges where it cut it at the screen's.
  */
-import { type Camera, type SeenBetween, screenInTheView, screenPointShift, viewOnTheScreen } from '../domain/camera.ts';
+import { type Camera, type SeenBetween, screenPlaneSeen, screenPointShift, viewOnTheScreen } from '../domain/camera.ts';
 import { type Stretch, hermiteBetween, hermiteSpeedBetween } from '../domain/curves.ts';
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import type { Format } from '../domain/format.ts';
+import { boxInTheView } from '../domain/framing.ts';
+import { facesTheEye, windowInTheWorld } from '../domain/placement.ts';
 import {
 	type Box,
 	type FrameSide,
@@ -51,16 +62,44 @@ import {
 import { A_NUMBER, type Kind, OneOf, Plain } from '../domain/handed.ts';
 import { between } from '../domain/toward.ts';
 
-/** What the screen shows: the filmed page, or a page of the film's own by its key. */
-export type Shows = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string };
+/** What the screen shows: the filmed page, or a page of the film's own by its key, drawn as far as it reaches. */
+export type Shows = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string; readonly reach: Reach };
+
+/**
+ * How far a page of the film's own the screen shows in front is drawn: cut at the screen's edges; or on past its top and
+ * foot as far as its document runs and the frame sees, its document so many of its pixels longer than the screen holds,
+ * measured as it was shown.
+ */
+export type Reach = { readonly kind: 'screen' } | { readonly kind: 'document'; readonly scrollLength: number };
+
+/** How far a page of the film's own is drawn on past the screen's top and past its foot, in its pixels. */
+export interface PastTheScreen {
+	readonly above: number;
+	readonly below: number;
+}
+
+/**
+ * A page of the film's own drawn past its screen as the stage lays it: how far past the screen's top and foot, in its
+ * pixels, and how far down its document the top of what is laid stands.
+ */
+export interface DrawnSheet extends PastTheScreen {
+	readonly scrolled: number;
+}
 
 /**
  * What the screen shows as the stage draws it: the filmed page, or a page of the film's own by its key, how far down
- * its scroll it stands, in its pixels, and what stands typed in it.
+ * its scroll it stands, in its pixels, what stands typed in it, and the sheet it is laid as past the screen, none where
+ * it is drawn on the screen alone.
  */
 type DrawnShows =
 	| { readonly kind: 'filmed' }
-	| { readonly kind: 'own'; readonly key: string; readonly scrolled: number; readonly typed: readonly TypedText[] };
+	| {
+			readonly kind: 'own';
+			readonly key: string;
+			readonly scrolled: number;
+			readonly typed: readonly TypedText[];
+			readonly sheet: DrawnSheet | null;
+	  };
 
 /**
  * What stands typed in a page of the film's own: the text a film typed into each block of it, by the block's selector,
@@ -69,7 +108,7 @@ type DrawnShows =
 type TypedBlocks = ReadonlyMap<string, string>;
 
 /** Text typed into a block of a page of the film's own, as the stage writes it: the block's selector, and the text. */
-interface TypedText {
+export interface TypedText {
 	readonly into: string;
 	readonly text: string;
 }
@@ -234,6 +273,7 @@ export const A_SLANT: Kind<number> = new Plain(
 );
 
 export const THE_FILMED_PAGE: Shows = { kind: 'filmed' };
+export const CUT_AT_THE_SCREEN: Reach = { kind: 'screen' };
 export const SEEN_THROUGH: Back = { kind: 'seen through' };
 // No page of the film's own run, each standing at its top; none typed into, and nothing typed in a page
 const NONE_RUN: ReadonlyMap<string, Scroll> = new Map();
@@ -270,6 +310,10 @@ const STANDING_AT_ITS_TOP: Scroll = {
 };
 // How far a page runs on the frame where none of the screen's runs
 const NOTHING_RUN = 0;
+// How far past the screen a page is drawn where nothing of it is; and the most that arithmetic leaves past it where the
+// frame sees the screen's edge itself, under a millionth of a pixel, which is no page drawn past it
+const NOTHING_PAST = 0;
+const ARITHMETIC_LEFT = 1e-6;
 
 // Which way a band coming from each side of the window goes across it, before it is slanted
 const CROSSING_FROM: { readonly [Side in FrameSide]: Point } = {
@@ -294,7 +338,8 @@ const NO_PICTURE: readonly number[] = [];
  * The screen as the stage draws it at a moment of the film, the camera that shows it framing the page in its view, in
  * a format, the eye seeing the window's front or its back, a pane's corners as round as the look has them in pixels of
  * a frame 1080 high: the page on the back, with no sweep, where the eye sees the back and the back has a page of its
- * own; the screen as it stands where not; a page of the film's own as far down as the film has run it then.
+ * own; the screen as it stands where not; a page of the film's own as far down as the film has run it then, the one in
+ * front laid as far past the screen as it is drawn (`pastTheScreen`).
  */
 export function drawnScreen(
 	screen: Screen,
@@ -302,40 +347,89 @@ export function drawnScreen(
 	format: Format,
 	facingTheEye: boolean,
 	paneCorner: number,
-	moment: number
+	moment: number,
+	past: PastTheScreen | null
 ): DrawnScreen {
 	const backPage = backPageSeen(screen.back, facingTheEye);
 	if (backPage !== null) {
-		const shows = ownPageDrawn(screen, backPage.key, moment);
+		const shows = ownPageDrawn(screen, backPage.key, moment, null);
 		return { shown: screen.shown, shows, sweep: null, backUpright: backPage.upright, filmed: null };
 	}
 	const sweep = screen.sweep === null ? null : drawnSweep(screen.sweep, partSwept(camera, format), camera.pose.zoom);
 	const filmed = screen.shows.kind === 'filmed' ? filmedLaid(camera, format, paneCorner) : null;
-	return { shown: screen.shown, shows: frontDrawn(screen, moment), sweep, backUpright: null, filmed };
+	return { shown: screen.shown, shows: frontDrawn(screen, moment, past), sweep, backUpright: null, filmed };
 }
 
-/** What the screen shows in front as the stage draws it at a moment: a page of the film's own as far as it has run. */
-function frontDrawn(screen: Screen, moment: number): DrawnShows {
+/**
+ * What the screen shows in front as the stage draws it at a moment: a page of the film's own as far as it has run,
+ * laid as far past the screen as it is drawn.
+ */
+function frontDrawn(screen: Screen, moment: number, past: PastTheScreen | null): DrawnShows {
 	switch (screen.shows.kind) {
 		case 'filmed':
 			return screen.shows;
 		case 'own':
-			return ownPageDrawn(screen, screen.shows.key, moment);
+			return ownPageDrawn(screen, screen.shows.key, moment, past);
 	}
 }
 
 /**
  * A page of the film's own, by its key, as the stage draws it at a moment: as far down as the film has run it, with
- * what the film has typed into it.
+ * what the film has typed into it, and laid as a sheet so far past the screen, its top as far above where the screen's
+ * stands in its document, where it is drawn past the screen.
  */
-function ownPageDrawn(screen: Screen, key: string, moment: number): DrawnShows {
+function ownPageDrawn(screen: Screen, key: string, moment: number, past: PastTheScreen | null): DrawnShows {
+	const scrolled = standingAt(runOf(screen, key), moment).top;
 	const typed = [...typedIn(screen, key)].map(([into, text]) => ({ into, text }));
-	return { kind: 'own', key, scrolled: standingAt(runOf(screen, key), moment).top, typed };
+	const sheet = past === null ? null : { ...past, scrolled: scrolled - past.above };
+	return { kind: 'own', key, scrolled, typed, sheet };
 }
 
 /** What stands typed in a page of the film's own on the screen, by its key: nothing where the film typed nothing. */
 export function typedIn(screen: Screen, key: string): TypedBlocks {
 	return screen.typed.get(key) ?? NOTHING_TYPED;
+}
+
+/**
+ * How far the page of the film's own the screen shows in front is drawn on past the screen's top and foot at a moment,
+ * as a camera shows the window's plane in a format: as far as the frame sees the plane there, but no farther than the
+ * document runs on above what has run past the screen's top and below its foot, and the whole of that where a corner of
+ * the frame sees the plane on to its horizon. None where the page is cut at the screen, where the screen shows the
+ * filmed page, where the eye sees a page on the window's back in its place, and where nothing of it is drawn past.
+ */
+export function pastTheScreen(screen: Screen, camera: Camera, format: Format, moment: number): PastTheScreen | null {
+	const shows = screen.shows;
+	if (shows.kind === 'filmed' || shows.reach.kind === 'screen' || !seesTheFront(screen, camera, format)) return null;
+	const scrolled = standingAt(runOf(screen, shows.key), moment).top;
+	const runsOn: PastTheScreen = { above: scrolled, below: shows.reach.scrollLength - scrolled };
+	const seen = screenPlaneSeen(camera, format.frame);
+	const past =
+		seen === null
+			? runsOn
+			: {
+					above: Math.min(runsOn.above, Math.max(NOTHING_PAST, AT_ITS_TOP - seen.top)),
+					below: Math.min(runsOn.below, Math.max(NOTHING_PAST, seen.top + seen.height - format.screen.height))
+				};
+	return past.above + past.below > ARITHMETIC_LEFT ? past : null;
+}
+
+/**
+ * Whether the eye sees the page the screen shows in front: always, but where the window's back shows a page of its own
+ * and the eye sees the back, as a camera shows the window in a format.
+ */
+function seesTheFront(screen: Screen, camera: Camera, format: Format): boolean {
+	if (screen.back.kind === 'seen through') return true;
+	return facesTheEye(windowInTheWorld(camera.view, camera.eye, format.frame).inTheEyesSpace);
+}
+
+/**
+ * The part of the window's plane the page the screen shows lies on, in the screen's pixels: the screen, and as far past
+ * its top and foot as the page is drawn there.
+ */
+export function pageShownOn(format: Format, past: PastTheScreen | null): Box {
+	const screen = boxOf(format.screen);
+	if (past === null) return screen;
+	return { ...screen, top: screen.top - past.above, height: screen.height + past.above + past.below };
 }
 
 /** How a page of the film's own runs on the screen, by its key: standing at its top where the film never ran it. */
@@ -448,7 +542,7 @@ function pagesOnItsFaces(screen: Screen): readonly string[] {
  * carried from the view's corner to where the view stands, its corners as round as a pane's at the frame's scale.
  */
 function filmedLaid(camera: Camera, format: Format, paneCorner: number): FilmedLaid {
-	const inTheView = screenInTheView(camera, format);
+	const inTheView = boxInTheView(camera, format.frame, boxOf(format.screen));
 	const view = camera.view.box;
 	return {
 		box: { ...inTheView, left: view.left + inTheView.left, top: view.top + inTheView.top },

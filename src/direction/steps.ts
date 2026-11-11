@@ -160,12 +160,16 @@ export function cssIn(steps: readonly Step[]): readonly CssNamed[] {
 }
 
 /**
- * Every page of the film's own the steps' moves show, each once, in the order they are first named, known before
- * anything is shot, so the stage lays each out before the first frame.
+ * Every page of the film's own the steps' moves show, each once, in the order they are first named, drawn past its
+ * screen where any move draws it so, known before anything is shot, so the stage lays each out before the first frame.
  */
 export function ownPagesIn(steps: readonly Step[]): readonly OwnPage[] {
-	const pages = steps.flatMap((step) => step.moves).flatMap(ownPagesOf);
-	return [...new Map(pages.map((page) => [page.key, page])).values()];
+	const pages = new Map<string, OwnPage>();
+	for (const page of steps.flatMap((step) => step.moves).flatMap(ownPagesOf)) {
+		const named = pages.get(page.key);
+		pages.set(page.key, named === undefined ? page : { ...named, drawnPast: named.drawnPast || page.drawnPast });
+	}
+	return [...pages.values()];
 }
 
 /**

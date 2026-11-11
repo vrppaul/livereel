@@ -80,6 +80,8 @@ import {
 	type Screen,
 	THE_FILMED_PAGE,
 	drawnScreen,
+	pageShownOn,
+	pastTheScreen,
 	pictureSweptBy,
 	runShift,
 	sweepShift
@@ -453,7 +455,8 @@ export function drawn(
 		sharpness,
 		sharper
 	};
-	const shown = drawnCamera(camera, format);
+	const past = pastTheScreen(scene.screen, camera, format, moment);
+	const shown = drawnCamera(camera, format, pageShownOn(format, past));
 	const objects = drawnObjects(scene.objects, moment, around);
 	const leaving = drawnObjects(scene.leaving, moment, around);
 	const window = drawnWindow(camera.view, shown.cut, scene.window, {
@@ -469,7 +472,7 @@ export function drawn(
 		world: drawnWorld(scene.world, format.frame),
 		camera: shown,
 		window,
-		screen: drawnScreen(scene.screen, camera, format, window.facingTheEye, scene.look.paneCorner, moment),
+		screen: drawnScreen(scene.screen, camera, format, window.facingTheEye, scene.look.paneCorner, moment, past),
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout, moment),
 		pins: scene.pins === null ? null : drawnPins(scene.pins, camera, format.frame),

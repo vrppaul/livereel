@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
 import { keystrokes } from '../../src/domain/typing.ts';
-import { cssIn, cut, framesIn, hold, ownPagesIn, picturesIn, play } from '../../src/direction/steps.ts';
+import { cssIn, cut, framesIn, hold, ownPagesIn, picturesIn, play, typing } from '../../src/direction/steps.ts';
 import { act } from '../../src/moves/act.ts';
 import { hide, show } from '../../src/moves/caption.ts';
 import { hide as cursorGone } from '../../src/moves/cursor.ts';
@@ -11,7 +11,7 @@ import { to as lookTo } from '../../src/moves/look.ts';
 import { act as actAtAMoment, scrollBy, type } from '../../src/moves/page.ts';
 import * as piece from '../../src/moves/piece.ts';
 import * as picture from '../../src/moves/picture.ts';
-import { shows, sweep } from '../../src/moves/screen.ts';
+import { shows, sweep, type as screenType } from '../../src/moves/screen.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import * as title from '../../src/moves/title.ts';
 import { body, lean, shade, to as windowTo } from '../../src/moves/window.ts';
@@ -40,6 +40,22 @@ test("the film's own pages its steps show are found before it is shot, each once
 		cut(shows(card))
 	];
 	expect(ownPagesIn(steps).map((page) => page.html)).toEqual([card.html, terminal.html]);
+});
+
+test("a page of the film's own is laid to be drawn past its screen where any move of the steps shows it so, a typing into it after too", () => {
+	const card = { html: '<p>The card</p>' };
+	const terminal = { html: '<pre>A terminal</pre>' };
+	const steps = [
+		cut(shows(card)),
+		cut(shows(terminal)),
+		cut(shows(card, { reaches: 'document' })),
+		cut(shows(card, { reaches: 'screen' })),
+		...typing(screenType(card, keystrokes('ls', { lettersPerSecond: 10 }), { into: '#typed' }))
+	];
+	expect(ownPagesIn(steps).map((page) => [page.html, page.drawnPast])).toEqual([
+		[card.html, true],
+		[terminal.html, false]
+	]);
 });
 
 test("the film's own pictures its steps show are found before it is shot, each file once, in a play or a cut", () => {

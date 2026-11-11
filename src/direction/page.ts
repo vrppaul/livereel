@@ -96,11 +96,13 @@ export const AN_ACTION: Kind<Action> = aFunction<Action>(A_FUNCTION_SAID);
 
 /**
  * A page of the film's own, which the screen may show in the filmed page's place: its HTML, whole, which the stage lays
- * out before the film is shot, and the key the scene and the stage know it by.
+ * out before the film is shot, the key the scene and the stage know it by, and whether a move draws it past its screen,
+ * which the stage lays it again for, in a frame of its own: the one at the screen's size stays what moves measure.
  */
 export interface OwnPage {
 	readonly key: string;
 	readonly html: string;
+	readonly drawnPast: boolean;
 }
 
 // FNV-1a over a page's code units, 32 bits: where it starts, what it multiplies by, and the base its key is written in
@@ -110,9 +112,9 @@ const KEY_BASE = 36;
 // A hash kept to 32 bits unsigned, as a shift by none keeps it
 const UNSIGNED = 0;
 
-/** A page of the film's own, from its HTML. */
-export function ownPageOf(html: string): OwnPage {
-	return { key: pageKeyOf(html), html };
+/** A page of the film's own, from its HTML, drawn past its screen or not. */
+export function ownPageOf(html: string, drawnPast: boolean): OwnPage {
+	return { key: pageKeyOf(html), html, drawnPast };
 }
 
 /** The key a page of the film's own is known by: a hash of its HTML, with its length. */

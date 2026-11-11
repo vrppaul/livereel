@@ -137,7 +137,7 @@ body {
 	height: calc(var(--view-height) * 1px);
 }
 
-/* The view's picture cut where the engine says (`drawnCamera`): at the screen's edges flat on the frame, closing in on the view's as it lifts into a window, the corners rounding with it as the engine rounds them (`DrawnWindow`), as its shadow's do and the room's body stands round them */
+/* The view's picture cut where the engine says (`drawnCamera`): at the edges of the page the screen shows flat on the frame, the screen's or a sheet's past it, closing in on the view's as it lifts into a window, the corners rounding with it as the engine rounds them (`DrawnWindow`), as its shadow's do and the room's body stands round them */
 .view {
 	clip-path: inset(
 		calc(var(--cut-top) * 1px) calc(var(--cut-right) * 1px) calc(var(--cut-bottom) * 1px) calc(var(--cut-left) * 1px)
@@ -212,6 +212,21 @@ body {
 	inset: 0;
 	border-radius: inherit;
 	pointer-events: none;
+}
+
+/* A page of the film's own drawn past its screen (`pastTheScreen` in `src/props/screen.ts`): a sheet laid in a frame of its own as far past the screen's top and foot as the engine says, the screen's ground under it and the screen's edge and shadow round it, its corners as round as the screen's; the screen, which no longer cuts what it holds there, draws neither its ground nor its shadow under it */
+[data-past] .screen {
+	overflow: visible;
+	background: none;
+	box-shadow: none;
+}
+
+/* A frame is replaced content, which its top and bottom do not stretch: its height is written out */
+[data-past] .page[data-sheet] {
+	top: calc(var(--past-above) * -1px);
+	height: calc(100% + (var(--past-above) + var(--past-below)) * 1px);
+	background: var(--screen-ground);
+	box-shadow: var(--pane-shadow);
 }
 
 /* Light sweeping away the picture the screen showed, a band or a disc (`src/props/screen.ts`), over the page in the screen's pixels, so the camera and the window carry it with the page, under the holes, the light and the cursor; cut at the screen's edge and rounded as it is, as the light would light the ground past it */
@@ -1509,6 +1524,12 @@ body {
 	inset: 0;
 	background: var(--page-dark);
 	opacity: var(--shade-dim);
+}
+
+/* The dim over a page of the film's own drawn past its screen lies over all the sheet drawn */
+[data-past] [data-shaded] .screen::after {
+	top: calc(var(--past-above) * -1px);
+	bottom: calc(var(--past-below) * -1px);
 }
 
 /* While the screen shows a page of the film's own, the filmed page, live or pictured, and the holes pieces of it leave stand unseen, laid out as they were; a page of the film's own it does not show stands unseen too */

@@ -22,6 +22,7 @@ import {
 } from '../../src/domain/geometry.ts';
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
 import { type Beginning, type Move, ownPagesOf } from '../../src/direction/move.ts';
+import { pageKeyOf } from '../../src/direction/page.ts';
 import { play } from '../../src/direction/steps.ts';
 import { onto, to as cameraTo } from '../../src/moves/camera.ts';
 import * as group from '../../src/moves/group.ts';
@@ -244,6 +245,8 @@ const TYPED_BLOCKS_HOLD = new Map([
 const TEN_A_SECOND = { lettersPerSecond: 10 };
 // A page the screen holds all of: it scrolls nowhere
 const NO_LONGER_THAN_THE_SCREEN = 0;
+// A page drawn on the screen alone, nothing of it past
+const NOTHING_PAST = null;
 const WHOLE_AT_ONE = { focusX: 960, focusY: 540, zoom: 1 };
 const MIDDLE_AT_TWO = { focusX: 960, focusY: 540, zoom: 2 };
 // A box of that screen reaching past the left edge of what the camera at 2 shows, which is 480 to 1440 across, and
@@ -1469,6 +1472,29 @@ test("a page of the film's own runs from its move's moment, gathering its pace o
 	expect([1, 2, 3, 5, 20].map((moment) => scrolledIn(running, moment))).toEqual([0, 25, 100, 300, 1000]);
 });
 
+test("a page of the film's own shown drawn as far as its document runs holds how far its document runs past the screen, as the stage measures it as the move begins", async () => {
+	const shown = await (
+		await screenShows(OWN_PAGE, { reaches: 'document' }).begin(scrollingFrom(OPENING_IN_FULL_HD, 0, 0))
+	)(OPENING_IN_FULL_HD, 1);
+	expect(shown.screen.shows).toEqual({
+		kind: 'own',
+		key: pageKeyOf(OWN_PAGE.html),
+		reach: { kind: 'document', scrollLength: OWN_PAGE_LENGTH }
+	});
+});
+
+test("a page of the film's own shown drawn past its screen with nothing past it is refused as it is shown, in the words of the move", async () => {
+	const fitting: Beginning = {
+		...scrollingFrom(OPENING_IN_FULL_HD, 0, 0),
+		ownPage: () => new PageOfBoxes(new Map(), new Map(), NO_LONGER_THAN_THE_SCREEN)
+	};
+	await expect(screenShows(OWN_PAGE, { reaches: 'document' }).begin(fitting)).rejects.toThrow(
+		new FilmError(
+			"screen.shows draws a page past its screen that has nothing past it: the screen holds all of it, or its own styles hide what runs past the screen, as overflow: hidden on its body does; give it more than the screen holds, or show it with reaches: 'screen'"
+		)
+	);
+});
+
 test("a page of the film's own takes its pace from where its run stands and as fast as it runs there, and stops at a pace of none", async () => {
 	// Running at 100 pixels a second from 0 s, then slowing to none over two seconds from 3 s: 300 pixels down then, 375
 	// at 4 s, and 400 from 5 s on
@@ -1570,10 +1596,10 @@ test('what a film types into a block of a page of its own stands as far as the t
 	const behind = await setIn(screenBehind(OWN_PAGE, { upright: 'over' }), halfWay, 1, FULL_HD);
 	const camera = cameraOf(halfWay, FULL_HD);
 	expect([
-		drawnScreen(halfWay.screen, camera, FULL_HD, true, 0, 0).shows,
-		drawnScreen({ ...behind.screen, shows: THE_FILMED_PAGE }, camera, FULL_HD, false, 0, 0).shows.typed
+		drawnScreen(halfWay.screen, camera, FULL_HD, true, 0, 0, NOTHING_PAST).shows,
+		drawnScreen({ ...behind.screen, shows: THE_FILMED_PAGE }, camera, FULL_HD, false, 0, 0, NOTHING_PAST).shows.typed
 	]).toEqual([
-		{ kind: 'own', key: expect.any(String), scrolled: 0, typed: [{ into: TYPED_INTO, text: 'l' }] },
+		{ kind: 'own', key: expect.any(String), scrolled: 0, typed: [{ into: TYPED_INTO, text: 'l' }], sheet: null },
 		[{ into: TYPED_INTO, text: 'l' }]
 	]);
 });

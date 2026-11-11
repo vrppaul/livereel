@@ -42,6 +42,7 @@ import {
 	type Kind,
 	Literal,
 	NameOrForm,
+	OneOf,
 	OfForm,
 	assertKind,
 	assertWritten,
@@ -75,7 +76,9 @@ import {
 	AT_ITS_TOP,
 	A_SLANT,
 	type Back,
+	CUT_AT_THE_SCREEN,
 	NO_SECONDS,
+	type Reach,
 	SCREEN_DOWN,
 	SCREEN_UP,
 	SEEN_THROUGH,
@@ -104,6 +107,14 @@ export type ScreenPage = typeof FILMED | OwnPageNamed;
 
 /** What a film names the window's back to show: a page of its own, its HTML whole, or none, `'none'`. */
 export type BackPage = typeof NONE_ON_THE_BACK | OwnPageNamed;
+
+/** How far a film draws a page of its own: cut at the screen's edges, or on past them as far as its document runs. */
+type ReachName = Reach['kind'];
+
+/** When a film shows a page, and how far it draws one of its own, `reaches` as `A_REACH` says. */
+export interface ShowsScript extends MomentScript {
+	readonly reaches?: ReachName;
+}
 
 /** How fast a film runs a page of its own, its pixels a second, and over what share of the step, on what curve. */
 export interface ScrollsScript extends TimingScript {
@@ -166,6 +177,17 @@ const DOWN_ALREADY = 'screen.lower lowers a screen already down';
 const SCROLLS_NOWHERE =
 	'screen.scrolls runs a page that scrolls nowhere: the screen holds all of it, or its own styles hide what runs past the screen, as overflow: hidden on its body does; give it more than the screen holds and let it scroll';
 const NO_LENGTH = 0;
+// How far a film draws a page of its own: cut at the screen's edges, where it names none, or on past them as far as its
+// document runs; what a page drawn past a screen that holds all of it says; and a page a move draws on the screen alone
+const THE_SCREEN = 'screen';
+const THE_DOCUMENT = 'document';
+const A_REACH: Kind<ReachName> = new OneOf<ReachName>(
+	[THE_SCREEN, THE_DOCUMENT],
+	'how far the page is drawn: cut at the screen\'s edges, "screen", or on past its top and foot as far as its document runs and the frame sees, "document"'
+);
+const REACHES_NOWHERE =
+	"screen.shows draws a page past its screen that has nothing past it: the screen holds all of it, or its own styles hide what runs past the screen, as overflow: hidden on its body does; give it more than the screen holds, or show it with reaches: 'screen'";
+const ON_THE_SCREEN_ALONE = false;
 // The move that brings a page of the film's own to rest, as its refusals name it; the product of the signs of a pace
 // and a way that go opposite ways; and how a way along a page's scroll is said, down where it is more than none
 const SCROLL_TO = 'screen.scrollTo';
@@ -208,6 +230,7 @@ const SCREEN_TYPING_FORM: Form<ScreenTypingScript> = { into: needed(A_SELECTOR),
 const SCROLLS_FORM: Form<ScrollsScript> = { pace: needed(A_NUMBER), ...TIMING_FORM };
 const SCROLL_TO_FORM: Form<ScrollToScript> = { top: needed(A_NUMBER), within: TIMING_FORM.within };
 const BACK_FORM: Form<BackScript> = { upright: needed(AN_UPRIGHT), ...MOMENT_FORM };
+const SHOWS_FORM: Form<ShowsScript> = { reaches: A_REACH, ...MOMENT_FORM };
 // The screen's values a move that raises or lowers it sets, one that changes what it shows, a sweep, one that changes
 // what the window's back shows, one that runs a page of the film's own, and one that types into one
 const HOW_FAR_UP = ['shown'] as const satisfies readonly (keyof Screen)[];
@@ -263,20 +286,27 @@ export function lower(script: TimingScript = {}): Move {
 
 /**
  * The screen showing the filmed page, `'filmed'`, or a page of the film's own, `{ html }`, a whole document in HTML
- * laid out at the screen's size: at once, or at the moment of a play `within: { start }` names.
+ * laid out at the screen's size, cut at the screen's edges, or, `reaches: 'document'`, drawn on past its top and foot
+ * as far as its document runs and the frame sees: at once, or at the moment of a play `within: { start }` names.
  */
-export function shows(page: ScreenPage, script: MomentScript = {}): Move {
+export function shows(page: typeof FILMED, script?: MomentScript): Move;
+export function shows(page: OwnPageNamed, script?: ShowsScript): Move;
+export function shows(page: ScreenPage, script: ShowsScript = {}): Move {
 	assertKind(page, A_SCREEN_PAGE, "screen.shows's page");
-	assertWritten(script, MOMENT_FORM, 'screen.shows');
 	const timing = momentTimingOf(script);
-	if (page === FILMED) return { part: 'screen', valueNames: SHOWING, timing, begin: () => showing(THE_FILMED_PAGE) };
-	const own = ownPageOf(page.html);
+	if (page === FILMED) {
+		assertWritten(script, MOMENT_FORM, 'screen.shows');
+		return { part: 'screen', valueNames: SHOWING, timing, begin: () => showing(THE_FILMED_PAGE) };
+	}
+	assertWritten(script, SHOWS_FORM, 'screen.shows');
+	const reaches = script.reaches ?? THE_SCREEN;
+	const own = ownPageOf(page.html, reaches === THE_DOCUMENT);
 	return {
 		part: 'screen',
 		valueNames: SHOWING,
 		timing,
 		ownPages: [own],
-		begin: (beginning) => showingOwn(beginning, { kind: 'own', key: own.key })
+		begin: (beginning) => showingOwn(beginning, own.key, reaches)
 	};
 }
 
@@ -294,7 +324,7 @@ export function behind(page: BackPage, script: MomentScript | BackScript = {}): 
 		return { part: 'screen', valueNames: BACKING, timing: momentTimingOf(script), begin: () => backing(SEEN_THROUGH) };
 	}
 	assertWritten(script, BACK_FORM, 'screen.behind');
-	const own = ownPageOf(page.html);
+	const own = ownPageOf(page.html, ON_THE_SCREEN_ALONE);
 	return {
 		part: 'screen',
 		valueNames: BACKING,
@@ -313,7 +343,7 @@ export function behind(page: BackPage, script: MomentScript | BackScript = {}): 
 export function scrolls(page: OwnPageNamed, script: ScrollsScript): Move {
 	assertKind(page, A_PAGE_RUN, "screen.scrolls's page");
 	assertWritten(script, SCROLLS_FORM, 'screen.scrolls');
-	const own = ownPageOf(page.html);
+	const own = ownPageOf(page.html, ON_THE_SCREEN_ALONE);
 	return {
 		part: 'screen',
 		valueNames: RUNNING,
@@ -346,7 +376,8 @@ export function type(page: OwnPageNamed, strokes: readonly Keystroke[], script: 
 	assertKind(page, A_PAGE_TYPED_INTO, "screen.type's page");
 	assertKind(strokes, A_STROKES, "screen.type's strokes");
 	assertWritten(script, SCREEN_TYPING_FORM, SCREEN_TYPE);
-	const own = ownPageOf(page.html);
+	// Typing draws nothing past the screen: a page shown so takes its sheet from the move that shows it (`ownPagesIn`)
+	const own = ownPageOf(page.html, ON_THE_SCREEN_ALONE);
 	return {
 		part: 'screen',
 		valueNames: TYPING,
@@ -414,7 +445,7 @@ export function scrollTo(page: OwnPageNamed, target: string, script: ScrollToScr
 	assertKind(page, A_PAGE_RUN, "screen.scrollTo's page");
 	assertKind(target, A_SELECTOR, "screen.scrollTo's target");
 	assertWritten(script, SCROLL_TO_FORM, SCROLL_TO);
-	const own = ownPageOf(page.html);
+	const own = ownPageOf(page.html, ON_THE_SCREEN_ALONE);
 	return {
 		part: 'screen',
 		valueNames: RUNNING,
@@ -479,16 +510,32 @@ function backing(shown: Back): Change {
 }
 
 /**
- * The screen showing a page of the film's own; refused while a lens stands, as a lens shows the filmed page under it,
- * drawn from its picture.
+ * The screen showing a page of the film's own, by its key, as far as the film names it reaches; refused while a lens
+ * stands, as a lens shows the filmed page under it, drawn from its picture.
  */
-function showingOwn(beginning: Beginning, shows: Shows): Change {
+async function showingOwn(beginning: Beginning, key: string, reaches: ReachName): Promise<Change> {
 	if ([...beginning.scene.objects.values()].some((object) => object.content.kind === LENS)) {
 		throw new FilmError(
 			"screen.shows shows the film's own page while a lens stands, which shows the filmed page under it: hide the lens first, with lens.hide()"
 		);
 	}
-	return showing(shows);
+	return showing({ kind: 'own', key, reach: await reachOf(beginning, key, reaches) });
+}
+
+/**
+ * How far a page of the film's own, by its key, is drawn, as the film names it: cut at the screen; or on past it as far
+ * as its document runs, as far as the stage measures it scrolls as the move begins, refused where that is nowhere.
+ */
+async function reachOf(beginning: Beginning, key: string, reaches: ReachName): Promise<Reach> {
+	switch (reaches) {
+		case THE_SCREEN:
+			return CUT_AT_THE_SCREEN;
+		case THE_DOCUMENT: {
+			const scrollLength = await beginning.ownPage(key).scrollLength();
+			if (scrollLength === NO_LENGTH) throw new FilmError(REACHES_NOWHERE);
+			return { kind: THE_DOCUMENT, scrollLength };
+		}
+	}
 }
 
 /** The screen on its way from where it stands to up or down; refused where it stands there already. */

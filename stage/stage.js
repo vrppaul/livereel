@@ -11,7 +11,7 @@
  * since Chrome loads no module from a file; nothing else runs in the stage page, so its names stand alone there.
  */
 /** @import { DrawnScene, ObjectList, PropName } from '../src/scene.ts' */
-/** @import { DrawnSweep } from '../src/props/screen.ts' */
+/** @import { DrawnSheet, DrawnSweep, TypedText } from '../src/props/screen.ts' */
 /** @import { ShownLine } from '../src/props/terminal.ts' */
 /** @import { DrawnPin } from '../src/props/pins.ts' */
 /** @import { DrawnWords, Piece } from '../src/props/words.ts' */
@@ -27,6 +27,11 @@
 /** @import { FilmsFontHanded, FilmsPictureDecoded, FilmsPictureHanded, HeldPicture, Layout, Opening, PagePicture, StageApi, SurfaceApart } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
+/**
+ * The frames an exposure lays the film's own pages in, by their keys: each at the screen's size, and, for one a move
+ * draws past its screen, a sheet as tall as it is drawn.
+ * @typedef {{ readonly onTheScreen: Map<string, HTMLIFrameElement>, readonly sheets: Map<string, HTMLIFrameElement> }} OwnFrames
+ */
 /** A value of the look set whole on the stage, in place of one token: any but the ground's layers, and the way words come up, which the moves that bring them read @typedef {Exclude<keyof Look, 'groundLayers' | 'words'>} WholeLookName */
 /** An element of the stage's markup: the cursor is drawn in SVG, the rest in HTML @typedef {HTMLElement | SVGElement} Staged */
 /**
@@ -85,12 +90,15 @@ const CREST_START = '--crest-start';
 const CREST_END = '--crest-end';
 const SHAPE = 'data-shape';
 // A page of the film's own: the class every page the screen shows takes, the attribute it is known by, what it is
-// called, the attribute the one a frame shows takes, and the one the screen takes while it shows one
+// called, the attribute the one a frame shows takes, and the one the screen takes while it shows one; the attribute a
+// frame laid as a sheet past the screen takes, and the one the screen takes while it shows a page laid so
 const PAGE = 'page';
 const OWN_PAGE = 'data-own-page';
 const OWN_PAGE_TITLE = "A page of the film's own";
 const SHOWN = 'data-shown';
 const SHOWS_OWN = 'data-shows-own';
+const SHEET = 'data-sheet';
+const PAST = 'data-past';
 // How the page the screen shows is mounted where it is the window's back's, which the stylesheet turns it by
 const BACK_UPRIGHT = 'data-back-upright';
 // How a page of the film's own is scrolled to where the film has run it: at once, as `instant` wins over a smooth
@@ -303,7 +311,8 @@ function shadeDrawn(root, shade) {
 
 /**
  * The screen: how far it has come up, what it shows, the filmed page or one of the film's own laid on it, with what
- * the film typed into it and scrolled as far as the film has run it, and the
+ * the film typed into it and scrolled as far as the film has run it, or laid so as a sheet past it in a frame of its
+ * own, and the
  * picture light sweeps away over it, a band or a disc; where the eye sees a page on the window's back, how it is
  * mounted, so the stylesheet turns it to stand upright from behind and leaves unseen what lies on the front. Its
  * numbers and names are drawn on each of its roots, one in each surface the window's view stands in; its pages and
@@ -311,7 +320,7 @@ function shadeDrawn(root, shade) {
  */
 class ScreenDrawer {
 	/**
-	 * @param {readonly Staged[]} roots @param {ReadonlyMap<string, HTMLIFrameElement>} ownPages
+	 * @param {readonly Staged[]} roots @param {OwnFrames} ownPages
 	 * @param {Staged} sweep the part the sweep stands in
 	 */
 	constructor(roots, ownPages, sweep) {
@@ -324,34 +333,82 @@ class ScreenDrawer {
 	/** @param {DrawnScene} scene */
 	draw(scene) {
 		const shownKey = ownPageShown(scene.screen.shows);
+		const sheet = sheetShown(scene.screen.shows);
 		for (const root of this.roots) {
 			numbered(root, { '--screen-shown': scene.screen.shown });
 			root.toggleAttribute(SHOWS_OWN, shownKey !== NAMELESS);
 			named(root, BACK_UPRIGHT, scene.screen.backUpright);
+			sheetLaid(root, sheet);
 		}
-		for (const [key, frame] of this.ownPages) frame.toggleAttribute(SHOWN, key === shownKey);
+		const { onTheScreen, sheets } = this.ownPages;
+		for (const [key, frame] of onTheScreen) frame.toggleAttribute(SHOWN, key === shownKey && sheet === null);
+		for (const [key, frame] of sheets) frame.toggleAttribute(SHOWN, key === shownKey && sheet !== null);
 		ownPageDrawn(this.ownPages, scene.screen.shows);
 		sweepDrawn(this.sweep, this.swept, scene.screen.sweep);
 	}
 }
 
 /**
- * The page of the film's own the screen shows as the film has it: what the film typed into its blocks written, then
- * scrolled as far down as the film has run it, at once, whatever scroll the page's own styles ask for, as a text typed
- * may lengthen it; the film runs it, never the page. Nothing where the screen shows the filmed page.
- * @param {ReadonlyMap<string, HTMLIFrameElement>} ownPages @param {DrawnScene['screen']['shows']} shows
+ * How far past the screen the page it shows is laid as a sheet, drawn on a root of the screen's: none, with no numbers
+ * at all, where it is drawn on the screen alone.
+ * @param {Staged} root @param {DrawnSheet | null} sheet
+ */
+function sheetLaid(root, sheet) {
+	root.toggleAttribute(PAST, sheet !== null);
+	if (sheet === null) return;
+	numbered(root, { '--past-above': sheet.above, '--past-below': sheet.below });
+}
+
+/**
+ * The page of the film's own the screen shows as the film has it, in its frame at the screen's size and in its sheet,
+ * where it is laid as one past the screen: what the film typed into its blocks written in each, then each scrolled at
+ * once, whatever scroll the page's own styles ask for, as a text typed may lengthen it: the frame as far down as the
+ * film has run the page, the sheet to where its top stands; the film runs it, never the page. The frame at the
+ * screen's size is drawn while the sheet shows in its place too, as it is what moves measure. Nothing where the screen
+ * shows the filmed page.
+ * @param {OwnFrames} ownPages @param {DrawnScene['screen']['shows']} shows
  */
 function ownPageDrawn(ownPages, shows) {
 	switch (shows.kind) {
 		case 'filmed':
 			return;
-		case 'own': {
-			const frame = ownPages.get(shows.key);
-			if (frame === undefined) throw new Error(`the stage laid no page of the film's own by the key ${shows.key}`);
-			const laid = documentOf(frame);
-			for (const typed of shows.typed) typedBlockOf(laid, typed.into).textContent = typed.text;
-			(laid.scrollingElement ?? laid.documentElement).scrollTo({ top: shows.scrolled, behavior: AT_ONCE });
-		}
+		case 'own':
+			pageWritten(ownFrame(ownPages.onTheScreen, shows.key), shows.typed, shows.scrolled);
+			if (shows.sheet !== null) pageWritten(ownFrame(ownPages.sheets, shows.key), shows.typed, shows.sheet.scrolled);
+	}
+}
+
+/**
+ * A frame's page with what the film typed into its blocks written, then scrolled so far down, at once.
+ * @param {HTMLIFrameElement} frame @param {readonly TypedText[]} typed @param {number} top
+ */
+function pageWritten(frame, typed, top) {
+	const laid = documentOf(frame);
+	for (const text of typed) typedBlockOf(laid, text.into).textContent = text.text;
+	(laid.scrollingElement ?? laid.documentElement).scrollTo({ top, behavior: AT_ONCE });
+}
+
+/**
+ * A page of the film's own laid in a frame, by its key, among frames of such pages.
+ * @param {ReadonlyMap<string, HTMLIFrameElement>} frames @param {string} key
+ */
+function ownFrame(frames, key) {
+	const frame = frames.get(key);
+	if (frame === undefined) throw new Error(`the stage laid no frame of the film's own page by the key ${key}`);
+	return frame;
+}
+
+/**
+ * The sheet the screen's page of the film's own is laid as past the screen; none where it is drawn on the screen
+ * alone, or the screen shows the filmed page.
+ * @param {DrawnScene['screen']['shows']} shows @returns {DrawnSheet | null}
+ */
+function sheetShown(shows) {
+	switch (shows.kind) {
+		case 'filmed':
+			return null;
+		case 'own':
+			return shows.sheet;
 	}
 }
 
@@ -1215,7 +1272,7 @@ class WorldDrawer {
  *     & { readonly objects: ObjectsDrawer },
  *   readonly page: Staged,
  *   readonly picture: Staged,
- *   readonly ownPages: Map<string, HTMLIFrameElement>
+ *   readonly ownPages: OwnFrames
  * }} Exposure
  */
 
@@ -1281,8 +1338,8 @@ function setup(layout) {
  */
 function exposureOf(root, drawing) {
 	if (drawing === 'room') overThePageLaidApart(root);
-	/** @type {Map<string, HTMLIFrameElement>} */
-	const ownPages = new Map();
+	/** @type {OwnFrames} */
+	const ownPages = { onTheScreen: new Map(), sheets: new Map() };
 	const caption = new CaptionDrawer(propRoot(root, 'caption'));
 	return {
 		root,
@@ -1504,9 +1561,11 @@ async function shownIn(exposure, address) {
 
 /**
  * The pages of the film's own laid in the screen of every exposure, over the filmed page's place, each a document of
- * its own at the screen's size, laid out but unseen until a frame shows it, so its fonts load: once each has loaded and
- * its fonts are ready. The first exposure's take the page's key as their name, by which moves measure their blocks.
- * The keys of those that move of themselves, by an animation or a transition of their own, which the film refuses.
+ * its own at the screen's size, laid out but unseen until a frame shows it, so its fonts load; and again, as a sheet
+ * the stylesheet lays as tall as it is drawn past the screen, each a move draws so: once each has loaded and its fonts
+ * are ready. The first exposure's at the screen's size take the page's key as their name, by which moves measure their
+ * blocks, so a sheet never moves what they measure. The keys of those that move of themselves, by an animation or a
+ * transition of their own, which the film refuses.
  * @param {readonly OwnPage[]} pages @returns {Promise<readonly string[]>}
  */
 async function layOwnPages(pages) {
@@ -1515,16 +1574,41 @@ async function layOwnPages(pages) {
 			pages.map((page) => laidIn(exposure, page, place === FIRST_EXPOSURE ? page.key : NAMELESS))
 		)
 	);
+	await Promise.all(
+		EXPOSURES.flatMap((exposure) => pages.filter((page) => page.drawnPast).map((page) => sheetLaidIn(exposure, page)))
+	);
 	const moving = frames.filter((frame) => movesOfItself(frame)).map((frame) => frame.getAttribute(OWN_PAGE));
 	return pages.map((page) => page.key).filter((key) => moving.includes(key));
 }
 
 /**
- * A page of the film's own laid in an exposure's screen, with its scripts kept from running, as its frame moves as the
- * film moves it alone, under a name where it is to have one: its frame, once it has loaded and its fonts are ready.
+ * A page of the film's own laid in an exposure's screen at the screen's size, under a name where it is to have one:
+ * its frame, once it has loaded and its fonts are ready.
  * @param {Exposure} exposure @param {OwnPage} page @param {string | null} name @returns {Promise<HTMLIFrameElement>}
  */
 async function laidIn(exposure, page, name) {
+	const frame = await frameLaidIn(exposure, page, name);
+	exposure.ownPages.onTheScreen.set(page.key, frame);
+	return frame;
+}
+
+/**
+ * A page of the film's own laid in an exposure's screen as a sheet past it, once it has loaded and its fonts are ready.
+ * @param {Exposure} exposure @param {OwnPage} page
+ */
+async function sheetLaidIn(exposure, page) {
+	const frame = await frameLaidIn(exposure, page, NAMELESS);
+	frame.toggleAttribute(SHEET, true);
+	exposure.ownPages.sheets.set(page.key, frame);
+}
+
+/**
+ * A frame of a page of the film's own laid in an exposure's screen, with its scripts kept from running, as its frame
+ * moves as the film moves it alone, under a name where it is to have one, given before it is laid, as the browser
+ * names a frame once: once it has loaded and its fonts are ready.
+ * @param {Exposure} exposure @param {OwnPage} page @param {string | null} name @returns {Promise<HTMLIFrameElement>}
+ */
+async function frameLaidIn(exposure, page, name) {
 	const frame = document.createElement('iframe');
 	frame.classList.add(PAGE);
 	frame.setAttribute(OWN_PAGE, page.key);
@@ -1536,7 +1620,6 @@ async function laidIn(exposure, page, name) {
 	exposure.picture.after(frame);
 	await loaded;
 	await documentOf(frame).fonts.ready;
-	exposure.ownPages.set(page.key, frame);
 	return frame;
 }
 

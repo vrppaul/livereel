@@ -20,7 +20,7 @@
  */
 import { type Eye, type Viewpoint, eyeAtRest, isAtRest, sightOf } from './eye.ts';
 import type { Format } from './format.ts';
-import { frameZoomOf, pointInTheView } from './framing.ts';
+import { boxInTheView, frameZoomOf, pointInTheView } from './framing.ts';
 import { type Fraction, NONE, WHOLE } from './fraction.ts';
 import {
 	type Box,
@@ -142,8 +142,8 @@ export interface Camera {
 
 /**
  * Where the camera's picture is cut, in from each edge of its view, in the frame's pixels; past the edge, less than
- * none. Flat on the frame, the cut stands at the screen's edges where they reach past the view's, so an angled screen
- * shows past the frame's own edges; as the view lifts into a window, the cut closes in on its edges. On a side where
+ * none. Flat on the frame, the cut stands at the edges of the page the screen shows, the screen's or a sheet's past it,
+ * where they reach past the view's, so an angled screen shows past the frame's own edges; as the view lifts into a window, the cut closes in on its edges. On a side where
  * the view stands in from the frame's edge, as a flat view sliding in or out does, the cut stands at the view's edge,
  * so nothing of the picture shows past it there.
  */
@@ -362,43 +362,30 @@ export function flatCamera(format: Format, focalLength: number): Camera {
 	return { pose: flatPose(format), view: wholeView(format.screen), eye: eyeAtRest(focalLength) };
 }
 
-/** The camera as the stage draws it, its cut worked out from where the screen stands in its view. */
-export function drawnCamera(camera: Camera, format: Format): DrawnCamera {
+/**
+ * The camera as the stage draws it, its cut worked out from where the part of the screen's plane the page shows on, in
+ * the screen's pixels, stands in its view: the screen, or a page of the film's own drawn on past it.
+ */
+export function drawnCamera(camera: Camera, format: Format, pageShownOn: Box): DrawnCamera {
 	const view = camera.view.box;
-	const screen = screenInTheView(camera, format);
-	// How much of the way from the screen's edges to the view's the cut still stands out
+	const page = boxInTheView(camera, format.frame, pageShownOn);
+	// How much of the way from the page's edges to the view's the cut still stands out
 	const open = LIFTED - camera.view.lift;
 	const { frame } = format;
 	return {
 		pose: camera.pose,
 		cut: {
-			top: cutPast(screen.top, view.top > FRAMES_EDGE, open),
-			right: cutPast(view.width - (screen.left + screen.width), view.left + view.width < frame.width, open),
-			bottom: cutPast(view.height - (screen.top + screen.height), view.top + view.height < frame.height, open),
-			left: cutPast(screen.left, view.left > FRAMES_EDGE, open)
+			top: cutPast(page.top, view.top > FRAMES_EDGE, open),
+			right: cutPast(view.width - (page.left + page.width), view.left + view.width < frame.width, open),
+			bottom: cutPast(view.height - (page.top + page.height), view.top + view.height < frame.height, open),
+			left: cutPast(page.left, view.left > FRAMES_EDGE, open)
 		}
 	};
 }
 
 /**
- * Where the whole screen stands in a camera's view as the camera frames the page, before the view's stance carries it:
- * in the view's pixels from its top left corner, the camera's focus at the view's middle, a page's pixel as many of the
- * frame's as the camera's zoom takes.
- */
-export function screenInTheView(camera: Camera, format: Format): Box {
-	const view = camera.view.box;
-	const frameZoom = frameZoomOf(camera.pose, format.frame);
-	return {
-		left: view.width / HALVES - camera.pose.focusX * frameZoom,
-		top: view.height / HALVES - camera.pose.focusY * frameZoom,
-		width: format.screen.width * frameZoom,
-		height: format.screen.height * frameZoom
-	};
-}
-
-/**
  * How far the camera's picture reaches on the window's plane: the view's box, past each edge as far as its cut stands
- * out, as a window on the frame's edge shows the screen past it, and within it as far as the cut closes in.
+ * out, as a window on the frame's edge shows the page past it, and within it as far as the cut closes in.
  */
 export function pictureReachOf(view: Box, cut: Cut): Box {
 	return {
@@ -410,12 +397,12 @@ export function pictureReachOf(view: Box, cut: Cut): Box {
 }
 
 /**
- * Where the picture is cut on one side of its view: as far past the view's edge as the screen reaches, so much of the
+ * Where the picture is cut on one side of its view: as far past the view's edge as the page reaches, so much of the
  * way as the cut still stands out, where the view meets the frame's edge there; at the view's edge where it stands in
  * from the frame's.
  */
-function cutPast(screenPast: number, standsIn: boolean, open: number): number {
-	return standsIn ? NOTHING : open * Math.min(NOTHING, screenPast);
+function cutPast(pagePast: number, standsIn: boolean, open: number): number {
+	return standsIn ? NOTHING : open * Math.min(NOTHING, pagePast);
 }
 
 /**
@@ -727,6 +714,24 @@ export function underTheFrame(camera: Camera, frame: Size, point: Point): Point 
 	);
 	const frameZoom = frameZoomOf(pose, frame);
 	return { left: pose.focusX + met.across / frameZoom, top: pose.focusY + met.down / frameZoom };
+}
+
+/**
+ * What a frame sees of the screen's plane from a camera, in the screen's pixels: the least box round the points of it
+ * the frame's corners show, as a frame whose every corner sees the plane before the eye sees a four-sided part of it
+ * with those points at its corners; none where a corner's sight misses the plane, as the frame then sees it on to its
+ * horizon.
+ */
+export function screenPlaneSeen(camera: Camera, frame: Size): Box | null {
+	const seen = cornersOf(boxOf(frame)).map((corner) => underTheFrame(camera, frame, corner));
+	const met = seen.filter((point) => point !== null);
+	if (met.length < seen.length) return null;
+	const lefts = met.map((point) => point.left);
+	const tops = met.map((point) => point.top);
+	return boxBetween(
+		{ left: Math.min(...lefts), top: Math.min(...tops) },
+		{ left: Math.max(...lefts), top: Math.max(...tops) }
+	);
 }
 
 /** The zoom of a pose in which a page's pixel takes so many of the frame's own pixels, on a frame of this size. */
