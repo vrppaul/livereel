@@ -1,6 +1,6 @@
 // Stand-ins for the browser in the unit tests: a page whose blocks stand where a table says, and a stage, footage and
 // a track that keep what they were handed
-import type { ActContext, FilmedPage, PageMotionSwitch, ScrollCourse } from '../../src/direction/page.ts';
+import type { ActContext, BlockHolding, FilmedPage, PageMotionSwitch, ScrollCourse } from '../../src/direction/page.ts';
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Box, Format } from '../../src/domain/geometry.ts';
 import type { DrawnScene } from '../../src/scene.ts';
@@ -27,24 +27,24 @@ export class PageOfBoxes implements FilmedPage {
 	readonly boxes: ReadonlyMap<string, Box>;
 	readonly grounds: ReadonlyMap<string, string>;
 	readonly length: number;
-	readonly holdingElements: ReadonlyMap<string, boolean>;
+	readonly holdings: ReadonlyMap<string, BlockHolding>;
 	readonly typed: string[] = [];
 
 	constructor(
 		boxes: ReadonlyMap<string, Box>,
 		grounds: ReadonlyMap<string, string> = new Map(),
 		length = A_LONG_PAGE,
-		holdingElements: ReadonlyMap<string, boolean> = new Map()
+		holdings: ReadonlyMap<string, BlockHolding> = new Map()
 	) {
 		this.boxes = boxes;
 		this.grounds = grounds;
 		this.length = length;
-		this.holdingElements = holdingElements;
+		this.holdings = holdings;
 	}
 
-	/** A test names only the blocks it says of whether they hold elements. */
-	holdsElements(target: string): Promise<boolean> {
-		return Promise.resolve(this.holdingElements.get(target)!);
+	/** A test names only the blocks whose holding its page has. */
+	holdingOf(target: string): Promise<BlockHolding> {
+		return Promise.resolve(this.holdings.get(target)!);
 	}
 
 	scrollLength(): Promise<number> {

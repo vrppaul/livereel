@@ -1,7 +1,7 @@
 /**
  * The filmed page as moves read it and type into it: where its blocks stand, the ground behind them, its scroll, its
  * keyboard; and a page of the film's own as moves measure it, among the rest how far down it scrolls, how far down its
- * document a block stands, and whether a block the film types into holds elements.
+ * document a block stands, and what a block the film types into shows as its text.
  *
  * The functions handed to the page run there, each alone: none may call another of this module. The block a scroll
  * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a
@@ -11,7 +11,7 @@ import type { Frame, JSHandle, Keyboard } from 'playwright-core';
 import { type Channels, hexOf } from '../../domain/colour.ts';
 import { FilmError } from '../../domain/errors.ts';
 import { type Box, boxAround } from '../../domain/geometry.ts';
-import type { ActContext, FilmedPage, ScrollAim, ScrollCourse } from '../../direction/page.ts';
+import type { ActContext, BlockHolding, FilmedPage, ScrollAim, ScrollCourse } from '../../direction/page.ts';
 
 /** The page a take films as moves read it, and as an act is handed it: live, or the film's set (`set.ts`). */
 export interface FilmedShown {
@@ -41,9 +41,8 @@ interface GroundAsked {
 
 // What a block's overflow is when it scrolls of itself
 const SCROLLS = new Set(['auto', 'scroll']);
-// What the page answers where a CSS selector selects no block, and how many elements a block of text alone holds
+// What the page answers where a CSS selector selects no block
 const NONE_SELECTED = null;
-const NO_ELEMENTS = 0;
 // A canvas of one pixel reads a colour's alpha from 0 to 255, the most, where the colour is drawn whole
 const GROUND_ASKED: GroundAsked = { canvasSide: 1, whole: 255 };
 // The ground read where no block a block stands in draws one: white, the browser's canvas in the light scheme a film
@@ -96,13 +95,13 @@ export class PlaywrightPage implements FilmedPage {
 	}
 
 	/**
-	 * Whether the first block a target matches as a CSS selector, as the stage finds a block to write text into, holds
-	 * elements of its own; refused at once where the page has none it matches, or the target is no CSS selector.
+	 * What the first block a target matches as a CSS selector, as the stage finds a block to write text into, shows as
+	 * its text; refused at once where the page has none it matches, or the target is no CSS selector.
 	 */
-	async holdsElements(target: string): Promise<boolean> {
-		const held = await this.frame.evaluate(elementsHeldBy, target);
-		if (held === NONE_SELECTED) throw new FilmError(`nothing on the page matches ${target} as a CSS selector`);
-		return held > NO_ELEMENTS;
+	async holdingOf(target: string): Promise<BlockHolding> {
+		const holding = await this.frame.evaluate(holdingOfTheBlock, target);
+		if (holding === NONE_SELECTED) throw new FilmError(`nothing on the page matches ${target} as a CSS selector`);
+		return holding;
 	}
 
 	type(text: string): Promise<void> {
@@ -176,12 +175,16 @@ function scrollLengthOfThePage(): number {
 }
 
 /**
- * How many elements the first block a CSS selector matches holds; none selected where it matches none, or is no CSS
- * selector.
+ * What the first block a CSS selector matches shows as its text: a value, where it is a field a person edits a text of
+ * its own in, as HTML gives such a field alone a way to set a range of that text (an input or a text area); elements
+ * of its own; or its text alone. None selected where it matches none, or is no CSS selector.
  */
-function elementsHeldBy(target: string): number | null {
+function holdingOfTheBlock(target: string): BlockHolding | null {
 	if (!CSS.supports(`selector(${target})`)) return null;
-	return document.querySelector(target)?.childElementCount ?? null;
+	const block = document.querySelector(target);
+	if (block === null) return null;
+	if ('setRangeText' in block) return 'a value';
+	return block.childElementCount > 0 ? 'elements' : 'text alone';
 }
 
 /** A block's top in its document: where it stands in the frame, and as far again as the page's own scroll has gone. */

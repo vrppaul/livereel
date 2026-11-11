@@ -238,8 +238,8 @@ const OWN_PAGE_BLOCKS = new Map([[INPUT, { left: 0, top: 900, width: 1920, heigh
 const TYPED_INTO = '#typed';
 const OTHER_TYPED_INTO = '#asked';
 const TYPED_BLOCKS_HOLD = new Map([
-	[TYPED_INTO, false],
-	[OTHER_TYPED_INTO, false]
+	[TYPED_INTO, 'text alone'],
+	[OTHER_TYPED_INTO, 'text alone']
 ]);
 const TEN_A_SECOND = { lettersPerSecond: 10 };
 // A page the screen holds all of: it scrolls nowhere
@@ -1595,17 +1595,26 @@ test("a typing into another block of a page of the film's own keeps what stands 
 	]);
 });
 
-test('screen.type refuses, as it begins, a block that holds elements of its own, which what it types would take the place of', async () => {
+test('screen.type refuses, as it begins, a block that holds elements of its own, which what it types would take the place of, and one that shows a value, not its text, where what it types would show nothing', async () => {
 	const front = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const holdings = new Map([
+		['#line', 'elements'],
+		['#field', 'a value']
+	]);
 	const holding: Beginning = {
 		...beginningIn(front, FULL_HD),
-		ownPage: () => new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH, new Map([[TYPED_INTO, true]]))
+		ownPage: () => new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH, holdings)
 	};
-	await expect(
-		screenType(OWN_PAGE, keystrokes('ls', TEN_A_SECOND), { into: TYPED_INTO }).begin(holding)
-	).rejects.toThrow(
+	const intoTheLine = screenType(OWN_PAGE, keystrokes('ls', TEN_A_SECOND), { into: '#line' }).begin(holding);
+	const intoTheField = screenType(OWN_PAGE, keystrokes('ls', TEN_A_SECOND), { into: '#field' }).begin(holding);
+	await expect(intoTheLine).rejects.toThrow(
 		new FilmError(
-			'screen.type types into #typed, which holds elements of its own that what it types would take the place of: name a block that holds text alone, as a span'
+			'screen.type types into #line, which holds elements of its own that what it types would take the place of: name a span of text alone, as <span id="typed"></span> beside <span class="caret"></span>'
+		)
+	);
+	await expect(intoTheField).rejects.toThrow(
+		new FilmError(
+			'screen.type types into #field, which shows a value, not its text, so what it types would show nothing: name a span of text alone, as <span id="typed"></span> beside <span class="caret"></span>'
 		)
 	);
 });

@@ -19,6 +19,7 @@ import { FilmError, SetupError, TakeError } from '../../src/domain/errors.ts';
 import type { Size } from '../../src/domain/geometry.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
 import type { Exposures, Filmed, Footage, FramesHanded, Opened, PicturedStage } from '../../src/studio/ports.ts';
+import type { BlockHolding } from '../../src/direction/page.ts';
 import { FILMS_FOLDER, NO_SET } from './app.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
 import {
@@ -390,15 +391,25 @@ test("a block a page of the film's own is brought to rest by is measured down it
 	);
 });
 
-test("a typing into a block a page of the film's own lacks, or into one that holds elements of its own, is refused as it begins, naming the block", async () => {
-	const intoNothing = [cut(screen.shows(OWN_PAGE)), ...typing(screen.type(OWN_PAGE, LS, { into: '#nowhere' }))];
+test("a typing into a block a page of the film's own lacks, into one that holds elements of its own, or into one that shows a value, not its text, is refused as it begins, naming the block", async () => {
+	// The filmed page's field is measured as a page of the film's own is, in the first film's act
+	const holdings: BlockHolding[] = [];
+	const fieldMeasured = act(async (context: ActContext) => {
+		holdings.push(await new PlaywrightPage(context.page, context.page.page().keyboard).holdingOf(FIELD));
+	});
+	const intoNothing = [
+		fieldMeasured,
+		cut(screen.shows(OWN_PAGE)),
+		...typing(screen.type(OWN_PAGE, LS, { into: '#nowhere' }))
+	];
 	const intoItsBody = [cut(screen.shows(OWN_PAGE)), ...typing(screen.type(OWN_PAGE, LS, { into: 'body' }))];
 	await expect(shoot(filmOf(intoNothing), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
 		'nothing on the page matches #nowhere as a CSS selector'
 	);
 	await expect(shoot(filmOf(intoItsBody), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
-		'screen.type types into body, which holds elements of its own that what it types would take the place of: name a block that holds text alone, as a span'
+		'screen.type types into body, which holds elements of its own that what it types would take the place of: name a span of text alone, as <span id="typed"></span> beside <span class="caret"></span>'
 	);
+	expect(holdings).toEqual(['a value']);
 });
 
 test("a page of the film's own that moves of itself is refused before the film is shot, naming how it begins", async () => {

@@ -23,8 +23,9 @@
  *
  * Keys are typed into a block of a page of the film's own, as into the terminal: what stands typed at each progress is
  * set whole, so the block shows it as its text in each exposure. The block is found by a CSS selector, as the stage
- * finds it in each exposure's copy of the page, and measured as the move begins; a block that holds elements is
- * refused, as its text would take their place. What stands typed is another value of the screen's own, so a typing
+ * finds it in each exposure's copy of the page, and measured as the move begins; a block whose text would not show
+ * what is typed is refused: one that holds elements, which its text would take the place of, and a field that shows a
+ * value, not its text, an input or a text area. What stands typed is another value of the screen's own, so a typing
  * shares a step with what the screen shows and how its page runs.
  */
 import { FASTEST_SPEED, type Stretch, linear } from '../domain/curves.ts';
@@ -66,7 +67,7 @@ import {
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
-import { ownPageOf } from '../direction/page.ts';
+import { type BlockHolding, ownPageOf } from '../direction/page.ts';
 import { keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
 import {
@@ -200,6 +201,9 @@ const A_PAGE_TYPED_INTO: Kind<OwnPageNamed> = new OfForm<OwnPageNamed>(
 	`${OWN_PAGE_SAID}; the filmed page is typed into by page.type`
 );
 const SCREEN_TYPE = 'screen.type';
+// What a typing refused for its block names in its place: a span of text alone, beside the caret, as the promo's input
+// is written
+const NAME_A_SPAN = 'name a span of text alone, as <span id="typed"></span> beside <span class="caret"></span>';
 const SCREEN_TYPING_FORM: Form<ScreenTypingScript> = { into: needed(A_SELECTOR), ...TYPING_FORM };
 const SCROLLS_FORM: Form<ScrollsScript> = { pace: needed(A_NUMBER), ...TIMING_FORM };
 const SCROLL_TO_FORM: Form<ScrollToScript> = { top: needed(A_NUMBER), within: TIMING_FORM.within };
@@ -335,8 +339,8 @@ async function running(beginning: Beginning, key: string, pace: number): Promise
  * Keys typed into a block of a page of the film's own, `{ html }`, `into` by its CSS selector, key by key, each
  * heard on the film's keyboard or the one named, at the times the strokes have them unless the film names a curve:
  * the block shows what stands typed as its text, in place of what the page wrote there, from the move's start; a block
- * that holds elements of its own is refused as it begins. It types whichever face of the window shows the page, or
- * none.
+ * that holds elements of its own, or shows a value, not its text, is refused as it begins. It types whichever face of
+ * the window shows the page, or none.
  */
 export function type(page: OwnPageNamed, strokes: readonly Keystroke[], script: ScreenTypingScript): Move & Typed {
 	assertKind(page, A_PAGE_TYPED_INTO, "screen.type's page");
@@ -356,7 +360,7 @@ export function type(page: OwnPageNamed, strokes: readonly Keystroke[], script: 
 
 /**
  * A block of a page of the film's own, by the page's key, showing as much of the strokes as stands typed at each
- * progress; refused as it begins where the block holds elements, which its text would take the place of.
+ * progress; refused as it begins where the block's text would not show it.
  */
 async function typingInto(
 	beginning: Beginning,
@@ -364,16 +368,31 @@ async function typingInto(
 	into: string,
 	strokes: readonly Keystroke[]
 ): Promise<Change> {
-	if (await beginning.ownPage(key).holdsElements(into)) {
-		throw new FilmError(
-			`${SCREEN_TYPE} types into ${into}, which holds elements of its own that what it types would take the place of: name a block that holds text alone, as a span`
-		);
-	}
+	refuseUnshown(await beginning.ownPage(key).holdingOf(into), into);
 	return (scene, progress) =>
 		withProp(scene, 'screen', {
 			...scene.screen,
 			typed: typedWith(scene.screen, key, into, typedAlong(strokes, progress))
 		});
+}
+
+/**
+ * A block a typing is refused for where its text would not show what is typed: one that holds elements, which the text
+ * would take the place of, and one that shows a value, not its text, where the text would show nothing.
+ */
+function refuseUnshown(holding: BlockHolding, into: string): void {
+	switch (holding) {
+		case 'text alone':
+			return;
+		case 'elements':
+			throw new FilmError(
+				`${SCREEN_TYPE} types into ${into}, which holds elements of its own that what it types would take the place of: ${NAME_A_SPAN}`
+			);
+		case 'a value':
+			throw new FilmError(
+				`${SCREEN_TYPE} types into ${into}, which shows a value, not its text, so what it types would show nothing: ${NAME_A_SPAN}`
+			);
+	}
 }
 
 /**
