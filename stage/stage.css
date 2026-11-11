@@ -971,7 +971,7 @@ body {
 	inset: 0;
 }
 
-/* The words stand in the middle of their box down it, as wide as their one line, or as wide as their box where they break into more, which CSS lays out no narrower. A word too long for its line breaks anywhere, so they never stand wider than their box. The box is in the frame's pixels, and what an object shows in pixels of a frame the stage's look was made on */
+/* The words stand in the middle of their box down it, as wide as their one line, or as wide as their box where they break into more, which CSS lays out no narrower. A word is never broken: one too long for its line runs past the box, the words standing as wide as it. The box is in the frame's pixels, and what an object shows in pixels of a frame the stage's look was made on */
 .title .way {
 	position: absolute;
 	left: var(--words-in-from-sides);
@@ -989,11 +989,6 @@ body {
 	color: var(--ink);
 	text-align: start;
 	text-wrap: balance;
-	overflow-wrap: anywhere;
-}
-
-.title[data-on-ground] .words {
-	overflow-wrap: normal;
 }
 
 .title[data-align='center'] .words {

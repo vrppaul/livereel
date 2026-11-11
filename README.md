@@ -338,7 +338,9 @@ letters are as large as the look's `titleSize`, and in a place a share of
 it no larger than the place's width lets a long word stand on a line;
 `size` sets one title's own, in pixels of a 1080 frame, over the whole
 frame or in a place alike: `title.show('Live', { at: 'left', size: 220 })`.
-A word larger than its place runs past it, so check it on a still.
+A word is never broken: one larger than its place runs past it, so check
+it on a still. In a room, a title standing in the world is cut where its
+words run past its box farther than a pane's shadow reaches.
 
 A title's or a caption's words come up in the way `words` names, the
 theme's where it names none:
