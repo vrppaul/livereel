@@ -3,7 +3,8 @@
  * stage draws it so: one matrix (`src/domain/matrix.ts`), which the stage draws with and the engine reads where the
  * thing stands on the frame, so a film turns, rolls, grows or brings near anything that stands so by its values alone,
  * with no move of its own for each. An object stands so (`src/props/object.ts`), and the page's window
- * (`src/props/window.ts`), drawn by the one matrix as flat or leant alike.
+ * (`src/props/window.ts`), drawn by the one matrix as flat or leant alike. A matrix is read back into a stance too
+ * (`stanceCarriedBy`), where something carried into another holder stands there as it stood.
  *
  * The stage is handed a flat 2D matrix where the thing faces the frame, at any size, depth or roll, and a 3D one only
  * where it leans: a 3D transform, of no angle too, costs the graphics card a layer in every exposure of a frame, and a
@@ -12,21 +13,32 @@
  * the matrix, so the stage draws the back of one that has turned away, never what it shows mirrored; the window turned
  * half round shows the page mirrored, or a page of the film's own on its back (`Back` in `src/props/screen.ts`).
  */
+import { Euler, MathUtils } from 'three';
 import { FilmError } from './errors.ts';
 import { type Size, frameScaleOf } from './geometry.ts';
 import { A_NUMBER, type Kind, Plain } from './handed.ts';
 import {
 	type FlatMatrix,
+	ITS_MIDDLE,
 	type Matrix,
+	type PlanesWays,
+	carried,
 	chained,
+	crossOf,
+	dotOf,
 	facesTheFrame,
 	flatOf,
+	lengthOf,
 	rotationX,
 	rotationY,
 	rotationZ,
 	scaling,
 	showsItsFront,
-	translation
+	threesMatrixOf,
+	translation,
+	turnTo,
+	unitOf,
+	waysAlongItsPlane
 } from './matrix.ts';
 import { between } from './toward.ts';
 
@@ -81,6 +93,15 @@ const DEGREES_IN_A_TURN = 360;
 const BEHIND_THE_EYE = 0;
 // A refusal says how far the eye stands from the frame to a tenth of a pixel: 2540.5 at 24°
 const DIGITS_OF_A_DEPTH = 1;
+// The order three reads the turns of an angle with no turn over in: tilted, swung, then rolled, as `angledAs` chains them
+const TILT_TURN_ROLL = 'XYZ';
+const NO_TURN_OVER = 0;
+// How far a step across and one down a matrix draws may stand unlike in length, for their length, or off square, as a
+// share of their lengths' product, while it still grows what it carries alike: whole turns' arithmetic leaves 2.4e-16
+const ALIKE_WITHIN = 1e-9;
+// How far off its plane, in the frame's pixels, a stance may bring something while it still lies on it: arithmetic
+// carrying a placement from one holder into another leaves under a millionth of a pixel
+const ON_ITS_PLANE_WITHIN = 1e-6;
 
 /** How something faces until a move leans it: face-on and upright. */
 export const FACE_ON: Angle = { tilt: 0, turn: 0, roll: 0, over: 0 };
@@ -197,16 +218,62 @@ export function transformOf(stood: Matrix, placing: Matrix): Transform {
  * turn, so something spun round a whole turn goes back without spinning back.
  */
 export function faceOnNearest(angle: Angle): Angle {
+	return angleNearest(FACE_ON, angle);
+}
+
+/** An angle each of whose values is moved by whole turns to stand nearest that value of another angle. */
+function angleNearest(angle: Angle, stood: Angle): Angle {
 	return {
-		tilt: nearestWholeTurn(angle.tilt),
-		turn: nearestWholeTurn(angle.turn),
-		roll: nearestWholeTurn(angle.roll),
-		over: nearestWholeTurn(angle.over)
+		tilt: turnNearest(angle.tilt, stood.tilt),
+		turn: turnNearest(angle.turn, stood.turn),
+		roll: turnNearest(angle.roll, stood.roll),
+		over: turnNearest(angle.over, stood.over)
 	};
 }
 
-function nearestWholeTurn(degrees: number): number {
-	return Math.round(degrees / DEGREES_IN_A_TURN) * DEGREES_IN_A_TURN;
+/** So many degrees moved by whole turns to stand nearest so many others. */
+function turnNearest(degrees: number, stood: number): number {
+	return degrees + Math.round((stood - degrees) / DEGREES_IN_A_TURN) * DEGREES_IN_A_TURN;
+}
+
+/**
+ * How a matrix stands what it carries about its middle, as a stance does (`stanceMatrix`), wherever it carries that
+ * middle across and down: as large as it draws a step across, as far out as it carries the middle, and facing as it
+ * turns the plane's across and down, with no turn over, each value of the angle at its nearest whole turn to that value
+ * of the angle it stood at, so what is carried on from there spins no whole turn back. None where the matrix draws a
+ * step across and one down unlike in length or off square, stretching what it carries, as no stance does.
+ */
+export function stanceCarriedBy(matrix: Matrix, stood: Angle): Stance | null {
+	const ways = waysAlongItsPlane(matrix);
+	const scale = lengthOf(ways.across);
+	if (!growsAlike(ways, scale)) return null;
+	const across = unitOf(ways.across);
+	const down = unitOf(ways.down);
+	const turn = threesMatrixOf(turnTo(across, down, crossOf(across, down)));
+	const turned = new Euler().setFromRotationMatrix(turn, TILT_TURN_ROLL);
+	const angle = {
+		tilt: MathUtils.radToDeg(turned.x),
+		turn: MathUtils.radToDeg(turned.y),
+		roll: MathUtils.radToDeg(turned.z),
+		over: NO_TURN_OVER
+	};
+	return { scale, depth: carried(matrix, ITS_MIDDLE).out, angle: angleNearest(angle, stood) };
+}
+
+/** Whether a matrix draws a step across its plane and one down it alike in length and square, the step across so long. */
+function growsAlike(ways: PlanesWays, acrossLength: number): boolean {
+	const alikeInLength = Math.abs(lengthOf(ways.down) - acrossLength) <= ALIKE_WITHIN * acrossLength;
+	const square = Math.abs(dotOf(ways.across, ways.down)) <= ALIKE_WITHIN * acrossLength * lengthOf(ways.down);
+	return alikeInLength && square;
+}
+
+/**
+ * Whether a stance lays something on the plane it stands on, facing it with its front and at no depth but what
+ * arithmetic leaves: grown or rolled in it, it may be.
+ */
+export function liesOnItsPlane(stance: Stance): boolean {
+	const angled = angledAs(stance.angle);
+	return facesTheFrame(angled) && showsItsFront(angled) && Math.abs(stance.depth) <= ON_ITS_PLANE_WITHIN;
 }
 
 function isScale(written: unknown): written is number {

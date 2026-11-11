@@ -9,6 +9,7 @@ import { FilmError } from '../../src/domain/errors.ts';
 import type { Format } from '../../src/domain/format.ts';
 import {
 	type Box,
+	CORNER_SHARES,
 	type Point,
 	boxOf,
 	boxToward,
@@ -239,9 +240,9 @@ const DRAWN_FROM_THE_PAGE = { kind: 'page' };
 const NONE_SHARPER: readonly never[] = [];
 // The middle of an object's box, in shares of it
 const BOX_MIDDLE: Point = { left: 0.5, top: 0.5 };
-// How a group stands as it was placed refuses an object joining it otherwise
-const JOINS_THE_STACK_PLACED =
-	'code.show joins the group "stack" only while it stands as it was placed: face-on by whole turns, as large as its box, on the frame\'s plane';
+// How a group grown and leant at once refuses an object joining it
+const JOINS_THE_STACK_STRETCHED =
+	'code.show joins the group "stack" while it stands grown and leant from the frame at once: what joins it would stand stretched there, as a group grows across and down its own plane alone; join it while the group stands as large as its box, or faces the frame';
 
 function beginningOf(scene: Scene): Beginning {
 	return beginningIn(scene, SMALL);
@@ -919,7 +920,7 @@ test('a piece lying on the page goes back over its source there, wherever the ca
 	]);
 });
 
-test('a piece is carried onto the page only from the frame, lying flat there, while the window faces the frame front on: leant, turned over or near, in a group, or under a leant window, it is refused', async () => {
+test('a piece on the frame is carried onto the page only lying flat there, while the window faces the frame front on: leant, turned over or near, in a group, or under a leant window, it is refused', async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
 	const tilted = await setIn(piece.lean({ tilt: 10 }), lifted, 1, FULL_HD);
@@ -943,6 +944,60 @@ test('a piece is carried onto the page only from the frame, lying flat there, wh
 		)
 	);
 });
+
+test('a piece in the world carried onto the page stands where it stood as it sets off, wherever the eye stands, on a window brought near and rolled, its angle at its nearest whole turn to where it stood, and lands so', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { inside: 'world' }), wide, 1, FULL_HD);
+	const spun = await setIn(piece.lean({ roll: 740 }), lifted, 1, FULL_HD);
+	const raised = await setIn(piece.effects({ depth: 100 }), spun, 1, FULL_HD);
+	const near = await setIn(windowTo(MIDDLE_HALF, { depth: 100 }), raised, 1, FULL_HD);
+	const rolled = await setIn(lean({ roll: 20 }), near, 1, FULL_HD);
+	const aside = await setIn(eye.to(EYE_ASIDE), rolled, 1, FULL_HD);
+	const settingOff = await setIn(piece.onto('#other'), aside, 0, FULL_HD);
+	const landed = await setIn(piece.onto('#other'), aside, 1, FULL_HD);
+	const before = drawnObjectsIn(aside, FULL_HD)[0]!;
+	const after = drawnObjectsIn(settingOff, FULL_HD)[0]!;
+	// Spun 740 in the world on a window rolled 20, it stands rolled 720 on the page, two whole turns
+	const spunTwice = { tilt: expect.closeTo(0), turn: expect.closeTo(0), roll: expect.closeTo(720), over: 0 };
+	expect([
+		after.laidIn,
+		after.inTheEyesSpace,
+		cornersDrawnIn(settingOff),
+		settingOff.objects.get('piece')!.angle,
+		landed.objects.get('piece')!.angle
+	]).toEqual([
+		'window',
+		closeToMatrix(before.inTheEyesSpace),
+		cornersDrawnIn(aside).map(closeToPoint),
+		spunTwice,
+		spunTwice
+	]);
+});
+
+test("a piece in the world is carried onto the page only lying on the page's plane as it stands: leant from the window, or nearer or farther than it, it is refused", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { inside: 'world' }), wide, 1, FULL_HD);
+	const tilted = await setIn(piece.lean({ tilt: 10 }), lifted, 1, FULL_HD);
+	const behindANearWindow = await setIn(windowTo(MIDDLE_HALF, { depth: 100 }), lifted, 1, FULL_HD);
+	const offThePlane = new FilmError(
+		"piece.onto would lay the piece on the page while it stands off the page's plane, leant from it or nearer or farther than it: bring it face-on to the window and to the window's depth first"
+	);
+	await expect(async () => piece.onto('#other').begin(beginningIn(tilted, FULL_HD))).rejects.toThrow(offThePlane);
+	await expect(async () => piece.onto('#other').begin(beginningIn(behindANearWindow, FULL_HD))).rejects.toThrow(
+		offThePlane
+	);
+});
+
+/** Where the corners of the piece of a scene shot full HD are drawn on the frame. */
+function cornersDrawnIn(scene: Scene): readonly Point[] {
+	const holders = { camera: cameraOf(scene, FULL_HD), groups: scene.groups };
+	return CORNER_SHARES.map((corner) => drawnOnTheFrame(scene.objects.get('piece')!, holders, FULL_HD.frame, corner));
+}
+
+/** A matrix as a test takes it: each of its entries close to the one named. */
+function closeToMatrix(matrix: Matrix): Matrix {
+	return Object.fromEntries(Object.entries(matrix).map(([entry, value]) => [entry, expect.closeTo(value)])) as Matrix;
+}
 
 test('a piece lying on the page leans with the window, flat on it: a tilt, a turn or a depth of its own is refused', async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
@@ -1440,36 +1495,36 @@ test("an object in a group turned toward the eye is drawn in 3D, and one turned 
 	]);
 });
 
-test('an object joins a group only as it comes, while the group stands as it was placed: none standing, or one leant, grown or brought near, is refused, one spun whole turns round, or half turns that cancel, taken', async () => {
+test('an object joins a group as it comes, standing in it where it stands on the frame however the group stands, leant, grown, brought near or spun: none standing, or one grown and leant at once, is refused', async () => {
 	const grouped = await setAt(group.show({ as: 'stack' }), OPENING_IN_SMALL, 1);
 	const joining = code.show(THREE_LINES, { at: 'left', group: 'stack' });
-	const unplaced = await Promise.all(
+	const onTheFrame = await setAt(code.show(THREE_LINES, { at: 'left' }), OPENING_IN_SMALL, 1);
+	const standing = await Promise.all(
 		[
-			group.lean({ as: 'stack', tilt: 10 }),
+			group.lean({ as: 'stack', tilt: 10, turn: 20 }),
 			group.to('whole', { as: 'stack', scale: 1.5 }),
-			group.to('whole', { as: 'stack', depth: 100 })
-		].map((move) => setAt(move, grouped, 1))
-	);
-	const spun = await Promise.all(
-		[
-			group.lean({ as: 'stack', turn: 360, roll: -360 }),
+			group.to('whole', { as: 'stack', depth: 100 }),
 			group.lean({ as: 'stack', tilt: 180, turn: 180, roll: 180 })
 		].map((move) => setAt(move, grouped, 1))
 	);
+	const grown = await setAt(group.to('whole', { as: 'stack', scale: 1.5 }), grouped, 1);
+	const grownAndLeant = await setAt(group.lean({ as: 'stack', tilt: 10 }), grown, 1);
 	await expect(async () => joining.begin(beginningOf(OPENING_IN_SMALL))).rejects.toThrow(
 		new FilmError('code.show finds no group "stack" standing')
 	);
-	await Promise.all(
-		unplaced.map((scene) =>
-			expect(async () => joining.begin(beginningOf(scene))).rejects.toThrow(new FilmError(JOINS_THE_STACK_PLACED))
-		)
+	await expect(async () => joining.begin(beginningOf(grownAndLeant))).rejects.toThrow(
+		new FilmError(JOINS_THE_STACK_STRETCHED)
 	);
-	const joined = await Promise.all(spun.map((scene) => setAt(joining, scene, 1)));
-	expect(joined.map((scene) => scene.objects.get('code')!.inside)).toEqual([
-		{ kind: 'group', name: 'stack', zIndex: null },
-		{ kind: 'group', name: 'stack', zIndex: null }
-	]);
+	const joined = await Promise.all(standing.map((scene) => setAt(joining, scene, 1)));
+	const asOnTheFrame = codesCornersDrawnIn(onTheFrame).map(closeToPoint);
+	expect(joined.map(codesCornersDrawnIn)).toEqual([asOnTheFrame, asOnTheFrame, asOnTheFrame, asOnTheFrame]);
 });
+
+/** Where the corners of the code of a scene shot in the small format are drawn on the frame. */
+function codesCornersDrawnIn(scene: Scene): readonly Point[] {
+	const holders = { camera: cameraOf(scene, SMALL), groups: scene.groups };
+	return CORNER_SHARES.map((corner) => drawnOnTheFrame(scene.objects.get('code')!, holders, SMALL.frame, corner));
+}
 
 test('an object stands inside the window or in a group, never both, and takes a zIndex only in a group', () => {
 	expect(() => code.show(THREE_LINES, { at: LOWER_RIGHT, inside: 'window', group: 'stack' })).toThrow(

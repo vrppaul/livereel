@@ -11,7 +11,9 @@
  * in perspective about its box's middle, or, on the window's plane, in the window, by those stances alone, as the
  * window's element carries what is laid in it; the room reads where it stands in the eye's own space. Where a point of
  * anything placed is seen on the frame is one function, `pointOnTheFrame`, which the motion blur, a lens, a note, the
- * pins and a piece's lines read through the camera's module or the object's.
+ * pins and a piece's lines read through the camera's module or the object's. Something carried from one holder into
+ * another, a piece from the world onto the page or an object joining a leant group, is placed there where it stood by
+ * one function too, `carriedInto`.
  *
  * The camera's module builds on this one, as it reads where the window stands; this one reads of the camera only how
  * it frames the page in its view (`src/domain/framing.ts`), and holds the arithmetic of a box about its middle on the
@@ -23,8 +25,18 @@
  */
 import type { Camera, View } from './camera.ts';
 import { type Eye, eyeAtRest, inTheEyesSpace, seenByTheEye, turnOf } from './eye.ts';
-import { boxInTheView } from './framing.ts';
-import { type Box, HALVES, type Point, type Size, boxOf, middleX, middleY, placedFrom } from './geometry.ts';
+import { boxInTheView, boxOfTheScreenIn } from './framing.ts';
+import {
+	type Box,
+	HALVES,
+	type Point,
+	type Size,
+	boxCentredOn,
+	boxOf,
+	middleX,
+	middleY,
+	placedFrom
+} from './geometry.ts';
 import {
 	ITS_MIDDLE,
 	type Matrix,
@@ -34,12 +46,13 @@ import {
 	crossOf,
 	dotOf,
 	inThreesAxes,
+	inverseOf,
 	lengthOf,
 	translation,
 	unitOf,
-	wayBetween
+	waysAlongItsPlane
 } from './matrix.ts';
-import { AS_PLACED, type Stance, type Transform, stanceMatrix, transformOf } from './stance.ts';
+import { AS_PLACED, type Stance, type Transform, stanceCarriedBy, stanceMatrix, transformOf } from './stance.ts';
 
 /** Where something stands on the plane of what holds it: its box, in that plane's own pixels, and its stance. */
 export interface Placement extends Stance {
@@ -143,13 +156,10 @@ export const ON_ITS_PLANE = 0;
 // A box read on its plane as it is; and something laid in the frame
 const AS_IT_IS: Measure = { kind: 'asItIs' };
 const IN_THE_FRAME: LaidIn = { kind: 'frame' };
-// Two things laid in the order they come; a step across a plane and down it from its middle; and how much farther from
-// the eye one plane may stand than another, in the frame's pixels, while the two are taken as one plane, and how far
-// two planes' facings may stand apart, as a sine, while they are taken to face alike: arithmetic leaves under a
-// millionth of a pixel and 1e-12
+// Two things laid in the order they come; and how much farther from the eye one plane may stand than another, in the
+// frame's pixels, while the two are taken as one plane, and how far two planes' facings may stand apart, as a sine,
+// while they are taken to face alike: arithmetic leaves under a millionth of a pixel and 1e-12
 const AS_THEY_COME = 0;
-const A_STEP_ACROSS: Spot = { across: 1, down: 0, out: ON_ITS_PLANE };
-const A_STEP_DOWN: Spot = { across: 0, down: 1, out: ON_ITS_PLANE };
 const ON_ONE_PLANE_WITHIN = 1e-6;
 const FACING_ALIKE_WITHIN = 1e-9;
 
@@ -235,6 +245,54 @@ export function placed(placement: Placement, plane: Plane, frame: Size): Placed 
 				placing: own,
 				inTheEyesSpace: chained([plane.inTheEyesSpace, translation(middleInTheRoom(laid, plane.box)), own])
 			};
+	}
+}
+
+/**
+ * A placement in one holder carried into another, standing where it stood as the holders stand: the matrix that carries
+ * it into the eye's own space read on the other's plane, and taken apart there into a box as large in what it is laid
+ * in as it was, its middle where the matrix carries it, and a stance (`stanceCarriedBy`), each value of its angle at its
+ * nearest whole turn to where it stood. None where the other's plane would stretch it: grown and leant from where it
+ * stands at once, as a plane grows across and down alone. Every matrix here carries into the eye's own space, before
+ * the eye sees anything in perspective, so no plane is ever seen edge-on.
+ */
+export function carriedInto(
+	placement: Placement,
+	from: Holder,
+	to: Holder,
+	holders: Holders,
+	frame: Size
+): Placement | null {
+	const standing = placed(placement, planeOf(from, holders, frame), frame);
+	const plane = planeOf(to, holders, frame);
+	const onThePlane = chained([inverseOf(ownSpaceOf(plane, frame)), standing.inTheEyesSpace]);
+	const stance = stanceCarriedBy(onThePlane, placement.angle);
+	if (stance === null) return null;
+	const middle = carried(onThePlane, ITS_MIDDLE);
+	const laidMiddle = { left: plane.box.width / HALVES + middle.across, top: plane.box.height / HALVES + middle.down };
+	return { ...stance, box: boxOfItsHolder(boxCentredOn(laidMiddle, standing.laid), plane.measures, frame) };
+}
+
+/**
+ * The matrix that carries a spot of a plane, from its box's middle in its own pixels, into the eye's own space: the
+ * plane's middle in what it is laid in, then its stance. `placed` chains the same products with a placement's own in
+ * each holder's order of before, which keeps the stage's bytes, so it does not build on this.
+ */
+function ownSpaceOf(plane: Plane, frame: Size): Matrix {
+	return chained([
+		plane.inTheEyesSpace,
+		translation(middleInTheRoom(plane.box, sizeOfWhatItIsLaidIn(plane.laidIn, frame))),
+		stanceMatrix(plane.stance)
+	]);
+}
+
+/** The size of what the flat stage lays something in: the frame, or the window's box. */
+function sizeOfWhatItIsLaidIn(laidIn: LaidIn, frame: Size): Size {
+	switch (laidIn.kind) {
+		case 'frame':
+			return frame;
+		case 'window':
+			return laidIn.window.laid;
 	}
 }
 
@@ -329,6 +387,16 @@ function boxOnThePlane(box: Box, measure: Measure, frame: Size): Box {
 	}
 }
 
+/** A box of a plane's own pixels in its holder's: as it is, or, on the page, the box of the screen the camera frames there. */
+function boxOfItsHolder(box: Box, measure: Measure, frame: Size): Box {
+	switch (measure.kind) {
+		case 'asItIs':
+			return box;
+		case 'framed':
+			return boxOfTheScreenIn(measure.camera, frame, box);
+	}
+}
+
 /**
  * How two things placed are laid one over the other where neither hides the other by depth, as the room lays what is
  * seen through: the farther first. Of two whose planes face alike or opposite ways, the farther is the one whose plane
@@ -354,10 +422,8 @@ function eyesDistanceToItsPlane(standing: Placed, facing: Spot): number {
 
 /** The way a plane carried into the eye's own space faces, as long as one: square to its across and its down. */
 function facingOf(inTheEyesSpace: Matrix): Spot {
-	const middle = carried(inTheEyesSpace, ITS_MIDDLE);
-	const across = wayBetween(middle, carried(inTheEyesSpace, A_STEP_ACROSS));
-	const down = wayBetween(middle, carried(inTheEyesSpace, A_STEP_DOWN));
-	return unitOf(crossOf(across, down));
+	const ways = waysAlongItsPlane(inTheEyesSpace);
+	return unitOf(crossOf(ways.across, ways.down));
 }
 
 /** How far before the eye the middle of something placed stands along where it looks, in the frame's pixels. */

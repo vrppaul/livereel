@@ -10,7 +10,8 @@
  * sharp as the page's picture is where the page stands still: it shows what the page showed there then, as the page
  * changes under it.
  * Lifted inside the world, it stands there over its source on the window's plane, wherever the eye stands, and the eye
- * moves past it as it moves past the window, the eye's focus blurring it as it stands off it.
+ * moves past it as it moves past the window, the eye's focus blurring it as it stands off it; carried onto a block of
+ * the page from there, it sets off from where it stands, while it lies on the window's plane.
  *
  * Lifted, it may leave a hole: the ground the page draws behind its block, read as it is lifted, or a colour the film
  * names, where a box of the screen, with no block behind it, needs one; and draw lines from itself to its source. Its

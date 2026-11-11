@@ -478,9 +478,9 @@ lie on the page there: it lands on the block wherever the camera goes on
 the way, and keeps that place on the screen after, the camera framing it
 as it frames the page, so a scroll of the page moves the block from under
 it. It lies in the window as the page does, flat on it, under what stands
-on the frame and cut at the window's edge, from the moment it sets off; it
-sets off only lying flat, face-on and at no depth of its own, and never
-slides from the page. `piece.back()` takes it back over its source as the
+on the frame and cut at the window's edge, from the moment it sets off; from
+the frame it sets off only lying flat, face-on and at no depth of its own,
+and it never slides from the page. `piece.back()` takes it back over its source as the
 camera shows it then, face-on and as large as it was, without spinning back
 a whole turn; `piece.hide()` puts it away.
 
@@ -522,9 +522,12 @@ drawn behind the near; such a group takes no `zIndex`.
 whatever else moves it then: a move of one of its objects still running
 sets nothing more. `group.to(place)` carries the group's middle to the
 place's; it stays as large as it was placed and grows by `scale`. An
-object joins a group only as it comes, while the group stands as it was
-placed, face-on, as large as its box and on the frame's plane; it never
-slides in or out past the frame's edge. A place an object in a group is
+object joins a group only as it comes, standing in it where it would stand
+on the frame however the group stands, leant, grown or brought near, so it
+stands still as it joins and moves with the group after; a group grown and
+leant at once is refused, as what joined it would stand stretched, a group
+growing across and down its own plane alone. It never slides in or out
+past the frame's edge. A place an object in a group is
 carried to, and a block its `back` or `to` reads, is read on the frame and
 stands in the group where it would stand once the group is back as it was
 placed.
@@ -541,7 +544,11 @@ far it stands, its shadow and its letters' edges seen through to the page
 behind. Its `depth` still counts from the eye at rest, so an eye
 moved near or past it is not kept in front of it. A piece lifted `inside:
 'world'`, `piece.show('#why', { inside: 'world' })`, stands over its source
-on the window's plane wherever the eye stands, aslant too.
+on the window's plane wherever the eye stands, aslant too. `piece.onto`
+carries it from the world onto the page where it stands, wherever the eye
+stands and however the window is brought near or rolled, while it lies on
+the window's plane, face-on to the window and at its depth, as what lies
+in the window is drawn flat on it: standing off that plane, it is refused.
 
 A title, code or the terminal stands `inside` the page's window, as a small
 window of code over the site's: `code.show(LINES, { at: { left: 0.45, top:

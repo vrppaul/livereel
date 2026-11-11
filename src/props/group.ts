@@ -6,16 +6,14 @@
  * the middle of, and an object in it has its box in the group's pixels, from the box's top left corner; the box is as
  * large as the group was placed, so a group grows by its scale alone.
  *
- * An object joins a group only as it comes, while the group stands as it was placed, so where it would stand on the
- * frame is where it stands in the group, measured from the group's corner: nothing is carried from one holder to
- * another. A group goes with every object in it, fading them as it goes; the scene holds no object of a group gone.
+ * An object joins a group only as it comes, standing in it where it would stand on the frame, carried into the group's
+ * plane however the group stands (`carriedInto`, `src/domain/placement.ts`), so it stands still as it joins. A group
+ * goes with every object in it, fading them as it goes; the scene holds no object of a group gone.
  */
 import { FilmError } from '../domain/errors.ts';
 import { type Fraction, WHOLE } from '../domain/fraction.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
-import { carriesEveryPointWhereItStands } from '../domain/matrix.ts';
 import type { GroupName, Placement } from '../domain/placement.ts';
-import { stanceMatrix } from '../domain/stance.ts';
 import { presentShare } from './way.ts';
 
 /**
@@ -43,15 +41,6 @@ export const A_GROUP_ORDER: Kind<GroupOrder> = new OneOf(
 
 /** Groups by name. */
 export type Groups = ReadonlyMap<GroupName, Group>;
-
-/**
- * Whether a group stands as it was placed: its stance carries every point where it stands, as large as its box, on the
- * frame's plane and facing it upright, by whole turns or none, so a box in it stands on the frame where it is measured
- * from its corner.
- */
-export function standsAsPlaced(group: Group): boolean {
-	return carriesEveryPointWhereItStands(stanceMatrix(group));
-}
 
 /** The group of a name a move takes, as it finds it as it begins; refused where none stands, the move named. */
 export function groupFound(groups: Groups, name: GroupName, move: string): Group {

@@ -1,6 +1,6 @@
 /**
  * A matrix that carries a point of something drawn to where it is seen, as CSS's `matrix3d()` does, and the few that
- * make one: moved, seen in perspective, rotated about each axis, grown.
+ * make one: moved, seen in perspective, rotated about each axis, grown, and undone, by three's own arithmetic.
  *
  * Where anything that leans, grows or turns stands on the frame is worked out here once, and the stage is handed the
  * numbers it draws with (`src/domain/stance.ts`), so the two never tell it apart. The entries are named as a DOMMatrix
@@ -9,6 +9,7 @@
  * entry `m<column><row>` stands in that column and row. A chain of them reads as a CSS transform list does: the last
  * carries a point first.
  */
+import { Matrix4 } from 'three';
 import { type Box, type Point, cornersAround, middleX, middleY } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, needed } from './handed.ts';
 import { between } from './toward.ts';
@@ -87,6 +88,12 @@ interface Way {
 	readonly down: number;
 }
 
+/** The ways a matrix carries a step across and a step down the plane it carries, from its middle, as long as it draws them. */
+export interface PlanesWays {
+	readonly across: Spot;
+	readonly down: Spot;
+}
+
 /** A spot of the room as a film writes it, every one of its three numbers given. */
 export const A_SPOT: Kind<Spot> = new OfForm<Spot>(
 	{ across: needed(A_NUMBER), down: needed(A_NUMBER), out: needed(A_NUMBER) },
@@ -95,6 +102,9 @@ export const A_SPOT: Kind<Spot> = new OfForm<Spot>(
 
 /** The middle of what a matrix carries about its middle, as the matrix takes it: no way from there. */
 export const ITS_MIDDLE: Spot = { across: 0, down: 0, out: 0 };
+// A step across a plane and one down it from its middle
+const A_STEP_ACROSS: Spot = { across: 1, down: 0, out: 0 };
+const A_STEP_DOWN: Spot = { across: 0, down: 1, out: 0 };
 
 /** The way from one spot to another. */
 export function wayBetween(start: Spot, end: Spot): Spot {
@@ -279,6 +289,46 @@ export function carried(matrix: Matrix, spot: Spot): Spot {
  */
 export function seenFromOf(matrix: Matrix, spot: Spot): number {
 	return matrix.m14 * spot.across + matrix.m24 * spot.down + matrix.m34 * spot.out + matrix.m44;
+}
+
+/** The ways a matrix carries a step across and a step down the plane it carries, from its middle. */
+export function waysAlongItsPlane(matrix: Matrix): PlanesWays {
+	const middle = carried(matrix, ITS_MIDDLE);
+	return {
+		across: wayBetween(middle, carried(matrix, A_STEP_ACROSS)),
+		down: wayBetween(middle, carried(matrix, A_STEP_DOWN))
+	};
+}
+
+/** The matrix that carries each point back to where a matrix carried it from: the matrix undone. */
+export function inverseOf(matrix: Matrix): Matrix {
+	const [m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44] =
+		threesMatrixOf(matrix).invert().elements;
+	return { m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44 };
+}
+
+/**
+ * A matrix as three.js holds one, for three's own arithmetic on it: its entries column after column, as
+ * `matrix3d()` takes them.
+ */
+export function threesMatrixOf(matrix: Matrix): Matrix4 {
+	return new Matrix4().fromArray(ENTRIES.map((entry) => matrix[entry]));
+}
+
+/** The matrix that turns the room's across, down and out to three ways, each as long as one and square to the others. */
+export function turnTo(across: Spot, down: Spot, out: Spot): Matrix {
+	return {
+		...IDENTITY,
+		m11: across.across,
+		m12: across.down,
+		m13: across.out,
+		m21: down.across,
+		m22: down.down,
+		m23: down.out,
+		m31: out.across,
+		m32: out.down,
+		m33: out.out
+	};
 }
 
 /**

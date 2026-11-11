@@ -37,3 +37,19 @@ export function boxInTheView(camera: Camera, frame: Size, box: Box): Box {
 		pointInTheView(camera, frame, { left: box.left + box.width, top: box.top + box.height })
 	);
 }
+
+/**
+ * The box of the screen a box of a camera's view shows as the camera frames the page, before the view's stance carries
+ * it: `boxInTheView` undone, in the screen's pixels.
+ */
+export function boxOfTheScreenIn(camera: Camera, frame: Size, box: Box): Box {
+	const pose = camera.pose;
+	const frameZoom = frameZoomOf(pose, frame);
+	const view = camera.view.box;
+	return {
+		left: pose.focusX + (box.left - view.width / HALVES) / frameZoom,
+		top: pose.focusY + (box.top - view.height / HALVES) / frameZoom,
+		width: box.width / frameZoom,
+		height: box.height / frameZoom
+	};
+}
