@@ -214,6 +214,25 @@ body {
 	pointer-events: none;
 }
 
+/* The pages of the film's own as moves read them (`standOwnPage` in `stage.js`): beside the frame, past the tab's edge, which no frame shows, at the screen's size and no scale, so each is laid out as the screen lays it out */
+.pages-read {
+	position: fixed;
+	left: calc(var(--frame-width) * 1px);
+	top: 0;
+	width: calc(var(--screen-width) * 1px);
+	height: calc(var(--screen-height) * 1px);
+}
+
+/* A frame is replaced content, which its sides do not stretch: its size is written out */
+.page-read {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
+}
+
 /* A page of the film's own drawn past its screen (`pastTheScreen` in `src/props/screen.ts`): a sheet laid in a frame of its own as far past the screen's top and foot as the engine says, the screen's ground under it and the screen's edge and shadow round it, its corners as round as the screen's; the screen, which no longer cuts what it holds there, draws neither its ground nor its shadow under it */
 [data-past] .screen {
 	overflow: visible;

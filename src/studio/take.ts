@@ -12,8 +12,9 @@
  * a frame's share along it, and a cut's moves take none, at the moment of the frame after them, as their sounds are
  * heard. The page is acted
  * on one way: as a move that acts begins, by the way the take hands every move. A move begins on the page the screen
- * shows: where that is a page of the film's own, it measures blocks there, and its scroll and keys go to the filmed page
- * behind it. A sound a move makes is heard as the move is set at or past its point, on the frame being made.
+ * shows: where that is a page of the film's own, it measures blocks there, the stage's copy of it stood as the page
+ * stands at the move's moment, and its scroll and keys go to the filmed page behind it. A sound a move makes is heard
+ * as the move is set at or past its point, on the frame being made.
  * A frame is drawn only when the footage keeps it, and drawn again where anything on it moved fast while its shutter
  * was open — the camera, its window, the cursor, the light, an object or what it shows — as the scene stood at moments
  * of that time: the scene the frame before left, every move begun by then set as far as it had come, and what is worked
@@ -58,6 +59,7 @@ import { ZOOM_AT_MOST, flatCamera, zoomPicturedFor } from '../domain/camera.ts';
 import { TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
 import type { Box } from '../domain/geometry.ts';
+import type { OwnPageStanding } from '../domain/own-page.ts';
 import { type PartAsked, closestOf } from '../domain/picture.ts';
 import { type MotionBlur, alsoExposedBack } from '../domain/shutter.ts';
 import { type Ease, type Stretch, linear } from '../domain/curves.ts';
@@ -65,7 +67,7 @@ import { framesOf, momentOf } from '../domain/time.ts';
 import type { TypedText } from '../domain/typing.ts';
 import { between } from '../domain/toward.ts';
 import { type Change, type Move, type Share, movesThePage, soundsOf } from '../direction/move.ts';
-import type { Action, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
+import type { Action, BlockHolding, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import type { Cue } from '../direction/sound.ts';
 import type { Cut, Play, Step } from '../direction/steps.ts';
 import {
@@ -76,6 +78,7 @@ import {
 	drawingOf,
 	drawn,
 	frameShiftBetween,
+	ownPageStandingIn,
 	partsAskedSharperIn,
 	pictureZoomsIn,
 	seenIn,
@@ -380,13 +383,14 @@ export class Take {
 
 	/** A move begun as the scene stands, over a stretch of the film's time. */
 	private changeOf(move: Move, stretch: Stretch): Change | Promise<Change> {
+		const scene = this.scene;
 		return move.begin({
-			scene: this.scene,
-			page: this.pageShownIn(this.scene),
+			scene,
+			page: this.pageShownIn(scene, stretch.moment),
 			format: this.format,
 			pageShown: this.opened.stage.kind,
 			stretch,
-			ownPage: (key) => this.ownPageOf(key),
+			ownPage: (key) => this.ownPageAt(scene, key, stretch.moment),
 			act: (action) => this.acted(action),
 			holdPicture: (part) => this.pictures.hold(part),
 			thingsBuilt: this.opened.thingsBuilt,
@@ -395,17 +399,22 @@ export class Take {
 	}
 
 	/**
-	 * The page a move begins on: the filmed page, or, where the screen shows a page of the film's own, that one as a move
-	 * measures it, the filmed page behind it still what scrolls and takes keys.
+	 * The page a move begins on at a moment: the filmed page, or, where the screen shows a page of the film's own, that
+	 * one as a move reads it then, the filmed page behind it still what scrolls and takes keys.
 	 */
-	private pageShownIn(scene: Scene): FilmedPage {
+	private pageShownIn(scene: Scene, moment: number): FilmedPage {
 		const shows = scene.screen.shows;
 		switch (shows.kind) {
 			case 'filmed':
 				return this.opened.page;
 			case 'own':
-				return new OwnPageShown(this.ownPageOf(shows.key), this.opened.page);
+				return new OwnPageShown(this.ownPageAt(scene, shows.key, moment), this.opened.page);
 		}
+	}
+
+	/** A page of the film's own, by its key, as a move begun at a moment on a scene reads it: as it stands then. */
+	private ownPageAt(scene: Scene, key: string, moment: number): MeasuredPage {
+		return new OwnPageStood(this.ownPageOf(key), ownPageStandingIn(scene, key, moment), this.opened.stage);
 	}
 
 	/** A page of the film's own the stage laid, by its key, as every page a move shows is laid before the film. */
@@ -645,7 +654,49 @@ export class Take {
 }
 
 /**
- * A page of the film's own as a move begins on it while the screen shows it: its blocks measured where it lays them,
+ * A page of the film's own as a move reads it: the stage's copy of it stood as the page stands at the move's moment
+ * before each read, as another move may have stood it otherwise since, so a block is measured where the page's run and
+ * what stands typed in it have it then, whatever the frame last drawn showed.
+ */
+class OwnPageStood implements MeasuredPage {
+	readonly laid: MeasuredPage;
+	readonly standing: OwnPageStanding;
+	readonly stage: Stage;
+
+	constructor(laid: MeasuredPage, standing: OwnPageStanding, stage: Stage) {
+		this.laid = laid;
+		this.standing = standing;
+		this.stage = stage;
+	}
+
+	async box(target: string, every: number): Promise<Box> {
+		await this.stage.standOwnPage(this.standing);
+		return this.laid.box(target, every);
+	}
+
+	async groundBehind(target: string): Promise<string> {
+		await this.stage.standOwnPage(this.standing);
+		return this.laid.groundBehind(target);
+	}
+
+	async scrollLengthWith(typed: readonly TypedText[]): Promise<number> {
+		await this.stage.standOwnPage(this.standing);
+		return this.laid.scrollLengthWith(typed);
+	}
+
+	async documentTop(target: string): Promise<number> {
+		await this.stage.standOwnPage(this.standing);
+		return this.laid.documentTop(target);
+	}
+
+	async holdingOf(target: string): Promise<BlockHolding> {
+		await this.stage.standOwnPage(this.standing);
+		return this.laid.holdingOf(target);
+	}
+}
+
+/**
+ * A page of the film's own as a move begins on it while the screen shows it: its blocks measured as a move reads it,
  * its scroll and its keys the filmed page's behind it, as a page the film wrote stands as written.
  */
 class OwnPageShown implements FilmedPage {

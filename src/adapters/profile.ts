@@ -20,6 +20,7 @@ import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { ActContext, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import type { DrawnScene } from '../scene.ts';
 import type { Box, Size } from '../domain/geometry.ts';
+import type { OwnPageStanding } from '../domain/own-page.ts';
 import type {
 	Browser,
 	DrawnBrowser,
@@ -324,6 +325,10 @@ class TimedDrawingStage<Timed extends Stage> {
 	capture(): Promise<Uint8Array> {
 		const part = this.drawnAtOnce === ITS_OWN ? 'stage.capture' : `stage.capture of ${this.drawnAtOnce}`;
 		return this.timings.timed(part, () => this.stage.capture());
+	}
+
+	standOwnPage(standing: OwnPageStanding): Promise<void> {
+		return this.timings.timed('stage.standOwnPage', () => this.stage.standOwnPage(standing));
 	}
 }
 

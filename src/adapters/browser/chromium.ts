@@ -432,7 +432,7 @@ export class Chromium implements Browser, DrawnBrowser, SetBrowser {
 
 /**
  * The browser with the filmed page shown on its stage: acted on, typed into and scrolled in the tab it stands in; and
- * the pages of the film's own the stage laid, measured where it lays them.
+ * the pages of the film's own the stage laid, measured on the copy of each it lays beside the frame.
  */
 class OpenedChromium implements Opened {
 	readonly browser: Playwright;
@@ -567,14 +567,14 @@ async function framedLive(
 }
 
 /**
- * The pages of the film's own the stage laid, each as a move measures it, by its key: the first exposure's, its frame
- * named by the key.
+ * The pages of the film's own the stage laid, each as a move measures it, by its key: the copy beside the frame moves
+ * read, its frame named by the key.
  */
 function ownPagesOn(stage: Page, pages: readonly OwnPage[]): ReadonlyMap<string, MeasuredPage> {
 	return new Map(pages.map((page) => [page.key, new PlaywrightPage(ownFrameOn(stage, page), stage.keyboard)]));
 }
 
-/** The frame the stage laid a page of the film's own in, in its first exposure. */
+/** The frame the stage laid the copy of a page of the film's own moves read in. */
 function ownFrameOn(stage: Page, page: OwnPage): Frame {
 	const frame = stage.frame({ name: page.key });
 	if (frame === null) throw new Error(`the stage laid no frame for the film's own page ${page.key}`);

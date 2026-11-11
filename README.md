@@ -723,9 +723,12 @@ film types into it (`screen.type`, below), and an address in it
 is read from the stage's own folder, so name an image or a font by a whole
 address or a `data:` URL: the film's `fonts` set the look's words, not
 its pages. While the page of the film's own shows, a move
-finds blocks on it by their selectors, and the filmed page behind it is
-still acted on, scrolled and typed into; a piece of the page and a lens,
-drawn from the filmed page's picture, are refused, and so is the swap while
+finds blocks on it by their selectors, where they stand at the moment the
+move begins, as far as the film has run the page and with what it typed
+into it then, so a light laid on a running page lands on its block; the
+filmed page behind it is still acted on, scrolled and typed into; a piece
+of the page and a lens, drawn from the filmed page's picture, are
+refused, and so is the swap while
 a lens stands. `screen.behind({ html }, { upright: 'over' })` puts a page
 of the film's own on the window's back, as a slab wears one: where the eye
 sees the window's back, the screen shows it in place of its front, mounted

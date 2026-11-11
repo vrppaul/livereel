@@ -4,6 +4,7 @@
  * studio names no process, browser or file of its own, and blends no image.
  */
 import type { Box, Size } from '../domain/geometry.ts';
+import type { OwnPageStanding } from '../domain/own-page.ts';
 import type { FilmInFormat, PageKind } from '../direction/film.ts';
 import type { ActContext, FilmedPage, MeasuredPage, OwnPage, PageShown } from '../direction/page.ts';
 import type { Site } from '../direction/site.ts';
@@ -37,6 +38,12 @@ interface DrawingStage {
 	readonly absence: () => Promise<Error | undefined>;
 	/** The frame as the stage shows it now, as a JPEG. */
 	readonly capture: () => Promise<Uint8Array>;
+	/**
+	 * A page of the film's own stood as it stands at a moment, where moves read it: in a copy of its own the stage lays
+	 * apart from every exposure, at no scale, which no frame shows, so it stands as the moment has it whatever the frame
+	 * last drawn showed.
+	 */
+	readonly standOwnPage: (standing: OwnPageStanding) => Promise<void>;
 }
 
 /** The stage with the page live in its frame, which every frame shows as it is. */
@@ -118,7 +125,7 @@ export interface Track {
 
 /**
  * A browser with the stage and the filmed page open in it, for one take, the page's time standing; and each page of
- * the film's own the stage laid, by its key, which a move measures blocks on while the screen shows it; and the names
+ * the film's own the stage laid, by its key, which a move measures blocks on as the stage last stood it; and the names
  * the film's things module builds a thing by, none where the stage draws no things; and the film's own pictures the
  * stage laid, by their paths, each as large as its file decoded.
  */

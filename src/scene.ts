@@ -26,6 +26,7 @@ import { type DrawnEye, type Eye, drawnEye, eyeAtRest } from './domain/eye.ts';
 import { lensLawOf, sharpnessOf } from './domain/focus.ts';
 import type { Format } from './domain/format.ts';
 import type { Size } from './domain/geometry.ts';
+import type { OwnPageStanding } from './domain/own-page.ts';
 import {
 	type Aiming,
 	type Camera,
@@ -82,6 +83,7 @@ import {
 	type Screen,
 	THE_FILMED_PAGE,
 	drawnScreen,
+	ownPageStanding,
 	pageShownOn,
 	pastTheScreen,
 	pictureSweptBy,
@@ -227,6 +229,11 @@ export function showingTheFilmedPage(scene: Scene): Scene {
 export function withPagesLaid(scene: Scene, scrollLengths: ReadonlyMap<string, number>): Scene {
 	const laid = [...scrollLengths].map(([key, scrollLength]) => [key, { typed: NOTHING_TYPED, scrollLength }] as const);
 	return withProp(scene, 'screen', { ...scene.screen, documents: new Map([...scene.screen.documents, ...laid]) });
+}
+
+/** A page of the film's own the stage laid, by its key, as it stands in the scene at a moment. */
+export function ownPageStandingIn(scene: Scene, key: string, moment: number): OwnPageStanding {
+	return ownPageStanding(scene.screen, key, moment);
 }
 
 /** The scene with the page's own time running at a speed. */

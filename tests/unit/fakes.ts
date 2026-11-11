@@ -4,6 +4,7 @@ import type { ActContext, BlockHolding, FilmedPage, PageMotionSwitch, ScrollCour
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Box, Format } from '../../src/domain/geometry.ts';
 import type { TypedText } from '../../src/domain/typing.ts';
+import type { OwnPageStanding } from '../../src/domain/own-page.ts';
 import type { DrawnScene } from '../../src/scene.ts';
 import type {
 	Exposures,
@@ -92,12 +93,14 @@ export class PageOfBoxes implements FilmedPage {
 
 /**
  * A stage of either kind, drawing one exposure of a frame at a time, that keeps every scene drawn on it, how many each
- * drawing was of, and counts its captures and the times it was waited on to finish drawing.
+ * drawing was of, and how each page of the film's own was stood, in turn, and counts its captures and the times it was
+ * waited on to finish drawing.
  */
 export abstract class StageThatKeeps {
 	readonly exposuresAtOnce: number = 1;
 	readonly drawn: DrawnScene[] = [];
 	readonly draws: number[] = [];
+	readonly stood: OwnPageStanding[] = [];
 	captured = 0;
 	waitedOn = 0;
 	private lost: Error | undefined = undefined;
@@ -126,6 +129,11 @@ export abstract class StageThatKeeps {
 	capture(): Promise<Uint8Array> {
 		this.captured += 1;
 		return Promise.resolve(new Uint8Array());
+	}
+
+	standOwnPage(standing: OwnPageStanding): Promise<void> {
+		this.stood.push(standing);
+		return Promise.resolve();
 	}
 }
 

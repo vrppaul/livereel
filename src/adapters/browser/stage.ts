@@ -44,6 +44,7 @@ import type { Format } from '../../domain/format.ts';
 import { type Box, type Size, boxOf, frameScaleOf } from '../../domain/geometry.ts';
 import type { Drawing } from '../../direction/film.ts';
 import type { OwnPage } from '../../direction/page.ts';
+import type { OwnPageStanding } from '../../domain/own-page.ts';
 import type { DrawnScene, ObjectList } from '../../scene.ts';
 import type { FramedStage, FramesHanded, PicturedStage } from '../../studio/ports.ts';
 import { type PictureBound, scaleWithin } from './bounds.ts';
@@ -137,11 +138,13 @@ export interface StageApi {
 	/** A picture of a part of the screen held let go, by its number, its address with it. */
 	readonly letGo: (number: number) => void;
 	/**
-	 * The pages of the film's own laid out in the screen's place in every exposure, hidden until a frame shows one, each
-	 * loaded with its fonts, its scripts kept from running; the first exposure's named by its key, where moves measure
-	 * its blocks. The keys of those that move of themselves, by an animation or a transition of their own.
+	 * The pages of the film's own laid out in the screen's place in every exposure, hidden until a frame shows one, and
+	 * once more beside the frame at no scale, the copy moves read, named by its key; each loaded with its fonts, its
+	 * scripts kept from running. The keys of those that move of themselves, by an animation or a transition of their own.
 	 */
 	readonly layOwnPages: (pages: readonly OwnPage[]) => Promise<readonly string[]>;
+	/** The copy of a page of the film's own moves read, by its key, written and scrolled as it stands at a moment. */
+	readonly standOwnPage: (standing: OwnPageStanding) => void;
 	/**
 	 * The film's own pictures held by their paths, each once it is decoded, so every frame drawn after shows it whole:
 	 * the size each decoded at.
@@ -267,6 +270,10 @@ export class PlaywrightFramedStage implements FramedStage {
 
 	capture(): Promise<Uint8Array> {
 		return capturedOf(this.page, boxOf(this.format.frame));
+	}
+
+	standOwnPage(standing: OwnPageStanding): Promise<void> {
+		return this.page.evaluate(ownPageStood, standing);
 	}
 
 	private async sizedTo(format: Format): Promise<void> {
@@ -411,6 +418,10 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	capture(): Promise<Uint8Array> {
 		return capturedOf(this.page, this.handedIn);
 	}
+
+	standOwnPage(standing: OwnPageStanding): Promise<void> {
+		return this.page.evaluate(ownPageStood, standing);
+	}
 }
 
 /**
@@ -479,6 +490,10 @@ export function fontsLaid(fonts: readonly FilmsFontHanded[]): Promise<readonly s
 /** The pages of the film's own laid on the stage: the keys of those that move of themselves. */
 export function ownPagesLaid(pages: readonly OwnPage[]): Promise<readonly string[]> {
 	return window.stage.layOwnPages(pages);
+}
+
+function ownPageStood(standing: OwnPageStanding): void {
+	window.stage.standOwnPage(standing);
 }
 
 function applyExposures(exposures: readonly DrawnScene[]): void {

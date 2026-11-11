@@ -66,6 +66,7 @@ import {
 	overlapOf
 } from '../domain/geometry.ts';
 import { A_NUMBER, type Kind, OneOf, Plain } from '../domain/handed.ts';
+import type { OwnPageStanding } from '../domain/own-page.ts';
 import { between } from '../domain/toward.ts';
 import type { TypedText } from '../domain/typing.ts';
 
@@ -93,19 +94,11 @@ export interface DrawnSheet extends PastTheScreen {
 }
 
 /**
- * What the screen shows as the stage draws it: the filmed page, or a page of the film's own by its key, how far down
- * its scroll it stands, in its pixels, what stands typed in it, and the sheet it is laid as past the screen, none where
- * it is drawn on the screen alone.
+ * What the screen shows as the stage draws it: the filmed page, or a page of the film's own as it stands, and the
+ * sheet it is laid as past the screen, none where it is drawn on the screen alone.
  */
 type DrawnShows =
-	| { readonly kind: 'filmed' }
-	| {
-			readonly kind: 'own';
-			readonly key: string;
-			readonly scrolled: number;
-			readonly typed: readonly TypedText[];
-			readonly sheet: DrawnSheet | null;
-	  };
+	{ readonly kind: 'filmed' } | ({ readonly kind: 'own'; readonly sheet: DrawnSheet | null } & OwnPageStanding);
 
 /**
  * What stands typed in a page of the film's own: the text a film typed into each block of it, by the block's selector,
@@ -386,10 +379,14 @@ function frontDrawn(screen: Screen, moment: number, past: PastTheScreen | null):
  * stands in its document, where it is drawn past the screen.
  */
 function ownPageDrawn(screen: Screen, key: string, moment: number, past: PastTheScreen | null): DrawnShows {
-	const scrolled = standingOn(screen, key, moment).top;
-	const typed = typedTextsOf(documentOf(screen, key).typed);
-	const sheet = past === null ? null : { ...past, scrolled: scrolled - past.above };
-	return { kind: 'own', key, scrolled, typed, sheet };
+	const standing = ownPageStanding(screen, key, moment);
+	const sheet = past === null ? null : { ...past, scrolled: standing.scrolled - past.above };
+	return { kind: 'own', sheet, ...standing };
+}
+
+/** A page of the film's own the stage laid, by its key, as it stands on a screen at a moment. */
+export function ownPageStanding(screen: Screen, key: string, moment: number): OwnPageStanding {
+	return { key, scrolled: standingOn(screen, key, moment).top, typed: typedTextsOf(documentOf(screen, key).typed) };
 }
 
 /** Blocks typed into as the stage writes them: each block's selector and its text, in the order first typed into. */

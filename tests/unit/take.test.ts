@@ -560,6 +560,20 @@ test("a block a move names is measured on the page the screen shows: the film's 
 	expect(stage.drawn[0]!.light!.box).toEqual(SECOND);
 });
 
+test("a move begun while a page of the film's own runs reads it stood as it stands at the move's moment, not as the frame before drew it", async () => {
+	// At 300 pixels a second from the cut, 10 a frame; the light begins half-way along a play of four frames after three
+	// held, at the film's 4/30 s, 40 pixels down, where the last frame drawn before it stood the page 30 down
+	const stage = new FramedStageThatKeeps();
+	const steps = [
+		cut(screenShows(OWN_PAGE), scrollsScreen(OWN_PAGE, { pace: 300 })),
+		hold({ seconds: 3 / 30 }),
+		play({ seconds: 4 / 30, moves: [on('#first', { within: { start: 0.5 } })], ease: linear })
+	];
+	const ownPage = new PageOfBoxes(PAGE);
+	await takeShowingOwnPage(new FootageOf([4]), stage, new PageOfBoxes(PAGE), ownPage, UNBLURRED).run(steps);
+	expect(stage.stood).toEqual([{ key: pageKeyOf(OWN_PAGE.html), scrolled: expect.closeTo(40), typed: [] }]);
+});
+
 test("keys typed into the page while the screen shows the film's own go to the filmed page behind it", async () => {
 	const filmedPage = new PageOfBoxes(PAGE);
 	const ownPage = new PageOfBoxes(PAGE);
