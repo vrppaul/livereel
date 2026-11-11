@@ -20,7 +20,8 @@
  * close the eye comes, so text near the eye of a window leant back came out soft (SSIM 0.79–0.85 at 4–9×, probed
  * 2026-11-02). It reaches as far past the frame as the camera's picture does on its plane, as the eye may see the plane
  * past the frame's edge, and is drawn less densely where its texture would pass the graphics card's largest. The world
- * is drawn as far past the frame as the lens's blur gathers at its edges.
+ * is drawn as far past the frame as the lens's blur gathers at its edges, to a step, so the layers it is drawn into
+ * keep their size while the blur gathers alike.
  *
  * The exposures are added up in linear light, as a shutter gathers the light of each moment: a glint that moves draws a
  * streak as bright as its light, where averaged in the screen's colours it went dark. Where the world asks, the frame
@@ -119,6 +120,13 @@ const SURFACE_DENSITY = '--surface-density';
 const NOWHERE = 0;
 // How clear round the window's surface is laid past what the frame shows of it, in the frame's pixels
 const EDGE_CLEAR = 2;
+// The step the world's reach past the frame is rounded up to, in the drawing's pixels. three makes a layer anew as its
+// size changes, and the world's layer, the see-through layer and the lens's own are sized to the box the world is drawn
+// over, which grew a little each frame as the eye's focus opened: the room drew a frame of 3840 × 2160, the page fading
+// as the focus opens, in 366 ms by its steps' clock, and with the reach to a step of 256 in 278 ms, of 128 in 261, of
+// 64 in 261 (2026-11-11). A step wider draws the world over more pixels than the blur reads; one narrower makes the
+// layers anew more often as the blur grows
+const REACH_STEP = 128;
 // A plane the eye sees edge-on, carried onto a line; and the fourth value of a point of the frame seen back onto the
 // plane where it sees no point of it before the eye
 const EDGE_ON = 0;
@@ -721,9 +729,9 @@ class Room {
 
 	/**
 	 * The box of the frame the world is drawn into for a frame's exposures: as far past each edge of the frame as the
-	 * lens's blur gathers there, from the softest point the frame shows of its window or of an object in it, in whole
-	 * pixels of the drawing, and no farther than the graphics card's largest texture leaves room for, past which a blur
-	 * by the frame's edge gathers nothing; the frame itself where the eye's focus blurs none.
+	 * lens's blur gathers there, from the softest point the frame shows of its window or of an object in it, rounded up
+	 * to a step of the drawing's pixels, and no farther than the graphics card's largest texture leaves room for, past
+	 * which a blur by the frame's edge gathers nothing; the frame itself where the eye's focus blurs none.
 	 * @param {readonly DrawnScene[]} scenes @returns {Box}
 	 */
 	gatheredFor(scenes) {
@@ -734,7 +742,8 @@ class Room {
 		);
 		if (softest === SHARP) return this.frameBox;
 		const roomLeft = (this.renderer.capabilities.maxTextureSize - Math.max(this.drawnSize.x, this.drawnSize.y)) * HALF;
-		const reach = Math.min(Math.ceil(SPREADS_REACHED * softest * this.pixelsOfOne), Math.floor(roomLeft));
+		const gathers = Math.ceil((SPREADS_REACHED * softest * this.pixelsOfOne) / REACH_STEP) * REACH_STEP;
+		const reach = Math.min(gathers, Math.floor(roomLeft));
 		return grownBy(this.frameBox, reach / window.devicePixelRatio);
 	}
 

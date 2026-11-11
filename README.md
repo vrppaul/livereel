@@ -1246,7 +1246,7 @@ What `room` costs:
   the graphics card, 300 frames of a lit window with a body, a thing through it and the
   eye's focus opening took 80.5 and 83.6 s (`--profile`, 2026-11-10).
   Drawing is the slowest step: with the page fading as the focus opens, a
-  frame took 329.9 and 335.9 ms to draw at 3840 × 2160 and 140.6 and 146.1
+  frame took 258.8 and 252.2 ms to draw at 3840 × 2160 and 150.6 and 145.9
   ms to capture (`--profile`, 2026-11-11).
 - What is seen through, a thing of glass, and a page fading or coming up
   while a thing stands in the world, is drawn and blurred as a field of
