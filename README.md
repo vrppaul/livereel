@@ -1166,7 +1166,10 @@ What `inside` costs:
   scale, filtered as it shrinks into the distance; the window's body round it and
   the film's things beside it, each hiding the others by depth alone; and
   each pixel blurred by the eye's focus as far as what it shows stands from
-  it, where flat blurs the window as one. The blur adds light up in linear
+  it, where flat blurs the window as one; what stands wholly before the
+  focus, a thing held near or the window brought up to the eye, is drawn
+  and blurred apart and laid over the rest, so its blurred edge shows what
+  it hides. The blur adds light up in linear
   light, as a lens does, so light words on a dark page blur brighter than a
   blur in the screen's colours draws them. The ground and what stands on
   the frame are drawn as flat draws them. A fast move's blur adds its
@@ -1274,6 +1277,10 @@ What `room` costs:
   seen through and a glass or markup stands beside it, what stands behind
   the page's plane is a field of its own, so it blurs by its own depth: one
   run of the lens more, about 80 ms a frame of 3840 × 2160 (2026-11-11).
+- What stands wholly before the focus is drawn and blurred as a world of
+  its own, a run of the lens more: 300 frames of a lit window leant with a
+  cube held before the focus took 67.1 and 67.5 s, against 72.8 and 72.7 s
+  with the cube blurred with the rest (`--profile`, 2026-11-11).
 - Where the frame shows more of the window's plane than the graphics card
   holds in one texture, as the eye flying low over a tall screen does, what
   lies over the page is drawn less densely, softer than flat near the eye;

@@ -18,6 +18,9 @@
  *   Where the near field hides the far one, the far field is first made whole, carried on into the hole from what of
  *   it stands nearest, and blurred there the wider the more the near field covers, so it goes on from the far field at
  *   the near field's edge as it stands there.
+ * One depth a pixel cannot hold what the near field hides, and what is carried into its hole is a guess: so the room
+ * draws what stands wholly in the near field as a world of its own, laid over the rest, which is drawn without it
+ * (`holdsWhollyNear`, `stage/room.js`), and only the near part of what crosses the focus leaves a hole to fill.
  * The widest spreads are found per tile of the drawing and widened over every tile they reach. Each sample's place on
  * its spiral is turned from pixel to pixel, so the samples' pattern draws no copies of an edge, and read from the
  * field's smaller copy whose pixels stand as far apart as the samples, so a wide disc is smooth. A copy mixes each
@@ -49,7 +52,7 @@ import {
 } from 'three';
 import { depthRangeOf } from './matrices.js';
 import { LAID_OVER, WRITTEN, WRITTEN_INTO_SEVERAL, passOver, valuesOfTheBox, valuesSet } from './passes.js';
-/** @import { WebGLRenderer, Texture, DepthTexture, Mesh, PlaneGeometry, ShaderMaterial } from 'three' */
+/** @import { Box3, WebGLRenderer, Texture, DepthTexture, Mesh, PlaneGeometry, ShaderMaterial } from 'three' */
 /** @import { Box } from '../src/domain/geometry.ts' */
 /** @import { DrawnEye } from '../src/domain/eye.ts' */
 
@@ -67,7 +70,8 @@ export const SPREADS_REACHED = 3;
 const SHARP_SPREAD = 0.5;
 // What stands before the focus is the near field's from a spread of a whole pixel of the drawing: what stands before
 // it sharper stays with the far field, each pixel there blurred by its own spread, where the near field's would blur it
-// as wide as the widest near spread round it, and an in-focus page a hair nearer than the focus with it
+// as wide as the widest near spread round it, and an in-focus page a hair nearer than the focus with it. What stands
+// wholly so is a world of its own (`holdsWhollyNear`)
 const NEAR_BLURRED_FROM = 1;
 // How much of a pixel on a straight edge of the near field its blur covers: half
 const EDGE_COVER = 0.5;
@@ -438,6 +442,8 @@ void main() {
 export class Lens {
 	/** @param {number} pixelsOfOne @param {number} frameScale */
 	constructor(pixelsOfOne, frameScale) {
+		this.pixelsOfOne = pixelsOfOne;
+		this.frameScale = frameScale;
 		// three draws nothing without a camera; every pass here places its own points
 		this.camera = new Camera();
 		// The scene split at the focus, each part a layer of it in its place
@@ -488,6 +494,18 @@ export class Lens {
 			LAID_AS_IT_STANDS_FRAGMENT,
 			LAID_OVER
 		);
+	}
+
+	/**
+	 * Whether all a box of the world holds, in the eye's own space, stands in the near field: nearer than the focus and
+	 * spreading a whole pixel of the drawing or more, as the split reads a pixel (`isNear`), at its farthest point, the
+	 * eye seeing down three's −z. None does where the eye's lens blurs nothing, or the box holds nothing.
+	 * @param {DrawnEye} eye @param {Box3} box
+	 */
+	holdsWhollyNear(eye, box) {
+		if (eye.lens === null || box.isEmpty()) return false;
+		const farthestNearness = this.frameScale / -box.min.z;
+		return eye.lens.perNearness * (farthestNearness - eye.lens.inFocus) * this.pixelsOfOne >= NEAR_BLURRED_FROM;
 	}
 
 	/**
