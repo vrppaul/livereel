@@ -67,6 +67,7 @@ import {
 	type Way,
 	flownAt,
 	gazeOf,
+	headingToward,
 	momentBy,
 	paceOf,
 	pointAtMoment,
@@ -95,6 +96,7 @@ import {
 	A_PIXELS,
 	A_SHARE,
 	A_SIZE,
+	EitherOf,
 	type Form,
 	FormByName,
 	type Kind,
@@ -206,11 +208,22 @@ interface GazeKeyScript {
 type DegreesKeyScript = GazeKeyScript & { readonly degrees: number };
 
 /**
- * A heading the eye follows: so many degrees from up the page clockwise; toward a block of the page, wherever it
- * stands; or along the way it flies, `along: 'way'`.
+ * The degrees of a heading toward a block of the page from where the eye stands as its key is reached, held from there
+ * as a number, as the promo's run turns back from the bearing the Story button had where the eye had sunk
+ * (`to-the-story.js` `turnedMost`).
+ */
+interface DegreesToward {
+	readonly toward: Target;
+}
+
+/**
+ * A heading the eye follows: so many degrees from up the page clockwise, written or worked out toward a block where
+ * the key is reached; toward a block of the page, wherever the eye stands; or along the way it flies, `along: 'way'`.
  */
 export type HeadingKeyScript =
-	DegreesKeyScript | (GazeKeyScript & { readonly toward: Target }) | (GazeKeyScript & { readonly along: 'way' });
+	| (GazeKeyScript & { readonly degrees: number | DegreesToward })
+	| (GazeKeyScript & { readonly toward: Target })
+	| (GazeKeyScript & { readonly along: 'way' });
 
 /**
  * A tip the eye follows: so many degrees off the page's plane, -90 looking straight down onto it, 0 level; or as far as
@@ -363,12 +376,19 @@ const A_KEYS_PLACE: Kind<number> = new Plain(
 	"a leg's end by its number, 0 for the first, or past one by a share of the next leg, 1.5 half way through leg 2"
 );
 const A_TIP: Kind<number> = new Plain(isTip, 'degrees from -90, looking straight down onto the page, to 90');
+const A_HEADINGS_DEGREES = new EitherOf(
+	A_NUMBER,
+	new OfForm<DegreesToward>(
+		{ toward: needed(A_TARGET) },
+		'a number, or { toward } a block, the degrees toward it from where the key is reached'
+	)
+);
 const A_HEADING_KEY: Kind<HeadingKeyScript> = new FormByName<HeadingKeyScript>(
 	[
 		['toward', new OfForm({ by: needed(A_KEYS_PLACE), toward: needed(A_TARGET) }, 'a heading: { by, toward }')],
 		['along', new OfForm({ by: needed(A_KEYS_PLACE), along: needed(new Literal('way')) }, 'a heading: { by, along }')]
 	],
-	new OfForm({ by: needed(A_KEYS_PLACE), degrees: needed(A_NUMBER) }, 'a heading: { by, degrees }'),
+	new OfForm({ by: needed(A_KEYS_PLACE), degrees: needed(A_HEADINGS_DEGREES) }, 'a heading: { by, degrees }'),
 	'a heading: { by, degrees }, { by, toward } or { by, along: "way" }'
 );
 const A_TIP_KEY: Kind<TipKeyScript> = new FormByName<TipKeyScript>(
@@ -736,8 +756,8 @@ async function legRead(beginning: Beginning, camera: Camera, leg: LegScript): Pr
 }
 
 /**
- * A heading key at the moment of the flight it is reached at, and its rule: its degrees, along the way, or toward a
- * block, refused where the eye stands right over the block then, where no heading is toward it.
+ * A heading key at the moment of the flight it is reached at, and its rule: along the way; toward a block; or its
+ * degrees, as written or worked out toward a block from where the eye stands then.
  */
 async function headingRead(
 	beginning: Beginning,
@@ -748,16 +768,34 @@ async function headingRead(
 	index: number
 ): Promise<GazeKey> {
 	const moment = momentBy(way, pace, key.by);
-	if ('degrees' in key) return { moment, rule: { kind: 'degrees', degrees: key.degrees } };
 	if ('along' in key) return { moment, rule: { kind: 'along' } };
-	const spot = await spotOver(beginning, camera, key.toward, LEVEL_WITH_THE_PAGE);
 	const standing = pointAtMoment(way, pace, moment);
+	if ('toward' in key) {
+		return { moment, rule: { kind: 'toward', spot: await blockAhead(beginning, camera, key.toward, standing, index) } };
+	}
+	if (typeof key.degrees === 'number') return { moment, rule: { kind: 'degrees', degrees: key.degrees } };
+	const spot = await blockAhead(beginning, camera, key.degrees.toward, standing, index);
+	return { moment, rule: { kind: 'degrees', degrees: headingToward(spot, standing) } };
+}
+
+/**
+ * Where a block a heading key turns toward stands on the window's plane, read as the move begins: refused where the eye
+ * stands right over it as the key is reached, where no heading is toward it.
+ */
+async function blockAhead(
+	beginning: Beginning,
+	camera: Camera,
+	target: Target,
+	standing: Spot,
+	index: number
+): Promise<Spot> {
+	const spot = await spotOver(beginning, camera, target, LEVEL_WITH_THE_PAGE);
 	if (Math.hypot(spot.across - standing.across, spot.down - standing.down) < RIGHT_OVER) {
 		throw new FilmError(
 			`${EYE_FLY}'s heading key ${String(index)} turns toward a block the eye stands right over there: turn it toward one ahead of it`
 		);
 	}
-	return { moment, rule: { kind: 'toward', spot } };
+	return spot;
 }
 
 /**

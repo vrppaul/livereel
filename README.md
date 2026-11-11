@@ -181,9 +181,14 @@ and the moves of each part of the scene:
   between two rules the gaze eases from one to the other over the flight's time, a heading the short way round:
   where the legs are timed apart, by their times, so a turn over a first leg that takes 2 s takes those 2 s however
   the eye's pace sets off and gathers; where they are not, as the way goes, the eye covering as much of it in each
-  equal share. `heading: [{ by: 0, toward: '#story' }, { by: 1.5, degrees: 0 }]`, `tip: [{ by: 0, holding: '#story',
-  at: 0.58 }, { by: 1, holding: '#story', at: 0.58 }, { by: 1.5, degrees: -90 }]` turns to the button over the first
-  leg, holds it through the second, and stands square half way through the third. It never rolls: a roll it set off
+  equal share. A heading's degrees may be worked out toward a block, `degrees: { toward: '#story' }`: the block's
+  bearing from where the eye stands as the key is reached, a number held from there, so the gaze turns to it and
+  back from it, where a heading `toward` the block, read all along, turns back from wherever the block now lies and
+  swings as the eye runs near under it. `heading: [{ by: 0, degrees: { toward: '#story' } }, { by: 1.5, degrees: 0
+  }]`, `tip: [{ by: 0, holding: '#story', at: 0.58 }, { by: 1, holding: '#story', at: 0.58 }, { by: 1.5, degrees:
+  -90 }]` turns to the button over the first leg, lifts its sight to hold it through the second, and turns back to
+  stand square half way through the third, as the claude-review promo's run to the Story button turns back from the
+  bearing the button had where the eye had sunk (`to-the-story.js` `turnedMost`). It never rolls: a roll it set off
   with eases away by the end of the first leg. Between two rules heading and tip each ease apart; `turning: 'whole'`
   turns the view as one rotation instead, from how the eye looks where one key or the first leg's end is reached to
   how it looks at the next, the roll it set off with among it, as three's quaternions slerp: a dive from looking down
@@ -193,7 +198,8 @@ and the moves of each part of the scene:
   page is drawn from a picture no closer than livereel's bound, so a flight low over it shows it soft. Refused: no
   leg, a leg ahead first or one to where the eye stands, a figure that gives a point of no numbers, flat or of no
   length, a way that reaches
-  the page, a height of none, a tip past ±90, a heading toward the block the eye arrives right over, a key by a leg
+  the page, a height of none, a tip past ±90, a heading toward a block, or of the degrees toward one, the eye stands
+  right over as the key is reached, a key by a leg
   the way has not, by below 0, by the end of a leg onto a block or no later than the key before, a leg that takes no
   time, one naming none
   beside one that names how long it takes, an `ease` beside legs that name it, and a turning neither `'apart'` nor

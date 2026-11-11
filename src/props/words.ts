@@ -27,6 +27,7 @@ import type { Fraction } from '../domain/fraction.ts';
 import {
 	A_COLOUR,
 	A_STRING,
+	EitherOf,
 	type Kind,
 	ListOf,
 	OfForm,
@@ -235,26 +236,10 @@ const A_RUN: Kind<Run> = new OfForm<Run>(
 	'words: a string, or a run of them set its own way, { text, italic, underline, strike, ink, marker }'
 );
 
-/** A kind whose values are strings, or of another kind, whose fault is the one said where a value is neither. */
-class StringOr<Value> implements Kind<string | Value> {
-	readonly other: Kind<Value>;
-
-	constructor(other: Kind<Value>) {
-		this.other = other;
-	}
-
-	is(written: unknown): written is string | Value {
-		return typeof written === 'string' || this.other.is(written);
-	}
-
-	faultOf(written: unknown, place: string): string | undefined {
-		return typeof written === 'string' ? undefined : this.other.faultOf(written, place);
-	}
-}
-
 /** What a film says, as it hands it: a string, or a list of strings and runs, a fault named down to the value. */
-export const A_WORDING: Kind<Wording> = new StringOr(
-	new ListOf(new StringOr(A_RUN), 'words: a string, or a list of strings and runs')
+export const A_WORDING: Kind<Wording> = new EitherOf(
+	A_STRING,
+	new ListOf(new EitherOf(A_STRING, A_RUN), 'words: a string, or a list of strings and runs')
 );
 
 /** What a film says, worked out once as its move is made: its words, and the key the stage knows them by. */

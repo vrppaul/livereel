@@ -259,7 +259,7 @@ export function gazeOf(eye: Viewpoint): Gaze {
 	const nearStraight = Math.abs(Math.cos(tip)) < Math.sin(radians(NEAR_STRAIGHT_DOWN));
 	// Looking straight down, the top of an eye that never rolls points along its heading; straight up, against it
 	const along = nearStraight ? top.clone().multiplyScalar(-Math.sign(tip)) : looking;
-	const heading = degreesOf(Math.atan2(along.x, -along.y));
+	const heading = headingOf(along);
 	const kept = topOf(heading, degreesOf(tip));
 	const square = top.clone().addScaledVector(looking, -top.dot(looking)).normalize();
 	const roll = Math.atan2(kept.clone().cross(square).dot(looking), kept.dot(square));
@@ -465,8 +465,17 @@ function turnOf(view: View): Quaternion {
 
 /** The heading the way flies at a share of its length, on the page's plane. */
 function headingAlong(way: Way, share: number): number {
-	const tangent = way.curve.getTangentAt(share);
-	return degreesOf(Math.atan2(tangent.x, -tangent.y));
+	return headingOf(way.curve.getTangentAt(share));
+}
+
+/** The heading from a spot of the window toward another, on the page's plane. */
+export function headingToward(spot: Spot, from: Spot): number {
+	return headingOf(vectorOf(spot).sub(vectorOf(from)));
+}
+
+/** The heading of a direction on the page's plane, in degrees from up the page clockwise. */
+function headingOf(along: Vector3): number {
+	return degreesOf(Math.atan2(along.x, -along.y));
 }
 
 /** Where the eye flying stands at a moment of its flight, on its way as far as its pace has it then. */
@@ -500,7 +509,7 @@ function ruled(rule: GazeRule, share: number, at: Vector3, flight: Flight): numb
 		case 'degrees':
 			return rule.degrees;
 		case 'toward':
-			return degreesOf(Math.atan2(rule.spot.across - at.x, -(rule.spot.down - at.y)));
+			return headingToward(rule.spot, spotOf(at));
 		case 'along':
 			return headingAlong(flight.way, share);
 		case 'holding':

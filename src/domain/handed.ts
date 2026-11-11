@@ -196,6 +196,28 @@ export class FormByName<Value> implements Kind<Value> {
 	}
 }
 
+/**
+ * A kind of values of one kind, or else of another, whose fault is the other's where a value is neither, so the other
+ * says both: words, a string or a list of strings and runs; a heading's degrees, a number or `{ toward }` a block.
+ */
+export class EitherOf<First, Other> implements Kind<First | Other> {
+	readonly first: Kind<First>;
+	readonly other: Kind<Other>;
+
+	constructor(first: Kind<First>, other: Kind<Other>) {
+		this.first = first;
+		this.other = other;
+	}
+
+	is(written: unknown): written is First | Other {
+		return this.first.is(written) || this.other.is(written);
+	}
+
+	faultOf(written: unknown, place: string): string | undefined {
+		return this.first.is(written) ? undefined : this.other.faultOf(written, place);
+	}
+}
+
 /** A kind of one value alone, by its name, said as it is written: a step's `kind`. */
 export class Literal<Name extends string> extends OneOf<Name> {
 	constructor(name: Name) {

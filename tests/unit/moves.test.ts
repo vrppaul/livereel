@@ -4034,6 +4034,29 @@ test("a gaze key between two legs' ends is reached that share of the later leg's
 	]).toEqual([expect.closeTo(45), expect.closeTo(90)]);
 });
 
+test("a heading of the degrees toward a block is the block's bearing from where its key is reached, held: the gaze turns to that number and back from it, half way at each half way in time, wherever the eye stands then", async () => {
+	const flying = await eye
+		.fly(
+			[
+				{ to: OVER_THE_BLOCK, takes: 1 },
+				{ to: { over: '#wide', height: 800 }, takes: 1 }
+			],
+			{
+				heading: [
+					{ by: 0, degrees: { toward: '#card' } },
+					{ by: 1, degrees: 0 }
+				]
+			}
+		)
+		.begin(beginningOf(OPENING_IN_SMALL));
+	const [turningTo, reached, turningBack] = [0.25, 0.5, 0.75];
+	const bearing = gazeOf((await flying(OPENING_IN_SMALL, reached)).eye).heading;
+	expect([
+		gazeOf((await flying(OPENING_IN_SMALL, turningTo)).eye).heading,
+		gazeOf((await flying(OPENING_IN_SMALL, turningBack)).eye).heading
+	]).toEqual([expect.closeTo(bearing / 2), expect.closeTo(bearing / 2)]);
+});
+
 test('a flight on legs timed apart refused as it is made: a leg taking no time, a leg naming none beside one that does, a curve of its own', () => {
 	expect(() => eye.fly([{ to: OVER_THE_BLOCK, takes: 0 }])).toThrow(
 		new FilmError("eye.fly's way[0]'s takes is 0: it is how long the leg takes beside the others, more than 0")
@@ -4075,6 +4098,11 @@ test('a flight refused as it is made: a way of no leg, a leg in no form of one, 
 	expect(() => eye.fly([{ to: OVER_THE_BLOCK }, { ahead: 1 }], { heading: [{ by: 1.5, degrees: 90 }] })).toThrow(
 		new FilmError("eye.fly's heading key 0 is reached by leg 1.5, and the way's legs go from 0 to 1")
 	);
+	expect(() => eye.fly([{ to: OVER_THE_BLOCK }], { heading: [{ by: 0, degrees: 'up' as never }] })).toThrow(
+		new FilmError(
+			'eye.fly\'s heading[0]\'s degrees is "up": it is a number, or { toward } a block, the degrees toward it from where the key is reached'
+		)
+	);
 	expect(() => eye.fly([{ to: OVER_THE_BLOCK }], { turning: 'round' as never })).toThrow(
 		new FilmError('eye.fly\'s turning is "round": it is "apart" or "whole"')
 	);
@@ -4097,9 +4125,20 @@ test('a flight refused as it is made: a way of no leg, a leg in no form of one, 
 	);
 });
 
-test('a flight refused as it begins: a leg ahead with none before it, a leg to where the eye stands, a heading toward the block the eye stands right over', async () => {
+test('a flight refused as it begins: a leg ahead with none before it, a leg to where the eye stands, a heading toward the block the eye stands right over, or of the degrees toward it', async () => {
 	await expect(
 		setAt(eye.fly([{ to: OVER_THE_BLOCK }], { heading: [{ by: 0, toward: '#block' }] }), OPENING_IN_SMALL, 1)
+	).rejects.toThrow(
+		new FilmError(
+			"eye.fly's heading key 0 turns toward a block the eye stands right over there: turn it toward one ahead of it"
+		)
+	);
+	await expect(
+		setAt(
+			eye.fly([{ to: OVER_THE_BLOCK }], { heading: [{ by: 0, degrees: { toward: '#block' } }] }),
+			OPENING_IN_SMALL,
+			1
+		)
 	).rejects.toThrow(
 		new FilmError(
 			"eye.fly's heading key 0 turns toward a block the eye stands right over there: turn it toward one ahead of it"
