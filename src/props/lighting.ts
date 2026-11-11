@@ -17,6 +17,7 @@
  * Light brighter than the page's white, a glint off the window's metal or glass or off a thing, may glow round itself,
  * as a lens blooms (`world.bloom`): none in livereel's own world either.
  */
+import { opaqueColourToward } from '../domain/colour.ts';
 import { type Size, frameScaleOf } from '../domain/geometry.ts';
 import {
 	A_BRIGHTNESS,
@@ -36,6 +37,7 @@ import {
 	chained,
 	inThreesAxes,
 	lengthOf,
+	movedAlong,
 	radians,
 	rotationX,
 	rotationY,
@@ -45,6 +47,7 @@ import {
 	translation,
 	wayBetween
 } from '../domain/matrix.ts';
+import { amountToward, halfWay, shareToward } from '../domain/toward.ts';
 
 /**
  * A light in the room: its colour, in hex; how bright a white face square to it stands at the spot it aims at, 1 its
@@ -231,6 +234,43 @@ export function drawnLighting(
 /** The glow round a frame's brightest light as the room draws it, of this strength and spread: none of no strength. */
 export function drawnBloom(strength: number, radius: number): DrawnBloom | null {
 	return strength > NONE ? { strength, radius, threshold: BRIGHTER_THAN_THE_PAGE } : null;
+}
+
+/**
+ * The world's lights `progress` of the way from some to others: as many as those they go to, each toward the one in
+ * its place, so a light fades in by its strength from none; of another number, the others whole half-way, as nothing
+ * says which light becomes which, and a cut, which sets a move at its end, changes them at once.
+ */
+export function lightsToward(
+	start: readonly WorldLight[],
+	end: readonly WorldLight[],
+	progress: number
+): readonly WorldLight[] {
+	if (start.length !== end.length) return halfWay(start, end, progress);
+	return start.map((light, place) => lightToward(light, lightAt(end, place), progress));
+}
+
+/**
+ * A light `progress` of the way to another: its colour mixed with no alpha, as three reads none; its spots evenly,
+ * past their ends as a curve takes them, as places go; its strength, cone and softness never past where they start
+ * and end, so none goes below none or opens past its widest.
+ */
+function lightToward(start: WorldLight, end: WorldLight, progress: number): WorldLight {
+	return {
+		colour: opaqueColourToward(start.colour, end.colour, progress),
+		strength: amountToward(start.strength, end.strength, progress),
+		at: movedAlong(start.at, wayBetween(start.at, end.at), progress),
+		aim: movedAlong(start.aim, wayBetween(start.aim, end.aim), progress),
+		angle: amountToward(start.angle, end.angle, progress),
+		softness: shareToward(start.softness, end.softness, progress)
+	};
+}
+
+/** The light in a place of a list as long as the one it moves from. */
+function lightAt(lights: readonly WorldLight[], place: number): WorldLight {
+	const light = lights[place];
+	if (light === undefined) throw new Error(`the world's lights have no light ${place + 1} of ${lights.length}`);
+	return light;
 }
 
 /**

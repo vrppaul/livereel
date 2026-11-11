@@ -428,7 +428,7 @@ test('a body in no form of one is refused as its move is made, where it stands: 
 	);
 });
 
-test("the world's look moves to the values named and keeps the rest: its glow through the strengths between, its lights changed half-way", async () => {
+test("the world's look moves to the values named and keeps the rest: its glow through the strengths between, lights of another number than those standing changed whole half-way", async () => {
 	const overhead = {
 		colour: '#fff',
 		strength: 1,
@@ -442,6 +442,52 @@ test("the world's look moves to the values named and keeps the rest: its glow th
 	expect([quarter.world, half.world]).toEqual([
 		{ ...LIVEREELS_WORLD, bloom: 0.2, lights: [] },
 		{ ...LIVEREELS_WORLD, bloom: 0.4, lights: [overhead] }
+	]);
+});
+
+test("the world's lights as many as those they go to move light by light, each value a share of the way to its own, a colour mixed with no alpha, a strength, a cone and a softness never past where they go, however far a curve takes them", async () => {
+	const dim = {
+		colour: '#000000',
+		strength: 0,
+		at: { across: 0, down: -800, out: 600 },
+		aim: { across: 0, down: 0, out: 0 },
+		angle: 20,
+		softness: 0
+	};
+	const bright = {
+		colour: '#ffffff',
+		strength: 2,
+		at: { across: 400, down: -400, out: 200 },
+		aim: { across: 100, down: 0, out: 0 },
+		angle: 40,
+		softness: 1
+	};
+	const darkened = withProp(OPENING_IN_SMALL, 'world', { ...LIVEREELS_WORLD, lights: [dim, bright] });
+	const swapped = world.to({ lights: [bright, dim] });
+	const [quarter, past] = [await setAt(swapped, darkened, 0.25), await setAt(swapped, darkened, 1.5)];
+	expect([quarter.world.lights, past.world.lights]).toEqual([
+		[
+			{
+				colour: '#404040',
+				strength: 0.5,
+				at: { across: 100, down: -700, out: 500 },
+				aim: { across: 25, down: 0, out: 0 },
+				angle: 25,
+				softness: 0.25
+			},
+			{
+				colour: '#bfbfbf',
+				strength: 1.5,
+				at: { across: 300, down: -500, out: 300 },
+				aim: { across: 75, down: 0, out: 0 },
+				angle: 35,
+				softness: 0.75
+			}
+		],
+		[
+			{ ...bright, at: { across: 600, down: -200, out: 0 }, aim: { across: 150, down: 0, out: 0 } },
+			{ ...dim, at: { across: -200, down: -1000, out: 800 }, aim: { across: -50, down: 0, out: 0 } }
+		]
 	]);
 });
 

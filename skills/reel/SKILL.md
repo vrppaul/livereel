@@ -412,8 +412,10 @@ page's white may glow round itself: `bloom` (0, none, livereel's; the
 reference promo's 0.45) and `bloomRadius` (0.4), from 0 to 1; light far
 past white glows wide, so show the user a still. `world.to(world)` changes
 any of these as the film goes, as `look.to` does the look: the glow through
-the values between, the lights and the soft boxes whole, half-way through a
-play. A theme never names the world's values, nor a world the look's.
+the values between; lights as many as those standing light by light, each
+value through the values between, so a light fades in from `strength: 0`
+(write the list with the light at 0 first, then move it); lights of another
+number and the soft boxes whole, half-way through a play. A theme never names the world's values, nor a world the look's.
 
 The rest: `keystrokes(text, { seed, slipAt, pace })` makes the strokes a
 person types. Curves of the film's own numbers: `cubicBezier(x1, y1, x2,

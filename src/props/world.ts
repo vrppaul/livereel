@@ -3,8 +3,9 @@
  * things look: the lights and soft boxes that light a film's own things and the window's body in a room
  * (`src/props/lighting.ts`), and the glow round the brightest light, as a lens blooms. A film opens on livereel's
  * world, which has none of them, with the values its `world` names, and changes it by moves as it goes (`world.to`): in
- * a play, the glow's strength and spread through the values between, and the lights or the soft boxes, which a play
- * changes whole, half-way; in a cut, at once. The stage is handed it as the room draws it (`DrawnWorld`).
+ * a play, the glow's strength and spread through the values between, the lights light by light where they are as many
+ * as those they go to, and the soft boxes, or lights of another number, whole, half-way; in a cut, at once. The stage
+ * is handed it as the room draws it (`DrawnWorld`).
  *
  * One table, `WORLD_KINDS`, says of each value what a film may write for it and how it moves (`src/domain/values.ts`),
  * so the film's world and a move's are checked by it and the world moved by it, and livereel's own values stand in
@@ -22,7 +23,8 @@ import {
 	type SoftBox,
 	type WorldLight,
 	drawnBloom,
-	drawnLighting
+	drawnLighting,
+	lightsToward
 } from './lighting.ts';
 
 export interface WorldLook {
@@ -54,13 +56,12 @@ export interface DrawnWorld {
 }
 
 /**
- * The kind of each value of the world, by its name: its lights and soft boxes changed whole half-way, as lights fading
- * in light by light wait for a film that asks (TODO.md), and soft boxes are drawn anew for the stage at each change;
- * its glow's strength never below none and its spread a share between none and whole, on a curve that passes their
- * ends; each held as written.
+ * The kind of each value of the world, by its name: its lights light by light (`lightsToward`); its soft boxes changed
+ * whole half-way, as the stage draws them anew at each change; its glow's strength never below none and its spread a
+ * share between none and whole, on a curve that passes their ends; each held as written.
  */
 export const WORLD_KINDS: KindsOf<WorldLook> = {
-	lights: new ValueKind(A_WORLD_LIGHTS, asWritten, halfWay),
+	lights: new ValueKind(A_WORLD_LIGHTS, asWritten, lightsToward),
 	softBoxes: new ValueKind(A_SOFT_BOXES, asWritten, halfWay),
 	bloom: new ValueKind(A_GLOW_STRENGTH, asWritten, amountToward),
 	bloomRadius: new ValueKind(A_SHARE, asWritten, shareToward)

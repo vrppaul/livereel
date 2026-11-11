@@ -926,9 +926,11 @@ all the frame, titles and the cursor too. The reference promo's was
 
 The world changes as the film goes, as the look does: `world.to(world)`,
 any of the same values. In a `play` the glow's strength and spread move
-through the values between, and the lights and the soft boxes, which have
-none between, change whole half-way: a light does not yet fade in by its
-strength. In a `cut`, at once. Two moves of the world share a step at once
+through the values between; lights as many as those standing move light by
+light, each to the one in its place, its colour, strength, spots, cone and
+softness through the values between, so a light fades in from a strength
+of `0`; lights of another number, and the soft boxes, change whole
+half-way. In a `cut`, at once. Two moves of the world share a step at once
 where they name no value alike; two that name one are refused, by it:
 
 ```ts
