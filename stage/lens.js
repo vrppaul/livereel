@@ -36,13 +36,11 @@
  * beside the fields what every later pass reads of each pixel: whether the near field holds it, how wide it spreads,
  * where anything was drawn, and whether the far field's copies hold its light; read off each sample's own depth
  * instead, a sharp thing's smoothed edge under a blurred page's depth spread the thing's colour over the page. The lens
- * reads the scene's light linear, premultiplied by how clear it is, and lays it so over what the fields before it laid,
- * as three's one layer lays what is seen through over what stands behind it: the room turns the world into the
- * screen's colours once all its fields are laid. Each field turned into them as it was laid, a glass over a page and a
- * page half faded over what stood behind it came out in another tone than in one layer (2026-11-10).
+ * reads the scene's light linear, premultiplied by how clear it is, and lays it so over what the target it is handed
+ * holds, as three lays what is seen through over what stands behind it; how each field is laid over the fields before
+ * it is the room's (`stage/laying.js`).
  */
 import {
-	Camera,
 	HalfFloatType,
 	LinearFilter,
 	LinearMipmapLinearFilter,
@@ -52,8 +50,8 @@ import {
 	WebGLRenderTarget
 } from 'three';
 import { depthRangeOf } from './matrices.js';
-import { LAID_OVER, WRITTEN, WRITTEN_INTO_SEVERAL, passOver, valuesOfTheBox, valuesSet } from './passes.js';
-/** @import { Box3, WebGLRenderer, Texture, DepthTexture, Mesh, PlaneGeometry, ShaderMaterial } from 'three' */
+import { LAID_OVER, WRITTEN, WRITTEN_INTO_SEVERAL, drawnInto, passOver, valuesOfTheBox, valuesSet } from './passes.js';
+/** @import { Box3, WebGLRenderer, Texture, DepthTexture } from 'three' */
 /** @import { Box } from '../src/domain/geometry.ts' */
 /** @import { DrawnEye } from '../src/domain/eye.ts' */
 /** @import { LensLaw } from '../src/domain/focus.ts' */
@@ -455,8 +453,6 @@ export class Lens {
 	constructor(pixelsOfOne, frameScale, pixelsOfAFramePixel) {
 		this.pixelsOfOne = pixelsOfOne;
 		this.frameScale = frameScale;
-		// three draws nothing without a camera; every pass here places its own points
-		this.camera = new Camera();
 		// The scene split at the focus, each part a layer of it in its place
 		this.parts = new WebGLRenderTarget(A_PIXEL, A_PIXEL, { ...FIELD, count: Object.keys(SPLIT_PARTS).length });
 		this.tilesFound = new WebGLRenderTarget(A_PIXEL, A_PIXEL, TILES_FOUND);
@@ -562,7 +558,7 @@ export class Lens {
 		const boxes = { drawnBox: valuesOfTheBox(drawn), shownBox: valuesOfTheBox(shown) };
 		if (eye.lens === null) {
 			valuesSet(this.asItStands.material, { drawnLight: field.light, ...boxes });
-			this.drawnInto(renderer, this.asItStands, target);
+			drawnInto(renderer, this.asItStands, target);
 			return;
 		}
 		this.sizedFor(field);
@@ -573,17 +569,17 @@ export class Lens {
 			law: new Vector2(eye.lens.perNearness, eye.lens.inFocus)
 		};
 		valuesSet(this.found.material, depthRead);
-		this.drawnInto(renderer, this.found, this.tilesFound);
+		drawnInto(renderer, this.found, this.tilesFound);
 		valuesSet(this.widening.material, { tiles: this.tilesFound.texture, along: ALONG_THE_ROWS });
-		this.drawnInto(renderer, this.widening, this.tilesWidenedAlongTheRows);
+		drawnInto(renderer, this.widening, this.tilesWidenedAlongTheRows);
 		valuesSet(this.widening.material, { tiles: this.tilesWidenedAlongTheRows.texture, along: ALONG_THE_COLUMNS });
-		this.drawnInto(renderer, this.widening, this.tilesWidened);
+		drawnInto(renderer, this.widening, this.tilesWidened);
 		valuesSet(this.split.material, { ...depthRead, drawnLight: field.light });
-		this.drawnInto(renderer, this.split, this.parts);
+		drawnInto(renderer, this.split, this.parts);
 		valuesSet(this.madeWhole.material, { coarsestLevel: Math.floor(Math.log2(Math.max(field.width, field.height))) });
-		this.drawnInto(renderer, this.madeWhole, this.farFieldWhole);
+		drawnInto(renderer, this.madeWhole, this.farFieldWhole);
 		valuesSet(this.lens.material, boxes);
-		this.drawnInto(renderer, this.lens, target);
+		drawnInto(renderer, this.lens, target);
 	}
 
 	/** The lens's own layers sized to a field and its tiles. @param {SceneField} field */
@@ -594,15 +590,6 @@ export class Lens {
 		for (const tiles of [this.tilesFound, this.tilesWidenedAlongTheRows, this.tilesWidened]) {
 			tiles.setSize(tilesAcross, tilesDown);
 		}
-	}
-
-	/**
-	 * A pass drawn into a target.
-	 * @param {WebGLRenderer} renderer @param {Mesh<PlaneGeometry, ShaderMaterial>} pass @param {WebGLRenderTarget} target
-	 */
-	drawnInto(renderer, pass, target) {
-		renderer.setRenderTarget(target);
-		renderer.render(pass, this.camera);
 	}
 }
 
@@ -619,6 +606,15 @@ function depthReadValues(pixelsOfOne, frameScale) {
 		pixelsOfOne: { value: pixelsOfOne },
 		law: { value: new Vector2() }
 	};
+}
+
+/**
+ * A field of the world as the lens reads it: its light, and the depth and size of the layer it was drawn in.
+ * @param {Texture} light @param {WebGLRenderTarget} drawnIn @returns {SceneField}
+ */
+export function sceneFieldOf(light, drawnIn) {
+	if (drawnIn.depthTexture === null) throw new Error("the room's world keeps no depth");
+	return { light, depth: drawnIn.depthTexture, width: drawnIn.width, height: drawnIn.height };
 }
 
 /**

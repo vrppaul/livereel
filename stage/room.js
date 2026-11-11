@@ -13,8 +13,8 @@
  * the eye and lit as it sees the room (`stage/lighting.js`), hiding one another by depth alone; but what stands before
  * all the rest while the eye's focus blurs it near, a world of its own drawn apart and laid over the rest
  * (`worldBuilt`). The eye's lens blurs each pixel of the world by how far what it shows stands from the focus
- * (`stage/lens.js`), its fields laid over one another in linear light and the whole laid over the ground; over that
- * stand the film's things on the frame, sharp, then the frame's surface.
+ * (`stage/lens.js`), its fields laid over one another each by its law (`stage/laying.js`) and the whole laid over the
+ * ground; over that stand the film's things on the frame, sharp, then the frame's surface.
  *
  * The window's surface is drawn from a picture of it as sharp as the browser draws a page face-on, and filtered as it
  * shrinks into the distance: the browser draws a layer leant in 3D at about one of its pixels a page's pixel, however
@@ -62,7 +62,7 @@ import {
 } from 'three';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { WindowBody } from './body.js';
-import { Lens, SPREADS_REACHED } from './lens.js';
+import { Lens, SPREADS_REACHED, sceneFieldOf } from './lens.js';
 import { WorldLighting } from './lighting.js';
 import { matrixOf, projectionOnto } from './matrices.js';
 import { PAGE_SURFACE_FRAGMENT, PagePicture, pageSurfaceValues } from './page-picture.js';
@@ -84,7 +84,6 @@ import { Things, isAThing } from './things.js';
 /** @import { DrawnWindow } from '../src/props/window.ts' */
 /** @import { DrawnBloom } from '../src/props/lighting.ts' */
 /** @import { ThingObject } from './things.js' */
-/** @import { SceneField } from './lens.js' */
 /** @import { BesideThePage, SeenThroughField, WorldPart } from './see-through.js' */
 /** @import { Laying } from './laying.js' */
 /** @import { PageLaid } from './page-picture.js' */
@@ -285,19 +284,19 @@ void main() {
 	vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
 	#include <clipping_planes_vertex>
 }`;
-// An object's surface: its texture read back from the screen's colours into linear light, premultiplied by how clear it
-// is; none drawn, nor its depth, where it is clear; cut where its material asks. The page's lays the window's surface
-// over the page's picture (`page-picture.js`)
+// An object's surface: its texture as the browser drew it, in the screen's colours, premultiplied by how clear it is, so
+// three lays it over what its field holds as the browser lays it (`see-through.js`); none drawn, nor its depth, where it
+// is clear; cut where its material asks. The page's lays the window's surface over the page's picture
+// (`page-picture.js`)
 const OBJECTS_SURFACE_FRAGMENT = `
 #include <clipping_planes_pars_fragment>
 uniform sampler2D surface;
 varying vec2 shareOfTheSurface;
-${SRGB_CURVES}
 void main() {
 	#include <clipping_planes_fragment>
 	vec4 drawn = texture2D(surface, shareOfTheSurface);
 	if (drawn.a < ${DRAWN_AT_LEAST}) discard;
-	gl_FragColor = vec4(decoded(drawn.rgb / drawn.a) * drawn.a, drawn.a);
+	gl_FragColor = drawn;
 }`;
 // A surface laid flat over the whole frame, as it stands, its texture's rows from its top
 const FLAT_SURFACE_FRAGMENT = `
@@ -464,7 +463,7 @@ class Room {
 			...THREES_LAYER,
 			depthTexture: new DepthTexture(drawnWidth, drawnHeight)
 		});
-		this.seeThrough = new SeeThroughLayer(THREES_LAYER);
+		this.seeThrough = new SeeThroughLayer(THREES_LAYER, PAST_WHITE);
 		this.lens = new Lens(this.pixelsOfOne, layout.frameScale, window.devicePixelRatio);
 		// The world as the eye's lens sees it, each field laid over the ones before (`laying.js`); then laid over the
 		// exposure in the screen's colours once
@@ -732,13 +731,12 @@ class Room {
 		this.renderer.setRenderTarget(this.worldLayer);
 		this.renderer.clear();
 		partsDrawn(this.renderer, world.scene, this.worldCamera, world.writingDepth);
-		const opaque = fieldOf(this.worldLayer);
+		const opaque = sceneFieldOf(this.worldLayer.texture, this.worldLayer);
 		this.worldSeen.fieldLaid(this.renderer, WHAT_WRITES_DEPTH_LAID, (target) =>
 			this.lens.laid(this.renderer, opaque, gathered, this.frameBox, scene.eye, target)
 		);
 		for (const field of world.seenThroughFields) {
-			this.seeThrough.drawn(this.renderer, world.scene, this.worldCamera, this.worldLayer, field);
-			const drawnField = fieldOf(this.seeThrough.layer);
+			const drawnField = this.seeThrough.drawn(this.renderer, world.scene, this.worldCamera, this.worldLayer, field);
 			this.worldSeen.fieldLaid(this.renderer, field.laid, (target) =>
 				this.lens.laid(this.renderer, drawnField, gathered, this.frameBox, scene.eye, target)
 			);
@@ -1230,12 +1228,6 @@ function kindsFartherFirst(standing) {
 		}))
 		.toSorted((first, second) => first.middle.z - second.middle.z)
 		.map(({ kind }) => kind);
-}
-
-/** A layer of the world as the lens reads it: its light, and its depth. @param {WebGLRenderTarget} layer @returns {SceneField} */
-function fieldOf(layer) {
-	if (layer.depthTexture === null) throw new Error("the room's world keeps no depth");
-	return { light: layer.texture, depth: layer.depthTexture, width: layer.width, height: layer.height };
 }
 
 /** The objects a scene draws, those standing and those pushed off. @param {DrawnScene} scene */

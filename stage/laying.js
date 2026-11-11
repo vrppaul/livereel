@@ -5,18 +5,19 @@
  * screen's colours once.
  *
  * A film's light, its things, their glass and the window with its body, is laid in linear light, as three lays what is
- * seen through over what stands behind it. Markup is the browser's: a stylesheet's shadow, glow or fade is drawn for
- * the browser to lay in the screen's colours, and laid in linear light over a dark page it came out lighter than the
- * stylesheet drew it, a pane's faint shadow and glow 9 levels lighter and red, where the flat stage draws 13 all along
- * (a probe film, `r-glow` at 0.5 s, row 880 of a 3840 still, 2026-11-11): one level of red in the screen's colours
- * over a dark ground is about nine in linear light. So a field of markup, blurred as light by the lens as all else is,
- * is laid as the browser lays it: what lies under it and the field each turned into the screen's colours, the field
- * laid over by its clearness, and the sum turned back into light. The pass reads what lies under as it lays, so the
- * world is laid into two layers in turn: the one laid so far is read, the other written whole, and they change places.
- * Laid so, where no lens blurs it, markup reads as the browser's own sum.
+ * seen through over what stands behind it. Markup is the browser's, and the page seen through with it: a stylesheet's
+ * shadow, glow or fade is drawn for the browser to lay in the screen's colours, and laid in linear light over a dark
+ * page it came out lighter than the stylesheet drew it, a pane's faint shadow and glow 9 levels lighter and red, where
+ * the flat stage draws 13 all along (a probe film, `r-glow` at 0.5 s, row 880 of a 3840 still, 2026-11-11): one level
+ * of red in the screen's colours over a dark ground is about nine in linear light. So a field of markup, drawn as the
+ * browser draws it and blurred as light by the lens as all else is (`stage/see-through.js`), is laid as the browser
+ * lays it: what lies under it and the field each turned into the screen's colours, the field laid over by its
+ * clearness, and the sum turned back into light. The pass reads what lies under as it lays, so the world is laid into
+ * two layers in turn: the one laid so far is read, the other written whole, and they change places. Laid so, where no
+ * lens blurs it, markup reads as the browser's own sum.
  */
-import { Camera, WebGLRenderTarget } from 'three';
-import { SRGB_CURVES, WRITTEN, passOver, valuesSet } from './passes.js';
+import { WebGLRenderTarget } from 'three';
+import { SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesSet } from './passes.js';
 /** @import { RenderTargetOptions, WebGLRenderer } from 'three' */
 
 /**
@@ -36,7 +37,7 @@ void main() {
 	vec4 below = inTheScreensColours(texture2D(under, shareOfTheFrame));
 	vec4 over = inTheScreensColours(texture2D(field, shareOfTheFrame));
 	vec4 laid = over + (1.0 - over.a) * below;
-	gl_FragColor = laid.a > 0.0 ? vec4(decoded(laid.rgb / laid.a) * laid.a, laid.a) : vec4(0.0);
+	gl_FragColor = inLinearLight(laid);
 }`;
 
 /** The world as the lens lays it, field over field: the layer laid so far, and what lays markup into the other. */
@@ -54,8 +55,6 @@ export class WorldSeen {
 			AS_THE_BROWSER_FRAGMENT,
 			WRITTEN
 		);
-		// three draws nothing without a camera; the pass places its own points
-		this.camera = new Camera();
 	}
 
 	/** Nothing laid yet. @param {WebGLRenderer} renderer */
@@ -79,8 +78,7 @@ export class WorldSeen {
 				renderer.clear();
 				laid(this.markup);
 				valuesSet(this.asTheBrowser.material, { under: this.seen.texture });
-				renderer.setRenderTarget(this.next);
-				renderer.render(this.asTheBrowser, this.camera);
+				drawnInto(renderer, this.asTheBrowser, this.next);
 				[this.seen, this.next] = [this.next, this.seen];
 		}
 	}

@@ -119,7 +119,7 @@ void main() {
 	vec4 over = anythingOver ? texture2D(overThePage, shareOfTheSurface) : vec4(0.0);
 	vec4 drawn = over + (1.0 - over.a) * (screen + under);
 	if (drawn.a < ${DRAWN_AT_LEAST}) discard;
-	gl_FragColor = vec4(decoded(drawn.rgb / drawn.a) * drawn.a, drawn.a);
+	gl_FragColor = inLinearLight(drawn);
 }`;
 
 /**

@@ -1239,9 +1239,12 @@ What `inside` costs:
   pulled through it. The blur adds light up in linear
   light, as a lens does, so light words on a dark page blur brighter than a
   blur in the screen's colours draws them. Markup standing in the world, a
-  title or a pane, is laid over what stands behind it in the screen's
-  colours, as the browser lays it, so a pane's shadow over a page is as
-  dark as flat draws it. The ground and what stands on the frame are drawn
+  title or a pane, and the page while it fades are laid over what stands
+  behind them in the screen's colours, as the browser lays them, so a
+  pane's shadow over a page is as dark as flat draws it, and a half-faded
+  page over a thing as the browser lays a fading layer; the window's glass
+  is laid over the page as light, so its sheen keeps its glow. The ground
+  and what stands on the frame are drawn
   as flat draws them. A fast move's blur adds its
   moments up in linear light,
   as a camera's shutter gathers light, where flat lays them over one another

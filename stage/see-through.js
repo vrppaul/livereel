@@ -11,8 +11,15 @@
  * which the lens blurs all of it by.
  *
  * A film's things seen through and markup stand in fields apart, as they are laid by two laws: a film's light in linear
- * light, as three lays one thing over another, and markup as the browser lays it (`stage/laying.js`). Of the two, the
- * farther is laid first (`kindsFartherFirst` in `stage/room.js`).
+ * light, as three lays one thing over another, and markup, the page seen through with it, as the browser lays it
+ * (`stage/laying.js`). Of the two, the farther is laid first (`kindsFartherFirst` in `stage/room.js`). Within its field
+ * markup is laid by its law too: drawn in the screen's colours, as the browser drew it, three lays its surfaces over one
+ * another there as the browser lays them, and the field is turned into light once drawn, for the lens. The page lies
+ * alone in its field with the window's glass over it, both drawn as light, the glass a film's light laid over the page
+ * as three lays a coat, so its reflection past white stays whole for the glow; the field is laid as the browser lays
+ * the page. Drawn with the page in its field, markup before it had the page under its faint shadow blurred by the
+ * shadow's depth, not the page's: a title in focus before a page blurred by the focus left a band of the page sharp
+ * under its shadow, cut hard where the shadow ends (a probe film, `w-titles` at 1.8 s, 2026-11-11).
  *
  * Nothing seen through writes depth, so it is laid in the order it is drawn, and three draws whole meshes, the farthest
  * first: a thing passing through the fading page would be laid wholly over the page or wholly under it. So where the
@@ -26,11 +33,13 @@
  * Which field a part of the world is drawn in is told by three's layers, which a camera draws one or more of at a time:
  * the world's lights are in all of them, as three lights a part only by lights in its own.
  */
-import { Camera, DepthTexture, DoubleSide, MeshBasicMaterial, Plane, Vector3, WebGLRenderTarget } from 'three';
-import { DEPTH_WRITTEN, passOver, valuesSet } from './passes.js';
+import { DepthTexture, DoubleSide, MeshBasicMaterial, Plane, Vector3, WebGLRenderTarget } from 'three';
+import { sceneFieldOf } from './lens.js';
+import { DEPTH_WRITTEN, SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesSet } from './passes.js';
 import { isDrawnPart, materialsOf } from './things.js';
-/** @import { Matrix4, Object3D, RenderTargetOptions, Scene, WebGLRenderer } from 'three' */
+/** @import { Camera, Matrix4, Object3D, RenderTargetOptions, Scene, WebGLRenderer } from 'three' */
 /** @import { Laying } from './laying.js' */
+/** @import { SceneField } from './lens.js' */
 
 /**
  * The parts of the world the room draws apart, each a layer of three's: what writes depth; a film's things seen
@@ -59,23 +68,32 @@ export const BESIDE_THE_PAGE = ['thingsSeenThrough', 'surfacesSeenThrough'];
 const THINGS_SEEN_THROUGH = ['thingsSeenThrough'];
 /** @type {readonly BesideThePage[]} */
 const NOTHING_SEEN_THROUGH = [];
-// How each kind beside the page is laid over what lies under it: a film's things in linear light, markup as the
-// browser lays it
-/** @type {{ readonly [Kind in BesideThePage]: Laying }} */
-const LAID = { thingsSeenThrough: 'linearly', surfacesSeenThrough: 'asTheBrowser' };
-// The page seen through laid as a film's light is, in linear light: alone over the ground, the room lays it in the
-// screen's colours as it lays the world over the exposure, a half-faded page within a level of the old room's laying
-// at the same spot (a probe film, `w-fade` at 1.2 s, 2026-11-11). The first kind beside the page before it shares its
-// field where it is laid alike
-/** @type {Laying} */
-const THE_PAGE_LAID = 'linearly';
+/**
+ * What a field of what is seen through holds: the page, with the window's glass over it, or a kind seen through beside
+ * the page.
+ * @typedef {'pageSeenThrough' | BesideThePage} SeenThroughHolding
+ */
+/**
+ * How what each field holds is drawn into it, in the screen's colours or as light, and how the field is laid over what
+ * lies under it, as the browser lays it or in linear light. Markup is drawn as the browser drew it, so three lays its
+ * surfaces over one another as the browser lays them (`OBJECTS_SURFACE_FRAGMENT` in `stage/room.js`), and is laid so. A
+ * film's things are its light. The page is laid as markup is: its fade is the stylesheet's, and laid in linear light
+ * over what stood behind it, a half-faded page over a glass cube read 13.27 levels off the old room, which laid its
+ * layers in the screen's colours, on average over 900 × 560 pixels of a 3840 still, and 1.79 laid so (a probe film,
+ * `see` at 1.8 s, 2026-11-11); it is drawn as light, as the glass over it is drawn as a film's light.
+ * @type {{ readonly [Holding in SeenThroughHolding]: { readonly inTheScreensColours: boolean, readonly laid: Laying } }}
+ */
+const DRAWN = {
+	pageSeenThrough: { inTheScreensColours: false, laid: 'asTheBrowser' },
+	thingsSeenThrough: { inTheScreensColours: false, laid: 'linearly' },
+	surfacesSeenThrough: { inTheScreensColours: true, laid: 'asTheBrowser' }
+};
 
 /**
- * A field of what is seen through: whether it holds the page, which kind beside the page it holds, none or one, the
- * planes that cut that, none where the page is not seen through, and how the field is laid over what lies under it.
+ * A field of what is seen through: what it holds, the planes that cut it, none where the page is not seen through or
+ * it holds the page, and how it is laid over what lies under it.
  * @typedef {{
- *   readonly withThePage: boolean,
- *   readonly beside: readonly BesideThePage[],
+ *   readonly holding: SeenThroughHolding,
  *   readonly cut: readonly Plane[],
  *   readonly laid: Laying
  * }} SeenThroughField
@@ -102,51 +120,67 @@ void main() {
 	gl_FragDepth = texture2D(depth, shareOfTheFrame).x;
 	gl_FragColor = vec4(0.0);
 }`;
+// The layer's light, drawn in the screen's colours, turned into light, each premultiplied
+const IN_LIGHT_FRAGMENT = `
+uniform sampler2D drawn;
+varying vec2 shareOfTheFrame;
+${SRGB_CURVES}
+void main() {
+	gl_FragColor = inLinearLight(texture2D(drawn, shareOfTheFrame));
+}`;
 
-/** The layer each field of what is seen through is drawn into in turn, and what draws its depth. */
+/** The layer each field of what is seen through is drawn into in turn, what draws its depth, and what turns its light. */
 export class SeeThroughLayer {
-	/** @param {RenderTargetOptions} drawnAs how the room draws three's layers, as the opaque field is drawn */
-	constructor(drawnAs) {
+	/**
+	 * @param {RenderTargetOptions} drawnAs how the room draws three's layers, as the opaque field is drawn
+	 * @param {RenderTargetOptions} turnedAs how the room holds light past white in a layer of a sample a pixel
+	 */
+	constructor(drawnAs, turnedAs) {
 		this.layer = new WebGLRenderTarget(A_PIXEL, A_PIXEL, {
 			...drawnAs,
 			depthTexture: new DepthTexture(A_PIXEL, A_PIXEL)
 		});
+		// A field drawn in the screen's colours turned into light, as the lens reads it
+		this.turned = new WebGLRenderTarget(A_PIXEL, A_PIXEL, turnedAs);
+		this.intoLight = passOver({ drawn: { value: this.layer.texture } }, IN_LIGHT_FRAGMENT, WRITTEN);
 		this.depthCopied = passOver({ depth: { value: null } }, DEPTH_COPIED_FRAGMENT, DEPTH_WRITTEN);
 		// Depth alone, of either side of a face, drawn in place of a see-through thing's own material
 		this.depthAlone = new MeshBasicMaterial({ colorWrite: false, side: DoubleSide });
-		// three draws nothing without a camera; the depth's pass places its own points
-		this.camera = new Camera();
 	}
 
 	/**
 	 * A field of what is seen through drawn into the layer from the world's scene, seen by its camera, over the opaque
-	 * field's depth: its light, the page's first where it holds the page, then what it holds beside the page, cut as the
-	 * field has it; then its own depth, its nearest surface's.
+	 * field's depth, cut as the field has it: the light of what it holds, in the colours it is drawn in, then its depth,
+	 * its nearest surface's. The field as the lens reads it: its light, turned into light where it was drawn in
+	 * the screen's colours, and its depth.
 	 * @param {WebGLRenderer} renderer @param {Scene} world @param {Camera} seen @param {WebGLRenderTarget} opaque
-	 * @param {SeenThroughField} field
+	 * @param {SeenThroughField} field @returns {SceneField}
 	 */
 	drawn(renderer, world, seen, opaque, field) {
 		renderer.setRenderTarget(this.layer);
 		renderer.clear();
 		valuesSet(this.depthCopied.material, { depth: opaque.depthTexture });
-		renderer.render(this.depthCopied, this.camera);
-		if (field.withThePage) partsDrawn(renderer, world, seen, ['pageSeenThrough']);
+		drawnInto(renderer, this.depthCopied, this.layer);
 		renderer.clippingPlanes = [...field.cut];
-		partsDrawn(renderer, world, seen, field.beside);
+		partsDrawn(renderer, world, seen, [field.holding]);
+		this.depthDrawn(renderer, world, seen, field.holding);
 		renderer.clippingPlanes = UNCUT;
-		if (field.withThePage) partsDrawn(renderer, world, seen, ['pageDepth']);
-		renderer.clippingPlanes = [...field.cut];
-		for (const kind of field.beside) this.depthDrawn(renderer, world, seen, kind);
-		renderer.clippingPlanes = UNCUT;
+		if (!DRAWN[field.holding].inTheScreensColours) return sceneFieldOf(this.layer.texture, this.layer);
+		this.turned.setSize(this.layer.width, this.layer.height);
+		drawnInto(renderer, this.intoLight, this.turned);
+		return sceneFieldOf(this.turned.texture, this.layer);
 	}
 
 	/**
-	 * The depth alone of a kind seen through beside the page drawn: a film's thing's in a material that writes depth
-	 * alone, in place of its own; markup's, its own surface of depth.
-	 * @param {WebGLRenderer} renderer @param {Scene} world @param {Camera} seen @param {BesideThePage} kind
+	 * The depth alone of what a field holds drawn: the page's, its own surface of depth; a film's thing's in a material
+	 * that writes depth alone, in place of its own; markup's, its own surface of depth.
+	 * @param {WebGLRenderer} renderer @param {Scene} world @param {Camera} seen @param {SeenThroughHolding} holding
 	 */
-	depthDrawn(renderer, world, seen, kind) {
-		switch (kind) {
+	depthDrawn(renderer, world, seen, holding) {
+		switch (holding) {
+			case 'pageSeenThrough':
+				partsDrawn(renderer, world, seen, ['pageDepth']);
+				return;
 			case 'thingsSeenThrough':
 				world.overrideMaterial = this.depthAlone;
 				partsDrawn(renderer, world, seen, ['thingsSeenThrough']);
@@ -161,8 +195,7 @@ export class SeeThroughLayer {
 /**
  * The fields what is seen through is drawn as, the lowest first, each kind beside the page in fields of its own, in
  * the order named: where the page is not seen through, a field of each; where it is, a field of each behind the page's
- * plane, then the page and, before it, the first kind where it is laid as the page is, in linear light, and a field of
- * each other kind. Each field is one run of the lens more.
+ * plane, then the page with its glass, then a field of each before it. Each field is one run of the lens more.
  * @param {Matrix4 | null} page the matrix that places the page's square, where the page is seen through
  * @param {readonly BesideThePage[]} beside the kinds seen through beside the page, in the order they are laid
  * @returns {readonly SeenThroughField[]}
@@ -176,19 +209,19 @@ export function seenThroughFieldsOf(page, beside) {
 	);
 	if (behind.distanceToPoint(THE_EYE) > ON_ITS_PLANE) behind.negate();
 	const before = [behind.clone().negate()];
-	const [first] = beside;
-	const withThePage = first !== undefined && LAID[first] === THE_PAGE_LAID ? [first] : [];
-	const thePage = { withThePage: true, beside: withThePage, cut: before, laid: THE_PAGE_LAID };
-	const besideBefore = beside.slice(withThePage.length).map((kind) => fieldOf(kind, before));
-	return [...beside.map((kind) => fieldOf(kind, [behind])), thePage, ...besideBefore];
+	return [
+		...beside.map((kind) => fieldOf(kind, [behind])),
+		fieldOf('pageSeenThrough', UNCUT),
+		...beside.map((kind) => fieldOf(kind, before))
+	];
 }
 
 /**
- * A field of a kind seen through beside the page alone, cut by the planes named, laid as its kind is.
- * @param {BesideThePage} kind @param {readonly Plane[]} cut @returns {SeenThroughField}
+ * A field holding the page or a kind seen through beside it, cut by the planes named, laid as what it holds is.
+ * @param {SeenThroughHolding} holding @param {readonly Plane[]} cut @returns {SeenThroughField}
  */
-function fieldOf(kind, cut) {
-	return { withThePage: false, beside: [kind], cut, laid: LAID[kind] };
+function fieldOf(holding, cut) {
+	return { holding, cut, laid: DRAWN[holding].laid };
 }
 
 /**
