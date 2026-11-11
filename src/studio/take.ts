@@ -340,8 +340,8 @@ export class Take {
 		for (const move of step.moves) {
 			const atOnce: Stretch = { moment: this.moment(), seconds: AT_ONCE, ease: move.timing.ease ?? linear };
 			const change = await this.changeOf(move, atOnce, () => Promise.resolve(cameraOf(this.scene, this.format)));
-			await this.set(change, 1, movesThePage(move));
-			this.heard(soundsOf(move), 1);
+			await this.set(change, AT_THEIR_ENDS, AT_THEIR_ENDS, movesThePage(move));
+			this.heard(soundsOf(move), AT_THEIR_ENDS);
 		}
 	}
 
@@ -389,20 +389,27 @@ export class Take {
 
 	/** Every running move whose share has ended by a point of the step set at its end, once; those still running. */
 	private async endedBy(running: readonly Running[], point: number): Promise<Running[]> {
-		for (const ending of running.filter((current) => current.within.end <= point)) await this.setAt(ending, 1);
+		for (const ending of running.filter((current) => current.within.end <= point)) {
+			await this.setAt(ending, AT_THEIR_ENDS, AT_THEIR_ENDS);
+		}
 		return running.filter((current) => current.within.end > point);
 	}
 
-	/** Every running move set at its eased progress when its step is `progress` along. */
+	/** Every running move set at its eased progress, and the share of its time gone, when its step is `progress` along. */
 	private async setAlong(running: readonly Running[], progress: number): Promise<Running[]> {
 		const moved: Running[] = [];
-		for (const current of running) moved.push(await this.setAt(current, easedAlong(current, progress)));
+		for (const current of running) {
+			moved.push(await this.setAt(current, easedAlong(current, progress), current.within.along(progress)));
+		}
 		return moved;
 	}
 
-	/** A running move set at a progress of its own, every sound it makes by then heard; the move, with those to come. */
-	private async setAt(current: Running, progress: number): Promise<Running> {
-		await this.set(current.change, progress, current.movesThePage);
+	/**
+	 * A running move set at a progress of its own, with a share of its time gone, every sound it makes by then heard; the
+	 * move, with those to come.
+	 */
+	private async setAt(current: Running, progress: number, timeGone: number): Promise<Running> {
+		await this.set(current.change, progress, timeGone, current.movesThePage);
 		return { ...current, unheard: this.heard(current.unheard, progress) };
 	}
 
@@ -527,9 +534,12 @@ export class Take {
 		return laid;
 	}
 
-	/** A change set at a progress; a change of the page itself leaves the page's picture behind the page. */
-	private async set(change: Change, progress: number, changesThePage: boolean): Promise<void> {
-		this.scene = await change(this.scene, progress);
+	/**
+	 * A change set at a progress, with a share of its time gone; a change of the page itself leaves the page's picture
+	 * behind the page.
+	 */
+	private async set(change: Change, progress: number, timeGone: number, changesThePage: boolean): Promise<void> {
+		this.scene = await change(this.scene, progress, timeGone);
 		this.pageChangedSinceTaken ||= changesThePage;
 	}
 
@@ -804,7 +814,7 @@ function easedAlong(current: Running, progress: number): number {
  */
 async function sceneAlong(scene: Scene, progress: number, moves: readonly Running[]): Promise<Scene> {
 	let along = scene;
-	for (const ran of moves) along = await ran.change(along, easedAlong(ran, progress));
+	for (const ran of moves) along = await ran.change(along, easedAlong(ran, progress), ran.within.along(progress));
 	return along;
 }
 

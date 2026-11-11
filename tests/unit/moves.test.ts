@@ -5,7 +5,7 @@ import { type Camera, placedIn, underTheFrame, wholeView, windowView } from '../
 import { type EyePlace, type Focus, type Viewpoint, eyeAtRest } from '../../src/domain/eye.ts';
 import { gazeOf } from '../../src/domain/flight.ts';
 import * as eye from '../../src/moves/eye.ts';
-import { easeInOutSine, easeOutCubic, linear } from '../../src/domain/curves.ts';
+import { easeInCubic, easeInOutSine, easeOutCubic, linear } from '../../src/domain/curves.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import type { Format } from '../../src/domain/format.ts';
 import {
@@ -1383,6 +1383,33 @@ test('a piece in the world standing off the page falls onto a block as it travel
 		closeToBox({ left: 1440, top: 660, width: 200, height: 120 }),
 		'world'
 	]);
+});
+
+test("a piece in the world falling onto a block travels on the move's curve and comes down on its fall's: a quarter of the time gone on a curve that eases in and out, at the travel's 0.146 and the fall's 0.016 on one that eases in", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { inside: 'world' }), wide, 1, FULL_HD);
+	const tilted = await setIn(piece.lean({ tilt: 10 }), lifted, 1, FULL_HD);
+	const raised = await setIn(piece.effects({ depth: 150 }), tilted, 1, FULL_HD);
+	const falling = await piece.onto('#other', { fall: easeInCubic }).begin(beginningIn(raised, FULL_HD));
+	const fallingPiece = (await falling(raised, easeInOutSine(0.25), 0.25)).objects.get('piece')!;
+	const travelled = await setIn(piece.onto('#other'), raised, easeInOutSine(0.25), FULL_HD);
+	expect([fallingPiece.box, fallingPiece.depth, fallingPiece.angle.tilt]).toEqual([
+		closeToBox(travelled.objects.get('piece')!.box),
+		expect.closeTo(150 * (1 - 0.25 ** 3)),
+		expect.closeTo(10 * (1 - 0.25 ** 3))
+	]);
+});
+
+test('a piece lying on the page from the moment it sets off is refused a fall: nothing of it falls', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	await expect(async () =>
+		piece.onto('#other', { fall: easeInCubic }).begin(beginningIn(lifted, FULL_HD))
+	).rejects.toThrow(
+		new FilmError(
+			'piece.onto names a fall for the piece, which lies flat on the page from the moment it sets off: nothing of it falls, leave fall out'
+		)
+	);
 });
 
 test('a piece in the world fallen onto a block goes down with the screen, as one lying on the page does', async () => {

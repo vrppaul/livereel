@@ -172,7 +172,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => piece.onto(5 as never)).toThrow(new FilmError(`piece.onto's target is 5: it is ${TARGET}`));
 	expect(() => piece.onto('#chart', { scale: 2 } as never)).toThrow(
-		new FilmError('piece.onto names scale: it names as, within, ease, or fewer')
+		new FilmError('piece.onto names scale: it names fall, as, within, ease, or fewer')
 	);
 	expect(() => code.show('x', { at: 'left', group: '' })).toThrow(
 		new FilmError(`code.show's group is "": it is a name, a string with something in it`)

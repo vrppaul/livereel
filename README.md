@@ -264,7 +264,7 @@ and the moves of each part of the scene:
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
 - `piece.show(target, { every, air, corner, hole, lines, picture, body, rides, enter, edge, as, inside, group,
-  zIndex })`, `piece.to(place, { scale, depth })`, `piece.onto(target)`, `piece.lean({ tilt, turn, roll, over, about })`, `piece.back()`,
+  zIndex })`, `piece.to(place, { scale, depth })`, `piece.onto(target, { fall })`, `piece.lean({ tilt, turn, roll, over, about })`, `piece.back()`,
   `piece.hide({ toward, leave, edge })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
   in the page's pixels (a rounded card's own `border-radius`), square where it names none, and as round as the window
@@ -272,8 +272,8 @@ and the moves of each part of the scene:
   source where named; drawn from the page's picture as it changes, or, `picture: 'held'`, from a picture of its source
   held as it is lifted; `inside: 'world'`, with a `body: { thickness, walls, glow }` where named, riding its block as
   the page scrolls, `rides: 'its block'`, where named; carried `onto` another
-  block, it lies on the page there, in the window, and keeps that place on the screen as the camera moves; each move of
-  it takes `as` to name which
+  block, it lies on the page there, in the window, and keeps that place on the screen as the camera moves, one standing
+  off the page in the world falling onto it on the curve `fall` names; each move of it takes `as` to name which
 - `outline.show(target, { every, line, enter, edge, as, group, zIndex })`, `outline.to(place, { scale, depth })`,
   `outline.lean({ tilt, turn, roll, over, about })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a
   selector's blocks or a box of the screen, `'solid'` or `'dashed'`; each move of it takes `as` to name which
@@ -343,7 +343,7 @@ roll, over, about })`, the screen in it with it, by a move of its own, so it tra
 and leans in one `play`. Every move that runs over time
 takes a share of its step, `within: { start, end }`, and a curve of its own,
 `ease`: `linear`, `easeInOutSine` (a step's own), `easeInOutCubic`,
-`easeOutCubic`, `easeOutQuint`, or `easeOutBack`, which passes its end and
+`easeInCubic`, `easeOutCubic`, `easeOutQuint`, or `easeOutBack`, which passes its end and
 settles back on it; or one of a film's own numbers: `cubicBezier(0.4, 0,
 0.2, 1)` as CSS's `cubic-bezier()`, `atSpeeds({ settingOff, arriving })`,
 which sets off and arrives at those speeds, each from 0 to 3 times its
@@ -689,7 +689,12 @@ what the camera shows there alone. `piece.onto`
 carries it from the world onto a block where it stands, wherever the eye
 stands and however the window is brought near or rolled, and brings it down
 onto the block on its way, from as near the eye and as leant as it stood,
-so a line lifted off a terminal falls onto its row as it travels. It stands
+so a line lifted off a terminal falls onto its row as it travels. It travels
+on the move's curve and falls on its own where the film names one:
+`piece.onto(ROW, { ease: easeInOutSine, fall: easeInCubic })` moves the line
+across evenly eased and brings it down gathering speed, as the claude-review
+promo does; `fall` is refused for a piece that lies on the page from the
+moment it sets off, as nothing of it falls. It stands
 on the page in the world, on the page's plane as the camera frames the
 page, so it keeps its body and its shadow, and is not cut at the window's
 edge nor shaded with the page as what lies in the window is; it goes down

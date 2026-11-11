@@ -88,6 +88,11 @@ export function linear(progress: number): number {
 	return progress;
 }
 
+/** In slowly, gathering speed to the end, as a thing falls. */
+export function easeInCubic(progress: number): number {
+	return progress ** CUBE;
+}
+
 export function easeOutCubic(progress: number): number {
 	return 1 - (1 - progress) ** CUBE;
 }

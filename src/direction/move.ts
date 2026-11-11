@@ -235,10 +235,11 @@ export interface Beginning {
 }
 
 /**
- * A begun move, `progress` of the way along, eased: the scene with its prop set. A move of the page sets the page's
+ * A begun move, `progress` of the way along, eased, with `timeGone` of its share's time gone beside it, for a move
+ * that sets some of its values on a curve of its own: the scene with its prop set. A move of the page sets the page's
  * own scroll or keys as it goes, and hands the scene back as it was.
  */
-export type Change = (scene: Scene, progress: number) => Scene | Promise<Scene>;
+export type Change = (scene: Scene, progress: number, timeGone: number) => Scene | Promise<Scene>;
 
 /**
  * A move as livereel's moves make one (`camera.onto`, `light.on`). A film names its type, to hand moves on from a

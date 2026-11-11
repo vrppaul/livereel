@@ -34,9 +34,9 @@
  * the frame stand on the screen as a box; it never slides from there, as the page's plane may stand leant from the
  * frame's: it goes in its place. One standing in the world stands on the page in the world, the page's plane standing
  * there, where it stands, wherever the eye stands and however the window stands, leant from that plane or near the eye
- * as it stood, and comes down onto the block on its way, so it falls as it travels: what lies in the window is drawn
- * flat on it, and what stands on the page in the world is drawn in the world, so it keeps its body and stands off the
- * page.
+ * as it stood, and comes down onto the block on its way, so it falls as it travels, on a curve of its own where the
+ * film names one: what lies in the window is drawn flat on it, and what stands on the page in the world is drawn in
+ * the world, so it keeps its body and stands off the page.
  *
  * An object on the frame, or beside a point, which rides with the eye, is handed into the world where the eye sees it
  * as that move begins, at once, square to the eye and as far before it as what it stood on, so it stays there as the
@@ -94,7 +94,7 @@ import {
 	readsInAnyBox,
 	windowPlaced
 } from '../domain/place.ts';
-import type { Ease } from '../domain/curves.ts';
+import { A_CURVE, type Ease } from '../domain/curves.ts';
 import { type Path, type Through, pathOf } from '../domain/path.ts';
 import { MOVES_WITH_THE_CURVE, type MovingBy, namedToward } from '../domain/toward.ts';
 import {
@@ -217,6 +217,15 @@ export interface HideScript extends TimingScript, NamedScript, LeaveScript {
 /** Which object a move takes to a box the move works out: back where its box places it, or to a block of the page. */
 export interface TakenScript extends TimingScript, NamedScript {}
 
+/**
+ * Which object is carried onto a block of the page, and the curve it comes down onto the page on, its `fall`, where
+ * it stands off the page's plane: its depth and lean, over the move's whole share as its travel is, on the move's own
+ * curve where the film names none.
+ */
+export interface OntoScript extends TakenScript {
+	readonly fall?: Ease;
+}
+
 /** Which object leans, and how: as the window leans. */
 export interface ObjectLeanScript extends LeanScript, NamedScript {}
 
@@ -313,6 +322,7 @@ export const TO_FORM: Form<ToScript> = {
 export const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...LEAVE_FORM, ...TIMING_FORM, ...NAMED_FORM };
 export const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { ...LEAN_FORM, ...NAMED_FORM };
 const TAKEN_FORM: Form<TakenScript> = { ...NAMED_FORM, ...TIMING_FORM };
+const ONTO_FORM: Form<OntoScript> = { fall: A_CURVE, ...TAKEN_FORM };
 const EFFECTS_FORM: Form<EffectsScript> = {
 	ring: A_SHARE,
 	glow: A_SHARE,
@@ -338,6 +348,10 @@ export const LEANT = ['angle', 'about'] as const satisfies readonly (keyof Frame
 const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
 // The values a move that takes an object back sets: where it stands and how it faces, together
 const BACK = [...CARRIED, ...LEANT] as const satisfies readonly (keyof FrameObject)[];
+// Of the values an object crossing into another holder is carried by, those it travels by, and those it falls by, its
+// angle beside them, which stand it off the plane of what it lands in
+const TRAVELLED = ['box', 'scale'] as const satisfies readonly (keyof Carried)[];
+const FALLEN = ['depth'] as const satisfies readonly (keyof Carried)[];
 // A box measured in a group stands as large as on the frame, as the group it is measured for stands as it was placed
 const AS_LARGE = 1;
 // What stands beside a point stands in no place of the frame: it stands off the point
@@ -735,17 +749,18 @@ export function objectCarriedTo(
  * large as the block: from where it stands as the move begins, measured on the screen as the camera shows it then, so
  * it lands on the block wherever the camera goes on its way, and keeps that place on the screen after. One standing in
  * the world comes down onto the block as it goes, from as near the eye and as leant as it stood, so it falls as it
- * travels, on the move's one curve.
+ * travels: its travel on the move's curve, its fall on the one the film names, so the fall gathers speed apart from
+ * the travel, or on the move's too.
  */
-export function objectOnto(kind: ShownKind, move: string, target: Target, script: TakenScript): Move {
+export function objectOnto(kind: ShownKind, move: string, target: Target, script: OntoScript): Move {
 	assertKind(target, A_TARGET, `${move}'s target`);
-	assertWritten(script, TAKEN_FORM, move);
+	assertWritten(script, ONTO_FORM, move);
 	const name = script.as ?? kind;
 	return {
 		part: objectPart(name),
 		valueNames: HELD_ANEW,
 		timing: timingOf(script),
-		begin: (beginning) => laidOnto(beginning, name, kind, target, move)
+		begin: (beginning) => laidOnto(beginning, name, kind, target, script, move)
 	};
 }
 
@@ -1301,19 +1316,27 @@ async function carriedToBox(
 
 /**
  * The object on its way onto a block of the page, from where it stood as the move began to lying on the block: what it
- * lands in written into it at once, its box and how it stands there on their way.
+ * lands in written into it at once, its box and how it stands there on their way, travelling on the move's curve and
+ * falling on the one the film names, or on the move's; a fall named for one lying flat on the page from the start,
+ * where nothing of it falls, is refused.
  */
 async function laidOnto(
 	beginning: Beginning,
 	name: ObjectName,
 	kind: ShownKind,
 	target: Target,
+	script: OntoScript,
 	move: string
 ): Promise<Change> {
 	const object = standingOfKind(beginning, name, move, kind);
 	const landing = landingOf(beginning, object, name, move);
+	if (script.fall !== undefined && landing.holder.kind === ON_THE_PAGE.kind) {
+		throw new FilmError(
+			`${move} names a fall for the ${name}, which lies flat on the page from the moment it sets off: nothing of it falls, leave fall out`
+		);
+	}
 	const end = await shownBox(beginning, target, THE_FIRST, move);
-	return crossing(name, landing.holder, landing.from, { ...landing.lying, box: end });
+	return crossing(name, landing.holder, landing.from, { ...landing.lying, box: end }, script.fall);
 }
 
 /**
@@ -1334,15 +1357,32 @@ function handedOver(beginning: Beginning, name: ObjectName, kind: ShownKind, mov
 
 /**
  * An object crossing into another holder, as `onto` carries it and `intoTheWorld` hands it over: what it stands in
- * written into it at once, and where it stands there carried from one placement to another on its way, its box, scale,
- * depth and angle; a move that hands it over at once names the same placement at both ends.
+ * written into it at once, and where it stands there carried from one placement to another on its way, its box and
+ * scale as far as the move has come, its depth and angle as far as its `fall` has with the share of its time gone,
+ * where one is named, else with the box; a move that hands it over at once names the same placement at both ends.
  */
-function crossing(name: ObjectName, holder: Holder, from: Placement, to: Placement): Change {
-	return writing(name, (progress): Partial<HeldAnew> => ({
+function crossing(name: ObjectName, holder: Holder, from: Placement, to: Placement, fall?: Ease): Change {
+	return (scene, progress, timeGone) =>
+		written(scene, name, crossedAt(holder, from, to, progress, fall?.(timeGone) ?? progress));
+}
+
+/**
+ * Where an object crossing into another holder stands, travelled and fallen so far of the way: in the holder, its box
+ * and scale travelled, its depth and angle fallen.
+ */
+function crossedAt(
+	holder: Holder,
+	from: Placement,
+	to: Placement,
+	travelled: number,
+	fallen: number
+): Partial<HeldAnew> {
+	return {
 		inside: holder,
-		...carriedAlong(from, to, CARRIED, progress),
-		angle: angleToward(from.angle, to.angle, progress)
-	}));
+		...carriedAlong(from, to, TRAVELLED, travelled),
+		...carriedAlong(from, to, FALLEN, fallen),
+		angle: angleToward(from.angle, to.angle, fallen)
+	};
 }
 
 /**

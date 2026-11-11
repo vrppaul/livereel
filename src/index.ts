@@ -50,6 +50,7 @@ export type { Keystroke, Typist } from './domain/typing.ts';
 export {
 	atSpeeds,
 	cubicBezier,
+	easeInCubic,
 	easeInOutCubic,
 	easeInOutSine,
 	easeOutBack,

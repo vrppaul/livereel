@@ -122,6 +122,28 @@ class Counted implements Move {
 	}
 }
 
+/** A move on the screen on a curve of its own that writes down every share of its time gone it is set at, and its progress. */
+class Timed implements Move {
+	readonly part = 'screen';
+	readonly timing;
+	readonly progresses: number[] = [];
+	readonly timesGone: number[] = [];
+
+	constructor(within: Bounds) {
+		this.timing = timingOf({ within, ease: easeOutCubic });
+	}
+
+	begin(): Change {
+		return (scene, progress, timeGone) => this.noted(scene, progress, timeGone);
+	}
+
+	noted(scene: Scene, progress: number, timeGone: number): Scene {
+		this.progresses.push(progress);
+		this.timesGone.push(timeGone);
+		return scene;
+	}
+}
+
 /** A move on the screen that writes in a log that it began, as it begins. */
 class LoggedAsItBegins implements Move {
 	readonly part = 'screen';
@@ -1224,6 +1246,33 @@ test('a move is set along its share, at its end exactly once, and never after', 
 	// Ten frames, the move over the first half of them
 	await takeOf(new FootageOf([9]), new PicturedStageThatKeeps()).run([play({ seconds: 10 / 30, moves: [counted] })]);
 	expect(counted.progresses).toEqual([0.2, 0.4, 0.6, 0.8, 1]);
+});
+
+test('a move is handed the share of its time gone beside its progress along its curve: through a play, along the exposures of a frame kept as it moves, and in a cut', async () => {
+	const timed = new Timed({ end: 0.5 });
+	const exposed = new Timed({});
+	const cutAtOnce = new Timed({});
+	// Ten frames, the move over the first half of them; a cut; five frames, the last kept as the move ends on it
+	const steps = [
+		play({ seconds: 10 / 30, moves: [timed] }),
+		cut(cutAtOnce),
+		play({ seconds: 5 / 30, moves: [exposed] })
+	];
+	await takeOf(new FootageOf([9, 14]), new PicturedStageThatKeeps()).run(steps);
+	const timesGone = [0.2, 0.4, 0.6, 0.8, 1];
+	expect([
+		timed.timesGone,
+		timed.progresses,
+		exposed.timesGone.length > timesGone.length,
+		exposed.progresses,
+		cutAtOnce.timesGone
+	]).toEqual([
+		timesGone,
+		timesGone.map((timeGone) => expect.closeTo(easeOutCubic(timeGone))),
+		true,
+		exposed.timesGone.map((timeGone) => expect.closeTo(easeOutCubic(timeGone))),
+		[1]
+	]);
 });
 
 test('a move begun and ended within one frame is set at its end once', async () => {

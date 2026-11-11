@@ -66,6 +66,7 @@ import {
 	NAMED_FORM,
 	type NamedScript,
 	type ObjectLeanScript,
+	type OntoScript,
 	READ_AS_THE_WINDOW,
 	type ShownKind,
 	THE_STEPS_CURVE,
@@ -271,9 +272,9 @@ export function to(place: Place, script: ToScript = {}): Move {
 /**
  * The piece carried onto the first block a selector matches, or a box of the screen, as large as the block holds its
  * source, to lie on the page there: it lands on the block wherever the camera goes on its way, and keeps that place on
- * the screen after.
+ * the screen after. One standing off the page in the world falls onto it as it travels, on the curve `fall` names.
  */
-export function onto(target: Target, script: TakenScript = {}): Move {
+export function onto(target: Target, script: OntoScript = {}): Move {
 	return objectOnto(PIECE, 'piece.onto', target, script);
 }
 
