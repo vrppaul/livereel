@@ -23,12 +23,16 @@
  *
  * The gaze is two values apart, as a person flying low over a page turns and tips their head: the heading, which way
  * on the window's plane the eye looks, in degrees from up the page clockwise, and the tip, how far its sight lifts off
- * the plane, from looking straight down onto it at -90 through level at 0. Each follows rules reached by the ends of
- * legs: a value of degrees, a heading toward a spot or along the way, a tip that holds a spot so far down the frame.
- * Each rule is read where the eye stands as it flies, so one that holds a spot holds it all along: between two rules
- * the gaze goes from the one before to the one after, both read where the eye stands, easing in and out by the share of
- * the way between them; past the last it follows the last; a heading turns the short way round. The eye never rolls
- * but as it sets off: a roll it stood with eases away by the end of the first leg.
+ * the plane, from looking straight down onto it at -90 through level at 0. Each follows rules reached at moments of
+ * the flight, at a leg's end or past it by a share of the next leg: a value of degrees, a heading toward a spot or
+ * along the way, a tip that holds a spot so far down the frame. Each rule is read where the eye stands as it flies, so
+ * one that holds a spot holds it all along: between two rules the gaze goes from the one before to the one after, both
+ * read where the eye stands, easing in and out over the flight's time between them; past the last it follows the
+ * last; a heading turns the short way round. The flight's time is its legs' where the film times them apart, so the
+ * promo's eye turns to the Story button over its first leg's 2 s however its pace sets off from rest
+ * (`to-the-story.js`), where easing by the way, which the pace eases already, turned it late; on an even pace the time
+ * and the way go together. The eye never rolls but as it sets off: a roll it stood with eases away by the end of the
+ * first leg.
  */
 import { CubicBezierCurve3, Curve, CurvePath, LineCurve3, Vector3, type Vector3Like } from 'three';
 import { FilmError } from './errors.ts';
@@ -81,13 +85,13 @@ type GazeRule =
 	| { readonly kind: 'along' }
 	| { readonly kind: 'holding'; readonly spot: Spot; readonly downTheFrame: number };
 
-/** A rule of the gaze the eye follows from a share of its way's length on. */
+/** A rule of the gaze the eye follows from a moment of its flight on, a share of its move's progress. */
 export interface GazeKey {
-	readonly share: number;
+	readonly moment: number;
 	readonly rule: GazeRule;
 }
 
-/** A gaze's keys: where it set off, at the way's start, then those the film names, each farther along. */
+/** A gaze's keys: where it set off, at the flight's start, then those the film names, each later. */
 type GazeKeys = readonly [GazeKey, ...GazeKey[]];
 
 /** A flight's way: its curve, and the share of the curve's length each leg ends at. */
@@ -117,7 +121,7 @@ interface PaceKnot extends PaceMark {
  * How a flight goes along its way as its move goes on: as far in each equal share of the move; or through the knots of
  * its legs timed apart, from rest to rest.
  */
-type Pace = typeof EVENLY | { readonly kind: 'apart'; readonly knots: readonly PaceKnot[] };
+export type Pace = typeof EVENLY | { readonly kind: 'apart'; readonly knots: readonly PaceKnot[] };
 
 /**
  * How the eye sees as it flies: its focal length, how far ahead of it its aim stands, and how high the frame is in
@@ -171,6 +175,10 @@ const HALVES = 2;
 const STEEPEST_AND_MONOTONE = 3;
 // How fast a flight timed by its legs goes as it sets off and as it comes to rest
 const AT_REST = 0;
+// The first leg, whose end a roll the eye set off with is gone by; and how many knots of a pace stand before the first
+// leg's end: the flight's start
+const THE_FIRST_LEG = 0;
+const KNOTS_BEFORE_THE_LEGS = 1;
 // How short a leg is to go nowhere, in pixels of a frame 1080 high
 const NOWHERE = 1e-6;
 // How many steps of a way are checked for a point on the page's plane or under it, its ends among them
@@ -300,20 +308,53 @@ function sumOf(numbers: readonly number[]): number {
 }
 
 /**
+ * The moment of a flight, a share of its move's progress, the eye reaches `by` at: the end of leg `by`, or past it by
+ * a share of the next leg's time, 1.5 half way through leg 2.
+ */
+export function momentBy(way: Way, pace: Pace, by: number): number {
+	const leg = Math.floor(by);
+	const ended = legsEndMoment(way, pace, leg);
+	const past = by - leg;
+	// The last leg's end has no leg after it to go a share into
+	if (past === 0) return ended;
+	return between(ended, legsEndMoment(way, pace, leg + 1), past);
+}
+
+/**
+ * The moment of a flight the eye passes a leg's end at: on an even pace, the share of the way it ends at; where the
+ * legs are timed apart, the share of the time it and the legs before it take.
+ */
+function legsEndMoment(way: Way, pace: Pace, leg: number): number {
+	switch (pace.kind) {
+		case 'evenly':
+			return knownLegsEnd(way.legsEnd[leg], leg);
+		case 'apart':
+			return knownLegsEnd(pace.knots[leg + KNOTS_BEFORE_THE_LEGS]?.time, leg);
+	}
+}
+
+/** A leg's end, of a leg the way has; a key past the way's legs is refused before its moment is read. */
+function knownLegsEnd(moment: number | undefined, leg: number): number {
+	if (moment === undefined) throw new Error(`a flight's way has no leg ${String(leg)}: its keys are refused first`);
+	return moment;
+}
+
+/**
  * Where the eye flying stands, looks and its top points, `progress` of its move along, straight on past either end of
- * its way: on its way as far as its pace has it then, its gaze as its rules have it there, rolled as it set off till the
- * first leg's end.
+ * its way: on its way as far as its pace has it then, its gaze as its rules have it then and there, rolled as it set
+ * off till the first leg's end.
  */
 export function flownAt(flight: Flight, progress: number): Viewpoint {
 	const share = wayFlown(flight.pace, progress);
 	const onTheWay = Math.min(ITS_END, Math.max(ITS_START, share));
+	const moment = Math.min(ITS_END, Math.max(ITS_START, progress));
 	const way = flight.way.curve;
 	const at = way.getPointAt(onTheWay).addScaledVector(way.getTangentAt(onTheWay), (share - onTheWay) * way.getLength());
-	const heading = valueAt(flight.heading, onTheWay, at, flight);
-	const tip = valueAt(flight.tip, onTheWay, at, flight);
+	const heading = valueAt(flight.heading, moment, onTheWay, at, flight);
+	const tip = valueAt(flight.tip, moment, onTheWay, at, flight);
 	const looking = lookingOf(heading, tip);
-	const firstLegsEnd = flight.way.legsEnd[0] ?? ITS_END;
-	const roll = flight.roll * (1 - easeInOutSine(Math.min(ITS_END, onTheWay / firstLegsEnd)));
+	const firstLegsEnd = legsEndMoment(flight.way, flight.pace, THE_FIRST_LEG);
+	const roll = flight.roll * (1 - easeInOutSine(Math.min(ITS_END, moment / firstLegsEnd)));
 	const top = topOf(heading, tip).applyAxisAngle(looking, radians(roll));
 	return {
 		at: spotOf(at),
@@ -328,23 +369,24 @@ function headingAlong(way: Way, share: number): number {
 	return degreesOf(Math.atan2(tangent.x, -tangent.y));
 }
 
-/** Where along its way the eye stands at a share of its length. */
-export function pointOnTheWay(way: Way, share: number): Spot {
-	return spotOf(way.curve.getPointAt(share));
+/** Where the eye flying stands at a moment of its flight, on its way as far as its pace has it then. */
+export function pointAtMoment(way: Way, pace: Pace, moment: number): Spot {
+	return spotOf(way.curve.getPointAt(wayFlown(pace, moment)));
 }
 
 /**
- * The value of a gaze's rules at a share of the way, the eye standing there: from the rule before to the rule after,
- * each read there, eased in and out by the share between them; the last rule past it; a heading the short way round.
+ * The value of a gaze's rules at a moment of the flight, the eye standing a share of its way along: from the rule
+ * before to the rule after, each read there, eased in and out over the time between them; the last rule past it; a
+ * heading the short way round.
  */
-function valueAt(keys: GazeKeys, share: number, at: Vector3, flight: Flight): number {
+function valueAt(keys: GazeKeys, moment: number, share: number, at: Vector3, flight: Flight): number {
 	const [first, ...rest] = keys;
 	let start = first;
 	for (const end of rest) {
-		if (share < end.share) {
+		if (moment < end.moment) {
 			const from = ruled(start.rule, share, at, flight);
 			const to = ruled(end.rule, share, at, flight);
-			const eased = easeInOutSine((share - start.share) / (end.share - start.share));
+			const eased = easeInOutSine((moment - start.moment) / (end.moment - start.moment));
 			return between(from, from + shortWay(from, to), eased);
 		}
 		start = end;

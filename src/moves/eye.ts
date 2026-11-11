@@ -61,11 +61,13 @@ import {
 	type Leg,
 	type LegsTimed,
 	type OwnFigure,
+	type Pace,
 	type Way,
 	flownAt,
 	gazeOf,
+	momentBy,
 	paceOf,
-	pointOnTheWay,
+	pointAtMoment,
 	wayOf
 } from '../domain/flight.ts';
 import { linear } from '../domain/curves.ts';
@@ -189,7 +191,10 @@ interface LegOnto extends TimedLeg, FramingScript {
 /** A leg of a flight's way, as a film writes it. */
 export type LegScript = LegTo | LegBending | LegAhead | LegAlong | LegOnto;
 
-/** A key of the eye's gaze, reached as the eye reaches the end of its way's leg `by`, from 0 for the first. */
+/**
+ * A key of the eye's gaze, reached as the eye reaches the end of its way's leg `by`, from 0 for the first, or past it
+ * by a share of the next leg's time: 1.5 half way through leg 2.
+ */
 interface GazeKeyScript {
 	readonly by: number;
 }
@@ -341,14 +346,17 @@ const A_LEG: Kind<LegScript> = new FormByName<LegScript>(
 	new OfForm<LegTo>({ to: needed(AN_OVER), takes: A_LEGS_TIME }, 'a leg: { to, takes }'),
 	'a leg: { to }, { to, arriving, bend }, { ahead }, { along } or { onto, fills }, each with how long it takes where the legs are timed'
 );
-const A_LEG_NUMBER: Kind<number> = new Plain(isLegNumber, "a leg's number, 0 for the first");
+const A_KEYS_PLACE: Kind<number> = new Plain(
+	isAtOrPastTheFirstLeg,
+	"a leg's end by its number, 0 for the first, or past one by a share of the next leg, 1.5 half way through leg 2"
+);
 const A_TIP: Kind<number> = new Plain(isTip, 'degrees from -90, looking straight down onto the page, to 90');
 const A_HEADING_KEY: Kind<HeadingKeyScript> = new FormByName<HeadingKeyScript>(
 	[
-		['toward', new OfForm({ by: needed(A_LEG_NUMBER), toward: needed(A_TARGET) }, 'a heading: { by, toward }')],
-		['along', new OfForm({ by: needed(A_LEG_NUMBER), along: needed(new Literal('way')) }, 'a heading: { by, along }')]
+		['toward', new OfForm({ by: needed(A_KEYS_PLACE), toward: needed(A_TARGET) }, 'a heading: { by, toward }')],
+		['along', new OfForm({ by: needed(A_KEYS_PLACE), along: needed(new Literal('way')) }, 'a heading: { by, along }')]
 	],
-	new OfForm({ by: needed(A_LEG_NUMBER), degrees: needed(A_NUMBER) }, 'a heading: { by, degrees }'),
+	new OfForm({ by: needed(A_KEYS_PLACE), degrees: needed(A_NUMBER) }, 'a heading: { by, degrees }'),
 	'a heading: { by, degrees }, { by, toward } or { by, along: "way" }'
 );
 const A_TIP_KEY: Kind<TipKeyScript> = new FormByName<TipKeyScript>(
@@ -356,12 +364,12 @@ const A_TIP_KEY: Kind<TipKeyScript> = new FormByName<TipKeyScript>(
 		[
 			'holding',
 			new OfForm(
-				{ by: needed(A_LEG_NUMBER), holding: needed(A_TARGET), at: needed(A_SHARE) },
+				{ by: needed(A_KEYS_PLACE), holding: needed(A_TARGET), at: needed(A_SHARE) },
 				'a tip: { by, holding, at }'
 			)
 		]
 	],
-	new OfForm({ by: needed(A_LEG_NUMBER), degrees: needed(A_TIP) }, 'a tip: { by, degrees }'),
+	new OfForm({ by: needed(A_KEYS_PLACE), degrees: needed(A_TIP) }, 'a tip: { by, degrees }'),
 	'a tip: { by, degrees } or { by, holding, at }'
 );
 const A_FLIGHTS_WAY = new ListOf(A_LEG, 'a list of legs');
@@ -376,8 +384,8 @@ const SMOOTH: Joining = 'smooth';
 // How the eye goes before a block where the film names no pace: as the camera zooms
 const BY_SCALE: PaceBeforeAPlane = 'scale';
 const NO_GAZE_KEYS: readonly never[] = [];
-// Where a flight's way starts, as a share of its length; how high over the page a block the gaze turns to stands;
-// and the bounds of a tip, in degrees
+// The moment a flight starts, as a share of its move's progress, and the first leg's end, which a gaze key is reached
+// at or past; how high over the page a block the gaze turns to stands; and the bounds of a tip, in degrees
 const ITS_START = 0;
 const THE_FIRST_LEG = 0;
 const LEVEL_WITH_THE_PAGE = 0;
@@ -614,19 +622,21 @@ function flightsTiming(script: FlyScript, timed: LegsTimed): Timing {
 }
 
 /**
- * Refuses gaze keys that name no leg of the way, a leg onto a block, which sets the gaze at its end, or a leg no
- * farther along than the key before.
+ * Refuses gaze keys reached past the way's last leg, at the end of a leg onto a block, which sets the gaze there, or
+ * no farther along than the key before.
  */
 function refuseKeysOff(keys: readonly GazeKeyScript[], way: readonly LegScript[], named: string): void {
+	const lastLeg = way.length - 1;
 	let legBefore: number | null = null;
 	for (const [index, key] of keys.entries()) {
-		const leg = way[key.by];
-		if (leg === undefined) {
+		if (key.by > lastLeg) {
 			throw new FilmError(
-				`${EYE_FLY}'s ${named} key ${String(index)} is reached by leg ${String(key.by)}, and the way's legs go from 0 to ${String(way.length - 1)}`
+				`${EYE_FLY}'s ${named} key ${String(index)} is reached by leg ${String(key.by)}, and the way's legs go from 0 to ${String(lastLeg)}`
 			);
 		}
-		if ('onto' in leg) {
+		// A key past a leg's end by a share stands inside the next leg, short of the end a stand sets the gaze at
+		const endingLeg = Number.isInteger(key.by) ? way[key.by] : undefined;
+		if (endingLeg !== undefined && 'onto' in endingLeg) {
 			throw new FilmError(
 				`${EYE_FLY}'s ${named} key ${String(index)} is reached by leg ${String(key.by)}, which stands before a block and sets the gaze at its end: name no key by it`
 			);
@@ -672,18 +682,19 @@ async function flown(
 	const legs: Leg[] = [];
 	for (const leg of way) legs.push(await legRead(beginning, camera, leg));
 	const flightsWay = wayOf(setOff.at, legs, joining, EYE_FLY);
+	const pace = paceOf(timed, flightsWay);
 	const gaze = gazeOf(setOff);
 	const headings: GazeKey[] = [];
 	for (const [index, key] of heading.entries()) {
-		headings.push(await headingRead(beginning, camera, flightsWay, key, index));
+		headings.push(await headingRead(beginning, camera, flightsWay, pace, key, index));
 	}
 	const tips: GazeKey[] = [];
-	for (const key of tip) tips.push(await tipRead(beginning, camera, flightsWay, key));
+	for (const key of tip) tips.push(await tipRead(beginning, camera, flightsWay, pace, key));
 	const flight: Flight = {
 		way: flightsWay,
-		pace: paceOf(timed, flightsWay),
-		heading: [{ share: ITS_START, rule: { kind: 'degrees', degrees: gaze.heading } }, ...headings],
-		tip: [{ share: ITS_START, rule: { kind: 'degrees', degrees: gaze.tip } }, ...tips],
+		pace,
+		heading: [{ moment: ITS_START, rule: { kind: 'degrees', degrees: gaze.heading } }, ...headings],
+		tip: [{ moment: ITS_START, rule: { kind: 'degrees', degrees: gaze.tip } }, ...tips],
 		roll: gaze.roll,
 		eye: { focalLength: camera.eye.focalLength, frameHeight: frame.height / frameScaleOf(frame) }
 	};
@@ -707,42 +718,45 @@ async function legRead(beginning: Beginning, camera: Camera, leg: LegScript): Pr
 }
 
 /**
- * A heading key's rule: its degrees, along the way, or toward a block, refused where the eye stands right over the
- * block as it reaches the key, where no heading is toward it.
+ * A heading key at the moment of the flight it is reached at, and its rule: its degrees, along the way, or toward a
+ * block, refused where the eye stands right over the block then, where no heading is toward it.
  */
 async function headingRead(
 	beginning: Beginning,
 	camera: Camera,
 	way: Way,
+	pace: Pace,
 	key: HeadingKeyScript,
 	index: number
 ): Promise<GazeKey> {
-	const share = shareOf(way, key.by);
-	if ('degrees' in key) return { share, rule: { kind: 'degrees', degrees: key.degrees } };
-	if ('along' in key) return { share, rule: { kind: 'along' } };
+	const moment = momentBy(way, pace, key.by);
+	if ('degrees' in key) return { moment, rule: { kind: 'degrees', degrees: key.degrees } };
+	if ('along' in key) return { moment, rule: { kind: 'along' } };
 	const spot = await spotOver(beginning, camera, key.toward, LEVEL_WITH_THE_PAGE);
-	const standing = pointOnTheWay(way, share);
+	const standing = pointAtMoment(way, pace, moment);
 	if (Math.hypot(spot.across - standing.across, spot.down - standing.down) < RIGHT_OVER) {
 		throw new FilmError(
 			`${EYE_FLY}'s heading key ${String(index)} turns toward a block the eye stands right over there: turn it toward one ahead of it`
 		);
 	}
-	return { share, rule: { kind: 'toward', spot } };
+	return { moment, rule: { kind: 'toward', spot } };
 }
 
-/** A tip key's rule: its degrees, or as far as holds a block so far down the frame. */
-async function tipRead(beginning: Beginning, camera: Camera, way: Way, key: TipKeyScript): Promise<GazeKey> {
-	const share = shareOf(way, key.by);
-	if ('degrees' in key) return { share, rule: { kind: 'degrees', degrees: key.degrees } };
+/**
+ * A tip key at the moment of the flight it is reached at, and its rule: its degrees, or as far as holds a block so far
+ * down the frame.
+ */
+async function tipRead(
+	beginning: Beginning,
+	camera: Camera,
+	way: Way,
+	pace: Pace,
+	key: TipKeyScript
+): Promise<GazeKey> {
+	const moment = momentBy(way, pace, key.by);
+	if ('degrees' in key) return { moment, rule: { kind: 'degrees', degrees: key.degrees } };
 	const spot = await spotOver(beginning, camera, key.holding, LEVEL_WITH_THE_PAGE);
-	return { share, rule: { kind: 'holding', spot, downTheFrame: key.at } };
-}
-
-/** The share of a way's length a leg ends at. */
-function shareOf(way: Way, leg: number): number {
-	const share = way.legsEnd[leg];
-	if (share === undefined) throw new Error(`a flight's way has no leg ${String(leg)}: its keys are refused first`);
-	return share;
+	return { moment, rule: { kind: 'holding', spot, downTheFrame: key.at } };
 }
 
 /** The spot so high over the middle of a block of the page, read as the move begins, over the window's own plane. */
@@ -847,8 +861,8 @@ function refocusingAndOpening(from: Focus, to: Focus, openedFrom: number, opened
 		});
 }
 
-function isLegNumber(written: unknown): written is number {
-	return Number.isInteger(written) && A_NUMBER.is(written) && written >= THE_FIRST_LEG;
+function isAtOrPastTheFirstLeg(written: unknown): written is number {
+	return A_NUMBER.is(written) && written >= THE_FIRST_LEG;
 }
 
 function isTip(written: unknown): written is number {

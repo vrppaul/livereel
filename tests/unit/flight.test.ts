@@ -40,12 +40,12 @@ function lowestOf(way: Way): number {
 
 /** A flight along a way, heading as its keys say, looking straight down all the way, as far in each share of its time. */
 function flightAlong(way: Way, heading: Flight['heading']): Flight {
-	return { way, pace: EVENLY, heading, tip: [{ share: 0, rule: STRAIGHT_DOWN }], roll: 0, eye: THE_EYE };
+	return { way, pace: EVENLY, heading, tip: [{ moment: 0, rule: STRAIGHT_DOWN }], roll: 0, eye: THE_EYE };
 }
 
 /** A flight along a way, looking straight down up the page, each leg taking its time beside the others'. */
 function flightTimed(way: Way, takes: readonly number[]): Flight {
-	return { ...flightAlong(way, [{ share: 0, rule: UP_THE_PAGE }]), pace: paceOf({ kind: 'apart', takes }, way) };
+	return { ...flightAlong(way, [{ moment: 0, rule: UP_THE_PAGE }]), pace: paceOf({ kind: 'apart', takes }, way) };
 }
 
 /** How far across the eye stands flying a flight, at each of so many even steps of its time, its ends among them. */
@@ -129,8 +129,8 @@ test('a way that reaches the page is refused, as one that goes on ahead as it si
 test('a heading turns the short way round: from 350° to 10°, half way it heads up the page, the top of an eye looking down pointing up it', () => {
 	const way = wayOf(SETTING_OFF, [TURNING[0]!], 'straight', 'eye.fly');
 	const flight = flightAlong(way, [
-		{ share: 0, rule: { kind: 'degrees', degrees: 350 } },
-		{ share: 1, rule: { kind: 'degrees', degrees: 10 } }
+		{ moment: 0, rule: { kind: 'degrees', degrees: 350 } },
+		{ moment: 1, rule: { kind: 'degrees', degrees: 10 } }
 	]);
 	const top = flownAt(flight, 0.5).up;
 	expect([top.across, top.down]).toEqual([expect.closeTo(0), expect.closeTo(-1)]);
@@ -138,7 +138,7 @@ test('a heading turns the short way round: from 350° to 10°, half way it heads
 
 test('a heading along the way turns the top of an eye looking down the way it flies', () => {
 	const way = wayOf(SETTING_OFF, [TURNING[0]!], 'straight', 'eye.fly');
-	const top = flownAt(flightAlong(way, [{ share: 0, rule: { kind: 'along' } }]), 0.5).up;
+	const top = flownAt(flightAlong(way, [{ moment: 0, rule: { kind: 'along' } }]), 0.5).up;
 	expect([top.across, top.down]).toEqual([expect.closeTo(1), expect.closeTo(0)]);
 });
 

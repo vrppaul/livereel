@@ -175,18 +175,23 @@ and the moves of each part of the scene:
   the flight takes its share of the step's time unbent, and names no `ease`. Its gaze is two values apart: the
   heading, degrees from up the page clockwise, and the tip, how far its sight lifts off the page, -90 looking
   straight down onto it, 0 level.
-  Each follows rules reached by the end of a leg: degrees, a heading `toward` a block or `along: 'way'`, a tip
-  `holding` a block that share down the frame, each read where the eye stands as it flies, so a block held stays held
-  all along and on past the last key; between two rules the gaze eases from one to the other by the way flown, a
-  heading the short way round, `heading: [{ by: 0, toward: '#story' }, { by: 2, degrees: 0 }]`, `tip: [{ by: 0,
-  holding: '#story', at: 0.58 }, { by: 1, holding: '#story', at: 0.58 }, { by: 2, degrees: -90 }]`. It never rolls: a
-  roll it set off with eases away by the end of the first leg. The blocks are read as the move begins; the eye then
+  Each follows rules reached at the end of leg `by`, or past it by a share of the next leg, `by: 1.5` half way
+  through leg 2: degrees, a heading `toward` a block or `along: 'way'`, a tip `holding` a block that share down the
+  frame, each read where the eye stands as it flies, so a block held stays held all along and on past the last key;
+  between two rules the gaze eases from one to the other over the flight's time, a heading the short way round:
+  where the legs are timed apart, by their times, so a turn over a first leg that takes 2 s takes those 2 s however
+  the eye's pace sets off and gathers; where they are not, as the way goes, the eye covering as much of it in each
+  equal share. `heading: [{ by: 0, toward: '#story' }, { by: 1.5, degrees: 0 }]`, `tip: [{ by: 0, holding: '#story',
+  at: 0.58 }, { by: 1, holding: '#story', at: 0.58 }, { by: 1.5, degrees: -90 }]` turns to the button over the first
+  leg, holds it through the second, and stands square half way through the third. It never rolls: a roll it set off
+  with eases away by the end of the first leg. The blocks are read as the move begins; the eye then
   rides the window, so a window that leans or travels carries it, until `eye.to` sends it into the room. Flat, the
   page is drawn from a picture no closer than livereel's bound, so a flight low over it shows it soft. Refused: no
   leg, a leg ahead first or one to where the eye stands, a figure that gives a point of no numbers, flat or of no
   length, a way that reaches
   the page, a height of none, a tip past ±90, a heading toward the block the eye arrives right over, a key by a leg
-  the way has not, by a leg onto a block or no later than the key before, a leg that takes no time, one naming none
+  the way has not, by below 0, by the end of a leg onto a block or no later than the key before, a leg that takes no
+  time, one naming none
   beside one that names how long it takes, and an `ease` beside legs that name it
 - `eye.onto(target, { fills, middleAt, turned, pace })`: the eye brought before a block of the page, a selector or a box of
   the screen: so near that, seen square, the block fills `fills` of the frame along the side it fills most,

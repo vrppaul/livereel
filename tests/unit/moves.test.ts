@@ -3,6 +3,7 @@ import { expect, test } from 'vitest';
 import { AS_PLACED, FACE_ON } from '../../src/domain/stance.ts';
 import { type Camera, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
 import { type EyePlace, type Focus, eyeAtRest } from '../../src/domain/eye.ts';
+import { gazeOf } from '../../src/domain/flight.ts';
 import * as eye from '../../src/moves/eye.ts';
 import { easeOutCubic, linear } from '../../src/domain/curves.ts';
 import { FilmError } from '../../src/domain/errors.ts';
@@ -3850,6 +3851,35 @@ test("an eye flown on legs that take their time apart stands over the first leg'
 	]);
 });
 
+test('a flight on legs timed apart turns its gaze by its time: half way in time to a key by its last leg, its heading has turned half way, though the eye has flown nine tenths of its way', async () => {
+	const flying = await eye
+		.fly(
+			[
+				{ to: OVER_THE_BLOCK, takes: 1 },
+				{ ahead: 0.1, takes: 1 }
+			],
+			{ heading: [{ by: 1, degrees: 90 }] }
+		)
+		.begin(beginningOf(OPENING_IN_SMALL));
+	expect(gazeOf((await flying(OPENING_IN_SMALL, 0.5)).eye).heading).toBeCloseTo(45);
+});
+
+test("a gaze key between two legs' ends is reached that share of the later leg's time past the first: by 0.5, its heading has turned half way at three eighths of the move and wholly at three quarters", async () => {
+	const flying = await eye
+		.fly(
+			[
+				{ to: OVER_THE_BLOCK, takes: 1 },
+				{ to: { over: '#card', height: 800 }, takes: 1 }
+			],
+			{ heading: [{ by: 0.5, degrees: 90 }] }
+		)
+		.begin(beginningOf(OPENING_IN_SMALL));
+	expect([
+		gazeOf((await flying(OPENING_IN_SMALL, 0.375)).eye).heading,
+		gazeOf((await flying(OPENING_IN_SMALL, 0.75)).eye).heading
+	]).toEqual([expect.closeTo(45), expect.closeTo(90)]);
+});
+
 test('a flight on legs timed apart refused as it is made: a leg taking no time, a leg naming none beside one that does, a curve of its own', () => {
 	expect(() => eye.fly([{ to: OVER_THE_BLOCK, takes: 0 }])).toThrow(
 		new FilmError("eye.fly's way[0]'s takes is 0: it is how long the leg takes beside the others, more than 0")
@@ -3887,6 +3917,14 @@ test('a flight refused as it is made: a way of no leg, a leg in no form of one, 
 	);
 	expect(() => eye.fly([{ to: OVER_THE_BLOCK }], { heading: [{ by: 1, degrees: 90 }] })).toThrow(
 		new FilmError("eye.fly's heading key 0 is reached by leg 1, and the way's legs go from 0 to 0")
+	);
+	expect(() => eye.fly([{ to: OVER_THE_BLOCK }, { ahead: 1 }], { heading: [{ by: 1.5, degrees: 90 }] })).toThrow(
+		new FilmError("eye.fly's heading key 0 is reached by leg 1.5, and the way's legs go from 0 to 1")
+	);
+	expect(() => eye.fly([{ to: OVER_THE_BLOCK }], { heading: [{ by: -0.5, degrees: 90 }] })).toThrow(
+		new FilmError(
+			"eye.fly's heading[0]'s by is -0.5: it is a leg's end by its number, 0 for the first, or past one by a share of the next leg, 1.5 half way through leg 2"
+		)
 	);
 	expect(() =>
 		eye.fly([{ to: OVER_THE_BLOCK }, { ahead: 1 }], {
