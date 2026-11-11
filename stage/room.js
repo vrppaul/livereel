@@ -60,6 +60,7 @@ import {
 	ShaderMaterial,
 	Vector2,
 	Vector3,
+	Vector4,
 	WebGLRenderTarget,
 	WebGLRenderer
 } from 'three';
@@ -90,7 +91,7 @@ import { Things, isAThing } from './things.js';
 /** @import { ThingObject } from './things.js' */
 /** @import { BesideThePage, SeenThroughField, WorldPart } from './see-through.js' */
 /** @import { Laying } from './laying.js' */
-/** @import { PageLaid } from './page-picture.js' */
+/** @import { BehindThePage, PageLaid } from './page-picture.js' */
 /** @import { SunkPit } from './piece-body.js' */
 /** @import { Size } from '../src/domain/geometry.ts' */
 /** @import { Texture } from 'three' */
@@ -444,6 +445,7 @@ class Room {
 			pageSurfaceValues()
 		);
 		this.pageDepth = surfaceInTheWorld(PAGE_DEPTH_ALONE, 'pageDepth', PAGE_SURFACE_FRAGMENT, pageSurfaceValues());
+		this.pageSurfaces = [this.page, this.pageSeenThrough, this.pageDepth];
 		/** The screen's size, in its pixels @type {Size} */
 		this.screen = layout.format.screen;
 		this.pagePicture = new PagePicture(
@@ -655,7 +657,7 @@ class Room {
 		this.world.clear();
 		this.beforeTheRest.clear();
 		const pageMatrix = surfaceMatrixOf(window.pageSurface.inTheEyesSpace, standing.placing);
-		for (const page of [this.page, this.pageSeenThrough, this.pageDepth]) {
+		for (const page of this.pageSurfaces) {
 			compiledForThePits(page.material, pageLaid);
 			valuesSet(page.material, pageLaid);
 			placedBy(page, pageMatrix);
@@ -756,24 +758,49 @@ class Room {
 	/**
 	 * A world apart drawn, lit as the eye sees the room, each field of it laid through the lens over the one before, the
 	 * lowest first: what writes depth, drawn into the world's layer; then each field of what is seen through, drawn over
-	 * that depth into one layer, one field at a time, each laid before the next is drawn.
+	 * that depth into one layer, one field at a time, each laid before the next is drawn. The page, in whichever field it
+	 * stands, reads what the room has laid so far as what stands behind it.
 	 * @param {DrawnScene} scene @param {WorldApart} world @param {Box} gathered
 	 */
 	worldApartDrawn(scene, world, gathered) {
 		this.lighting.shiningIn(world.scene, scene.eye.roomInTheEyesSpace);
 		this.renderer.setRenderTarget(this.worldLayer);
 		this.renderer.clear();
+		this.behindThePageSet(gathered);
 		partsDrawn(this.renderer, world.scene, this.worldCamera, world.writingDepth);
 		const opaque = sceneFieldOf(this.worldLayer.texture, this.worldLayer);
 		this.worldSeen.fieldLaid(this.renderer, WHAT_WRITES_DEPTH_LAID, (target) =>
 			this.lens.laid(this.renderer, opaque, gathered, this.frameBox, scene.eye, target)
 		);
 		for (const field of world.seenThroughFields) {
+			this.behindThePageSet(gathered);
 			const drawnField = this.seeThrough.drawn(this.renderer, world.scene, this.worldCamera, this.worldLayer, field);
 			this.worldSeen.fieldLaid(this.renderer, field.laid, (target) =>
 				this.lens.laid(this.renderer, drawnField, gathered, this.frameBox, scene.eye, target)
 			);
 		}
+	}
+
+	/**
+	 * What the page's surface reads of what stands behind it, where its shade fades it (`page-picture.js`), set as the
+	 * room has laid the world so far: that world, the film's ground, and where a pixel of the layers the world is drawn
+	 * into over the box the lens gathers stands on the frame.
+	 * @param {Box} gathered
+	 */
+	behindThePageSet(gathered) {
+		const frame = this.frameBox;
+		/** @type {BehindThePage} */
+		const behind = {
+			behindSoFar: this.worldSeen.seen.texture,
+			filmsGround: textureOf(this.textures, 'ground').texture,
+			layerOnTheFrame: new Vector4(
+				gathered.width / this.worldLayer.width / frame.width,
+				gathered.height / this.worldLayer.height / frame.height,
+				(gathered.left - frame.left) / frame.width,
+				(frame.top + frame.height - gathered.top - gathered.height) / frame.height
+			)
+		};
+		for (const page of this.pageSurfaces) valuesSet(page.material, behind);
 	}
 
 	/**

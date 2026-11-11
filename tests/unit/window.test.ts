@@ -136,6 +136,18 @@ test('the page shows as far as its screen has come up and its shade has not fade
 	expect([faded.pageShown, comingUp.pageShown, whole.pageShown]).toEqual([0.375, 0.5, 1]);
 });
 
+test('the page has faded into what stands behind it as far as its screen has come up and its shade fades it, none where unfaded', () => {
+	const fadedHalfUp = drawnWindow(
+		LIFTED,
+		AT_ITS_EDGES,
+		{ ...WITH_LIVEREELS_BODY, fade: 0.25 },
+		{ ...AROUND, screen: HALF_UP }
+	);
+	const fadedWhole = drawnWindow(LIFTED, AT_ITS_EDGES, { ...WITH_LIVEREELS_BODY, fade: 1 }, AROUND);
+	const comingUp = drawnWindow(LIFTED, AT_ITS_EDGES, WITH_LIVEREELS_BODY, { ...AROUND, screen: HALF_UP });
+	expect([fadedHalfUp.pageFaded, fadedWhole.pageFaded, comingUp.pageFaded]).toEqual([0.125, 1, 0]);
+});
+
 test('a window turned past edge-on shows the eye its back, not its page', () => {
 	const turned = TURNED.map((angle) => drawnWindow({ ...LIFTED, angle }, AT_ITS_EDGES, WITH_A_BODY, AROUND));
 	expect(turned.map((window) => window.facingTheEye)).toEqual([true, true, false, false]);

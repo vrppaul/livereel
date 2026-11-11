@@ -30,6 +30,17 @@
  * promo's pits show through a picture of the page cleared at their mouths (a still of 2026-11-11: walls behind the
  * plane showed through a mouth cleared so, and were hidden where it was not). GLSL sizes a list by a count it is
  * compiled with, so the surface is compiled anew, by three, as the number of pits changes.
+ *
+ * Where the window's shade fades the page, the screen's pane, its picture and its markup over it, is faded in light
+ * into what stands behind it, as the reference promo's lens faded its page toward the ground: the surface lays the
+ * pane as far as the screen shows it less the fade, as the stylesheet draws it, and adds the light of what stands
+ * behind it by the share faded, the world the room has laid so far laid over the film's ground, read where the eye sees
+ * the pixel. Left to show through, the faded share was laid over the ground in the screen's colours, as the room lays
+ * its world over the ground, and a dark page faded into a dark ground went darker than the promo's: a light's deviation
+ * of 5.0 levels of 255 over the soft page of its beats 7–8, 10.2 faded in light, the promo's 9.3 (a still at the
+ * draft's second 2.5, 2026-11-11). What the room has laid so far is read as the eye's lens blurred it, and the lens
+ * blurs it again with the page, by the page's depth. The window's edge and shadow keep as they stand; a page of the
+ * film's own, which the window's surface draws, fades in the screen's colours.
  */
 import {
 	Color,
@@ -51,9 +62,9 @@ import { SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOfTheBox, valuesSet } 
  * What the page's surface lays, as the shader takes it: the texture of what lies over the page and whether anything
  * does; the texture it samples the picture from and whether it draws one; the box of the window's plane both surfaces
  * are laid out over; where the screen lies on that plane and how round its corners are; the part of it the view shows
- * and how round its corners are; how clear the screen is; its ground; and the mouth of each pit sunk into the page, how
- * round its corners are, and how far it is open, as far as its hole has come. Every box and corner in the frame's
- * pixels on the window's plane.
+ * and how round its corners are; how clear the screen is, and how much of it has faded into what stands behind it; its
+ * ground; and the mouth of each pit sunk into the page, how round its corners are, and how far it is open, as far as
+ * its hole has come. Every box and corner in the frame's pixels on the window's plane.
  * @typedef {{
  *   readonly overThePage: Texture | null,
  *   readonly anythingOver: boolean,
@@ -65,6 +76,7 @@ import { SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOfTheBox, valuesSet } 
  *   readonly shownBox: Vector4,
  *   readonly shownCorner: number,
  *   readonly shown: number,
+ *   readonly faded: number,
  *   readonly ground: Vector4,
  *   readonly mouths: readonly Vector4[],
  *   readonly mouthCorners: readonly number[],
@@ -85,6 +97,18 @@ import { SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOfTheBox, valuesSet } 
  * }} SharpPartLaid
  */
 
+/**
+ * What the page's surface reads of what stands behind it, as the room hands it before each field of the world it draws:
+ * the world the room has laid so far, as light, premultiplied, over the frame; the film's ground, in the screen's
+ * colours, over the frame, its rows from its top; and where a pixel of the layer the surface is drawn into stands on
+ * the frame, in shares of it: how far a pixel reaches across and up, and where the layer's bottom left corner stands.
+ * @typedef {{
+ *   readonly behindSoFar: Texture,
+ *   readonly filmsGround: Texture,
+ *   readonly layerOnTheFrame: Vector4
+ * }} BehindThePage
+ */
+
 // A share of a surface so clear none of it is drawn there, nor its depth: under a level of the browser's eight bits
 const EIGHT_BIT_LEVELS = 255;
 const DRAWN_AT_LEAST = 1 / EIGHT_BIT_LEVELS;
@@ -96,6 +120,8 @@ const NARROWEST_PIXEL = 1e-6;
 // of the ground's clearness and of how far the screen shows
 const SCREEN_GROUND = '--screen-ground';
 const WHOLE = 1;
+// None of the page faded into what stands behind it
+const NONE_FADED = 0;
 // A blur of none, which leaves the picture as it was taken; a texture's own copy, not a smaller one; and a corner not
 // rounded
 const UNBLURRED = 0;
@@ -139,7 +165,9 @@ const PITS = 'PITS';
  * there, as its markup over the page is as clear as the screen, cut to the screen's rounded box and the view's; over
  * them the window's surface; all of it as far as no pit's mouth is open there; over all, what lies over the page,
  * where anything does. Each edge smoothed over a pixel of the frame as the eye sees it; none drawn, nor its depth,
- * where it is clear.
+ * where it is clear. Where the page has faded, the light of what stands behind it added by the share faded, under the
+ * screen's pane alone, where anything of the surface's own is drawn: a page faded whole draws nothing, as what stands
+ * behind it shows as it stands.
  */
 export const PAGE_SURFACE_FRAGMENT = `
 uniform sampler2D surface;
@@ -153,6 +181,10 @@ uniform float screenCorner;
 uniform vec4 shownBox;
 uniform float shownCorner;
 uniform float shown;
+uniform float faded;
+uniform sampler2D behindSoFar;
+uniform sampler2D filmsGround;
+uniform vec4 layerOnTheFrame;
 uniform vec4 ground;
 uniform bool keepsAPartSharp;
 uniform sampler2D sharpPicture;
@@ -194,9 +226,17 @@ float sharpAt(vec2 onTheScreen) {
 	vec2 kept = clamp(1.0 - past / sharpEdge, 0.0, 1.0);
 	return kept.x * kept.y;
 }
+// What stands behind the pixel as the eye sees it, as light: the world laid so far over the film's ground
+vec4 behindAt() {
+	vec2 shareOfTheFrame = gl_FragCoord.xy * layerOnTheFrame.xy + layerOnTheFrame.zw;
+	vec4 world = inTheScreensColours(texture2D(behindSoFar, shareOfTheFrame));
+	vec4 filmsGroundThere = texture2D(filmsGround, vec2(shareOfTheFrame.x, 1.0 - shareOfTheFrame.y));
+	return inLinearLight(world + (1.0 - world.a) * filmsGroundThere);
+}
 void main() {
 	vec4 screen = texture2D(surface, shareOfTheSurface);
 	vec2 point = surfaceBox.xy + shareOfTheSurface * surfaceBox.zw;
+	float onThePane = 0.0;
 	vec4 under = vec4(0.0);
 	if (pictured) {
 		float past = max(pastTheEdge(point, screenBox, screenCorner), pastTheEdge(point, shownBox, shownCorner));
@@ -205,12 +245,16 @@ void main() {
 		if (keepsAPartSharp) {
 			page = mix(page, texture2D(sharpPicture, shareOfTheScreen), sharpAt(shareOfTheScreen * screenSize));
 		}
-		under = insideTheEdge(past) * max(shown - screen.a, 0.0) * (page + (1.0 - page.a) * ground);
+		onThePane = insideTheEdge(past);
+		under = onThePane * max(shown - screen.a, 0.0) * (page + (1.0 - page.a) * ground);
 	}
 	vec4 over = anythingOver ? texture2D(overThePage, shareOfTheSurface) : vec4(0.0);
-	vec4 drawn = over + (1.0 - over.a) * (1.0 - openAt(point)) * (screen + under);
+	float underWhatIsOver = (1.0 - over.a) * (1.0 - openAt(point));
+	vec4 drawn = over + underWhatIsOver * (screen + under);
 	if (drawn.a < ${DRAWN_AT_LEAST}) discard;
-	gl_FragColor = inLinearLight(drawn);
+	vec4 light = inLinearLight(drawn);
+	if (faded > 0.0) light += underWhatIsOver * onThePane * faded * behindAt();
+	gl_FragColor = light;
 }`;
 
 /**
@@ -254,6 +298,10 @@ export function pageSurfaceValues() {
 		shownBox: { value: new Vector4() },
 		shownCorner: { value: SQUARE },
 		shown: { value: WHOLE },
+		faded: { value: NONE_FADED },
+		behindSoFar: { value: null },
+		filmsGround: { value: null },
+		layerOnTheFrame: { value: new Vector4() },
 		ground: { value: new Vector4() },
 		keepsAPartSharp: { value: false },
 		sharpPicture: { value: null },
@@ -404,6 +452,7 @@ export class PagePicture {
 			shownBox: valuesOfTheBox(scene.window.reach),
 			shownCorner: scene.window.corner,
 			shown: scene.window.pageShown,
+			faded: scene.window.pageFaded,
 			ground: this.ground,
 			mouths: pits.map((pit) => valuesOfTheBox(pit.mouth)),
 			mouthCorners: pits.map((pit) => pit.corner),

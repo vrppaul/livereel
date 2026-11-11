@@ -99,7 +99,8 @@ interface SharpPart {
  * high, for the flat stage, and at its softest point the frame shows, as far as the room's blur of it gathers past the
  * frame's edge; how much of the page shows, from 0 to 1, as far as the screen has come up and its shade has not faded
  * it, which the stylesheet draws the screen as clear as, and the room reads whether the page is seen through by
- * (`stage/see-through.js`); and its body, none where it has none.
+ * (`stage/see-through.js`); how much of it has faded into what stands behind it, as far as the screen has come up and
+ * its shade fades it, which the room lays in light (`stage/page-picture.js`); and its body, none where it has none.
  */
 export interface DrawnWindow extends DrawnPlacement {
 	readonly reach: Box;
@@ -112,6 +113,7 @@ export interface DrawnWindow extends DrawnPlacement {
 	readonly outOfFocus: number | null;
 	readonly softestOutOfFocus: number | null;
 	readonly pageShown: Fraction;
+	readonly pageFaded: Fraction;
 	readonly body: DrawnBody | null;
 }
 
@@ -217,6 +219,7 @@ export function drawnWindow(
 		outOfFocus: outOfFocusOnTheFrame(placing, view.box, sharpness, frame),
 		softestOutOfFocus: softestOutOfFocusSeen(placing, view.box, boxAround([view.box, reach]), sharpness, frame),
 		pageShown: fractionOf(around.screen.shown * (WHOLE - window.fade)),
+		pageFaded: fractionOf(around.screen.shown * window.fade),
 		body
 	};
 }

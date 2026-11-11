@@ -977,7 +977,11 @@ blurs the page's picture in linear light, as its eye's lens blurs the world,
 so light words on a dark page spread their light where the flat stage, which
 blurs in the screen's colours as the browser does, spreads them dark; the
 holes and the picture a sweep holds, markup, blur in the screen's colours on
-both stages, and so is the fade laid. It is
+both stages. A room fades the page, its picture and the screen's markup
+over it, in linear light too, into what stands behind it, the film's ground
+or a thing, so a dark page faded into a dark ground keeps its light words
+lighter than flat's, which fades it in the screen's colours; a page of the
+film's own fades in the screen's colours on both stages. The blur is
 drawn from the page's picture, so a
 page framed live is refused, as one the screen shows a page of the film's
 own in place of; the picture the sweep holds and the holes over the part
@@ -1544,10 +1548,12 @@ What `inside` costs:
   pulled through it. The blur adds light up in linear
   light, as a lens does, so light words on a dark page blur brighter than a
   blur in the screen's colours draws them. Markup standing in the world, a
-  title or a pane, and the page while it fades are laid over what stands
+  title or a pane, and the page while it comes up are laid over what stands
   behind them in the screen's colours, as the browser lays them, so a
-  pane's shadow over a page is as dark as flat draws it, and a half-faded
-  page over a thing as the browser lays a fading layer; the window's glass
+  pane's shadow over a page is as dark as flat draws it, and a page half
+  come up over a thing as the browser lays a fading layer; a page the
+  window's shade fades is faded into what stands behind it in linear light,
+  as a lens's light mixes; the window's glass
   is laid over the page as light, so its sheen keeps its glow. The ground
   and what stands on the frame are drawn
   as flat draws them. A fast move's blur adds its

@@ -80,7 +80,10 @@ const NOTHING_SEEN_THROUGH = [];
  * film's things are its light. The page is laid as markup is: its fade is the stylesheet's, and laid in linear light
  * over what stood behind it, a half-faded page over a glass cube read 13.27 levels off the old room, which laid its
  * layers in the screen's colours, on average over 900 × 560 pixels of a 3840 still, and 1.79 laid so (a probe film,
- * `see` at 1.8 s, 2026-11-11); it is drawn as light, as the glass over it is drawn as a film's light.
+ * `see` at 1.8 s, 2026-11-11); it is drawn as light, as the glass over it is drawn as a film's light. The share the
+ * window's shade fades it by the page's surface lays in light itself, from what the room has laid behind it
+ * (`stage/page-picture.js`): the field holds the page as clear as its screen has come up, and the browser's law lays
+ * that alone.
  * @type {{ readonly [Holding in SeenThroughHolding]: { readonly inTheScreensColours: boolean, readonly laid: Laying } }}
  */
 const DRAWN = {
