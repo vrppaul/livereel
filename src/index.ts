@@ -20,6 +20,7 @@ export * as look from './moves/look.ts';
 export * as world from './moves/world.ts';
 export * as terminal from './moves/terminal.ts';
 export * as piece from './moves/piece.ts';
+export * as picture from './moves/picture.ts';
 export * as outline from './moves/outline.ts';
 export * as lens from './moves/lens.ts';
 export * as thing from './moves/thing.ts';

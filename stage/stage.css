@@ -1287,11 +1287,25 @@ body {
 	margin-right: 0.6em;
 }
 
-/* A piece of the page, a lens or an outline in its object, fading up whole as it comes in its own way and out as it goes */
+/* A piece of the page, a lens, an outline or a picture of the film's own in its object, fading up whole as it comes in its own way and out as it goes */
 .piece,
 .lens,
-.outline {
+.outline,
+.picture {
 	opacity: var(--shown);
+}
+
+/* A picture of the film's own: the picture the stage holds (`layPictures` in `stage/stage.js`), whole, in the part of its box the engine works out, as large as the box holds it. Its lengths stand in pixels of a frame the look was made on, as all an object shows does. It draws nothing past its box */
+.picture .way {
+	--way-reach: 0px;
+
+	position: absolute;
+	left: calc(var(--figure-left) * 1px / var(--frame-scale));
+	top: calc(var(--figure-top) * 1px / var(--frame-scale));
+	width: calc(var(--figure-width) * 1px / var(--frame-scale));
+	height: calc(var(--figure-height) * 1px / var(--frame-scale));
+	background-image: var(--films-picture);
+	background-size: 100% 100%;
 }
 
 /* The figure of a piece of the page or a lens: the part of the page's picture over its source, at its fit, a screen's pixel to so many of the frame's, in the part of its box the engine works out; drawn from the page's own picture as the stage last showed it (`show` in `stage/stage.js`), so it shows what the page shows there as it changes. Its lengths stand in pixels of a frame the look was made on, as all an object shows does, so a frame's pixel is a share of the frame's scale. It draws nothing past its box */
@@ -1447,7 +1461,7 @@ body {
 	visibility: hidden;
 }
 
-/* An object with its effects: what it shows drawn with the shadow it casts toward its foot and the glow round it, and blurred, as the film has each (`--effects` in `tokens.css`), and its edge ringed, rounded as it is — a title's words, or its card where it stands on one, a pane, a piece of the page, a lens's glass, an outline's ring. One standing out in no way has neither, so it draws as one with no filter does. Its rules stand at the end, after every figure's */
+/* An object with its effects: what it shows drawn with the shadow it casts toward its foot and the glow round it, and blurred, as the film has each (`--effects` in `tokens.css`), and its edge ringed, rounded as it is — a title's words, or its card where it stands on one, a pane, a piece of the page, a lens's glass, an outline's ring, a picture of the film's own. One standing out in no way has neither, so it draws as one with no filter does. Its rules stand at the end, after every figure's */
 .object[data-effects] .content {
 	filter: var(--effects);
 }
@@ -1465,6 +1479,7 @@ body {
 .object[data-effects] .piece .way,
 .object[data-effects] .lens .way,
 .object[data-effects] .outline .way,
+.object[data-effects] .picture .way,
 .object[data-effects] .title[data-on-ground] .ground,
 .object[data-effects] .title:not([data-on-ground]) .way {
 	outline: var(--stroke-width) solid var(--ring-line);

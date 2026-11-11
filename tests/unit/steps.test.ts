@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
 import { keystrokes } from '../../src/domain/typing.ts';
-import { cssIn, cut, framesIn, hold, ownPagesIn, play } from '../../src/direction/steps.ts';
+import { cssIn, cut, framesIn, hold, ownPagesIn, picturesIn, play } from '../../src/direction/steps.ts';
 import { act } from '../../src/moves/act.ts';
 import { hide, show } from '../../src/moves/caption.ts';
 import { hide as cursorGone } from '../../src/moves/cursor.ts';
@@ -10,6 +10,7 @@ import { on } from '../../src/moves/light.ts';
 import { to as lookTo } from '../../src/moves/look.ts';
 import { act as actAtAMoment, scrollBy, type } from '../../src/moves/page.ts';
 import * as piece from '../../src/moves/piece.ts';
+import * as picture from '../../src/moves/picture.ts';
 import { shows, sweep } from '../../src/moves/screen.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import * as title from '../../src/moves/title.ts';
@@ -39,6 +40,15 @@ test("the film's own pages its steps show are found before it is shot, each once
 		cut(shows(card))
 	];
 	expect(ownPagesIn(steps).map((page) => page.html)).toEqual([card.html, terminal.html]);
+});
+
+test("the film's own pictures its steps show are found before it is shot, each file once, in a play or a cut", () => {
+	const steps = [
+		cut(picture.show('mark.png')),
+		play({ seconds: 1, moves: [picture.show('logo.svg', { as: 'logo', within: { start: 0.5 } })] }),
+		cut(picture.show('mark.png', { as: 'again' }))
+	];
+	expect(picturesIn(steps)).toEqual(['mark.png', 'logo.svg']);
 });
 
 test('two moves of one object at once in one step are refused as the step is written', () => {

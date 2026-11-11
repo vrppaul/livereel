@@ -27,6 +27,7 @@ import * as group from '../../src/moves/group.ts';
 import * as lens from '../../src/moves/lens.ts';
 import * as outline from '../../src/moves/outline.ts';
 import * as piece from '../../src/moves/piece.ts';
+import * as picture from '../../src/moves/picture.ts';
 import {
 	body as windowBody,
 	hide as windowHide,
@@ -139,6 +140,9 @@ const NO_ACT = undefined as never;
 const NO_PICTURE_HELD = undefined as never;
 // The things the film's module builds, as a room loaded it: a card
 const THINGS_BUILT = ['card'];
+// The film's own pictures the stage laid, by their paths, as their files were decoded: a mark four times as wide as
+// tall
+const FILMS_PICTURES = new Map([['mark.png', { width: 400, height: 100 }]]);
 const PAGE = new PageOfBoxes(
 	new Map([
 		['#block', BLOCK],
@@ -263,7 +267,8 @@ function beginningIn(scene: Scene, format: Format): Beginning {
 		pageShown: 'pictured',
 		act: NO_ACT,
 		holdPicture: NO_PICTURE_HELD,
-		thingsBuilt: THINGS_BUILT
+		thingsBuilt: THINGS_BUILT,
+		filmsPictures: FILMS_PICTURES
 	};
 }
 
@@ -831,6 +836,32 @@ test('an outline is born round its block as the camera shows it, cut to the part
 		{ kind: 'outline', source: SHOWN_AT_TWO, line: 'dashed' },
 		{ kind: 'outline', source: SHOWN_AT_TWO, line: 'solid' }
 	]);
+});
+
+test("a picture of the film's comes up in its place, or over the whole frame, drawn as large as its box holds all of it as its file was decoded, in the box's middle, fading up whole", async () => {
+	const placed = (
+		await setIn(picture.show('mark.png', { at: MIDDLE_HALF }), OPENING_IN_FULL_HD, 0.5, FULL_HD)
+	).objects.get('picture')!;
+	const whole = (await setIn(picture.show('mark.png', { as: 'card' }), OPENING_IN_FULL_HD, 1, FULL_HD)).objects.get(
+		'card'
+	)!;
+	expect([
+		placed.content,
+		placed.box,
+		drawnObject('picture', placed, 0, AROUND_IN_FULL_HD).content,
+		drawnObject('card', whole, 0, AROUND_IN_FULL_HD).content
+	]).toEqual([
+		{ kind: 'picture', file: 'mark.png', aspect: 4 },
+		{ left: 480, top: 270, width: 960, height: 540 },
+		{ kind: 'picture', file: 'mark.png', figure: { left: 0, top: 150, width: 960, height: 240 }, shown: 0.5 },
+		{ kind: 'picture', file: 'mark.png', figure: { left: 0, top: 300, width: 1920, height: 480 }, shown: 1 }
+	]);
+});
+
+test("a picture's file is refused where the film names no path", () => {
+	expect(() => picture.show(42 as never)).toThrow(
+		new FilmError("picture.show's file is 42: it is a file's path, from the film's file")
+	);
 });
 
 test('a piece, or an outline, goes back over its block as the camera shows it then, face-on by its nearest whole turn, as large as it was and on its plane', async () => {

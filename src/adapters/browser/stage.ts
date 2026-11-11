@@ -91,6 +91,16 @@ export interface HeldPicture extends PagePicture {
 	readonly number: number;
 }
 
+/** A picture of the film's own as the stage is handed it, by the path the film names it by. */
+export interface FilmsPictureHanded extends PagePicture {
+	readonly path: string;
+}
+
+/** A picture of the film's own as the stage decoded it, by its path: its size, none across and down where it decodes to none. */
+export interface FilmsPictureDecoded extends Size {
+	readonly path: string;
+}
+
 /**
  * A surface the stage lays an object of markup standing in the world in, apart from the frame's objects, where a frame
  * is drawn as a room: the object's list, standing or pushed off, and its name, and the surface's element, which the
@@ -125,6 +135,11 @@ export interface StageApi {
 	 * its blocks. The keys of those that move of themselves, by an animation or a transition of their own.
 	 */
 	readonly layOwnPages: (pages: readonly OwnPage[]) => Promise<readonly string[]>;
+	/**
+	 * The film's own pictures held by their paths, each once it is decoded, so every frame drawn after shows it whole:
+	 * the size each decoded at.
+	 */
+	readonly layPictures: (pictures: readonly FilmsPictureHanded[]) => Promise<readonly FilmsPictureDecoded[]>;
 	/** One frame, drawn whole from each of its exposures' scenes, laid over one another so each weighs the same. */
 	readonly apply: (exposures: readonly DrawnScene[]) => void;
 }
@@ -437,6 +452,11 @@ function pictureHeld(picture: HeldPicture): Promise<void> {
 
 function pictureLetGo(number: number): void {
 	window.stage.letGo(number);
+}
+
+/** The film's own pictures laid on the stage: the size each decoded at. */
+export function picturesLaid(pictures: readonly FilmsPictureHanded[]): Promise<readonly FilmsPictureDecoded[]> {
+	return window.stage.layPictures(pictures);
 }
 
 /** The pages of the film's own laid on the stage: the keys of those that move of themselves. */

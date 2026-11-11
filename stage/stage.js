@@ -24,7 +24,7 @@
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
 /** @import { OwnPage } from '../src/direction/page.ts' */
 /** @import { Drawing } from '../src/direction/film.ts' */
-/** @import { HeldPicture, Layout, Opening, PagePicture, StageApi, SurfaceApart } from '../src/adapters/browser/stage.ts' */
+/** @import { FilmsPictureDecoded, FilmsPictureHanded, HeldPicture, Layout, Opening, PagePicture, StageApi, SurfaceApart } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
 /** A value of the look set whole on the stage, in place of one token: any but the ground's layers, and the way words come up, which the moves that bring them read @typedef {Exclude<keyof Look, 'groundLayers' | 'words'>} WholeLookName */
@@ -75,6 +75,8 @@ const CUSTOM_PROPERTY = '--';
 const PAGE_PICTURE = '--page-picture';
 const PIECE_PICTURE = '--piece-picture';
 const PICTURE = 'data-picture';
+// The custom property a picture of the film's own is set as on its element
+const FILMS_PICTURE = '--films-picture';
 // The custom property the picture light sweeps away is set as on its element, the colours a film gives the light's
 // crest at its two ends, the stylesheet's accent standing at an end it gives none, and the attribute its shape is named
 // by, a band or a disc
@@ -969,6 +971,24 @@ class OutlineDrawer {
 }
 
 /**
+ * A picture of the film's own in its object: the picture the stage holds by its file, in the part of its box the
+ * engine works out, set whole on its element as the page's is on the root, fading up whole as it comes.
+ */
+class PictureDrawer {
+	/** @param {Staged} element */
+	constructor(element) {
+		this.element = element;
+	}
+
+	/** @param {DrawnContent} content */
+	draw(content) {
+		const picture = ofKind(content, 'picture');
+		figureDrawn(this.element, picture);
+		this.element.style.setProperty(FILMS_PICTURE, `url("${filmsPicture(picture.file).src}")`);
+	}
+}
+
+/**
  * A thing in its object: nothing the markup draws, as the room draws it from the film's own three.js
  * (`stage/room.js`); its element stands for its box alone.
  */
@@ -997,6 +1017,7 @@ const CONTENT_DRAWERS = {
 	piece: (element) => new PieceDrawer(element),
 	outline: (element) => new OutlineDrawer(element),
 	lens: (element) => new LensDrawer(element),
+	picture: (element) => new PictureDrawer(element),
 	thing: () => new ThingDrawer()
 };
 
@@ -1133,6 +1154,14 @@ const EXPOSURES = [];
  * @type {Map<number, HTMLImageElement>}
  */
 const HELD_PICTURES = new Map();
+/**
+ * The film's own pictures, decoded, by the paths the film names them by: kept as images, as the pictures of parts of
+ * the screen are, so every frame drawn after they are laid shows them whole.
+ * @type {Map<string, HTMLImageElement>}
+ */
+const FILMS_PICTURES = new Map();
+// The size of a picture that decodes to none, which the film is refused for (`films-pictures.ts`)
+const NO_SIZE = 0;
 // The custom property an exposure's share is set as: how much of it shows over the exposures laid before it. Laid over
 // so many before it, it shows the whole of its own light in as many parts as there are with it, so each weighs the
 // same
@@ -1310,6 +1339,40 @@ async function hold(picture) {
 function letGo(number) {
 	URL.revokeObjectURL(heldPicture(number).src);
 	HELD_PICTURES.delete(number);
+}
+
+/**
+ * The film's own pictures held by their paths, each at an address of the stage's own as the page's pictures are, once
+ * it is decoded: the size each decoded at, none where it decodes to no picture.
+ * @param {readonly FilmsPictureHanded[]} pictures @returns {Promise<readonly FilmsPictureDecoded[]>}
+ */
+function layPictures(pictures) {
+	return Promise.all(pictures.map((picture) => laidPicture(picture)));
+}
+
+/** A picture of the film's own held by its path, and the size it decoded at. @param {FilmsPictureHanded} picture */
+async function laidPicture(picture) {
+	const image = new Image();
+	image.src = addressOf(picture);
+	FILMS_PICTURES.set(picture.path, image);
+	return { path: picture.path, ...(await decodedSize(image)) };
+}
+
+/** The size an image decodes at: none across and down where it decodes to no picture. @param {HTMLImageElement} image */
+async function decodedSize(image) {
+	try {
+		await image.decode();
+		return { width: image.naturalWidth, height: image.naturalHeight };
+	} catch {
+		return { width: NO_SIZE, height: NO_SIZE };
+	}
+}
+
+/** A picture of the film's own the stage holds, by its path. @param {string} path */
+function filmsPicture(path) {
+	const held = FILMS_PICTURES.get(path);
+	if (held === undefined) throw new Error(`the stage holds no picture of the film's ${path}`);
+	return held;
 }
 
 /** A picture handed to the stage at an address of the stage's own, which holds its bytes. @param {PagePicture} picture */
@@ -1811,5 +1874,5 @@ function found(element, name) {
 }
 
 /** @type {StageApi} */
-const STAGE = { setup, laidApart, open, show, hold, letGo, layOwnPages, apply };
+const STAGE = { setup, laidApart, open, show, hold, letGo, layOwnPages, layPictures, apply };
 window.stage = STAGE;

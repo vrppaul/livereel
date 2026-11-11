@@ -39,6 +39,7 @@ import {
 	depthsOf,
 	movesThePage,
 	ownPagesOf,
+	picturesOf,
 	placesOf,
 	soundsOf
 } from './move.ts';
@@ -165,6 +166,15 @@ export function cssIn(steps: readonly Step[]): readonly CssNamed[] {
 export function ownPagesIn(steps: readonly Step[]): readonly OwnPage[] {
 	const pages = steps.flatMap((step) => step.moves).flatMap(ownPagesOf);
 	return [...new Map(pages.map((page) => [page.key, page])).values()];
+}
+
+/**
+ * Every picture of the film's own the steps' moves show, each file once, in the order they are first named, known
+ * before anything is shot, so a file that is not there is refused at once and the stage lays each before the first
+ * frame.
+ */
+export function picturesIn(steps: readonly Step[]): readonly string[] {
+	return [...new Set(steps.flatMap((step) => step.moves).flatMap(picturesOf))];
 }
 
 /** Every place the steps' moves name, known before anything is shot, so one the format has not is refused at once. */

@@ -123,7 +123,7 @@ test("a film's set is opened on its first state's picture, and an act shows anot
 	const set = await (await setShot([])).read();
 	const film = filmOnSet([]);
 	await using opened = await new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER).open(
-		{ ...film, motionBlur: null, ownPages: [] },
+		{ ...film, motionBlur: null, ownPages: [], pictures: [] },
 		{ kind: 'set', set },
 		1
 	);

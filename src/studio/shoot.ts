@@ -16,7 +16,7 @@ import type { MotionBlur } from '../domain/shutter.ts';
 import { momentOf } from '../domain/time.ts';
 import type { FilmInFormat } from '../direction/film.ts';
 import type { FilmSet } from '../direction/set.ts';
-import { type Step, cssIn, framesIn, ownPagesIn, soundsIn } from '../direction/steps.ts';
+import { type Step, cssIn, framesIn, ownPagesIn, picturesIn, soundsIn } from '../direction/steps.ts';
 import { openingScene } from '../scene.ts';
 import type { Browser, Footage, FramesHanded, Opened, PageServer, SetFolder, SetShot, Track } from './ports.ts';
 import { Take } from './take.ts';
@@ -71,6 +71,7 @@ export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Sho
 		css: [...film.css, ...cssIn(steps)],
 		motionBlur,
 		ownPages: ownPagesIn(steps),
+		pictures: picturesIn(steps),
 		framesHanded: shooting.quality.framesHanded
 	};
 	const sharpness = shooting.quality.sharpness;

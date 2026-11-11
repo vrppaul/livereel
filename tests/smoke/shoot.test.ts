@@ -34,6 +34,7 @@ import {
 	light,
 	look,
 	page,
+	picture,
 	piece,
 	play,
 	screen,
@@ -50,6 +51,8 @@ const FIELD = '[data-testid=field]';
 const TYPED = 'hello';
 // A film that shows no page of its own, opened as a take opens it; a page of the film's own, and a block only it has
 const NO_OWN_PAGES: readonly never[] = [];
+// A film that shows no picture of its own
+const NO_PICTURES: readonly never[] = [];
 const OWN_PAGE = { html: '<!doctype html><body style="margin: 0"><h2 id="ours" style="margin: 60px">Ours</h2></body>' };
 const ONLY_OURS = '#ours';
 // The window leant back and swung, as the room places it by the engine's matrix
@@ -275,6 +278,21 @@ test("a film's things module that exports no builders is refused as the stage op
 			"the film's things module exports no builders by default: export default { card: { build(three) {...}, set(built, values, shown, three) {...} } }"
 		)
 	);
+});
+
+test("a picture of the film's that is not there, or that decodes to no picture, is refused before the first frame", async () => {
+	const missing = filmWritten([cut(picture.show('missing.png')), hold({ seconds: 0.1 })], {});
+	const unreadable = filmWritten([cut(picture.show('not-a-picture.png')), hold({ seconds: 0.1 })], {});
+	const counted = new EveryFrameCounted();
+	await expect(shoot(missing, shootingInto(counted, 'software'))).rejects.toThrow(
+		"the film's picture missing.png could not be read"
+	);
+	await expect(shoot(unreadable, shootingInto(counted, 'software'))).rejects.toThrow(
+		new FilmError(
+			"the film's picture not-a-picture.png decodes to no picture with a size: give a PNG, JPEG, WebP, AVIF or GIF file, or an SVG that names its width and height"
+		)
+	);
+	expect(counted.kept).toEqual([]);
 });
 
 test('a film drawn as a room in software is shot with a word that the graphics card draws it faster', async () => {
@@ -683,7 +701,7 @@ test('an act waiting on what the page does after a delay of its own is answered,
 });
 
 test('a page in a tab of its own is heard to change of itself, once', async () => {
-	const setting = { ...timedFilmOf([], {}), ownPages: NO_OWN_PAGES, framesHanded: SCALED };
+	const setting = { ...timedFilmOf([], {}), ownPages: NO_OWN_PAGES, pictures: NO_PICTURES, framesHanded: SCALED };
 	await using opened = await new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER).open(setting, liveAt(TIMED), 1);
 	const stage = opened.stage as PicturedStage;
 	const page = opened.act.page;
@@ -746,7 +764,7 @@ test("a picture of a screen taller at livereel's closest than a JPEG holds is ta
 	const warned: string[] = [];
 	const browser = new Chromium('software', (said) => warned.push(said), FILMS_FOLDER);
 	await using opened = await browser.open(
-		{ ...TALL_FILM, ownPages: NO_OWN_PAGES, framesHanded: SCALED },
+		{ ...TALL_FILM, ownPages: NO_OWN_PAGES, pictures: NO_PICTURES, framesHanded: SCALED },
 		liveAt(PAGE),
 		1
 	);
@@ -764,7 +782,7 @@ test("a picture of a screen taller at livereel's closest than a JPEG holds is ta
 /** The dense page in a tab of its own, the stage showing its pictures at the draft's sharpness. */
 function denseOpened(): Promise<Opened> {
 	return new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER).open(
-		{ ...DENSE_FILM, ownPages: NO_OWN_PAGES, framesHanded: SCALED },
+		{ ...DENSE_FILM, ownPages: NO_OWN_PAGES, pictures: NO_PICTURES, framesHanded: SCALED },
 		liveAt(DENSE),
 		1
 	);

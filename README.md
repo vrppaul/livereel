@@ -227,11 +227,18 @@ and the moves of each part of the scene:
 - `lens.show(target, { magnification, size, enter, edge, as, group, zIndex })`, `lens.to(target)`,
   `lens.hide({ toward, leave, edge })`; a round glass over the page, showing what lies under its middle magnified; each
   move of it takes `as` to name which
+- `picture.show(file, { at, from, enter, edge, as, inside, group, zIndex })`, `picture.to(place, { scale, depth })`,
+  `picture.lean({ tilt, turn, roll, over })`, `picture.hide({ toward, leave, edge })`; a picture of the film's own, a
+  mark or a logo, from an image file by its path from the film's file (PNG, JPEG, WebP, AVIF, GIF, or an SVG that
+  names its width and height), over the whole frame or `at` a place, read as the window reads one, drawn as large as
+  the place holds all of it, in its middle, as wide against as tall as its file; a file that is not there, or decodes
+  to no picture, is refused before the first frame. It is drawn at the frame's density wherever it stands, as all
+  markup is: brought near the eye in the world it is magnified, as a title is; each move of it takes `as` to name which
 - `thing.show(made, { at, reach, values, inside: 'world', from, as })`, `thing.to(place, { through, scale, depth })`,
   `thing.lean({ tilt, turn, roll, over })`, `thing.set(values)`, `thing.hide({ toward })`: a thing of the film's own
   three.js, built by the film's things module by the name `made`, in a room alone ("Flat, or a room")
 - `title.effects({ ring, glow, shadow, blur, colour, melt, scale, depth })`, and so `code.effects`,
-  `terminal.effects`, `piece.effects`, `outline.effects` and `lens.effects`: how the object stands out, ringed and
+  `terminal.effects`, `piece.effects`, `outline.effects`, `lens.effects` and `picture.effects`: how the object stands out, ringed and
   glowing in the accent or a `colour` of the film's, casting a shadow, blurred, melting toward a side, grown or
   brought toward the eye where it stands
 - `group.show({ at, order })`, `group.to(place, { scale, depth })`, `group.lean({ tilt, turn, roll, over })`,

@@ -51,6 +51,7 @@ const NO_CSS: readonly CssNamed[] = [];
 const NO_PLACES: readonly PlaceNamed[] = [];
 const NO_DEPTHS: readonly DepthNamed[] = [];
 const NO_OWN_PAGES: readonly OwnPage[] = [];
+const NO_PICTURES: readonly string[] = [];
 // Where a step starts and ends, as shares of it; and how far along a move is before its share and after it
 const STEP_START = 0;
 const STEP_END = 1;
@@ -211,6 +212,8 @@ export interface Beginning {
 	readonly holdPicture: (part: Box) => Promise<number>;
 	/** The names the film's things module builds a thing by: none where the film draws no things of its own. */
 	readonly thingsBuilt: readonly string[];
+	/** The film's own pictures the stage laid, by the path the film names each, and the size each file decoded at. */
+	readonly filmsPictures: ReadonlyMap<string, Size>;
 }
 
 /**
@@ -246,6 +249,8 @@ export interface Move {
 	readonly depths?: readonly DepthNamed[];
 	/** The pages of the film's own the move shows, which the stage lays before the film is shot; most show none. */
 	readonly ownPages?: readonly OwnPage[];
+	/** The film's own pictures the move shows, by their paths, which the stage lays before the film is shot; most show none. */
+	readonly pictures?: readonly string[];
 	/**
 	 * Whether the move holds a picture of the page as it begins, as a sweep of the screen and a piece holding its
 	 * picture do, so an act at that moment, done first, would be in it; most hold none.
@@ -296,6 +301,11 @@ export function depthsOf(move: Move): readonly DepthNamed[] {
 /** The pages of the film's own a move shows: none, for a move that shows none. */
 export function ownPagesOf(move: Move): readonly OwnPage[] {
 	return move.ownPages ?? NO_OWN_PAGES;
+}
+
+/** The film's own pictures a move shows, by their paths: none, for a move that shows none. */
+export function picturesOf(move: Move): readonly string[] {
+	return move.pictures ?? NO_PICTURES;
 }
 
 /** The change of one prop: its state at each progress, written into the scene. */

@@ -1,7 +1,8 @@
 /**
  * An object on the frame: something that stands in a box, grows, comes near, turns, comes up and goes, and shows what
  * it holds, its content — a title's words, a pane of code, an agent's terminal, the ending card, a piece of the page,
- * an outline round a part of it, a lens over it, or a thing of the film's own three.js (`src/props/thing.ts`), which
+ * an outline round a part of it, a lens over it, a picture of the film's own (`src/props/picture.ts`), or a thing of
+ * the film's own three.js (`src/props/thing.ts`), which
  * the room draws and the stage's markup does not. Where it stands, how it stands about its middle
  * (`src/domain/stance.ts`), how it stands out (`src/props/effects.ts`) and how far it has come and gone are the
  * object's, alike for every content, so a move that carries, leans, sets apart or slides one is written once
@@ -95,6 +96,7 @@ import { type DrawnLens, type Lens, drawnLens, lensFit, pageMovedIn } from './le
 import type { Look } from './look.ts';
 import { type DrawnOutline, type Outline, drawnOutline } from './outline.ts';
 import { type DrawnHole, type DrawnPiece, type Piece, drawnPiece, pageFitOfPiece } from './piece.ts';
+import { type DrawnFilmPicture, type FilmPicture, drawnFilmPicture } from './picture.ts';
 import { type OnItsWay, type Way, alongItsWay, figureMoved, presencesIn, presentShare } from './way.ts';
 import type { Screen } from './screen.ts';
 import { type DrawnTerminal, type Terminal, drawnTerminal } from './terminal.ts';
@@ -130,11 +132,19 @@ export interface Surroundings extends Holders {
 }
 
 /** What an object shows. */
-export type Content = TitleWords | Code | Terminal | Ending | Piece | Outline | Lens | Thing;
+export type Content = TitleWords | Code | Terminal | Ending | Piece | Outline | Lens | Thing | FilmPicture;
 
 /** What an object shows, as the stage draws it. */
 export type DrawnContent =
-	DrawnTitleWords | DrawnCode | DrawnTerminal | DrawnEnding | DrawnPiece | DrawnOutline | DrawnLens | DrawnThing;
+	| DrawnTitleWords
+	| DrawnCode
+	| DrawnTerminal
+	| DrawnEnding
+	| DrawnPiece
+	| DrawnOutline
+	| DrawnLens
+	| DrawnThing
+	| DrawnFilmPicture;
 
 /**
  * An object: what it stands inside, its box in the pixels of that from its top left corner, how it stands about the
@@ -243,6 +253,7 @@ function shownMoved(start: StandingThen, end: StandingThen, frame: Size): Point 
 		case 'piece':
 		case 'outline':
 		case 'thing':
+		case 'picture':
 			return UNMOVED;
 	}
 }
@@ -483,6 +494,7 @@ function pageFitOf(object: FrameObject, laid: Box, camera: Camera, frame: Size):
 		case 'ending':
 		case 'outline':
 		case 'thing':
+		case 'picture':
 			return null;
 	}
 }
@@ -549,6 +561,8 @@ function drawnContent(
 		case 'thing': {
 			return drawnThing(content, standing, object.scale, presentShare(figure), around);
 		}
+		case 'picture':
+			return drawnFilmPicture(content, standing.laid, presentShare(figure));
 	}
 }
 
