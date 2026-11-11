@@ -6,17 +6,25 @@
 		<style>
 			body {
 				margin: 0;
-				font: 20px/30px monospace;
+				/* Lines as tall as leave an odd count of pixels round a letter, so the leading above it is not whole */
+				font: 20px/31px monospace;
 			}
+			/* A line of code stands a line tall, blank or not */
 			p {
 				margin: 0;
 				padding: 10px 0 0 30px;
+				min-height: 31px;
 			}
 		</style>
 	</head>
 	<body>
 		<main>
-			<p data-testid="code"><span data-testid="word" style="font-size: 30px">abcdef</span> ghij</p>
+			<!-- Indented before its first letter, as a page's markup is: text the page lays out nothing of, which Prettier
+			would take out, not seeing that it stands in the document -->
+			<!-- prettier-ignore -->
+			<p data-testid="code">
+				<span data-testid="word" style="font-size: 30px; letter-spacing: 2px">abcdef</span> ghij
+			</p>
 			<p data-testid="blank"></p>
 			<p data-testid="filled">abc</p>
 			<p data-testid="hidden" hidden>abc</p>

@@ -74,10 +74,10 @@ export interface FilmedPage {
 	 */
 	readonly groundBehind: (target: string) => Promise<string>;
 	/**
-	 * Where a letter set at the start of the text of the first block a target matches stands on the screen, as the page
-	 * lays it in that text's font, or where the text would start in a block holding none: the box it takes, as wide as a
-	 * letter steps, past the block's padding. None where the block lays out no letter, as it is hidden. A target the
-	 * page lacks is refused at once.
+	 * Where the letters of the first block a target matches start on the screen, as the page lays them out, read
+	 * without writing into it: the box its first laid-out letter takes, or, in a block that lays out none, the box a
+	 * letter of its font would take at the start of its content, in its middle; as wide as a letter steps in that font.
+	 * None where the block lays out nothing, as it is hidden. A target the page lacks is refused at once.
 	 */
 	readonly letterAtTheStart: (target: string) => Promise<Box | null>;
 	/** The scroll a target takes to reach its aim; a target the page lacks is refused at once. */

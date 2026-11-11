@@ -7,9 +7,9 @@
  * The functions handed to the page run there, each alone: none may call another of this module. The block a scroll
  * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a
  * canvas of the page's own, which turns any colour CSS writes, in whatever form, into its channels. Where a block's
- * letters start, and how far one steps, is read off a letter set there for the measure and taken out at once, as the
- * page lays it: never off the block's box, which holds its padding too, nor off its own letters, of which a blank line
- * of code has none.
+ * letters start is read off what the page lays out, its first letter, or, where it lays out none, as a blank line of
+ * code, its content box; how far a letter steps in their font, and how tall it stands, off a canvas too. No letter is
+ * set into the page to measure it: only an act changes the filmed page, and a page watching itself would see one.
  *
  * A block a scroll moves, and every block whose scroll carries the source of a piece riding its block, is told by a key
  * the take gives it, the same however a film selects the block, so a scroll and a ride meet on the block itself, never
@@ -64,6 +64,33 @@ interface GroundAsked {
 	readonly whole: number;
 }
 
+/** A font as a canvas is handed it: CSS's `font` shorthand, and how far apart its letters stand, as CSS writes each. */
+interface CanvasFont {
+	readonly font: string;
+	readonly letterSpacing: string;
+}
+
+/**
+ * Where a block's letters start on the screen as the page lays them out, and the font they are set in: the box its
+ * first letter takes, or, for a block that lays out none, its content box, which a letter would stand in the middle of.
+ */
+interface LettersStart extends CanvasFont {
+	readonly left: number;
+	readonly top: number;
+	readonly height: number;
+}
+
+/** A letter handed to the page to measure on a canvas, in a font. */
+interface LetterAsked extends CanvasFont {
+	readonly letter: string;
+}
+
+/** How far a letter steps, its width with the spacing after it, and how tall its font stands, ascent and descent. */
+interface LetterMeasured {
+	readonly width: number;
+	readonly height: number;
+}
+
 /**
  * The keys a take gave blocks of one document of the frame, held in that document by a handle alone: no global, no
  * attribute, nothing the page or a selector sees, and gone with the document.
@@ -105,9 +132,11 @@ const GROUND_ASKED: GroundAsked = { canvasSide: 1, whole: 255 };
 // The ground read where no block a block stands in draws one: white, the browser's canvas in the light scheme a film
 // asks for where it names none; a page that lets the dark scheme in shows its canvas dark, which is not read
 const WHITE: Channels = { red: 255, green: 255, blue: 255, alpha: 255 };
-// The letter set at the start of a block's text to find where its letters start and how far one steps: a figure, as
-// wide as every letter of the monospace fonts code is set in
+// The letter measured in a block's font to find how far one steps: a figure, as wide as every letter of the monospace
+// fonts code is set in
 const A_LETTER = '0';
+// What the page answers where a block lays out nothing, as it is hidden
+const NONE_LAID = null;
 
 export class PlaywrightPage implements FilmedPage {
 	readonly frame: Frame;
@@ -140,7 +169,14 @@ export class PlaywrightPage implements FilmedPage {
 	}
 
 	async letterAtTheStart(target: string): Promise<Box | null> {
-		return (await this.found(target)).evaluate(letterAtTheStartOf, A_LETTER);
+		const start = await (await this.found(target)).evaluate(lettersStartOf);
+		if (start === NONE_LAID) return null;
+		const { left, top, height, ...font } = start;
+		const letter = await this.frame.evaluate(letterMeasured, { letter: A_LETTER, ...font });
+		// The letter in the middle of what it stands in, the leading above it rounded down to a whole pixel, as Chromium
+		// lays a line's letters out in its height: none for a letter's own box
+		const leadingAbove = Math.floor((height - letter.height) * MIDDLE_SHARE.top);
+		return { left, top: top + leadingAbove, width: letter.width, height: letter.height };
 	}
 
 	async scrollCourse(target: string, aim: ScrollAim): Promise<ScrollCourse> {
@@ -313,21 +349,50 @@ function groundOf(block: Element, asked: GroundAsked): Channels | null {
 }
 
 /**
- * The box a letter takes set at the start of a block's text: before the first text it holds, in that text's own
- * font, or into the block where it holds none; taken out again at once. None where the block lays out no letter, as
- * it is hidden.
+ * Where a block's letters start, read off what the page lays out and never written into it: the box of the first
+ * letter of its text the page lays out, in that letter's own font, past text it lays out nothing of, as the indentation
+ * of its markup; or, where it lays out no letter, as a blank line of code, its content box, inside its border and
+ * padding, in the block's own font. None where the block lays out nothing, as it is hidden.
  */
-function letterAtTheStartOf(block: Element, letter: string): Box | null {
-	const set = document.createTextNode(letter);
-	const first = document.createTreeWalker(block, NodeFilter.SHOW_TEXT).nextNode();
-	if (first instanceof Text) first.before(set);
-	else block.prepend(set);
-	const range = document.createRange();
-	range.selectNodeContents(set);
-	const [taken] = range.getClientRects();
-	set.remove();
-	if (taken === undefined || taken.width === 0) return null;
-	return { left: taken.left, top: taken.top, width: taken.width, height: taken.height };
+function lettersStartOf(block: Element): LettersStart | null {
+	const letter = document.createRange();
+	const texts = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+	let laid: DOMRect | undefined;
+	let setIn = block;
+	for (let text = texts.nextNode(); laid === undefined && text instanceof Text; text = texts.nextNode()) {
+		for (let place = 0; laid === undefined && place < text.length; place += 1) {
+			letter.setStart(text, place);
+			letter.setEnd(text, place + 1);
+			laid = [...letter.getClientRects()].find((box) => box.width > 0);
+		}
+		// A text in the block stands in an element of it, which the type checker cannot see
+		if (laid !== undefined) setIn = text.parentElement ?? block;
+	}
+	const style = getComputedStyle(setIn);
+	const font = {
+		font: `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`,
+		letterSpacing: style.letterSpacing
+	};
+	if (laid !== undefined) return { left: laid.left, top: laid.top, height: laid.height, ...font };
+	const [own] = block.getClientRects();
+	if (own === undefined) return null;
+	const top = own.top + parseFloat(style.borderTopWidth) + parseFloat(style.paddingTop);
+	const bottom = own.bottom - parseFloat(style.borderBottomWidth) - parseFloat(style.paddingBottom);
+	const left = own.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft);
+	return { left, top, height: bottom - top, ...font };
+}
+
+/**
+ * How far a letter steps in a font and how tall the font stands, measured on a canvas never put into the document, as
+ * a ground is read: its width with the spacing after it, and the font's ascent and descent.
+ */
+function letterMeasured(asked: LetterAsked): LetterMeasured {
+	const paint = document.createElement('canvas').getContext('2d');
+	if (paint === null) throw new Error('the page gives no canvas to measure a letter on');
+	paint.font = asked.font;
+	paint.letterSpacing = asked.letterSpacing;
+	const measured = paint.measureText(asked.letter);
+	return { width: measured.width, height: measured.fontBoundingBoxAscent + measured.fontBoundingBoxDescent };
 }
 
 /**

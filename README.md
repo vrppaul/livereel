@@ -734,15 +734,16 @@ that holds its code, it lands them letter on letter on the block's,
 promo lands a terminal's diff line on the review's row: grown as far as a
 letter of the block steps against one of its own, so its letters stand as
 large as the block's and over the same columns, its first letter where the
-block's starts, its middle on theirs. Where letters start and
-how far one steps is read off a letter the page sets at the start of the
-block's text and takes out at once, past the block's padding, so a blank line
-of code lands as its neighbours do. The film names the block because only it
-knows which of a source's letters are the block's: a terminal sets the diff's
-sign before the code, the review in a column of its own, so the terminal's
-page holds the code in a span of its own. The piece's letters are read as it
-is lifted, off the page it is lifted off, a page of the film's own too; the
-block's as it lands. A box of the screen holds no letters, so landing letters
+block's starts, its middle on theirs. Where letters start is read off the
+block's first letter as the page lays it out, past its padding and what of
+its markup lays out nothing, and in a blank line of code off its content box,
+so it lands as its neighbours do; how far one steps, off the font they are
+set in. Nothing is written into the page to measure it. The film names the
+block because only it knows which of a source's letters are the block's: a
+terminal sets the diff's sign before the code, the review in a column of its
+own, so the terminal's page holds the code in a span of its own. The piece's
+letters are read as it is lifted, off the page it is lifted off, a page of
+the film's own too; the block's as it lands. A box of the screen holds no letters, so landing letters
 on one is refused, as is a hidden block; a film's set measured no letters,
 so it is refused there.
 
@@ -1003,10 +1004,11 @@ screen, the light on it included, and `fade` fades the screen into the
 film's ground, each from 0 none to 1 whole; `blur` blurs the page and the
 holes in it, in pixels of a frame 1080 high. The window's edge and shadow
 stay as they stand, and what stands over the page stands clear, the cursor
-too: it lies over the screen, not in it, so a shaded page leaves it white
-and sharp, as the claude-review promo draws its pointer over a soft page. It
-sets only what it names, so it shares a `play` with `window.to` and
-`window.lean`, and `window.shade({ dim: 0 })` takes the dark away again.
+too: it lies over the screen, not in it, so a shaded page leaves it as sharp
+and as bright as the look draws it, as the claude-review promo draws its
+pointer over a soft page. It sets only what it names, so it shares a `play`
+with `window.to` and `window.lean`, and `window.shade({ dim: 0 })` takes
+the dark away again.
 `window.shade({ blur: 6, sharp: '.thread' })` keeps a part of the page
 sharp in the blur, a block or a box of the screen, the page softening into
 the blur over half as far as the blur past it, as the eye of a promo is drawn
@@ -1033,12 +1035,11 @@ both stages. A room fades the page, its picture and the screen's markup
 over it, in linear light too, into what stands behind it, the film's ground
 or a thing, so a dark page faded into a dark ground keeps its light words
 lighter than flat's, which fades it in the screen's colours; a page of the
-film's own fades in the screen's colours on both stages. The blur is
-drawn from the page's picture, so a
-page framed live is refused, as one the screen shows a page of the film's
-own in place of; the picture the sweep holds and the holes over the part
-blur with the rest.
-The shade reaches the page alone, so a film fading one page over another
+film's own fades in the screen's colours on both stages. The part kept
+sharp is drawn from the page's picture, so `sharp` is refused on a page
+framed live, as on one the screen shows a page of the film's own in place
+of; the picture the sweep holds and the holes over the part blur with the
+rest. The shade reaches the page alone, so a film fading one page over another
 keeps its slab whole while the page goes. `window.shade({ blur: 8, fade:
 0.78, reaching: 'window' })` has it reach the whole window, as a promo's lens
 softens and fades all of its slab: in a room its blur and fade reach the

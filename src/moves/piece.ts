@@ -26,11 +26,11 @@
  * Lifted naming a block of its source whose letters it carries, it lands them letter on letter on the letters of a
  * block it is carried onto, as the claude-review promo lands a terminal's diff line on the review's row: grown as far
  * as a letter of the block steps against one of its own, so its letters stand as large as theirs and column on
- * column, its first letter where theirs starts, its middle on theirs. Where letters start, and how far one steps, is
- * read off a letter the page sets at the start of the block's text, so a blank line of code lands as its neighbours
- * do. Only the film knows which of its source's letters are the block's: the diff's sign stands in a terminal's line
- * and in a column of its own on the review. Its letters are measured as it is lifted, off the page it is lifted off
- * as it stands then, as its picture is taken; the block's as it lands.
+ * column, its first letter where theirs starts, its middle on theirs. Where letters start is read off the block's
+ * first laid-out letter, or, in a blank line of code, off its content box, so it lands as its neighbours do; how far
+ * one steps, off the font they are set in. Only the film knows which of its source's letters are the block's: the
+ * diff's sign stands in a terminal's line and in a column of its own on the review. Its letters are measured as it is
+ * lifted, off the page it is lifted off as it stands then, as its picture is taken; the block's as it lands.
  */
 import { type Camera, boxOnTheFrame } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';

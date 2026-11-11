@@ -114,8 +114,8 @@ export class PageOfBoxes implements FilmedPage {
 }
 
 /**
- * A page of boxes where a letter set at the start of each block's text stands as a table says, a block that lays out
- * none, hidden, named with none.
+ * A page of boxes where the letter at the start of each block stands as a table says, a block that lays out none,
+ * hidden, named with none.
  */
 export class PageOfLetters extends PageOfBoxes {
 	readonly firstLetters: ReadonlyMap<string, Box | null>;
