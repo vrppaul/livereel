@@ -44,7 +44,8 @@ import {
 	scrollTo as screenScrollTo,
 	scrolls as screenScrolls,
 	shows as screenShows,
-	sweep as screenSweep
+	sweep as screenSweep,
+	type as screenType
 } from '../../src/moves/screen.ts';
 import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
@@ -67,7 +68,7 @@ import {
 } from '../../src/domain/focus.ts';
 import { IN_THE_WINDOW, ON_THE_PAGE, pointOnTheFrame, windowInTheWorld } from '../../src/domain/placement.ts';
 import type { Piece } from '../../src/props/piece.ts';
-import { SCREEN_UP } from '../../src/props/screen.ts';
+import { SCREEN_UP, THE_FILMED_PAGE, drawnScreen } from '../../src/props/screen.ts';
 import type { DrawnWindow } from '../../src/props/window.ts';
 import { ONE_FRAME, pastTheEdge, windowPlaced, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
@@ -233,6 +234,14 @@ const OWN_PAGE = { html: '<p id="card">Ours</p>' };
 const OWN_PAGE_LENGTH = 1000;
 const INPUT = '#input';
 const OWN_PAGE_BLOCKS = new Map([[INPUT, { left: 0, top: 900, width: 1920, height: 60 }]]);
+// Two blocks of that page a film types into, each holding text alone, and a typist striking ten letters a second
+const TYPED_INTO = '#typed';
+const OTHER_TYPED_INTO = '#asked';
+const TYPED_BLOCKS_HOLD = new Map([
+	[TYPED_INTO, false],
+	[OTHER_TYPED_INTO, false]
+]);
+const TEN_A_SECOND = { lettersPerSecond: 10 };
 // A page the screen holds all of: it scrolls nowhere
 const NO_LONGER_THAN_THE_SCREEN = 0;
 const WHOLE_AT_ONE = { focusX: 960, focusY: 540, zoom: 1 };
@@ -327,6 +336,25 @@ function scrollingFrom(scene: Scene, moment: number, seconds: number): Beginning
 		stretch: { moment, seconds, ease: linear },
 		ownPage: () => new PageOfBoxes(OWN_PAGE_BLOCKS, new Map(), OWN_PAGE_LENGTH)
 	};
+}
+
+/** A beginning in full HD whose page of the film's own holds the blocks typed into, each holding text alone. */
+function typingFrom(scene: Scene): Beginning {
+	return {
+		...beginningIn(scene, FULL_HD),
+		ownPage: () => new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH, TYPED_BLOCKS_HOLD)
+	};
+}
+
+/** The scene with a text typed whole into a block of its page of the film's own. */
+async function typedWhole(scene: Scene, text: string, into: string): Promise<Scene> {
+	const typing = await screenType(OWN_PAGE, keystrokes(text, TEN_A_SECOND), { into }).begin(typingFrom(scene));
+	return typing(scene, 1);
+}
+
+/** What stands typed in the page of the film's own a scene's screen shows, as the stage draws it. */
+function typedDrawnIn(scene: Scene): unknown {
+	return drawnSceneIn(scene, FULL_HD).screen.shows.typed;
 }
 
 /** A scene whose page of the film's own runs at 100 pixels a second from the film's start, 300 down at 3 s. */
@@ -1529,6 +1557,66 @@ test('screen.scrollTo refuses, as it begins, a run that would turn back to come 
 		new FilmError(
 			'screen.scrollTo would carry the page past the rest that brings #input there and back: it runs 100 pixels a second, more than 3 times the 25 a second its way to rest takes on average: give the move a longer share, or slow the page first'
 		)
+	);
+});
+
+test('what a film types into a block of a page of its own stands as far as the typing has come, on whichever face of the window shows the page', async () => {
+	// Two letters, at 0.1 s and 0.2 s: half way through, the first stands typed
+	const front = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const typing = await screenType(OWN_PAGE, keystrokes('ls', TEN_A_SECOND), { into: TYPED_INTO }).begin(
+		typingFrom(front)
+	);
+	const halfWay = await typing(front, 0.5);
+	const behind = await setIn(screenBehind(OWN_PAGE, { upright: 'over' }), halfWay, 1, FULL_HD);
+	const camera = cameraOf(halfWay, FULL_HD);
+	expect([
+		drawnScreen(halfWay.screen, camera, FULL_HD, true, 0, 0).shows,
+		drawnScreen({ ...behind.screen, shows: THE_FILMED_PAGE }, camera, FULL_HD, false, 0, 0).shows.typed
+	]).toEqual([
+		{ kind: 'own', key: expect.any(String), scrolled: 0, typed: [{ into: TYPED_INTO, text: 'l' }] },
+		[{ into: TYPED_INTO, text: 'l' }]
+	]);
+});
+
+test("a typing into another block of a page of the film's own keeps what stands typed in the first, and one into the same block takes its place", async () => {
+	const front = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const first = await typedWhole(front, 'ls', TYPED_INTO);
+	const second = await typedWhole(first, 'cd', OTHER_TYPED_INTO);
+	const again = await typedWhole(second, 'pwd', TYPED_INTO);
+	expect([typedDrawnIn(second), typedDrawnIn(again)]).toEqual([
+		[
+			{ into: TYPED_INTO, text: 'ls' },
+			{ into: OTHER_TYPED_INTO, text: 'cd' }
+		],
+		[
+			{ into: TYPED_INTO, text: 'pwd' },
+			{ into: OTHER_TYPED_INTO, text: 'cd' }
+		]
+	]);
+});
+
+test('screen.type refuses, as it begins, a block that holds elements of its own, which what it types would take the place of', async () => {
+	const front = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const holding: Beginning = {
+		...beginningIn(front, FULL_HD),
+		ownPage: () => new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH, new Map([[TYPED_INTO, true]]))
+	};
+	await expect(
+		screenType(OWN_PAGE, keystrokes('ls', TEN_A_SECOND), { into: TYPED_INTO }).begin(holding)
+	).rejects.toThrow(
+		new FilmError(
+			'screen.type types into #typed, which holds elements of its own that what it types would take the place of: name a block that holds text alone, as a span'
+		)
+	);
+});
+
+test('screen.type shares a step with what the screen shows and how its page runs, and two typings at once are refused', () => {
+	const typed = screenType(OWN_PAGE, keystrokes('ls', TEN_A_SECOND), { into: TYPED_INTO });
+	expect(() =>
+		play({ seconds: 1, moves: [screenShows(OWN_PAGE), screenScrolls(OWN_PAGE, { pace: 100 }), typed] })
+	).not.toThrow();
+	expect(() => play({ seconds: 1, moves: [typed, typed] })).toThrow(
+		new FilmError("two moves on the screen's typed at once in one step")
 	);
 });
 

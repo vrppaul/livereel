@@ -302,8 +302,8 @@ function shadeDrawn(root, shade) {
 }
 
 /**
- * The screen: how far it has come up, what it shows, the filmed page or one of the film's own laid on it, scrolled as
- * far as the film has run it, and the
+ * The screen: how far it has come up, what it shows, the filmed page or one of the film's own laid on it, with what
+ * the film typed into it and scrolled as far as the film has run it, and the
  * picture light sweeps away over it, a band or a disc; where the eye sees a page on the window's back, how it is
  * mounted, so the stylesheet turns it to stand upright from behind and leaves unseen what lies on the front. Its
  * numbers and names are drawn on each of its roots, one in each surface the window's view stands in; its pages and
@@ -330,17 +330,18 @@ class ScreenDrawer {
 			named(root, BACK_UPRIGHT, scene.screen.backUpright);
 		}
 		for (const [key, frame] of this.ownPages) frame.toggleAttribute(SHOWN, key === shownKey);
-		ownPageRun(this.ownPages, scene.screen.shows);
+		ownPageDrawn(this.ownPages, scene.screen.shows);
 		sweepDrawn(this.sweep, this.swept, scene.screen.sweep);
 	}
 }
 
 /**
- * The page of the film's own the screen shows scrolled as far down as the film has run it, at once, whatever scroll
- * the page's own styles ask for: the film runs it, never the page; nothing where it shows the filmed page.
+ * The page of the film's own the screen shows as the film has it: what the film typed into its blocks written, then
+ * scrolled as far down as the film has run it, at once, whatever scroll the page's own styles ask for, as a text typed
+ * may lengthen it; the film runs it, never the page. Nothing where the screen shows the filmed page.
  * @param {ReadonlyMap<string, HTMLIFrameElement>} ownPages @param {DrawnScene['screen']['shows']} shows
  */
-function ownPageRun(ownPages, shows) {
+function ownPageDrawn(ownPages, shows) {
 	switch (shows.kind) {
 		case 'filmed':
 			return;
@@ -348,9 +349,20 @@ function ownPageRun(ownPages, shows) {
 			const frame = ownPages.get(shows.key);
 			if (frame === undefined) throw new Error(`the stage laid no page of the film's own by the key ${shows.key}`);
 			const laid = documentOf(frame);
+			for (const typed of shows.typed) typedBlockOf(laid, typed.into).textContent = typed.text;
 			(laid.scrollingElement ?? laid.documentElement).scrollTo({ top: shows.scrolled, behavior: AT_ONCE });
 		}
 	}
+}
+
+/**
+ * The block of a page of the film's own a film types into, the first its CSS selector matches, which the move measured
+ * as it began. @param {Document} laid @param {string} into
+ */
+function typedBlockOf(laid, into) {
+	const block = laid.querySelector(into);
+	if (block === null) throw new Error(`the film's own page holds no ${into} to type into`);
+	return block;
 }
 
 /**

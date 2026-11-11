@@ -20,8 +20,14 @@
  * time, its pace changing over the move's share on its curve, or slowing from it to stand still at the rest as the
  * share ends, refused where it would turn back on its way; where the page stands at any moment is worked out from that
  * run (`src/props/screen.ts`). Its runs are a value of the screen's own, so it shares a step with what the screen shows.
+ *
+ * Keys are typed into a block of a page of the film's own, as into the terminal: what stands typed at each progress is
+ * set whole, so the block shows it as its text in each exposure. The block is found by a CSS selector, as the stage
+ * finds it in each exposure's copy of the page, and measured as the move begins; a block that holds elements is
+ * refused, as its text would take their place. What stands typed is another value of the screen's own, so a typing
+ * shares a step with what the screen shows and how its page runs.
  */
-import { FASTEST_SPEED, type Stretch } from '../domain/curves.ts';
+import { FASTEST_SPEED, type Stretch, linear } from '../domain/curves.ts';
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
 import { A_FRAME_SIDE, type FrameSide, boxOf, middleX, middleY } from '../domain/geometry.ts';
@@ -41,6 +47,7 @@ import {
 	needed
 } from '../domain/handed.ts';
 import { between } from '../domain/toward.ts';
+import { A_STROKES, type Keystroke, typedAlong } from '../domain/typing.ts';
 import {
 	A_TARGET,
 	type Beginning,
@@ -60,6 +67,8 @@ import {
 	untilTheEnd
 } from '../direction/move.ts';
 import { ownPageOf } from '../direction/page.ts';
+import { keysHeard } from '../direction/sound.ts';
+import type { Typed } from '../direction/steps.ts';
 import {
 	AN_UPRIGHT,
 	AT_ITS_TOP,
@@ -78,9 +87,11 @@ import {
 	runOf,
 	runToRest,
 	setOff,
-	standingAt
+	standingAt,
+	typedIn
 } from '../props/screen.ts';
 import { withProp } from '../scene.ts';
+import { TYPING_FORM, type TypingScript } from './typing.ts';
 
 /** A page of the film's own as a film names it: its HTML whole. */
 interface OwnPageNamed {
@@ -105,6 +116,11 @@ export interface ScrollsScript extends TimingScript {
 export interface ScrollToScript {
 	readonly top: number;
 	readonly within?: Bounds;
+}
+
+/** The block of a page of its own a film types `into`, by its CSS selector, the typing's timing, and its keyboard. */
+export interface ScreenTypingScript extends TypingScript {
+	readonly into: string;
 }
 
 /** How a page on the window's back is mounted, `upright` as `AN_UPRIGHT` says, and the moment of a play it comes. */
@@ -178,16 +194,24 @@ const A_PAGE_RUN: Kind<OwnPageNamed> = new OfForm<OwnPageNamed>(
 	OWN_PAGE_FORM,
 	`${OWN_PAGE_SAID}; the filmed page scrolls by page.scrollBy or page.scrollTo`
 );
+// A page a film types into: one of its own alone, as the filmed page holds a keyboard of its own
+const A_PAGE_TYPED_INTO: Kind<OwnPageNamed> = new OfForm<OwnPageNamed>(
+	OWN_PAGE_FORM,
+	`${OWN_PAGE_SAID}; the filmed page is typed into by page.type`
+);
+const SCREEN_TYPE = 'screen.type';
+const SCREEN_TYPING_FORM: Form<ScreenTypingScript> = { into: needed(A_SELECTOR), ...TYPING_FORM };
 const SCROLLS_FORM: Form<ScrollsScript> = { pace: needed(A_NUMBER), ...TIMING_FORM };
 const SCROLL_TO_FORM: Form<ScrollToScript> = { top: needed(A_NUMBER), within: TIMING_FORM.within };
 const BACK_FORM: Form<BackScript> = { upright: needed(AN_UPRIGHT), ...MOMENT_FORM };
-// The screen's values a move that raises or lowers it sets, one that changes what it shows, a sweep, and one that
-// changes what the window's back shows
+// The screen's values a move that raises or lowers it sets, one that changes what it shows, a sweep, one that changes
+// what the window's back shows, one that runs a page of the film's own, and one that types into one
 const HOW_FAR_UP = ['shown'] as const satisfies readonly (keyof Screen)[];
 const SHOWING = ['shows'] as const satisfies readonly (keyof Screen)[];
 const SWEEPING = ['sweep'] as const satisfies readonly (keyof Screen)[];
 const BACKING = ['back'] as const satisfies readonly (keyof Screen)[];
 const RUNNING = ['scrolls'] as const satisfies readonly (keyof Screen)[];
+const TYPING = ['typed'] as const satisfies readonly (keyof Screen)[];
 const SWEEP_FORM: Form<SweepScript> = {
 	round: A_TARGET,
 	from: A_FRAME_SIDE,
@@ -305,6 +329,59 @@ async function running(beginning: Beginning, key: string, pace: number): Promise
 	if (length === NO_LENGTH) throw new FilmError(SCROLLS_NOWHERE);
 	const from = standingAt(runOf(beginning.scene.screen, key), beginning.stretch.moment);
 	return runSet(key, setOff(from, beginning.stretch, pace, length));
+}
+
+/**
+ * Keys typed into a block of a page of the film's own, `{ html }`, `into` by its CSS selector, key by key, each
+ * heard on the film's keyboard or the one named, at the times the strokes have them unless the film names a curve:
+ * the block shows what stands typed as its text, in place of what the page wrote there, from the move's start; a block
+ * that holds elements of its own is refused as it begins. It types whichever face of the window shows the page, or
+ * none.
+ */
+export function type(page: OwnPageNamed, strokes: readonly Keystroke[], script: ScreenTypingScript): Move & Typed {
+	assertKind(page, A_PAGE_TYPED_INTO, "screen.type's page");
+	assertKind(strokes, A_STROKES, "screen.type's strokes");
+	assertWritten(script, SCREEN_TYPING_FORM, SCREEN_TYPE);
+	const own = ownPageOf(page.html);
+	return {
+		part: 'screen',
+		valueNames: TYPING,
+		timing: timingOf({ ease: linear, ...script }),
+		ownPages: [own],
+		strokes,
+		sounds: keysHeard(strokes, script.keyboard),
+		begin: (beginning) => typingInto(beginning, own.key, script.into, strokes)
+	};
+}
+
+/**
+ * A block of a page of the film's own, by the page's key, showing as much of the strokes as stands typed at each
+ * progress; refused as it begins where the block holds elements, which its text would take the place of.
+ */
+async function typingInto(
+	beginning: Beginning,
+	key: string,
+	into: string,
+	strokes: readonly Keystroke[]
+): Promise<Change> {
+	if (await beginning.ownPage(key).holdsElements(into)) {
+		throw new FilmError(
+			`${SCREEN_TYPE} types into ${into}, which holds elements of its own that what it types would take the place of: name a block that holds text alone, as a span`
+		);
+	}
+	return (scene, progress) =>
+		withProp(scene, 'screen', {
+			...scene.screen,
+			typed: typedWith(scene.screen, key, into, typedAlong(strokes, progress))
+		});
+}
+
+/**
+ * What stands typed in the pages of the film's own on a screen, with a block of one, by the page's key, holding a text
+ * in place of what it held, whatever else stands typed.
+ */
+function typedWith(screen: Screen, key: string, into: string, text: string): Screen['typed'] {
+	return new Map([...screen.typed, [key, new Map([...typedIn(screen, key), [into, text]])]]);
 }
 
 /**

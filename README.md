@@ -212,7 +212,7 @@ and the moves of each part of the scene:
   whole frame where they come up, over every object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`, `screen.behind(page, { upright, within })`,
   `screen.scrolls(page, { pace })`, `screen.scrollTo(page, selector, { top })`,
-  `screen.sweep({ from, slant, round, width, crest })`
+  `screen.type(page, strokes, { into, keyboard })`, `screen.sweep({ from, slant, round, width, crest })`
 - `terminal.open(title, { at, from, enter, edge, inside, group, zIndex })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
   `terminal.lean({ tilt, turn, roll, over, about })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
@@ -303,7 +303,10 @@ mean, so a move set off at the speed the one before arrived at, counted in
 its own mean's terms, runs on from it with no jolt, and `softThenHeld(0.4)`, which sets off
 from rest, is at its fastest at 0.4 of its time and holds that speed to its
 end, as a dive that runs on does. `keystrokes(text, { seed, slipAt, pace })`
-types the way a person does: unevenly, with a slip now and then.
+types the way a person does: unevenly, with a slip now and then;
+`keystrokes(text, { lettersPerSecond: 12 })` types evenly, a letter every
+twelfth of a second, the first a twelfth after the typing starts, as a cut
+that types on a beat does.
 
 ### Titles, and words set their own way
 
@@ -631,8 +634,9 @@ shows the filmed page again. In a `cut` it swaps at once; in a `play`, at
 the moment `within: { start }` names, so a camera flying fast through the
 swap smears one into the other. The page stands as written: its scripts do
 not run, one that animates or transitions of itself is refused before the
-film is shot, as what moves in a film is the film's, and it moves only as
-the film runs it (`screen.scrolls`, below), and an address in it
+film is shot, as what moves in a film is the film's, it moves only as
+the film runs it (`screen.scrolls`, below), no key reaches it but as the
+film types into it (`screen.type`, below), and an address in it
 is read from the stage's own folder, so name an image or a font by a whole
 address or a `data:` URL: the film's `fonts` set the look's words, not
 its pages. While the page of the film's own shows, a move
@@ -671,7 +675,21 @@ smears; the filmed page scrolls by `page.scrollBy` and `page.scrollTo`, and
 `screen.scrolls('filmed')` and `screen.scrollTo('filmed', …)` are refused.
 So is the run of a page that scrolls nowhere, one the screen
 holds all of or whose own styles hide what runs past the screen
-(`overflow: hidden` on its body). `screen.sweep()` in a `play` sweeps the picture the screen
+(`overflow: hidden` on its body). `screen.type({ html }, keystrokes('/review-ui',
+{ lettersPerSecond: 12 }), { into: '#typed' })`, in `typing()`, types into a
+block of a page of the film's own, the first its CSS selector `into`
+matches: from the move's start the block shows what stands typed as its
+text, in place of what the page wrote there, each key heard on the film's
+keyboard or the `keyboard` named. What stands typed is the page's, kept on
+either face of the window, or on none, until the film types into that
+block again, which types it anew from nothing; typing into another block
+keeps it. A block that holds elements of its own, which its text would take
+the place of, is refused as the move begins, as is one the page lacks: type
+into a span of text alone, the caret an element beside it, as
+`<span id="typed"></span><span class="caret"></span>`. An `<input>`
+shows its value, not its text: type into a span.
+`screen.type('filmed', …)` is refused: the filmed page is typed into by
+`page.type`. `screen.sweep()` in a `play` sweeps the picture the screen
 shows away by a band of light, the page as it stands showing behind it: an
 act on the page at a moment of the play, `page.act(action, { within })`, a
 theme turned dark, comes in behind the band. The band crosses what the

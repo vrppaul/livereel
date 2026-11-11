@@ -1,7 +1,7 @@
 /**
  * The filmed page as moves read it and type into it: where its blocks stand, the ground behind them, its scroll, its
- * keyboard; and a page of the film's own as moves measure it, among the rest how far down it scrolls and how far down its
- * document a block stands.
+ * keyboard; and a page of the film's own as moves measure it, among the rest how far down it scrolls, how far down its
+ * document a block stands, and whether a block the film types into holds elements.
  *
  * The functions handed to the page run there, each alone: none may call another of this module. The block a scroll
  * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a
@@ -41,6 +41,9 @@ interface GroundAsked {
 
 // What a block's overflow is when it scrolls of itself
 const SCROLLS = new Set(['auto', 'scroll']);
+// What the page answers where a CSS selector selects no block, and how many elements a block of text alone holds
+const NONE_SELECTED = null;
+const NO_ELEMENTS = 0;
 // A canvas of one pixel reads a colour's alpha from 0 to 255, the most, where the colour is drawn whole
 const GROUND_ASKED: GroundAsked = { canvasSide: 1, whole: 255 };
 // The ground read where no block a block stands in draws one: white, the browser's canvas in the light scheme a film
@@ -90,6 +93,16 @@ export class PlaywrightPage implements FilmedPage {
 	/** How far down the page's document the first block a target matches stands, in its pixels, however far it is scrolled. */
 	async documentTop(target: string): Promise<number> {
 		return (await this.found(target)).evaluate(documentTopOf);
+	}
+
+	/**
+	 * Whether the first block a target matches as a CSS selector, as the stage finds a block to write text into, holds
+	 * elements of its own; refused at once where the page has none it matches, or the target is no CSS selector.
+	 */
+	async holdsElements(target: string): Promise<boolean> {
+		const held = await this.frame.evaluate(elementsHeldBy, target);
+		if (held === NONE_SELECTED) throw new FilmError(`nothing on the page matches ${target} as a CSS selector`);
+		return held > NO_ELEMENTS;
 	}
 
 	type(text: string): Promise<void> {
@@ -160,6 +173,15 @@ function groundOf(block: Element, asked: GroundAsked): Channels | null {
 function scrollLengthOfThePage(): number {
 	const scroller = document.scrollingElement ?? document.documentElement;
 	return scroller.scrollHeight - scroller.clientHeight;
+}
+
+/**
+ * How many elements the first block a CSS selector matches holds; none selected where it matches none, or is no CSS
+ * selector.
+ */
+function elementsHeldBy(target: string): number | null {
+	if (!CSS.supports(`selector(${target})`)) return null;
+	return document.querySelector(target)?.childElementCount ?? null;
 }
 
 /** A block's top in its document: where it stands in the frame, and as far again as the page's own scroll has gone. */

@@ -28,14 +28,19 @@ export interface ScrollCourse {
 export type PageShown = 'framed' | 'pictured';
 
 /**
- * A page as a move measures it: where its blocks stand and the ground behind them, and, in its pixels, how far down it
- * scrolls at most and how far down its document a block's top stands, however far it is scrolled; as a page of the
- * film's own is measured, which nothing types into and the film alone runs.
+ * A page as a move measures it: where its blocks stand and the ground behind them, in its pixels how far down it scrolls
+ * at most and how far down its document a block's top stands, however far it is scrolled, and whether a block holds
+ * elements; as a page of the film's own is measured, which no key reaches and the film alone runs and types into.
  */
 export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind'> & {
 	readonly scrollLength: () => Promise<number>;
 	/** The first block a target matches; a target the page lacks is refused at once. */
 	readonly documentTop: (target: string) => Promise<number>;
+	/**
+	 * Whether the first block a target matches as a CSS selector, as the stage finds it, holds elements of its own; a
+	 * target the page lacks, or that is no CSS selector, is refused at once.
+	 */
+	readonly holdsElements: (target: string) => Promise<boolean>;
 };
 
 /** The filmed page as a move reads it and types into it. */

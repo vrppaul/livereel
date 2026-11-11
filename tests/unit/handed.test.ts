@@ -255,6 +255,17 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() =>
 		screen.scrollTo({ html: '<p>Runs</p>' }, '#input', { top: 0, ease: (progress: number) => progress } as never)
 	).toThrow(new FilmError(`screen.scrollTo names ease: it names top, within, or fewer`));
+	expect(() => screen.type('filmed' as never, [STROKE], { into: '#typed' })).toThrow(
+		new FilmError(
+			`screen.type's page is "filmed": it is a page of the film's own, { html }; the filmed page is typed into by page.type`
+		)
+	);
+	expect(() => screen.type({ html: '<p>Typed</p>' }, 'ls' as never, { into: '#typed' })).toThrow(
+		new FilmError('screen.type\'s strokes is "ls": it is keystrokes, as keystrokes() gives them')
+	);
+	expect(() => screen.type({ html: '<p>Typed</p>' }, [STROKE], {} as never)).toThrow(
+		new FilmError(`screen.type's into is undefined: it is a selector: a string that names blocks of the page`)
+	);
 	expect(() => screen.sweep({ from: 'middle' as never })).toThrow(
 		new FilmError(`screen.sweep's from is "middle": it is a side of the frame: "left", "right", "top" or "bottom"`)
 	);
@@ -350,6 +361,12 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => keystrokes(5 as never, { seed: 1 })).toThrow(new FilmError("keystrokes's text is 5: it is a string"));
 	expect(() => keystrokes('ls', {} as never)).toThrow(new FilmError("keystrokes's seed is undefined: it is a number"));
+	expect(() => keystrokes('ls', { lettersPerSecond: 0 })).toThrow(
+		new FilmError("keystrokes's lettersPerSecond is 0: it is letters a second, more than 0")
+	);
+	expect(() => keystrokes('ls', { lettersPerSecond: 12, seed: 1 } as never)).toThrow(
+		new FilmError('keystrokes names seed: it names lettersPerSecond, or fewer')
+	);
 	expect(() => camera.to(null as never)).toThrow(
 		new FilmError("camera.to's pose is null: it is a pose: { focusX, focusY, zoom }, as steps is handed")
 	);

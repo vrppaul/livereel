@@ -41,6 +41,16 @@ test('before the first key nothing stands typed', () => {
 	expect(typedBy(keystrokes(TEXT, { seed: 1 }), 0)).toBe('');
 });
 
+test('an even typist strikes a letter at every one of its shares of a second, the first a share after the typing starts', () => {
+	expect(keystrokes('ls -a', { lettersPerSecond: 10 })).toEqual([
+		{ at: 0.1, typed: 'l' },
+		{ at: 0.2, typed: 'ls' },
+		{ at: 0.3, typed: 'ls ' },
+		{ at: 0.4, typed: 'ls -' },
+		{ at: 0.5, typed: 'ls -a' }
+	]);
+});
+
 test('a slower pace takes longer', () => {
 	expect(typingSeconds(keystrokes(TEXT, { seed: 1, pace: 2 }))).toBeGreaterThan(
 		typingSeconds(keystrokes(TEXT, { seed: 1 }))

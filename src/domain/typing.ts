@@ -1,19 +1,22 @@
 /**
- * A person typing: keys at uneven times, a breath now and then, a wrong key rubbed out.
+ * Typing: a person's keys at uneven times, a breath now and then, a wrong key rubbed out; or keys at an even pace.
  *
- * Typing at an even pace reads as a machine. The times are drawn from a seed by a generator of livereel's own
- * (`src/domain/chance.ts`, its gaps lognormal by Box–Muller), so a film typed twice is typed the same on any Node.
+ * Typing at an even pace reads as a machine, so a person's rhythm is livereel's way; a film keeps the even pace for a
+ * cut that types on a beat, as the claude-review promo types its command at twelve letters a second. A person's times
+ * are drawn from a seed by a generator of livereel's own (`src/domain/chance.ts`, its gaps lognormal by Box–Muller), so
+ * a film typed twice is typed the same on any Node.
  */
 import { Chance } from './chance.ts';
 import {
 	A_NUMBER,
 	A_STRING,
-	type Form,
+	FormByName,
 	type Kind,
 	ListOf,
 	OfForm,
+	Plain,
 	assertKind,
-	assertWritten,
+	isMoreThanNone,
 	needed
 } from './handed.ts';
 
@@ -23,11 +26,19 @@ export interface Keystroke {
 	readonly typed: string;
 }
 
-/** How a text is typed: the seed its rhythm is drawn from, a slip on one letter, and how slowly (1 is usual). */
-export interface Typist {
+/** How a text is typed: by a person, or evenly. */
+export type Typist = Person | EvenTypist;
+
+/** A person typing: the seed their rhythm is drawn from, a slip on one letter, and how slowly (1 is usual). */
+interface Person {
 	readonly seed: number;
 	readonly slipAt?: number;
 	readonly pace?: number;
+}
+
+/** Keys struck evenly, so many letters a second, the first that long after the typing starts. */
+interface EvenTypist {
+	readonly lettersPerSecond: number;
 }
 
 /** Keystrokes as a film hands them to what types them, made by `keystrokes` or written out. */
@@ -35,7 +46,21 @@ export const A_STROKES: Kind<readonly Keystroke[]> = new ListOf(
 	new OfForm<Keystroke>({ at: needed(A_NUMBER), typed: needed(A_STRING) }, 'a keystroke: { at, typed }'),
 	'keystrokes, as keystrokes() gives them'
 );
-const TYPIST_FORM: Form<Typist> = { seed: needed(A_NUMBER), slipAt: A_NUMBER, pace: A_NUMBER };
+// How a film says who types: evenly where it names letters a second, a person otherwise
+const EVENLY = 'lettersPerSecond';
+const A_TYPIST: Kind<Typist> = new FormByName<Typist>(
+	[
+		[
+			EVENLY,
+			new OfForm<EvenTypist>(
+				{ lettersPerSecond: needed(new Plain(isMoreThanNone, 'letters a second, more than 0')) },
+				'an even typist: { lettersPerSecond }'
+			)
+		]
+	],
+	new OfForm<Person>({ seed: needed(A_NUMBER), slipAt: A_NUMBER, pace: A_NUMBER }, 'a person: { seed, slipAt, pace }'),
+	'a typist: a person, { seed, slipAt, pace }, or an even one, { lettersPerSecond }'
+);
 
 // The usual time between two keys, how unevenly they come, the start of a word a little slower, a longer breath now
 // and then, and how long a wrong key stands before it is rubbed out
@@ -55,17 +80,32 @@ const FULL_TURN = HALF_TURNS * Math.PI;
 const LETTERS = new Intl.Segmenter();
 // The last of a list, counted from its end
 const LAST = -1;
+// An even typist's first letter is the first struck, a count from one where a list's places count from none
+const FIRST_STRUCK = 1;
 
-/** The text typed by a person; with `slipAt`, a slip on that letter, rubbed out. */
+/** The text typed by a person, with `slipAt` a slip on that letter rubbed out; or evenly, so many letters a second. */
 export function keystrokes(text: string, typist: Typist): readonly Keystroke[] {
 	assertKind(text, A_STRING, "keystrokes's text");
-	assertWritten(typist, TYPIST_FORM, 'keystrokes');
+	assertKind(typist, A_TYPIST, 'keystrokes');
+	const letters = lettersOf(text);
+	return EVENLY in typist ? evenStrokes(letters, typist.lettersPerSecond) : personsStrokes(letters, typist);
+}
+
+/** Letters struck one at each share of a second, so many a second, the first a share after the typing starts. */
+function evenStrokes(letters: readonly string[], lettersPerSecond: number): readonly Keystroke[] {
+	return letters.map((_letter, index) => ({
+		at: (index + FIRST_STRUCK) / lettersPerSecond,
+		typed: letters.slice(0, index + FIRST_STRUCK).join('')
+	}));
+}
+
+/** Letters struck by a person: at the times their rhythm draws, a slip on one letter rubbed out. */
+function personsStrokes(letters: readonly string[], typist: Person): readonly Keystroke[] {
 	const rhythm = new Rhythm(typist.seed);
 	const pace = typist.pace ?? 1;
 	const strokes: Keystroke[] = [];
 	let moment = 0;
 	let typed = '';
-	const letters = lettersOf(text);
 	for (const [index, letter] of letters.entries()) {
 		const gap = rhythm.gap(letters[index - 1] === SPACE) * pace;
 		// A letter on no row of the keyboard has no key beside it to slip to

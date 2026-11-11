@@ -49,6 +49,8 @@ const SMALL = { frame: { width: 320, height: 320 }, screen: { width: 480, height
 const RATE = 30;
 const FIELD = '[data-testid=field]';
 const TYPED = 'hello';
+// A short command typed evenly, ten letters a second
+const LS = keystrokes('ls', { lettersPerSecond: 10 });
 // A film that shows no page of its own, opened as a take opens it; a page of the film's own, and a block only it has
 const NO_OWN_PAGES: readonly never[] = [];
 // A film that shows no picture of its own
@@ -385,6 +387,17 @@ test("a block a page of the film's own is brought to rest by is measured down it
 	];
 	await expect(shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
 		"screen.scrollTo would bring #far -800 pixels below the screen's top with its page scrolled 2800 down, and it scrolls from 0 to 2720: name a top it reaches"
+	);
+});
+
+test("a typing into a block a page of the film's own lacks, or into one that holds elements of its own, is refused as it begins, naming the block", async () => {
+	const intoNothing = [cut(screen.shows(OWN_PAGE)), ...typing(screen.type(OWN_PAGE, LS, { into: '#nowhere' }))];
+	const intoItsBody = [cut(screen.shows(OWN_PAGE)), ...typing(screen.type(OWN_PAGE, LS, { into: 'body' }))];
+	await expect(shoot(filmOf(intoNothing), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
+		'nothing on the page matches #nowhere as a CSS selector'
+	);
+	await expect(shoot(filmOf(intoItsBody), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
+		'screen.type types into body, which holds elements of its own that what it types would take the place of: name a block that holds text alone, as a span'
 	);
 });
 

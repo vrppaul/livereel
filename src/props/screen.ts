@@ -24,6 +24,10 @@
  * it ends, so a move that takes the run over goes on from where it stands and as fast. Where it stands is worked out
  * from the moment, as what else changes with time of itself is, so each exposure of a frame draws it where it stood then
  * and a fast run smears.
+ *
+ * A film may type into a block of a page of its own, which then shows what stands typed as its text in place of what
+ * the page wrote there. What stands typed is the page's too, held by its key and the block's selector until the film
+ * types into that block again, so it stays as the page is shown on the other face, or not at all.
  */
 import { type Camera, type SeenBetween, screenInTheView, screenPointShift, viewOnTheScreen } from '../domain/camera.ts';
 import { type Stretch, hermiteBetween, hermiteSpeedBetween } from '../domain/curves.ts';
@@ -51,11 +55,24 @@ import { between } from '../domain/toward.ts';
 export type Shows = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string };
 
 /**
- * What the screen shows as the stage draws it: the filmed page, or a page of the film's own by its key, and how far
- * down its scroll it stands, in its pixels.
+ * What the screen shows as the stage draws it: the filmed page, or a page of the film's own by its key, how far down
+ * its scroll it stands, in its pixels, and what stands typed in it.
  */
 type DrawnShows =
-	{ readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string; readonly scrolled: number };
+	| { readonly kind: 'filmed' }
+	| { readonly kind: 'own'; readonly key: string; readonly scrolled: number; readonly typed: readonly TypedText[] };
+
+/**
+ * What stands typed in a page of the film's own: the text a film typed into each block of it, by the block's selector,
+ * in the order the film first typed into each.
+ */
+type TypedBlocks = ReadonlyMap<string, string>;
+
+/** Text typed into a block of a page of the film's own, as the stage writes it: the block's selector, and the text. */
+interface TypedText {
+	readonly into: string;
+	readonly text: string;
+}
 
 /**
  * A point of the film's time a page's run passes through: the moment, how far down its scroll the page stands then, in
@@ -142,7 +159,8 @@ type DiscSweep = DiscShape & SweepOfAnyShape;
 
 /**
  * How far the screen has come up, as a film may open on the ground alone, what it shows, the sweep over it, if any,
- * what the window's back shows, and how each page of the film's own the film has run runs, by its key.
+ * what the window's back shows, and, by its key, how each page of the film's own the film has run runs and what stands
+ * typed in each it has typed into.
  */
 export interface Screen {
 	readonly shown: Fraction;
@@ -150,6 +168,7 @@ export interface Screen {
 	readonly sweep: Sweep | null;
 	readonly back: Back;
 	readonly scrolls: ReadonlyMap<string, Scroll>;
+	readonly typed: ReadonlyMap<string, TypedBlocks>;
 }
 
 /** Two moments of a frame's time, the earlier first. */
@@ -216,14 +235,17 @@ export const A_SLANT: Kind<number> = new Plain(
 
 export const THE_FILMED_PAGE: Shows = { kind: 'filmed' };
 export const SEEN_THROUGH: Back = { kind: 'seen through' };
-// No page of the film's own run, each standing at its top
+// No page of the film's own run, each standing at its top; none typed into, and nothing typed in a page
 const NONE_RUN: ReadonlyMap<string, Scroll> = new Map();
+const NONE_TYPED_INTO: ReadonlyMap<string, TypedBlocks> = new Map();
+const NOTHING_TYPED: TypedBlocks = new Map();
 export const SCREEN_UP: Screen = {
 	shown: WHOLE,
 	shows: THE_FILMED_PAGE,
 	sweep: null,
 	back: SEEN_THROUGH,
-	scrolls: NONE_RUN
+	scrolls: NONE_RUN,
+	typed: NONE_TYPED_INTO
 };
 export const SCREEN_DOWN: Screen = { ...SCREEN_UP, shown: NONE };
 
@@ -302,9 +324,18 @@ function frontDrawn(screen: Screen, moment: number): DrawnShows {
 	}
 }
 
-/** A page of the film's own, by its key, as the stage draws it at a moment: as far down as the film has run it. */
+/**
+ * A page of the film's own, by its key, as the stage draws it at a moment: as far down as the film has run it, with
+ * what the film has typed into it.
+ */
 function ownPageDrawn(screen: Screen, key: string, moment: number): DrawnShows {
-	return { kind: 'own', key, scrolled: standingAt(runOf(screen, key), moment).top };
+	const typed = [...typedIn(screen, key)].map(([into, text]) => ({ into, text }));
+	return { kind: 'own', key, scrolled: standingAt(runOf(screen, key), moment).top, typed };
+}
+
+/** What stands typed in a page of the film's own on the screen, by its key: nothing where the film typed nothing. */
+export function typedIn(screen: Screen, key: string): TypedBlocks {
+	return screen.typed.get(key) ?? NOTHING_TYPED;
 }
 
 /** How a page of the film's own runs on the screen, by its key: standing at its top where the film never ran it. */

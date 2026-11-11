@@ -351,9 +351,9 @@ test("the screen shows the page on the window's back where the eye sees the wind
 		drawnScreen(bare, camera, SMALL, SEES_THE_BACK, PANE_CORNER, AT_THE_START)
 	];
 	expect(drawn.map((screen) => [screen.shows, screen.backUpright])).toEqual([
-		[{ kind: 'own', key: 'behind', scrolled: 0 }, 'over'],
-		[{ ...front, scrolled: 0 }, null],
-		[{ ...front, scrolled: 0 }, null]
+		[{ kind: 'own', key: 'behind', scrolled: 0, typed: [] }, 'over'],
+		[{ ...front, scrolled: 0, typed: [] }, null],
+		[{ ...front, scrolled: 0, typed: [] }, null]
 	]);
 });
 
@@ -371,8 +371,8 @@ test("a page of the film's own keeps its run whichever face of the window shows 
 		drawnScreen(both, camera, SMALL, SEES_THE_FRONT, PANE_CORNER, 2).shows,
 		drawnScreen(both, camera, SMALL, SEES_THE_BACK, PANE_CORNER, 2).shows
 	]).toEqual([
-		{ kind: 'own', key: 'page', scrolled: 60 },
-		{ kind: 'own', key: 'page', scrolled: 60 }
+		{ kind: 'own', key: 'page', scrolled: 60, typed: [] },
+		{ kind: 'own', key: 'page', scrolled: 60, typed: [] }
 	]);
 });
 

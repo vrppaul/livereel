@@ -27,12 +27,24 @@ export class PageOfBoxes implements FilmedPage {
 	readonly boxes: ReadonlyMap<string, Box>;
 	readonly grounds: ReadonlyMap<string, string>;
 	readonly length: number;
+	readonly holdingElements: ReadonlyMap<string, boolean>;
 	readonly typed: string[] = [];
 
-	constructor(boxes: ReadonlyMap<string, Box>, grounds: ReadonlyMap<string, string> = new Map(), length = A_LONG_PAGE) {
+	constructor(
+		boxes: ReadonlyMap<string, Box>,
+		grounds: ReadonlyMap<string, string> = new Map(),
+		length = A_LONG_PAGE,
+		holdingElements: ReadonlyMap<string, boolean> = new Map()
+	) {
 		this.boxes = boxes;
 		this.grounds = grounds;
 		this.length = length;
+		this.holdingElements = holdingElements;
+	}
+
+	/** A test names only the blocks it says of whether they hold elements. */
+	holdsElements(target: string): Promise<boolean> {
+		return Promise.resolve(this.holdingElements.get(target)!);
 	}
 
 	scrollLength(): Promise<number> {
