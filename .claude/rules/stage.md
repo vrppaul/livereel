@@ -19,7 +19,7 @@ Beside it, `stage/set.html`, `stage/set.css` and `stage/set.js` are the page a f
 - But the block a film types into on a page of its own is found by the film's CSS selector in that page's document, each time it is written (`typedBlockOf`).
 - A drawer sets its prop's numbers, and the colours a film gives or the engine reads off the page (a hole's ground), as bare custom properties, and writes its words; the stylesheet makes the numbers places, sizes and shades.
 - The grain's strength alone is set as attributes, the weights of its SVG filter, which CSS cannot set.
-- The script writes no style, but for pictures, each set whole as a `url()` custom property: the page's on the stage's root, one a piece or a sweep holds, or a film's own, on its element; CSS takes no address out of one.
+- The script writes no style, but for pictures, each set whole as a `url()` custom property: the page's on the stage's root, one a piece, a sweep or a fade holds, or a film's own, on its element; CSS takes no address out of one.
 - A script reads a token back only where the room draws by it: how far past its box a surface of markup reaches (`--reach-past-the-box`), and the screen's ground under the page's picture.
 - What a drawer is handed by name it names in a class or an attribute: a piece's styles, a callout's `data-side`, a title's `data-align` and `data-words-down`.
 - Nothing on the stage moves of itself: no transition, animation or keyframes in its styles (stylelint refuses them), no timer or clock in its script (eslint refuses them). Every frame is set whole by `apply`.
