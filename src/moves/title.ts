@@ -14,7 +14,8 @@
  * that part's side as the eye sees the point on each frame (`src/domain/placement.ts`), so it rides with the part as the
  * eye, the window, the camera and the part itself move, as the claude-review promo's lines stand beside its plates and
  * over its window's words. Its box is a frame wide and high, off that point, its words reading from its near edge and
- * breaking only where the film breaks them.
+ * breaking only where the film breaks them. Handed into the world, it stands there beside the part, where the eye saw
+ * it, and the eye moves past it.
  */
 import { FilmError } from '../domain/errors.ts';
 import { type Box, HALVES, type Point, type Size, boxOf, frameScaleOf } from '../domain/geometry.ts';
@@ -58,9 +59,11 @@ import {
 	SHOW_FORM,
 	type ShowScript,
 	type ShownKind,
+	type TakenScript,
 	type ToScript,
 	objectEffects,
 	objectHide,
+	objectIntoTheWorld,
 	objectLean,
 	objectShow,
 	objectShowBeside,
@@ -282,6 +285,15 @@ function titleBeside(setting: Setting, beside: BesideScript, beginning: Beginnin
  */
 export function to(place: Place, script: ToScript = {}): Move {
 	return objectTo(TITLE, 'title.to', place, script, TITLE_READING);
+}
+
+/**
+ * The title, on the frame or beside a part, handed into the world where the eye sees it as the move begins, square to
+ * the eye, as far before it as the frame or the part's point, its words going on as they stood, so the eye moves past
+ * it from then on.
+ */
+export function intoTheWorld(script: TakenScript = {}): Move {
+	return objectIntoTheWorld(TITLE, 'title.intoTheWorld', script);
 }
 
 /**

@@ -219,7 +219,8 @@ and the moves of each part of the scene:
 - `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
 - `title.show(text, { at, beside, align, size, letterSpacing, lineHeight, from, enter, edge, words, as, inside, group, zIndex })`,
-  `title.to(place, { scale, depth })`, `title.lean({ tilt, turn, roll, over, about })`, `title.hide({ toward, leave, edge, words })`
+  `title.to(place, { scale, depth })`, `title.lean({ tilt, turn, roll, over, about })`, `title.intoTheWorld()`,
+  `title.hide({ toward, leave, edge, words })`
 - `code.show(text, { at, from, enter, edge, longLines, as, inside, group, zIndex })`,
   `code.to(place, { scale, depth })`, `code.lean({ tilt, turn, roll, over, about })`, `code.light(line, { through })`,
   `code.scrollTo(line)`,
@@ -403,6 +404,21 @@ goes with the group. Its box is a frame wide and high off the point, so its
 words break only where the film breaks them; it names no `at`, `inside`,
 `group` or `align`, and `title.to` carries it to no place: hide it and show
 it anew.
+
+`title.intoTheWorld()` hands a title on the frame, or beside a part, into
+the world, at once, where the eye sees it as the move begins: square to the
+eye, as far before it as the frame's plane, or beside a part as the part's
+point, and as large on the frame as it stood, its words going on as they
+were. From then on the eye moves past it: words beside a part stand beside
+it in the world. The claude-review promo leaves its last lines so as the eye
+dives past them:
+
+```ts
+cut(title.intoTheWorld({ as: 'diagram-line' }), title.intoTheWorld({ as: 'step-line' })),
+```
+
+A title in the world already, inside the window or in a group is refused,
+and one beside a point at the eye or behind it.
 
 A title's or a caption's words come up in the way `words` names, the
 theme's where it names none:

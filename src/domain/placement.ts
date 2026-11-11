@@ -16,7 +16,8 @@
  * `pointOnTheFrame`, which the motion blur, a lens, a note, the pins and a piece's lines read through the camera's
  * module or the object's, and a point of the screen `onTheFrame`. Something carried from one holder into another, a
  * piece from the world onto the page or an object joining a leant group, is placed there where it stood by one function
- * too, `carriedInto`.
+ * too, `carriedInto`; and something on the frame's plane, which rides with the eye, handed into the world where the
+ * eye sees it, as far before the eye as what it stands on, by `handedIntoTheWorld`.
  *
  * The camera's module builds on this one, as it reads where the window stands; this one reads of the camera only how
  * it frames the page in its view (`src/domain/framing.ts`), and holds the arithmetic of a box about its middle on the
@@ -52,6 +53,7 @@ import {
 	inThreesAxes,
 	inverseOf,
 	lengthOf,
+	scalingAlong,
 	translation,
 	unitOf,
 	wayBetween,
@@ -112,6 +114,21 @@ export interface Ride {
 type PointOf =
 	| { readonly kind: 'screen'; readonly at: Point }
 	| { readonly kind: 'object'; readonly name: string; readonly share: Point };
+
+/**
+ * A point of something that stands in the world, as a frame is drawn: what it is a point of, placed, and the point, in
+ * the pixels of its box from that box's top left corner.
+ */
+interface PointStanding {
+	readonly on: Placed;
+	readonly at: Point;
+}
+
+/**
+ * A holder whose plane is the frame's own, riding with the eye: the frame itself, or a point that plane stands off; not
+ * a group, whose plane stands as the group does.
+ */
+export type OnTheFramesPlane = Extract<Holder, { readonly kind: 'frame' | 'point' }>;
 
 /** Where something stands that a holder can be read off: its placement, and what it stands in. */
 interface HeldPlacement extends Placement {
@@ -227,6 +244,8 @@ const A_UNIT_OUT: Spot = { across: 0, down: 0, out: 1 };
 const TURNED_AWAY = 0;
 // How far the film has scrolled a block it never scrolled
 const NOT_SCROLLED = 0;
+// How far before the eye a spot stands at the eye
+const AT_THE_EYE = 0;
 
 /**
  * The plane of a holder, as the holders stand: a group's, the frame's carried by the group's box and stance; a point's,
@@ -257,18 +276,24 @@ export function planeOf(holder: Holder, holders: Holders, frame: Size): Plane {
 	}
 }
 
-/**
- * Where the eye sees a point of something that stands in the world on the frame, as the holders stand: a point of the
- * screen as the camera shows it; a point of an object where it is drawn, as it stands in what it stands in.
- */
+/** Where the eye sees a point of something that stands in the world on the frame, as the holders stand. */
 function pointSeenOnTheFrame(point: PointOf, holders: Holders, frame: Size): Point {
+	const standing = pointStanding(point, holders, frame);
+	return pointOnTheFrame(standing.on, standing.at);
+}
+
+/**
+ * A point of something that stands in the world, as the holders stand: of the screen, on the page's window where the
+ * camera frames it; of an object, on the object as it stands in what it stands in.
+ */
+function pointStanding(point: PointOf, holders: Holders, frame: Size): PointStanding {
 	switch (point.kind) {
 		case 'screen':
-			return onTheFrame(holders.camera, frame, point.at);
+			return screenPointStanding(holders.camera, frame, point.at);
 		case 'object': {
 			const object = objectNamed(holders.objects, point.name);
 			const standing = placed(object, planeOf(object.inside, holders, frame), frame);
-			return pointOnTheFrame(standing, pointAt(boxOf(standing.laid), point.share));
+			return { on: standing, at: pointAt(boxOf(standing.laid), point.share) };
 		}
 	}
 }
@@ -298,7 +323,13 @@ export function screenBoxUnder(box: Box, holder: Holder, scrolled: Scrolled): Bo
  * window stands and seen from the eye.
  */
 export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
-	return pointOnTheFrame(windowInTheWorld(camera.view, camera.eye, frame), pointInTheView(camera, frame, point));
+	const standing = screenPointStanding(camera, frame, point);
+	return pointOnTheFrame(standing.on, standing.at);
+}
+
+/** A point of the screen from a camera: on the page's window where the camera frames it in its view. */
+function screenPointStanding(camera: Camera, frame: Size, point: Point): PointStanding {
+	return { on: windowInTheWorld(camera.view, camera.eye, frame), at: pointInTheView(camera, frame, point) };
 }
 
 /** The plane of a holder that lasts the whole film, as the camera shows the page and its eye sees. */
@@ -409,14 +440,68 @@ export function carriedInto(
 	frame: Size
 ): Placement | null {
 	const standing = placed(placement, planeOf(from, holders, frame), frame);
-	const plane = planeOf(to, holders, frame);
-	const onThePlane = chained([inverseOf(ownSpaceOf(plane, frame)), standing.inTheEyesSpace]);
-	const stance = stanceCarriedBy(onThePlane, placement, standing.laid);
+	return standingOn(planeOf(to, holders, frame), standing.inTheEyesSpace, placement, standing.laid, frame);
+}
+
+/**
+ * A placement on the frame's own plane handed into the world, standing where the eye sees it now: carried along the
+ * eye's sight, about the eye, from the frame's plane to as far before the eye as what it stands on, so it stands as
+ * large on the frame as it stood, square to the eye as the frame is. On the frame, what it stands on is the frame's
+ * plane, so it stands there; beside a point, the point, so words beside a part stand beside it in the world too. None
+ * where that point stands at the eye or behind it.
+ */
+export function handedIntoTheWorld(
+	placement: Placement,
+	from: OnTheFramesPlane,
+	holders: Holders,
+	frame: Size
+): Placement | null {
+	const plane = planeOf(from, holders, frame);
+	const standing = placed(placement, plane, frame);
+	const depth = depthBeforeTheEye(spotItStandsOn(from, plane, holders, frame));
+	if (depth <= AT_THE_EYE) return null;
+	const timesAsFar = depth / depthBeforeTheEye(carried(plane.inTheEyesSpace, ITS_MIDDLE));
+	const alongTheSight = chained([scalingAlong(timesAsFar, timesAsFar, timesAsFar), standing.inTheEyesSpace]);
+	const world = lastingPlaneOf(IN_THE_WORLD, holders.camera, frame);
+	const handed = standingOn(world, alongTheSight, placement, standing.laid, frame);
+	// Grown alike every way about the eye, it stands unstretched on the world's plane, which faces the frame unstretched
+	if (handed === null) throw new Error('a placement handed into the world would stand stretched there');
+	return handed;
+}
+
+/**
+ * The spot, in the eye's own space, of what a placement on the frame's own plane stands on: the plane's middle, on the
+ * frame; the point, beside one.
+ */
+function spotItStandsOn(holder: OnTheFramesPlane, plane: Plane, holders: Holders, frame: Size): Spot {
+	switch (holder.kind) {
+		case 'frame':
+			return carried(plane.inTheEyesSpace, ITS_MIDDLE);
+		case 'point': {
+			const point = pointStanding(holder.of, holders, frame);
+			return carried(point.on.inTheEyesSpace, fromItsMiddle(point.on.laid, point.at));
+		}
+	}
+}
+
+/**
+ * A placement standing on a plane where the matrix that carries it into the eye's own space carries it, a box as large
+ * in what it is laid in as `laid` and a stance, as `carriedInto` has it; none where the plane would stretch it.
+ */
+function standingOn(
+	plane: Plane,
+	inTheEyesSpace: Matrix,
+	placement: Placement,
+	laid: Box,
+	frame: Size
+): Placement | null {
+	const onThePlane = chained([inverseOf(ownSpaceOf(plane, frame)), inTheEyesSpace]);
+	const stance = stanceCarriedBy(onThePlane, placement, laid);
 	if (stance === null) return null;
 	// Where the box's middle stands on the plane: where the matrix carries it, less how far the stance moves it
-	const middle = wayBetween(middleMovedBy(stance, standing.laid), carried(onThePlane, ITS_MIDDLE));
+	const middle = wayBetween(middleMovedBy(stance, laid), carried(onThePlane, ITS_MIDDLE));
 	const laidMiddle = { left: plane.box.width / HALVES + middle.across, top: plane.box.height / HALVES + middle.down };
-	return { ...stance, box: boxOfItsHolder(boxCentredOn(laidMiddle, standing.laid), plane.measures, frame) };
+	return { ...stance, box: boxOfItsHolder(boxCentredOn(laidMiddle, laid), plane.measures, frame) };
 }
 
 /**
@@ -583,7 +668,12 @@ function facingOf(inTheEyesSpace: Matrix): Spot {
 
 /** How far before the eye the middle of something placed stands along where it looks, in the frame's pixels. */
 function depthOfItsMiddle(standing: Placed): number {
-	return -carried(standing.inTheEyesSpace, ITS_MIDDLE).out;
+	return depthBeforeTheEye(carried(standing.inTheEyesSpace, ITS_MIDDLE));
+}
+
+/** How far before the eye a spot of its own space stands along where it looks, in the frame's pixels. */
+function depthBeforeTheEye(spot: Spot): number {
+	return -spot.out;
 }
 
 /** The group of a name something stands in: none is gone while anything stands in it, as it goes with all of it. */

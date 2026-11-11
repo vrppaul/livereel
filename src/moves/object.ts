@@ -34,6 +34,10 @@
  * stand on the screen as a box. One standing in the world is carried into the page's plane where it stands, wherever
  * the eye stands and however the window stands, while it lies on that plane, as what lies in the window is drawn flat
  * on it. It never slides from there, as the page's plane may stand leant from the frame's: it goes in its place.
+ *
+ * An object on the frame, or beside a point, which rides with the eye, is handed into the world where the eye sees it
+ * as that move begins, at once, square to the eye and as far before it as what it stood on, so it stays there as the
+ * eye moves on, as the claude-review promo leaves its lines standing in the world as the eye dives past them.
  */
 import { boxOnTheFrame, boxOnTheScreen, standingAt, viewOf } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -115,10 +119,12 @@ import {
 	IN_THE_WORLD,
 	ON_THE_FRAME,
 	ON_THE_PAGE,
+	type OnTheFramesPlane,
 	type Placement,
 	type Ride,
 	carriedInto,
 	groupNamed,
+	handedIntoTheWorld,
 	planeOf,
 	scrolledSoFar
 } from '../domain/placement.ts';
@@ -308,11 +314,11 @@ const EFFECTS_FORM: Form<EffectsScript> = {
 // The values of an object, or of a group, a move that carries it may set, and one that leans it; and of an object, one
 // of what it shows; what each writes is held to them. One that carries an object to a place sets its box, and of its
 // scale and depth those the film names; one that carries it to a box read off the page, its box alone; one that
-// carries it onto a block of the page, what it stands in and where it stands there, its box and stance, as it reads
-// them anew in the page's plane
+// carries it onto a block of the page, or hands it into the world, what it stands in and where it stands there, its
+// box and stance, as it reads them anew in the plane of what it then stands in
 const CARRIED = ['box', 'scale', 'depth'] as const satisfies readonly (keyof FrameObject & keyof Group)[];
 const PLACED = ['box'] as const satisfies readonly (keyof FrameObject)[];
-const LAID_ONTO = ['inside', 'box', 'scale', 'depth', 'angle'] as const satisfies readonly (keyof FrameObject)[];
+const HELD_ANEW = ['inside', 'box', 'scale', 'depth', 'angle'] as const satisfies readonly (keyof FrameObject)[];
 const SET_WHERE_NAMED = ['scale', 'depth'] as const satisfies readonly (keyof FrameObject & keyof ToScript)[];
 export const LEANT = ['angle', 'about'] as const satisfies readonly (keyof FrameObject & keyof Group)[];
 const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
@@ -359,7 +365,7 @@ export const READ_AS_THE_WINDOW: PlaceReading<ShownKind> = { placed: windowPlace
  * shows.
  */
 export type Carried = Pick<FrameObject, (typeof CARRIED)[number]>;
-type Lying = Pick<FrameObject, (typeof LAID_ONTO)[number]>;
+type HeldAnew = Pick<FrameObject, (typeof HELD_ANEW)[number]>;
 type Leant = Pick<FrameObject, (typeof LEANT)[number]>;
 type Shows = Pick<FrameObject, (typeof CONTENT)[number]>;
 
@@ -717,9 +723,27 @@ export function objectOnto(kind: ShownKind, move: string, target: Target, script
 	const name = script.as ?? kind;
 	return {
 		part: objectPart(name),
-		valueNames: LAID_ONTO,
+		valueNames: HELD_ANEW,
 		timing: timingOf(script),
 		begin: (beginning) => laidOnto(beginning, name, kind, target, move)
+	};
+}
+
+/**
+ * An object of a kind on the frame, or beside a point, handed into the world as the move begins, standing where the eye
+ * sees it then, square to the eye, as far before it as what it stands on (`handedIntoTheWorld`,
+ * `src/domain/placement.ts`), so the eye moves past it from then on: words beside a part stand beside it in the world.
+ * What it stands in and where it stands there are written into it at once, so nothing of it moves, and what it shows
+ * goes on as it was.
+ */
+export function objectIntoTheWorld(kind: ShownKind, move: string, script: TakenScript): Move {
+	assertWritten(script, TAKEN_FORM, move);
+	const name = script.as ?? kind;
+	return {
+		part: objectPart(name),
+		valueNames: HELD_ANEW,
+		timing: timingOf(script),
+		begin: (beginning) => handedOver(beginning, name, kind, move)
 	};
 }
 
@@ -1250,13 +1274,58 @@ async function laidOnto(
 	const object = standingOfKind(beginning, name, move, kind);
 	const start = onThePage(beginning, object, name, move);
 	const end = await shownBox(beginning, target, THE_FIRST, move);
-	return writing(name, (progress): Lying => ({
+	return writing(name, (progress): HeldAnew => ({
 		inside: ON_THE_PAGE,
 		box: boxToward(start.box, end, progress),
 		scale: start.scale,
 		depth: start.depth,
 		angle: start.angle
 	}));
+}
+
+/**
+ * The object handed into the world where the eye sees it as the move begins: what it stands in and where it stands
+ * there written into it at once; refused where it stands beside a point at the eye or behind it.
+ */
+function handedOver(beginning: Beginning, name: ObjectName, kind: ShownKind, move: string): Change {
+	const object = standingOfKind(beginning, name, move, kind);
+	const from = onTheFramesPlane(object.inside, name, move);
+	const there = handedIntoTheWorld(object, from, holdersAsTheyStand(beginning), beginning.format.frame);
+	if (there === null) {
+		throw new FilmError(
+			`${move} would stand the ${name} as far before the eye as the point it stands beside, which stands at the eye or behind it: hand it over while the eye sees that point`
+		);
+	}
+	const handed: HeldAnew = {
+		inside: IN_THE_WORLD,
+		box: there.box,
+		scale: there.scale,
+		depth: there.depth,
+		angle: there.angle
+	};
+	return writing(name, () => handed);
+}
+
+/**
+ * What an object of a name stands in, where it stands on the frame's own plane, to be handed into the world from: the
+ * frame, or a point beside which it stands. One in the world already, riding a block's scroll there or not, is refused,
+ * and one inside the window, on the page or in a group, as it goes with what it stands in.
+ */
+function onTheFramesPlane(holder: Holder, name: ObjectName, move: string): OnTheFramesPlane {
+	switch (holder.kind) {
+		case 'frame':
+		case 'point':
+			return holder;
+		case 'world':
+		case 'scroll':
+			throw new FilmError(`${move} finds the ${name} in the world already`);
+		case 'window':
+			throw new FilmError(`${move} would carry the ${name} out of the window into the world: it stands in the window`);
+		case 'page':
+			throw new FilmError(`${move} would carry the ${name} off the page into the world: it lies on the page`);
+		case 'group':
+			throw new FilmError(`${move} would carry the ${name} out of its group into the world: it goes with its group`);
+	}
 }
 
 /** The object going where it stands, in the way it goes, showing what its kind has it show as it goes; once gone, none. */

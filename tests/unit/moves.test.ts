@@ -70,7 +70,10 @@ import {
 import {
 	IN_THE_WINDOW,
 	ON_THE_PAGE,
+	fromItsMiddle,
 	onTheFrame,
+	placed,
+	planeOf,
 	pointOnTheFrame,
 	windowInTheWorld
 } from '../../src/domain/placement.ts';
@@ -96,7 +99,8 @@ import {
 	carried,
 	chained,
 	longestScaleAtItsMiddle,
-	translation
+	translation,
+	waysAlongItsPlane
 } from '../../src/domain/matrix.ts';
 import { LIVEREELS_SLAB } from '../../src/props/body.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
@@ -4684,6 +4688,88 @@ test('a title is refused as its move begins beside an object that stands beside 
 	).rejects.toThrow(
 		new FilmError(
 			'title.show stands the first beside the third, which stands beside the first, straight or through others: name an object that stands by itself'
+		)
+	);
+});
+
+// The far corner of a title's box, in shares of it; and the eye standing between the frame and a piece brought 100
+// toward it, looking at the frame's middle, so the piece stands behind it
+const FAR_CORNER: Point = { left: 1, top: 1 };
+const EYE_BEFORE_THE_PIECE: EyePlace = { at: { across: 0, down: 0, out: 50 }, aim: { across: 0, down: 0, out: 0 } };
+
+/** How far before the eye a point of an object of a scene shot full HD stands, in shares of its box, along its sight. */
+function depthBeforeTheEyeInFullHd(scene: Scene, name: string, share: Point): number {
+	const object = scene.objects.get(name)!;
+	const holders = holdersIn(scene, cameraOf(scene, FULL_HD));
+	const standing = placed(object, planeOf(object.inside, holders, FULL_HD.frame), FULL_HD.frame);
+	return -carried(standing.inTheEyesSpace, fromItsMiddle(standing.laid, pointAt(boxOf(standing.laid), share))).out;
+}
+
+test("a title beside a piece handed into the world stands where the eye saw it, its words as they stood, square to the eye, as far before it as the piece's point", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { inside: 'world' }), wide, 1, FULL_HD);
+	const beside = await setIn(title.show('what you asked', { beside: BESIDE_THE_PIECE }), lifted, 1, FULL_HD);
+	const raised = await setIn(piece.effects({ depth: 100 }), beside, 1, FULL_HD);
+	const aside = await setIn(eye.to(EYE_ASIDE), raised, 1, FULL_HD);
+	const handed = await setIn(title.intoTheWorld(), aside, 1, FULL_HD);
+	const drawnHanded = drawnObjectsIn(handed, FULL_HD)[1]!;
+	const facing = waysAlongItsPlane(drawnHanded.inTheEyesSpace);
+	expect([
+		drawnHanded.standsIn,
+		handed.objects.get('title')!.content,
+		drawnPointInFullHd(handed, 'title', WORDS_READ_FROM),
+		drawnPointInFullHd(handed, 'title', FAR_CORNER),
+		[facing.across.out, facing.down.out],
+		depthBeforeTheEyeInFullHd(handed, 'title', WORDS_READ_FROM)
+	]).toEqual([
+		'world',
+		aside.objects.get('title')!.content,
+		closeToPoint(drawnPointInFullHd(aside, 'title', WORDS_READ_FROM)),
+		closeToPoint(drawnPointInFullHd(aside, 'title', FAR_CORNER)),
+		[expect.closeTo(0), expect.closeTo(0)],
+		expect.closeTo(depthBeforeTheEyeInFullHd(aside, 'piece', THE_PIECES_POINT))
+	]);
+});
+
+test("a title on the frame handed into the world stands where the frame's plane stood before the eye, wherever the eye stands", async () => {
+	const shown = await setIn(title.show('Words', { at: 'top' }), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const aside = await setIn(eye.to(EYE_ASIDE), shown, 1, FULL_HD);
+	const handed = await setIn(title.intoTheWorld(), aside, 1, FULL_HD);
+	const atRest = await setIn(title.intoTheWorld(), shown, 1, FULL_HD);
+	const drawnHanded = drawnObjectsIn(handed, FULL_HD)[0]!;
+	expect([
+		drawnHanded.standsIn,
+		drawnHanded.inTheEyesSpace,
+		drawnObjectsIn(atRest, FULL_HD)[0]!.inTheEyesSpace
+	]).toEqual([
+		'world',
+		closeToMatrix(drawnObjectsIn(aside, FULL_HD)[0]!.inTheEyesSpace),
+		closeToMatrix(drawnObjectsIn(shown, FULL_HD)[0]!.inTheEyesSpace)
+	]);
+});
+
+test('a title is handed into the world only from the frame or from beside a point the eye sees before it: in the world, the window or a group, or beside a point behind the eye, it is refused', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const inTheWorld = await setIn(title.show('Words', { at: 'top', inside: 'world' }), wide, 1, FULL_HD);
+	const inTheWindow = await setIn(title.show('Words', { at: MIDDLE_HALF, inside: 'window' }), wide, 1, FULL_HD);
+	const grouped = await setIn(group.show(), wide, 1, FULL_HD);
+	const inAGroup = await setIn(title.show('Words', { at: 'left', group: 'group' }), grouped, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { inside: 'world' }), wide, 1, FULL_HD);
+	const beside = await setIn(title.show('what you asked', { beside: BESIDE_THE_PIECE }), lifted, 1, FULL_HD);
+	const raised = await setIn(piece.effects({ depth: 100 }), beside, 1, FULL_HD);
+	const pastThePiece = await setIn(eye.to(EYE_BEFORE_THE_PIECE), raised, 1, FULL_HD);
+	await expect(setIn(title.intoTheWorld(), inTheWorld, 1, FULL_HD)).rejects.toThrow(
+		new FilmError('title.intoTheWorld finds the title in the world already')
+	);
+	await expect(setIn(title.intoTheWorld(), inTheWindow, 1, FULL_HD)).rejects.toThrow(
+		new FilmError('title.intoTheWorld would carry the title out of the window into the world: it stands in the window')
+	);
+	await expect(setIn(title.intoTheWorld(), inAGroup, 1, FULL_HD)).rejects.toThrow(
+		new FilmError('title.intoTheWorld would carry the title out of its group into the world: it goes with its group')
+	);
+	await expect(setIn(title.intoTheWorld(), pastThePiece, 1, FULL_HD)).rejects.toThrow(
+		new FilmError(
+			'title.intoTheWorld would stand the title as far before the eye as the point it stands beside, which stands at the eye or behind it: hand it over while the eye sees that point'
 		)
 	);
 });
