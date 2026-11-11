@@ -41,6 +41,7 @@ import {
 } from '../../src/moves/window.ts';
 import {
 	behind as screenBehind,
+	blinks as screenBlinks,
 	lower,
 	rise,
 	scrollTo as screenScrollTo,
@@ -408,6 +409,12 @@ function typingFrom(scene: Scene): Beginning {
 		...beginningIn(scene, FULL_HD),
 		ownPage: () => Promise.resolve(new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH, TYPED_BLOCKS_HOLD))
 	};
+}
+
+/** The scene a blink of a block of the film's own page sets, begun at a moment on a scene in full HD. */
+async function blinkedAt(move: Move, scene: Scene, moment: number): Promise<Scene> {
+	const change = await move.begin({ ...typingFrom(scene), stretch: { moment, seconds: 0, ease: linear } });
+	return change(scene, 1);
 }
 
 /** A typing of the line that wraps into a block of the page of the film's own, ten letters a second. */
@@ -2032,6 +2039,30 @@ test("screen.scrollTo refuses, as it begins, a pace judged at a point of the fra
 	);
 });
 
+test("a block of a page of the film's own blinks from its move's moment as often as the film names, another block's blink kept and the same block's taken over", async () => {
+	const front = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const blinking = await blinkedAt(screenBlinks(OWN_PAGE, TYPED_INTO, { seconds: 1.06 }), front, 18);
+	const both = await blinkedAt(screenBlinks(OWN_PAGE, OTHER_TYPED_INTO, { seconds: 2 }), blinking, 19);
+	const again = await blinkedAt(screenBlinks(OWN_PAGE, TYPED_INTO, { seconds: 0.5 }), both, 20);
+	expect(
+		[blinking, both, again].map((scene) => [...scene.screen.blinks.values()].map((blocks) => [...blocks]))
+	).toEqual([
+		[[[TYPED_INTO, { since: 18, seconds: 1.06 }]]],
+		[
+			[
+				[TYPED_INTO, { since: 18, seconds: 1.06 }],
+				[OTHER_TYPED_INTO, { since: 19, seconds: 2 }]
+			]
+		],
+		[
+			[
+				[TYPED_INTO, { since: 20, seconds: 0.5 }],
+				[OTHER_TYPED_INTO, { since: 19, seconds: 2 }]
+			]
+		]
+	]);
+});
+
 test('what a film types into a block of a page of its own stands as far as the typing has come, on whichever face of the window shows the page', async () => {
 	// Two letters, at 0.1 s and 0.2 s: half way through, the first stands typed
 	const front = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
@@ -2045,7 +2076,14 @@ test('what a film types into a block of a page of its own stands as far as the t
 		drawnScreen(halfWay.screen, camera, FULL_HD, true, 0, 0, NOTHING_PAST).shows,
 		drawnScreen({ ...behind.screen, shows: THE_FILMED_PAGE }, camera, FULL_HD, false, 0, 0, NOTHING_PAST).shows.typed
 	]).toEqual([
-		{ kind: 'own', key: expect.any(String), scrolled: 0, typed: [{ into: TYPED_INTO, text: 'l' }], sheet: null },
+		{
+			kind: 'own',
+			key: expect.any(String),
+			scrolled: 0,
+			typed: [{ into: TYPED_INTO, text: 'l' }],
+			blinking: [],
+			sheet: null
+		},
 		[{ into: TYPED_INTO, text: 'l' }]
 	]);
 });

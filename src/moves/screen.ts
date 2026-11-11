@@ -41,6 +41,10 @@
  * take the place of, and an input, which shows its value, not its text; a text area shows its text. A page's document,
  * what stands typed in it and how far that lets it scroll, is another value of the screen's own, set by a typing
  * alone, so a typing shares a step with what the screen shows and how its page runs, which read it.
+ *
+ * A block of a page of the film's own blinks from a moment, as a terminal's caret: the move sets when the blink began
+ * and how long a blink is, and how clear the block stands is worked out from the moment (`src/props/screen.ts`). Which
+ * blocks blink is a value of the screen's own, so a blink shares a step with what the screen shows, a run and a typing.
  */
 import { A_CURVE, type Ease, FASTEST_SPEED, type Stretch, easeInOutSine, linear } from '../domain/curves.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -102,10 +106,12 @@ import {
 	AT_ITS_TOP,
 	A_SLANT,
 	type Back,
+	type Blink,
 	CUT_AT_THE_SCREEN,
 	DRAWN_TO_ITS_DOCUMENT,
 	type Fade,
 	type Knot,
+	NO_BLOCK_BLINKING,
 	NO_SECONDS,
 	type OwnDocument,
 	type Reach,
@@ -188,6 +194,11 @@ export interface ScrollToScript {
 /** The block of a page of its own a film types `into`, by its CSS selector, the typing's timing, and its keyboard. */
 export interface ScreenTypingScript extends TypingScript {
 	readonly into: string;
+}
+
+/** How long a blink of a block of a page of the film's own is, in `seconds`, and the moment of a play it begins. */
+export interface BlinksScript extends MomentScript {
+	readonly seconds: number;
 }
 
 /** How a page on the window's back is mounted, `upright` as `AN_UPRIGHT` says, and the moment of a play it comes. */
@@ -279,6 +290,14 @@ const A_PAGE_TYPED_INTO: Kind<OwnPageNamed> = new OfForm<OwnPageNamed>(
 	`${OWN_PAGE_SAID}; the filmed page is typed into by page.type`
 );
 const SCREEN_TYPE = 'screen.type';
+// A page a film blinks a block of: one of its own alone, as the filmed page's own motion stays stilled; and the move,
+// as its refusals name it
+const A_PAGE_BLINKED: Kind<OwnPageNamed> = new OfForm<OwnPageNamed>(
+	OWN_PAGE_FORM,
+	`${OWN_PAGE_SAID}; the filmed page's own motion stays stilled`
+);
+const SCREEN_BLINKS = 'screen.blinks';
+const BLINKS_FORM: Form<BlinksScript> = { seconds: needed(SOME_SECONDS), ...MOMENT_FORM };
 // What a typing refused for its block names in its place: a span of text alone, beside the caret, as the promo's input
 // is written
 const NAME_A_SPAN = 'name a span of text alone, as <span id="typed"></span> beside <span class="caret"></span>';
@@ -300,8 +319,8 @@ const FADES_ALONG: Ease = easeInOutSine;
 const SHOWS = 'screen.shows';
 const SHOWS_FADE = "screen.shows' fade";
 // The screen's values a move that raises or lowers it sets, one that changes what it shows, one that fades into what
-// it shows, a sweep, one that changes what the window's back shows, one that runs a page of the film's own, and one
-// that types into one
+// it shows, a sweep, one that changes what the window's back shows, one that runs a page of the film's own, one that
+// types into one, and one that blinks a block of one
 const HOW_FAR_UP = ['shown'] as const satisfies readonly (keyof Screen)[];
 const SHOWING = ['shows'] as const satisfies readonly (keyof Screen)[];
 const FADING_INTO = ['shows', 'fade'] as const satisfies readonly (keyof Screen)[];
@@ -309,6 +328,7 @@ const SWEEPING = ['sweep'] as const satisfies readonly (keyof Screen)[];
 const BACKING = ['back'] as const satisfies readonly (keyof Screen)[];
 const RUNNING = ['scrolls'] as const satisfies readonly (keyof Screen)[];
 const TYPING = ['documents'] as const satisfies readonly (keyof Screen)[];
+const BLINKING = ['blinks'] as const satisfies readonly (keyof Screen)[];
 const SWEEP_FORM: Form<SweepScript> = {
 	round: A_TARGET,
 	from: A_FRAME_SIDE,
@@ -611,6 +631,45 @@ function documentSet(scene: Scene, key: string, ownDocument: OwnDocument): Scene
 	return withProp(scene, 'screen', {
 		...scene.screen,
 		documents: new Map([...scene.screen.documents, [key, ownDocument]])
+	});
+}
+
+/**
+ * A block of a page of the film's own, `{ html }`, by its CSS selector, blinking a blink every so many `seconds` from
+ * the move's moment, at once or at the moment of a play `within: { start }` names, until the film blinks it again:
+ * whole as it begins, it fades out on a cosine to none half a blink on and back, as a terminal's caret blinks. It
+ * blinks whichever face of the window shows the page, or none; a selector the page lacks is refused as it begins.
+ */
+export function blinks(page: OwnPageNamed, into: string, script: BlinksScript): Move {
+	assertKind(page, A_PAGE_BLINKED, "screen.blinks's page");
+	assertKind(into, A_SELECTOR, "screen.blinks's block");
+	assertWritten(script, BLINKS_FORM, SCREEN_BLINKS);
+	const own = ownPageOf(page.html, ON_THE_SCREEN_ALONE);
+	return {
+		part: 'screen',
+		valueNames: BLINKING,
+		timing: momentTimingOf(script),
+		ownPages: [own],
+		begin: (beginning) => blinking(beginning, own.key, into, script.seconds)
+	};
+}
+
+/**
+ * A block of a page of the film's own, by the page's key, blinking from the moment its move begins: found as the move
+ * begins as the stage finds it in each exposure's copy, so a selector the page lacks is refused then.
+ */
+async function blinking(beginning: Beginning, key: string, into: string, seconds: number): Promise<Change> {
+	await (await beginning.ownPage(key)).holdingOf(into);
+	const blink: Blink = { since: beginning.stretch.moment, seconds };
+	return (scene) => blinkSet(scene, key, into, blink);
+}
+
+/** A block of a page of the film's own, by the page's key, blinking so, the page's other blocks as they blink. */
+function blinkSet(scene: Scene, key: string, into: string, blink: Blink): Scene {
+	const blocks = scene.screen.blinks.get(key) ?? NO_BLOCK_BLINKING;
+	return withProp(scene, 'screen', {
+		...scene.screen,
+		blinks: new Map([...scene.screen.blinks, [key, new Map([...blocks, [into, blink]])]])
 	});
 }
 

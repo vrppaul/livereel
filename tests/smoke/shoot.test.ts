@@ -396,7 +396,7 @@ test("a block of a page of the film's own is measured where its copy was last st
 	const tall = ownPageOf(TALL_OWN_PAGE.html, false);
 	const setting = { ...filmOf([]), ownPages: [tall], pictures: NO_PICTURES, framesHanded: SCALED };
 	await using opened = await new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER).open(setting, liveAt(PAGE), 1);
-	await opened.ownPages.stand({ key: tall.key, scrolled: 1500, typed: [] });
+	await opened.ownPages.stand({ key: tall.key, scrolled: 1500, typed: [], blinking: [] });
 	expect((await opened.ownPages.laid.get(tall.key)!.box('#far', 1)).top).toBe(500);
 });
 

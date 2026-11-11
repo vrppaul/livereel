@@ -652,7 +652,12 @@ test("a move begun while a page of the film's own runs reads it stood as it stan
 	];
 	const ownPage = ownPageRead(new PageOfBoxes(PAGE));
 	await takeShowingOwnPage(new FootageOf([4]), stage, new PageOfBoxes(PAGE), ownPage, UNBLURRED).run(steps);
-	expect(ownPage.stood.at(-1)).toEqual({ key: pageKeyOf(OWN_PAGE.html), scrolled: expect.closeTo(40), typed: [] });
+	expect(ownPage.stood.at(-1)).toEqual({
+		key: pageKeyOf(OWN_PAGE.html),
+		scrolled: expect.closeTo(40),
+		typed: [],
+		blinking: []
+	});
 });
 
 test("a piece lifted holding its picture while a page of the film's own runs has the stage hold a picture of that page, stood as it stands at the move's moment", async () => {
@@ -666,7 +671,7 @@ test("a piece lifted holding its picture while a page of the film's own runs has
 	];
 	const ownPage = ownPageRead(new PageOfBoxes(PAGE));
 	await takeShowingOwnPage(new FootageOf([3]), stage, new PageOfBoxes(PAGE), ownPage, UNBLURRED).run(steps);
-	const standing = { key: pageKeyOf(OWN_PAGE.html), scrolled: expect.closeTo(30), typed: [] };
+	const standing = { key: pageKeyOf(OWN_PAGE.html), scrolled: expect.closeTo(30), typed: [], blinking: [] };
 	expect([stage.held.map((asked) => asked.page), ownPage.stood.at(-1)]).toEqual([['own'], standing]);
 });
 

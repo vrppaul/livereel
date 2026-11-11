@@ -43,7 +43,7 @@ async function copyLaid(page) {
 function pageStood(standing) {
 	const stood = copyOf(standing.key);
 	for (const copy of COPIES.values()) copy.toggleAttribute(STOOD, copy === stood);
-	window.ownPage.pageWritten(stood, standing.typed, standing.scrolled);
+	window.ownPage.pageWritten(stood, standing, standing.scrolled);
 }
 
 /** The copy of a page of the film's own, by its key. @param {string} key */

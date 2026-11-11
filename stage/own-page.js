@@ -11,7 +11,7 @@
  * stay in it too, and eslint refuses a name at its top (`eslint.config.js`).
  */
 /** @import { OwnPage } from '../src/direction/page.ts' */
-/** @import { TypedText } from '../src/domain/typing.ts' */
+/** @import { OwnPageStanding } from '../src/domain/own-page.ts' */
 /** @import { OwnPageApi } from '../src/adapters/browser/own-pages.ts' */
 
 {
@@ -48,23 +48,31 @@
 	}
 
 	/**
-	 * A frame's page with what the film typed into its blocks written, then scrolled so far down, at once, whatever
-	 * scroll the page's own styles ask for, as a text typed may lengthen it; the film runs it, never the page.
-	 * @param {HTMLIFrameElement} frame @param {readonly TypedText[]} typed @param {number} top
+	 * A frame's page with what the film typed into its blocks written and each block it blinks as clear as it stands,
+	 * then scrolled so far down, at once, whatever scroll the page's own styles ask for, as a text typed may lengthen
+	 * it; the film runs it, never the page. How clear a block stands is set on the block itself, as no stylesheet of
+	 * the stage's reaches into a page of the film's own.
+	 * @param {HTMLIFrameElement} frame @param {Pick<OwnPageStanding, 'typed' | 'blinking'>} standing
+	 * @param {number} top
 	 */
-	function pageWritten(frame, typed, top) {
+	function pageWritten(frame, standing, top) {
 		const laid = documentOf(frame);
-		for (const text of typed) typedBlockOf(laid, text.into).textContent = text.text;
+		for (const text of standing.typed) blockOf(laid, text.into).textContent = text.text;
+		for (const block of standing.blinking) blockOf(laid, block.into).style.opacity = String(block.clear);
 		(laid.scrollingElement ?? laid.documentElement).scrollTo({ top, behavior: AT_ONCE });
 	}
 
 	/**
-	 * The block of a page of the film's own a film types into, the first its CSS selector matches, which the move
-	 * measured as it began. @param {Document} laid @param {string} into
+	 * The block of a page of the film's own a film types into or blinks, the first its CSS selector matches, which the
+	 * move found as it began: an element of the page's own window, as the frame's page is a world of its own.
+	 * @param {Document} laid @param {string} into @returns {HTMLElement}
 	 */
-	function typedBlockOf(laid, into) {
+	function blockOf(laid, into) {
 		const block = laid.querySelector(into);
-		if (block === null) throw new Error(`the film's own page holds no ${into} to type into`);
+		const pagesWindow = laid.defaultView;
+		if (pagesWindow === null || !(block instanceof pagesWindow.HTMLElement)) {
+			throw new Error(`the film's own page holds no element ${into}`);
+		}
 		return block;
 	}
 

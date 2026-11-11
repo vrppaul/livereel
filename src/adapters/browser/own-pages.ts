@@ -17,7 +17,6 @@
 import type { Browser as Playwright, CDPSession, Frame, Page } from 'playwright-core';
 import { FilmError } from '../../domain/errors.ts';
 import type { OwnPageStanding } from '../../domain/own-page.ts';
-import type { TypedText } from '../../domain/typing.ts';
 import type { MeasuredPage, OwnPage } from '../../direction/page.ts';
 import type { OwnPages, Setting } from '../../studio/ports.ts';
 import { PlaywrightPage } from './page.ts';
@@ -44,8 +43,15 @@ export interface OwnPageApi {
 	 * loaded and its fonts are ready.
 	 */
 	readonly frameLaid: (page: OwnPage, lay: (frame: HTMLIFrameElement) => void) => Promise<HTMLIFrameElement>;
-	/** A frame's page with what the film typed into its blocks written, then scrolled so far down, at once. */
-	readonly pageWritten: (frame: HTMLIFrameElement, typed: readonly TypedText[], top: number) => void;
+	/**
+	 * A frame's page with what the film typed into its blocks written and each block it blinks as clear as it stands,
+	 * then scrolled so far down, at once.
+	 */
+	readonly pageWritten: (
+		frame: HTMLIFrameElement,
+		standing: Pick<OwnPageStanding, 'typed' | 'blinking'>,
+		top: number
+	) => void;
 	/** The document a frame's page holds. */
 	readonly documentOf: (frame: HTMLIFrameElement) => Document;
 }

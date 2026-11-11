@@ -14,6 +14,7 @@ import {
 	type Sweep,
 	drawnScreen,
 	drawnSweep,
+	ownPageStanding,
 	pastTheScreen
 } from '../../src/props/screen.ts';
 import { cameraOf, drawn, openingScene } from '../../src/scene.ts';
@@ -263,6 +264,20 @@ test("a line of the agent's work leads with its tool, and the thinking line with
 	expect(early[1]?.lead).not.toBe(later[1]?.lead);
 });
 
+test("a block of a page of the film's own that blinks stands whole as its blink begins, fades out on a cosine to none half its seconds on, and comes back whole a blink on", () => {
+	const card: Screen = {
+		...SCREEN_UP,
+		documents: new Map([['card', { typed: new Map(), scrollLength: 0 }]]),
+		blinks: new Map([['card', new Map([['.caret', { since: 18, seconds: 1.06 }]])]])
+	};
+	expect([18, 18.265, 18.53, 19.06].map((moment) => ownPageStanding(card, 'card', moment).blinking)).toEqual([
+		[{ into: '.caret', clear: 1 }],
+		[{ into: '.caret', clear: expect.closeTo(0.5) }],
+		[{ into: '.caret', clear: 0 }],
+		[{ into: '.caret', clear: 1 }]
+	]);
+});
+
 test('the caret blinks with the moment', () => {
 	const terminal = openTerminal('A terminal');
 	expect([drawnTerminal(terminal, 0).caret, drawnTerminal(terminal, 0.5).caret]).toEqual([true, false]);
@@ -400,9 +415,9 @@ test("the screen shows the page on the window's back where the eye sees the wind
 		drawnScreen(bare, camera, SMALL, SEES_THE_BACK, PANE_CORNER, AT_THE_START, NOTHING_PAST)
 	];
 	expect(drawn.map((screen) => [screen.shows, screen.backUpright])).toEqual([
-		[{ kind: 'own', key: 'behind', scrolled: 0, typed: [], sheet: null }, 'over'],
-		[{ kind: 'own', key: 'front', scrolled: 0, typed: [], sheet: null }, null],
-		[{ kind: 'own', key: 'front', scrolled: 0, typed: [], sheet: null }, null]
+		[{ kind: 'own', key: 'behind', scrolled: 0, typed: [], blinking: [], sheet: null }, 'over'],
+		[{ kind: 'own', key: 'front', scrolled: 0, typed: [], blinking: [], sheet: null }, null],
+		[{ kind: 'own', key: 'front', scrolled: 0, typed: [], blinking: [], sheet: null }, null]
 	]);
 });
 
@@ -420,8 +435,8 @@ test("a page of the film's own keeps its run whichever face of the window shows 
 		drawnScreen(both, camera, SMALL, SEES_THE_FRONT, PANE_CORNER, 2, NOTHING_PAST).shows,
 		drawnScreen(both, camera, SMALL, SEES_THE_BACK, PANE_CORNER, 2, NOTHING_PAST).shows
 	]).toEqual([
-		{ kind: 'own', key: 'page', scrolled: 60, typed: [], sheet: null },
-		{ kind: 'own', key: 'page', scrolled: 60, typed: [], sheet: null }
+		{ kind: 'own', key: 'page', scrolled: 60, typed: [], blinking: [], sheet: null },
+		{ kind: 'own', key: 'page', scrolled: 60, typed: [], blinking: [], sheet: null }
 	]);
 });
 
@@ -489,7 +504,7 @@ test("where the eye sees a page on the window's back, the page in front is drawn
 		drawn({ ...OPENING_AS_LARGE, screen }, turnedOver, AT_THE_START, SCREEN_AS_LARGE, NONE_SHARPER)
 	);
 	expect([drawnPast!.screen.shows, drawnPast!.camera]).toEqual([
-		{ kind: 'own', key: 'behind', scrolled: 0, typed: [], sheet: null },
+		{ kind: 'own', key: 'behind', scrolled: 0, typed: [], blinking: [], sheet: null },
 		drawnCut!.camera
 	]);
 });
@@ -504,6 +519,7 @@ test('what a film typed into a page of its own drawn past its screen is handed w
 		key: 'sheet',
 		scrolled: 100000,
 		typed: [{ into: '#typed', text: 'ls' }],
+		blinking: [],
 		sheet: { ...past, scrolled: 100000 - past!.above }
 	});
 });

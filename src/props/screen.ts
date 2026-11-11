@@ -40,6 +40,11 @@
  * the page wrote there. What stands typed is the page's too, held by its key and the block's selector until the film
  * types into that block again, so it stays as the page is shown on the other face, or not at all.
  *
+ * A film may blink a block of a page of its own, as a terminal blinks its caret: the block fades out and in on a
+ * cosine, a blink so many seconds long, from the moment its move begins. The blink is the page's too, held by its key
+ * and the block's selector until the film blinks that block again, and how clear the block stands is worked out from
+ * the moment, so each exposure draws it as it stood then.
+ *
  * How far a page of the film's own scrolls at most is held once, beside what stands typed in it, by its key: the two
  * are its document as it stands, and text typed may wrap and lengthen it. The take reads it as the stage lays the page,
  * nothing typed; a typing reads it for the text standing typed at each of its strokes as it begins, so it changes on
@@ -86,7 +91,7 @@ import {
 	overlapOf
 } from '../domain/geometry.ts';
 import { A_NUMBER, type Kind, OneOf, Plain } from '../domain/handed.ts';
-import type { OwnPageStanding } from '../domain/own-page.ts';
+import type { BlockBlinking, OwnPageStanding } from '../domain/own-page.ts';
 import { between } from '../domain/toward.ts';
 import type { TypedText } from '../domain/typing.ts';
 
@@ -148,6 +153,15 @@ type DrawnShows =
  * in the order the film first typed into each.
  */
 export type TypedBlocks = ReadonlyMap<string, string>;
+
+/** How a block of a page of the film's own blinks: from a moment of the film, a blink so many seconds long. */
+export interface Blink {
+	readonly since: number;
+	readonly seconds: number;
+}
+
+/** The blocks of a page of the film's own the film blinks, by each block's selector. */
+export type BlinkingBlocks = ReadonlyMap<string, Blink>;
 
 /**
  * A page of the film's own as its document stands: what stands typed in it, and how far it then scrolls at most, in
@@ -292,7 +306,7 @@ interface DrawnFade {
 /**
  * How far the screen has come up, as a film may open on the ground alone, what it shows, the sweep over it, if any,
  * the page it fades from, if any, what the window's back shows, and, by its key, how each page of the film's own the
- * film has run runs and how each page the stage laid stands as a document.
+ * film has run runs, how each page the stage laid stands as a document, and which blocks of each the film blinks.
  */
 export interface Screen {
 	readonly shown: Fraction;
@@ -302,6 +316,7 @@ export interface Screen {
 	readonly back: Back;
 	readonly scrolls: ReadonlyMap<string, Scroll>;
 	readonly documents: ReadonlyMap<string, OwnDocument>;
+	readonly blinks: ReadonlyMap<string, BlinkingBlocks>;
 }
 
 /** Two moments of a frame's time, the earlier first. */
@@ -371,10 +386,13 @@ export const THE_FILMED_PAGE: Shows = { kind: 'filmed' };
 export const CUT_AT_THE_SCREEN: Reach = 'screen';
 export const DRAWN_TO_ITS_DOCUMENT: Reach = 'document';
 export const SEEN_THROUGH: Back = { kind: 'seen through' };
-// No page of the film's own run, each standing at its top; none laid; and nothing typed in a page as the stage lays it
+// No page of the film's own run, each standing at its top; none laid; nothing typed in a page as the stage lays it;
+// and no block of any page, or of one page, blinking
 const NONE_RUN: ReadonlyMap<string, Scroll> = new Map();
 const NONE_LAID: ReadonlyMap<string, OwnDocument> = new Map();
 export const NOTHING_TYPED: TypedBlocks = new Map();
+const NONE_BLINKING: ReadonlyMap<string, BlinkingBlocks> = new Map();
+export const NO_BLOCK_BLINKING: BlinkingBlocks = new Map();
 export const SCREEN_UP: Screen = {
 	shown: WHOLE,
 	shows: THE_FILMED_PAGE,
@@ -382,7 +400,8 @@ export const SCREEN_UP: Screen = {
 	fade: null,
 	back: SEEN_THROUGH,
 	scrolls: NONE_RUN,
-	documents: NONE_LAID
+	documents: NONE_LAID,
+	blinks: NONE_BLINKING
 };
 export const SCREEN_DOWN: Screen = { ...SCREEN_UP, shown: NONE };
 
@@ -432,6 +451,9 @@ const CROSSING_FROM: { readonly [Side in FrameSide]: Point } = {
 };
 const HALVES = 2;
 const DEGREES_IN_A_HALF_TURN = 180;
+// A blink is a whole turn of the cosine a block's clearness follows, in radians; the cosine, from -1 to 1, comes to a
+// clearness from none to whole by adding a whole and halving
+const A_WHOLE_TURN = HALVES * Math.PI;
 // The ways from a disc's middle to the points of its ring its shift is measured by: up, right, down and left
 const RING_WAYS: readonly Point[] = [
 	{ left: 0, top: -1 },
@@ -528,7 +550,24 @@ function ownPageDrawn(screen: Screen, key: string, moment: number, past: PastThe
 
 /** A page of the film's own the stage laid, by its key, as it stands on a screen at a moment. */
 export function ownPageStanding(screen: Screen, key: string, moment: number): OwnPageStanding {
-	return { key, scrolled: standingOn(screen, key, moment).top, typed: typedTextsOf(documentOf(screen, key).typed) };
+	return {
+		key,
+		scrolled: standingOn(screen, key, moment).top,
+		typed: typedTextsOf(documentOf(screen, key).typed),
+		blinking: blinkingAt(screen.blinks.get(key) ?? NO_BLOCK_BLINKING, moment)
+	};
+}
+
+/**
+ * The blocks of a page the film blinks as they stand at a moment: each as clear as a cosine of its blink, whole as the
+ * blink begins and at each blink's end, none half way, fading out and in, as a terminal's caret blinks in the
+ * claude-review promo (`end-card.js` `faceAt`).
+ */
+function blinkingAt(blocks: BlinkingBlocks, moment: number): readonly BlockBlinking[] {
+	return [...blocks].map(([into, blink]) => ({
+		into,
+		clear: fractionOf((WHOLE + Math.cos((A_WHOLE_TURN * (moment - blink.since)) / blink.seconds)) / HALVES)
+	}));
 }
 
 /** Blocks typed into as the stage writes them: each block's selector and its text, in the order first typed into. */

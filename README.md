@@ -258,7 +258,7 @@ and the moves of each part of the scene:
 - `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`, `screen.behind(page, { upright, within })`,
   `screen.shows(page, { reaches, fade: { seconds, ease } })`, `screen.scrolls(page, { pace })`,
   `screen.scrollTo(page, selector, { top, judged })`, `screen.type(page, strokes, { into, keyboard })`,
-  `screen.sweep({ from, slant, round, width, crest })`
+  `screen.blinks(page, selector, { seconds, within })`, `screen.sweep({ from, slant, round, width, crest })`
 - `terminal.open(title, { at, from, enter, edge, inside, group, zIndex, effects })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
   `terminal.lean({ tilt, turn, roll, over, about })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
@@ -962,7 +962,15 @@ text alone, the caret an element beside it, as
 `<span id="typed"></span><span class="caret"></span>`. A `<textarea>`
 shows its text, so it is typed into as a span is.
 `screen.type('filmed', …)` is refused: the filmed page is typed into by
-`page.type`. `screen.sweep()` in a `play` sweeps the picture the screen
+`page.type`. `screen.blinks({ html }, '.caret', { seconds: 1.06 })` blinks
+a block of a page of the film's own, the first its CSS selector matches,
+as a terminal blinks its caret: from the move's moment, or the moment of a
+play `within: { start }` names, the block fades out on a cosine to none
+half a blink on and back to whole, a blink every `seconds`, as the
+claude-review promo's end card blinks its caret, until the film blinks it
+again. It blinks on either face of the window, or on none; a block the
+page lacks is refused as the move begins, and the filmed page, whose own
+motion stays stilled. `screen.sweep()` in a `play` sweeps the picture the screen
 shows away by a band of light, the page as it stands showing behind it: an
 act on the page at a moment of the play, `page.act(action, { within })`, a
 theme turned dark, comes in behind the band. The band crosses what the

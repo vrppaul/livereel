@@ -441,9 +441,9 @@ function sheetLaid(root, sheet) {
 
 /**
  * The page of the film's own the screen shows as the film has it, in the frame that shows it: its frame at the
- * screen's size, or its sheet, where it is laid as one past the screen; what the film typed into its blocks written,
- * then scrolled as far down as the film has run the page, or, a sheet, to where its top stands. Nothing where the
- * screen shows the filmed page.
+ * screen's size, or its sheet, where it is laid as one past the screen; what the film typed into its blocks written and
+ * those it blinks as clear as they stand, then scrolled as far down as the film has run the page, or, a sheet, to where
+ * its top stands. Nothing where the screen shows the filmed page.
  * @param {OwnFrames} ownPages @param {DrawnScene['screen']['shows']} shows
  */
 function ownPageDrawn(ownPages, shows) {
@@ -452,9 +452,9 @@ function ownPageDrawn(ownPages, shows) {
 			return;
 		case 'own':
 			if (shows.sheet === null) {
-				window.ownPage.pageWritten(ownFrame(ownPages.onTheScreen, shows.key), shows.typed, shows.scrolled);
+				window.ownPage.pageWritten(ownFrame(ownPages.onTheScreen, shows.key), shows, shows.scrolled);
 			} else {
-				window.ownPage.pageWritten(ownFrame(ownPages.sheets, shows.key), shows.typed, shows.sheet.scrolled);
+				window.ownPage.pageWritten(ownFrame(ownPages.sheets, shows.key), shows, shows.sheet.scrolled);
 			}
 	}
 }

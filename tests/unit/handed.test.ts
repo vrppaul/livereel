@@ -284,6 +284,14 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => screen.type({ html: '<p>Typed</p>' }, [STROKE], {} as never)).toThrow(
 		new FilmError(`screen.type's into is undefined: it is a selector: a string that names blocks of the page`)
 	);
+	expect(() => screen.blinks('filmed' as never, '.caret', { seconds: 1.06 })).toThrow(
+		new FilmError(
+			`screen.blinks's page is "filmed": it is a page of the film's own, { html }; the filmed page's own motion stays stilled`
+		)
+	);
+	expect(() => screen.blinks({ html: '<p>Blinks</p>' }, '.caret', { seconds: 0 })).toThrow(
+		new FilmError(`screen.blinks's seconds is 0: it is some seconds, more than none`)
+	);
 	expect(() => screen.sweep({ from: 'middle' as never })).toThrow(
 		new FilmError(`screen.sweep's from is "middle": it is a side of the frame: "left", "right", "top" or "bottom"`)
 	);
