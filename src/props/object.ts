@@ -409,6 +409,7 @@ export function focusOn(object: FrameObject, holders: Holders, frame: Size): Foc
 		case 'world':
 		case 'window':
 		case 'page':
+		case 'overThePage':
 			return { kind: 'spot', holder, point, depth: moved.out };
 	}
 }
@@ -544,15 +545,16 @@ function pageFitOf(object: FrameObject, laid: Box, camera: Camera, frame: Size):
 
 /**
  * How much of an object what it stands in lets show, among what stands round it: all of it on the frame, in the world,
- * riding a block's scroll there and beside a point; in the page's window or on the page in it, as much as the screen
- * has come up out of the ground; in a group, as much as the group has not gone. It fades the object whole, and what it shows stands as far along as
- * its own moves have it: words typed stay typed as their key was heard.
+ * riding a block's scroll there or over the page, and beside a point; in the page's window or on the page in it, as much
+ * as the screen has come up out of the ground; in a group, as much as the group has not gone. It fades the object whole,
+ * and what it shows stands as far along as its own moves have it: words typed stay typed as their key was heard.
  */
 function heldIn(object: FrameObject, around: Surroundings): number {
 	switch (object.inside.kind) {
 		case 'frame':
 		case 'world':
 		case 'scroll':
+		case 'overThePage':
 		case 'point':
 			return WHOLLY_HELD;
 		case 'window':

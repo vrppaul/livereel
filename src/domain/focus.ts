@@ -20,8 +20,8 @@
  * stands on the frame, or in a group on it, rides with the eye and stays sharp, as words laid over a film do.
  *
  * Where the eye focuses is placed as each frame is drawn (`Focus` in `src/domain/eye.ts`), at both ends of its way: a
- * spot of the frame, the world, the window or the page placed on that holder's plane as the window, the camera and the
- * eye stand then, as anything placed there is (`src/domain/placement.ts`), so a focus holds on what it was put on while
+ * spot of the frame, the world, the window, the page or over it, placed on that holder's plane as the window, the
+ * camera and the eye stand then, as anything placed there is (`src/domain/placement.ts`), so a focus holds on what it was put on while
  * they move; or under a point of the frame, where the eye's line through that point meets the window's plane as the
  * window stands then (`underTheFrame` in `src/domain/camera.ts`), so the focus stays under the point while the window
  * leans and turns beneath it. A focus going from one to another goes evenly in the reciprocal of its distance, as a

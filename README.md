@@ -666,10 +666,13 @@ off any part of the screen the window's picture holds: an eye moved close
 to a window that reaches past the frame's foot lifts a button it sees
 there, which the eye at rest does not. On the frame, a piece is taken off
 what the camera shows there alone. `piece.onto`
-carries it from the world onto the page where it stands, wherever the eye
-stands and however the window is brought near or rolled, while it lies on
-the window's plane, face-on to the window and at its depth, as what lies
-in the window is drawn flat on it: standing off that plane, it is refused.
+carries it from the world onto a block where it stands, wherever the eye
+stands and however the window is brought near or rolled, and brings it down
+onto the block on its way, from as near the eye and as leant as it stood,
+so a line lifted off a terminal falls onto its row as it travels. It stands
+over the page in the world, on the page's plane as the camera frames the
+page, so it keeps its body and its shadow, and is not cut at the window's
+edge nor faded with the page as what lies in the window is.
 
 A piece lifted `inside: 'world'` rides the scroll of a block of the page where
 the film names the block: `piece.show(TASK, { inside: 'world', rides:

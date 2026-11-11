@@ -273,8 +273,8 @@ function withoutWhatStandsBeside(scene: Scene, name: ObjectName): Scene {
 }
 
 /**
- * Whether what an object stands in stands in a scene: the frame, the world, the window, the page, a block's scroll
- * and a point of the screen always, a group while it stands, a point of an object while the object does.
+ * Whether what an object stands in stands in a scene: the frame, the world, the window, the page and over it, a
+ * block's scroll and a point of the screen always, a group while it stands, a point of an object while the object does.
  */
 function itsHolderStands(scene: Scene, object: FrameObject): boolean {
 	const holder = object.inside;
@@ -287,6 +287,7 @@ function itsHolderStands(scene: Scene, object: FrameObject): boolean {
 		case 'world':
 		case 'window':
 		case 'page':
+		case 'overThePage':
 		case 'scroll':
 			return true;
 	}
