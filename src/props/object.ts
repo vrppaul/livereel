@@ -370,11 +370,12 @@ export function standingInTheWorld(object: FrameObject, holders: Holders, frame:
 /**
  * Where the eye focuses to see an object sharp, its middle where it stands now: at that spot of what it stands in, its
  * box's middle where its stance moves it, brought out by its depth and round the point it turns about, placed as each
- * frame is drawn; in a group, which goes with what stands in it, so far before the eye, as the group rides with it.
+ * frame is drawn; in a group, which goes with what stands in it, or beside a point, so far before the eye, as either
+ * rides with it.
  */
 export function focusOn(object: FrameObject, holders: Holders, frame: Size): Focus {
 	const holder = object.inside;
-	if (holder.kind === 'group') {
+	if (holder.kind === 'group' || holder.kind === 'point') {
 		return { kind: 'distance', distance: distanceOfItsMiddle(placedInItsHolder(object, holders, frame), frame) };
 	}
 	const moved = middleMovedBy(object, object.box);
@@ -418,6 +419,12 @@ function orderInItsGroup(object: FrameObject, around: Surroundings): number {
 /** Whether an object stands in a group of a name. */
 export function standsInGroup(object: FrameObject, group: GroupName): boolean {
 	return object.inside.kind === 'group' && object.inside.name === group;
+}
+
+/** Whether an object stands beside an object of a name, off a point of it. */
+export function standsBeside(object: FrameObject, name: ObjectName): boolean {
+	const holder = object.inside;
+	return holder.kind === 'point' && holder.of.kind === 'object' && holder.of.name === name;
 }
 
 /** Where among objects an object is drawn: where it came, or where the first of its group came. */
@@ -502,15 +509,16 @@ function pageFitOf(object: FrameObject, laid: Box, camera: Camera, frame: Size):
 }
 
 /**
- * How much of an object what it stands in lets show, among what stands round it: all of it on the frame; in the page's
- * window or on the page in it, as much as the screen has come up out of the ground; in a group, as much as the group
- * has not gone. It fades the object whole, and what it shows stands as far along as its own moves have it: words typed
- * stay typed as their key was heard.
+ * How much of an object what it stands in lets show, among what stands round it: all of it on the frame, in the world
+ * and beside a point; in the page's window or on the page in it, as much as the screen has come up out of the ground;
+ * in a group, as much as the group has not gone. It fades the object whole, and what it shows stands as far along as
+ * its own moves have it: words typed stay typed as their key was heard.
  */
 function heldIn(object: FrameObject, around: Surroundings): number {
 	switch (object.inside.kind) {
 		case 'frame':
 		case 'world':
+		case 'point':
 			return WHOLLY_HELD;
 		case 'window':
 		case 'page':

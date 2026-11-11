@@ -8,7 +8,7 @@
  * block as far as their place lets. The line is drawn first, as the words' ground would come up, and the words come up
  * at its end, in the theme's way as the note comes.
  */
-import { type Camera, type SeenBetween, onTheFrame, screenPointShift } from '../domain/camera.ts';
+import { type Camera, type SeenBetween, screenPointShift } from '../domain/camera.ts';
 import {
 	type Box,
 	type FrameSide,
@@ -20,6 +20,7 @@ import {
 	middleY,
 	segmentBetween
 } from '../domain/geometry.ts';
+import { onTheFrame } from '../domain/placement.ts';
 import { type ComingUp, type DrawnWords, type ShownWords, drawnWords } from './words.ts';
 
 /**

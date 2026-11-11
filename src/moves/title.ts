@@ -8,9 +8,30 @@
  * look's; one that sets no size takes, in a place, its size by the width of the place, and its words wrap by it there,
  * so a title moving to a place of another size takes that size as it sets off, where it reads from, and travels whole:
  * its lines change once, where they would break anew on every frame of the way.
+ *
+ * A title stands beside a part instead where the film names one: a block of the page, or an object, a piece lifted off
+ * the page among them. It stands on the frame, as large as its letters are set wherever the eye stands, off a point of
+ * that part's side as the eye sees the point on each frame (`src/domain/placement.ts`), so it rides with the part as the
+ * eye, the window, the camera and the part itself move, as the claude-review promo's lines stand beside its plates and
+ * over its window's words. Its box is a frame wide and high, off that point, its words reading from its near edge and
+ * breaking only where the film breaks them.
  */
-import { type Box, boxOf } from '../domain/geometry.ts';
-import { A_LETTER_SPACING, A_LINE_HEIGHT, A_SIZE, type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { FilmError } from '../domain/errors.ts';
+import { type Box, HALVES, type Point, type Size, boxOf, frameScaleOf } from '../domain/geometry.ts';
+import {
+	A_LETTER_SPACING,
+	A_LINE_HEIGHT,
+	A_NAME,
+	A_PIXELS,
+	A_SHARE,
+	A_SIZE,
+	type Form,
+	OfForm,
+	OneOf,
+	assertKind,
+	assertWritten,
+	needed
+} from '../domain/handed.ts';
 import {
 	AN_ALIGNMENT,
 	A_PLACE,
@@ -20,8 +41,9 @@ import {
 	wordsPlaced,
 	wordsResized
 } from '../domain/place.ts';
-import type { Beginning, Move } from '../direction/move.ts';
-import type { TitleType, TitleWords } from '../props/title.ts';
+import { A_TARGET, type Beginning, type Move, type Target } from '../direction/move.ts';
+import type { ObjectName } from '../props/object.ts';
+import type { TitleType, TitleWords, WordsDown } from '../props/title.ts';
 import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
 import {
 	type Coming,
@@ -32,6 +54,7 @@ import {
 	type NestedScript,
 	type ObjectLeanScript,
 	type PlaceReading,
+	type PointAsked,
 	SHOW_FORM,
 	type ShowScript,
 	type ShownKind,
@@ -40,6 +63,7 @@ import {
 	objectHide,
 	objectLean,
 	objectShow,
+	objectShowBeside,
 	objectTo
 } from './object.ts';
 import {
@@ -66,15 +90,45 @@ import {
  * named; the side it slides in `from`, past the frame's edge, rather than coming up in its place, or the way it comes
  * up there, `enter`; how its words come up there, `words`, the theme's way where none is named; which title it is,
  * `as`; and what it stands `inside`, the page's window, its place then a box in the window's shares, or the `group` it
- * stands in.
+ * stands in. Or the part it stands `beside`, in place of a place and of what it stands in, reading from that part.
  */
 export interface TitleScript extends ShowScript, NestedScript {
 	readonly at?: Place;
+	readonly beside?: BesideScript;
 	readonly align?: Alignment;
 	readonly size?: number;
 	readonly letterSpacing?: number;
 	readonly lineHeight?: number;
 	readonly words?: WordsScript;
+}
+
+/**
+ * A part a title stands beside, as a film writes it: the block a selector matches, or a box of the screen, `part`, or
+ * an object by its name, `object`; the `side` of it its words stand on, its right or its top; how far `along` that
+ * side the point they stand off lies, a share of it from its top or its left, its middle where none is named; and how
+ * far off that point they stand, `gap`, in pixels of a frame 1080 on its shorter side.
+ */
+interface BesideScript {
+	readonly part?: Target;
+	readonly object?: ObjectName;
+	readonly side: BesideSide;
+	readonly along?: number;
+	readonly gap: number;
+}
+
+const BESIDE_SIDES = ['right', 'top'] as const;
+
+type BesideSide = (typeof BESIDE_SIDES)[number];
+
+/**
+ * How words stand on a side of a part: the point of the part's box they stand off, in shares of it, by how far along
+ * that side it lies; their box, in the frame's pixels from that point, a frame wide and high, by how far off the point
+ * they stand; and where they stand down their box.
+ */
+interface StandingBeside {
+	readonly pointAlong: (along: number) => Point;
+	readonly boxOff: (gap: number, frame: Size) => Box;
+	readonly down: WordsDown;
 }
 
 /** How a title goes: as an object goes, and how many of its words are on their way at once, `words`, where they go in place. */
@@ -95,8 +149,19 @@ interface Setting {
 }
 
 const TITLE = 'title' satisfies ShownKind;
+const A_BESIDE: OfForm<BesideScript> = new OfForm<BesideScript>(
+	{
+		part: A_TARGET,
+		object: A_NAME,
+		side: needed(new OneOf(BESIDE_SIDES, 'the side of a part words stand on: "right" or "top"')),
+		along: A_SHARE,
+		gap: needed(A_PIXELS)
+	},
+	'a part to stand beside: { part, side, along, gap }, a selector or a box of the screen, or { object, side, along, gap }, an object by its name'
+);
 const TITLE_FORM: Form<TitleScript> = {
 	at: A_PLACE,
+	beside: A_BESIDE,
 	align: AN_ALIGNMENT,
 	size: A_SIZE,
 	letterSpacing: A_LETTER_SPACING,
@@ -113,12 +178,36 @@ const TITLE_SHOW = 'title.show';
 const TITLE_HIDE = 'title.hide';
 // A title reads a place as words do, and sets off toward one as `settingOff` has it
 const TITLE_READING: PlaceReading<typeof TITLE> = { placed: wordsPlaced, settingOff };
+// Words beside a part read from it; the point they stand off lies the middle of its side where the film names none;
+// the right side's points lie at the box's right edge, the top's at its top edge; words over a part read from the
+// point, at none across from it
+const READ_FROM_THE_PART: Alignment = 'start';
+const MIDDLE_OF_THE_SIDE = 0.5;
+const AT_ITS_RIGHT = 1;
+const AT_ITS_TOP = 0;
+const FROM_THE_POINT = 0;
+// Words to a part's right read from `gap` right of the point, their middle level with it; words over its top read
+// from the point, their foot `gap` above it
+const STANDING_BESIDE: { readonly [Side in BesideSide]: StandingBeside } = {
+	right: {
+		pointAlong: (along) => ({ left: AT_ITS_RIGHT, top: along }),
+		boxOff: (gap, frame) => ({ left: gap, top: -frame.height / HALVES, ...frame }),
+		down: 'middle'
+	},
+	top: {
+		pointAlong: (along) => ({ left: along, top: AT_ITS_TOP }),
+		boxOff: (gap, frame) => ({ left: FROM_THE_POINT, top: -gap - frame.height, ...frame }),
+		down: 'foot'
+	}
+};
+// Words in a place, or over the whole frame, stand in the middle of their box down it
+const IN_THE_MIDDLE: WordsDown = 'middle';
 
 /**
  * A title coming up, its words in the way the film names, typed by a person where it has them typed, each key heard,
  * or in the theme's; over the whole frame its ground first, or in its place; or whole, in a way of livereel's or from
  * past a side of the frame where the film names one, naming no way for its words; words that come up in place come up
- * at an even pace unless the film names a curve.
+ * at an even pace unless the film names a curve. Beside a part, it comes up off the part's point in the same ways.
  */
 export function show(text: Wording, script: TitleScript = {}): Move {
 	assertKind(text, A_WORDING, "title.show's text");
@@ -132,10 +221,59 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 		lineHeight: script.lineHeight ?? null
 	};
 	const setting: Setting = { said, place: script.at ?? null, align: script.align ?? null, type, coming };
-	const showing = objectShow(TITLE, TITLE_SHOW, script, setting.place, WORDS_COME_AND_GO_ON, (beginning) =>
-		titleComing(setting, beginning)
-	);
+	const beside = script.beside;
+	const showing =
+		beside === undefined
+			? objectShow(TITLE, TITLE_SHOW, script, setting.place, WORDS_COME_AND_GO_ON, (beginning) =>
+					titleComing(setting, beginning)
+				)
+			: objectShowBeside(TITLE, TITLE_SHOW, script, pointAskedBy(script, beside), WORDS_COME_AND_GO_ON, (beginning) =>
+					titleBeside(setting, beside, beginning)
+				);
 	return { ...showing, sounds: coming.sounds };
+}
+
+/**
+ * The point of a part a title stands beside asks for, by the side its words stand on and how far along it; refused
+ * where the script names a place, what it stands in or how it reads as well, each of which the part sets, or names
+ * both a part of the page and an object, or neither.
+ */
+function pointAskedBy(script: TitleScript, beside: BesideScript): PointAsked {
+	if (script.at !== undefined || script.inside !== undefined || script.group !== undefined) {
+		throw new FilmError(
+			`${TITLE_SHOW} stands a title beside a part, on the frame off it: name no place, window, world or group as well`
+		);
+	}
+	if (script.align !== undefined) {
+		throw new FilmError(`${TITLE_SHOW} reads a title beside a part from that part: name no align`);
+	}
+	const share = STANDING_BESIDE[beside.side].pointAlong(beside.along ?? MIDDLE_OF_THE_SIDE);
+	const { part, object } = beside;
+	if (part !== undefined && object === undefined) return { kind: 'part', target: part, share };
+	if (object !== undefined && part === undefined) return { kind: 'object', name: object, share };
+	throw new FilmError(`${TITLE_SHOW}'s beside names one part to stand beside: a part of the page, or an object`);
+}
+
+/**
+ * A title's words and their box beside a part as their move begins: reading from the part, a frame wide and high off
+ * the point they stand off, in the frame's pixels, so far off it as the film names in pixels of a frame 1080 on its
+ * shorter side.
+ */
+function titleBeside(setting: Setting, beside: BesideScript, beginning: Beginning): Coming {
+	const { said, type } = setting;
+	const standing = STANDING_BESIDE[beside.side];
+	const comingUp = comingUpAt(setting.coming, said, beginning.scene.look);
+	const frame = beginning.format.frame;
+	const words: TitleWords = {
+		kind: TITLE,
+		...said,
+		...type,
+		align: READ_FROM_THE_PART,
+		down: standing.down,
+		onGround: false,
+		comingUp
+	};
+	return { content: words, box: standing.boxOff(beside.gap * frameScaleOf(frame), frame) };
 }
 
 /**
@@ -187,11 +325,11 @@ function titleComing(setting: Setting, beginning: Beginning): Coming {
 	const format = beginning.format;
 	if (place === null) {
 		const align = setting.align ?? OVER_THE_WHOLE;
-		const card: TitleWords = { kind: TITLE, ...said, ...type, align, onGround: true, comingUp };
+		const card: TitleWords = { kind: TITLE, ...said, ...type, align, down: IN_THE_MIDDLE, onGround: true, comingUp };
 		return { content: card, box: boxOf(format.frame) };
 	}
 	const align = setting.align ?? alignmentIn(format, place);
-	const placed: TitleWords = { kind: TITLE, ...said, ...type, align, onGround: false, comingUp };
+	const placed: TitleWords = { kind: TITLE, ...said, ...type, align, down: IN_THE_MIDDLE, onGround: false, comingUp };
 	return { content: placed, box: TITLE_READING.placed(format, place, placed) };
 }
 

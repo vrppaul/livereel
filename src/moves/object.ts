@@ -45,9 +45,11 @@ import {
 	BOX_SPACE,
 	type Box,
 	type FrameSide,
+	type Point,
 	type Size,
 	boxToward,
-	measuredFrom
+	measuredFrom,
+	pointAt
 } from '../domain/geometry.ts';
 import {
 	A_COLOUR,
@@ -100,6 +102,7 @@ import {
 	type TimingScript,
 	objectPart,
 	shownBox,
+	shownPart,
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
@@ -126,7 +129,7 @@ import {
 	framesPastTheEdge
 } from '../props/object.ts';
 import { OWN_WAY, type Way } from '../props/way.ts';
-import { type Scene, cameraOf, withEye, withLeaving, withObject, withProp } from '../scene.ts';
+import { type Scene, cameraOf, holdersIn, withEye, withLeaving, withObject, withProp } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
 import { cameraFrontOn } from './source.ts';
 import { type ThroughScript, throughFormOf, throughWritten } from './through.ts';
@@ -228,7 +231,18 @@ interface MeltScript {
 	readonly share: number;
 }
 
-/** What an object comes up showing, and the box of the frame it comes up in. */
+/**
+ * A point of a part a film names an object to stand beside, as a move reads it as it begins: of the blocks a selector
+ * matches, or a box of the screen, or of an object by its name, in shares of its box.
+ */
+export type PointAsked =
+	| { readonly kind: 'part'; readonly target: Target; readonly share: Point }
+	| { readonly kind: 'object'; readonly name: ObjectName; readonly share: Point };
+
+/**
+ * What an object comes up showing, and the box it comes up in: of the frame, or, beside a point, in the frame's pixels
+ * from the point.
+ */
 export interface Coming {
 	readonly content: Content;
 	readonly box: Box;
@@ -303,6 +317,8 @@ const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
 const BACK = [...CARRIED, ...LEANT] as const satisfies readonly (keyof FrameObject)[];
 // A box measured in a group stands as large as on the frame, as the group it is measured for stands as it was placed
 const AS_LARGE = 1;
+// What stands beside a point stands in no place of the frame: it stands off the point
+const OFF_ITS_POINT = null;
 
 /**
  * The curve what a kind shows comes up on in its own way, where the film names none, for a kind whose module reads how
@@ -378,26 +394,89 @@ export function objectShow(
 	ownCurve: Ease | null,
 	comingAt: (beginning: Beginning) => Coming | Promise<Coming>
 ): Move {
-	const name = script.as ?? kind;
 	const holder = holderNamed(script, move);
 	refusePlacedInside(holder, place, `${move}'s at`);
+	if (script.from !== undefined && holder.kind === 'group') {
+		throw new FilmError(
+			`${move} slides nothing in from a side into a group: an object in a group comes up in its place`
+		);
+	}
+	return objectComing(kind, move, script, place, ownCurve, () => holder, comingAt);
+}
+
+/**
+ * An object of a kind coming up beside a point of a part, as `objectShow` brings one, standing off that point as the
+ * eye sees it on the frame, wherever the part goes: the point read as the move begins, of the block a selector matches
+ * as the screen shows it then, or of an object standing, which is refused where none of its name stands, or where it
+ * is the object coming up.
+ */
+export function objectShowBeside(
+	kind: ShownKind,
+	move: string,
+	script: ShowScript,
+	beside: PointAsked,
+	ownCurve: Ease | null,
+	comingAt: (beginning: Beginning) => Coming | Promise<Coming>
+): Move {
+	const name = script.as ?? kind;
+	if (beside.kind === 'object' && beside.name === name) {
+		throw new FilmError(`${move} stands the ${name} beside itself: name another object`);
+	}
+	return objectComing(
+		kind,
+		move,
+		script,
+		OFF_ITS_POINT,
+		ownCurve,
+		(beginning) => pointHeld(beginning, beside, move),
+		comingAt
+	);
+}
+
+/**
+ * An object of a kind coming up in what `holderAt` names as the move begins, its way and curve as `objectShow` has
+ * them.
+ */
+function objectComing(
+	kind: ShownKind,
+	move: string,
+	script: ShowScript,
+	place: Place | null,
+	ownCurve: Ease | null,
+	holderAt: (beginning: Beginning) => Holder | Promise<Holder>,
+	comingAt: (beginning: Beginning) => Coming | Promise<Coming>
+): Move {
+	const name = script.as ?? kind;
 	const from = script.from ?? null;
 	const way = wayOf(script.enter, script.edge, move);
 	if (from !== null && way.kind !== OWN_WAY.kind) {
 		throw new FilmError(`${move} comes up in its place in a way, or slides in from a side: not both`);
-	}
-	if (from !== null && holder.kind === 'group') {
-		throw new FilmError(
-			`${move} slides nothing in from a side into a group: an object in a group comes up in its place`
-		);
 	}
 	const curve = from === null && way.kind === OWN_WAY.kind ? ownCurve : THE_STEPS_CURVE;
 	return {
 		part: objectPart(name),
 		timing: timingOf(curve === null ? script : { ease: curve, ...script }),
 		places: placesNamed(`${move}'s at`, place),
-		begin: (beginning) => appearingIn(beginning, name, holder, { from, way }, comingAt, move)
+		begin: async (beginning) => appearingIn(beginning, name, await holderAt(beginning), { from, way }, comingAt, move)
 	};
+}
+
+/**
+ * The point beside which an object stands, as a move begins: of the block a selector matches, or of a box of the
+ * screen, as the screen shows it then, in the screen's pixels; or of an object of a name, which is refused where none
+ * stands.
+ */
+async function pointHeld(beginning: Beginning, asked: PointAsked, move: string): Promise<Holder> {
+	switch (asked.kind) {
+		case 'part': {
+			const part = await shownPart(beginning, asked.target, THE_FIRST, move);
+			return { kind: 'point', of: { kind: 'screen', at: pointAt(part, asked.share) } };
+		}
+		case 'object':
+			// Found, or refused where none of its name stands
+			standing(beginning, asked.name, move);
+			return { kind: 'point', of: { kind: 'object', name: asked.name, share: asked.share } };
+	}
 }
 
 /**
@@ -582,9 +661,9 @@ export function objectOnto(kind: ShownKind, move: string, target: Target, script
 	};
 }
 
-/** What objects stand in as a move begins: the camera as the scene shows it, and the groups standing. */
+/** What objects stand in as a move begins: the camera as the scene shows it, the groups and the objects standing. */
 export function holdersAsTheyStand(beginning: Beginning): Holders {
-	return { camera: cameraOf(beginning.scene, beginning.format), groups: beginning.scene.groups };
+	return holdersIn(beginning.scene, cameraOf(beginning.scene, beginning.format));
 }
 
 /** An object as a move finds it as it begins, whatever it shows; one not on the screen is refused, the move named. */
@@ -614,9 +693,9 @@ function shows<Kind extends ShownKind>(object: FrameObject, kind: Kind): object 
 }
 
 /**
- * A move's beginning as what stands in a holder sees it: on the frame, on the page or in a group, which read the
- * frame's places, as it is; inside the page's window, its frame the window's box as it stands, so a box in shares of
- * the frame reads as one in shares of the window.
+ * A move's beginning as what stands in a holder sees it: on the frame, on the page, in a group or beside a point,
+ * which read the frame's places, as it is; inside the page's window, its frame the window's box as it stands, so a box
+ * in shares of the frame reads as one in shares of the window.
  */
 function seenFrom(beginning: Beginning, holder: Holder): Beginning {
 	switch (holder.kind) {
@@ -624,6 +703,7 @@ function seenFrom(beginning: Beginning, holder: Holder): Beginning {
 		case 'world':
 		case 'page':
 		case 'group':
+		case 'point':
 			return beginning;
 		case 'window': {
 			const box = viewOf(beginning.scene.window).box;
@@ -650,6 +730,7 @@ function readFrom(beginning: Beginning, holder: Holder): Beginning {
 		case 'window':
 		case 'page':
 		case 'group':
+		case 'point':
 			return beginning;
 	}
 }
@@ -658,13 +739,14 @@ function readFrom(beginning: Beginning, holder: Holder): Beginning {
  * A box a move works out as what stands in a holder sees it, as a box in what the holder measures in, for the object
  * of a name: as it is on the frame and inside the window; on the page, where the camera shows it on the screen as the
  * move begins, the window facing the frame front on; in a group, measured from the group's corner, where it stands once
- * the group stands as it was placed.
+ * the group stands as it was placed. Beside a point, a box is worked out off the point alone, so it stands as it is.
  */
 function measuredIn(beginning: Beginning, holder: Holder, box: Box, name: ObjectName, move: string): Box {
 	switch (holder.kind) {
 		case 'frame':
 		case 'world':
 		case 'window':
+		case 'point':
 			return box;
 		case 'page': {
 			const camera = cameraFrontOn(beginning, `${move} measures the ${name} on the page`);
@@ -680,8 +762,8 @@ function measuredIn(beginning: Beginning, holder: Holder, box: Box, name: Object
  * standing on the frame and lying flat, where the camera shows its box, as it stands; standing in the world, where it
  * stands there, carried into the page's plane, while it lies on that plane. One leant or near the eye on the frame is
  * refused, as it would lie flat at once; one in the world standing off the page's plane, as neither stage draws what
- * lies in the window off its plane (TODO.md); and one inside the window or in a group, as it goes with what it stands
- * in.
+ * lies in the window off its plane (TODO.md); and one inside the window, in a group or beside a point, as it goes with
+ * what it stands in.
  */
 function onThePage(beginning: Beginning, object: FrameObject, name: ObjectName, move: string): Placement {
 	switch (object.inside.kind) {
@@ -700,6 +782,8 @@ function onThePage(beginning: Beginning, object: FrameObject, name: ObjectName, 
 			throw new FilmError(`${move} would carry the ${name} out of the window onto the page: it stands in the window`);
 		case 'group':
 			throw new FilmError(`${move} would carry the ${name} out of its group onto the page: it goes with its group`);
+		case 'point':
+			throw new FilmError(`${move} would carry the ${name} onto the page: it stands beside a part, and goes with it`);
 	}
 }
 
@@ -725,11 +809,17 @@ function stanceOf(object: FrameObject): Stance {
 
 /**
  * Refuses a place inside the page's window that is not a box in its shares, where a move names one: every name of a
- * place, and every split, is the frame's.
+ * place, and every split, is the frame's; and any place for what stands beside a point, which stands off the point.
  */
 function refusePlacedInside(holder: Holder, place: Place | null, where: string): void {
-	if (holder.kind === 'window' && place !== null && !readsInAnyBox(place)) {
+	if (place === null) return;
+	if (holder.kind === 'window' && !readsInAnyBox(place)) {
 		throw new FilmError(`${where} inside the window is a box in the window's shares, { left, top, width, height }`);
+	}
+	if (holder.kind === 'point') {
+		throw new FilmError(
+			`${where} is a place of the frame, and what stands beside a part stands off it: hide it, and show it at the place`
+		);
 	}
 }
 
@@ -1019,7 +1109,7 @@ function leaning(
 
 /**
  * Where what an object stands in lays it flat on the window's plane, as a refusal says it: inside the window, or on the
- * page in it; none where it stands on the frame or in a group, free to lean and come near.
+ * page in it; none where it stands on the frame, in a group or beside a point, free to lean and come near.
  */
 function flatOnTheWindowSaid(holder: Holder): string | null {
 	switch (holder.kind) {
@@ -1030,6 +1120,7 @@ function flatOnTheWindowSaid(holder: Holder): string | null {
 		case 'frame':
 		case 'world':
 		case 'group':
+		case 'point':
 			return null;
 	}
 }

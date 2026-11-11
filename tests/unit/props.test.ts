@@ -31,7 +31,8 @@ import {
 import { easeOutCubic } from '../../src/domain/curves.ts';
 import { type Keystroke, lettersOf } from '../../src/domain/typing.ts';
 import { FOCAL_LENGTH, SMALL } from './fakes.ts';
-import { type Camera, onTheFrame, wholeView } from '../../src/domain/camera.ts';
+import { type Camera, wholeView } from '../../src/domain/camera.ts';
+import { onTheFrame } from '../../src/domain/placement.ts';
 import { eyeAtRest } from '../../src/domain/eye.ts';
 import type { Format } from '../../src/domain/format.ts';
 import { FACE_ON } from '../../src/domain/stance.ts';

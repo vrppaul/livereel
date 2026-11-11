@@ -16,11 +16,12 @@
  * worked out as the stage draws it (`.camera` in `stage/stage.css`, and the view by where it is placed in the world,
  * `src/domain/placement.ts`): the screen carried by its focus to the view's middle and brought close, the view
  * standing about its middle as it stands, and seen from the eye before the frame's middle, a nearer point larger. Where
- * a point of it is seen on the frame is `pointOnTheFrame` there; how far it moves on the frame is worked out here.
+ * a point of it is seen on the frame is `pointOnTheFrame` there, a point of the screen `onTheFrame`; how far it moves on
+ * the frame is worked out here.
  */
 import { type Eye, type Viewpoint, eyeAtRest, isAtRest, sightOf } from './eye.ts';
 import type { Format } from './format.ts';
-import { boxInTheView, frameZoomOf, pointInTheView } from './framing.ts';
+import { boxInTheView, frameZoomOf } from './framing.ts';
 import { type Fraction, NONE, WHOLE } from './fraction.ts';
 import {
 	type Box,
@@ -57,7 +58,7 @@ import {
 	translation,
 	wayBetween
 } from './matrix.ts';
-import { middleInTheRoom, pointOnTheFrame, windowInTheWorld } from './placement.ts';
+import { middleInTheRoom, onTheFrame, pointOnTheFrame, windowInTheWorld } from './placement.ts';
 import {
 	AS_PLACED,
 	type Stance,
@@ -610,14 +611,6 @@ export function screenBoxShift(seen: SeenBetween, start: Box, end: Box): number 
 	return Math.max(
 		...CORNER_SHARES.map((corner) => screenPointShift(seen, pointAt(start, corner), pointAt(end, corner)))
 	);
-}
-
-/**
- * Where a point of the screen stands on the frame from a camera: where the camera frames it in its view, carried as the
- * window stands and seen from the eye.
- */
-export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
-	return pointOnTheFrame(windowInTheWorld(camera.view, camera.eye, frame), pointInTheView(camera, frame, point));
 }
 
 /**

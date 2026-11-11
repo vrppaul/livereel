@@ -5,15 +5,17 @@
  *
  * Every holder is a plane: the frame, which rides with the eye and is seen as from where it rests; the world, which the
  * eye moves past; the page's window, a placement in the world, in its box's own pixels; the page in it, the window's
- * plane with a box of the screen framed onto it as the camera frames the page; and a group of objects, a placement on
- * the frame, in its box's pixels from its corner. Something placed on a plane stands about its box's middle as the
- * plane's stance carries it there and as its own stance does. The flat stage lays it in the frame, seen from the eye
- * in perspective about its box's middle, or, on the window's plane, in the window, by those stances alone, as the
- * window's element carries what is laid in it; the room reads where it stands in the eye's own space. Where a point of
- * anything placed is seen on the frame is one function, `pointOnTheFrame`, which the motion blur, a lens, a note, the
- * pins and a piece's lines read through the camera's module or the object's. Something carried from one holder into
- * another, a piece from the world onto the page or an object joining a leant group, is placed there where it stood by
- * one function too, `carriedInto`.
+ * plane with a box of the screen framed onto it as the camera frames the page; a group of objects, a placement on the
+ * frame, in its box's pixels from its corner; and a point of the screen or of an object, the frame's plane in its
+ * pixels from where the eye sees that point on each frame, which words beside a part stand on. Something placed on a
+ * plane stands about its box's middle as the plane's stance carries it there and as its own stance does. The flat
+ * stage lays it in the frame, seen from the eye in perspective about its box's middle, or, on the window's plane, in
+ * the window, by those stances alone, as the window's element carries what is laid in it; the room reads where it
+ * stands in the eye's own space. Where a point of anything placed is seen on the frame is one function,
+ * `pointOnTheFrame`, which the motion blur, a lens, a note, the pins and a piece's lines read through the camera's
+ * module or the object's, and a point of the screen `onTheFrame`. Something carried from one holder into another, a
+ * piece from the world onto the page or an object joining a leant group, is placed there where it stood by one function
+ * too, `carriedInto`.
  *
  * The camera's module builds on this one, as it reads where the window stands; this one reads of the camera only how
  * it frames the page in its view (`src/domain/framing.ts`), and holds the arithmetic of a box about its middle on the
@@ -25,7 +27,7 @@
  */
 import type { Camera, View } from './camera.ts';
 import { type Eye, eyeAtRest, inTheEyesSpace, seenByTheEye, turnOf } from './eye.ts';
-import { boxInTheView, boxOfTheScreenIn } from './framing.ts';
+import { boxInTheView, boxOfTheScreenIn, pointInTheView } from './framing.ts';
 import {
 	type Box,
 	HALVES,
@@ -35,7 +37,8 @@ import {
 	boxOf,
 	middleX,
 	middleY,
-	placedFrom
+	placedFrom,
+	pointAt
 } from './geometry.ts';
 import {
 	ITS_MIDDLE,
@@ -72,12 +75,28 @@ export interface Placement extends Stance {
 export type GroupName = string;
 
 /**
- * What a placement is read in: one that lasts the whole film, or a group of objects by its name, with the zIndex of
- * what stands in it there, how high it is drawn among the others of the group, where the film names one; a group goes
- * with what stands in it.
+ * What a placement is read in: one that lasts the whole film; a group of objects by its name, with the zIndex of what
+ * stands in it there, how high it is drawn among the others of the group, where the film names one, a group going with
+ * what stands in it; or a point of something that stands in the world, where the eye sees it on the frame as each
+ * frame is drawn, which words beside a part stand off.
  */
 export type Holder =
-	LastingHolder | { readonly kind: 'group'; readonly name: GroupName; readonly zIndex: number | null };
+	| LastingHolder
+	| { readonly kind: 'group'; readonly name: GroupName; readonly zIndex: number | null }
+	| { readonly kind: 'point'; readonly of: PointOf };
+
+/**
+ * A point of something that stands in the world: of the page's screen, in its pixels, or of an object by its name, in
+ * shares of its box, wherever it stands and however it moves.
+ */
+type PointOf =
+	| { readonly kind: 'screen'; readonly at: Point }
+	| { readonly kind: 'object'; readonly name: string; readonly share: Point };
+
+/** Where something stands that a holder can be read off: its placement, and what it stands in. */
+interface HeldPlacement extends Placement {
+	readonly inside: Holder;
+}
 
 /**
  * What a placement is read in that lasts the whole film, its plane worked out from the camera alone: the frame, which
@@ -96,12 +115,13 @@ type LaidIn = { readonly kind: 'frame' } | { readonly kind: 'window'; readonly w
 type Rider = 'eye' | 'world';
 
 /**
- * What holders are read off as a frame is drawn: the camera, which shows the window and frames the page in it, and
- * where each group standing stands.
+ * What holders are read off as a frame is drawn: the camera, which shows the window and frames the page in it, where
+ * each group standing stands, and where each object standing stands, by its name.
  */
 export interface Holders {
 	readonly camera: Camera;
 	readonly groups: ReadonlyMap<GroupName, Placement>;
+	readonly objects: ReadonlyMap<string, HeldPlacement>;
 }
 
 /** How a box of a holder is read on its plane: in the plane's own pixels, or, on the page, framed by the camera there. */
@@ -168,9 +188,11 @@ export const ON_THE_PAGE: LastingHolder = { kind: 'page' };
 // How far out of its own plane a spot of a box's plane stands
 export const ON_ITS_PLANE = 0;
 
-// A box read on its plane as it is; and something laid in the frame
+// A box read on its plane as it is; something laid in the frame; and the size of a point's box, whose corner is the
+// point, as a box on its plane is measured from that
 const AS_IT_IS: Measure = { kind: 'asItIs' };
 const IN_THE_FRAME: LaidIn = { kind: 'frame' };
+const NO_SIZE: Size = { width: 0, height: 0 };
 // Two things laid in the order they come; and how much farther from the eye one plane may stand than another, in the
 // frame's pixels, while the two are taken as one plane, and how far two planes' facings may stand apart, as a sine,
 // while they are taken to face alike: arithmetic leaves under a millionth of a pixel and 1e-12
@@ -182,11 +204,51 @@ const FACING_ALIKE_WITHIN = 1e-9;
 const A_UNIT_OUT: Spot = { across: 0, down: 0, out: 1 };
 const TURNED_AWAY = 0;
 
-/** The plane of a holder, as the holders stand: a group's, the frame's carried by the group's box and stance. */
+/**
+ * The plane of a holder, as the holders stand: a group's, the frame's carried by the group's box and stance; a point's,
+ * the frame's, its corner where the eye sees the point now, so what stands off it rides with the eye and goes with the
+ * point as the point moves on the frame.
+ */
 export function planeOf(holder: Holder, holders: Holders, frame: Size): Plane {
-	if (holder.kind !== 'group') return lastingPlaneOf(holder, holders.camera, frame);
-	const group = groupNamed(holders.groups, holder.name);
-	return { ...lastingPlaneOf(ON_THE_FRAME, holders.camera, frame), box: group.box, stance: group };
+	switch (holder.kind) {
+		case 'group': {
+			const group = groupNamed(holders.groups, holder.name);
+			return { ...lastingPlaneOf(ON_THE_FRAME, holders.camera, frame), box: group.box, stance: group };
+		}
+		case 'point': {
+			const corner = pointSeenOnTheFrame(holder.of, holders, frame);
+			return { ...lastingPlaneOf(ON_THE_FRAME, holders.camera, frame), box: { ...corner, ...NO_SIZE } };
+		}
+		case 'frame':
+		case 'world':
+		case 'window':
+		case 'page':
+			return lastingPlaneOf(holder, holders.camera, frame);
+	}
+}
+
+/**
+ * Where the eye sees a point of something that stands in the world on the frame, as the holders stand: a point of the
+ * screen as the camera shows it; a point of an object where it is drawn, as it stands in what it stands in.
+ */
+function pointSeenOnTheFrame(point: PointOf, holders: Holders, frame: Size): Point {
+	switch (point.kind) {
+		case 'screen':
+			return onTheFrame(holders.camera, frame, point.at);
+		case 'object': {
+			const object = objectNamed(holders.objects, point.name);
+			const standing = placed(object, planeOf(object.inside, holders, frame), frame);
+			return pointOnTheFrame(standing, pointAt(boxOf(standing.laid), point.share));
+		}
+	}
+}
+
+/**
+ * Where a point of the screen stands on the frame from a camera: where the camera frames it in its view, carried as the
+ * window stands and seen from the eye.
+ */
+export function onTheFrame(camera: Camera, frame: Size, point: Point): Point {
+	return pointOnTheFrame(windowInTheWorld(camera.view, camera.eye, frame), pointInTheView(camera, frame, point));
 }
 
 /** The plane of a holder that lasts the whole film, as the camera shows the page and its eye sees. */
@@ -479,4 +541,11 @@ export function groupNamed<Group extends Placement>(groups: ReadonlyMap<GroupNam
 	const group = groups.get(name);
 	if (group === undefined) throw new Error(`an object stands in the group "${name}", which is gone`);
 	return group;
+}
+
+/** The object of a name something stands beside: none is gone while anything stands beside it, as it goes with it. */
+function objectNamed(objects: ReadonlyMap<string, HeldPlacement>, name: string): HeldPlacement {
+	const object = objects.get(name);
+	if (object === undefined) throw new Error(`an object stands beside the ${name}, which is gone`);
+	return object;
 }

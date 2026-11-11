@@ -68,6 +68,7 @@ import {
 	pictureHeldBy,
 	pictureZoomOf,
 	standingInTheWorld,
+	standsBeside,
 	standsInGroup
 } from './props/object.ts';
 import type { PartAsked, SharperPicture } from './domain/picture.ts';
@@ -234,21 +235,41 @@ export function withPageSpeed(scene: Scene, pageSpeed: number): Scene {
 }
 
 /**
- * The scene with an object of a name set where it stands, or coming last where none of its name stood; none, gone. One
- * set in a group gone is gone with it, as a group takes what stands in it: a move of it running on as its group goes,
- * or one bringing it into a group going, sets nothing once the group is gone, whichever move began first.
+ * The scene with an object of a name set where it stands, or coming last where none of its name stood; none, gone,
+ * and what stands beside it gone with it. One set in a group gone, or beside an object gone, is gone with it, as a
+ * group takes what stands in it: a move of it running on as its group goes, or one bringing it into a group going,
+ * sets nothing once the group is gone, whichever move began first.
  */
 export function withObject(scene: Scene, name: ObjectName, object: FrameObject | null): Scene {
 	const held = object === null || itsHolderStands(scene, object) ? object : null;
-	return { ...scene, objects: withNamed(scene.objects, name, held) };
+	const set = { ...scene, objects: withNamed(scene.objects, name, held) };
+	return held === null ? withoutWhatStandsBeside(set, name) : set;
+}
+
+/** The scene with every object standing beside an object of a name gone, and what stands beside each of those. */
+function withoutWhatStandsBeside(scene: Scene, name: ObjectName): Scene {
+	return [...scene.objects]
+		.filter(([, object]) => standsBeside(object, name))
+		.reduce((without, [besideName]) => withObject(without, besideName, null), scene);
 }
 
 /**
- * Whether what an object stands in stands in a scene: the frame, the window and the page always, a group while it
- * stands.
+ * Whether what an object stands in stands in a scene: the frame, the window, the page and a point of the screen
+ * always, a group while it stands, a point of an object while the object does.
  */
 function itsHolderStands(scene: Scene, object: FrameObject): boolean {
-	return object.inside.kind !== 'group' || scene.groups.has(object.inside.name);
+	const holder = object.inside;
+	switch (holder.kind) {
+		case 'group':
+			return scene.groups.has(holder.name);
+		case 'point':
+			return holder.of.kind === 'screen' || scene.objects.has(holder.of.name);
+		case 'frame':
+		case 'world':
+		case 'window':
+		case 'page':
+			return true;
+	}
 }
 
 /** The scene with the object pushed off by one of its name set as it goes; none, once it is past the edge. */
@@ -260,11 +281,10 @@ export function withLeaving(scene: Scene, name: ObjectName, object: FrameObject 
 export function withGroup(scene: Scene, name: GroupName, group: Group | null): Scene {
 	const groups = withNamed(scene.groups, name, group);
 	if (group !== null) return { ...scene, groups };
-	return {
-		...scene,
-		groups,
-		objects: new Map([...scene.objects].filter(([, object]) => !standsInGroup(object, name)))
-	};
+	const groupGone: Scene = { ...scene, groups };
+	return [...scene.objects]
+		.filter(([, object]) => standsInGroup(object, name))
+		.reduce((without, [inIt]) => withObject(without, inIt, null), groupGone);
 }
 
 function withNamed<Value>(values: ReadonlyMap<string, Value>, name: string, value: Value | null): Map<string, Value> {
@@ -288,7 +308,7 @@ export function cameraOf(scene: Scene, format: Format): Camera {
  * is taken as sharp.
  */
 export function pictureZoomsIn(scene: Scene, camera: Camera, frame: Size): readonly number[] {
-	const holders: Holders = { camera, groups: scene.groups };
+	const holders = holdersIn(scene, camera);
 	return [...scene.objects.values(), ...scene.leaving.values()]
 		.map((object) => pictureZoomOf(object, holders, frame))
 		.filter((zoom) => zoom !== null);
@@ -300,10 +320,15 @@ export function pictureZoomsIn(scene: Scene, camera: Camera, frame: Size): reado
  * on a frame of a size.
  */
 export function partsAskedSharperIn(scene: Scene, camera: Camera, frame: Size): readonly PartAsked[] {
-	const holders: Holders = { camera, groups: scene.groups };
+	const holders = holdersIn(scene, camera);
 	return [...scene.objects.values(), ...scene.leaving.values()].flatMap((object) =>
 		partAskedSharper(object, holders, frame)
 	);
+}
+
+/** What the objects of a scene stand in, seen by a camera: it, the groups standing and the objects standing. */
+export function holdersIn(scene: Scene, camera: Camera): Holders {
+	return { camera, groups: scene.groups, objects: scene.objects };
 }
 
 /** The numbers of the pictures the pieces in a scene hold, standing or pushed off, and the one its screen's sweep holds. */
@@ -429,7 +454,7 @@ function objectShifts(
 
 /** An object as it stood at a moment of a frame's time, in the scene then. */
 function objectThen(object: FrameObject, seen: SceneSeen): ObjectThen {
-	return { object, holders: { camera: seen.camera, groups: seen.scene.groups }, look: seen.scene.look };
+	return { object, holders: holdersIn(seen.scene, seen.camera), look: seen.scene.look };
 }
 
 /**
@@ -461,6 +486,7 @@ export function drawn(
 		frame: format.frame,
 		camera,
 		groups: scene.groups,
+		objects: scene.objects,
 		holes,
 		sharpness,
 		sharper
@@ -498,7 +524,7 @@ export function drawn(
 			scene.pins !== null ||
 			[...objects, ...leaving].some((object) => object.standsIn === 'window'),
 		holes,
-		lines: drawnLines(everyObject, camera, scene.groups, format.frame),
+		lines: drawnLines(everyObject, around, format.frame),
 		eye: drawnEye(camera.eye, format.frame, lensLawOf(sharpness))
 	};
 }

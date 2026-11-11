@@ -977,6 +977,7 @@ body {
 	);
 	--words-in-from-sides: 0px;
 	--room-before-words: 0;
+	--words-down-their-box: 0.5;
 }
 
 .title[data-on-ground] {
@@ -986,6 +987,11 @@ body {
 
 .title[data-align='center'] {
 	--room-before-words: auto;
+}
+
+/* Words over a part stand their foot at their box's foot (`data-words-down`), so it stands as far above the part as the film names, however many lines they take */
+.title[data-words-down='foot'] {
+	--words-down-their-box: 1;
 }
 
 /* A title card's ground is its own, over its box: the card is a sheet that slides, travels and leans, so its glow and layers go with it, where the ending card, which only slides in, stands on the frame's */
@@ -1002,16 +1008,16 @@ body {
 	inset: 0;
 }
 
-/* The words stand in the middle of their box down it, as wide as their one line, or as wide as their box where they break into more, which CSS lays out no narrower. A word is never broken: one too long for its line runs past the box, the words standing as wide as it. The box is in the frame's pixels, and what an object shows in pixels of a frame the stage's look was made on */
+/* The words stand in the middle of their box down it, or at its foot, as far down it as they stand down themselves, as wide as their one line, or as wide as their box where they break into more, which CSS lays out no narrower. A word is never broken: one too long for its line runs past the box, the words standing as wide as it. The box is in the frame's pixels, and what an object shows in pixels of a frame the stage's look was made on */
 .title .way {
 	position: absolute;
 	left: var(--words-in-from-sides);
 	right: var(--words-in-from-sides);
-	top: calc(var(--content-height) / 2);
+	top: calc(var(--content-height) * var(--words-down-their-box));
 	width: fit-content;
 	margin-left: var(--room-before-words);
 	margin-right: auto;
-	translate: 0 -50%;
+	translate: 0 calc(-100% * var(--words-down-their-box));
 	font: var(--title-weight) var(--words-size) / var(--title-own-line-height, var(--title-line-height)) var(--sans);
 }
 

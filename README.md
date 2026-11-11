@@ -212,7 +212,7 @@ and the moves of each part of the scene:
 - `keys.show(caps, { enter, edge })`, `keys.hide({ leave, edge })`
 - `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { at, align, size, letterSpacing, lineHeight, from, enter, edge, words, as, inside, group, zIndex })`,
+- `title.show(text, { at, beside, align, size, letterSpacing, lineHeight, from, enter, edge, words, as, inside, group, zIndex })`,
   `title.to(place, { scale, depth })`, `title.lean({ tilt, turn, roll, over, about })`, `title.hide({ toward, leave, edge, words })`
 - `code.show(text, { at, from, enter, edge, longLines, as, inside, group, zIndex })`,
   `code.to(place, { scale, depth })`, `code.lean({ tilt, turn, roll, over, about })`, `code.light(line, { through })`,
@@ -369,6 +369,31 @@ title, a caption, a callout or a note, and in any run of its words:
 `title.show('each step:\nwhy, then the code', { at })` stands on two lines
 wherever the place's width would have broken it. In a room, a title standing in the world is cut where its
 words run past its box farther than a pane's shadow reaches.
+
+A title stands `beside` a part in place of a place: a block of the page,
+`part`, a selector or a box of the screen, or an object a film names,
+`object`, a piece lifted off the page among them. It stands on the frame,
+its letters as large wherever the eye stands, off a point of that part as
+the eye sees it on each frame, so it goes with the part as the eye, the
+window, the camera and the part itself move. To the part's `right`, its
+words read from `gap` pixels of a 1080 frame right of the point, their
+middle level with it; over its `top`, they read from the point, their foot
+`gap` above it. The point lies `along` that side, a share of it from its
+top or left, its middle where none is named. The claude-review promo's
+lines beside its plates, and the line over its agent's words:
+
+```ts
+title.show('what you asked', { beside: { object: 'task', side: 'right', gap: 70 }, size: 66 }),
+title.show('each step:\nwhy, then the code', { beside: { object: 'step', side: 'right', along: 0.3, gap: 70 } }),
+title.show('ask it anything', { beside: { part: '[data-testid=agent-words]', side: 'top', along: 0, gap: 24 }, size: 88 }),
+```
+
+A block is read as the move begins, what the screen shows of it, as a
+callout's is. Words beside an object go with it, as what stands in a group
+goes with the group. Its box is a frame wide and high off the point, so its
+words break only where the film breaks them; it names no `at`, `inside`,
+`group` or `align`, and `title.to` carries it to no place: hide it and show
+it anew.
 
 A title's or a caption's words come up in the way `words` names, the
 theme's where it names none:

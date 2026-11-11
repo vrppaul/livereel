@@ -1,7 +1,7 @@
 import { CubicBezierCurve3, Vector3 } from 'three';
 import { expect, test } from 'vitest';
 import { AS_PLACED, FACE_ON } from '../../src/domain/stance.ts';
-import { type Camera, onTheFrame, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
+import { type Camera, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
 import { type EyePlace, type Focus, eyeAtRest } from '../../src/domain/eye.ts';
 import * as eye from '../../src/moves/eye.ts';
 import { easeOutCubic, linear } from '../../src/domain/curves.ts';
@@ -67,7 +67,13 @@ import {
 	outOfFocusAt,
 	sharpnessOf
 } from '../../src/domain/focus.ts';
-import { IN_THE_WINDOW, ON_THE_PAGE, pointOnTheFrame, windowInTheWorld } from '../../src/domain/placement.ts';
+import {
+	IN_THE_WINDOW,
+	ON_THE_PAGE,
+	onTheFrame,
+	pointOnTheFrame,
+	windowInTheWorld
+} from '../../src/domain/placement.ts';
 import type { Piece } from '../../src/props/piece.ts';
 import { SCREEN_UP, THE_FILMED_PAGE, drawnScreen, pastTheScreen } from '../../src/props/screen.ts';
 import type { DrawnWindow } from '../../src/props/window.ts';
@@ -81,6 +87,7 @@ import * as thing from '../../src/moves/thing.ts';
 import * as title from '../../src/moves/title.ts';
 import * as world from '../../src/moves/world.ts';
 import type { DrawnThing } from '../../src/props/thing.ts';
+import type { DrawnTitleWords } from '../../src/props/title.ts';
 import { drawnLighting } from '../../src/props/lighting.ts';
 import { ITS_MIDDLE, type Matrix, type Spot, carried, chained } from '../../src/domain/matrix.ts';
 import { LIVEREELS_SLAB } from '../../src/props/body.ts';
@@ -111,6 +118,7 @@ import {
 	cameraOf,
 	drawn,
 	frameShiftBetween,
+	holdersIn,
 	openingScene,
 	partsAskedSharperIn,
 	pictureZoomsIn,
@@ -200,6 +208,7 @@ const NOTHING_AROUND: Surroundings = {
 	frame: SMALL.frame,
 	camera: cameraOf(OPENING_IN_SMALL, SMALL),
 	groups: new Map(),
+	objects: new Map(),
 	holes: [],
 	sharpness: ALL_SHARP,
 	sharper: []
@@ -275,6 +284,7 @@ const AROUND_IN_FULL_HD: Surroundings = {
 	frame: FULL_HD.frame,
 	camera: cameraOf(OPENING_IN_FULL_HD, FULL_HD),
 	groups: new Map(),
+	objects: new Map(),
 	holes: [],
 	sharpness: ALL_SHARP,
 	sharper: []
@@ -425,7 +435,7 @@ function drawnObjectsIn(scene: Scene, format: Format): readonly DrawnObject[] {
 
 /** Where the middle of an object of a scene shot in the small format is drawn on the frame. */
 function drawnMiddleOf(scene: Scene, name: string): Point {
-	const holders = { camera: cameraOf(scene, SMALL), groups: scene.groups };
+	const holders = holdersIn(scene, cameraOf(scene, SMALL));
 	return drawnOnTheFrame(scene.objects.get(name)!, holders, SMALL.frame, BOX_MIDDLE);
 }
 
@@ -1286,7 +1296,7 @@ test("a piece in the world is carried onto the page only lying on the page's pla
 
 /** Where the corners of the piece of a scene shot full HD are drawn on the frame. */
 function cornersDrawnIn(scene: Scene): readonly Point[] {
-	const holders = { camera: cameraOf(scene, FULL_HD), groups: scene.groups };
+	const holders = holdersIn(scene, cameraOf(scene, FULL_HD));
 	return CORNER_SHARES.map((corner) => drawnOnTheFrame(scene.objects.get('piece')!, holders, FULL_HD.frame, corner));
 }
 
@@ -2026,7 +2036,7 @@ test('an object joins a group as it comes, standing in it where it stands on the
 
 /** Where the corners of the code of a scene shot in the small format are drawn on the frame. */
 function codesCornersDrawnIn(scene: Scene): readonly Point[] {
-	const holders = { camera: cameraOf(scene, SMALL), groups: scene.groups };
+	const holders = holdersIn(scene, cameraOf(scene, SMALL));
 	return CORNER_SHARES.map((corner) => drawnOnTheFrame(scene.objects.get('code')!, holders, SMALL.frame, corner));
 }
 
@@ -4065,7 +4075,7 @@ function drawnOverItsSource(scene: Scene): boolean {
 	const camera = cameraOf(scene, FULL_HD);
 	const lifted = scene.objects.get('piece')!;
 	const source = (lifted.content as Piece).source;
-	const drawnMiddle = drawnOnTheFrame(lifted, { camera, groups: scene.groups }, FULL_HD.frame, BOX_MIDDLE);
+	const drawnMiddle = drawnOnTheFrame(lifted, holdersIn(scene, camera), FULL_HD.frame, BOX_MIDDLE);
 	const sourcesMiddle = onTheFrame(camera, FULL_HD.frame, { left: middleX(source), top: middleY(source) });
 	return distanceBetween(drawnMiddle, sourcesMiddle) < HALF_A_PIXEL;
 }
@@ -4217,7 +4227,7 @@ function windowsPointOf(scene: Scene, share: Point): Point {
 
 /** Where a point of an object of a scene shot in the small format, in shares of its box, is drawn on the frame. */
 function drawnPointOf(scene: Scene, name: string, share: Point): Point {
-	const holders = { camera: cameraOf(scene, SMALL), groups: scene.groups };
+	const holders = holdersIn(scene, cameraOf(scene, SMALL));
 	return drawnOnTheFrame(scene.objects.get(name)!, holders, SMALL.frame, share);
 }
 
@@ -4322,4 +4332,109 @@ test('a piece in the world rolled about its foot, carried onto the page, stands 
 		closeToMatrix(drawnObjectsIn(rolled, FULL_HD)[0]!.inTheEyesSpace),
 		FOOT_MIDDLE
 	]);
+});
+
+// Words beside a part: to an object's right, the point a fifth down its right side, 70 pixels of a 1080 frame off it,
+// their middle at the left of their box; over a block's top, its left corner, 30 off it, their foot at their box's
+const BESIDE_THE_PIECE = { object: 'piece', side: 'right', along: 0.2, gap: 70 } as const;
+const THE_PIECES_POINT: Point = { left: 1, top: 0.2 };
+const WORDS_READ_FROM: Point = { left: 0, top: 0.5 };
+const OVER_THE_CARD = { part: '#card', side: 'top', along: 0, gap: 30 } as const;
+const WORDS_FOOT_FROM: Point = { left: 0, top: 1 };
+
+/** Where a point of an object of a scene shot full HD, in shares of its box, is drawn on the frame. */
+function drawnPointInFullHd(scene: Scene, name: string, share: Point): Point {
+	return drawnOnTheFrame(scene.objects.get(name)!, holdersIn(scene, cameraOf(scene, FULL_HD)), FULL_HD.frame, share);
+}
+
+/** A point of the frame moved across and down by so many pixels. */
+function movedBy(point: Point, across: number, down: number): Point {
+	return { left: point.left + across, top: point.top + down };
+}
+
+test("a title beside an object stands on the frame, reading from so far right of the point of the object's right side the film names, level with it, as the object is lifted toward the eye and the eye moves", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { inside: 'world' }), wide, 1, FULL_HD);
+	const beside = await setIn(title.show('what you asked', { beside: BESIDE_THE_PIECE }), lifted, 1, FULL_HD);
+	const raised = await setIn(piece.effects({ depth: 100 }), beside, 1, FULL_HD);
+	const aside = await setIn(eye.to(EYE_ASIDE), raised, 1, FULL_HD);
+	const scenes = [beside, raised, aside];
+	expect([
+		...scenes.map((scene) => drawnPointInFullHd(scene, 'title', WORDS_READ_FROM)),
+		drawnObjectsIn(aside, FULL_HD)[1]!.standsIn
+	]).toEqual([
+		...scenes.map((scene) => closeToPoint(movedBy(drawnPointInFullHd(scene, 'piece', THE_PIECES_POINT), 70, 0))),
+		'frame'
+	]);
+});
+
+test("a title over a block of the page stands its foot so far above the block's top, reading from its corner, as the camera shows the block wherever the window and the eye stand", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const over = await setIn(title.show('asked here', { beside: OVER_THE_CARD }), wide, 1, FULL_HD);
+	const near = await setIn(windowTo(MIDDLE_HALF, { depth: 100 }), over, 1, FULL_HD);
+	const aside = await setIn(eye.to(EYE_ASIDE), near, 1, FULL_HD);
+	const scenes = [over, near, aside];
+	const cardsCorner = { left: CARD.left, top: CARD.top };
+	const words = drawnObjectsIn(aside, FULL_HD)[0]!.content as DrawnTitleWords;
+	expect([
+		...scenes.map((scene) => drawnPointInFullHd(scene, 'title', WORDS_FOOT_FROM)),
+		[words.down, words.align]
+	]).toEqual([
+		...scenes.map((scene) =>
+			closeToPoint(movedBy(onTheFrame(cameraOf(scene, FULL_HD), FULL_HD.frame, cardsCorner), 0, -30))
+		),
+		['foot', 'start']
+	]);
+});
+
+test('a title beside an object goes with it, and with the group it stands in', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { inside: 'world' }), wide, 1, FULL_HD);
+	const beside = await setIn(title.show('what you asked', { beside: BESIDE_THE_PIECE }), lifted, 1, FULL_HD);
+	const grouped = await setIn(group.show(), wide, 1, FULL_HD);
+	const coded = await setIn(code.show(THREE_LINES, { at: 'left', group: 'group' }), grouped, 1, FULL_HD);
+	const besideCode = await setIn(
+		title.show('lines', { beside: { ...BESIDE_THE_PIECE, object: 'code' } }),
+		coded,
+		1,
+		FULL_HD
+	);
+	expect([
+		[...(await setIn(piece.hide(), beside, 1, FULL_HD)).objects.keys()],
+		[...(await setIn(group.hide(), besideCode, 1, FULL_HD)).objects.keys()]
+	]).toEqual([[], []]);
+});
+
+test('a title beside a part is refused as its move is made where it names a place, what it stands in or how it reads as well, both a part and an object or neither, or itself', () => {
+	const standsElsewhere = new FilmError(
+		'title.show stands a title beside a part, on the frame off it: name no place, window, world or group as well'
+	);
+	const notOnePart = new FilmError(
+		"title.show's beside names one part to stand beside: a part of the page, or an object"
+	);
+	expect(() => title.show('words', { beside: BESIDE_THE_PIECE, at: 'left' })).toThrow(standsElsewhere);
+	expect(() => title.show('words', { beside: BESIDE_THE_PIECE, inside: 'world' })).toThrow(standsElsewhere);
+	expect(() => title.show('words', { beside: BESIDE_THE_PIECE, group: 'group' })).toThrow(standsElsewhere);
+	expect(() => title.show('words', { beside: BESIDE_THE_PIECE, align: 'center' })).toThrow(
+		new FilmError('title.show reads a title beside a part from that part: name no align')
+	);
+	expect(() => title.show('words', { beside: { ...BESIDE_THE_PIECE, part: '#card' } })).toThrow(notOnePart);
+	expect(() => title.show('words', { beside: { side: 'right', gap: 70 } })).toThrow(notOnePart);
+	expect(() => title.show('words', { beside: BESIDE_THE_PIECE, as: 'piece' })).toThrow(
+		new FilmError('title.show stands the piece beside itself: name another object')
+	);
+});
+
+test('a title beside an object none of stands is refused as its move begins, and one standing beside a part is carried to no place', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { inside: 'world' }), wide, 1, FULL_HD);
+	const beside = await setIn(title.show('what you asked', { beside: BESIDE_THE_PIECE }), lifted, 1, FULL_HD);
+	await expect(setIn(title.show('words', { beside: BESIDE_THE_PIECE }), wide, 1, FULL_HD)).rejects.toThrow(
+		new FilmError('title.show finds no piece on the screen')
+	);
+	await expect(setIn(title.to('left'), beside, 1, FULL_HD)).rejects.toThrow(
+		new FilmError(
+			"title.to's place is a place of the frame, and what stands beside a part stands off it: hide it, and show it at the place"
+		)
+	);
 });

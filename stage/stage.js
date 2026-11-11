@@ -67,9 +67,11 @@ const BETWEEN_LINES = '\n';
 // stands on
 const SIDE = 'data-side';
 // The attribute a title's words stand on a ground of their own by, over their object's whole box, rather than in their
-// place on the ground round them, and the one that names how they read there
+// place on the ground round them, the one that names how they read there, and the one that names where they stand down
+// their box, their middle at its middle or their foot at its foot
 const ON_GROUND = 'data-on-ground';
 const ALIGN = 'data-align';
+const WORDS_DOWN = 'data-words-down';
 // The attribute that names how an object, or the page's window, is drawn about its middle, flat or leant, and the one
 // that names the side of an object the eye sees, its front or its back
 const TRANSFORM = 'data-transform';
@@ -1002,6 +1004,7 @@ class TitleWordsDrawer {
 		const title = ofKind(content, 'title');
 		this.element.toggleAttribute(ON_GROUND, title.onGround);
 		named(this.element, ALIGN, title.align);
+		named(this.element, WORDS_DOWN, title.down);
 		givenOrNone(this.element, OWN_SIZE, title.size);
 		givenOrNone(this.element, OWN_LETTER_SPACING, title.letterSpacing);
 		givenOrNone(this.element, OWN_LINE_HEIGHT, title.lineHeight);

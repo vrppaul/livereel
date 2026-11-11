@@ -7,7 +7,6 @@ import {
 	drawnCamera,
 	frameShift,
 	keptOnTheScreen,
-	onTheFrame,
 	onto,
 	underTheFrame,
 	wholePose,
@@ -15,7 +14,7 @@ import {
 	windowView,
 	zoomPicturedFor
 } from '../../src/domain/camera.ts';
-import { inTheEyesSpaceAbout, seenFromTheEye, windowInTheWorld } from '../../src/domain/placement.ts';
+import { inTheEyesSpaceAbout, onTheFrame, seenFromTheEye, windowInTheWorld } from '../../src/domain/placement.ts';
 import { type Eye, eyeAtRest } from '../../src/domain/eye.ts';
 import { type Box, type Format, type Point, type Size, boxOf, distanceBetween } from '../../src/domain/geometry.ts';
 import type { Sharpness } from '../../src/domain/focus.ts';

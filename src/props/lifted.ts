@@ -8,10 +8,9 @@
  * one holds the other, as while the piece stands over its source, nor while the two cross as a bar across a bar, where
  * the outline round both joins them four times. Both come and go with the piece.
  */
-import { type Camera, onTheFrame } from '../domain/camera.ts';
+import type { Camera } from '../domain/camera.ts';
 import { type Box, type Point, type Segment, type Size, segmentBetween } from '../domain/geometry.ts';
-import type { Groups } from './group.ts';
-import type { Holders } from '../domain/placement.ts';
+import { type Holders, onTheFrame } from '../domain/placement.ts';
 import { type FrameObject, type ObjectEntry, type ObjectName, drawnOnTheFrame } from './object.ts';
 import { type DrawnHole, type Piece, figureIn } from './piece.ts';
 import type { Stroke } from './stroke.ts';
@@ -70,17 +69,11 @@ export function drawnHoles(objects: readonly ObjectEntry[]): readonly DrawnHole[
 }
 
 /**
- * The lines the pieces among objects draw to their sources, the page seen by a camera on a frame of a size, among the
- * groups standing; none from a piece while its lines would stand nowhere.
+ * The lines the pieces among objects draw to their sources, on a frame of a size, among the holders as they stand, the
+ * page seen by their camera; none from a piece while its lines would stand nowhere.
  */
-export function drawnLines(
-	objects: readonly ObjectEntry[],
-	camera: Camera,
-	groups: Groups,
-	frame: Size
-): readonly DrawnLines[] {
-	const holders: Holders = { camera, groups };
-	return piecesAmong(objects).flatMap((standing) => linesDrawnBy(standing, camera, holders, frame));
+export function drawnLines(objects: readonly ObjectEntry[], holders: Holders, frame: Size): readonly DrawnLines[] {
+	return piecesAmong(objects).flatMap((standing) => linesDrawnBy(standing, holders, frame));
 }
 
 /** The objects that show a piece of the page, by name. */
@@ -91,25 +84,20 @@ function piecesAmong(objects: readonly ObjectEntry[]): readonly PieceStanding[] 
 }
 
 /** A piece's lines to its source, if it draws them and they stand anywhere now. */
-function linesDrawnBy(standing: PieceStanding, camera: Camera, holders: Holders, frame: Size): readonly DrawnLines[] {
+function linesDrawnBy(standing: PieceStanding, holders: Holders, frame: Size): readonly DrawnLines[] {
 	const { name, object, piece } = standing;
 	if (piece.lines === null) return [];
-	const segments = linesOf(object, piece, camera, holders, frame);
+	const segments = linesOf(object, piece, holders, frame);
 	return segments === null ? [] : [{ name, line: piece.lines, segments, drawn: presentShare(object) }];
 }
 
 /**
- * The two lines from a piece's source, as the camera shows it, to the piece as it is drawn: the edges of the outline
- * round both that join one to the other; none while one holds the other, or the outline joins them more than twice.
+ * The two lines from a piece's source, as the holders' camera shows it, to the piece as it is drawn: the edges of the
+ * outline round both that join one to the other; none while one holds the other, or the outline joins them more than
+ * twice.
  */
-function linesOf(
-	object: FrameObject,
-	piece: Piece,
-	camera: Camera,
-	holders: Holders,
-	frame: Size
-): readonly [Segment, Segment] | null {
-	const source = sourceCorners(piece.source, camera, frame);
+function linesOf(object: FrameObject, piece: Piece, holders: Holders, frame: Size): readonly [Segment, Segment] | null {
+	const source = sourceCorners(piece.source, holders.camera, frame);
 	const drawn = pieceCorners(object, piece, holders, frame);
 	if (holds(source, drawn) || holds(drawn, source)) return null;
 	const corners = [...ownedBy(source, 'source'), ...ownedBy(drawn, 'piece')];

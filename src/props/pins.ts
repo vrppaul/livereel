@@ -4,9 +4,10 @@
  * the camera carries them with the page; each block is read once, as its pin comes. Which way a label runs is worked
  * out every frame from where the camera shows the block, so it runs toward the view's middle and stays on the frame.
  */
-import { type Camera, onTheFrame } from '../domain/camera.ts';
+import type { Camera } from '../domain/camera.ts';
 import type { Fraction } from '../domain/fraction.ts';
 import { type Box, type Size, middleX } from '../domain/geometry.ts';
+import { onTheFrame } from '../domain/placement.ts';
 
 /**
  * The ways a pin's label runs from its mark: left from the block's top left corner, right from its top right one, or,
