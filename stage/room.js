@@ -72,7 +72,7 @@ import {
 	sortedBySeeingThrough
 } from './see-through.js';
 import { Things, isAThing } from './things.js';
-/** @import { DrawnScene, ObjectList } from '../src/scene.ts' */
+/** @import { DrawnScene } from '../src/scene.ts' */
 /** @import { DrawnObject } from '../src/props/object.ts' */
 /** @import { DrawnWindow } from '../src/props/window.ts' */
 /** @import { DrawnBloom } from '../src/props/lighting.ts' */
@@ -82,7 +82,7 @@ import { Things, isAThing } from './things.js';
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { Matrix } from '../src/domain/matrix.ts' */
 /** @import { Box } from '../src/domain/geometry.ts' */
-/** @import { Layout } from '../src/adapters/browser/stage.ts' */
+/** @import { Layout, StageApi, SurfaceApart } from '../src/adapters/browser/stage.ts' */
 /** @import { Object3D, RenderItem } from 'three' */
 /** @import { RoomApi, ThingsLoaded } from '../src/adapters/browser/room.ts' */
 
@@ -104,11 +104,6 @@ import { Things, isAThing } from './things.js';
 /** @type {readonly SurfaceName[]} */
 const SURFACES = ['ground', 'window', 'frame'];
 const SURFACE = 'data-surface';
-// The class every surface takes, the name a surface of markup standing in the world is marked by, and the class of the
-// holder the stage lays its object in
-const SURFACE_CLASS = 'surface';
-const IN_THE_WORLD = 'world';
-const OBJECTS_HOLDER = 'objects';
 // The place none stands at among what stands in the world
 const NOWHERE_LAID = -1;
 // The token of how far past its box anything an object shows draws (`tokens.css`)
@@ -338,55 +333,12 @@ class SurfaceTexture {
 }
 
 /**
- * A surface an object of markup standing in the world is laid in: its element, a child of the room's canvas, which the
- * canvas draws into a texture of its own; the holder of the frame's size the stage lays the object in, so it stands
- * where the frame has it; and the object's list and name.
- * @typedef {{ readonly element: HTMLElement, readonly holder: HTMLElement, readonly list: ObjectList, readonly name: string }} WorldSurface
+ * The room: the canvas each exposure's surfaces are laid in, the stage's and those it lays markup standing in the world
+ * in apart, the world's one scene, and what composes a frame.
  */
-
-/**
- * The surfaces an exposure's markup standing in the world is laid in, one for each object, made as the stage first lays
- * an object in one and let go once a frame lays nothing in it.
- */
-class WorldSurfaces {
-	/** @param {PaintingCanvas} canvas */
-	constructor(canvas) {
-		this.canvas = canvas;
-		/** Each surface, by its object's list and name @type {Map<string, WorldSurface>} */
-		this.surfaces = new Map();
-		/** The surfaces the stage has laid an object in since the frame before @type {Set<WorldSurface>} */
-		this.laid = new Set();
-	}
-
-	/**
-	 * The holder an object of a list and a name is laid in, its surface made the first time.
-	 * @param {ObjectList} list @param {string} name
-	 */
-	holderFor(list, name) {
-		const key = `${list} ${name}`;
-		const surface = this.surfaces.get(key) ?? worldSurfaceIn(this.canvas, list, name);
-		this.surfaces.set(key, surface);
-		this.laid.add(surface);
-		return surface.holder;
-	}
-
-	/** The surfaces the stage laid an object in this frame, the rest let go. @returns {readonly WorldSurface[]} */
-	laidThisFrame() {
-		const laid = [...this.laid];
-		for (const [key, surface] of this.surfaces) {
-			if (this.laid.has(surface)) continue;
-			surface.element.remove();
-			this.surfaces.delete(key);
-		}
-		this.laid.clear();
-		return laid;
-	}
-}
-
-/** The room: the canvas each exposure's surfaces are laid in, the world's one scene, and what composes a frame. */
 class Room {
-	/** @param {Layout} layout @param {Things} things @param {WorldLighting} lighting */
-	constructor(layout, things, lighting) {
+	/** @param {Layout} layout @param {Things} things @param {WorldLighting} lighting @param {StageApi} stage */
+	constructor(layout, things, lighting, stage) {
 		/** The frame's box, in its own pixels @type {Box} */
 		this.frameBox = { left: NOWHERE, top: NOWHERE, ...layout.format.frame };
 		this.canvas = roomCanvas();
@@ -435,8 +387,8 @@ class Room {
 		this.page = surfaceInTheWorld(PAGE_LAID, 'opaque');
 		this.pageSeenThrough = surfaceInTheWorld(PAGE_SEEN_THROUGH, 'pageSeenThrough');
 		this.pageDepth = surfaceInTheWorld(PAGE_DEPTH_ALONE, 'pageDepth');
-		/** The surfaces markup standing in the world is laid in, each exposure's apart @type {WorldSurfaces[]} */
-		this.worldSurfaces = this.exposureSurfaces.map(() => new WorldSurfaces(this.canvas));
+		// The stage, which hands the surfaces it lays markup standing in the world in apart as it draws
+		this.stage = stage;
 		/**
 		 * Each surface of markup in the world as the world draws it, by its place among an exposure's
 		 * @type {MarkupInTheWorld[]}
@@ -450,9 +402,6 @@ class Room {
 		this.laidAt = new Map();
 		// How far past its box anything an object shows draws, in the frame's pixels
 		this.reachPastTheBox = reachPastTheBox() * layout.frameScale;
-		window.stage.layApart((exposure, list, name) =>
-			worldSurfacesAt(this.worldSurfaces, exposure).holderFor(list, name)
-		);
 		this.worldLayer = new WebGLRenderTarget(drawnWidth, drawnHeight, {
 			...THREES_LAYER,
 			depthTexture: new DepthTexture(drawnWidth, drawnHeight)
@@ -508,12 +457,8 @@ class Room {
 		}
 		const standings = pagePlacings.map((placing, place) => ({
 			placing,
-			markup: worldSurfacesAt(this.worldSurfaces, place)
-				.laidThisFrame()
-				.map((surface) => this.markupLaidOut(surface, scenesAt(scenes, place)))
+			markup: this.stage.laidApart(place).map((apart) => this.markupLaidOut(apart, scenesAt(scenes, place)))
 		}));
-		// An exposure the frame has none of lays no markup: its surfaces are let go
-		for (const surfaces of this.worldSurfaces.slice(scenes.length)) surfaces.laidThisFrame();
 		await paintedOf(this.canvas);
 		const first = surfacesAt(this.exposureSurfaces, FIRST);
 		for (const name of SURFACES.filter((each) => !SURFACE_TEXTURES[each].eachExposure)) {
@@ -563,13 +508,14 @@ class Room {
 		this.flatLaid('ground', surfaces);
 		const pageTexture = textureOf(this.textures, 'window');
 		pageTexture.drawnFrom(surfaceOf(surfaces, 'window'));
-		const seenThroughFields = this.worldBuilt(scene, pageTexture, standing, things.filter(standsInTheWorld));
+		const inTheWorld = things.filter((thing) => thing.standsIn === 'world');
+		const seenThroughFields = this.worldBuilt(scene, pageTexture, standing, inTheWorld);
 		this.renderer.setRenderTarget(this.worldSeen);
 		this.renderer.clear();
 		this.worldDrawn(scene, seenThroughFields, gathered);
 		this.renderer.setRenderTarget(this.exposure);
 		this.renderer.render(this.worldLaying, this.camera);
-		const onTheFrame = things.filter((thing) => !standsInTheWorld(thing));
+		const onTheFrame = things.filter((thing) => thing.standsIn === 'frame');
 		if (onTheFrame.length > NONE_STANDING) this.onTheFrameLaid(onTheFrame, scene);
 		this.flatLaid('frame', surfaces);
 		this.renderer.setRenderTarget(this.frame);
@@ -674,16 +620,17 @@ class Room {
 	}
 
 	/**
-	 * An object of markup standing in the world laid out where the stage laid it: its surface over its box and as far
-	 * past it as anything it shows draws, as densely as the card holds it.
-	 * @param {WorldSurface} surface @param {DrawnScene} scene @returns {MarkupStanding}
+	 * An object of markup standing in the world laid out where the stage laid it apart: its surface laid in the canvas,
+	 * where it is not yet, over its box and as far past it as anything it shows draws, as densely as the card holds it.
+	 * @param {SurfaceApart} apart @param {DrawnScene} scene @returns {MarkupStanding}
 	 */
-	markupLaidOut(surface, scene) {
-		const object = objectNamed(scene[surface.list], surface.name);
+	markupLaidOut(apart, scene) {
+		const object = objectNamed(scene[apart.list], apart.name);
 		const box = clearRound(grownBy(object.box, this.reachPastTheBox));
-		laidOutAs(surface.element, box, this.densityOf(box));
-		const laidAt = placeInTheWorld(scene, surface);
-		return { object, element: surface.element, placing: { box, middle: middleOf(object.box) }, laidAt };
+		if (apart.element.parentElement !== this.canvas) this.canvas.append(apart.element);
+		laidOutAs(apart.element, box, this.densityOf(box));
+		const laidAt = placeInTheWorld(scene, apart);
+		return { object, element: apart.element, placing: { box, middle: middleOf(object.box) }, laidAt };
 	}
 
 	/**
@@ -1086,29 +1033,13 @@ function objectNamed(objects, name) {
 }
 
 /**
- * A surface an object of markup standing in the world is laid in, laid in the canvas: a surface of the stage's, marked
- * as standing in the world, holding a holder of objects.
- * @param {PaintingCanvas} canvas @param {ObjectList} list @param {string} name @returns {WorldSurface}
- */
-function worldSurfaceIn(canvas, list, name) {
-	const element = document.createElement('div');
-	element.classList.add(SURFACE_CLASS);
-	element.setAttribute(SURFACE, IN_THE_WORLD);
-	const holder = document.createElement('div');
-	holder.classList.add(OBJECTS_HOLDER);
-	element.append(holder);
-	canvas.append(element);
-	return { element, holder, list, name };
-}
-
-/**
  * The place of an object of markup standing in the world among all that stands there, in the order the scene lays it:
- * the stage laid it in its surface as it drew the scene, so one missing is the room's fault.
- * @param {DrawnScene} scene @param {WorldSurface} surface
+ * the stage laid it apart as it drew the scene, so one missing is the stage's fault or the room's.
+ * @param {DrawnScene} scene @param {SurfaceApart} apart
  */
-function placeInTheWorld(scene, surface) {
-	const place = scene.laidInTheWorld.findIndex((laid) => laid.list === surface.list && laid.name === surface.name);
-	if (place === NOWHERE_LAID) throw new Error(`the room lays ${surface.name} in the world, where the scene lays none`);
+function placeInTheWorld(scene, apart) {
+	const place = scene.laidInTheWorld.findIndex((laid) => laid.list === apart.list && laid.name === apart.name);
+	if (place === NOWHERE_LAID) throw new Error(`the room lays ${apart.name} in the world, where the scene lays none`);
 	return place;
 }
 
@@ -1151,18 +1082,6 @@ function markupAt(markup, place) {
 	const inTheWorld = markup[place];
 	if (inTheWorld === undefined) throw new Error(`the room has drawn no surface ${place + 1} of markup in the world`);
 	return inTheWorld;
-}
-
-/** @param {readonly WorldSurfaces[]} exposures @param {number} place */
-function worldSurfacesAt(exposures, place) {
-	const surfaces = exposures[place];
-	if (surfaces === undefined) throw new Error(`the room has no exposure ${place + 1} to lay markup in`);
-	return surfaces;
-}
-
-/** Whether a thing stands in the world, where the eye sees it, not on the frame. @param {ThingObject} thing */
-function standsInTheWorld(thing) {
-	return thing.rides === 'world';
 }
 
 /** @param {readonly DrawnScene[]} scenes @param {number} place */
@@ -1209,7 +1128,7 @@ async function roomLaidOut(layout, address) {
 	const lighting = new WorldLighting();
 	const things = new Things();
 	const loaded = address === null ? NO_THINGS : await things.loaded(address);
-	laidOut = new Room(layout, things, lighting);
+	laidOut = new Room(layout, things, lighting, window.stage);
 	return loaded;
 }
 

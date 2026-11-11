@@ -879,7 +879,7 @@ test("a piece lying on the page is laid in the page's window where the camera fr
 	// The window, 960 × 540 in the frame's middle, shows the screen from 480 across and 270 down at 1: the other block,
 	// from 1200 and 600, stands at 720 and 330 in it
 	expect(drawnObjectsIn(landed, FULL_HD)[0]).toEqual(
-		expect.objectContaining({ laidIn: 'window', box: closeToBox({ left: 720, top: 330, width: 100, height: 60 }) })
+		expect.objectContaining({ standsIn: 'window', box: closeToBox({ left: 720, top: 330, width: 100, height: 60 }) })
 	);
 });
 
@@ -960,7 +960,7 @@ test('a piece in the world carried onto the page stands where it stood as it set
 	// Spun 740 in the world on a window rolled 20, it stands rolled 720 on the page, two whole turns
 	const spunTwice = { tilt: expect.closeTo(0), turn: expect.closeTo(0), roll: expect.closeTo(720), over: 0 };
 	expect([
-		after.laidIn,
+		after.standsIn,
 		after.inTheEyesSpace,
 		cornersDrawnIn(settingOff),
 		settingOff.objects.get('piece')!.angle,
@@ -3430,7 +3430,7 @@ test("a thing stands as far as it reaches about its place's middle, and is carri
 test("a thing shown in the world is drawn as one the page's window may hide, and one on the frame as one it never hides", async () => {
 	const onTheFrame = await setAt(thing.show('card', A_CARD_SHOWN), OPENING_IN_SMALL, 1);
 	const [inTheWorld, ridingTheEye] = [await cardAt(0), onTheFrame].map((scene) => drawnObjectsIn(scene, SMALL)[0]!);
-	expect([inTheWorld!.rides, ridingTheEye!.rides]).toEqual(['world', 'eye']);
+	expect([inTheWorld!.standsIn, ridingTheEye!.standsIn]).toEqual(['world', 'frame']);
 });
 
 test('a scene hands the room as the eye sees it, for a thing in the world, and as the eye at rest does, for one on the frame, so a light standing where that eye stands and aiming where it looks is seen at its middle, straight down its sight', async () => {

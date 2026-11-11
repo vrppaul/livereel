@@ -60,6 +60,7 @@ declare global {
  * in 197 ms (`--profile` of 30 frames each, 2026-11-11), so the person who asked for software is told.
  */
 export const DRAWN_AS_A_ROOM: StageDrawing = {
+	name: 'room',
 	flags: ['--enable-blink-features=CanvasDrawElement'],
 	opened: roomOpened,
 	laidOut: roomLaidOut,

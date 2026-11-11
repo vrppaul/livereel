@@ -83,7 +83,8 @@ import {
 	groupNamed,
 	placed,
 	planeOf,
-	pointOnTheFrame
+	pointOnTheFrame,
+	whereItStands
 } from '../domain/placement.ts';
 import { type Face, type Stance, faceOf, transformOf } from '../domain/stance.ts';
 import { type Code, type DrawnCode, drawnCode, scrolledShareOf } from './code.ts';
@@ -338,7 +339,7 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	const effects = drawnEffects(object);
 	const melt = drawnMelt(object);
 	const { placing, laid } = standing;
-	const inTheWorld = standsInTheWorld(standing);
+	const inTheWorld = whereItStands(standing) === 'world';
 	const { sharpness, frame } = around;
 	const outOfFocus = inTheWorld ? outOfFocusBeforeItsMatrix(placing, laid, sharpness, frame) : null;
 	const softestOutOfFocus = inTheWorld ? softestOutOfFocusSeen(placing, laid, laid, sharpness, frame) : null;
@@ -352,16 +353,7 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
  */
 export function standingInTheWorld(object: FrameObject, holders: Holders, frame: Size): Placed | null {
 	const standing = placedInItsHolder(object, holders, frame);
-	return standsInTheWorld(standing) ? standing : null;
-}
-
-/**
- * Whether something placed stands in the world, where the eye's focus blurs it by where it stands: laid in the frame
- * and not riding with the eye; laid in the window, the window's blur takes it with it, and what stands on the frame or
- * in a group rides with the eye.
- */
-function standsInTheWorld(standing: Placed): boolean {
-	return standing.rides === 'world' && standing.laidIn.kind === 'frame';
+	return whereItStands(standing) === 'world' ? standing : null;
 }
 
 /**

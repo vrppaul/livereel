@@ -131,16 +131,22 @@ export interface Placed {
 }
 
 /**
- * Something placed, as the stage draws it: what the flat stage lays it in, its box there and how it draws it about that
- * box's middle (`src/domain/stance.ts`); the matrix that carries a spot of it, from its middle, into the eye's own
- * space in three's axes, where the room stands it; and what it rides with, the eye or the world.
+ * Where something placed stands, as the stage lays it: on the frame, riding with the eye; in the world, laid in the
+ * frame while the eye moves past it, where the eye's focus blurs it by where it stands and the room stands it in its
+ * one scene; or in the page's window, whose element carries it, and whose blur takes it with it.
+ */
+export type StandsIn = 'frame' | 'world' | 'window';
+
+/**
+ * Something placed, as the stage draws it: where it stands, its box in what the flat stage lays it in, the frame or the
+ * window, and how it draws it about that box's middle (`src/domain/stance.ts`); and the matrix that carries a spot of
+ * it, from its middle, into the eye's own space in three's axes, where the room stands it.
  */
 export interface DrawnPlacement {
-	readonly laidIn: LaidIn['kind'];
+	readonly standsIn: StandsIn;
 	readonly box: Box;
 	readonly transform: Transform;
 	readonly inTheEyesSpace: Matrix;
-	readonly rides: Rider;
 }
 
 // Where something stands that a film shows inside nothing, one it shows inside the page's window or the world, and
@@ -299,12 +305,21 @@ function sizeOfWhatItIsLaidIn(laidIn: LaidIn, frame: Size): Size {
 /** Something placed as the stage draws it: flat or leant as how it stands before the eye has it, in three's axes. */
 export function drawnPlacement(standing: Placed): DrawnPlacement {
 	return {
-		laidIn: standing.laidIn.kind,
+		standsIn: whereItStands(standing),
 		box: standing.laid,
 		transform: transformOf(standing.stood, standing.placing),
-		inTheEyesSpace: inThreesAxes(standing.inTheEyesSpace),
-		rides: standing.rides
+		inTheEyesSpace: inThreesAxes(standing.inTheEyesSpace)
 	};
+}
+
+/** Where something placed stands: by what it is laid in, and, laid in the frame, by what it rides with. */
+export function whereItStands(standing: Placed): StandsIn {
+	switch (standing.laidIn.kind) {
+		case 'frame':
+			return standing.rides === 'world' ? 'world' : 'frame';
+		case 'window':
+			return 'window';
+	}
 }
 
 /**

@@ -447,7 +447,7 @@ async function pictured(
 		stage,
 		setting,
 		drawing,
-		layoutOf(setting.format, exposuresAtOnce, handedIn),
+		layoutOf(setting.format, exposuresAtOnce, drawing, handedIn),
 		picturing.things
 	);
 	const tab = await browser.newPage({
@@ -687,7 +687,7 @@ async function framed(page: Page, setting: Setting, opening: Opening): Promise<F
 		page,
 		setting,
 		DRAWN_FLAT,
-		layoutOf(setting.format, ONE_AT_A_TIME, boxOf(setting.format.frame)),
+		layoutOf(setting.format, ONE_AT_A_TIME, DRAWN_FLAT, boxOf(setting.format.frame)),
 		NO_THINGS_MODULE
 	);
 	const [filmed] = await Promise.all([

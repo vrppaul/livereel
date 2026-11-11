@@ -42,6 +42,7 @@
 import type { CDPSession, Frame, Page } from 'playwright-core';
 import type { Format } from '../../domain/format.ts';
 import { type Box, type Size, boxOf, frameScaleOf } from '../../domain/geometry.ts';
+import type { Drawing } from '../../direction/film.ts';
 import type { OwnPage } from '../../direction/page.ts';
 import type { DrawnScene, ObjectList } from '../../scene.ts';
 import type { FramedStage, FramesHanded, PicturedStage } from '../../studio/ports.ts';
@@ -56,15 +57,17 @@ export const STAGE_PAGE = 'stage.html';
 
 /**
  * How the stage is laid out for a take: the frame it fills, the screen the camera moves in it, and how large the stage
- * draws on it against the frames its look was made on: the camera's zoom, and what stands over the frame; and how many
- * exposures of a frame it draws at once, each a whole drawing of the stage laid over those before; and the part of the
- * stage, in its own pixels, a frame is handed on from. The eye is in the matrices the engine hands the stage with each
- * frame.
+ * draws on it against the frames its look was made on: the camera's zoom, and what stands over the frame; how many
+ * exposures of a frame it draws at once, each a whole drawing of the stage laid over those before; how a frame is
+ * drawn, flat by the stage's markup alone or as a room, which composes the surfaces the stage lays its markup in; and
+ * the part of the stage, in its own pixels, a frame is handed on from. The eye is in the matrices the engine hands the
+ * stage with each frame.
  */
 export interface Layout {
 	readonly format: Format;
 	readonly frameScale: number;
 	readonly exposures: number;
+	readonly drawing: Drawing;
 	readonly handedIn: Box;
 }
 
@@ -89,20 +92,25 @@ export interface HeldPicture extends PagePicture {
 }
 
 /**
- * Where the room lays an object of markup standing in the world (`stage/room.js`): a holder of its own in a surface of
- * the room's, by the place of the exposure it is drawn in among the stage's, its list, standing or pushed off, and its
- * name.
+ * A surface the stage lays an object of markup standing in the world in, apart from the frame's objects, where a frame
+ * is drawn as a room: the object's list, standing or pushed off, and its name, and the surface's element, which the
+ * room lays in its canvas and stands where the object stands in its one scene (`stage/room.js`).
  */
-export type HolderInTheWorld = (exposure: number, list: ObjectList, name: string) => HTMLElement;
+export interface SurfaceApart {
+	readonly list: ObjectList;
+	readonly name: string;
+	readonly element: HTMLElement;
+}
 
 export interface StageApi {
-	/** The stage laid out: the frame and the screen in it, as large as it draws, and its exposures. */
+	/** The stage laid out: the frame and the screen in it, as large as it draws, its exposures, and how it is drawn. */
 	readonly setup: (layout: Layout) => void;
 	/**
-	 * Markup standing in the world laid apart from the frame's objects in every exposure, each object in the holder the
-	 * room gives it, where it lay among them as the flat stage draws it.
+	 * The surfaces an exposure, by its place among the stage's, laid markup standing in the world in as it last drew,
+	 * apart from the frame's objects, where it is drawn as a room; none where it is drawn flat, which lays such markup
+	 * among them.
 	 */
-	readonly layApart: (holderOf: HolderInTheWorld) => void;
+	readonly laidApart: (exposure: number) => readonly SurfaceApart[];
 	/** The filmed page opened in the screen's frame. */
 	readonly open: (opening: Opening) => void;
 	/** A picture of the filmed page, shown in the frame's place once it is decoded. */
@@ -128,13 +136,15 @@ declare global {
 }
 
 /**
- * How the stage draws a frame, flat or as a room (`room.ts`): the flags the browser is launched with for it, how the
- * stage is opened, serving the film's things module where it names one, and then laid out, loading it: the names it
- * builds a thing by, none for a stage that draws no things; how a frame's exposures are drawn on it, and waited on to
- * the end of their drawing; whether it scales its frame down to the frame's own size without a change of look; and
- * what the person who asks for software is told, if anything.
+ * How the stage draws a frame, flat or as a room (`room.ts`), by the name the film gives it, which the stage is laid
+ * out for: the flags the browser is launched with for it, how the stage is opened, serving the film's things module
+ * where it names one, and then laid out, loading it: the names it builds a thing by, none for a stage that draws no
+ * things; how a frame's exposures are drawn on it, and waited on to the end of their drawing; whether it scales its
+ * frame down to the frame's own size without a change of look; and what the person who asks for software is told, if
+ * anything.
  */
 export interface StageDrawing {
+	readonly name: Drawing;
 	readonly flags: readonly string[];
 	readonly opened: (page: Page, things: string | null) => Promise<void>;
 	readonly laidOut: (page: Page, layout: Layout, things: string | null) => Promise<readonly string[]>;
@@ -150,6 +160,7 @@ export interface StageDrawing {
  * own size, the browser would draw its text anew at that size, not scale it: its frames are handed as sharp as drawn.
  */
 export const DRAWN_FLAT: StageDrawing = {
+	name: 'flat',
 	flags: [],
 	opened: stageApartOpened,
 	laidOut: () => Promise.resolve(NO_THINGS),
@@ -233,7 +244,8 @@ export class PlaywrightFramedStage implements FramedStage {
 
 	private async sizedTo(format: Format): Promise<void> {
 		await this.page.setViewportSize(format.frame);
-		await this.page.evaluate(setUpStage, layoutOf(format, this.exposuresAtOnce, boxOf(format.frame)));
+		const layout = layoutOf(format, this.exposuresAtOnce, DRAWN_FLAT, boxOf(format.frame));
+		await this.page.evaluate(setUpStage, layout);
 	}
 }
 
@@ -375,10 +387,11 @@ export class PlaywrightPicturedStage implements PicturedStage {
 }
 
 /**
- * The stage's layout for a format, drawing so many exposures of a frame at once, handing each on from that part of it.
+ * The stage's layout for a format, drawing so many exposures of a frame at once, as a drawing has it drawn, handing
+ * each on from that part of it.
  */
-export function layoutOf(format: Format, exposures: number, handedIn: Box): Layout {
-	return { format, frameScale: frameScaleOf(format.frame), exposures, handedIn };
+export function layoutOf(format: Format, exposures: number, drawing: StageDrawing, handedIn: Box): Layout {
+	return { format, frameScale: frameScaleOf(format.frame), exposures, drawing: drawing.name, handedIn };
 }
 
 function drawnOn(page: Page, exposures: readonly DrawnScene[]): Promise<void> {
