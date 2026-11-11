@@ -234,7 +234,8 @@ and the moves of each part of the scene:
   under a point off the frame, or where the eye sees past the window's plane as the move begins; where the window
   turns so the eye sees past its plane there later, the focus stands as far as can be
 - `window.to(place, { depth })`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn, roll, over, about })`,
-  `window.shade({ dim, fade, blur, sharp, sharpSoftens, reaching })`, `window.body({ thickness, rim, metal, roughness, glass }, { within })`
+  `window.shade({ dim, fade, blur, sharp, sharpSoftens, reaching })`,
+  `window.body({ thickness, rim, metal, roughness, glass, glint }, { within })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
 - `callout.show(target, text, { side })`, `callout.hide()`
 - `note.show(target, text, { at })`, `note.hide()`
@@ -1228,6 +1229,7 @@ window opens on livereel's, of no thickness, which is none:
 | `thickness`, `rim` | how thick the slab is, `0` none, and how far its rim reaches past the page all round, in pixels | `0`, `6` |
 | `metal`, `roughness` | the colour of its metal, in hex with no alpha, and how rough it is, from `0`, a mirror, to `1`, matte | `#454b56`, `0.45` |
 | `glass` | how strong the clear coat of glass over the page is, from `0`, none, to `1`, a whole coat: 4% reflected face-on, more aslant | `0.4` |
+| `glint` | how bright the glint of a strip of light standing near the glass shines at its brightest, `0` none, `1` the page's white | `0` |
 
 A film whose window has a body from its start sets it in a `cut` as its
 first step. The body takes the place of the window's edge and shadow and
@@ -1249,6 +1251,20 @@ steps: () => [
 	cut(window.body({ thickness: 24, rim: 6 })),
 	...
 ]
+```
+
+The glass may also catch the glint of a strip of light the slab keeps of
+its own, standing near before it, as the claude-review promo lays one on
+its slabs' glass: a soft diagonal sheen, leaning up to the left, that goes
+where the slab goes and moves on the glass as the eye moves, and grows as
+the eye comes near, as a near light's glint does, where the soft boxes,
+standing at the world's end, stay still on the frame as the eye moves
+square to the glass. It is the slab's own light, so it shows with no light
+in the world, and comes and fades as the glass does. A slab at rest
+showing a faint sheen and no soft boxes on its glass:
+
+```ts
+cut(window.body({ thickness: 30, glass: 0, glint: 0.012 }))
 ```
 
 In a `play` the body moves to the values named over its share of the step,

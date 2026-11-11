@@ -29,8 +29,9 @@ const STANDING_OUT: Cut = { top: -40, right: 0, bottom: 0, left: -100 };
 const SHOWN_PAST_ITS_EDGES: Box = { left: 900, top: 560, width: 1900, height: 1040 };
 const SHOWN_MIDDLE_FROM_THE_WINDOWS: Spot = { across: -50, down: 20, out: 0 };
 // A window's body: as thick and as wide a rim as these, in pixels of a frame 1080 high, of a dark metal this rough,
-// glass this strong over the page; and a window unshaded with it, and with livereel's, of no thickness
-const BODY: Slab = { thickness: 24, rim: 6, metal: '#454b56', roughness: 0.45, glass: 0.4 };
+// glass this strong over the page, its glint this bright; and a window unshaded with it, and with livereel's, of no
+// thickness
+const BODY: Slab = { thickness: 24, rim: 6, metal: '#454b56', roughness: 0.45, glass: 0.4, glint: 0.04 };
 const WITH_A_BODY = { ...UNSHADED, body: BODY };
 const WITH_LIVEREELS_BODY = { ...UNSHADED, body: LIVEREELS_SLAB };
 // The page's corners as round as livereel's look has them, in pixels of a frame 1080 high
@@ -119,6 +120,7 @@ test("a window lifted whole, with a body, hands the stage its slab: the rim and 
 			metal: BODY.metal,
 			roughness: BODY.roughness,
 			glass: BODY.glass,
+			glint: BODY.glint,
 			placing: carriedTo(window.inTheEyesSpace, ITS_TOP_RIGHT),
 			shade: null
 		}
@@ -201,6 +203,17 @@ test('a shade reaching the window fades its body as far as the page and blurs it
 
 test('the glass reflects nothing where the world has no light in it, no lights and no soft boxes', () => {
 	expect(drawnWindow(LIFTED, AT_ITS_EDGES, WITH_A_BODY, { ...AROUND, world: LIVEREELS_WORLD }).body!.glass).toBe(0);
+});
+
+test("the glass's glint, a light of its own, shows in a world with no light too, as far as the body has come and the shade has not faded it", () => {
+	const unlit = { ...AROUND, world: LIVEREELS_WORLD };
+	const halfLifted = { ...LIFTED, lift: 0.5 };
+	const faded = { ...WITH_A_BODY, fade: 0.25, reaching: 'window' } as const;
+	expect([
+		drawnWindow(LIFTED, AT_ITS_EDGES, WITH_A_BODY, unlit).body!.glint,
+		drawnWindow(halfLifted, AT_ITS_EDGES, WITH_A_BODY, { ...unlit, screen: HALF_UP }).body!.glint,
+		drawnWindow(LIFTED, AT_ITS_EDGES, faded, unlit).body!.glint
+	]).toEqual([BODY.glint, BODY.glint * 0.25, BODY.glint * 0.75]);
 });
 
 test("no body where the window's is of no thickness, livereel's own, where the window is the frame itself, or where the screen has not come up", () => {

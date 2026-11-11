@@ -156,10 +156,11 @@ type PlaneDrawn = Pick<DrawnPlacement, 'transform' | 'inTheEyesSpace'>;
 /**
  * The window's body as the room draws it round the page the camera's cut shows (`reach`), in the frame's pixels: how
  * far its rim reaches past the page and how thick it is; its metal's colour and how rough it is; how much of the
- * world's light the glass over the page reflects; the matrix that carries the page's middle, its face toward three's
- * z, into the eye's own space, in three's axes, the body standing behind its face, lit by the world's lights where the
- * scene's eye hands the room (`DrawnEye` in `src/domain/eye.ts`); and how the window's shade reaches it, none where it
- * reaches the page alone or neither fades nor blurs.
+ * world's light the glass over the page reflects, and how bright the glint of its own near strip of light shines on it;
+ * the matrix that carries the page's middle, its face toward three's z, into the eye's own space, in three's axes, the
+ * body standing behind its face, lit by the world's lights where the scene's eye hands the room (`DrawnEye` in
+ * `src/domain/eye.ts`); and how the window's shade reaches it, none where it reaches the page alone or neither fades
+ * nor blurs.
  */
 export interface DrawnBody {
 	readonly rim: number;
@@ -167,6 +168,7 @@ export interface DrawnBody {
 	readonly metal: string;
 	readonly roughness: number;
 	readonly glass: number;
+	readonly glint: number;
 	readonly placing: Matrix;
 	readonly shade: BodyShade | null;
 }
@@ -272,10 +274,10 @@ export function drawnWindow(
 
 /**
  * The window's body as the room draws it, round the page the camera's cut shows, placed by the matrix that carries the
- * window's middle into the eye's own space: as thick, its rim as wide and its glass as strong as the window's slab has
- * them, so far as the window stands off the ground and the screen has come up in it, so no glint comes with it at once,
- * its glass none where the world has no light to reflect, and faded as far as the shade fades the body; shaded as the
- * shade reaches it; none, where that leaves it no thickness.
+ * window's middle into the eye's own space: as thick, its rim as wide and its glass and glint as strong as the window's
+ * slab has them, so far as the window stands off the ground and the screen has come up in it, so no glint comes with it
+ * at once, its glass none where the world has no light to reflect, its glint its own light, and both faded as far as
+ * the shade fades the body; shaded as the shade reaches it; none, where that leaves it no thickness.
  */
 function drawnBody(
 	view: View,
@@ -297,12 +299,14 @@ function drawnBody(
 	const rim = slab.rim * scale * standing;
 	const shade = bodyShaded(window, placed, withAir(page, rim), around.frame);
 	const glass = isLit(around.world) ? slab.glass * standing : NONE;
+	const unfaded = WHOLE - (shade?.fade ?? NONE);
 	return {
 		rim,
 		thickness,
 		metal: slab.metal,
 		roughness: slab.roughness,
-		glass: glass * (WHOLE - (shade?.fade ?? NONE)),
+		glass: glass * unfaded,
+		glint: slab.glint * standing * unfaded,
 		placing: inThreesAxes(chained([placed.inTheEyesSpace, translation(pageMiddle)])),
 		shade
 	};

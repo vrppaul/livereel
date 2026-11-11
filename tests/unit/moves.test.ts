@@ -589,9 +589,9 @@ test("window.body sets the values of the window's body it names and keeps the re
 	]);
 });
 
-test('a body in no form of one is refused as its move is made, where it stands: none, a thickness below none, a metal with an alpha, a name the look gave it, one that names none', () => {
+test('a body in no form of one is refused as its move is made, where it stands: none, a thickness below none, a metal with an alpha, a name the look gave it, one that names none, a glint below none', () => {
 	expect(() => windowBody(null as never)).toThrow(
-		new FilmError('window.body is handed null for an object of thickness, rim, metal, roughness, glass')
+		new FilmError('window.body is handed null for an object of thickness, rim, metal, roughness, glass, glint')
 	);
 	expect(() => windowBody({ thickness: -1 })).toThrow(
 		new FilmError("window.body's thickness is -1: it is a number of pixels, 0 or more")
@@ -600,10 +600,15 @@ test('a body in no form of one is refused as its move is made, where it stands: 
 		new FilmError(`window.body's metal is "#454b5680": it is a colour in hex with no alpha: #rgb or #rrggbb`)
 	);
 	expect(() => windowBody({ windowThickness: 24 } as never)).toThrow(
-		new FilmError('window.body names windowThickness: it names thickness, rim, metal, roughness, glass, or fewer')
+		new FilmError(
+			'window.body names windowThickness: it names thickness, rim, metal, roughness, glass, glint, or fewer'
+		)
 	);
 	expect(() => windowBody({})).toThrow(
-		new FilmError('window.body names none of thickness, rim, metal, roughness, glass')
+		new FilmError('window.body names none of thickness, rim, metal, roughness, glass, glint')
+	);
+	expect(() => windowBody({ glint: -0.1 })).toThrow(
+		new FilmError("window.body's glint is -0.1: it is how bright it is, a number, 0 or more: 1 its whole colour")
 	);
 });
 

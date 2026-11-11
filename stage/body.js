@@ -72,16 +72,69 @@ const GLASS_NEARER = -2;
 const GLASS_DRAWN_LAST = 1;
 // A coat of none, which is no coat: three would draw the black face under it whole
 const NO_COAT = 0;
-// Where three writes a lit material's colour, and the glass's own: the light its coat reflects, premultiplied, and as
-// opaque as the share of what lies under it the coat holds back, `Fcc` being how much the coat reflects as the eye sees
-// it (three's physical material, where it lays a coat)
+// The strip of light standing near the glass, whose glint the glass catches as the slab's own light (`Slab.glint` in
+// `src/props/body.ts`), as the claude-review promo lays one on its slabs' glass (`GLINT` in its `slab.js`): a long soft
+// strip standing square to the glass and before it, in the slab's own frame, so it goes where the slab goes and its
+// glint moves on the glass as the eye moves and grows as the eye comes near, as a near light's would. Its measures are
+// the promo's in the page's widths, so it lies alike on a page of any size: how far before the glass it stands; where
+// its middle line passes, left of the page's middle and above it; how far it leans from upright toward the left, in
+// degrees, the promo's key light's lean; how wide it is, its light falling off as a bell across it; how long; and the
+// share of its half-length its brightness holds before it fades to its end. The way along it, up and to the left
+const NEAR_STRIP = {
+	standsOff: 0.75,
+	through: { across: -0.375, up: 0.625 },
+	leans: 24,
+	width: 0.0625,
+	length: 3.5,
+	holds: 0.6
+};
+const NEAR_STRIP_LEANS = THREE.MathUtils.degToRad(NEAR_STRIP.leans);
+const ALONG_THE_NEAR_STRIP = { across: -Math.sin(NEAR_STRIP_LEANS), up: Math.cos(NEAR_STRIP_LEANS) };
+// A glint of none, which the glass draws none of; and a page of no width, before the glass is first posed over one
+const NO_GLINT = 0;
+const NO_PAGE_YET = 0;
+// How little of the eye's ray, reflected off the glass, may head away from it: a ray along the glass meets the strip
+// nowhere, and is kept from dividing by none
+const AWAY_FROM_THE_GLASS_LEAST = 1e-4;
+// Where three writes a vertex's place, where the glass's point and the eye are carried into the slab's own frame
+const THREES_PLACING = '#include <project_vertex>';
+// A point of the glass and the eye, each in the slab's own frame, the glass on its plane, its face toward its z
+const THE_GLASS_AND_THE_EYE = `
+varying vec3 glassPoint;
+varying vec3 eyePoint;`;
+const THE_GLASS_AND_THE_EYE_SET = `
+${THREES_PLACING}
+glassPoint = transformed;
+eyePoint = (inverse(modelMatrix) * vec4(cameraPosition, 1.0)).xyz;`;
+// How bright the glint of the near strip shines at a point of the glass: as far as the eye's ray, reflected off the
+// glass there, meets the strip where it stands before the glass, across its middle line as a bell, along it holding and
+// then fading to its end; its measures grown by the page's width
+const THE_NEAR_STRIPS_GLINT = `${THE_GLASS_AND_THE_EYE}
+uniform float glint;
+uniform float pageWidth;
+const vec2 STRIP_THROUGH = vec2(float(${NEAR_STRIP.through.across}), float(${NEAR_STRIP.through.up}));
+const vec2 STRIP_ALONG = vec2(float(${ALONG_THE_NEAR_STRIP.across}), float(${ALONG_THE_NEAR_STRIP.up}));
+float nearStripsGlint() {
+	vec3 away = reflect(normalize(glassPoint - eyePoint), vec3(0.0, 0.0, 1.0));
+	float standsOff = float(${NEAR_STRIP.standsOff}) * pageWidth;
+	float reachesIt = (standsOff - glassPoint.z) / max(away.z, float(${AWAY_FROM_THE_GLASS_LEAST}));
+	vec2 met = glassPoint.xy + away.xy * reachesIt - STRIP_THROUGH * pageWidth;
+	float across = dot(met, vec2(-STRIP_ALONG.y, STRIP_ALONG.x)) / (float(${NEAR_STRIP.width}) * pageWidth);
+	float along = abs(dot(met, STRIP_ALONG)) / (float(${NEAR_STRIP.length}) * pageWidth);
+	float fading = 1.0 - smoothstep(float(${NEAR_STRIP.holds}), 1.0, along);
+	return glint * exp(-across * across) * fading;
+}`;
+// Where three writes a lit material's colour, and the glass's own: the light its coat reflects and the near strip's
+// glint, premultiplied, and as opaque as the share of what lies under it the coat holds back, `Fcc` being how much the
+// coat reflects as the eye sees it (three's physical material, where it lays a coat), none where it has no coat
 const THREES_OUTPUT = '#include <opaque_fragment>';
 const THE_GLASS_OUTPUT = `
 #ifdef USE_CLEARCOAT
-gl_FragColor = vec4( outgoingLight, material.clearcoat * Fcc.g );
+float heldBack = material.clearcoat * Fcc.g;
 #else
-${THREES_OUTPUT}
-#endif`;
+float heldBack = 0.0;
+#endif
+gl_FragColor = vec4(outgoingLight + nearStripsGlint(), heldBack);`;
 // No turn, a quarter-turn, a half-turn and a whole one, in radians, as a corner's arc runs from the one before; a side
 // and the half of it its edge stands from its middle
 const NO_TURN = 0;
@@ -202,7 +255,9 @@ export class WindowBody {
 			polygonOffsetFactor: GLASS_NEARER,
 			polygonOffsetUnits: GLASS_NEARER
 		});
-		this.glassCoat.onBeforeCompile = asClearAsItsCoatLetsThrough;
+		// How bright the near strip's glint on the glass shines, and the page's width its measures grow by
+		this.glinting = { glint: { value: NO_GLINT }, pageWidth: { value: NO_PAGE_YET } };
+		this.glassCoat.onBeforeCompile = (shader) => glassCatchingTheNearStrip(shader, this.glinting);
 		this.slab = new THREE.Group();
 		this.slab.matrixAutoUpdate = false;
 		this.glass = new THREE.Group();
@@ -217,8 +272,8 @@ export class WindowBody {
 
 	/**
 	 * The slab and its glass posed for a window: built round the page it shows, where their measures are not those they
-	 * were built of, in the body's metal, faded as far as the shade fades it, and as much glass as it has, the glass
-	 * shown only where it has some, and placed where the engine places them in the eye's own space.
+	 * were built of, in the body's metal, faded as far as the shade fades it, and as much glass and glint as it has, the
+	 * glass shown only where it has either, and placed where the engine places them in the eye's own space.
 	 * @param {DrawnWindow} window @param {DrawnBody} body
 	 * @returns {{ readonly slab: THREE.Group, readonly glass: THREE.Group }}
 	 */
@@ -228,7 +283,9 @@ export class WindowBody {
 		this.metal.roughness = body.roughness;
 		this.fading.faded.value = body.shade === null ? NONE_FADED : body.shade.fade;
 		this.glassCoat.clearcoat = body.glass;
-		this.glass.visible = body.glass > NO_COAT;
+		this.glinting.glint.value = body.glint;
+		this.glinting.pageWidth.value = window.reach.width;
+		this.glass.visible = body.glass > NO_COAT || body.glint > NO_GLINT;
 		const placing = matrixOf(body.placing);
 		for (const part of [this.slab, this.glass]) {
 			part.matrix.copy(placing);
@@ -449,11 +506,18 @@ function sidesFacingOut(geometry, outline) {
 }
 
 /**
- * The glass's shader written to draw it as clear as its coat lets through what lies under it.
- * @param {THREE.WebGLProgramParametersWithUniforms} shader
+ * The glass's shader written to catch the near strip's glint, its values the body's own, and to draw it as clear as its
+ * coat lets through what lies under it.
+ * @param {THREE.WebGLProgramParametersWithUniforms} shader @param {WindowBody['glinting']} glinting
  */
-function asClearAsItsCoatLetsThrough(shader) {
-	shader.fragmentShader = shader.fragmentShader.replace(THREES_OUTPUT, THE_GLASS_OUTPUT);
+function glassCatchingTheNearStrip(shader, glinting) {
+	Object.assign(shader.uniforms, glinting);
+	shader.vertexShader = shader.vertexShader
+		.replace(THREES_DECLARATIONS, `${THREES_DECLARATIONS}${THE_GLASS_AND_THE_EYE}`)
+		.replace(THREES_PLACING, THE_GLASS_AND_THE_EYE_SET);
+	shader.fragmentShader = shader.fragmentShader
+		.replace(THREES_DECLARATIONS, `${THREES_DECLARATIONS}${THE_NEAR_STRIPS_GLINT}`)
+		.replace(THREES_OUTPUT, THE_GLASS_OUTPUT);
 }
 
 /** A rounded rectangle about its middle, its corners drawn as arcs. @param {Outline} outline */
