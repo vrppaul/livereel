@@ -1488,6 +1488,16 @@ test("a page of the film's own coming to rest sets off at the pace it ran", asyn
 	expect(scrolledIn(resting, 3.001) - scrolledIn(resting, 3)).toBeCloseTo(0.1, 3);
 });
 
+test("a page of the film's own taken over while its pace changes sets off as fast as it ran there", async () => {
+	// Gathering pace evenly from standing to 200 pixels a second over 2 s, it runs at 99 at 0.99 s, between two of
+	// its run's knots: 0.099 of a pixel over the first thousandth of a second of its way to rest from there
+	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const gathering = (await screenScrolls(OWN_PAGE, { pace: 200 }).begin(scrollingFrom(shown, 0, 2)))(shown, 1);
+	const toRest = await screenScrollTo(OWN_PAGE, INPUT, { top: 200 }).begin(scrollingFrom(gathering, 0.99, 2));
+	const resting = await toRest(gathering, 1);
+	expect(scrolledIn(resting, 0.991) - scrolledIn(resting, 0.99)).toBeCloseTo(0.099, 3);
+});
+
 test('screen.scrollTo refuses a rest past where its page scrolls, above its top or past its end, as it begins', async () => {
 	const running = await runningFromTheStart();
 	const aboveItsTop = screenScrollTo(OWN_PAGE, INPUT, { top: 1000 }).begin(scrollingFrom(running, 3, 2));

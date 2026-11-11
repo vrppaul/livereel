@@ -65,6 +65,7 @@ import {
 	AT_ITS_TOP,
 	A_SLANT,
 	type Back,
+	NO_SECONDS,
 	SCREEN_DOWN,
 	SCREEN_UP,
 	SEEN_THROUGH,
@@ -148,11 +149,9 @@ const DOWN_ALREADY = 'screen.lower lowers a screen already down';
 const SCROLLS_NOWHERE =
 	'screen.scrolls runs a page that scrolls nowhere: the screen holds all of it, or its own styles hide what runs past the screen, as overflow: hidden on its body does; give it more than the screen holds and let it scroll';
 const NO_LENGTH = 0;
-// The move that brings a page of the film's own to rest, as its refusals name it; a move done at once, as in a cut,
-// which takes no seconds and runs nowhere on its way; the product of the signs of a pace and a way that go opposite
-// ways; and how a way along a page's scroll is said, down where it is more than none
+// The move that brings a page of the film's own to rest, as its refusals name it; the product of the signs of a pace
+// and a way that go opposite ways; and how a way along a page's scroll is said, down where it is more than none
 const SCROLL_TO = 'screen.scrollTo';
-const NO_SECONDS = 0;
 const OPPOSITE_WAYS = -1;
 const NO_WAY = 0;
 const TOWARD_ITS_END = 'down';

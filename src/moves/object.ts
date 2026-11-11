@@ -313,18 +313,18 @@ export const THE_STEPS_CURVE = null;
 
 /**
  * How what a kind shows goes in its own way: the curve it goes on where the film names none, and what it shows as it
- * sets off, read from what it showed, none where it goes as it stands.
+ * goes, read from what it showed as the going begins.
  */
 export interface OwnGoing<Kind extends ShownKind> {
 	readonly curve: Ease | null;
-	readonly settingOff: SettingOff<Kind> | null;
+	readonly shownAsItGoes: ShownAsItGoes<Kind>;
 }
 
-/** What a kind shows as it sets off going, from what it showed: a title's words at the pace the hide names. */
-type SettingOff<Kind extends ShownKind> = (shown: ShownOf<Kind>) => ShownOf<Kind>;
+/** What a kind shows as it goes, from what it showed: a title's words at the pace the hide names. */
+type ShownAsItGoes<Kind extends ShownKind> = (shown: ShownOf<Kind>) => ShownOf<Kind>;
 
-/** How a kind whose module reads how far it has gone goes in its own way: fading whole on its step's curve. */
-export const GOES_AS_IT_STANDS = { curve: THE_STEPS_CURVE, settingOff: null } as const;
+/** How a kind whose module reads how far it has gone goes in its own way: showing what it showed, on its step's curve. */
+export const GOES_AS_IT_STANDS = { curve: THE_STEPS_CURVE, shownAsItGoes: asItShowed } as const;
 
 /**
  * How a pane reads a place, as the page's window reads one — a terminal, a piece of the page, an outline — setting off
@@ -504,7 +504,7 @@ export function objectHide<Kind extends ShownKind>(
 		timing: timingOf(curve === null ? script : { ease: curve, ...script }),
 		begin: (beginning) =>
 			toward === null
-				? going(beginning, name, kind, way, own.settingOff, move)
+				? going(beginning, name, kind, way, own.shownAsItGoes, move)
 				: slidingOut(beginning, name, kind, toward, move)
 	};
 }
@@ -1096,18 +1096,23 @@ async function laidOnto(
 	}));
 }
 
-/** The object going where it stands, in the way it goes, what it shows set off as its kind sets it; once gone, none. */
+/** The object going where it stands, in the way it goes, showing what its kind has it show as it goes; once gone, none. */
 function going<Kind extends ShownKind>(
 	beginning: Beginning,
 	name: ObjectName,
 	kind: Kind,
 	way: Way,
-	settingOff: SettingOff<Kind> | null,
+	shownAsItGoes: ShownAsItGoes<Kind>,
 	move: string
 ): Change {
 	const object = standingOfKind(beginning, name, move, kind);
-	const setOff = settingOff === null ? object : { ...object, content: settingOff(object.content) };
+	const setOff = { ...object, content: shownAsItGoes(object.content) };
 	return (scene, progress) => withObject(scene, name, goneIn(setOff, way, progress));
+}
+
+/** What a kind shows as it goes where its going changes nothing of it: what it showed. */
+function asItShowed<Shown>(shown: Shown): Shown {
+	return shown;
 }
 
 /**

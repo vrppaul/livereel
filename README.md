@@ -203,12 +203,12 @@ and the moves of each part of the scene:
 - `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
 - `title.show(text, { at, align, size, letterSpacing, lineHeight, from, enter, edge, words, as, inside, group, zIndex })`,
-  `title.to(place, { scale, depth })`, `title.lean({ tilt, turn, roll, over, about })`, `title.hide({ toward, leave, edge })`
+  `title.to(place, { scale, depth })`, `title.lean({ tilt, turn, roll, over, about })`, `title.hide({ toward, leave, edge, words })`
 - `code.show(text, { at, from, enter, edge, longLines, as, inside, group, zIndex })`,
   `code.to(place, { scale, depth })`, `code.lean({ tilt, turn, roll, over, about })`, `code.light(line, { through })`,
   `code.scrollTo(line)`,
   `code.hide({ toward, leave, edge })`; each move of a title or code takes `as` to name which
-- `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
+- `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge, words })`; a caption and keys stand over the
   whole frame where they come up, over every object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`, `screen.behind(page, { upright, within })`,
   `screen.scrolls(page, { pace })`, `screen.scrollTo(page, selector, { top })`,
@@ -436,8 +436,8 @@ a side crosses that width, and an iris or a grow works from the box's
 middle.
 
 A title, code or the terminal leans as the window does: `title.lean({ tilt:
-12 })` leans it back from its top edge, `code.lean({ turn: -8 })` swings it
-about its middle, `roll` turns it in its own plane, clockwise, and `over`
+12 })` leans it back from its top edge, `code.lean({ turn: -8 })` swings
+it, `roll` turns it in its own plane, clockwise, and `over`
 turns it over round its own width as it then stands, swung and rolled, top
 away from the eye, as a slab turned over in the hand; a value left out is
 kept as it stands, and 360 is a whole turn, so `lean({ turn: 360 })` spins

@@ -8,6 +8,7 @@
  * Words come up in their way only where the object showing them comes up in its place in its own way: one that slides
  * in or comes up in a way of livereel's brings them whole, and one that slides out or goes in a way takes them whole.
  */
+import { linear } from '../domain/curves.ts';
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
 import type { FrameSide } from '../domain/geometry.ts';
@@ -60,6 +61,11 @@ export type WordsScript = WordsWay | PacedScript | TypedScript;
 /** How words go, as a hide names it: how many of them are on their way at once. */
 export interface WordsGoingScript {
 	readonly atOnce: number;
+}
+
+/** What shows words and holds how they came up, which is how they go. */
+interface WordsShown {
+	readonly comingUp: ComingUp;
 }
 
 /** How words go as a hide names it, and what would take them whole: a slide, a way of livereel's. */
@@ -116,6 +122,12 @@ export const A_WORDS_GOING: Kind<WordsGoingScript> = new OfForm<WordsGoingScript
 	'how its words go: { atOnce }'
 );
 
+/**
+ * The curve a title's or a caption's words come up and go on in their own way where the film names none: one after
+ * another at an even pace.
+ */
+export const WORDS_COME_AND_GO_ON = linear;
+
 // Words that come up of themselves make no sound; and words a film names no way for come up in the theme's, read as
 // they come
 const UNHEARD: readonly Cue[] = [];
@@ -150,10 +162,22 @@ export function refuseWordsTakenWhole(script: WordsTakenWhole, move: string): vo
 }
 
 /**
+ * What shows words as it sets off going, a title or a caption: as it stood, its words going at the pace the hide
+ * names, or the one they came at.
+ */
+export function setOffGoing<Shown extends WordsShown>(
+	shown: Shown,
+	script: WordsGoingScript | undefined,
+	move: string
+): Shown {
+	return { ...shown, comingUp: wordsGoingAt(shown.comingUp, script, move) };
+}
+
+/**
  * How words that stand go, read as their going begins: word by word at the pace the hide names, or at the one they
  * came at where it names none; words laid out by letters go together, and a pace named for them is refused.
  */
-export function wordsGoingAt(comingUp: ComingUp, script: WordsGoingScript | undefined, move: string): ComingUp {
+function wordsGoingAt(comingUp: ComingUp, script: WordsGoingScript | undefined, move: string): ComingUp {
 	if (script === undefined) return comingUp;
 	switch (comingUp.kind) {
 		case 'word by word':

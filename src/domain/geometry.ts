@@ -5,7 +5,7 @@
  * stands on that screen, with no camera applied, or a part of the frame, as the page's window on it. Every other
  * measure of a film is read off these.
  */
-import { A_NUMBER, A_PIXELS, OfForm, OneOf, needed } from './handed.ts';
+import { A_NUMBER, A_PIXELS, type Kind, OfForm, OneOf, needed } from './handed.ts';
 import type { PathSpace } from './path.ts';
 import { between } from './toward.ts';
 
@@ -27,7 +27,7 @@ export type FrameSide = (typeof FRAME_SIDES)[number];
 
 export const A_FRAME_SIDE = new OneOf(FRAME_SIDES, 'a side of the frame: "left", "right", "top" or "bottom"');
 
-export const A_POINT: OfForm<Point> = new OfForm<Point>(
+export const A_POINT: Kind<Point> = new OfForm<Point>(
 	{ left: needed(A_NUMBER), top: needed(A_NUMBER) },
 	'a point: { left, top }, each a number'
 );

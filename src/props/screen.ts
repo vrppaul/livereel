@@ -235,11 +235,11 @@ const STANDING = 0;
 // runs exactly: the page's run strays from the curve's by at most its change in pace times its seconds times a curve's
 // sharpest bend over 8 × 64², 0.06 pixels for 480 pixels a second gathered over 0.8 s on easeInOutSine
 const STRETCHES_OF_A_CHANGE = 64;
-// The knot a change of pace sets off from and the first one past it; and a stretch of no seconds, as a pace changed at
-// once has
+// The knot a change of pace sets off from and the first one past it
 const SETTING_OFF = 0;
 const FIRST_ONWARD = 1;
-const NO_SECONDS = 0;
+/** A stretch of no seconds, as a move done at once has, in a cut: its run changes at once and runs nowhere on its way. */
+export const NO_SECONDS = 0;
 // A page the film never ran: at its top since the film began, standing still, scrolling nowhere
 const THE_FILMS_START = 0;
 const STANDING_AT_ITS_TOP: Scroll = {

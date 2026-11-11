@@ -4,7 +4,6 @@
  * (`src/moves/way.ts`). A caption is one alone, over the frame: it takes no name and never slides, so keys always know
  * where it stands.
  */
-import { linear } from '../domain/curves.ts';
 import { type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import { type Beginning, type Change, type Move, present, propChange, timingOf } from '../direction/move.ts';
 import { captionPlaceIn } from '../props/caption.ts';
@@ -22,14 +21,15 @@ import {
 import {
 	A_WORDS_GOING,
 	A_WORDS_SCRIPT,
+	WORDS_COME_AND_GO_ON,
 	type WordsComing,
 	type WordsGoingScript,
 	type WordsScript,
 	comingUpAt,
 	refuseWordsBroughtWhole,
 	refuseWordsTakenWhole,
-	wordsComing,
-	wordsGoingAt
+	setOffGoing,
+	wordsComing
 } from './words.ts';
 
 /** How a caption comes up: its timing, the way it comes up, and how its `words` come up, the theme's where none is named. */
@@ -44,8 +44,9 @@ export interface CaptionHideScript extends InPlaceHideScript {
 
 const CAPTION_FORM: Form<CaptionScript> = { words: A_WORDS_SCRIPT, ...IN_PLACE_SHOW_FORM };
 const CAPTION_HIDE_FORM: Form<CaptionHideScript> = { words: A_WORDS_GOING, ...IN_PLACE_HIDE_FORM };
-// A caption's words come up and go one after another at an even pace in their own way, where the film names no curve
-const WORDS_COME_AND_GO_ON = linear;
+// What a refusal names each move by
+const CAPTION_SHOW = 'caption.show';
+const CAPTION_HIDE = 'caption.hide';
 
 /**
  * A caption coming up, its words in the way the film names, typed by a person where it has them typed, each key heard,
@@ -53,11 +54,11 @@ const WORDS_COME_AND_GO_ON = linear;
  */
 export function show(text: Wording, script: CaptionScript = {}): Move {
 	assertKind(text, A_WORDING, "caption.show's text");
-	assertWritten(script, CAPTION_FORM, 'caption.show');
-	refuseWordsBroughtWhole(script, 'caption.show');
+	assertWritten(script, CAPTION_FORM, CAPTION_SHOW);
+	refuseWordsBroughtWhole(script, CAPTION_SHOW);
 	const said = saidOf(text);
 	const coming = wordsComing(said, script.words);
-	const way = wayOf(script.enter, script.edge, 'caption.show');
+	const way = wayOf(script.enter, script.edge, CAPTION_SHOW);
 	return {
 		part: 'caption',
 		timing: timingOf(way.kind === OWN_WAY.kind ? { ease: WORDS_COME_AND_GO_ON, ...script } : script),
@@ -72,9 +73,9 @@ export function show(text: Wording, script: CaptionScript = {}): Move {
  * once gone, there is none.
  */
 export function hide(script: CaptionHideScript = {}): Move {
-	assertWritten(script, CAPTION_HIDE_FORM, 'caption.hide');
-	refuseWordsTakenWhole(script, 'caption.hide');
-	const way = wayOf(script.leave, script.edge, 'caption.hide');
+	assertWritten(script, CAPTION_HIDE_FORM, CAPTION_HIDE);
+	refuseWordsTakenWhole(script, CAPTION_HIDE);
+	const way = wayOf(script.leave, script.edge, CAPTION_HIDE);
 	return {
 		part: 'caption',
 		timing: timingOf(way.kind === OWN_WAY.kind ? { ease: WORDS_COME_AND_GO_ON, ...script } : script),
@@ -91,7 +92,7 @@ function captionComing(beginning: Beginning, said: Said, coming: WordsComing, wa
 
 /** The caption standing going in a way, its words at the pace named; one not on the screen is refused. */
 function captionGoing(beginning: Beginning, way: Way, words: WordsGoingScript | undefined): Change {
-	const standing = present(beginning, 'caption', 'caption.hide finds no caption on the screen');
-	const setOff = { ...standing, comingUp: wordsGoingAt(standing.comingUp, words, 'caption.hide') };
+	const standing = present(beginning, 'caption', `${CAPTION_HIDE} finds no caption on the screen`);
+	const setOff = setOffGoing(standing, words, CAPTION_HIDE);
 	return propChange('caption', (progress) => goneIn(setOff, way, progress));
 }

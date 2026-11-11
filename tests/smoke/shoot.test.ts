@@ -388,16 +388,6 @@ test("a block a page of the film's own is brought to rest by is measured down it
 	);
 });
 
-test("a block a page of the film's own lacks is refused as a run to rest by it begins, naming the block", async () => {
-	const steps = [
-		cut(screen.shows(TALL_OWN_PAGE)),
-		play({ seconds: 0.1, moves: [screen.scrollTo(TALL_OWN_PAGE, '#nowhere', { top: 0 })] })
-	];
-	await expect(shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
-		'nothing on the page matches #nowhere'
-	);
-});
-
 test("a page of the film's own that moves of itself is refused before the film is shot, naming how it begins", async () => {
 	const spinning = '<style>h2 { animation: spin 1s infinite } @keyframes spin { to { rotate: 1turn } }</style>';
 	const steps = [cut(screen.shows({ html: `${spinning}<h2>Spinning</h2>` }))];

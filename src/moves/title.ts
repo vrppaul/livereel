@@ -9,7 +9,6 @@
  * so a title moving to a place of another size takes that size as it sets off, where it reads from, and travels whole:
  * its lines change once, where they would break anew on every frame of the way.
  */
-import { linear } from '../domain/curves.ts';
 import { type Box, boxOf } from '../domain/geometry.ts';
 import { A_LETTER_SPACING, A_LINE_HEIGHT, A_SIZE, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import {
@@ -46,14 +45,15 @@ import {
 import {
 	A_WORDS_GOING,
 	A_WORDS_SCRIPT,
+	WORDS_COME_AND_GO_ON,
 	type WordsComing,
 	type WordsGoingScript,
 	type WordsScript,
 	comingUpAt,
 	refuseWordsBroughtWhole,
 	refuseWordsTakenWhole,
-	wordsComing,
-	wordsGoingAt
+	setOffGoing,
+	wordsComing
 } from './words.ts';
 
 /**
@@ -108,8 +108,9 @@ const TITLE_FORM: Form<TitleScript> = {
 // Words over the whole frame on their ground stand centred
 const OVER_THE_WHOLE: Alignment = 'center';
 const TITLE_HIDE_FORM: Form<TitleHideScript> = { words: A_WORDS_GOING, ...HIDE_FORM };
-// A title's words come up and go one after another at an even pace in their own way, where the film names no curve
-const WORDS_COME_AND_GO_ON = linear;
+// What a refusal names the moves that bring a title and take it away by
+const TITLE_SHOW = 'title.show';
+const TITLE_HIDE = 'title.hide';
 // A title reads a place as words do, and sets off toward one as `settingOff` has it
 const TITLE_READING: PlaceReading<typeof TITLE> = { placed: wordsPlaced, settingOff };
 
@@ -121,8 +122,8 @@ const TITLE_READING: PlaceReading<typeof TITLE> = { placed: wordsPlaced, setting
  */
 export function show(text: Wording, script: TitleScript = {}): Move {
 	assertKind(text, A_WORDING, "title.show's text");
-	assertWritten(script, TITLE_FORM, 'title.show');
-	refuseWordsBroughtWhole(script, 'title.show');
+	assertWritten(script, TITLE_FORM, TITLE_SHOW);
+	refuseWordsBroughtWhole(script, TITLE_SHOW);
 	const said = saidOf(text);
 	const coming = wordsComing(said, script.words);
 	const type: TitleType = {
@@ -131,7 +132,7 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 		lineHeight: script.lineHeight ?? null
 	};
 	const setting: Setting = { said, place: script.at ?? null, align: script.align ?? null, type, coming };
-	const showing = objectShow(TITLE, 'title.show', script, setting.place, WORDS_COME_AND_GO_ON, (beginning) =>
+	const showing = objectShow(TITLE, TITLE_SHOW, script, setting.place, WORDS_COME_AND_GO_ON, (beginning) =>
 		titleComing(setting, beginning)
 	);
 	return { ...showing, sounds: coming.sounds };
@@ -151,12 +152,12 @@ export function to(place: Place, script: ToScript = {}): Move {
  * of the frame, naming no pace for its words; once gone, there is none.
  */
 export function hide(script: TitleHideScript = {}): Move {
-	assertWritten(script, TITLE_HIDE_FORM, 'title.hide');
-	refuseWordsTakenWhole(script, 'title.hide');
+	assertWritten(script, TITLE_HIDE_FORM, TITLE_HIDE);
+	refuseWordsTakenWhole(script, TITLE_HIDE);
 	const { words, ...hiding } = script;
-	return objectHide(TITLE, 'title.hide', hiding, {
+	return objectHide(TITLE, TITLE_HIDE, hiding, {
 		curve: WORDS_COME_AND_GO_ON,
-		settingOff: (title) => ({ ...title, comingUp: wordsGoingAt(title.comingUp, words, 'title.hide') })
+		shownAsItGoes: (title) => setOffGoing(title, words, TITLE_HIDE)
 	});
 }
 
