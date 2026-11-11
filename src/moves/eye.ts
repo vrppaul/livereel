@@ -62,10 +62,12 @@ import {
 	type LegsTimed,
 	type OwnFigure,
 	type Pace,
+	THE_FIRST_LEG,
 	TURNINGS,
 	type Turning,
 	type Way,
 	flownAt,
+	gazeKeysOf,
 	gazeOf,
 	headingToward,
 	momentBy,
@@ -419,10 +421,7 @@ const APART: Turning = 'apart';
 // How the eye goes before a block where the film names no pace: as the camera zooms
 const BY_SCALE: PaceBeforeAPlane = 'scale';
 const NO_GAZE_KEYS: readonly never[] = [];
-// The moment a flight starts, as a share of its move's progress, and the first leg's end, which a gaze key is reached
-// at or past; how high over the page a block the gaze turns to stands; and the bounds of a tip, in degrees
-const ITS_START = 0;
-const THE_FIRST_LEG = 0;
+// How high over the page a block the gaze turns to stands; and the bounds of a tip, in degrees
 const LEVEL_WITH_THE_PAGE = 0;
 const STRAIGHT_DOWN = -90;
 const STRAIGHT_UP = 90;
@@ -730,8 +729,8 @@ async function flown(
 	const flight: Flight = {
 		way: flightsWay,
 		pace,
-		heading: [{ moment: ITS_START, rule: { kind: 'degrees', degrees: gaze.heading } }, ...headings],
-		tip: [{ moment: ITS_START, rule: { kind: 'degrees', degrees: gaze.tip } }, ...tips],
+		heading: gazeKeysOf(gaze.heading, headings),
+		tip: gazeKeysOf(gaze.tip, tips),
 		turned: turnedOf(gazeWritten.turning, flightsWay, pace, [...headings, ...tips]),
 		roll: gaze.roll,
 		eye: { focalLength: camera.eye.focalLength, frameHeight: frame.height / frameScaleOf(frame) }

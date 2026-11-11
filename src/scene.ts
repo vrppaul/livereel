@@ -133,8 +133,8 @@ export type Scene = { readonly [Name in PropName]: PropStates[Name] } & {
 	readonly pageSpeed: number;
 	/**
 	 * How far the film's own scrolls have scrolled each block of the page, by the key the page knows it by
-	 * (`src/domain/placement.ts`): what carries a piece riding a block standing in it. The page holds the scroll
-	 * itself; the stage draws nothing of this.
+	 * (`src/domain/placement.ts`): what carries a piece riding its block, as far as the blocks that carry its source have
+	 * scrolled. The page holds the scroll itself; the stage draws nothing of this.
 	 */
 	readonly scrolled: Scrolled;
 	/**

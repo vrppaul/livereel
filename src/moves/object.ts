@@ -507,7 +507,7 @@ export function objectShowBeside(
 }
 
 /**
- * An object of a kind coming up in the world riding the blocks its source stands in, a selector's first `every` blocks
+ * An object of a kind coming up in the world riding the blocks that carry its source, a selector's first `every` blocks
  * or a box of the screen, as `objectShow` brings one inside the world: carried up the world from then on as far as the
  * film scrolls any of those blocks, as the source is, as many of the world's pixels a pixel of the scrolls as the
  * camera shows a pixel of the screen as the move begins. One named to stand anywhere but inside the world is refused:

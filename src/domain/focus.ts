@@ -21,12 +21,12 @@
  *
  * Where the eye focuses is placed as each frame is drawn (`Focus` in `src/domain/eye.ts`), at both ends of its way: a
  * spot of the frame, the world, the window, the page or over it, placed on that holder's plane as the window, the
- * camera and the eye stand then, as anything placed there is (`src/domain/placement.ts`), so a focus holds on what it was put on while
- * they move; or under a point of the frame, where the eye's line through that point meets the window's plane as the
- * window stands then (`underTheFrame` in `src/domain/camera.ts`), so the focus stays under the point while the window
- * leans and turns beneath it. A focus going from one to another goes evenly in the reciprocal of its distance, as a
- * lens's ring turns, so what it leaves softer softens evenly; it goes no farther than as far as can be, where a spot it
- * was put on stands behind the eye or the eye sees past the window's plane under the point.
+ * camera and the eye stand then, as anything placed there is (`src/domain/placement.ts`), so a focus holds on what it
+ * was put on while they move; or under a point of the frame, where the eye's line through that point meets the window's
+ * plane as the window stands then (`underTheFrame` in `src/domain/camera.ts`), so the focus stays under the point while
+ * the window leans and turns beneath it. A focus going from one to another goes evenly in the reciprocal of its
+ * distance, as a lens's ring turns, so what it leaves softer softens evenly; it goes no farther than as far as can be,
+ * where a spot it was put on stands behind the eye or the eye sees past the window's plane under the point.
  */
 import { type Camera, underTheFrame } from './camera.ts';
 import {

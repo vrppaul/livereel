@@ -242,8 +242,8 @@ const REACHES_NOWHERE =
 	"screen.shows draws a page past its screen that has nothing past it: the screen holds all of it, or its own styles hide what runs past the screen, as overflow: hidden on its body does; give it more than the screen holds, or show it with reaches: 'screen'";
 const ON_THE_SCREEN_ALONE = false;
 // The move that brings a page of the film's own to rest, as its refusals name it, and what it says of a pace judged
-// where the eye sees past the window's plane; the product of the signs of a pace
-// and a way that go opposite ways; and how a way along a page's scroll is said, down where it is more than none
+// where the eye sees past the window's plane; the product of the signs of a pace and a way that go opposite ways; and
+// how a way along a page's scroll is said, down where it is more than none
 const SCROLL_TO = 'screen.scrollTo';
 const SEEN_PAST_THE_PLANE = `${SCROLL_TO} judges its pace at a point of the frame where the eye sees past the window's plane while the page runs: judge it where the eye sees that plane all through the move`;
 const OPPOSITE_WAYS = -1;

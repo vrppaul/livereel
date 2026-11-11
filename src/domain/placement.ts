@@ -9,8 +9,8 @@
  * standing in the world, where what stands on it stands off it as freely as in the world, as a piece falls onto a
  * block; a group of objects, a placement on the frame, in its box's pixels from its corner; a point of the screen or of
  * an object, the frame's plane in its pixels from where the eye sees that point on each frame, which words beside a
- * part stand on; and the page's scrolls, the world's plane carried up as far as the film scrolls the blocks a piece's
- * source stands in, which the piece rides. Something placed on a plane stands about its box's middle as the plane's
+ * part stand on; and the page's scrolls, the world's plane carried up as far as the film scrolls the blocks that carry
+ * a piece's source, which the piece rides. Something placed on a plane stands about its box's middle as the plane's
  * stance carries it there and as its own stance does. The flat stage lays it in the frame, seen from the eye in
  * perspective about its box's middle, or, on the window's plane, in the window, by those stances alone, as the window's
  * element carries what is laid in it; the room reads where it stands in the eye's own space. Where a point of anything
@@ -82,9 +82,9 @@ export type GroupName = string;
 /**
  * What a placement is read in: one that lasts the whole film; a group of objects by its name, with the zIndex of what
  * stands in it there, how high it is drawn among the others of the group, where the film names one, a group going with
- * what stands in it; a point of something that stands in the world, where the eye sees it on the frame as each frame
- * is drawn, which words beside a part stand off; or the world as the page's scrolls carry a ride, up the world as far
- * as the film scrolls the blocks the ride stands in, so a piece lifted off a block rides it.
+ * what stands in it; a point of something that stands in the world, where the eye sees it on the frame as each frame is
+ * drawn, which words beside a part stand off; or the world as the page's scrolls carry a ride, up the world as far as
+ * the film scrolls the blocks that carry the rider's source, so a piece lifted off a block rides it.
  */
 export type Holder =
 	| LastingHolder
@@ -170,7 +170,7 @@ type Rider = 'eye' | 'world';
 /**
  * What holders are read off as a frame is drawn: the camera, which shows the window and frames the page in it, where
  * each group standing stands, where each object standing stands, by its name, and how far the film has scrolled each
- * block it scrolls, which carries what rides a block standing in it.
+ * block it scrolls, which carries a rider whose source that scroll carries.
  */
 export interface Holders {
 	readonly camera: Camera;
@@ -267,8 +267,8 @@ const AT_THE_EYE = 0;
 /**
  * The plane of a holder, as the holders stand: a group's, the frame's carried by the group's box and stance; a point's,
  * the frame's, its corner where the eye sees the point now, so what stands off it rides with the eye and goes with the
- * point as the point moves on the frame; a ride's, the world's carried up it as far as the film has scrolled the
- * blocks the ride stands in since it began, as many of its pixels a pixel of the scrolls as the ride's scale.
+ * point as the point moves on the frame; a ride's, the world's carried up it as far as the film has scrolled the ride's
+ * blocks since it began, as many of its pixels a pixel of the scrolls as the ride's scale.
  */
 export function planeOf(holder: Holder, holders: Holders, frame: Size): Plane {
 	switch (holder.kind) {
@@ -329,15 +329,15 @@ export function scrolledInAll(scrolled: Scrolled, blocks: readonly BlockKey[]): 
 	return blocks.reduce((carried, block) => carried + scrolledSoFar(scrolled, block), NOT_SCROLLED);
 }
 
-/** How far the film has scrolled the blocks a ride stands in since the ride began, in all, in the page's pixels. */
+/** How far the film has scrolled a ride's blocks since the ride began, in all, in the page's pixels. */
 function scrolledSince(ride: Ride, scrolled: Scrolled): number {
 	return scrolledInAll(scrolled, ride.blocks) - ride.from;
 }
 
 /**
  * A box of the screen as it stands now under something placed over it in a holder: riding the page's scrolls, carried
- * up the screen as far as the film has scrolled the blocks the ride stands in since it began, as the block's own parts
- * are; in any other holder, as it is.
+ * up the screen as far as the film has scrolled the ride's blocks since it began, as the block's own parts are; in any
+ * other holder, as it is.
  */
 export function screenBoxUnder(box: Box, holder: Holder, scrolled: Scrolled): Box {
 	if (holder.kind !== 'scroll') return box;

@@ -155,14 +155,13 @@ export interface BodyScript {
 /**
  * How a piece is lifted: off the first `every` blocks a selector matches, together, with `air` clear round them, in the
  * page's pixels; how round the corners of what it lifts are, `corner`, a radius in the page's pixels: a rounded card's
- * own `border-radius`, where it lifts the card alone and whole;
- * the hole it leaves and the line the lines from it to its source are drawn in, where the film names them; the
- * `picture` it is drawn from, the page's as it changes, `'following'`, where the film names none, or one of its source
- * held as it is lifted, `'held'`; how it comes up; which piece; the world it stands `inside`, which the eye moves
- * through, or the group it stands in, if either; its `body` in the world, if the film names one; whether it `rides`
- * its block in the world, `'its block'`, carried up by the film's scrolls of every block its source stands in; the
- * block whose `letters` it carries, a selector, which it lands on a block's letters, if the film names one; and how it
- * stands out as it comes up, `effects`.
+ * own `border-radius`, where it lifts the card alone and whole; the hole it leaves and the line the lines from it to
+ * its source are drawn in, where the film names them; the `picture` it is drawn from, the page's as it changes,
+ * `'following'`, where the film names none, or one of its source held as it is lifted, `'held'`; how it comes up; which
+ * piece; the world it stands `inside`, which the eye moves through, or the group it stands in, if either; its `body` in
+ * the world, if the film names one; whether it `rides` its block in the world, `'its block'`, carried up by the film's
+ * scrolls of every block whose scroll carries its source; the block whose `letters` it carries, a selector, which it
+ * lands on a block's letters, if the film names one; and how it stands out as it comes up, `effects`.
  */
 export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript, ShownStandingOutScript {
 	readonly every?: number;
@@ -279,7 +278,7 @@ const PIECE_FORM: Form<PieceScript> = {
 	// A piece stands inside the world alone: it lies in the window only where it is carried onto the page (`onto`)
 	inside: new Literal('world'),
 	body: new OfForm(BODY_FORM, 'a body: { thickness, walls, glow }'),
-	// The page finds the blocks a piece's source stands in, so the film names none, and none by a selector it mistypes
+	// The page finds the blocks that carry a piece's source, so the film names none, and none by a selector it mistypes
 	rides: new Literal('its block'),
 	letters: A_SELECTOR,
 	...IN_PLACE_SHOW_FORM,
@@ -292,7 +291,7 @@ const PIECE_FORM: Form<PieceScript> = {
  * where the camera shows it, cut to the part it shows, its corners as round as the film names, leaving the hole and
  * drawing the lines the film names, drawn from the picture the film names: in place of any piece of its name, in its
  * own way, fading up whole, or in a way of livereel's the film names, with the body the film names; in the world,
- * riding its block as the film scrolls any block the target stands in, where the film asks. A hole over a box of the
+ * riding its block as the film scrolls any block that carries the target, where the film asks. A hole over a box of the
  * screen, which has no block to read the ground behind, is refused unless the film names its colour; a pit on a piece
  * with no body, whose colour its walls take, is refused.
  */
@@ -325,8 +324,8 @@ function takingOf(script: PieceScript): Taking {
 }
 
 /**
- * A piece coming up lifted off a target as the film asks: riding its block, the blocks it stands in, where the film
- * asks so, standing where it comes up else.
+ * A piece coming up lifted off a target as the film asks: riding its block, the blocks that carry its source, where the
+ * film asks so, standing where it comes up else.
  */
 function pieceComing(target: Target, script: PieceScript, lifting: Lifting): Move {
 	if (script.rides === undefined) {

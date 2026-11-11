@@ -4,13 +4,13 @@
  *
  * The scroll and the keys change the page: each frame sets the page's scroll, or presses the keys due by then, so the
  * page renders a little each frame as a person's scroll and typing make it. Of the scene, a scroll changes only how far
- * the film has scrolled the block it moves, by the key the page knows it by, which carries a piece riding a block
- * standing in it (`src/domain/placement.ts`). An act is done once, at its moment, as its move begins, the film's time
- * standing while the page answers and every other move going on round it, so a camera need not stop at a click. It
- * takes no time, so it clashes only with a scroll or a typing running across its moment, which it would pull the page
- * out from under, and the take does it before any move that begins at that moment reads the page. The speed is the
- * scene's, which the take runs the page's time by, so its time runs ever faster or slower through a play, at once from
- * a cut.
+ * the film has scrolled the block it moves, by the key the page knows it by, which carries a piece riding its block
+ * where that scroll carries the piece's source (`src/domain/placement.ts`). An act is done once, at its moment, as its
+ * move begins, the film's time standing while the page answers and every other move going on round it, so a camera need
+ * not stop at a click. It takes no time, so it clashes only with a scroll or a typing running across its moment, which
+ * it would pull the page out from under, and the take does it before any move that begins at that moment reads the
+ * page. The speed is the scene's, which the take runs the page's time by, so its time runs ever faster or slower
+ * through a play, at once from a cut.
  */
 import {
 	A_NUMBER,

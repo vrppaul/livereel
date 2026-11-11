@@ -204,9 +204,9 @@ const HALVES = 2;
 const STEEPEST_AND_MONOTONE = 3;
 // How fast a flight timed by its legs goes as it sets off and as it comes to rest
 const AT_REST = 0;
-// The first leg, whose end a roll the eye set off with is gone by; and how many knots of a pace stand before the first
-// leg's end: the flight's start
-const THE_FIRST_LEG = 0;
+// The first leg, whose end a roll the eye set off with is gone by and a gaze key is reached at or past; and how many
+// knots of a pace stand before the first leg's end: the flight's start
+export const THE_FIRST_LEG = 0;
 const KNOTS_BEFORE_THE_LEGS = 1;
 // How short a leg is to go nowhere, in pixels of a frame 1080 high
 const NOWHERE = 1e-6;
@@ -264,6 +264,11 @@ export function gazeOf(eye: Viewpoint): Gaze {
 	const square = top.clone().addScaledVector(looking, -top.dot(looking)).normalize();
 	const roll = Math.atan2(kept.clone().cross(square).dot(looking), kept.dot(square));
 	return { heading, tip: degreesOf(tip), roll: degreesOf(roll) };
+}
+
+/** A gaze's keys: the degrees it set off at, at the flight's start, then those the film names, each later. */
+export function gazeKeysOf(setOffAt: number, named: readonly GazeKey[]): GazeKeys {
+	return [{ moment: ITS_START, rule: { kind: 'degrees', degrees: setOffAt } }, ...named];
 }
 
 /**

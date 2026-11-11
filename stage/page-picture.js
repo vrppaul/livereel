@@ -18,12 +18,12 @@
  * where a blur reads it. Blurred in the screen's colours, as the stylesheet blurs it, a page's light words spread dark
  * over a dark page: the soft page of the promo's beats 7–8 read a light's deviation of 2.7 levels of 255 so, 4.9 in
  * light, the promo's own 9.2 (a still at the draft's second 2.5, 2026-11-11). Over a part of the screen the blur leaves
- * sharp the picture is laid unblurred, or blurred
- * apart by as much as the part softens, softening into the page's past the part's edge as the flat stage's mask has it
- * (`.sharp-part` in `stage.css`): never a sharp picture faded into a blurred one, which reads as two pictures at once.
- * Where the shade reaching the whole window blurs the window's body, the picture is laid unblurred and the eye's lens
- * blurs the page with its body as one (`blurredWithTheWindow`, `stage/body.js`): blurred apart, the page's outline
- * stood sharp round a soft page, a bright line where the claude-review promo's lens softened all of its slab.
+ * sharp the picture is laid unblurred, or blurred apart by as much as the part softens, softening into the page's past
+ * the part's edge as the flat stage's mask has it (`.sharp-part` in `stage.css`): never a sharp picture faded into a
+ * blurred one, which reads as two pictures at once. Where the shade reaching the whole window blurs the window's body,
+ * the picture is laid unblurred and the eye's lens blurs the page with its body as one (`blurredWithTheWindow`,
+ * `stage/body.js`): blurred apart, the page's outline stood sharp round a soft page, a bright line where the
+ * claude-review promo's lens softened all of its slab.
  *
  * The page's surface lays, as the browser lays them in the window's view: the screen's ground and the picture, cut to
  * the screen's rounded box and the view's, showing as far as the screen is clear less how clear its own markup is

@@ -5479,7 +5479,7 @@ test('a piece riding its block carried to a place stands there however far the b
 	]);
 });
 
-test("a piece riding its block is carried by a scroll of every block it stands in, however the film selects that block: the column by its selector or another, the piece's block scrolled to, which scrolls the column, and the column scrolled to, which scrolls the page; the piece's block's own scroll carries it none", async () => {
+test("a piece riding its block is carried by a scroll of every block the page finds carrying its source, however the film selects that block: the column by its selector or another, the piece's block scrolled to, which scrolls the column, and the column scrolled to, which scrolls the page; the piece's block's own scroll carries it none", async () => {
 	const lifted = await liftedRiding();
 	const byTheColumn = await columnScrolled(lifted, SCROLLED_AFTER);
 	const byItsRole = await setOnTheScrollingPage(

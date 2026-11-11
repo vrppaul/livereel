@@ -32,9 +32,9 @@
  * move's share lays knots at even points of it, a run brought to rest lays two, the pace it sets off at and rest where
  * it ends, so a move that takes the run over goes on from where it stands and as fast. A run brought to rest with its
  * pace judged at a point of the frame lays knots at even points of its share too, so what the point shows comes to rest
- * on that curve across the frame, wherever the frame stands meanwhile. Where the page stands is worked out
- * from the moment, as what else changes with time of itself is, so each exposure of a frame draws it where it stood then
- * and a fast run smears.
+ * on that curve across the frame, wherever the frame stands meanwhile. Where the page stands is worked out from the
+ * moment, as what else changes with time of itself is, so each exposure of a frame draws it where it stood then and a
+ * fast run smears.
  *
  * A film may type into a block of a page of its own, which then shows what stands typed as its text in place of what
  * the page wrote there. What stands typed is the page's too, held by its key and the block's selector until the film
