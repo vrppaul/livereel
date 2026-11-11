@@ -5,9 +5,10 @@
  * itself and as sharply at a slant as the card filters, so a window brought near the eye or leant toward it shows the
  * page as sharp as the picture was taken. Markup, which would reflow drawn denser, stays in the surfaces the browser
  * draws at the frame's own density: the window's, which holds the screen's own markup over the page — the sweep, the
- * holes, the light, the dim — or a page of the film's own; and the surface of what lies over the page in
- * the window, apart — a callout, pins, an object inside the window — which the stage lays apart where a frame is drawn
- * as a room, as it lies over the faded screen whole, not faded with it.
+ * holes, the light, the dim — or a page of the film's own; the surface of what lies over the page in the window,
+ * apart — a callout, pins, an object inside the window — which the stage lays apart where a frame is drawn as a room,
+ * as it lies over the faded screen whole, not faded with it; and the cursor's, which the room lays over all the world
+ * it draws (`cursorLaid` in `stage/room.js`).
  *
  * The picture is uploaded once each time the stage shows another, not each exposure as the surfaces are drawn. Where
  * the window shades the page with a blur, the picture is blurred by a Gaussian whose deviation is the shade's blur,
@@ -42,8 +43,11 @@
  * its world over the ground, and a dark page faded into a dark ground went darker than the promo's: a light's deviation
  * of 5.0 levels of 255 over the soft page of its beats 7–8, 10.2 faded in light, the promo's 9.3 (a still at the
  * draft's second 2.5, 2026-11-11). What the room has laid so far is read as the eye's lens blurred it, and the lens
- * blurs it again with the page, by the page's depth. The window's edge and shadow keep as they stand; a page of the
- * film's own, which the window's surface draws, fades in the screen's colours.
+ * blurs it again with the page, by the page's depth. Where the shade reaches the page alone, the window's edge and
+ * shadow, or its body, keep as they stand; where it reaches the whole window, they fade with the page: the edge and
+ * shadow as the stylesheet fades them (`.view-shadow` in `stage.css`), the body into the same light of what stands
+ * behind it (`stage/body.js`). A page of the film's own, which the window's surface draws, fades in the screen's
+ * colours.
  */
 import {
 	Color,

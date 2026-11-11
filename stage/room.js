@@ -12,10 +12,11 @@
  * frame's, drawn face-on into a texture as many times as densely as the eye magnifies it (`DrawnObject.magnified`), so
  * brought near it is as sharp as the page beside it, and stood where the engine's matrix places its box, a piece's body
  * standing with it (`stage/piece-body.js`); all seen in perspective from the eye and lit as it sees the room
- * (`stage/lighting.js`), hiding one another by depth alone; but what stands before
- * all the rest while the eye's focus blurs it near, a world of its own drawn apart and laid over the rest
- * (`worldBuilt`). The eye's lens blurs each pixel of the world by how far what it shows stands from the focus
- * (`stage/lens.js`), its fields laid over one another each by its law (`stage/laying.js`) and the whole laid over the
+ * (`stage/lighting.js`), hiding one another by depth alone; but what stands before all the rest while the eye's focus
+ * blurs it near, a world of its own drawn apart and laid over the rest (`worldBuilt`). The eye's lens blurs each pixel
+ * of the world by how far what it shows stands from the focus, or, where the window's shade blurs the whole window,
+ * as wide as the shade blurs the window there where that is wider (`stage/lens.js`, `WindowBlurred` in
+ * `stage/body.js`); its fields are laid over one another each by its law (`stage/laying.js`) and the whole over the
  * ground; over that the cursor, on the page's plane where the eye sees it but over whatever stands nearer, unblurred,
  * as the reference promo drew its pointer over its world past its lens (`pointer.js` of the film): laid in the world, a
  * piece lifted off the page and its shadow lay over it, grey and soft (beats 5–6's draft at 4.4 s, 2026-11-11); then
@@ -943,11 +944,10 @@ class Room {
 	/**
 	 * The box of the frame the world is drawn into for a frame's exposures: as far past each edge of the frame as the
 	 * lens's blur gathers there, from the softest point the frame shows of its window or of an object in it, or of the
-	 * window's slab the shade blurs whole, rounded up
-	 * to a step of the drawing's pixels; grown about the frame till each side halves evenly down to the coarsest copy
-	 * the lens reads of it (`sideHalvedEvenly`), so the blur's light is the same wherever the frame falls in it; and no
-	 * longer a side than the graphics card's largest texture, a power of two, past which a blur by the frame's edge
-	 * gathers nothing. The frame itself where the eye's focus blurs none.
+	 * window's slab the shade blurs whole, rounded up to a step of the drawing's pixels; grown about the frame till each
+	 * side halves evenly down to the coarsest copy the lens reads of it (`sideHalvedEvenly`), so the blur's light is the
+	 * same wherever the frame falls in it; and no longer a side than the graphics card's largest texture, a power of
+	 * two, past which a blur by the frame's edge gathers nothing. The frame itself where the eye's focus blurs none.
 	 * @param {readonly DrawnScene[]} scenes @returns {Box}
 	 */
 	gatheredFor(scenes) {
