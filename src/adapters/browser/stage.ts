@@ -125,23 +125,28 @@ declare global {
 /**
  * How the stage draws a frame, flat or as a room (`room.ts`): the flags the browser is launched with for it, how the
  * stage is opened, serving the film's things module where it names one, and then laid out, loading it: the names it
- * builds a thing by, none for a stage that draws no things; how a frame's exposures are drawn on it, and what the
- * person who asks for software is told, if anything.
+ * builds a thing by, none for a stage that draws no things; how a frame's exposures are drawn on it, and waited on to
+ * the end of their drawing; and what the person who asks for software is told, if anything.
  */
 export interface StageDrawing {
 	readonly flags: readonly string[];
 	readonly opened: (page: Page, things: string | null) => Promise<void>;
 	readonly laidOut: (page: Page, layout: Layout, things: string | null) => Promise<readonly string[]>;
 	readonly drawn: (page: Page, exposures: readonly DrawnScene[]) => Promise<void>;
+	readonly finished: (page: Page) => Promise<void>;
 	readonly saidInSoftware: string | null;
 }
 
-/** The stage drawn flat: opened from the package's files as they stand, laid out by its markup, drawn by it alone. */
+/**
+ * The stage drawn flat: opened from the package's files as they stand, laid out by its markup, drawn by it alone, as
+ * the browser lays out and paints it in its capture, so nothing goes on drawing past its draw.
+ */
 export const DRAWN_FLAT: StageDrawing = {
 	flags: [],
 	opened: stageApartOpened,
 	laidOut: () => Promise.resolve(NO_THINGS),
 	drawn: drawnOn,
+	finished: () => Promise.resolve(),
 	saidInSoftware: null
 };
 
@@ -178,6 +183,11 @@ export class PlaywrightFramedStage implements FramedStage {
 
 	draw(exposures: readonly DrawnScene[]): Promise<void> {
 		return drawnOn(this.page, exposures);
+	}
+
+	/** Drawn flat, as the browser paints it in its capture. */
+	drawingFinished(): Promise<void> {
+		return DRAWN_FLAT.finished(this.page);
 	}
 
 	/** A browser finds the point it clicks wrongly on a screen the camera has scaled; at no scale, every point is the page's own. */
@@ -255,6 +265,10 @@ export class PlaywrightPicturedStage implements PicturedStage {
 
 	draw(exposures: readonly DrawnScene[]): Promise<void> {
 		return this.drawing.drawn(this.page, exposures);
+	}
+
+	drawingFinished(): Promise<void> {
+		return this.drawing.finished(this.page);
 	}
 
 	/** The page's picture taken anew, and shown where it came out otherwise than the last. */

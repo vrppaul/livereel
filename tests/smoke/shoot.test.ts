@@ -226,7 +226,7 @@ test('a film drawn as a room in software is shot with a word that the graphics c
 		browser: new Chromium('software', (said) => warned.push(said), FILMS_FOLDER)
 	});
 	expect(warned).toEqual([
-		'the room is drawn in software, where a frame takes about twenty times as long to draw as on a graphics card: --renderer gpu draws it on the card, where the machine has one'
+		'the room is drawn in software, where a frame takes about 150 times as long to draw as on a graphics card: --renderer gpu draws it on the card, where the machine has one'
 	]);
 });
 

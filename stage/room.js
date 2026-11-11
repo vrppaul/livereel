@@ -191,6 +191,11 @@ const PAST_WHITE = { depthBuffer: false, type: HalfFloatType };
 const NO_TIME_PASSING = 0;
 const UNMASKED = false;
 const SET_BY_EACH_FRAME = 0;
+// What the card is made to finish its work by: one pixel read back, of a target nothing is drawn into, its four bytes,
+// from its corner
+const ONE_PIXEL = 1;
+const BYTES_A_PIXEL = 4;
+const ITS_CORNER = 0;
 // A film that names no things module builds no things
 /** @type {ThingsLoaded} */
 const NO_THINGS = { kind: 'built', names: [] };
@@ -462,6 +467,15 @@ class Room {
 		const frame = layout.format.frame;
 		const measuredOn = new Vector2(frame.width / layout.frameScale, frame.height / layout.frameScale);
 		this.bloom = new UnrealBloomPass(measuredOn, SET_BY_EACH_FRAME, SET_BY_EACH_FRAME, SET_BY_EACH_FRAME);
+		// A pixel read back waits for the card to finish all it was asked, as Chrome's WebGL `finish` does not
+		this.finishing = new WebGLRenderTarget(ONE_PIXEL, ONE_PIXEL);
+		this.renderer.initRenderTarget(this.finishing);
+		this.readBack = new Uint8Array(BYTES_A_PIXEL);
+	}
+
+	/** Once the graphics card has done all the room asked of it. */
+	finished() {
+		this.renderer.readRenderTargetPixels(this.finishing, ITS_CORNER, ITS_CORNER, ONE_PIXEL, ONE_PIXEL, this.readBack);
 	}
 
 	/**
@@ -1180,6 +1194,10 @@ const ROOM_API = {
 	compose: (scenes) => {
 		if (laidOut === null) throw new Error('the room composes a frame before it is laid out');
 		return laidOut.compose(scenes);
+	},
+	finish: () => {
+		if (laidOut === null) throw new Error('the room is waited on to draw before it is laid out');
+		laidOut.finished();
 	}
 };
 window.room = ROOM_API;

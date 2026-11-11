@@ -26,6 +26,11 @@ interface DrawingStage {
 	/** The frame drawn as these exposures of it, as many as the stage draws at once at most. */
 	readonly draw: (exposures: readonly DrawnScene[]) => Promise<void>;
 	/**
+	 * Once the frame last drawn is drawn to its end: a stage that draws on the graphics card returns from `draw` with the
+	 * card's work queued, which its capture would otherwise wait on.
+	 */
+	readonly drawingFinished: () => Promise<void>;
+	/**
 	 * Why the stage, or the page in its frame, is no longer there, where one is not: a click that took the stage away,
 	 * a page that refuses its frame, one that could not be reached; none where both are.
 	 */

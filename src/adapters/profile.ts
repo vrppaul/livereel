@@ -7,8 +7,14 @@
  * is said as the rest: the film's own code, its acts, the sounds read before the first frame, and the scene worked
  * out. Where the rest grows, a part of it is timed next, so no second is put down to a guess. The footage's blends
  * are timed apart, as they run beside the take rather than in its way; a frame of one exposure blends nothing, and
- * is not counted. Timing costs two readings of the clock a call, so a shoot is always timed, and says it where it is
- * asked to.
+ * is not counted.
+ *
+ * A stage that draws on the graphics card, as a room does, has the card's work queued as its draw returns, and the
+ * card does it inside the capture after: timed so, a room's frame of 3840 × 2160, the page fading as the eye's focus
+ * opens, told 15.6 ms of drawing and 446.9 of capture, where waited on it told 329.9 and 140.6 (2026-11-11). So a
+ * profile taken waits, as it times a draw, for the stage's drawing to finish, and the capture is the frame's way out of
+ * the browser alone. The wait stops the card's queue once a frame, so only a profile taken wraps the ports: a shoot not
+ * asked for its profile waits on nothing more than its frames, and says nothing of where its time went.
  */
 import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { ActContext, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
@@ -57,17 +63,19 @@ const THE_REST = 'the rest';
 const ITS_OWN = 1;
 
 /**
- * A shoot's profile: the parts the take waits on, timed at the ports handed to it, and the footage's blends, timed as
- * they run; said as lines once the shoot is done.
+ * A shoot's profile, where it is taken: the parts the take waits on, timed at the ports handed to it, and the footage's
+ * blends, timed as they run; said as lines once the shoot is done. One not taken hands every port on as it is.
  */
 export class Profile {
 	readonly clock: Clock;
+	readonly taken: boolean;
 	readonly waited: Timings;
 	readonly blended: Timings;
 	private whole = 0;
 
-	constructor(clock: Clock) {
+	constructor(clock: Clock, taken: boolean) {
 		this.clock = clock;
+		this.taken = taken;
 		this.waited = new Timings(clock);
 		this.blended = new Timings(clock);
 	}
@@ -88,27 +96,28 @@ export class Profile {
 	}
 
 	browser(browser: Browser): Browser {
-		return new TimedBrowser(browser, this.waited);
+		return this.taken ? new TimedBrowser(browser, this.waited) : browser;
 	}
 
 	drawnBrowser(browser: DrawnBrowser): DrawnBrowser {
-		return new TimedDrawnBrowser(browser, this.waited);
+		return this.taken ? new TimedDrawnBrowser(browser, this.waited) : browser;
 	}
 
 	footage(footage: Footage): Footage {
-		return new TimedFootage(footage, this.waited);
+		return this.taken ? new TimedFootage(footage, this.waited) : footage;
 	}
 
 	blend(blend: Blend): Blend {
+		if (!this.taken) return blend;
 		return (exposures) =>
 			exposures.earlier.length === 0
 				? blend(exposures)
 				: this.blended.timed(`blend of ${exposures.earlier.length + ITS_OWN}`, () => blend(exposures));
 	}
 
-	/** Where the shoot's time went. */
+	/** Where the shoot's time went, where the profile is taken. */
 	said(): readonly string[] {
-		return profileSaid(this.whole, this.waited, this.blended);
+		return this.taken ? profileSaid(this.whole, this.waited, this.blended) : [];
 	}
 }
 
@@ -271,8 +280,9 @@ function timedStage(stage: Stage, timings: Timings): Stage {
 }
 
 /**
- * What a stage of either kind does, timed; a capture of exposures laid over one another apart from a capture of one,
- * by how many it lays, as a blend is timed by how many it blends.
+ * What a stage of either kind does, timed; a draw to the end of the stage's drawing, so a capture is timed as the
+ * frame's way out alone; a capture of exposures laid over one another apart from a capture of one, by how many it
+ * lays, as a blend is timed by how many it blends.
  */
 class TimedDrawingStage<Timed extends Stage> {
 	readonly stage: Timed;
@@ -291,7 +301,18 @@ class TimedDrawingStage<Timed extends Stage> {
 
 	draw(exposures: readonly DrawnScene[]): Promise<void> {
 		this.drawnAtOnce = exposures.length;
-		return this.timings.timed('stage.draw', () => this.stage.draw(exposures));
+		return this.timings.timed('stage.draw', () => this.drawnToTheEnd(exposures));
+	}
+
+	/** Waited on by each draw already, in its time. */
+	drawingFinished(): Promise<void> {
+		return this.stage.drawingFinished();
+	}
+
+	/** The frame drawn, and waited on until the stage's drawing of it has finished. */
+	private async drawnToTheEnd(exposures: readonly DrawnScene[]): Promise<void> {
+		await this.stage.draw(exposures);
+		await this.stage.drawingFinished();
 	}
 
 	absence(): Promise<Error | undefined> {

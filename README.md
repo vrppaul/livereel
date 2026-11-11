@@ -108,7 +108,7 @@ checked frame by frame on contact sheets and stills. Install it with
 | `--sheet-rate FRAMES_A_SECOND` | `shoot`, `clip` | how many frames a second the sheet shows: 6 to follow a move as an eye does |
 | `--quality draft\|finest` | `shoot`, `clip`, `still` | `finest`, the default, shoots at twice the frame's width and height and blurs a fast move as the film says; `draft` shoots at the frame's own size, unblurred: quicker and softer |
 | `--renderer software\|gpu` | `shoot`, `clip`, `still`, `set` | where the frames are drawn: in software, the default, or on the graphics card |
-| `--profile` | `shoot`, `clip`, `still` | where the shoot's time went: each part of the browser and the footage the frames waited on, its calls, the time each took and its share, the rest, and the blends of exposures |
+| `--profile` | `shoot`, `clip`, `still` | where the shoot's time went: each part of the browser and the footage the frames waited on, its calls, the time each took and its share, the rest, and the blends of exposures; a room's frame is waited on until the graphics card has drawn it, so `stage.draw` is its drawing and `stage.capture` its way out of the browser, a wait a shoot without `--profile` does not make |
 
 Every file is named after the film's file and the format it is shot in.
 `livereel --help` gives each command's usage. A command that refuses says
@@ -1240,11 +1240,14 @@ module throws building or setting one, as the frame is drawn; and
 
 What `room` costs:
 
-- A frame takes longer to draw than flat, and in software about a third of
-  a second a frame more, which livereel says as it starts: on the graphics
-  card, 300 frames of a lit window with a body, a thing through it and the
-  eye's focus opening took 80.5 and 83.6 s (`--profile`, 2026-11-10), the
-  browser's capture of each frame the slowest step.
+- A frame takes longer to draw than flat, and in software about 150 times
+  as long as on the card, which livereel says as it starts (a frame of 1920
+  × 1080, the page fading as the focus opens, 30.6 s against 197 ms): on
+  the graphics card, 300 frames of a lit window with a body, a thing through it and the
+  eye's focus opening took 80.5 and 83.6 s (`--profile`, 2026-11-10).
+  Drawing is the slowest step: with the page fading as the focus opens, a
+  frame took 329.9 and 335.9 ms to draw at 3840 × 2160 and 140.6 and 146.1
+  ms to capture (`--profile`, 2026-11-11).
 - What is seen through, a thing of glass, and a page fading or coming up
   while a thing stands in the world, is drawn and blurred as a field of
   its own while it stands: the same 300 frames with the page fading over

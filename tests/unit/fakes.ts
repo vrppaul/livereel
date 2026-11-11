@@ -56,18 +56,24 @@ export class PageOfBoxes implements FilmedPage {
 
 /**
  * A stage of either kind, drawing one exposure of a frame at a time, that keeps every scene drawn on it, how many each
- * drawing was of, and counts its captures.
+ * drawing was of, and counts its captures and the times it was waited on to finish drawing.
  */
 export abstract class StageThatKeeps {
 	readonly exposuresAtOnce: number = 1;
 	readonly drawn: DrawnScene[] = [];
 	readonly draws: number[] = [];
 	captured = 0;
+	waitedOn = 0;
 	private lost: Error | undefined = undefined;
 
 	draw(exposures: readonly DrawnScene[]): Promise<void> {
 		this.drawn.push(...exposures);
 		this.draws.push(exposures.length);
+		return Promise.resolve();
+	}
+
+	drawingFinished(): Promise<void> {
+		this.waitedOn += 1;
 		return Promise.resolve();
 	}
 

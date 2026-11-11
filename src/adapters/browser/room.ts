@@ -35,6 +35,11 @@ export interface RoomApi {
 	 * film's things among them; what the film is told where its module fails building or setting one, none where not.
 	 */
 	readonly compose: (exposures: readonly DrawnScene[]) => Promise<string | null>;
+	/**
+	 * Once the graphics card has done all the room asked of it: `compose` returns with the card's work queued, and
+	 * WebGL's `finish` returns at once in Chrome.
+	 */
+	readonly finish: () => void;
 }
 
 /** The film's things module as the room loads it: the names it builds a thing by, or what the film is told. */
@@ -51,16 +56,17 @@ declare global {
  * The stage drawn as a room: the browser launched with HTML-in-Canvas, the stage opened on the room's origin, its
  * surfaces laid in the room's canvas, before the pages of the film's own are laid in them, as a frame moved in the
  * document loads its page anew; and each frame drawn by the stage's markup, then composed by the room. In software a
- * frame of 1920 × 1080 took 292 and 315 ms to draw, where the graphics card drew one in 16 ms on average over the
- * README film (`--profile`, 2026-11-04), so the person who asked for software is told.
+ * frame of 1920 × 1080, the page fading as the eye's focus opens, took 30.6 s to draw, where the graphics card drew one
+ * in 197 ms (`--profile` of 30 frames each, 2026-11-11), so the person who asked for software is told.
  */
 export const DRAWN_AS_A_ROOM: StageDrawing = {
 	flags: ['--enable-blink-features=CanvasDrawElement'],
 	opened: roomOpened,
 	laidOut: roomLaidOut,
 	drawn: drawnInTheRoom,
+	finished: (page) => page.evaluate(cardFinished),
 	saidInSoftware:
-		'the room is drawn in software, where a frame takes about twenty times as long to draw as on a graphics card: ' +
+		'the room is drawn in software, where a frame takes about 150 times as long to draw as on a graphics card: ' +
 		'--renderer gpu draws it on the card, where the machine has one'
 };
 
@@ -200,4 +206,9 @@ function roomSetUp(laying: { readonly layout: Layout; readonly address: string |
 function composedInTheRoom(exposures: readonly DrawnScene[]): Promise<string | null> {
 	window.stage.apply(exposures);
 	return window.room.compose(exposures);
+}
+
+/** The room's frame drawn to its end on the graphics card. */
+function cardFinished(): void {
+	window.room.finish();
 }

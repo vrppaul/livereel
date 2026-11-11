@@ -191,7 +191,7 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const out = theOut(values.out, SHOOT);
 	const kinds = kindsAsked(values.as);
 	const sheetRate = sheetRateAsked(values.sheet, values['sheet-rate'], SHOOT);
-	const profile = new Profile(() => performance.now());
+	const profile = new Profile(() => performance.now(), values.profile);
 	const shotWith = shotWithAsked(values, file, SHOOT, profile);
 	await ffmpegNeeded();
 	await encodersNeeded(kinds);
@@ -202,7 +202,7 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const mp4 = kept ? `${stem}${KINDS.mp4.suffix}` : `${stem}${SOURCE}${KINDS.mp4.suffix}`;
 	try {
 		const shot = await shotInto(mp4, film, { file, shotWith, profile }, EVERY_SHOT, soundOf(film, file));
-		if (values.profile) profile.said().forEach(say);
+		profile.said().forEach(say);
 		if (kept) say(mp4);
 		for (const kind of kinds.filter(isMade)) await madeAs(kind, mp4, stem, film);
 		if (sheetRate !== undefined) await sheetMade(mp4, stem, shot.seconds, sheetRate);
@@ -234,7 +234,7 @@ async function clipCommand(given: readonly string[]): Promise<void> {
 	const from = momentAsked(values.from, FROM_SAID, CLIP);
 	const to = momentAsked(values.to, TO_SAID, CLIP);
 	const sheetRate = sheetRateAsked(values.sheet, values['sheet-rate'], CLIP);
-	const profile = new Profile(() => performance.now());
+	const profile = new Profile(() => performance.now(), values.profile);
 	const shotWith = shotWithAsked(values, file, CLIP, profile);
 	await ffmpegNeeded();
 	const film = formatAsked(await loadedFilm(file), values.format, CLIP);
@@ -244,7 +244,7 @@ async function clipCommand(given: readonly string[]): Promise<void> {
 	const clip = `${stem}${KINDS.mp4.suffix}`;
 	const shot = await shotInto(clip, film, { file, shotWith, profile }, kept, SILENCE);
 	say(clip);
-	if (values.profile) profile.said().forEach(say);
+	profile.said().forEach(say);
 	if (sheetRate !== undefined) await sheetMade(clip, stem, shot.seconds, sheetRate);
 }
 
@@ -266,7 +266,7 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	const file = theFilmFile(positionals, STILL);
 	const out = theOut(values.out, STILL);
 	const moment = momentAsked(values.at, AT_SAID, STILL);
-	const profile = new Profile(() => performance.now());
+	const profile = new Profile(() => performance.now(), values.profile);
 	const shotWith = shotWithAsked(values, file, STILL, profile);
 	await ffmpegNeeded();
 	const film = formatAsked(await loadedFilm(file), values.format, STILL);
@@ -277,7 +277,7 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	const footage = profile.footage(new StillFootage(still, moment, film.framesPerSecond, profile.blend(blended)));
 	await profile.shooting(() => filmedInto(film, { file, shotWith, profile }, footage, SILENT));
 	say(`${still}: shot in ${secondsBetween(started, performance.now())} s`);
-	if (values.profile) profile.said().forEach(say);
+	profile.said().forEach(say);
 }
 
 async function setCommand(given: readonly string[]): Promise<void> {

@@ -38,7 +38,7 @@
  *
  * A static page's stage draws a frame flat, as the browser draws its markup, or, where the film names it, as a room:
  * launched, opened, laid out and drawn as `room.ts` has it, which the person who asks for software is told costs a frame
- * about twenty times as long there. A framed page is drawn flat.
+ * about 150 times as long there. A framed page is drawn flat.
  */
 import { resolve } from 'node:path';
 import { type Browser as Playwright, type Frame, type Page, chromium } from 'playwright-core';

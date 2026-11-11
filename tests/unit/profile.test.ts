@@ -2,14 +2,19 @@ import { expect, test } from 'vitest';
 import { Profile, Timings, profileSaid } from '../../src/adapters/profile.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { LIVEREELS_WORLD } from '../../src/props/world.ts';
-import { cameraOf, drawn, openingScene } from '../../src/scene.ts';
-import type { Browser } from '../../src/studio/ports.ts';
+import { type DrawnScene, cameraOf, drawn, openingScene } from '../../src/scene.ts';
+import type { Browser, Filmed } from '../../src/studio/ports.ts';
 import { FOCAL_LENGTH, PageOfBoxes, PicturedStageThatKeeps, SMALL, openedOn } from './fakes.ts';
 
 // A shoot of ten seconds, in milliseconds
 const WHOLE = 10_000;
 // A stage that lays two exposures of a frame over one another
 const TWO_AT_ONCE = 2;
+// A profile the shoot is asked for, and one it is not
+const TAKEN = true;
+const NOT_TAKEN = false;
+// A static page, at no address the fakes read
+const STATIC: Filmed = { kind: 'static', address: '' };
 
 /** A stage that draws two exposures at once. */
 class StageLayingTwo extends PicturedStageThatKeeps {
@@ -34,14 +39,10 @@ test('a profile says each part slowest first, its calls, time each, seconds and 
 });
 
 test('a capture of exposures laid over one another at once is timed apart from a capture of one, by how many it lays', async () => {
-	const profile = new Profile(clockTicking());
-	const browser: Browser = {
-		open: () => Promise.resolve(openedOn(new PageOfBoxes(new Map()), new StageLayingTwo()))
-	};
-	const opening = openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH);
-	const scene = drawn(opening, cameraOf(opening, SMALL), 0, SMALL, []);
+	const profile = new Profile(clockTicking(), TAKEN);
+	const scene = openingDrawn();
 	await profile.shooting(async () => {
-		const opened = await profile.browser(browser).open(undefined as never, { kind: 'static', address: '' }, 1);
+		const opened = await profile.browser(browserWith(new StageLayingTwo())).open(undefined as never, STATIC, 1);
 		await opened.stage.draw([scene]);
 		await opened.stage.capture();
 		await opened.stage.draw([scene, scene]);
@@ -54,6 +55,40 @@ test('a capture of exposures laid over one another at once is timed apart from a
 		])
 	);
 });
+
+test("a profile taken times a draw to the end of the stage's drawing; one not taken waits on nothing past the draw", async () => {
+	const stages = { taken: new PicturedStageThatKeeps(), notTaken: new PicturedStageThatKeeps() };
+	await drawnUnder(new Profile(clockTicking(), TAKEN), stages.taken);
+	await drawnUnder(new Profile(clockTicking(), NOT_TAKEN), stages.notTaken);
+	expect([stages.taken.waitedOn, stages.notTaken.waitedOn]).toEqual([1, 0]);
+});
+
+test('a profile not taken says nothing of the shoot', async () => {
+	const profile = new Profile(clockTicking(), NOT_TAKEN);
+	await drawnUnder(profile, new PicturedStageThatKeeps());
+	expect(profile.said()).toEqual([]);
+});
+
+/** One frame drawn and captured on a stage, opened through a profile. */
+async function drawnUnder(profile: Profile, stage: PicturedStageThatKeeps): Promise<void> {
+	const scene = openingDrawn();
+	await profile.shooting(async () => {
+		const opened = await profile.browser(browserWith(stage)).open(undefined as never, STATIC, 1);
+		await opened.stage.draw([scene]);
+		await opened.stage.capture();
+	});
+}
+
+/** A browser that opens a page of no boxes on this stage. */
+function browserWith(stage: PicturedStageThatKeeps): Browser {
+	return { open: () => Promise.resolve(openedOn(new PageOfBoxes(new Map()), stage)) };
+}
+
+/** The opening scene of a small format, drawn. */
+function openingDrawn(): DrawnScene {
+	const opening = openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH);
+	return drawn(opening, cameraOf(opening, SMALL), 0, SMALL, []);
+}
 
 /** A clock that moves a millisecond each time it is read, from none. */
 function clockTicking(): () => number {
