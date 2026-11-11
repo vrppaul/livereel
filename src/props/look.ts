@@ -1,10 +1,10 @@
 /**
  * The film's look, a prop like any other: the ground the screen stands on and the titles and ending come up on, its
  * glow and the layers a film lays over them in CSS, the ink of the words livereel writes over the frame, their fonts,
- * sizes and weights and how they come up, where a title and a caption's ground stand, the accent of the marks, the
- * corners, edge and shadow of what stands on the ground as a pane — the page's window and its screen, the code's pane
- * and the agent's terminal alike — the colours of the code by kind, the cursor, and the agent's terminal and the
- * ending card, their colours and sizes. How the world looks, its light and the glow round it, is a prop of its own
+ * sizes and weights, how far apart a title's letters and lines stand, and how they come up, where a title and a
+ * caption's ground stand, the accent of the marks, the corners, edge and shadow of what stands on the ground as a pane
+ * — the page's window and its screen, the code's pane and the agent's terminal alike — the colours of the code by
+ * kind, the cursor, and the agent's terminal and the ending card, their colours and sizes. How the world looks, its light and the glow round it, is a prop of its own
  * (`src/props/world.ts`), and the body of the page's window in a room is the window's own (`src/props/body.ts`). A film
  * opens on livereel's look with its theme's values, and changes it by moves as it goes: in a play, a colour, a size or
  * a shadow moves through the values between, a font, which has none between, changes half-way, and the ground's layers
@@ -23,6 +23,7 @@ import {
 	A_COLOUR,
 	A_FONT_FAMILY,
 	A_GROUND_LAYERS,
+	A_LETTER_SPACING,
 	A_LINE_HEIGHT,
 	A_PIXELS,
 	A_SHARE,
@@ -97,6 +98,12 @@ export interface Look {
 	readonly titleWeight: number;
 	readonly captionWeight: number;
 	/**
+	 * How far apart a title's letters stand past where its font sets them, and how far below one line's foot the next's
+	 * stands, each in times its letters' size, so they hold at any size.
+	 */
+	readonly titleLetterSpacing: number;
+	readonly titleLineHeight: number;
+	/**
 	 * How large a note's, a callout's, a pin's and a key's letters are, the code's at most, the terminal's, and the
 	 * ending's name's, line's and command's, in pixels of a frame 1080 on its shorter side.
 	 */
@@ -170,6 +177,7 @@ const CHECKED_HERE = null;
 const COLOUR = new LookKind(A_COLOUR, asWritten, colourToward, CHECKED_HERE);
 const SIZE = new LookKind(A_SIZE, asWritten, between, CHECKED_HERE);
 const LINE_HEIGHT = new LookKind(A_LINE_HEIGHT, asWritten, between, CHECKED_HERE);
+const LETTER_SPACING = new LookKind(A_LETTER_SPACING, asWritten, between, CHECKED_HERE);
 const PIXELS = new LookKind(A_PIXELS, asWritten, amountToward, CHECKED_HERE);
 const SHARE = new LookKind(A_SHARE, asWritten, shareToward, CHECKED_HERE);
 const WEIGHT = new LookKind(A_WEIGHT, asWritten, between, CHECKED_HERE);
@@ -213,6 +221,8 @@ export const LOOK_KINDS: { readonly [Name in keyof Look]: LookKind<LookWritten[N
 	glowY: SHARE,
 	titleWeight: WEIGHT,
 	captionWeight: WEIGHT,
+	titleLetterSpacing: LETTER_SPACING,
+	titleLineHeight: LINE_HEIGHT,
 	noteSize: SIZE,
 	calloutSize: SIZE,
 	pinSize: SIZE,
@@ -259,6 +269,8 @@ export const LIVEREELS_LOOK: Look = {
 	glowY: 0.3,
 	titleWeight: 700,
 	captionWeight: 650,
+	titleLetterSpacing: -0.03,
+	titleLineHeight: 1.08,
 	noteSize: 44,
 	calloutSize: 20,
 	pinSize: 26,

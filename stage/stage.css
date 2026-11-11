@@ -981,11 +981,12 @@ body {
 	margin-left: var(--room-before-words);
 	margin-right: auto;
 	translate: 0 -50%;
-	font: var(--title-weight) var(--words-size) / 1.08 var(--sans);
+	font: var(--title-weight) var(--words-size) / var(--title-own-line-height, var(--title-line-height)) var(--sans);
 }
 
+/* Its letters stand as far apart as the title sets them, the look's where it sets none, in times their size */
 .title .words {
-	letter-spacing: -0.03em;
+	letter-spacing: calc(var(--title-own-letter-spacing, var(--title-letter-spacing)) * 1em);
 	color: var(--ink);
 	text-align: start;
 	text-wrap: balance;

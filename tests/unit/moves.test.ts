@@ -716,6 +716,43 @@ test("a title's size of none is refused as its move is made", () => {
 	);
 });
 
+test("a title's letters and lines stand as far apart as the film names, each a share of the letters' size, and as the look has them where it names none", async () => {
+	const own = await setAt(
+		title.show('claude review', { at: 'left', letterSpacing: -0.03, lineHeight: 0.967, as: 'own' }),
+		OPENING_IN_SMALL,
+		1
+	);
+	const both = await setAt(title.show('Plain', { at: 'right', as: 'plain' }), own, 1);
+	expect(
+		['own', 'plain'].map((name) => drawnObject(name, both.objects.get(name)!, 0, NOTHING_AROUND).content)
+	).toMatchObject([
+		{ letterSpacing: -0.03, lineHeight: 0.967 },
+		{ letterSpacing: null, lineHeight: null }
+	]);
+});
+
+test("a title's letters and lines move apart as the look's values move, through the values between", async () => {
+	const looked = await setAt(look.to({ titleLetterSpacing: -0.05, titleLineHeight: 0.9 }), OPENING_IN_SMALL, 0.5);
+	expect([looked.look.titleLetterSpacing, looked.look.titleLineHeight]).toEqual([
+		(LIVEREELS_LOOK.titleLetterSpacing - 0.05) / 2,
+		(LIVEREELS_LOOK.titleLineHeight + 0.9) / 2
+	]);
+});
+
+test("a title's lines standing no distance apart, or its letters spaced by no number, are refused as the move is made, by the title and by the look", () => {
+	expect(() => title.show('Here', { lineHeight: 0 })).toThrow(
+		new FilmError("title.show's lineHeight is 0: it is a number of times the letters' size, more than 0")
+	);
+	expect(() => title.show('Here', { letterSpacing: Number.NaN })).toThrow(
+		new FilmError(
+			"title.show's letterSpacing is NaN: it is a share of the letters' size, 0 as the font sets them, below 0 closer"
+		)
+	);
+	expect(() => look.to({ titleLineHeight: -1 })).toThrow(
+		new FilmError("look.to's titleLineHeight is -1: it is a number of times the letters' size, more than 0")
+	);
+});
+
 test('an object shown from a side pushes the one of its name off past the side across, however it stands, as one sheet, and it is gone at the end; one of another name stays', async () => {
 	const [left, right, frame] = [wordsPlaced(SMALL, 'left'), wordsPlaced(SMALL, 'right'), boxOf(SMALL.frame)];
 	const coded = await setAt(code.show('light.on(VISITORS)', { at: 'left' }), OPENING_IN_SMALL, 1);

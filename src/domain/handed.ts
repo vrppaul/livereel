@@ -250,6 +250,11 @@ export const A_PAGE_SPEED = new Plain(
 export const A_SIZE = new Plain(isSize, 'a number of pixels, more than 0');
 /** How tall a line stands, in times its letters' size: more than none, as a line of no height is not there. */
 export const A_LINE_HEIGHT = new Plain(isSize, "a number of times the letters' size, more than 0");
+/** How far apart letters stand, past where their font sets them, in shares of their size, as CSS's `em`. */
+export const A_LETTER_SPACING = new Plain(
+	isNumber,
+	"a share of the letters' size, 0 as the font sets them, below 0 closer"
+);
 /** A share of something a film gives, from none of it to the whole. */
 export const A_SHARE = new Plain(isShare, 'a number from 0 to 1');
 /** How many of a picture's pixels a page's pixel takes: more than none, as a picture of no pixels shows nothing. */

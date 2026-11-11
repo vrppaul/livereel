@@ -132,8 +132,11 @@ const MELT_TOWARD = 'data-melt-toward';
 const OUT_OF_FOCUS = 'data-out-of-focus';
 // The attribute the window is drawn with where the room draws its body, which takes the place of its edge and shadow
 const WITH_A_BODY = 'data-body';
-// The custom property a title's own size is set as, where it has one; the stylesheet takes the look's where it has not
+// The custom properties a title's own size, letter spacing and line height are set as, where it has each; the
+// stylesheet takes the look's where it has not
 const OWN_SIZE = '--title-own-size';
+const OWN_LETTER_SPACING = '--title-own-letter-spacing';
+const OWN_LINE_HEIGHT = '--title-own-line-height';
 // The attribute that names the edge of the frame a caption stands at: its foot, or its top
 const CAPTION_EDGE = 'data-at';
 // The attribute that names which way a note's words run from where its line meets them, or a pin's label from its mark
@@ -201,6 +204,8 @@ const LOOK_TOKENS = {
 	glowY: '--glow-y',
 	titleWeight: '--title-weight',
 	captionWeight: '--caption-weight',
+	titleLetterSpacing: '--title-letter-spacing',
+	titleLineHeight: '--title-line-height',
 	noteSize: '--note-size',
 	calloutSize: '--callout-size',
 	pinSize: '--pin-text-size',
@@ -900,6 +905,8 @@ class TitleWordsDrawer {
 		this.element.toggleAttribute(ON_GROUND, title.onGround);
 		named(this.element, ALIGN, title.align);
 		givenOrNone(this.element, OWN_SIZE, title.size);
+		givenOrNone(this.element, OWN_LETTER_SPACING, title.letterSpacing);
+		givenOrNone(this.element, OWN_LINE_HEIGHT, title.lineHeight);
 		numbered(this.element, { '--grounded': title.ground, '--gone': title.gone });
 		wordsDrawn(this.words, title);
 	}

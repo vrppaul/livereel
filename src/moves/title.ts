@@ -4,14 +4,14 @@
  * alone, in place of the title of its name on the screen, and go. A title is the object named `title`, or one the
  * film names `as`, so several stand at once. Any title slides in from past a side of the frame, pushing the one of its
  * name standing off past the side across, moves to a place, leans, or leaves past a side, its ground with it where it
- * has one. A title may set its letters' own size, in place of the look's; one that sets none takes, in a place, its
- * size by the width of the place, and its words wrap by it there, so a title moving to a place of another size takes
- * that size as it sets off, where it reads from, and travels whole: its lines change once, where they would break
- * anew on every frame of the way.
+ * has one. A title may set its letters' own size, and how far apart its letters and lines stand, each in place of the
+ * look's; one that sets no size takes, in a place, its size by the width of the place, and its words wrap by it there,
+ * so a title moving to a place of another size takes that size as it sets off, where it reads from, and travels whole:
+ * its lines change once, where they would break anew on every frame of the way.
  */
 import { linear } from '../domain/curves.ts';
 import { type Box, boxOf } from '../domain/geometry.ts';
-import { A_SIZE, type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { A_LETTER_SPACING, A_LINE_HEIGHT, A_SIZE, type Form, assertKind, assertWritten } from '../domain/handed.ts';
 import {
 	AN_ALIGNMENT,
 	A_PLACE,
@@ -22,7 +22,7 @@ import {
 	wordsResized
 } from '../domain/place.ts';
 import type { Beginning, Move } from '../direction/move.ts';
-import type { TitleWords } from '../props/title.ts';
+import type { TitleType, TitleWords } from '../props/title.ts';
 import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
 import {
 	type Coming,
@@ -55,27 +55,32 @@ import {
  * Where a title stands: `at` a place on the frame, or over the whole of it, on its ground, where none is named; how it
  * reads there, `align`, the place's own way where none is named; how large its letters are, `size`, in pixels of a
  * frame 1080 on its shorter side, over the whole frame and in a place alike, where none is named the look's
- * `titleSize`, and in a place a share of it no larger than its width lets a long word stand; the side it slides in
- * `from`, past the frame's edge, rather than coming up in its place, or the way it comes up there, `enter`; how its
- * words come up there, `words`, the theme's way where none is named; which title it is, `as`; and what it stands
- * `inside`, the page's window, its place then a box in the window's shares, or the `group` it stands in.
+ * `titleSize`, and in a place a share of it no larger than its width lets a long word stand; how far apart its letters
+ * stand past where its font sets them, `letterSpacing`, and how far below one line's foot the next's stands,
+ * `lineHeight`, each in times its letters' size, the look's `titleLetterSpacing` and `titleLineHeight` where none is
+ * named; the side it slides in `from`, past the frame's edge, rather than coming up in its place, or the way it comes
+ * up there, `enter`; how its words come up there, `words`, the theme's way where none is named; which title it is,
+ * `as`; and what it stands `inside`, the page's window, its place then a box in the window's shares, or the `group` it
+ * stands in.
  */
 export interface TitleScript extends ShowScript, NestedScript {
 	readonly at?: Place;
 	readonly align?: Alignment;
 	readonly size?: number;
+	readonly letterSpacing?: number;
+	readonly lineHeight?: number;
 	readonly words?: WordsScript;
 }
 
 /**
  * A title's words as `show` reads them: what they say, their place, none over the whole frame, how they read, none for
- * the place's own way, their own size, none for the look's, and how they come up.
+ * the place's own way, how it sets its letters, each none for the look's, and how they come up.
  */
 interface Setting {
 	readonly said: Said;
 	readonly place: Place | null;
 	readonly align: Alignment | null;
-	readonly size: number | null;
+	readonly type: TitleType;
 	readonly coming: WordsComing;
 }
 
@@ -84,6 +89,8 @@ const TITLE_FORM: Form<TitleScript> = {
 	at: A_PLACE,
 	align: AN_ALIGNMENT,
 	size: A_SIZE,
+	letterSpacing: A_LETTER_SPACING,
+	lineHeight: A_LINE_HEIGHT,
 	words: A_WORDS_SCRIPT,
 	...SHOW_FORM,
 	...NESTED_FORM
@@ -107,13 +114,12 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 	refuseWordsBroughtWhole(script, 'title.show');
 	const said = saidOf(text);
 	const coming = wordsComing(said, script.words);
-	const setting: Setting = {
-		said,
-		place: script.at ?? null,
-		align: script.align ?? null,
+	const type: TitleType = {
 		size: script.size ?? null,
-		coming
+		letterSpacing: script.letterSpacing ?? null,
+		lineHeight: script.lineHeight ?? null
 	};
+	const setting: Setting = { said, place: script.at ?? null, align: script.align ?? null, type, coming };
 	const showing = objectShow(TITLE, 'title.show', script, setting.place, WORDS_COME_UP_ON, (beginning) =>
 		titleComing(setting, beginning)
 	);
@@ -154,16 +160,16 @@ export function effects(script: EffectsScript): Move {
  * the film says or in the way of the place, a format's own read as the place it names.
  */
 function titleComing(setting: Setting, beginning: Beginning): Coming {
-	const { said, place, size } = setting;
+	const { said, place, type } = setting;
 	const comingUp = comingUpAt(setting.coming, said, beginning.scene.look);
 	const format = beginning.format;
 	if (place === null) {
 		const align = setting.align ?? OVER_THE_WHOLE;
-		const card: TitleWords = { kind: TITLE, ...said, align, size, onGround: true, comingUp };
+		const card: TitleWords = { kind: TITLE, ...said, ...type, align, onGround: true, comingUp };
 		return { content: card, box: boxOf(format.frame) };
 	}
 	const align = setting.align ?? alignmentIn(format, place);
-	const placed: TitleWords = { kind: TITLE, ...said, align, size, onGround: false, comingUp };
+	const placed: TitleWords = { kind: TITLE, ...said, ...type, align, onGround: false, comingUp };
 	return { content: placed, box: TITLE_READING.placed(format, place, placed) };
 }
 

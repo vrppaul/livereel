@@ -197,7 +197,7 @@ and the moves of each part of the scene:
 - `keys.show(caps, { enter, edge })`, `keys.hide({ leave, edge })`
 - `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
-- `title.show(text, { at, align, size, from, enter, edge, words, as, inside, group, zIndex })`,
+- `title.show(text, { at, align, size, letterSpacing, lineHeight, from, enter, edge, words, as, inside, group, zIndex })`,
   `title.to(place, { scale, depth })`, `title.lean({ tilt, turn, roll, over })`, `title.hide({ toward, leave, edge })`
 - `code.show(text, { at, from, enter, edge, longLines, as, inside, group, zIndex })`,
   `code.to(place, { scale, depth })`, `code.lean({ tilt, turn, roll, over })`, `code.light(line, { through })`,
@@ -338,6 +338,12 @@ letters are as large as the look's `titleSize`, and in a place a share of
 it no larger than the place's width lets a long word stand on a line;
 `size` sets one title's own, in pixels of a 1080 frame, over the whole
 frame or in a place alike: `title.show('Live', { at: 'left', size: 220 })`.
+Its letters stand as far apart as the look's `titleLetterSpacing` and its
+lines as far apart as `titleLineHeight`; `letterSpacing` and `lineHeight`
+set one title's own, each in times its letters' size, as CSS's `em`, so
+they hold at any size. The claude-review promo's name, drawn 9 px closer
+at 300 px, its lines' feet 290 px apart:
+`title.show('claude review', { at, size: 185, letterSpacing: -9 / 300, lineHeight: 290 / 300 })`.
 A word is never broken: one larger than its place runs past it, so check
 it on a still. In a room, a title standing in the world is cut where its
 words run past its box farther than a pane's shadow reaches.
@@ -764,6 +770,7 @@ values; what the film leaves out stays livereel's:
 | `codeComment`, `codeString`, `codeNumber`, `codeKeyword`, `codeCall`, `codeKey` | the colours of the code's pieces by kind: a comment, a string, a number, a word the language keeps, a function called, a key of an object; livereel's are made for a dark pane | `#8b949e`, `#a5d6ff`, `#79c0ff`, `#ff7b72`, `#d2a8ff`, `#7ee787` |
 | `glowX`, `glowY` | where the ground's glow stands, across and down, each from 0 to 1 | `0.5`, `0.3` |
 | `titleWeight`, `captionWeight` | how heavy a title's and a caption's letters are, 100 to 900 | `700`, `650` |
+| `titleLetterSpacing`, `titleLineHeight` | how far apart a title's letters stand past where its font sets them, below `0` closer, and how far below one line's foot the next's stands, each in times its letters' size | `-0.03`, `1.08` |
 | `noteSize`, `calloutSize`, `pinSize`, `keysSize`, `codeSize` | how large a note's, a callout's, a pin's label's and a key's letters are, and the code's at most, in pixels | `44`, `20`, `26`, `44`, `26` |
 | `terminalSize` | how large the terminal's letters are, in pixels | `25` |
 | `endingNameSize`, `endingLineSize`, `endingCommandSize` | how large the ending card's name, line and command are, in pixels | `96`, `36`, `38` |

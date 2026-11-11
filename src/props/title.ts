@@ -10,21 +10,26 @@ import { type ComingUp, type DrawnWords, type Said, drawnWordsOnGround } from '.
 
 /**
  * A title's words: what they say, how they read in their box, how large their letters are, in pixels of a frame 1080
- * on its shorter side — none, as the look has a title's — whether they stand on a ground of their own, and how they
- * come up, word by word or typed.
+ * on its shorter side, how far apart its letters and its lines stand, in times its letters' size — each none, as the
+ * look has a title's — whether they stand on a ground of their own, and how they come up, word by word or typed.
  */
-export interface TitleWords extends Said {
+export interface TitleWords extends Said, TitleType {
 	readonly kind: 'title';
 	readonly align: Alignment;
-	readonly size: number | null;
 	readonly onGround: boolean;
 	readonly comingUp: ComingUp;
 }
 
-export interface DrawnTitleWords extends DrawnWords {
+/** How a title sets its letters where it sets them its own way, each none where the look's stands. */
+export interface TitleType {
+	readonly size: number | null;
+	readonly letterSpacing: number | null;
+	readonly lineHeight: number | null;
+}
+
+export interface DrawnTitleWords extends DrawnWords, TitleType {
 	readonly kind: 'title';
 	readonly align: Alignment;
-	readonly size: number | null;
 	readonly onGround: boolean;
 }
 
@@ -40,6 +45,8 @@ export function drawnTitleWords(title: TitleWords, presences: Presences, moment:
 		ground: title.onGround ? words.ground : NO_GROUND,
 		align: title.align,
 		size: title.size,
+		letterSpacing: title.letterSpacing,
+		lineHeight: title.lineHeight,
 		onGround: title.onGround
 	};
 }

@@ -429,7 +429,7 @@ test("a film's set is shot 3 times as sharp as its page where it names no sharpn
 
 test("a theme in no form of one is refused as the film is defined, where it stands: not an object, a name a theme has not, a value of the world's look or of the window's body by its name, pixels less than none, a share past 1, a size of none, a way words come up it has not, a colour not in hex, a font of no name", () => {
 	const names =
-		'ground, glow, groundLayers, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, paneCorner, paneEdge, paneShadow, paneShadowColour, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, glowX, glowY, titleWeight, captionWeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, codeLineHeight, cursorFill, cursorEdge, words';
+		'ground, glow, groundLayers, ink, quietInk, accent, accentInk, font, mono, titleSize, captionSize, titleMargin, captionGroundHeight, paneCorner, paneEdge, paneShadow, paneShadowColour, terminal, terminalInk, codeComment, codeString, codeNumber, codeKeyword, codeCall, codeKey, glowX, glowY, titleWeight, captionWeight, titleLetterSpacing, titleLineHeight, noteSize, calloutSize, pinSize, keysSize, codeSize, terminalSize, endingNameSize, endingLineSize, endingCommandSize, codeLineHeight, cursorFill, cursorEdge, words';
 	expect(() => filmWritten({ theme: null })).toThrow(
 		new FilmError(`the film's theme is handed null for an object of ${names}`)
 	);
