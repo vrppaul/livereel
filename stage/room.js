@@ -15,21 +15,26 @@
  * another in linear light and the whole laid over the ground; over that stand the film's things on the frame, sharp,
  * then the frame's surface.
  *
- * The page's surface is drawn from a picture of it as sharp as the browser draws a page face-on, and filtered as it
+ * The window's surface is drawn from a picture of it as sharp as the browser draws a page face-on, and filtered as it
  * shrinks into the distance: the browser draws a layer leant in 3D at about one of its pixels a page's pixel, however
  * close the eye comes, so text near the eye of a window leant back came out soft (SSIM 0.79–0.85 at 4–9×, probed
  * 2026-11-02). It reaches as far past the frame as the camera's picture does on its plane, as the eye may see the plane
- * past the frame's edge, and is drawn less densely where its texture would pass the graphics card's largest. The world
- * is drawn as far past the frame as the lens's blur gathers at its edges, to a step, so the layers it is drawn into
- * keep their size while the blur gathers alike.
+ * past the frame's edge, and is drawn less densely where its texture would pass the graphics card's largest. It holds
+ * the screen's own markup over the page; what lies over the page in the window, a callout, pins, an object in it, stands
+ * in a surface of its own laid out alike; the page's surface lays the screen's ground and the page's picture under the
+ * one, as dense as the picture was taken, and the other over all (`stage/page-picture.js`). The world is drawn as far
+ * past the frame as the lens's blur gathers at its edges, to a step, so the layers it is drawn into keep their size
+ * while the blur gathers alike.
  *
  * The exposures are added up in linear light, as a shutter gathers the light of each moment: a glint that moves draws a
  * streak as bright as its light, where averaged in the screen's colours it went dark. Where the world asks, the frame
  * glows round its light past the page's white, as a lens blooms, once over the light its exposures gathered: three's
  * own bloom (`UnrealBloomPass`), the reference promo's, its spread a share of a frame 1080 high however large the frame
  * is drawn; the glow lies over all the frame, what stands on it too. One texture of each surface serves every exposure,
- * uploaded anew for each in turn, so the card holds three, not three for each exposure: sixteen exposures of a 3840 ×
- * 2160 frame would hold 2 GB.
+ * uploaded anew for each in turn, so the card holds one each, not one each for each exposure: sixteen exposures of a
+ * 3840 × 2160 frame would hold 2 GB. A texture last drawn from a surface the canvas has not painted anew since, as it
+ * names what it paints anew, is kept as it stands: a frame of one exposure whose window stands still draws the window's
+ * texture no more.
  *
  * three.js keeps no camera of its own: every point is placed by the matrices the engine hands the stage, and the
  * world's camera takes the projection alone. The script is a module, three's being modules alone, which the page loads
@@ -61,6 +66,7 @@ import { WindowBody } from './body.js';
 import { Lens, SPREADS_REACHED } from './lens.js';
 import { WorldLighting } from './lighting.js';
 import { matrixOf, projectionOnto } from './matrices.js';
+import { PAGE_SURFACE_FRAGMENT, PagePicture, pageSurfaceValues } from './page-picture.js';
 import { ADDED, LAID_OVER, SRGB_CURVES, passOver, valuesSet } from './passes.js';
 import { FrameShown } from './shown.js';
 import {
@@ -79,6 +85,8 @@ import { Things, isAThing } from './things.js';
 /** @import { ThingObject } from './things.js' */
 /** @import { SceneField } from './lens.js' */
 /** @import { SeenThroughField, WorldPart } from './see-through.js' */
+/** @import { PageLaid } from './page-picture.js' */
+/** @import { Texture } from 'three' */
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { Matrix } from '../src/domain/matrix.ts' */
 /** @import { Box } from '../src/domain/geometry.ts' */
@@ -97,13 +105,23 @@ import { Things, isAThing } from './things.js';
  * A canvas whose children it draws, which paints them on asking and tells when it has.
  * @typedef {HTMLCanvasElement & { readonly requestPaint: () => void }} PaintingCanvas
  */
-/** The surfaces of an exposure, one over the other in the order named @typedef {'ground' | 'window' | 'frame'} SurfaceName */
-/** The surfaces laid flat over the frame, as it stands @typedef {Exclude<SurfaceName, 'window'>} FlatSurfaceName */
+/**
+ * What such a canvas fires once it has painted: it names the children it painted anew, whose rendering changed.
+ * @typedef {Event & { readonly changedElements: readonly Element[] }} CanvasPaintEvent
+ */
+/**
+ * The surfaces of an exposure, one over the other in the order named: what lies over the page in the window stands
+ * apart where a frame is drawn as a room
+ * @typedef {'ground' | 'window' | 'over-the-page' | 'frame'} SurfaceName
+ */
+/** The surfaces laid flat over the frame, as it stands @typedef {Exclude<SurfaceName, 'window' | 'over-the-page'>} FlatSurfaceName */
 
 // The surfaces of an exposure, the lowest first, and the attribute each is marked with in the stage's markup
 /** @type {readonly SurfaceName[]} */
-const SURFACES = ['ground', 'window', 'frame'];
+const SURFACES = ['ground', 'window', 'over-the-page', 'frame'];
 const SURFACE = 'data-surface';
+// The stage's picture of the page in the window's surface, which the room lays under it itself (`page-picture.js`)
+const PICTURE = '[data-part="picture"]';
 // The place none stands at among what stands in the world
 const NOWHERE_LAID = -1;
 // The token of how far past its box anything an object shows draws (`tokens.css`)
@@ -153,14 +171,25 @@ const WHOLE = 1;
 // The first exposure of a frame, whose surfaces drawn once a frame serve every exposure of it
 const FIRST = 0;
 // How each surface's texture is drawn: anew for each exposure, or once a frame, as every exposure's ground is alike,
-// the look being the first exposure's (`apply` in `stage.js`); and with smaller copies of itself where the room
-// shrinks it, as it shrinks the window alone
-/** @type {{ readonly [Name in SurfaceName]: { readonly eachExposure: boolean, readonly shrinks: boolean } }} */
+// the look being the first exposure's (`apply` in `stage.js`); with smaller copies of itself where the room shrinks
+// it, as it shrinks the window and what lies over its page alone, which are laid out over the page's plane; and in
+// what scene it holds anything to draw: what lies over the page only where the scene says anything does
+/**
+ * @type {{ readonly [Name in SurfaceName]: {
+ *   readonly eachExposure: boolean,
+ *   readonly shrinks: boolean,
+ *   readonly onThePage: boolean,
+ *   readonly holdsAnything: (scene: DrawnScene) => boolean
+ * } }}
+ */
 const SURFACE_TEXTURES = {
-	ground: { eachExposure: false, shrinks: false },
-	window: { eachExposure: true, shrinks: true },
-	frame: { eachExposure: true, shrinks: false }
+	ground: { eachExposure: false, shrinks: false, onThePage: false, holdsAnything: () => true },
+	window: { eachExposure: true, shrinks: true, onThePage: true, holdsAnything: () => true },
+	'over-the-page': { eachExposure: true, shrinks: true, onThePage: true, holdsAnything: (scene) => scene.overThePage },
+	frame: { eachExposure: true, shrinks: false, onThePage: false, holdsAnything: () => true }
 };
+// The surfaces laid out over the page's plane, the window's and what lies over its page
+const ON_THE_PAGE = SURFACES.filter((name) => SURFACE_TEXTURES[name].onThePage);
 // Half of a box's width or height, which its middle stands at
 const HALF = 0.5;
 // The entries a flat matrix leaves out, as the identity has them: none of one axis carried into another, and out and
@@ -239,9 +268,8 @@ const PAGE_DEPTH_ALONE = { blending: NoBlending, colorWrite: false, depthWrite: 
 const MARKUP_SEEN_THROUGH = { ...PAGE_SEEN_THROUGH, ...MARKUP_NEARER, clipping: true };
 const MARKUP_DEPTH_ALONE = { ...PAGE_DEPTH_ALONE, ...MARKUP_NEARER, clipping: true };
 
-// A surface drawn from markup in the world, the page's or an object's: its texture where the plane's share of it falls,
-// the texture's rows from its top, read back from the screen's colours into linear light, premultiplied by how clear it
-// is; none drawn, nor its depth, where it is clear; cut by three's clipping planes where its material asks
+// A surface drawn from markup in the world, the page's or an object's: placed where the plane's share of it falls, the
+// texture's rows from its top; cut by three's clipping planes where its material asks
 const SURFACE_IN_THE_WORLD_VERTEX = `
 #include <clipping_planes_pars_vertex>
 varying vec2 shareOfTheSurface;
@@ -252,7 +280,10 @@ void main() {
 	vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
 	#include <clipping_planes_vertex>
 }`;
-const SURFACE_IN_THE_WORLD_FRAGMENT = `
+// An object's surface: its texture read back from the screen's colours into linear light, premultiplied by how clear it
+// is; none drawn, nor its depth, where it is clear; cut where its material asks. The page's lays the window's surface
+// over the page's picture (`page-picture.js`)
+const OBJECTS_SURFACE_FRAGMENT = `
 #include <clipping_planes_pars_fragment>
 uniform sampler2D surface;
 varying vec2 shareOfTheSurface;
@@ -315,20 +346,27 @@ class SurfaceTexture {
 			const sharpest = Number(context.getParameter(anisotropic.MAX_TEXTURE_MAX_ANISOTROPY_EXT));
 			context.texParameterf(context.TEXTURE_2D, anisotropic.TEXTURE_MAX_ANISOTROPY_EXT, sharpest);
 		}
+		/** The element it was last drawn from, none before the first @type {Element | null} */
+		this.drawnOf = null;
 	}
 
 	/**
 	 * The element as the canvas last painted it, at the page's device scale, premultiplied by its clearness as the
-	 * browser lays layers over one another, and its smaller copies made anew where the room shrinks it.
-	 * @param {Element} element
+	 * browser lays layers over one another, and its smaller copies made anew where the room shrinks it: three's texture
+	 * of it. Kept as it stands where it was last drawn from this element and the canvas, as it says, has not painted the
+	 * element anew since: the texture holds what it shows.
+	 * @param {Element} element @param {ReadonlySet<Element>} repainted what the canvas painted anew as it last painted
 	 */
-	drawnFrom(element) {
+	drawnFrom(element, repainted) {
+		if (this.drawnOf === element && !repainted.has(element)) return this.texture;
+		this.drawnOf = element;
 		const context = this.context;
 		this.renderer.state.bindTexture(context.TEXTURE_2D, this.source);
 		context.pixelStorei(context.UNPACK_FLIP_Y_WEBGL, false);
 		context.pixelStorei(context.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 		context.texElementImage2D(context.TEXTURE_2D, context.RGBA8, element);
 		if (this.shrinks) context.generateMipmap(context.TEXTURE_2D);
+		return this.texture;
 	}
 }
 
@@ -384,11 +422,23 @@ class Room {
 		this.body = new WindowBody();
 		this.world = new Scene();
 		// The page as it writes depth, where it is drawn whole; and where it is seen through, its light and its depth apart
-		this.page = surfaceInTheWorld(PAGE_LAID, 'opaque');
-		this.pageSeenThrough = surfaceInTheWorld(PAGE_SEEN_THROUGH, 'pageSeenThrough');
-		this.pageDepth = surfaceInTheWorld(PAGE_DEPTH_ALONE, 'pageDepth');
+		this.page = surfaceInTheWorld(PAGE_LAID, 'opaque', PAGE_SURFACE_FRAGMENT, pageSurfaceValues());
+		this.pageSeenThrough = surfaceInTheWorld(
+			PAGE_SEEN_THROUGH,
+			'pageSeenThrough',
+			PAGE_SURFACE_FRAGMENT,
+			pageSurfaceValues()
+		);
+		this.pageDepth = surfaceInTheWorld(PAGE_DEPTH_ALONE, 'pageDepth', PAGE_SURFACE_FRAGMENT, pageSurfaceValues());
+		this.pagePicture = new PagePicture(
+			this.renderer,
+			pictureIn(surfaceOf(surfacesAt(this.exposureSurfaces, FIRST), 'window')),
+			layout.format.screen
+		);
 		// The stage, which hands the surfaces it lays markup standing in the world in apart as it draws
 		this.stage = stage;
+		/** The surfaces the canvas painted anew for the frame composed last @type {ReadonlySet<Element>} */
+		this.repainted = new Set();
 		/**
 		 * Each surface of markup in the world as the world draws it, by its place among an exposure's
 		 * @type {MarkupInTheWorld[]}
@@ -449,20 +499,21 @@ class Room {
 		const gathered = this.gatheredFor(scenes);
 		const pagePlacings = scenes.map((scene) => pagePlacingOf(scene, gathered));
 		for (const [place, surfaces] of this.exposureSurfaces.entries()) {
-			for (const [name, surface] of surfaces) surface.toggleAttribute(HIDDEN, !isPainted(name, place, scenes.length));
+			for (const [name, surface] of surfaces) surface.toggleAttribute(HIDDEN, !isPainted(name, place, scenes));
 		}
 		for (const [place, placing] of pagePlacings.entries()) {
-			const surface = surfaceOf(surfacesAt(this.exposureSurfaces, place), 'window');
-			laidOutAs(surface, placing.box, this.densityOf(placing.box));
+			const surfaces = surfacesAt(this.exposureSurfaces, place);
+			const density = this.densityOf(placing.box);
+			for (const name of ON_THE_PAGE) laidOutAs(surfaceOf(surfaces, name), placing.box, density);
 		}
 		const standings = pagePlacings.map((placing, place) => ({
 			placing,
 			markup: this.stage.laidApart(place).map((apart) => this.markupLaidOut(apart, scenesAt(scenes, place)))
 		}));
-		await paintedOf(this.canvas);
+		this.repainted = await paintedOf(this.canvas);
 		const first = surfacesAt(this.exposureSurfaces, FIRST);
 		for (const name of SURFACES.filter((each) => !SURFACE_TEXTURES[each].eachExposure)) {
-			textureOf(this.textures, name).drawnFrom(surfaceOf(first, name));
+			textureOf(this.textures, name).drawnFrom(surfaceOf(first, name), this.repainted);
 		}
 		for (const layer of [this.worldLayer, this.seeThrough.layer]) sizedTo(layer, gathered);
 		this.renderer.setRenderTarget(this.frame);
@@ -506,10 +557,9 @@ class Room {
 		this.renderer.setRenderTarget(this.exposure);
 		this.renderer.clear();
 		this.flatLaid('ground', surfaces);
-		const pageTexture = textureOf(this.textures, 'window');
-		pageTexture.drawnFrom(surfaceOf(surfaces, 'window'));
 		const inTheWorld = things.filter((thing) => thing.standsIn === 'world');
-		const seenThroughFields = this.worldBuilt(scene, pageTexture, standing, inTheWorld);
+		const pageLaid = this.pageLaid(surfaces, standing, scene);
+		const seenThroughFields = this.worldBuilt(scene, pageLaid, standing, inTheWorld);
 		this.renderer.setRenderTarget(this.worldSeen);
 		this.renderer.clear();
 		this.worldDrawn(scene, seenThroughFields, gathered);
@@ -521,6 +571,20 @@ class Room {
 		this.renderer.setRenderTarget(this.frame);
 		this.renderer.render(this.weighed, this.camera);
 		return null;
+	}
+
+	/**
+	 * What an exposure's page's surface lays, as its material takes it: the window's surface drawn anew; what lies over
+	 * the page, drawn anew where anything does; and the page's picture under them (`page-picture.js`).
+	 * @param {ReadonlyMap<SurfaceName, Element>} surfaces @param {ExposureStanding} standing @param {DrawnScene} scene
+	 * @returns {PageSurfaceLaid}
+	 */
+	pageLaid(surfaces, standing, scene) {
+		const surface = textureOf(this.textures, 'window').drawnFrom(surfaceOf(surfaces, 'window'), this.repainted);
+		const overThePage = scene.overThePage
+			? textureOf(this.textures, 'over-the-page').drawnFrom(surfaceOf(surfaces, 'over-the-page'), this.repainted)
+			: null;
+		return { surface, ...this.pagePicture.laidWith(scene, standing.placing.box, overThePage) };
 	}
 
 	/**
@@ -543,7 +607,7 @@ class Room {
 	 */
 	flatLaid(name, surfaces) {
 		const texture = textureOf(this.textures, name);
-		if (SURFACE_TEXTURES[name].eachExposure) texture.drawnFrom(surfaceOf(surfaces, name));
+		if (SURFACE_TEXTURES[name].eachExposure) texture.drawnFrom(surfaceOf(surfaces, name), this.repainted);
 		valuesSet(this.flatLaying.material, { surface: texture.texture });
 		this.renderer.setRenderTarget(this.exposure);
 		this.renderer.render(this.flatLaying, this.camera);
@@ -558,10 +622,10 @@ class Room {
 	 * blur, and its body's rim under its edge, on its own plane: it is drawn with what writes depth, so its edge and the
 	 * rim under it blur as one, where blurred apart they left a light band round a blurred page, and the lens runs once.
 	 * The fields of what is seen through the world is drawn with, none where nothing is.
-	 * @param {DrawnScene} scene @param {SurfaceTexture} pageTexture @param {ExposureStanding} standing
+	 * @param {DrawnScene} scene @param {PageSurfaceLaid} pageLaid @param {ExposureStanding} standing
 	 * @param {readonly ThingObject[]} things @returns {readonly SeenThroughField[]}
 	 */
-	worldBuilt(scene, pageTexture, standing, things) {
+	worldBuilt(scene, pageLaid, standing, things) {
 		const window = scene.window;
 		this.world.clear();
 		const pageMatrix = surfaceMatrixOf(window.pageSurface.inTheEyesSpace, standing.placing);
@@ -569,7 +633,7 @@ class Room {
 		const pageSeenThrough = window.pageShown < WHOLLY_SHOWN && standsBesideThePage;
 		const pages = pageSeenThrough ? [this.pageSeenThrough, this.pageDepth] : [this.page];
 		for (const page of pages) {
-			valuesSet(page.material, { surface: pageTexture.texture });
+			valuesSet(page.material, pageLaid);
 			placedBy(page, pageMatrix);
 			this.world.add(page);
 		}
@@ -642,7 +706,7 @@ class Room {
 	markupAdded(place, markup) {
 		while (this.markup.length <= place) this.markup.push(markupInTheWorld(this.renderer));
 		const inTheWorld = markupAt(this.markup, place);
-		inTheWorld.texture.drawnFrom(markup.element);
+		inTheWorld.texture.drawnFrom(markup.element, this.repainted);
 		const matrix = surfaceMatrixOf(markup.object.inTheEyesSpace, markup.placing);
 		for (const surface of [inTheWorld.light, inTheWorld.depth]) {
 			valuesSet(surface.material, { surface: inTheWorld.texture.texture });
@@ -730,6 +794,11 @@ class Room {
  *   readonly placing: SurfacePlacing,
  *   readonly laidAt: number
  * }} MarkupStanding
+ */
+/**
+ * What the page's surface lays, as its material takes it: the window's surface, and with it what lies over the page
+ * and the page's picture under it (`page-picture.js`).
+ * @typedef {PageLaid & { readonly surface: Texture }} PageSurfaceLaid
  */
 /**
  * What stands in an exposure's world drawn from markup: the page's surface, and each object's.
@@ -904,12 +973,14 @@ function laidOutAs(surface, box, density) {
 }
 
 /**
- * Whether the canvas paints a surface of an exposure for a frame of so many exposures: one the frame has, and of a
- * surface drawn once a frame, the first exposure's alone.
- * @param {SurfaceName} name @param {number} place @param {number} exposures
+ * Whether the canvas paints a surface of an exposure for a frame of these exposures' scenes: one the frame has, and of
+ * a surface drawn once a frame, the first exposure's alone, where its scene has it hold anything.
+ * @param {SurfaceName} name @param {number} place @param {readonly DrawnScene[]} scenes
  */
-function isPainted(name, place, exposures) {
-	return place < exposures && (SURFACE_TEXTURES[name].eachExposure || place === FIRST);
+function isPainted(name, place, scenes) {
+	const scene = scenes[place];
+	const drawn = SURFACE_TEXTURES[name];
+	return scene !== undefined && (drawn.eachExposure || place === FIRST) && drawn.holdsAnything(scene);
 }
 
 /**
@@ -955,11 +1026,34 @@ function surfaceIn(exposure, name) {
 	return surface;
 }
 
-/** The canvas painted, what the stage drew in it with it: once it says it has. @param {PaintingCanvas} canvas */
+/**
+ * The canvas painted, what the stage drew in it with it: once it says it has, the children it painted anew, whose
+ * rendering changed since it last painted (a probe of 2026-11-11: a frame of the window standing still repainted its
+ * surface in 29 of 301 paints).
+ * @param {PaintingCanvas} canvas @returns {Promise<ReadonlySet<Element>>}
+ */
 function paintedOf(canvas) {
-	const painted = new Promise((resolve) => canvas.addEventListener(PAINTED, resolve, { once: true }));
+	const painted = new Promise((resolve) =>
+		canvas.addEventListener(PAINTED, (event) => resolve(new Set(repaintedBy(event))), { once: true })
+	);
 	canvas.requestPaint();
 	return painted;
+}
+
+/**
+ * The children a canvas's paint names as painted anew: HTML-in-Canvas's `CanvasPaintEvent` names them.
+ * @param {Event} event @returns {readonly Element[]}
+ */
+function repaintedBy(event) {
+	if (!namesWhatItPainted(event)) {
+		throw new Error("the room's canvas names nothing it painted anew: the browser's HTML-in-Canvas lacks it");
+	}
+	return event.changedElements;
+}
+
+/** @param {Event} event @returns {event is CanvasPaintEvent} */
+function namesWhatItPainted(event) {
+	return 'changedElements' in event && Array.isArray(event.changedElements);
 }
 
 /** The WebGL a renderer draws with, with HTML-in-Canvas. @param {WebGLRenderer} renderer @returns {ElementDrawing} */
@@ -976,13 +1070,13 @@ function elementDrawingOf(renderer) {
  * whichever side faces the eye, as a window turned half round shows the page mirrored, laid as named, drawn nearer than
  * what shares its plane, in a part of the world.
  * @param {typeof PAGE_LAID | typeof PAGE_SEEN_THROUGH | typeof PAGE_DEPTH_ALONE | typeof MARKUP_SEEN_THROUGH | typeof MARKUP_DEPTH_ALONE} laid
- * @param {WorldPart} part
+ * @param {WorldPart} part @param {string} fragmentShader @param {Record<string, { value: unknown }>} uniforms
  */
-function surfaceInTheWorld(laid, part) {
+function surfaceInTheWorld(laid, part, fragmentShader, uniforms) {
 	const material = new ShaderMaterial({
-		uniforms: { surface: { value: null } },
+		uniforms,
 		vertexShader: SURFACE_IN_THE_WORLD_VERTEX,
-		fragmentShader: SURFACE_IN_THE_WORLD_FRAGMENT,
+		fragmentShader,
 		side: DoubleSide,
 		...laid
 	});
@@ -1064,9 +1158,29 @@ function laidAsThreeLaysThem(first, second) {
 function markupInTheWorld(renderer) {
 	return {
 		texture: new SurfaceTexture(renderer, SHRINKS),
-		light: surfaceInTheWorld(MARKUP_SEEN_THROUGH, 'surfacesSeenThrough'),
-		depth: surfaceInTheWorld(MARKUP_DEPTH_ALONE, 'surfacesDepth')
+		light: surfaceInTheWorld(
+			MARKUP_SEEN_THROUGH,
+			'surfacesSeenThrough',
+			OBJECTS_SURFACE_FRAGMENT,
+			objectsSurfaceValues()
+		),
+		depth: surfaceInTheWorld(MARKUP_DEPTH_ALONE, 'surfacesDepth', OBJECTS_SURFACE_FRAGMENT, objectsSurfaceValues())
 	};
+}
+
+/** The values an object's surface's material starts with, its own: no texture yet. */
+function objectsSurfaceValues() {
+	return { surface: { value: null } };
+}
+
+/**
+ * The picture of the page the stage shows in an exposure's window's surface (`show` in `stage.js`).
+ * @param {Element} surface
+ */
+function pictureIn(surface) {
+	const picture = surface.querySelector(PICTURE);
+	if (!(picture instanceof HTMLImageElement)) throw new Error("the room's window shows no picture of the page");
+	return picture;
 }
 
 /**

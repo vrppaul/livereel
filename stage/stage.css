@@ -580,8 +580,8 @@ body {
 	box-shadow: none;
 }
 
-/* In the room the window's surface stands over the frame and as far past it as the camera's picture reaches on the window's plane, where the eye may see it leant or from aside; an object standing in the world stands in a surface of its own over its box and as far past it as anything it shows draws; each as densely as the graphics card holds it (`room.js`). What it holds stays where the frame has it, uncut at the frame's edge */
-.room > :is([data-surface='window'], [data-surface='world']) {
+/* In the room the window's surface, and the surface of what lies over the page in the window, stand over the frame and as far past it as the camera's picture reaches on the window's plane, where the eye may see it leant or from aside; an object standing in the world stands in a surface of its own over its box and as far past it as anything it shows draws; each as densely as the graphics card holds it (`room.js`). What it holds stays where the frame has it, uncut at the frame's edge */
+.room > :is([data-surface='window'], [data-surface='over-the-page'], [data-surface='world']) {
 	left: calc(var(--surface-left) * 1px);
 	top: calc(var(--surface-top) * 1px);
 	width: calc(var(--surface-width) * 1px);
@@ -589,7 +589,7 @@ body {
 	zoom: var(--surface-density);
 }
 
-.room > [data-surface='window'] > [data-prop='screen'],
+.room > :is([data-surface='window'], [data-surface='over-the-page']) > [data-prop='screen'],
 .room > [data-surface='world'] > .objects {
 	position: absolute;
 	left: calc(var(--surface-left) * -1px);
@@ -600,6 +600,15 @@ body {
 
 .room .stage {
 	overflow: visible;
+}
+
+/* In the room, where the screen shows the filmed page, the room lays the screen's ground and the page's picture under the window's surface itself, the picture as densely as it was taken (`page-picture.js`): the surface holds the screen's own markup over them. A page of the film's own stands on the ground in the surface, as their edges are smoothed together there */
+.room [data-prop='screen']:not([data-shows-own]) .screen {
+	background: none;
+}
+
+.room .page[data-part='picture'] {
+	visibility: hidden;
 }
 
 /* What an object shows fills its box, sized in pixels of a frame the stage's look was made on and every length of it scaled to the frame shot, as what stands over the frame is: the box's width and height in those pixels are named once for every part of it, as a length under the zoom is never a share of the box, which the zoom would count twice */

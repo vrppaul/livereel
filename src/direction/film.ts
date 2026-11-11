@@ -134,8 +134,7 @@ export interface Script<Name extends string> extends SiteScript {
 	/**
 	 * How the stage draws a frame: `flat`, where none is named, as the browser draws a page, the window and each object
 	 * on layers of its own, a leant one drawn as soft as the browser draws a layer in 3D; or `room`, the window drawn in
-	 * WebGL as a plane where the eye sees it, from a picture of it as dense as the page's device scale, for a static
-	 * page.
+	 * WebGL as a plane where the eye sees it, a static page from its picture as dense as it was taken.
 	 */
 	readonly drawing?: Drawing;
 	/**

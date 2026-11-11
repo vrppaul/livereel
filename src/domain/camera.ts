@@ -349,22 +349,34 @@ export function flatCamera(format: Format, focalLength: number): Camera {
 /** The camera as the stage draws it, its cut worked out from where the screen stands in its view. */
 export function drawnCamera(camera: Camera, format: Format): DrawnCamera {
 	const view = camera.view.box;
-	const frameZoom = frameZoomOf(camera.pose, format.frame);
-	const screenLeft = view.width / HALVES - camera.pose.focusX * frameZoom;
-	const screenTop = view.height / HALVES - camera.pose.focusY * frameZoom;
-	const screenRight = screenLeft + format.screen.width * frameZoom;
-	const screenBottom = screenTop + format.screen.height * frameZoom;
+	const screen = screenInTheView(camera, format);
 	// How much of the way from the screen's edges to the view's the cut still stands out
 	const open = LIFTED - camera.view.lift;
 	const { frame } = format;
 	return {
 		pose: camera.pose,
 		cut: {
-			top: cutPast(screenTop, view.top > FRAMES_EDGE, open),
-			right: cutPast(view.width - screenRight, view.left + view.width < frame.width, open),
-			bottom: cutPast(view.height - screenBottom, view.top + view.height < frame.height, open),
-			left: cutPast(screenLeft, view.left > FRAMES_EDGE, open)
+			top: cutPast(screen.top, view.top > FRAMES_EDGE, open),
+			right: cutPast(view.width - (screen.left + screen.width), view.left + view.width < frame.width, open),
+			bottom: cutPast(view.height - (screen.top + screen.height), view.top + view.height < frame.height, open),
+			left: cutPast(screen.left, view.left > FRAMES_EDGE, open)
 		}
+	};
+}
+
+/**
+ * Where the whole screen stands in a camera's view as the camera frames the page, before the view's stance carries it:
+ * in the view's pixels from its top left corner, the camera's focus at the view's middle, a page's pixel as many of the
+ * frame's as the camera's zoom takes.
+ */
+export function screenInTheView(camera: Camera, format: Format): Box {
+	const view = camera.view.box;
+	const frameZoom = frameZoomOf(camera.pose, format.frame);
+	return {
+		left: view.width / HALVES - camera.pose.focusX * frameZoom,
+		top: view.height / HALVES - camera.pose.focusY * frameZoom,
+		width: format.screen.width * frameZoom,
+		height: format.screen.height * frameZoom
 	};
 }
 

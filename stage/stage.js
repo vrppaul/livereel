@@ -155,8 +155,11 @@ const QUIET = 'quiet';
 const AMONG_THOSE_ON_THE_FRAME = { kind: 'among those on the frame' };
 /** @type {ReadonlyMap<string, Staged>} */
 const NONE_LAID_APART = new Map();
-// The template a surface an object is laid in apart is made from
+// The template a surface an object is laid in apart is made from; the one the surface of what lies over the page is
+// made from; and the window's surface, which it is laid after
 const SURFACE_APART = 'template[data-apart]';
+const OVER_THE_PAGE = 'template[data-over-the-page]';
+const WINDOWS_SURFACE = '[data-surface="window"]';
 // The class of a line of code; each piece of it is classed by its kind; and the attribute that names how a pane fits
 // a line too long
 const CODE_LINE = 'code-line';
@@ -210,25 +213,28 @@ const LOOK_NAMES = Object.keys(LOOK_TOKENS).filter(isOfTheLook);
 /** @type {{ readonly [Part in keyof GroundLayers]: string }} */
 const LAYERS_SET_AS = { going: '--layers-going', coming: '--layers-coming', come: '--layers-come' };
 
+/** The camera, drawn on each of its roots: one in each surface the window's view stands in. */
 class CameraDrawer {
-	/** @param {Staged} root */
-	constructor(root) {
-		this.root = root;
+	/** @param {readonly Staged[]} roots */
+	constructor(roots) {
+		this.roots = roots;
 	}
 
 	/** @param {DrawnScene} scene */
 	draw(scene) {
 		const pose = scene.camera.pose;
 		const cut = scene.camera.cut;
-		numbered(this.root, {
-			'--focus-x': pose.focusX,
-			'--focus-y': pose.focusY,
-			'--zoom': pose.zoom,
-			'--cut-top': cut.top,
-			'--cut-right': cut.right,
-			'--cut-bottom': cut.bottom,
-			'--cut-left': cut.left
-		});
+		for (const root of this.roots) {
+			numbered(root, {
+				'--focus-x': pose.focusX,
+				'--focus-y': pose.focusY,
+				'--zoom': pose.zoom,
+				'--cut-top': cut.top,
+				'--cut-right': cut.right,
+				'--cut-bottom': cut.bottom,
+				'--cut-left': cut.left
+			});
+		}
 	}
 }
 
@@ -236,30 +242,32 @@ class CameraDrawer {
  * The page's window: where on the frame the camera's picture shows, how round its corners are, how far it stands off
  * the ground, how much of the page shows, how it is drawn about its middle as it leans, by the matrix the engine sees it
  * through, how it shades the page, how soft the eye's focus draws it, and whether it has a body, which the room draws
- * (`stage/body.js`).
+ * (`stage/body.js`): on each of its roots, one in each surface its view stands in.
  */
 class WindowDrawer {
-	/** @param {Staged} root */
-	constructor(root) {
-		this.root = root;
+	/** @param {readonly Staged[]} roots */
+	constructor(roots) {
+		this.roots = roots;
 	}
 
 	/** @param {DrawnScene} scene */
 	draw(scene) {
 		const view = scene.window;
-		numbered(this.root, {
-			'--view-left': view.box.left,
-			'--view-top': view.box.top,
-			'--view-width': view.box.width,
-			'--view-height': view.box.height,
-			'--view-corner': view.corner,
-			'--lift': view.lift,
-			'--page-shown': view.pageShown
-		});
-		transformed(this.root, view.transform);
-		shadeDrawn(this.root, view.shade);
-		focusDrawn(this.root, view.outOfFocus);
-		this.root.toggleAttribute(WITH_A_BODY, view.body !== null);
+		for (const root of this.roots) {
+			numbered(root, {
+				'--view-left': view.box.left,
+				'--view-top': view.box.top,
+				'--view-width': view.box.width,
+				'--view-height': view.box.height,
+				'--view-corner': view.corner,
+				'--lift': view.lift,
+				'--page-shown': view.pageShown
+			});
+			transformed(root, view.transform);
+			shadeDrawn(root, view.shade);
+			focusDrawn(root, view.outOfFocus);
+			root.toggleAttribute(WITH_A_BODY, view.body !== null);
+		}
 	}
 }
 
@@ -277,24 +285,31 @@ function shadeDrawn(root, shade) {
 /**
  * The screen: how far it has come up, what it shows, the filmed page or one of the film's own laid on it, and the
  * picture light sweeps away over it, a band or a disc; where the eye sees a page on the window's back, how it is
- * mounted, so the stylesheet turns it to stand upright from behind and leaves unseen what lies on the front.
+ * mounted, so the stylesheet turns it to stand upright from behind and leaves unseen what lies on the front. Its
+ * numbers and names are drawn on each of its roots, one in each surface the window's view stands in; its pages and
+ * its sweep stand in the window's surface alone.
  */
 class ScreenDrawer {
-	/** @param {Staged} root @param {ReadonlyMap<string, HTMLIFrameElement>} ownPages */
-	constructor(root, ownPages) {
-		this.root = root;
+	/**
+	 * @param {readonly Staged[]} roots @param {ReadonlyMap<string, HTMLIFrameElement>} ownPages
+	 * @param {Staged} sweep the part the sweep stands in
+	 */
+	constructor(roots, ownPages, sweep) {
+		this.roots = roots;
 		this.ownPages = ownPages;
-		this.sweep = partOf(root, 'sweep');
-		this.swept = partOf(root, 'swept');
+		this.sweep = sweep;
+		this.swept = partOf(sweep, 'swept');
 	}
 
 	/** @param {DrawnScene} scene */
 	draw(scene) {
-		numbered(this.root, { '--screen-shown': scene.screen.shown });
 		const shownKey = ownPageShown(scene.screen.shows);
-		this.root.toggleAttribute(SHOWS_OWN, shownKey !== NAMELESS);
+		for (const root of this.roots) {
+			numbered(root, { '--screen-shown': scene.screen.shown });
+			root.toggleAttribute(SHOWS_OWN, shownKey !== NAMELESS);
+			named(root, BACK_UPRIGHT, scene.screen.backUpright);
+		}
 		for (const [key, frame] of this.ownPages) frame.toggleAttribute(SHOWN, key === shownKey);
-		named(this.root, BACK_UPRIGHT, scene.screen.backUpright);
 		sweepDrawn(this.sweep, this.swept, scene.screen.sweep);
 	}
 }
@@ -1094,10 +1109,10 @@ class LookDrawer {
  * its one root; the world's light lights the room's things and the window's body alone, which the room draws
  * (`stage/things.js`, `stage/body.js`), and its glow the room draws over a frame (`stage/room.js`), as it blurs the
  * world by how the eye sees (`stage/lens.js`) and sees it from where the eye stands, laying what stands in the world in
- * the order the scene hands.
+ * the order the scene hands, and drawing what lies over the page in the window into a texture where anything does.
  * @typedef {{
  *   readonly root: Staged,
- *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'world' | 'leaving' | 'laidInTheWorld' | 'eye'>]: Drawer }
+ *   readonly drawers: { readonly [Name in Exclude<keyof DrawnScene, 'look' | 'world' | 'leaving' | 'laidInTheWorld' | 'overThePage' | 'eye'>]: Drawer }
  *     & { readonly objects: ObjectsDrawer },
  *   readonly page: Staged,
  *   readonly picture: Staged,
@@ -1146,19 +1161,21 @@ function setup(layout) {
 }
 
 /**
- * An exposure of the frame by its root, laying markup standing in the world as it is drawn has it.
+ * An exposure of the frame by its root, laid out as it is drawn: laying markup standing in the world as that has it,
+ * and, drawn as a room, what lies over the page in the window in a surface apart.
  * @param {Staged} root @param {Drawing} drawing @returns {Exposure}
  */
 function exposureOf(root, drawing) {
+	if (drawing === 'room') overThePageLaidApart(root);
 	/** @type {Map<string, HTMLIFrameElement>} */
 	const ownPages = new Map();
 	const caption = new CaptionDrawer(propRoot(root, 'caption'));
 	return {
 		root,
 		drawers: {
-			camera: new CameraDrawer(propRoot(root, 'camera')),
-			window: new WindowDrawer(propRoot(root, 'window')),
-			screen: new ScreenDrawer(propRoot(root, 'screen'), ownPages),
+			camera: new CameraDrawer(propRoots(root, 'camera')),
+			window: new WindowDrawer(propRoots(root, 'window')),
+			screen: new ScreenDrawer(propRoots(root, 'screen'), ownPages, partOf(root, 'sweep')),
 			light: new LightDrawer(propRoot(root, 'light')),
 			callout: new CalloutDrawer(propRoot(root, 'callout')),
 			pins: new PinsDrawer(propRoot(root, 'pins')),
@@ -1177,6 +1194,25 @@ function exposureOf(root, drawing) {
 		picture: partOf(root, 'picture'),
 		ownPages
 	};
+}
+
+/**
+ * What lies over the page in an exposure's window — the callout, the pins, the objects standing in the window — laid
+ * in a surface of its own after the window's, made from the stage's template, where the room lays it over the screen
+ * and the page's picture: as the screen fades whole, what lies over it does not, and the room lays the picture under
+ * the screen's own markup alone.
+ * @param {Staged} root
+ */
+function overThePageLaidApart(root) {
+	const template = document.querySelector(OVER_THE_PAGE);
+	if (!(template instanceof HTMLTemplateElement))
+		throw new Error("the stage's markup has no template of what lies over the page");
+	const surface = document.importNode(template.content, true).firstElementChild;
+	if (!(surface instanceof HTMLElement))
+		throw new Error("the stage's template of what lies over the page holds no element");
+	found(root.querySelector(WINDOWS_SURFACE), "window's surface").after(surface);
+	partOf(surface, 'camera').append(propRoot(root, 'callout'), propRoot(root, 'pins'));
+	partOf(surface, 'view').append(sceneRoot(root, 'window'));
 }
 
 /**
@@ -1590,6 +1626,15 @@ function lineElement(line) {
 /** The root of a prop's elements in an exposure's markup. @param {Element} exposure @param {PropName} prop */
 function propRoot(exposure, prop) {
 	return found(exposure.querySelector(`[data-prop="${prop}"]`), prop);
+}
+
+/**
+ * Every root of a prop's elements in an exposure's markup: one, or one in each surface it stands in, as the window, the
+ * camera and the screen stand in the window's surface and in that of what lies over the page.
+ * @param {Element} exposure @param {PropName} prop
+ */
+function propRoots(exposure, prop) {
+	return [...exposure.querySelectorAll(`[data-prop="${prop}"]`)].map((root) => found(root, prop));
 }
 
 /**

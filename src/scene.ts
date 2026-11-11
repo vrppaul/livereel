@@ -154,14 +154,16 @@ interface StandingListed extends ListedObject {
 /**
  * What the stage is handed of a scene: each prop as drawn, the objects standing and pushed off, those of them standing
  * in the world in the order the room lays them one over the other (`laidFartherFirst` in `src/domain/placement.ts`),
- * what the pieces of the page among them leave on the page and draw to it, holes on the screen and lines on the frame,
- * and the eye as the room sees the world and the frame by it and blurs each pixel of the world by its lens, once a
- * scene.
+ * whether anything lies over the page in the window but the screen's own — a callout, pins, an object standing inside
+ * the window — which the room lays over the page apart; what the pieces of the page among them leave on the page and
+ * draw to it, holes on the screen and lines on the frame, and the eye as the room sees the world and the frame by it and
+ * blurs each pixel of the world by its lens, once a scene.
  */
 export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 	readonly objects: readonly DrawnObject[];
 	readonly leaving: readonly DrawnObject[];
 	readonly laidInTheWorld: readonly ListedObject[];
+	readonly overThePage: boolean;
 	readonly holes: readonly DrawnHole[];
 	readonly lines: readonly DrawnLines[];
 	readonly eye: DrawnEye;
@@ -429,6 +431,8 @@ export function drawn(
 		sharper
 	};
 	const shown = drawnCamera(camera, format);
+	const objects = drawnObjects(scene.objects, moment, around);
+	const leaving = drawnObjects(scene.leaving, moment, around);
 	const window = drawnWindow(camera.view, shown.cut, scene.window, {
 		eye: camera.eye,
 		frame: format.frame,
@@ -442,7 +446,7 @@ export function drawn(
 		world: drawnWorld(scene.world, format.frame),
 		camera: shown,
 		window,
-		screen: drawnScreen(scene.screen, camera, format, window.facingTheEye),
+		screen: drawnScreen(scene.screen, camera, format, window.facingTheEye, scene.look.paneCorner),
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout, moment),
 		pins: scene.pins === null ? null : drawnPins(scene.pins, camera, format.frame),
@@ -450,9 +454,13 @@ export function drawn(
 		note: scene.note === null ? null : drawnNote(scene.note, camera, format.frame, moment),
 		caption: scene.caption === null ? null : drawnCaption(scene.caption, moment),
 		keys: scene.keys === null ? null : drawnKeys(scene.keys, scene.caption),
-		objects: drawnObjects(scene.objects, moment, around),
-		leaving: drawnObjects(scene.leaving, moment, around),
+		objects,
+		leaving,
 		laidInTheWorld: laidInTheWorldOf(scene, around),
+		overThePage:
+			scene.callout !== null ||
+			scene.pins !== null ||
+			[...objects, ...leaving].some((object) => object.standsIn === 'window'),
 		holes,
 		lines: drawnLines(everyObject, camera, scene.groups, format.frame),
 		eye: drawnEye(camera.eye, format.frame, lensLawOf(sharpness))

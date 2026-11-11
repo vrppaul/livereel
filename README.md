@@ -1158,9 +1158,12 @@ What `inside` costs:
   browser draws a layer in 3D, at about one of its pixels a page's pixel
   however near the eye comes.
 - `room`: the world drawn in WebGL as one scene with one depth, as a 3D
-  program draws it: the page a plane where the eye sees it, from a picture
-  of what the frame shows of it as dense as the page's device scale,
-  filtered as it shrinks into the distance; the window's body round it and
+  program draws it: the page a plane where the eye sees it, a static page
+  from its own picture, as dense as the picture was taken, so a window
+  brought near or leant toward the eye stays as sharp, and what lies over
+  the page in the window (the light, the cursor, a callout, an object in
+  the window, a page of the film's own) as dense as the page's device
+  scale, filtered as it shrinks into the distance; the window's body round it and
   the film's things beside it, each hiding the others by depth alone; and
   each pixel blurred by the eye's focus as far as what it shows stands from
   it, where flat blurs the window as one. The blur adds light up in linear
@@ -1272,8 +1275,12 @@ What `room` costs:
   the page's plane is a field of its own, so it blurs by its own depth: one
   run of the lens more, about 80 ms a frame of 3840 × 2160 (2026-11-11).
 - Where the frame shows more of the window's plane than the graphics card
-  holds in one texture, as the eye flying low over a tall screen does, the
-  plane is drawn less densely, softer than flat near the eye.
+  holds in one texture, as the eye flying low over a tall screen does, what
+  lies over the page is drawn less densely, softer than flat near the eye;
+  a page's picture larger than the card's largest texture is shrunk whole
+  to fit it.
+- What lies over the page in the window stays as dense as the frame: a
+  window brought near shows it magnified, softer than the page under it.
 - It draws through Chrome's HTML-in-Canvas, an experiment of Chrome's behind
   a flag livereel turns on, renamed twice before: livereel pins the browser
   `npx livereel setup` installs, and refuses a browser without it, or one

@@ -2542,6 +2542,23 @@ test('a caption and keys never slide and take no name: one of each stands where 
 	expect(() => keys.hide({ as: 'second' } as never)).toThrow(FilmError);
 });
 
+test('something lies over the page in the window while a callout, pins or an object inside the window stands; nothing where none does, nor where an object stands on the frame or in the world', async () => {
+	const pointed = await setAt(callout.show('#block', 'Here'), OPENING_IN_SMALL, 1);
+	const pinned = await setAt(pin.show('#block', 'Here'), OPENING_IN_SMALL, 1);
+	const inTheWindow = await setAt(code.show('x', { at: LOWER_RIGHT, inside: 'window' }), OPENING_IN_SMALL, 1);
+	const onTheFrame = await setAt(code.show('x', { at: LOWER_RIGHT }), OPENING_IN_SMALL, 1);
+	const inTheWorld = await setAt(code.show('x', { at: LOWER_RIGHT, inside: 'world' }), OPENING_IN_SMALL, 1);
+	const scenes = [OPENING_IN_SMALL, pointed, pinned, inTheWindow, onTheFrame, inTheWorld];
+	expect(scenes.map((scene) => drawnSceneIn(scene, SMALL).overThePage)).toEqual([
+		false,
+		true,
+		true,
+		true,
+		false,
+		false
+	]);
+});
+
 test("an object inside the page's window stands, and is carried, in the window's box read as a frame of that size", async () => {
 	const windowed = await setAt(windowTo('right'), OPENING_IN_SMALL, 1);
 	const windowBox = windowed.window.box.to;

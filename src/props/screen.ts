@@ -17,7 +17,7 @@
  * is, mounted so it stands upright once the window is turned over round its width or round its upright; with none,
  * the eye sees the screen through the window's back, mirrored, as before.
  */
-import { type Camera, type SeenBetween, screenPointShift, viewOnTheScreen } from '../domain/camera.ts';
+import { type Camera, type SeenBetween, screenInTheView, screenPointShift, viewOnTheScreen } from '../domain/camera.ts';
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import type { Format } from '../domain/format.ts';
 import {
@@ -29,6 +29,7 @@ import {
 	cornersOf,
 	diagonalOf,
 	distanceBetween,
+	frameScaleOf,
 	nearestInTheBox,
 	middleX,
 	middleY,
@@ -138,14 +139,25 @@ type DrawnSweepShape =
 
 /**
  * The screen as the stage draws it: how far it has come up, what it shows on the side of the window the eye sees, the
- * sweep over it as drawn, if any; and how the page it shows is mounted where it is the window's back's, which then shows
- * it alone, none where the eye sees the front or the screen through the back.
+ * sweep over it as drawn, if any; how the page it shows is mounted where it is the window's back's, which then shows
+ * it alone, none where the eye sees the front or the screen through the back; and where the filmed page lies, none
+ * where it shows a page of the film's own.
  */
 export interface DrawnScreen {
 	readonly shown: Fraction;
 	readonly shows: Shows;
 	readonly sweep: DrawnSweep | null;
 	readonly backUpright: Upright | null;
+	readonly filmed: FilmedLaid | null;
+}
+
+/**
+ * Where the filmed page lies on the window's plane, as the camera frames it: its box, in the frame's pixels as the
+ * window's box is, and how round its corners are there, which the room lays the page's picture by (`stage/room.js`).
+ */
+interface FilmedLaid {
+	readonly box: Box;
+	readonly corner: number;
 }
 
 // How far a band may stand slanted from the side it comes from, either way: short of a quarter turn, where it would lie
@@ -184,17 +196,38 @@ const NO_PICTURE: readonly number[] = [];
 
 /**
  * The screen as the stage draws it, the camera that shows it framing the page in its view, in a format, the eye seeing
- * the window's front or its back: the page on the back, with no sweep, where the eye sees the back and the back has a
- * page of its own; the screen as it stands where not.
+ * the window's front or its back, a pane's corners as round as the look has them in pixels of a frame 1080 high: the
+ * page on the back, with no sweep, where the eye sees the back and the back has a page of its own; the screen as it
+ * stands where not.
  */
-export function drawnScreen(screen: Screen, camera: Camera, format: Format, facingTheEye: boolean): DrawnScreen {
+export function drawnScreen(
+	screen: Screen,
+	camera: Camera,
+	format: Format,
+	facingTheEye: boolean,
+	paneCorner: number
+): DrawnScreen {
 	const backPage = backPageSeen(screen.back, facingTheEye);
 	if (backPage !== null) {
 		const shows: Shows = { kind: 'own', key: backPage.key };
-		return { shown: screen.shown, shows, sweep: null, backUpright: backPage.upright };
+		return { shown: screen.shown, shows, sweep: null, backUpright: backPage.upright, filmed: null };
 	}
 	const sweep = screen.sweep === null ? null : drawnSweep(screen.sweep, partSwept(camera, format), camera.pose.zoom);
-	return { shown: screen.shown, shows: screen.shows, sweep, backUpright: null };
+	const filmed = screen.shows.kind === 'filmed' ? filmedLaid(camera, format, paneCorner) : null;
+	return { shown: screen.shown, shows: screen.shows, sweep, backUpright: null, filmed };
+}
+
+/**
+ * Where the filmed page lies on the window's plane, as a camera frames it in a format: the whole screen in the view,
+ * carried from the view's corner to where the view stands, its corners as round as a pane's at the frame's scale.
+ */
+function filmedLaid(camera: Camera, format: Format, paneCorner: number): FilmedLaid {
+	const inTheView = screenInTheView(camera, format);
+	const view = camera.view.box;
+	return {
+		box: { ...inTheView, left: view.left + inTheView.left, top: view.top + inTheView.top },
+		corner: paneCorner * frameScaleOf(format.frame)
+	};
 }
 
 /**
