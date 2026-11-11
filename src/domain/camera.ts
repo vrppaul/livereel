@@ -68,7 +68,7 @@ import {
 	stanceMatrix,
 	stanceMatrixBack
 } from './stance.ts';
-import { between } from './toward.ts';
+import { between, shareByScale } from './toward.ts';
 import { ARRIVED, type Track, alongTrack, arrivedAt } from './track.ts';
 
 /**
@@ -499,23 +499,12 @@ function flatPose(format: Format): Pose {
  * edge lets it (`seenThrough`).
  */
 function poseToward(start: Pose, end: Pose, progress: number): Pose {
-	const focusShare = focusShareAt(start.zoom, end.zoom, progress);
+	const focusShare = shareByScale(start.zoom, end.zoom, progress);
 	return {
 		focusX: between(start.focusX, end.focusX, focusShare),
 		focusY: between(start.focusY, end.focusY, focusShare),
 		zoom: start.zoom * (end.zoom / start.zoom) ** progress
 	};
-}
-
-/**
- * The share of the way between two foci where the zoom has gone `progress` of its way by scale, the point still on the
- * frame kept still: `(1 − start ÷ zoom) ÷ (1 − start ÷ end)`, written with `expm1` so a zoom that hardly changes comes
- * out as exact as a pan, which, of one zoom, goes evenly.
- */
-function focusShareAt(startZoom: number, endZoom: number, progress: number): number {
-	const zoomRatiosLogarithm = Math.log(endZoom / startZoom);
-	if (zoomRatiosLogarithm === 0) return progress;
-	return Math.expm1(-zoomRatiosLogarithm * progress) / Math.expm1(-zoomRatiosLogarithm);
 }
 
 /** How close a camera comes: more than none, as a camera at none shows no page, and its zoom goes by scale. */

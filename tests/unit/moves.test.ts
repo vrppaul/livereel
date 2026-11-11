@@ -3876,7 +3876,7 @@ test('an eye onto a block rides the window: the window leant in the same step, s
 	]);
 });
 
-test('an eye onto a block refused as the move is made: no share of the frame to fill, a middle off the frame, a turn a quarter round from square or past', () => {
+test('an eye onto a block refused as the move is made: no share of the frame to fill, a middle off the frame, a turn a quarter round from square or past, a pace of neither kind', () => {
 	expect(() => eye.onto('#card', { fills: 0 })).toThrow(
 		new FilmError(
 			"eye.onto's fills is 0: it is the share of the frame the block fills along the side it fills most, more than 0"
@@ -3890,6 +3890,39 @@ test('an eye onto a block refused as the move is made: no share of the frame to 
 	);
 	expect(() => eye.onto('#card', { fills: 0.5, turned: { up: -90 } })).toThrow(
 		new FilmError("eye.onto's turned's up is -90: it is degrees turned from square, more than -90 and less than 90")
+	);
+	expect(() => eye.onto('#card', { fills: 0.5, pace: 'keys' as never })).toThrow(
+		new FilmError('eye.onto\'s pace is "keys": it is "scale" or "even"')
+	);
+});
+
+/** How wide the card is drawn on the small frame of a scene, by its own camera. */
+function cardsWidthDrawn(scene: Scene): number {
+	const camera = cameraOf(scene, SMALL);
+	return onTheFrame(camera, SMALL.frame, CARDS_FOOT_RIGHT).left - onTheFrame(camera, SMALL.frame, CARDS_TOP_LEFT).left;
+}
+
+test('an eye onto a block grows the page by even steps of scale: half way, the card drawn the mean by scale of how wide it set off and ends; named even, the eye as far along its way in each share, the card half way the mean of the reciprocals', async () => {
+	const byScale = await eye.onto('#card', { fills: 0.9 }).begin(beginningOf(OPENING_IN_SMALL));
+	const evenly = await eye.onto('#card', { fills: 0.9, pace: 'even' }).begin(beginningOf(OPENING_IN_SMALL));
+	const setOff = cardsWidthDrawn(OPENING_IN_SMALL);
+	const ends = cardsWidthDrawn(await byScale(OPENING_IN_SMALL, 1));
+	expect([
+		cardsWidthDrawn(await byScale(OPENING_IN_SMALL, 0.5)),
+		cardsWidthDrawn(await evenly(OPENING_IN_SMALL, 0.5))
+	]).toEqual([expect.closeTo(Math.sqrt(setOff * ends)), expect.closeTo((2 * setOff * ends) / (setOff + ends))]);
+});
+
+test("an eye onto a block by steps of scale refused as it begins where the eye stands at or behind the page's plane, where it has no scale", async () => {
+	const behind = await setAt(
+		eye.to({ at: { across: 0, down: 0, out: -1000 }, aim: { across: 0, down: 0, out: -3000 } }),
+		OPENING_IN_SMALL,
+		1
+	);
+	await expect(setAt(eye.onto('#card', { fills: 0.5 }), behind, 1)).rejects.toThrow(
+		new FilmError(
+			"eye.onto goes by steps of scale, and the eye stands at or behind the page's plane as it begins, where it shows the page at no scale: bring it before the page first, or name pace: 'even'"
+		)
 	);
 });
 

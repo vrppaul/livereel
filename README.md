@@ -188,7 +188,7 @@ and the moves of each part of the scene:
   the page, a height of none, a tip past ±90, a heading toward the block the eye arrives right over, a key by a leg
   the way has not, by a leg onto a block or no later than the key before, a leg that takes no time, one naming none
   beside one that names how long it takes, and an `ease` beside legs that name it
-- `eye.onto(target, { fills, middleAt, turned })`: the eye brought before a block of the page, a selector or a box of
+- `eye.onto(target, { fills, middleAt, turned, pace })`: the eye brought before a block of the page, a selector or a box of
   the screen: so near that, seen square, the block fills `fills` of the frame along the side it fills most,
   `eye.onto('#thread', { fills: 0.94 })`; its middle at `middleAt` of the frame, `{ left: 0.5, top: 0.64 }` in shares
   of it, the frame's middle where none is named; and turned from square about that middle, looking at it,
@@ -196,8 +196,13 @@ and the moves of each part of the scene:
   as a soft box stands round the room, square where none is named; its top up the page. A stretch of the page about a
   point, as the promo's stages look, is a box that wide about it, `fills: 1`. The block is read as the move begins,
   where the camera shows it in the window; the eye goes there from where it stands, where it stands and looks each on
-  a straight way, and rides the window, as a flight leaves it, so a window that leans or travels carries it, until
-  `eye.to` sends it into the room. Refused: a share of none, a middle off the frame, a turn a quarter round or more
+  a straight way, by even steps of scale, as the camera zooms: the page grows or shrinks by the same ratio in each
+  equal share of the move, from 1 to 4 times at 2 half way, as the promo draws back from what the page says of the
+  story's writing (`story-written.js`); or, `pace: 'even'`, as far along its way in each equal share, as the promo
+  dives onto the line it asks about (`asking.js`). It then rides the window, as a flight leaves it, so a window that
+  leans or travels carries it, until `eye.to` sends it into the room. Refused: a share of none, a middle off the
+  frame, a turn a quarter round or more, a pace of neither kind, and, as it begins, steps of scale from where the eye
+  stands at or behind the page's plane
 - `eye.focus(on, { aperture })`: the eye focused so far before it, `eye.focus(1800)`, at a spot of the world, on a
   block of the page, `eye.focus('#thread')`, on an object, `eye.focus({ object: 'why' })`, or under a point of the
   frame, `eye.focus({ under: { left: 0.25, top: 0.26 } })` in shares of it, where the eye sees the window's plane

@@ -23,7 +23,9 @@
  * The eye stands before a box of a plane as a film frames it there (`viewpointBefore`): so near that the box fills a
  * share of the frame as it would seen square, turned from square about its middle, and moved along its own picture
  * plane till the middle shows where the film names on the frame, its top up the plane. Worked out in the plane's own
- * axes, the place rides the plane as the eye rides the window.
+ * axes, the place rides the plane as the eye rides the window. The eye goes there on its straight way by even steps of
+ * the scale it shows the plane at, as the camera zooms, or as far in each share of its move where a film names it
+ * (`pacedBeforeAPlane`): the claude-review promo's cut goes both ways.
  *
  * The eye sees as a lens does: focused at a point and open so wide. Open none, a pinhole, as every film was seen before
  * it could open, it sees all sharp; open, it draws what stands in the world nearer or farther than its focus the softer
@@ -68,7 +70,7 @@ import {
 import type { LensLaw } from './focus.ts';
 import type { Path, PathSpace } from './path.ts';
 import type { LastingHolder } from './placement.ts';
-import { between } from './toward.ts';
+import { between, shareByScale } from './toward.ts';
 import { type Track, arrivedAt } from './track.ts';
 
 /**
@@ -158,6 +160,15 @@ export interface EyeFraming {
 	readonly middleAt: Point;
 	readonly turned: Turned;
 }
+
+/**
+ * How the eye goes along its straight way before a plane: `'scale'`, by even steps of the scale it shows the plane at,
+ * so the plane grows or shrinks on the frame by the same ratio in each equal share of the move, as the camera zooms;
+ * or `'even'`, as far along the way in each equal share.
+ */
+export const PACES_BEFORE_A_PLANE = ['scale', 'even'] as const;
+
+export type PaceBeforeAPlane = (typeof PACES_BEFORE_A_PLANE)[number];
 
 /** The line an eye sees a point on: where the eye stands, and the way its sight goes from there. */
 export interface Sight {
@@ -366,6 +377,53 @@ export function viewpointBefore(box: Box, framing: EyeFraming, focalLength: numb
 		(MIDDLE_SHARE.top - framing.middleAt.top) * seen.height * movedPerPixel
 	);
 	return { at: movedAlong(aim, facing, distance), aim, up: UP_THE_FRAME };
+}
+
+/**
+ * The eye's straight way to a place before a plane, its places in the plane's own axes, `out` away from its face, gone
+ * at the pace named: evenly, as the way goes; or by even steps of the scale the eye shows the plane at, the reciprocal
+ * of how far out of it the eye stands, refused where it sets off at or behind the plane, where it shows the plane at
+ * no scale.
+ */
+export function pacedBeforeAPlane(
+	way: Path<Viewpoint>,
+	from: Viewpoint,
+	to: Viewpoint,
+	pace: PaceBeforeAPlane,
+	move: string
+): Path<Viewpoint> {
+	switch (pace) {
+		case 'even':
+			return way;
+		case 'scale':
+			if (from.at.out <= ON_ITS_PLANE) {
+				throw new FilmError(
+					`${move} goes by steps of scale, and the eye stands at or behind the page's plane as it begins, where it shows the page at no scale: bring it before the page first, or name pace: 'even'`
+				);
+			}
+			return new ByScale(way, from, to);
+	}
+}
+
+/**
+ * The eye's straight way before a plane gone by even steps of the scale it shows the plane at, which goes as the
+ * reciprocal of how far out of the plane it stands: on past either end too, where the scale goes on growing or
+ * shrinking, so the eye never reaches the plane.
+ */
+class ByScale implements Path<Viewpoint> {
+	readonly way: Path<Viewpoint>;
+	readonly startScale: number;
+	readonly endScale: number;
+
+	constructor(way: Path<Viewpoint>, from: Viewpoint, to: Viewpoint) {
+		this.way = way;
+		this.startScale = 1 / from.at.out;
+		this.endScale = 1 / to.at.out;
+	}
+
+	at(progress: number): Viewpoint {
+		return this.way.at(shareByScale(this.startScale, this.endScale, progress));
+	}
 }
 
 /**

@@ -67,6 +67,19 @@ export function between(start: number, end: number, progress: number): number {
 	return start + (end - start) * progress;
 }
 
+/**
+ * The share of a straight way gone `progress` of the way along by even steps of scale, from where what the frame shows
+ * stands `startScale` large to where it stands `endScale` large: it grows by the same ratio in each equal share of the
+ * move, so from 1 to 4 it stands at 2 half way, and the point the way heads for stays still on the frame.
+ * `(1 − start ÷ scale) ÷ (1 − start ÷ end)`, written with `expm1`, so a way along which the scale hardly changes comes
+ * out as exact as one of one scale, which goes evenly.
+ */
+export function shareByScale(startScale: number, endScale: number, progress: number): number {
+	const scaleRatiosLogarithm = Math.log(endScale / startScale);
+	if (scaleRatiosLogarithm === 0) return progress;
+	return Math.expm1(-scaleRatiosLogarithm * progress) / Math.expm1(-scaleRatiosLogarithm);
+}
+
 /** A value with none between, at its start for the first half of the way and at its end for the rest. */
 export function halfWay<Value>(start: Value, end: Value, progress: number): Value {
 	return progress < HALF_WAY ? start : end;

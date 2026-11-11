@@ -37,8 +37,11 @@ import {
 	type EyePlace,
 	type EyePlaceOrRest,
 	type Focus,
+	PACES_BEFORE_A_PLANE,
+	type PaceBeforeAPlane,
 	type Viewpoint,
 	eyeSentTo,
+	pacedBeforeAPlane,
 	pathThatSees,
 	placesThatRollOneWay,
 	viewpointBefore,
@@ -227,10 +230,11 @@ interface TurnedScript {
 
 /**
  * How the eye stands before a block: framed so, and turned from square about the block's middle as `turned` says,
- * square where it says nothing.
+ * square where it says nothing; and how it goes there, `pace`, by even steps of scale where it names none.
  */
 export interface OntoScript extends TimingScript, FramingScript {
 	readonly turned?: TurnedScript;
+	readonly pace?: PaceBeforeAPlane;
 }
 
 /** An object a film focuses the eye on, by its name. */
@@ -289,6 +293,7 @@ const ONTO_FORM: Form<OntoScript> = {
 		{ round: A_TURN_FROM_SQUARE, up: A_TURN_FROM_SQUARE },
 		'a turn from square: { round, up }, in degrees'
 	),
+	pace: new OneOf(PACES_BEFORE_A_PLANE, '"scale" or "even"'),
 	...TIMING_FORM
 };
 const FOCUS_ON_SAID =
@@ -371,6 +376,8 @@ const FLY_FORM: Form<FlyScript> = {
 };
 // How a flight's legs join where the film names none; and the gaze's keys where it names none, kept as it set off
 const SMOOTH: Joining = 'smooth';
+// How the eye goes before a block where the film names no pace: as the camera zooms
+const BY_SCALE: PaceBeforeAPlane = 'scale';
 const NO_GAZE_KEYS: readonly never[] = [];
 // Where a flight's way starts, as a share of its length; how high over the page a block the gaze turns to stands;
 // and the bounds of a tip, in degrees
@@ -465,18 +472,19 @@ export function fly(way: readonly LegScript[], script: FlyScript = {}): Move {
 }
 
 /**
- * The eye brought before a block of the page from where it stands, as the film frames the block there, riding the
- * window from then on.
+ * The eye brought before a block of the page from where it stands, as the film frames the block there, at the pace it
+ * names, riding the window from then on.
  */
 export function onto(target: Target, script: OntoScript): Move {
 	assertKind(target, A_TARGET, `${EYE_ONTO}'s target`);
 	assertWritten(script, ONTO_FORM, EYE_ONTO);
 	const framing = framingOf(script, { round: script.turned?.round ?? SQUARE, up: script.turned?.up ?? SQUARE });
+	const pace = script.pace ?? BY_SCALE;
 	return {
 		part: 'eye',
 		valueNames: STANDING,
 		timing: timingOf(script),
-		begin: (beginning) => broughtBefore(beginning, target, framing)
+		begin: (beginning) => broughtBefore(beginning, target, framing, pace)
 	};
 }
 
@@ -529,15 +537,22 @@ function sentAlong(eye: Eye, through: Through<EyePlace>, place: EyePlaceOrRest):
 
 /**
  * The eye on its way from where it stands, read riding the window as it stands as the move begins, to before a block
- * as the film frames it, the block read then where the camera shows it in the window; refused where its up turns half
- * round on the way, or it could not see anywhere on it.
+ * as the film frames it, the block read then where the camera shows it in the window, on its straight way at the pace
+ * named; refused where its up turns half round on the way, it could not see anywhere on it, or it would go by scale
+ * from where it shows the page at none.
  */
-async function broughtBefore(beginning: Beginning, target: Target, framing: EyeFraming): Promise<Change> {
+async function broughtBefore(
+	beginning: Beginning,
+	target: Target,
+	framing: EyeFraming,
+	pace: PaceBeforeAPlane
+): Promise<Change> {
 	const camera = cameraOf(beginning.scene, beginning.format);
 	const setOffFrom = viewpointOf(eyeInTheWindow(camera.eye, camera.view, beginning.format.frame));
 	const end = await standBefore(beginning, camera, target, framing, EYE_ONTO);
 	placesThatRollOneWay([setOffFrom, end], EYE_ONTO);
-	return travelling(pathThatSees(pathOf(setOffFrom, NO_KEYS, end, EYE_SPACE), EYE_ONTO), 'window');
+	const way = pathThatSees(pathOf(setOffFrom, NO_KEYS, end, EYE_SPACE), EYE_ONTO);
+	return travelling(pacedBeforeAPlane(way, setOffFrom, end, pace, EYE_ONTO), 'window');
 }
 
 /**
