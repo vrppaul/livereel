@@ -1591,5 +1591,5 @@ body {
 
 /* In the room a piece of the page with a body casts no shadow of its markup's: one on its face's plane would lie over its walls, so the room draws it on what lies under the piece (`piece-body.js`) */
 .room [data-surface='world'] .object[data-effects] .piece[data-body] {
-	filter: var(--effects-but-the-shadow);
+	filter: var(--glow-and-blur);
 }

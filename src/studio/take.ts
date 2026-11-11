@@ -96,8 +96,8 @@ const NONE = 0;
 // moment of the frame after them, on their own curve or a straight one, never gone along
 const A_FRAME = 1;
 const AT_ONCE = 0;
-// Nothing typed into a page of the film's own, as the stage lays it
-const NOTHING_TYPED: readonly TypedText[] = [];
+// No text written into a page of the film's own, as the stage lays it
+const NO_TEXTS_TYPED: readonly TypedText[] = [];
 
 /**
  * A move begun: the share of its step it runs over, its curve, what it sets and whether that is the page itself, and
@@ -212,7 +212,7 @@ export class Take {
 	/** How far each page of the film's own the stage laid scrolls at most, by its key, as laid: nothing typed into it. */
 	private async scrollLengthsLaid(): Promise<ReadonlyMap<string, number>> {
 		const measured = [...this.opened.ownPages].map(
-			async ([key, page]) => [key, await page.scrollLengthWith(NOTHING_TYPED)] as const
+			async ([key, page]) => [key, await page.scrollLengthWith(NO_TEXTS_TYPED)] as const
 		);
 		return new Map(await Promise.all(measured));
 	}

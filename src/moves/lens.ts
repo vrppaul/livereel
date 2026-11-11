@@ -28,7 +28,7 @@ import {
 	objectHide,
 	objectShow
 } from './object.ts';
-import { BORN_ON_THE_FRAME, NO_AIR, NO_PLACE, ONE_BLOCK, cameraOverThePicture, sourceOf } from './source.ts';
+import { NO_PLACE, ONE_BLOCK_ON_THE_FRAME, cameraOverThePicture, sourceOf } from './source.ts';
 import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
 
 /**
@@ -98,7 +98,7 @@ export function hide(script: HideScript = {}): Move {
 /** A lens round the middle of a target where the camera shows it, and its box there, as wide as its glass is. */
 async function over(beginning: Beginning, target: Target, glass: Glass): Promise<Coming> {
 	const camera = cameraOverThePicture(beginning, 'lens.show');
-	const { box } = await sourceOf(beginning, camera, target, ONE_BLOCK, NO_AIR, 'lens.show', BORN_ON_THE_FRAME);
+	const { box } = await sourceOf(beginning, camera, target, ONE_BLOCK_ON_THE_FRAME, 'lens.show');
 	const across = glass.size * frameScaleOf(beginning.format.frame);
 	const lens: Lens = { kind: LENS, magnification: glass.magnification };
 	return { content: lens, box: resizedAbout(box, { width: across, height: across }) };
@@ -107,6 +107,6 @@ async function over(beginning: Beginning, target: Target, glass: Glass): Promise
 /** The box of a lens as large as it stands round the middle of a target where the camera shows it. */
 async function roundIts(beginning: Beginning, target: Target, lens: FrameObject): Promise<Box> {
 	const camera = cameraOverThePicture(beginning, 'lens.to');
-	const { box } = await sourceOf(beginning, camera, target, ONE_BLOCK, NO_AIR, 'lens.to', BORN_ON_THE_FRAME);
+	const { box } = await sourceOf(beginning, camera, target, ONE_BLOCK_ON_THE_FRAME, 'lens.to');
 	return resizedAbout(box, lens.box);
 }

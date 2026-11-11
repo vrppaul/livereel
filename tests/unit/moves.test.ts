@@ -4478,3 +4478,33 @@ test('a title beside an object none of stands is refused as its move begins, and
 		)
 	);
 });
+
+test('a title is refused as its move begins beside an object that stands beside it, straight or through another', async () => {
+	const first = await setIn(title.show('one', { at: 'left', as: 'first' }), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const second = await setIn(
+		title.show('two', { beside: { ...BESIDE_THE_PIECE, object: 'first' }, as: 'second' }),
+		first,
+		1,
+		FULL_HD
+	);
+	const third = await setIn(
+		title.show('three', { beside: { ...BESIDE_THE_PIECE, object: 'second' }, as: 'third' }),
+		second,
+		1,
+		FULL_HD
+	);
+	await expect(
+		setIn(title.show('one', { beside: { ...BESIDE_THE_PIECE, object: 'second' }, as: 'first' }), second, 1, FULL_HD)
+	).rejects.toThrow(
+		new FilmError(
+			'title.show stands the first beside the second, which stands beside the first, straight or through others: name an object that stands by itself'
+		)
+	);
+	await expect(
+		setIn(title.show('one', { beside: { ...BESIDE_THE_PIECE, object: 'third' }, as: 'first' }), third, 1, FULL_HD)
+	).rejects.toThrow(
+		new FilmError(
+			'title.show stands the first beside the third, which stands beside the first, straight or through others: name an object that stands by itself'
+		)
+	);
+});

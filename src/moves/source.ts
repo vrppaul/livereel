@@ -6,9 +6,8 @@
  * it is cut to the part of the screen the window's picture holds there, which an eye moved near or aside sees past
  * what the frame shows from where the eye rests. A source shows as a box only through a window that faces the frame
  * with its front, upright, so each is refused while the window leans, rolls or shows its back; what is drawn from the
- * page's picture is refused
- * too where the stage shows the page live, with no picture, and while the screen shows a page of the film's own in its
- * place.
+ * page's picture is refused too where the stage shows the page live, with no picture, and while the screen shows a page
+ * of the film's own in its place.
  */
 import { type Camera, boxOnTheFrame, screenPicturedBy, screenShownBy } from '../domain/camera.ts';
 import type { Format } from '../domain/format.ts';
@@ -44,6 +43,19 @@ export type BornIn = 'frame' | 'world';
 
 // What is born over a source where the film stands it inside nothing, an outline and a lens always
 export const BORN_ON_THE_FRAME: BornIn = 'frame';
+
+/**
+ * How a source is taken off its target: off the first `every` blocks a selector matches, together, with `air` clear
+ * round them in the page's pixels, cut to the part of the screen what stands over it may stand over where it is born.
+ */
+export interface Taking {
+	readonly every: number;
+	readonly air: number;
+	readonly bornIn: BornIn;
+}
+
+// A lens's source: the one block, with no air, born on the frame
+export const ONE_BLOCK_ON_THE_FRAME: Taking = { every: ONE_BLOCK, air: NO_AIR, bornIn: BORN_ON_THE_FRAME };
 // The part of the screen what is born over a source may stand over, as a refusal names it, by where it is born
 const SHOWN_SAID: { readonly [Where in BornIn]: string } = {
 	frame: 'what the camera shows',
@@ -51,25 +63,22 @@ const SHOWN_SAID: { readonly [Where in BornIn]: string } = {
 };
 
 /**
- * The part of the screen a target stands over, the first `every` blocks a selector matches together or a box of the
- * screen, with so much air clear round it in the page's pixels, cut to the part of the screen what is born over it
- * stands over where it is born, and where the camera shows that on the frame, as from the eye at rest for what is born
- * in the world; refused where that part holds none of it.
+ * The part of the screen a target stands over, a selector's blocks or a box of the screen, taken as `taking` says, and
+ * where the camera shows that on the frame, as from the eye at rest for what is born in the world; refused where the
+ * part of the screen it may stand over holds none of it.
  */
 export async function sourceOf(
 	beginning: Beginning,
 	camera: Camera,
 	target: Target,
-	every: number,
-	air: number,
-	move: string,
-	bornIn: BornIn
+	taking: Taking,
+	move: string
 ): Promise<Source> {
-	const shown = screenUnder(camera, beginning.format, bornIn);
-	const block = withAir(await shownBox(beginning, target, every, move), air);
+	const shown = screenUnder(camera, beginning.format, taking.bornIn);
+	const block = withAir(await shownBox(beginning, target, taking.every, move), taking.air);
 	const source = shown === null ? null : overlapOf(block, shown);
 	if (shown === null || source === null) {
-		throw new FilmError(`${move}'s ${targetSaid(target)} stands outside ${SHOWN_SAID[bornIn]}: frame it first`);
+		throw new FilmError(`${move}'s ${targetSaid(target)} stands outside ${SHOWN_SAID[taking.bornIn]}: frame it first`);
 	}
 	return { source, shown, box: boxOnTheFrame(camera, beginning.format.frame, source) };
 }
@@ -90,8 +99,8 @@ function screenUnder(camera: Camera, format: Format, bornIn: BornIn): Box | null
 /**
  * The scene's camera as a move begins that does what a refusal says it does, refused where its window leans, rolls or
  * shows its back, or the eye looks at it aslant or from behind its plane, as a box of the screen then shows on the
- * frame as no box, or a box turned over or rolled, and a box of the frame stands on the screen as none. An eye moved but looking straight
- * ahead from before the plane sees the window's plane as it is, only nearer, farther or aside.
+ * frame as no box, or a box turned over or rolled, and a box of the frame stands on the screen as none. An eye moved
+ * but looking straight ahead from before the plane sees the window's plane as it is, only nearer, farther or aside.
  */
 export function cameraFrontOn(beginning: Beginning, doing: string): Camera {
 	const camera = cameraOf(beginning.scene, beginning.format);

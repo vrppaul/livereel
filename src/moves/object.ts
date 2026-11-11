@@ -428,7 +428,7 @@ export function objectShowBeside(
 		script,
 		OFF_ITS_POINT,
 		ownCurve,
-		(beginning) => pointHeld(beginning, beside, move),
+		(beginning) => pointHeld(beginning, beside, name, move),
 		comingAt
 	);
 }
@@ -464,9 +464,10 @@ function objectComing(
 /**
  * The point beside which an object stands, as a move begins: of the block a selector matches, or of a box of the
  * screen, as the screen shows it then, in the screen's pixels; or of an object of a name, which is refused where none
- * stands.
+ * stands, and where it stands beside the object coming, straight or through others: each would stand off the other's
+ * point, and neither anywhere.
  */
-async function pointHeld(beginning: Beginning, asked: PointAsked, move: string): Promise<Holder> {
+async function pointHeld(beginning: Beginning, asked: PointAsked, coming: ObjectName, move: string): Promise<Holder> {
 	switch (asked.kind) {
 		case 'part': {
 			const part = await shownPart(beginning, asked.target, THE_FIRST, move);
@@ -475,8 +476,30 @@ async function pointHeld(beginning: Beginning, asked: PointAsked, move: string):
 		case 'object':
 			// Found, or refused where none of its name stands
 			standing(beginning, asked.name, move);
+			if (standsBesideThrough(beginning.scene.objects, asked.name, coming)) {
+				throw new FilmError(
+					`${move} stands the ${coming} beside the ${asked.name}, which stands beside the ${coming}, straight or through others: name an object that stands by itself`
+				);
+			}
 			return { kind: 'point', of: { kind: 'object', name: asked.name, share: asked.share } };
 	}
+}
+
+/**
+ * Whether an object of a name stands beside another, off a point of it or of one that stands beside it in turn,
+ * through however many.
+ */
+function standsBesideThrough(
+	objects: ReadonlyMap<ObjectName, FrameObject>,
+	name: ObjectName,
+	another: ObjectName
+): boolean {
+	let holder = objects.get(name)?.inside;
+	while (holder?.kind === 'point' && holder.of.kind === 'object') {
+		if (holder.of.name === another) return true;
+		holder = objects.get(holder.of.name)?.inside;
+	}
+	return false;
 }
 
 /**

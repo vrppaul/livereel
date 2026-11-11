@@ -39,7 +39,7 @@ import {
 import { matrixOf, placedBy } from './matrices.js';
 import { PREMULTIPLIED, valuesSet } from './passes.js';
 import { WORLD_PARTS } from './see-through.js';
-/** @import { Object3D } from 'three' */
+/** @import { HSL, Object3D } from 'three' */
 /** @import { DrawnObject } from '../src/props/object.ts' */
 /** @import { Corners, DrawnBody, DrawnPiece } from '../src/props/piece.ts' */
 /** @import { Look } from '../src/props/look.ts' */
@@ -60,6 +60,11 @@ const SHADOW_DROP_A_HEIGHT = COLUMNS_DROP / COLUMNS_RISE;
 const SHADOW_SOFT_A_HEIGHT = 1;
 // How dark the walls are at the back, a share of their colour at the face, as both the promo's walls darken
 const BACK_SHADE = 0.35;
+// How light the light inside a body is, in its walls' own hue, as the promo's story parts are lit (`story-parts.js`
+// GLOW)
+const GLOW_LIGHTNESS = 0.6;
+// Which of the groups three cuts an extrusion's points into holds its sides: the lids at both ends come first
+const SIDES = 1;
 // How finely a corner is cut, in straight lines a quarter-turn
 const CORNER_SEGMENTS = 16;
 // The walls and the shadow moved neither across nor down from the piece's middle, but the shadow dropped
@@ -243,9 +248,9 @@ class PieceBody {
 
 /**
  * A piece's walls: its outline drawn back from its face as thick as its body is, its face at their origin toward
- * three's z, each point coloured as far toward its back as it stands, its body's colour at the face, darkening toward
- * the back, and that colour added all over as strongly as the body's glow, a light in their own hue, as the promo's
- * diff lines glow.
+ * three's z, with no lid at either end, as the piece's face is their front: a lid there showed whole behind a face
+ * that fades. Each point is coloured as far toward its back as it stands, its body's colour at the face, darkening
+ * toward the back, and the light inside them (`glowOf`) added all over as strongly as the body's glow.
  * @param {Measures} measures
  */
 function wallsOf(measures) {
@@ -260,10 +265,13 @@ function wallsOf(measures) {
 		bevelEnabled: false,
 		curveSegments: CORNER_SEGMENTS
 	});
+	const sides = geometry.groups[SIDES];
+	if (sides === undefined) throw new Error("three built a piece's walls with no sides");
+	geometry.setDrawRange(sides.start, sides.count);
 	geometry.translate(UNMOVED, UNMOVED, -thickness);
 	const face = new Color(measures.walls);
 	const back = face.clone().multiplyScalar(BACK_SHADE);
-	const glow = face.clone().multiplyScalar(measures.glow);
+	const glow = glowOf(face).multiplyScalar(measures.glow);
 	const position = geometry.getAttribute('position');
 	const colours = new Float32Array(position.count * CHANNELS);
 	const shade = new Color();
@@ -277,6 +285,17 @@ function wallsOf(measures) {
 	}
 	geometry.setAttribute('color', new Float32BufferAttribute(colours, CHANNELS));
 	return geometry;
+}
+
+/**
+ * The colour a body's walls glow in, lit from within: their own hue, as saturated, at the light's lightness, so black
+ * or grey walls glow grey-white and coloured ones in their colour, as the promo's story parts glow (`walls.js` of the
+ * film, `glowOf`).
+ * @param {Color} walls
+ */
+function glowOf(walls) {
+	const own = walls.getHSL(/** @type {HSL} */ ({}));
+	return new Color().setHSL(own.h, own.s, GLOW_LIGHTNESS);
 }
 
 /**

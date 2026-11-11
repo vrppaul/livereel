@@ -10,8 +10,8 @@
  * glass round it (`stage/body.js`); the film's things in the world (`stage/things.js`); each object of markup standing
  * in the world, a title, code, the terminal or a piece, on a surface of its own the stage lays it in apart from the
  * frame's, drawn face-on into a texture and stood where the engine's matrix places its box, a piece's body standing
- * with it (`stage/piece-body.js`); all seen in perspective from
- * the eye and lit as it sees the room (`stage/lighting.js`), hiding one another by depth alone; but what stands before
+ * with it (`stage/piece-body.js`); all seen in perspective from the eye and lit as it sees the room
+ * (`stage/lighting.js`), hiding one another by depth alone; but what stands before
  * all the rest while the eye's focus blurs it near, a world of its own drawn apart and laid over the rest
  * (`worldBuilt`). The eye's lens blurs each pixel of the world by how far what it shows stands from the focus
  * (`stage/lens.js`), its fields laid over one another each by its law (`stage/laying.js`) and the whole laid over the

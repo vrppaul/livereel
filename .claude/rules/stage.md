@@ -12,12 +12,14 @@ Beside it, `stage/set.html`, `stage/set.css` and `stage/set.js` are the page a f
 - The stage draws the scene as `src/scene.ts` hands it over, and decides nothing: what is shown, where and how far along is the film's.
 - Every prop has its drawer in each exposure of `stage/stage.js` (`exposureOf`), the look in `LOOK`, one for every exposure; the type checker refuses a prop without one.
 - The world's light and glow have no drawer: the room alone draws them (`stage/room.js`, `stage/lighting.js`); its grain is drawn on both stages by `WorldDrawer`.
+- Nor have the window's body and a piece's body with the shadow it casts: the room alone draws them (`stage/body.js`, `stage/piece-body.js`).
 - A drawer finds its elements once, by the `data-prop` of its root, one in each surface its prop stands in, and the `data-part` of each element under it; the look's drawer draws on the stage's root, where every rule reads it.
+- But the block a film types into on a page of its own is found by the film's CSS selector in that page's document, each time it is written (`typedBlockOf`).
 - A drawer sets its prop's numbers, and the colours a film gives or the engine reads off the page (a hole's ground), as bare custom properties, and writes its words; the stylesheet makes the numbers places, sizes and shades.
 - The grain's strength alone is set as attributes, the weights of its SVG filter, which CSS cannot set.
 - The script writes no style, but for pictures, each set whole as a `url()` custom property: the page's on the stage's root, one a piece or a sweep holds, or a film's own, on its element; CSS takes no address out of one.
 - A script reads a token back only where the room draws by it: how far past its box a surface of markup reaches (`--reach-past-the-box`), and the screen's ground under the page's picture.
-- What a drawer is handed by name it names in a class or an attribute: a piece's styles, a callout's `data-side`, a title's `data-align`.
+- What a drawer is handed by name it names in a class or an attribute: a piece's styles, a callout's `data-side`, a title's `data-align` and `data-words-down`.
 - Nothing on the stage moves of itself: no transition, animation or keyframes in its styles (stylelint refuses them), no timer or clock in its script (eslint refuses them). Every frame is set whole by `apply`.
 - A colour, a shadow or a gradient is a token; the stylesheet names tokens (stylelint refuses one written elsewhere).
 - An object's figure stands in a part of its own, `way`, which a way of livereel's is drawn on: its transform, opacity and cut are the way's, and a rule that lays it out by its class sets none of them (stylelint refuses one).

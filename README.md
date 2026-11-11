@@ -642,14 +642,16 @@ body: { thickness: 12, walls: '#222935' }, hole: { ground: '#07090d' } })`,
 then `piece.effects({ depth: 11.25, shadow: 1 })`. Its walls go back from its
 face as thick as `thickness` names, in the page's pixels as `corner` is,
 matte, in the colour `walls` names at the face, darkening to 0.35 of it at
-the back, and that colour added over them as strongly as `glow` names, from
-0, none, to 1, so a line of the diff glows green. On the plane it was lifted
-from they stand behind the page, which hides them; as `depth` brings the face
-toward the eye, they come up out of the page, and its shadow lies on that
-plane under it, as dark as its `shadow` is strong, dropped toward its foot
-and soft as far as the face stands high, as the promo's column cast it,
-where flat draws it on the face's own plane. The walls grow back from the face as
-the piece comes up, so none come whole at once. The room draws the body; the
+the back, and a light inside them, their own hue at a lightness of 0.6,
+added over them as strongly as `glow` names, from 0, none, to 1, so a line of
+the diff glows green and a dark plate's walls show faintly lit. On the plane
+it was lifted from they stand behind the page, which hides them; as `depth`
+brings the face toward the eye, they come up out of the page, and its shadow
+lies on that plane under it, as dark as its `shadow` is strong, dropped
+toward its foot and soft as far as the face stands high, as the promo's
+column cast it, where flat draws it on the face's own plane. The walls grow
+back from the face as the piece comes up, and shrink back into it as it goes,
+so none come or stay whole at once. The room draws the body; the
 flat stage draws the face and its shadow alone, as it draws no body for the
 window. A body anywhere but inside the world is refused, as the frame, a
 group and the window are drawn flat over everything in a room.

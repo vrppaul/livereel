@@ -33,7 +33,16 @@ import {
 	objectShow,
 	objectTo
 } from './object.ts';
-import { BORN_ON_THE_FRAME, NO_AIR, NO_PLACE, ONE_BLOCK, cameraFrontOn, overItsSource, sourceOf } from './source.ts';
+import {
+	BORN_ON_THE_FRAME,
+	NO_AIR,
+	NO_PLACE,
+	ONE_BLOCK,
+	type Taking,
+	cameraFrontOn,
+	overItsSource,
+	sourceOf
+} from './source.ts';
 import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
 
 /**
@@ -107,7 +116,8 @@ export function hide(script: HideScript = {}): Move {
 /** An outline round a target, cut to the part of it the camera shows, and the box of the frame it shows there. */
 async function ringed(beginning: Beginning, target: Target, every: number, line: Stroke): Promise<Coming> {
 	const camera = cameraFrontOn(beginning, overItsSource('outline.show'));
-	const { source, box } = await sourceOf(beginning, camera, target, every, NO_AIR, 'outline.show', BORN_ON_THE_FRAME);
+	const taking: Taking = { every, air: NO_AIR, bornIn: BORN_ON_THE_FRAME };
+	const { source, box } = await sourceOf(beginning, camera, target, taking, 'outline.show');
 	const outline: Outline = { kind: OUTLINE, source, line };
 	return { content: outline, box };
 }

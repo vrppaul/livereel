@@ -76,10 +76,10 @@ import {
 } from './object.ts';
 import {
 	BORN_ON_THE_FRAME,
-	type BornIn,
 	NO_AIR,
 	NO_PLACE,
 	ONE_BLOCK,
+	type Taking,
 	cameraOverThePicture,
 	sourceOf
 } from './source.ts';
@@ -136,18 +136,15 @@ interface HoleAsked {
 }
 
 /**
- * What a piece is lifted with, as it is made: how many blocks, how much air round them, how round its corners are, the
- * hole it leaves, if any, its lines, if any, the kind of picture it is drawn from, where it is born, and its body, if
- * any.
+ * What a piece is lifted with, as it is made: how its source is taken, how many blocks, with how much air round them
+ * and where it is born; how round its corners are, the hole it leaves, if any, its lines, if any, the kind of picture
+ * it is drawn from, and its body, if any.
  */
-interface Lifting {
-	readonly every: number;
-	readonly air: number;
+interface Lifting extends Taking {
 	readonly corner: number;
 	readonly hole: HoleAsked | null;
 	readonly lines: Stroke | null;
 	readonly picture: PiecePicture['kind'];
-	readonly bornIn: BornIn;
 	readonly body: Body | null;
 }
 
@@ -294,8 +291,7 @@ function bodyAsked(body: BodyScript, inside: PieceScript['inside']): Body {
  */
 async function lifted(beginning: Beginning, target: Target, lifting: Lifting): Promise<Coming> {
 	const camera = cameraOverThePicture(beginning, 'piece.show');
-	const { every, air, bornIn } = lifting;
-	const { source, shown, box } = await sourceOf(beginning, camera, target, every, air, 'piece.show', bornIn);
+	const { source, shown, box } = await sourceOf(beginning, camera, target, lifting, 'piece.show');
 	// The window's corner as the look rounds it on the frame, in the page's pixels as the camera shows them there
 	const windowCorner =
 		(beginning.scene.look.paneCorner * frameScaleOf(beginning.format.frame) * source.width) / box.width;
