@@ -1190,10 +1190,11 @@ What `inside` costs:
   scale, filtered as it shrinks into the distance; the window's body round it and
   the film's things beside it, each hiding the others by depth alone; and
   each pixel blurred by the eye's focus as far as what it shows stands from
-  it, where flat blurs the window as one; what stands wholly before the
-  focus, a thing held near or the window brought up to the eye, is drawn
-  and blurred apart and laid over the rest, so its blurred edge shows what
-  it hides. The blur adds light up in linear
+  it, where flat blurs the window as one; what stands nearer the eye than
+  all the rest while the focus blurs any of it, a thing held near or the
+  window brought up to the eye, is drawn and blurred apart and laid over
+  the rest, so its blurred edge shows what it hides, however the focus is
+  pulled through it. The blur adds light up in linear
   light, as a lens does, so light words on a dark page blur brighter than a
   blur in the screen's colours draws them. Markup standing in the world, a
   title or a pane, is laid over what stands behind it in the screen's
