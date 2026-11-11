@@ -20,7 +20,9 @@
  * time, its pace changing over the move's share on its curve, or slowing from it to stand still at the rest as the
  * share ends, refused where it would turn back on its way; where the page stands at any moment is worked out from that
  * run, held at its document's end as it stands then (`src/props/screen.ts`). Its runs are a value of the screen's own,
- * so it shares a step with what the screen shows.
+ * so it shares a step with what the screen shows. A run to rest judged at a point of the frame slows on its curve across
+ * the frame there: as it begins it asks where the frame will stand at each moment of its share, which the take works
+ * out with every move of the camera, the window and the eye that begins meanwhile (`src/studio/take.ts`).
  *
  * Keys are typed into a block of a page of the film's own, as into the terminal: what stands typed at each progress is
  * set whole, so the block shows it as its text in each exposure, with how far the page scrolls at most with that text
@@ -34,7 +36,17 @@
 import { FASTEST_SPEED, type Stretch, linear } from '../domain/curves.ts';
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
-import { A_FRAME_SIDE, type FrameSide, boxOf, middleX, middleY } from '../domain/geometry.ts';
+import { runCarriedUnder } from '../domain/camera.ts';
+import {
+	A_FRAME_SIDE,
+	A_POINT_OF_THE_FRAME,
+	type FrameSide,
+	type Point,
+	boxOf,
+	middleX,
+	middleY,
+	pointAt
+} from '../domain/geometry.ts';
 import {
 	AN_HTML_PAGE,
 	A_COLOUR,
@@ -81,6 +93,7 @@ import {
 	type Back,
 	CUT_AT_THE_SCREEN,
 	DRAWN_TO_ITS_DOCUMENT,
+	type Knot,
 	NO_SECONDS,
 	type OwnDocument,
 	type Reach,
@@ -94,7 +107,10 @@ import {
 	THE_FILMED_PAGE,
 	type TypedBlocks,
 	type Upright,
+	type WayOnTheFrame,
 	documentOf,
+	judgedToRest,
+	momentsJudgedAt,
 	runToRest,
 	setOff,
 	standingOn,
@@ -126,10 +142,12 @@ export interface ScrollsScript extends TimingScript {
 
 /**
  * Where a film brings a page of its own to rest, its block's top so many pixels below the screen's top, and over what
- * share of the step: its curve is the run's own.
+ * share of the step: its curve is the run's own, along the page, or across the frame at the point it is `judged` at,
+ * in shares of the frame.
  */
 export interface ScrollToScript {
 	readonly top: number;
+	readonly judged?: Point;
 	readonly within?: Bounds;
 }
 
@@ -189,9 +207,11 @@ const A_REACH: Kind<Reach> = new OneOf<Reach>(
 const REACHES_NOWHERE =
 	"screen.shows draws a page past its screen that has nothing past it: the screen holds all of it, or its own styles hide what runs past the screen, as overflow: hidden on its body does; give it more than the screen holds, or show it with reaches: 'screen'";
 const ON_THE_SCREEN_ALONE = false;
-// The move that brings a page of the film's own to rest, as its refusals name it; the product of the signs of a pace
+// The move that brings a page of the film's own to rest, as its refusals name it, and what it says of a pace judged
+// where the eye sees past the window's plane; the product of the signs of a pace
 // and a way that go opposite ways; and how a way along a page's scroll is said, down where it is more than none
 const SCROLL_TO = 'screen.scrollTo';
+const SEEN_PAST_THE_PLANE = `${SCROLL_TO} judges its pace at a point of the frame where the eye sees past the window's plane while the page runs: judge it where the eye sees that plane all through the move`;
 const OPPOSITE_WAYS = -1;
 const NO_WAY = 0;
 const TOWARD_ITS_END = 'down';
@@ -229,7 +249,11 @@ const SCREEN_TYPE = 'screen.type';
 const NAME_A_SPAN = 'name a span of text alone, as <span id="typed"></span> beside <span class="caret"></span>';
 const SCREEN_TYPING_FORM: Form<ScreenTypingScript> = { into: needed(A_SELECTOR), ...TYPING_FORM };
 const SCROLLS_FORM: Form<ScrollsScript> = { pace: needed(A_NUMBER), ...TIMING_FORM };
-const SCROLL_TO_FORM: Form<ScrollToScript> = { top: needed(A_NUMBER), within: TIMING_FORM.within };
+const SCROLL_TO_FORM: Form<ScrollToScript> = {
+	top: needed(A_NUMBER),
+	judged: A_POINT_OF_THE_FRAME,
+	within: TIMING_FORM.within
+};
 const BACK_FORM: Form<BackScript> = { upright: needed(AN_UPRIGHT), ...MOMENT_FORM };
 const SHOWS_FORM: Form<ShowsScript> = { reaches: A_REACH, ...MOMENT_FORM };
 // The screen's values a move that raises or lowers it sets, one that changes what it shows, a sweep, one that changes
@@ -476,7 +500,9 @@ function documentSet(scene: Scene, key: string, ownDocument: OwnDocument): Scene
  * below the screen's top: from where the page stands as the move begins, setting off at the pace it runs there and
  * slowing smoothly to stand still there as the move's share ends, in a play, or at once, in a cut. The block is
  * measured where it stands in the page's document. Its curve is the run's own, a cubic Hermite curve from its pace to
- * rest, so it takes no `ease`. It runs whichever face of the window shows the page, or none.
+ * rest, so it takes no `ease`: along the page, or, with its pace `judged` at a point of the frame, in shares of it,
+ * across the frame there, what the point shows coming to rest on that curve however the window, the eye and the camera
+ * move meanwhile. It runs whichever face of the window shows the page, or none.
  */
 export function scrollTo(page: OwnPageNamed, target: string, script: ScrollToScript): Move {
 	assertKind(page, A_PAGE_RUN, "screen.scrollTo's page");
@@ -488,47 +514,98 @@ export function scrollTo(page: OwnPageNamed, target: string, script: ScrollToScr
 		valueNames: RUNNING,
 		timing: timingOf(script),
 		ownPages: [own],
-		begin: (beginning) => comingToRest(beginning, own.key, target, script.top)
+		begin: (beginning) => comingToRest(beginning, own.key, target, script)
 	};
 }
 
 /**
  * A page of the film's own, by its key, brought to rest with a block of it so far below the screen's top as its move
- * begins: refused where the page cannot scroll there, and where, in a play, it would turn back to come to rest, running
- * away from its rest or too fast to stop short of it.
+ * begins, its pace judged on the frame where the film names a point: refused where the page cannot scroll there, and
+ * where, in a play, it would turn back to come to rest, running away from its rest or too fast to stop short of it. A
+ * cut brings it to rest at once, with no pace to judge.
  */
-async function comingToRest(beginning: Beginning, key: string, target: string, top: number): Promise<Change> {
+async function comingToRest(
+	beginning: Beginning,
+	key: string,
+	target: string,
+	script: ScrollToScript
+): Promise<Change> {
 	const screen = beginning.scene.screen;
 	const length = documentOf(screen, key).scrollLength;
 	const page = await beginning.ownPage(key);
-	const rest = (await page.documentTop(target)) - top;
+	const rest = (await page.documentTop(target)) - script.top;
 	if (rest < AT_ITS_TOP || rest > length) {
 		throw new FilmError(
-			`${SCROLL_TO} would bring ${target} ${top} pixels below the screen's top with its page scrolled ${Math.round(rest)} down, and it scrolls from ${AT_ITS_TOP} to ${Math.round(length)}: name a top it reaches`
+			`${SCROLL_TO} would bring ${target} ${script.top} pixels below the screen's top with its page scrolled ${Math.round(rest)} down, and it scrolls from ${AT_ITS_TOP} to ${Math.round(length)}: name a top it reaches`
 		);
 	}
-	const from = standingOn(screen, key, beginning.stretch.moment);
-	if (beginning.stretch.seconds > NO_SECONDS) refuseTurningBack(from.pace, rest - from.top, beginning.stretch, target);
-	return runSet(key, runToRest(from, beginning.stretch, rest));
+	const stretch = beginning.stretch;
+	const from = standingOn(screen, key, stretch.moment);
+	if (stretch.seconds === NO_SECONDS) return runSet(key, runToRest(from, stretch, rest));
+	refuseRunningAway(from.pace, rest - from.top, target);
+	if (script.judged === undefined) {
+		refuseRunningPast(from.pace, rest - from.top, stretch, target);
+		return runSet(key, runToRest(from, stretch, rest));
+	}
+	return runSet(key, await judgedRun(beginning, from, rest, script.judged, target));
 }
 
 /**
- * A run to rest refused where it would turn back on its way: setting off away from its rest, or faster than a cubic
- * Hermite curve arriving at rest sets off without running past its end, so many times its mean speed.
+ * A page of the film's own brought to rest from where it stands, its pace judged at a point of the frame, in shares of
+ * it: the frame measured where it will stand at each moment the run is judged at, one after another, as the take may
+ * begin moves of the frame ahead to answer each; refused where the eye sees past the window's plane there, and where the
+ * run would turn back across the frame there.
  */
-function refuseTurningBack(pace: number, way: number, stretch: Stretch, target: string): void {
-	const rest = `the rest that brings ${target} there`;
-	if (Math.sign(pace) * Math.sign(way) === OPPOSITE_WAYS) {
-		throw new FilmError(
-			`${SCROLL_TO} would turn the page back: it runs ${Math.round(Math.abs(pace))} pixels a second ${downOrUp(pace)} its scroll, and ${rest} lies ${Math.round(Math.abs(way))} ${downOrUp(way)} it: stop it first, with screen.scrolls(page, { pace: 0 })`
-		);
+async function judgedRun(
+	beginning: Beginning,
+	from: Knot,
+	rest: number,
+	judged: Point,
+	target: string
+): Promise<Scroll> {
+	const frame = beginning.format.frame;
+	const point = pointAt(boxOf(frame), judged);
+	const carried: number[] = [];
+	for (const moment of momentsJudgedAt(beginning.stretch)) {
+		const carry = runCarriedUnder(await beginning.cameraAt(moment), frame, point);
+		if (carry === null) throw new FilmError(SEEN_PAST_THE_PLANE);
+		carried.push(carry);
 	}
+	const judgedToItsRest = judgedToRest(from, beginning.stretch, rest, carried);
+	refuseRunningPastOnTheFrame(judgedToItsRest.onTheFrame, beginning.stretch, target);
+	return judgedToItsRest.run;
+}
+
+/** A run to rest refused where it sets off away from its rest: it would turn back on its way. */
+function refuseRunningAway(pace: number, way: number, target: string): void {
+	if (Math.sign(pace) * Math.sign(way) !== OPPOSITE_WAYS) return;
+	throw new FilmError(
+		`${SCROLL_TO} would turn the page back: it runs ${Math.round(Math.abs(pace))} pixels a second ${downOrUp(pace)} its scroll, and the rest that brings ${target} there lies ${Math.round(Math.abs(way))} ${downOrUp(way)} it: stop it first, with screen.scrolls(page, { pace: 0 })`
+	);
+}
+
+/**
+ * A run to rest along the page refused where it sets off faster than a cubic Hermite curve arriving at rest sets off
+ * without running past its end, so many times its mean speed.
+ */
+function refuseRunningPast(pace: number, way: number, stretch: Stretch, target: string): void {
 	const meanPace = Math.abs(way) / stretch.seconds;
-	if (Math.abs(pace) > FASTEST_SPEED * meanPace) {
-		throw new FilmError(
-			`${SCROLL_TO} would carry the page past ${rest} and back: it runs ${Math.round(Math.abs(pace))} pixels a second, more than ${FASTEST_SPEED} times the ${Math.round(meanPace)} a second its way to rest takes on average: give the move a longer share, or slow the page first`
-		);
-	}
+	if (Math.abs(pace) <= FASTEST_SPEED * meanPace) return;
+	throw new FilmError(
+		`${SCROLL_TO} would carry the page past the rest that brings ${target} there and back: it runs ${Math.round(Math.abs(pace))} pixels a second, more than ${FASTEST_SPEED} times the ${Math.round(meanPace)} a second its way to rest takes on average: give the move a longer share, or slow the page first`
+	);
+}
+
+/**
+ * A run to rest judged on the frame refused where its curve across the frame would run past its end and back: setting
+ * off against its way there, or faster than so many times its mean speed.
+ */
+function refuseRunningPastOnTheFrame(onTheFrame: WayOnTheFrame, stretch: Stretch, target: string): void {
+	const { settingOff, way } = onTheFrame;
+	if (settingOff * way >= NO_WAY && Math.abs(settingOff) <= FASTEST_SPEED * Math.abs(way)) return;
+	throw new FilmError(
+		`${SCROLL_TO} would carry the page past the rest that brings ${target} there and back: it runs ${Math.round(Math.abs(settingOff) / stretch.seconds)} pixels a second across the frame where its pace is judged, too fast to slow to rest there within the move's share: give the move a longer share, or slow the page first`
+	);
 }
 
 /** Which way down a page's scroll so many pixels go: down where more than none, up where less. */

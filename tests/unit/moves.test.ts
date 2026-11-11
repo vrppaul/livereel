@@ -431,6 +431,47 @@ function scrolledIn(scene: Scene, moment: number): number {
 	return drawn(scene, cameraOf(scene, FULL_HD), moment, FULL_HD, NONE_SHARPER).screen.shows.scrolled;
 }
 
+/** A scene whose page of the film's own stands at its top from the film's start. */
+async function standingFromTheStart(): Promise<Scene> {
+	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	return (await screenScrolls(OWN_PAGE, { pace: 0 }).begin(scrollingFrom(shown, 0, 0)))(shown, 1);
+}
+
+/**
+ * A beginning like `scrollingFrom` whose frame will stand at each moment as a camera on the whole screen, face-on, its
+ * middle on the screen's, at the zoom a curve of the moment gives.
+ */
+function judgedFrom(scene: Scene, moment: number, seconds: number, zoomAt: (at: number) => number): Beginning {
+	return { ...scrollingFrom(scene, moment, seconds), cameraAt: (at) => Promise.resolve(wholeScreenAt(zoomAt(at))) };
+}
+
+/** A camera on the whole full-HD screen, face-on, its middle on the screen's, at a zoom. */
+function wholeScreenAt(zoom: number): Camera {
+	return { pose: { ...MIDDLE_AT_TWO, zoom }, view: wholeView(FULL_HD.frame), eye: eyeAtRest(FOCAL_LENGTH) };
+}
+
+/** A zoom coming evenly from 1 at 3 s to 2 at 5 s. */
+function comingCloser(moment: number): number {
+	return 1 + (moment - 3) / 2;
+}
+
+/** A zoom of 8 at 3 s, drawing back to 1 within 0.05 s. */
+function drawingBack(moment: number): number {
+	return Math.max(1, 8 - 140 * (moment - 3));
+}
+
+/**
+ * How far what the frame's middle shows runs across the frame between two moments, the frame at a zoom of the moment,
+ * on the whole screen face-on: each of a thousand steps of the page's run as large as the zoom half way through it.
+ */
+function runAcrossTheMiddle(scene: Scene, start: number, end: number, zoomAt: (at: number) => number): number {
+	const step = (end - start) / 1000;
+	return Array.from({ length: 1000 }, (_, place) => start + place * step).reduce(
+		(way, from) => way + zoomAt(from + step / 2) * (scrolledIn(scene, from + step) - scrolledIn(scene, from)),
+		0
+	);
+}
+
 /** A scene at the film's first moment, where what a test measures is worked out from none. */
 function atTheStart(scene: Scene): SceneAt {
 	return { scene, moment: 0 };
@@ -1683,6 +1724,55 @@ test('screen.scrollTo refuses, as it begins, a run that would turn back to come 
 	await expect(tooNear).rejects.toThrow(
 		new FilmError(
 			'screen.scrollTo would carry the page past the rest that brings #input there and back: it runs 100 pixels a second, more than 3 times the 25 a second its way to rest takes on average: give the move a longer share, or slow the page first'
+		)
+	);
+});
+
+test("a page of the film's own brought to rest with its pace judged at a point of the frame has run half its way across the frame there by half its share, from standing, as the frame comes closer", async () => {
+	// Standing at its top at 3 s, brought to rest 700 down by 5 s while the frame comes from a zoom of 1 to 2: what the
+	// frame's middle shows has run half its way across the frame by 4 s; run on the page alone, 0.4375 of it
+	const standing = await standingFromTheStart();
+	const toRest = screenScrollTo(OWN_PAGE, INPUT, { top: 200, judged: { left: 0.5, top: 0.5 } });
+	const resting = await (await toRest.begin(judgedFrom(standing, 3, 2, comingCloser)))(standing, 1);
+	const halfWay = runAcrossTheMiddle(resting, 3, 4, comingCloser) / runAcrossTheMiddle(resting, 3, 5, comingCloser);
+	expect(halfWay).toBeCloseTo(0.5, 3);
+});
+
+test("a page of the film's own brought to rest with its pace judged on the frame sets off at the pace it ran and stands at its rest as its share ends", async () => {
+	// 300 down and running 100 pixels a second at 3 s: a tenth of a pixel over the first thousandth of a second, and 700
+	// down, where #input stands 200 below the screen's top, from 5 s on
+	const running = await runningFromTheStart();
+	const toRest = screenScrollTo(OWN_PAGE, INPUT, { top: 200, judged: { left: 0.5, top: 0.5 } });
+	const resting = await (await toRest.begin(judgedFrom(running, 3, 2, comingCloser)))(running, 1);
+	const setOff = scrolledIn(resting, 3.001) - scrolledIn(resting, 3);
+	expect([setOff, scrolledIn(resting, 5), scrolledIn(resting, 9)]).toEqual([expect.closeTo(0.1, 3), 700, 700]);
+});
+
+test('screen.scrollTo refuses, as it begins, a run judged on the frame that would turn back across the frame there, though on the page alone it would not', async () => {
+	// Running 100 pixels a second, 800 across the frame at a zoom of 8, as the frame draws back to 1 at once: its way to
+	// rest 400 down the page over 2 s is about 400 across the frame, which it cannot set off on at 800 and not pass
+	const running = await runningFromTheStart();
+	const toRest = screenScrollTo(OWN_PAGE, INPUT, { top: 200, judged: { left: 0.5, top: 0.5 } });
+	await expect(toRest.begin(judgedFrom(running, 3, 2, drawingBack))).rejects.toThrow(
+		new FilmError(
+			"screen.scrollTo would carry the page past the rest that brings #input there and back: it runs 800 pixels a second across the frame where its pace is judged, too fast to slow to rest there within the move's share: give the move a longer share, or slow the page first"
+		)
+	);
+});
+
+test("screen.scrollTo refuses, as it begins, a pace judged at a point of the frame where the eye sees past the window's plane", async () => {
+	// Leant back 89° about its middle, the window's plane lies below the frame's top
+	const running = await runningFromTheStart();
+	const edgeOn = {
+		...LEANT_ABOUT_ITS_MIDDLE,
+		view: { ...LEANT_ABOUT_ITS_MIDDLE.view, angle: { ...FACE_ON, tilt: 89 } }
+	};
+	const toRest = screenScrollTo(OWN_PAGE, INPUT, { top: 200, judged: { left: 0.5, top: 0 } });
+	await expect(
+		toRest.begin({ ...scrollingFrom(running, 3, 2), cameraAt: () => Promise.resolve(edgeOn) })
+	).rejects.toThrow(
+		new FilmError(
+			"screen.scrollTo judges its pace at a point of the frame where the eye sees past the window's plane while the page runs: judge it where the eye sees that plane all through the move"
 		)
 	);
 });

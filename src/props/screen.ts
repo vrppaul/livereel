@@ -21,7 +21,9 @@
  * its key, so it goes on as the page is shown on the other face. The run is the knots of the film's time it passes
  * through, where the page stands and how fast it runs at each, joined by a cubic Hermite curve: a pace changing over a
  * move's share lays knots at even points of it, a run brought to rest lays two, the pace it sets off at and rest where
- * it ends, so a move that takes the run over goes on from where it stands and as fast. Where it stands is worked out
+ * it ends, so a move that takes the run over goes on from where it stands and as fast. A run brought to rest with its
+ * pace judged at a point of the frame lays knots at even points of its share too, so what the point shows comes to rest
+ * on that curve across the frame, wherever the frame stands meanwhile. Where the page stands is worked out
  * from the moment, as what else changes with time of itself is, so each exposure of a frame draws it where it stood then
  * and a fast run smears.
  *
@@ -45,7 +47,7 @@
  * edges where it cut it at the screen's.
  */
 import { type Camera, type SeenBetween, screenPlaneSeen, screenPointShift, viewOnTheScreen } from '../domain/camera.ts';
-import { type Stretch, hermiteBetween, hermiteSpeedBetween } from '../domain/curves.ts';
+import { type HermiteEnd, type Stretch, hermiteBetween, hermiteSpeedBetween } from '../domain/curves.ts';
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import type { Format } from '../domain/format.ts';
 import { boxInTheView } from '../domain/framing.ts';
@@ -134,6 +136,31 @@ export interface Knot {
  */
 export interface Scroll {
 	readonly knots: readonly [Knot, ...Knot[]];
+}
+
+/**
+ * A run judged on the frame's way across the frame where it is judged, a cubic Hermite curve to rest: how fast what the
+ * point shows sets off there and how far it goes, each in the frame's pixels, the speed so many of them over the run's
+ * whole time.
+ */
+export interface WayOnTheFrame {
+	readonly settingOff: number;
+	readonly way: number;
+}
+
+/** A page brought to rest with its pace judged on the frame: its run, and its way across the frame where it is judged. */
+export interface JudgedRun {
+	readonly run: Scroll;
+	readonly onTheFrame: WayOnTheFrame;
+}
+
+/**
+ * How far down its page a run judged on the frame goes by each of its knots for each pixel across the frame of each of
+ * its curve's weights: its way to rest, and its setting off.
+ */
+interface CurveWays {
+	readonly towardTheEnd: readonly number[];
+	readonly settingOff: readonly number[];
 }
 
 /**
@@ -303,6 +330,18 @@ const STRETCHES_OF_A_CHANGE = 64;
 // The knot a change of pace sets off from and the first one past it
 const SETTING_OFF = 0;
 const FIRST_ONWARD = 1;
+// A run judged on the frame lays its knots as a change of pace does, at even points of its move's share, and measures
+// the frame at each and half way to the next, summing the page's way over each stretch by Simpson's rule: its ends
+// weigh 1 and its middle 4 of 6, exact for a frame that holds still, as the curve's speeds are of the second power;
+// one measure past another, as the stretch's end is past its last half; the way a run has gone at its start; and the
+// ends of the curve's weights: still at none and at 1, and setting off at 1
+const SIMPSONS_MIDDLE_WEIGHT = 4;
+const SIMPSONS_WHOLE = 6;
+const ONE_MEASURE = 1;
+const NO_WAY_YET = 0;
+const STILL_AT_NONE: HermiteEnd = { value: 0, speed: 0 };
+const STILL_AT_ONE: HermiteEnd = { value: 1, speed: 0 };
+const SETTING_OFF_AT_ONE: HermiteEnd = { value: 0, speed: 1 };
 /** A stretch of no seconds, as a move done at once has, in a cut: its run changes at once and runs nowhere on its way. */
 export const NO_SECONDS = 0;
 // A page the film never ran: at its top since the film began, standing still
@@ -503,6 +542,106 @@ export function runToRest(from: Knot, stretch: Stretch, rest: number): Scroll {
 	const resting: Knot = { moment: stretch.moment + stretch.seconds, top: rest, pace: STANDING };
 	if (stretch.seconds === NO_SECONDS) return { knots: [resting] };
 	return { knots: [from, resting] };
+}
+
+/**
+ * The moments of a stretch of the film's time a run judged on the frame measures how far the frame carries the page at:
+ * evenly from the stretch's start to its end, at each knot the run lays and half way between each two.
+ */
+export function momentsJudgedAt(stretch: Stretch): readonly number[] {
+	const measures = STRETCHES_OF_A_CHANGE * HALVES;
+	return Array.from(
+		{ length: measures + ONE_MEASURE },
+		(_, measure) => stretch.moment + (measure / measures) * stretch.seconds
+	);
+}
+
+/**
+ * A page brought to rest at a scroll from where it stands as its move begins, over a stretch of the film's time, its
+ * pace judged at a point of the frame: what the point shows sets off across the frame as fast as the page's pace carries
+ * it there, and slows to rest on a cubic Hermite curve; each piece of that way is run on the page as far as the frame
+ * then carries a pixel of the page there, so the page comes to rest at the scroll as the stretch ends however the frame
+ * moves meanwhile. How far the frame carries a pixel is given at each of `momentsJudgedAt`. The page's run is laid in
+ * knots at even points of the stretch, each as far down as the run's way there, summed by Simpson's rule, and running as
+ * fast as its way across the frame goes there over how far the frame carries a pixel.
+ */
+export function judgedToRest(from: Knot, stretch: Stretch, rest: number, carried: readonly number[]): JudgedRun {
+	const perPixel: CurveWays = {
+		towardTheEnd: pageWayByKnots(carried, endsSpeedAt),
+		settingOff: pageWayByKnots(carried, startsSpeedAt)
+	};
+	const onTheFrame = wayJudged(from, stretch, rest, valueAt(carried, SETTING_OFF), perPixel);
+	const later: Knot[] = [];
+	for (let point = FIRST_ONWARD; point < STRETCHES_OF_A_CHANGE; point += 1) {
+		const share = point / STRETCHES_OF_A_CHANGE;
+		const towardTheEnd = onTheFrame.way * valueAt(perPixel.towardTheEnd, point);
+		const settingOff = onTheFrame.settingOff * valueAt(perPixel.settingOff, point);
+		const speedOnTheFrame = onTheFrame.way * endsSpeedAt(share) + onTheFrame.settingOff * startsSpeedAt(share);
+		later.push({
+			moment: stretch.moment + share * stretch.seconds,
+			top: from.top + towardTheEnd + settingOff,
+			pace: speedOnTheFrame / (valueAt(carried, point * HALVES) * stretch.seconds)
+		});
+	}
+	const resting: Knot = { moment: stretch.moment + stretch.seconds, top: rest, pace: STANDING };
+	return { run: { knots: [from, ...later, resting] }, onTheFrame };
+}
+
+/**
+ * A judged run's way across the frame where it is judged, as it comes to rest at a scroll: setting off as fast as the
+ * page's pace and how far the frame carries a pixel of it as it sets off take it, and going as far as brings the page to
+ * rest there, the page running so far for each pixel of the curve's way, beside so far for each of its setting off.
+ */
+function wayJudged(
+	from: Knot,
+	stretch: Stretch,
+	rest: number,
+	carriedAtTheStart: number,
+	perPixel: CurveWays
+): WayOnTheFrame {
+	const settingOff = from.pace * carriedAtTheStart * stretch.seconds;
+	const pageWayOfSettingOff = settingOff * valueAt(perPixel.settingOff, STRETCHES_OF_A_CHANGE);
+	const pageWayPerPixel = valueAt(perPixel.towardTheEnd, STRETCHES_OF_A_CHANGE);
+	return { settingOff, way: (rest - from.top - pageWayOfSettingOff) / pageWayPerPixel };
+}
+
+/**
+ * How far down its page a run judged on the frame goes by each of its knots for each pixel across the frame of one of a
+ * cubic Hermite curve's weights, from none at its start: the weight's speed over how far the frame carries a pixel of
+ * the page, summed stretch by stretch by Simpson's rule from the frame measured at each knot and half way between.
+ */
+function pageWayByKnots(carried: readonly number[], speedAt: (share: number) => number): readonly number[] {
+	const measures = carried.length - ONE_MEASURE;
+	const perPixel = carried.map((carry, measure) => speedAt(measure / measures) / carry);
+	const ways = [NO_WAY_YET];
+	let ranBefore = NO_WAY_YET;
+	for (let point = FIRST_ONWARD; point <= STRETCHES_OF_A_CHANGE; point += 1) {
+		const middle = point * HALVES - ONE_MEASURE;
+		const ends = valueAt(perPixel, middle - ONE_MEASURE) + valueAt(perPixel, middle + ONE_MEASURE);
+		ranBefore += (ends + SIMPSONS_MIDDLE_WEIGHT * valueAt(perPixel, middle)) / SIMPSONS_WHOLE / STRETCHES_OF_A_CHANGE;
+		ways.push(ranBefore);
+	}
+	return ways;
+}
+
+/** How fast a cubic Hermite curve from none to 1, standing still at both ends, goes at a share of its time. */
+function endsSpeedAt(share: number): number {
+	return hermiteSpeedBetween(STILL_AT_NONE, STILL_AT_ONE, share);
+}
+
+/** How fast a cubic Hermite curve from none back to none, setting off at 1 and arriving still, goes at a share of its time. */
+function startsSpeedAt(share: number): number {
+	return hermiteSpeedBetween(SETTING_OFF_AT_ONE, STILL_AT_NONE, share);
+}
+
+/**
+ * A value a run judged on the frame works out at a place of its measures or its knots, each of which it measures or
+ * lays; one it lacks is a fault of livereel's.
+ */
+function valueAt(values: readonly number[], place: number): number {
+	const value = values[place];
+	if (value === undefined) throw new Error(`a run judged on the frame works out no value at place ${place}`);
+	return value;
 }
 
 /** A page's pace at an even point of a change from one pace to another over a stretch, on the stretch's curve. */

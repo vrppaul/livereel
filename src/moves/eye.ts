@@ -71,6 +71,7 @@ import {
 import { linear } from '../domain/curves.ts';
 import { AT_THE_EYE, focusDistanceOf } from '../domain/focus.ts';
 import {
+	A_POINT_OF_THE_FRAME,
 	type Box,
 	HALVES,
 	MIDDLE_SHARE,
@@ -270,10 +271,6 @@ type FocusAsked =
 const TO_FORM: Form<EyeToScript> = { ...throughFormOf(AN_EYE_PLACE, 'a list of places of the eye'), ...TIMING_FORM };
 const FOCUS_FORM: Form<FocusScript> = { aperture: A_PIXELS, ...TIMING_FORM };
 const AN_OBJECT_FOCUS = new OfForm<ObjectFocus>({ object: needed(A_NAME) }, 'an object by its name: { object }');
-const A_POINT_OF_THE_FRAME = new OfForm<Point>(
-	{ left: needed(A_SHARE), top: needed(A_SHARE) },
-	'a point of the frame: { left, top }, each a share of it'
-);
 const AN_UNDER_FOCUS = new OfForm<UnderFocus>(
 	{ under: needed(A_POINT_OF_THE_FRAME) },
 	'under a point of the frame: { under: { left, top } }'

@@ -266,7 +266,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() =>
 		screen.scrollTo({ html: '<p>Runs</p>' }, '#input', { top: 0, ease: (progress: number) => progress } as never)
-	).toThrow(new FilmError(`screen.scrollTo names ease: it names top, within, or fewer`));
+	).toThrow(new FilmError(`screen.scrollTo names ease: it names top, judged, within, or fewer`));
 	expect(() => screen.type('filmed' as never, [STROKE], { into: '#typed' })).toThrow(
 		new FilmError(
 			`screen.type's page is "filmed": it is a page of the film's own, { html }; the filmed page is typed into by page.type`

@@ -1,10 +1,11 @@
 import { expect, test } from 'vitest';
-import type { Pose } from '../../src/domain/camera.ts';
+import type { Camera, Pose } from '../../src/domain/camera.ts';
+import { drawnPlacement, windowInTheWorld } from '../../src/domain/placement.ts';
 import type { Format } from '../../src/domain/geometry.ts';
 import type { MotionBlur } from '../../src/domain/shutter.ts';
 import { FilmError, TakeError } from '../../src/domain/errors.ts';
 import { easeOutCubic, linear } from '../../src/domain/curves.ts';
-import { type Bounds, type Change, type Move, timingOf } from '../../src/direction/move.ts';
+import { type Beginning, type Bounds, type Change, type Move, timingOf } from '../../src/direction/move.ts';
 import { cut, hold, play } from '../../src/direction/steps.ts';
 import { act } from '../../src/moves/act.ts';
 import { to as cameraTo } from '../../src/moves/camera.ts';
@@ -21,7 +22,7 @@ import { scrolls as scrollsScreen, shows as screenShows, sweep as sweepScreen } 
 import { play as playSound } from '../../src/moves/sound.ts';
 import { open, type, works } from '../../src/moves/terminal.ts';
 import { lean as leanTitle, show as showTitle, to as titleTo } from '../../src/moves/title.ts';
-import { to as windowTo } from '../../src/moves/window.ts';
+import { lean as windowLean, shade as windowShade, to as windowTo } from '../../src/moves/window.ts';
 import { hide as hidePiece, show as showPiece, to as pieceTo } from '../../src/moves/piece.ts';
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Keystroke } from '../../src/domain/typing.ts';
@@ -132,6 +133,41 @@ class LoggedAsItBegins implements Move {
 
 	begin(): Change {
 		this.log.push('begun');
+		return (scene) => scene;
+	}
+}
+
+/** A move of the window that writes in a log that it began, as it begins. */
+class WindowLoggedAsItBegins implements Move {
+	readonly part = 'window';
+	readonly timing;
+	readonly log: string[];
+
+	constructor(within: Bounds, log: string[]) {
+		this.timing = timingOf({ within });
+		this.log = log;
+	}
+
+	begin(): Change {
+		this.log.push('begun');
+		return (scene) => scene;
+	}
+}
+
+/** A move that asks, as it begins, the cameras the frame will be seen by at moments of its share, and keeps them. */
+class AskingTheFrame implements Move {
+	readonly part = null;
+	readonly timing;
+	readonly moments: readonly number[];
+	readonly cameras: Camera[] = [];
+
+	constructor(within: Bounds, moments: readonly number[]) {
+		this.timing = timingOf({ within });
+		this.moments = moments;
+	}
+
+	async begin(beginning: Beginning): Promise<Change> {
+		for (const moment of this.moments) this.cameras.push(await beginning.cameraAt(moment));
 		return (scene) => scene;
 	}
 }
@@ -600,6 +636,49 @@ test("keys typed into the page while the screen shows the film's own go to the f
 	const steps = [cut(screenShows(OWN_PAGE)), play({ seconds: 2 / 30, moves: [typeIntoThePage(STROKES)] })];
 	await takeShowingOwnPage(new FootageOf([1]), new FramedStageThatKeeps(), filmedPage, ownPageRead(ownPage)).run(steps);
 	expect([filmedPage.typed, ownPage.typed]).toEqual([['a', 'b'], []]);
+});
+
+test('a move asking where the frame will stand at moments of its share is handed the camera each frame is drawn by then, a lean of the window beginning after it among them', async () => {
+	// Six frames, from 0 s, a thirtieth of a second apart; the lean begins half way, at the fourth
+	const stage = new FramedStageThatKeeps();
+	const frameMoments = [0, 1, 2, 3, 4, 5].map((frame) => frame / RATE);
+	const asking = new AskingTheFrame({ start: 0 }, frameMoments);
+	const leaning = windowLean({ tilt: 60, within: { start: 0.5 } });
+	await unblurredTakeOf(new FootageOf([0, 1, 2, 3, 4, 5]), stage).run([
+		play({ seconds: 6 / RATE, ease: linear, moves: [asking, leaning] })
+	]);
+	// A moment of the film read back as a share of the play differs from the frame's own in the last place
+	const foreseen = asking.cameras.map((camera) =>
+		drawnPlacement(windowInTheWorld(camera.view, camera.eye, SMALL.frame))
+	);
+	expect(foreseen.map((window) => Object.values(window.inTheEyesSpace))).toEqual(
+		stage.drawn.map((scene) => Object.values(scene.window.inTheEyesSpace).map((entry) => expect.closeTo(entry, 9)))
+	);
+});
+
+test('a move of the window begun ahead of its share, as a move asking where the frame will stand asks, is begun once', async () => {
+	const log: string[] = [];
+	const moves = [new AskingTheFrame({ start: 0 }, [5 / RATE]), new WindowLoggedAsItBegins({ start: 0.5 }, log)];
+	await unblurredTakeOf(new FootageOf([5]), new FramedStageThatKeeps()).run([play({ seconds: 6 / RATE, moves })]);
+	expect(log).toEqual(['begun']);
+});
+
+test('a move of the window that reads the page is refused where it would be begun ahead of its share, as a move asking where the frame will stand asks', async () => {
+	const moves = [
+		new AskingTheFrame({ start: 0 }, [5 / RATE]),
+		windowShade({ blur: 4, sharp: '#first', within: { start: 0.5 } })
+	];
+	await expect(
+		unblurredTakeOf(new FootageOf([5]), new PicturedStageThatKeeps()).run([play({ seconds: 6 / RATE, moves })])
+	).rejects.toThrow(
+		new TakeError(
+			new FilmError(
+				'a move of the camera, the window or the eye beginning while a page runs with its pace judged on the frame is begun as the run begins, to know where the frame will stand: begun so early, it may read the scene alone, not the page or where the frame will stand; let it begin once the run is at rest'
+			),
+			0,
+			1
+		)
+	);
 });
 
 test("a page framed live is acted on laid flat as the filmed page, while the screen shows the film's own", async () => {

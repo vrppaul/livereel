@@ -10,7 +10,11 @@
  * its moves and sets each at its end, with no frame between; an act between steps is a cut of one. A move begins
  * knowing the stretch of the film's time its share takes: a play's begins a frame before its first frame, which stands
  * a frame's share along it, and a cut's moves take none, at the moment of the frame after them, as their sounds are
- * heard. The page is acted
+ * heard. A move judged on the frame, as a page's run brought to rest, asks as it begins where the frame will stand at
+ * moments of its share: every move of the camera, the window and the eye that starts by then is begun ahead, in order,
+ * on the scene as foreseen where its share starts, and kept for its share, never begun again; begun so early it may
+ * read the scene alone, and one that reads the page is refused. A play that asks nothing begins each move at its share.
+ * The page is acted
  * on one way: as a move that acts begins, by the way the take hands every move. A move begins on the page the screen
  * shows: where that is a page of the film's own, it measures blocks there, and pictures parts of it, on its copy apart
  * from the stage's stood as the page stands at the move's moment, and its scroll and keys go to the filmed page behind
@@ -56,8 +60,8 @@
  * the take is refused by why, in place of what its loss made a step fail at (a selector that matches nothing on
  * Chrome's error page), and nothing of it is shot.
  */
-import { ZOOM_AT_MOST, flatCamera, zoomPicturedFor } from '../domain/camera.ts';
-import { TakeError } from '../domain/errors.ts';
+import { type Camera, ZOOM_AT_MOST, flatCamera, zoomPicturedFor } from '../domain/camera.ts';
+import { FilmError, TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
 import type { Box } from '../domain/geometry.ts';
 import { type PartAsked, closestOf } from '../domain/picture.ts';
@@ -66,7 +70,15 @@ import { type Ease, type Stretch, linear } from '../domain/curves.ts';
 import { framesOf, momentOf } from '../domain/time.ts';
 import type { TypedText } from '../domain/typing.ts';
 import { between } from '../domain/toward.ts';
-import { type Change, type Move, type Share, movesThePage, soundsOf } from '../direction/move.ts';
+import {
+	type Beginning,
+	type Change,
+	type Move,
+	type Share,
+	movesTheFrame,
+	movesThePage,
+	soundsOf
+} from '../direction/move.ts';
 import type { Action, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import type { Cue } from '../direction/sound.ts';
 import type { Cut, Play, Step } from '../direction/steps.ts';
@@ -75,6 +87,7 @@ import {
 	type Scene,
 	type SceneAt,
 	type SceneSeen,
+	cameraOf,
 	drawingOf,
 	drawn,
 	frameShiftBetween,
@@ -101,6 +114,16 @@ const A_FRAME = 1;
 const AT_ONCE = 0;
 // No text written into a page of the film's own, as the stage lays it
 const NO_TEXTS_TYPED: readonly TypedText[] = [];
+// What a move of the frame begun ahead of its share says as it reads more than the scene; and the page it is handed
+const READ_AHEAD =
+	'a move of the camera, the window or the eye beginning while a page runs with its pace judged on the frame is begun as the run begins, to know where the frame will stand: begun so early, it may read the scene alone, not the page or where the frame will stand; let it begin once the run is at rest';
+const PAGE_UNREAD_AHEAD: FilmedPage = {
+	box: refusedAhead,
+	groundBehind: refusedAhead,
+	scrollCourse: refusedAhead,
+	type: refusedAhead,
+	press: refusedAhead
+};
 
 /**
  * A move begun: the share of its step it runs over, its curve, what it sets and whether that is the page itself, and
@@ -122,6 +145,19 @@ interface PlayTime {
 	readonly start: number;
 	readonly seconds: number;
 	readonly ease: Ease;
+}
+
+/**
+ * A play as a move of it begins, which may ask where the frame will stand later in it: the scene the move begins on,
+ * the moves running then and those yet to begin, the moves of the frame begun ahead of their share and kept for it, and
+ * the play's time.
+ */
+interface Foresight {
+	readonly scene: Scene;
+	readonly running: readonly Running[];
+	readonly unbegun: readonly Move[];
+	readonly ahead: Map<Move, Running>;
+	readonly playTime: PlayTime;
 }
 
 /**
@@ -264,6 +300,8 @@ export class Take {
 		};
 		let waiting = [...step.moves];
 		let running: Running[] = [];
+		// The moves of the frame begun ahead of their share, as a move judged on the frame asks, each kept until its share
+		const ahead = new Map<Move, Running>();
 		for (let index = 1; index <= frames; index += 1) {
 			if (this.finished()) return;
 			const progress = index / frames;
@@ -272,9 +310,11 @@ export class Take {
 			const before = this.scene;
 			// What runs over the frame's time: the moves running as the frame before was shot, and those begun since
 			const ranOver = [...running];
-			for (const move of due) {
+			for (const [place, move] of due.entries()) {
 				running = await this.endedBy(running, move.timing.within.start);
-				const begun = await this.begun(move, playTime);
+				const unbegun = [...due.slice(place + 1), ...waiting];
+				const foresight: Foresight = { scene: this.scene, running: [...running], unbegun, ahead, playTime };
+				const begun = await this.begunInPlay(move, foresight);
 				running.push(begun);
 				ranOver.push(begun);
 			}
@@ -291,7 +331,8 @@ export class Take {
 	private async cut(step: Cut): Promise<void> {
 		for (const move of step.moves) {
 			const atOnce: Stretch = { moment: this.moment(), seconds: AT_ONCE, ease: move.timing.ease ?? linear };
-			await this.set(await this.changeOf(move, atOnce), 1, movesThePage(move));
+			const change = await this.changeOf(move, atOnce, () => Promise.resolve(cameraOf(this.scene, this.format)));
+			await this.set(change, 1, movesThePage(move));
 			this.heard(soundsOf(move), 1);
 		}
 	}
@@ -363,26 +404,52 @@ export class Take {
 		return cues.filter((due) => due.at > progress);
 	}
 
-	/** A move of a play begun, its share on the play's time and its own curve or the play's. */
-	private async begun(move: Move, playTime: PlayTime): Promise<Running> {
-		const within = move.timing.within;
-		const ease = move.timing.ease ?? playTime.ease;
-		const stretch: Stretch = {
-			moment: playTime.start + within.start * playTime.seconds,
-			seconds: (within.end - within.start) * playTime.seconds,
-			ease
-		};
-		return {
-			within,
-			ease,
-			change: await this.changeOf(move, stretch),
-			movesThePage: movesThePage(move),
-			unheard: soundsOf(move)
-		};
+	/**
+	 * A move of a play begun as its share starts, or the one begun ahead of it for a move judged on the frame, taken as
+	 * it was begun then; a move begun now foresees the frame by the play as it stands.
+	 */
+	private async begunInPlay(move: Move, foresight: Foresight): Promise<Running> {
+		const begunAhead = foresight.ahead.get(move);
+		if (begunAhead !== undefined) {
+			foresight.ahead.delete(move);
+			return begunAhead;
+		}
+		const stretch = stretchIn(move, foresight.playTime);
+		const change = await this.changeOf(move, stretch, (moment) => this.cameraForeseen(foresight, moment));
+		return runningOf(move, stretch, change);
 	}
 
-	/** A move begun as the scene stands, over a stretch of the film's time. */
-	private async changeOf(move: Move, stretch: Stretch): Promise<Change> {
+	/**
+	 * The camera a play's frame will be seen by at a moment of it, foreseen as a move of it begins: every move of the
+	 * frame due to begin by then begun ahead, then the scene the move begins on with each move running and each begun
+	 * ahead by then set as far as it will have come.
+	 */
+	private async cameraForeseen(foresight: Foresight, moment: number): Promise<Camera> {
+		const progress = (moment - foresight.playTime.start) / foresight.playTime.seconds;
+		await this.begunAhead(foresight, progress);
+		const scene = await sceneAlong(foresight.scene, progress, begunBy(movesForeseen(foresight), progress));
+		return cameraOf(scene, this.format);
+	}
+
+	/**
+	 * Every move of the camera, the window and the eye a play has yet to begin whose share starts by a point of it,
+	 * begun ahead of its share in the order they begin, each on the scene as foreseen where its share starts, with the
+	 * moves begun before it set as far as they will have come, and kept for its share.
+	 */
+	private async begunAhead(foresight: Foresight, progress: number): Promise<void> {
+		const due = foresight.unbegun
+			.filter((move) => movesTheFrame(move) && move.timing.within.start <= progress && !foresight.ahead.has(move))
+			.sort(inBeginningOrder);
+		for (const move of due) {
+			const start = move.timing.within.start;
+			const scene = await sceneAlong(foresight.scene, start, begunBefore(movesForeseen(foresight), start));
+			const stretch = stretchIn(move, foresight.playTime);
+			foresight.ahead.set(move, runningOf(move, stretch, await move.begin(this.beginningAhead(scene, stretch))));
+		}
+	}
+
+	/** A move begun as the scene stands, over a stretch of the film's time, where the frame will stand along it foreseen. */
+	private async changeOf(move: Move, stretch: Stretch, cameraAt: (moment: number) => Promise<Camera>): Promise<Change> {
 		const scene = this.scene;
 		return move.begin({
 			scene,
@@ -393,9 +460,30 @@ export class Take {
 			ownPage: (key) => this.ownPageAt(scene, key, stretch.moment),
 			act: (action) => this.acted(action),
 			holdPicture: (part) => this.pictures.hold(part, scene.screen.shows.kind),
+			cameraAt,
 			thingsBuilt: this.opened.thingsBuilt,
 			filmsPictures: this.opened.filmsPictures
 		});
+	}
+
+	/**
+	 * What a move of the frame begun ahead of its share reads: the scene as foreseen where its share starts, the format,
+	 * its stretch; never the page, which stands as the move judged on the frame finds it, not as it will at the share.
+	 */
+	private beginningAhead(scene: Scene, stretch: Stretch): Beginning {
+		return {
+			scene,
+			page: PAGE_UNREAD_AHEAD,
+			format: this.format,
+			pageShown: this.opened.stage.kind,
+			stretch,
+			ownPage: refusedAhead,
+			act: refusedAhead,
+			holdPicture: refusedAhead,
+			cameraAt: refusedAhead,
+			thingsBuilt: this.opened.thingsBuilt,
+			filmsPictures: this.opened.filmsPictures
+		};
 	}
 
 	/**
@@ -539,9 +627,7 @@ export class Take {
 	 * takes over from another of its part sets what it sets once that one is done.
 	 */
 	private async sceneOf(time: FrameTime, progress: number, begun: readonly Running[]): Promise<SceneAt> {
-		let scene = time.before;
-		for (const ran of begun) scene = await ran.change(scene, easedAlong(ran, progress));
-		return { scene, moment: this.momentAt(time, progress) };
+		return { scene: await sceneAlong(time.before, progress, begun), moment: this.momentAt(time, progress) };
 	}
 
 	/** The moment of the film a point of the frame's step stands at: so many frames' time back from the frame's own. */
@@ -697,6 +783,50 @@ class OwnPageShown implements FilmedPage {
 /** How far along a running move is, eased, when its step is `progress` along. */
 function easedAlong(current: Running, progress: number): number {
 	return current.ease(current.within.along(progress));
+}
+
+/**
+ * A scene with moves set as far as each has come when their step is `progress` along, one ended at its end, in the
+ * order they began, so a move that takes over from another of its part sets what it sets once that one is done.
+ */
+async function sceneAlong(scene: Scene, progress: number, moves: readonly Running[]): Promise<Scene> {
+	let along = scene;
+	for (const ran of moves) along = await ran.change(along, easedAlong(ran, progress));
+	return along;
+}
+
+/** The stretch of a play's time a move's share takes, on the move's own curve or the play's. */
+function stretchIn(move: Move, playTime: PlayTime): Stretch {
+	const within = move.timing.within;
+	return {
+		moment: playTime.start + within.start * playTime.seconds,
+		seconds: (within.end - within.start) * playTime.seconds,
+		ease: move.timing.ease ?? playTime.ease
+	};
+}
+
+/** A move begun over a stretch of a play: its share, its curve, what it sets and whether that is the page, its sounds. */
+function runningOf(move: Move, stretch: Stretch, change: Change): Running {
+	return {
+		within: move.timing.within,
+		ease: stretch.ease,
+		change,
+		movesThePage: movesThePage(move),
+		unheard: soundsOf(move)
+	};
+}
+
+/**
+ * The moves a play's frame is foreseen by, in the order they begin: those running as the move asking begins, then
+ * those begun ahead, each foresight reaching past the last, so the later begin after.
+ */
+function movesForeseen(foresight: Foresight): readonly Running[] {
+	return [...foresight.running, ...foresight.ahead.values()];
+}
+
+/** A move of the frame begun ahead of its share refused where it reads the page, or where the frame will stand. */
+function refusedAhead(): Promise<never> {
+	return Promise.reject(new FilmError(READ_AHEAD));
 }
 
 /** How far along its step a frame's time stands so far back from the frame's moment, a share of its time. */

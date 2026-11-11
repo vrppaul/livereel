@@ -236,7 +236,7 @@ and the moves of each part of the scene:
 - `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge, words })`; a caption and keys stand over the
   whole frame where they come up, over every object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`, `screen.behind(page, { upright, within })`,
-  `screen.shows(page, { reaches })`, `screen.scrolls(page, { pace })`, `screen.scrollTo(page, selector, { top })`,
+  `screen.shows(page, { reaches })`, `screen.scrolls(page, { pace })`, `screen.scrollTo(page, selector, { top, judged })`,
   `screen.type(page, strokes, { into, keyboard })`, `screen.sweep({ from, slant, round, width, crest })`
 - `terminal.open(title, { at, from, enter, edge, inside, group, zIndex })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
@@ -801,7 +801,19 @@ block is measured where it stands in the page's document, however far the
 page has run. It is refused as it begins where the page cannot scroll so
 far, and where it would turn back on its way: running away from its rest,
 or so fast that it would pass it, more than three times the mean pace of
-its way; stop the page first, or give the move a longer share. Each
+its way; stop the page first, or give the move a longer share. With
+`judged: { left: 0.85, top: 0.275 }`, a point of the frame in shares of
+it, the curve is laid across the frame there: what the eye reads at that
+point sets off as fast as the page's pace carries it there and slows to
+rest on that curve however the window leans and the eye and the camera
+move meanwhile, and the page still comes to rest with its block where
+the film names, as the claude-review promo's terminal runs back while it
+turns square. To know where the frame will stand, the take begins every
+move of the camera, the window and the eye that starts within the run's
+share as the run begins; begun so early, such a move reads the scene
+alone, and one that reads the page there, a block it goes to, is
+refused. So is a point where the eye sees past the window's plane while
+the page runs, and a run that would pass its rest across the frame. Each
 exposure of a frame draws the page where it stood then, so a fast run
 smears; the filmed page scrolls by `page.scrollBy` and `page.scrollTo`, and
 `screen.scrolls('filmed')` and `screen.scrollTo('filmed', …)` are refused.

@@ -197,6 +197,8 @@ const LIFTED: Fraction = WHOLE;
 const WHOLE_SHARE: Box = { left: 0, top: 0, width: 1, height: 1 };
 // A move the other way: so many times as far back
 const BACK = -1;
+// Half the pixel of a page's run a point's carry on the frame is measured over, either side of the point
+const HALF_A_PIXEL = 0.5;
 
 /** The whole frame as the camera's view, edge to edge, standing as placed. */
 export function wholeView(frame: Size): View {
@@ -715,6 +717,19 @@ export function underTheFrame(camera: Camera, frame: Size, point: Point): Point 
 	);
 	const frameZoom = frameZoomOf(pose, frame);
 	return { left: pose.focusX + met.across / frameZoom, top: pose.focusY + met.down / frameZoom };
+}
+
+/**
+ * How far the frame carries what a point of it shows as the page runs, in the frame's pixels for a pixel of the page:
+ * how far the point of the screen's plane under it moves on the frame, measured over a pixel of the page's run centred
+ * on it. None where the point sees past the plane.
+ */
+export function runCarriedUnder(camera: Camera, frame: Size, point: Point): number | null {
+	const under = underTheFrame(camera, frame, point);
+	if (under === null) return null;
+	const before = onTheFrame(camera, frame, { left: under.left, top: under.top + HALF_A_PIXEL });
+	const after = onTheFrame(camera, frame, { left: under.left, top: under.top - HALF_A_PIXEL });
+	return distanceBetween(before, after);
 }
 
 /**

@@ -9,6 +9,7 @@
  * acts as it begins, by the way the take hands it, so a move that begins after it reads the page it left. A move is a
  * plain object made by a function of its prop's module (`src/moves/`).
  */
+import type { Camera } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
 import { A_BOX, type Box, type Size, liesAboveOrBelow, liesOutside, partWithin } from '../domain/geometry.ts';
@@ -52,6 +53,8 @@ const NO_PLACES: readonly PlaceNamed[] = [];
 const NO_DEPTHS: readonly DepthNamed[] = [];
 const NO_OWN_PAGES: readonly OwnPage[] = [];
 const NO_PICTURES: readonly string[] = [];
+// The parts a frame's camera is seen by (`cameraOf` in `src/scene.ts`)
+const FRAMING: readonly Part[] = ['camera', 'window', 'eye'];
 // Where a step starts and ends, as shares of it; and how far along a move is before its share and after it
 const STEP_START = 0;
 const STEP_END = 1;
@@ -193,8 +196,8 @@ export const A_MOVES: Kind<readonly Move[]> = new ListOf(A_MOVE, 'a list of move
 /**
  * What a move reads as its share begins: the scene, the page, the format, and how the stage shows the page; the
  * stretch of the film's time its share takes, for a move that sets what runs on with time; the take's way to act on
- * the page, for a move that acts as it begins; and its way to hold a picture of a part of the screen, for a move that
- * lifts what is drawn from one.
+ * the page, for a move that acts as it begins; its way to hold a picture of a part of the screen, for a move that lifts
+ * what is drawn from one; and where the frame will stand along its stretch, for a move judged on the frame.
  */
 export interface Beginning {
 	readonly scene: Scene;
@@ -219,6 +222,12 @@ export interface Beginning {
 	 * back; only where the stage shows the filmed page's picture, not the page live.
 	 */
 	readonly holdPicture: (part: Box) => Promise<number>;
+	/**
+	 * The camera the frame will be seen by at a moment of the move's stretch, asked one moment after another: as the
+	 * step will stand then, every move of the camera, the window and the eye that begins by then among it, begun ahead of
+	 * its share on the scene alone where it has yet to begin; in a cut, the camera as it stands.
+	 */
+	readonly cameraAt: (moment: number) => Promise<Camera>;
 	/** The names the film's things module builds a thing by: none where the film draws no things of its own. */
 	readonly thingsBuilt: readonly string[];
 	/** The film's own pictures the stage laid, by the path the film names each, and the size each file decoded at. */
@@ -275,6 +284,11 @@ export function timingOf(script: TimingScript): Timing {
 /** Whether a move changes the page itself, its scroll or its keys, rather than a prop drawn over it. */
 export function movesThePage(move: Move): boolean {
 	return move.part === 'page';
+}
+
+/** Whether a move changes a part the frame's camera is seen by: the camera, its window or the eye. */
+export function movesTheFrame(move: Move): boolean {
+	return FRAMING.includes(move.part);
 }
 
 /** The part a move of an object changes. */
