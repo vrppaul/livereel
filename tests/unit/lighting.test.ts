@@ -44,6 +44,15 @@ test("a light stands and aims in the room in three's axes, up the frame, in the 
 	]);
 });
 
+test('a light is as strong as written at the spot it aims at and falls off by the square of the distance, so a pixel of the frame off it, the frame twice the look, it is as strong as written times the square of twice the way to its aim', () => {
+	const fartherOff = { ...LIGHT, strength: 2, at: { across: -600, down: -1600, out: 1200 } };
+	const lights = drawnLighting([LIGHT, fartherOff], [], TWICE_THE_LOOK).lights;
+	expect(lights.map((light) => light.strengthAPixelOff)).toEqual([
+		expect.closeTo(4 * 1_090_000),
+		expect.closeTo(2 * 4 * 4_360_000)
+	]);
+});
+
 test("a soft box stands a unit from the room's middle the way it is turned, toward the eye at rest, the frame's right, up it or up from its right, in three's axes, facing the middle, as wide as the angle it spans, leant clockwise seen from beyond it; the farthest corner of any, as far as it stands", () => {
 	const boxes: readonly SoftBox[] = [
 		{ ...SOFT_BOX, round: 0, up: 0 },

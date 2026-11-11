@@ -879,11 +879,13 @@ A light stands at a spot of the room and aims at another, as the eye does,
 each in pixels of a frame 1080 high from the frame's middle. A soft box
 lights rough faces as well as glossy ones, and stands turned `round` from
 straight toward the eye at rest, to the right for more degrees, and `up`
-from level. A light is as strong however
-far it reaches: its `strength` is how bright a white face square to it
-stands, 1 its whole colour. A soft box spans `width` and `height` degrees
-seen from the room's middle, brightest along its middle; boxes as bright as
-below light a matte thing strongly too. Each colour is hex with no alpha.
+from level. A light falls off by the square of
+the distance, as light does: its `strength` is how bright a white face
+square to it stands at the spot it aims at, 1 its whole colour, so a thing
+there stands as bright as written, and one coming toward the light
+brightens as it comes; aim a light at where its thing stands. A soft box
+spans `width` and `height` degrees seen from the room's middle, brightest
+along its middle; boxes as bright as below light a matte thing strongly too. Each colour is hex with no alpha.
 Things built of three's lit materials take the lights,
 `MeshStandardMaterial`, `MeshPhysicalMaterial`, `MeshLambertMaterial`,
 `MeshPhongMaterial` and `MeshToonMaterial`, and all but the toon the soft

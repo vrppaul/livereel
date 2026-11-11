@@ -5,10 +5,11 @@
  * has neither, as a film of flat light has none to place.
  *
  * A light stands at a spot of the room and aims at another, as the eye does, in pixels of a frame 1080 high from the
- * frame's middle, `out` toward whoever watches; it shines in a cone, as strong however far it reaches, so its strength
- * is how bright it stands on a white face square to it: the frame's pixels make a falloff by distance mean nothing a
- * film could tune. A soft box stands round the room's middle, as far off as reflections take it, seen from there as
- * wide and high as the angles it spans: only its direction counts, as for anything a face reflects from afar.
+ * frame's middle, `out` toward whoever watches; it shines in a cone and falls off by the square of the distance, as
+ * light does, so a thing coming toward it brightens and one leaving it dims. Its strength is how bright a white face
+ * square to it stands at the spot it aims at, a number a film sets by eye, where three's, a pixel off, runs to
+ * millions. A soft box stands round the room's middle, as far off as reflections take it, seen from there as wide and
+ * high as the angles it spans: only its direction counts, as for anything a face reflects from afar.
  *
  * Everything is handed in the room, in three's axes, as it stands while the world does: each thing carries the room
  * into the eye's own space that sees it (`DrawnThing` in `src/props/thing.ts`), so the eye moving moves none of it.
@@ -46,9 +47,10 @@ import {
 } from '../domain/matrix.ts';
 
 /**
- * A light in the room: its colour, in hex; how bright a white face square to it stands, 1 its whole colour; the spot
- * it stands at and the spot it aims at, each in pixels of a frame 1080 high from the frame's middle; how far its cone
- * opens from its middle, in degrees; and how softly the cone's edge falls off, from 0, sharp, to 1, from its middle.
+ * A light in the room: its colour, in hex; how bright a white face square to it stands at the spot it aims at, 1 its
+ * whole colour, brighter nearer it and dimmer farther by the square of the distance; the spot it stands at and the spot
+ * it aims at, each in pixels of a frame 1080 high from the frame's middle; how far its cone opens from its middle, in
+ * degrees; and how softly the cone's edge falls off, from 0, sharp, to 1, from its middle.
  */
 export interface WorldLight {
 	readonly colour: string;
@@ -77,12 +79,14 @@ export interface SoftBox {
 }
 
 /**
- * A light as the stage draws it: its colour, strength, angle and softness as written; and the matrices that carry the
- * room's middle to the spot it stands at and the spot it aims at, in the room in three's axes, in the frame's pixels.
+ * A light as the stage draws it: its colour, angle and softness as written; how bright a white face square to it stands
+ * a pixel of the frame off it, falling off by the square of the distance in the frame's pixels, so as bright as written
+ * at the spot it aims at; and the matrices that carry the room's middle to the spot it stands at and the spot it aims
+ * at, in the room in three's axes, in the frame's pixels.
  */
 export interface DrawnLight {
 	readonly colour: string;
-	readonly strength: number;
+	readonly strengthAPixelOff: number;
 	readonly angle: number;
 	readonly softness: number;
 	readonly standing: Matrix;
@@ -140,6 +144,8 @@ const FLAT_ALONG_ITS_FACE = 1;
 const A_UNIT = 1;
 // A side of a square, and the half of it its edge stands from its middle
 const HALVES = 2;
+// A light falls off by the square of the distance
+const SQUARED = 2;
 
 /**
  * The kind of a light, as a film writes it: of a light's form, and aiming away from where it stands, as a light aiming
@@ -227,15 +233,21 @@ export function drawnBloom(strength: number, radius: number): DrawnBloom | null 
 	return strength > NONE ? { strength, radius, threshold: BRIGHTER_THAN_THE_PAGE } : null;
 }
 
-/** A light as the stage draws it, its spots in the frame's pixels, so many times a frame 1080 high's. */
+/**
+ * A light as the stage draws it, its spots in the frame's pixels, so many times a frame 1080 high's: as strong a pixel
+ * off as its strength times the square of the pixels to its aim, so falling off by the square it is as strong as
+ * written there.
+ */
 function drawnLight(light: WorldLight, scale: number): DrawnLight {
+	const at = scaledBy(light.at, scale);
+	const aim = scaledBy(light.aim, scale);
 	return {
 		colour: light.colour,
-		strength: light.strength,
+		strengthAPixelOff: light.strength * lengthOf(wayBetween(at, aim)) ** SQUARED,
 		angle: light.angle,
 		softness: light.softness,
-		standing: inThreesAxes(translation(scaledBy(light.at, scale))),
-		aimedAt: inThreesAxes(translation(scaledBy(light.aim, scale)))
+		standing: inThreesAxes(translation(at)),
+		aimedAt: inThreesAxes(translation(aim))
 	};
 }
 

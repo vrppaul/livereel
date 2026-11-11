@@ -12,10 +12,11 @@ import { matrixOf } from './matrices.js';
 /** @import { Matrix } from '../src/domain/matrix.ts' */
 
 // A light's strength as three takes it: three shades a white face square to a light by its strength over π, so a
-// strength of 1 lights it its whole colour; a light reaching endlessly, as strong however far it reaches
+// strength of 1 a unit off lights it its whole colour there; a light reaching endlessly, falling off by the square of
+// the distance
 const STRENGTH_IN_THREES = Math.PI;
 const REACHES_ENDLESSLY = 0;
-const NO_FALLOFF = 0;
+const BY_THE_SQUARE = 2;
 // The soft boxes' reflections: drawn unblurred, rough faces blurring them as they read them; looked for from so near
 // the room's middle, the boxes a unit off, to twice as far as the farthest corner of one; and kept so many pixels a
 // side, coarser, a leaning soft box's edge reflecting in steps: a cube of half floats, about 67 MB on the card with
@@ -103,13 +104,21 @@ function shiningFrom(group, lights) {
 
 /**
  * A light of the world as three shines it, and the spot it aims at, each placed in the room by the engine's matrix: a
- * spotlight as strong however far it reaches, a white face square to it as bright as the light's strength says.
+ * spotlight falling off by the square of the distance in the frame's pixels, a white face square to it a pixel off as
+ * bright as the engine says.
  * @param {DrawnLight} light @returns {THREE.Object3D[]}
  */
 function spotlightOf(light) {
-	const strength = light.strength * STRENGTH_IN_THREES;
+	const strength = light.strengthAPixelOff * STRENGTH_IN_THREES;
 	const angle = THREE.MathUtils.degToRad(light.angle);
-	const spotlight = new THREE.SpotLight(light.colour, strength, REACHES_ENDLESSLY, angle, light.softness, NO_FALLOFF);
+	const spotlight = new THREE.SpotLight(
+		light.colour,
+		strength,
+		REACHES_ENDLESSLY,
+		angle,
+		light.softness,
+		BY_THE_SQUARE
+	);
 	// Shining in every part of the world the room draws apart, as three lights a face only by lights in its part
 	spotlight.layers.enableAll();
 	return [placedBy(spotlight, light.standing), placedBy(spotlight.target, light.aimedAt)];

@@ -397,8 +397,9 @@ ground, or the words pass through the ground's own grey.
 the theme: its light, for a film's own things in a lit material and the
 window's body: `lights`, each `{ colour, strength, at, aim, angle,
 softness }`, a spotlight standing `at` a spot and aiming at another as the
-eye does, `strength` how bright a white face square to it stands (1 its
-whole colour), as strong however far it reaches, `angle` how far its cone
+eye does, `strength` how bright a white face square to it stands at the
+spot it aims at (1 its whole colour), falling off by the square of the
+distance, so aim it where the thing it lights stands, `angle` how far its cone
 opens from its middle, under 90°, and `softness` its edge, 0 sharp to 1;
 and `softBoxes`, each `{ colour, brightness, round, up, width, height,
 lean }`, a glowing panel faces reflect and are lit by, matte ones too,
