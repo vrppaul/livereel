@@ -911,7 +911,10 @@ from level. A light falls off by the square of
 the distance, as light does: its `strength` is how bright a white face
 square to it stands at the spot it aims at, 1 its whole colour, so a thing
 there stands as bright as written, and one coming toward the light
-brightens as it comes; aim a light at where its thing stands. A soft box
+brightens as it comes; aim a light at where its thing stands. The strength
+is held at the aim, so a light whose aim `world.to` moves farther from it
+brightens whatever else it lights, by the square of how much farther the
+aim stands. A soft box
 spans `width` and `height` degrees seen from the room's middle, brightest
 along its middle; boxes as bright as below light a matte thing strongly too. Each colour is hex with no alpha.
 Things built of three's lit materials take the lights,
@@ -1347,14 +1350,15 @@ What `room` costs:
   world, a title or a pane, is seen through round its letters and in its
   shadow, so it is drawn in a field of its own, laid as the browser lays
   it: the frames with a title and code in the world in place of the cube
-  took 119.4 and 121.5 s; the page, laid in linear light, is a field apart
-  from it, which made those frames 138.8 and 146.4 s against 122.6 and
-  123.7 s (2026-11-11). While the page is
+  took 119.4 and 121.5 s; the page, laid as the browser lays it with its
+  glass over it as light, is a field apart from it, which made those frames
+  138.8 and 146.4 s against 122.6 and 123.7 s (2026-11-11). While the page is
   seen through and a glass or markup stands beside it, what stands behind
   the page's plane is a field of its own, so it blurs by its own depth: one
   run of the lens more, about 80 ms a frame of 3840 × 2160 (2026-11-11).
-- What stands wholly before the focus is drawn and blurred as a world of
-  its own, a run of the lens more: 300 frames of a lit window leant with a
+- What stands nearer the eye than all the rest, while the focus blurs any
+  of it near, is drawn and blurred as a world of its own, a run of the lens
+  more: 300 frames of a lit window leant with a
   cube held before the focus took 67.1 and 67.5 s, against 72.8 and 72.7 s
   with the cube blurred with the rest (`--profile`, 2026-11-11).
 - Where the frame shows more of the window's plane than the graphics card

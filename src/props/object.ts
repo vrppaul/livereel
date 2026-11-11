@@ -414,14 +414,14 @@ function orderInItsGroup(object: FrameObject, around: Surroundings): number {
 }
 
 /** Whether an object stands in a group of a name. */
-export function standsIn(object: FrameObject, group: GroupName): boolean {
+export function standsInGroup(object: FrameObject, group: GroupName): boolean {
 	return object.inside.kind === 'group' && object.inside.name === group;
 }
 
 /** Where among objects an object is drawn: where it came, or where the first of its group came. */
 function drawingPlaceOf(object: FrameObject, came: number, objects: readonly FrameObject[]): number {
 	const holder = object.inside;
-	return holder.kind === 'group' ? objects.findIndex((other) => standsIn(other, holder.name)) : came;
+	return holder.kind === 'group' ? objects.findIndex((other) => standsInGroup(other, holder.name)) : came;
 }
 
 /**

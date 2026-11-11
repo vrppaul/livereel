@@ -68,7 +68,7 @@ import {
 	pictureHeldBy,
 	pictureZoomOf,
 	standingInTheWorld,
-	standsIn
+	standsInGroup
 } from './props/object.ts';
 import type { PartAsked, SharperPicture } from './domain/picture.ts';
 import type { DrawnHole } from './props/piece.ts';
@@ -248,7 +248,11 @@ export function withLeaving(scene: Scene, name: ObjectName, object: FrameObject 
 export function withGroup(scene: Scene, name: GroupName, group: Group | null): Scene {
 	const groups = withNamed(scene.groups, name, group);
 	if (group !== null) return { ...scene, groups };
-	return { ...scene, groups, objects: new Map([...scene.objects].filter(([, object]) => !standsIn(object, name))) };
+	return {
+		...scene,
+		groups,
+		objects: new Map([...scene.objects].filter(([, object]) => !standsInGroup(object, name)))
+	};
 }
 
 function withNamed<Value>(values: ReadonlyMap<string, Value>, name: string, value: Value | null): Map<string, Value> {

@@ -4,12 +4,13 @@
  * sizes and weights, how far apart a title's letters and lines stand, and how they come up, where a title and a
  * caption's ground stand, the accent of the marks, the corners, edge and shadow of what stands on the ground as a pane
  * — the page's window and its screen, the code's pane and the agent's terminal alike — the colours of the code by
- * kind, the cursor, and the agent's terminal and the ending card, their colours and sizes. How the world looks, its light and the glow round it, is a prop of its own
- * (`src/props/world.ts`), and the body of the page's window in a room is the window's own (`src/props/body.ts`). A film
- * opens on livereel's look with its theme's values, and changes it by moves as it goes: in a play, a colour, a size or
- * a shadow moves through the values between, a font, which has none between, changes half-way, and the ground's layers
- * fade into new ones; in a cut, at once. The stage is handed the whole look every frame and sets each value in place of
- * its token (`stage/tokens.css`), the ground's layers part by part.
+ * kind, the cursor, and the agent's terminal and the ending card, their colours and sizes. How the world looks, its
+ * light and the glow round it, is a prop of its own (`src/props/world.ts`), and the body of the page's window in a
+ * room is the window's own (`src/props/body.ts`). A film opens on livereel's look with its theme's values, and changes
+ * it by moves as it goes: in a play, a colour, a size or a shadow moves through the values between, a font, which has
+ * none between, changes half-way, and the ground's layers fade into new ones; in a cut, at once. The stage is handed
+ * the whole look every frame and sets each value in place of its token (`stage/tokens.css`), the ground's layers part
+ * by part.
  *
  * One table, `LOOK_KINDS`, says of each value what a film may write for it, how the look holds it, how it moves
  * (`src/domain/values.ts`) and what CSS reads it as, so a theme is checked by it and a look moved by it, and livereel's
