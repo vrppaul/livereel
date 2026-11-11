@@ -382,13 +382,17 @@ or on the `keyboard` named, and a caret follows the last letter typed until
 every one is. Words that come by letters stand laid out whole from the
 start, so no line breaks anew as they come; a run's style, ink and marker
 come with each letter. Going, words that came word by word go one after
-another at the pace they came, the first first, each in its way, a mask's
-sinking back under its line, the others sinking or fading as they rose,
-slow at first, as a rise run back; words that came by letters go all
-together. Words come in their way only where their
+another at the pace they came, or as many at once as the hide names,
+`title.hide({ words: { atOnce: 8 } })`, the first first, at an even pace
+unless it names a curve, each in its way, a mask's sinking back under its
+line, cut there as it sinks so it never shows over the line below, the
+others sinking or fading as they rose, slow at first, as a rise run back;
+words that came by letters go all together, and are named no pace. Words
+come in their way only where their
 title or caption comes up in its place in its own way: `words` with `from`
-or `enter` is refused. A callout's and a note's words come in the theme's
-way.
+or `enter` is refused, and they go at a pace only where it goes in its own
+way: `words` with `toward` or `leave` is refused. A callout's and a note's
+words come in the theme's way.
 
 Words in a place travel: `title.to(place)` and `code.to(place)` carry them
 to another place through the boxes between, a title reading as it did;

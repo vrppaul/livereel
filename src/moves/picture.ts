@@ -14,6 +14,7 @@ import type { FilmPicture } from '../props/picture.ts';
 import {
 	type Coming,
 	type EffectsScript,
+	GOES_AS_IT_STANDS,
 	type HideScript,
 	NESTED_FORM,
 	type NestedScript,
@@ -81,7 +82,7 @@ export function effects(script: EffectsScript): Move {
 
 /** The picture going where it stands, or sliding out past a side of the frame; once gone, there is none. */
 export function hide(script: HideScript = {}): Move {
-	return objectHide(PICTURE, 'picture.hide', script);
+	return objectHide(PICTURE, 'picture.hide', script, GOES_AS_IT_STANDS);
 }
 
 /**

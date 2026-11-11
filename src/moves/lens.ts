@@ -14,6 +14,7 @@ import type { FrameObject } from '../props/object.ts';
 import {
 	type Coming,
 	type EffectsScript,
+	GOES_AS_IT_STANDS,
 	GROUPED_FORM,
 	type GroupedScript,
 	type HideScript,
@@ -91,7 +92,7 @@ export function effects(script: EffectsScript): Move {
 
 /** The lens going where it stands, or sliding out past a side of the frame; once gone, there is none. */
 export function hide(script: HideScript = {}): Move {
-	return objectHide(LENS, 'lens.hide', script);
+	return objectHide(LENS, 'lens.hide', script, GOES_AS_IT_STANDS);
 }
 
 /** A lens round the middle of a target where the camera shows it, and its box there, as wide as its glass is. */

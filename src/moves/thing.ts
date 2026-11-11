@@ -24,6 +24,7 @@ import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript,
 import { A_REACH, type Reach, THING_VALUES, type Thing, type ThingValues, valuesToward } from '../props/thing.ts';
 import {
 	type Coming,
+	GOES_AS_IT_STANDS,
 	NAMED_FORM,
 	type NamedScript,
 	type ObjectLeanScript,
@@ -124,7 +125,7 @@ export function set(values: ThingValues, script: ThingSetScript = {}): Move {
 /** The thing on the screen going where it stands, in its own way, or sliding out past a side of the frame. */
 export function hide(script: ThingHideScript = {}): Move {
 	assertWritten(script, THING_HIDE_FORM, 'thing.hide');
-	return objectHide(THING, 'thing.hide', script);
+	return objectHide(THING, 'thing.hide', script, GOES_AS_IT_STANDS);
 }
 
 /**

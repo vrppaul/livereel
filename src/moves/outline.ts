@@ -14,6 +14,7 @@ import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
 	type EffectsScript,
+	GOES_AS_IT_STANDS,
 	GROUPED_FORM,
 	type GroupedScript,
 	type HideScript,
@@ -100,7 +101,7 @@ export function back(script: TakenScript = {}): Move {
 
 /** The outline going where it stands, or sliding out past a side of the frame; once gone, there is none. */
 export function hide(script: HideScript = {}): Move {
-	return objectHide(OUTLINE, 'outline.hide', script);
+	return objectHide(OUTLINE, 'outline.hide', script, GOES_AS_IT_STANDS);
 }
 
 /** An outline round a target, cut to the part of it the camera shows, and the box of the frame it shows there. */

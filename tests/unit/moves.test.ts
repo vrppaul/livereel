@@ -724,6 +724,36 @@ test("a title's or a caption's words come up with as many on their way at once a
 	]);
 });
 
+test("a title's or a caption's words go with as many on their way at once as the hide names, whatever the pace they came at", async () => {
+	const titleStanding = await setAt(title.show('ab cd ef', { words: 'rise' }), OPENING_IN_SMALL, 1);
+	const captionStanding = await setAt(caption.show('ab cd ef', { words: 'rise' }), OPENING_IN_SMALL, 1);
+	const words = { atOnce: 2 };
+	expect([
+		drawnObjectsIn(await setAt(title.hide({ words }), titleStanding, 0.5), SMALL)[0]!.content.words.map(
+			(word) => word.gone
+		),
+		drawnSceneIn(await setAt(caption.hide({ words }), captionStanding, 0.5), SMALL).caption!.words.map(
+			(word) => word.gone
+		)
+	]).toEqual([
+		[1, 1 - easeOutCubic(0.5), 0],
+		[1, 1 - easeOutCubic(0.5), 0]
+	]);
+});
+
+test('words that go whole, sliding out, in a way of livereel’s or laid out by letters, are named no pace to go at', async () => {
+	const lettered = await setAt(title.show('ab cd', { words: 'letters' }), OPENING_IN_SMALL, 1);
+	expect(() => title.hide({ words: { atOnce: 2 }, toward: 'left' })).toThrow(
+		new FilmError('title.hide slides out whole toward a side, its words with it: it names no pace for its words')
+	);
+	expect(() => caption.hide({ words: { atOnce: 2 }, leave: 'fade' })).toThrow(
+		new FilmError('caption.hide goes whole in a way, its words with it: it names no pace for its words')
+	);
+	await expect(setAt(title.hide({ words: { atOnce: 2 } }), lettered, 0.5)).rejects.toThrow(
+		new FilmError('title.hide names a pace for words that came letter by letter: they go together')
+	);
+});
+
 test("a callout's and a note's words come up in the theme's way", async () => {
 	const blurred = openingScene(SMALL, { ...LIVEREELS_LOOK, words: 'blur' }, LIVEREELS_WORLD, FOCAL_LENGTH);
 	const windowed = withProp(blurred, 'window', placedIn(windowView({ left: 300, top: 20, width: 80, height: 60 })));
@@ -2959,6 +2989,17 @@ test('words, code and a caption come up in place at an even pace, the terminal, 
 		keys.show(['⌘', 'K']).timing.ease,
 		open('claude', { ease: linear }).timing.ease
 	]).toEqual([linear, linear, linear, null, null, null, linear]);
+});
+
+test("a title's or a caption's words go in place at an even pace, and whole in a way or sliding on their step's curve, unless the film names one", () => {
+	expect([
+		title.hide().timing.ease,
+		caption.hide().timing.ease,
+		title.hide({ leave: 'fade' }).timing.ease,
+		title.hide({ toward: 'left' }).timing.ease,
+		caption.hide({ leave: 'fade' }).timing.ease,
+		title.hide({ ease: easeOutCubic }).timing.ease
+	]).toEqual([linear, linear, null, null, null, easeOutCubic]);
 });
 
 /** How a move refuses the block below the screen. */

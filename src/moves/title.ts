@@ -27,6 +27,7 @@ import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
 import {
 	type Coming,
 	type EffectsScript,
+	HIDE_FORM,
 	type HideScript,
 	NESTED_FORM,
 	type NestedScript,
@@ -43,12 +44,16 @@ import {
 	objectTo
 } from './object.ts';
 import {
+	A_WORDS_GOING,
 	A_WORDS_SCRIPT,
 	type WordsComing,
+	type WordsGoingScript,
 	type WordsScript,
 	comingUpAt,
 	refuseWordsBroughtWhole,
-	wordsComing
+	refuseWordsTakenWhole,
+	wordsComing,
+	wordsGoingAt
 } from './words.ts';
 
 /**
@@ -70,6 +75,11 @@ export interface TitleScript extends ShowScript, NestedScript {
 	readonly letterSpacing?: number;
 	readonly lineHeight?: number;
 	readonly words?: WordsScript;
+}
+
+/** How a title goes: as an object goes, and how many of its words are on their way at once, `words`, where they go in place. */
+export interface TitleHideScript extends HideScript {
+	readonly words?: WordsGoingScript;
 }
 
 /**
@@ -97,8 +107,9 @@ const TITLE_FORM: Form<TitleScript> = {
 };
 // Words over the whole frame on their ground stand centred
 const OVER_THE_WHOLE: Alignment = 'center';
-// A title's words come up one after another at an even pace in their own way, where the film names no curve
-const WORDS_COME_UP_ON = linear;
+const TITLE_HIDE_FORM: Form<TitleHideScript> = { words: A_WORDS_GOING, ...HIDE_FORM };
+// A title's words come up and go one after another at an even pace in their own way, where the film names no curve
+const WORDS_COME_AND_GO_ON = linear;
 // A title reads a place as words do, and sets off toward one as `settingOff` has it
 const TITLE_READING: PlaceReading<typeof TITLE> = { placed: wordsPlaced, settingOff };
 
@@ -120,7 +131,7 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 		lineHeight: script.lineHeight ?? null
 	};
 	const setting: Setting = { said, place: script.at ?? null, align: script.align ?? null, type, coming };
-	const showing = objectShow(TITLE, 'title.show', script, setting.place, WORDS_COME_UP_ON, (beginning) =>
+	const showing = objectShow(TITLE, 'title.show', script, setting.place, WORDS_COME_AND_GO_ON, (beginning) =>
 		titleComing(setting, beginning)
 	);
 	return { ...showing, sounds: coming.sounds };
@@ -134,9 +145,19 @@ export function to(place: Place, script: ToScript = {}): Move {
 	return objectTo(TITLE, 'title.to', place, script, TITLE_READING);
 }
 
-/** The title going, and its ground with it, or sliding out past a side of the frame; once gone, there is none. */
-export function hide(script: HideScript = {}): Move {
-	return objectHide(TITLE, 'title.hide', script);
+/**
+ * The title going, and its ground with it, its words one after another at an even pace unless the film names a curve,
+ * as many on their way at once as it names or as they came; or whole, in a way of livereel's or sliding out past a side
+ * of the frame, naming no pace for its words; once gone, there is none.
+ */
+export function hide(script: TitleHideScript = {}): Move {
+	assertWritten(script, TITLE_HIDE_FORM, 'title.hide');
+	refuseWordsTakenWhole(script, 'title.hide');
+	const { words, ...hiding } = script;
+	return objectHide(TITLE, 'title.hide', hiding, {
+		curve: WORDS_COME_AND_GO_ON,
+		settingOff: (title) => ({ ...title, comingUp: wordsGoingAt(title.comingUp, words, 'title.hide') })
+	});
 }
 
 /**

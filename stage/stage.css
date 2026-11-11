@@ -684,7 +684,7 @@ body {
 	filter: blur(calc((1 - var(--appeared)) * var(--word-blur) + var(--gone) * var(--word-blur-leaving)));
 }
 
-/* Words come up and go in the way the film or its theme names (`data-words`, `src/props/words.ts`): rising out of a blur, as above; rising sharp; fading up where they stand; coming clear out of a blur there; or each rising from under its own line, cut there a reach below its box for its letters' tails, and sinking back under it as it goes. Words that come letter by letter stand whole as their letters come, and go all together, as rising words look going */
+/* Words come up and go in the way the film or its theme names (`data-words`, `src/props/words.ts`): rising out of a blur, as above; rising sharp; fading up where they stand; coming clear out of a blur there; or each rising from under its own line, cut there at its letters' tails, and sinking back under it as it goes. Words that come letter by letter stand whole as their letters come, and go all together, as rising words look going */
 .words[data-words='sharp'] .word {
 	filter: none;
 }
@@ -698,15 +698,17 @@ body {
 	transform: none;
 }
 
+/* A masked word's cut reaches above its line for its marks, and below it for its tails only as far as they still stand there: the whole reach while the word stands, less by as far as it has moved, none once it has moved the reach. So a word rising or sinking shows below its line nothing deeper than its own tails stood, never over the next line's letters; and it is out of sight under its line once it has moved its box and the reach above it */
 .words[data-words='mask'] .word {
-	--under-its-line: calc((1 - var(--appeared) + var(--gone)) * (100% + 2 * var(--letters-tails-reach)));
+	--under-its-line: calc((1 - var(--appeared) + var(--gone)) * (100% + var(--letters-tails-reach)));
+	--tails-below-its-line: max(0px, var(--letters-tails-reach) - var(--under-its-line));
 
 	opacity: 1;
 	filter: none;
 	transform: translateY(var(--under-its-line));
 	clip-path: inset(
 		calc(-1 * var(--letters-tails-reach)) calc(-1 * var(--letters-tails-reach))
-			calc(var(--under-its-line) - var(--letters-tails-reach)) calc(-1 * var(--letters-tails-reach))
+			calc(var(--under-its-line) - var(--tails-below-its-line)) calc(-1 * var(--letters-tails-reach))
 	);
 }
 

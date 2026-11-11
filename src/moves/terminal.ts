@@ -17,6 +17,7 @@ import type { ObjectName } from '../props/object.ts';
 import { A_LINES, type Terminal, type TerminalLine, openTerminal } from '../props/terminal.ts';
 import {
 	type EffectsScript,
+	GOES_AS_IT_STANDS,
 	type HideScript,
 	NAMED_FORM,
 	NESTED_FORM,
@@ -159,7 +160,7 @@ export function effects(script: EffectsScript): Move {
  * gone, there is none.
  */
 export function leave(script: HideScript = {}): Move {
-	return objectHide(TERMINAL, 'terminal.leave', script);
+	return objectHide(TERMINAL, 'terminal.leave', script, GOES_AS_IT_STANDS);
 }
 
 function typingInto(beginning: Beginning, name: ObjectName, strokes: readonly Keystroke[]): Change {

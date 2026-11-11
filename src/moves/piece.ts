@@ -42,6 +42,7 @@ import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
 	type EffectsScript,
+	GOES_AS_IT_STANDS,
 	GROUPED_FORM,
 	type GroupedScript,
 	type HideScript,
@@ -213,7 +214,7 @@ export function back(script: TakenScript = {}): Move {
 
 /** The piece going where it stands, or sliding out past a side of the frame; once gone, there is none. */
 export function hide(script: HideScript = {}): Move {
-	return objectHide(PIECE, 'piece.hide', script);
+	return objectHide(PIECE, 'piece.hide', script, GOES_AS_IT_STANDS);
 }
 
 /**

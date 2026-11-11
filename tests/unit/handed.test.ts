@@ -192,7 +192,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		)
 	);
 	expect(() => title.hide({ at: 'left' } as never)).toThrow(
-		new FilmError('title.hide names at: it names toward, leave, edge, within, ease, as, or fewer')
+		new FilmError('title.hide names at: it names words, toward, leave, edge, within, ease, as, or fewer')
 	);
 	expect(() => title.show('ab', { enter: 'spin' as never })).toThrow(
 		new FilmError(

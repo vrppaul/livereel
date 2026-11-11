@@ -28,6 +28,7 @@ import {
 import type { ObjectName } from '../props/object.ts';
 import {
 	type EffectsScript,
+	GOES_AS_IT_STANDS,
 	type HideScript,
 	NAMED_FORM,
 	NESTED_FORM,
@@ -167,7 +168,7 @@ export function effects(script: EffectsScript): Move {
 
 /** The code on the screen going, its pane with it, or sliding out past a side of the frame; once gone, none. */
 export function hide(script: HideScript = {}): Move {
-	return objectHide(CODE, 'code.hide', script);
+	return objectHide(CODE, 'code.hide', script, GOES_AS_IT_STANDS);
 }
 
 function lighting(beginning: Beginning, name: ObjectName, firstNamed: LineNamed, lastNamed: LineNamed): Change {

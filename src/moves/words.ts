@@ -2,11 +2,11 @@
  * What the moves of words that come up one after another and go do alike: how a film has a title's or a caption's
  * words come up, `words`, in a way by its name (`src/props/words.ts`), word by word with as many on their way at once
  * as it names, or typed by a person whose rhythm is drawn from a seed, spread over the move's share, each key heard; in
- * the theme's way where it names none, read as the words come, as a callout's and a note's always come; and a
- * callout's or a note's words going.
+ * the theme's way where it names none, read as the words come, as a callout's and a note's always come; how a title's
+ * or a caption's words go, at the pace a hide names or the one they came at; and a callout's or a note's words going.
  *
  * Words come up in their way only where the object showing them comes up in its place in its own way: one that slides
- * in or comes up in a way of livereel's brings them whole.
+ * in or comes up in a way of livereel's brings them whole, and one that slides out or goes in a way takes them whole.
  */
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
@@ -57,6 +57,18 @@ interface PacedScript {
 /** How a film has words come up: in a way by its name, word by word at a pace, or typed. */
 export type WordsScript = WordsWay | PacedScript | TypedScript;
 
+/** How words go, as a hide names it: how many of them are on their way at once. */
+export interface WordsGoingScript {
+	readonly atOnce: number;
+}
+
+/** How words go as a hide names it, and what would take them whole: a slide, a way of livereel's. */
+interface WordsTakenWhole {
+	readonly words?: WordsGoingScript;
+	readonly toward?: FrameSide;
+	readonly leave?: WayName;
+}
+
 /** How words come up as a show names it, and what would bring them whole: a slide, a way of livereel's. */
 interface WordsBroughtWhole {
 	readonly words?: WordsScript;
@@ -98,6 +110,12 @@ export const A_WORDS_SCRIPT: Kind<WordsScript> = new NameOrForm(
 	WORDS_SAID
 );
 
+/** How a film has words go, as it hands it. */
+export const A_WORDS_GOING: Kind<WordsGoingScript> = new OfForm<WordsGoingScript>(
+	{ atOnce: needed(AN_AT_ONCE) },
+	'how its words go: { atOnce }'
+);
+
 // Words that come up of themselves make no sound; and words a film names no way for come up in the theme's, read as
 // they come
 const UNHEARD: readonly Cue[] = [];
@@ -114,6 +132,36 @@ export function refuseWordsBroughtWhole(script: WordsBroughtWhole, move: string)
 	}
 	if (script.enter !== undefined) {
 		throw new FilmError(`${move} comes up whole in a way, its words with it: it names no way for its words`);
+	}
+}
+
+/**
+ * Refuses a pace named for words to go at where the object showing them goes whole: sliding out toward a side, or in a
+ * way of livereel's.
+ */
+export function refuseWordsTakenWhole(script: WordsTakenWhole, move: string): void {
+	if (script.words === undefined) return;
+	if (script.toward !== undefined) {
+		throw new FilmError(`${move} slides out whole toward a side, its words with it: it names no pace for its words`);
+	}
+	if (script.leave !== undefined) {
+		throw new FilmError(`${move} goes whole in a way, its words with it: it names no pace for its words`);
+	}
+}
+
+/**
+ * How words that stand go, read as their going begins: word by word at the pace the hide names, or at the one they
+ * came at where it names none; words laid out by letters go together, and a pace named for them is refused.
+ */
+export function wordsGoingAt(comingUp: ComingUp, script: WordsGoingScript | undefined, move: string): ComingUp {
+	if (script === undefined) return comingUp;
+	switch (comingUp.kind) {
+		case 'word by word':
+			return wordByWordAt(comingUp.way, script.atOnce);
+		case 'letters':
+		case 'scramble':
+		case 'typed':
+			throw new FilmError(`${move} names a pace for words that came letter by letter: they go together`);
 	}
 }
 

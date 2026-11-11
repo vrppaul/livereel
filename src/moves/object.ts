@@ -273,7 +273,7 @@ export const TO_FORM: Form<ToScript> = {
 	...NAMED_FORM,
 	...TIMING_FORM
 };
-const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...LEAVE_FORM, ...TIMING_FORM, ...NAMED_FORM };
+export const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...LEAVE_FORM, ...TIMING_FORM, ...NAMED_FORM };
 export const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { ...LEAN_FORM, ...NAMED_FORM };
 const TAKEN_FORM: Form<TakenScript> = { ...NAMED_FORM, ...TIMING_FORM };
 const EFFECTS_FORM: Form<EffectsScript> = {
@@ -310,6 +310,21 @@ const AS_LARGE = 1;
  * its kind.
  */
 export const THE_STEPS_CURVE = null;
+
+/**
+ * How what a kind shows goes in its own way: the curve it goes on where the film names none, and what it shows as it
+ * sets off, read from what it showed, none where it goes as it stands.
+ */
+export interface OwnGoing<Kind extends ShownKind> {
+	readonly curve: Ease | null;
+	readonly settingOff: SettingOff<Kind> | null;
+}
+
+/** What a kind shows as it sets off going, from what it showed: a title's words at the pace the hide names. */
+type SettingOff<Kind extends ShownKind> = (shown: ShownOf<Kind>) => ShownOf<Kind>;
+
+/** How a kind whose module reads how far it has gone goes in its own way: fading whole on its step's curve. */
+export const GOES_AS_IT_STANDS = { curve: THE_STEPS_CURVE, settingOff: null } as const;
 
 /**
  * How a pane reads a place, as the page's window reads one — a terminal, a piece of the page, an outline — setting off
@@ -466,10 +481,16 @@ export function objectEffects(kind: ShownKind, move: string, script: EffectsScri
 }
 
 /**
- * An object of a kind going where it stands, in its own way, as what it shows goes, or in a way of livereel's the film
- * names; or sliding out past a side of the frame where the film names one; once gone, there is none.
+ * An object of a kind going where it stands, in its own way, as what it shows goes, on the kind's own curve unless the
+ * film names one, what it shows set off as the kind sets it; or in a way of livereel's the film names; or sliding out
+ * past a side of the frame where the film names one; once gone, there is none.
  */
-export function objectHide(kind: ShownKind, move: string, script: HideScript): Move {
+export function objectHide<Kind extends ShownKind>(
+	kind: Kind,
+	move: string,
+	script: HideScript,
+	own: OwnGoing<Kind>
+): Move {
 	assertWritten(script, HIDE_FORM, move);
 	const name = script.as ?? kind;
 	const toward = script.toward ?? null;
@@ -477,11 +498,14 @@ export function objectHide(kind: ShownKind, move: string, script: HideScript): M
 	if (toward !== null && way.kind !== OWN_WAY.kind) {
 		throw new FilmError(`${move} goes from its place in a way, or slides out toward a side: not both`);
 	}
+	const curve = toward === null && way.kind === OWN_WAY.kind ? own.curve : THE_STEPS_CURVE;
 	return {
 		part: objectPart(name),
-		timing: timingOf(script),
+		timing: timingOf(curve === null ? script : { ease: curve, ...script }),
 		begin: (beginning) =>
-			toward === null ? going(beginning, name, kind, way, move) : slidingOut(beginning, name, kind, toward, move)
+			toward === null
+				? going(beginning, name, kind, way, own.settingOff, move)
+				: slidingOut(beginning, name, kind, toward, move)
 	};
 }
 
@@ -1072,10 +1096,18 @@ async function laidOnto(
 	}));
 }
 
-/** The object going where it stands, in the way it goes; once gone, none. */
-function going(beginning: Beginning, name: ObjectName, kind: ShownKind, way: Way, move: string): Change {
+/** The object going where it stands, in the way it goes, what it shows set off as its kind sets it; once gone, none. */
+function going<Kind extends ShownKind>(
+	beginning: Beginning,
+	name: ObjectName,
+	kind: Kind,
+	way: Way,
+	settingOff: SettingOff<Kind> | null,
+	move: string
+): Change {
 	const object = standingOfKind(beginning, name, move, kind);
-	return (scene, progress) => withObject(scene, name, goneIn(object, way, progress));
+	const setOff = settingOff === null ? object : { ...object, content: settingOff(object.content) };
+	return (scene, progress) => withObject(scene, name, goneIn(setOff, way, progress));
 }
 
 /**
