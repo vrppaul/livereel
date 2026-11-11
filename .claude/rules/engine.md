@@ -26,12 +26,13 @@ How a module is built is said in its comment at the top. The stage has its own r
 - The page's own time is the film's (`PageTime` in `src/studio/ports.ts`): the take begins it with the film and runs it on with each frame at the scene's `pageSpeed`, a field of the scene that no prop is and the stage never draws.
 - Anything that waits on the page — an act, the film's `ready` — waits inside `time.running`.
 - A move reads what it starts from once, as its share of its step begins, and becomes a change that knows its start and end; its prop at any progress follows from those and the progress alone.
+- What a move sets running on with time, a page's run, follows from the stretch of the film's time its share takes (`Beginning.stretch`) and the moment it is drawn at.
 - Two moves of one part — a prop, or the page — share a step only one after the other: `play` and `cut` refuse them at once, unless each sets values of the part the other does not (`Move.valueNames`), as two moves of the look may.
 - A move that finds nothing to start from throws as it begins (`present` in `src/direction/move.ts`); nothing checks for it frame by frame.
 - A cut is moves set at their end at once; a film changes the scene by moves alone.
 - Only an act changes the page itself: `page.act`, done at its moment as it begins (`Beginning.act`), `act` a cut of one; a play changes the scene and, for the page's own scroll or keys, does what that frame wants done.
 - The page's own motion stays stilled (reduced motion): every move in a film is the film's.
-- What changes with time of itself — the spinner, the caret — is worked out from the moment in the prop's state module; the stage keeps no time.
+- What changes with time of itself — the spinner, the caret, a page of the film's own the film runs — is worked out from the moment in the prop's state module, each exposure at its own; the stage keeps no time.
 - A function handed to the page runs there alone: it calls nothing of its module.
 
 ## The command line

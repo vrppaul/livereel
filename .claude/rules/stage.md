@@ -5,16 +5,18 @@ paths:
 
 # The stage
 
-`stage/stage.html` lays out the stage, `stage/stage.css` gives every prop its look, and `stage/stage.js` answers the browser adapter under `window.stage` (`StageApi` in `src/adapters/browser/stage.ts`).
+`stage/stage.html` lays out the stage, `stage/stage.css` gives every prop its look, and `stage/stage.js` answers the browser adapter and the room under `window.stage` (`StageApi` in `src/adapters/browser/stage.ts`).
 The script is JavaScript with its types in JSDoc, which the type checker reads; the page runs it as it is written.
 Beside it, `stage/set.html`, `stage/set.css` and `stage/set.js` are the page a film's set is shown on, in the filmed page's tab: one state's picture at a time, answering under `window.filmSet` (`SetApi` in `src/adapters/browser/set.ts`).
 
 - The stage draws the scene as `src/scene.ts` hands it over, and decides nothing: what is shown, where and how far along is the film's.
 - Every prop has its drawer in each exposure of `stage/stage.js` (`exposureOf`), the look in `LOOK`, one for every exposure; the type checker refuses a prop without one.
-- The world's look has no drawer: the room alone draws it (`stage/room.js`, `stage/lighting.js`).
-- A drawer finds its elements once, by the `data-prop` of its root and the `data-part` of each element under it; the look's drawer draws on the stage's root, where every rule reads it.
+- The world's light and glow have no drawer: the room alone draws them (`stage/room.js`, `stage/lighting.js`); its grain is drawn on both stages by `WorldDrawer`.
+- A drawer finds its elements once, by the `data-prop` of its root, one in each surface its prop stands in, and the `data-part` of each element under it; the look's drawer draws on the stage's root, where every rule reads it.
 - A drawer sets its prop's numbers, and the colours a film gives or the engine reads off the page (a hole's ground), as bare custom properties, and writes its words; the stylesheet makes the numbers places, sizes and shades.
-- The script writes no style, but for the page's pictures, each set whole as a `url()` custom property: the page's on the stage's root, one a piece or a sweep holds on its element; CSS takes no address out of one.
+- The grain's strength alone is set as attributes, the weights of its SVG filter, which CSS cannot set.
+- The script writes no style, but for pictures, each set whole as a `url()` custom property: the page's on the stage's root, one a piece or a sweep holds, or a film's own, on its element; CSS takes no address out of one.
+- A script reads a token back only where the room draws by it: how far past its box a surface of markup reaches (`--reach-past-the-box`), and the screen's ground under the page's picture.
 - What a drawer is handed by name it names in a class or an attribute: a piece's styles, a callout's `data-side`, a title's `data-align`.
 - Nothing on the stage moves of itself: no transition, animation or keyframes in its styles (stylelint refuses them), no timer or clock in its script (eslint refuses them). Every frame is set whole by `apply`.
 - A colour, a shadow or a gradient is a token; the stylesheet names tokens (stylelint refuses one written elsewhere).
