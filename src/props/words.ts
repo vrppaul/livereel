@@ -7,7 +7,8 @@
  * key the stage knows them by: a word is a list of pieces, each the part of one run within it, after the space before
  * it, a piece of its own, set as the run it was written in sets it, so an underline or a marker runs on under the
  * space between two words of one run and stops where the run does; the browser drops a space that ends a line, and
- * its underline or marker with it. The space comes up with the word after it.
+ * its underline or marker with it. The space comes up with the word after it. A line break the film writes between two
+ * words, in whichever run, stands in place of that space, as many as it writes, and the stage breaks the line there.
  *
  * Words come up in a way the film names, or the theme's (`WORDS_WAYS`). Word by word, so many words are on their way at
  * once as the film names, or `ON_THEIR_WAY_AT_ONCE`: each comes up over the share of the whole that many take, setting
@@ -216,8 +217,10 @@ const SIGNS = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#$%&*+=?';
 const SIGN_MIXING_ODD = 0x9e3779b1;
 // No sign: a letter standing as itself
 const AS_ITSELF = null;
-// Where a run's text breaks between words, the break kept, and the space a break is set as, however it was written
+// Where a run's text breaks between words, the break kept; what of a break is not a line break the film wrote; and the
+// space a break holding none is set as, however it was written
 const BETWEEN_WORDS = /(\s+)/;
+const NOT_A_LINE_BREAK = /[^\n]/g;
 const SPACE = ' ';
 const A_STYLE_ON = new Plain(isOn, 'true, or left out');
 const A_RUN: Kind<Run> = new OfForm<Run>(
@@ -268,8 +271,8 @@ function wordsOf(wording: Wording): readonly Word[] {
 	let spaceAfter: Piece | null = null;
 	for (const stretch of stretchesOf(wording)) {
 		if (stretch.between) {
-			// The first space after a word is the one between it and the next; a space before any word is none
-			if (spaceAfter === null && pieces.length > 0) spaceAfter = stretch.piece;
+			// A space before any word is none
+			if (pieces.length > 0) spaceAfter = spaceBetween(spaceAfter, stretch.piece);
 			continue;
 		}
 		if (spaceAfter !== null) {
@@ -485,7 +488,25 @@ function stretchesOfRun(run: Run): Stretch[] {
 
 function stretchOf(run: Run, part: string): Stretch {
 	const between = part.trim() === '';
-	return { piece: pieceOf(run, between ? SPACE : part), between };
+	return { piece: pieceOf(run, between ? spaceSetFor(part) : part), between };
+}
+
+/** What a break between words is set as: the line breaks the film wrote in it, as many as it wrote, or a space. */
+function spaceSetFor(written: string): string {
+	const lineBreaks = written.replace(NOT_A_LINE_BREAK, '');
+	return lineBreaks === '' ? SPACE : lineBreaks;
+}
+
+/**
+ * Of two spaces written one after the other between two words, in two runs, the one set between them: the first,
+ * unless the later breaks the line where the first does not.
+ */
+function spaceBetween(first: Piece | null, later: Piece): Piece {
+	return first === null || (breaksTheLine(later) && !breaksTheLine(first)) ? later : first;
+}
+
+function breaksTheLine(space: Piece): boolean {
+	return space.text !== SPACE;
 }
 
 function pieceOf(run: Run, text: string): Piece {

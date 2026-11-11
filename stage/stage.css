@@ -727,8 +727,9 @@ body {
 	);
 }
 
-/* The space before a word comes up with it and keeps to its line: the browser drops it where it ends a line, and its underline or marker with it. Chrome leaves a space bare of an underline unless told not to */
+/* The space before a word comes up with it and keeps to its line: the browser drops it where it ends a line, and its underline or marker with it. Chrome leaves a space bare of an underline unless told not to. One that is a line break the film wrote breaks the line there, as many times as it holds breaks */
 .words .space {
+	white-space: pre-line;
 	text-decoration-skip-spaces: none;
 	opacity: calc(var(--appeared) * (1 - var(--gone)));
 }

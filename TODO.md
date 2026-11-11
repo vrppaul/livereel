@@ -104,7 +104,7 @@
 - A code pane only shrinks its letters to its widest line: code of more lines than its box holds runs off the frame, with no refusal.
 - The square ad with code in it (asked 2026-10-29 08:11, its treatment in that session's words): not started.
 - A window keeps no option to show the whole screen in its shape (as before 2026-10-29): offered as a format's `split` value, not answered.
-- From the storyboard board (https://claude.ai/artifact/46tDazJ5nnEmMxxB4QvUWT), not built: one word larger than the frame, line breaks in a title for beats, a strike drawn across as it comes, two windows side by side (the terminal beside the page), text blurred in the terminal, an address bar over the window (it needs the page's address each frame: a change of construction, the owner's word first), a voice with subtitles (a new dependency, the owner's word first).
+- From the storyboard board (https://claude.ai/artifact/46tDazJ5nnEmMxxB4QvUWT), not built: one word larger than the frame, a strike drawn across as it comes, two windows side by side (the terminal beside the page), text blurred in the terminal, an address bar over the window (it needs the page's address each frame: a change of construction, the owner's word first), a voice with subtitles (a new dependency, the owner's word first).
 
 ## Infographics: a page beside words that walk through it (asked 2026-11-01)
 
@@ -120,8 +120,6 @@ are built; what is not:
 - A title's own weight, as it has its own size: the look's `titleWeight` holds for every title, so a light line under
   a heavy heading cannot be written.
 - A title's own spacing of its letters, for a small label in capitals spaced wide.
-- A line break where the film puts it in a title, for a heading on two lines that breaks where it means to, not where
-  its place's width breaks it (with "line breaks in a title for beats" above).
 - A bar over the page's window, a title and the window's buttons drawn as the window's own, for a page that has none
   (with "an address bar over the window" above, and device mockups among the ideas).
 

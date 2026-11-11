@@ -206,6 +206,16 @@ test('the space between two words is set as the run it was written in, and none 
 	]);
 });
 
+test('a line break the film writes between two words stands in place of the space there, as many as it writes, whichever run holds it; none stands before the first word or after the last', () => {
+	expect(saidOf(['\nEach step:\r\n', { text: ' why,\n \nthen', italic: true }, ' code\n']).words).toEqual([
+		{ spaceBefore: null, pieces: [piece('Each')] },
+		{ spaceBefore: piece(' '), pieces: [piece('step:')] },
+		{ spaceBefore: piece('\n'), pieces: [piece('why,', 'italic')] },
+		{ spaceBefore: piece('\n\n', 'italic'), pieces: [piece('then', 'italic')] },
+		{ spaceBefore: piece(' '), pieces: [piece('code')] }
+	]);
+});
+
 test('a word written across two runs is one word, each part set as its run is', () => {
 	expect(saidOf(['un', { text: 'missable', italic: true, strike: true }]).words).toEqual([
 		{ spaceBefore: null, pieces: [piece('un'), piece('missable', 'italic', 'strike')] }

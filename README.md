@@ -364,7 +364,10 @@ they hold at any size. The claude-review promo's name, drawn 9 px closer
 at 300 px, its lines' feet 290 px apart:
 `title.show('claude review', { at, size: 185, letterSpacing: -9 / 300, lineHeight: 290 / 300 })`.
 A word is never broken: one larger than its place runs past it, so check
-it on a still. In a room, a title standing in the world is cut where its
+it on a still. A line break the film writes breaks the line there, in a
+title, a caption, a callout or a note, and in any run of its words:
+`title.show('each step:\nwhy, then the code', { at })` stands on two lines
+wherever the place's width would have broken it. In a room, a title standing in the world is cut where its
 words run past its box farther than a pane's shadow reaches.
 
 A title's or a caption's words come up in the way `words` names, the
