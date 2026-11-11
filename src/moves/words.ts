@@ -1,8 +1,9 @@
 /**
  * What the moves of words that come up one after another and go do alike: how a film has a title's or a caption's
- * words come up, `words`, in a way by its name (`src/props/words.ts`), or typed by a person whose rhythm is drawn from
- * a seed, spread over the move's share, each key heard; in the theme's way where it names none, read as the words come,
- * as a callout's and a note's always come; and a callout's or a note's words going.
+ * words come up, `words`, in a way by its name (`src/props/words.ts`), word by word with as many on their way at once
+ * as it names, or typed by a person whose rhythm is drawn from a seed, spread over the move's share, each key heard; in
+ * the theme's way where it names none, read as the words come, as a callout's and a note's always come; and a
+ * callout's or a note's words going.
  *
  * Words come up in their way only where the object showing them comes up in its place in its own way: one that slides
  * in or comes up in a way of livereel's brings them whole.
@@ -10,20 +11,24 @@
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
 import type { FrameSide } from '../domain/geometry.ts';
-import { A_NUMBER, type Kind, NameOrForm, OfForm, needed } from '../domain/handed.ts';
+import { A_NUMBER, FormByName, type Kind, NameOrForm, OfForm, needed } from '../domain/handed.ts';
 import { keystrokes } from '../domain/typing.ts';
 import { type Beginning, type Change, present, propChange, untilTheEnd } from '../direction/move.ts';
 import { A_KEYBOARD, type Cue, type KeyboardSound, keysHeard } from '../direction/sound.ts';
 import type { Look } from '../props/look.ts';
 import type { WayName } from '../props/way.ts';
 import {
+	AN_AT_ONCE,
 	A_WORDS_WAY,
+	A_WORD_BY_WORD_WAY,
 	type ComingUp,
 	type Said,
+	type WordByWordWay,
 	type WordsWay,
 	comingUpIn,
 	plainTextOf,
-	typedComingUp
+	typedComingUp,
+	wordByWordAt
 } from '../props/words.ts';
 
 /** The props whose words come up one after another (`src/props/words.ts`). */
@@ -43,8 +48,14 @@ interface TypedScript {
 	readonly typed: WordsTypedScript;
 }
 
-/** How a film has words come up: in a way by its name, or typed. */
-export type WordsScript = WordsWay | TypedScript;
+/** Words coming up word by word in a way by its name, so many of them on their way at once. */
+interface PacedScript {
+	readonly way: WordByWordWay;
+	readonly atOnce: number;
+}
+
+/** How a film has words come up: in a way by its name, word by word at a pace, or typed. */
+export type WordsScript = WordsWay | PacedScript | TypedScript;
 
 /** How words come up as a show names it, and what would bring them whole: a slide, a way of livereel's. */
 interface WordsBroughtWhole {
@@ -70,11 +81,21 @@ const WORDS_TYPED: Kind<WordsTypedScript> = new OfForm<WordsTypedScript>(
 	'how its words are typed: { seed, keyboard }'
 );
 
-/** How a film has words come up, as it hands it. */
+// How a refusal says every form of words a film may hand
+const WORDS_SAID = `${A_WORDS_WAY.said}, or typed, { typed: { seed, keyboard } }, or word by word at a pace, { way, atOnce }`;
+
+/** How a film has words come up, as it hands it: an object naming `typed` is typed, any other paced. */
 export const A_WORDS_SCRIPT: Kind<WordsScript> = new NameOrForm(
 	A_WORDS_WAY,
-	new OfForm<TypedScript>({ typed: needed(WORDS_TYPED) }, 'words typed: { typed: { seed, keyboard } }'),
-	`${A_WORDS_WAY.said}, or typed, { typed: { seed, keyboard } }`
+	new FormByName<PacedScript | TypedScript>(
+		[['typed', new OfForm<TypedScript>({ typed: needed(WORDS_TYPED) }, 'words typed: { typed: { seed, keyboard } }')]],
+		new OfForm<PacedScript>(
+			{ way: needed(A_WORD_BY_WORD_WAY), atOnce: needed(AN_AT_ONCE) },
+			'words word by word at a pace: { way, atOnce }'
+		),
+		WORDS_SAID
+	),
+	WORDS_SAID
 );
 
 // Words that come up of themselves make no sound; and words a film names no way for come up in the theme's, read as
@@ -96,11 +117,16 @@ export function refuseWordsBroughtWhole(script: WordsBroughtWhole, move: string)
 	}
 }
 
-/** What a film says coming up in the way it names, typed, each key heard, or in the theme's where it names none. */
+/**
+ * What a film says coming up in the way it names, word by word at the pace it names, typed, each key heard, or in the
+ * theme's where it names none.
+ */
 export function wordsComing(said: Said, script: WordsScript | undefined): WordsComing {
 	if (script === undefined) return { chosen: THE_THEMES, sounds: UNHEARD };
 	if (typeof script === 'string')
 		return { chosen: { kind: 'named', comingUp: comingUpIn(script, said) }, sounds: UNHEARD };
+	if ('way' in script)
+		return { chosen: { kind: 'named', comingUp: wordByWordAt(script.way, script.atOnce) }, sounds: UNHEARD };
 	const strokes = keystrokes(plainTextOf(said), { seed: script.typed.seed });
 	const comingUp = typedComingUp(said, strokes);
 	return { chosen: { kind: 'named', comingUp }, sounds: keysHeard(strokes, script.typed.keyboard) };

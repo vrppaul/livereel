@@ -676,7 +676,7 @@ body {
 	clip-path: circle(calc(var(--way-cut-radius) * (var(--to-the-corners) + var(--widest-reach))) at 50% 50%);
 }
 
-/* A title's, a caption's or a callout's word as it comes up: the space before it, then its own box, which rises out of a blur and sinks as it goes */
+/* A title's, a caption's, a callout's or a note's word as it comes up: the space before it, then its own box, which rises out of a blur and sinks as it goes, each word as far as its own `--appeared` and `--gone` have it, so words that came one after another go so */
 .words .word {
 	display: inline-block;
 	opacity: calc(var(--appeared) * (1 - var(--gone)));
@@ -684,7 +684,7 @@ body {
 	filter: blur(calc((1 - var(--appeared)) * var(--word-blur) + var(--gone) * var(--word-blur-leaving)));
 }
 
-/* Words come up and go in the way the film or its theme names (`data-words`, `src/props/words.ts`): rising out of a blur, as above; rising sharp; fading up where they stand; coming clear out of a blur there; or each rising from under its own line, cut there a reach below its box for its letters' tails, and sinking back under it as it goes. Words that come letter by letter stand whole as their letters come, and go as rising words do */
+/* Words come up and go in the way the film or its theme names (`data-words`, `src/props/words.ts`): rising out of a blur, as above; rising sharp; fading up where they stand; coming clear out of a blur there; or each rising from under its own line, cut there a reach below its box for its letters' tails, and sinking back under it as it goes. Words that come letter by letter stand whole as their letters come, and go all together, as rising words look going */
 .words[data-words='sharp'] .word {
 	filter: none;
 }

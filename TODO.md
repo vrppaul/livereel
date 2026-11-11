@@ -155,6 +155,17 @@ soft past 2.2, the infographics.
 - The flat stage lays the grain's filter over every exposure's ground as it captures, though every exposure's ground is
   alike: a 3 s flat film with grain shot in 20.6 to 23.3 s against 16.6 and 17.5 without, a capture of three
   exposures 287 to 316 ms against 177 to 222 (2026-11-11). A room draws the ground once a frame and shows no cost.
+- Words go at the pace they came: `title.hide` and `caption.hide` name no pace of their own (`words: { atOnce }`), so
+  the promo's owner's line, rising 6.25 at once and dropping 8 at once over 0.7 s, drops each word in 0.357 s, 0.057 s
+  after the one before, where the cut drops each in 0.4 s, 0.05 s after. And words going one after another go on
+  their step's curve where the hide names none, `play`'s `easeInOutSine`, where they come up on an even one: a hide
+  in their own way should take the even curve as a show does (`ownCurve` of `objectShow` in `src/moves/object.ts`).
+  Both are a few lines in `src/moves/object.ts` and `src/moves/caption.ts` (2026-11-11).
+- A word going under its mask shows its top in the band its cut reaches below its line for its letters' tails
+  (`--letters-tails-reach`, `.words[data-words='mask']` in `stage/stage.css`), where the next line's letters stand: as
+  words go one after another, a word of the first line sinks through it over the second line's standing letters (the
+  promo's owner's line at 7.6 s, 88 px letters on lines 104 px apart). The promo's mask is the line's box, its tails
+  inside it at that height. Whether to cut a word going at its line's box is for the owner's eye (2026-11-11).
 - An end card with the film's logo, which may grow out of another mark, and a link line in place of a command.
 - A screen inside a screen: a live picture or a video as what a device shows (a page's video runs on no film clock).
 - A picture cut into slices by its depth map and spread along the depth, handed the map; with the room.

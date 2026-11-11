@@ -43,13 +43,14 @@ export interface Note extends ShownWords {
 }
 
 /**
- * A note as the stage draws it: the words' box on the frame, its line from the block's edge, and where the line meets
- * the words.
+ * A note as the stage draws it: the words' box on the frame, its line from the block's edge, where the line meets the
+ * words, and how far the whole note has gone, which fades as it goes.
  */
 export interface DrawnNote extends DrawnWords, Segment {
 	readonly side: FrameSide;
 	readonly place: Box;
 	readonly to: Point;
+	readonly gone: number;
 }
 
 /**
@@ -61,7 +62,7 @@ export function drawnNote(note: Note, camera: Camera, frame: Size, moment: numbe
 	const place = besideTheWindow(note.beside, camera.view.box);
 	const from = onTheFrame(camera, frame, edgeFacing(note.box, side));
 	const to = meeting(place, from, side);
-	return { ...drawnWords(note, note.comingUp, moment), ...segmentBetween(from, to), side, place, to };
+	return { ...drawnWords(note, note.comingUp, moment), ...segmentBetween(from, to), side, place, to, gone: note.gone };
 }
 
 /**

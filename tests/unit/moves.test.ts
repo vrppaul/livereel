@@ -4,7 +4,7 @@ import { AS_PLACED, FACE_ON } from '../../src/domain/stance.ts';
 import { type Camera, onTheFrame, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
 import { type EyePlace, type Focus, eyeAtRest } from '../../src/domain/eye.ts';
 import * as eye from '../../src/moves/eye.ts';
-import { linear } from '../../src/domain/curves.ts';
+import { easeOutCubic, linear } from '../../src/domain/curves.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import type { Format } from '../../src/domain/format.ts';
 import {
@@ -101,7 +101,7 @@ import { keystrokes } from '../../src/domain/typing.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
 import { NO_EFFECTS } from '../../src/props/effects.ts';
 import { OWN_WAY } from '../../src/props/way.ts';
-import { appearedOf, comingUpIn, groundOf, saidOf } from '../../src/props/words.ts';
+import { ON_THEIR_WAY_AT_ONCE, appearedOf, comingUpIn, groundOf, saidOf } from '../../src/props/words.ts';
 import {
 	type DrawnScene,
 	type Scene,
@@ -703,14 +703,35 @@ test("a title's or a caption's words come up in the way the film names, and in t
 	]).toEqual(['mask', 'fade', 'scramble', 'fade']);
 });
 
+test("a title's or a caption's words come up with as many on their way at once as the film names, and go one after another at that pace", async () => {
+	const words = { way: 'mask', atOnce: 2 } as const;
+	const titled = title.show('ab cd ef', { words });
+	const captioned = caption.show('ab cd ef', { words });
+	const titleStanding = await setAt(titled, OPENING_IN_SMALL, 1);
+	const captionStanding = await setAt(captioned, OPENING_IN_SMALL, 1);
+	const titleGoing = await setAt(title.hide(), titleStanding, 0.5);
+	const captionGoing = await setAt(caption.hide(), captionStanding, 0.5);
+	expect([
+		drawnObjectsIn(await setAt(titled, OPENING_IN_SMALL, 0.5), SMALL)[0]!.content.words.map((word) => word.appeared),
+		drawnSceneIn(await setAt(captioned, OPENING_IN_SMALL, 0.5), SMALL).caption!.words.map((word) => word.appeared),
+		drawnObjectsIn(titleGoing, SMALL)[0]!.content.words.map((word) => word.gone),
+		drawnSceneIn(captionGoing, SMALL).caption!.words.map((word) => word.gone)
+	]).toEqual([
+		[1, easeOutCubic(0.5), 0],
+		[1, easeOutCubic(0.5), 0],
+		[1, 1 - easeOutCubic(0.5), 0],
+		[1, 1 - easeOutCubic(0.5), 0]
+	]);
+});
+
 test("a callout's and a note's words come up in the theme's way", async () => {
 	const blurred = openingScene(SMALL, { ...LIVEREELS_LOOK, words: 'blur' }, LIVEREELS_WORLD, FOCAL_LENGTH);
 	const windowed = withProp(blurred, 'window', placedIn(windowView({ left: 300, top: 20, width: 80, height: 60 })));
 	const pointed = await setAt(callout.show('#reaching-below', 'Here'), blurred, 0.5);
 	const noted = await setAt(note.show('#block', 'Here'), windowed, 0.5);
 	expect([pointed.callout?.comingUp, noted.note?.comingUp]).toEqual([
-		{ kind: 'word by word', way: 'blur' },
-		{ kind: 'word by word', way: 'blur' }
+		{ kind: 'word by word', way: 'blur', atOnce: ON_THEIR_WAY_AT_ONCE },
+		{ kind: 'word by word', way: 'blur', atOnce: ON_THEIR_WAY_AT_ONCE }
 	]);
 });
 
@@ -2684,13 +2705,16 @@ test('what an object shows stands whole while it comes up or goes in a way: word
 	)[0]!;
 	const standing = await setAt(title.show('Two words'), OPENING_IN_SMALL, 1);
 	const leaving = drawnObjectsIn(await setAt(title.hide({ leave: 'iris' }), standing, 0.25), SMALL)[0]!;
-	expect([masked.content.words.map((word) => word.appeared), leaving.content.gone]).toEqual([[1, 1], 0]);
+	expect([masked.content.words.map((word) => word.appeared), leaving.content.words.map((word) => word.gone)]).toEqual([
+		[1, 1],
+		[0, 0]
+	]);
 });
 
 test('an object coming up in its own way is on no way, its words coming up one after another', async () => {
 	const own = drawnObjectsIn(await setAt(title.show('Two words'), OPENING_IN_SMALL, 0.5), SMALL)[0]!;
 	expect([own.content.words.map((word) => word.appeared), own.onItsWay]).toEqual([
-		[appearedOf(0.5, 0, 2), appearedOf(0.5, 1, 2)],
+		[appearedOf(0.5, 0, 2, ON_THEIR_WAY_AT_ONCE), appearedOf(0.5, 1, 2, ON_THEIR_WAY_AT_ONCE)],
 		null
 	]);
 });

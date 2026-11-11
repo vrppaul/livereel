@@ -70,6 +70,7 @@ import {
 	assertKind,
 	assertWritten,
 	described,
+	isMoreThanNone,
 	isObjectOfValues,
 	needed
 } from '../domain/handed.ts';
@@ -262,9 +263,8 @@ const LEVEL_WITH_THE_PAGE = 0;
 const STRAIGHT_DOWN = -90;
 const STRAIGHT_UP = 90;
 // How near over a block, on the page's plane, the eye stands to have no heading toward it, in pixels of a frame 1080
-// high; and a number of none
+// high
 const RIGHT_OVER = 1e-6;
-const NONE = 0;
 // What a refusal names each move by
 const EYE_TO = 'eye.to';
 const EYE_FLY = 'eye.fly';
@@ -561,10 +561,6 @@ function refocusingAndOpening(from: Focus, to: Focus, openedFrom: number, opened
 
 function isLegNumber(written: unknown): written is number {
 	return Number.isInteger(written) && A_NUMBER.is(written) && written >= THE_FIRST_LEG;
-}
-
-function isMoreThanNone(written: unknown): written is number {
-	return A_NUMBER.is(written) && written > NONE;
 }
 
 function isTip(written: unknown): written is number {

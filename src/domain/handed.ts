@@ -143,15 +143,16 @@ export class OneOf<Name extends string> implements Kind<Name> {
 }
 
 /**
- * A kind of one value of a few by its name, or an object of a form for a value a name cannot say: how words come up,
- * `'mask'` or `{ typed: { seed } }`; a string is told by its names, an object down to the value at fault.
+ * A kind of one value of a few by its name, or an object of a form, or of one of a few, for a value a name cannot say:
+ * how words come up, `'mask'`, `{ typed: { seed } }` or `{ way, atOnce }`; a string is told by its names, an object down
+ * to the value at fault.
  */
 export class NameOrForm<Name extends string, Value> implements Kind<Name | Value> {
 	readonly name: OneOf<Name>;
-	readonly form: OfForm<Value>;
+	readonly form: Kind<Value>;
 	readonly said: string;
 
-	constructor(name: OneOf<Name>, form: OfForm<Value>, said: string) {
+	constructor(name: OneOf<Name>, form: Kind<Value>, said: string) {
 		this.name = name;
 		this.form = form;
 		this.said = said;
@@ -247,9 +248,9 @@ export const A_PAGE_SPEED = new Plain(
 	"how many of the page's seconds a second of the film runs, 0 or more"
 );
 /** How large letters are, in pixels: more than none, as letters of no size are not there. */
-export const A_SIZE = new Plain(isSize, 'a number of pixels, more than 0');
+export const A_SIZE = new Plain(isMoreThanNone, 'a number of pixels, more than 0');
 /** How tall a line stands, in times its letters' size: more than none, as a line of no height is not there. */
-export const A_LINE_HEIGHT = new Plain(isSize, "a number of times the letters' size, more than 0");
+export const A_LINE_HEIGHT = new Plain(isMoreThanNone, "a number of times the letters' size, more than 0");
 /** How far apart letters stand, past where their font sets them, in shares of their size, as CSS's `em`. */
 export const A_LETTER_SPACING = new Plain(
 	isNumber,
@@ -258,7 +259,10 @@ export const A_LETTER_SPACING = new Plain(
 /** A share of something a film gives, from none of it to the whole. */
 export const A_SHARE = new Plain(isShare, 'a number from 0 to 1');
 /** How many of a picture's pixels a page's pixel takes: more than none, as a picture of no pixels shows nothing. */
-export const A_SHARPNESS = new Plain(isSize, "how many of a picture's pixels a page's pixel takes, more than 0");
+export const A_SHARPNESS = new Plain(
+	isMoreThanNone,
+	"how many of a picture's pixels a page's pixel takes, more than 0"
+);
 /** Blocks of the page a film names, each by its selector. */
 export const SELECTORS = new ListOf(A_SELECTOR, 'a list of selectors');
 
@@ -450,7 +454,8 @@ function isNoneOrMore(written: unknown): written is number {
 	return isNumber(written) && written >= NONE;
 }
 
-function isSize(written: unknown): written is number {
+/** Whether a value is a number more than none: a size, a share of a length, how many words are on their way at once. */
+export function isMoreThanNone(written: unknown): written is number {
 	return isNumber(written) && written > NONE;
 }
 

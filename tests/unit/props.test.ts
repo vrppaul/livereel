@@ -15,7 +15,16 @@ import {
 import { cameraOf, openingScene } from '../../src/scene.ts';
 import { alongItsWay } from '../../src/props/way.ts';
 import { NONE, WHOLE, fractionOf } from '../../src/domain/fraction.ts';
-import { type DrawnWords, type Piece, comingUpIn, drawnWords, saidOf, typedComingUp } from '../../src/props/words.ts';
+import {
+	type DrawnWords,
+	type Piece,
+	comingUpIn,
+	drawnWords,
+	saidOf,
+	typedComingUp,
+	wordByWordAt
+} from '../../src/props/words.ts';
+import { easeOutCubic } from '../../src/domain/curves.ts';
 import { type Keystroke, lettersOf } from '../../src/domain/typing.ts';
 import { FOCAL_LENGTH, SMALL } from './fakes.ts';
 import type { Camera } from '../../src/domain/camera.ts';
@@ -27,6 +36,8 @@ const SEES_THE_BACK = false;
 const PANE_CORNER = 24;
 // The moment a screen is drawn at where no page of it runs
 const AT_THE_START = 0;
+// Words on their way two at a time
+const TWO_AT_ONCE = 2;
 
 /** How much of a word stands typed, and whether the caret follows it. */
 interface StandingTyped {
@@ -55,6 +66,14 @@ function typedAt(shown: number): readonly StandingTyped[] {
 	return words.map((word) => ({ letters: word.letters, caret: word.caret }));
 }
 
+/** How far each of three words rising two at a time has come up, the whole come up `shown` of the way. */
+function appearedAt(shown: number): readonly number[] {
+	const said = saidOf('ab cd ef');
+	return drawnWords({ ...said, shown, gone: 0 }, wordByWordAt('rise', TWO_AT_ONCE), 0).words.map(
+		(word) => word.appeared
+	);
+}
+
 /** Two words scrambled, the whole come up `shown` of the way, at a moment of the film; 'ab cd' where none are named. */
 function scrambledAt(shown: number, moment: number, text = 'ab cd'): DrawnWords['words'] {
 	const said = saidOf(text);
@@ -72,6 +91,26 @@ test("a caption's words come up one after another", () => {
 	const appeared = words.map((word) => word.appeared);
 	expect(appeared).toEqual([...appeared].sort((earlier, later) => later - earlier));
 	expect([appeared[0]! > 0, appeared.at(-1)]).toEqual([true, 0]);
+});
+
+test('words come up with as many on their way at once as the film names, each setting off as the one so many before it arrives, the last arriving as the way ends', () => {
+	expect([appearedAt(0.5), appearedAt(0.75), appearedAt(1)]).toEqual([
+		[1, easeOutCubic(0.5), 0],
+		[1, 1, easeOutCubic(0.5)],
+		[1, 1, 1]
+	]);
+});
+
+test('words that came up word by word go one after another, the first first, each as it came run back; words laid out by letters go together', () => {
+	const said = saidOf('ab cd ef');
+	const going = { ...said, shown: 1, gone: 0.5 };
+	expect([
+		drawnWords(going, wordByWordAt('rise', TWO_AT_ONCE), 0).words.map((word) => word.gone),
+		drawnWords(going, comingUpIn('letters', said), 0).words.map((word) => word.gone)
+	]).toEqual([
+		[1, 1 - easeOutCubic(0.5), 0],
+		[0.5, 0.5, 0.5]
+	]);
 });
 
 test('the ground under words goes as they go', () => {

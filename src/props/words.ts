@@ -9,19 +9,31 @@
  * space between two words of one run and stops where the run does; the browser drops a space that ends a line, and
  * its underline or marker with it. The space comes up with the word after it.
  *
- * Words come up in a way the film names, or the theme's (`WORDS_WAYS`). Word by word, each word comes up over the share
- * of the whole that `WORDS_AT_ONCE` words take, so several are on their way at a time, and the stage draws its way by
- * name. Letter by letter, every word stands laid out from the start, so no line breaks anew as they come: the letters
- * fade up one after another at an even pace; or stand as signs drawn by chance, which settle into the letters a few
- * behind those coming (`src/domain/chance.ts`); or are typed as a person types them (`src/domain/typing.ts`), each
- * shown once its key has come, a caret after the last letter typed until every one is. The space before a word is its
- * first letter. Every piece's letters are worked out with its words, so the stage lays such a word out one letter to
- * an element as it is handed them. The ground under the words comes up twice as fast as they do. The stage is handed
- * every word's progress, and of a word laid out by letters, how many of its letters stand and the sign each stands as.
+ * Words come up in a way the film names, or the theme's (`WORDS_WAYS`). Word by word, so many words are on their way at
+ * once as the film names, or `ON_THEIR_WAY_AT_ONCE`: each comes up over the share of the whole that many take, setting
+ * off as the one that many before it arrives, so the last arrives as the whole does; and the stage draws its way by
+ * name. They go so too, the first first, each as it came run back. Letter by letter, every word stands laid out from
+ * the start, so no line breaks anew as they come: the letters fade up one after another at an even pace; or stand as
+ * signs drawn by chance, which settle into the letters a few behind those coming (`src/domain/chance.ts`); or are typed
+ * as a person types them (`src/domain/typing.ts`), each shown once its key has come, a caret after the last letter
+ * typed until every one is; and such words go together. The space before a word is its first letter. Every piece's
+ * letters are worked out with its words, so the stage lays such a word out one letter to an element as it is handed
+ * them. The ground under the words comes up twice as fast as they do. The stage is handed every word's progress and how
+ * far it has gone, and of a word laid out by letters, how many of its letters stand and the sign each stands as.
  */
 import { Chance, seedOf } from '../domain/chance.ts';
 import type { Fraction } from '../domain/fraction.ts';
-import { A_COLOUR, A_STRING, type Kind, ListOf, OfForm, OneOf, Plain, needed } from '../domain/handed.ts';
+import {
+	A_COLOUR,
+	A_STRING,
+	type Kind,
+	ListOf,
+	OfForm,
+	OneOf,
+	Plain,
+	isMoreThanNone,
+	needed
+} from '../domain/handed.ts';
 import { easeOutCubic } from '../domain/curves.ts';
 import { type Keystroke, keysStruckAlong, lettersOf } from '../domain/typing.ts';
 import type { Presences } from './way.ts';
@@ -77,11 +89,19 @@ export interface ShownWords extends Said {
 }
 
 /**
- * The ways words come up and go, as a film names them: word by word, each rising out of a blur, rising sharp, fading
- * up where it stands, coming clear out of a blur there, or rising from under its own line, as from under a mask; or
- * letter by letter, each fading up, or each standing as a sign drawn by chance until it settles into its own.
+ * The ways words come up word by word, each word whole, which the stage draws by its name: each rising out of a blur,
+ * rising sharp, fading up where it stands, coming clear out of a blur there, or rising from under its own line, as
+ * from under a mask.
  */
-const WORDS_WAYS = ['rise', 'sharp', 'fade', 'blur', 'mask', 'letters', 'scramble'] as const;
+const WORD_BY_WORD_WAYS = ['rise', 'sharp', 'fade', 'blur', 'mask'] as const;
+
+export type WordByWordWay = (typeof WORD_BY_WORD_WAYS)[number];
+
+/**
+ * The ways words come up and go, as a film names them: word by word; or letter by letter, each fading up, or each
+ * standing as a sign drawn by chance until it settles into its own.
+ */
+const WORDS_WAYS = [...WORD_BY_WORD_WAYS, 'letters', 'scramble'] as const;
 
 export type WordsWay = (typeof WORDS_WAYS)[number];
 
@@ -90,22 +110,31 @@ export const A_WORDS_WAY: OneOf<WordsWay> = new OneOf(
 	'how words come up: "rise", "sharp", "fade", "blur", "mask", "letters" or "scramble"'
 );
 
-/** A way words come up word by word, each word whole, which the stage draws by its name. */
-type WordByWordWay = Exclude<WordsWay, LetterByLetterWay>;
+export const A_WORD_BY_WORD_WAY: OneOf<WordByWordWay> = new OneOf(
+	WORD_BY_WORD_WAYS,
+	'how words come up word by word: "rise", "sharp", "fade", "blur" or "mask"'
+);
+
+/** How many words are on their way at once, as a film names it: more than none, a share of one as well, as 6.25. */
+export const AN_AT_ONCE: Kind<number> = new Plain(
+	isMoreThanNone,
+	'how many words are on their way at once, more than 0'
+);
 
 /** A way words come up letter by letter, laid out one letter to an element. */
-type LetterByLetterWay = Extract<WordsWay, 'letters' | 'scramble'>;
+type LetterByLetterWay = Exclude<WordsWay, WordByWordWay>;
 
 /**
- * How words come up: word by word in a way the stage draws by its name; letter by letter, at an even pace, or out of
- * signs; or typed, by the strokes of a person typing them. Words that come up letter by letter are laid out so, so the
- * stage knows them by a key of their own.
+ * How words come up: word by word in a way the stage draws by its name, so many on their way at once; letter by
+ * letter, at an even pace, or out of signs; or typed, by the strokes of a person typing them. Words that come up letter
+ * by letter are laid out so, so the stage knows them by a key of their own.
  */
 export type ComingUp = WordByWord | LetterByLetter | Typed;
 
 interface WordByWord {
 	readonly kind: 'word by word';
 	readonly way: WordByWordWay;
+	readonly atOnce: number;
 }
 
 interface LetterByLetter {
@@ -119,16 +148,18 @@ interface Typed {
 	readonly key: string;
 }
 
-/** A word as the stage draws it: rising, how far it has come up, eased, from 0 to 1. */
+/** A word as the stage draws it: rising, how far it has come up and how far it has gone, each eased, from 0 to 1. */
 interface RisingWord extends Word {
 	readonly kind: 'word by word';
 	readonly appeared: number;
+	readonly gone: number;
 }
 
 /**
  * A word laid out letter by letter as the stage draws it: standing whole, how many of its letters stand, the space
  * before it first, whether the caret follows the last of them, and the sign each letter stands as before it settles
- * into its own, by its place in the word, none where it stands as itself.
+ * into its own, by its place in the word, none where it stands as itself; and how far it has gone, as all its words
+ * have.
  */
 interface LetteredWord extends Word {
 	readonly kind: 'lettered';
@@ -136,20 +167,20 @@ interface LetteredWord extends Word {
 	readonly letters: number;
 	readonly caret: boolean;
 	readonly signs: readonly (string | null)[];
+	readonly gone: number;
 }
 
 type DrawnWord = RisingWord | LetteredWord;
 
 /**
- * Words as the stage draws them: each word's progress, the way they come up, which the stage draws by its name, how
- * far their ground has come up, how far they went.
+ * Words as the stage draws them: each word's progress, the way they come up, which the stage draws by its name, and how
+ * far their ground has come up.
  */
 export interface DrawnWords {
 	readonly words: readonly DrawnWord[];
 	readonly key: string;
 	readonly way: WordsWay | Typed['kind'];
 	readonly ground: number;
-	readonly gone: number;
 }
 
 /** A part of a run's text: a word's, or the space between two words. */
@@ -158,9 +189,15 @@ interface Stretch {
 	readonly between: boolean;
 }
 
-// How many words are on their way up at once, and how much faster than the words their ground comes up
-const WORDS_AT_ONCE = 3;
+/** How many words are on their way at once where a film names no pace, and lines of code always. */
+export const ON_THEIR_WAY_AT_ONCE = 3;
+
+// How much faster than the words their ground comes up
 const GROUND_COMES_FASTER = 2;
+// The whole of a word's own way, from which what is left of it is counted, to run its coming up back as it goes
+const WHOLE_WAY = 1;
+// Places among things that come one after another count from none, so the last's stands one short of their count
+const ONE_SHORT = 1;
 // A word laid out letter by letter stands whole, its letters shown one by one; and such words are laid out apart from
 // the same words coming up word by word, one letter to an element, so the stage knows them by a key of their own, this
 // before theirs
@@ -251,7 +288,7 @@ export function typedComingUp(said: Said, strokes: readonly Keystroke[]): Coming
 	return { kind: 'typed', strokes, key: LETTERED_KEY + said.key };
 }
 
-/** What a film says coming up in a way it names. */
+/** What a film says coming up in a way it names, word by word at the pace a film names none. */
 export function comingUpIn(way: WordsWay, said: Said): ComingUp {
 	switch (way) {
 		case 'letters':
@@ -262,8 +299,13 @@ export function comingUpIn(way: WordsWay, said: Said): ComingUp {
 		case 'fade':
 		case 'blur':
 		case 'mask':
-			return { kind: 'word by word', way };
+			return wordByWordAt(way, ON_THEIR_WAY_AT_ONCE);
 	}
+}
+
+/** Words coming up word by word in a way, so many on their way at once. */
+export function wordByWordAt(way: WordByWordWay, atOnce: number): ComingUp {
+	return { kind: 'word by word', way, atOnce };
 }
 
 /** What a film says as plain text, its words with one space between each two: what a person types of it. */
@@ -285,76 +327,79 @@ export function drawnWordsOnGround(said: Said, comingUp: ComingUp, presences: Pr
 	};
 }
 
-/** Words as the stage draws them at a moment of the film, coming up as they do. */
+/** Words as the stage draws them at a moment of the film, coming up and going as they do. */
 export function drawnWords(shown: ShownWords, comingUp: ComingUp, moment: number): DrawnWords {
 	const ground = groundOf(shown.shown, shown.gone);
-	const gone = shown.gone;
 	switch (comingUp.kind) {
 		case 'word by word': {
-			const words = risingWords(shown.words, shown.shown);
-			return { words, key: shown.key, way: comingUp.way, ground, gone };
+			const words = risingWords(shown, comingUp.atOnce);
+			return { words, key: shown.key, way: comingUp.way, ground };
 		}
 		case 'letters': {
-			const words = letteredWords(shown.words, shown.shown * lettersIn(shown.words), NO_CARET, standingAsItself);
-			return { words, key: comingUp.key, way: comingUp.kind, ground, gone };
+			const words = letteredWords(shown, shown.shown * lettersIn(shown.words), NO_CARET, standingAsItself);
+			return { words, key: comingUp.key, way: comingUp.kind, ground };
 		}
 		case 'scramble': {
-			const words = scrambledWords(shown, shown.shown, moment);
-			return { words, key: comingUp.key, way: comingUp.kind, ground, gone };
+			const words = scrambledWords(shown, moment);
+			return { words, key: comingUp.key, way: comingUp.kind, ground };
 		}
 		case 'typed': {
 			const typed = keysStruckAlong(comingUp.strokes, shown.shown);
-			const words = letteredWords(shown.words, typed, CARET_FOLLOWS, standingAsItself);
-			return { words, key: comingUp.key, way: comingUp.kind, ground, gone };
+			const words = letteredWords(shown, typed, CARET_FOLLOWS, standingAsItself);
+			return { words, key: comingUp.key, way: comingUp.kind, ground };
 		}
 	}
 }
 
-/** Words rising one after another, the whole `shown` of the way. */
-function risingWords(words: readonly Word[], shown: number): readonly DrawnWord[] {
-	return words.map((word, place): DrawnWord => ({
+/** Words rising one after another and going so, as far as they have come up and gone, `atOnce` on their way at once. */
+function risingWords(shown: ShownWords, atOnce: number): readonly DrawnWord[] {
+	const count = shown.words.length;
+	return shown.words.map((word, place): DrawnWord => ({
 		...word,
 		kind: 'word by word',
-		appeared: appearedOf(shown, place, words.length)
+		appeared: appearedOf(shown.shown, place, count, atOnce),
+		gone: goneOf(shown.gone, place, count, atOnce)
 	}));
 }
 
 /**
  * Words laid out letter by letter as so many of their letters stand, counted from the first: each word whole, as many
  * of its letters as fall to it, the caret after the last letter standing where one follows, until every letter stands,
- * and the sign each letter stands as, by `signOf` its place among all and the letter.
+ * and the sign each letter stands as, by `signOf` its place among all and the letter; every word gone as far as all
+ * have.
  */
 function letteredWords(
-	words: readonly Word[],
+	shown: ShownWords,
 	standing: number,
 	caretFollows: boolean,
 	signOf: (place: number, letter: string) => string | null
 ): readonly DrawnWord[] {
-	const coming = standing < lettersIn(words);
+	const coming = standing < lettersIn(shown.words);
+	const gone = shown.gone;
 	const drawn: DrawnWord[] = [];
 	let firstLetter = 0;
-	for (const word of words) {
+	for (const word of shown.words) {
 		const letters = lettersOfWord(word);
 		const stands = Math.min(letters.length, Math.max(0, standing - firstLetter));
 		const caret = caretFollows && coming && standing > firstLetter && standing <= firstLetter + letters.length;
 		const signs = letters.map((letter, place) => signOf(firstLetter + place, letter));
-		drawn.push({ ...word, kind: 'lettered', appeared: STANDS_WHOLE, letters: stands, caret, signs });
+		drawn.push({ ...word, kind: 'lettered', appeared: STANDS_WHOLE, letters: stands, caret, signs, gone });
 		firstLetter += letters.length;
 	}
 	return drawn;
 }
 
 /**
- * Words scrambled, the whole `shown` of the way, at a moment of the film: their letters come up one after another, each
+ * Words scrambled, as far as they have come up, at a moment of the film: their letters come up one after another, each
  * standing as a sign drawn by chance, `SIGNS_A_SECOND` new ones a second, and settle into their own
  * `SIGNS_AHEAD` letters behind, so the last settles as the way ends. The words' key seeds the signs, so other words
  * draw signs of their own.
  */
-function scrambledWords(said: Said, shown: number, moment: number): readonly DrawnWord[] {
-	const standing = shown * (lettersIn(said.words) + SIGNS_AHEAD);
+function scrambledWords(shown: ShownWords, moment: number): readonly DrawnWord[] {
+	const standing = shown.shown * (lettersIn(shown.words) + SIGNS_AHEAD);
 	const settled = standing - SIGNS_AHEAD;
-	const draw = Math.floor(moment * SIGNS_A_SECOND + A_HAIR_SHORT) + seedOf(said.key);
-	return letteredWords(said.words, standing, NO_CARET, (place, letter) => signAt(place, letter, settled, draw));
+	const draw = Math.floor(moment * SIGNS_A_SECOND + A_HAIR_SHORT) + seedOf(shown.key);
+	return letteredWords(shown, standing, NO_CARET, (place, letter) => signAt(place, letter, settled, draw));
 }
 
 /**
@@ -396,11 +441,28 @@ function typedPiecesOf(word: Word): readonly Piece[] {
 
 /**
  * How far one of `count` things that come up one after another, words or lines of code, has come up, eased, the whole
- * `shown` of the way: each over the share of the whole that `WORDS_AT_ONCE` take, so several are on their way at once.
+ * `shown` of the way, `atOnce` of them on their way at once.
  */
-export function appearedOf(shown: number, place: number, count: number): number {
-	const share = WORDS_AT_ONCE / (count + WORDS_AT_ONCE - 1);
-	return easeOutCubic(shareOf(shown, (place / count) * (1 - share), share));
+export function appearedOf(shown: number, place: number, count: number, atOnce: number): number {
+	return easeOutCubic(alongItsOwnWay(shown, place, count, atOnce));
+}
+
+/**
+ * How far one of `count` words that go one after another has gone, the whole `gone` of the way, `atOnce` of them on
+ * their way at once: as it came up, run back.
+ */
+function goneOf(gone: number, place: number, count: number, atOnce: number): number {
+	return WHOLE_WAY - easeOutCubic(WHOLE_WAY - alongItsOwnWay(gone, place, count, atOnce));
+}
+
+/**
+ * How far along its own way one of `count` things that come or go one after another is, the whole `progress` along:
+ * each sets off a step after the one before and takes `atOnce` steps, so it sets off as the one `atOnce` before it
+ * arrives, the first sets off as the whole does and the last arrives as it does.
+ */
+function alongItsOwnWay(progress: number, place: number, count: number, atOnce: number): number {
+	const steps = count - ONE_SHORT + atOnce;
+	return shareOf(progress, place / steps, atOnce / steps);
 }
 
 /** How far the ground under what comes up one after another has come: twice as fast as it does, going as it goes. */

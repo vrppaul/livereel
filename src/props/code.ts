@@ -16,7 +16,7 @@ import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import { type Size, frameScaleOf } from '../domain/geometry.ts';
 import { OneOf } from '../domain/handed.ts';
 import type { Look } from './look.ts';
-import { appearedOf, groundOf } from './words.ts';
+import { ON_THEIR_WAY_AT_ONCE, appearedOf, groundOf } from './words.ts';
 
 // The kinds of the pieces of a line: a comment to the line's end, a string, a number, a word the language keeps, a
 // function called, a name given a value. Anything else is plain
@@ -116,7 +116,10 @@ export function drawnCode(code: Code, shown: number, gone: number): DrawnCode {
 	const count = code.lines.length;
 	return {
 		kind: code.kind,
-		lines: code.lines.map((line, place) => ({ ...line, appeared: appearedOf(shown, place, count) })),
+		lines: code.lines.map((line, place) => ({
+			...line,
+			appeared: appearedOf(shown, place, count, ON_THEIR_WAY_AT_ONCE)
+		})),
 		key: code.key,
 		columns: code.columns,
 		ground: groundOf(shown, gone),

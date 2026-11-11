@@ -466,8 +466,7 @@ class CalloutDrawer {
 			'--top': callout.box.top,
 			'--width': callout.box.width,
 			'--height': callout.box.height,
-			'--grounded': callout.ground,
-			'--gone': callout.gone
+			'--grounded': callout.ground
 		});
 		wordsDrawn(this.words, callout);
 	}
@@ -564,7 +563,7 @@ class CaptionDrawer {
 			return;
 		}
 		named(this.root, CAPTION_EDGE, caption.at);
-		numbered(this.root, { '--darkened': caption.ground, '--gone': caption.gone });
+		numbered(this.root, { '--darkened': caption.ground });
 		wordsDrawn(this.words, caption);
 		wayDrawn(this.way, caption.onItsWay);
 	}
@@ -915,7 +914,7 @@ class TitleWordsDrawer {
 		givenOrNone(this.element, OWN_SIZE, title.size);
 		givenOrNone(this.element, OWN_LETTER_SPACING, title.letterSpacing);
 		givenOrNone(this.element, OWN_LINE_HEIGHT, title.lineHeight);
-		numbered(this.element, { '--grounded': title.ground, '--gone': title.gone });
+		numbered(this.element, { '--grounded': title.ground });
 		wordsDrawn(this.words, title);
 	}
 }
@@ -1715,17 +1714,22 @@ function wordsDrawn(list, words) {
 }
 
 /**
- * How far a word has come up; of a word laid out letter by letter, how many of its letters stand, whether the caret
- * follows them, and the sign each letter stands as, where it does.
+ * How far a word has come up and how far it has gone; of a word laid out letter by letter, how many of its letters
+ * stand, whether the caret follows them, and the sign each letter stands as, where it does.
  * @param {HTMLElement} element @param {DrawnWords['words'][number]} word
  */
 function wordDrawn(element, word) {
 	switch (word.kind) {
 		case 'word by word':
-			numbered(element, { '--appeared': word.appeared });
+			numbered(element, { '--appeared': word.appeared, '--gone': word.gone });
 			return;
 		case 'lettered':
-			numbered(element, { '--appeared': word.appeared, '--typed': word.letters, '--caret': Number(word.caret) });
+			numbered(element, {
+				'--appeared': word.appeared,
+				'--gone': word.gone,
+				'--typed': word.letters,
+				'--caret': Number(word.caret)
+			});
 			signsDrawn(element, word.signs);
 			return;
 	}

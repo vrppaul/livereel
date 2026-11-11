@@ -33,7 +33,7 @@ import {
 	resizedAbout,
 	wholePixels
 } from './geometry.ts';
-import { A_NUMBER, type Kind, OfForm, OneOf, Plain } from './handed.ts';
+import { A_NUMBER, type Kind, OfForm, OneOf, Plain, isMoreThanNone } from './handed.ts';
 import { windowOn, wordsOn, wordsWholeOn } from './split.ts';
 
 const PLACE_NAMES = ['whole', 'left', 'right', 'top', 'bottom'] as const;
@@ -356,8 +356,4 @@ function isPlaceName(name: string): name is PlaceName {
 /** Whether a film wrote a name, a string with something in it. */
 function isSomeName(written: unknown): written is string {
 	return typeof written === 'string' && written.length > 0;
-}
-
-function isMoreThanNone(written: unknown): written is number {
-	return typeof written === 'number' && Number.isFinite(written) && written > NONE;
 }

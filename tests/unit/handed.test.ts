@@ -201,11 +201,19 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => caption.show('ab', { words: 'bounce' as never })).toThrow(
 		new FilmError(
-			`caption.show's words is "bounce": it is how words come up: "rise", "sharp", "fade", "blur", "mask", "letters" or "scramble", or typed, { typed: { seed, keyboard } }`
+			`caption.show's words is "bounce": it is how words come up: "rise", "sharp", "fade", "blur", "mask", "letters" or "scramble", or typed, { typed: { seed, keyboard } }, or word by word at a pace, { way, atOnce }`
 		)
 	);
 	expect(() => title.show('ab', { words: { typed: { seed: 'one' as never } } })).toThrow(
 		new FilmError(`title.show's words's typed's seed is "one": it is a number`)
+	);
+	expect(() => title.show('ab', { words: { way: 'letters' as never, atOnce: 2 } })).toThrow(
+		new FilmError(
+			`title.show's words's way is "letters": it is how words come up word by word: "rise", "sharp", "fade", "blur" or "mask"`
+		)
+	);
+	expect(() => caption.show('ab', { words: { way: 'mask', atOnce: 0 } })).toThrow(
+		new FilmError(`caption.show's words's atOnce is 0: it is how many words are on their way at once, more than 0`)
 	);
 	expect(() => screen.rise({ within: { start: null as never } })).toThrow(
 		new FilmError("screen.rise's within's start is null: it is a number")

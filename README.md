@@ -354,6 +354,7 @@ theme's where it names none:
 
 ```ts
 title.show('Out of nothing', { words: 'mask' }),
+title.show('agent diff a bit too long again?', { words: { way: 'mask', atOnce: 6.25 } }),
 caption.show('Decoded', { words: 'scramble' }),
 title.show(['Film your ', { text: 'live', italic: true }, ' app'], { words: { typed: { seed: 3 } } }),
 ```
@@ -361,7 +362,11 @@ title.show(['Film your ', { text: 'live', italic: true }, ' app'], { words: { ty
 Word by word, one after another: `'rise'`, out of a blur, livereel's own;
 `'sharp'`, rising with no blur; `'fade'`, fading up where they stand;
 `'blur'`, coming clear out of a blur there; `'mask'`, each word rising from
-under its own line, on as many lines as it takes. Letter by letter:
+under its own line, on as many lines as it takes. Three words are on their
+way at once, each setting off as the one three before it arrives, so the
+last arrives as the move ends; `{ way: 'mask', atOnce: 6.25 }` names how
+many, any number more than 0, as the claude-review promo's line rises, a
+word every 0.08 s, each in 0.5 s. Letter by letter:
 `'letters'`, fading up one after another at an even pace; `'scramble'`,
 each letter standing as a sign drawn by chance, a new one every two frames,
 until it settles into its own a few letters behind those coming. Or typed,
@@ -371,8 +376,11 @@ which sets how fast it is typed; each key is heard on the film's keyboard,
 or on the `keyboard` named, and a caret follows the last letter typed until
 every one is. Words that come by letters stand laid out whole from the
 start, so no line breaks anew as they come; a run's style, ink and marker
-come with each letter. Going, words go as they would rise, but for a mask,
-which sinks back under its line. Words come in their way only where their
+come with each letter. Going, words that came word by word go one after
+another at the pace they came, the first first, each in its way, a mask's
+sinking back under its line, the others sinking or fading as they rose,
+slow at first, as a rise run back; words that came by letters go all
+together. Words come in their way only where their
 title or caption comes up in its place in its own way: `words` with `from`
 or `enter` is refused. A callout's and a note's words come in the theme's
 way.

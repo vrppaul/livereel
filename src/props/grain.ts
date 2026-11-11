@@ -11,7 +11,7 @@
  * stage is handed how far it spreads a colour (`drawnGrain`), as the stage's noise is of a kind of its own, not even,
  * and drawn as strongly as spreads a colour as far.
  */
-import { A_NUMBER, type Kind, OfForm, Plain, needed } from '../domain/handed.ts';
+import { type Kind, OfForm, Plain, isMoreThanNone, needed } from '../domain/handed.ts';
 import { type TurnedOff, isTurnedOff } from '../domain/turned-off.ts';
 
 /** Grain of so many levels of 255, which it moves a colour either way, evenly. */
@@ -72,8 +72,4 @@ export function levelsOf(written: GrainScript): number {
  */
 export function drawnGrain(levels: number): number | null {
 	return levels > NONE ? (levels * EVEN_SPREAD_OF_A_LEVEL) / CHANNEL_LEVELS : null;
-}
-
-function isMoreThanNone(written: unknown): written is number {
-	return A_NUMBER.is(written) && written > NONE;
 }
