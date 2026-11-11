@@ -891,7 +891,8 @@ window's, not the look's: a theme or `look.to` names none of its values.
 ### The world's look
 
 A film drawn as a room may light the world its own three.js things and the
-window's body stand in, and let the brightest light glow. `defineFilm`
+window's body stand in, and let the brightest light glow; any film may lay
+grain over its ground. `defineFilm`
 takes a `world`, how that world looks as the film opens, any of its values;
 what the film leaves out stays livereel's, a world of flat light:
 
@@ -900,6 +901,7 @@ what the film leaves out stays livereel's, a world of flat light:
 | `lights` | spotlights standing in the room | none: `[]` |
 | `softBoxes` | glowing panels round the room, which faces reflect and are lit by | none: `[]` |
 | `bloom`, `bloomRadius` | how strongly light brighter than the page's white glows round itself, `0` none, as three's bloom takes its strength, and how far the glow spreads, from `0`, nearest, to `1`, widest | `0`, `0.4` |
+| `grain` | a faint noise over the ground, flat or in a room: `{ levels }`, how many levels of 255 it moves a colour either way, or `{ enabled: false }` | none: `{ enabled: false }` |
 
 A light stands at a spot of the room and aims at another, as the eye does,
 each in pixels of a frame 1080 high from the frame's middle. A soft box
@@ -950,9 +952,23 @@ glow at all. The glow lies over
 all the frame, titles and the cursor too. The reference promo's was
 `bloom: 0.45, bloomRadius: 0.4`.
 
+A glow fading across a dark ground falls into bands, as eight bits hold a
+colour in 255 steps and a dark glow spans few of them. `grain` lays a noise
+over the ground that hides where one step meets the next, as the reference
+promo did over its backdrop with `grain: { levels: 1 }`: each colour of
+each pixel of the frame moved by about so many levels either way, still
+from frame to frame and alike on every shot. It lies on the ground alone,
+its layers and the ending card's ground with it, under the window and all
+else, so a page and the words over it stand as drawn; a film drawn flat
+shows it as a room does. It is the browser's own noise, spread as far as an
+even one of so many levels: at one level's grain a few colours in a hundred
+move two levels. A film writes it whether or not it is drawn as a
+room.
+
 The world changes as the film goes, as the look does: `world.to(world)`,
-any of the same values. In a `play` the glow's strength and spread move
-through the values between; lights as many as those standing move light by
+any of the same values. In a `play` the glow's strength and spread and the
+grain's levels move through the values between, a grain turned off from
+none; lights as many as those standing move light by
 light, each to the one in its place, its colour, strength, spots, cone and
 softness through the values between, so a light fades in from a strength
 of `0`; lights of another number, and the soft boxes, change whole

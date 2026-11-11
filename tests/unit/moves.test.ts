@@ -491,9 +491,21 @@ test("the world's lights as many as those they go to move light by light, each v
 	]);
 });
 
+test("the world's grain moves through the levels between, from none where it is turned off, never past where it starts and ends however far a curve takes it", async () => {
+	const grained = withProp(OPENING_IN_SMALL, 'world', { ...LIVEREELS_WORLD, grain: 2 });
+	const [fading, coming] = [world.to({ grain: { enabled: false } }), world.to({ grain: { levels: 1 } })];
+	const moved = [
+		await setAt(fading, grained, 0.25),
+		await setAt(fading, grained, 1.5),
+		await setAt(coming, OPENING_IN_SMALL, 0.5),
+		await setAt(coming, OPENING_IN_SMALL, -0.5)
+	];
+	expect(moved.map((scene) => scene.world.grain)).toEqual([1.5, 0, 0.5, 0]);
+});
+
 test("the world's look in no form of one is refused as its move is made, where it stands: none, a glow of a strength below none, a value of the film's look by its name", () => {
 	expect(() => world.to(null as never)).toThrow(
-		new FilmError('world.to is handed null for an object of lights, softBoxes, bloom, bloomRadius')
+		new FilmError('world.to is handed null for an object of lights, softBoxes, bloom, bloomRadius, grain')
 	);
 	expect(() => world.to({ bloom: -1 })).toThrow(
 		new FilmError(
@@ -501,7 +513,7 @@ test("the world's look in no form of one is refused as its move is made, where i
 		)
 	);
 	expect(() => world.to({ ground: '#000' } as never)).toThrow(
-		new FilmError('world.to names ground: it names lights, softBoxes, bloom, bloomRadius, or fewer')
+		new FilmError('world.to names ground: it names lights, softBoxes, bloom, bloomRadius, grain, or fewer')
 	);
 });
 

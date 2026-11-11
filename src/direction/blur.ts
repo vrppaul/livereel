@@ -10,7 +10,7 @@
 import { FilmError } from '../domain/errors.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
 import { described, isObjectOfValues, refuseNamesBeyond } from '../domain/handed.ts';
-import { type TurnedOff, turnedOffBy } from './turned-off.ts';
+import { type TurnedOff, turnedOffBy } from '../domain/turned-off.ts';
 
 /** A film's blur as it writes it: `{ enabled: false }` for none, or livereel's with any value given in its place. */
 export type MotionBlurScript =

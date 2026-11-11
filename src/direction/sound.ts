@@ -22,7 +22,7 @@ import {
 	isObjectOfValues,
 	refuseNamesBeyond
 } from '../domain/handed.ts';
-import { type TurnedOff, isTurnedOff, turnedOffBy } from './turned-off.ts';
+import { type TurnedOff, isTurnedOff, turnedOffBy } from '../domain/turned-off.ts';
 
 /** livereel's sounds: the cursor pressed in, a key typed, the ending coming up. */
 export type LivereelSound = 'click' | 'key' | 'ending';

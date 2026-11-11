@@ -42,6 +42,19 @@ body {
 	background: var(--ground-light);
 }
 
+/* The filter the world's grain is drawn by, which takes no room of its own */
+.grain {
+	position: absolute;
+	width: 0;
+	height: 0;
+}
+
+/* The world's grain over the ground, its layers with it, where the world has any: under an exposure, and on the ending card, which stands on the frame's own ground. The card's grain is a noise of its own, which slides with it, as alike to the frame's as one pixel's to the next. The mark weighs nothing, so the ground's other rules stand where they are */
+:where(:root[data-grain]) [data-surface='ground'],
+:where(:root[data-grain]) .ending .ground {
+	filter: url('#grain');
+}
+
 /* What stands on the frame, over the window: the page is clicked through it */
 [data-surface='frame'] {
 	pointer-events: none;

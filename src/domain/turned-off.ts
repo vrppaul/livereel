@@ -1,11 +1,11 @@
 /**
- * How a film turns off something livereel does unasked — its sounds, one of them, its blur: by saying so, never by a
+ * How a film turns a thing off — livereel's sounds, one of them, its blur, the world's grain: by saying so, never by a
  * `null` or an empty value that means it. One form for all, so a film reads the same wherever it turns a thing off.
  */
-import { FilmError } from '../domain/errors.ts';
-import { type Handed, described, isObjectOfValues } from '../domain/handed.ts';
+import { FilmError } from './errors.ts';
+import { type Handed, described, isObjectOfValues } from './handed.ts';
 
-/** Something livereel does unasked, turned off, as a film writes it. */
+/** A thing turned off, as a film writes it. */
 export interface TurnedOff {
 	readonly enabled: false;
 }

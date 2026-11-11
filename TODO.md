@@ -147,7 +147,11 @@ soft past 2.2, the infographics.
 - A change of the whole frame from one scene to the next: a new ground opening as a disc, or rising as a wave, not the
   ground's colour faded alone.
 - A line of light sweeping across the page or an object, apart from the light's spot on a block.
-- Grain seeded per frame and a vignette over the frame.
+- A vignette over the frame. Grain that changes from frame to frame, as film's does: the ground's grain (`world.grain`)
+  stands still, as the reference promo's did.
+- The flat stage lays the grain's filter over every exposure's ground as it captures, though every exposure's ground is
+  alike: a 3 s flat film with grain shot in 20.6 to 23.3 s against 16.6 and 17.5 without, a capture of three
+  exposures 287 to 316 ms against 177 to 222 (2026-11-11). A room draws the ground once a frame and shows no cost.
 - An end card with the film's logo, which may grow out of another mark, and a link line in place of a command.
 - A screen inside a screen: a live picture or a video as what a device shows (a page's video runs on no film clock).
 - A picture cut into slices by its depth map and spread along the depth, handed the map; with the room.

@@ -223,6 +223,14 @@ const LOOK_NAMES = Object.keys(LOOK_TOKENS).filter(isOfTheLook);
 // The token each part of the ground's layers takes the place of: those going, those coming, how far these have come
 /** @type {{ readonly [Part in keyof GroundLayers]: string }} */
 const LAYERS_SET_AS = { going: '--layers-going', coming: '--layers-coming', come: '--layers-come' };
+// The attribute the stage's root bears while the world has grain, which lays the ground through the grain's filter
+const GRAINED = 'data-grain';
+// The noise the grain's filter makes (`stage.html`): each colour round the middle of its whole, spread by 27 of its 255
+// levels, its standard deviation (26.4 to 27.2 by colour, measured 2026-11-11 on Chrome 156, in software and on the
+// card)
+const GRAIN_NOISE = { middle: 0.5, spreadInLevels: 27, levels: 255 };
+// The weights of the filter's last step, its attributes: how much of the noise it adds, and what it adds to all
+const GRAIN_WEIGHTS = { noise: 'k3', toAll: 'k4' };
 
 /** The camera, drawn on each of its roots: one in each surface the window's view stands in. */
 class CameraDrawer {
@@ -1153,12 +1161,40 @@ class LookDrawer {
 }
 
 /**
+ * The world's look as the stage draws it: its grain, a filter the stylesheet lays the ground through while the stage's
+ * root is marked grained, set as strong as the world's grain spreads a colour. Its light and glow the room draws.
+ */
+class WorldDrawer {
+	/** @param {Staged} root the stage's root @param {Staged} grain the filter's step that adds its noise to the ground */
+	constructor(root, grain) {
+		this.root = root;
+		this.grain = grain;
+	}
+
+	/**
+	 * The noise added as far as the grain spreads a colour, in shares of the noise's own spread, less its middle as far,
+	 * so the ground stays as light on the whole. CSS sets nothing of an SVG filter's arithmetic: its weights are its
+	 * attributes alone.
+	 * @param {DrawnScene} scene
+	 */
+	draw(scene) {
+		const spread = scene.world.grain;
+		this.root.toggleAttribute(GRAINED, spread !== null);
+		if (spread === null) return;
+		const noiseAdded = (spread * GRAIN_NOISE.levels) / GRAIN_NOISE.spreadInLevels;
+		this.grain.setAttribute(GRAIN_WEIGHTS.noise, String(noiseAdded));
+		this.grain.setAttribute(GRAIN_WEIGHTS.toAll, String(-noiseAdded * GRAIN_NOISE.middle));
+	}
+}
+
+/**
  * An exposure of the frame: its root, a drawer for every prop it draws, for its objects, and for the holes and lines
  * pieces of the page leave and draw, and the page it shows, live or as a picture, and the pages of the film's own laid
  * in its screen, by their keys. Every prop but the look and the world is drawn in each exposure, as the camera stood at
  * its moment: the type checker refuses a prop without a drawer. The look is the stage's root's, one for every exposure
  * of a frame; the objects' drawer draws those pushed off too, as both lists lay what stands inside the page's window in
- * its one root; the world's light lights the room's things and the window's body alone, which the room draws
+ * its one root; the world's grain is drawn on the stage's root, one for every exposure, as the look is; its light lights
+ * the room's things and the window's body alone, which the room draws
  * (`stage/things.js`, `stage/body.js`), and its glow the room draws over a frame (`stage/room.js`), as it blurs the
  * world by how the eye sees (`stage/lens.js`) and sees it from where the eye stands, laying what stands in the world in
  * the order the scene hands, and drawing what lies over the page in the window into a texture where anything does.
@@ -1173,6 +1209,10 @@ class LookDrawer {
  */
 
 const LOOK = new LookDrawer(document.documentElement);
+const WORLD = new WorldDrawer(
+	document.documentElement,
+	partOf(found(document.querySelector('[data-prop="world"]'), 'world'), 'grain')
+);
 const FIRST_ROOT = found(document.querySelector('[data-exposure]'), 'exposure');
 // The first exposure's root as the markup lays it out, before anything is drawn: every further exposure copies it
 const UNDRAWN_ROOT = FIRST_ROOT.cloneNode(true);
@@ -1515,6 +1555,7 @@ function apply(scenes) {
 		);
 	}
 	LOOK.draw(first);
+	WORLD.draw(first);
 	for (const [place, exposure] of EXPOSURES.entries()) {
 		const scene = scenes[place];
 		shown(exposure.root, scene !== undefined);

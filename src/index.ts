@@ -41,7 +41,7 @@ export type { ActContext, SetShown } from './direction/page.ts';
 export type { Bounds, Move, Target, TimingScript } from './direction/move.ts';
 export type { KeyboardSound, LivereelSound, LivereelSoundsScript, Music, SoundsInPlace } from './direction/sound.ts';
 export type { TypingScript } from './moves/typing.ts';
-export type { TurnedOff } from './direction/turned-off.ts';
+export type { TurnedOff } from './domain/turned-off.ts';
 export type { Theme } from './props/look.ts';
 export type { WorldScript } from './props/world.ts';
 export type { SlabScript } from './props/body.ts';

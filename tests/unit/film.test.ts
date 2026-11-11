@@ -466,7 +466,7 @@ test("a theme in no form of one is refused as the film is defined, where it stan
 	);
 });
 
-test("a film opens on livereel's world, with no light and no glow, where it names none, and on the values of the world it names, the rest livereel's", () => {
+test("a film opens on livereel's world, with no light, no glow and no grain, where it names none, and on the values of the world it names, the rest livereel's: grain held as the levels it moves a colour either way, none turned off", () => {
 	const overhead = {
 		colour: '#fff',
 		strength: 1,
@@ -475,15 +475,20 @@ test("a film opens on livereel's world, with no light and no glow, where it name
 		angle: 30,
 		softness: 1
 	};
-	const [unnamed, named] = [filmWritten({}), filmWritten({ world: { lights: [overhead], bloom: 0.45 } })];
-	expect([unnamed.formats.get('small')!.world, named.formats.get('small')!.world]).toEqual([
-		{ lights: [], softBoxes: [], bloom: 0, bloomRadius: 0.4 },
-		{ lights: [overhead], softBoxes: [], bloom: 0.45, bloomRadius: 0.4 }
+	const [unnamed, named, unGrained] = [
+		filmWritten({}),
+		filmWritten({ world: { lights: [overhead], bloom: 0.45, grain: { levels: 1.5 } } }),
+		filmWritten({ world: { grain: { enabled: false } } })
+	];
+	expect([unnamed, named, unGrained].map((film) => film.formats.get('small')!.world)).toEqual([
+		{ lights: [], softBoxes: [], bloom: 0, bloomRadius: 0.4, grain: 0 },
+		{ lights: [overhead], softBoxes: [], bloom: 0.45, bloomRadius: 0.4, grain: 1.5 },
+		{ lights: [], softBoxes: [], bloom: 0, bloomRadius: 0.4, grain: 0 }
 	]);
 });
 
-test("a world in no form of one is refused as the film is defined, where it stands: not an object, a name the world has not, a value of the film's look by its name, a light whose cone opens a half-turn, that aims where it stands or whose colour has an alpha three reads none of, a soft box spanning a half-turn or turned up past straight up, a glow of a strength below none", () => {
-	const names = 'lights, softBoxes, bloom, bloomRadius';
+test("a world in no form of one is refused as the film is defined, where it stands: not an object, a name the world has not, a value of the film's look by its name, a light whose cone opens a half-turn, that aims where it stands or whose colour has an alpha three reads none of, a soft box spanning a half-turn or turned up past straight up, a glow of a strength below none, grain as a bare number, of no levels or turned off with levels", () => {
+	const names = 'lights, softBoxes, bloom, bloomRadius, grain';
 	const light = {
 		colour: '#fff',
 		strength: 1,
@@ -496,8 +501,21 @@ test("a world in no form of one is refused as the film is defined, where it stan
 	expect(() => filmWritten({ world: null })).toThrow(
 		new FilmError(`the film's world is handed null for an object of ${names}`)
 	);
+	expect(() => filmWritten({ world: { vignette: 0.2 } })).toThrow(
+		new FilmError(`the film's world names vignette: it names ${names}, or fewer`)
+	);
 	expect(() => filmWritten({ world: { grain: 0.2 } })).toThrow(
-		new FilmError(`the film's world names grain: it names ${names}, or fewer`)
+		new FilmError(
+			"the film's world's grain is 0.2: it is { enabled: false } for none, or grain of so many levels: { levels }"
+		)
+	);
+	expect(() => filmWritten({ world: { grain: { levels: 0 } } })).toThrow(
+		new FilmError(
+			"the film's world's grain's levels is 0: it is how many levels of 255 grain moves a colour either way, a number more than 0"
+		)
+	);
+	expect(() => filmWritten({ world: { grain: { enabled: false, levels: 1 } } })).toThrow(
+		new FilmError("the film's world's grain names enabled: it names levels, or fewer")
 	);
 	expect(() => filmWritten({ world: { ground: '#000' } })).toThrow(
 		new FilmError(`the film's world names ground: it names ${names}, or fewer`)

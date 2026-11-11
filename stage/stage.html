@@ -8,6 +8,14 @@
 		<script defer src="stage.js"></script>
 	</head>
 	<body>
+		<!-- The world's grain, the filter the ground is laid through where the world has any: a fractal noise a pixel of the frame apart (at a frequency of 1 its lattice falls on the pixels, where such noise is nought; at 0.8 a pixel's noise and the next one's are all but unrelated, correlated by -0.07, measured 2026-11-11), each colour apart, made opaque, then added to the ground's colours as strongly as the world's grain says (`WorldDrawer` in `stage.js`), in the screen's colours, as the browser draws the ground -->
+		<svg class="grain" data-prop="world" aria-hidden="true">
+			<filter id="grain" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+				<feTurbulence type="fractalNoise" baseFrequency="0.8" />
+				<feComponentTransfer result="noise"><feFuncA type="linear" slope="0" intercept="1" /></feComponentTransfer>
+				<feComposite data-part="grain" in="SourceGraphic" in2="noise" operator="arithmetic" k2="1" />
+			</filter>
+		</svg>
 		<!-- An exposure of the frame: all of it drawn as the camera stood at one moment, on the ground; the stage copies it for each further exposure it draws at once. It stands in three surfaces, one over the other, which a film drawn as a room lays in its canvas apart: the ground, the window and all in it, and what stands on the frame -->
 		<div class="exposure" data-exposure>
 			<!-- The ground, and the layers the film lays over it, under all else -->
