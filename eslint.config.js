@@ -271,6 +271,15 @@ export default tseslint.config(
 		rules: { 'no-undef': 'off', '@typescript-eslint/explicit-function-return-type': 'off' }
 	},
 	{
+		// The script two of the stage's pages load before their own. The browser stands the names declared at the top
+		// of a page's plain scripts in one scope, where a name declared twice stops the second script loading (a
+		// `NAMELESS` in two of them broke every film with a page of its own once), and the type checker, reading each
+		// as a module, cannot see it. So this one declares no name there: strict, all in one block
+		files: ['stage/own-page.js'],
+		languageOptions: { sourceType: 'script' },
+		rules: { strict: ['error', 'global'], 'no-implicit-globals': ['error', { lexicalBindings: true }] }
+	},
+	{
 		files: ['examples/**/*.ts'],
 		rules: { 'no-restricted-syntax': ['error', NO_NESTED_HELPERS, NUMBERS_ONLY_IN_THE_SCRIPT] }
 	}

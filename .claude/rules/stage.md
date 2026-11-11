@@ -8,6 +8,8 @@ paths:
 `stage/stage.html` lays out the stage, `stage/stage.css` gives every prop its look, and `stage/stage.js` answers the browser adapter and the room under `window.stage` (`StageApi` in `src/adapters/browser/stage.ts`).
 The script is JavaScript with its types in JSDoc, which the type checker reads; the page runs it as it is written.
 Beside it, `stage/set.html`, `stage/set.css` and `stage/set.js` are the page a film's set is shown on, in the filmed page's tab: one state's picture at a time, answering under `window.filmSet` (`SetApi` in `src/adapters/browser/set.ts`).
+`stage/pages.html`, `stage/pages.css` and `stage/pages.js` are the tab the film's own pages are read and pictured in, one copy of each, answering under `window.pages` (`PagesApi` in `src/adapters/browser/own-pages.ts`).
+`stage/own-page.js` lays and stands a page of the film's own for the stage and that tab alike, under `window.ownPage`; it shares one scope with each page's script, so it declares no name at its top (eslint refuses one).
 
 - The stage draws the scene as `src/scene.ts` hands it over, and decides nothing: what is shown, where and how far along is the film's.
 - Every prop has its drawer in each exposure of `stage/stage.js` (`exposureOf`), the look in `LOOK`, one for every exposure; the type checker refuses a prop without one.
