@@ -13,8 +13,9 @@
  * the window shades the page with a blur, the picture is blurred as the stylesheet blurs it, a Gaussian whose deviation
  * is the shade's blur, nothing past the picture's edge, so the screen's ground shows there: drawn from the smaller copy
  * of the picture whose pixels stand no more than a share of the blur apart, across and then down, and kept while the
- * picture and the blur stand. Over a part of the screen the blur leaves sharp the picture is laid unblurred, softening
- * into the blurred one past the part's edge as the flat stage's mask has it (`.sharp-part` in `stage.css`).
+ * picture and the blur stand. Over a part of the screen the blur leaves sharp the picture is laid unblurred, or blurred
+ * apart by as much as the part softens, softening into the page's past the part's edge as the flat stage's mask has it
+ * (`.sharp-part` in `stage.css`): never a sharp picture faded into a blurred one, which reads as two pictures at once.
  *
  * The page's surface lays, as the browser lays them in the window's view: the screen's ground and the picture, cut to
  * the screen's rounded box and the view's, showing as far as the screen is clear less how clear its own markup is
@@ -25,8 +26,8 @@
  * plane showed through a mouth cleared so, and were hidden where it was not). GLSL sizes a list by a count it is
  * compiled with, so the surface is compiled anew, by three, as the number of pits changes.
  */
-import { Camera, Color, LinearMipmapLinearFilter, Texture, Vector2, Vector4, WebGLRenderTarget } from 'three';
-import { SRGB_CURVES, WRITTEN, passOver, valuesOfTheBox, valuesSet } from './passes.js';
+import { Color, LinearMipmapLinearFilter, Texture, Vector2, Vector4, WebGLRenderTarget } from 'three';
+import { SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOfTheBox, valuesSet } from './passes.js';
 /** @import { ShaderMaterial, WebGLRenderer } from 'three' */
 /** @import { DrawnScene } from '../src/scene.ts' */
 /** @import { Box, Size } from '../src/domain/geometry.ts' */
@@ -59,8 +60,8 @@ import { SRGB_CURVES, WRITTEN, passOver, valuesOfTheBox, valuesSet } from './pas
 
 /**
  * What the page's surface lays of the part of the screen the shade's blur leaves sharp, as the shader takes it:
- * whether it lays one; the picture laid unblurred over the part; how large the screen is, in its pixels; and the
- * part's box and how far past it the page softens into the blur, in the screen's pixels.
+ * whether it lays one; the picture laid over the part, unblurred or as far as the part softens; how large the screen
+ * is, in its pixels; and the part's box and how far past it the page softens into the blur, in the screen's pixels.
  * @typedef {{
  *   readonly keepsAPartSharp: boolean,
  *   readonly sharpPicture: Texture | null,
@@ -97,8 +98,8 @@ const ACROSS = new Vector2(1, 0);
 const DOWN = new Vector2(0, 1);
 // One pixel: a layer's side before it is first sized, and a blur's spread before it is first set
 const A_PIXEL = 1;
-// No part of the screen kept sharp in the shade's blur, as the page's surface lays it: nothing laid unblurred, over a
-// part of no size with no edge
+// No part of the screen kept sharp in the shade's blur, as the page's surface lays it: no picture laid over a part of
+// no size with no edge
 const NO_EDGE = 0;
 const NO_PART_KEPT_SHARP = {
 	keepsAPartSharp: false,
@@ -167,7 +168,7 @@ float openAt(vec2 point) {
 #endif
 	return open;
 }
-// How much of the unblurred picture shows at a point of the screen, in its pixels: whole over the part kept sharp,
+// How much of the part's own picture shows at a point of the screen, in its pixels: whole over the part kept sharp,
 // none from as far past each side of it as its edge, across and down apart and one in the other, as the flat stage's
 // mask has it (\`--sharp-across\`, \`--sharp-down\` in \`tokens.css\`)
 float sharpAt(vec2 onTheScreen) {
@@ -256,44 +257,22 @@ export function compiledForThePits(material, laid) {
 }
 
 /**
- * What the page's surface lays of the part of the screen the shade's blur leaves sharp: the picture unblurred, laid
- * over the blurred one there, the screen's size, the part and its edge, the edge in the screen's pixels as the blur is
- * (`seenBlurred`); none where the blur leaves none.
- * @param {Texture} picture @param {Size} screen @param {DrawnScene['window']['sharp']} sharp @param {number} zoom
- * @returns {SharpPartLaid}
+ * A picture blurred by a deviation in its own pixels, as the stylesheet blurs it, a Gaussian with nothing past the
+ * picture's edge: drawn from the picture's smaller copy whose pixels stand no farther apart than the most a pixel
+ * spreads, across into one layer, then down into another as large; and kept while the picture's upload and the blur
+ * stand. The page's picture is blurred by one as the window's shade blurs the page, and by another as far as the part
+ * the blur leaves sharp softens, each kept apart, as both may stand at once.
  */
-function sharpPartLaid(picture, screen, sharp, zoom) {
-	if (sharp === null) return NO_PART_KEPT_SHARP;
-	return {
-		keepsAPartSharp: true,
-		sharpPicture: picture,
-		screenSize: new Vector2(screen.width, screen.height),
-		sharpBox: valuesOfTheBox(sharp.box),
-		sharpEdge: sharp.edge / zoom
-	};
-}
-
-/** The page's picture the stage shows, as the room lays it under the window's surface. */
-export class PagePicture {
-	/**
-	 * @param {WebGLRenderer} renderer @param {HTMLImageElement} shownBy the stage's picture of the page
-	 * @param {Size} screen the screen's size, in its pixels
-	 */
-	constructor(renderer, shownBy, screen) {
+class BlurredPicture {
+	/** @param {WebGLRenderer} renderer */
+	constructor(renderer) {
 		this.renderer = renderer;
-		this.shownBy = shownBy;
-		this.screen = screen;
-		this.texture = new Texture();
-		this.texture.flipY = false;
-		this.texture.minFilter = LinearMipmapLinearFilter;
-		this.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-		/** The address of the picture uploaded, none before the first @type {string | null} */
-		this.uploaded = null;
-		this.ground = screenGround();
 		this.across = new WebGLRenderTarget(A_PIXEL, A_PIXEL, BLURRED_ACROSS_LAYER);
 		this.blurred = new WebGLRenderTarget(A_PIXEL, A_PIXEL, BLURRED_LAYER);
-		/** The blur the blurred picture was drawn with, of the picture uploaded; none before the first @type {number | null} */
-		this.blurredBy = null;
+		/** Which upload of the picture the layers hold, none before the first @type {number | null} */
+		this.uploadBlurred = null;
+		/** The deviation the layers hold the picture blurred by, none before the first @type {number | null} */
+		this.spreadBlurred = null;
 		this.blurring = passOver(
 			{
 				drawn: { value: null },
@@ -304,8 +283,69 @@ export class PagePicture {
 			BLURRED_ALONG_FRAGMENT,
 			WRITTEN
 		);
-		// three draws nothing without a camera; the passes place their own points
-		this.camera = new Camera();
+	}
+
+	/**
+	 * The picture blurred by a deviation in its own pixels, drawn anew where it was uploaded anew or the blur changed.
+	 * @param {Texture} picture @param {HTMLImageElement} image the picture's image, as large as it was taken
+	 * @param {number} spread @returns {Texture}
+	 */
+	of(picture, image, spread) {
+		if (this.uploadBlurred !== picture.version || this.spreadBlurred !== spread) {
+			this.blurredAnew(picture, image, spread);
+			this.uploadBlurred = picture.version;
+			this.spreadBlurred = spread;
+		}
+		return this.blurred.texture;
+	}
+
+	/**
+	 * The picture blurred anew by a deviation in its own pixels: from its smaller copy whose pixels stand no farther
+	 * apart than the most a pixel spreads, across into one layer, then down into another as large.
+	 * @param {Texture} picture @param {HTMLImageElement} image @param {number} spread
+	 */
+	blurredAnew(picture, image, spread) {
+		const level = Math.max(FULL_SIZE, Math.ceil(Math.log2(spread / MOST_SPREAD_A_PIXEL)));
+		const shrunk = HALVING ** level;
+		const width = Math.ceil(image.naturalWidth / shrunk);
+		const height = Math.ceil(image.naturalHeight / shrunk);
+		const spreadThere = spread / shrunk;
+		this.across.setSize(width, height);
+		this.blurred.setSize(width, height);
+		this.blurredAlong(picture, level, ACROSS.clone().divideScalar(width), spreadThere, this.across);
+		this.blurredAlong(this.across.texture, FULL_SIZE, DOWN.clone().divideScalar(height), spreadThere, this.blurred);
+	}
+
+	/**
+	 * A texture's copy at a level blurred along a way, a step a pixel, into a layer.
+	 * @param {Texture} drawn @param {number} level @param {Vector2} pixelStep @param {number} spread
+	 * @param {WebGLRenderTarget} into
+	 */
+	blurredAlong(drawn, level, pixelStep, spread, into) {
+		valuesSet(this.blurring.material, { drawn, level, pixelStep, spread });
+		drawnInto(this.renderer, this.blurring, into);
+	}
+}
+
+/** The page's picture the stage shows, as the room lays it under the window's surface. */
+export class PagePicture {
+	/**
+	 * @param {WebGLRenderer} renderer @param {HTMLImageElement} shownBy the stage's picture of the page
+	 * @param {Size} screen the screen's size, in its pixels
+	 */
+	constructor(renderer, shownBy, screen) {
+		this.shownBy = shownBy;
+		this.screen = screen;
+		this.texture = new Texture();
+		this.texture.flipY = false;
+		this.texture.minFilter = LinearMipmapLinearFilter;
+		this.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+		/** The address of the picture uploaded, none before the first @type {string | null} */
+		this.uploaded = null;
+		this.ground = screenGround();
+		// The picture blurred as the window's shade blurs the page, and as far as the part its blur leaves sharp softens
+		this.pageBlurred = new BlurredPicture(renderer);
+		this.partBlurred = new BlurredPicture(renderer);
 	}
 
 	/**
@@ -341,31 +381,46 @@ export class PagePicture {
 				...NO_PART_KEPT_SHARP
 			};
 		}
+		this.uploadedAnew();
+		const zoom = scene.camera.pose.zoom;
+		const shade = scene.window.shade;
 		return {
 			...laid,
-			picture: this.seenBlurred(scene),
+			picture: this.seenBlurred(this.pageBlurred, shade === null ? UNBLURRED : shade.blur, zoom),
 			pictured: true,
 			screenBox: valuesOfTheBox(filmed.box),
 			screenCorner: filmed.corner,
-			...sharpPartLaid(this.texture, this.screen, scene.window.sharp, scene.camera.pose.zoom)
+			...this.sharpPartLaid(scene.window.sharp, zoom)
 		};
 	}
 
 	/**
-	 * The picture as an exposure shows it: uploaded anew where the stage shows another, and blurred as the window shades
-	 * the page, its blur in the picture's pixels, as many as the stylesheet's in the screen's, which the camera's zoom
-	 * scales (`[data-shaded] .page` in `stage.css`).
-	 * @param {DrawnScene} scene
+	 * What the page's surface lays of the part of the screen the shade's blur leaves sharp: the picture, unblurred or
+	 * blurred as far as the part softens, laid over the page's there, the screen's size, the part and its edge, the edge
+	 * in the screen's pixels as the blur is (`seenBlurred`); none where the blur leaves none.
+	 * @param {DrawnScene['window']['sharp']} sharp @param {number} zoom @returns {SharpPartLaid}
 	 */
-	seenBlurred(scene) {
-		this.uploadedAnew();
-		const shade = scene.window.shade;
-		const inTheScreen = shade === null ? UNBLURRED : shade.blur / scene.camera.pose.zoom;
-		const spread = (inTheScreen * this.shownBy.naturalWidth) / this.screen.width;
+	sharpPartLaid(sharp, zoom) {
+		if (sharp === null) return NO_PART_KEPT_SHARP;
+		return {
+			keepsAPartSharp: true,
+			sharpPicture: this.seenBlurred(this.partBlurred, sharp.blur ?? UNBLURRED, zoom),
+			screenSize: new Vector2(this.screen.width, this.screen.height),
+			sharpBox: valuesOfTheBox(sharp.box),
+			sharpEdge: sharp.edge / zoom
+		};
+	}
+
+	/**
+	 * The picture uploaded as an exposure shows it, blurred by so many pixels of a frame 1080 high, in the picture's
+	 * pixels as many as the stylesheet's in the screen's, which the camera's zoom scales (`[data-shaded] .page`,
+	 * `[data-sharp-softened] .sharp-part` in `stage.css`): by the blur it is handed, or unblurred where it blurs none.
+	 * @param {BlurredPicture} blurred @param {number} blur @param {number} zoom @returns {Texture}
+	 */
+	seenBlurred(blurred, blur, zoom) {
+		const spread = ((blur / zoom) * this.shownBy.naturalWidth) / this.screen.width;
 		if (spread <= UNBLURRED) return this.texture;
-		if (this.blurredBy !== spread) this.blurredAnew(spread);
-		this.blurredBy = spread;
-		return this.blurred.texture;
+		return blurred.of(this.texture, this.shownBy, spread);
 	}
 
 	/** The picture the stage shows uploaded, where it is another than the one uploaded last. */
@@ -375,35 +430,6 @@ export class PagePicture {
 		this.texture.image = this.shownBy;
 		this.texture.needsUpdate = true;
 		this.uploaded = address;
-		this.blurredBy = null;
-	}
-
-	/**
-	 * The picture blurred by a deviation in its own pixels: from its smaller copy whose pixels stand no farther apart than
-	 * the most a pixel spreads, across into one layer, then down into another as large.
-	 * @param {number} spread
-	 */
-	blurredAnew(spread) {
-		const level = Math.max(FULL_SIZE, Math.ceil(Math.log2(spread / MOST_SPREAD_A_PIXEL)));
-		const shrunk = HALVING ** level;
-		const width = Math.ceil(this.shownBy.naturalWidth / shrunk);
-		const height = Math.ceil(this.shownBy.naturalHeight / shrunk);
-		const spreadThere = spread / shrunk;
-		this.across.setSize(width, height);
-		this.blurred.setSize(width, height);
-		this.blurredAlong(this.texture, level, ACROSS.clone().divideScalar(width), spreadThere, this.across);
-		this.blurredAlong(this.across.texture, FULL_SIZE, DOWN.clone().divideScalar(height), spreadThere, this.blurred);
-	}
-
-	/**
-	 * A texture's copy at a level blurred along a way, a step a pixel, into a layer.
-	 * @param {Texture} drawn @param {number} level @param {Vector2} pixelStep @param {number} spread
-	 * @param {WebGLRenderTarget} into
-	 */
-	blurredAlong(drawn, level, pixelStep, spread, into) {
-		valuesSet(this.blurring.material, { drawn, level, pixelStep, spread });
-		this.renderer.setRenderTarget(into);
-		this.renderer.render(this.blurring, this.camera);
 	}
 }
 

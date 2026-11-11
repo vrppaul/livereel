@@ -424,7 +424,9 @@ test("a move that sets the values a film names refuses one naming none, and each
 	expect(() => piece.effects({ colour: 'blue' })).toThrow(
 		new FilmError('piece.effects\'s colour is "blue": it is a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa')
 	);
-	expect(() => pageWindow.shade({})).toThrow(new FilmError('window.shade names none of dim, fade, blur, sharp'));
+	expect(() => pageWindow.shade({})).toThrow(
+		new FilmError('window.shade names none of dim, fade, blur, sharpSoftens, sharp')
+	);
 	expect(() => look.to({})).toThrow(/^look\.to names none of ground, /);
 	expect(() => world.to({})).toThrow(
 		new FilmError('world.to names none of lights, softBoxes, bloom, bloomRadius, grain')
@@ -437,6 +439,9 @@ test("a move that sets the values a film names refuses one naming none, and each
 	);
 	expect(() => pageWindow.shade({ dim: 2 })).toThrow(
 		new FilmError("window.shade's dim is 2: it is a number from 0 to 1")
+	);
+	expect(() => pageWindow.shade({ sharpSoftens: 1.5 })).toThrow(
+		new FilmError("window.shade's sharpSoftens is 1.5: it is a number from 0 to 1")
 	);
 });
 

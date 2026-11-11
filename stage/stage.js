@@ -135,8 +135,10 @@ const WAY_CUT = 'data-way-cut';
 const EFFECTS = 'data-effects';
 const SHADED = 'data-shaded';
 // The attribute the window bears while the shade's blur leaves a part of the page sharp, which it has not where the
-// blur leaves none, so no second picture of the page is drawn
+// blur leaves none, so no second picture of the page is drawn; and the one it bears while that part softens toward
+// the blur, which it has not where the part is wholly sharp, so the part is drawn with no filter at all
 const SHARP_PART = 'data-sharp-part';
+const SHARP_PART_SOFTENED = 'data-sharp-softened';
 // The colour of an object's ring and glow the film gave it, which one in the look's accent has not; and the side of
 // its figure an object melts toward, which one melting none has not, so it is drawn with no mask at all
 const EFFECT_COLOUR = '--effect-colour';
@@ -318,12 +320,14 @@ function shadeDrawn(root, shade) {
 }
 
 /**
- * The part of the page the shade's blur leaves sharp, drawn on the window's root: its box in the screen's pixels and
- * how far past it the page softens into the blur; none drawn where the blur leaves none.
+ * The part of the page the shade's blur leaves sharp, drawn on the window's root: its box in the screen's pixels, how
+ * far past it the page softens into the blur, and how far the part itself is blurred, where it softens; none drawn
+ * where the blur leaves none.
  * @param {Staged} root @param {DrawnScene['window']['sharp']} sharp
  */
 function sharpPartDrawn(root, sharp) {
 	root.toggleAttribute(SHARP_PART, sharp !== null);
+	root.toggleAttribute(SHARP_PART_SOFTENED, sharp !== null && sharp.blur !== null);
 	if (sharp === null) return;
 	numbered(root, {
 		'--sharp-left': sharp.box.left,
@@ -332,6 +336,7 @@ function sharpPartDrawn(root, sharp) {
 		'--sharp-height': sharp.box.height,
 		'--sharp-edge': sharp.edge
 	});
+	if (sharp.blur !== null) numbered(root, { '--sharp-blur': sharp.blur });
 }
 
 /**

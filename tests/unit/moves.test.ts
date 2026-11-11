@@ -2480,13 +2480,14 @@ test('how strongly an object stands out, and how far the page is dimmed and fade
 	]);
 });
 
-test('the page is shaded as far as its move has come toward the values the film names, the rest as they stood, and stays so as the window travels; one shaded none is drawn with no shade', async () => {
+test('the page is shaded as far as its move has come toward the values the film names, the rest as they stood, and stays so as the window travels; one shaded none, or only softening the part its blur leaves sharp, is drawn with no shade', async () => {
 	const dimming = await setAt(windowShade({ dim: 0.6 }), OPENING_IN_SMALL, 0.5);
 	const blurred = await setAt(windowShade({ blur: 8, fade: 0.5 }), dimming, 1);
 	const travelled = await setAt(windowTo('right'), blurred, 1);
 	const cleared = await setAt(windowShade({ dim: 0, fade: 0, blur: 0 }), travelled, 1);
+	const softeningAlone = await setAt(windowShade({ sharpSoftens: 0.5 }), OPENING_IN_SMALL, 1);
 	expect(
-		[OPENING_IN_SMALL, dimming, blurred, travelled, cleared].map(
+		[OPENING_IN_SMALL, dimming, blurred, travelled, cleared, softeningAlone].map(
 			(scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).window.shade
 		)
 	).toEqual([
@@ -2494,6 +2495,7 @@ test('the page is shaded as far as its move has come toward the values the film 
 		{ dim: 0.3, fade: 0, blur: 0 },
 		{ dim: 0.3, fade: 0.5, blur: 8 },
 		{ dim: 0.3, fade: 0.5, blur: 8 },
+		null,
 		null
 	]);
 });
@@ -2515,7 +2517,24 @@ test("the stage is handed the part the shade's blur leaves sharp, its edge softe
 	const unblurred = await setAt(windowShade({ blur: 0 }), blurred, 1);
 	expect(
 		[blurred, unblurred].map((scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).window.sharp)
-	).toEqual([{ box: BLOCK, edge: 4 }, null]);
+	).toEqual([{ box: BLOCK, edge: 4, blur: null }, null]);
+});
+
+test("the part the shade's blur leaves sharp softens toward the blur as far as the film names, a share of the way through the values between, and the stage is handed it blurred by that share of the page's blur; wholly sharp where it softens none", async () => {
+	const kept = await setAt(windowShade({ blur: 8, sharp: '#block' }), OPENING_IN_SMALL, 1);
+	const softening = await setAt(windowShade({ sharpSoftens: 0.75 }), kept, 0.5);
+	const softened = await setAt(windowShade({ sharpSoftens: 0.75 }), kept, 1);
+	const sharpAgain = await setAt(windowShade({ sharpSoftens: 0 }), softened, 1);
+	expect(
+		[softening, softened, sharpAgain].map((scene) => [
+			scene.window.sharpSoftens,
+			drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).window.sharp
+		])
+	).toEqual([
+		[0.375, { box: BLOCK, edge: 4, blur: 3 }],
+		[0.75, { box: BLOCK, edge: 4, blur: 6 }],
+		[0, { box: BLOCK, edge: 4, blur: null }]
+	]);
 });
 
 test("a part of the page kept sharp in the shade's blur is refused where the stage draws no picture of the filmed page to draw it from", async () => {

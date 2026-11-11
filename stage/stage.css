@@ -1525,7 +1525,7 @@ body {
 	filter: blur(calc(var(--shade-blur) * 1px / var(--zoom)));
 }
 
-/* The part of the page the shade's blur leaves sharp (`src/props/window.ts`): the page's picture laid again over the screen, unblurred, through a mask whole over the part and softening into the blurred page past it (`--sharp-across` and `--sharp-down` in `tokens.css`). The picture the sweep holds and the holes over it blur with the rest. The room draws the part in the page's picture itself (`page-picture.js`), so this one stands unseen there */
+/* The part of the page the shade's blur leaves sharp (`src/props/window.ts`): the page's picture laid again over the screen, unblurred but where it softens (below), through a mask whole over the part and softening into the blurred page past it (`--sharp-across` and `--sharp-down` in `tokens.css`). The picture the sweep holds and the holes over it blur with the rest. The room draws the part in the page's picture itself (`page-picture.js`), so this one stands unseen there */
 .sharp-part {
 	position: absolute;
 	top: 0;
@@ -1540,6 +1540,11 @@ body {
 
 [data-sharp-part] .sharp-part {
 	visibility: visible;
+}
+
+/* The part of the page the shade's blur leaves sharp softened toward the blur, as far as the window has it, in pixels of a frame 1080 high, which the camera's zoom would scale: blurred before its mask cuts it, so its edge stays where it stood */
+[data-sharp-softened] .sharp-part {
+	filter: blur(calc(var(--sharp-blur) * 1px / var(--zoom)));
 }
 
 .room .sharp-part {

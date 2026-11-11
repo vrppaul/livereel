@@ -6,7 +6,10 @@
  * share from none to whole, the blur in pixels of a frame 1080 high; the window's edge and shadow keep as they stand.
  * The blur may leave a part of the screen sharp, as a lens keeps sharp what the eye is drawn to: it is the page's own,
  * not the eye's, as the eye's lens blurs by depth and a page lies at one, and so what stands over the page, a title
- * carried with it or a piece lifted off it, stays as sharp as it stands wherever it stands over the blur.
+ * carried with it or a piece lifted off it, stays as sharp as it stands wherever it stands over the blur. The part may
+ * soften toward the blur by a share of its own while the page round it stays as soft as it is, as the claude-review
+ * promo's page softens round a button lifted off the part it keeps sharp, as far as the button has risen: a share, not
+ * pixels, so the part is never softer than the page round it, and it follows the blur as the blur moves.
  * One table, `SHADE_KINDS`, says of each value what a film may write for it and how it moves (`src/domain/values.ts`),
  * so a move's shade is checked by it and the window's moved by it, as the body's is by its own (`src/props/body.ts`).
  *
@@ -49,10 +52,19 @@ import type { Look } from './look.ts';
 import { type Screen, backPageSeen } from './screen.ts';
 import type { WorldLook } from './world.ts';
 
-export interface Shade {
+/** How the page is shaded as the stage draws it: dimmed, faded and blurred. */
+interface PageShade {
 	readonly dim: Fraction;
 	readonly fade: Fraction;
 	readonly blur: number;
+}
+
+/**
+ * The shade a film moves: the page's, and how far the part its blur leaves sharp softens toward the blur, from none,
+ * wholly sharp, to whole, as soft as the page round it.
+ */
+export interface Shade extends PageShade {
+	readonly sharpSoftens: Fraction;
 }
 
 /** The shade's values as a film writes them: every one a number. */
@@ -65,12 +77,14 @@ export interface PageWindow extends Placing, Shade {
 }
 
 /**
- * The part of the screen the shade's blur leaves sharp as the stage draws it: its box, in the screen's pixels, and how
- * far past it the page softens into the blur, in pixels of a frame 1080 high, as the blur is.
+ * The part of the screen the shade's blur leaves sharp as the stage draws it: its box, in the screen's pixels; how far
+ * past it the page softens into the blur, and how far the part itself is blurred, none where it is wholly sharp, each
+ * in pixels of a frame 1080 high, as the blur is.
  */
 interface SharpPart {
 	readonly box: Box;
 	readonly edge: number;
+	readonly blur: number | null;
 }
 
 /**
@@ -93,7 +107,7 @@ export interface DrawnWindow extends DrawnPlacement {
 	readonly facingTheEye: boolean;
 	readonly pageSurface: PlaneDrawn;
 	readonly corner: number;
-	readonly shade: Shade | null;
+	readonly shade: PageShade | null;
 	readonly sharp: SharpPart | null;
 	readonly outOfFocus: number | null;
 	readonly softestOutOfFocus: number | null;
@@ -139,21 +153,24 @@ export interface AroundTheWindow {
 	readonly screen: Pick<Screen, 'shown' | 'back'>;
 }
 
-export const UNSHADED: Shade = { dim: NONE, fade: NONE, blur: NO_PIXELS };
+export const UNSHADED: Shade = { dim: NONE, fade: NONE, blur: NO_PIXELS, sharpSoftens: NONE };
 
 /**
- * The kind of each value of the shade, by its name: the dim and the fade shares held between none and whole, the blur
- * pixels never below none, each between where it starts and ends however far past its ends a curve takes it; the
- * shares held as fractions, the blur as written.
+ * The kind of each value of the shade, by its name: the dim, the fade and how far the part kept sharp softens, shares
+ * held between none and whole, the blur pixels never below none, each between where it starts and ends however far
+ * past its ends a curve takes it; the shares held as fractions, the blur as written.
  */
 export const SHADE_KINDS: KindsOf<Shade, ShadeWritten> = {
 	dim: new ValueKind(A_SHARE, fractionOf, shareToward),
 	fade: new ValueKind(A_SHARE, fractionOf, shareToward),
-	blur: new ValueKind(A_PIXELS, asWritten, amountToward)
+	blur: new ValueKind(A_PIXELS, asWritten, amountToward),
+	sharpSoftens: new ValueKind(A_SHARE, fractionOf, shareToward)
 };
 
 /** The names of the shade's values, in the order a refusal says them. */
 export const SHADE_NAMES = namesOf(SHADE_KINDS);
+// The names of the page's own shade, which the stage draws on the page as a whole
+const PAGE_SHADE_NAMES = ['dim', 'fade', 'blur'] as const satisfies readonly (keyof PageShade)[];
 
 // How far past the part the shade's blur leaves sharp the page softens into the blur, as a share of the blur: half, as
 // the claude-review promo softens it, so a part whose edge lies between two rows of words is blurred whole before the
@@ -244,17 +261,26 @@ function isLit(world: Pick<WorldLook, 'lights' | 'softBoxes'>): boolean {
 	return world.lights.length > NONE || world.softBoxes.length > NONE;
 }
 
-/** The page's shade as the stage draws it; none where it is shaded none, so the stage draws no filter. */
-function drawnShade(window: Shade): Shade | null {
-	if (standsAtRest(window, UNSHADED, SHADE_NAMES)) return null;
+/**
+ * The page's shade as the stage draws it; none where it is shaded none, so the stage draws no filter, however far the
+ * part its blur would leave sharp softens.
+ */
+function drawnShade(window: PageShade): PageShade | null {
+	if (standsAtRest(window, UNSHADED, PAGE_SHADE_NAMES)) return null;
 	return { dim: window.dim, fade: window.fade, blur: window.blur };
 }
 
 /**
  * The part of the screen the shade's blur leaves sharp as the stage draws it, its edge softening over a share of the
- * blur; none where the blur leaves none, or blurs none, as the whole page is sharp then.
+ * blur, itself blurred by the share of the blur it softens by; none where the blur leaves none, or blurs none, as the
+ * whole page is sharp then.
  */
-function sharpPartDrawn(window: Pick<PageWindow, 'blur' | 'sharp'>): SharpPart | null {
+function sharpPartDrawn(window: Pick<PageWindow, 'blur' | 'sharp' | 'sharpSoftens'>): SharpPart | null {
 	if (window.sharp === null || window.blur <= NO_PIXELS) return null;
-	return { box: window.sharp, edge: window.blur * SHARP_EDGE_PER_BLUR };
+	const blur = window.blur * window.sharpSoftens;
+	return {
+		box: window.sharp,
+		edge: window.blur * SHARP_EDGE_PER_BLUR,
+		blur: blur > NO_PIXELS ? blur : null
+	};
 }

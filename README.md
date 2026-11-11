@@ -210,7 +210,7 @@ and the moves of each part of the scene:
   under a point off the frame, or where the eye sees past the window's plane as the move begins; where the window
   turns so the eye sees past its plane there later, the focus stands as far as can be
 - `window.to(place, { depth })`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn, roll, over, about })`,
-  `window.shade({ dim, fade, blur, sharp })`, `window.body({ thickness, rim, metal, roughness, glass }, { within })`
+  `window.shade({ dim, fade, blur, sharp, sharpSoftens })`, `window.body({ thickness, rim, metal, roughness, glass }, { within })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
 - `callout.show(target, text, { side })`, `callout.hide()`
 - `note.show(target, text, { at })`, `note.hide()`
@@ -850,8 +850,16 @@ stands. A move naming another part, `window.shade({ sharp: '#send' })`,
 keeps it sharp from the move's start, as a part slid across the page would
 slide its edge over the words; to hand the sharp part on in a glide, bring
 the blur to 0 over its first half and back over its second with the new
-part, and `sharp: 'none'` keeps none. The blur, like the page, is seen
-larger by an eye brought near. It is drawn from the page's picture, so a
+part, and `sharp: 'none'` keeps none. `window.shade({ sharpSoftens: 0.75 })`
+softens the part kept sharp three quarters of the way toward the blur, the
+page round it as soft as it was, as a promo's page goes soft round a button
+lifted off the line it keeps sharp: written beside the lift's `effects`, on
+its curve and in its time, the part softens as far as the button has risen,
+and `sharpSoftens: 0` makes it sharp again. A share, not pixels, so the part
+is never softer than the page round it and follows the blur as it moves;
+with no part kept, the whole page goes soft round a lift by `blur` alone.
+The blur, like the page, is seen larger by an eye brought near. It is
+drawn from the page's picture, so a
 page framed live is refused, as one the screen shows a page of the film's
 own in place of; the picture the sweep holds and the holes over the part
 blur with the rest.

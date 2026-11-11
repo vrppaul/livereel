@@ -73,8 +73,9 @@ export interface WindowHideScript extends TimingScript {
 
 /**
  * How far the page is dimmed, `dim`, and faded into the film's ground, `fade`, each from 0 none to 1 whole, how far it
- * is blurred, `blur`, in pixels of a frame 1080 high, and the part of it the blur leaves `sharp`, a block or a box of
- * the screen, or none, `'none'`; any left out as it stands.
+ * is blurred, `blur`, in pixels of a frame 1080 high, the part of it the blur leaves `sharp`, a block or a box of the
+ * screen, or none, `'none'`, and how far that part softens toward the blur, `sharpSoftens`, from 0 none to 1 as soft
+ * as the page round it; any left out as it stands.
  */
 export interface ShadeScript extends TimingScript, Partial<ShadeWritten> {
 	readonly sharp?: Target;
@@ -147,8 +148,8 @@ export function hide(script: WindowHideScript): Move {
 }
 
 /**
- * The page in the window dimmed, faded and blurred to the film's values, but for a part the blur leaves sharp, those it
- * names alone.
+ * The page in the window dimmed, faded and blurred to the film's values, but for a part the blur leaves sharp, softened
+ * toward the blur as far as the film names, those it names alone.
  */
 export function shade(script: ShadeScript): Move {
 	assertWritten(script, SHADE_FORM, 'window.shade');
