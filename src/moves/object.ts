@@ -5,20 +5,21 @@
  * whole from past a side of the frame, pushing the object of its name standing there off past the side across; carried
  * to another place, growing and coming toward the eye on the way, to a box read off the page, or onto a block of the
  * page to lie there; leant and rolled; set apart from what lies under it, ringed and glowing in the accent or a colour
- * of the film's, casting a shadow, blurred, melted toward a side, grown or brought toward the eye where it stands
- * (`src/props/effects.ts`); taken back to stand as its box places it; put away where it stands, in its own way or one
- * of livereel's, or slid out past a side. A move takes the object a film names `as`, or its kind's own name, so a film
- * shows several of a kind at once, each moved by its name; it takes only an object of its kind, and refuses one that
- * shows another. What differs by what an object shows is handed here by the kind's own module: the curve it comes up
- * on in its own way, how it reads a place, and the box it sets off from as it is carried there.
+ * of the film's, casting a shadow, blurred, melted toward a side, faded into what lies behind it, each from its first
+ * frame where its show names it, grown or brought toward the eye where it stands (`src/props/effects.ts`); taken back
+ * to stand as its box places it; put away where it stands, in its own way or one of livereel's, or slid out past a
+ * side. A move takes the object a film names `as`, or its kind's own name, so a film shows several of a kind at once,
+ * each moved by its name; it takes only an object of its kind, and refuses one that shows another. What differs by
+ * what an object shows is handed here by the kind's own module: the curve it comes up on in its own way, how it reads
+ * a place, and the box it sets off from as it is carried there.
  *
  * A move that carries an object to a place sets its box and the scale and depth the film names, one that carries it to
  * a box read off the page its box, one that carries it onto a block of the page what it stands in and where it stands
  * there, its box, scale, depth and angle, one that leans it its angle and the point of its box it turns about, one of
  * how it stands out the values the film names, one of what it shows its content, each writing only its own into the
  * object as it stands, so they share a step, each as far along as its own share; a move that brings one sets it whole,
- * standing where it comes up and standing out in no way, and one that puts it away sets it whole as it stands. A move
- * of an object that is not on the screen is refused as it begins.
+ * standing where it comes up and standing out as the film names at its show, in no way where it names nothing, and one
+ * that puts it away sets it whole as it stands. A move of an object that is not on the screen is refused as it begins.
  *
  * An object shown into a group (`src/props/group.ts`) reads its place, or its source, as it would on the frame, and
  * stands in the group where it would stand there, carried into the group's plane however the group stands
@@ -111,7 +112,13 @@ import {
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
-import { EFFECTS_IN_PLACE, EFFECTS_IN_PLACE_NAMES, type EffectsInPlace, NO_EFFECTS } from '../props/effects.ts';
+import {
+	EFFECTS_IN_PLACE,
+	EFFECTS_IN_PLACE_NAMES,
+	type Effects,
+	type EffectsInPlace,
+	NO_EFFECTS
+} from '../props/effects.ts';
 import {
 	type GroupName,
 	type Holder,
@@ -228,21 +235,37 @@ export interface OntoScript extends TakenScript {
 export interface ObjectLeanScript extends LeanScript, NamedScript {}
 
 /**
- * Which object stands out, and how: a `ring` along its edge, a `glow` round it and a `shadow` under it, each from 0
- * none to 1 whole, how far it is blurred, `blur`, the `colour` of its ring and glow in hex, how far in from a side of
- * what it shows it melts into nothing there, `melt`, a share of it, how many times as large it stands about its
- * middle, `scale`, and how far out toward the eye, `depth`, a blur and a depth in pixels of a frame 1080 high; any left
- * out as it stands.
+ * How an object stands out, as a film writes it as the object comes up or as it moves: a `ring` along its edge, a
+ * `glow` round it and a `shadow` under it, each from 0 none to 1 whole, how far it is blurred, `blur`, in pixels of a
+ * frame 1080 high, the `colour` of its ring and glow in hex, how far in from a side of what it shows it melts into
+ * nothing there, `melt`, a share of it, and how far it has faded into what lies behind it, `fade`, from 0 none to 1
+ * whole.
  */
-export interface EffectsScript extends TimingScript, NamedScript {
+interface StandingOutScript {
 	readonly ring?: number;
 	readonly glow?: number;
 	readonly shadow?: number;
 	readonly blur?: number;
 	readonly colour?: string;
 	readonly melt?: MeltScript;
+	readonly fade?: number;
+}
+
+/**
+ * Which object stands out, and how, as `StandingOutScript` has it; how many times as large it stands about its
+ * middle, `scale`, and how far out toward the eye, `depth`, in pixels of a frame 1080 high; any left out as it stands.
+ */
+export interface EffectsScript extends TimingScript, NamedScript, StandingOutScript {
 	readonly scale?: number;
 	readonly depth?: number;
+}
+
+/**
+ * How an object comes up standing out, `effects`, so it comes soft or faded from its first frame, as a move of its
+ * effects would leave it; in no way where the film names none.
+ */
+export interface ShownStandingOutScript {
+	readonly effects?: StandingOutScript;
 }
 
 /** How an object melts, as a film writes it: the side of what it shows it melts toward, and how far in, from 0 to 1. */
@@ -284,10 +307,14 @@ interface Landing {
 	readonly lying: Stance;
 }
 
-/** How an object comes: sliding in whole `from` a side of the frame, if any, and the way it comes up in its place. */
+/**
+ * How an object comes: sliding in whole `from` a side of the frame, if any, the way it comes up in its place, and how
+ * it stands out from its first frame.
+ */
 interface Arrival {
 	readonly from: FrameSide | null;
 	readonly way: Way;
+	readonly effects: Effects;
 }
 
 /**
@@ -321,17 +348,24 @@ export const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...LEAVE_FORM
 export const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { ...LEAN_FORM, ...NAMED_FORM };
 const TAKEN_FORM: Form<TakenScript> = { ...NAMED_FORM, ...TIMING_FORM };
 const ONTO_FORM: Form<OntoScript> = { fall: A_CURVE, ...TAKEN_FORM };
-const EFFECTS_FORM: Form<EffectsScript> = {
+const STANDING_OUT_FORM: Form<StandingOutScript> = {
 	ring: A_SHARE,
 	glow: A_SHARE,
 	shadow: A_SHARE,
 	blur: A_PIXELS,
 	colour: A_COLOUR,
 	melt: A_MELT,
+	fade: A_SHARE
+};
+const EFFECTS_FORM: Form<EffectsScript> = {
+	...STANDING_OUT_FORM,
 	scale: A_SCALE,
 	depth: A_NUMBER,
 	...NAMED_FORM,
 	...TIMING_FORM
+};
+export const SHOWN_STANDING_OUT_FORM: Form<ShownStandingOutScript> = {
+	effects: new OfForm(STANDING_OUT_FORM, 'effects: { ring, glow, shadow, blur, colour, melt, fade }')
 };
 // The values of an object, or of a group, a move that carries it may set, and one that leans it; and of an object, one
 // of what it shows; what each writes is held to them. One that carries an object to a place sets its box, and of its
@@ -421,13 +455,14 @@ const CARRYING: MovingBy<Carried> = {
  * standing off past the side across, so the two move as one sheet. `place` is the place the film names, none where it
  * names none. An object shown `inside` the page's window reads its place, a box in the window's shares, and slides as
  * if the window's box were the frame; one shown into a `group` stands in it where it would stand on the frame, however
- * the group stands, and never slides. The script is the kind's own, checked by it. Every move of an object is handed
- * its kind and its own name, as a refusal says it: `terminal.open`.
+ * the group stands, and never slides. It comes up standing out as the film names, in no way where it names nothing.
+ * The script is the kind's own, checked by it. Every move of an object is handed its kind and its own name, as a
+ * refusal says it: `terminal.open`.
  */
 export function objectShow(
 	kind: ShownKind,
 	move: string,
-	script: ShowScript & NestedScript,
+	script: ShowScript & NestedScript & ShownStandingOutScript,
 	place: Place | null,
 	ownCurve: Ease | null,
 	comingAt: (beginning: Beginning) => Coming | Promise<Coming>
@@ -451,7 +486,7 @@ export function objectShow(
 export function objectShowBeside(
 	kind: ShownKind,
 	move: string,
-	script: ShowScript,
+	script: ShowScript & ShownStandingOutScript,
 	beside: PointAsked,
 	ownCurve: Ease | null,
 	comingAt: (beginning: Beginning) => Coming | Promise<Coming>
@@ -481,7 +516,7 @@ export function objectShowBeside(
 export function objectShowRiding(
 	kind: ShownKind,
 	move: string,
-	script: ShowScript & NestedScript,
+	script: ShowScript & NestedScript & ShownStandingOutScript,
 	source: Target,
 	every: number,
 	place: Place | null,
@@ -509,13 +544,13 @@ async function rideHeld(beginning: Beginning, source: Target, every: number): Pr
 }
 
 /**
- * An object of a kind coming up in what `holderAt` names as the move begins, its way and curve as `objectShow` has
- * them.
+ * An object of a kind coming up in what `holderAt` names as the move begins, its way, curve and how it stands out as
+ * `objectShow` has them.
  */
 function objectComing(
 	kind: ShownKind,
 	move: string,
-	script: ShowScript,
+	script: ShowScript & ShownStandingOutScript,
 	place: Place | null,
 	ownCurve: Ease | null,
 	holderAt: (beginning: Beginning) => Holder | Promise<Holder>,
@@ -528,11 +563,13 @@ function objectComing(
 		throw new FilmError(`${move} comes up in its place in a way, or slides in from a side: not both`);
 	}
 	const curve = from === null && way.kind === OWN_WAY.kind ? ownCurve : THE_STEPS_CURVE;
+	const effects = script.effects === undefined ? NO_EFFECTS : effectsNamed(NO_EFFECTS, script.effects);
+	const arrival: Arrival = { from, way, effects };
 	return {
 		part: objectPart(name),
 		timing: timingOf(curve === null ? script : { ease: curve, ...script }),
 		places: placesNamed(`${move}'s at`, place),
-		begin: async (beginning) => appearingIn(beginning, name, await holderAt(beginning), { from, way }, comingAt, move)
+		begin: async (beginning) => appearingIn(beginning, name, await holderAt(beginning), arrival, comingAt, move)
 	};
 }
 
@@ -1059,7 +1096,7 @@ function appearing(
 	const arrived: FrameObject = {
 		inside: holder,
 		...arriving.standing,
-		...NO_EFFECTS,
+		...arrival.effects,
 		shown: WHOLE,
 		// Not going: neither gone nor on its way out
 		gone: NONE,
@@ -1190,18 +1227,27 @@ function standingOut(
 	const object = standingOfKind(beginning, name, move, kind);
 	const from: EffectsInPlace = { ...object, colour: colourSeenIn(object, script.colour, beginning.scene.look.accent) };
 	const to: EffectsInPlace = {
-		ring: fractionOf(script.ring ?? object.ring),
-		glow: fractionOf(script.glow ?? object.glow),
-		shadow: fractionOf(script.shadow ?? object.shadow),
-		blur: script.blur ?? object.blur,
+		...effectsNamed(object, script),
 		colour: script.colour ?? from.colour,
-		melt: script.melt === undefined ? object.melt : { ...script.melt, share: fractionOf(script.melt.share) },
 		scale: script.scale ?? object.scale,
 		depth: depthAsked(script.depth, object.depth, beginning.format.frame)
 	};
 	refuseNearingInside(object, to.depth, name, move);
 	refuseMeltTurned(object, to, name, move);
 	return writing(name, (progress) => namedToward(EFFECTS_IN_PLACE, from, to, names, progress));
+}
+
+/** How an object stands out with the values a film names, as it writes them, the rest as they stand. */
+function effectsNamed(standing: Effects, named: StandingOutScript): Effects {
+	return {
+		ring: fractionOf(named.ring ?? standing.ring),
+		glow: fractionOf(named.glow ?? standing.glow),
+		shadow: fractionOf(named.shadow ?? standing.shadow),
+		blur: named.blur ?? standing.blur,
+		colour: named.colour ?? standing.colour,
+		melt: named.melt === undefined ? standing.melt : { ...named.melt, share: fractionOf(named.melt.share) },
+		fade: fractionOf(named.fade ?? standing.fade)
+	};
 }
 
 /** Refuses a melt turned to another side while the object melts, which would jump there at once. */

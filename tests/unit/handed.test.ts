@@ -156,7 +156,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => piece.show(5 as never)).toThrow(new FilmError(`piece.show's target is 5: it is ${TARGET}`));
 	expect(() => piece.show('#chart', { from: 'left' } as never)).toThrow(
 		new FilmError(
-			'piece.show names from: it names every, air, corner, hole, lines, picture, inside, body, rides, letters, enter, edge, within, ease, as, group, zIndex, or fewer'
+			'piece.show names from: it names every, air, corner, hole, lines, picture, inside, body, rides, letters, enter, edge, within, ease, as, group, zIndex, effects, or fewer'
 		)
 	);
 	expect(() => piece.show('#chart', { letters: 5 as never })).toThrow(
@@ -420,7 +420,10 @@ test('what a refusal says a film handed is said as it was, whatever JSON cannot 
 
 test("a move that sets the values a film names refuses one naming none, and each value in no kind it takes: an object's effects, the window's shade, the film's look and the world's", () => {
 	expect(() => title.effects({})).toThrow(
-		new FilmError('title.effects names none of ring, glow, shadow, blur, colour, melt, scale, depth')
+		new FilmError('title.effects names none of ring, glow, shadow, blur, colour, melt, fade, scale, depth')
+	);
+	expect(() => piece.effects({ fade: 1.5 })).toThrow(
+		new FilmError("piece.effects's fade is 1.5: it is a number from 0 to 1")
 	);
 	expect(() => piece.effects({ melt: { toward: 'middle', share: 0.5 } })).toThrow(
 		new FilmError(
@@ -451,6 +454,18 @@ test("a move that sets the values a film names refuses one naming none, and each
 	);
 	expect(() => pageWindow.shade({ sharpSoftens: 1.5 })).toThrow(
 		new FilmError("window.shade's sharpSoftens is 1.5: it is a number from 0 to 1")
+	);
+});
+
+test('an object comes up standing out by the effects its show names, refused where they name a value of no effect, or the kind takes no effects', () => {
+	expect(() => piece.show('#card', { effects: { depth: 10 } as never })).toThrow(
+		new FilmError("piece.show's effects names depth: it names ring, glow, shadow, blur, colour, melt, fade, or fewer")
+	);
+	expect(() => title.show('Soft', { effects: { blur: -1 } })).toThrow(
+		new FilmError("title.show's effects's blur is -1: it is a number of pixels, 0 or more")
+	);
+	expect(() => ending.show(CARD, { effects: { blur: 4 } } as never)).toThrow(
+		new FilmError('ending.show names effects: it names from, enter, edge, as, within, ease, or fewer')
 	);
 });
 

@@ -245,10 +245,10 @@ and the moves of each part of the scene:
   block from its left, at most 60 pixels, just under its middle, or at the point `into` names, in shares of that
   part from its top left corner: `{ into: { left: 0.8, top: 0.75 } }` low at its right, as the claude-review promo's
   pointer clicks (`pointer.js` `CLICKS_INTO`)
-- `title.show(text, { at, beside, align, size, letterSpacing, lineHeight, from, enter, edge, words, as, inside, group, zIndex })`,
+- `title.show(text, { at, beside, align, size, letterSpacing, lineHeight, from, enter, edge, words, as, inside, group, zIndex, effects })`,
   `title.to(place, { scale, depth })`, `title.lean({ tilt, turn, roll, over, about })`, `title.intoTheWorld()`,
   `title.hide({ toward, leave, edge, words })`
-- `code.show(text, { at, from, enter, edge, longLines, as, inside, group, zIndex })`,
+- `code.show(text, { at, from, enter, edge, longLines, as, inside, group, zIndex, effects })`,
   `code.to(place, { scale, depth })`, `code.lean({ tilt, turn, roll, over, about })`, `code.light(line, { through })`,
   `code.scrollTo(line)`,
   `code.hide({ toward, leave, edge })`; each move of a title or code takes `as` to name which
@@ -258,13 +258,13 @@ and the moves of each part of the scene:
   `screen.shows(page, { reaches, fade: { seconds, ease } })`, `screen.scrolls(page, { pace })`,
   `screen.scrollTo(page, selector, { top, judged })`, `screen.type(page, strokes, { into, keyboard })`,
   `screen.sweep({ from, slant, round, width, crest })`
-- `terminal.open(title, { at, from, enter, edge, inside, group, zIndex })`, `terminal.type(strokes, { keyboard })`,
+- `terminal.open(title, { at, from, enter, edge, inside, group, zIndex, effects })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
   `terminal.lean({ tilt, turn, roll, over, about })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
 - `piece.show(target, { every, air, corner, hole, lines, picture, body, rides, letters, enter, edge, as, inside, group,
-  zIndex })`, `piece.to(place, { scale, depth })`, `piece.onto(target, { fall })`, `piece.lean({ tilt, turn, roll, over, about })`, `piece.back()`,
+  zIndex, effects })`, `piece.to(place, { scale, depth })`, `piece.onto(target, { fall })`, `piece.lean({ tilt, turn, roll, over, about })`, `piece.back()`,
   `piece.hide({ toward, leave, edge, sheen })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
   in the page's pixels (a rounded card's own `border-radius`), square where it names none, and as round as the window
@@ -275,13 +275,13 @@ and the moves of each part of the scene:
   the frame in the window, keeping that place on the screen as the camera moves; from the world on the page in the
   world, keeping its body and falling onto it on the curve `fall` names; one carrying the `letters` of a block of its
   source lands them letter on letter on the block's; each move of it takes `as` to name which
-- `outline.show(target, { every, line, enter, edge, as, group, zIndex })`, `outline.to(place, { scale, depth })`,
+- `outline.show(target, { every, line, enter, edge, as, group, zIndex, effects })`, `outline.to(place, { scale, depth })`,
   `outline.lean({ tilt, turn, roll, over, about })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a
   selector's blocks or a box of the screen, `'solid'` or `'dashed'`; each move of it takes `as` to name which
-- `lens.show(target, { magnification, size, enter, edge, as, group, zIndex })`, `lens.to(target)`,
+- `lens.show(target, { magnification, size, enter, edge, as, group, zIndex, effects })`, `lens.to(target)`,
   `lens.hide({ toward, leave, edge })`; a round glass over the page, showing what lies under its middle magnified; each
   move of it takes `as` to name which
-- `picture.show(file, { at, from, enter, edge, as, inside, group, zIndex })`, `picture.to(place, { scale, depth })`,
+- `picture.show(file, { at, from, enter, edge, as, inside, group, zIndex, effects })`, `picture.to(place, { scale, depth })`,
   `picture.lean({ tilt, turn, roll, over, about })`, `picture.hide({ toward, leave, edge })`; a picture of the film's own, a
   mark or a logo, from an image file by its path from the film's file (PNG, JPEG, WebP, AVIF, GIF, or an SVG that
   names its width and height), over the whole frame or `at` a place, read as the window reads one, drawn as large as
@@ -292,10 +292,11 @@ and the moves of each part of the scene:
 - `thing.show(made, { at, reach, values, inside: 'world', from, as })`, `thing.to(place, { through, scale, depth })`,
   `thing.lean({ tilt, turn, roll, over, about })`, `thing.set(values)`, `thing.hide({ toward })`: a thing of the film's own
   three.js, built by the film's things module by the name `made`, in a room alone ("Flat, or a room")
-- `title.effects({ ring, glow, shadow, blur, colour, melt, scale, depth })`, and so `code.effects`,
+- `title.effects({ ring, glow, shadow, blur, colour, melt, fade, scale, depth })`, and so `code.effects`,
   `terminal.effects`, `piece.effects`, `outline.effects`, `lens.effects` and `picture.effects`: how the object stands out, ringed and
-  glowing in the accent or a `colour` of the film's, casting a shadow, blurred, melting toward a side, grown or
-  brought toward the eye where it stands
+  glowing in the accent or a `colour` of the film's, casting a shadow, blurred, melting toward a side, faded into what
+  lies behind it, grown or brought toward the eye where it stands; each show of these takes the same values but
+  `scale` and `depth` as `effects`, how it stands out from its first frame
 - `group.show({ at, order })`, `group.to(place, { scale, depth })`, `group.lean({ tilt, turn, roll, over, about })`,
   `group.hide()`; a group of objects, turned, grown and brought near as one, each object in it as its own moves have
   it, drawn by the `zIndex` its show names, the higher over the lower, or, with `order: 'depth'`, the farther behind
@@ -568,7 +569,9 @@ in, as two halves of a page melt toward the middle as they part; its
 shadow and glow follow what is left, and what it draws past its edges
 stands whole where it does not melt. A melt turned to another side while
 the object melts is refused; one that only melts draws no filter.
-`scale` grows it about its middle where it stands, as `to` grows it
+`fade: 0.78` fades all of it, its shadow and a piece's walls with it,
+into what lies behind it, from 0 none to 1 whole, as `window.shade({
+fade })` fades the page into the film's ground. `scale` grows it about its middle where it stands, as `to` grows it
 where it goes, so a block lifted off the page grows in place though the
 film knows no place of it; `depth` brings it near the eye, larger and
 farther from the frame's middle. A shadow and a glow follow what the
@@ -579,7 +582,13 @@ object's foot, so it turns as the object rolls, as a pane's own shadow
 does. The move sets only the values it names, the rest kept as they
 stand, so it shares a `play`
 with a move that carries or leans the object, and with another `effects`
-naming others. An object comes up standing out in no way.
+naming others. An object comes up standing out in no way, unless its show
+names how, `effects: { ring, glow, shadow, blur, colour, melt, fade }`: a
+piece lifted off a page the shade has softened and faded comes up as soft
+and faded as the page from its first frame, `piece.show(PART, { inside:
+'world', effects: { blur: 4, fade: 0.78 } })`, and sharpens as it rises,
+`piece.effects({ depth: 60, blur: 0, fade: 0 })`, where a move of its
+effects in a cut of its own would come a frame late in a play.
 
 Several titles or panes of code stand at once by name:
 `title.show('Pricing', { at: 'top', as: 'heading' })` stands beside the

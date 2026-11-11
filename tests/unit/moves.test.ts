@@ -1505,7 +1505,7 @@ test('a piece in the world fallen onto a block goes down with the screen, as one
 	const raised = await setIn(piece.effects({ depth: 150 }), lifted, 1, FULL_HD);
 	const landed = await setIn(piece.onto('#other'), raised, 1, FULL_HD);
 	const halfLowered = await setIn(lower(), landed, 0.5, FULL_HD);
-	expect(drawnObjectsIn(halfLowered, FULL_HD)[0]!.held).toEqual(0.5);
+	expect(drawnObjectsIn(halfLowered, FULL_HD)[0]!.clear).toEqual(0.5);
 });
 
 test("a piece in the world fallen onto a block draws its walls as far as the screen has come up, as the window's body: half as thick half way through screen.lower(), none once the screen is down", async () => {
@@ -2247,8 +2247,8 @@ test('a piece lifted into the world with a body is drawn with walls as thick as 
 	const risenBody = bodyOf(risen);
 	// The screen's pixels are the frame's at the camera at 1: 12 thick, half come up 6, twice as large 24
 	expect([bodyOf(coming), risenBody]).toEqual([
-		{ thickness: 6, walls: '#e6e8ec', glow: 0, height: 0 },
-		{ thickness: 24, walls: '#e6e8ec', glow: 0, height: 40 }
+		{ thickness: 6, walls: '#e6e8ec', glow: 0, height: 0, clear: 1 },
+		{ thickness: 24, walls: '#e6e8ec', glow: 0, height: 40, clear: 1 }
 	]);
 });
 
@@ -2580,7 +2580,7 @@ test('a group put away fades what stands in it with it, and at its end is gone w
 	const going = await setAt(group.hide(), joined, 0.25);
 	const gone = await setAt(group.hide(), joined, 1);
 	expect([
-		drawnObjectsIn(going, SMALL).map((object) => object.held),
+		drawnObjectsIn(going, SMALL).map((object) => object.clear),
 		[...gone.objects.keys()],
 		gone.groups.size
 	]).toEqual([[1, 0.75], ['apart'], 0]);
@@ -2795,6 +2795,58 @@ test('every object that is carried and leant stands out: a title, code, the term
 		['piece', ring],
 		['outline', ring],
 		['lens', ring]
+	]);
+});
+
+test('an object comes up standing out as its show names, as soft and faded as the page beside it, and a move of its effects goes on from there', async () => {
+	const soft = await setAt(title.show('Soft', { at: 'left', effects: { blur: 8, fade: 0.5 } }), OPENING_IN_SMALL, 1);
+	const sharpening = await setAt(title.effects({ blur: 0, fade: 0 }), soft, 0.5);
+	const drawn = [soft, sharpening].map((scene) => drawnObjectsIn(scene, SMALL)[0]!);
+	expect(drawn.map((object) => [object.effects, object.clear])).toEqual([
+		[{ ring: 0, glow: 0, shadow: 0, blur: 8, colour: null }, 0.5],
+		[{ ring: 0, glow: 0, shadow: 0, blur: 4, colour: null }, 0.75]
+	]);
+});
+
+test('every object that stands out comes up standing out as its show names: a title, code, the terminal, a piece of the page, an outline, a lens', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const ringed = { effects: { ring: 1 } };
+	const shown = await [
+		title.show('Words', { at: 'top', ...ringed }),
+		code.show(THREE_LINES, { at: 'left', ...ringed }),
+		open('A terminal', { at: 'right', ...ringed }),
+		piece.show('#card', ringed),
+		outline.show('#other', ringed),
+		lens.show('#block', ringed)
+	].reduce(async (scene, move) => setIn(move, await scene, 1, FULL_HD), Promise.resolve(wide));
+	const ring = { ring: 1, glow: 0, shadow: 0, blur: 0, colour: null };
+	expect(drawnObjectsIn(shown, FULL_HD).map((object) => object.effects)).toEqual([ring, ring, ring, ring, ring, ring]);
+});
+
+test('an object fades into what lies behind it as far as its move has come, drawn as clear as what it stands in lets it show less its fade, standing out in no way for it', async () => {
+	const grouped = await setAt(group.show(), OPENING_IN_SMALL, 1);
+	const joined = await setAt(code.show(THREE_LINES, { at: 'left', group: 'group' }), grouped, 1);
+	const halfway = await setAt(code.effects({ fade: 0.5 }), joined, 0.5);
+	const faded = await setAt(code.effects({ fade: 0.5 }), joined, 1);
+	const going = await setAt(group.hide(), faded, 0.25);
+	const drawn = [halfway, faded, going].map((scene) => drawnObjectsIn(scene, SMALL)[0]!);
+	expect(drawn.map((object) => [object.clear, object.effects])).toEqual([
+		[0.75, null],
+		[0.5, null],
+		[0.375, null]
+	]);
+});
+
+test('a piece with a body draws its walls as clear as it has not faded, as thick as they stand', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const bodied = piece.show('#card', { inside: 'world', body: { thickness: 12, walls: '#1d2a44' } });
+	const raised = await setIn(piece.effects({ depth: 150 }), await setIn(bodied, wide, 1, FULL_HD), 1, FULL_HD);
+	const faded = await setIn(piece.effects({ fade: 0.75 }), raised, 1, FULL_HD);
+	const bodyIn = (scene: Scene) => (drawnObjectsIn(scene, FULL_HD)[0]!.content as DrawnPiece).body!;
+	expect([bodyIn(raised).clear, bodyIn(faded).clear, bodyIn(faded).thickness]).toEqual([
+		1,
+		0.25,
+		bodyIn(raised).thickness
 	]);
 });
 
@@ -3653,9 +3705,9 @@ test("what stands inside the page's window shows no more than the screen it show
 	);
 	const [terminalDrawn, titleDrawn] = drawnObjectsIn(await setAt(lower(), typed, 0.5), SMALL);
 	expect([
-		terminalDrawn!.held,
+		terminalDrawn!.clear,
 		terminalDrawn!.content.shown,
-		titleDrawn!.held,
+		titleDrawn!.clear,
 		titleDrawn!.content.words.map((word) => word.letters)
 	]).toEqual([0.5, 1, 0.5, [2]]);
 });

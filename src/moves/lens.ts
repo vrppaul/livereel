@@ -20,7 +20,9 @@ import {
 	type HideScript,
 	NAMED_FORM,
 	type NamedScript,
+	SHOWN_STANDING_OUT_FORM,
 	type ShownKind,
+	type ShownStandingOutScript,
 	THE_STEPS_CURVE,
 	type TakenScript,
 	objectCarriedTo,
@@ -33,9 +35,10 @@ import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
 
 /**
  * How a lens comes: how many times larger it shows the page than the camera does, how wide it is across, in pixels of a
- * frame 1080 high; how it comes up; which lens; the group it stands in, if any.
+ * frame 1080 high; how it comes up; which lens; the group it stands in, if any; how it stands out as it comes up,
+ * `effects`.
  */
-export interface LensScript extends InPlaceShowScript, NamedScript, GroupedScript {
+export interface LensScript extends InPlaceShowScript, NamedScript, GroupedScript, ShownStandingOutScript {
 	readonly magnification?: number;
 	readonly size?: number;
 }
@@ -52,7 +55,8 @@ const LENS_FORM: Form<LensScript> = {
 	size: A_SIZE,
 	...IN_PLACE_SHOW_FORM,
 	...NAMED_FORM,
-	...GROUPED_FORM
+	...GROUPED_FORM,
+	...SHOWN_STANDING_OUT_FORM
 };
 // A lens shows the page twice as large as the camera does, and stands 320 pixels of a 1080 frame across, as wide for
 // its frame as the board's loupe, where the film names neither

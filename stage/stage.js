@@ -907,7 +907,7 @@ class StagedObject {
 	/** @param {DrawnObject} object */
 	draw(object) {
 		placed(this.element, object.box);
-		numbered(this.element, { '--held': object.held });
+		numbered(this.element, { '--clear': object.clear });
 		transformed(this.element, object.transform);
 		this.element.setAttribute(FACE, object.face);
 		wayDrawn(this.way, object.onItsWay);

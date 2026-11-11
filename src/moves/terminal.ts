@@ -25,9 +25,11 @@ import {
 	type NestedScript,
 	type ObjectLeanScript,
 	READ_AS_THE_WINDOW,
+	SHOWN_STANDING_OUT_FORM,
 	SHOW_FORM,
 	type ShowScript,
 	type ShownKind,
+	type ShownStandingOutScript,
 	THE_STEPS_CURVE,
 	type ToScript,
 	contentMove,
@@ -42,10 +44,10 @@ import {
 import { TYPING_FORM, type TypingScript } from './typing.ts';
 
 /**
- * Where the terminal opens, `at` a place on the frame or in what it stands `inside` or in, its `group`, and how it
- * comes there.
+ * Where the terminal opens, `at` a place on the frame or in what it stands `inside` or in, its `group`, how it comes
+ * there, and how it stands out as it comes, `effects`.
  */
-export interface TerminalScript extends ShowScript, NestedScript {
+export interface TerminalScript extends ShowScript, NestedScript, ShownStandingOutScript {
 	readonly at?: Place;
 }
 
@@ -71,7 +73,12 @@ const TERMINAL = 'terminal' satisfies ShownKind;
 const MOST_OF_THE_FRAME: Place = { left: 0.07, top: 0.11, width: 0.86, height: 0.78 };
 // Of the agent's work, the share it only thinks before its first line
 const THINKING_SHARE = 0.22;
-const TERMINAL_FORM: Form<TerminalScript> = { at: A_PLACE, ...SHOW_FORM, ...NESTED_FORM };
+const TERMINAL_FORM: Form<TerminalScript> = {
+	at: A_PLACE,
+	...SHOW_FORM,
+	...NESTED_FORM,
+	...SHOWN_STANDING_OUT_FORM
+};
 const TYPING_INTO_FORM: Form<TerminalTypingScript> = { ...TYPING_FORM, ...NAMED_FORM };
 const WORK_FORM: Form<WorkScript> = { thinkingShare: A_NUMBER, ...TIMING_FORM, ...NAMED_FORM };
 

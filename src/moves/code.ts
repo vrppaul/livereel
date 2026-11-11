@@ -36,9 +36,11 @@ import {
 	type NestedScript,
 	type ObjectLeanScript,
 	type PlaceReading,
+	SHOWN_STANDING_OUT_FORM,
 	SHOW_FORM,
 	type ShowScript,
 	type ShownKind,
+	type ShownStandingOutScript,
 	type ToScript,
 	contentMove,
 	fromItsBox,
@@ -52,11 +54,12 @@ import {
 } from './object.ts';
 
 /**
- * Where code stands, `at` a place on the frame or in what it stands `inside` or in, its `group`, how it comes there,
- * and how its pane fits a line too long, `longLines`: its letters smaller until the widest fits, `'shrink'`, where the
- * film names none, or as large as the look has them, the line cut at the pane's edge, `'cut'`.
+ * Where code stands, `at` a place on the frame or in what it stands `inside` or in, its `group`, how it comes there
+ * and how it stands out as it comes, `effects`, and how its pane fits a line too long, `longLines`: its letters
+ * smaller until the widest fits, `'shrink'`, where the film names none, or as large as the look has them, the line cut
+ * at the pane's edge, `'cut'`.
  */
-export interface CodeScript extends ShowScript, NestedScript {
+export interface CodeScript extends ShowScript, NestedScript, ShownStandingOutScript {
 	readonly at: Place;
 	readonly longLines?: LongLines;
 }
@@ -85,7 +88,8 @@ const CODE_FORM: Form<CodeScript> = {
 	at: needed(A_PLACE),
 	longLines: A_WAY_OF_LONG_LINES,
 	...SHOW_FORM,
-	...NESTED_FORM
+	...NESTED_FORM,
+	...SHOWN_STANDING_OUT_FORM
 };
 const LIGHT_FORM: Form<LightScript> = { through: A_LINE_NAMED, ...NAMED_FORM, ...TIMING_FORM };
 const SCROLL_FORM: Form<ScrollScript> = { ...NAMED_FORM, ...TIMING_FORM };

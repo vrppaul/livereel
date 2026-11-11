@@ -20,9 +20,11 @@ import {
 	type NestedScript,
 	type ObjectLeanScript,
 	READ_AS_THE_WINDOW,
+	SHOWN_STANDING_OUT_FORM,
 	SHOW_FORM,
 	type ShowScript,
 	type ShownKind,
+	type ShownStandingOutScript,
 	THE_STEPS_CURVE,
 	type ToScript,
 	objectEffects,
@@ -34,16 +36,16 @@ import {
 
 /**
  * Where a picture stands: `at` a place on the frame, or over the whole of it where none is named; the side it slides
- * in `from`, past the frame's edge, or the way it comes up in its place, `enter`; which picture it is, `as`; and what it
+ * in `from`, past the frame's edge, or the way it comes up in its place, `enter`; which picture it is, `as`; what it
  * stands `inside`, the page's window, its place then a box in the window's shares, or the world, or the `group` it
- * stands in.
+ * stands in; and how it stands out as it comes up, `effects`.
  */
-export interface PictureScript extends ShowScript, NestedScript {
+export interface PictureScript extends ShowScript, NestedScript, ShownStandingOutScript {
 	readonly at?: Place;
 }
 
 const PICTURE = 'picture' satisfies ShownKind;
-const PICTURE_FORM: Form<PictureScript> = { at: A_PLACE, ...SHOW_FORM, ...NESTED_FORM };
+const PICTURE_FORM: Form<PictureScript> = { at: A_PLACE, ...SHOW_FORM, ...NESTED_FORM, ...SHOWN_STANDING_OUT_FORM };
 
 /**
  * A picture of the film's own coming up: in its place, or over the whole frame, fading up whole in its own way, or in

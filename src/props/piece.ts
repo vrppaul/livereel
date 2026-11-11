@@ -27,7 +27,9 @@
  */
 import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
 import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
+import type { Fraction } from '../domain/fraction.ts';
 import type { Stance } from '../domain/stance.ts';
+import { type Effects, unfaded } from './effects.ts';
 import type { ObjectName } from './object.ts';
 import type { PageOfTheScreen } from './screen.ts';
 import type { Stroke } from './stroke.ts';
@@ -106,11 +108,13 @@ export interface Body {
 }
 
 /**
- * A piece's body as the room draws it: as thick as it shows, in the frame's pixels, its walls' colour and glow; and how
- * high its face stands over the plane it was lifted from, in the same pixels, where its shadow lies.
+ * A piece's body as the room draws it: as thick as it shows, in the frame's pixels, its walls' colour and glow; how
+ * high its face stands over the plane it was lifted from, in the same pixels, where its shadow lies; and how clear its
+ * walls are, as far as the piece has not faded, from 0 to 1, as the stylesheet draws its face.
  */
 export interface DrawnBody extends Body {
 	readonly height: number;
+	readonly clear: Fraction;
 }
 
 /**
@@ -151,20 +155,23 @@ export interface DrawnPiece {
 	readonly body: DrawnBody | null;
 }
 
+/** How large a piece stands and how far out toward the eye, and how far it has faded. */
+type Standing = Pick<Stance, 'scale' | 'depth'> & Pick<Effects, 'fade'>;
+
 // A body of no thickness, which is none; and a hole a figure of the page shows, with no pit sunk under it
 const NO_THICKNESS = 0;
 const SHOWN_FLAT = null;
 
 /**
- * A piece as the stage draws it in a box, standing as large and as far out as it stands, as far as it has come up and
- * not gone, and as much of it as what it stands in lets show, showing those of the holes on the screen in its source,
- * drawn from the picture it holds, or from one of its source the stage holds sharper than the page's where it is drawn
- * from the page's.
+ * A piece as the stage draws it in a box, standing as large and as far out as it stands and as faded, as far as it has
+ * come up and not gone, and as much of it as what it stands in lets show, showing those of the holes on the screen in
+ * its source, drawn from the picture it holds, or from one of its source the stage holds sharper than the page's where
+ * it is drawn from the page's.
  */
 export function drawnPiece(
 	piece: Piece,
 	box: Box,
-	stance: Pick<Stance, 'scale' | 'depth'>,
+	standing: Standing,
 	shown: number,
 	held: number,
 	holes: readonly DrawnHole[],
@@ -181,20 +188,20 @@ export function drawnPiece(
 		holes: holesShown(holes, source, fit),
 		shown,
 		picture: drawnPictureOf(piece, sharper),
-		body: piece.body === null ? null : drawnBody(piece.body, fit, stance, shown * held)
+		body: piece.body === null ? null : drawnBody(piece.body, fit, standing, shown * held)
 	};
 }
 
 /**
  * A piece's body as the room draws it: as thick as the piece's fit and scale show its thickness, as the walls stand
  * back along the eye's way, which a scale does not stretch, and as far as the piece shows, come up and let show by
- * what it stands in, as the window's body is as thick as the screen has come up; its face as high as it stands out.
- * None, where that leaves it no thickness.
+ * what it stands in, as the window's body is as thick as the screen has come up; its face as high as it stands out;
+ * its walls as clear as the piece has not faded. None, where that leaves it no thickness.
  */
-function drawnBody(body: Body, fit: number, stance: Pick<Stance, 'scale' | 'depth'>, shown: number): DrawnBody | null {
-	const thickness = body.thickness * fit * stance.scale * shown;
+function drawnBody(body: Body, fit: number, standing: Standing, shown: number): DrawnBody | null {
+	const thickness = body.thickness * fit * standing.scale * shown;
 	if (thickness <= NO_THICKNESS) return null;
-	return { thickness, walls: body.walls, glow: body.glow, height: stance.depth };
+	return { thickness, walls: body.walls, glow: body.glow, height: standing.depth, clear: unfaded(standing) };
 }
 
 /**

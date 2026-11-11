@@ -586,14 +586,14 @@ body {
 	pointer-events: none;
 }
 
-/* An object: its box on the frame, in the frame's pixels; as much of it showing as what it stands in lets */
+/* An object: its box on the frame, in the frame's pixels; as clear as the engine works it out, as much of it showing as what it stands in lets and as far as it has not faded into what lies behind it */
 .object {
 	position: absolute;
 	left: calc(var(--left) * 1px);
 	top: calc(var(--top) * 1px);
 	width: calc(var(--width) * 1px);
 	height: calc(var(--height) * 1px);
-	opacity: var(--held);
+	opacity: var(--clear);
 }
 
 /* Drawn about its middle by a matrix the engine works out, seen from the eye, flat or leant in 3D as the engine names it: an object by its stance, how large, how near, rolled and leant (`src/domain/stance.ts`), and the page's window with its shadow by its stance alike, as anything placed is (`src/domain/placement.ts`), set on the window's root, which its view and its shadow both read. Each entry is named as CSS orders them, and a flat matrix's two last are its shift in pixels */

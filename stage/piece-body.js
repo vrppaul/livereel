@@ -12,10 +12,11 @@
  * own hue showing through as faintly as the film names. They write depth, so standing behind the page's plane, as a
  * piece on the plane it was lifted from stands, the page hides them, and they come up out of it as the piece stands
  * out. They are built anew only as their own measures change: a piece standing, or rising with its walls whole, keeps
- * the walls it has.
+ * the walls it has. A piece faded into what lies behind it lays them over what lies behind them as far as it is clear,
+ * as the stylesheet lays its face.
  *
  * The shadow lies as far behind the face as the face stands out, on the plane the piece was lifted from, as dark as
- * the piece's shadow is strong and as much as what it stands in lets the face show, and dropped toward its foot and
+ * the piece's shadow is strong and as clear as the face is drawn, and dropped toward its foot and
  * soft as far as the face stands high, as the promo's column cast it: the stylesheet's shadow of an object standing out
  * is measured in the object's own pixels, so a button seen four times as large cast it four times as far and as soft,
  * spread too thin to show (the asking beats' Story button at 26.6 s). The stylesheet drops the markup's shadow where
@@ -192,8 +193,8 @@ export class PieceBodies {
 	/**
 	 * What an object of markup standing in the world brings into the world beside its surface, by its place among an
 	 * exposure's: a piece with a body its walls, placed by its matrix, and its shadow where it casts one, standing out
-	 * of its plane with a shadow of some strength, as strong as what it stands in lets it show, as the stylesheet fades
-	 * the face and the shadow it drops for this one, in the look's shadow colour; anything else nothing.
+	 * of its plane with a shadow of some strength, as strong as the piece is clear, as the stylesheet fades the face and
+	 * the shadow it drops for this one, in the look's shadow colour; anything else nothing.
 	 * @param {number} place @param {DrawnObject} object @param {Look} look @returns {readonly Object3D[]}
 	 */
 	posed(place, object, look) {
@@ -203,7 +204,7 @@ export class PieceBodies {
 		const body = bodyAt(this.bodies, place);
 		const placing = matrixOf(object.inTheEyesSpace);
 		const walls = body.wallsPosed(piece, piece.body, placing);
-		const strength = (object.effects?.shadow ?? NO_SHADOW) * object.held;
+		const strength = (object.effects?.shadow ?? NO_SHADOW) * object.clear;
 		if (strength === NO_SHADOW || piece.body.height <= ON_ITS_PLANE) return [walls];
 		return [walls, body.shadowPosed(piece, piece.body, placing, { strength, colour: look.paneShadowColour })];
 	}
@@ -309,8 +310,8 @@ class Walls {
 
 	/**
 	 * The walls shown as far as a share: opaque where wholly shown, else laid over what lies behind them as far as the
-	 * share, as the screen a pit is sunk into goes down. Three compiles a material anew as it comes to be seen through,
-	 * or stops, only when told.
+	 * share, as the screen a pit is sunk into goes down, or a piece fades. Three compiles a material anew as it comes to
+	 * be seen through, or stops, only when told.
 	 * @param {number} shown
 	 */
 	shownAsFarAs(shown) {
@@ -354,13 +355,14 @@ class PieceBody {
 	}
 
 	/**
-	 * The walls posed for a piece: built of its figure, corners and body, and placed by its matrix, its face at its own
-	 * origin.
+	 * The walls posed for a piece: built of its figure, corners and body, placed by its matrix, its face at its own
+	 * origin, and as clear as the body is, as far as the piece has not faded.
 	 * @param {DrawnPiece} piece @param {DrawnBody} body @param {Matrix4} placing
 	 */
 	wallsPosed(piece, body, placing) {
 		const { width, height } = piece.figure;
 		const { walls, glow } = body;
+		this.walls.shownAsFarAs(body.clear);
 		return this.walls.posed({ width, height, corners: piece.corners, depth: body.thickness, walls, glow }, placing);
 	}
 

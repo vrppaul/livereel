@@ -56,9 +56,11 @@ import {
 	type ObjectLeanScript,
 	type PlaceReading,
 	type PointAsked,
+	SHOWN_STANDING_OUT_FORM,
 	SHOW_FORM,
 	type ShowScript,
 	type ShownKind,
+	type ShownStandingOutScript,
 	type TakenScript,
 	type ToScript,
 	objectEffects,
@@ -93,9 +95,10 @@ import {
  * named; the side it slides in `from`, past the frame's edge, rather than coming up in its place, or the way it comes
  * up there, `enter`; how its words come up there, `words`, the theme's way where none is named; which title it is,
  * `as`; and what it stands `inside`, the page's window, its place then a box in the window's shares, or the `group` it
- * stands in. Or the part it stands `beside`, in place of a place and of what it stands in, reading from that part.
+ * stands in. Or the part it stands `beside`, in place of a place and of what it stands in, reading from that part. And
+ * how it stands out as it comes up, `effects`.
  */
-export interface TitleScript extends ShowScript, NestedScript {
+export interface TitleScript extends ShowScript, NestedScript, ShownStandingOutScript {
 	readonly at?: Place;
 	readonly beside?: BesideScript;
 	readonly align?: Alignment;
@@ -171,7 +174,8 @@ const TITLE_FORM: Form<TitleScript> = {
 	lineHeight: A_LINE_HEIGHT,
 	words: A_WORDS_SCRIPT,
 	...SHOW_FORM,
-	...NESTED_FORM
+	...NESTED_FORM,
+	...SHOWN_STANDING_OUT_FORM
 };
 // Words over the whole frame on their ground stand centred
 const OVER_THE_WHOLE: Alignment = 'center';

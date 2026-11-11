@@ -22,7 +22,9 @@ import {
 	type NamedScript,
 	type ObjectLeanScript,
 	READ_AS_THE_WINDOW,
+	SHOWN_STANDING_OUT_FORM,
 	type ShownKind,
+	type ShownStandingOutScript,
 	THE_STEPS_CURVE,
 	type TakenScript,
 	type ToScript,
@@ -47,9 +49,9 @@ import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
 
 /**
  * How an outline is drawn: round the first `every` blocks a selector matches, together; in a line; which outline; the
- * group it stands in, if any.
+ * group it stands in, if any; how it stands out as it comes up, `effects`.
  */
-export interface OutlineScript extends InPlaceShowScript, NamedScript, GroupedScript {
+export interface OutlineScript extends InPlaceShowScript, NamedScript, GroupedScript, ShownStandingOutScript {
 	readonly every?: number;
 	readonly line?: Stroke;
 }
@@ -60,7 +62,8 @@ const OUTLINE_FORM: Form<OutlineScript> = {
 	line: A_STROKE,
 	...IN_PLACE_SHOW_FORM,
 	...NAMED_FORM,
-	...GROUPED_FORM
+	...GROUPED_FORM,
+	...SHOWN_STANDING_OUT_FORM
 };
 // The line an outline is drawn in where the film names none
 const SOLID: Stroke = 'solid';

@@ -89,8 +89,10 @@ import {
 	type ObjectLeanScript,
 	type OntoScript,
 	READ_AS_THE_WINDOW,
+	SHOWN_STANDING_OUT_FORM,
 	type ShowingOf,
 	type ShownKind,
+	type ShownStandingOutScript,
 	THE_STEPS_CURVE,
 	type TakenScript,
 	type ToScript,
@@ -158,10 +160,11 @@ export interface BodyScript {
  * `picture` it is drawn from, the page's as it changes, `'following'`, where the film names none, or one of its source
  * held as it is lifted, `'held'`; how it comes up; which piece; the world it stands `inside`, which the eye moves
  * through, or the group it stands in, if either; its `body` in the world, if the film names one; whether it `rides`
- * its block in the world, `'its block'`, carried up by the film's scrolls of every block its source stands in; and the
- * block whose `letters` it carries, a selector, which it lands on a block's letters, if the film names one.
+ * its block in the world, `'its block'`, carried up by the film's scrolls of every block its source stands in; the
+ * block whose `letters` it carries, a selector, which it lands on a block's letters, if the film names one; and how it
+ * stands out as it comes up, `effects`.
  */
-export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript {
+export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript, ShownStandingOutScript {
 	readonly every?: number;
 	readonly air?: number;
 	readonly corner?: number;
@@ -281,7 +284,8 @@ const PIECE_FORM: Form<PieceScript> = {
 	letters: A_SELECTOR,
 	...IN_PLACE_SHOW_FORM,
 	...NAMED_FORM,
-	...GROUPED_FORM
+	...GROUPED_FORM,
+	...SHOWN_STANDING_OUT_FORM
 };
 /**
  * A piece of the page lifted off a target, a selector's first `every` blocks together or a box of the screen, over
