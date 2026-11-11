@@ -3,8 +3,9 @@
  * (`src/props/object.ts`), so it travels, grows, comes near, turns, stands out, comes up and goes as any object does.
  * What is its own is the file it shows and how wide it stands against how tall, as the browser decoded it: it is
  * drawn as large as its box holds all of it, in the box's middle, as a piece of the page is (`src/props/piece.ts`).
- * The stage draws it from the file as it holds it (`layPictures` in `stage/stage.js`), at the frame's density wherever
- * it stands, as all markup is drawn.
+ * The stage draws it from the file as it holds it (`layPictures` in `stage/stage.js`), at the frame's density on the
+ * frame and in the window, and in the world as densely as the eye magnifies it (`DrawnObject.magnified`), as all
+ * markup there.
  */
 import { type Box, boxOf } from '../domain/geometry.ts';
 import { figureIn } from './piece.ts';

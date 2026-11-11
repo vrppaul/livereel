@@ -289,7 +289,7 @@ const A_LEG_BENDING = new OfForm<LegBending>(
 		bend: needed(new Plain(isMoreThanNone, "a share of the leg's chord, more than 0")),
 		takes: A_LEGS_TIME
 	},
-	'a leg bending: { to, arriving, bend }'
+	'a leg bending: { to, arriving, bend, takes }'
 );
 const A_LEG: Kind<LegScript> = new FormByName<LegScript>(
 	[
@@ -300,18 +300,21 @@ const A_LEG: Kind<LegScript> = new FormByName<LegScript>(
 					ahead: needed(new Plain(isMoreThanNone, 'how many times as long as the leg before, more than 0')),
 					takes: A_LEGS_TIME
 				},
-				'a leg ahead: { ahead }'
+				'a leg ahead: { ahead, takes }'
 			)
 		],
 		[
 			'along',
-			new OfForm<LegAlong>({ along: needed(AN_OWN_FIGURE), takes: A_LEGS_TIME }, 'a leg along a figure: { along }')
+			new OfForm<LegAlong>(
+				{ along: needed(AN_OWN_FIGURE), takes: A_LEGS_TIME },
+				'a leg along a figure: { along, takes }'
+			)
 		],
 		['arriving', A_LEG_BENDING],
 		['bend', A_LEG_BENDING]
 	],
-	new OfForm<LegTo>({ to: needed(AN_OVER), takes: A_LEGS_TIME }, 'a leg: { to }'),
-	'a leg: { to }, { to, arriving, bend }, { ahead } or { along }'
+	new OfForm<LegTo>({ to: needed(AN_OVER), takes: A_LEGS_TIME }, 'a leg: { to, takes }'),
+	'a leg: { to }, { to, arriving, bend }, { ahead } or { along }, each with how long it takes where the legs are timed'
 );
 const A_LEG_NUMBER: Kind<number> = new Plain(isLegNumber, "a leg's number, 0 for the first");
 const A_TIP: Kind<number> = new Plain(isTip, 'degrees from -90, looking straight down onto the page, to 90');
