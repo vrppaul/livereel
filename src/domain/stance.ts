@@ -1,10 +1,15 @@
 /**
- * How something stands about its box's middle — how large, how far out toward the eye, which way it faces — and how the
- * stage draws it so: one matrix (`src/domain/matrix.ts`), which the stage draws with and the engine reads where the
- * thing stands on the frame, so a film turns, rolls, grows or brings near anything that stands so by its values alone,
- * with no move of its own for each. An object stands so (`src/props/object.ts`), and the page's window
- * (`src/props/window.ts`), drawn by the one matrix as flat or leant alike. A matrix is read back into a stance too
- * (`stanceCarriedBy`), where something carried into another holder stands there as it stood.
+ * How something stands about its box's middle — how large, how far out toward the eye, which way it faces and the point
+ * of its box it turns about — and how the stage draws it so: one matrix (`src/domain/matrix.ts`), which the stage draws
+ * with and the engine reads where the thing stands on the frame, so a film turns, rolls, grows or brings near anything
+ * that stands so by its values alone, with no move of its own for each. An object stands so (`src/props/object.ts`),
+ * and the page's window (`src/props/window.ts`), drawn by the one matrix as flat or leant alike. A matrix is read back
+ * into a stance too (`stanceCarriedBy`), where something carried into another holder stands there as it stood.
+ *
+ * It grows about its box's middle and turns about a point of its box, its middle until a lean names another, as a slab
+ * leans back on its foot: the point, of the box as grown, stays where it stood as the angle turns. The point is a
+ * share of the box, so it goes with the box as the box travels or grows, and the box's middle is where it stands face-on;
+ * it moves nothing while the angle turns nothing, so a lean names another only then, where it cannot jump.
  *
  * The stage is handed a flat 2D matrix where the thing faces the frame, at any size, depth or roll, and a 3D one only
  * where it leans: a 3D transform, of no angle too, costs the graphics card a layer in every exposure of a frame, and a
@@ -15,19 +20,21 @@
  */
 import { Euler, MathUtils } from 'three';
 import { FilmError } from './errors.ts';
-import { type Size, frameScaleOf } from './geometry.ts';
-import { A_NUMBER, type Kind, Plain } from './handed.ts';
+import { A_POINT, MIDDLE_SHARE, type Point, type Size, frameScaleOf } from './geometry.ts';
+import { A_NUMBER, type Kind, NameOrForm, OneOf, Plain } from './handed.ts';
 import {
 	type FlatMatrix,
 	ITS_MIDDLE,
 	type Matrix,
 	type PlanesWays,
+	type Spot,
 	carried,
 	chained,
 	crossOf,
 	dotOf,
 	facesTheFrame,
 	flatOf,
+	keepsItsAcross,
 	lengthOf,
 	rotationX,
 	rotationY,
@@ -38,6 +45,7 @@ import {
 	translation,
 	turnTo,
 	unitOf,
+	wayBetween,
 	waysAlongItsPlane
 } from './matrix.ts';
 import { between } from './toward.ts';
@@ -56,13 +64,23 @@ export interface Angle {
 
 /**
  * How something stands about its box's middle: `scale` times as large, `depth` out toward the eye in the frame's
- * pixels, facing as `angle`.
+ * pixels, facing as `angle`, turned `about` a point of its box, in shares of the box across and down from its top left
+ * corner, which may lie past it.
  */
 export interface Stance {
 	readonly scale: number;
 	readonly depth: number;
 	readonly angle: Angle;
+	readonly about: Point;
 }
+
+/** The points of a box a film names to turn something about: its middle, or the middle of an edge. */
+const ABOUT_NAMES = ['middle', 'top', 'bottom', 'left', 'right'] as const;
+
+type AboutName = (typeof ABOUT_NAMES)[number];
+
+/** A point of a box a film turns something about: by its name, or in shares of the box, `{ left, top }`. */
+export type AboutWritten = AboutName | Point;
 
 /** How the stage draws something about its middle: flat, a 2D matrix, or leant, a 3D one. */
 export type Transform = FlatTransform | LeantTransform;
@@ -84,8 +102,6 @@ export type Face = 'front' | 'back';
 const AS_LARGE = 1;
 // On the frame's plane, or the window's
 const ON_ITS_PLANE = 0;
-// Moved neither across nor down: something grows, turns and comes near about its own middle
-const UNMOVED = 0;
 // A scale of none draws nothing, and one less draws it upside down, a half roll
 const NONE = 0;
 const DEGREES_IN_A_TURN = 360;
@@ -103,14 +119,42 @@ const ALIKE_WITHIN = 1e-9;
 // carrying a placement from one holder into another leaves under a millionth of a pixel
 const ON_ITS_PLANE_WITHIN = 1e-6;
 
+// A box's left or top edge, and its right edge or foot, in shares of it
+const NEAR_EDGE = 0;
+const FAR_EDGE = 1;
+// The points of a box a film names, in shares of it across and down from its top left corner: its middle, and the
+// middles of its edges
+const POINTS_NAMED: Readonly<Record<AboutName, Point>> = {
+	middle: MIDDLE_SHARE,
+	top: { left: MIDDLE_SHARE.left, top: NEAR_EDGE },
+	bottom: { left: MIDDLE_SHARE.left, top: FAR_EDGE },
+	left: { left: NEAR_EDGE, top: MIDDLE_SHARE.top },
+	right: { left: FAR_EDGE, top: MIDDLE_SHARE.top }
+};
+
 /** How something faces until a move leans it: face-on and upright. */
 export const FACE_ON: Angle = { tilt: 0, turn: 0, roll: 0, over: 0 };
 
-/** How something stands until a move changes it: as large as its box, on its plane, face-on and upright. */
-export const AS_PLACED: Stance = { scale: AS_LARGE, depth: ON_ITS_PLANE, angle: FACE_ON };
+/**
+ * How something stands until a move changes it: as large as its box, on its plane, face-on and upright, turning about
+ * its middle.
+ */
+export const AS_PLACED: Stance = { scale: AS_LARGE, depth: ON_ITS_PLANE, angle: FACE_ON, about: MIDDLE_SHARE };
 
 /** How large a film grows something: any number of times more than none. */
 export const A_SCALE: Kind<number> = new Plain(isScale, 'a scale, more than 0, 1 as large as its place');
+
+/** A point of a box a film turns something about, as it writes it: by its name, or in shares of the box. */
+export const A_POINT_TURNED_ABOUT: Kind<AboutWritten> = new NameOrForm(
+	new OneOf(ABOUT_NAMES, `one of ${ABOUT_NAMES.join(', ')}`),
+	A_POINT,
+	`a point of its box: ${ABOUT_NAMES.map((name) => JSON.stringify(name)).join(', ')}, or { left, top } in shares of the box`
+);
+
+/** The point of a box a film names to turn something about, in shares of the box. */
+export function pointTurnedAbout(written: AboutWritten): Point {
+	return typeof written === 'string' ? POINTS_NAMED[written] : written;
+}
 
 /**
  * A depth a move brings something to, in pixels of a frame 1080 high, and the move's value that names it, as a
@@ -148,27 +192,38 @@ export function assertNearerThanTheEye(named: readonly DepthNamed[], focalLength
 }
 
 /**
- * The matrix of a stance about the middle of its box, before any eye sees it: grown, turned to its angle, then brought
- * out toward the eye.
+ * The matrix of a stance about the middle of its box, a box of this size, before any eye sees it: grown, turned to its
+ * angle, then moved as far as `middleMovedBy` moves its middle.
  */
-export function stanceMatrix(stance: Stance): Matrix {
+export function stanceMatrix(stance: Stance, box: Size): Matrix {
+	return chained([translation(middleMovedBy(stance, box)), angledAs(stance.angle), scaling(stance.scale)]);
+}
+
+/**
+ * The matrix that takes a spot where a stance carried it back to where it stood about its box's middle: moved back as
+ * far as its middle moved, turned back from its angle, then shrunk back from its scale, `stanceMatrix` undone.
+ */
+export function stanceMatrixBack(stance: Stance, box: Size): Matrix {
 	return chained([
-		translation({ across: UNMOVED, down: UNMOVED, out: stance.depth }),
-		angledAs(stance.angle),
-		scaling(stance.scale)
+		scaling(AS_LARGE / stance.scale),
+		angledBack(stance.angle),
+		translation(wayBetween(middleMovedBy(stance, box), ITS_MIDDLE))
 	]);
 }
 
 /**
- * The matrix that takes a spot where a stance carried it back to where it stood about its box's middle: brought back
- * from its depth, turned back from its angle, then shrunk back from its scale, `stanceMatrix` undone.
+ * How far a stance moves the middle of its box, a box of this size: out toward the eye by its depth, and, turned about
+ * another point of the box, round that point, which stands as far from the middle as the box is grown, so that point
+ * stays where it stood as the angle turns. None but the depth about the middle.
  */
-export function stanceMatrixBack(stance: Stance): Matrix {
-	return chained([
-		scaling(AS_LARGE / stance.scale),
-		angledBack(stance.angle),
-		translation({ across: UNMOVED, down: UNMOVED, out: -stance.depth })
-	]);
+export function middleMovedBy(stance: Stance, box: Size): Spot {
+	const about = {
+		across: (stance.about.left - MIDDLE_SHARE.left) * box.width * stance.scale,
+		down: (stance.about.top - MIDDLE_SHARE.top) * box.height * stance.scale,
+		out: ON_ITS_PLANE
+	};
+	const round = wayBetween(carried(angledAs(stance.angle), about), about);
+	return { ...round, out: stance.depth + round.out };
 }
 
 /**
@@ -237,13 +292,14 @@ function turnNearest(degrees: number, stood: number): number {
 }
 
 /**
- * How a matrix stands what it carries about its middle, as a stance does (`stanceMatrix`), wherever it carries that
- * middle across and down: as large as it draws a step across, as far out as it carries the middle, and facing as it
- * turns the plane's across and down, with no turn over, each value of the angle at its nearest whole turn to that value
- * of the angle it stood at, so what is carried on from there spins no whole turn back. None where the matrix draws a
- * step across and one down unlike in length or off square, stretching what it carries, as no stance does.
+ * How a matrix stands what it carries about the middle of a box of this size, as a stance does (`stanceMatrix`),
+ * wherever it carries that middle across and down: as large as it draws a step across, facing as it turns the plane's
+ * across and down, with no turn over, each value of the angle at its nearest whole turn to that value of the angle it
+ * stood at, so what is carried on from there spins no whole turn back; turned about the point it stood turned about, and
+ * as far out as it carries the middle, less how far turning about that point moves it out. None where the matrix draws
+ * a step across and one down unlike in length or off square, stretching what it carries, as no stance does.
  */
-export function stanceCarriedBy(matrix: Matrix, stood: Angle): Stance | null {
+export function stanceCarriedBy(matrix: Matrix, stood: Stance, box: Size): Stance | null {
 	const ways = waysAlongItsPlane(matrix);
 	const scale = lengthOf(ways.across);
 	if (!growsAlike(ways, scale)) return null;
@@ -257,7 +313,17 @@ export function stanceCarriedBy(matrix: Matrix, stood: Angle): Stance | null {
 		roll: MathUtils.radToDeg(turned.z),
 		over: NO_TURN_OVER
 	};
-	return { scale, depth: carried(matrix, ITS_MIDDLE).out, angle: angleNearest(angle, stood) };
+	const turning = { scale, depth: ON_ITS_PLANE, angle: angleNearest(angle, stood.angle), about: stood.about };
+	return { ...turning, depth: carried(matrix, ITS_MIDDLE).out - middleMovedBy(turning, box).out };
+}
+
+/**
+ * Whether an angle leaves what faces so facing the frame with its front, upright, as it stood: by whole turns alone,
+ * so it turns nothing about any point.
+ */
+export function isFrontOn(angle: Angle): boolean {
+	const angled = angledAs(angle);
+	return facesTheFrame(angled) && showsItsFront(angled) && keepsItsAcross(angled);
 }
 
 /** Whether a matrix draws a step across its plane and one down it alike in length and square, the step across so long. */

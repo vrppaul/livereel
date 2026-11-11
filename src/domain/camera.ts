@@ -52,15 +52,21 @@ import {
 	chained,
 	dotOf,
 	facesTheFrame,
-	keepsItsAcross,
 	movedAlong,
 	scaledBy,
-	showsItsFront,
 	translation,
 	wayBetween
 } from './matrix.ts';
 import { middleInTheRoom, pointOnTheFrame, windowInTheWorld } from './placement.ts';
-import { AS_PLACED, type Stance, angledAs, angledBack, stanceMatrix, stanceMatrixBack } from './stance.ts';
+import {
+	AS_PLACED,
+	type Stance,
+	angledAs,
+	angledBack,
+	middleMovedBy,
+	stanceMatrix,
+	stanceMatrixBack
+} from './stance.ts';
 import { between } from './toward.ts';
 import { ARRIVED, type Track, alongTrack, arrivedAt } from './track.ts';
 
@@ -218,7 +224,8 @@ export function viewOf(placing: Placing): View {
 		lift: placing.lift,
 		scale: placing.scale,
 		depth: placing.depth,
-		angle: placing.angle
+		angle: placing.angle,
+		about: placing.about
 	};
 }
 
@@ -271,7 +278,7 @@ function eyeInTheRoom(eye: Eye, view: View, frame: Size): Eye {
  */
 export function eyeInTheWindow(eye: Eye, view: View, frame: Size): Eye {
 	const back = chained([
-		stanceMatrixBack(stanceAsTheEyeMeasures(view, frame)),
+		stanceMatrixBack(stanceAsTheEyeMeasures(view, frame), sizeAsTheEyeMeasures(view, frame)),
 		translation(scaledBy(windowsMiddle(view, frame), BACK))
 	]);
 	return { ...eye, ...viewpointCarried(back, angledBack(view.angle), eye), inside: 'window' };
@@ -282,7 +289,10 @@ export function eyeInTheWindow(eye: Eye, view: View, frame: Size): Eye {
  * frame of this size, in pixels of a frame 1080 high, as the eye's spots are.
  */
 function windowInTheRoom(view: View, frame: Size): Matrix {
-	return chained([translation(windowsMiddle(view, frame)), stanceMatrix(stanceAsTheEyeMeasures(view, frame))]);
+	return chained([
+		translation(windowsMiddle(view, frame)),
+		stanceMatrix(stanceAsTheEyeMeasures(view, frame), sizeAsTheEyeMeasures(view, frame))
+	]);
 }
 
 /**
@@ -295,7 +305,13 @@ function windowsMiddle(view: View, frame: Size): Spot {
 
 /** How the window stands on a frame of this size, its depth in pixels of a frame 1080 high, as the eye's spots are. */
 function stanceAsTheEyeMeasures(view: View, frame: Size): Stance {
-	return { scale: view.scale, depth: view.depth / frameScaleOf(frame), angle: view.angle };
+	return { scale: view.scale, depth: view.depth / frameScaleOf(frame), angle: view.angle, about: view.about };
+}
+
+/** The size of the window's box on a frame of this size, in pixels of a frame 1080 high, as the eye's spots are. */
+function sizeAsTheEyeMeasures(view: View, frame: Size): Size {
+	const frameScale = frameScaleOf(frame);
+	return { width: view.box.width / frameScale, height: view.box.height / frameScale };
 }
 
 /** Where an eye stands and looks carried by a matrix, and the way its top points turned by the matrix's turn alone. */
@@ -435,13 +451,7 @@ export function zoomPicturedFor(own: Camera, along: readonly Camera[], pieces: r
  * turned over, or by whole or half turns alone, which show its front or its back, rolled any way.
  */
 function showsThePageNoLargerThanItsZoom(view: View): boolean {
-	return view.depth <= AS_PLACED.depth && view.scale <= AS_PLACED.scale && facesTheFrame(stanceMatrix(view));
-}
-
-/** Whether a stance leaves what stands so facing the frame with its front, upright: by whole turns alone. */
-export function isFrontOn(stance: Stance): boolean {
-	const stood = stanceMatrix(stance);
-	return facesTheFrame(stood) && showsItsFront(stood) && keepsItsAcross(stood);
+	return view.depth <= AS_PLACED.depth && view.scale <= AS_PLACED.scale && facesTheFrame(angledAs(view.angle));
 }
 
 /** The pose an aim comes to in a view, kept off the screen's edge there: the film's own, or a block framed there. */
@@ -693,14 +703,16 @@ function seenOnTheScreen(camera: Camera, frame: Size, point: Point): Point {
 
 /**
  * The point of the screen's plane a point of the frame shows from a camera: where the eye's line through it meets the
- * plane, which passes through the view's middle brought out by its depth, facing as the view leans, carried back to
- * the screen. None where the line meets the plane behind the eye, or never: the point sees past it.
+ * plane, which passes through the view's middle where its stance moves it, brought out by its depth and round the
+ * point it turns about, facing as the view leans, carried back to the screen. None where the line meets the plane
+ * behind the eye, or never: the point sees past it.
  */
 export function underTheFrame(camera: Camera, frame: Size, point: Point): Point | null {
 	const pose = camera.pose;
 	const facingNow = carried(angledAs(camera.view.angle), FACING_OUT);
 	const middle = middleInTheRoom(camera.view.box, frame);
-	const planesMiddle = { ...middle, out: camera.view.depth };
+	const moved = middleMovedBy(camera.view, camera.view.box);
+	const planesMiddle = { across: middle.across + moved.across, down: middle.down + moved.down, out: moved.out };
 	const sight = sightOf(camera.eye, frame, {
 		left: point.left - frame.width / HALVES,
 		top: point.top - frame.height / HALVES
@@ -709,7 +721,10 @@ export function underTheFrame(camera: Camera, frame: Size, point: Point): Point 
 	// eye at rest on the frame's plane
 	const reach = dotOf(facingNow, wayBetween(sight.from, planesMiddle)) / dotOf(facingNow, sight.along);
 	if (!(reach > 0 && Number.isFinite(reach))) return null;
-	const met = carried(stanceMatrixBack(camera.view), wayBetween(middle, movedAlong(sight.from, sight.along, reach)));
+	const met = carried(
+		stanceMatrixBack(camera.view, camera.view.box),
+		wayBetween(middle, movedAlong(sight.from, sight.along, reach))
+	);
 	const frameZoom = frameZoomOf(pose, frame);
 	return { left: pose.focusX + met.across / frameZoom, top: pose.focusY + met.down / frameZoom };
 }

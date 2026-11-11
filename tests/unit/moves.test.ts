@@ -17,7 +17,8 @@ import {
 	distanceBetween,
 	frameScaleOf,
 	middleX,
-	middleY
+	middleY,
+	pointAt
 } from '../../src/domain/geometry.ts';
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
 import { type Beginning, type Move, ownPagesOf } from '../../src/direction/move.ts';
@@ -48,9 +49,22 @@ import * as callout from '../../src/moves/callout.ts';
 import * as caption from '../../src/moves/caption.ts';
 import * as code from '../../src/moves/code.ts';
 import * as ending from '../../src/moves/ending.ts';
-import { type DrawnObject, type Surroundings, drawnObject, drawnOnTheFrame } from '../../src/props/object.ts';
-import { type Sharpness, focusDistanceOf, outOfFocusAt, sharpnessOf } from '../../src/domain/focus.ts';
-import { IN_THE_WINDOW, ON_THE_PAGE } from '../../src/domain/placement.ts';
+import {
+	type DrawnObject,
+	type Surroundings,
+	drawnObject,
+	drawnOnTheFrame,
+	focusOn,
+	standingInTheWorld
+} from '../../src/props/object.ts';
+import {
+	type Sharpness,
+	distanceOfItsMiddle,
+	focusDistanceOf,
+	outOfFocusAt,
+	sharpnessOf
+} from '../../src/domain/focus.ts';
+import { IN_THE_WINDOW, ON_THE_PAGE, pointOnTheFrame, windowInTheWorld } from '../../src/domain/placement.ts';
 import type { Piece } from '../../src/props/piece.ts';
 import { SCREEN_UP } from '../../src/props/screen.ts';
 import type { DrawnWindow } from '../../src/props/window.ts';
@@ -3735,4 +3749,85 @@ test("a thing is refused standing inside the window, built by a name the film's 
 			'thing.set sets shine, which the thing was not shown with: show it with every number its module reads'
 		)
 	);
+});
+
+// Points of a box in shares of it: the middle of its foot and of its right edge, and one below it, left of its middle
+const FOOT_MIDDLE: Point = { left: 0.5, top: 1 };
+const RIGHT_MIDDLE: Point = { left: 1, top: 0.5 };
+const BELOW_ITS_BOX: Point = { left: 0.2, top: 1.5 };
+
+/** Where a point of the window, in shares of its box, is drawn on the frame of a scene shot in the small format. */
+function windowsPointOf(scene: Scene, share: Point): Point {
+	const camera = cameraOf(scene, SMALL);
+	const window = windowInTheWorld(camera.view, camera.eye, SMALL.frame);
+	return pointOnTheFrame(window, pointAt(boxOf(camera.view.box), share));
+}
+
+/** Where a point of an object of a scene shot in the small format, in shares of its box, is drawn on the frame. */
+function drawnPointOf(scene: Scene, name: string, share: Point): Point {
+	const holders = { camera: cameraOf(scene, SMALL), groups: scene.groups };
+	return drawnOnTheFrame(scene.objects.get(name)!, holders, SMALL.frame, share);
+}
+
+test('a window or an object leant about a point of its box keeps that point where it stood on the frame: the window tilted 90° about its foot, a title rolled about the middle of its right edge, code tilted and rolled about a point below its box', async () => {
+	const placed = await setAt(windowTo('right'), OPENING_IN_SMALL, 1);
+	const tilted = await setAt(lean({ tilt: 90, about: 'bottom' }), placed, 1);
+	const titled = await setAt(title.show('Words', { at: 'left' }), OPENING_IN_SMALL, 1);
+	const rolled = await setAt(title.lean({ roll: 50, about: 'right' }), titled, 1);
+	const coded = await setAt(code.show(THREE_LINES, { at: 'left' }), OPENING_IN_SMALL, 1);
+	const leant = await setAt(code.lean({ tilt: 30, roll: 20, about: BELOW_ITS_BOX }), coded, 1);
+	expect([
+		windowsPointOf(tilted, FOOT_MIDDLE),
+		drawnPointOf(rolled, 'title', RIGHT_MIDDLE),
+		drawnPointOf(leant, 'code', BELOW_ITS_BOX)
+	]).toEqual([
+		closeToPoint(windowsPointOf(placed, FOOT_MIDDLE)),
+		closeToPoint(drawnPointOf(titled, 'title', RIGHT_MIDDLE)),
+		closeToPoint(drawnPointOf(coded, 'code', BELOW_ITS_BOX))
+	]);
+});
+
+test('a lean naming another point of the box to turn about is refused while what it leans is turned from face-on, rolled too, and taken where it faces the frame by whole turns', async () => {
+	const tilted = await setAt(lean({ tilt: 20 }), OPENING_IN_SMALL, 1);
+	const titled = await setAt(title.show('Words', { at: 'left' }), OPENING_IN_SMALL, 1);
+	const rolled = await setAt(title.lean({ roll: 30 }), titled, 1);
+	const spun = await setAt(lean({ turn: 360 }), OPENING_IN_SMALL, 1);
+	await expect(setAt(lean({ tilt: 40, about: 'bottom' }), tilted, 1)).rejects.toThrow(
+		new FilmError(
+			'window.lean would turn the window about another point of its box while it is turned from face-on, where it would jump: lean it face-on first, or on about the point it turns about'
+		)
+	);
+	await expect(setAt(title.lean({ about: 'top' }), rolled, 1)).rejects.toThrow(
+		new FilmError(
+			'title.lean would turn the title about another point of its box while it is turned from face-on, where it would jump: lean it face-on first, or on about the point it turns about'
+		)
+	);
+	expect((await setAt(lean({ tilt: 10, about: 'bottom' }), spun, 1)).window.about).toEqual(FOOT_MIDDLE);
+});
+
+test('the eye sees under a point of the frame the point of the screen drawn there on a window leant about its foot', async () => {
+	const leant = await setAt(lean({ tilt: 50, roll: 20, about: 'bottom' }), OPENING_IN_SMALL, 1);
+	const camera = cameraOf(leant, SMALL);
+	const point: Point = { left: 330, top: 180 };
+	expect(underTheFrame(camera, SMALL.frame, onTheFrame(camera, SMALL.frame, point))).toEqual(closeToPoint(point));
+});
+
+test('the eye focused on an object leant about its foot focuses where its middle stands', async () => {
+	const shown = await setAt(title.show('Words', { at: AROUND_THE_AIM, inside: 'world' }), OPENING_IN_SMALL, 1);
+	const leant = await setAt(title.lean({ tilt: 60, about: 'bottom' }), shown, 1);
+	const holders = { camera: cameraOf(leant, SMALL), groups: leant.groups };
+	const object = leant.objects.get('title')!;
+	const middle = distanceOfItsMiddle(standingInTheWorld(object, holders, SMALL.frame)!, SMALL.frame);
+	expect(focusDistanceOf(focusOn(object, holders, SMALL.frame), holders.camera, SMALL.frame)).toBeCloseTo(middle);
+});
+
+test('a piece in the world rolled about its foot, carried onto the page, stands where it stood as it sets off and still turns about its foot', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { inside: 'world' }), wide, 1, FULL_HD);
+	const rolled = await setIn(piece.lean({ roll: 30, about: 'bottom' }), lifted, 1, FULL_HD);
+	const settingOff = await setIn(piece.onto('#other'), rolled, 0, FULL_HD);
+	expect([drawnObjectsIn(settingOff, FULL_HD)[0]!.inTheEyesSpace, settingOff.objects.get('piece')!.about]).toEqual([
+		closeToMatrix(drawnObjectsIn(rolled, FULL_HD)[0]!.inTheEyesSpace),
+		FOOT_MIDDLE
+	]);
 });

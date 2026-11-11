@@ -188,7 +188,7 @@ and the moves of each part of the scene:
   as its own distance has it, so a window leant back is sharp where the eye focuses and melts beyond; what stands on
   the frame or in a group stays sharp. It shares a step with `eye.to`, and holds on what it was put on as the eye moves; a focus pulled from
   one to another goes evenly in how sharp it leaves things. A focus on what stands behind the eye is refused
-- `window.to(place, { depth })`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn, roll, over })`,
+- `window.to(place, { depth })`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn, roll, over, about })`,
   `window.shade({ dim, fade, blur })`, `window.body({ thickness, rim, metal, roughness, glass }, { within })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
 - `callout.show(target, text, { side })`, `callout.hide()`
@@ -198,9 +198,9 @@ and the moves of each part of the scene:
 - `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
   `cursor.release()`, `cursor.hide()`
 - `title.show(text, { at, align, size, letterSpacing, lineHeight, from, enter, edge, words, as, inside, group, zIndex })`,
-  `title.to(place, { scale, depth })`, `title.lean({ tilt, turn, roll, over })`, `title.hide({ toward, leave, edge })`
+  `title.to(place, { scale, depth })`, `title.lean({ tilt, turn, roll, over, about })`, `title.hide({ toward, leave, edge })`
 - `code.show(text, { at, from, enter, edge, longLines, as, inside, group, zIndex })`,
-  `code.to(place, { scale, depth })`, `code.lean({ tilt, turn, roll, over })`, `code.light(line, { through })`,
+  `code.to(place, { scale, depth })`, `code.lean({ tilt, turn, roll, over, about })`, `code.light(line, { through })`,
   `code.scrollTo(line)`,
   `code.hide({ toward, leave, edge })`; each move of a title or code takes `as` to name which
 - `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
@@ -209,11 +209,11 @@ and the moves of each part of the scene:
   `screen.scrolls(page, { pace })`, `screen.sweep({ from, slant, round, width, crest })`
 - `terminal.open(title, { at, from, enter, edge, inside, group, zIndex })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
-  `terminal.lean({ tilt, turn, roll, over })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
+  `terminal.lean({ tilt, turn, roll, over, about })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
 - `piece.show(target, { every, air, corner, hole, lines, picture, enter, edge, as, inside, group, zIndex })`,
-  `piece.to(place, { scale, depth })`, `piece.onto(target)`, `piece.lean({ tilt, turn, roll, over })`, `piece.back()`,
+  `piece.to(place, { scale, depth })`, `piece.onto(target)`, `piece.lean({ tilt, turn, roll, over, about })`, `piece.back()`,
   `piece.hide({ toward, leave, edge })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
   in the page's pixels (a rounded card's own `border-radius`), square where it names none, and as round as the window
@@ -222,26 +222,26 @@ and the moves of each part of the scene:
   held as it is lifted; carried `onto` another block, it lies on the page there, in the window, and keeps that place on
   the screen as the camera moves; each move of it takes `as` to name which
 - `outline.show(target, { every, line, enter, edge, as, group, zIndex })`, `outline.to(place, { scale, depth })`,
-  `outline.lean({ tilt, turn, roll, over })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a
+  `outline.lean({ tilt, turn, roll, over, about })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a
   selector's blocks or a box of the screen, `'solid'` or `'dashed'`; each move of it takes `as` to name which
 - `lens.show(target, { magnification, size, enter, edge, as, group, zIndex })`, `lens.to(target)`,
   `lens.hide({ toward, leave, edge })`; a round glass over the page, showing what lies under its middle magnified; each
   move of it takes `as` to name which
 - `picture.show(file, { at, from, enter, edge, as, inside, group, zIndex })`, `picture.to(place, { scale, depth })`,
-  `picture.lean({ tilt, turn, roll, over })`, `picture.hide({ toward, leave, edge })`; a picture of the film's own, a
+  `picture.lean({ tilt, turn, roll, over, about })`, `picture.hide({ toward, leave, edge })`; a picture of the film's own, a
   mark or a logo, from an image file by its path from the film's file (PNG, JPEG, WebP, AVIF, GIF, or an SVG that
   names its width and height), over the whole frame or `at` a place, read as the window reads one, drawn as large as
   the place holds all of it, in its middle, as wide against as tall as its file; a file that is not there, or decodes
   to no picture, is refused before the first frame. It is drawn at the frame's density wherever it stands, as all
   markup is: brought near the eye in the world it is magnified, as a title is; each move of it takes `as` to name which
 - `thing.show(made, { at, reach, values, inside: 'world', from, as })`, `thing.to(place, { through, scale, depth })`,
-  `thing.lean({ tilt, turn, roll, over })`, `thing.set(values)`, `thing.hide({ toward })`: a thing of the film's own
+  `thing.lean({ tilt, turn, roll, over, about })`, `thing.set(values)`, `thing.hide({ toward })`: a thing of the film's own
   three.js, built by the film's things module by the name `made`, in a room alone ("Flat, or a room")
 - `title.effects({ ring, glow, shadow, blur, colour, melt, scale, depth })`, and so `code.effects`,
   `terminal.effects`, `piece.effects`, `outline.effects`, `lens.effects` and `picture.effects`: how the object stands out, ringed and
   glowing in the accent or a `colour` of the film's, casting a shadow, blurred, melting toward a side, grown or
   brought toward the eye where it stands
-- `group.show({ at, order })`, `group.to(place, { scale, depth })`, `group.lean({ tilt, turn, roll, over })`,
+- `group.show({ at, order })`, `group.to(place, { scale, depth })`, `group.lean({ tilt, turn, roll, over, about })`,
   `group.hide()`; a group of objects, turned, grown and brought near as one, each object in it as its own moves have
   it, drawn by the `zIndex` its show names, the higher over the lower, or, with `order: 'depth'`, the farther behind
   the nearer; each move of it takes `as` to name which
@@ -285,7 +285,7 @@ written out, `{ focusX, focusY, zoom }`. The camera chooses what of the page
 the window shows, its zoom going by even steps of scale, 1 to 4 at 2 half
 way, the point of the page that stands at one place on the frame at both
 ends staying there all the way; the window leans, `window.lean({ tilt, turn,
-roll, over })`, the screen in it with it, by a move of its own, so it travels
+roll, over, about })`, the screen in it with it, by a move of its own, so it travels
 and leans in one `play`. Every move that runs over time
 takes a share of its step, `within: { start, end }`, and a curve of its own,
 `ease`: `linear`, `easeInOutSine` (a step's own), `easeInOutCubic`,
@@ -423,7 +423,14 @@ about its middle, `roll` turns it in its own plane, clockwise, and `over`
 turns it over round its own width as it then stands, swung and rolled, top
 away from the eye, as a slab turned over in the hand; a value left out is
 kept as it stands, and 360 is a whole turn, so `lean({ turn: 360 })` spins
-it round once. Unrolled and unswung, `over` leans it as `tilt` does. As it is carried it grows about its middle,
+it round once. Unrolled and unswung, `over` leans it as `tilt` does. It
+turns about its middle until a lean names another point of its box,
+`about`: `'top'`, `'bottom'`, `'left'`, `'right'`, `'middle'`, or `{ left,
+top }` in shares of the box, past it too, which stays where it stood as it
+turns, so `window.lean({ tilt: 64, roll: 36, about: 'bottom' })` lies the
+window back on its foot; the point goes with the box as it travels, and is
+kept until a lean names another, which one may do only while it faces the
+frame unturned, as turning about another point would jump. As it is carried it grows about its middle,
 `code.to('right', { scale: 1.4 })`, and comes `depth` pixels of a frame 1080
 high toward the eye, less than the eye's focal length, larger and farther
 from the frame's middle as the eye sees it; each is kept as it stands where

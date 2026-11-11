@@ -5,7 +5,7 @@
  * stands on that screen, with no camera applied, or a part of the frame, as the page's window on it. Every other
  * measure of a film is read off these.
  */
-import { A_NUMBER, A_PIXELS, type Kind, OfForm, OneOf, needed } from './handed.ts';
+import { A_NUMBER, A_PIXELS, OfForm, OneOf, needed } from './handed.ts';
 import type { PathSpace } from './path.ts';
 import { between } from './toward.ts';
 
@@ -27,7 +27,7 @@ export type FrameSide = (typeof FRAME_SIDES)[number];
 
 export const A_FRAME_SIDE = new OneOf(FRAME_SIDES, 'a side of the frame: "left", "right", "top" or "bottom"');
 
-export const A_POINT: Kind<Point> = new OfForm<Point>(
+export const A_POINT: OfForm<Point> = new OfForm<Point>(
 	{ left: needed(A_NUMBER), top: needed(A_NUMBER) },
 	'a point: { left, top }, each a number'
 );
@@ -188,6 +188,11 @@ export function nearestInTheBox(point: Point, box: Box): Point {
 /** Whether a box is the whole of a size laid from its top left, edge to edge. */
 export function isTheWholeOf(box: Box, size: Size): boolean {
 	return box.left === 0 && box.top === 0 && box.width === size.width && box.height === size.height;
+}
+
+/** Whether two points are the same point: as far across and as far down. */
+export function samePoint(first: Point, second: Point): boolean {
+	return first.left === second.left && first.top === second.top;
 }
 
 /** Whether two boxes are the same box: each edge where the other's is. */

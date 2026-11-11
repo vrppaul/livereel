@@ -50,9 +50,18 @@ import {
 	lengthOf,
 	translation,
 	unitOf,
+	wayBetween,
 	waysAlongItsPlane
 } from './matrix.ts';
-import { AS_PLACED, type Stance, type Transform, stanceCarriedBy, stanceMatrix, transformOf } from './stance.ts';
+import {
+	AS_PLACED,
+	type Stance,
+	type Transform,
+	middleMovedBy,
+	stanceCarriedBy,
+	stanceMatrix,
+	transformOf
+} from './stance.ts';
 
 /** Where something stands on the plane of what holds it: its box, in that plane's own pixels, and its stance. */
 export interface Placement extends Stance {
@@ -234,7 +243,10 @@ function windowsPlane(camera: Camera, frame: Size): Plane {
 export function placed(placement: Placement, plane: Plane, frame: Size): Placed {
 	const onThePlane = boxOnThePlane(placement.box, plane.measures, frame);
 	const laid = placedFrom(onThePlane, plane.box);
-	const own = chained([aboutTheMiddleOf(stanceMatrix(plane.stance), onThePlane, plane.box), stanceMatrix(placement)]);
+	const own = chained([
+		aboutTheMiddleOf(stanceMatrix(plane.stance, plane.box), onThePlane, plane.box),
+		stanceMatrix(placement, onThePlane)
+	]);
 	const standing = { laidIn: plane.laidIn, laid, rides: plane.rides };
 	switch (plane.laidIn.kind) {
 		case 'frame':
@@ -257,8 +269,9 @@ export function placed(placement: Placement, plane: Plane, frame: Size): Placed 
 /**
  * A placement in one holder carried into another, standing where it stood as the holders stand: the matrix that carries
  * it into the eye's own space read on the other's plane, and taken apart there into a box as large in what it is laid
- * in as it was, its middle where the matrix carries it, and a stance (`stanceCarriedBy`), each value of its angle at its
- * nearest whole turn to where it stood. None where the other's plane would stretch it: grown and leant from where it
+ * in as it was and a stance (`stanceCarriedBy`), each value of its angle at its nearest whole turn to where it stood,
+ * turning about the point of its box it turned about, the box's middle where the matrix carries it, less how far that
+ * stance moves it. None where the other's plane would stretch it: grown and leant from where it
  * stands at once, as a plane grows across and down alone. Every matrix here carries into the eye's own space, before
  * the eye sees anything in perspective, so no plane is ever seen edge-on.
  */
@@ -272,9 +285,10 @@ export function carriedInto(
 	const standing = placed(placement, planeOf(from, holders, frame), frame);
 	const plane = planeOf(to, holders, frame);
 	const onThePlane = chained([inverseOf(ownSpaceOf(plane, frame)), standing.inTheEyesSpace]);
-	const stance = stanceCarriedBy(onThePlane, placement.angle);
+	const stance = stanceCarriedBy(onThePlane, placement, standing.laid);
 	if (stance === null) return null;
-	const middle = carried(onThePlane, ITS_MIDDLE);
+	// Where the box's middle stands on the plane: where the matrix carries it, less how far the stance moves it
+	const middle = wayBetween(middleMovedBy(stance, standing.laid), carried(onThePlane, ITS_MIDDLE));
 	const laidMiddle = { left: plane.box.width / HALVES + middle.across, top: plane.box.height / HALVES + middle.down };
 	return { ...stance, box: boxOfItsHolder(boxCentredOn(laidMiddle, standing.laid), plane.measures, frame) };
 }
@@ -288,7 +302,7 @@ function ownSpaceOf(plane: Plane, frame: Size): Matrix {
 	return chained([
 		plane.inTheEyesSpace,
 		translation(middleInTheRoom(plane.box, sizeOfWhatItIsLaidIn(plane.laidIn, frame))),
-		stanceMatrix(plane.stance)
+		stanceMatrix(plane.stance, plane.box)
 	]);
 }
 

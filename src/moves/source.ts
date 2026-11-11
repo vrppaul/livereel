@@ -7,10 +7,11 @@
  * too where the stage shows the page live, with no picture, and while the screen shows a page of the film's own in its
  * place.
  */
-import { type Camera, boxOnTheFrame, isFrontOn, screenShownBy } from '../domain/camera.ts';
+import { type Camera, boxOnTheFrame, screenShownBy } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import { looksStraightAtTheFrame } from '../domain/eye.ts';
 import { type Box, overlapOf, withAir } from '../domain/geometry.ts';
+import { isFrontOn } from '../domain/stance.ts';
 import { type Beginning, type Target, refuseWithoutThePicture, shownBox, targetSaid } from '../direction/move.ts';
 import { cameraOf } from '../scene.ts';
 
@@ -61,7 +62,7 @@ export async function sourceOf(
  */
 export function cameraFrontOn(beginning: Beginning, doing: string): Camera {
 	const camera = cameraOf(beginning.scene, beginning.format);
-	if (!isFrontOn(camera.view)) {
+	if (!isFrontOn(camera.view.angle)) {
 		throw new FilmError(
 			`${doing} only while the window faces the frame front on, upright: bring it so, window.lean({ tilt: 0, turn: 0, roll: 0, over: 0 })`
 		);

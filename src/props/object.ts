@@ -87,7 +87,7 @@ import {
 	pointOnTheFrame,
 	whereItStands
 } from '../domain/placement.ts';
-import { type Face, type Stance, faceOf, transformOf } from '../domain/stance.ts';
+import { type Face, type Stance, faceOf, middleMovedBy, transformOf } from '../domain/stance.ts';
 import { type Code, type DrawnCode, drawnCode, scrolledShareOf } from './code.ts';
 import { type DrawnEffects, type Effects, type Melting, drawnEffects, drawnMelt } from './effects.ts';
 import { type DrawnEnding, type Ending, drawnEnding } from './ending.ts';
@@ -369,15 +369,17 @@ export function standingInTheWorld(object: FrameObject, holders: Holders, frame:
 
 /**
  * Where the eye focuses to see an object sharp, its middle where it stands now: at that spot of what it stands in, its
- * box's middle brought out by its depth, placed as each frame is drawn; in a group, which goes with what stands in it,
- * so far before the eye, as the group rides with it.
+ * box's middle where its stance moves it, brought out by its depth and round the point it turns about, placed as each
+ * frame is drawn; in a group, which goes with what stands in it, so far before the eye, as the group rides with it.
  */
 export function focusOn(object: FrameObject, holders: Holders, frame: Size): Focus {
 	const holder = object.inside;
 	if (holder.kind === 'group') {
 		return { kind: 'distance', distance: distanceOfItsMiddle(placedInItsHolder(object, holders, frame), frame) };
 	}
-	return { kind: 'spot', holder, point: { left: middleX(object.box), top: middleY(object.box) }, depth: object.depth };
+	const moved = middleMovedBy(object, object.box);
+	const point = { left: middleX(object.box) + moved.across, top: middleY(object.box) + moved.down };
+	return { kind: 'spot', holder, point, depth: moved.out };
 }
 
 /**

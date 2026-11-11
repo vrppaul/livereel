@@ -58,8 +58,9 @@ type Leant = Pick<Group, (typeof LEANT)[number]>;
 
 // The group a move takes where the film names none
 const GROUP: GroupName = 'group';
-// What a refusal names the move that carries a group by
+// What a refusal names the moves that carry and lean a group by
 const GROUP_TO = 'group.to';
+const GROUP_LEAN = 'group.lean';
 // The place a group stands in where the film names none, and how it orders what stands in it
 const THE_WHOLE_FRAME: Place = 'whole';
 const BY_Z_INDEX: GroupOrder = 'zIndex';
@@ -105,11 +106,11 @@ export function to(place: Place, script: ToScript = {}): Move {
 }
 
 /**
- * The group leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled by `roll`, with
- * everything in it.
+ * The group leant back from its top edge by `tilt`, swung by `turn`, rolled by `roll` and turned over by `over`, about
+ * a point of its box, with everything in it.
  */
 export function lean(script: ObjectLeanScript): Move {
-	assertWritten(script, LEAN_OBJECT_FORM, 'group.lean');
+	assertWritten(script, LEAN_OBJECT_FORM, GROUP_LEAN);
 	const name = script.as ?? GROUP;
 	return {
 		part: groupPart(name),
@@ -163,11 +164,11 @@ function aboutAPlace(beginning: Beginning, place: Place, group: Group): Box {
 	return resizedAbout(windowPlaced(beginning.format, place), group.box);
 }
 
-/** The group's angle on its way from how it faces to the film's. */
+/** The group's angle on its way from how it faces to the film's, about the point of its box it turns about. */
 function leaning(beginning: Beginning, name: GroupName, script: ObjectLeanScript): Change {
-	const group = groupFound(beginning.scene.groups, name, 'group.lean');
-	const to = leantFrom(group.angle, script);
-	return writing(name, (progress): Leant => ({ angle: angleToward(group.angle, to, progress) }));
+	const group = groupFound(beginning.scene.groups, name, GROUP_LEAN);
+	const to = leantFrom(group, script, GROUP_LEAN, `group "${name}"`);
+	return writing(name, (progress): Leant => ({ angle: angleToward(group.angle, to.angle, progress), about: to.about }));
 }
 
 /** The group going, everything in it fading with it; once gone, none, with all of it. */

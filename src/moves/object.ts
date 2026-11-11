@@ -14,11 +14,11 @@
  *
  * A move that carries an object to a place sets its box and the scale and depth the film names, one that carries it to
  * a box read off the page its box, one that carries it onto a block of the page what it stands in and where it stands
- * there, its box and its stance, one that leans it its angle, one of how it stands out the values the film names, one
- * of what it shows its content, each writing only its own into the object as it stands, so they share a step, each as
- * far along as its own share; a move that brings one sets it whole, standing where it comes up and standing out in no
- * way, and one that puts it away sets it whole as it stands. A move of an object that is not on the screen is refused
- * as it begins.
+ * there, its box, scale, depth and angle, one that leans it its angle and the point of its box it turns about, one of
+ * how it stands out the values the film names, one of what it shows its content, each writing only its own into the
+ * object as it stands, so they share a step, each as far along as its own share; a move that brings one sets it whole,
+ * standing where it comes up and standing out in no way, and one that puts it away sets it whole as it stands. A move
+ * of an object that is not on the screen is refused as it begins.
  *
  * An object shown into a group (`src/props/group.ts`) reads its place, or its source, as it would on the frame, and
  * stands in the group where it would stand there, carried into the group's plane however the group stands
@@ -297,7 +297,7 @@ const CARRIED = ['box', 'scale', 'depth'] as const satisfies readonly (keyof Fra
 const PLACED = ['box'] as const satisfies readonly (keyof FrameObject)[];
 const LAID_ONTO = ['inside', 'box', 'scale', 'depth', 'angle'] as const satisfies readonly (keyof FrameObject)[];
 const SET_WHERE_NAMED = ['scale', 'depth'] as const satisfies readonly (keyof FrameObject & keyof ToScript)[];
-export const LEANT = ['angle'] as const satisfies readonly (keyof FrameObject & keyof Group)[];
+export const LEANT = ['angle', 'about'] as const satisfies readonly (keyof FrameObject & keyof Group)[];
 const CONTENT = ['content'] as const satisfies readonly (keyof FrameObject)[];
 // The values a move that takes an object back sets: where it stands and how it faces, together
 const BACK = [...CARRIED, ...LEANT] as const satisfies readonly (keyof FrameObject)[];
@@ -486,8 +486,8 @@ export function objectHide(kind: ShownKind, move: string, script: HideScript): M
 }
 
 /**
- * An object of a kind leant back from its top edge by `tilt`, swung about its middle by `turn`, rolled in its own plane
- * by `roll` and turned over round its own width by `over`.
+ * An object of a kind leant back from its top edge by `tilt`, swung by `turn`, rolled in its own plane by `roll` and
+ * turned over round its own width by `over`, about a point of its box.
  */
 export function objectLean(kind: ShownKind, move: string, script: ObjectLeanScript): Move {
 	assertWritten(script, LEAN_OBJECT_FORM, move);
@@ -696,7 +696,7 @@ function carriedOntoThePage(beginning: Beginning, object: FrameObject, name: Obj
 
 /** How an object stands about its box's middle, apart from all else it holds. */
 function stanceOf(object: FrameObject): Stance {
-	return { scale: object.scale, depth: object.depth, angle: object.angle };
+	return { scale: object.scale, depth: object.depth, angle: object.angle, about: object.about };
 }
 
 /**
@@ -970,9 +970,9 @@ function refuseNearingInside(object: FrameObject, depth: number, name: ObjectNam
 }
 
 /**
- * The object's angle on its way from how it faces to the film's. Inside the page's window, or on the page in it, it
- * leans as the window does, and a lean of its own would only lie flat on the window's, so a tilt, a turn or a turn
- * over is refused there: it rolls.
+ * The object's angle on its way from how it faces to the film's, about the point of its box it turns about. Inside the
+ * page's window, or on the page in it, it leans as the window does, and a lean of its own would only lie flat on the
+ * window's, so a tilt, a turn or a turn over is refused there: it rolls.
  */
 function leaning(
 	beginning: Beginning,
@@ -983,14 +983,14 @@ function leaning(
 ): Change {
 	const object = standingOfKind(beginning, name, move, kind);
 	const from = object.angle;
-	const to = leantFrom(from, script);
+	const to = leantFrom(object, script, move, name);
 	const flat = flatOnTheWindowSaid(object.inside);
-	if (flat !== null && (to.tilt !== from.tilt || to.turn !== from.turn || to.over !== from.over)) {
+	if (flat !== null && (to.angle.tilt !== from.tilt || to.angle.turn !== from.turn || to.angle.over !== from.over)) {
 		throw new FilmError(
 			`${move} would tilt, turn or turn over the ${name} alone: ${flat}, and leans as it does; it rolls in it`
 		);
 	}
-	return writing(name, (progress): Leant => ({ angle: angleToward(from, to, progress) }));
+	return writing(name, (progress): Leant => ({ angle: angleToward(from, to.angle, progress), about: to.about }));
 }
 
 /**
@@ -1029,7 +1029,7 @@ function goingBack<Kind extends ShownKind>(
 		depth: AS_PLACED.depth
 	};
 	const faceOn = faceOnNearest(object.angle);
-	return writing(name, (progress): Partial<Carried> & Leant => ({
+	return writing(name, (progress): Partial<Carried & Leant> => ({
 		...carriedAlong(object, to, CARRIED, progress),
 		angle: angleToward(object.angle, faceOn, progress)
 	}));

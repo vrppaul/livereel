@@ -22,9 +22,9 @@
  *
  * Where the window stands, how it leans, how it shades the page and its body are its own values: a move that carries
  * it sets its box, lift and depth, the depth kept as it stands but where `window.to` names one, as only that move brings
- * the window near; one that leans it its angle, one that shades the page those of the shade it names, one that changes
- * its body those of the body it names, each writing only its own into the window as it stands, so they share a step,
- * each as far along as its own share.
+ * the window near; one that leans it its angle and the point of its box it turns about, one that shades the page those
+ * of the shade it names, one that changes its body those of the body it names, each writing only its own into the
+ * window as it stands, so they share a step, each as far along as its own share.
  */
 import { type Placing, type View, viewOf, viewOver } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -70,9 +70,11 @@ const HIDE_FORM: Form<WindowHideScript> = { toward: needed(A_FRAME_SIDE), ...TIM
 const SHADE_FORM: Form<ShadeScript> = { ...SHADE_KINDS, ...TIMING_FORM };
 // The window's values a move that carries it sets, and one that leans it; what each writes is held to them
 const CARRIED = ['box', 'lift', 'depth'] as const satisfies readonly (keyof Placing)[];
-const LEANT = ['angle'] as const satisfies readonly (keyof Placing)[];
-// The move of the window's body, as its refusals name it
+const LEANT = ['angle', 'about'] as const satisfies readonly (keyof Placing)[];
+// The moves of the window's body and of its lean, and the window, as their refusals name them
 const BODY_MOVE = 'window.body';
+const LEAN_MOVE = 'window.lean';
+const WINDOW = 'window';
 
 /** The window's values a move that carries it writes, and one that leans it. */
 type Carried = Pick<Placing, (typeof CARRIED)[number]>;
@@ -146,9 +148,12 @@ export function body(slab: SlabScript, script: TimingScript = {}): Move {
 	};
 }
 
-/** The window leant back from its top edge by `tilt` and swung about its middle by `turn`, the screen in it with it. */
+/**
+ * The window leant back from its top edge by `tilt`, swung by `turn`, rolled by `roll` and turned over by `over`, about
+ * a point of its box, the screen in it with it.
+ */
 export function lean(script: LeanScript): Move {
-	assertWritten(script, LEAN_FORM, 'window.lean');
+	assertWritten(script, LEAN_FORM, LEAN_MOVE);
 	return {
 		part: 'window',
 		valueNames: LEANT,
@@ -221,11 +226,14 @@ function carried(from: Standing, to: Standing): Change {
 	}));
 }
 
-/** The window's angle on its way from how it leans to the film's, written into the window as it stands. */
+/**
+ * The window's angle on its way from how it leans to the film's, about the point of its box it turns about, written
+ * into the window as it stands.
+ */
 function leaning(beginning: Beginning, script: LeanScript): Change {
-	const from = beginning.scene.window.angle;
-	const to = leantFrom(from, script);
-	return writing((progress): Leant => ({ angle: angleToward(from, to, progress) }));
+	const from = beginning.scene.window;
+	const to = leantFrom(from, script, LEAN_MOVE, WINDOW);
+	return writing((progress): Leant => ({ angle: angleToward(from.angle, to.angle, progress), about: to.about }));
 }
 
 /** The page's shade on its way from how it stands to the film's, the values it names written into the window. */
