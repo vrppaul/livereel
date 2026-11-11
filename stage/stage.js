@@ -11,7 +11,8 @@
  * since Chrome loads no module from a file; nothing else runs in the stage page, so its names stand alone there.
  */
 /** @import { DrawnScene, ObjectList, PropName } from '../src/scene.ts' */
-/** @import { DrawnSheet, DrawnSweep, TypedText } from '../src/props/screen.ts' */
+/** @import { DrawnSheet, DrawnSweep } from '../src/props/screen.ts' */
+/** @import { TypedText } from '../src/domain/typing.ts' */
 /** @import { ShownLine } from '../src/props/terminal.ts' */
 /** @import { DrawnPin } from '../src/props/pins.ts' */
 /** @import { DrawnWords, Piece } from '../src/props/words.ts' */

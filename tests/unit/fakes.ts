@@ -3,6 +3,7 @@
 import type { ActContext, BlockHolding, FilmedPage, PageMotionSwitch, ScrollCourse } from '../../src/direction/page.ts';
 import type { Sound } from '../../src/direction/sound.ts';
 import type { Box, Format } from '../../src/domain/geometry.ts';
+import type { TypedText } from '../../src/domain/typing.ts';
 import type { DrawnScene } from '../../src/scene.ts';
 import type {
 	Exposures,
@@ -20,26 +21,35 @@ export const SMALL: Format = { frame: { width: 400, height: 400 }, screen: { wid
 // at rest, which the numbers the tests work out by hand take
 export const FOCAL_LENGTH = 2000;
 
-// How far a test's page scrolls where it names none: far past anything a test runs it
+// How far a test's page scrolls where it names none: far past anything a test runs it; and a page that grows by nothing
+// whatever is typed into it
 const A_LONG_PAGE = 100000;
+const NOTHING_GROWS = (): number => 0;
 
+/**
+ * A page whose blocks stand where a table says, the ground behind each as another says, as far as it scrolls with
+ * nothing typed and so much farther as a rule says of what is typed, each block holding what a third table says.
+ */
 export class PageOfBoxes implements FilmedPage {
 	readonly boxes: ReadonlyMap<string, Box>;
 	readonly grounds: ReadonlyMap<string, string>;
 	readonly length: number;
 	readonly holdings: ReadonlyMap<string, BlockHolding>;
+	readonly growth: (typed: readonly TypedText[]) => number;
 	readonly typed: string[] = [];
 
 	constructor(
 		boxes: ReadonlyMap<string, Box>,
 		grounds: ReadonlyMap<string, string> = new Map(),
 		length = A_LONG_PAGE,
-		holdings: ReadonlyMap<string, BlockHolding> = new Map()
+		holdings: ReadonlyMap<string, BlockHolding> = new Map(),
+		growth: (typed: readonly TypedText[]) => number = NOTHING_GROWS
 	) {
 		this.boxes = boxes;
 		this.grounds = grounds;
 		this.length = length;
 		this.holdings = holdings;
+		this.growth = growth;
 	}
 
 	/** A test names only the blocks whose holding its page has. */
@@ -47,8 +57,8 @@ export class PageOfBoxes implements FilmedPage {
 		return Promise.resolve(this.holdings.get(target)!);
 	}
 
-	scrollLength(): Promise<number> {
-		return Promise.resolve(this.length);
+	scrollLengthWith(typed: readonly TypedText[]): Promise<number> {
+		return Promise.resolve(this.length + this.growth(typed));
 	}
 
 	/** A test names only the blocks its page has. */

@@ -1,7 +1,7 @@
 /**
  * The filmed page as moves read it and type into it: where its blocks stand, the ground behind them, its scroll, its
- * keyboard; and a page of the film's own as moves measure it, among the rest how far down it scrolls, how far down its
- * document a block stands, and what a block the film types into shows as its text.
+ * keyboard; and a page of the film's own as moves measure it, among the rest how far down it scrolls with what is typed
+ * into its blocks, how far down its document a block stands, and what a block the film types into shows as its text.
  *
  * The functions handed to the page run there, each alone: none may call another of this module. The block a scroll
  * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a
@@ -12,6 +12,7 @@ import { type Channels, hexOf } from '../../domain/colour.ts';
 import { FilmError } from '../../domain/errors.ts';
 import { type Box, boxAround } from '../../domain/geometry.ts';
 import type { ActContext, BlockHolding, FilmedPage, ScrollAim, ScrollCourse } from '../../direction/page.ts';
+import type { TypedText } from '../../domain/typing.ts';
 
 /** The page a take films as moves read it, and as an act is handed it: live, or the film's set (`set.ts`). */
 export interface FilmedShown {
@@ -28,6 +29,12 @@ interface CourseAsked {
 interface CourseFound {
 	readonly start: number;
 	readonly end: number;
+}
+
+/** A block a measure wrote a typed text into, and the text it held before, which the measure writes back. */
+interface BlockWritten {
+	readonly block: Element;
+	readonly found: string | null;
 }
 
 /**
@@ -84,9 +91,12 @@ export class PlaywrightPage implements FilmedPage {
 		}
 	}
 
-	/** How far down the page's own scroll goes at most, in its pixels: none where the page fits its frame. */
-	scrollLength(): Promise<number> {
-		return this.frame.evaluate(scrollLengthOfThePage);
+	/**
+	 * How far down the page's own scroll goes at most, in its pixels, with each block a typed text names holding that
+	 * text: none where the page fits its frame. Each block holds what it held again after.
+	 */
+	scrollLengthWith(typed: readonly TypedText[]): Promise<number> {
+		return this.frame.evaluate(scrollLengthTyped, typed);
 	}
 
 	/** How far down the page's document the first block a target matches stands, in its pixels, however far it is scrolled. */
@@ -168,10 +178,22 @@ function groundOf(block: Element, asked: GroundAsked): Channels | null {
 	return null;
 }
 
-/** How far the page's own scroll goes at most: the page's height past its frame's. */
-function scrollLengthOfThePage(): number {
+/**
+ * How far the page's own scroll goes at most, the page's height past its frame's, with the first block each typed
+ * text's selector matches holding that text; each block's text as it found it written back after.
+ */
+function scrollLengthTyped(typed: readonly TypedText[]): number {
+	const written: BlockWritten[] = [];
+	for (const text of typed) {
+		const block = document.querySelector(text.into);
+		if (block === null) throw new Error(`the film's own page holds no ${text.into} to type into`);
+		written.push({ block, found: block.textContent });
+		block.textContent = text.text;
+	}
 	const scroller = document.scrollingElement ?? document.documentElement;
-	return scroller.scrollHeight - scroller.clientHeight;
+	const length = scroller.scrollHeight - scroller.clientHeight;
+	for (const { block, found } of written) block.textContent = found;
+	return length;
 }
 
 /**

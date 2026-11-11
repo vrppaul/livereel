@@ -26,6 +26,15 @@ export interface Keystroke {
 	readonly typed: string;
 }
 
+/**
+ * Text typed into a block of a page of the film's own, as the stage writes it and a page is measured with it: the
+ * block's selector, and the text.
+ */
+export interface TypedText {
+	readonly into: string;
+	readonly text: string;
+}
+
 /** How a text is typed: by a person, or evenly. */
 export type Typist = Person | EvenTypist;
 
@@ -82,6 +91,8 @@ const LETTERS = new Intl.Segmenter();
 const LAST = -1;
 // An even typist's first letter is the first struck, a count from one where a list's places count from none
 const FIRST_STRUCK = 1;
+// The progress a typing begins at
+const AS_IT_BEGINS = 0;
 
 /** The text typed by a person, with `slipAt` a slip on that letter rubbed out; or evenly, so many letters a second. */
 export function keystrokes(text: string, typist: Typist): readonly Keystroke[] {
@@ -141,6 +152,11 @@ export function typingSeconds(strokes: readonly Keystroke[]): number {
 /** What stands typed `progress` of the way through the typing, from 0 to 1. */
 export function typedAlong(strokes: readonly Keystroke[], progress: number): string {
 	return typedBy(strokes, progress * typingSeconds(strokes));
+}
+
+/** Every text that stands typed at some point of the typing, each once: what stands as it begins, then each key's. */
+export function textsTypedAlong(strokes: readonly Keystroke[]): readonly string[] {
+	return [...new Set([typedAlong(strokes, AS_IT_BEGINS), ...strokes.map((stroke) => stroke.typed)])];
 }
 
 /** How many keys are struck `progress` of the way through the typing, from 0 to 1. */

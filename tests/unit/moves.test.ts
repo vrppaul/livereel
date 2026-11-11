@@ -69,7 +69,7 @@ import {
 } from '../../src/domain/focus.ts';
 import { IN_THE_WINDOW, ON_THE_PAGE, pointOnTheFrame, windowInTheWorld } from '../../src/domain/placement.ts';
 import type { Piece } from '../../src/props/piece.ts';
-import { SCREEN_UP, THE_FILMED_PAGE, drawnScreen } from '../../src/props/screen.ts';
+import { SCREEN_UP, THE_FILMED_PAGE, drawnScreen, pastTheScreen } from '../../src/props/screen.ts';
 import type { DrawnWindow } from '../../src/props/window.ts';
 import { ONE_FRAME, pastTheEdge, windowPlaced, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
@@ -99,7 +99,7 @@ import {
 	type as typeInto,
 	works
 } from '../../src/moves/terminal.ts';
-import { keystrokes } from '../../src/domain/typing.ts';
+import { type TypedText, keystrokes } from '../../src/domain/typing.ts';
 import type { TerminalLine } from '../../src/props/terminal.ts';
 import { NO_EFFECTS } from '../../src/props/effects.ts';
 import { OWN_WAY } from '../../src/props/way.ts';
@@ -115,6 +115,7 @@ import {
 	partsAskedSharperIn,
 	pictureZoomsIn,
 	withObject,
+	withPagesLaid,
 	withProp
 } from '../../src/scene.ts';
 import { FOCAL_LENGTH, PageOfBoxes, PicturesHeld, SMALL } from './fakes.ts';
@@ -227,12 +228,16 @@ const ACROSS_THE_FRAME = { left: 0, top: 0.3, width: 1, height: 0.4 } as const;
 // A frame as large as the stage's look was made on, its screen as large: a camera at a zoom of 1 shows the screen's
 // pixels as its own, and one at 2 its middle half twice as large
 const FULL_HD: Format = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } };
-// The scene a film shot in that format opens on: livereel's look and world, the eye of its focal length at rest
-const OPENING_IN_FULL_HD = openingScene(FULL_HD, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH);
 // A page of the film's own
 const OWN_PAGE = { html: '<p id="card">Ours</p>' };
 // How much longer than the screen that page is, as far as it scrolls, and a block of it, its top 900 down the page
 const OWN_PAGE_LENGTH = 1000;
+// The scene a film shot in that format opens on: livereel's look and world, the eye of its focal length at rest, that
+// page laid as the stage lays it
+const OPENING_IN_FULL_HD = withPagesLaid(
+	openingScene(FULL_HD, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
+	new Map([[pageKeyOf(OWN_PAGE.html), OWN_PAGE_LENGTH]])
+);
 const INPUT = '#input';
 const OWN_PAGE_BLOCKS = new Map([[INPUT, { left: 0, top: 900, width: 1920, height: 60 }]]);
 // Two blocks of that page a film types into, each holding text alone, and a typist striking ten letters a second
@@ -243,8 +248,18 @@ const TYPED_BLOCKS_HOLD = new Map([
 	[OTHER_TYPED_INTO, 'text alone']
 ]);
 const TEN_A_SECOND = { lettersPerSecond: 10 };
-// A page the screen holds all of: it scrolls nowhere
-const NO_LONGER_THAN_THE_SCREEN = 0;
+// A line of text typed that wraps, 16 letters, on a page that grows by a line 40 pixels high for each 10 letters typed
+const WRAPPING = 'echo hello world';
+const LINE_HEIGHT = 40;
+const LETTERS_A_LINE = 10;
+// The whole screen face-on, leant back 64° about its middle: the frame sees past the screen's top and its foot
+const LEANT_ABOUT_ITS_MIDDLE: Camera = {
+	pose: { focusX: 960, focusY: 540, zoom: 1 },
+	view: { ...wholeView(FULL_HD.frame), angle: { ...FACE_ON, tilt: 64 } },
+	eye: eyeAtRest(FOCAL_LENGTH)
+};
+// The scene that opens on with the page laid as one the screen holds all of: it scrolls nowhere
+const OPENING_ON_A_FITTING_PAGE = withPagesLaid(OPENING_IN_FULL_HD, new Map([[pageKeyOf(OWN_PAGE.html), 0]]));
 // A page drawn on the screen alone, nothing of it past
 const NOTHING_PAST = null;
 const WHOLE_AT_ONE = { focusX: 960, focusY: 540, zoom: 1 };
@@ -347,6 +362,28 @@ function typingFrom(scene: Scene): Beginning {
 		...beginningIn(scene, FULL_HD),
 		ownPage: () => new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH, TYPED_BLOCKS_HOLD)
 	};
+}
+
+/** A typing of the line that wraps into a block of the page of the film's own, ten letters a second. */
+function typingWrapped(): Move {
+	return screenType(OWN_PAGE, keystrokes(WRAPPING, TEN_A_SECOND), { into: TYPED_INTO });
+}
+
+/**
+ * A beginning in full HD at a moment whose page of the film's own holds the blocks typed into and grows by a line for
+ * each ten letters typed.
+ */
+function typingWrappedFrom(scene: Scene, moment: number): Beginning {
+	return {
+		...scrollingFrom(scene, moment, 0),
+		ownPage: () => new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH, TYPED_BLOCKS_HOLD, grownByLines)
+	};
+}
+
+/** How much longer a page is with text typed into it: a line for each ten letters typed. */
+function grownByLines(typed: readonly TypedText[]): number {
+	const letters = typed.reduce((count, block) => count + block.text.length, 0);
+	return LINE_HEIGHT * Math.floor(letters / LETTERS_A_LINE);
 }
 
 /** The scene with a text typed whole into a block of its page of the film's own. */
@@ -1472,27 +1509,36 @@ test("a page of the film's own runs from its move's moment, gathering its pace o
 	expect([1, 2, 3, 5, 20].map((moment) => scrolledIn(running, moment))).toEqual([0, 25, 100, 300, 1000]);
 });
 
-test("a page of the film's own shown drawn as far as its document runs holds how far its document runs past the screen, as the stage measures it as the move begins", async () => {
-	const shown = await (
-		await screenShows(OWN_PAGE, { reaches: 'document' }).begin(scrollingFrom(OPENING_IN_FULL_HD, 0, 0))
-	)(OPENING_IN_FULL_HD, 1);
-	expect(shown.screen.shows).toEqual({
-		kind: 'own',
-		key: pageKeyOf(OWN_PAGE.html),
-		reach: { kind: 'document', scrollLength: OWN_PAGE_LENGTH }
-	});
-});
-
 test("a page of the film's own shown drawn past its screen with nothing past it is refused as it is shown, in the words of the move", async () => {
-	const fitting: Beginning = {
-		...scrollingFrom(OPENING_IN_FULL_HD, 0, 0),
-		ownPage: () => new PageOfBoxes(new Map(), new Map(), NO_LONGER_THAN_THE_SCREEN)
-	};
-	await expect(screenShows(OWN_PAGE, { reaches: 'document' }).begin(fitting)).rejects.toThrow(
+	const fitting = scrollingFrom(OPENING_ON_A_FITTING_PAGE, 0, 0);
+	await expect(async () => screenShows(OWN_PAGE, { reaches: 'document' }).begin(fitting)).rejects.toThrow(
 		new FilmError(
 			"screen.shows draws a page past its screen that has nothing past it: the screen holds all of it, or its own styles hide what runs past the screen, as overflow: hidden on its body does; give it more than the screen holds, or show it with reaches: 'screen'"
 		)
 	);
+});
+
+test('a page drawn past its screen, typed longer, then run past the length it was shown with, runs on to its new end and is drawn past its foot by none there, never less', async () => {
+	// 1000 pixels longer than the screen as shown, 1040 once the line typed wraps; run at 100 a second from 0 s, it
+	// stands at its new end from 10.4 s
+	const shown = await setIn(screenShows(OWN_PAGE, { reaches: 'document' }), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const typed = await (await typingWrapped().begin(typingWrappedFrom(shown, 0)))(shown, 1);
+	const running = await (await screenScrolls(OWN_PAGE, { pace: 100 }).begin(scrollingFrom(typed, 0, 0)))(typed, 1);
+	const past = pastTheScreen(running.screen, LEANT_ABOUT_ITS_MIDDLE, FULL_HD, 20)!;
+	expect([scrolledIn(running, 20), past.below]).toEqual([1040, 0]);
+});
+
+test('while a typing lengthens a page drawn past its screen, the sheet reaches below the screen as far as the text standing typed at each stroke makes it', async () => {
+	// Run at 100 a second from 0 s, 990 down at 9.9 s, 10 short of its end as shown: 8 letters typed half way, the line
+	// not yet wrapped, and 16 at the end, wrapped, the page 40 longer
+	const shown = await setIn(screenShows(OWN_PAGE, { reaches: 'document' }), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const running = await (await screenScrolls(OWN_PAGE, { pace: 100 }).begin(scrollingFrom(shown, 0, 0)))(shown, 1);
+	const typing = await typingWrapped().begin(typingWrappedFrom(running, 9.9));
+	const typedTo = await Promise.all([0.5, 1].map(async (progress) => typing(running, progress)));
+	expect(typedTo.map((scene) => pastTheScreen(scene.screen, LEANT_ABOUT_ITS_MIDDLE, FULL_HD, 9.9)!.below)).toEqual([
+		expect.closeTo(10),
+		expect.closeTo(50)
+	]);
 });
 
 test("a page of the film's own takes its pace from where its run stands and as fast as it runs there, and stops at a pace of none", async () => {
@@ -1505,12 +1551,9 @@ test("a page of the film's own takes its pace from where its run stands and as f
 });
 
 test("a page of the film's own that scrolls nowhere is refused as its run begins, in the words of the move", async () => {
-	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
-	const fitting: Beginning = {
-		...scrollingFrom(shown, 0, 0),
-		ownPage: () => new PageOfBoxes(new Map(), new Map(), NO_LONGER_THAN_THE_SCREEN)
-	};
-	await expect(screenScrolls(OWN_PAGE, { pace: 100 }).begin(fitting)).rejects.toThrow(
+	const shown = await setIn(screenShows(OWN_PAGE), OPENING_ON_A_FITTING_PAGE, 1, FULL_HD);
+	const fitting = scrollingFrom(shown, 0, 0);
+	await expect(async () => screenScrolls(OWN_PAGE, { pace: 100 }).begin(fitting)).rejects.toThrow(
 		new FilmError(
 			'screen.scrolls runs a page that scrolls nowhere: the screen holds all of it, or its own styles hide what runs past the screen, as overflow: hidden on its body does; give it more than the screen holds and let it scroll'
 		)
@@ -1651,7 +1694,7 @@ test('screen.type shares a step with what the screen shows and how its page runs
 		play({ seconds: 1, moves: [screenShows(OWN_PAGE), screenScrolls(OWN_PAGE, { pace: 100 }), typed] })
 	).not.toThrow();
 	expect(() => play({ seconds: 1, moves: [typed, typed] })).toThrow(
-		new FilmError("two moves on the screen's typed at once in one step")
+		new FilmError("two moves on the screen's documents at once in one step")
 	);
 });
 

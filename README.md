@@ -689,8 +689,13 @@ where the screen's top stands, as before, so `screen.scrolls` and
 `screen.scrollTo` mean the same either way. Face-on and whole, where
 the frame sees nothing past the screen, it draws the same bytes as cut.
 The window's own edge, lifted, still cuts it, and a page on the
-window's back is cut at the screen. Refused: a page with nothing past
-its screen, and `reaches` on the filmed page.
+window's back is cut at the screen. The sheet is laid in a frame as tall
+as it is drawn, so a page whose layout reads its viewport's height lays
+out otherwise there than on the screen: `vh` is the sheet's height, and
+a block `position: fixed` or `sticky` to the screen's foot, a prompt,
+leaps to the sheet's foot as the sheet first shows; lay such a page out
+in pixels. Refused: a page with nothing past its screen, and `reaches`
+on the filmed page.
 `screen.type({ html }, keystrokes('/review-ui',
 { lettersPerSecond: 12 }), { into: '#typed' })`, in `typing()`, types into a
 block of a page of the film's own, the first its CSS selector `into`
@@ -699,7 +704,9 @@ text, in place of what the page wrote there, each key heard on the film's
 keyboard or the `keyboard` named. What stands typed is the page's, kept on
 either face of the window, or on none, until the film types into that
 block again, which types it anew from nothing; typing into another block
-keeps it. A block that holds elements of its own, which its text would take
+keeps it. Text that wraps lengthens the page from the frame its letter
+lands on, so a run goes on to the page's new end and a page drawn past its
+screen reaches as far. A block that holds elements of its own, which its text would take
 the place of, is refused as the move begins, as is an `<input>`, which
 shows its value, not its text, and one the page lacks: type into a span of
 text alone, the caret an element beside it, as

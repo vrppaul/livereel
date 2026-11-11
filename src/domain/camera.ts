@@ -143,9 +143,9 @@ export interface Camera {
 /**
  * Where the camera's picture is cut, in from each edge of its view, in the frame's pixels; past the edge, less than
  * none. Flat on the frame, the cut stands at the edges of the page the screen shows, the screen's or a sheet's past it,
- * where they reach past the view's, so an angled screen shows past the frame's own edges; as the view lifts into a window, the cut closes in on its edges. On a side where
- * the view stands in from the frame's edge, as a flat view sliding in or out does, the cut stands at the view's edge,
- * so nothing of the picture shows past it there.
+ * where they reach past the view's, so an angled screen shows past the frame's own edges; as the view lifts into a
+ * window, the cut closes in on its edges. On a side where the view stands in from the frame's edge, as a flat view
+ * sliding in or out does, the cut stands at the view's edge, so nothing of the picture shows past it there.
  */
 export interface Cut {
 	readonly top: number;

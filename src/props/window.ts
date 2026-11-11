@@ -63,14 +63,14 @@ export interface PageWindow extends Placing, Shade {
  * The window as the stage draws it: where it is placed in the world, as the stage draws a placement
  * (`src/domain/placement.ts`), its box on the frame, drawn about its middle; how far the camera's picture reaches on
  * its plane, past the box where the page the screen shows stands past it, how far it stands off the ground, and
- * whether the eye sees the page's side of it or its back, read where it stands before the eye, behind the eye too; the plane the room lays
- * the page's surface on in its one scene; how round the corners of the page the camera's cut shows are, in the frame's
- * pixels, which the stylesheet cuts the page by and the body stands round; its shade, none where the page is shaded
- * none, and how soft the eye's focus draws it and all in it, none where sharp: as one, on the frame in pixels of a frame
- * 1080 high, for the flat stage, and at its softest point the frame shows, as far as the room's blur of it gathers past
- * the frame's edge; how much of the page shows, from 0 to 1, as far as the screen has come up and its shade has not
- * faded it, which the stylesheet draws the screen as clear as, and the room reads whether the page is seen through by
- * (`stage/see-through.js`); and its body, none where it has none.
+ * whether the eye sees the page's side of it or its back, read where it stands before the eye, behind the eye too; the
+ * plane the room lays the page's surface on in its one scene; how round the corners of the page the camera's cut shows
+ * are, in the frame's pixels, which the stylesheet cuts the page by and the body stands round; its shade, none where
+ * the page is shaded none, and how soft the eye's focus draws it and all in it, none where sharp: as one, on the frame
+ * in pixels of a frame 1080 high, for the flat stage, and at its softest point the frame shows, as far as the room's
+ * blur of it gathers past the frame's edge; how much of the page shows, from 0 to 1, as far as the screen has come up
+ * and its shade has not faded it, which the stylesheet draws the screen as clear as, and the room reads whether the
+ * page is seen through by (`stage/see-through.js`); and its body, none where it has none.
  */
 export interface DrawnWindow extends DrawnPlacement {
 	readonly reach: Box;

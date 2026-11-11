@@ -62,6 +62,7 @@ import { type PartAsked, closestOf } from '../domain/picture.ts';
 import { type MotionBlur, alsoExposedBack } from '../domain/shutter.ts';
 import { type Ease, type Stretch, linear } from '../domain/curves.ts';
 import { framesOf, momentOf } from '../domain/time.ts';
+import type { TypedText } from '../domain/typing.ts';
 import { between } from '../domain/toward.ts';
 import { type Change, type Move, type Share, movesThePage, soundsOf } from '../direction/move.ts';
 import type { Action, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
@@ -78,7 +79,8 @@ import {
 	partsAskedSharperIn,
 	pictureZoomsIn,
 	seenIn,
-	showingTheFilmedPage
+	showingTheFilmedPage,
+	withPagesLaid
 } from '../scene.ts';
 import { type PartPictures, picturesOn } from './pictures.ts';
 import type { Exposures, Footage, FramedStage, Opened, PicturedStage, Stage, Track } from './ports.ts';
@@ -94,6 +96,8 @@ const NONE = 0;
 // moment of the frame after them, on their own curve or a straight one, never gone along
 const A_FRAME = 1;
 const AT_ONCE = 0;
+// Nothing typed into a page of the film's own, as the stage lays it
+const NOTHING_TYPED: readonly TypedText[] = [];
 
 /**
  * A move begun: the share of its step it runs over, its curve, what it sets and whether that is the page itself, and
@@ -189,10 +193,12 @@ export class Take {
 	}
 
 	/**
-	 * The film begun where the page's time stands, then every step in turn, until the steps or the footage run out;
-	 * then the stage asked once more, so a last frame kept as its page went is not kept without a word.
+	 * The film begun where the page's time stands, each page of the film's own the stage laid standing on the screen as
+	 * its document stands, then every step in turn, until the steps or the footage run out; then the stage asked once
+	 * more, so a last frame kept as its page went is not kept without a word.
 	 */
 	async run(steps: readonly Step[]): Promise<void> {
+		this.scene = withPagesLaid(this.scene, await this.scrollLengthsLaid());
 		this.opened.time.begin();
 		let begun = 0;
 		for (const step of steps) {
@@ -201,6 +207,14 @@ export class Take {
 			begun += 1;
 		}
 		await this.taken(begun - 1, () => this.refusedWhereGone());
+	}
+
+	/** How far each page of the film's own the stage laid scrolls at most, by its key, as laid: nothing typed into it. */
+	private async scrollLengthsLaid(): Promise<ReadonlyMap<string, number>> {
+		const measured = [...this.opened.ownPages].map(
+			async ([key, page]) => [key, await page.scrollLengthWith(NOTHING_TYPED)] as const
+		);
+		return new Map(await Promise.all(measured));
 	}
 
 	/**

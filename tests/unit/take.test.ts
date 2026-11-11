@@ -512,7 +512,8 @@ test("the screen shows a page of the film's own from a moment of a play: the exp
 	const footage = new FootageOf([0, 1]);
 	// The camera fast over two frames, the second's exposures a sixteenth of the step apart from 0.8125 on
 	const moves = [cameraTo(CLOSE_AT_THE_RIGHT), screenShows(OWN_PAGE, { within: { start: 0.875 } })];
-	await takeOf(footage, stage).run([play({ seconds: 2 / 30, moves, ease: linear })]);
+	const take = takeShowingOwnPage(footage, stage, new PageOfBoxes(PAGE), new PageOfBoxes(PAGE));
+	await take.run([play({ seconds: 2 / 30, moves, ease: linear })]);
 	expect(stage.drawn.map((scene) => scene.screen.shows.kind)).toEqual([
 		'filmed',
 		'filmed',
@@ -540,6 +541,15 @@ test("a page of the film's own runs from the moment its move begins: from a cut'
 		[0, 10, 20],
 		[expect.closeTo(1.667), expect.closeTo(6.667), expect.closeTo(15)]
 	]);
+});
+
+test("a page of the film's own runs as far as the stage laid it to scroll, measured before the film begins", async () => {
+	// At 300 pixels a second from the cut, 10 a frame, on a page that scrolls 15 pixels at most
+	const stage = new FramedStageThatKeeps();
+	const steps = [cut(screenShows(OWN_PAGE)), cut(scrollsScreen(OWN_PAGE, { pace: 300 })), hold({ seconds: 3 / 30 })];
+	const shortPage = new PageOfBoxes(PAGE, new Map(), 15);
+	await takeShowingOwnPage(new FootageOf([0, 1, 2]), stage, new PageOfBoxes(PAGE), shortPage, UNBLURRED).run(steps);
+	expect(stage.drawn.map((scene) => scene.screen.shows.scrolled)).toEqual([0, 10, 15]);
 });
 
 test("a block a move names is measured on the page the screen shows: the film's own, where it shows it", async () => {

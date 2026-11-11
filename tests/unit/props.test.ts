@@ -5,6 +5,8 @@ import { LIVEREELS_WORLD } from '../../src/props/world.ts';
 import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
 import {
 	CUT_AT_THE_SCREEN,
+	DRAWN_TO_ITS_DOCUMENT,
+	type OwnDocument,
 	SCREEN_UP,
 	type Screen,
 	type Scroll,
@@ -14,7 +16,7 @@ import {
 	drawnSweep,
 	pastTheScreen
 } from '../../src/props/screen.ts';
-import { cameraOf, openingScene } from '../../src/scene.ts';
+import { cameraOf, drawn, openingScene } from '../../src/scene.ts';
 import { alongItsWay } from '../../src/props/way.ts';
 import { NONE, WHOLE, fractionOf } from '../../src/domain/fraction.ts';
 import {
@@ -45,6 +47,19 @@ const AT_THE_START = 0;
 const TWO_AT_ONCE = 2;
 // A page drawn on the screen alone, nothing of it past
 const NOTHING_PAST = null;
+// The screen up with the pages of the film's own the tests name laid on it, nothing typed in each: each 200000 of its
+// pixels longer than the screen holds
+const LONG_DOCUMENT = 200000;
+const LAID_LONG: OwnDocument = { typed: new Map(), scrollLength: LONG_DOCUMENT };
+const LAID_UP: Screen = {
+	...SCREEN_UP,
+	documents: new Map([
+		['front', LAID_LONG],
+		['behind', LAID_LONG],
+		['page', LAID_LONG],
+		['sheet', LAID_LONG]
+	])
+};
 
 /** How much of a word stands typed, and whether the caret follows it. */
 interface StandingTyped {
@@ -351,8 +366,8 @@ test("a band sweeping the screen crosses what the window shows of the screen, no
 test("the screen shows the page on the window's back where the eye sees the window's back, standing as its mount says, the page in front where the eye sees the front, and the front seen through where the back shows none", () => {
 	const camera = cameraOf(openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH), SMALL);
 	const front: Shows = { kind: 'own', key: 'front', reach: CUT_AT_THE_SCREEN };
-	const backed: Screen = { ...SCREEN_UP, shows: front, back: { kind: 'own', key: 'behind', upright: 'over' } };
-	const bare: Screen = { ...SCREEN_UP, shows: front };
+	const backed: Screen = { ...LAID_UP, shows: front, back: { kind: 'own', key: 'behind', upright: 'over' } };
+	const bare: Screen = { ...LAID_UP, shows: front };
 	const drawn = [
 		drawnScreen(backed, camera, SMALL, SEES_THE_BACK, PANE_CORNER, AT_THE_START, NOTHING_PAST),
 		drawnScreen(backed, camera, SMALL, SEES_THE_FRONT, PANE_CORNER, AT_THE_START, NOTHING_PAST),
@@ -368,9 +383,9 @@ test("the screen shows the page on the window's back where the eye sees the wind
 test("a page of the film's own keeps its run whichever face of the window shows it", () => {
 	const camera = cameraOf(openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH), SMALL);
 	// One page in front and behind, run 40 pixels down by 0 s and on at 10 a second: 60 down at 2 s
-	const running: Scroll = { knots: [{ moment: 0, top: 40, pace: 10 }], length: 1000 };
+	const running: Scroll = { knots: [{ moment: 0, top: 40, pace: 10 }] };
 	const both: Screen = {
-		...SCREEN_UP,
+		...LAID_UP,
 		shows: { kind: 'own', key: 'page', reach: CUT_AT_THE_SCREEN },
 		back: { kind: 'own', key: 'page', upright: 'over' },
 		scrolls: new Map([['page', running]])
@@ -397,18 +412,16 @@ const LEANT_BACK: Camera = {
 	...FACE_ON_WHOLE,
 	view: { ...FACE_ON_WHOLE.view, angle: { ...FACE_ON, tilt: 64 }, about: { left: 0.5, top: 1 } }
 };
+// The scene a film in that format opens on; and no picture the stage holds sharper
+const OPENING_AS_LARGE = openingScene(SCREEN_AS_LARGE, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH);
+const NONE_SHARPER: readonly never[] = [];
 // A page drawn as far as its document runs, 200000 of its pixels longer than the screen holds, run so far down
-const LONG_DOCUMENT = 200000;
-const DRAWN_TO_ITS_DOCUMENT: Shows = {
-	kind: 'own',
-	key: 'sheet',
-	reach: { kind: 'document', scrollLength: LONG_DOCUMENT }
-};
+const DRAWN_PAST: Shows = { kind: 'own', key: 'sheet', reach: DRAWN_TO_ITS_DOCUMENT };
 
 /** A screen showing the long page drawn as far as its document runs, standing so far down it. */
 function sheetRunTo(top: number): Screen {
-	const standing: Scroll = { knots: [{ moment: AT_THE_START, top, pace: 0 }], length: LONG_DOCUMENT };
-	return { ...SCREEN_UP, shows: DRAWN_TO_ITS_DOCUMENT, scrolls: new Map([['sheet', standing]]) };
+	const standing: Scroll = { knots: [{ moment: AT_THE_START, top, pace: 0 }] };
+	return { ...LAID_UP, shows: DRAWN_PAST, scrolls: new Map([['sheet', standing]]) };
 }
 
 test("a page of the film's own drawn as far as its document runs is drawn on the screen alone where the frame sees nothing past the screen, face-on and whole", () => {
@@ -429,8 +442,35 @@ test("a page of the film's own drawn as far as its document runs is drawn below 
 	expect([nearItsEnd.below, atItsEnd]).toEqual([40, null]);
 });
 
+test("the camera's cut stands at the edges of a sheet laid past the screen, not at the screen's", () => {
+	// Leant back about its foot, the page run far down: the sheet runs up to the frame's top edge, the cut with it
+	const scene = { ...OPENING_AS_LARGE, screen: sheetRunTo(100000) };
+	const past = pastTheScreen(scene.screen, LEANT_BACK, SCREEN_AS_LARGE, AT_THE_START)!;
+	const cut = drawn(scene, LEANT_BACK, AT_THE_START, SCREEN_AS_LARGE, NONE_SHARPER).camera.cut;
+	expect([cut.top, cut.bottom]).toEqual([expect.closeTo(-past.above), 0]);
+});
+
+test("where the eye sees a page on the window's back, the page in front is drawn on its screen alone, no sheet laid and the camera's cut at the screen", () => {
+	// Leant back and turned over round its width, the window shows the eye its back, the frame seeing far past its
+	// screen's top
+	const turnedOver: Camera = {
+		...LEANT_BACK,
+		view: { ...LEANT_BACK.view, angle: { ...FACE_ON, tilt: 64, over: 180 } }
+	};
+	const backed: Screen = { ...sheetRunTo(100000), back: { kind: 'own', key: 'behind', upright: 'over' } };
+	const cutAtTheScreen: Screen = { ...backed, shows: { ...DRAWN_PAST, reach: CUT_AT_THE_SCREEN } };
+	const [drawnPast, drawnCut] = [backed, cutAtTheScreen].map((screen) =>
+		drawn({ ...OPENING_AS_LARGE, screen }, turnedOver, AT_THE_START, SCREEN_AS_LARGE, NONE_SHARPER)
+	);
+	expect([drawnPast!.screen.shows, drawnPast!.camera]).toEqual([
+		{ kind: 'own', key: 'behind', scrolled: 0, typed: [], sheet: null },
+		drawnCut!.camera
+	]);
+});
+
 test('what a film typed into a page of its own drawn past its screen is handed with its sheet, so the stage writes it there too', () => {
-	const typedInto: Screen = { ...sheetRunTo(100000), typed: new Map([['sheet', new Map([['#typed', 'ls']])]]) };
+	const typed: OwnDocument = { typed: new Map([['#typed', 'ls']]), scrollLength: LONG_DOCUMENT };
+	const typedInto: Screen = { ...sheetRunTo(100000), documents: new Map([['sheet', typed]]) };
 	const past = pastTheScreen(typedInto, LEANT_BACK, SCREEN_AS_LARGE, AT_THE_START);
 	const drawn = drawnScreen(typedInto, LEANT_BACK, SCREEN_AS_LARGE, SEES_THE_FRONT, PANE_CORNER, AT_THE_START, past);
 	expect(drawn.shows).toEqual({
@@ -448,13 +488,13 @@ test("the filmed page lies on the window's plane where the camera frames it, as 
 	// 150 across and 200 down stands the screen 50 in from the frame's left
 	const camera = cameraOf(openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH), SMALL);
 	const close: Camera = { ...camera, pose: { focusX: 150, focusY: 200, zoom: 2.7 } };
-	const backed: Screen = { ...SCREEN_UP, back: { kind: 'own', key: 'behind', upright: 'round' } };
+	const backed: Screen = { ...LAID_UP, back: { kind: 'own', key: 'behind', upright: 'round' } };
 	const drawn = [
 		drawnScreen(SCREEN_UP, camera, SMALL, SEES_THE_FRONT, PANE_CORNER, AT_THE_START, NOTHING_PAST),
 		drawnScreen(SCREEN_UP, close, SMALL, SEES_THE_FRONT, PANE_CORNER, AT_THE_START, NOTHING_PAST),
 		drawnScreen(backed, close, SMALL, SEES_THE_BACK, PANE_CORNER, AT_THE_START, NOTHING_PAST),
 		drawnScreen(
-			{ ...SCREEN_UP, shows: { kind: 'own', key: 'front', reach: CUT_AT_THE_SCREEN } },
+			{ ...LAID_UP, shows: { kind: 'own', key: 'front', reach: CUT_AT_THE_SCREEN } },
 			close,
 			SMALL,
 			SEES_THE_FRONT,

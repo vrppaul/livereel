@@ -19,14 +19,17 @@
  * film names: the move reads where the page stands and how fast it runs as it begins, and sets its run on the film's
  * time, its pace changing over the move's share on its curve, or slowing from it to stand still at the rest as the
  * share ends, refused where it would turn back on its way; where the page stands at any moment is worked out from that
- * run (`src/props/screen.ts`). Its runs are a value of the screen's own, so it shares a step with what the screen shows.
+ * run, held at its document's end as it stands then (`src/props/screen.ts`). Its runs are a value of the screen's own,
+ * so it shares a step with what the screen shows.
  *
  * Keys are typed into a block of a page of the film's own, as into the terminal: what stands typed at each progress is
- * set whole, so the block shows it as its text in each exposure. The block is found by a CSS selector, as the stage
- * finds it in each exposure's copy of the page, and measured as the move begins; a block whose text would not show
- * what is typed is refused: one that holds elements, which its text would take the place of, and an input, which shows
- * its value, not its text; a text area shows its text. What stands typed is another value of the screen's own, so a
- * typing shares a step with what the screen shows and how its page runs.
+ * set whole, so the block shows it as its text in each exposure, with how far the page scrolls at most with that text
+ * standing typed, measured for each stroke's text as the move begins, as a line that wraps lengthens the page. The
+ * block is found by a CSS selector, as the stage finds it in each exposure's copy of the page, and measured as the move
+ * begins; a block whose text would not show what is typed is refused: one that holds elements, which its text would
+ * take the place of, and an input, which shows its value, not its text; a text area shows its text. A page's document,
+ * what stands typed in it and how far that lets it scroll, is another value of the screen's own, set by a typing
+ * alone, so a typing shares a step with what the screen shows and how its page runs, which read it.
  */
 import { FASTEST_SPEED, type Stretch, linear } from '../domain/curves.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -49,7 +52,7 @@ import {
 	needed
 } from '../domain/handed.ts';
 import { between } from '../domain/toward.ts';
-import { A_STROKES, type Keystroke, typedAlong } from '../domain/typing.ts';
+import { A_STROKES, type Keystroke, textsTypedAlong, typedAlong } from '../domain/typing.ts';
 import {
 	A_TARGET,
 	type Beginning,
@@ -68,7 +71,7 @@ import {
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
-import { type BlockHolding, ownPageOf } from '../direction/page.ts';
+import { type BlockHolding, type MeasuredPage, ownPageOf } from '../direction/page.ts';
 import { keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
 import {
@@ -77,7 +80,9 @@ import {
 	A_SLANT,
 	type Back,
 	CUT_AT_THE_SCREEN,
+	DRAWN_TO_ITS_DOCUMENT,
 	NO_SECONDS,
+	type OwnDocument,
 	type Reach,
 	SCREEN_DOWN,
 	SCREEN_UP,
@@ -87,14 +92,15 @@ import {
 	type Shows,
 	type SweepShape,
 	THE_FILMED_PAGE,
+	type TypedBlocks,
 	type Upright,
-	runOf,
+	documentOf,
 	runToRest,
 	setOff,
-	standingAt,
-	typedIn
+	standingOn,
+	typedTextsOf
 } from '../props/screen.ts';
-import { withProp } from '../scene.ts';
+import { type Scene, withProp } from '../scene.ts';
 import { TYPING_FORM, type TypingScript } from './typing.ts';
 
 /** A page of the film's own as a film names it: its HTML whole. */
@@ -108,12 +114,9 @@ export type ScreenPage = typeof FILMED | OwnPageNamed;
 /** What a film names the window's back to show: a page of its own, its HTML whole, or none, `'none'`. */
 export type BackPage = typeof NONE_ON_THE_BACK | OwnPageNamed;
 
-/** How far a film draws a page of its own: cut at the screen's edges, or on past them as far as its document runs. */
-type ReachName = Reach['kind'];
-
 /** When a film shows a page, and how far it draws one of its own, `reaches` as `A_REACH` says. */
 export interface ShowsScript extends MomentScript {
-	readonly reaches?: ReachName;
+	readonly reaches?: Reach;
 }
 
 /** How fast a film runs a page of its own, its pixels a second, and over what share of the step, on what curve. */
@@ -179,10 +182,8 @@ const SCROLLS_NOWHERE =
 const NO_LENGTH = 0;
 // How far a film draws a page of its own: cut at the screen's edges, where it names none, or on past them as far as its
 // document runs; what a page drawn past a screen that holds all of it says; and a page a move draws on the screen alone
-const THE_SCREEN = 'screen';
-const THE_DOCUMENT = 'document';
-const A_REACH: Kind<ReachName> = new OneOf<ReachName>(
-	[THE_SCREEN, THE_DOCUMENT],
+const A_REACH: Kind<Reach> = new OneOf<Reach>(
+	[CUT_AT_THE_SCREEN, DRAWN_TO_ITS_DOCUMENT],
 	'how far the page is drawn: cut at the screen\'s edges, "screen", or on past its top and foot as far as its document runs and the frame sees, "document"'
 );
 const REACHES_NOWHERE =
@@ -238,7 +239,7 @@ const SHOWING = ['shows'] as const satisfies readonly (keyof Screen)[];
 const SWEEPING = ['sweep'] as const satisfies readonly (keyof Screen)[];
 const BACKING = ['back'] as const satisfies readonly (keyof Screen)[];
 const RUNNING = ['scrolls'] as const satisfies readonly (keyof Screen)[];
-const TYPING = ['typed'] as const satisfies readonly (keyof Screen)[];
+const TYPING = ['documents'] as const satisfies readonly (keyof Screen)[];
 const SWEEP_FORM: Form<SweepScript> = {
 	round: A_TARGET,
 	from: A_FRAME_SIDE,
@@ -299,8 +300,8 @@ export function shows(page: ScreenPage, script: ShowsScript = {}): Move {
 		return { part: 'screen', valueNames: SHOWING, timing, begin: () => showing(THE_FILMED_PAGE) };
 	}
 	assertWritten(script, SHOWS_FORM, 'screen.shows');
-	const reaches = script.reaches ?? THE_SCREEN;
-	const own = ownPageOf(page.html, reaches === THE_DOCUMENT);
+	const reaches = script.reaches ?? CUT_AT_THE_SCREEN;
+	const own = ownPageOf(page.html, reaches === DRAWN_TO_ITS_DOCUMENT);
 	return {
 		part: 'screen',
 		valueNames: SHOWING,
@@ -354,15 +355,13 @@ export function scrolls(page: OwnPageNamed, script: ScrollsScript): Move {
 }
 
 /**
- * A page of the film's own, by its key, set off running at a pace as its move begins, as far as the stage measures it
- * scrolls, refused where that is nowhere; what it sets is a run on the film's time, so it is the same at any progress
- * of the move.
+ * A page of the film's own, by its key, set off running at a pace as its move begins, refused where its document as it
+ * stands then scrolls nowhere; what it sets is a run on the film's time, so it is the same at any progress of the move.
  */
-async function running(beginning: Beginning, key: string, pace: number): Promise<Change> {
-	const length = await beginning.ownPage(key).scrollLength();
-	if (length === NO_LENGTH) throw new FilmError(SCROLLS_NOWHERE);
-	const from = standingAt(runOf(beginning.scene.screen, key), beginning.stretch.moment);
-	return runSet(key, setOff(from, beginning.stretch, pace, length));
+function running(beginning: Beginning, key: string, pace: number): Change {
+	const screen = beginning.scene.screen;
+	if (documentOf(screen, key).scrollLength === NO_LENGTH) throw new FilmError(SCROLLS_NOWHERE);
+	return runSet(key, setOff(standingOn(screen, key, beginning.stretch.moment), beginning.stretch, pace));
 }
 
 /**
@@ -391,7 +390,9 @@ export function type(page: OwnPageNamed, strokes: readonly Keystroke[], script: 
 
 /**
  * A block of a page of the film's own, by the page's key, showing as much of the strokes as stands typed at each
- * progress; refused as it begins where the block's text would not show it.
+ * progress, the page as far as it scrolls at most with that text standing typed and what else stands typed in it as
+ * the move begins, measured then for each text the strokes leave typed; refused as it begins where the block's text
+ * would not show it.
  */
 async function typingInto(
 	beginning: Beginning,
@@ -399,12 +400,28 @@ async function typingInto(
 	into: string,
 	strokes: readonly Keystroke[]
 ): Promise<Change> {
-	refuseUnshown(await beginning.ownPage(key).holdingOf(into), into);
+	const page = beginning.ownPage(key);
+	refuseUnshown(await page.holdingOf(into), into);
+	const standing = documentOf(beginning.scene.screen, key).typed;
+	const scrollLengths = await scrollLengthsTyped(page, standing, into, textsTypedAlong(strokes));
 	return (scene, progress) =>
-		withProp(scene, 'screen', {
-			...scene.screen,
-			typed: typedWith(scene.screen, key, into, typedAlong(strokes, progress))
-		});
+		documentSet(scene, key, documentTyped(standing, into, typedAlong(strokes, progress), scrollLengths));
+}
+
+/**
+ * How far a page scrolls at most with a block of it holding each of some texts in turn, beside what else stands typed
+ * in it, by the text: measured each at once, as each measure leaves the page as it found it.
+ */
+async function scrollLengthsTyped(
+	page: MeasuredPage,
+	standing: TypedBlocks,
+	into: string,
+	texts: readonly string[]
+): Promise<ReadonlyMap<string, number>> {
+	const measured = texts.map(
+		async (text) => [text, await page.scrollLengthWith(typedTextsOf(typedWith(standing, into, text)))] as const
+	);
+	return new Map(await Promise.all(measured));
 }
 
 /**
@@ -426,12 +443,32 @@ function refuseUnshown(holding: BlockHolding, into: string): void {
 	}
 }
 
+/** What stands typed in a page of the film's own with a block of it holding a text in place of what it held. */
+function typedWith(standing: TypedBlocks, into: string, text: string): TypedBlocks {
+	return new Map([...standing, [into, text]]);
+}
+
 /**
- * What stands typed in the pages of the film's own on a screen, with a block of one, by the page's key, holding a text
- * in place of what it held, whatever else stands typed.
+ * A page of the film's own as its document stands with a block of it holding a text, beside what else stands typed in
+ * it, as far as it scrolls at most so, measured for each text a typing leaves typed.
  */
-function typedWith(screen: Screen, key: string, into: string, text: string): Screen['typed'] {
-	return new Map([...screen.typed, [key, new Map([...typedIn(screen, key), [into, text]])]]);
+function documentTyped(
+	standing: TypedBlocks,
+	into: string,
+	text: string,
+	scrollLengths: ReadonlyMap<string, number>
+): OwnDocument {
+	const scrollLength = scrollLengths.get(text);
+	if (scrollLength === undefined) throw new Error(`a typing measured its page with no text ${text} standing typed`);
+	return { typed: typedWith(standing, into, text), scrollLength };
+}
+
+/** A page of the film's own, by its key, standing as a document, whatever else the screen stands as. */
+function documentSet(scene: Scene, key: string, ownDocument: OwnDocument): Scene {
+	return withProp(scene, 'screen', {
+		...scene.screen,
+		documents: new Map([...scene.screen.documents, [key, ownDocument]])
+	});
 }
 
 /**
@@ -461,17 +498,17 @@ export function scrollTo(page: OwnPageNamed, target: string, script: ScrollToScr
  * away from its rest or too fast to stop short of it.
  */
 async function comingToRest(beginning: Beginning, key: string, target: string, top: number): Promise<Change> {
-	const measured = beginning.ownPage(key);
-	const length = await measured.scrollLength();
-	const rest = (await measured.documentTop(target)) - top;
+	const screen = beginning.scene.screen;
+	const length = documentOf(screen, key).scrollLength;
+	const rest = (await beginning.ownPage(key).documentTop(target)) - top;
 	if (rest < AT_ITS_TOP || rest > length) {
 		throw new FilmError(
 			`${SCROLL_TO} would bring ${target} ${top} pixels below the screen's top with its page scrolled ${Math.round(rest)} down, and it scrolls from ${AT_ITS_TOP} to ${Math.round(length)}: name a top it reaches`
 		);
 	}
-	const from = standingAt(runOf(beginning.scene.screen, key), beginning.stretch.moment);
+	const from = standingOn(screen, key, beginning.stretch.moment);
 	if (beginning.stretch.seconds > NO_SECONDS) refuseTurningBack(from.pace, rest - from.top, beginning.stretch, target);
-	return runSet(key, runToRest(from, beginning.stretch, rest, length));
+	return runSet(key, runToRest(from, beginning.stretch, rest));
 }
 
 /**
@@ -511,31 +548,20 @@ function backing(shown: Back): Change {
 
 /**
  * The screen showing a page of the film's own, by its key, as far as the film names it reaches; refused while a lens
- * stands, as a lens shows the filmed page under it, drawn from its picture.
+ * stands, as a lens shows the filmed page under it, drawn from its picture, and where it is drawn past its screen and
+ * its document as it stands then has nothing past it.
  */
-async function showingOwn(beginning: Beginning, key: string, reaches: ReachName): Promise<Change> {
-	if ([...beginning.scene.objects.values()].some((object) => object.content.kind === LENS)) {
+function showingOwn(beginning: Beginning, key: string, reaches: Reach): Change {
+	const scene = beginning.scene;
+	if ([...scene.objects.values()].some((object) => object.content.kind === LENS)) {
 		throw new FilmError(
 			"screen.shows shows the film's own page while a lens stands, which shows the filmed page under it: hide the lens first, with lens.hide()"
 		);
 	}
-	return showing({ kind: 'own', key, reach: await reachOf(beginning, key, reaches) });
-}
-
-/**
- * How far a page of the film's own, by its key, is drawn, as the film names it: cut at the screen; or on past it as far
- * as its document runs, as far as the stage measures it scrolls as the move begins, refused where that is nowhere.
- */
-async function reachOf(beginning: Beginning, key: string, reaches: ReachName): Promise<Reach> {
-	switch (reaches) {
-		case THE_SCREEN:
-			return CUT_AT_THE_SCREEN;
-		case THE_DOCUMENT: {
-			const scrollLength = await beginning.ownPage(key).scrollLength();
-			if (scrollLength === NO_LENGTH) throw new FilmError(REACHES_NOWHERE);
-			return { kind: THE_DOCUMENT, scrollLength };
-		}
+	if (reaches === DRAWN_TO_ITS_DOCUMENT && documentOf(scene.screen, key).scrollLength === NO_LENGTH) {
+		throw new FilmError(REACHES_NOWHERE);
 	}
+	return showing({ kind: 'own', key, reach: reaches });
 }
 
 /** The screen on its way from where it stands to up or down; refused where it stands there already. */

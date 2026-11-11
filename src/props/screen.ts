@@ -29,6 +29,12 @@
  * the page wrote there. What stands typed is the page's too, held by its key and the block's selector until the film
  * types into that block again, so it stays as the page is shown on the other face, or not at all.
  *
+ * How far a page of the film's own scrolls at most is held once, beside what stands typed in it, by its key: the two
+ * are its document as it stands, and text typed may wrap and lengthen it. The take reads it as the stage lays the page,
+ * nothing typed; a typing reads it for the text standing typed at each of its strokes as it begins, so it changes on
+ * the frame a letter lands that wraps a line. Its run is held at its end and the sheet reaches below the screen by that
+ * one length, so neither holds a copy that a typing after it leaves short.
+ *
  * A page of the film's own the screen shows in front is cut at the screen's edges, or, where the film asks, drawn on
  * past the screen's top and foot as a sheet longer than the hand that holds it: as far as its document runs on there,
  * above what has run past the screen's top and below its foot, and as far as the frame sees the window's plane, which
@@ -61,16 +67,16 @@ import {
 } from '../domain/geometry.ts';
 import { A_NUMBER, type Kind, OneOf, Plain } from '../domain/handed.ts';
 import { between } from '../domain/toward.ts';
+import type { TypedText } from '../domain/typing.ts';
 
 /** What the screen shows: the filmed page, or a page of the film's own by its key, drawn as far as it reaches. */
 export type Shows = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string; readonly reach: Reach };
 
 /**
- * How far a page of the film's own the screen shows in front is drawn: cut at the screen's edges; or on past its top and
- * foot as far as its document runs and the frame sees, its document so many of its pixels longer than the screen holds,
- * measured as it was shown.
+ * How far a page of the film's own the screen shows in front is drawn: cut at the screen's edges, `'screen'`; or on
+ * past its top and foot as far as its document runs and the frame sees, `'document'`.
  */
-export type Reach = { readonly kind: 'screen' } | { readonly kind: 'document'; readonly scrollLength: number };
+export type Reach = 'screen' | 'document';
 
 /** How far a page of the film's own is drawn on past the screen's top and past its foot, in its pixels. */
 export interface PastTheScreen {
@@ -105,12 +111,15 @@ type DrawnShows =
  * What stands typed in a page of the film's own: the text a film typed into each block of it, by the block's selector,
  * in the order the film first typed into each.
  */
-type TypedBlocks = ReadonlyMap<string, string>;
+export type TypedBlocks = ReadonlyMap<string, string>;
 
-/** Text typed into a block of a page of the film's own, as the stage writes it: the block's selector, and the text. */
-export interface TypedText {
-	readonly into: string;
-	readonly text: string;
+/**
+ * A page of the film's own as its document stands: what stands typed in it, and how far it then scrolls at most, in
+ * its pixels, none where the screen holds all of it.
+ */
+export interface OwnDocument {
+	readonly typed: TypedBlocks;
+	readonly scrollLength: number;
 }
 
 /**
@@ -127,11 +136,11 @@ export interface Knot {
 /**
  * How a page of the film's own runs down its scroll, which it moves by only as the film runs it: the knots its run
  * passes through, the earliest first, as a cubic Hermite curve in time between each two, standing at the first before
- * it and running on at the last's pace after it; and how far it scrolls at most, measured as its move began.
+ * it and running on at the last's pace after it. Where it is held, at its top and at its document's end as it stands
+ * then, is the page's to say (`standingOn`).
  */
 export interface Scroll {
 	readonly knots: readonly [Knot, ...Knot[]];
-	readonly length: number;
 }
 
 /**
@@ -198,8 +207,8 @@ type DiscSweep = DiscShape & SweepOfAnyShape;
 
 /**
  * How far the screen has come up, as a film may open on the ground alone, what it shows, the sweep over it, if any,
- * what the window's back shows, and, by its key, how each page of the film's own the film has run runs and what stands
- * typed in each it has typed into.
+ * what the window's back shows, and, by its key, how each page of the film's own the film has run runs and how each
+ * page the stage laid stands as a document.
  */
 export interface Screen {
 	readonly shown: Fraction;
@@ -207,7 +216,7 @@ export interface Screen {
 	readonly sweep: Sweep | null;
 	readonly back: Back;
 	readonly scrolls: ReadonlyMap<string, Scroll>;
-	readonly typed: ReadonlyMap<string, TypedBlocks>;
+	readonly documents: ReadonlyMap<string, OwnDocument>;
 }
 
 /** Two moments of a frame's time, the earlier first. */
@@ -273,19 +282,20 @@ export const A_SLANT: Kind<number> = new Plain(
 );
 
 export const THE_FILMED_PAGE: Shows = { kind: 'filmed' };
-export const CUT_AT_THE_SCREEN: Reach = { kind: 'screen' };
+export const CUT_AT_THE_SCREEN: Reach = 'screen';
+export const DRAWN_TO_ITS_DOCUMENT: Reach = 'document';
 export const SEEN_THROUGH: Back = { kind: 'seen through' };
-// No page of the film's own run, each standing at its top; none typed into, and nothing typed in a page
+// No page of the film's own run, each standing at its top; none laid; and nothing typed in a page as the stage lays it
 const NONE_RUN: ReadonlyMap<string, Scroll> = new Map();
-const NONE_TYPED_INTO: ReadonlyMap<string, TypedBlocks> = new Map();
-const NOTHING_TYPED: TypedBlocks = new Map();
+const NONE_LAID: ReadonlyMap<string, OwnDocument> = new Map();
+export const NOTHING_TYPED: TypedBlocks = new Map();
 export const SCREEN_UP: Screen = {
 	shown: WHOLE,
 	shows: THE_FILMED_PAGE,
 	sweep: null,
 	back: SEEN_THROUGH,
 	scrolls: NONE_RUN,
-	typed: NONE_TYPED_INTO
+	documents: NONE_LAID
 };
 export const SCREEN_DOWN: Screen = { ...SCREEN_UP, shown: NONE };
 
@@ -302,12 +312,9 @@ const SETTING_OFF = 0;
 const FIRST_ONWARD = 1;
 /** A stretch of no seconds, as a move done at once has, in a cut: its run changes at once and runs nowhere on its way. */
 export const NO_SECONDS = 0;
-// A page the film never ran: at its top since the film began, standing still, scrolling nowhere
+// A page the film never ran: at its top since the film began, standing still
 const THE_FILMS_START = 0;
-const STANDING_AT_ITS_TOP: Scroll = {
-	knots: [{ moment: THE_FILMS_START, top: AT_ITS_TOP, pace: STANDING }],
-	length: AT_ITS_TOP
-};
+const STANDING_AT_ITS_TOP: Scroll = { knots: [{ moment: THE_FILMS_START, top: AT_ITS_TOP, pace: STANDING }] };
 // How far a page runs on the frame where none of the screen's runs
 const NOTHING_RUN = 0;
 // How far past the screen a page is drawn where nothing of it is; and the most that arithmetic leaves past it where the
@@ -379,15 +386,25 @@ function frontDrawn(screen: Screen, moment: number, past: PastTheScreen | null):
  * stands in its document, where it is drawn past the screen.
  */
 function ownPageDrawn(screen: Screen, key: string, moment: number, past: PastTheScreen | null): DrawnShows {
-	const scrolled = standingAt(runOf(screen, key), moment).top;
-	const typed = [...typedIn(screen, key)].map(([into, text]) => ({ into, text }));
+	const scrolled = standingOn(screen, key, moment).top;
+	const typed = typedTextsOf(documentOf(screen, key).typed);
 	const sheet = past === null ? null : { ...past, scrolled: scrolled - past.above };
 	return { kind: 'own', key, scrolled, typed, sheet };
 }
 
-/** What stands typed in a page of the film's own on the screen, by its key: nothing where the film typed nothing. */
-export function typedIn(screen: Screen, key: string): TypedBlocks {
-	return screen.typed.get(key) ?? NOTHING_TYPED;
+/** Blocks typed into as the stage writes them: each block's selector and its text, in the order first typed into. */
+export function typedTextsOf(typed: TypedBlocks): readonly TypedText[] {
+	return [...typed].map(([into, text]) => ({ into, text }));
+}
+
+/**
+ * A page of the film's own the stage laid, by its key, as its document stands on the screen; one the stage never laid
+ * is a fault of livereel's, as every page a move names is laid before the film.
+ */
+export function documentOf(screen: Screen, key: string): OwnDocument {
+	const laid = screen.documents.get(key);
+	if (laid === undefined) throw new Error(`the screen holds no page of the film's own laid by the key ${key}`);
+	return laid;
 }
 
 /**
@@ -399,9 +416,11 @@ export function typedIn(screen: Screen, key: string): TypedBlocks {
  */
 export function pastTheScreen(screen: Screen, camera: Camera, format: Format, moment: number): PastTheScreen | null {
 	const shows = screen.shows;
-	if (shows.kind === 'filmed' || shows.reach.kind === 'screen' || !seesTheFront(screen, camera, format)) return null;
-	const scrolled = standingAt(runOf(screen, shows.key), moment).top;
-	const runsOn: PastTheScreen = { above: scrolled, below: shows.reach.scrollLength - scrolled };
+	if (shows.kind === 'filmed' || shows.reach === CUT_AT_THE_SCREEN || !seesTheFront(screen, camera, format)) {
+		return null;
+	}
+	const scrolled = standingOn(screen, shows.key, moment).top;
+	const runsOn: PastTheScreen = { above: scrolled, below: documentOf(screen, shows.key).scrollLength - scrolled };
 	const seen = screenPlaneSeen(camera, format.frame);
 	const past =
 		seen === null
@@ -433,28 +452,36 @@ export function pageShownOn(format: Format, past: PastTheScreen | null): Box {
 }
 
 /** How a page of the film's own runs on the screen, by its key: standing at its top where the film never ran it. */
-export function runOf(screen: Screen, key: string): Scroll {
+function runOf(screen: Screen, key: string): Scroll {
 	return screen.scrolls.get(key) ?? STANDING_AT_ITS_TOP;
 }
 
 /**
- * Where a running page stands at a moment and how fast it runs there: on its run, held between its top and its end,
- * standing still where it is held at an end it runs into.
+ * Where a page of the film's own, by its key, stands on a screen at a moment and how fast it runs there: on its run,
+ * held between its top and its document's end as it stands on that screen.
  */
-export function standingAt(run: Scroll, moment: number): Knot {
+export function standingOn(screen: Screen, key: string, moment: number): Knot {
+	return standingAt(runOf(screen, key), documentOf(screen, key).scrollLength, moment);
+}
+
+/**
+ * Where a running page stands at a moment and how fast it runs there: on its run, held between its top and as far as
+ * it scrolls, standing still where it is held at an end it runs into.
+ */
+function standingAt(run: Scroll, scrollLength: number, moment: number): Knot {
 	const unheld = unheldAt(run, moment);
-	const top = Math.min(Math.max(unheld.top, AT_ITS_TOP), run.length);
-	const heldAtAnEnd = (top >= run.length && unheld.pace > STANDING) || (top <= AT_ITS_TOP && unheld.pace < STANDING);
+	const top = Math.min(Math.max(unheld.top, AT_ITS_TOP), scrollLength);
+	const heldAtAnEnd = (top >= scrollLength && unheld.pace > STANDING) || (top <= AT_ITS_TOP && unheld.pace < STANDING);
 	return { moment, top, pace: heldAtAnEnd ? STANDING : unheld.pace };
 }
 
 /**
  * A page set off running at a pace from where it stands as its move begins, over a stretch of the film's time: its
  * pace changing from what it is there to the one named along the stretch, on its curve, in knots at even points of
- * it, at once where the stretch takes no time; as far as it scrolls at most, measured as it sets off.
+ * it, at once where the stretch takes no time.
  */
-export function setOff(from: Knot, stretch: Stretch, pace: number, length: number): Scroll {
-	if (stretch.seconds === NO_SECONDS) return { knots: [{ ...from, pace }], length };
+export function setOff(from: Knot, stretch: Stretch, pace: number): Scroll {
+	if (stretch.seconds === NO_SECONDS) return { knots: [{ ...from, pace }] };
 	const knotSeconds = stretch.seconds / STRETCHES_OF_A_CHANGE;
 	const first: Knot = { ...from, pace: paceOfAChange(from.pace, pace, stretch, SETTING_OFF) };
 	const later: Knot[] = [];
@@ -467,18 +494,18 @@ export function setOff(from: Knot, stretch: Stretch, pace: number, length: numbe
 		later.push(knot);
 		before = knot;
 	}
-	return { knots: [first, ...later], length };
+	return { knots: [first, ...later] };
 }
 
 /**
  * A page brought to rest at a scroll from where it stands as its move begins, over a stretch of the film's time:
  * setting off at the pace it runs there and slowing on a cubic Hermite curve to stand still there as the stretch ends;
- * at once where the stretch takes no time; as far as it scrolls at most, measured as it sets off.
+ * at once where the stretch takes no time.
  */
-export function runToRest(from: Knot, stretch: Stretch, rest: number, length: number): Scroll {
+export function runToRest(from: Knot, stretch: Stretch, rest: number): Scroll {
 	const resting: Knot = { moment: stretch.moment + stretch.seconds, top: rest, pace: STANDING };
-	if (stretch.seconds === NO_SECONDS) return { knots: [resting], length };
-	return { knots: [from, resting], length };
+	if (stretch.seconds === NO_SECONDS) return { knots: [resting] };
+	return { knots: [from, resting] };
 }
 
 /** A page's pace at an even point of a change from one pace to another over a stretch, on the stretch's curve. */
@@ -521,7 +548,7 @@ export function runShift(camera: Camera, format: Format, start: Screen, end: Scr
 	const shown = viewOnTheScreen(camera, format.frame);
 	const middle: Point = { left: middleX(shown), top: middleY(shown) };
 	const ran = pagesOnItsFaces(end).map(
-		(key) => standingAt(runOf(end, key), moments.end).top - standingAt(runOf(start, key), moments.start).top
+		(key) => standingOn(end, key, moments.end).top - standingOn(start, key, moments.start).top
 	);
 	return Math.max(NOTHING_RUN, ...ran.map((pixels) => ranOnTheFrame(camera, format, middle, pixels)));
 }

@@ -9,6 +9,7 @@
 import type { Frame } from 'playwright-core';
 import type { Box } from '../domain/geometry.ts';
 import { A_FUNCTION_SAID, type Kind, aFunction } from '../domain/handed.ts';
+import type { TypedText } from '../domain/typing.ts';
 
 /** How far a scroll goes: so many pixels down the target's own scroll, or until the target stands `top` below the top of what scrolls it. */
 export type ScrollAim =
@@ -35,12 +36,17 @@ export type PageShown = 'framed' | 'pictured';
 export type BlockHolding = 'text alone' | 'elements' | 'its value';
 
 /**
- * A page as a move measures it: where its blocks stand and the ground behind them, in its pixels how far down it scrolls
- * at most and how far down its document a block's top stands, however far it is scrolled, and what a block shows as its
- * text; as a page of the film's own is measured, which no key reaches and the film alone runs and types into.
+ * A page as a move measures it: where its blocks stand and the ground behind them, in its pixels how far down it
+ * scrolls at most with a text written into each of some blocks, and how far down its document a block's top stands,
+ * however far it is scrolled, and what a block shows as its text; as a page of the film's own is measured, which no
+ * key reaches and the film alone runs and types into.
  */
 export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind'> & {
-	readonly scrollLength: () => Promise<number>;
+	/**
+	 * Measured with each block a typed text names, the first its CSS selector matches, holding that text and every other
+	 * holding what it held; each holds what it held again after, as the stage writes what stands typed in each exposure.
+	 */
+	readonly scrollLengthWith: (typed: readonly TypedText[]) => Promise<number>;
 	/** The first block a target matches; a target the page lacks is refused at once. */
 	readonly documentTop: (target: string) => Promise<number>;
 	/**

@@ -76,6 +76,7 @@ import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
 import {
 	type DrawnScreen,
 	type MomentsBetween,
+	NOTHING_TYPED,
 	SCREEN_UP,
 	type Screen,
 	THE_FILMED_PAGE,
@@ -216,6 +217,15 @@ export function withProp<Name extends PropName>(scene: Scene, name: Name, state:
 /** The scene with its screen showing the filmed page, whatever page it shows, as an act on the page has it shown. */
 export function showingTheFilmedPage(scene: Scene): Scene {
 	return withProp(scene, 'screen', { ...scene.screen, shows: THE_FILMED_PAGE });
+}
+
+/**
+ * The scene with pages of the film's own laid on its screen, by their keys, as the stage lays each: nothing typed in
+ * it, and as far as it then scrolls at most.
+ */
+export function withPagesLaid(scene: Scene, scrollLengths: ReadonlyMap<string, number>): Scene {
+	const laid = [...scrollLengths].map(([key, scrollLength]) => [key, { typed: NOTHING_TYPED, scrollLength }] as const);
+	return withProp(scene, 'screen', { ...scene.screen, documents: new Map([...scene.screen.documents, ...laid]) });
 }
 
 /** The scene with the page's own time running at a speed. */
