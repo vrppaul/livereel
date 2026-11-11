@@ -35,7 +35,7 @@
  * the eye stands and however the window stands, while it lies on that plane, as what lies in the window is drawn flat
  * on it. It never slides from there, as the page's plane may stand leant from the frame's: it goes in its place.
  */
-import { boxOnTheScreen, standingAt, viewOf } from '../domain/camera.ts';
+import { boxOnTheFrame, boxOnTheScreen, standingAt, viewOf } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import { eyeAtRest } from '../domain/eye.ts';
 import type { Format } from '../domain/format.ts';
@@ -116,8 +116,11 @@ import {
 	ON_THE_FRAME,
 	ON_THE_PAGE,
 	type Placement,
+	type Ride,
 	carriedInto,
-	groupNamed
+	groupNamed,
+	planeOf,
+	scrolledSoFar
 } from '../domain/placement.ts';
 import { type Group, groupFound } from '../props/group.ts';
 import {
@@ -139,7 +142,7 @@ import { ENTER_FORM, type EnterScript, LEAVE_FORM, type LeaveScript, goneIn, way
 export type ShownKind = Content['kind'];
 
 /** What an object of a kind shows. */
-export type ShownOf<Kind extends ShownKind> = Extract<Content, { readonly kind: Kind }>;
+type ShownOf<Kind extends ShownKind> = Extract<Content, { readonly kind: Kind }>;
 
 /** An object showing what one of a kind shows. */
 export type ShowingOf<Kind extends ShownKind> = FrameObject & { readonly content: ShownOf<Kind> };
@@ -319,6 +322,9 @@ const BACK = [...CARRIED, ...LEANT] as const satisfies readonly (keyof FrameObje
 const AS_LARGE = 1;
 // What stands beside a point stands in no place of the frame: it stands off the point
 const OFF_ITS_POINT = null;
+// A pixel of the screen from its corner, which the camera shows as large on the frame as it shows every pixel of a
+// screen facing the frame
+const A_PIXEL_OF_THE_SCREEN: Box = { left: 0, top: 0, width: 1, height: 1 };
 
 /**
  * The curve what a kind shows comes up on in its own way, where the film names none, for a kind whose module reads how
@@ -431,6 +437,39 @@ export function objectShowBeside(
 		(beginning) => pointHeld(beginning, beside, name, move),
 		comingAt
 	);
+}
+
+/**
+ * An object of a kind coming up in the world riding the scroll of the block a selector names, as `objectShow` brings
+ * one inside the world: carried up the world from then on as far as the film scrolls the block by its scrolls, as many
+ * of the world's pixels a pixel of the scroll as the camera shows a pixel of the screen as the move begins. One named
+ * to stand anywhere but inside the world is refused: the world's plane is what the scroll carries.
+ */
+export function objectShowRiding(
+	kind: ShownKind,
+	move: string,
+	script: ShowScript & NestedScript,
+	scroller: string,
+	place: Place | null,
+	ownCurve: Ease | null,
+	comingAt: (beginning: Beginning) => Coming | Promise<Coming>
+): Move {
+	if (holderNamed(script, move).kind !== IN_THE_WORLD.kind) {
+		throw new FilmError(`${move} rides a block's scroll inside the world alone: name inside: 'world'`);
+	}
+	return objectComing(kind, move, script, place, ownCurve, (beginning) => rideHeld(beginning, scroller), comingAt);
+}
+
+/**
+ * The scroll of the block a selector names as something is placed riding it as a move begins: from as far as the film
+ * has scrolled the block then, carrying what rides it as many of the world's pixels a pixel of the scroll as the camera
+ * shows a pixel of the screen then, from the eye at rest, as what stands in the world reads the page.
+ */
+function rideHeld(beginning: Beginning, scroller: string): Holder {
+	const camera = cameraOf(readFrom(beginning, IN_THE_WORLD).scene, beginning.format);
+	const scale = boxOnTheFrame(camera, beginning.format.frame, A_PIXEL_OF_THE_SCREEN).height;
+	const ride: Ride = { scroller, from: scrolledSoFar(beginning.scene.scrolled, scroller), scale };
+	return { kind: 'scroll', ride };
 }
 
 /**
@@ -627,15 +666,15 @@ export function objectLean(kind: ShownKind, move: string, script: ObjectLeanScri
 }
 
 /**
- * An object of a kind taken back to stand as its box places it: carried to the box `boxAt` works out of what it shows
- * as the move begins, as large as that box, on its plane, and face-on by its nearest whole turns, so one spun round
- * goes back without spinning back.
+ * An object of a kind taken back to stand as its box places it: carried to the box `boxAt` works out of the object as
+ * the move begins, what it shows and what it stands in, as large as that box, on its plane, and face-on by its nearest
+ * whole turns, so one spun round goes back without spinning back.
  */
 export function objectBack<Kind extends ShownKind>(
 	kind: Kind,
 	move: string,
 	script: TakenScript,
-	boxAt: (beginning: Beginning, shown: ShownOf<Kind>) => Box
+	boxAt: (beginning: Beginning, object: ShowingOf<Kind>) => Box
 ): Move {
 	assertWritten(script, TAKEN_FORM, move);
 	const name = script.as ?? kind;
@@ -724,6 +763,7 @@ function seenFrom(beginning: Beginning, holder: Holder): Beginning {
 	switch (holder.kind) {
 		case 'frame':
 		case 'world':
+		case 'scroll':
 		case 'page':
 		case 'group':
 		case 'point':
@@ -736,14 +776,15 @@ function seenFrom(beginning: Beginning, holder: Holder): Beginning {
 }
 
 /**
- * A move's beginning as what stands in a holder reads the page through the camera: in the world, the camera standing
- * where it stands and seen from the eye at rest, the frame's plane then the world's, so a box read there stands over
- * what it was read off wherever the eye stands; anywhere else, as the eye stands. The camera is stood at its pose, as
- * the eye paces a camera's way through keys.
+ * A move's beginning as what stands in a holder reads the page through the camera: in the world, riding a block's
+ * scroll there or not, the camera standing where it stands and seen from the eye at rest, the frame's plane then the
+ * world's, so a box read there stands over what it was read off wherever the eye stands; anywhere else, as the eye
+ * stands. The camera is stood at its pose, as the eye paces a camera's way through keys.
  */
 function readFrom(beginning: Beginning, holder: Holder): Beginning {
 	switch (holder.kind) {
-		case 'world': {
+		case 'world':
+		case 'scroll': {
 			const pose = cameraOf(beginning.scene, beginning.format).pose;
 			const atRest = eyeAtRest(beginning.scene.eye.focalLength);
 			const asAtRest = withEye(withProp(beginning.scene, 'camera', standingAt(pose)), atRest);
@@ -762,7 +803,9 @@ function readFrom(beginning: Beginning, holder: Holder): Beginning {
  * A box a move works out as what stands in a holder sees it, as a box in what the holder measures in, for the object
  * of a name: as it is on the frame and inside the window; on the page, where the camera shows it on the screen as the
  * move begins, the window facing the frame front on; in a group, measured from the group's corner, where it stands once
- * the group stands as it was placed. Beside a point, a box is worked out off the point alone, so it stands as it is.
+ * the group stands as it was placed; riding a block's scroll, measured from where the scroll has carried the world's
+ * plane as the move begins, so it stands there at the box. Beside a point, a box is worked out off the point alone, so
+ * it stands as it is.
  */
 function measuredIn(beginning: Beginning, holder: Holder, box: Box, name: ObjectName, move: string): Box {
 	switch (holder.kind) {
@@ -771,6 +814,8 @@ function measuredIn(beginning: Beginning, holder: Holder, box: Box, name: Object
 		case 'window':
 		case 'point':
 			return box;
+		case 'scroll':
+			return measuredFrom(box, planeOf(holder, holdersAsTheyStand(beginning), beginning.format.frame).box, AS_LARGE);
 		case 'page': {
 			const camera = cameraFrontOn(beginning, `${move} measures the ${name} on the page`);
 			return boxOnTheScreen(camera, beginning.format.frame, box);
@@ -782,11 +827,11 @@ function measuredIn(beginning: Beginning, holder: Holder, box: Box, name: Object
 
 /**
  * Where an object of a name stands on the page as a move begins, its box in the screen's pixels: where it lies there;
- * standing on the frame and lying flat, where the camera shows its box, as it stands; standing in the world, where it
- * stands there, carried into the page's plane, while it lies on that plane. One leant or near the eye on the frame is
- * refused, as it would lie flat at once; one in the world standing off the page's plane, as neither stage draws what
- * lies in the window off its plane (TODO.md); and one inside the window, in a group or beside a point, as it goes with
- * what it stands in.
+ * standing on the frame and lying flat, where the camera shows its box, as it stands; standing in the world, riding a
+ * block's scroll there or not, where it stands there, carried into the page's plane, while it lies on that plane, so a
+ * ride ends there. One leant or near the eye on the frame is refused, as it would lie flat at once; one in the world
+ * standing off the page's plane, as neither stage draws what lies in the window off its plane (TODO.md); and one inside
+ * the window, in a group or beside a point, as it goes with what it stands in.
  */
 function onThePage(beginning: Beginning, object: FrameObject, name: ObjectName, move: string): Placement {
 	switch (object.inside.kind) {
@@ -800,6 +845,7 @@ function onThePage(beginning: Beginning, object: FrameObject, name: ObjectName, 
 			}
 			return { ...stanceOf(object), box: measuredIn(beginning, ON_THE_PAGE, object.box, name, move) };
 		case 'world':
+		case 'scroll':
 			return carriedOntoThePage(beginning, object, name, move);
 		case 'window':
 			throw new FilmError(`${move} would carry the ${name} out of the window onto the page: it stands in the window`);
@@ -811,12 +857,13 @@ function onThePage(beginning: Beginning, object: FrameObject, name: ObjectName, 
 }
 
 /**
- * Where an object of a name standing in the world stands on the page as a move begins, carried into the page's plane
- * and laid exactly on it, as it lies there but for what arithmetic leaves; refused where it stands off that plane.
+ * Where an object of a name standing in the world, riding a block's scroll there or not, stands on the page as a move
+ * begins, carried into the page's plane and laid exactly on it, as it lies there but for what arithmetic leaves;
+ * refused where it stands off that plane.
  */
 function carriedOntoThePage(beginning: Beginning, object: FrameObject, name: ObjectName, move: string): Placement {
 	const holders = holdersAsTheyStand(beginning);
-	const there = carriedInto(object, IN_THE_WORLD, ON_THE_PAGE, holders, beginning.format.frame);
+	const there = carriedInto(object, object.inside, ON_THE_PAGE, holders, beginning.format.frame);
 	if (there === null || !liesOnItsPlane(there)) {
 		throw new FilmError(
 			`${move} would lay the ${name} on the page while it stands off the page's plane, leant from it or nearer or farther than it: bring it face-on to the window and to the window's depth first`
@@ -1132,7 +1179,8 @@ function leaning(
 
 /**
  * Where what an object stands in lays it flat on the window's plane, as a refusal says it: inside the window, or on the
- * page in it; none where it stands on the frame, in a group or beside a point, free to lean and come near.
+ * page in it; none where it stands on the frame, in the world, riding a block's scroll there or not, in a group or
+ * beside a point, free to lean and come near.
  */
 function flatOnTheWindowSaid(holder: Holder): string | null {
 	switch (holder.kind) {
@@ -1142,6 +1190,7 @@ function flatOnTheWindowSaid(holder: Holder): string | null {
 			return 'it lies on the page';
 		case 'frame':
 		case 'world':
+		case 'scroll':
 		case 'group':
 		case 'point':
 			return null;
@@ -1149,18 +1198,18 @@ function flatOnTheWindowSaid(holder: Holder): string | null {
 }
 
 /**
- * The object of a kind on its way back from how it stands to the box `boxAt` works out of what it shows, as large as
- * its box, on its plane, and face-on by its nearest whole turns.
+ * The object of a kind on its way back from how it stands to the box `boxAt` works out of it, as large as its box, on
+ * its plane, and face-on by its nearest whole turns.
  */
 function goingBack<Kind extends ShownKind>(
 	beginning: Beginning,
 	name: ObjectName,
 	kind: Kind,
-	boxAt: (beginning: Beginning, shown: ShownOf<Kind>) => Box,
+	boxAt: (beginning: Beginning, object: ShowingOf<Kind>) => Box,
 	move: string
 ): Change {
 	const object = standingOfKind(beginning, name, move, kind);
-	const backTo = boxAt(readFrom(beginning, object.inside), object.content);
+	const backTo = boxAt(readFrom(beginning, object.inside), object);
 	const to: Carried = {
 		box: measuredIn(beginning, object.inside, backTo, name, move),
 		scale: AS_PLACED.scale,

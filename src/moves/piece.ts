@@ -30,6 +30,7 @@ import {
 	A_COLOUR,
 	A_COUNT,
 	A_PIXELS,
+	A_SELECTOR,
 	A_SHARE,
 	type Form,
 	type Kind,
@@ -42,6 +43,7 @@ import {
 	needed
 } from '../domain/handed.ts';
 import type { Place } from '../domain/place.ts';
+import { screenBoxUnder } from '../domain/placement.ts';
 import { A_TARGET, type Beginning, type Move, type Target } from '../direction/move.ts';
 import {
 	type Body,
@@ -74,6 +76,7 @@ import {
 	objectLean,
 	objectOnto,
 	objectShow,
+	objectShowRiding,
 	objectTo
 } from './object.ts';
 import {
@@ -127,7 +130,8 @@ export interface BodyScript {
  * the hole it leaves and the line the lines from it to its source are drawn in, where the film names them; the
  * `picture` it is drawn from, the page's as it changes, `'following'`, where the film names none, or one of its source
  * held as it is lifted, `'held'`; how it comes up; which piece; the world it stands `inside`, which the eye moves
- * through, or the group it stands in, if either; and its `body` in the world, if the film names one.
+ * through, or the group it stands in, if either; its `body` in the world, if the film names one; and the block of
+ * the page whose scroll it `rides` in the world, a selector, as the film names it to `page.scrollBy`, if it names one.
  */
 export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript {
 	readonly every?: number;
@@ -138,6 +142,7 @@ export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScri
 	readonly picture?: PiecePicture['kind'];
 	readonly inside?: 'world';
 	readonly body?: BodyScript;
+	readonly rides?: string;
 }
 
 /** How a hole is filled, as a piece is made: with the ground the page draws behind a block a selector names, or a colour. */
@@ -206,6 +211,7 @@ const PIECE_FORM: Form<PieceScript> = {
 	// A piece stands inside the world alone: it lies in the window only where it is carried onto the page (`onto`)
 	inside: new Literal('world'),
 	body: new OfForm(BODY_FORM, 'a body: { thickness, walls, glow }'),
+	rides: A_SELECTOR,
 	...IN_PLACE_SHOW_FORM,
 	...NAMED_FORM,
 	...GROUPED_FORM
@@ -214,9 +220,10 @@ const PIECE_FORM: Form<PieceScript> = {
  * A piece of the page lifted off a target, a selector's first `every` blocks together or a box of the screen, over
  * where the camera shows it, cut to the part it shows, its corners as round as the film names, leaving the hole and
  * drawing the lines the film names, drawn from the picture the film names: in place of any piece of its name, in its
- * own way, fading up whole, or in a way of livereel's the film names, with the body the film names. A hole over a box
- * of the screen, which has no block to read the ground behind, is refused unless the film names its colour; a pit on a
- * piece with no body, whose colour its walls take, is refused.
+ * own way, fading up whole, or in a way of livereel's the film names, with the body the film names; in the world,
+ * riding the scroll of the block a selector `rides` names, where the film names one. A hole over a box of the screen,
+ * which has no block to read the ground behind, is refused unless the film names its colour; a pit on a piece with no
+ * body, whose colour its walls take, is refused.
  */
 export function show(target: Target, script: PieceScript = {}): Move {
 	assertKind(target, A_TARGET, "piece.show's target");
@@ -232,12 +239,22 @@ export function show(target: Target, script: PieceScript = {}): Move {
 		bornIn: script.inside ?? BORN_ON_THE_FRAME,
 		body
 	};
-	return {
-		...objectShow(PIECE, 'piece.show', script, NO_PLACE, THE_STEPS_CURVE, (beginning) =>
+	return { ...pieceComing(target, script, lifting), holdsThePage: lifting.picture === 'held' };
+}
+
+/**
+ * A piece coming up lifted off a target as the film asks: riding the scroll of the block it names, where it names one,
+ * standing where it comes up else.
+ */
+function pieceComing(target: Target, script: PieceScript, lifting: Lifting): Move {
+	if (script.rides === undefined) {
+		return objectShow(PIECE, 'piece.show', script, NO_PLACE, THE_STEPS_CURVE, (beginning) =>
 			lifted(beginning, target, lifting)
-		),
-		holdsThePage: lifting.picture === 'held'
-	};
+		);
+	}
+	return objectShowRiding(PIECE, 'piece.show', script, script.rides, NO_PLACE, THE_STEPS_CURVE, (beginning) =>
+		lifted(beginning, target, lifting)
+	);
 }
 
 /**
@@ -271,12 +288,16 @@ export function effects(script: EffectsScript): Move {
 }
 
 /**
- * The piece taken back over its source as the camera shows it then, face-on by its nearest whole turns, as large as
- * its source shows there and on the frame's plane.
+ * The piece taken back over its source as the camera shows it then, where the block it rides stands then, face-on by
+ * its nearest whole turns, as large as its source shows there and on the frame's plane.
  */
 export function back(script: TakenScript = {}): Move {
-	return objectBack(PIECE, 'piece.back', script, (beginning, shown) =>
-		boxOnTheFrame(cameraOverThePicture(beginning, 'piece.back'), beginning.format.frame, shown.source)
+	return objectBack(PIECE, 'piece.back', script, (beginning, piece) =>
+		boxOnTheFrame(
+			cameraOverThePicture(beginning, 'piece.back'),
+			beginning.format.frame,
+			screenBoxUnder(piece.content.source, piece.inside, beginning.scene.scrolled)
+		)
 	);
 }
 

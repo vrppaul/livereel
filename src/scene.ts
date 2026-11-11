@@ -48,7 +48,7 @@ import { LIVEREELS_SLAB } from './props/body.ts';
 import { type Callout, type DrawnCallout, drawnCallout } from './props/callout.ts';
 import { type Caption, type DrawnCaption, drawnCaption } from './props/caption.ts';
 import type { Cursor } from './props/cursor.ts';
-import { type GroupName, type Holders, type Placed, laidFartherFirst } from './domain/placement.ts';
+import { type GroupName, type Holders, type Placed, type Scrolled, laidFartherFirst } from './domain/placement.ts';
 import type { Group, Groups } from './props/group.ts';
 import { type DrawnKeys, type Keys, drawnKeys } from './props/keys.ts';
 import { type DrawnLines, drawnHoles, drawnLines } from './props/lifted.ts';
@@ -122,6 +122,12 @@ export type Scene = { readonly [Name in PropName]: PropStates[Name] } & {
 	 * take runs the page's time by it; the stage draws nothing of it.
 	 */
 	readonly pageSpeed: number;
+	/**
+	 * How far the film's own scrolls have scrolled each block of the page, by the selector they name it by
+	 * (`src/domain/placement.ts`): what carries a piece riding a block's scroll. The page holds the scroll itself; the
+	 * stage draws nothing of this.
+	 */
+	readonly scrolled: Scrolled;
 	/**
 	 * Where the eye stands and what it looks at, where it focuses and how wide it is open (`src/domain/eye.ts`): the
 	 * world, the window in it, is seen from it and as sharp as it sees, the frame rides with it. The stage draws nothing
@@ -204,6 +210,7 @@ export function openingScene(format: Format, look: Look, world: WorldLook, focal
 		leaving: new Map(),
 		groups: new Map(),
 		pageSpeed: THE_FILMS_OWN_SPEED,
+		scrolled: new Map(),
 		eye: eyeAtRest(focalLength)
 	};
 }
@@ -241,6 +248,11 @@ export function withPageSpeed(scene: Scene, pageSpeed: number): Scene {
 	return { ...scene, pageSpeed };
 }
 
+/** The scene with a block of the page, by the selector the film names it by, scrolled so far by the film's scrolls. */
+export function withScrolled(scene: Scene, scroller: string, scrolledSoFar: number): Scene {
+	return { ...scene, scrolled: new Map([...scene.scrolled, [scroller, scrolledSoFar]]) };
+}
+
 /**
  * The scene with an object of a name set where it stands, or coming last where none of its name stood; none, gone,
  * and what stands beside it gone with it. One set in a group gone, or beside an object gone, is gone with it, as a
@@ -261,8 +273,8 @@ function withoutWhatStandsBeside(scene: Scene, name: ObjectName): Scene {
 }
 
 /**
- * Whether what an object stands in stands in a scene: the frame, the window, the page and a point of the screen
- * always, a group while it stands, a point of an object while the object does.
+ * Whether what an object stands in stands in a scene: the frame, the world, the window, the page, a block's scroll
+ * and a point of the screen always, a group while it stands, a point of an object while the object does.
  */
 function itsHolderStands(scene: Scene, object: FrameObject): boolean {
 	const holder = object.inside;
@@ -275,6 +287,7 @@ function itsHolderStands(scene: Scene, object: FrameObject): boolean {
 		case 'world':
 		case 'window':
 		case 'page':
+		case 'scroll':
 			return true;
 	}
 }
@@ -333,9 +346,12 @@ export function partsAskedSharperIn(scene: Scene, camera: Camera, frame: Size): 
 	);
 }
 
-/** What the objects of a scene stand in, seen by a camera: it, the groups standing and the objects standing. */
+/**
+ * What the objects of a scene stand in, seen by a camera: it, the groups standing, the objects standing and how far the
+ * film has scrolled each block it scrolls.
+ */
 export function holdersIn(scene: Scene, camera: Camera): Holders {
-	return { camera, groups: scene.groups, objects: scene.objects };
+	return { camera, groups: scene.groups, objects: scene.objects, scrolled: scene.scrolled };
 }
 
 /** The numbers of the pictures the pieces in a scene hold, standing or pushed off, and the one its screen's sweep holds. */
@@ -486,7 +502,7 @@ export function drawn(
 	sharper: readonly SharperPicture[]
 ): DrawnScene {
 	const everyObject = [...scene.objects, ...scene.leaving];
-	const holes = drawnHoles(everyObject);
+	const holes = drawnHoles(everyObject, scene.scrolled);
 	const sharpness = sharpnessOf(camera, format.frame);
 	const around: Surroundings = {
 		screen: scene.screen,
@@ -494,6 +510,7 @@ export function drawn(
 		camera,
 		groups: scene.groups,
 		objects: scene.objects,
+		scrolled: scene.scrolled,
 		holes,
 		sharpness,
 		sharper

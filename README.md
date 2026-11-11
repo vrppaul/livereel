@@ -234,14 +234,15 @@ and the moves of each part of the scene:
   `terminal.lean({ tilt, turn, roll, over, about })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
-- `piece.show(target, { every, air, corner, hole, lines, picture, body, enter, edge, as, inside, group, zIndex })`,
-  `piece.to(place, { scale, depth })`, `piece.onto(target)`, `piece.lean({ tilt, turn, roll, over, about })`, `piece.back()`,
+- `piece.show(target, { every, air, corner, hole, lines, picture, body, rides, enter, edge, as, inside, group,
+  zIndex })`, `piece.to(place, { scale, depth })`, `piece.onto(target)`, `piece.lean({ tilt, turn, roll, over, about })`, `piece.back()`,
   `piece.hide({ toward, leave, edge })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
   in the page's pixels (a rounded card's own `border-radius`), square where it names none, and as round as the window
   at a corner standing on a corner of what the window shows, leaving a `hole: { ground, line, reach, pit }` and drawing `lines` to its
   source where named; drawn from the page's picture as it changes, or, `picture: 'held'`, from a picture of its source
-  held as it is lifted; `inside: 'world'`, with a `body: { thickness, walls, glow }` where named; carried `onto` another
+  held as it is lifted; `inside: 'world'`, with a `body: { thickness, walls, glow }` where named, riding the scroll of
+  the block `rides` names, a selector, where named; carried `onto` another
   block, it lies on the page there, in the window, and keeps that place on the screen as the camera moves; each move of
   it takes `as` to name which
 - `outline.show(target, { every, line, enter, edge, as, group, zIndex })`, `outline.to(place, { scale, depth })`,
@@ -642,6 +643,22 @@ carries it from the world onto the page where it stands, wherever the eye
 stands and however the window is brought near or rolled, while it lies on
 the window's plane, face-on to the window and at its depth, as what lies
 in the window is drawn flat on it: standing off that plane, it is refused.
+
+A piece lifted `inside: 'world'` rides the scroll of a block of the page where
+the film names the block: `piece.show(TASK, { inside: 'world', rides:
+'[data-testid=story-view]' })`, then `page.scrollBy('[data-testid=story-view]',
+{ pixels: 280 })` in a `play`, carries it up the world as far as the scroll
+moves the block, as many of the world's pixels to a pixel of the scroll as the
+camera showed the page as it was lifted, so it stays over its block as the
+story slides under the parts lifted off it. Its hole and its pit, its lines
+to its source, what it draws from the page's picture, its body's shadow and
+words standing beside it go with it. It rides the film's own scrolls of the
+block alone, by the selector it names the block by: a scroll an act does, or
+the page does by itself, carries it nowhere. Carried `to` a place, it stands
+there however far the block has scrolled and rides on from there; `back`
+takes it over its source where the block stands then; carried `onto` the
+page, it lies there and rides no more. A piece riding anything but inside the
+world is refused.
 
 A piece lifted `inside: 'world'` may have a body, as a real button rises out
 of the page as a column: `piece.show(STORY, { inside: 'world', corner: 6,

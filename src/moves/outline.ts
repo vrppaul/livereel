@@ -103,8 +103,12 @@ export function effects(script: EffectsScript): Move {
  * its source shows there and on the frame's plane.
  */
 export function back(script: TakenScript = {}): Move {
-	return objectBack(OUTLINE, 'outline.back', script, (beginning, shown) =>
-		boxOnTheFrame(cameraFrontOn(beginning, overItsSource('outline.back')), beginning.format.frame, shown.source)
+	return objectBack(OUTLINE, 'outline.back', script, (beginning, outline) =>
+		boxOnTheFrame(
+			cameraFrontOn(beginning, overItsSource('outline.back')),
+			beginning.format.frame,
+			outline.content.source
+		)
 	);
 }
 

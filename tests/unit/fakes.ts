@@ -91,6 +91,20 @@ export class PageOfBoxes implements FilmedPage {
 	}
 }
 
+/** A page of boxes whose every scroll runs so many pixels down from where it stands. */
+export class PageScrollingBy extends PageOfBoxes {
+	readonly pixels: number;
+
+	constructor(boxes: ReadonlyMap<string, Box>, pixels: number) {
+		super(boxes);
+		this.pixels = pixels;
+	}
+
+	scrollCourse(): Promise<ScrollCourse> {
+		return Promise.resolve({ start: 0, end: this.pixels, scroll: () => Promise.resolve() });
+	}
+}
+
 /**
  * A stage of either kind, drawing one exposure of a frame at a time, that keeps every scene drawn on it, how many each
  * drawing was of, and how each page of the film's own was stood, in turn, and counts its captures and the times it was

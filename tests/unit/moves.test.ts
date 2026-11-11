@@ -74,14 +74,14 @@ import {
 	pointOnTheFrame,
 	windowInTheWorld
 } from '../../src/domain/placement.ts';
-import type { Piece } from '../../src/props/piece.ts';
+import type { DrawnPiece, Piece } from '../../src/props/piece.ts';
 import { SCREEN_UP, THE_FILMED_PAGE, drawnScreen, pastTheScreen } from '../../src/props/screen.ts';
 import type { DrawnWindow } from '../../src/props/window.ts';
 import { ONE_FRAME, pastTheEdge, windowPlaced, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
 import * as look from '../../src/moves/look.ts';
 import * as note from '../../src/moves/note.ts';
-import { speed } from '../../src/moves/page.ts';
+import { scrollBy, speed } from '../../src/moves/page.ts';
 import * as pin from '../../src/moves/pins.ts';
 import * as thing from '../../src/moves/thing.ts';
 import * as title from '../../src/moves/title.ts';
@@ -134,7 +134,7 @@ import {
 	withPagesLaid,
 	withProp
 } from '../../src/scene.ts';
-import { FOCAL_LENGTH, PageOfBoxes, PicturesHeld, SMALL } from './fakes.ts';
+import { FOCAL_LENGTH, PageOfBoxes, PageScrollingBy, PicturesHeld, SMALL } from './fakes.ts';
 
 const BLOCK = { left: 100, top: 100, width: 100, height: 40 };
 // How far along a curve that passes its ends may stand, past its end and before its start
@@ -4666,4 +4666,70 @@ test('a title is refused as its move begins beside an object that stands beside 
 			'title.show stands the first beside the third, which stands beside the first, straight or through others: name an object that stands by itself'
 		)
 	);
+});
+
+// The block of the page whose scroll carries a piece riding it; how far the film scrolls it before the piece is lifted
+// and after, in the page's pixels; and the camera at 2, which shows a pixel of the screen as two of the frame's
+const COLUMN = '#column';
+const SCROLLED_BEFORE = 50;
+const SCROLLED_AFTER = 30;
+const FRAME_PIXELS_A_SCREEN_PIXEL = 2;
+const RIDING_THE_COLUMN = { inside: 'world', rides: COLUMN, hole: {} } as const;
+
+/** The scene a scroll of the column so many pixels down sets at its end, begun on a scene shot full HD. */
+async function columnScrolled(scene: Scene, pixels: number): Promise<Scene> {
+	const beginning = { ...beginningIn(scene, FULL_HD), page: new PageScrollingBy(PAGE.boxes, pixels) };
+	return (await scrollBy(COLUMN, { pixels }).begin(beginning))(scene, 1);
+}
+
+/** A scene shot full HD, the camera at 2 on the screen's middle, the column scrolled, a piece lifted riding it. */
+async function liftedRiding(): Promise<Scene> {
+	const close = await setIn(cameraTo(MIDDLE_AT_TWO), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const scrolledFirst = await columnScrolled(close, SCROLLED_BEFORE);
+	return setIn(piece.show('#other', RIDING_THE_COLUMN), scrolledFirst, 1, FULL_HD);
+}
+
+test("a piece lifted in the world riding a block's scroll is carried up the frame as far as the film scrolls the block after it is lifted, as the camera showed the page, its hole, what it shows and words beside it with it; one riding none keeps its place", async () => {
+	const lifted = await liftedRiding();
+	const beside = await setIn(title.show('what it did', { beside: BESIDE_THE_PIECE }), lifted, 1, FULL_HD);
+	const still = await setIn(piece.show('#other', { inside: 'world', as: 'still' }), beside, 1, FULL_HD);
+	const scrolled = await columnScrolled(still, SCROLLED_AFTER);
+	const carriedUp = -SCROLLED_AFTER * FRAME_PIXELS_A_SCREEN_PIXEL;
+	const sourceNow = { ...OTHER, top: OTHER.top - SCROLLED_AFTER };
+	const drawnNow = drawnSceneIn(scrolled, FULL_HD);
+	expect([
+		cornersDrawnIn(scrolled),
+		drawnPointInFullHd(scrolled, 'title', WORDS_READ_FROM),
+		drawnNow.holes[0]!.box,
+		(drawnNow.objects[0]!.content as DrawnPiece).source,
+		drawnPointInFullHd(scrolled, 'still', BOX_MIDDLE)
+	]).toEqual([
+		cornersDrawnIn(still).map((corner) => closeToPoint(movedBy(corner, 0, carriedUp))),
+		closeToPoint(movedBy(drawnPointInFullHd(still, 'title', WORDS_READ_FROM), 0, carriedUp)),
+		sourceNow,
+		sourceNow,
+		closeToPoint(drawnPointInFullHd(still, 'still', BOX_MIDDLE))
+	]);
+});
+
+test("a piece riding a block's scroll carried to a place stands there however far the block is scrolled, and goes back over its source where the block stands now", async () => {
+	const lifted = await liftedRiding();
+	const scrolled = await columnScrolled(lifted, SCROLLED_AFTER);
+	const carried = await setIn(piece.to(UPPER_LEFT), scrolled, 1, FULL_HD);
+	const back = await setIn(piece.back(), carried, 1, FULL_HD);
+	const close = await setIn(cameraTo(MIDDLE_AT_TWO), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const ridingNone = await setIn(piece.show('#other', { inside: 'world' }), close, 1, FULL_HD);
+	const carriedRidingNone = await setIn(piece.to(UPPER_LEFT), ridingNone, 1, FULL_HD);
+	expect([cornersDrawnIn(carried), cornersDrawnIn(back)]).toEqual([
+		cornersDrawnIn(carriedRidingNone).map(closeToPoint),
+		cornersDrawnIn(scrolled).map(closeToPoint)
+	]);
+});
+
+test("a piece rides a block's scroll in the world alone: on the frame or in a group it is refused as its move is made", () => {
+	const inTheWorldAlone = new FilmError(
+		"piece.show rides a block's scroll inside the world alone: name inside: 'world'"
+	);
+	expect(() => piece.show('#card', { rides: COLUMN })).toThrow(inTheWorldAlone);
+	expect(() => piece.show('#card', { rides: COLUMN, group: 'stack' })).toThrow(inTheWorldAlone);
 });

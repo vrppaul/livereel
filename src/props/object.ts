@@ -78,13 +78,16 @@ import {
 	type GroupName,
 	type Holder,
 	type Holders,
+	IN_THE_WORLD,
 	type Placed,
+	type Scrolled,
 	carriedAboutItsMiddle,
 	drawnPlacement,
 	groupNamed,
 	placed,
 	planeOf,
 	pointOnTheFrame,
+	screenBoxUnder,
 	whereItStands
 } from '../domain/placement.ts';
 import { type Face, type Stance, faceOf, middleMovedBy, transformOf } from '../domain/stance.ts';
@@ -387,16 +390,27 @@ export function standingInTheWorld(object: FrameObject, holders: Holders, frame:
  * Where the eye focuses to see an object sharp, its middle where it stands now: at that spot of what it stands in, its
  * box's middle where its stance moves it, brought out by its depth and round the point it turns about, placed as each
  * frame is drawn; in a group, which goes with what stands in it, or beside a point, so far before the eye, as either
- * rides with it.
+ * rides with it; riding a block's scroll, at the spot of the world it stands at now, which the scroll carries no more.
  */
 export function focusOn(object: FrameObject, holders: Holders, frame: Size): Focus {
 	const holder = object.inside;
-	if (holder.kind === 'group' || holder.kind === 'point') {
-		return { kind: 'distance', distance: distanceOfItsMiddle(placedInItsHolder(object, holders, frame), frame) };
-	}
 	const moved = middleMovedBy(object, object.box);
 	const point = { left: middleX(object.box) + moved.across, top: middleY(object.box) + moved.down };
-	return { kind: 'spot', holder, point, depth: moved.out };
+	switch (holder.kind) {
+		case 'group':
+		case 'point':
+			return { kind: 'distance', distance: distanceOfItsMiddle(placedInItsHolder(object, holders, frame), frame) };
+		case 'scroll': {
+			const carriedPlane = planeOf(holder, holders, frame).box;
+			const inTheWorld = { left: point.left + carriedPlane.left, top: point.top + carriedPlane.top };
+			return { kind: 'spot', holder: IN_THE_WORLD, point: inTheWorld, depth: moved.out };
+		}
+		case 'frame':
+		case 'world':
+		case 'window':
+		case 'page':
+			return { kind: 'spot', holder, point, depth: moved.out };
+	}
 }
 
 /**
@@ -455,7 +469,7 @@ function drawingPlaceOf(object: FrameObject, came: number, objects: readonly Fra
  */
 export function pictureZoomOf(object: FrameObject, holders: Holders, frame: Size): number | null {
 	const zoom = pageZoomOf(object, holders, frame);
-	return partPastTheBound(object, zoom) === null ? zoom : null;
+	return partPastTheBound(object, zoom, holders.scrolled) === null ? zoom : null;
 }
 
 /**
@@ -464,14 +478,18 @@ export function pictureZoomOf(object: FrameObject, holders: Holders, frame: Size
  * leant, or from a picture it holds.
  */
 export function partAskedSharper(object: FrameObject, holders: Holders, frame: Size): readonly PartAsked[] {
-	const part = partPastTheBound(object, pageZoomOf(object, holders, frame));
+	const part = partPastTheBound(object, pageZoomOf(object, holders, frame), holders.scrolled);
 	return part === null ? [] : [part];
 }
 
-/** The part of the screen an object shows past livereel's bound at a zoom: a piece's source; none for any other. */
-function partPastTheBound(object: FrameObject, zoom: number | null): PartAsked | null {
+/**
+ * The part of the screen an object shows past livereel's bound at a zoom: a piece's source, where the block it rides
+ * stands now; none for any other.
+ */
+function partPastTheBound(object: FrameObject, zoom: number | null, scrolled: Scrolled): PartAsked | null {
 	const content = object.content;
-	return content.kind === 'piece' && zoom !== null && zoom > ZOOM_AT_MOST ? { part: content.source, zoom } : null;
+	if (content.kind !== 'piece' || zoom === null || zoom <= ZOOM_AT_MOST) return null;
+	return { part: screenBoxUnder(content.source, object.inside, scrolled), zoom };
 }
 
 /**
@@ -525,15 +543,16 @@ function pageFitOf(object: FrameObject, laid: Box, camera: Camera, frame: Size):
 }
 
 /**
- * How much of an object what it stands in lets show, among what stands round it: all of it on the frame, in the world
- * and beside a point; in the page's window or on the page in it, as much as the screen has come up out of the ground;
- * in a group, as much as the group has not gone. It fades the object whole, and what it shows stands as far along as
+ * How much of an object what it stands in lets show, among what stands round it: all of it on the frame, in the world,
+ * riding a block's scroll there and beside a point; in the page's window or on the page in it, as much as the screen
+ * has come up out of the ground; in a group, as much as the group has not gone. It fades the object whole, and what it shows stands as far along as
  * its own moves have it: words typed stay typed as their key was heard.
  */
 function heldIn(object: FrameObject, around: Surroundings): number {
 	switch (object.inside.kind) {
 		case 'frame':
 		case 'world':
+		case 'scroll':
 		case 'point':
 			return WHOLLY_HELD;
 		case 'window':
@@ -547,8 +566,9 @@ function heldIn(object: FrameObject, around: Surroundings): number {
 /**
  * What an object of a name shows, standing as it does, drawn as far as its ground and its figure have come up and gone
  * in the way it comes, at a moment of the film, among what stands round it: the camera, which a lens shows the page
- * past, and the holes on the screen, which a piece or a lens shows but for the piece's own. What has no ground of its
- * own is its figure alone.
+ * past, the holes on the screen, which a piece or a lens shows but for the piece's own, and how far the film has
+ * scrolled each block, which carries the source of a piece riding one. What has no ground of its own is its figure
+ * alone.
  */
 function drawnContent(
 	name: ObjectName,
@@ -571,7 +591,7 @@ function drawnContent(
 			return drawnEnding(content, object.way, object);
 		case 'piece':
 			return drawnPiece(
-				content,
+				{ ...content, source: screenBoxUnder(content.source, object.inside, around.scrolled) },
 				standing.laid,
 				object,
 				presentShare(figure),
