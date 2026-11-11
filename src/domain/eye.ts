@@ -20,6 +20,11 @@
  * (`src/domain/camera.ts`), so a window that leans or travels in the same step carries the eye with it whichever is set
  * first.
  *
+ * The eye stands before a box of a plane as a film frames it there (`viewpointBefore`): so near that the box fills a
+ * share of the frame as it would seen square, turned from square about its middle, and moved along its own picture
+ * plane till the middle shows where the film names on the frame, its top up the plane. Worked out in the plane's own
+ * axes, the place rides the plane as the eye rides the window.
+ *
  * The eye sees as a lens does: focused at a point and open so wide. Open none, a pinhole, as every film was seen before
  * it could open, it sees all sharp; open, it draws what stands in the world nearer or farther than its focus the softer
  * the farther it stands off it (`src/domain/focus.ts`). Where it stands and where it focuses are values of their own,
@@ -27,20 +32,34 @@
  */
 import { FilmError } from './errors.ts';
 import { Quaternion, Vector3 } from 'three';
-import { HALVES, LOOK_MADE_ON, type Point, type Size, frameScaleOf } from './geometry.ts';
+import {
+	type Box,
+	HALVES,
+	LOOK_MADE_ON,
+	MIDDLE_SHARE,
+	type Point,
+	type Size,
+	frameScaleOf,
+	middleX,
+	middleY
+} from './geometry.ts';
 import { A_NUMBER, type Kind, Literal, NameOrForm, OfForm, Plain } from './handed.ts';
 import {
 	A_SPOT,
 	type Matrix,
 	type Spot,
+	carried,
 	carriesEveryPointWhereItStands,
 	chained,
 	crossOf,
 	dotOf,
 	inThreesAxes,
 	lengthOf,
+	movedAlong,
 	perspective,
 	radians,
+	rotationX,
+	rotationY,
 	scaledBy,
 	translation,
 	unitOf,
@@ -118,15 +137,39 @@ export interface DrawnEye {
 	readonly lens: LensLaw | null;
 }
 
+/**
+ * How far the eye is turned from square before a plane, in degrees, each less than a quarter round either way: `round`
+ * the plane's upright toward its right, then `up` toward its top, as a soft box stands round the room
+ * (`src/props/lighting.ts`).
+ */
+interface Turned {
+	readonly round: number;
+	readonly up: number;
+}
+
+/**
+ * How the eye stands before a box of a plane: so far from the box's middle that, seen square, the box fills `fills` of
+ * the frame along the side it fills most; turned from square about that middle, looking at it, as `turned` says; and
+ * moved along its own picture plane till the middle shows at `middleAt` of the frame, in shares of it from its top
+ * left corner.
+ */
+export interface EyeFraming {
+	readonly fills: number;
+	readonly middleAt: Point;
+	readonly turned: Turned;
+}
+
 /** The line an eye sees a point on: where the eye stands, and the way its sight goes from there. */
 export interface Sight {
 	readonly from: Spot;
 	readonly along: Spot;
 }
 
-// The frame's middle, which the eye at rest looks at; the frame's up, the way its top points; and a move of none
+// The frame's middle, which the eye at rest looks at; the frame's up, the way its top points, as a plane's up is in its
+// own axes; the way out of a plane's face; and a move of none
 const THE_FRAMES_MIDDLE: Spot = { across: 0, down: 0, out: 0 };
 const UP_THE_FRAME: Spot = { across: 0, down: -1, out: 0 };
+const OUT_OF_ITS_FACE: Spot = { across: 0, down: 0, out: 1 };
 const NO_MOVE: Spot = { across: 0, down: 0, out: 0 };
 // The bounds of the angles of view the eye may take, in degrees
 const NO_ANGLE = 0;
@@ -156,8 +199,8 @@ const UP_FIRST = AIM_FIRST + A_SPOTS_NUMBERS;
 const A_VIEWPOINTS_NUMBERS = UP_FIRST + A_SPOTS_NUMBERS;
 // What a film names to send the eye back where it rests
 const AT_REST = 'rest' as const;
-// The plane of the frame, how far out the window stands where nothing leans it
-const THE_FRAMES_PLANE = 0;
+// How far out of a plane a spot of it stands: the frame's, where the window stands where nothing leans it
+const ON_ITS_PLANE = 0;
 // How wide a pinhole is open, as the eye is until a film opens it
 export const A_PINHOLE = 0;
 
@@ -300,7 +343,29 @@ export function isAtRest(eye: Eye): boolean {
  * nearer, farther or aside, and every point of it on one line of sight.
  */
 export function looksStraightAtTheFrame(eye: Viewpoint): boolean {
-	return carriesEveryPointWhereItStands(turnOf(eye)) && eye.at.out > THE_FRAMES_PLANE;
+	return carriesEveryPointWhereItStands(turnOf(eye)) && eye.at.out > ON_ITS_PLANE;
+}
+
+/**
+ * Where the eye stands to see a box of a plane as a framing says, an eye of this focal length on a frame of this size:
+ * the box, and the places of the eye, in the plane's own pixels of a frame 1080 high, `out` away from its face; its
+ * top up the plane.
+ */
+export function viewpointBefore(box: Box, framing: EyeFraming, focalLength: number, frame: Size): Viewpoint {
+	const frameScale = frameScaleOf(frame);
+	const seen = { width: frame.width / frameScale, height: frame.height / frameScale };
+	const distance = (focalLength * Math.max(box.width / seen.width, box.height / seen.height)) / framing.fills;
+	const facing = carried(chained([rotationY(framing.turned.round), rotationX(framing.turned.up)]), OUT_OF_ITS_FACE);
+	const [across, down] = axesAlong(facing, UP_THE_FRAME);
+	// How far the eye moves along its own picture plane to see the middle move a pixel the other way on the frame
+	const movedPerPixel = distance / focalLength;
+	const middle = { across: middleX(box), down: middleY(box), out: ON_ITS_PLANE };
+	const aim = movedAlong(
+		movedAlong(middle, across, (MIDDLE_SHARE.left - framing.middleAt.left) * seen.width * movedPerPixel),
+		down,
+		(MIDDLE_SHARE.top - framing.middleAt.top) * seen.height * movedPerPixel
+	);
+	return { at: movedAlong(aim, facing, distance), aim, up: UP_THE_FRAME };
 }
 
 /**
@@ -370,8 +435,15 @@ export function sightOf(eye: Eye, frame: Size, fromTheMiddle: Point): Sight {
  * at toward it.
  */
 function axesOf(eye: Viewpoint): readonly [Spot, Spot, Spot] {
-	const out = unitOf(wayBetween(eye.aim, eye.at));
-	const across = unitOf(crossOf(out, eye.up));
+	return axesAlong(unitOf(wayBetween(eye.aim, eye.at)), eye.up);
+}
+
+/**
+ * The axes of an eye whose sight comes back toward it along `out`, as long as one, its top pointing `up`: across to its
+ * right, down away from where its top points, and out.
+ */
+function axesAlong(out: Spot, up: Spot): readonly [Spot, Spot, Spot] {
+	const across = unitOf(crossOf(out, up));
 	return [across, crossOf(out, across), out];
 }
 

@@ -82,7 +82,7 @@ import * as title from '../../src/moves/title.ts';
 import * as world from '../../src/moves/world.ts';
 import type { DrawnThing } from '../../src/props/thing.ts';
 import { drawnLighting } from '../../src/props/lighting.ts';
-import { ITS_MIDDLE, type Matrix, carried, chained } from '../../src/domain/matrix.ts';
+import { ITS_MIDDLE, type Matrix, type Spot, carried, chained } from '../../src/domain/matrix.ts';
 import { LIVEREELS_SLAB } from '../../src/props/body.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { LIVEREELS_WORLD } from '../../src/props/world.ts';
@@ -3595,6 +3595,87 @@ test('a flight refused as it begins: a leg ahead with none before it, a leg to w
 test('an eye sent back to rest after a flight stands in the room again, where it rests', async () => {
 	const flown = await setAt(eye.fly([{ to: OVER_THE_BLOCK }]), OPENING_IN_SMALL, 1);
 	expect((await setAt(eye.to('rest'), flown, 1)).eye).toEqual(OPENING_IN_SMALL.eye);
+});
+
+// The eye onto a block filling half the small frame along the side it fills most, its middle three quarters down the
+// frame; where the card's corners then stand on the frame, 200 by 100 of it, and those of the block above, 100 by 200
+const HALF_THE_FRAME_LOW = { fills: 0.5, middleAt: { left: 0.5, top: 0.75 } };
+const CARDS_TOP_LEFT: Point = { left: CARD.left, top: CARD.top };
+const CARDS_FOOT_RIGHT: Point = { left: CARD.left + CARD.width, top: CARD.top + CARD.height };
+const SHOWN_ABOVE_TOP_LEFT: Point = { left: SHOWN_ABOVE.left, top: SHOWN_ABOVE.top };
+const SHOWN_ABOVE_FOOT_RIGHT: Point = {
+	left: SHOWN_ABOVE.left + SHOWN_ABOVE.width,
+	top: SHOWN_ABOVE.top + SHOWN_ABOVE.height
+};
+// The eye turned from square before a block: round toward the page's right, and up toward its top
+const TURNED = { round: 30, up: 20 };
+
+/** A spot as a test takes it: each of its numbers close to the one named. */
+function closeToSpot(spot: Spot): Spot {
+	return { across: expect.closeTo(spot.across), down: expect.closeTo(spot.down), out: expect.closeTo(spot.out) };
+}
+
+test('an eye onto a block stands square before it, riding the window: the block fills its share of the frame along the side it fills most, its middle where the film names', async () => {
+	const ontoTheCard = await setAt(eye.onto('#card', HALF_THE_FRAME_LOW), OPENING_IN_SMALL, 1);
+	const ontoATallBlock = await setAt(eye.onto('#shown-above', HALF_THE_FRAME_LOW), OPENING_IN_SMALL, 1);
+	expect([
+		ontoTheCard.eye.inside,
+		pagePointDrawn(ontoTheCard, CARDS_TOP_LEFT),
+		pagePointDrawn(ontoTheCard, CARDS_FOOT_RIGHT),
+		pagePointDrawn(ontoATallBlock, SHOWN_ABOVE_TOP_LEFT),
+		pagePointDrawn(ontoATallBlock, SHOWN_ABOVE_FOOT_RIGHT)
+	]).toEqual([
+		'window',
+		{ left: 100, top: 250 },
+		{ left: 300, top: 350 },
+		{ left: 150, top: 200 },
+		{ left: 250, top: 400 }
+	]);
+});
+
+test("an eye onto a block turned round and up stands as far from the block's middle as square, round toward the page's right and up toward its top, looking at the middle", async () => {
+	const square = cameraOf(await setAt(eye.onto('#card', { fills: 0.5 }), OPENING_IN_SMALL, 1), SMALL).eye;
+	const turnedScene = await setAt(eye.onto('#card', { fills: 0.5, turned: TURNED }), OPENING_IN_SMALL, 1);
+	const turned = cameraOf(turnedScene, SMALL).eye;
+	const distance = square.at.out - square.aim.out;
+	const [round, up] = [(TURNED.round * Math.PI) / 180, (TURNED.up * Math.PI) / 180];
+	expect([turned.aim, turned.at, pagePointDrawn(turnedScene, CARDS_MIDDLE)]).toEqual([
+		closeToSpot(square.aim),
+		closeToSpot({
+			across: square.aim.across + distance * Math.cos(up) * Math.sin(round),
+			down: square.aim.down - distance * Math.sin(up),
+			out: square.aim.out + distance * Math.cos(up) * Math.cos(round)
+		}),
+		FRAMES_MIDDLE
+	]);
+});
+
+test('an eye onto a block rides the window: the window leant in the same step, set first or after, carries it, the block still where the film named', async () => {
+	const coming = await eye.onto('#card', HALF_THE_FRAME_LOW).begin(beginningOf(OPENING_IN_SMALL));
+	const leaning = await lean({ tilt: 30, turn: -20 }).begin(beginningOf(OPENING_IN_SMALL));
+	const cameFirst = await leaning(await coming(OPENING_IN_SMALL, 1), 1);
+	const leantFirst = await coming(await leaning(OPENING_IN_SMALL, 1), 1);
+	expect([pagePointDrawn(cameFirst, CARDS_MIDDLE), pagePointDrawn(leantFirst, CARDS_MIDDLE)]).toEqual([
+		{ left: 200, top: 300 },
+		{ left: 200, top: 300 }
+	]);
+});
+
+test('an eye onto a block refused as the move is made: no share of the frame to fill, a middle off the frame, a turn a quarter round from square or past', () => {
+	expect(() => eye.onto('#card', { fills: 0 })).toThrow(
+		new FilmError(
+			"eye.onto's fills is 0: it is the share of the frame the block fills along the side it fills most, more than 0"
+		)
+	);
+	expect(() => eye.onto('#card', { fills: 0.5, middleAt: { left: 0.5, top: 1.2 } })).toThrow(
+		new FilmError("eye.onto's middleAt's top is 1.2: it is a number from 0 to 1")
+	);
+	expect(() => eye.onto('#card', { fills: 0.5, turned: { round: 90 } })).toThrow(
+		new FilmError("eye.onto's turned's round is 90: it is degrees turned from square, more than -90 and less than 90")
+	);
+	expect(() => eye.onto('#card', { fills: 0.5, turned: { up: -90 } })).toThrow(
+		new FilmError("eye.onto's turned's up is -90: it is degrees turned from square, more than -90 and less than 90")
+	);
 });
 
 test('a piece is lifted off the page while the eye looks straight ahead, moved aside or not, and refused while it looks aslant', async () => {

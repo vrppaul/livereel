@@ -179,6 +179,16 @@ and the moves of each part of the scene:
   length, a way that reaches
   the page, a height of none, a tip past ±90, a heading toward the block the eye arrives right over, a key by a leg
   the way has not or no later than the key before
+- `eye.onto(target, { fills, middleAt, turned })`: the eye brought before a block of the page, a selector or a box of
+  the screen: so near that, seen square, the block fills `fills` of the frame along the side it fills most,
+  `eye.onto('#thread', { fills: 0.94 })`; its middle at `middleAt` of the frame, `{ left: 0.5, top: 0.64 }` in shares
+  of it, the frame's middle where none is named; and turned from square about that middle, looking at it,
+  `turned: { round: -40, up: -14 }` in degrees, `round` the page's upright toward its right, then `up` toward its top,
+  as a soft box stands round the room, square where none is named; its top up the page. A stretch of the page about a
+  point, as the promo's stages look, is a box that wide about it, `fills: 1`. The block is read as the move begins,
+  where the camera shows it in the window; the eye goes there from where it stands, where it stands and looks each on
+  a straight way, and rides the window, as a flight leaves it, so a window that leans or travels carries it, until
+  `eye.to` sends it into the room. Refused: a share of none, a middle off the frame, a turn a quarter round or more
 - `eye.focus(on, { aperture })`: the eye focused so far before it, `eye.focus(1800)`, at a spot of the world, on a
   block of the page, `eye.focus('#thread')`, on an object, `eye.focus({ object: 'why' })`, or under a point of the
   frame, `eye.focus({ under: { left: 0.25, top: 0.26 } })` in shares of it, where the eye sees the window's plane

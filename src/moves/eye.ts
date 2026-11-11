@@ -14,6 +14,10 @@
  * as the camera shows the page in the window then, and the eye rides the window from then on, so a window that leans
  * or travels carries it, until `eye.to` sends it into the room again.
  *
+ * The eye comes before a block of the page by a move of its own, square to it or turned from square, the block filling
+ * a share of the frame, its middle at a point of the frame: the block is read once, as the move begins, where the camera
+ * shows it in the window then, and the eye rides the window from then on, as a flight leaves it.
+ *
  * The eye focuses, and opens as wide as a film names, by a move of its own, which shares a step with one that sends it
  * somewhere (`src/domain/focus.ts`): so far before it; at a spot of the world; on a block of the page; or on an object,
  * where its middle stands. What it focuses on is read once, as the move begins, and placed where it stands as each
@@ -26,6 +30,7 @@ import {
 	AN_EYE_PLACE_OR_REST,
 	EYE_SPACE,
 	type Eye,
+	type EyeFraming,
 	type EyePlace,
 	type EyePlaceOrRest,
 	type Focus,
@@ -33,6 +38,7 @@ import {
 	eyeSentTo,
 	pathThatSees,
 	placesThatRollOneWay,
+	viewpointBefore,
 	viewpointOf
 } from '../domain/eye.ts';
 import { type Camera, eyeInTheWindow, underTheFrame } from '../domain/camera.ts';
@@ -54,7 +60,19 @@ import {
 	wayOf
 } from '../domain/flight.ts';
 import { AT_THE_EYE, focusDistanceOf } from '../domain/focus.ts';
-import { HALVES, type Point, type Size, boxOf, frameScaleOf, middleX, middleY, pointAt } from '../domain/geometry.ts';
+import {
+	type Box,
+	HALVES,
+	MIDDLE_SHARE,
+	type Point,
+	type Size,
+	boxBetween,
+	boxOf,
+	frameScaleOf,
+	middleX,
+	middleY,
+	pointAt
+} from '../domain/geometry.ts';
 import {
 	A_NAME,
 	A_NUMBER,
@@ -77,7 +95,7 @@ import {
 	needed
 } from '../domain/handed.ts';
 import { A_SPOT, type Spot, scaledBy } from '../domain/matrix.ts';
-import { type Path, type Through, pathOf } from '../domain/path.ts';
+import { NO_KEYS, type Path, type Through, pathOf } from '../domain/path.ts';
 import { amountToward } from '../domain/toward.ts';
 import { trackOf } from '../domain/track.ts';
 import {
@@ -167,6 +185,26 @@ export interface FlyScript extends TimingScript {
 	readonly tip?: readonly TipKeyScript[];
 }
 
+/**
+ * How far a film turns the eye from square before a block, in degrees: `round` the page's upright toward its right,
+ * `up` toward its top; none where it names none.
+ */
+interface TurnedScript {
+	readonly round?: number;
+	readonly up?: number;
+}
+
+/**
+ * How the eye stands before a block: so near that, seen square, the block fills `fills` of the frame along the side it
+ * fills most; its middle at `middleAt` of the frame, in shares of it from its top left corner, the frame's middle where
+ * none is named; and turned from square about that middle as `turned` says, square where it says nothing.
+ */
+export interface OntoScript extends TimingScript {
+	readonly fills: number;
+	readonly middleAt?: Point;
+	readonly turned?: TurnedScript;
+}
+
 /** An object a film focuses the eye on, by its name. */
 interface ObjectFocus {
 	readonly object: ObjectName;
@@ -208,6 +246,21 @@ const AN_UNDER_FOCUS = new OfForm<UnderFocus>(
 	{ under: needed(A_POINT_OF_THE_FRAME) },
 	'under a point of the frame: { under: { left, top } }'
 );
+const A_TURN_FROM_SQUARE: Kind<number> = new Plain(
+	isTurnFromSquare,
+	'degrees turned from square, more than -90 and less than 90'
+);
+const ONTO_FORM: Form<OntoScript> = {
+	fills: needed(
+		new Plain(isMoreThanNone, 'the share of the frame the block fills along the side it fills most, more than 0')
+	),
+	middleAt: A_POINT_OF_THE_FRAME,
+	turned: new OfForm<TurnedScript>(
+		{ round: A_TURN_FROM_SQUARE, up: A_TURN_FROM_SQUARE },
+		'a turn from square: { round, up }, in degrees'
+	),
+	...TIMING_FORM
+};
 const FOCUS_ON_SAID =
 	'a distance before the eye in pixels of a frame 1080 high, more than 0; a spot { across, down, out }; a selector or a box of the screen; an object, { object }; or under a point of the frame, { under: { left, top } } in shares of it';
 const AN_OVER = new OfForm<Over>(
@@ -270,7 +323,7 @@ const FLY_FORM: Form<FlyScript> = {
 };
 // How a flight's legs join where the film names none; and the gaze's keys where it names none, kept as it set off
 const SMOOTH: Joining = 'smooth';
-const NO_KEYS: readonly never[] = [];
+const NO_GAZE_KEYS: readonly never[] = [];
 // Where a flight's way starts, as a share of its length; how high over the page a block the gaze turns to stands;
 // and the bounds of a tip, in degrees
 const ITS_START = 0;
@@ -281,9 +334,14 @@ const STRAIGHT_UP = 90;
 // How near over a block, on the page's plane, the eye stands to have no heading toward it, in pixels of a frame 1080
 // high
 const RIGHT_OVER = 1e-6;
+// How far the eye stands turned from square where a film names no turn, and the quarter turn it stays within, in
+// degrees: turned so far, it would stand on the page's plane
+const SQUARE = 0;
+const A_QUARTER_TURN = 90;
 // What a refusal names each move by
 const EYE_TO = 'eye.to';
 const EYE_FLY = 'eye.fly';
+const EYE_ONTO = 'eye.onto';
 const EYE_FOCUS = 'eye.focus';
 // The values of the eye each move sets: where it stands, looks and its top points, and what it stands in, every one of
 // them, so the compiler refuses a value of where the eye stands that `eye.to` or `eye.fly` would set unnamed; where it
@@ -338,8 +396,8 @@ export function fly(way: readonly LegScript[], script: FlyScript = {}): Move {
 	assertKind(way, A_FLIGHTS_WAY, `${EYE_FLY}'s way`);
 	assertWritten(script, FLY_FORM, EYE_FLY);
 	if (way.length === 0) throw new FilmError(`${EYE_FLY}'s way has no leg: name one or more`);
-	const heading = script.heading ?? NO_KEYS;
-	const tip = script.tip ?? NO_KEYS;
+	const heading = script.heading ?? NO_GAZE_KEYS;
+	const tip = script.tip ?? NO_GAZE_KEYS;
 	refuseKeysOff(heading, way, 'heading');
 	refuseKeysOff(tip, way, 'tip');
 	return {
@@ -347,6 +405,26 @@ export function fly(way: readonly LegScript[], script: FlyScript = {}): Move {
 		valueNames: STANDING,
 		timing: timingOf(script),
 		begin: (beginning) => flown(beginning, way, script.shape ?? SMOOTH, heading, tip)
+	};
+}
+
+/**
+ * The eye brought before a block of the page from where it stands, as the film frames the block there, riding the
+ * window from then on.
+ */
+export function onto(target: Target, script: OntoScript): Move {
+	assertKind(target, A_TARGET, `${EYE_ONTO}'s target`);
+	assertWritten(script, ONTO_FORM, EYE_ONTO);
+	const framing: EyeFraming = {
+		fills: script.fills,
+		middleAt: script.middleAt ?? MIDDLE_SHARE,
+		turned: { round: script.turned?.round ?? SQUARE, up: script.turned?.up ?? SQUARE }
+	};
+	return {
+		part: 'eye',
+		valueNames: STANDING,
+		timing: timingOf(script),
+		begin: (beginning) => broughtBefore(beginning, target, framing)
 	};
 }
 
@@ -394,15 +472,30 @@ function sentAlong(eye: Eye, through: Through<EyePlace>, place: EyePlaceOrRest):
 	const end = eyeSentTo(setOffFrom, place, eye.focalLength);
 	placesThatRollOneWay([setOffFrom, ...keys, end], EYE_TO);
 	const path = pathOf(setOffFrom, { ...through, keys }, end, EYE_SPACE);
-	return travelling(pathThatSees(path, EYE_TO));
+	return travelling(pathThatSees(path, EYE_TO), 'world');
 }
 
 /**
- * The eye `progress` of the way along its path in the room, where it focuses and how wide it is open kept as they
- * stand.
+ * The eye on its way from where it stands, read riding the window as it stands as the move begins, to before a block
+ * as the film frames it, the block read then where the camera shows it in the window; refused where its up turns half
+ * round on the way, or it could not see anywhere on it.
  */
-function travelling(path: Path<Viewpoint>): Change {
-	return (scene, progress) => withEye(scene, { ...scene.eye, ...path.at(progress), inside: 'world' });
+async function broughtBefore(beginning: Beginning, target: Target, framing: EyeFraming): Promise<Change> {
+	const camera = cameraOf(beginning.scene, beginning.format);
+	const frame = beginning.format.frame;
+	const setOffFrom = viewpointOf(eyeInTheWindow(camera.eye, camera.view, frame));
+	const block = await shownBox(beginning, target, THE_FIRST, EYE_ONTO);
+	const end = viewpointBefore(boxOnTheWindowsPlane(camera, frame, block), framing, camera.eye.focalLength, frame);
+	placesThatRollOneWay([setOffFrom, end], EYE_ONTO);
+	return travelling(pathThatSees(pathOf(setOffFrom, NO_KEYS, end, EYE_SPACE), EYE_ONTO), 'window');
+}
+
+/**
+ * The eye `progress` of the way along its path in what it stands in, the room or the window, where it focuses and how
+ * wide it is open kept as they stand.
+ */
+function travelling(path: Path<Viewpoint>, inside: Eye['inside']): Change {
+	return (scene, progress) => withEye(scene, { ...scene.eye, ...path.at(progress), inside });
 }
 
 /** Refuses gaze keys that name no leg of the way, or a leg no farther along than the key before. */
@@ -506,16 +599,27 @@ function shareOf(way: Way, leg: number): number {
 	return share;
 }
 
-/**
- * The spot so high over the middle of a block of the page, read as the move begins, on the window's own plane: in
- * pixels of a frame 1080 high from the window's middle, as the camera shows the page in it.
- */
+/** The spot so high over the middle of a block of the page, read as the move begins, over the window's own plane. */
 async function spotOver(beginning: Beginning, camera: Camera, target: Target, height: number): Promise<Spot> {
 	const frame = beginning.format.frame;
 	const block = await shownBox(beginning, target, THE_FIRST, EYE_FLY);
-	const inTheView = pointInTheView(camera, frame, { left: middleX(block), top: middleY(block) });
-	const onThePlane = scaledBy(fromItsMiddle(camera.view.box, inTheView), 1 / frameScaleOf(frame));
-	return { ...onThePlane, out: height };
+	return { ...onTheWindowsPlane(camera, frame, { left: middleX(block), top: middleY(block) }), out: height };
+}
+
+/** Where a box of the screen stands on the window's own plane, between where its corners stand there. */
+function boxOnTheWindowsPlane(camera: Camera, frame: Size, box: Box): Box {
+	const topLeft = onTheWindowsPlane(camera, frame, { left: box.left, top: box.top });
+	const footRight = onTheWindowsPlane(camera, frame, { left: box.left + box.width, top: box.top + box.height });
+	return boxBetween({ left: topLeft.across, top: topLeft.down }, { left: footRight.across, top: footRight.down });
+}
+
+/**
+ * Where a point of the screen stands on the window's own plane, as the camera shows the page in it: in pixels of a
+ * frame 1080 high from the window's middle.
+ */
+function onTheWindowsPlane(camera: Camera, frame: Size, point: Point): Spot {
+	const inTheView = pointInTheView(camera, frame, point);
+	return scaledBy(fromItsMiddle(camera.view.box, inTheView), 1 / frameScaleOf(frame));
 }
 
 /**
@@ -603,4 +707,8 @@ function isLegNumber(written: unknown): written is number {
 
 function isTip(written: unknown): written is number {
 	return A_NUMBER.is(written) && written >= STRAIGHT_DOWN && written <= STRAIGHT_UP;
+}
+
+function isTurnFromSquare(written: unknown): written is number {
+	return A_NUMBER.is(written) && Math.abs(written) < A_QUARTER_TURN;
 }
