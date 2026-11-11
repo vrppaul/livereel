@@ -62,12 +62,15 @@ import {
 	type LegsTimed,
 	type OwnFigure,
 	type Pace,
+	TURNINGS,
+	type Turning,
 	type Way,
 	flownAt,
 	gazeOf,
 	momentBy,
 	paceOf,
 	pointAtMoment,
+	turnedOf,
 	wayOf
 } from '../domain/flight.ts';
 import { linear } from '../domain/curves.ts';
@@ -216,13 +219,22 @@ export type HeadingKeyScript =
 export type TipKeyScript = DegreesKeyScript | (GazeKeyScript & { readonly holding: Target; readonly at: number });
 
 /**
- * How a flight goes: its legs joined smoothly where none is named, or straight; and its gaze's keys, heading and tip
- * apart, each kept as the eye set off where it names none.
+ * How a flight goes: its legs joined smoothly where none is named, or straight; its gaze's keys, heading and tip
+ * apart, each kept as the eye set off where it names none; and how its view turns between them, heading and tip each
+ * apart where it names none, or whole.
  */
 export interface FlyScript extends TimingScript {
 	readonly shape?: Joining;
 	readonly heading?: readonly HeadingKeyScript[];
 	readonly tip?: readonly TipKeyScript[];
+	readonly turning?: Turning;
+}
+
+/** A flight's gaze as the film writes it: its keys, the stands its legs onto blocks set among them, and its turning. */
+interface GazeWritten {
+	readonly heading: readonly HeadingKeyScript[];
+	readonly tip: readonly TipKeyScript[];
+	readonly turning: Turning;
 }
 
 /**
@@ -377,10 +389,13 @@ const FLY_FORM: Form<FlyScript> = {
 	shape: new OneOf(JOININGS, '"smooth" or "straight"'),
 	heading: new ListOf(A_HEADING_KEY, 'a list of headings'),
 	tip: new ListOf(A_TIP_KEY, 'a list of tips'),
+	turning: new OneOf(TURNINGS, '"apart" or "whole"'),
 	...TIMING_FORM
 };
-// How a flight's legs join where the film names none; and the gaze's keys where it names none, kept as it set off
+// How a flight's legs join where the film names none; how its view turns between its keys, heading and tip each apart;
+// and the gaze's keys where it names none, kept as it set off
 const SMOOTH: Joining = 'smooth';
+const APART: Turning = 'apart';
 // How the eye goes before a block where the film names no pace: as the camera zooms
 const BY_SCALE: PaceBeforeAPlane = 'scale';
 const NO_GAZE_KEYS: readonly never[] = [];
@@ -466,13 +481,16 @@ export function fly(way: readonly LegScript[], script: FlyScript = {}): Move {
 	refuseKeysOff(heading, way, 'heading');
 	refuseKeysOff(tip, way, 'tip');
 	const timed = legsTimedOf(way);
-	const headingWithStands = keysWithStands(heading, way, UP_THE_PAGE);
-	const tipWithStands = keysWithStands(tip, way, STRAIGHT_DOWN);
+	const gazeWritten: GazeWritten = {
+		heading: keysWithStands(heading, way, UP_THE_PAGE),
+		tip: keysWithStands(tip, way, STRAIGHT_DOWN),
+		turning: script.turning ?? APART
+	};
 	return {
 		part: 'eye',
 		valueNames: STANDING,
 		timing: flightsTiming(script, timed),
-		begin: (beginning) => flown(beginning, way, script.shape ?? SMOOTH, timed, headingWithStands, tipWithStands)
+		begin: (beginning) => flown(beginning, way, script.shape ?? SMOOTH, timed, gazeWritten)
 	};
 }
 
@@ -666,15 +684,14 @@ function keysWithStands<Key extends GazeKeyScript>(
 /**
  * The eye flying from where it stands as the move begins, read riding the window as it stands then: its legs' points
  * over the blocks they name, read off the page then, its way and its pace along it, and its gaze from how it looks then
- * through the rules its keys name, the blocks they name read then too.
+ * through the rules its keys name, the blocks they name read then too, turned as the film names.
  */
 async function flown(
 	beginning: Beginning,
 	way: readonly LegScript[],
 	joining: Joining,
 	timed: LegsTimed,
-	heading: readonly HeadingKeyScript[],
-	tip: readonly TipKeyScript[]
+	gazeWritten: GazeWritten
 ): Promise<Change> {
 	const camera = cameraOf(beginning.scene, beginning.format);
 	const frame = beginning.format.frame;
@@ -685,16 +702,17 @@ async function flown(
 	const pace = paceOf(timed, flightsWay);
 	const gaze = gazeOf(setOff);
 	const headings: GazeKey[] = [];
-	for (const [index, key] of heading.entries()) {
+	for (const [index, key] of gazeWritten.heading.entries()) {
 		headings.push(await headingRead(beginning, camera, flightsWay, pace, key, index));
 	}
 	const tips: GazeKey[] = [];
-	for (const key of tip) tips.push(await tipRead(beginning, camera, flightsWay, pace, key));
+	for (const key of gazeWritten.tip) tips.push(await tipRead(beginning, camera, flightsWay, pace, key));
 	const flight: Flight = {
 		way: flightsWay,
 		pace,
 		heading: [{ moment: ITS_START, rule: { kind: 'degrees', degrees: gaze.heading } }, ...headings],
 		tip: [{ moment: ITS_START, rule: { kind: 'degrees', degrees: gaze.tip } }, ...tips],
+		turned: turnedOf(gazeWritten.turning, flightsWay, pace, [...headings, ...tips]),
 		roll: gaze.roll,
 		eye: { focalLength: camera.eye.focalLength, frameHeight: frame.height / frameScaleOf(frame) }
 	};

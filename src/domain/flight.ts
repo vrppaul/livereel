@@ -33,8 +33,16 @@
  * (`to-the-story.js`), where easing by the way, which the pace eases already, turned it late; on an even pace the time
  * and the way go together. The eye never rolls but as it sets off: a roll it stood with eases away by the end of the
  * first leg.
+ *
+ * Between two keys heading and tip ease each apart, as the promo's run to the Story button turns toward it over its
+ * sinking and tips its gaze over the rise. Or the film turns the view whole, as the promo's dive turns the eye from how
+ * it looked to looking level along the gap in one rotation (`ending.js`, three's quaternions slerped): from how the eye
+ * looks at one moment a key or the first leg's end names to how it looks at the next, each read where it stands, the
+ * roll it set off with among it. A turn of heading alone, or of tip alone, goes the same either way; one of both apart
+ * sweeps the heading round at a pace of its own, and from looking down the dive's lines turned up to 8° ahead of the
+ * cut's.
  */
-import { CubicBezierCurve3, Curve, CurvePath, LineCurve3, Vector3, type Vector3Like } from 'three';
+import { CubicBezierCurve3, Curve, CurvePath, LineCurve3, Matrix4, Quaternion, Vector3, type Vector3Like } from 'three';
 import { FilmError } from './errors.ts';
 import type { Viewpoint } from './eye.ts';
 import { type Kind, Plain, isObjectOfValues } from './handed.ts';
@@ -94,6 +102,17 @@ export interface GazeKey {
 /** A gaze's keys: where it set off, at the flight's start, then those the film names, each later. */
 type GazeKeys = readonly [GazeKey, ...GazeKey[]];
 
+/** How a flight's view turns between its gaze's keys: heading and tip each apart, or whole, as one rotation. */
+export const TURNINGS = ['apart', 'whole'] as const;
+
+export type Turning = (typeof TURNINGS)[number];
+
+/**
+ * How a flight's view turns, worked out: apart; or whole, through the moments it turns between after its start, each
+ * later.
+ */
+type Turned = { readonly kind: 'apart' } | { readonly kind: 'whole'; readonly turns: readonly number[] };
+
 /** A flight's way: its curve, and the share of the curve's length each leg ends at. */
 export interface Way {
 	readonly curve: CurvePath<Vector3>;
@@ -132,14 +151,24 @@ interface FlyingEye {
 	readonly frameHeight: number;
 }
 
-/** A flight worked out: its way, its pace along it, its gaze's keys, the roll it set off with, the eye that flies it. */
+/**
+ * A flight worked out: its way, its pace along it, its gaze's keys and how its view turns between them, the roll it
+ * set off with, the eye that flies it.
+ */
 export interface Flight {
 	readonly way: Way;
 	readonly pace: Pace;
 	readonly heading: GazeKeys;
 	readonly tip: GazeKeys;
+	readonly turned: Turned;
 	readonly roll: number;
 	readonly eye: FlyingEye;
+}
+
+/** The way an eye looks and the way its top points, each as long as one. */
+interface View {
+	readonly looking: Vector3;
+	readonly top: Vector3;
 }
 
 /** How the leg before arrived where the next leaves: heading which way, as long as one, and how long it was. */
@@ -189,6 +218,10 @@ const THE_PAGES_PLANE = 0;
 const NEAR_STRAIGHT_DOWN = 1;
 // The way out of the window's face, which a tip lifts the eye's sight toward
 const OUT_OF_THE_PAGE = new Vector3(0, 0, 1);
+// The way behind an eye and the way its top points in its own frame, as three's cameras stand: it looks against its z,
+// its top up its y
+const ITS_OWN_BACK = new Vector3(0, 0, 1);
+const ITS_OWN_TOP = new Vector3(0, 1, 0);
 
 /**
  * A flight's way from where the eye stands, through its legs, joined as named; refused where a leg goes nowhere, goes
@@ -340,9 +373,24 @@ function knownLegsEnd(moment: number | undefined, leg: number): number {
 }
 
 /**
+ * How a flight's view turns as the film names it: apart; or whole, between the moments its gaze's keys are reached at
+ * and the first leg's end, by which the roll it set off with is gone, each once.
+ */
+export function turnedOf(turning: Turning, way: Way, pace: Pace, keys: readonly GazeKey[]): Turned {
+	switch (turning) {
+		case 'apart':
+			return { kind: 'apart' };
+		case 'whole': {
+			const moments = new Set([legsEndMoment(way, pace, THE_FIRST_LEG), ...keys.map((key) => key.moment)]);
+			return { kind: 'whole', turns: [...moments].toSorted((before, after) => before - after) };
+		}
+	}
+}
+
+/**
  * Where the eye flying stands, looks and its top points, `progress` of its move along, straight on past either end of
- * its way: on its way as far as its pace has it then, its gaze as its rules have it then and there, rolled as it set
- * off till the first leg's end.
+ * its way: on its way as far as its pace has it then, its view as its gaze's rules have it then and there, turned as
+ * the film names.
  */
 export function flownAt(flight: Flight, progress: number): Viewpoint {
 	const share = wayFlown(flight.pace, progress);
@@ -350,17 +398,69 @@ export function flownAt(flight: Flight, progress: number): Viewpoint {
 	const moment = Math.min(ITS_END, Math.max(ITS_START, progress));
 	const way = flight.way.curve;
 	const at = way.getPointAt(onTheWay).addScaledVector(way.getTangentAt(onTheWay), (share - onTheWay) * way.getLength());
-	const heading = valueAt(flight.heading, moment, onTheWay, at, flight);
-	const tip = valueAt(flight.tip, moment, onTheWay, at, flight);
-	const looking = lookingOf(heading, tip);
-	const firstLegsEnd = legsEndMoment(flight.way, flight.pace, THE_FIRST_LEG);
-	const roll = flight.roll * (1 - easeInOutSine(Math.min(ITS_END, moment / firstLegsEnd)));
-	const top = topOf(heading, tip).applyAxisAngle(looking, radians(roll));
+	const view = viewAt(flight, moment, onTheWay, at);
 	return {
 		at: spotOf(at),
-		aim: spotOf(at.clone().addScaledVector(looking, flight.eye.focalLength)),
-		up: spotOf(top)
+		aim: spotOf(at.clone().addScaledVector(view.looking, flight.eye.focalLength)),
+		up: spotOf(view.top)
 	};
+}
+
+/** How the eye flying looks at a moment, standing a share of its way along: its gaze apart, or turned whole. */
+function viewAt(flight: Flight, moment: number, share: number, at: Vector3): View {
+	switch (flight.turned.kind) {
+		case 'apart':
+			return viewOf(gazeAt(flight, moment, share, at));
+		case 'whole':
+			return turnedWhole(flight, flight.turned.turns, moment, share, at);
+	}
+}
+
+/**
+ * The view turned whole at a moment: from how the eye looks at the turn before to how it looks at the turn after, each
+ * read where it stands now, by one rotation eased in and out over the time between; past the last, as there.
+ */
+function turnedWhole(flight: Flight, turns: readonly number[], moment: number, share: number, at: Vector3): View {
+	let start = ITS_START;
+	for (const end of turns) {
+		if (moment < end) {
+			const from = turnOf(viewOf(gazeAt(flight, start, share, at)));
+			const to = turnOf(viewOf(gazeAt(flight, end, share, at)));
+			const turned = from.slerp(to, easeInOutSine((moment - start) / (end - start)));
+			return {
+				looking: ITS_OWN_BACK.clone().applyQuaternion(turned).negate(),
+				top: ITS_OWN_TOP.clone().applyQuaternion(turned)
+			};
+		}
+		start = end;
+	}
+	return viewOf(gazeAt(flight, moment, share, at));
+}
+
+/**
+ * The eye's gaze at a moment of its flight, its rules read where it stands a share of its way along: the heading and
+ * the tip they give then, and the roll it set off with as far as it has not yet eased away by the first leg's end.
+ */
+function gazeAt(flight: Flight, moment: number, share: number, at: Vector3): Gaze {
+	const firstLegsEnd = legsEndMoment(flight.way, flight.pace, THE_FIRST_LEG);
+	return {
+		heading: valueAt(flight.heading, moment, share, at, flight),
+		tip: valueAt(flight.tip, moment, share, at, flight),
+		roll: flight.roll * (1 - easeInOutSine(Math.min(ITS_END, moment / firstLegsEnd)))
+	};
+}
+
+/** How an eye with a gaze looks and its top points: along its heading, tipped, rolled about its sight. */
+function viewOf(gaze: Gaze): View {
+	const looking = lookingOf(gaze.heading, gaze.tip);
+	return { looking, top: topOf(gaze.heading, gaze.tip).applyAxisAngle(looking, radians(gaze.roll)) };
+}
+
+/** The rotation that turns an eye's own frame to a view, as three turns a camera. */
+function turnOf(view: View): Quaternion {
+	const right = view.looking.clone().cross(view.top);
+	const back = view.looking.clone().negate();
+	return new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(right, view.top, back));
 }
 
 /** The heading the way flies at a share of its length, on the page's plane. */

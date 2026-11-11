@@ -1,8 +1,8 @@
-import { CubicBezierCurve3, Vector3 } from 'three';
+import { CubicBezierCurve3, Matrix4, Quaternion, Vector3 } from 'three';
 import { expect, test } from 'vitest';
 import { AS_PLACED, FACE_ON } from '../../src/domain/stance.ts';
 import { type Camera, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
-import { type EyePlace, type Focus, eyeAtRest } from '../../src/domain/eye.ts';
+import { type EyePlace, type Focus, type Viewpoint, eyeAtRest } from '../../src/domain/eye.ts';
 import { gazeOf } from '../../src/domain/flight.ts';
 import * as eye from '../../src/moves/eye.ts';
 import { easeOutCubic, linear } from '../../src/domain/curves.ts';
@@ -3789,6 +3789,34 @@ test('an eye rolled as a flight sets off flies on from it as it stood, the page 
 	]).toEqual([pagePointDrawn(rolled, CARDS_MIDDLE), expect.closeTo(0)]);
 });
 
+/** How an eye is turned, as three turns a camera standing there looking at its aim, its top up. */
+function turnOfTheEye(eyeSeen: Viewpoint): Quaternion {
+	const looking = new Matrix4().lookAt(
+		new Vector3(eyeSeen.at.across, eyeSeen.at.down, eyeSeen.at.out),
+		new Vector3(eyeSeen.aim.across, eyeSeen.aim.down, eyeSeen.aim.out),
+		new Vector3(eyeSeen.up.across, eyeSeen.up.down, eyeSeen.up.out)
+	);
+	return new Quaternion().setFromRotationMatrix(looking);
+}
+
+test('an eye turning whole as it flies turns as one rotation, the roll it set off with among it: half way to its key it has turned as far, about the same axis, as it turns on from there', async () => {
+	const aslantAndRolled = { at: { across: 0, down: 1500, out: 1500 }, up: { across: -1, down: -0.5, out: 0.5 } };
+	const rolled = await setAt(eye.to(aslantAndRolled), OPENING_IN_SMALL, 1);
+	const flying = await eye
+		.fly([{ to: OVER_THE_BLOCK }], {
+			heading: [{ by: 0, degrees: 90 }],
+			tip: [{ by: 0, degrees: 0 }],
+			turning: 'whole'
+		})
+		.begin(beginningOf(rolled));
+	const setOff = turnOfTheEye((await flying(rolled, 0)).eye);
+	const halfWay = turnOfTheEye((await flying(rolled, 0.5)).eye);
+	const arrived = turnOfTheEye((await flying(rolled, 1)).eye);
+	const firstHalf = halfWay.clone().multiply(setOff.clone().invert());
+	const secondHalf = arrived.clone().multiply(halfWay.clone().invert());
+	expect(firstHalf.angleTo(secondHalf)).toBeCloseTo(0);
+});
+
 test('an eye flown on a curve that passes its end, as one that bounces, goes on past its way and back, never stopping there', async () => {
 	const flying = await eye.fly([{ to: OVER_THE_BLOCK }]).begin(beginningOf(OPENING_IN_SMALL));
 	const [atTheEnd, past] = [(await flying(OPENING_IN_SMALL, 1)).eye.at, (await flying(OPENING_IN_SMALL, 1.1)).eye.at];
@@ -3920,6 +3948,9 @@ test('a flight refused as it is made: a way of no leg, a leg in no form of one, 
 	);
 	expect(() => eye.fly([{ to: OVER_THE_BLOCK }, { ahead: 1 }], { heading: [{ by: 1.5, degrees: 90 }] })).toThrow(
 		new FilmError("eye.fly's heading key 0 is reached by leg 1.5, and the way's legs go from 0 to 1")
+	);
+	expect(() => eye.fly([{ to: OVER_THE_BLOCK }], { turning: 'round' as never })).toThrow(
+		new FilmError('eye.fly\'s turning is "round": it is "apart" or "whole"')
 	);
 	expect(() => eye.fly([{ to: OVER_THE_BLOCK }], { heading: [{ by: -0.5, degrees: 90 }] })).toThrow(
 		new FilmError(

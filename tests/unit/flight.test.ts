@@ -40,7 +40,15 @@ function lowestOf(way: Way): number {
 
 /** A flight along a way, heading as its keys say, looking straight down all the way, as far in each share of its time. */
 function flightAlong(way: Way, heading: Flight['heading']): Flight {
-	return { way, pace: EVENLY, heading, tip: [{ moment: 0, rule: STRAIGHT_DOWN }], roll: 0, eye: THE_EYE };
+	return {
+		way,
+		pace: EVENLY,
+		heading,
+		tip: [{ moment: 0, rule: STRAIGHT_DOWN }],
+		turned: { kind: 'apart' },
+		roll: 0,
+		eye: THE_EYE
+	};
 }
 
 /** A flight along a way, looking straight down up the page, each leg taking its time beside the others'. */
