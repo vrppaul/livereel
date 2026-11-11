@@ -226,7 +226,8 @@ const LOOK_TOKENS = {
 	endingCommandSize: '--ending-command-size',
 	codeLineHeight: '--code-line-height',
 	cursorFill: '--cursor-fill',
-	cursorEdge: '--cursor-edge'
+	cursorEdge: '--cursor-edge',
+	cursorSize: '--cursor-size'
 };
 const LOOK_NAMES = Object.keys(LOOK_TOKENS).filter(isOfTheLook);
 // The token each part of the ground's layers takes the place of: those going, those coming, how far these have come

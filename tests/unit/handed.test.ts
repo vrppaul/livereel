@@ -94,6 +94,9 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => cursor.to('#block', { entering: { x: 1 } as never })).toThrow(
 		new FilmError("cursor.to's entering names x: it names left, top, or fewer")
 	);
+	expect(() => cursor.to('#block', { into: { left: 1.2, top: 0.5 } })).toThrow(
+		new FilmError("cursor.to's into's left is 1.2: it is a number from 0 to 1")
+	);
 	expect(() => cursor.press({ sound: null as never })).toThrow(
 		new FilmError(`cursor.press's sound is null: it is ${FILE}`)
 	);

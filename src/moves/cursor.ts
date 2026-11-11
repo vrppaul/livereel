@@ -1,11 +1,12 @@
 /**
- * The cursor: along a slight arc to a block of the page, as a hand moves it; pressed in with a click, and let go;
- * taken away. Where it is and how far it is pressed are set by moves of their own, so a press and a let-go go on while
- * the cursor goes its way, as a click at a moment of a play does with the camera going on.
+ * The cursor: along a slight arc to a block of the page, as a hand moves it, coming to rest where livereel rests it on
+ * the block or at a point of it the film names; pressed in with a click, and let go; taken away. Where it is and how
+ * far it is pressed are set by moves of their own, so a press and a let-go go on while the cursor goes its way, as a
+ * click at a moment of a play does with the camera going on.
  */
 import { NONE, fractionOf } from '../domain/fraction.ts';
-import { A_POINT, type Box, type Point, bowedArc, pointAlong } from '../domain/geometry.ts';
-import { A_NUMBER, A_PATH, type Form, assertKind, assertWritten } from '../domain/handed.ts';
+import { A_POINT, type Box, type Point, bowedArc, pointAlong, pointAt } from '../domain/geometry.ts';
+import { A_NUMBER, A_PATH, A_SHARE, type Form, OfForm, assertKind, assertWritten, needed } from '../domain/handed.ts';
 import { easeOutCubic } from '../domain/curves.ts';
 import {
 	A_TARGET,
@@ -27,10 +28,14 @@ import type { Cursor } from '../props/cursor.ts';
 import { withProp } from '../scene.ts';
 import { act } from './act.ts';
 
-/** Where a cursor not yet on the screen comes in from, and how far its path bends off the straight line. */
+/**
+ * Where a cursor not yet on the screen comes in from, how far its path bends off the straight line, and the point of
+ * the block it comes to rest at, in shares of what the screen shows of it from its top left corner.
+ */
 export interface CursorScript extends TimingScript {
 	readonly entering?: Point;
 	readonly bow?: number;
+	readonly into?: Point;
 }
 
 /** A press's timing, and the file of its click where it is not livereel's own. */
@@ -54,13 +59,22 @@ const AS_A_FINGER_PRESSES = easeOutCubic;
 const POSITION = ['left', 'top'] as const satisfies readonly (keyof Cursor)[];
 const PRESSING = ['press'] as const satisfies readonly (keyof Cursor)[];
 const HIDDEN: Change = propChange('cursor', () => null);
-const CURSOR_FORM: Form<CursorScript> = { entering: A_POINT, bow: A_NUMBER, ...TIMING_FORM };
+const A_POINT_OF_THE_BLOCK = new OfForm<Point>(
+	{ left: needed(A_SHARE), top: needed(A_SHARE) },
+	'a point of the block: { left, top }, each a share of what the screen shows of it'
+);
+const CURSOR_FORM: Form<CursorScript> = {
+	entering: A_POINT,
+	bow: A_NUMBER,
+	into: A_POINT_OF_THE_BLOCK,
+	...TIMING_FORM
+};
 const CLICK_FORM: Form<SoundScript> = { sound: A_PATH };
 const PRESS_FORM: Form<PressScript> = { ...CLICK_FORM, ...TIMING_FORM };
 
 /**
  * The cursor to a block of the page, one a selector names or a box of the screen, from where it is, or from where it
- * enters if it is not yet on the screen.
+ * enters if it is not yet on the screen, to rest where livereel rests it on the block or at the point the film names.
  */
 export function to(target: Target, script: CursorScript = {}): Move {
 	assertKind(target, A_TARGET, "cursor.to's target");
@@ -116,7 +130,8 @@ export function click(action: Action, script: SoundScript = {}): readonly Step[]
 }
 
 async function along(beginning: Beginning, target: Target, script: CursorScript): Promise<Change> {
-	const end = restingOn(await shownPart(beginning, target, 1, 'cursor.to'));
+	const shown = await shownPart(beginning, target, 1, 'cursor.to');
+	const end = script.into === undefined ? restingOn(shown) : pointAt(shown, script.into);
 	const start = beginning.scene.cursor ?? script.entering ?? enteringFor(end);
 	const arc = bowedArc({ left: start.left, top: start.top }, end, script.bow ?? BOW);
 	// A cursor that comes onto the screen comes unpressed

@@ -3663,6 +3663,19 @@ test('a cursor comes to rest on what the screen shows of a block reaching off it
 	]);
 });
 
+test('a cursor comes to rest at the point of a block the film names, in shares of what the screen shows of it, however wide it is', async () => {
+	const lowAtTheRight = { left: 0.8, top: 0.75 };
+	const rests = await Promise.all(
+		['#wide', '#reaching-right'].map(
+			async (target) => (await setAt(cursorTo(target, { into: lowAtTheRight }), OPENING_IN_SMALL, 1)).cursor
+		)
+	);
+	expect(rests).toEqual([
+		{ left: 450, top: 330, press: 0 },
+		{ left: 596, top: 130, press: 0 }
+	]);
+});
+
 /** Where the camera ends, onto a block from the opening scene. */
 async function cameraOnto(target: string): Promise<Camera> {
 	return cameraOf(await setAt(onto(target), OPENING_IN_SMALL, 1), SMALL);

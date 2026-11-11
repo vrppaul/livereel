@@ -240,8 +240,11 @@ and the moves of each part of the scene:
 - `note.show(target, text, { at })`, `note.hide()`
 - `pin.show(target, label)`, `pin.clear()`
 - `keys.show(caps, { enter, edge })`, `keys.hide({ leave, edge })`
-- `cursor.to(target, { entering, bow })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
-  `cursor.release()`, `cursor.hide()`
+- `cursor.to(target, { entering, bow, into })`, `cursor.click(action, { sound })`, `cursor.press({ sound })`,
+  `cursor.release()`, `cursor.hide()`: `cursor.to` rests the cursor a little into what the screen shows of the
+  block from its left, at most 60 pixels, just under its middle, or at the point `into` names, in shares of that
+  part from its top left corner: `{ into: { left: 0.8, top: 0.75 } }` low at its right, as the claude-review promo's
+  pointer clicks (`pointer.js` `CLICKS_INTO`)
 - `title.show(text, { at, beside, align, size, letterSpacing, lineHeight, from, enter, edge, words, as, inside, group, zIndex })`,
   `title.to(place, { scale, depth })`, `title.lean({ tilt, turn, roll, over, about })`, `title.intoTheWorld()`,
   `title.hide({ toward, leave, edge, words })`
@@ -1069,6 +1072,7 @@ values; what the film leaves out stays livereel's:
 | `endingNameSize`, `endingLineSize`, `endingCommandSize` | how large the ending card's name, line and command are, in pixels | `96`, `36`, `38` |
 | `codeLineHeight` | how tall a line of code stands, in times its letters' size: the step `code.scrollTo` scrolls by | `1.6` |
 | `cursorFill`, `cursorEdge` | the cursor's colour and its edge's | `#111`, `#fff` |
+| `cursorSize` | how tall the cursor's arrow stands from its tip to its foot, in pixels of the screen it lies on, its edge growing with it | `33.5` |
 | `words` | how words come up where a film names no way of their own, a title's, a caption's, a callout's and a note's, read as each comes: `'rise'`, `'sharp'`, `'fade'`, `'blur'`, `'mask'`, `'letters'` or `'scramble'`, as `words` names on a title | `'rise'` |
 
 Colours are in hex; sizes in pixels of a frame 1080 on its shorter side,

@@ -533,9 +533,12 @@ body {
 	color: var(--ink-quiet);
 }
 
-/* The pointer, its tip where the scene has it, a little smaller as it is pressed in */
+/* The pointer, its tip where the scene has it, as tall as the look has it, a little smaller as it is pressed in */
 .cursor {
 	--cursor-tip: 3px;
+
+	/* How tall the arrow is drawn in its picture, from its tip to its foot, in the picture's pixels (`stage.html`) */
+	--cursor-drawn-height: 33.5;
 	--press-shrink: 0.18;
 
 	position: absolute;
@@ -546,7 +549,7 @@ body {
 	pointer-events: none;
 	transform-origin: var(--cursor-tip) var(--cursor-tip);
 	transform: translate(calc(var(--left) * 1px - var(--cursor-tip)), calc(var(--top) * 1px - var(--cursor-tip)))
-		scale(calc(1 - var(--press-shrink) * var(--press)));
+		scale(calc(var(--cursor-size) / var(--cursor-drawn-height) * (1 - var(--press-shrink) * var(--press))));
 	filter: var(--cursor-shadow);
 	fill: var(--cursor-fill);
 	stroke: var(--cursor-edge);

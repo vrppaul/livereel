@@ -123,6 +123,11 @@ export interface Look {
 	readonly cursorFill: string;
 	readonly cursorEdge: string;
 	/**
+	 * How tall the cursor's arrow stands from its tip to its foot, in pixels of the screen it lies on, so it grows with
+	 * the page as the camera brings it near; its edge grows with it.
+	 */
+	readonly cursorSize: number;
+	/**
 	 * How words come up where a film names no way of their own (`src/props/words.ts`): a title's, a caption's, a
 	 * callout's and a note's, each read as it comes.
 	 */
@@ -236,6 +241,7 @@ export const LOOK_KINDS: { readonly [Name in keyof Look]: LookKind<LookWritten[N
 	codeLineHeight: LINE_HEIGHT,
 	cursorFill: COLOUR,
 	cursorEdge: COLOUR,
+	cursorSize: SIZE,
 	words: WAY_OF_WORDS
 };
 
@@ -284,6 +290,7 @@ export const LIVEREELS_LOOK: Look = {
 	codeLineHeight: 1.6,
 	cursorFill: '#111',
 	cursorEdge: '#fff',
+	cursorSize: 33.5,
 	words: 'rise'
 };
 
