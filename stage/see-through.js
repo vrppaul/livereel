@@ -5,16 +5,19 @@
  * standing in the world. The lens reads one depth a pixel, and what is seen through shows two things at a pixel,
  * itself and what stands behind it: drawn in the world with the rest, a thing of glass was blurred by the depth of
  * what stood behind it, and a fading page, which writes its depth, hid what of such a thing stood behind it and had
- * what stood behind it blurred as the page. So the world is drawn as two fields, each blurred by the lens by its own
- * depth and laid over the last: what writes depth; and over it what is seen through, drawn over the first field's
- * depth, so what stands behind an opaque surface stays hidden, with a depth of its own, that of the nearest surface it
- * holds, which the lens blurs all of it by.
+ * what stood behind it blurred as the page. So what is seen through is drawn as fields of its own, each blurred by the
+ * lens by its own depth and laid over the last, over the field of what writes depth: drawn over that field's depth, so
+ * what stands behind an opaque surface stays hidden, with a depth of its own, that of the nearest surface it holds,
+ * which the lens blurs all of it by.
  *
- * Nothing in the see-through field writes depth, so it is laid in the order it is drawn, and three draws whole meshes,
- * the farthest first: a thing passing through the fading page would be laid wholly over the page or wholly under it. So
- * its things are drawn twice, cut at the page's plane: what stands behind the page, then the page, then what stands
- * before it. A mesh's own faces three lays in the order of its materials, so a box of six see-through materials lays a
- * back face drawn after a front face over it; one material drawn on both sides is laid its back faces first.
+ * Nothing seen through writes depth, so it is laid in the order it is drawn, and three draws whole meshes, the farthest
+ * first: a thing passing through the fading page would be laid wholly over the page or wholly under it. So where the
+ * page is seen through, what is seen through beside it is cut at its plane, and drawn as two fields: what stands
+ * behind the page; then the page, and what stands before it. Drawn as one field, the nearest surface's depth was the
+ * page's where what stood behind showed through it: a title in the world behind a half-faded page in focus was sharp
+ * where it was seen through the page and blurred beside it (a probe film, `w-titles` at 1.3 s, 2026-11-11). A
+ * mesh's own faces three lays in the order of its materials, so a box of six see-through materials lays a back face
+ * drawn after a front face over it; one material drawn on both sides is laid its back faces first.
  *
  * Which field a part of the world is drawn in is told by three's layers, which a camera draws one or more of at a time:
  * the world's lights are in all of them, as three lights a part only by lights in its own.
@@ -26,9 +29,9 @@ import { isDrawnPart, materialsOf } from './things.js';
 
 /**
  * The parts of the world the room draws apart, each a layer of three's: what writes depth; a film's things seen
- * through; markup standing in the world; the page where it is seen through, and the glass over it; and the depth alone
- * of the page seen through and of markup, where each is drawn.
- * @typedef {'opaque' | 'thingsSeenThrough' | 'surfacesSeenThrough' | 'pageSeenThrough' | 'surfacesDepth'} WorldPart
+ * through; markup standing in the world; the page where it is seen through, and the glass over it; the depth alone of
+ * markup, where it is drawn; and the depth alone of the page seen through.
+ * @typedef {'opaque' | 'thingsSeenThrough' | 'surfacesSeenThrough' | 'pageSeenThrough' | 'surfacesDepth' | 'pageDepth'} WorldPart
  */
 /** @type {{ readonly [Part in WorldPart]: number }} */
 export const WORLD_PARTS = {
@@ -36,11 +39,18 @@ export const WORLD_PARTS = {
 	thingsSeenThrough: 1,
 	surfacesSeenThrough: 2,
 	pageSeenThrough: 3,
-	surfacesDepth: 4
+	surfacesDepth: 4,
+	pageDepth: 5
 };
-// What is seen through besides the page, drawn cut at its plane where it is seen through: a film's things, and markup
+// What is seen through besides the page, cut at its plane where it is seen through: a film's things, and markup
 /** @type {readonly WorldPart[]} */
 const BESIDE_THE_PAGE = ['thingsSeenThrough', 'surfacesSeenThrough'];
+
+/**
+ * A field of what is seen through: whether it holds the page, and the planes that cut what is seen through beside the
+ * page, none where the page is not seen through.
+ * @typedef {{ readonly withThePage: boolean, readonly beside: readonly Plane[] }} SeenThroughField
+ */
 
 // A layer before it is first sized
 const A_PIXEL = 1;
@@ -54,6 +64,12 @@ const UP_THE_SQUARE = new Vector3(0, 1, 0);
 const ON_ITS_PLANE = 0;
 // No plane cuts what is drawn
 const UNCUT = /** @type {Plane[]} */ ([]);
+// All that is seen through as one field, where the page is not seen through
+/** @type {SeenThroughField} */
+const ALL_AS_ONE = { withThePage: false, beside: UNCUT };
+// No field, where nothing is seen through
+/** @type {readonly SeenThroughField[]} */
+const NONE = [];
 
 // The opaque field's depth written as it stands, over all the field holds, its light none
 const DEPTH_COPIED_FRAGMENT = `
@@ -64,8 +80,8 @@ void main() {
 	gl_FragColor = vec4(0.0);
 }`;
 
-/** The see-through field: its layer, and what draws its depth. */
-export class SeeThroughField {
+/** The layer each field of what is seen through is drawn into in turn, and what draws its depth. */
+export class SeeThroughLayer {
 	/** @param {RenderTargetOptions} drawnAs how the room draws three's layers, as the opaque field is drawn */
 	constructor(drawnAs) {
 		this.layer = new WebGLRenderTarget(A_PIXEL, A_PIXEL, {
@@ -80,24 +96,49 @@ export class SeeThroughField {
 	}
 
 	/**
-	 * The see-through field drawn into its layer from the world's scene, seen by its camera: over the opaque field's
-	 * depth, its things and markup, cut at the page's plane where the page is seen through, so the page lies between what
-	 * stands behind it and what stands before it; then its own depth, its nearest surface's.
+	 * A field of what is seen through drawn into the layer from the world's scene, seen by its camera, over the opaque
+	 * field's depth: its light, the page's first where it holds the page, then what is seen through beside the page, cut
+	 * as the field has it; then its own depth, its nearest surface's.
 	 * @param {WebGLRenderer} renderer @param {Scene} world @param {Camera} seen @param {WebGLRenderTarget} opaque
-	 * @param {Matrix4 | null} page the matrix that places the page's square, where the page is seen through
+	 * @param {SeenThroughField} field
 	 */
-	drawn(renderer, world, seen, opaque, page) {
+	drawn(renderer, world, seen, opaque, field) {
 		renderer.setRenderTarget(this.layer);
 		renderer.clear();
 		valuesSet(this.depthCopied.material, { depth: opaque.depthTexture });
 		renderer.render(this.depthCopied, this.camera);
-		if (page === null) partsDrawn(renderer, world, seen, BESIDE_THE_PAGE);
-		else seenThroughThePage(renderer, world, seen, page);
+		if (field.withThePage) partsDrawn(renderer, world, seen, ['pageSeenThrough']);
+		renderer.clippingPlanes = [...field.beside];
+		partsDrawn(renderer, world, seen, BESIDE_THE_PAGE);
+		renderer.clippingPlanes = UNCUT;
+		if (field.withThePage) partsDrawn(renderer, world, seen, ['pageDepth']);
+		renderer.clippingPlanes = [...field.beside];
 		world.overrideMaterial = this.depthAlone;
 		partsDrawn(renderer, world, seen, ['thingsSeenThrough']);
 		world.overrideMaterial = null;
 		partsDrawn(renderer, world, seen, ['surfacesDepth']);
+		renderer.clippingPlanes = UNCUT;
 	}
+}
+
+/**
+ * The fields what is seen through is drawn as, the lowest first: where the page is not seen through, all as one, or
+ * none where nothing beside it is; where it is, what is seen through behind the page's plane, where anything beside
+ * the page is, then the page and what is seen through before it. Each field is one run of the lens more.
+ * @param {Matrix4 | null} page the matrix that places the page's square, where the page is seen through
+ * @param {boolean} besideThePage whether anything beside the page is seen through, a film's thing or markup
+ * @returns {readonly SeenThroughField[]}
+ */
+export function seenThroughFieldsOf(page, besideThePage) {
+	if (page === null) return besideThePage ? [ALL_AS_ONE] : NONE;
+	const behind = new Plane().setFromCoplanarPoints(
+		SQUARES_MIDDLE.clone().applyMatrix4(page),
+		ACROSS_THE_SQUARE.clone().applyMatrix4(page),
+		UP_THE_SQUARE.clone().applyMatrix4(page)
+	);
+	if (behind.distanceToPoint(THE_EYE) > ON_ITS_PLANE) behind.negate();
+	const thePageAndBefore = { withThePage: true, beside: [behind.clone().negate()] };
+	return besideThePage ? [{ withThePage: false, beside: [behind] }, thePageAndBefore] : [thePageAndBefore];
 }
 
 /**
@@ -126,27 +167,6 @@ export function hasAPartSeenThrough(thing) {
 	const parts = [];
 	thing.traverse((part) => parts.push(part));
 	return parts.some(isSeenThrough);
-}
-
-/**
- * What is seen through beside the page drawn behind the page's plane, then the page and its glass, then what stands
- * before it.
- * @param {WebGLRenderer} renderer @param {Scene} world @param {Camera} seen @param {Matrix4} page
- */
-function seenThroughThePage(renderer, world, seen, page) {
-	const behind = new Plane().setFromCoplanarPoints(
-		SQUARES_MIDDLE.clone().applyMatrix4(page),
-		ACROSS_THE_SQUARE.clone().applyMatrix4(page),
-		UP_THE_SQUARE.clone().applyMatrix4(page)
-	);
-	if (behind.distanceToPoint(THE_EYE) > ON_ITS_PLANE) behind.negate();
-	renderer.clippingPlanes = [behind];
-	partsDrawn(renderer, world, seen, BESIDE_THE_PAGE);
-	renderer.clippingPlanes = UNCUT;
-	partsDrawn(renderer, world, seen, ['pageSeenThrough']);
-	renderer.clippingPlanes = [behind.clone().negate()];
-	partsDrawn(renderer, world, seen, BESIDE_THE_PAGE);
-	renderer.clippingPlanes = UNCUT;
 }
 
 /** Whether three draws a part seen through: a material of it writes no depth. @param {Object3D} part */

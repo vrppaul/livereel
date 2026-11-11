@@ -1260,7 +1260,10 @@ What `room` costs:
   100.8 s where two fields took 108.6 and 108.6 s. Markup standing in the
   world, a title or a pane, is seen through round its letters and in its
   shadow, so it is drawn in that field: the frames with a title and code in
-  the world in place of the cube took 119.4 and 121.5 s.
+  the world in place of the cube took 119.4 and 121.5 s. While the page is
+  seen through and a glass or markup stands beside it, what stands behind
+  the page's plane is a field of its own, so it blurs by its own depth: one
+  run of the lens more, about 80 ms a frame of 3840 × 2160 (2026-11-11).
 - Where the frame shows more of the window's plane than the graphics card
   holds in one texture, as the eye flying low over a tall screen does, the
   plane is drawn less densely, softer than flat near the eye.

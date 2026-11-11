@@ -63,7 +63,14 @@ import { WorldLighting } from './lighting.js';
 import { matrixOf, projectionOnto } from './matrices.js';
 import { ADDED, LAID_OVER, SRGB_CURVES, passOver, valuesSet } from './passes.js';
 import { FrameShown } from './shown.js';
-import { SeeThroughField, WORLD_PARTS, hasAPartSeenThrough, partsDrawn, sortedBySeeingThrough } from './see-through.js';
+import {
+	SeeThroughLayer,
+	WORLD_PARTS,
+	hasAPartSeenThrough,
+	partsDrawn,
+	seenThroughFieldsOf,
+	sortedBySeeingThrough
+} from './see-through.js';
 import { Things, isAThing } from './things.js';
 /** @import { DrawnScene, ObjectList } from '../src/scene.ts' */
 /** @import { DrawnObject } from '../src/props/object.ts' */
@@ -71,7 +78,7 @@ import { Things, isAThing } from './things.js';
 /** @import { DrawnBloom } from '../src/props/lighting.ts' */
 /** @import { ThingObject } from './things.js' */
 /** @import { SceneField } from './lens.js' */
-/** @import { WorldPart } from './see-through.js' */
+/** @import { SeenThroughField, WorldPart } from './see-through.js' */
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { Matrix } from '../src/domain/matrix.ts' */
 /** @import { Box } from '../src/domain/geometry.ts' */
@@ -427,7 +434,7 @@ class Room {
 		// The page as it writes depth, where it is drawn whole; and where it is seen through, its light and its depth apart
 		this.page = surfaceInTheWorld(PAGE_LAID, 'opaque');
 		this.pageSeenThrough = surfaceInTheWorld(PAGE_SEEN_THROUGH, 'pageSeenThrough');
-		this.pageDepth = surfaceInTheWorld(PAGE_DEPTH_ALONE, 'surfacesDepth');
+		this.pageDepth = surfaceInTheWorld(PAGE_DEPTH_ALONE, 'pageDepth');
 		/** The surfaces markup standing in the world is laid in, each exposure's apart @type {WorldSurfaces[]} */
 		this.worldSurfaces = this.exposureSurfaces.map(() => new WorldSurfaces(this.canvas));
 		/**
@@ -450,7 +457,7 @@ class Room {
 			...THREES_LAYER,
 			depthTexture: new DepthTexture(drawnWidth, drawnHeight)
 		});
-		this.seeThrough = new SeeThroughField(THREES_LAYER);
+		this.seeThrough = new SeeThroughLayer(THREES_LAYER);
 		this.lens = new Lens(this.pixelsOfOne, layout.frameScale);
 		// The world as the eye's lens sees it, each field laid over the one before in linear light, as three's one layer
 		// lays what is seen through over what stands behind it; then laid over the exposure in the screen's colours once
@@ -556,12 +563,10 @@ class Room {
 		this.flatLaid('ground', surfaces);
 		const pageTexture = textureOf(this.textures, 'window');
 		pageTexture.drawnFrom(surfaceOf(surfaces, 'window'));
-		const fields = this.worldDrawn(scene, pageTexture, standing, things.filter(standsInTheWorld), gathered);
+		const seenThroughFields = this.worldBuilt(scene, pageTexture, standing, things.filter(standsInTheWorld));
 		this.renderer.setRenderTarget(this.worldSeen);
 		this.renderer.clear();
-		for (const field of fields) {
-			this.lens.laid(this.renderer, field, gathered, this.frameBox, scene.eye, this.worldSeen);
-		}
+		this.worldDrawn(scene, seenThroughFields, gathered);
 		this.renderer.setRenderTarget(this.exposure);
 		this.renderer.render(this.worldLaying, this.camera);
 		const onTheFrame = things.filter((thing) => !standsInTheWorld(thing));
@@ -599,21 +604,19 @@ class Room {
 	}
 
 	/**
-	 * The world drawn as one scene, over the box of the frame the lens's blur gathers: the page's surface on the plane
-	 * the engine lays it on; the window's body and glass; the film's posed things in the world; and the surface of each
-	 * object of markup standing there; seen from the eye, lit as it sees the room. What writes depth is drawn into the
-	 * world's layer, and what is seen through, where it has something of the world behind it to show, into a field of its
-	 * own over it (`see-through.js`). Markup is seen through, round its letters and in its shadows, so it stands in that
-	 * field. A page seen through with nothing of the world but its own body standing round it shows the ground behind it,
-	 * which the lens does not blur, and its body's rim under its edge, on its own plane: it is drawn with what writes
-	 * depth, so its edge and the rim under it blur as one, where blurred apart they left a light band round a blurred
-	 * page, and the lens runs once. The fields the lens lays, the lowest first.
+	 * The world built as one scene: the page's surface on the plane the engine lays it on; the window's body and glass;
+	 * the film's posed things in the world; and the surface of each object of markup standing there; lit as the eye sees
+	 * the room. What writes depth is drawn apart from what is seen through, where that has something of the world behind
+	 * it to show (`see-through.js`); markup is seen through, round its letters and in its shadows. A page seen through
+	 * with nothing of the world but its own body standing round it shows the ground behind it, which the lens does not
+	 * blur, and its body's rim under its edge, on its own plane: it is drawn with what writes depth, so its edge and the
+	 * rim under it blur as one, where blurred apart they left a light band round a blurred page, and the lens runs once.
+	 * The fields of what is seen through the world is drawn with, none where nothing is.
 	 * @param {DrawnScene} scene @param {SurfaceTexture} pageTexture @param {ExposureStanding} standing
-	 * @param {readonly ThingObject[]} things @param {Box} gathered @returns {readonly SceneField[]}
+	 * @param {readonly ThingObject[]} things @returns {readonly SeenThroughField[]}
 	 */
-	worldDrawn(scene, pageTexture, standing, things, gathered) {
+	worldBuilt(scene, pageTexture, standing, things) {
 		const window = scene.window;
-		seenThrough(this.worldCamera, projectionOnto(gathered, this.frameBox, scene.eye.distance));
 		this.world.clear();
 		const pageMatrix = surfaceMatrixOf(window.pageSurface.inTheEyesSpace, standing.placing);
 		const standsBesideThePage = things.length + standing.markup.length > NONE_STANDING;
@@ -633,14 +636,28 @@ class Room {
 		const thingsSeenThrough = posed.some(hasAPartSeenThrough);
 		for (const [place, markup] of standing.markup.entries()) this.markupAdded(place, markup);
 		this.lighting.shiningIn(this.world, scene.eye.roomInTheEyesSpace);
+		const besideThePage = thingsSeenThrough || standing.markup.length > NONE_STANDING;
+		return seenThroughFieldsOf(pageSeenThrough ? pageMatrix : null, besideThePage);
+	}
+
+	/**
+	 * The world drawn over the box of the frame the lens's blur gathers, seen from the eye, each field of it laid through
+	 * the lens over the one before, the lowest first: what writes depth, drawn into the world's layer; then each field of
+	 * what is seen through, drawn over that depth into one layer, one field at a time, each laid before the next is
+	 * drawn.
+	 * @param {DrawnScene} scene @param {readonly SeenThroughField[]} seenThroughFields @param {Box} gathered
+	 */
+	worldDrawn(scene, seenThroughFields, gathered) {
+		seenThrough(this.worldCamera, projectionOnto(gathered, this.frameBox, scene.eye.distance));
 		this.renderer.setRenderTarget(this.worldLayer);
 		this.renderer.clear();
 		partsDrawn(this.renderer, this.world, this.worldCamera, ['opaque']);
-		const opaque = fieldOf(this.worldLayer);
-		if (!pageSeenThrough && !thingsSeenThrough && standing.markup.length === NONE_STANDING) return [opaque];
-		const seenThroughPage = pageSeenThrough ? pageMatrix : null;
-		this.seeThrough.drawn(this.renderer, this.world, this.worldCamera, this.worldLayer, seenThroughPage);
-		return [opaque, fieldOf(this.seeThrough.layer)];
+		this.lens.laid(this.renderer, fieldOf(this.worldLayer), gathered, this.frameBox, scene.eye, this.worldSeen);
+		for (const field of seenThroughFields) {
+			this.seeThrough.drawn(this.renderer, this.world, this.worldCamera, this.worldLayer, field);
+			const drawnField = fieldOf(this.seeThrough.layer);
+			this.lens.laid(this.renderer, drawnField, gathered, this.frameBox, scene.eye, this.worldSeen);
+		}
 	}
 
 	/**
