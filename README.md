@@ -246,8 +246,9 @@ and the moves of each part of the scene:
 - `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge, words })`; a caption and keys stand over the
   whole frame where they come up, over every object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`, `screen.behind(page, { upright, within })`,
-  `screen.shows(page, { reaches })`, `screen.scrolls(page, { pace })`, `screen.scrollTo(page, selector, { top, judged })`,
-  `screen.type(page, strokes, { into, keyboard })`, `screen.sweep({ from, slant, round, width, crest })`
+  `screen.shows(page, { reaches, fade: { seconds, ease } })`, `screen.scrolls(page, { pace })`,
+  `screen.scrollTo(page, selector, { top, judged })`, `screen.type(page, strokes, { into, keyboard })`,
+  `screen.sweep({ from, slant, round, width, crest })`
 - `terminal.open(title, { at, from, enter, edge, inside, group, zIndex })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
   `terminal.lean({ tilt, turn, roll, over, about })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
@@ -773,7 +774,23 @@ size, framed by the camera, leant and blurred as the filmed page is, its
 text drawn sharp however close the camera comes; `screen.shows('filmed')`
 shows the filmed page again. In a `cut` it swaps at once; in a `play`, at
 the moment `within: { start }` names, so a camera flying fast through the
-swap smears one into the other. The page stands as written: its scripts do
+swap smears one into the other. Or it fades, as a film's cut dissolves:
+`screen.shows('filmed', { fade: { seconds: 2.4, ease: easeInOutCubic } })`
+holds a picture of the page the screen shows, framed as the camera frames
+it then, and fades it away over the page coming, over as many seconds of
+the film's time as `seconds` names, on `ease`, `easeInOutSine` where it
+names none, on past its step. Written first in a `cut`, with a camera move
+after it in the same cut, the page going stands as it stood while the
+camera frames the page coming at once, closer or farther: one page fading
+over another, each at its own scale. The page going lies over the screen,
+the light and the cursor, under a callout and the pins, and the window's
+shade dims and fades the page coming alone, so `window.shade({ fade: 1 })`
+in the same cut, brought to `0` over the next play, brings the page coming
+up out of the dark under the one going. A fade is refused on a page framed
+live, from a page the window shades, from a page of the film's own that
+runs or is drawn past its screen, as its picture would drop each at once,
+and while the screen still fades from the page before. The page stands as
+written: its scripts do
 not run, one that animates or transitions of itself is refused before the
 film is shot, as what moves in a film is the film's, it moves only as
 the film runs it (`screen.scrolls`, below), no key reaches it but as the

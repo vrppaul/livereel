@@ -536,7 +536,7 @@ export class Take {
 		if (this.footage.keeps(this.shot)) {
 			await this.footage.keep(this.shot, await this.exposed(time, pageMovesOn));
 		}
-		await this.pictures.letGoUnnamedBy(this.scene);
+		await this.pictures.letGoUnnamedBy(this.scene, this.moment());
 		this.shot += 1;
 	}
 

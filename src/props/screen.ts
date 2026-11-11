@@ -12,6 +12,15 @@
  * of the screen, its ring of light growing from its middle to past the farthest corner of what the window shows, the
  * picture kept outside it alone.
  *
+ * Or the screen fades from the page it showed into the one it shows now: a picture of that page, held as the fade
+ * began, lies over the screen as the camera framed the page then, whatever the camera frames now, so the page coming
+ * may be framed closer or farther than the page going, and goes from whole to none over a stretch of the film's time,
+ * on its curve, as clear as the screen has come up. It is the page going, not the screen: the window's shade dims,
+ * fades and blurs the page coming alone, so that page may come up out of the dark under the one going, as the
+ * claude-review promo's review comes up under its terminal; and the light, the cursor and the holes, which lie on the
+ * page coming, lie under it. Its stretch is the film's time, not a move's share, so a fade begun in a cut, where the
+ * camera may move at once to frame the page coming, goes on over the steps after it.
+ *
  * The window's back may show a page of the film's own too, as a slab's back wears a picture of its own: where the eye
  * sees the window's back, the screen shows it in place of what it shows in front, framed by the camera as the front
  * is, mounted so it stands upright once the window is turned over round its width or round its upright; with none,
@@ -46,9 +55,17 @@
  * that much less, what is typed into it written there as on the screen. The camera cuts its picture at the sheet's
  * edges where it cut it at the screen's.
  */
-import { type Camera, type SeenBetween, screenPlaneSeen, screenPointShift, viewOnTheScreen } from '../domain/camera.ts';
+import {
+	type Camera,
+	type Pose,
+	type SeenBetween,
+	screenFramedBy,
+	screenPlaneSeen,
+	screenPointShift,
+	viewOnTheScreen
+} from '../domain/camera.ts';
 import { type HermiteEnd, type Stretch, hermiteBetween, hermiteSpeedBetween } from '../domain/curves.ts';
-import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
+import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
 import type { Format } from '../domain/format.ts';
 import { boxInTheView } from '../domain/framing.ts';
 import { facesTheEye, windowInTheWorld } from '../domain/placement.ts';
@@ -56,6 +73,7 @@ import {
 	type Box,
 	type FrameSide,
 	type Point,
+	type Size,
 	UNMOVED,
 	boxOf,
 	cornersOf,
@@ -249,14 +267,36 @@ type BandSweep = BandShape & SweepOfAnyShape;
 type DiscSweep = DiscShape & SweepOfAnyShape;
 
 /**
+ * The screen fading from a page it showed: a picture of that page, held by its number as the fade began; how the camera
+ * framed it then; and the stretch of the film's time it goes from whole to none over, on its curve.
+ */
+export interface Fade {
+	readonly picture: number;
+	readonly framing: Pose;
+	readonly over: Stretch;
+}
+
+/**
+ * The page the screen fades from as the stage draws it: the picture held; where the whole screen stood as the camera
+ * framed it as the fade began, in the screen's pixels as the camera frames them now; and how much of it still shows,
+ * as far as the fade has left it and the screen has come up.
+ */
+interface DrawnFade {
+	readonly picture: number;
+	readonly box: Box;
+	readonly shown: Fraction;
+}
+
+/**
  * How far the screen has come up, as a film may open on the ground alone, what it shows, the sweep over it, if any,
- * what the window's back shows, and, by its key, how each page of the film's own the film has run runs and how each
- * page the stage laid stands as a document.
+ * the page it fades from, if any, what the window's back shows, and, by its key, how each page of the film's own the
+ * film has run runs and how each page the stage laid stands as a document.
  */
 export interface Screen {
 	readonly shown: Fraction;
 	readonly shows: Shows;
 	readonly sweep: Sweep | null;
+	readonly fade: Fade | null;
 	readonly back: Back;
 	readonly scrolls: ReadonlyMap<string, Scroll>;
 	readonly documents: ReadonlyMap<string, OwnDocument>;
@@ -293,14 +333,15 @@ type DrawnSweepShape =
 
 /**
  * The screen as the stage draws it: how far it has come up, what it shows on the side of the window the eye sees, the
- * sweep over it as drawn, if any; how the page it shows is mounted where it is the window's back's, which then shows
- * it alone, none where the eye sees the front or the screen through the back; and where the filmed page lies, none
- * where it shows a page of the film's own.
+ * sweep over it as drawn, if any, and the page it fades from, if any; how the page it shows is mounted where it is the
+ * window's back's, which then shows it alone, none where the eye sees the front or the screen through the back; and
+ * where the filmed page lies, none where it shows a page of the film's own.
  */
 export interface DrawnScreen {
 	readonly shown: Fraction;
 	readonly shows: DrawnShows;
 	readonly sweep: DrawnSweep | null;
+	readonly fade: DrawnFade | null;
 	readonly backUpright: Upright | null;
 	readonly filmed: FilmedLaid | null;
 }
@@ -336,6 +377,7 @@ export const SCREEN_UP: Screen = {
 	shown: WHOLE,
 	shows: THE_FILMED_PAGE,
 	sweep: null,
+	fade: null,
 	back: SEEN_THROUGH,
 	scrolls: NONE_RUN,
 	documents: NONE_LAID
@@ -344,7 +386,7 @@ export const SCREEN_DOWN: Screen = { ...SCREEN_UP, shown: NONE };
 
 // A page's top, where one the film never ran stands, and the pace it stands still at
 export const AT_ITS_TOP = 0;
-const STANDING = 0;
+export const STANDING = 0;
 // How many even stretches a pace changing over a move's share is laid in knots at, its curve read at each knot, each
 // knot as far down as a pace changing evenly from the knot before carries it, which the Hermite curve between them then
 // runs exactly: the page's run strays from the curve's by at most its change in pace times its seconds times a curve's
@@ -393,15 +435,18 @@ const RING_WAYS: readonly Point[] = [
 	{ left: 0, top: 1 },
 	{ left: -1, top: 0 }
 ];
-// No picture a screen swept by none holds
+// No picture a screen swept by none, or fading from none, holds
 const NO_PICTURE: readonly number[] = [];
+// How far through its stretch a fade stands before it and after it
+const NOT_BEGUN = 0;
+const THROUGH = 1;
 
 /**
  * The screen as the stage draws it at a moment of the film, the camera that shows it framing the page in its view, in
  * a format, the eye seeing the window's front or its back, a pane's corners as round as the look has them in pixels of
- * a frame 1080 high: the page on the back, with no sweep, where the eye sees the back and the back has a page of its
- * own; the screen as it stands where not; a page of the film's own as far down as the film has run it then, the one in
- * front laid as far past the screen as it is drawn (`pastTheScreen`).
+ * a frame 1080 high: the page on the back, with no sweep and no fade, where the eye sees the back and the back has a
+ * page of its own; the screen as it stands where not; a page of the film's own as far down as the film has run it
+ * then, the one in front laid as far past the screen as it is drawn (`pastTheScreen`).
  */
 export function drawnScreen(
 	screen: Screen,
@@ -415,11 +460,42 @@ export function drawnScreen(
 	const backPage = backPageSeen(screen.back, facingTheEye);
 	if (backPage !== null) {
 		const shows = ownPageDrawn(screen, backPage.key, moment, null);
-		return { shown: screen.shown, shows, sweep: null, backUpright: backPage.upright, filmed: null };
+		return { shown: screen.shown, shows, sweep: null, fade: null, backUpright: backPage.upright, filmed: null };
 	}
 	const sweep = screen.sweep === null ? null : drawnSweep(screen.sweep, partSwept(camera, format), camera.pose.zoom);
+	const fade = drawnFade(screen, camera.pose, format.screen, moment);
 	const filmed = screen.shows.kind === 'filmed' ? filmedLaid(camera, format, paneCorner) : null;
-	return { shown: screen.shown, shows: frontDrawn(screen, moment, past), sweep, backUpright: null, filmed };
+	return { shown: screen.shown, shows: frontDrawn(screen, moment, past), sweep, fade, backUpright: null, filmed };
+}
+
+/**
+ * The page a screen fades from as the stage draws it at a moment, the camera framing the screen of a size by a pose
+ * now: none where the screen fades from none, or has faded from it whole by then.
+ */
+function drawnFade(screen: Screen, framedNow: Pose, size: Size, moment: number): DrawnFade | null {
+	const fade = screen.fade;
+	if (fade === null || !fadesAt(fade, moment)) return null;
+	const gone = fade.over.ease(shareThrough(fade.over, moment));
+	return {
+		picture: fade.picture,
+		box: screenFramedBy(fade.framing, framedNow, size),
+		shown: fractionOf((WHOLE - gone) * screen.shown)
+	};
+}
+
+/** Whether a screen still fades from a page at a moment: before its fade's end. */
+export function fadesAt(fade: Fade, moment: number): boolean {
+	return moment < fadeEndOf(fade);
+}
+
+/** The moment a screen has faded from a page whole. */
+export function fadeEndOf(fade: Fade): number {
+	return fade.over.moment + fade.over.seconds;
+}
+
+/** How far through a stretch of the film's time a moment stands, held from none before it to whole past it. */
+function shareThrough(stretch: Stretch, moment: number): number {
+	return Math.min(THROUGH, Math.max(NOT_BEGUN, (moment - stretch.moment) / stretch.seconds));
 }
 
 /**
@@ -764,9 +840,14 @@ export function sweepShift(seen: SeenBetween, format: Format, start: Sweep, end:
 	return Math.max(...startPoints.map((point, place) => screenPointShift(seen, point, pointAt(endPoints, place))));
 }
 
-/** The picture a screen's sweep holds, if any. */
-export function pictureSweptBy(screen: Screen): readonly number[] {
-	return screen.sweep === null ? NO_PICTURE : [screen.sweep.picture];
+/**
+ * The pictures a screen holds at a moment, as a frame drawn then or later may draw them: its sweep's, and the page's it
+ * fades from while it fades.
+ */
+export function picturesHeldOn(screen: Screen, moment: number): readonly number[] {
+	const swept = screen.sweep === null ? NO_PICTURE : [screen.sweep.picture];
+	const faded = screen.fade !== null && fadesAt(screen.fade, moment) ? [screen.fade.picture] : NO_PICTURE;
+	return [...swept, ...faded];
 }
 
 /** A sweep's shape on the screen, where a part of it shows in the window at a camera's zoom. */

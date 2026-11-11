@@ -247,6 +247,8 @@ export const A_PAGE_SPEED = new Plain(
 	isNoneOrMore,
 	"how many of the page's seconds a second of the film runs, 0 or more"
 );
+/** How long a step lasts, or anything a film times in seconds of its own: more than none, or it shows nothing. */
+export const SOME_SECONDS = new Plain(isMoreThanNone, 'some seconds, more than none');
 /** How large letters are, in pixels: more than none, as letters of no size are not there. */
 export const A_SIZE = new Plain(isMoreThanNone, 'a number of pixels, more than 0');
 /** How tall a line stands, in times its letters' size: more than none, as a line of no height is not there. */

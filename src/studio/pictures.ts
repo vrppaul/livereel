@@ -1,9 +1,9 @@
 /**
- * The pictures of parts of the screen the stage holds for pieces of the page and a sweep of the screen, apart from the
- * page's own picture: those pieces hold as they are lifted, the one a sweep holds as it begins, and those sharper than
- * the page's for pieces drawn past livereel's bound. The take hands them what each frame asks and the scene each frame
- * ends on; each picture is held as long as a frame after may draw it, and let go then. A stage that shows the page live
- * holds none, as no piece or sweep stands on it.
+ * The pictures of parts of the screen the stage holds for pieces of the page and a sweep or a fade of the screen, apart
+ * from the page's own picture: those pieces hold as they are lifted, the one a sweep or a fade holds as it begins, and
+ * those sharper than the page's for pieces drawn past livereel's bound. The take hands them what each frame asks and
+ * the scene each frame ends on; each picture is held as long as a frame after may draw it, and let go then. A stage
+ * that shows the page live holds none, as no piece, sweep or fade stands on it.
  */
 import { ZOOM_AT_MOST } from '../domain/camera.ts';
 import type { Box } from '../domain/geometry.ts';
@@ -27,10 +27,10 @@ export interface PartPictures {
 	 */
 	readonly serve: (asked: readonly PartAsked[], pageChanged: boolean) => Promise<void>;
 	/**
-	 * Every picture a piece or a sweep holds let go once a scene a frame ends on names it no more: each exposure of a
-	 * later frame is drawn from that scene on, so none names it again.
+	 * Every picture a piece, a sweep or a fade holds let go once a scene a frame ends on names it no more at the frame's
+	 * moment: each exposure of a later frame is drawn from that scene on, later, so none names it again.
 	 */
-	readonly letGoUnnamedBy: (scene: Scene) => Promise<void>;
+	readonly letGoUnnamedBy: (scene: Scene, moment: number) => Promise<void>;
 }
 
 // No picture of a part of the screen held sharper than the page's; and the page those held so are of, as a piece drawn
@@ -80,8 +80,8 @@ class PicturesOnTheStage implements PartPictures {
 		this.heldSharper = [...kept, ...taken];
 	}
 
-	async letGoUnnamedBy(scene: Scene): Promise<void> {
-		const named = picturesHeldIn(scene);
+	async letGoUnnamedBy(scene: Scene, moment: number): Promise<void> {
+		const named = picturesHeldIn(scene, moment);
 		for (const number of this.held.filter((held) => !named.includes(held))) await this.stage.letGo(number);
 		this.held = this.held.filter((held) => named.includes(held));
 	}

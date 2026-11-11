@@ -1001,6 +1001,19 @@ test("a sweep of the screen has the stage hold a picture of the whole screen as 
 	]);
 });
 
+test("a fade of the screen in a cut has the stage hold a picture of the whole screen as the page stands then, as sharp as livereel's bound, draws it fading over the film's time from the frame after the cut on, and lets it go once the fade is over", async () => {
+	const stage = new PicturedStageThatKeeps();
+	await unblurredTakeOf(new FootageOf([0, 1, 2]), stage).run([
+		cut(screenShows('filmed', { fade: { seconds: 2 / 30, ease: linear } })),
+		hold({ seconds: 3 / 30 })
+	]);
+	expect([stage.held, stage.drawn.map((scene) => scene.screen.fade), stage.letGone]).toEqual([
+		[{ part: { left: 0, top: 0, width: 600, height: 400 }, zoom: 2.2, page: 'filmed' }],
+		[expect.objectContaining({ picture: 1, shown: 1 }), expect.objectContaining({ picture: 1, shown: 0.5 }), null],
+		[1]
+	]);
+});
+
 test("a static page moving under a camera that crosses the frame fast is pictured as close as the frame's closest exposure", async () => {
 	const stage = new PicturedStageThatKeeps();
 	const take = new Take({

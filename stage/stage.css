@@ -187,8 +187,24 @@ body {
 	opacity: var(--page-shown);
 }
 
-/* A pane on the ground — the screen, the code's pane, the agent's terminal — its corners, edge and shadow as the look has them, at its own scale, as the page's window's are */
+/* The page the screen fades from (`src/props/screen.ts`): its picture, held as the fade began, laid where the camera framed the whole screen then, in the screen's pixels as the camera frames them now, so it stands as it stood however the camera frames the page coming; drawn under the camera's scale, as the screen is, and as clear as it still shows. It lies over the screen, not in it, so the window's shade and the screen's sheet leave it as it is */
+.faded-page {
+	--pane-scale: calc(1 / var(--zoom));
+
+	position: absolute;
+	left: calc(var(--faded-left) * 1px);
+	top: calc(var(--faded-top) * 1px);
+	width: calc(var(--faded-width) * 1px);
+	height: calc(var(--faded-height) * 1px);
+	background-image: var(--faded-picture);
+	background-size: 100% 100%;
+	opacity: var(--faded-shown);
+	pointer-events: none;
+}
+
+/* A pane on the ground — the screen, the page it fades from, the code's pane, the agent's terminal — its corners, edge and shadow as the look has them, at its own scale, as the page's window's are */
 .screen,
+.faded-page,
 .object .pane {
 	border-radius: calc(var(--pane-corner) * var(--pane-scale) * 1px);
 	box-shadow: var(--pane-shadow);

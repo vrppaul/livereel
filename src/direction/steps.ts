@@ -16,6 +16,7 @@ import {
 	Literal,
 	OfForm,
 	Plain,
+	SOME_SECONDS,
 	assertKind,
 	assertWritten,
 	described,
@@ -89,8 +90,6 @@ interface PartTaken {
 
 // A beat after the last key, before the next step
 const AFTER_TYPING_SECONDS = 0.12;
-// A step lasts some time, or it shows nothing
-const SOME_SECONDS = new Plain(isSomeSeconds, 'some seconds, more than none');
 const PLAY_FORM: Form<PlayScript> = { seconds: needed(SOME_SECONDS), moves: A_MOVES, ease: A_CURVE };
 const HOLD_FORM: Form<HoldScript> = { seconds: needed(SOME_SECONDS) };
 // A step a film may write out by hand, as the types allow, each kind of step to its form
@@ -277,10 +276,6 @@ function stepOf(written: unknown, place: number): Step {
 
 function isStepKind(written: unknown): written is Step['kind'] {
 	return typeof written === 'string' && Object.hasOwn(STEP_FORMS, written);
-}
-
-function isSomeSeconds(written: unknown): written is number {
-	return typeof written === 'number' && written > 0 && Number.isFinite(written);
 }
 
 function isTypedMove(written: unknown): written is Move & Typed {

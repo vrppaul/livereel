@@ -2,8 +2,9 @@
  * What a film's moves set, at one moment: what the stage draws on one frame — every prop's state and the objects on
  * the frame — and the speed the take runs the page's own time at, which the stage draws nothing of.
  *
- * A scene is plain values, never changed in place: a move's change hands back a scene with its own prop or object set,
- * and the take keeps the one standing. The film's look and the world's are props too, changed by moves as any other. A
+ * A scene is plain values, never changed in place, but for the curve a fade of the screen goes on, a function the film
+ * names, which the stage is never handed: a move's change hands back a scene with its own prop or object set, and the
+ * take keeps the one standing. The film's look and the world's are props too, changed by moves as any other. A
  * prop is one of livereel's, each in a slot of its own; an object (`src/props/object.ts`) is the film's, known by a
  * name it gives or its kind's own, so several of a kind stand at once, drawn in the order they first came, the last
  * over the rest: one shown again in place of itself keeps its place. One pushed off by another of its name sliding in
@@ -87,7 +88,7 @@ import {
 	pageShownBy,
 	pageShownOn,
 	pastTheScreen,
-	pictureSweptBy,
+	picturesHeldOn,
 	runShift,
 	sweepShift
 } from './props/screen.ts';
@@ -170,10 +171,10 @@ interface StandingListed extends ListedObject {
 /**
  * What the stage is handed of a scene: each prop as drawn, the objects standing and pushed off, those of them standing
  * in the world in the order the room lays them one over the other (`laidFartherFirst` in `src/domain/placement.ts`),
- * whether anything lies over the page in the window but the screen's own — a callout, pins, an object standing inside
- * the window — which the room lays over the page apart; what the pieces of the page among them leave on the page and
- * draw to it, holes on the screen and lines on the frame, and the eye as the room sees the world and the frame by it and
- * blurs each pixel of the world by its lens, once a scene.
+ * whether anything lies over the page in the window but the screen's own — the page the screen fades from, a callout,
+ * pins, an object standing inside the window — which the room lays over the page apart; what the pieces of the page
+ * among them leave on the page and draw to it, holes on the screen and lines on the frame, and the eye as the room sees
+ * the world and the frame by it and blurs each pixel of the world by its lens, once a scene.
  */
 export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 	readonly objects: readonly DrawnObject[];
@@ -356,11 +357,14 @@ export function holdersIn(scene: Scene, camera: Camera): Holders {
 	return { camera, groups: scene.groups, objects: scene.objects, scrolled: scene.scrolled };
 }
 
-/** The numbers of the pictures the pieces in a scene hold, standing or pushed off, and the one its screen's sweep holds. */
-export function picturesHeldIn(scene: Scene): readonly number[] {
+/**
+ * The numbers of the pictures a scene holds at a moment, as a frame drawn then or later may draw them: those the pieces
+ * in it hold, standing or pushed off, and those its screen holds.
+ */
+export function picturesHeldIn(scene: Scene, moment: number): readonly number[] {
 	return [
 		...[...scene.objects.values(), ...scene.leaving.values()].flatMap((object) => pictureHeldBy(object)),
-		...pictureSweptBy(scene.screen)
+		...picturesHeldOn(scene.screen, moment)
 	];
 }
 
@@ -529,12 +533,13 @@ export function drawn(
 		world: scene.world,
 		screen: scene.screen
 	});
+	const screen = drawnScreen(scene.screen, camera, format, window.facingTheEye, scene.look.paneCorner, moment, past);
 	return {
 		look: scene.look,
 		world: drawnWorld(scene.world, format.frame),
 		camera: shown,
 		window,
-		screen: drawnScreen(scene.screen, camera, format, window.facingTheEye, scene.look.paneCorner, moment, past),
+		screen,
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout, moment),
 		pins: scene.pins === null ? null : drawnPins(scene.pins, camera, format.frame),
@@ -546,6 +551,7 @@ export function drawn(
 		leaving,
 		laidInTheWorld: laidInTheWorldOf(scene, around),
 		overThePage:
+			screen.fade !== null ||
 			scene.callout !== null ||
 			scene.pins !== null ||
 			[...objects, ...leaving].some((object) => object.standsIn === 'window'),

@@ -266,8 +266,13 @@ function isLit(world: Pick<WorldLook, 'lights' | 'softBoxes'>): boolean {
  * part its blur would leave sharp softens.
  */
 function drawnShade(window: PageShade): PageShade | null {
-	if (standsAtRest(window, UNSHADED, PAGE_SHADE_NAMES)) return null;
+	if (!shadesThePage(window)) return null;
 	return { dim: window.dim, fade: window.fade, blur: window.blur };
+}
+
+/** Whether the window shades the page at all: dims, fades or blurs it. */
+export function shadesThePage(window: PageShade): boolean {
+	return !standsAtRest(window, UNSHADED, PAGE_SHADE_NAMES);
 }
 
 /**

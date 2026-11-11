@@ -366,6 +366,22 @@ export function flatCamera(format: Format, focalLength: number): Camera {
 }
 
 /**
+ * Where the whole screen stands, as one pose frames it, in the screen's pixels as another pose frames them, both in one
+ * view: the point the first looks at where the second looks, larger by as many times as the first comes closer. The
+ * stage draws the screen by a pose (`.camera` in `stage/stage.css`), so a box laid there by this stands on the frame as
+ * the first pose would draw the screen.
+ */
+export function screenFramedBy(framing: Pose, framedNow: Pose, screen: Size): Box {
+	const closer = framing.zoom / framedNow.zoom;
+	return {
+		left: framedNow.focusX - framing.focusX * closer,
+		top: framedNow.focusY - framing.focusY * closer,
+		width: screen.width * closer,
+		height: screen.height * closer
+	};
+}
+
+/**
  * The camera as the stage draws it, its cut worked out from where the part of the screen's plane the page shows on, in
  * the screen's pixels, stands in its view: the screen, or a page of the film's own drawn on past it.
  */

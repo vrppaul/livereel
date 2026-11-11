@@ -9,6 +9,15 @@
  * the one, those from it the other. How far it has come up and what it shows are set by moves of their own, which
  * share a step. The page a move of the film's own names is the stage's to lay before the film is shot.
  *
+ * Or the screen fades from the page it showed into the one it shows, as a film's cut dissolves: the move holds a
+ * picture of the page as it begins, and of how the camera frames it then, and the screen fades from it over as many
+ * seconds of the film's time as the film names, on a curve, past the move's step. So a fade written in a cut, before a
+ * camera move in the same cut, keeps the page going framed as it stood while the camera frames the page coming at once:
+ * one page fading over another, each at its own scale. A fade is refused as it begins where its picture would drop
+ * something at once: on a page framed live, which has no picture; from a page the window shades, as the picture is
+ * unshaded; from a page of the film's own that runs, as the picture stands still; from one drawn past its screen, as
+ * the picture holds the screen alone; and while the screen still fades from the page before, whose picture would go.
+ *
  * Light sweeps away the picture the screen shows, a band crossing it or a disc opening round a block, over a move's
  * share, to the page as it stands behind it: the picture is held as the move begins, as a piece holding its picture
  * holds one, so an act done at the same moment of the play, which is done first, is under the picture already; an act
@@ -33,7 +42,7 @@
  * what stands typed in it and how far that lets it scroll, is another value of the screen's own, set by a typing
  * alone, so a typing shares a step with what the screen shows and how its page runs, which read it.
  */
-import { FASTEST_SPEED, type Stretch, linear } from '../domain/curves.ts';
+import { A_CURVE, type Ease, FASTEST_SPEED, type Stretch, easeInOutSine, linear } from '../domain/curves.ts';
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
 import { runCarriedUnder } from '../domain/camera.ts';
@@ -59,10 +68,12 @@ import {
 	NameOrForm,
 	OneOf,
 	OfForm,
+	SOME_SECONDS,
 	assertKind,
 	assertWritten,
 	needed
 } from '../domain/handed.ts';
+import { secondsSaid } from '../domain/time.ts';
 import { between } from '../domain/toward.ts';
 import { A_STROKES, type Keystroke, textsTypedAlong, typedAlong } from '../domain/typing.ts';
 import {
@@ -83,7 +94,7 @@ import {
 	timingOf,
 	untilTheEnd
 } from '../direction/move.ts';
-import { type BlockHolding, type MeasuredPage, ownPageOf } from '../direction/page.ts';
+import { type BlockHolding, type MeasuredPage, type OwnPage, ownPageOf } from '../direction/page.ts';
 import { keysHeard } from '../direction/sound.ts';
 import type { Typed } from '../direction/steps.ts';
 import {
@@ -93,6 +104,7 @@ import {
 	type Back,
 	CUT_AT_THE_SCREEN,
 	DRAWN_TO_ITS_DOCUMENT,
+	type Fade,
 	type Knot,
 	NO_SECONDS,
 	type OwnDocument,
@@ -100,6 +112,7 @@ import {
 	SCREEN_DOWN,
 	SCREEN_UP,
 	SEEN_THROUGH,
+	STANDING,
 	type Screen,
 	type Scroll,
 	type Shows,
@@ -109,14 +122,18 @@ import {
 	type Upright,
 	type WayOnTheFrame,
 	documentOf,
+	fadeEndOf,
+	fadesAt,
 	judgedToRest,
 	momentsJudgedAt,
+	pastTheScreen,
 	runToRest,
 	setOff,
 	standingOn,
 	typedTextsOf
 } from '../props/screen.ts';
-import { type Scene, withProp } from '../scene.ts';
+import { shadesThePage } from '../props/window.ts';
+import { type Scene, cameraOf, withProp } from '../scene.ts';
 import { TYPING_FORM, type TypingScript } from './typing.ts';
 
 /** A page of the film's own as a film names it: its HTML whole. */
@@ -130,8 +147,25 @@ export type ScreenPage = typeof FILMED | OwnPageNamed;
 /** What a film names the window's back to show: a page of its own, its HTML whole, or none, `'none'`. */
 export type BackPage = typeof NONE_ON_THE_BACK | OwnPageNamed;
 
-/** When a film shows a page, and how far it draws one of its own, `reaches` as `A_REACH` says. */
-export interface ShowsScript extends MomentScript {
+/**
+ * How the screen fades from the page it showed into the one a move shows: over so many `seconds` of the film's time
+ * from the move's moment, on a curve, `ease`, livereel's `easeInOutSine` where the film names none, as a play's.
+ */
+export interface FadeScript {
+	readonly seconds: number;
+	readonly ease?: Ease;
+}
+
+/** When a film shows the filmed page, and how the screen fades into it, where it does. */
+export interface FilmedShowsScript extends MomentScript {
+	readonly fade?: FadeScript;
+}
+
+/**
+ * When a film shows a page, how the screen fades into it, and how far it draws one of its own, `reaches` as `A_REACH`
+ * says.
+ */
+export interface ShowsScript extends FilmedShowsScript {
 	readonly reaches?: Reach;
 }
 
@@ -219,8 +253,9 @@ const TOWARD_ITS_TOP = 'up';
 // A page of the film's own, as a film names it
 const OWN_PAGE_FORM: Form<OwnPageNamed> = { html: needed(AN_HTML_PAGE) };
 const OWN_PAGE_SAID = "a page of the film's own, { html }";
-// The filmed page, as a film names it
+// The filmed page, as a film names it, and the pages of the film's own a move showing it shows: none
 const FILMED = 'filmed';
+const NO_OWN_PAGES: readonly OwnPage[] = [];
 const A_SCREEN_PAGE: Kind<ScreenPage> = new NameOrForm(
 	new Literal(FILMED),
 	new OfForm<OwnPageNamed>(OWN_PAGE_FORM, OWN_PAGE_SAID),
@@ -255,11 +290,21 @@ const SCROLL_TO_FORM: Form<ScrollToScript> = {
 	within: TIMING_FORM.within
 };
 const BACK_FORM: Form<BackScript> = { upright: needed(AN_UPRIGHT), ...MOMENT_FORM };
-const SHOWS_FORM: Form<ShowsScript> = { reaches: A_REACH, ...MOMENT_FORM };
-// The screen's values a move that raises or lowers it sets, one that changes what it shows, a sweep, one that changes
-// what the window's back shows, one that runs a page of the film's own, and one that types into one
+const FADE_FORM: Form<FadeScript> = { seconds: needed(SOME_SECONDS), ease: A_CURVE };
+const A_FADE: Kind<FadeScript> = new OfForm<FadeScript>(FADE_FORM, 'a fade: { seconds, ease }');
+const FILMED_SHOWS_FORM: Form<FilmedShowsScript> = { fade: A_FADE, ...MOMENT_FORM };
+const SHOWS_FORM: Form<ShowsScript> = { reaches: A_REACH, ...FILMED_SHOWS_FORM };
+// A fade's curve where the film names none: a play's
+const FADES_ALONG: Ease = easeInOutSine;
+// The move that shows a page, and its fade, as refusals name them
+const SHOWS = 'screen.shows';
+const SHOWS_FADE = "screen.shows' fade";
+// The screen's values a move that raises or lowers it sets, one that changes what it shows, one that fades into what
+// it shows, a sweep, one that changes what the window's back shows, one that runs a page of the film's own, and one
+// that types into one
 const HOW_FAR_UP = ['shown'] as const satisfies readonly (keyof Screen)[];
 const SHOWING = ['shows'] as const satisfies readonly (keyof Screen)[];
+const FADING_INTO = ['shows', 'fade'] as const satisfies readonly (keyof Screen)[];
 const SWEEPING = ['sweep'] as const satisfies readonly (keyof Screen)[];
 const BACKING = ['back'] as const satisfies readonly (keyof Screen)[];
 const RUNNING = ['scrolls'] as const satisfies readonly (keyof Screen)[];
@@ -312,27 +357,101 @@ export function lower(script: TimingScript = {}): Move {
 /**
  * The screen showing the filmed page, `'filmed'`, or a page of the film's own, `{ html }`, a whole document in HTML
  * laid out at the screen's size, cut at the screen's edges, or, `reaches: 'document'`, drawn on past its top and foot
- * as far as its document runs and the frame sees: at once, or at the moment of a play `within: { start }` names.
+ * as far as its document runs and the frame sees: at once, or at the moment of a play `within: { start }` names; and
+ * fading from the page it showed over the `fade` the film names, where it names one.
  */
-export function shows(page: typeof FILMED, script?: MomentScript): Move;
+export function shows(page: typeof FILMED, script?: FilmedShowsScript): Move;
 export function shows(page: OwnPageNamed, script?: ShowsScript): Move;
 export function shows(page: ScreenPage, script: ShowsScript = {}): Move {
 	assertKind(page, A_SCREEN_PAGE, "screen.shows's page");
-	const timing = momentTimingOf(script);
 	if (page === FILMED) {
-		assertWritten(script, MOMENT_FORM, 'screen.shows');
-		return { part: 'screen', valueNames: SHOWING, timing, begin: () => showing(THE_FILMED_PAGE) };
+		assertWritten(script, FILMED_SHOWS_FORM, SHOWS);
+		return showingMove(script, NO_OWN_PAGES, () => THE_FILMED_PAGE);
 	}
-	assertWritten(script, SHOWS_FORM, 'screen.shows');
+	assertWritten(script, SHOWS_FORM, SHOWS);
 	const reaches = script.reaches ?? CUT_AT_THE_SCREEN;
 	const own = ownPageOf(page.html, reaches === DRAWN_TO_ITS_DOCUMENT);
+	return showingMove(script, [own], (beginning) => ownPageShown(beginning, own.key, reaches));
+}
+
+/**
+ * A move showing a page at its moment, by what it shows as it begins: at once; or, where the film names a fade,
+ * fading from the page the screen showed, which it holds a picture of as it begins, as a sweep does, so an act at that
+ * moment is refused.
+ */
+function showingMove(
+	script: FilmedShowsScript,
+	ownPages: readonly OwnPage[],
+	shownAsItBegins: (beginning: Beginning) => Shows
+): Move {
+	const timing = momentTimingOf(script);
+	const fade = script.fade;
+	if (fade === undefined) {
+		return {
+			part: 'screen',
+			valueNames: SHOWING,
+			timing,
+			ownPages,
+			begin: (beginning) => showing(shownAsItBegins(beginning))
+		};
+	}
 	return {
 		part: 'screen',
-		valueNames: SHOWING,
+		valueNames: FADING_INTO,
 		timing,
-		ownPages: [own],
-		begin: (beginning) => showingOwn(beginning, own.key, reaches)
+		ownPages,
+		holdsThePage: true,
+		begin: (beginning) => fadingInto(beginning, shownAsItBegins(beginning), fade)
 	};
+}
+
+/**
+ * The screen fading from the page it shows as the move begins into another: a picture of the whole screen held then,
+ * framed as the camera frames it then, fading over the film's time from the move's moment, as many seconds as the film
+ * names, on its curve; refused where it would drop at once what the screen shows (`refuseFadingFrom`).
+ */
+async function fadingInto(beginning: Beginning, shows: Shows, script: FadeScript): Promise<Change> {
+	refuseWhereLive(beginning, SHOWS_FADE);
+	refuseFadingFrom(beginning);
+	const fade: Fade = {
+		picture: await beginning.holdPicture(boxOf(beginning.format.screen)),
+		framing: cameraOf(beginning.scene, beginning.format).pose,
+		over: { moment: beginning.stretch.moment, seconds: script.seconds, ease: script.ease ?? FADES_ALONG }
+	};
+	return (scene) => withProp(scene, 'screen', { ...scene.screen, shows, fade });
+}
+
+/**
+ * A fade refused as it begins where its picture would drop at once what the screen shows: while the screen still fades
+ * from the page before, whose picture would go; from a page the window shades, as the picture is unshaded; from a page
+ * of the film's own that runs, as the picture stands still; and from one drawn past its screen, as the picture holds
+ * the screen alone.
+ */
+function refuseFadingFrom(beginning: Beginning): void {
+	const { scene, format } = beginning;
+	const moment = beginning.stretch.moment;
+	const screen = scene.screen;
+	if (screen.fade !== null && fadesAt(screen.fade, moment)) {
+		throw new FilmError(
+			`${SHOWS} fades from the page the screen shows while it still fades from the one before, until ${secondsSaid(fadeEndOf(screen.fade))} s into the film: fade from then on`
+		);
+	}
+	if (shadesThePage(scene.window)) {
+		throw new FilmError(
+			`${SHOWS} fades from a page the window shades, holding its picture unshaded, so the shade would leave it at once: lift the shade before the fade, or shade the page coming in after it, in the same cut`
+		);
+	}
+	const pace = screen.shows.kind === 'own' ? standingOn(screen, screen.shows.key, moment).pace : STANDING;
+	if (pace !== STANDING) {
+		throw new FilmError(
+			`${SHOWS} fades from a page running ${Math.round(Math.abs(pace))} pixels a second, holding its picture as the fade begins, so the page would stop at once: bring it to rest first, with screen.scrolls(page, { pace: 0 }) or screen.scrollTo`
+		);
+	}
+	if (pastTheScreen(screen, cameraOf(scene, format), format, moment) !== null) {
+		throw new FilmError(
+			`${SHOWS} fades from a page drawn past its screen, holding a picture of the screen alone, so what is drawn past it would go at once: show the page with reaches: 'screen' before the fade`
+		);
+	}
 }
 
 /**
@@ -625,11 +744,11 @@ function backing(shown: Back): Change {
 }
 
 /**
- * The screen showing a page of the film's own, by its key, as far as the film names it reaches; refused while a lens
- * stands, as a lens shows the filmed page under it, drawn from its picture, and where it is drawn past its screen and
- * its document as it stands then has nothing past it.
+ * A page of the film's own, by its key, as the screen shows it as far as the film names it reaches; refused while a
+ * lens stands, as a lens shows the filmed page under it, drawn from its picture, and where it is drawn past its screen
+ * and its document as it stands then has nothing past it.
  */
-function showingOwn(beginning: Beginning, key: string, reaches: Reach): Change {
+function ownPageShown(beginning: Beginning, key: string, reaches: Reach): Shows {
 	const scene = beginning.scene;
 	if ([...scene.objects.values()].some((object) => object.content.kind === LENS)) {
 		throw new FilmError(
@@ -639,7 +758,7 @@ function showingOwn(beginning: Beginning, key: string, reaches: Reach): Change {
 	if (reaches === DRAWN_TO_ITS_DOCUMENT && documentOf(scene.screen, key).scrollLength === NO_LENGTH) {
 		throw new FilmError(REACHES_NOWHERE);
 	}
-	return showing({ kind: 'own', key, reach: reaches });
+	return { kind: 'own', key, reach: reaches };
 }
 
 /** The screen on its way from where it stands to up or down; refused where it stands there already. */

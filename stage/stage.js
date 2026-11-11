@@ -92,6 +92,8 @@ const SWEPT_PICTURE = '--swept-picture';
 const CREST_START = '--crest-start';
 const CREST_END = '--crest-end';
 const SHAPE = 'data-shape';
+// The custom property the picture of the page the screen fades from is set as on its element
+const FADED_PICTURE = '--faded-picture';
 // A page of the film's own: the class every page the screen shows takes, the attribute the one a frame shows takes,
 // and the one the screen takes while it shows one; the attribute a frame laid as a sheet past the screen takes, and the
 // one the screen takes while it shows a page laid so
@@ -333,21 +335,23 @@ function sharpPartDrawn(root, sharp) {
  * The screen: how far it has come up, what it shows, the filmed page or one of the film's own laid on it, with what
  * the film typed into it and scrolled as far as the film has run it, or laid so as a sheet past it in a frame of its
  * own, and the
- * picture light sweeps away over it, a band or a disc; where the eye sees a page on the window's back, how it is
- * mounted, so the stylesheet turns it to stand upright from behind and leaves unseen what lies on the front. Its
- * numbers and names are drawn on each of its roots, one in each surface the window's view stands in; its pages and
- * its sweep stand in the window's surface alone.
+ * picture light sweeps away over it, a band or a disc, and the page it fades from over it; where the eye sees a page on
+ * the window's back, how it is mounted, so the stylesheet turns it to stand upright from behind and leaves unseen what
+ * lies on the front. Its numbers and names are drawn on each of its roots, one in each surface the window's view
+ * stands in; its pages and its sweep stand in the window's surface alone, the page it fades from in the surface of
+ * what lies over the page where a frame is drawn as a room.
  */
 class ScreenDrawer {
 	/**
 	 * @param {readonly Staged[]} roots @param {OwnFrames} ownPages
-	 * @param {Staged} sweep the part the sweep stands in
+	 * @param {Staged} sweep the part the sweep stands in @param {Staged} fadedPage the part the page it fades from does
 	 */
-	constructor(roots, ownPages, sweep) {
+	constructor(roots, ownPages, sweep, fadedPage) {
 		this.roots = roots;
 		this.ownPages = ownPages;
 		this.sweep = sweep;
 		this.swept = partOf(sweep, 'swept');
+		this.fadedPage = fadedPage;
 	}
 
 	/** @param {DrawnScene} scene */
@@ -365,7 +369,30 @@ class ScreenDrawer {
 		for (const [key, frame] of sheets) frame.toggleAttribute(SHOWN, key === shownKey && sheet !== null);
 		ownPageDrawn(this.ownPages, scene.screen.shows);
 		sweepDrawn(this.sweep, this.swept, scene.screen.sweep);
+		fadedPageDrawn(this.fadedPage, scene.screen.fade);
 	}
+}
+
+/**
+ * The page the screen fades from, from the held picture it is, where the camera framed the whole screen as the fade
+ * began, as clear as it still shows; none where the screen fades from none.
+ * @param {Staged} part @param {DrawnScene['screen']['fade']} fade
+ */
+function fadedPageDrawn(part, fade) {
+	shown(part, fade !== null);
+	if (fade === null) {
+		part.style.removeProperty(FADED_PICTURE);
+		return;
+	}
+	// CSS takes no address out of a custom property into a url(), so the url() is written whole here
+	part.style.setProperty(FADED_PICTURE, `url("${heldPicture(fade.picture).src}")`);
+	numbered(part, {
+		'--faded-left': fade.box.left,
+		'--faded-top': fade.box.top,
+		'--faded-width': fade.box.width,
+		'--faded-height': fade.box.height,
+		'--faded-shown': fade.shown
+	});
 }
 
 /**
@@ -1349,7 +1376,7 @@ function exposureOf(root, drawing) {
 		drawers: {
 			camera: new CameraDrawer(propRoots(root, 'camera')),
 			window: new WindowDrawer(propRoots(root, 'window')),
-			screen: new ScreenDrawer(propRoots(root, 'screen'), ownPages, partOf(root, 'sweep')),
+			screen: new ScreenDrawer(propRoots(root, 'screen'), ownPages, partOf(root, 'sweep'), partOf(root, 'faded-page')),
 			light: new LightDrawer(propRoot(root, 'light')),
 			callout: new CalloutDrawer(propRoot(root, 'callout')),
 			pins: new PinsDrawer(propRoot(root, 'pins')),
@@ -1371,10 +1398,10 @@ function exposureOf(root, drawing) {
 }
 
 /**
- * What lies over the page in an exposure's window — the callout, the pins, the objects standing in the window — laid
- * in a surface of its own after the window's, made from the stage's template, where the room lays it over the screen
- * and the page's picture: as the screen fades whole, what lies over it does not, and the room lays the picture under
- * the screen's own markup alone.
+ * What lies over the page in an exposure's window — the page the screen fades from, the callout, the pins, the objects
+ * standing in the window — laid in a surface of its own after the window's, made from the stage's template, where the
+ * room lays it over the screen and the page's picture: as the screen fades whole, what lies over it does not, and the
+ * room lays the picture under the screen's own markup alone.
  * @param {Staged} root
  */
 function overThePageLaidApart(root) {
@@ -1385,7 +1412,7 @@ function overThePageLaidApart(root) {
 	if (!(surface instanceof HTMLElement))
 		throw new Error("the stage's template of what lies over the page holds no element");
 	found(root.querySelector(WINDOWS_SURFACE), "window's surface").after(surface);
-	partOf(surface, 'camera').append(propRoot(root, 'callout'), propRoot(root, 'pins'));
+	partOf(surface, 'camera').append(partOf(root, 'faded-page'), propRoot(root, 'callout'), propRoot(root, 'pins'));
 	partOf(surface, 'view').append(sceneRoot(root, 'window'));
 }
 
