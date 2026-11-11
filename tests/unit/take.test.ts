@@ -17,7 +17,7 @@ import { on, to } from '../../src/moves/light.ts';
 import { click, hide, press, release, to as cursorTo } from '../../src/moves/cursor.ts';
 import { show } from '../../src/moves/ending.ts';
 import { act as actAtAMoment, speed, type as typeIntoThePage } from '../../src/moves/page.ts';
-import { shows as screenShows, sweep as sweepScreen } from '../../src/moves/screen.ts';
+import { scrolls as scrollsScreen, shows as screenShows, sweep as sweepScreen } from '../../src/moves/screen.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
 import { open, type, works } from '../../src/moves/terminal.ts';
 import { lean as leanTitle, show as showTitle, to as titleTo } from '../../src/moves/title.ts';
@@ -214,8 +214,14 @@ function takeOf(
 	});
 }
 
-/** A take of a film that shows a page of its own, the page the stage lays for it given. */
-function takeShowingOwnPage(footage: FootageOf, stage: Stage, filmed: PageOfBoxes, own: PageOfBoxes): Take {
+/** A take of a film that shows a page of its own, the page the stage lays for it given, blurred as named. */
+function takeShowingOwnPage(
+	footage: FootageOf,
+	stage: Stage,
+	filmed: PageOfBoxes,
+	own: PageOfBoxes,
+	motionBlur: MotionBlur | null = HALF_OF_FOUR
+): Take {
 	const ownPages = new Map([[pageKeyOf(OWN_PAGE.html), own]]);
 	return new Take({
 		opened: openedOn(filmed, stage, new PageTimeLogged(), ownPages),
@@ -223,7 +229,7 @@ function takeShowingOwnPage(footage: FootageOf, stage: Stage, filmed: PageOfBoxe
 		track: new TrackThatKeeps(),
 		format: SMALL,
 		opening: openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
-		motionBlur: HALF_OF_FOUR,
+		motionBlur,
 		framesPerSecond: RATE
 	});
 }
@@ -516,6 +522,23 @@ test("the screen shows a page of the film's own from a moment of a play: the exp
 		'own',
 		'own',
 		'own'
+	]);
+});
+
+test("a page of the film's own runs from the moment its move begins: from a cut's frame on, and in a play from where its share stands on the film's time, a frame before its first frame", async () => {
+	const cutStage = new FramedStageThatKeeps();
+	const playStage = new FramedStageThatKeeps();
+	const shown = cut(screenShows(OWN_PAGE));
+	// At 300 pixels a second from the cut, 10 a frame; gathering to it over a play of three frames, a tenth of a second
+	// from a frame before the first, 1500 × t² pixels down t seconds on
+	const fromACut = [shown, cut(scrollsScreen(OWN_PAGE, { pace: 300 })), hold({ seconds: 3 / 30 })];
+	const inAPlay = [shown, play({ seconds: 3 / 30, moves: [scrollsScreen(OWN_PAGE, { pace: 300 })], ease: linear })];
+	const ownPage = new PageOfBoxes(PAGE);
+	await takeShowingOwnPage(new FootageOf([0, 1, 2]), cutStage, new PageOfBoxes(PAGE), ownPage, UNBLURRED).run(fromACut);
+	await takeShowingOwnPage(new FootageOf([0, 1, 2]), playStage, new PageOfBoxes(PAGE), ownPage, UNBLURRED).run(inAPlay);
+	expect([cutStage, playStage].map((stage) => stage.drawn.map((scene) => scene.screen.shows.scrolled))).toEqual([
+		[0, 10, 20],
+		[expect.closeTo(1.667), expect.closeTo(6.667), expect.closeTo(15)]
 	]);
 });
 

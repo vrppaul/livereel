@@ -13,7 +13,8 @@
  * needs from it — how far each word of a title, a caption or a callout and each line of code has come, the terminal's
  * spinner, how far keys rise clear of a caption, where a note's line meets the block it names on the frame, the hole a
  * piece of the page leaves and the lines it draws to its source, the part of the screen under a lens, where a band of
- * light sweeping the screen stands across what the window shows of it, where an object in a group, or on the page as
+ * light sweeping the screen stands across what the window shows of it, how far down a page of the film's own on the
+ * screen the film has run it, where an object in a group, or on the page as
  * the camera frames it then, is drawn and in what order, how soft the eye's focus draws the window and each object in
  * the world, where the world's lights stand in the room and how the eye that sees each thing sees the room — so the
  * stage draws numbers and words and decides nothing, and draws no group of its own. What the camera shows is worked out
@@ -74,11 +75,13 @@ import type { DrawnHole } from './props/piece.ts';
 import { type DrawnPins, type Pins, drawnPins } from './props/pins.ts';
 import {
 	type DrawnScreen,
+	type MomentsBetween,
 	SCREEN_UP,
 	type Screen,
 	THE_FILMED_PAGE,
 	drawnScreen,
 	pictureSweptBy,
+	runShift,
 	sweepShift
 } from './props/screen.ts';
 import { figureShiftOver } from './props/way.ts';
@@ -309,19 +312,23 @@ export interface SceneSeen extends SceneAt {
 	readonly camera: Camera;
 }
 
-/** Two moments of a frame's time a move on the frame is measured between: the scenes then, and their cameras. */
+/**
+ * Two moments of a frame's time a move on the frame is measured between: the scenes then, their cameras, and the
+ * moments themselves.
+ */
 interface Between {
 	readonly start: Scene;
 	readonly end: Scene;
 	readonly seen: SeenBetween;
+	readonly moments: MomentsBetween;
 	readonly format: Format;
 }
 
 // How far anything moves on the frame where nothing does
 const NOTHING_MOVES = 0;
 // How far what each prop draws moves on the frame between two moments, the compiler holding every prop to one: the
-// screen as the camera shows it, the window's edge, the band of light sweeping the screen, the light's box and the
-// cursor's tip on the screen, a note's words beside the window and its line's end at its block, and the figure of a
+// screen as the camera shows it, the window's edge, the band of light sweeping the screen and a page of the film's own
+// running on it, the light's box and the cursor's tip on the screen, a note's words beside the window and its line's end at its block, and the figure of a
 // caption and of keys as a way of livereel's shifts, grows and cuts it over the whole frame, each where it stands at
 // both, a prop that comes or goes between them moving nowhere. The screen comes up in its place, and a
 // callout and pins lie on the screen, moving only as far as it carries them, which the camera's measures. The look's
@@ -332,8 +339,11 @@ const FRAME_SHIFT_OF: { readonly [Name in PropName]: (between: Between) => numbe
 	world: () => NOTHING_MOVES,
 	camera: ({ seen, format }) => frameShift(seen.start, seen.end, format),
 	window: ({ seen }) => viewShift(seen),
-	screen: ({ start, end, seen, format }) =>
-		shiftOfBoth(start.screen.sweep, end.screen.sweep, (from, to) => sweepShift(seen, format, from, to)),
+	screen: ({ start, end, seen, moments, format }) =>
+		Math.max(
+			shiftOfBoth(start.screen.sweep, end.screen.sweep, (from, to) => sweepShift(seen, format, from, to)),
+			runShift(seen.end, format, start.screen, end.screen, moments)
+		),
 	light: ({ start, end, seen }) =>
 		shiftOfBoth(start.light, end.light, (from, to) => screenBoxShift(seen, from.box, to.box)),
 	callout: () => NOTHING_MOVES,
@@ -367,6 +377,7 @@ function shiftBetween(start: SceneSeen, end: SceneSeen, format: Format): number 
 		start: start.scene,
 		end: end.scene,
 		seen: { start: start.camera, end: end.camera, frame: format.frame },
+		moments: { start: start.moment, end: end.moment },
 		format
 	};
 	return Math.max(
@@ -454,7 +465,7 @@ export function drawn(
 		world: drawnWorld(scene.world, format.frame),
 		camera: shown,
 		window,
-		screen: drawnScreen(scene.screen, camera, format, window.facingTheEye, scene.look.paneCorner),
+		screen: drawnScreen(scene.screen, camera, format, window.facingTheEye, scene.look.paneCorner, moment),
 		light: scene.light,
 		callout: scene.callout === null ? null : drawnCallout(scene.callout, moment),
 		pins: scene.pins === null ? null : drawnPins(scene.pins, camera, format.frame),

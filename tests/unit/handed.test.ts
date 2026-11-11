@@ -227,6 +227,15 @@ test('every function a film calls refuses what it is handed in no form it takes,
 			`screen.behind's upright is "up": it is how the page stands upright: once the window is turned over round its width, "over", or round its upright, "round"`
 		)
 	);
+	expect(() => screen.scrolls('filmed' as never, { pace: 480 })).toThrow(
+		new FilmError(
+			`screen.scrolls's page is "filmed": it is a page of the film's own, { html }; the filmed page scrolls by page.scrollBy or page.scrollTo`
+		)
+	);
+	expect(() => screen.scrolls({ html: '<p>Runs</p>' }, { pace: 'fast' as never })).toThrow(
+		new FilmError(`screen.scrolls's pace is "fast": it is a number`)
+	);
+	expect(() => screen.scrolls({ html: '<p>Runs</p>' }, {} as never)).toThrow(FilmError);
 	expect(() => screen.sweep({ from: 'middle' as never })).toThrow(
 		new FilmError(`screen.sweep's from is "middle": it is a side of the frame: "left", "right", "top" or "bottom"`)
 	);

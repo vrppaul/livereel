@@ -28,10 +28,12 @@ export interface ScrollCourse {
 export type PageShown = 'framed' | 'pictured';
 
 /**
- * A page as a move measures it: where its blocks stand and the ground behind them, as a page of the film's own is
- * measured, which nothing scrolls or types into.
+ * A page as a move measures it: where its blocks stand and the ground behind them, and how far down it scrolls at most,
+ * in its pixels, as a page of the film's own is measured, which nothing types into and the film alone runs.
  */
-export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind'>;
+export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind'> & {
+	readonly scrollLength: () => Promise<number>;
+};
 
 /** The filmed page as a move reads it and types into it. */
 export interface FilmedPage {

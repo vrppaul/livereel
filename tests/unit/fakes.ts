@@ -20,14 +20,23 @@ export const SMALL: Format = { frame: { width: 400, height: 400 }, screen: { wid
 // at rest, which the numbers the tests work out by hand take
 export const FOCAL_LENGTH = 2000;
 
+// How far a test's page scrolls where it names none: far past anything a test runs it
+const A_LONG_PAGE = 100000;
+
 export class PageOfBoxes implements FilmedPage {
 	readonly boxes: ReadonlyMap<string, Box>;
 	readonly grounds: ReadonlyMap<string, string>;
+	readonly length: number;
 	readonly typed: string[] = [];
 
-	constructor(boxes: ReadonlyMap<string, Box>, grounds: ReadonlyMap<string, string> = new Map()) {
+	constructor(boxes: ReadonlyMap<string, Box>, grounds: ReadonlyMap<string, string> = new Map(), length = A_LONG_PAGE) {
 		this.boxes = boxes;
 		this.grounds = grounds;
+		this.length = length;
+	}
+
+	scrollLength(): Promise<number> {
+		return Promise.resolve(this.length);
 	}
 
 	/** A test names only the blocks its page has. */

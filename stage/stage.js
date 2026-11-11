@@ -93,6 +93,10 @@ const SHOWN = 'data-shown';
 const SHOWS_OWN = 'data-shows-own';
 // How the page the screen shows is mounted where it is the window's back's, which the stylesheet turns it by
 const BACK_UPRIGHT = 'data-back-upright';
+// How a page of the film's own is scrolled to where the film has run it: at once, as `instant` wins over a smooth
+// scroll the page's own styles ask for
+/** @type {ScrollBehavior} */
+const AT_ONCE = 'instant';
 // The exposure the stage's markup lays out, whose pages of the film's own are named, so moves measure blocks on them,
 // and the name a page of the film's own in any other takes: none
 const FIRST_EXPOSURE = 0;
@@ -285,7 +289,8 @@ function shadeDrawn(root, shade) {
 }
 
 /**
- * The screen: how far it has come up, what it shows, the filmed page or one of the film's own laid on it, and the
+ * The screen: how far it has come up, what it shows, the filmed page or one of the film's own laid on it, scrolled as
+ * far as the film has run it, and the
  * picture light sweeps away over it, a band or a disc; where the eye sees a page on the window's back, how it is
  * mounted, so the stylesheet turns it to stand upright from behind and leaves unseen what lies on the front. Its
  * numbers and names are drawn on each of its roots, one in each surface the window's view stands in; its pages and
@@ -312,7 +317,26 @@ class ScreenDrawer {
 			named(root, BACK_UPRIGHT, scene.screen.backUpright);
 		}
 		for (const [key, frame] of this.ownPages) frame.toggleAttribute(SHOWN, key === shownKey);
+		ownPageRun(this.ownPages, scene.screen.shows);
 		sweepDrawn(this.sweep, this.swept, scene.screen.sweep);
+	}
+}
+
+/**
+ * The page of the film's own the screen shows scrolled as far down as the film has run it, at once, whatever scroll
+ * the page's own styles ask for: the film runs it, never the page; nothing where it shows the filmed page.
+ * @param {ReadonlyMap<string, HTMLIFrameElement>} ownPages @param {DrawnScene['screen']['shows']} shows
+ */
+function ownPageRun(ownPages, shows) {
+	switch (shows.kind) {
+		case 'filmed':
+			return;
+		case 'own': {
+			const frame = ownPages.get(shows.key);
+			if (frame === undefined) throw new Error(`the stage laid no page of the film's own by the key ${shows.key}`);
+			const laid = documentOf(frame);
+			(laid.scrollingElement ?? laid.documentElement).scrollTo({ top: shows.scrolled, behavior: AT_ONCE });
+		}
 	}
 }
 

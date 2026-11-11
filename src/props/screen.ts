@@ -16,8 +16,14 @@
  * sees the window's back, the screen shows it in place of what it shows in front, framed by the camera as the front
  * is, mounted so it stands upright once the window is turned over round its width or round its upright; with none,
  * the eye sees the screen through the window's back, mirrored, as before.
+ *
+ * A page of the film's own runs down its scroll as the film runs it, never of itself: its run is the page's, held by
+ * its key, so it goes on as the page is shown on the other face. Where it stands is worked out from the moment, as
+ * what else changes with time of itself is, so each exposure of a frame draws it where it stood then and a fast run
+ * smears; a run changing pace over a move's share keeps its curve as paces at even points of it.
  */
 import { type Camera, type SeenBetween, screenInTheView, screenPointShift, viewOnTheScreen } from '../domain/camera.ts';
+import type { Stretch } from '../domain/curves.ts';
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import type { Format } from '../domain/format.ts';
 import {
@@ -40,6 +46,27 @@ import { between } from '../domain/toward.ts';
 
 /** What the screen shows: the filmed page, or a page of the film's own by its key. */
 export type Shows = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string };
+
+/**
+ * What the screen shows as the stage draws it: the filmed page, or a page of the film's own by its key, and how far
+ * down its scroll it stands, in its pixels.
+ */
+type DrawnShows =
+	{ readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string; readonly scrolled: number };
+
+/**
+ * How a page of the film's own runs down its scroll, which it moves by only as the film runs it: where it stood, in its
+ * pixels, at the moment of the film it set off at; how fast it runs from then, its pixels a second, at even points of
+ * the stretch its pace changes over, the last held after it, one alone where its pace changed at once; how long that
+ * stretch is; and how far it scrolls at most, measured as its move began. Between two points its pace changes evenly.
+ */
+export interface Scroll {
+	readonly top: number;
+	readonly since: number;
+	readonly paces: readonly number[];
+	readonly seconds: number;
+	readonly length: number;
+}
 
 /**
  * How a page on the window's back is mounted: upright once the window is turned over round its width, or round its
@@ -104,14 +131,21 @@ type BandSweep = BandShape & SweepOfAnyShape;
 type DiscSweep = DiscShape & SweepOfAnyShape;
 
 /**
- * How far the screen has come up, as a film may open on the ground alone, what it shows, the sweep over it, if any, and
- * what the window's back shows.
+ * How far the screen has come up, as a film may open on the ground alone, what it shows, the sweep over it, if any,
+ * what the window's back shows, and how each page of the film's own the film has run runs, by its key.
  */
 export interface Screen {
 	readonly shown: Fraction;
 	readonly shows: Shows;
 	readonly sweep: Sweep | null;
 	readonly back: Back;
+	readonly scrolls: ReadonlyMap<string, Scroll>;
+}
+
+/** Two moments of a frame's time, the earlier first. */
+export interface MomentsBetween {
+	readonly start: number;
+	readonly end: number;
 }
 
 /** A band's line across the window, in the screen's pixels: from its start, the end nearer the top, to its end. */
@@ -145,7 +179,7 @@ type DrawnSweepShape =
  */
 export interface DrawnScreen {
 	readonly shown: Fraction;
-	readonly shows: Shows;
+	readonly shows: DrawnShows;
 	readonly sweep: DrawnSweep | null;
 	readonly backUpright: Upright | null;
 	readonly filmed: FilmedLaid | null;
@@ -172,8 +206,40 @@ export const A_SLANT: Kind<number> = new Plain(
 
 export const THE_FILMED_PAGE: Shows = { kind: 'filmed' };
 export const SEEN_THROUGH: Back = { kind: 'seen through' };
-export const SCREEN_UP: Screen = { shown: WHOLE, shows: THE_FILMED_PAGE, sweep: null, back: SEEN_THROUGH };
-export const SCREEN_DOWN: Screen = { shown: NONE, shows: THE_FILMED_PAGE, sweep: null, back: SEEN_THROUGH };
+// No page of the film's own run, each standing at its top
+const NONE_RUN: ReadonlyMap<string, Scroll> = new Map();
+export const SCREEN_UP: Screen = {
+	shown: WHOLE,
+	shows: THE_FILMED_PAGE,
+	sweep: null,
+	back: SEEN_THROUGH,
+	scrolls: NONE_RUN
+};
+export const SCREEN_DOWN: Screen = { ...SCREEN_UP, shown: NONE };
+
+// A page's top, where one the film never ran stands, and the pace it stands still at
+const AT_ITS_TOP = 0;
+const STANDING = 0;
+// How many even stretches a pace changing over a move's share is held at, its curve read at the end of each: the pace
+// changes evenly between two, so the page's run strays from the curve's by at most its change in pace times its seconds
+// times a curve's sharpest bend over 8 × 64², 0.06 pixels for 480 pixels a second gathered over 0.8 s on easeInOutSine
+const STRETCHES_OF_A_CHANGE = 64;
+// A change of pace has a point more than its stretches, each stretch between a point and the next, the first point
+// where it sets off; and a stretch of no seconds, as a pace changed at once has
+const ONE_POINT = 1;
+const FIRST_POINT = 0;
+const NO_SECONDS = 0;
+// A page the film never ran: at its top since the film began, standing still, scrolling nowhere
+const THE_FILMS_START = 0;
+const STANDING_AT_ITS_TOP: Scroll = {
+	top: AT_ITS_TOP,
+	since: THE_FILMS_START,
+	paces: [STANDING],
+	seconds: NO_SECONDS,
+	length: AT_ITS_TOP
+};
+// How far a page runs on the frame where none of the screen's runs
+const NOTHING_RUN = 0;
 
 // Which way a band coming from each side of the window goes across it, before it is slanted
 const CROSSING_FROM: { readonly [Side in FrameSide]: Point } = {
@@ -195,26 +261,146 @@ const RING_WAYS: readonly Point[] = [
 const NO_PICTURE: readonly number[] = [];
 
 /**
- * The screen as the stage draws it, the camera that shows it framing the page in its view, in a format, the eye seeing
- * the window's front or its back, a pane's corners as round as the look has them in pixels of a frame 1080 high: the
- * page on the back, with no sweep, where the eye sees the back and the back has a page of its own; the screen as it
- * stands where not.
+ * The screen as the stage draws it at a moment of the film, the camera that shows it framing the page in its view, in
+ * a format, the eye seeing the window's front or its back, a pane's corners as round as the look has them in pixels of
+ * a frame 1080 high: the page on the back, with no sweep, where the eye sees the back and the back has a page of its
+ * own; the screen as it stands where not; a page of the film's own as far down as the film has run it then.
  */
 export function drawnScreen(
 	screen: Screen,
 	camera: Camera,
 	format: Format,
 	facingTheEye: boolean,
-	paneCorner: number
+	paneCorner: number,
+	moment: number
 ): DrawnScreen {
 	const backPage = backPageSeen(screen.back, facingTheEye);
 	if (backPage !== null) {
-		const shows: Shows = { kind: 'own', key: backPage.key };
+		const shows = ownPageDrawn(screen, backPage.key, moment);
 		return { shown: screen.shown, shows, sweep: null, backUpright: backPage.upright, filmed: null };
 	}
 	const sweep = screen.sweep === null ? null : drawnSweep(screen.sweep, partSwept(camera, format), camera.pose.zoom);
 	const filmed = screen.shows.kind === 'filmed' ? filmedLaid(camera, format, paneCorner) : null;
-	return { shown: screen.shown, shows: screen.shows, sweep, backUpright: null, filmed };
+	return { shown: screen.shown, shows: frontDrawn(screen, moment), sweep, backUpright: null, filmed };
+}
+
+/** What the screen shows in front as the stage draws it at a moment: a page of the film's own as far as it has run. */
+function frontDrawn(screen: Screen, moment: number): DrawnShows {
+	switch (screen.shows.kind) {
+		case 'filmed':
+			return screen.shows;
+		case 'own':
+			return ownPageDrawn(screen, screen.shows.key, moment);
+	}
+}
+
+/** A page of the film's own, by its key, as the stage draws it at a moment: as far down as the film has run it. */
+function ownPageDrawn(screen: Screen, key: string, moment: number): DrawnShows {
+	return { kind: 'own', key, scrolled: scrolledAt(runOf(screen, key), moment) };
+}
+
+/** How a page of the film's own runs on the screen, by its key: standing at its top where the film never ran it. */
+export function runOf(screen: Screen, key: string): Scroll {
+	return screen.scrolls.get(key) ?? STANDING_AT_ITS_TOP;
+}
+
+/**
+ * A page set off running at a pace, as its move begins over a stretch of the film's time: from where it stands then,
+ * its pace changing from what it is there to the one named along the stretch, on its curve, at once where the stretch
+ * takes no time; as far as it scrolls at most, measured as it sets off.
+ */
+export function setOff(run: Scroll, stretch: Stretch, pace: number, length: number): Scroll {
+	const from = paceAt(run, stretch.moment);
+	const paces =
+		stretch.seconds === NO_SECONDS
+			? [pace]
+			: [...Array(STRETCHES_OF_A_CHANGE + ONE_POINT).keys()].map((point) =>
+					between(from, pace, stretch.ease(point / STRETCHES_OF_A_CHANGE))
+				);
+	return { top: scrolledAt(run, stretch.moment), since: stretch.moment, paces, seconds: stretch.seconds, length };
+}
+
+/**
+ * How far down its scroll a running page stands at a moment, in its pixels: where it set off and as far as it has run
+ * since, held between its top and its end; where it set off, at a moment before.
+ */
+function scrolledAt(run: Scroll, moment: number): number {
+	const ranTo = run.top + ranOver(run, moment - run.since);
+	return Math.min(Math.max(ranTo, AT_ITS_TOP), run.length);
+}
+
+/**
+ * How fast a running page runs at a moment, its pixels a second: as its pace stands along the stretch it changes over,
+ * its last after it, its first before; none where it is held at an end it runs into.
+ */
+function paceAt(run: Scroll, moment: number): number {
+	const pace = paceAlong(run, moment - run.since);
+	const standsAt = scrolledAt(run, moment);
+	const heldAtAnEnd = (standsAt >= run.length && pace > STANDING) || (standsAt <= AT_ITS_TOP && pace < STANDING);
+	return heldAtAnEnd ? STANDING : pace;
+}
+
+/** A running page's pace so many seconds after it set off: its last after its stretch, its first before. */
+function paceAlong(run: Scroll, elapsed: number): number {
+	const stretches = run.paces.length - ONE_POINT;
+	if (elapsed >= run.seconds) return paceOf(run.paces, stretches);
+	if (elapsed <= NO_SECONDS) return paceOf(run.paces, FIRST_POINT);
+	const along = (elapsed / run.seconds) * stretches;
+	const point = Math.floor(along);
+	return between(paceOf(run.paces, point), paceOf(run.paces, point + ONE_POINT), along - point);
+}
+
+/**
+ * How far a running page has run so many seconds after it set off: none before; along its stretch, its pace changing
+ * evenly between each two points of it; on at its last pace after.
+ */
+function ranOver(run: Scroll, elapsed: number): number {
+	const stretches = run.paces.length - ONE_POINT;
+	const stretchSeconds = run.seconds / stretches;
+	const within = Math.min(Math.max(elapsed, NO_SECONDS), run.seconds);
+	let ran = NOTHING_RUN;
+	for (let point = FIRST_POINT; point < stretches; point += 1) {
+		const into = Math.min(Math.max(within - point * stretchSeconds, NO_SECONDS), stretchSeconds);
+		const from = paceOf(run.paces, point);
+		const change = paceOf(run.paces, point + ONE_POINT) - from;
+		// Its pace changing evenly over the stretch, it runs its pace there over the time, and half the change over it
+		ran += from * into + (change * into * into) / (HALVES * stretchSeconds);
+	}
+	const after = Math.max(elapsed - run.seconds, NO_SECONDS);
+	return ran + paceOf(run.paces, stretches) * after;
+}
+
+/** A page's pace at a point of the stretch it changes over, which its paces hold. */
+function paceOf(paces: readonly number[], point: number): number {
+	const pace = paces[point];
+	if (pace === undefined) throw new Error(`a running page has no pace at point ${point} of its change`);
+	return pace;
+}
+
+/**
+ * How far the pages of the film's own on the screen's faces run on the frame between two moments, as a camera shows
+ * the screen, apart from how far the camera carries it, which it counts itself: the farthest of them, by the point at
+ * the middle of what the camera shows of the screen, carried up the screen as far as its page ran. Both faces' pages
+ * are measured, as which face the eye sees is the window's to say: a page run unseen costs exposures, never a frame.
+ */
+export function runShift(camera: Camera, format: Format, start: Screen, end: Screen, moments: MomentsBetween): number {
+	const shown = viewOnTheScreen(camera, format.frame);
+	const middle: Point = { left: middleX(shown), top: middleY(shown) };
+	const ran = pagesOnItsFaces(end).map(
+		(key) => scrolledAt(runOf(end, key), moments.end) - scrolledAt(runOf(start, key), moments.start)
+	);
+	return Math.max(NOTHING_RUN, ...ran.map((pixels) => ranOnTheFrame(camera, format, middle, pixels)));
+}
+
+/** How far a point of the screen moves on the frame as a camera shows it, carried up the screen so many pixels. */
+function ranOnTheFrame(camera: Camera, format: Format, point: Point, pixels: number): number {
+	const still: SeenBetween = { start: camera, end: camera, frame: format.frame };
+	return screenPointShift(still, point, { left: point.left, top: point.top - pixels });
+}
+
+/** The keys of the pages of the film's own the screen's faces show: in front, and on the window's back. */
+function pagesOnItsFaces(screen: Screen): readonly string[] {
+	return [screen.shows, screen.back].flatMap((face) => (face.kind === 'own' ? [face.key] : []));
 }
 
 /**

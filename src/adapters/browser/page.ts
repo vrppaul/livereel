@@ -1,6 +1,6 @@
 /**
  * The filmed page as moves read it and type into it: where its blocks stand, the ground behind them, its scroll, its
- * keyboard.
+ * keyboard; and a page of the film's own as moves measure it, how far down it scrolls among the rest.
  *
  * The functions handed to the page run there, each alone: none may call another of this module. The block a scroll
  * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a
@@ -81,6 +81,11 @@ export class PlaywrightPage implements FilmedPage {
 		}
 	}
 
+	/** How far down the page's own scroll goes at most, in its pixels: none where the page fits its frame. */
+	scrollLength(): Promise<number> {
+		return this.frame.evaluate(scrollLengthOfThePage);
+	}
+
 	type(text: string): Promise<void> {
 		return this.keyboard.type(text);
 	}
@@ -143,6 +148,12 @@ function groundOf(block: Element, asked: GroundAsked): Channels | null {
 		if (alpha === asked.whole) return { red, green, blue, alpha };
 	}
 	return null;
+}
+
+/** How far the page's own scroll goes at most: the page's height past its frame's. */
+function scrollLengthOfThePage(): number {
+	const scroller = document.scrollingElement ?? document.documentElement;
+	return scroller.scrollHeight - scroller.clientHeight;
 }
 
 function scrollTopSet(block: Element, top: number): void {

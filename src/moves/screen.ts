@@ -14,6 +14,11 @@
  * holds one, so an act done at the same moment of the play, which is done first, is under the picture already; an act
  * at a moment after it comes in behind the light. A sweep sets a value of its own, so it shares a step with a move that
  * raises or lowers the screen, or changes what it shows.
+ *
+ * A page of the film's own runs down its scroll at a pace the film sets: the move reads where the page stands and how
+ * fast it runs as it begins, and sets its run on the film's time, its pace changing over the move's share on its curve;
+ * where the page stands at any moment is worked out from that run (`src/props/screen.ts`). Its runs are a value of the
+ * screen's own, so it shares a step with what the screen shows.
  */
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
@@ -21,6 +26,7 @@ import { A_FRAME_SIDE, type FrameSide, boxOf, middleX, middleY } from '../domain
 import {
 	AN_HTML_PAGE,
 	A_COLOUR,
+	A_NUMBER,
 	A_SIZE,
 	type Form,
 	type Kind,
@@ -61,15 +67,27 @@ import {
 	type Shows,
 	type SweepShape,
 	THE_FILMED_PAGE,
-	type Upright
+	type Upright,
+	runOf,
+	setOff
 } from '../props/screen.ts';
 import { withProp } from '../scene.ts';
 
+/** A page of the film's own as a film names it: its HTML whole. */
+interface OwnPageNamed {
+	readonly html: string;
+}
+
 /** What a film names the screen to show: the filmed page, `'filmed'`, or a page of its own, its HTML whole. */
-export type ScreenPage = typeof FILMED | { readonly html: string };
+export type ScreenPage = typeof FILMED | OwnPageNamed;
 
 /** What a film names the window's back to show: a page of its own, its HTML whole, or none, `'none'`. */
-export type BackPage = typeof NONE_ON_THE_BACK | { readonly html: string };
+export type BackPage = typeof NONE_ON_THE_BACK | OwnPageNamed;
+
+/** How fast a film runs a page of its own, its pixels a second, and over what share of the step, on what curve. */
+export interface ScrollsScript extends TimingScript {
+	readonly pace: number;
+}
 
 /** How a page on the window's back is mounted, `upright` as `AN_UPRIGHT` says, and the moment of a play it comes. */
 export interface BackScript extends MomentScript {
@@ -108,20 +126,34 @@ type ShapeNamed =
 // What a move of the screen that has nothing to move from says
 const UP_ALREADY = 'screen.rise raises a screen already up: lower it first, with cut(screen.lower())';
 const DOWN_ALREADY = 'screen.lower lowers a screen already down';
+// What a run of a page that cannot run says, and how far such a page scrolls: run without a word, it stood still in
+// every frame, as the first film to run a page found (2026-11-11)
+const SCROLLS_NOWHERE =
+	'screen.scrolls runs a page that scrolls nowhere: the screen holds all of it, or its own styles hide what runs past the screen, as overflow: hidden on its body does; give it more than the screen holds and let it scroll';
+const NO_LENGTH = 0;
+// A page of the film's own, as a film names it
+const OWN_PAGE_FORM: Form<OwnPageNamed> = { html: needed(AN_HTML_PAGE) };
+const OWN_PAGE_SAID = "a page of the film's own, { html }";
 // The filmed page, as a film names it
 const FILMED = 'filmed';
 const A_SCREEN_PAGE: Kind<ScreenPage> = new NameOrForm(
 	new Literal(FILMED),
-	new OfForm<{ readonly html: string }>({ html: needed(AN_HTML_PAGE) }, "a page of the film's own, { html }"),
-	`the filmed page, "filmed", or a page of the film's own, { html }`
+	new OfForm<OwnPageNamed>(OWN_PAGE_FORM, OWN_PAGE_SAID),
+	`the filmed page, "filmed", or ${OWN_PAGE_SAID}`
 );
 // No page on the window's back, as a film names it, the screen seen through it
 const NONE_ON_THE_BACK = 'none';
 const A_BACK_PAGE: Kind<BackPage> = new NameOrForm(
 	new Literal(NONE_ON_THE_BACK),
-	new OfForm<{ readonly html: string }>({ html: needed(AN_HTML_PAGE) }, "a page of the film's own, { html }"),
-	`a page of the film's own, { html }, or none, "none"`
+	new OfForm<OwnPageNamed>(OWN_PAGE_FORM, OWN_PAGE_SAID),
+	`${OWN_PAGE_SAID}, or none, "none"`
 );
+// A page the film runs: one of its own alone, as the filmed page scrolls by the page's own moves
+const A_PAGE_RUN: Kind<OwnPageNamed> = new OfForm<OwnPageNamed>(
+	OWN_PAGE_FORM,
+	`${OWN_PAGE_SAID}; the filmed page scrolls by page.scrollBy or page.scrollTo`
+);
+const SCROLLS_FORM: Form<ScrollsScript> = { pace: needed(A_NUMBER), ...TIMING_FORM };
 const BACK_FORM: Form<BackScript> = { upright: needed(AN_UPRIGHT), ...MOMENT_FORM };
 // The screen's values a move that raises or lowers it sets, one that changes what it shows, a sweep, and one that
 // changes what the window's back shows
@@ -129,6 +161,7 @@ const HOW_FAR_UP = ['shown'] as const satisfies readonly (keyof Screen)[];
 const SHOWING = ['shows'] as const satisfies readonly (keyof Screen)[];
 const SWEEPING = ['sweep'] as const satisfies readonly (keyof Screen)[];
 const BACKING = ['back'] as const satisfies readonly (keyof Screen)[];
+const RUNNING = ['scrolls'] as const satisfies readonly (keyof Screen)[];
 const SWEEP_FORM: Form<SweepScript> = {
 	round: A_TARGET,
 	from: A_FRAME_SIDE,
@@ -199,7 +232,7 @@ export function shows(page: ScreenPage, script: MomentScript = {}): Move {
  * `within: { start }` names.
  */
 export function behind(page: typeof NONE_ON_THE_BACK, script?: MomentScript): Move;
-export function behind(page: { readonly html: string }, script: BackScript): Move;
+export function behind(page: OwnPageNamed, script: BackScript): Move;
 export function behind(page: BackPage, script: MomentScript | BackScript = {}): Move {
 	assertKind(page, A_BACK_PAGE, "screen.behind's page");
 	if (page === NONE_ON_THE_BACK) {
@@ -215,6 +248,38 @@ export function behind(page: BackPage, script: MomentScript | BackScript = {}): 
 		ownPages: [own],
 		begin: () => backing({ kind: 'own', key: own.key, upright: script.upright })
 	};
+}
+
+/**
+ * A page of the film's own, `{ html }`, running down its scroll at a pace, its pixels a second, until another move of
+ * its run: from where it stands as the move begins, its pace changing to the one named over the move's share on its
+ * curve in a play, at once in a cut; a pace of none stops it, and a pace below none runs it back up. It runs whichever
+ * face of the window shows it, or none, and holds at its top and its end.
+ */
+export function scrolls(page: OwnPageNamed, script: ScrollsScript): Move {
+	assertKind(page, A_PAGE_RUN, "screen.scrolls's page");
+	assertWritten(script, SCROLLS_FORM, 'screen.scrolls');
+	const own = ownPageOf(page.html);
+	return {
+		part: 'screen',
+		valueNames: RUNNING,
+		timing: timingOf(script),
+		ownPages: [own],
+		begin: (beginning) => running(beginning, own.key, script.pace)
+	};
+}
+
+/**
+ * A page of the film's own, by its key, set off running at a pace as its move begins, as far as the stage measures it
+ * scrolls, refused where that is nowhere; what it sets is a run on the film's time, so it is the same at any progress
+ * of the move.
+ */
+async function running(beginning: Beginning, key: string, pace: number): Promise<Change> {
+	const length = await beginning.ownPage(key).scrollLength();
+	if (length === NO_LENGTH) throw new FilmError(SCROLLS_NOWHERE);
+	const run = setOff(runOf(beginning.scene.screen, key), beginning.stretch, pace, length);
+	return (scene) =>
+		withProp(scene, 'screen', { ...scene.screen, scrolls: new Map([...scene.screen.scrolls, [key, run]]) });
 }
 
 /** The window's back showing a page, or the screen seen through it, whatever else the screen stands as. */

@@ -3,7 +3,15 @@ import { codeOf } from '../../src/props/code.ts';
 import { LIVEREELS_LOOK } from '../../src/props/look.ts';
 import { LIVEREELS_WORLD } from '../../src/props/world.ts';
 import { drawnTerminal, openTerminal } from '../../src/props/terminal.ts';
-import { SCREEN_UP, type Screen, type Shows, type Sweep, drawnScreen, drawnSweep } from '../../src/props/screen.ts';
+import {
+	SCREEN_UP,
+	type Screen,
+	type Scroll,
+	type Shows,
+	type Sweep,
+	drawnScreen,
+	drawnSweep
+} from '../../src/props/screen.ts';
 import { cameraOf, openingScene } from '../../src/scene.ts';
 import { alongItsWay } from '../../src/props/way.ts';
 import { NONE, WHOLE, fractionOf } from '../../src/domain/fraction.ts';
@@ -17,6 +25,8 @@ const SEES_THE_FRONT = true;
 const SEES_THE_BACK = false;
 // How round a pane's corners are, in pixels of a frame 1080 high
 const PANE_CORNER = 24;
+// The moment a screen is drawn at where no page of it runs
+const AT_THE_START = 0;
 
 /** How much of a word stands typed, and whether the caret follows it. */
 interface StandingTyped {
@@ -282,7 +292,8 @@ test("a band sweeping the screen crosses what the window shows of the screen, no
 		cameraOf(openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH), SMALL),
 		SMALL,
 		SEES_THE_FRONT,
-		PANE_CORNER
+		PANE_CORNER,
+		AT_THE_START
 	);
 	expect(drawn.sweep!.shape.band).toEqual({
 		start: { left: expect.closeTo(-60.56), top: expect.closeTo(-44.44) },
@@ -296,14 +307,33 @@ test("the screen shows the page on the window's back where the eye sees the wind
 	const backed: Screen = { ...SCREEN_UP, shows: front, back: { kind: 'own', key: 'behind', upright: 'over' } };
 	const bare: Screen = { ...SCREEN_UP, shows: front };
 	const drawn = [
-		drawnScreen(backed, camera, SMALL, SEES_THE_BACK, PANE_CORNER),
-		drawnScreen(backed, camera, SMALL, SEES_THE_FRONT, PANE_CORNER),
-		drawnScreen(bare, camera, SMALL, SEES_THE_BACK, PANE_CORNER)
+		drawnScreen(backed, camera, SMALL, SEES_THE_BACK, PANE_CORNER, AT_THE_START),
+		drawnScreen(backed, camera, SMALL, SEES_THE_FRONT, PANE_CORNER, AT_THE_START),
+		drawnScreen(bare, camera, SMALL, SEES_THE_BACK, PANE_CORNER, AT_THE_START)
 	];
 	expect(drawn.map((screen) => [screen.shows, screen.backUpright])).toEqual([
-		[{ kind: 'own', key: 'behind' }, 'over'],
-		[front, null],
-		[front, null]
+		[{ kind: 'own', key: 'behind', scrolled: 0 }, 'over'],
+		[{ ...front, scrolled: 0 }, null],
+		[{ ...front, scrolled: 0 }, null]
+	]);
+});
+
+test("a page of the film's own keeps its run whichever face of the window shows it", () => {
+	const camera = cameraOf(openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH), SMALL);
+	// One page in front and behind, run 40 pixels down by 0 s and on at 10 a second: 60 down at 2 s
+	const running: Scroll = { top: 40, since: 0, paces: [10], seconds: 0, length: 1000 };
+	const both: Screen = {
+		...SCREEN_UP,
+		shows: { kind: 'own', key: 'page' },
+		back: { kind: 'own', key: 'page', upright: 'over' },
+		scrolls: new Map([['page', running]])
+	};
+	expect([
+		drawnScreen(both, camera, SMALL, SEES_THE_FRONT, PANE_CORNER, 2).shows,
+		drawnScreen(both, camera, SMALL, SEES_THE_BACK, PANE_CORNER, 2).shows
+	]).toEqual([
+		{ kind: 'own', key: 'page', scrolled: 60 },
+		{ kind: 'own', key: 'page', scrolled: 60 }
 	]);
 });
 
@@ -315,10 +345,17 @@ test("the filmed page lies on the window's plane where the camera frames it, as 
 	const close: Camera = { ...camera, pose: { focusX: 150, focusY: 200, zoom: 2.7 } };
 	const backed: Screen = { ...SCREEN_UP, back: { kind: 'own', key: 'behind', upright: 'round' } };
 	const drawn = [
-		drawnScreen(SCREEN_UP, camera, SMALL, SEES_THE_FRONT, PANE_CORNER),
-		drawnScreen(SCREEN_UP, close, SMALL, SEES_THE_FRONT, PANE_CORNER),
-		drawnScreen(backed, close, SMALL, SEES_THE_BACK, PANE_CORNER),
-		drawnScreen({ ...SCREEN_UP, shows: { kind: 'own', key: 'front' } }, close, SMALL, SEES_THE_FRONT, PANE_CORNER)
+		drawnScreen(SCREEN_UP, camera, SMALL, SEES_THE_FRONT, PANE_CORNER, AT_THE_START),
+		drawnScreen(SCREEN_UP, close, SMALL, SEES_THE_FRONT, PANE_CORNER, AT_THE_START),
+		drawnScreen(backed, close, SMALL, SEES_THE_BACK, PANE_CORNER, AT_THE_START),
+		drawnScreen(
+			{ ...SCREEN_UP, shows: { kind: 'own', key: 'front' } },
+			close,
+			SMALL,
+			SEES_THE_FRONT,
+			PANE_CORNER,
+			AT_THE_START
+		)
 	];
 	expect(drawn.map((screen) => screen.filmed)).toEqual([
 		{

@@ -15,6 +15,16 @@ import { A_NUMBER, type Form, type Kind, Plain, aFunction, assertKind, assertWri
 /** A curve: the share of the way gone at a share of the time. */
 export type Ease = (progress: number) => number;
 
+/**
+ * A stretch of the film's time a move goes over: the moment it begins, how many seconds it lasts, none for a move done
+ * at once, as in a cut, and the curve the move goes along it on.
+ */
+export interface Stretch {
+	readonly moment: number;
+	readonly seconds: number;
+	readonly ease: Ease;
+}
+
 /** How fast a move sets off and arrives, each in times its mean speed: 1 is as fast as an even move goes. */
 export interface Speeds {
 	readonly settingOff: number;

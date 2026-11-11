@@ -25,13 +25,13 @@ import {
 	described,
 	isObjectOfValues
 } from '../domain/handed.ts';
-import { A_CURVE, type Ease } from '../domain/curves.ts';
+import { A_CURVE, type Ease, type Stretch } from '../domain/curves.ts';
 import type { CssNamed } from './theme.ts';
 import type { GroupName } from '../domain/placement.ts';
 import type { ObjectName } from '../props/object.ts';
 import { THE_FILMED_PAGE } from '../props/screen.ts';
 import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';
-import type { Action, FilmedPage, OwnPage, PageShown } from './page.ts';
+import type { Action, FilmedPage, MeasuredPage, OwnPage, PageShown } from './page.ts';
 import type { Cue } from './sound.ts';
 
 /** An object as the part a move changes, said by its name, apart from any prop or the page whatever its name. */
@@ -191,15 +191,20 @@ export const A_MOVE: Kind<Move> = new Plain(isMove, 'a move, as camera.onto or l
 export const A_MOVES: Kind<readonly Move[]> = new ListOf(A_MOVE, 'a list of moves');
 
 /**
- * What a move reads as its share begins: the scene, the page, the format, and how the stage shows the page; the take's
- * way to act on the page, for a move that acts as it begins; and its way to hold a picture of a part of the screen, for
- * a move that lifts what is drawn from one.
+ * What a move reads as its share begins: the scene, the page, the format, and how the stage shows the page; the
+ * stretch of the film's time its share takes, for a move that sets what runs on with time; the take's way to act on
+ * the page, for a move that acts as it begins; and its way to hold a picture of a part of the screen, for a move that
+ * lifts what is drawn from one.
  */
 export interface Beginning {
 	readonly scene: Scene;
 	readonly page: FilmedPage;
 	readonly format: Format;
 	readonly pageShown: PageShown;
+	/** The moment the share begins, how long it lasts, none in a cut, and the curve the move goes along it on. */
+	readonly stretch: Stretch;
+	/** A page of the film's own the stage laid, by its key, as a move measures it, whether or not the screen shows it. */
+	readonly ownPage: (key: string) => MeasuredPage;
 	/**
 	 * The page acted on as an `act` acts on it: the film's time standing while the page answers, the stage laid flat for
 	 * it where it shows the page live.

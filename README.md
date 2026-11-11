@@ -206,7 +206,7 @@ and the moves of each part of the scene:
 - `caption.show(text, { enter, edge, words })`, `caption.hide({ leave, edge })`; a caption and keys stand over the
   whole frame where they come up, over every object, the keys over the caption, one of each
 - `screen.rise()`, `screen.lower()`, `screen.shows(page, { within })`, `screen.behind(page, { upright, within })`,
-  `screen.sweep({ from, slant, round, width, crest })`
+  `screen.scrolls(page, { pace })`, `screen.sweep({ from, slant, round, width, crest })`
 - `terminal.open(title, { at, from, enter, edge, inside, group, zIndex })`, `terminal.type(strokes, { keyboard })`,
   `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })`, `terminal.to(place, { scale, depth })`,
   `terminal.lean({ tilt, turn, roll, over })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
@@ -598,7 +598,8 @@ shows the filmed page again. In a `cut` it swaps at once; in a `play`, at
 the moment `within: { start }` names, so a camera flying fast through the
 swap smears one into the other. The page stands as written: its scripts do
 not run, one that animates or transitions of itself is refused before the
-film is shot, as what moves in a film is the film's, and an address in it
+film is shot, as what moves in a film is the film's, and it moves only as
+the film runs it (`screen.scrolls`, below), and an address in it
 is read from the stage's own folder, so name an image or a font by a whole
 address or a `data:` URL. While the page of the film's own shows, a move
 finds blocks on it by their selectors, and the filmed page behind it is
@@ -614,7 +615,19 @@ the back: bring the camera to the whole screen before the window turns. What
 lies on the front, the light, the cursor, a callout, the pins and the
 objects in the window, stands unseen meanwhile, and in a room the page lies
 on the body's back. `screen.behind('none')` takes it off, and the screen is
-seen through the window's back, mirrored, as before. `screen.sweep()` in a `play` sweeps the picture the screen
+seen through the window's back, mirrored, as before. A page of the film's
+own moves only as the film runs it: `screen.scrolls({ html }, { pace: 480
+})` runs it down its scroll at 480 of its pixels a second until another
+move of its run, its pace changing from what it was to the new one over
+the move's share of a `play` on the move's curve, or at once in a `cut`;
+`pace: 0` stops it, a pace below none runs it back up, and it holds at its
+top and its end. The run is the page's, so the same page keeps it on
+either face of the window, or on none. Each exposure of a frame draws it
+where it stood then, so a fast run smears; the filmed page scrolls by
+`page.scrollBy` and `page.scrollTo`, and `screen.scrolls('filmed')` is
+refused. So is the run of a page that scrolls nowhere, one the screen
+holds all of or whose own styles hide what runs past the screen
+(`overflow: hidden` on its body). `screen.sweep()` in a `play` sweeps the picture the screen
 shows away by a band of light, the page as it stands showing behind it: an
 act on the page at a moment of the play, `page.act(action, { within })`, a
 theme turned dark, comes in behind the band. The band crosses what the

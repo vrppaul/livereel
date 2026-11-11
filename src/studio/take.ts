@@ -7,7 +7,10 @@
  * stand at its start, and one that begins as an act is done reads the page it left — then sets at its end every
  * change ended by the frame, and every other at its eased progress. One move at most drives a part, or a value of it,
  * at any point, so the order moves are written in matters nowhere but between two acts at one moment. A cut begins
- * its moves and sets each at its end, with no frame between; an act between steps is a cut of one. The page is acted
+ * its moves and sets each at its end, with no frame between; an act between steps is a cut of one. A move begins
+ * knowing the stretch of the film's time its share takes: a play's begins a frame before its first frame, which stands
+ * a frame's share along it, and a cut's moves take none, at the moment of the frame after them, as their sounds are
+ * heard. The page is acted
  * on one way: as a move that acts begins, by the way the take hands every move. A move begins on the page the screen
  * shows: where that is a page of the film's own, it measures blocks there, and its scroll and keys go to the filmed page
  * behind it. A sound a move makes is heard as the move is set at or past its point, on the frame being made.
@@ -57,7 +60,7 @@ import type { Format } from '../domain/format.ts';
 import type { Box } from '../domain/geometry.ts';
 import { type PartAsked, closestOf } from '../domain/picture.ts';
 import { type MotionBlur, alsoExposedBack } from '../domain/shutter.ts';
-import type { Ease } from '../domain/curves.ts';
+import { type Ease, type Stretch, linear } from '../domain/curves.ts';
 import { framesOf, momentOf } from '../domain/time.ts';
 import { between } from '../domain/toward.ts';
 import { type Change, type Move, type Share, movesThePage, soundsOf } from '../direction/move.ts';
@@ -87,6 +90,10 @@ const NOTHING_SMEARED = 0;
 // The end of a step, where every move of it stands at its end; and how many parts a frame asks where it asks none
 const AT_THEIR_ENDS = 1;
 const NONE = 0;
+// The frame before a play's first, whose moment the play begins at; and how long a cut's moves take, set at once at the
+// moment of the frame after them, on their own curve or a straight one, never gone along
+const A_FRAME = 1;
+const AT_ONCE = 0;
 
 /**
  * A move begun: the share of its step it runs over, its curve, what it sets and whether that is the page itself, and
@@ -98,6 +105,16 @@ interface Running {
 	readonly change: Change;
 	readonly movesThePage: boolean;
 	readonly unheard: readonly Cue[];
+}
+
+/**
+ * A play on the film's time: the moment it begins, a frame before its first frame, which stands a frame's share along
+ * it; how long its frames take; and the curve its moves take where they name none.
+ */
+interface PlayTime {
+	readonly start: number;
+	readonly seconds: number;
+	readonly ease: Ease;
 }
 
 /**
@@ -223,6 +240,11 @@ export class Take {
 
 	private async play(step: Play): Promise<void> {
 		const frames = framesOf(step.seconds, this.framesPerSecond);
+		const playTime: PlayTime = {
+			start: momentOf(this.shot - A_FRAME, this.framesPerSecond),
+			seconds: frames / this.framesPerSecond,
+			ease: step.ease
+		};
 		let waiting = [...step.moves];
 		let running: Running[] = [];
 		for (let index = 1; index <= frames; index += 1) {
@@ -235,7 +257,7 @@ export class Take {
 			const ranOver = [...running];
 			for (const move of due) {
 				running = await this.endedBy(running, move.timing.within.start);
-				const begun = await this.begun(move, step.ease);
+				const begun = await this.begun(move, playTime);
 				running.push(begun);
 				ranOver.push(begun);
 			}
@@ -251,7 +273,8 @@ export class Take {
 
 	private async cut(step: Cut): Promise<void> {
 		for (const move of step.moves) {
-			await this.set(await this.changeOf(move), 1, movesThePage(move));
+			const atOnce: Stretch = { moment: this.moment(), seconds: AT_ONCE, ease: move.timing.ease ?? linear };
+			await this.set(await this.changeOf(move, atOnce), 1, movesThePage(move));
 			this.heard(soundsOf(move), 1);
 		}
 	}
@@ -323,22 +346,33 @@ export class Take {
 		return cues.filter((due) => due.at > progress);
 	}
 
-	private async begun(move: Move, stepEase: Ease): Promise<Running> {
+	/** A move of a play begun, its share on the play's time and its own curve or the play's. */
+	private async begun(move: Move, playTime: PlayTime): Promise<Running> {
+		const within = move.timing.within;
+		const ease = move.timing.ease ?? playTime.ease;
+		const stretch: Stretch = {
+			moment: playTime.start + within.start * playTime.seconds,
+			seconds: (within.end - within.start) * playTime.seconds,
+			ease
+		};
 		return {
-			within: move.timing.within,
-			ease: move.timing.ease ?? stepEase,
-			change: await this.changeOf(move),
+			within,
+			ease,
+			change: await this.changeOf(move, stretch),
 			movesThePage: movesThePage(move),
 			unheard: soundsOf(move)
 		};
 	}
 
-	private changeOf(move: Move): Change | Promise<Change> {
+	/** A move begun as the scene stands, over a stretch of the film's time. */
+	private changeOf(move: Move, stretch: Stretch): Change | Promise<Change> {
 		return move.begin({
 			scene: this.scene,
 			page: this.pageShownIn(this.scene),
 			format: this.format,
 			pageShown: this.opened.stage.kind,
+			stretch,
+			ownPage: (key) => this.ownPageOf(key),
 			act: (action) => this.acted(action),
 			holdPicture: (part) => this.pictures.hold(part),
 			thingsBuilt: this.opened.thingsBuilt,

@@ -40,6 +40,7 @@ import {
 	behind as screenBehind,
 	lower,
 	rise,
+	scrolls as screenScrolls,
 	shows as screenShows,
 	sweep as screenSweep
 } from '../../src/moves/screen.ts';
@@ -213,6 +214,10 @@ const FULL_HD: Format = { frame: { width: 1920, height: 1080 }, screen: { width:
 const OPENING_IN_FULL_HD = openingScene(FULL_HD, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH);
 // A page of the film's own
 const OWN_PAGE = { html: '<p id="card">Ours</p>' };
+// How much longer than the screen that page is, as far as it scrolls
+const OWN_PAGE_LENGTH = 1000;
+// A page the screen holds all of: it scrolls nowhere
+const NO_LONGER_THAN_THE_SCREEN = 0;
 const WHOLE_AT_ONE = { focusX: 960, focusY: 540, zoom: 1 };
 const MIDDLE_AT_TWO = { focusX: 960, focusY: 540, zoom: 2 };
 // A box of that screen reaching past the left edge of what the camera at 2 shows, which is 480 to 1440 across, and
@@ -293,6 +298,23 @@ async function setAt(move: Move, scene: Scene, progress: number): Promise<Scene>
 async function setIn(move: Move, scene: Scene, progress: number, format: Format): Promise<Scene> {
 	const change = await move.begin(beginningIn(scene, format));
 	return change(scene, progress);
+}
+
+/**
+ * A beginning in full HD at a moment, its move's share so many seconds long on a straight curve, the film's own page
+ * it names 1000 pixels longer than the screen.
+ */
+function scrollingFrom(scene: Scene, moment: number, seconds: number): Beginning {
+	return {
+		...beginningIn(scene, FULL_HD),
+		stretch: { moment, seconds, ease: linear },
+		ownPage: () => new PageOfBoxes(new Map(), new Map(), OWN_PAGE_LENGTH)
+	};
+}
+
+/** How far down the page of the film's own a scene's screen shows stands at a moment, as the stage draws it. */
+function scrolledIn(scene: Scene, moment: number): number {
+	return drawn(scene, cameraOf(scene, FULL_HD), moment, FULL_HD, NONE_SHARPER).screen.shows.scrolled;
 }
 
 /** A scene at the film's first moment, where what a test measures is worked out from none. */
@@ -1239,6 +1261,44 @@ test("the window's back shows a page of the film's own, laid by the stage as the
 		bare.screen.back
 	]).toEqual([1, { kind: 'own', key: expect.any(String), upright: 'round' }, { kind: 'seen through' }]);
 	expect(() => play({ seconds: 1, moves: [screenShows(OWN_PAGE), screenBehind('none')] })).not.toThrow();
+});
+
+test("a page of the film's own runs from its move's moment, gathering its pace over its share, running on at it, and holding at its end", async () => {
+	// A page 1000 pixels longer than the screen, from standing to 100 pixels a second over two seconds from 1 s: 25
+	// pixels down at 2 s, 100 at 3 s, 300 at 5 s, at its end from 10 s on
+	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const change = await screenScrolls(OWN_PAGE, { pace: 100 }).begin(scrollingFrom(shown, 1, 2));
+	const running = await change(shown, 1);
+	expect([1, 2, 3, 5, 20].map((moment) => scrolledIn(running, moment))).toEqual([0, 25, 100, 300, 1000]);
+});
+
+test("a page of the film's own takes its pace from where its run stands and as fast as it runs there, and stops at a pace of none", async () => {
+	// Running at 100 pixels a second from 0 s, then slowing to none over two seconds from 3 s: 300 pixels down then, 375
+	// at 4 s, and 400 from 5 s on
+	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const running = await (await screenScrolls(OWN_PAGE, { pace: 100 }).begin(scrollingFrom(shown, 0, 0)))(shown, 1);
+	const stopped = await (await screenScrolls(OWN_PAGE, { pace: 0 }).begin(scrollingFrom(running, 3, 2)))(running, 1);
+	expect([3, 4, 9].map((moment) => scrolledIn(stopped, moment))).toEqual([300, 375, 400]);
+});
+
+test("a page of the film's own that scrolls nowhere is refused as its run begins, in the words of the move", async () => {
+	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const fitting: Beginning = {
+		...scrollingFrom(shown, 0, 0),
+		ownPage: () => new PageOfBoxes(new Map(), new Map(), NO_LONGER_THAN_THE_SCREEN)
+	};
+	await expect(screenScrolls(OWN_PAGE, { pace: 100 }).begin(fitting)).rejects.toThrow(
+		new FilmError(
+			'screen.scrolls runs a page that scrolls nowhere: the screen holds all of it, or its own styles hide what runs past the screen, as overflow: hidden on its body does; give it more than the screen holds and let it scroll'
+		)
+	);
+});
+
+test("a page of the film's own that runs moves on the frame as far as it runs while the shutter is open, as the camera shows the screen", async () => {
+	// Face-on, the whole screen at a zoom of 1 on a frame as large: 100 pixels a second, 10 over a tenth of a second
+	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const running = await (await screenScrolls(OWN_PAGE, { pace: 100 }).begin(scrollingFrom(shown, 0, 0)))(shown, 1);
+	expect(frameShiftBetween({ scene: running, moment: 3 }, { scene: running, moment: 3.1 }, FULL_HD)).toBeCloseTo(10);
 });
 
 test('the screen coming up or going down keeps showing what it shows, and shares a step with a move that changes it and one that sweeps it', async () => {
