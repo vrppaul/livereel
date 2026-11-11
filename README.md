@@ -922,7 +922,12 @@ its curve and in its time, the part softens as far as the button has risen,
 and `sharpSoftens: 0` makes it sharp again. A share, not pixels, so the part
 is never softer than the page round it and follows the blur as it moves;
 with no part kept, the whole page goes soft round a lift by `blur` alone.
-The blur, like the page, is seen larger by an eye brought near. It is
+The blur, like the page, is seen larger by an eye brought near. A room
+blurs the page's picture in linear light, as its eye's lens blurs the world,
+so light words on a dark page spread their light where the flat stage, which
+blurs in the screen's colours as the browser does, spreads them dark; the
+holes and the picture a sweep holds, markup, blur in the screen's colours on
+both stages, and so is the fade laid. It is
 drawn from the page's picture, so a
 page framed live is refused, as one the screen shows a page of the film's
 own in place of; the picture the sweep holds and the holes over the part

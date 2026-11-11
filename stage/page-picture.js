@@ -10,10 +10,15 @@
  * as a room, as it lies over the faded screen whole, not faded with it.
  *
  * The picture is uploaded once each time the stage shows another, not each exposure as the surfaces are drawn. Where
- * the window shades the page with a blur, the picture is blurred as the stylesheet blurs it, a Gaussian whose deviation
- * is the shade's blur, nothing past the picture's edge, so the screen's ground shows there: drawn from the smaller copy
- * of the picture whose pixels stand no more than a share of the blur apart, across and then down, and kept while the
- * picture and the blur stand. Over a part of the screen the blur leaves sharp the picture is laid unblurred, or blurred
+ * the window shades the page with a blur, the picture is blurred by a Gaussian whose deviation is the shade's blur,
+ * nothing past the picture's edge, so the screen's ground shows there: drawn from the smaller copy of the picture whose
+ * pixels stand no more than a share of the blur apart, across and then down, and kept while the picture and the blur
+ * stand. It is blurred in linear light, as the eye's lens blurs the world (`stage/lens.js`) and the reference promo's
+ * lens blurred its page, from a copy of the picture read as light, its smaller copies made in light too, uploaded only
+ * where a blur reads it. Blurred in the screen's colours, as the stylesheet blurs it, a page's light words spread dark
+ * over a dark page: the soft page of the promo's beats 7–8 read a light's deviation of 2.7 levels of 255 so, 4.9 in
+ * light, the promo's own 9.2 (a still at the draft's second 2.5, 2026-11-11). Over a part of the screen the blur leaves
+ * sharp the picture is laid unblurred, or blurred
  * apart by as much as the part softens, softening into the page's past the part's edge as the flat stage's mask has it
  * (`.sharp-part` in `stage.css`): never a sharp picture faded into a blurred one, which reads as two pictures at once.
  *
@@ -26,7 +31,16 @@
  * plane showed through a mouth cleared so, and were hidden where it was not). GLSL sizes a list by a count it is
  * compiled with, so the surface is compiled anew, by three, as the number of pits changes.
  */
-import { Color, LinearMipmapLinearFilter, Texture, Vector2, Vector4, WebGLRenderTarget } from 'three';
+import {
+	Color,
+	HalfFloatType,
+	LinearMipmapLinearFilter,
+	SRGBColorSpace,
+	Texture,
+	Vector2,
+	Vector4,
+	WebGLRenderTarget
+} from 'three';
 import { SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOfTheBox, valuesSet } from './passes.js';
 /** @import { ShaderMaterial, WebGLRenderer } from 'three' */
 /** @import { DrawnScene } from '../src/scene.ts' */
@@ -108,10 +122,14 @@ const NO_PART_KEPT_SHARP = {
 	sharpBox: new Vector4(),
 	sharpEdge: NO_EDGE
 };
-// The picture blurred across alone, and then down too, in the screen's colours as the picture is, the second with
-// smaller copies of itself
-const BLURRED_ACROSS_LAYER = { depthBuffer: false };
+// The picture blurred across alone, as light, in half floats, which keep a dark page's light as finely as the screen's
+// colours do; and then down too, in the screen's colours as the page's surface lays the picture, with smaller copies
+// of itself
+const BLURRED_ACROSS_LAYER = { depthBuffer: false, type: HalfFloatType };
 const BLURRED_LAYER = { depthBuffer: false, generateMipmaps: true, minFilter: LinearMipmapLinearFilter };
+// What a pass of the blur writes: the light it gathers, as it is, or written in the screen's colours
+const WRITTEN_AS_LIGHT = false;
+const WRITTEN_IN_THE_SCREENS_COLOURS = true;
 // The name of the count of pits sunk into the page the page's surface is compiled with, as its shader reads it
 const PITS = 'PITS';
 
@@ -196,15 +214,18 @@ void main() {
 }`;
 
 /**
- * The picture blurred along one way: each pixel of the layer drawn a Gaussian of the pixels of a copy of what it reads,
- * so many either side along the way, the copy's pixels a step apart, none past its edge.
+ * The picture blurred along one way, as light: each pixel of the layer drawn a Gaussian of the pixels of a copy of what
+ * it reads, so many either side along the way, the copy's pixels a step apart, none past its edge; written as light or
+ * in the screen's colours.
  */
 const BLURRED_ALONG_FRAGMENT = `
 uniform sampler2D drawn;
 uniform float level;
 uniform vec2 pixelStep;
 uniform float spread;
+uniform bool intoTheScreensColours;
 varying vec2 shareOfTheFrame;
+${SRGB_CURVES}
 void main() {
 	vec4 gathered = vec4(0.0);
 	float weights = 0.0;
@@ -215,7 +236,8 @@ void main() {
 		gathered += weight * (onIt ? textureLod(drawn, at, level) : vec4(0.0));
 		weights += weight;
 	}
-	gl_FragColor = gathered / weights;
+	vec4 blurred = gathered / weights;
+	gl_FragColor = intoTheScreensColours ? inTheScreensColours(blurred) : blurred;
 }`;
 
 /** The values a page's surface's material starts with, its own: nothing laid yet. */
@@ -257,11 +279,11 @@ export function compiledForThePits(material, laid) {
 }
 
 /**
- * A picture blurred by a deviation in its own pixels, as the stylesheet blurs it, a Gaussian with nothing past the
- * picture's edge: drawn from the picture's smaller copy whose pixels stand no farther apart than the most a pixel
- * spreads, across into one layer, then down into another as large; and kept while the picture's upload and the blur
- * stand. The page's picture is blurred by one as the window's shade blurs the page, and by another as far as the part
- * the blur leaves sharp softens, each kept apart, as both may stand at once.
+ * A picture blurred by a deviation in its own pixels, a Gaussian in linear light with nothing past the picture's edge:
+ * drawn from the smaller copy of the picture read as light whose pixels stand no farther apart than the most a pixel
+ * spreads, across into one layer as light, then down into another as large, in the screen's colours; and kept while the
+ * picture's upload and the blur stand. The page's picture is blurred by one as the window's shade blurs the page, and
+ * by another as far as the part the blur leaves sharp softens, each kept apart, as both may stand at once.
  */
 class BlurredPicture {
 	/** @param {WebGLRenderer} renderer */
@@ -278,7 +300,8 @@ class BlurredPicture {
 				drawn: { value: null },
 				level: { value: FULL_SIZE },
 				pixelStep: { value: new Vector2() },
-				spread: { value: A_PIXEL }
+				spread: { value: A_PIXEL },
+				intoTheScreensColours: { value: WRITTEN_AS_LIGHT }
 			},
 			BLURRED_ALONG_FRAGMENT,
 			WRITTEN
@@ -287,24 +310,25 @@ class BlurredPicture {
 
 	/**
 	 * The picture blurred by a deviation in its own pixels, drawn anew where it was uploaded anew or the blur changed.
-	 * @param {Texture} picture @param {HTMLImageElement} image the picture's image, as large as it was taken
-	 * @param {number} spread @returns {Texture}
+	 * @param {Texture} light the picture read as light @param {HTMLImageElement} image the picture's image, as large as
+	 * it was taken @param {number} spread @returns {Texture}
 	 */
-	of(picture, image, spread) {
-		if (this.uploadBlurred !== picture.version || this.spreadBlurred !== spread) {
-			this.blurredAnew(picture, image, spread);
-			this.uploadBlurred = picture.version;
+	of(light, image, spread) {
+		if (this.uploadBlurred !== light.version || this.spreadBlurred !== spread) {
+			this.blurredAnew(light, image, spread);
+			this.uploadBlurred = light.version;
 			this.spreadBlurred = spread;
 		}
 		return this.blurred.texture;
 	}
 
 	/**
-	 * The picture blurred anew by a deviation in its own pixels: from its smaller copy whose pixels stand no farther
-	 * apart than the most a pixel spreads, across into one layer, then down into another as large.
-	 * @param {Texture} picture @param {HTMLImageElement} image @param {number} spread
+	 * The picture blurred anew by a deviation in its own pixels: from its smaller copy read as light whose pixels stand
+	 * no farther apart than the most a pixel spreads, across into one layer as light, then down into another as large,
+	 * in the screen's colours.
+	 * @param {Texture} light @param {HTMLImageElement} image @param {number} spread
 	 */
-	blurredAnew(picture, image, spread) {
+	blurredAnew(light, image, spread) {
 		const level = Math.max(FULL_SIZE, Math.ceil(Math.log2(spread / MOST_SPREAD_A_PIXEL)));
 		const shrunk = HALVING ** level;
 		const width = Math.ceil(image.naturalWidth / shrunk);
@@ -312,17 +336,25 @@ class BlurredPicture {
 		const spreadThere = spread / shrunk;
 		this.across.setSize(width, height);
 		this.blurred.setSize(width, height);
-		this.blurredAlong(picture, level, ACROSS.clone().divideScalar(width), spreadThere, this.across);
-		this.blurredAlong(this.across.texture, FULL_SIZE, DOWN.clone().divideScalar(height), spreadThere, this.blurred);
+		this.blurredAlong(light, level, ACROSS.clone().divideScalar(width), spreadThere, this.across, WRITTEN_AS_LIGHT);
+		this.blurredAlong(
+			this.across.texture,
+			FULL_SIZE,
+			DOWN.clone().divideScalar(height),
+			spreadThere,
+			this.blurred,
+			WRITTEN_IN_THE_SCREENS_COLOURS
+		);
 	}
 
 	/**
-	 * A texture's copy at a level blurred along a way, a step a pixel, into a layer.
+	 * A texture's copy at a level blurred along a way, a step a pixel, into a layer, written as light or in the screen's
+	 * colours.
 	 * @param {Texture} drawn @param {number} level @param {Vector2} pixelStep @param {number} spread
-	 * @param {WebGLRenderTarget} into
+	 * @param {WebGLRenderTarget} into @param {boolean} intoTheScreensColours
 	 */
-	blurredAlong(drawn, level, pixelStep, spread, into) {
-		valuesSet(this.blurring.material, { drawn, level, pixelStep, spread });
+	blurredAlong(drawn, level, pixelStep, spread, into, intoTheScreensColours) {
+		valuesSet(this.blurring.material, { drawn, level, pixelStep, spread, intoTheScreensColours });
 		drawnInto(this.renderer, this.blurring, into);
 	}
 }
@@ -340,6 +372,12 @@ export class PagePicture {
 		this.texture.flipY = false;
 		this.texture.minFilter = LinearMipmapLinearFilter;
 		this.texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+		// The picture read as light, which the card turns out of the screen's colours as it samples it and makes its
+		// smaller copies of, for the blur alone: three uploads it the first time a blur reads it
+		this.light = new Texture();
+		this.light.flipY = false;
+		this.light.colorSpace = SRGBColorSpace;
+		this.light.minFilter = LinearMipmapLinearFilter;
 		/** The address of the picture uploaded, none before the first @type {string | null} */
 		this.uploaded = null;
 		this.ground = screenGround();
@@ -420,15 +458,17 @@ export class PagePicture {
 	seenBlurred(blurred, blur, zoom) {
 		const spread = ((blur / zoom) * this.shownBy.naturalWidth) / this.screen.width;
 		if (spread <= UNBLURRED) return this.texture;
-		return blurred.of(this.texture, this.shownBy, spread);
+		return blurred.of(this.light, this.shownBy, spread);
 	}
 
-	/** The picture the stage shows uploaded, where it is another than the one uploaded last. */
+	/** The picture the stage shows uploaded, as it is and as light, where it is another than the one uploaded last. */
 	uploadedAnew() {
 		const address = this.shownBy.src;
 		if (this.uploaded === address) return;
-		this.texture.image = this.shownBy;
-		this.texture.needsUpdate = true;
+		for (const texture of [this.texture, this.light]) {
+			texture.image = this.shownBy;
+			texture.needsUpdate = true;
+		}
 		this.uploaded = address;
 	}
 }
