@@ -55,7 +55,7 @@ import {
 	Vector4,
 	WebGLRenderTarget
 } from 'three';
-import { SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOfTheBox, valuesSet } from './passes.js';
+import { PAST_A_ROUNDED_BOX, SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOfTheBox, valuesSet } from './passes.js';
 /** @import { ShaderMaterial, WebGLRenderer } from 'three' */
 /** @import { DrawnScene } from '../src/scene.ts' */
 /** @import { Box, Size } from '../src/domain/geometry.ts' */
@@ -180,20 +180,33 @@ vec4 behindAt() {
 }`;
 
 /**
- * How much of the part of the screen the shade's blur leaves sharp shows at a point of the screen, in its pixels: whole
- * over the part, none from as far past each side of it as its edge, across and down apart and one in the other, as
- * the flat stage's mask has it (`--sharp-across`, `--sharp-down` in `tokens.css`); the part's box and edge in the
- * screen's pixels. The page's surface lays the part's own picture so far over the page's (`SharpPartLaid`); where the
- * room blurs the whole window through the lens, the body's spreads keep the part so far from the blur (`body.js`).
+ * How much of the part of the screen the shade's blur leaves sharp shows at a point of the screen, in shares of it
+ * across and down: whole over the part, none from as far past each side of it as its edge, across and down apart and
+ * one in the other, as the flat stage's mask has it (`--sharp-across`, `--sharp-down` in `tokens.css`); the part's box
+ * and edge in the screen's pixels, and the screen's size (`partKeptSharpValues`). The page's surface lays the part's
+ * own picture so far over the page's (`SharpPartLaid`); where the room blurs the whole window through the lens, the
+ * body's spreads keep the part so far from the blur (`body.js`).
  */
 export const THE_PART_KEPT_SHARP = `
 uniform vec4 sharpBox;
 uniform float sharpEdge;
-float sharpAt(vec2 onTheScreen) {
+uniform vec2 screenSize;
+float sharpAt(vec2 shareOfTheScreen) {
+	vec2 onTheScreen = shareOfTheScreen * screenSize;
 	vec2 past = max(max(sharpBox.xy - onTheScreen, onTheScreen - sharpBox.xy - sharpBox.zw), 0.0);
 	vec2 kept = clamp(1.0 - past / sharpEdge, 0.0, 1.0);
 	return kept.x * kept.y;
 }`;
+
+/**
+ * The values `THE_PART_KEPT_SHARP` reads of the part of the screen the shade's blur leaves sharp: its box and its
+ * edge in the screen's pixels, the edge as narrow as the camera's zoom frames the screen larger, as the blur is
+ * (`seenBlurred`), and the screen's size.
+ * @param {NonNullable<DrawnScene['window']['sharp']>} sharp @param {number} zoom @param {Vector2} screenSize
+ */
+export function partKeptSharpValues(sharp, zoom, screenSize) {
+	return { sharpBox: valuesOfTheBox(sharp.box), sharpEdge: sharp.edge / zoom, screenSize };
+}
 
 /**
  * The page's surface, all in the screen's colours, premultiplied, read back into linear light: the screen's ground and
@@ -221,7 +234,6 @@ uniform float faded;
 uniform vec4 ground;
 uniform bool keepsAPartSharp;
 uniform sampler2D sharpPicture;
-uniform vec2 screenSize;
 #if ${PITS} > 0
 uniform vec4 mouths[${PITS}];
 uniform float mouthCorners[${PITS}];
@@ -230,11 +242,12 @@ uniform float mouthsOpen[${PITS}];
 varying vec2 shareOfTheSurface;
 ${SRGB_CURVES}
 ${WHAT_STANDS_BEHIND}
+${PAST_A_ROUNDED_BOX}
+// How far a point stands past the edge of a box, by its left, top, width and height, its corners as round as named or
+// as half its shorter side, as CSS rounds a box no further
 float pastTheEdge(vec2 point, vec4 box, float corner) {
 	vec2 halfSize = box.zw * 0.5;
-	float rounding = min(corner, min(halfSize.x, halfSize.y));
-	vec2 fromTheCorner = abs(point - box.xy - halfSize) - halfSize + rounding;
-	return length(max(fromTheCorner, 0.0)) + min(max(fromTheCorner.x, fromTheCorner.y), 0.0) - rounding;
+	return pastARoundedBox(point - box.xy - halfSize, halfSize, min(corner, min(halfSize.x, halfSize.y)));
 }
 // How much of a pixel stands inside an edge it stands so far past, the edge smoothed over a pixel of the frame
 float insideTheEdge(float past) {
@@ -261,7 +274,7 @@ void main() {
 		vec2 shareOfTheScreen = (point - screenBox.xy) / screenBox.zw;
 		vec4 page = texture2D(picture, shareOfTheScreen);
 		if (keepsAPartSharp) {
-			page = mix(page, texture2D(sharpPicture, shareOfTheScreen), sharpAt(shareOfTheScreen * screenSize));
+			page = mix(page, texture2D(sharpPicture, shareOfTheScreen), sharpAt(shareOfTheScreen));
 		}
 		onThePane = insideTheEdge(past);
 		under = onThePane * max(shown - screen.a, 0.0) * (page + (1.0 - page.a) * ground);
@@ -433,7 +446,7 @@ export class PagePicture {
 	 */
 	constructor(renderer, shownBy, screen) {
 		this.shownBy = shownBy;
-		this.screen = screen;
+		this.screenSize = new Vector2(screen.width, screen.height);
 		this.texture = new Texture();
 		this.texture.flipY = false;
 		this.texture.minFilter = LinearMipmapLinearFilter;
@@ -510,9 +523,7 @@ export class PagePicture {
 		return {
 			keepsAPartSharp: true,
 			sharpPicture: this.seenBlurred(this.partBlurred, sharp.blur ?? UNBLURRED, zoom),
-			screenSize: new Vector2(this.screen.width, this.screen.height),
-			sharpBox: valuesOfTheBox(sharp.box),
-			sharpEdge: sharp.edge / zoom
+			...partKeptSharpValues(sharp, zoom, this.screenSize)
 		};
 	}
 
@@ -523,7 +534,7 @@ export class PagePicture {
 	 * @param {BlurredPicture} blurred @param {number} blur @param {number} zoom @returns {Texture}
 	 */
 	seenBlurred(blurred, blur, zoom) {
-		const spread = ((blur / zoom) * this.shownBy.naturalWidth) / this.screen.width;
+		const spread = ((blur / zoom) * this.shownBy.naturalWidth) / this.screenSize.width;
 		if (spread <= UNBLURRED) return this.texture;
 		return blurred.of(this.light, this.shownBy, spread);
 	}

@@ -32,8 +32,18 @@
  */
 import * as THREE from 'three';
 import { matrixOf } from './matrices.js';
-import { THE_PART_KEPT_SHARP, WHAT_STANDS_BEHIND } from './page-picture.js';
-import { PREMULTIPLIED, SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOfTheBox, valuesSet } from './passes.js';
+import { THE_PART_KEPT_SHARP, WHAT_STANDS_BEHIND, partKeptSharpValues } from './page-picture.js';
+import {
+	NOTHING_DRAWN,
+	PAST_A_ROUNDED_BOX,
+	PREMULTIPLIED,
+	SRGB_CURVES,
+	WRITTEN,
+	drawnInto,
+	passOver,
+	valuesOfTheBox,
+	valuesSet
+} from './passes.js';
 /** @import { BodyShade, DrawnBody, DrawnWindow } from '../src/props/window.ts' */
 /** @import { DrawnScene } from '../src/scene.ts' */
 /** @import { Box, Size } from '../src/domain/geometry.ts' */
@@ -173,8 +183,6 @@ const SPREADS_LAYER = {
 const A_PIXEL = 1;
 // A value of the spreads' pass before the spreads are first drawn, which sets every one
 const SET_AS_DRAWN = 0;
-// The depth a layer keeps where nothing was drawn, the farthest it holds
-const NOTHING_DRAWN = 1;
 // How far off a face of the slab a point read back off the depth still lies on it, in the frame's pixels: past the
 // steps the depth a layer keeps reads a point by, two thirds of a pixel three frame heights from the eye (24 bits from
 // a pixel before the eye to a hundred eye distances, `depthRangeOf` in `matrices.js`), and the offsets by depth the
@@ -201,16 +209,12 @@ uniform float spreadOnTheFrame;
 uniform bool keepsAPartSharp;
 uniform vec2 pageMiddle;
 uniform vec4 screenBox;
-uniform vec2 screenSize;
 uniform float partSoftens;
 varying vec2 shareOfTheFrame;
 const float NOTHING_DRAWN = float(${NOTHING_DRAWN});
 const float ON_A_FACE = float(${ON_A_FACE});
 ${THE_PART_KEPT_SHARP}
-float pastTheOutline(vec2 point, vec3 outline) {
-	vec2 fromTheCorner = abs(point) - outline.xy + outline.z;
-	return length(max(fromTheCorner, 0.0)) + min(max(fromTheCorner.x, fromTheCorner.y), 0.0) - outline.z;
-}
+${PAST_A_ROUNDED_BOX}
 void main() {
 	float stored = texture2D(depth, shareOfTheFrame).x;
 	if (stored >= NOTHING_DRAWN) {
@@ -220,8 +224,8 @@ void main() {
 	vec4 seen = fieldToTheEye * vec4(vec3(shareOfTheFrame, stored) * 2.0 - 1.0, 1.0);
 	vec3 inTheEyesSpace = seen.xyz / seen.w;
 	vec3 onTheSlab = (eyeToTheSlab * vec4(inTheEyesSpace, 1.0)).xyz;
-	bool withinTheSlab = pastTheOutline(onTheSlab.xy, slabOutline) <= ON_A_FACE && onTheSlab.z <= ON_A_FACE
-		&& onTheSlab.z >= -thickness - ON_A_FACE;
+	bool withinTheSlab = pastARoundedBox(onTheSlab.xy, slabOutline.xy, slabOutline.z) <= ON_A_FACE
+		&& onTheSlab.z <= ON_A_FACE && onTheSlab.z >= -thickness - ON_A_FACE;
 	if (!withinTheSlab) {
 		gl_FragColor = vec4(0.0);
 		return;
@@ -229,7 +233,7 @@ void main() {
 	float share = 1.0;
 	if (keepsAPartSharp) {
 		vec2 onThePlane = pageMiddle + vec2(onTheSlab.x, -onTheSlab.y);
-		share = mix(1.0, partSoftens, sharpAt((onThePlane - screenBox.xy) / screenBox.zw * screenSize));
+		share = mix(1.0, partSoftens, sharpAt((onThePlane - screenBox.xy) / screenBox.zw));
 	}
 	float spread = seenOnTheFrame ? spreadOnTheFrame : spreadAPixelAway / -inTheEyesSpace.z;
 	gl_FragColor = vec4(share * spread, 0.0, 0.0, 0.0);
@@ -357,7 +361,7 @@ export class WindowBlurred {
 				keepsAPartSharp: { value: false },
 				pageMiddle: { value: new THREE.Vector2() },
 				screenBox: { value: new THREE.Vector4() },
-				screenSize: { value: this.screenSize },
+				screenSize: { value: new THREE.Vector2() },
 				sharpBox: { value: new THREE.Vector4() },
 				sharpEdge: { value: SET_AS_DRAWN },
 				partSoftens: { value: SET_AS_DRAWN }
@@ -398,7 +402,9 @@ export class WindowBlurred {
 				window.reach.left + window.reach.width / HALVES,
 				window.reach.top + window.reach.height / HALVES
 			),
-			...(filmed === null || sharp === null ? {} : sharpPartValues(filmed.box, sharp, scene.camera.pose.zoom))
+			...(filmed === null || sharp === null
+				? {}
+				: keptSharpOfTheSpreads(filmed.box, sharp, scene.camera.pose.zoom, this.screenSize))
 		});
 		drawnInto(renderer, this.pass, this.spreads);
 		return this.spreads.texture;
@@ -407,16 +413,15 @@ export class WindowBlurred {
 
 /**
  * The part of the screen the shade's blur leaves sharp, as the window's spreads keep it: the screen's box on the
- * window's plane, the part's box and edge in the screen's pixels, the edge as the camera's zoom frames it, and the
- * share of the page's blur the part softens by.
+ * window's plane, the share of the page's blur the part softens by, and the part as the page's surface keeps it too.
  * @param {Box} screen @param {NonNullable<DrawnWindow['sharp']>} sharp @param {number} zoom
+ * @param {THREE.Vector2} screenSize
  */
-function sharpPartValues(screen, sharp, zoom) {
+function keptSharpOfTheSpreads(screen, sharp, zoom, screenSize) {
 	return {
 		screenBox: valuesOfTheBox(screen),
-		sharpBox: valuesOfTheBox(sharp.box),
-		sharpEdge: sharp.edge / zoom,
-		partSoftens: sharp.softens
+		partSoftens: sharp.softens,
+		...partKeptSharpValues(sharp, zoom, screenSize)
 	};
 }
 

@@ -50,7 +50,7 @@ import {
 	Vector4
 } from 'three';
 import { matrixOf, placedBy } from './matrices.js';
-import { PREMULTIPLIED, valuesSet } from './passes.js';
+import { PAST_A_ROUNDED_BOX, PREMULTIPLIED, valuesSet } from './passes.js';
 import { WORLD_PARTS } from './see-through.js';
 /** @import { HSL, Object3D, Side } from 'three' */
 /** @import { DrawnScene } from '../src/scene.ts' */
@@ -172,7 +172,7 @@ void main() {
 }`;
 // The shadow: the piece's outline, its corners as round, as dark as its strength has it within it, soft for as far
 // each way as it blurs, in the look's shadow colour, premultiplied. How far a point stands outside a box rounded at
-// each corner is Inigo Quilez's distance to a rounded box, the corner's radius picked by the quarter the point is in
+// each corner is how far it stands outside one rounded at every corner as its own quarter's is
 const SHADOW_FRAGMENT = `
 uniform vec2 halfSize;
 uniform vec4 corners;
@@ -180,13 +180,13 @@ uniform float blur;
 uniform float darkness;
 uniform vec3 colour;
 varying vec2 fromTheMiddle;
+${PAST_A_ROUNDED_BOX}
 float outsideTheOutline(vec2 point) {
 	vec2 side = corners.xy;
 	if (point.x < 0.0) side = corners.zw;
 	float radius = side.x;
 	if (point.y < 0.0) radius = side.y;
-	vec2 past = abs(point) - halfSize + radius;
-	return min(max(past.x, past.y), 0.0) + length(max(past, 0.0)) - radius;
+	return pastARoundedBox(point, halfSize, radius);
 }
 void main() {
 	float shade = darkness * (1.0 - smoothstep(-blur, blur, outsideTheOutline(fromTheMiddle)));

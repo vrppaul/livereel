@@ -2,10 +2,11 @@
 /**
  * What the room's passes over a whole layer share (`stage/room.js`, `stage/lens.js`, `stage/see-through.js`): a square
  * over all a layer holds and the one camera it is drawn by, how a pass lays what it draws over what stands there,
- * sRGB's curve in GLSL, and a material's values set; and the blend
- * premultiplied light is laid by, a pass's, the page's surface's and the window's glass's (`stage/body.js`). The room
- * holds light in two ways: linear, as three adds it up, in half floats past white, and in the screen's colours, as the
- * browser draws a page; light passes between the two by one rule each way, written here once.
+ * sRGB's curve and the distance past a rounded box in GLSL, the depth a layer keeps where nothing was drawn, and a
+ * material's values set; and the blend premultiplied light is laid by, a pass's, the page's surface's and the window's
+ * glass's (`stage/body.js`). The room holds light in two ways: linear, as three adds it up, in half floats past white,
+ * and in the screen's colours, as the browser draws a page; light passes between the two by one rule each way, written
+ * here once.
  */
 import {
 	AlwaysDepth,
@@ -120,6 +121,22 @@ vec4 inTheScreensColours(vec4 drawn) {
 vec4 inLinearLight(vec4 screens) {
 	return screens.a > 0.0 ? vec4(decoded(screens.rgb / screens.a) * screens.a, screens.a) : vec4(0.0);
 }`;
+
+/**
+ * How far a point stands outside a box with round corners, all as round, both about the box's middle: Inigo Quilez's
+ * distance to a rounded box, below none inside it. The page's surface cuts the screen and the pits' mouths by it, the
+ * window's spreads find the slab by it, and a piece's shadow fades out past its outline by it.
+ */
+export const PAST_A_ROUNDED_BOX = `
+float pastARoundedBox(vec2 fromTheMiddle, vec2 halfSize, float corner) {
+	vec2 fromTheCorner = abs(fromTheMiddle) - halfSize + corner;
+	return length(max(fromTheCorner, 0.0)) + min(max(fromTheCorner.x, fromTheCorner.y), 0.0) - corner;
+}`;
+
+/**
+ * The depth a layer keeps where nothing was drawn, the farthest it holds, as the lens and the window's spreads read it.
+ */
+export const NOTHING_DRAWN = 1;
 
 // three draws nothing without a camera; a pass places its own points, so one camera serves every pass
 const PASSES_SEEN_BY = new Camera();

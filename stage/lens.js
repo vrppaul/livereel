@@ -54,7 +54,16 @@ import {
 	WebGLRenderTarget
 } from 'three';
 import { depthRangeOf } from './matrices.js';
-import { LAID_OVER, WRITTEN, WRITTEN_INTO_SEVERAL, drawnInto, passOver, valuesOfTheBox, valuesSet } from './passes.js';
+import {
+	LAID_OVER,
+	NOTHING_DRAWN,
+	WRITTEN,
+	WRITTEN_INTO_SEVERAL,
+	drawnInto,
+	passOver,
+	valuesOfTheBox,
+	valuesSet
+} from './passes.js';
 /** @import { Box3, WebGLRenderer, Texture, DepthTexture } from 'three' */
 /** @import { Box } from '../src/domain/geometry.ts' */
 /** @import { DrawnEye } from '../src/domain/eye.ts' */
@@ -95,8 +104,6 @@ const EDGE_COVER = 0.5;
 const TILE = 16;
 const ALONG_THE_ROWS = new Vector2(1, 0);
 const ALONG_THE_COLUMNS = new Vector2(0, 1);
-// The depth a layer keeps where nothing was drawn, the farthest it holds
-const NOTHING_DRAWN = 1;
 // The spiral's turn between samples, the golden angle, π(3 − √5), and a whole turn, in radians
 const GOLDEN_ANGLE = 2.399963229728653;
 const HALF_TURN = Math.PI;

@@ -98,7 +98,6 @@ import {
 	type ToScript,
 	objectBack,
 	objectEffects,
-	objectGoing,
 	objectHide,
 	objectLean,
 	objectOnto,
@@ -466,23 +465,14 @@ function refuseFollowingOverOwnPage(beginning: Beginning, picture: PiecePicture[
 export function hide(script: PieceHideScript = {}): Move {
 	assertWritten(script, PIECE_HIDE_FORM, PIECE_HIDE);
 	const { sheen, ...going } = script;
-	const hiding = objectHide(PIECE, PIECE_HIDE, going, GOES_AS_IT_STANDS);
-	if (sheen === undefined) return hiding;
+	if (sheen === undefined) return objectHide(PIECE, PIECE_HIDE, going, GOES_AS_IT_STANDS);
 	const wipe = wayOf(going.leave, going.edge, PIECE_HIDE);
 	if (wipe.kind !== 'wipe')
 		throw new FilmError(`${PIECE_HIDE} names a sheen, which trails a wipe's edge: leave: 'wipe'`);
-	return {
-		...hiding,
-		begin: (beginning) =>
-			objectGoing(
-				beginning,
-				script.as ?? PIECE,
-				PIECE,
-				(piece) => ({ ...wipe, sheen: sheenAcross(piece, wipe.edge, sheen, beginning.format.frame) }),
-				GOES_AS_IT_STANDS.shownAsItGoes,
-				PIECE_HIDE
-			)
-	};
+	return objectHide(PIECE, PIECE_HIDE, going, GOES_AS_IT_STANDS, (piece, frame) => ({
+		...wipe,
+		sheen: sheenAcross(piece, wipe.edge, sheen, frame)
+	}));
 }
 
 /**
