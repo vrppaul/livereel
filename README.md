@@ -184,9 +184,9 @@ and the moves of each part of the scene:
   pixels of a frame 1080 high wide; it rests open none, all sharp. What stands in the world nearer or farther than the
   focus is drawn as a disc `aperture × focal length × |1/focus − 1/distance|` across, as a camera's lens draws it:
   the window, with all in it, and each object shown `inside: 'world'`, each as soft as its point nearest the focus, so
-  what the eye focuses on is drawn sharp; drawn as a room, each point of the window as soft as its own distance has
-  it, so a window leant back is sharp where the eye focuses and melts beyond; what stands on the frame or in a group
-  stays sharp. It shares a step with `eye.to`, and holds on what it was put on as the eye moves; a focus pulled from
+  what the eye focuses on is drawn sharp; drawn as a room, each point of the window and of each such object as soft
+  as its own distance has it, so a window leant back is sharp where the eye focuses and melts beyond; what stands on
+  the frame or in a group stays sharp. It shares a step with `eye.to`, and holds on what it was put on as the eye moves; a focus pulled from
   one to another goes evenly in how sharp it leaves things. A focus on what stands behind the eye is refused
 - `window.to(place, { depth })`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn, roll, over })`,
   `window.shade({ dim, fade, blur })`, `window.body({ thickness, rim, metal, roughness, glass }, { within })`
