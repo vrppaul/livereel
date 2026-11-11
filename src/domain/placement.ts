@@ -5,20 +5,21 @@
  *
  * Every holder is a plane: the frame, which rides with the eye and is seen as from where it rests; the world, which the
  * eye moves past; the page's window, a placement in the world, in its box's own pixels; the page in it, the window's
- * plane with a box of the screen framed onto it as the camera frames the page; over the page, that plane standing in the
- * world, where what stands on it stands off it as freely as in the world, as a piece falls onto a block; a group of
- * objects, a placement on the frame, in its box's pixels from its corner; a point of the screen or of an object, the
- * frame's plane in its pixels from where the eye sees that point on each frame, which words beside a part stand on; and
- * the page's scrolls, the world's plane carried up as far as the film scrolls the blocks a piece's source stands in,
- * which the piece rides. Something placed on a plane stands about its box's middle as the plane's stance carries it
- * there and as its own stance does. The flat stage lays it in the frame, seen from the eye in perspective about its
- * box's middle, or, on the window's plane, in the window, by those stances alone, as the window's element carries what
- * is laid in it; the room reads where it stands in the eye's own space. Where a point of anything placed is seen on
- * the frame is one function, `pointOnTheFrame`, which the motion blur, a lens, a note, the pins and a piece's lines
- * read through the camera's module or the object's, and a point of the screen `onTheFrame`. Something carried from one
- * holder into another, a piece from the world over the page or an object joining a leant group, is placed there where
- * it stood by one function too, `carriedInto`; and something on the frame's plane, which rides with the eye, handed into the world where the
- * eye sees it, as far before the eye as what it stands on, by `handedIntoTheWorld`.
+ * plane with a box of the screen framed onto it as the camera frames the page; the page in the world, that plane
+ * standing in the world, where what stands on it stands off it as freely as in the world, as a piece falls onto a
+ * block; a group of objects, a placement on the frame, in its box's pixels from its corner; a point of the screen or of
+ * an object, the frame's plane in its pixels from where the eye sees that point on each frame, which words beside a
+ * part stand on; and the page's scrolls, the world's plane carried up as far as the film scrolls the blocks a piece's
+ * source stands in, which the piece rides. Something placed on a plane stands about its box's middle as the plane's
+ * stance carries it there and as its own stance does. The flat stage lays it in the frame, seen from the eye in
+ * perspective about its box's middle, or, on the window's plane, in the window, by those stances alone, as the window's
+ * element carries what is laid in it; the room reads where it stands in the eye's own space. Where a point of anything
+ * placed is seen on the frame is one function, `pointOnTheFrame`, which the motion blur, a lens, a note, the pins and a
+ * piece's lines read through the camera's module or the object's, and a point of the screen `onTheFrame`. Something
+ * carried from one holder into another, a piece from the world onto the page in the world or an object joining a leant
+ * group, is placed there where it stood by one function too, `carriedInto`; and something on the frame's plane, which
+ * rides with the eye, handed into the world where the eye sees it, as far before the eye as what it stands on, by
+ * `handedIntoTheWorld`.
  *
  * The camera's module builds on this one, as it reads where the window stands; this one reads of the camera only how
  * it frames the page in its view (`src/domain/framing.ts`), and holds the arithmetic of a box about its middle on the
@@ -146,8 +147,8 @@ interface HeldPlacement extends Placement {
 
 /**
  * What a placement is read in that lasts the whole film, its plane worked out from the camera alone: the frame, which
- * rides with the eye, the world, which the eye moves through, the page's window, the page in it, or the page's plane
- * standing in the world, over the page, which carries what stands on it as the camera frames the page and the window
+ * rides with the eye, the world, which the eye moves through, the page's window, the page in it, or the page in the
+ * world, the page's plane standing there, which carries what stands on it as the camera frames the page and the window
  * stands, as the page in the window does, while it stands in the world, off that plane as freely as anywhere there.
  */
 export type LastingHolder =
@@ -155,7 +156,7 @@ export type LastingHolder =
 	| { readonly kind: 'world' }
 	| { readonly kind: 'window' }
 	| { readonly kind: 'page' }
-	| { readonly kind: 'overThePage' };
+	| { readonly kind: 'pageInTheWorld' };
 
 /**
  * What the flat stage lays something in: the frame; or the page's window, placed in the world, which carries what is
@@ -238,7 +239,7 @@ export const ON_THE_FRAME: LastingHolder = { kind: 'frame' };
 export const IN_THE_WINDOW: LastingHolder = { kind: 'window' };
 export const IN_THE_WORLD: LastingHolder = { kind: 'world' };
 export const ON_THE_PAGE: LastingHolder = { kind: 'page' };
-export const OVER_THE_PAGE: LastingHolder = { kind: 'overThePage' };
+export const ON_THE_PAGE_IN_THE_WORLD: LastingHolder = { kind: 'pageInTheWorld' };
 
 // How far out of its own plane a spot of a box's plane stands
 export const ON_ITS_PLANE = 0;
@@ -288,7 +289,7 @@ export function planeOf(holder: Holder, holders: Holders, frame: Size): Plane {
 		case 'world':
 		case 'window':
 		case 'page':
-		case 'overThePage':
+		case 'pageInTheWorld':
 			return lastingPlaneOf(holder, holders.camera, frame);
 	}
 }
@@ -368,7 +369,7 @@ export function lastingPlaneOf(holder: LastingHolder, camera: Camera, frame: Siz
 			return windowsPlane(camera, frame);
 		case 'page':
 			return { ...windowsPlane(camera, frame), measures: { kind: 'framed', camera } };
-		case 'overThePage':
+		case 'pageInTheWorld':
 			return pagesPlaneInTheWorld(camera, frame);
 	}
 }
@@ -376,7 +377,7 @@ export function lastingPlaneOf(holder: LastingHolder, camera: Camera, frame: Siz
 /**
  * The page's plane standing in the world: the world's plane carried by the window's box and stance, as a group's is the
  * frame's, laid in the frame, a box of the screen read on it as the camera frames the page in the window; so what
- * stands on it stands over the page as the window carries what lies in it, and the room draws it in its one scene.
+ * stands on it stands on the page as the window carries what lies in it, and the room draws it in its one scene.
  */
 function pagesPlaneInTheWorld(camera: Camera, frame: Size): Plane {
 	const world = worldSeenBy(camera.eye, frame);

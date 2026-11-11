@@ -32,10 +32,11 @@
  * it reads on the frame is measured on the screen so too. One standing on the frame lies on the page, carried there
  * lying flat, face-on and at no depth of its own, while the window faces the frame front on, as only then does a box of
  * the frame stand on the screen as a box; it never slides from there, as the page's plane may stand leant from the
- * frame's: it goes in its place. One standing in the world stands over the page, on the page's plane standing in the
- * world, where it stands, wherever the eye stands and however the window stands, leant from that plane or near the eye
+ * frame's: it goes in its place. One standing in the world stands on the page in the world, the page's plane standing
+ * there, where it stands, wherever the eye stands and however the window stands, leant from that plane or near the eye
  * as it stood, and comes down onto the block on its way, so it falls as it travels: what lies in the window is drawn
- * flat on it, and what stands over the page is drawn in the world, so it keeps its body and stands off the page.
+ * flat on it, and what stands on the page in the world is drawn in the world, so it keeps its body and stands off the
+ * page.
  *
  * An object on the frame, or beside a point, which rides with the eye, is handed into the world where the eye sees it
  * as that move begins, at once, square to the eye and as far before it as what it stood on, so it stays there as the
@@ -121,7 +122,7 @@ import {
 	IN_THE_WORLD,
 	ON_THE_FRAME,
 	ON_THE_PAGE,
-	OVER_THE_PAGE,
+	ON_THE_PAGE_IN_THE_WORLD,
 	type OnTheFramesPlane,
 	type Placement,
 	type Ride,
@@ -808,7 +809,7 @@ function seenFrom(beginning: Beginning, holder: Holder): Beginning {
 		case 'world':
 		case 'scroll':
 		case 'page':
-		case 'overThePage':
+		case 'pageInTheWorld':
 		case 'group':
 		case 'point':
 			return beginning;
@@ -822,9 +823,9 @@ function seenFrom(beginning: Beginning, holder: Holder): Beginning {
 /**
  * A move's beginning as what stands in a holder reads the page through the camera: in the world, riding a block's
  * scroll there or not, the camera standing where it stands and seen from the eye at rest, the frame's plane then the
- * world's, so a box read there stands over what it was read off wherever the eye stands; anywhere else, over the page
- * too, which reads the page as the page in the window does, as the eye stands. The camera is stood at its pose, as the
- * eye paces a camera's way through keys.
+ * world's, so a box read there stands over what it was read off wherever the eye stands; anywhere else, on the page in
+ * the world too, which reads the page as the page in the window does, as the eye stands. The camera is stood at its
+ * pose, as the eye paces a camera's way through keys.
  */
 function readFrom(beginning: Beginning, holder: Holder): Beginning {
 	switch (holder.kind) {
@@ -838,7 +839,7 @@ function readFrom(beginning: Beginning, holder: Holder): Beginning {
 		case 'frame':
 		case 'window':
 		case 'page':
-		case 'overThePage':
+		case 'pageInTheWorld':
 		case 'group':
 		case 'point':
 			return beginning;
@@ -847,11 +848,11 @@ function readFrom(beginning: Beginning, holder: Holder): Beginning {
 
 /**
  * A box a move works out as what stands in a holder sees it, as a box in what the holder measures in, for the object
- * of a name: as it is on the frame and inside the window; on the page or over it, where the camera shows it on the
- * screen as the move begins, the window facing the frame front on; in a group, measured from the group's corner, where
- * it stands once the group stands as it was placed; riding a block's scroll, measured from where the scroll has carried
- * the world's plane as the move begins, so it stands there at the box. Beside a point, a box is worked out off the
- * point alone, so it stands as it is.
+ * of a name: as it is on the frame and inside the window; on the page, in the window or in the world, where the camera
+ * shows it on the screen as the move begins, the window facing the frame front on; in a group, measured from the
+ * group's corner, where it stands once the group stands as it was placed; riding a block's scroll, measured from where
+ * the scroll has carried the world's plane as the move begins, so it stands there at the box. Beside a point, a box is
+ * worked out off the point alone, so it stands as it is.
  */
 function measuredIn(beginning: Beginning, holder: Holder, box: Box, name: ObjectName, move: string): Box {
 	switch (holder.kind) {
@@ -863,7 +864,7 @@ function measuredIn(beginning: Beginning, holder: Holder, box: Box, name: Object
 		case 'scroll':
 			return measuredFrom(box, planeOf(holder, holdersAsTheyStand(beginning), beginning.format.frame).box, AS_LARGE);
 		case 'page':
-		case 'overThePage': {
+		case 'pageInTheWorld': {
 			const camera = cameraFrontOn(beginning, `${move} measures the ${name} on the page`);
 			return boxOnTheScreen(camera, beginning.format.frame, box);
 		}
@@ -877,10 +878,10 @@ function measuredIn(beginning: Beginning, holder: Holder, box: Box, name: Object
  * way and there, where it sets off, its box in the screen's pixels, and how it stands as it lies on the block. One on
  * the page lies on it, and stays so. One on the frame, lying flat, lies on the page from the start, where the camera
  * shows its box, as it stands; leant or near the eye it is refused, as it would lie flat at once. One in the world,
- * riding a block's scroll there or not, stands over the page where it stands, carried onto the page's plane in the
- * world, and comes down onto the block on its way, so it falls as it travels: on it, face-on at its nearest whole turns
- * and rolled as it stood; a ride ends there. One over the page already lands so too. One inside the window, in a group
- * or beside a point is refused, as it goes with what it stands in.
+ * riding a block's scroll there or not, stands on the page in the world where it stands, carried onto the page's plane
+ * standing there, and comes down onto the block on its way, so it falls as it travels: on it, face-on at its nearest
+ * whole turns and rolled as it stood; a ride ends there. One on the page in the world already lands so too. One inside
+ * the window, in a group or beside a point is refused, as it goes with what it stands in.
  */
 function landingOf(beginning: Beginning, object: FrameObject, name: ObjectName, move: string): Landing {
 	switch (object.inside.kind) {
@@ -898,10 +899,10 @@ function landingOf(beginning: Beginning, object: FrameObject, name: ObjectName, 
 		}
 		case 'world':
 		case 'scroll':
-		case 'overThePage': {
-			const from = carriedOverThePage(beginning, object, name, move);
+		case 'pageInTheWorld': {
+			const from = carriedOntoThePageInTheWorld(beginning, object, name, move);
 			const lying = { ...from, depth: AS_PLACED.depth, angle: { ...faceOnNearest(from.angle), roll: from.angle.roll } };
-			return { holder: OVER_THE_PAGE, from, lying };
+			return { holder: ON_THE_PAGE_IN_THE_WORLD, from, lying };
 		}
 		case 'window':
 			throw new FilmError(`${move} would carry the ${name} out of the window onto the page: it stands in the window`);
@@ -913,13 +914,18 @@ function landingOf(beginning: Beginning, object: FrameObject, name: ObjectName, 
 }
 
 /**
- * Where an object of a name standing in the world, riding a block's scroll there or not, or over the page, stands over
- * the page as a move begins: carried onto the page's plane in the world, standing off it as it stands; refused where
- * that plane would stretch it, the window standing grown and leant from it at once.
+ * Where an object of a name standing in the world, riding a block's scroll there or not, or on the page in the world,
+ * stands on the page in the world as a move begins: carried onto the page's plane standing there, standing off it as
+ * it stands; refused where that plane would stretch it, the window standing grown and leant from it at once.
  */
-function carriedOverThePage(beginning: Beginning, object: FrameObject, name: ObjectName, move: string): Placement {
+function carriedOntoThePageInTheWorld(
+	beginning: Beginning,
+	object: FrameObject,
+	name: ObjectName,
+	move: string
+): Placement {
 	const holders = holdersAsTheyStand(beginning);
-	const there = carriedInto(object, object.inside, OVER_THE_PAGE, holders, beginning.format.frame);
+	const there = carriedInto(object, object.inside, ON_THE_PAGE_IN_THE_WORLD, holders, beginning.format.frame);
 	if (there === null) {
 		throw new FilmError(
 			`${move} would stand the ${name} stretched over the page, as the window stands grown and leant from it at once, and a plane grows across and down its own alone: bring the window as large as its box, or the ${name} face-on to it, first`
@@ -1235,8 +1241,8 @@ function leaning(
 
 /**
  * Where what an object stands in lays it flat on the window's plane, as a refusal says it: inside the window, or on the
- * page in it; none where it stands on the frame, in the world, riding a block's scroll there or not, over the page, in
- * a group or beside a point, free to lean and come near.
+ * page in it; none where it stands on the frame, in the world, riding a block's scroll there or not, on the page in the
+ * world, in a group or beside a point, free to lean and come near.
  */
 function flatOnTheWindowSaid(holder: Holder): string | null {
 	switch (holder.kind) {
@@ -1247,7 +1253,7 @@ function flatOnTheWindowSaid(holder: Holder): string | null {
 		case 'frame':
 		case 'world':
 		case 'scroll':
-		case 'overThePage':
+		case 'pageInTheWorld':
 		case 'group':
 		case 'point':
 			return null;
@@ -1351,7 +1357,7 @@ function onTheFramesPlane(holder: Holder, name: ObjectName, move: string): OnThe
 			return holder;
 		case 'world':
 		case 'scroll':
-		case 'overThePage':
+		case 'pageInTheWorld':
 			throw new FilmError(`${move} finds the ${name} in the world already`);
 		case 'window':
 			throw new FilmError(`${move} would carry the ${name} out of the window into the world: it stands in the window`);

@@ -681,9 +681,10 @@ carries it from the world onto a block where it stands, wherever the eye
 stands and however the window is brought near or rolled, and brings it down
 onto the block on its way, from as near the eye and as leant as it stood,
 so a line lifted off a terminal falls onto its row as it travels. It stands
-over the page in the world, on the page's plane as the camera frames the
+on the page in the world, on the page's plane as the camera frames the
 page, so it keeps its body and its shadow, and is not cut at the window's
-edge nor faded with the page as what lies in the window is.
+edge nor shaded with the page as what lies in the window is; it goes down
+with the screen as the page does.
 
 A piece lifted `inside: 'world'` rides its block as the page scrolls where the
 film asks: `piece.show(TASK, { inside: 'world', rides: 'its block' })`, then

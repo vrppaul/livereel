@@ -1332,7 +1332,7 @@ test('a piece on the frame is carried onto the page only lying flat there, while
 	);
 });
 
-test('a piece in the world carried onto the page stands where it stood as it sets off, wherever the eye stands, on a window brought near and rolled, and lands lying on it over the page in the world, its angle at its nearest whole turn to where it stood', async () => {
+test('a piece in the world carried onto the page stands where it stood as it sets off, wherever the eye stands, on a window brought near and rolled, and lands lying on it on the page in the world, its angle at its nearest whole turn to where it stood', async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const lifted = await setIn(piece.show('#card', { inside: 'world' }), wide, 1, FULL_HD);
 	const spun = await setIn(piece.lean({ roll: 740 }), lifted, 1, FULL_HD);
@@ -1355,7 +1355,7 @@ test('a piece in the world carried onto the page stands where it stood as it set
 	]).toEqual(['world', closeToMatrix(before.inTheEyesSpace), cornersDrawnIn(aside).map(closeToPoint), spunTwice, 0]);
 });
 
-test('a piece in the world standing off the page falls onto a block as it travels: it sets off where it stood, leant and near the eye, comes down on its way, and lies flat on the block over the page as the camera frames it', async () => {
+test('a piece in the world standing off the page falls onto a block as it travels: it sets off where it stood, leant and near the eye, comes down on its way, and lies flat on the block on the page in the world as the camera frames it', async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const lifted = await setIn(piece.show('#card', { inside: 'world' }), wide, 1, FULL_HD);
 	const tilted = await setIn(piece.lean({ tilt: 10 }), lifted, 1, FULL_HD);
@@ -1383,6 +1383,15 @@ test('a piece in the world standing off the page falls onto a block as it travel
 		closeToBox({ left: 1440, top: 660, width: 200, height: 120 }),
 		'world'
 	]);
+});
+
+test('a piece in the world fallen onto a block goes down with the screen, as one lying on the page does', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { inside: 'world' }), wide, 1, FULL_HD);
+	const raised = await setIn(piece.effects({ depth: 150 }), lifted, 1, FULL_HD);
+	const landed = await setIn(piece.onto('#other'), raised, 1, FULL_HD);
+	const halfLowered = await setIn(lower(), landed, 0.5, FULL_HD);
+	expect(drawnObjectsIn(halfLowered, FULL_HD)[0]!.held).toEqual(0.5);
 });
 
 /** Where the corners of the piece of a scene shot full HD are drawn on the frame. */

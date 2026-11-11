@@ -296,7 +296,7 @@ function itsHolderStands(scene: Scene, object: FrameObject): boolean {
 		case 'world':
 		case 'window':
 		case 'page':
-		case 'overThePage':
+		case 'pageInTheWorld':
 		case 'scroll':
 			return true;
 	}
