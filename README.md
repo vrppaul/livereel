@@ -233,7 +233,7 @@ and the moves of each part of the scene:
   `piece.hide({ toward, leave, edge })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
   in the page's pixels (a rounded card's own `border-radius`), square where it names none, and as round as the window
-  at a corner standing on a corner of what the window shows, leaving a `hole: { ground, line }` and drawing `lines` to its
+  at a corner standing on a corner of what the window shows, leaving a `hole: { ground, line, reach, pit }` and drawing `lines` to its
   source where named; drawn from the page's picture as it changes, or, `picture: 'held'`, from a picture of its source
   held as it is lifted; `inside: 'world'`, with a `body: { thickness, walls, glow }` where named; carried `onto` another
   block, it lies on the page there, in the window, and keeps that place on the screen as the camera moves; each move of
@@ -655,6 +655,20 @@ so none come or stay whole at once. The room draws the body; the
 flat stage draws the face and its shadow alone, as it draws no body for the
 window. A body anywhere but inside the world is refused, as the frame, a
 group and the window are drawn flat over everything in a room.
+
+The hole a bodied piece leaves may be a socket it rises out of: `hole: {
+ground: '#07090d', reach: 3 }` reaches 3 of the page's pixels past the
+piece's edge each way, its corners as much rounder, so its ground shows
+round the walls as they come up. Or a pit sunk into the page where the piece
+lay, as the promo's story parts leave theirs: `hole: { reach: 3, pit: {
+depth: 14, glow: 0.018 } }` is drawn back behind the window's plane as deep
+as `depth` names, in the page's pixels, its walls the body's colour, 0.6 of
+it at the mouth and 0.18 at the floor, that colour added as strongly as
+`glow`, by the same law as the body's walls. The room lays none of the page
+over its mouth, as far as the piece has come, so a part lifted off the page
+shows the pit it left, and lying back stands in it; the flat stage draws the
+hole in its `ground`. A pit takes its colour from the body: one on a piece
+with no body is refused.
 
 A title, code or the terminal stands `inside` the page's window, as a small
 window of code over the site's: `code.show(LINES, { at: { left: 0.45, top:

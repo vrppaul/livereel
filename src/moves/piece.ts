@@ -16,10 +16,11 @@
  * flat over everything there, so a body anywhere else is refused.
  *
  * Lifted, it may leave a hole: the ground the page draws behind its block, read as it is lifted, or a colour the film
- * names, where a box of the screen, with no block behind it, needs one; and draw lines from itself to its source. Its
- * corners, and its hole's, are as round as the film names, square where it names none: the film knows how round a
- * block of its page is drawn, which no box read off the page says. Every move of it takes the piece named `piece`, or
- * the one the film names `as`.
+ * names, where a box of the screen, with no block behind it, needs one; reaching past the piece as far as the film
+ * names, a socket its body comes up out of; sunk into the page as a pit with walls of its body's colour, which a piece
+ * with no body cannot give; and draw lines from itself to its source. Its corners, and its hole's, are as round as the
+ * film names, square where it names none: the film knows how round a block of its page is drawn, which no box read off
+ * the page says. Every move of it takes the piece named `piece`, or the one the film names `as`.
  */
 import { boxOnTheFrame } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -48,7 +49,8 @@ import {
 	FOLLOWING_THE_PAGE,
 	type Hole,
 	type Piece,
-	type PiecePicture
+	type PiecePicture,
+	type Pit
 } from '../props/piece.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
@@ -87,11 +89,24 @@ import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
 
 /**
  * What fills the part of the screen a piece is lifted off: the ground the page draws behind its block, `'page'`, where
- * the film names none, or a colour in hex; and the line round its edge, where the film names one.
+ * the film names none, or a colour in hex; the line round its edge, where the film names one; how far past the piece's
+ * edge it reaches each way, in the page's pixels, none where the film names none; and the pit it is sunk into the page
+ * as, where the film names one.
  */
 export interface HoleScript {
 	readonly ground?: string;
 	readonly line?: Stroke;
+	readonly reach?: number;
+	readonly pit?: PitScript;
+}
+
+/**
+ * A hole's pit as a film writes it: how deep it is sunk into the page, in the page's pixels; and how strongly a light in
+ * its walls' own hue shows in it, from 0 to 1, none where the film names none. Its walls are the piece's body's colour.
+ */
+export interface PitScript {
+	readonly depth: number;
+	readonly glow?: number;
 }
 
 /**
@@ -129,10 +144,15 @@ export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScri
 type Filling =
 	{ readonly kind: 'behind'; readonly selector: string } | { readonly kind: 'colour'; readonly colour: string };
 
-/** A hole as a piece is made: how it is filled, and the line round its edge, if any. */
+/**
+ * A hole as a piece is made: how it is filled, the line round its edge, if any, how far past the piece it reaches, and
+ * its pit, if any.
+ */
 interface HoleAsked {
 	readonly filling: Filling;
 	readonly line: Stroke | null;
+	readonly reach: number;
+	readonly pit: Pit | null;
 }
 
 /**
@@ -159,20 +179,28 @@ const A_HOLE_GROUND: Kind<string> = new Plain(
 	(written): written is string => written === PAGES_GROUND || A_COLOUR.is(written),
 	`the ground the page draws behind the block, "${PAGES_GROUND}", or a colour in hex`
 );
-const HOLE_FORM: Form<HoleScript> = { ground: A_HOLE_GROUND, line: A_STROKE };
+const PIT_FORM: Form<PitScript> = { depth: needed(A_PIXELS), glow: A_SHARE };
+const HOLE_FORM: Form<HoleScript> = {
+	ground: A_HOLE_GROUND,
+	line: A_STROKE,
+	reach: A_PIXELS,
+	pit: new OfForm(PIT_FORM, 'a pit: { depth, glow }')
+};
+// A hole reaching no farther than its piece's edge where the film names no reach
+const NO_REACH = 0;
 const PIECE_PICTURES = ['following', 'held'] as const satisfies readonly PiecePicture['kind'][];
 const A_PIECE_PICTURE: Kind<PiecePicture['kind']> = new OneOf(
 	PIECE_PICTURES,
 	`what a piece is drawn from: "following", the page's picture as it changes, or "held", a picture of its source held as it is lifted`
 );
 const BODY_FORM: Form<BodyScript> = { thickness: needed(A_PIXELS), walls: needed(AN_OPAQUE_COLOUR), glow: A_SHARE };
-// A body's walls lit from within by no light where the film names none
+// A body's walls, or a pit's, lit from within by no light where the film names none
 const NO_GLOW = 0;
 const PIECE_FORM: Form<PieceScript> = {
 	every: A_COUNT,
 	air: A_PIXELS,
 	corner: A_PIXELS,
-	hole: new OfForm(HOLE_FORM, 'a hole: { ground, line }'),
+	hole: new OfForm(HOLE_FORM, 'a hole: { ground, line, reach, pit }'),
 	lines: A_STROKE,
 	picture: A_PIECE_PICTURE,
 	// A piece stands inside the world alone: it lies in the window only where it is carried onto the page (`onto`)
@@ -187,20 +215,22 @@ const PIECE_FORM: Form<PieceScript> = {
  * where the camera shows it, cut to the part it shows, its corners as round as the film names, leaving the hole and
  * drawing the lines the film names, drawn from the picture the film names: in place of any piece of its name, in its
  * own way, fading up whole, or in a way of livereel's the film names, with the body the film names. A hole over a box
- * of the screen, which has no block to read the ground behind, is refused unless the film names its colour.
+ * of the screen, which has no block to read the ground behind, is refused unless the film names its colour; a pit on a
+ * piece with no body, whose colour its walls take, is refused.
  */
 export function show(target: Target, script: PieceScript = {}): Move {
 	assertKind(target, A_TARGET, "piece.show's target");
 	assertWritten(script, PIECE_FORM, 'piece.show');
+	const body = script.body === undefined ? null : bodyAsked(script.body, script.inside);
 	const lifting: Lifting = {
 		every: script.every ?? ONE_BLOCK,
 		air: script.air ?? NO_AIR,
 		corner: script.corner ?? SQUARE,
-		hole: script.hole === undefined ? null : holeAsked(target, script.hole),
+		hole: script.hole === undefined ? null : holeAsked(target, script.hole, body),
 		lines: script.lines ?? null,
 		picture: script.picture ?? FOLLOWING_THE_PAGE.kind,
 		bornIn: script.inside ?? BORN_ON_THE_FRAME,
-		body: script.body === undefined ? null : bodyAsked(script.body, script.inside)
+		body
 	};
 	return {
 		...objectShow(PIECE, 'piece.show', script, NO_PLACE, THE_STEPS_CURVE, (beginning) =>
@@ -256,19 +286,37 @@ export function hide(script: HideScript = {}): Move {
 }
 
 /**
- * How the hole a film names is filled: with a colour it names, or with the ground behind the block a selector names;
- * refused for a box of the screen, which names no block.
+ * The hole a film names, reaching as far as it names past the piece, none where it names no reach, sunk as the pit it
+ * names, of the piece's body's colour; filled with a colour it names, or with the ground behind the block a selector
+ * names, refused for a box of the screen, which names no block.
  */
-function holeAsked(target: Target, hole: HoleScript): HoleAsked {
+function holeAsked(target: Target, hole: HoleScript, body: Body | null): HoleAsked {
 	const ground = hole.ground ?? PAGES_GROUND;
-	const line = hole.line ?? null;
-	if (ground !== PAGES_GROUND) return { filling: { kind: 'colour', colour: ground }, line };
+	const shaped = {
+		line: hole.line ?? null,
+		reach: hole.reach ?? NO_REACH,
+		pit: hole.pit === undefined ? null : pitAsked(hole.pit, body)
+	};
+	if (ground !== PAGES_GROUND) return { filling: { kind: 'colour', colour: ground }, ...shaped };
 	if (typeof target !== 'string') {
 		throw new FilmError(
 			"piece.show's hole over a box of the screen finds no block to read the ground behind: name its colour, hole: { ground: '#rrggbb' }"
 		);
 	}
-	return { filling: { kind: 'behind', selector: target }, line };
+	return { filling: { kind: 'behind', selector: target }, ...shaped };
+}
+
+/**
+ * A pit as the film names it, its walls the piece's body's colour, lit from within by none where it names no glow;
+ * refused on a piece with no body.
+ */
+function pitAsked(pit: PitScript, body: Body | null): Pit {
+	if (body === null) {
+		throw new FilmError(
+			"piece.show sinks a hole's pit with walls of the piece's body's colour: give the piece a body, body: { thickness, walls }"
+		);
+	}
+	return { depth: pit.depth, walls: body.walls, glow: pit.glow ?? NO_GLOW };
 }
 
 /**
@@ -339,10 +387,11 @@ function standsOn(edge: number, shownEdge: number): boolean {
  * corners as round as its piece's.
  */
 async function holeOf(beginning: Beginning, asked: HoleAsked, corner: number): Promise<Hole> {
-	switch (asked.filling.kind) {
+	const { filling, ...shaped } = asked;
+	switch (filling.kind) {
 		case 'colour':
-			return { ground: asked.filling.colour, line: asked.line, corner };
+			return { ...shaped, ground: filling.colour, corner };
 		case 'behind':
-			return { ground: await beginning.page.groundBehind(asked.filling.selector), line: asked.line, corner };
+			return { ...shaped, ground: await beginning.page.groundBehind(filling.selector), corner };
 	}
 }

@@ -16,7 +16,10 @@
  * scene (`stage/piece-body.js`). The walls grow back from the face as the piece comes up, as the window's body grows
  * as the screen does, so none comes whole at once; standing on the plane it was lifted from, they lie behind it, and
  * come up out of it as the piece stands out toward the eye. Its shadow then lies on that plane, under it, where the
- * room draws it; the flat stage draws the face and its shadow alone, as it draws no body for the window.
+ * room draws it; the flat stage draws the face and its shadow alone, as it draws no body for the window. Its hole may
+ * reach past its edge, a socket the walls come up out of; or be sunk into the page as a pit with walls of the body's
+ * colour, which the room draws behind the window's plane, the page cleared over its mouth, and the flat stage draws as
+ * a hole of its colour.
  */
 import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
 import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
@@ -25,22 +28,37 @@ import type { ObjectName } from './object.ts';
 import type { Stroke } from './stroke.ts';
 
 /**
- * What fills the part of the screen a piece was lifted off: a colour, in hex, the line round its edge, if any, and how
- * round its corners are, as its piece's, in the screen's pixels.
+ * A hole sunk into the page as a pit with walls of its own: how deep, in the screen's pixels; its walls' colour, its
+ * piece's body's, in hex, darkening from its mouth to its floor; and how strongly a light in their own hue shows in
+ * them, a share from 0 none to 1, as a body's does.
+ */
+export interface Pit {
+	readonly depth: number;
+	readonly walls: string;
+	readonly glow: number;
+}
+
+/**
+ * What fills the part of the screen a piece was lifted off: a colour, in hex, the line round its edge, if any, how
+ * round its corners are, as its piece's, and how far past the piece's edge it reaches each way, its corners as much
+ * rounder, in the screen's pixels; and the pit it is sunk into the page as, if any, which the room draws where the flat
+ * stage draws its colour.
  */
 export interface Hole {
 	readonly ground: string;
 	readonly line: Stroke | null;
 	readonly corner: number;
+	readonly reach: number;
+	readonly pit: Pit | null;
 }
 
 /**
  * A hole as the stage draws it: the name of the piece that left it, the box it fills in what it is drawn on — the
  * screen, in its pixels, or what a piece or a lens shows of it, in the frame's pixels from the figure's top left corner
- * — its colour, the line round its edge, if any, how round its corners are, in the pixels its box is in, and how far
- * it has come and not gone, as its piece has.
+ * — as far as it reaches, its colour, the line round its edge, if any, how round its corners are, in the pixels its box
+ * is in, how far it has come and not gone, as its piece has, and its pit, if any: a figure of the page shows it flat.
  */
-export interface DrawnHole extends Hole {
+export interface DrawnHole extends Omit<Hole, 'reach'> {
 	readonly name: ObjectName;
 	readonly box: Box;
 	readonly shown: number;
@@ -124,8 +142,9 @@ export interface DrawnPiece {
 	readonly body: DrawnBody | null;
 }
 
-// A body of no thickness, which is none
+// A body of no thickness, which is none; and a hole a figure of the page shows, with no pit sunk under it
 const NO_THICKNESS = 0;
+const SHOWN_FLAT = null;
 
 /**
  * A piece as the stage draws it in a box, standing as large and as far out as it stands, as far as it has come up and
@@ -214,11 +233,12 @@ export function holesShown(holes: readonly DrawnHole[], source: Box, fit: number
 
 /**
  * A hole as a figure drawn from a source at a fit shows it, cut to the source, its corners as round as the figure
- * shows them; none where it lies outside.
+ * shows them, flat, as a picture of the page shows a pit; none where it lies outside.
  */
 function holeShown(hole: DrawnHole, source: Box, fit: number): readonly DrawnHole[] {
 	const shown = overlapOf(hole.box, source);
-	return shown === null ? [] : [{ ...hole, box: measuredFrom(shown, source, fit), corner: hole.corner * fit }];
+	if (shown === null) return [];
+	return [{ ...hole, box: measuredFrom(shown, source, fit), corner: hole.corner * fit, pit: SHOWN_FLAT }];
 }
 
 /** How many of the frame's pixels a screen's pixel takes in a box that holds all of a source, as large as it can. */

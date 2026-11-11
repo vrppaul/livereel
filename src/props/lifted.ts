@@ -1,18 +1,18 @@
 /**
  * What a piece of the page (`src/props/piece.ts`) leaves on the page and draws to it, worked out from the objects as
  * the stage draws them. A hole stands on the screen, where the piece was lifted, so the camera and the window carry it
- * with the page, as the light: the piece keeps a box of the screen, not a block, and the hole keeps it too. Lines run
- * on the frame from the piece's source, as the camera shows it now, to the piece, as it is drawn now, grown, turned or
- * leant, as an inset's are drawn on a chart or a map: along the two edges of the outline round both that join one to the
- * other, so they cross neither box nor each other and move without a jump as the piece travels. There are none while
- * one holds the other, as while the piece stands over its source, nor while the two cross as a bar across a bar, where
- * the outline round both joins them four times. Both come and go with the piece.
+ * with the page, as the light: the piece keeps a box of the screen, not a block, and the hole keeps it too, as far past
+ * it as it reaches. Lines run on the frame from the piece's source, as the camera shows it now, to the piece, as it is
+ * drawn now, grown, turned or leant, as an inset's are drawn on a chart or a map: along the two edges of the outline
+ * round both that join one to the other, so they cross neither box nor each other and move without a jump as the piece
+ * travels. There are none while one holds the other, as while the piece stands over its source, nor while the two cross
+ * as a bar across a bar, where the outline round both joins them four times. Both come and go with the piece.
  */
 import type { Camera } from '../domain/camera.ts';
-import { type Box, type Point, type Segment, type Size, segmentBetween } from '../domain/geometry.ts';
+import { type Box, type Point, type Segment, type Size, segmentBetween, withAir } from '../domain/geometry.ts';
 import { type Holders, onTheFrame } from '../domain/placement.ts';
 import { type FrameObject, type ObjectEntry, type ObjectName, drawnOnTheFrame } from './object.ts';
-import { type DrawnHole, type Piece, figureIn } from './piece.ts';
+import { type DrawnHole, type Hole, type Piece, figureIn } from './piece.ts';
 import type { Stroke } from './stroke.ts';
 import { presentShare } from './way.ts';
 
@@ -64,8 +64,17 @@ const BEFORE_THE_LAST = -2;
 /** The holes the pieces among objects leave on the screen, each where its piece was lifted. */
 export function drawnHoles(objects: readonly ObjectEntry[]): readonly DrawnHole[] {
 	return piecesAmong(objects).flatMap(({ name, object, piece }) =>
-		piece.hole === null ? [] : [{ name, box: piece.source, ...piece.hole, shown: presentShare(object) }]
+		piece.hole === null ? [] : [drawnHole(name, piece.source, piece.hole, presentShare(object))]
 	);
+}
+
+/**
+ * A hole as the stage draws it on the screen: over its piece's source and as far past it each way as it reaches, its
+ * corners as much rounder, as far as its piece has come and not gone.
+ */
+function drawnHole(name: ObjectName, source: Box, hole: Hole, shown: number): DrawnHole {
+	const { reach, ...drawn } = hole;
+	return { ...drawn, name, box: withAir(source, reach), corner: hole.corner + reach, shown };
 }
 
 /**

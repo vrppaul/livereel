@@ -67,8 +67,8 @@ import { WindowBody } from './body.js';
 import { Lens, SPREADS_REACHED, sceneFieldOf, sideHalvedEvenly } from './lens.js';
 import { WorldLighting } from './lighting.js';
 import { matrixOf, placedBy, projectionOnto } from './matrices.js';
-import { PAGE_SURFACE_FRAGMENT, PagePicture, pageSurfaceValues } from './page-picture.js';
-import { PieceBodies } from './piece-body.js';
+import { PAGE_SURFACE_FRAGMENT, PagePicture, compiledForThePits, pageSurfaceValues } from './page-picture.js';
+import { PagePits, PieceBodies, pitsSunkIn } from './piece-body.js';
 import { ADDED, LAID_OVER, PREMULTIPLIED, SRGB_CURVES, passOver, valuesSet } from './passes.js';
 import { FrameShown } from './shown.js';
 import { WorldSeen } from './laying.js';
@@ -90,6 +90,8 @@ import { Things, isAThing } from './things.js';
 /** @import { BesideThePage, SeenThroughField, WorldPart } from './see-through.js' */
 /** @import { Laying } from './laying.js' */
 /** @import { PageLaid } from './page-picture.js' */
+/** @import { SunkPit } from './piece-body.js' */
+/** @import { Size } from '../src/domain/geometry.ts' */
 /** @import { Texture } from 'three' */
 /** @import { DrawnEye } from '../src/domain/eye.ts' */
 /** @import { Transform } from '../src/domain/stance.ts' */
@@ -441,11 +443,15 @@ class Room {
 			pageSurfaceValues()
 		);
 		this.pageDepth = surfaceInTheWorld(PAGE_DEPTH_ALONE, 'pageDepth', PAGE_SURFACE_FRAGMENT, pageSurfaceValues());
+		/** The screen's size, in its pixels @type {Size} */
+		this.screen = layout.format.screen;
 		this.pagePicture = new PagePicture(
 			this.renderer,
 			pictureIn(surfaceOf(surfacesAt(this.exposureSurfaces, FIRST), 'window')),
-			layout.format.screen
+			this.screen
 		);
+		// The pits sunk into the page under the holes pieces of it leave, which stand with the window
+		this.pagePits = new PagePits();
 		// The stage, which hands the surfaces it lays markup standing in the world in apart as it draws
 		this.stage = stage;
 		/** The surfaces the canvas painted anew for the frame composed last @type {ReadonlySet<Element>} */
@@ -571,8 +577,9 @@ class Room {
 		this.renderer.clear();
 		this.flatLaid('ground', surfaces);
 		const inTheWorld = things.filter((thing) => thing.standsIn === 'world');
-		const pageLaid = this.pageLaid(surfaces, standing, scene);
-		const worlds = this.worldBuilt(scene, pageLaid, standing, inTheWorld);
+		const pits = pitsSunkIn(scene, this.screen);
+		const pageLaid = this.pageLaid(surfaces, standing, scene, pits);
+		const worlds = this.worldBuilt(scene, pageLaid, standing, inTheWorld, pits);
 		this.worldSeen.cleared(this.renderer);
 		this.worldDrawn(scene, worlds, gathered);
 		valuesSet(this.worldLaying.material, { drawn: this.worldSeen.seen.texture });
@@ -588,16 +595,17 @@ class Room {
 
 	/**
 	 * What an exposure's page's surface lays, as its material takes it: the window's surface drawn anew; what lies over
-	 * the page, drawn anew where anything does; and the page's picture under them (`page-picture.js`).
+	 * the page, drawn anew where anything does; the page's picture under them; and the mouths of the pits sunk into the
+	 * page (`page-picture.js`).
 	 * @param {ReadonlyMap<SurfaceName, Element>} surfaces @param {ExposureStanding} standing @param {DrawnScene} scene
-	 * @returns {PageSurfaceLaid}
+	 * @param {readonly SunkPit[]} pits @returns {PageSurfaceLaid}
 	 */
-	pageLaid(surfaces, standing, scene) {
+	pageLaid(surfaces, standing, scene, pits) {
 		const surface = textureOf(this.textures, 'window').drawnFrom(surfaceOf(surfaces, 'window'), this.repainted);
 		const overThePage = scene.overThePage
 			? textureOf(this.textures, 'over-the-page').drawnFrom(surfaceOf(surfaces, 'over-the-page'), this.repainted)
 			: null;
-		return { surface, ...this.pagePicture.laidWith(scene, standing.placing.box, overThePage) };
+		return { surface, ...this.pagePicture.laidWith(scene, standing.placing.box, overThePage, pits) };
 	}
 
 	/**
@@ -638,15 +646,16 @@ class Room {
 	 * cut, or a band where the two sides lay over one another. Each world is built by `worldApartBuilt`; the worlds the
 	 * room draws, the rest first, none that holds nothing.
 	 * @param {DrawnScene} scene @param {PageSurfaceLaid} pageLaid @param {ExposureStanding} standing
-	 * @param {readonly ThingObject[]} things @returns {readonly WorldApart[]}
+	 * @param {readonly ThingObject[]} things @param {readonly SunkPit[]} pits @returns {readonly WorldApart[]}
 	 */
-	worldBuilt(scene, pageLaid, standing, things) {
+	worldBuilt(scene, pageLaid, standing, things, pits) {
 		const window = scene.window;
 		const eye = scene.eye;
 		this.world.clear();
 		this.beforeTheRest.clear();
 		const pageMatrix = surfaceMatrixOf(window.pageSurface.inTheEyesSpace, standing.placing);
 		for (const page of [this.page, this.pageSeenThrough, this.pageDepth]) {
+			compiledForThePits(page.material, pageLaid);
 			valuesSet(page.material, pageLaid);
 			placedBy(page, pageMatrix);
 		}
@@ -654,7 +663,7 @@ class Room {
 		// Where the window has a body, it stands within its slab; where it has none, the page draws its shadow past its
 		// edge, on its plane, so it stands on all of the page's surface
 		const windowStanding = { box: boxHolding(body === null ? [this.page] : [body.slab]) };
-		const windowBuilt = { drawn: window, pageMatrix, body };
+		const windowBuilt = { drawn: window, pageMatrix, body, pits: this.pitsPosed(pits, window) };
 		const posed = things.map((thing) => this.things.posedAs(thing).placed);
 		for (const placed of posed) sortedBySeeingThrough(placed);
 		for (const [place, markup] of standing.markup.entries()) this.markupAdded(place, markup);
@@ -708,15 +717,29 @@ class Room {
 	}
 
 	/**
-	 * The window added to a world, its page seen through where it fades and anything else stands beside it there: the
-	 * matrix that places the page's square where it is seen through, none where it is not.
+	 * The window added to a world, its page seen through where it fades and anything else stands beside it there, and
+	 * the pits sunk into its page: the matrix that places the page's square where it is seen through, none where it is
+	 * not.
 	 * @param {Scene} world @param {WindowBuilt} window @param {boolean} besideThePage
 	 */
 	windowAdded(world, window, besideThePage) {
 		const pageSeenThrough = window.drawn.pageShown < WHOLLY_SHOWN && besideThePage;
 		world.add(...(pageSeenThrough ? [this.pageSeenThrough, this.pageDepth] : [this.page]));
 		if (window.body !== null) bodyAdded(world, window.body, pageSeenThrough);
+		for (const pit of window.pits) world.add(pit);
 		return pageSeenThrough ? window.pageMatrix : null;
+	}
+
+	/**
+	 * The pits sunk into the window's page posed, each by its place among them under its mouth, where the screen lies on
+	 * the window's plane.
+	 * @param {readonly SunkPit[]} pits @param {DrawnWindow} window @returns {readonly Object3D[]}
+	 */
+	pitsPosed(pits, window) {
+		const middle = middleOf(window.box);
+		return pits.map((pit, place) =>
+			this.pagePits.posed(place, pit, fromTheMiddleOf(window.pageSurface.inTheEyesSpace, { box: pit.mouth, middle }))
+		);
 	}
 
 	/**
@@ -878,9 +901,14 @@ class Room {
  * @typedef {{ readonly placing: SurfacePlacing, readonly markup: readonly MarkupStanding[] }} ExposureStanding
  */
 /**
- * The window as an exposure's world is built of it: as drawn, the matrix that places the page's square, and its body
- * as posed, none where it has none.
- * @typedef {{ readonly drawn: DrawnWindow, readonly pageMatrix: Matrix4, readonly body: BodyPosed | null }} WindowBuilt
+ * The window as an exposure's world is built of it: as drawn, the matrix that places the page's square, its body as
+ * posed, none where it has none, and the pits sunk into its page, as posed.
+ * @typedef {{
+ *   readonly drawn: DrawnWindow,
+ *   readonly pageMatrix: Matrix4,
+ *   readonly body: BodyPosed | null,
+ *   readonly pits: readonly Object3D[]
+ * }} WindowBuilt
  */
 /** The window's body as posed: its slab, and the glass over the page. @typedef {ReturnType<WindowBody['posed']>} BodyPosed */
 /**
@@ -936,14 +964,22 @@ function middleOf(box) {
  */
 function surfaceMatrixOf(inTheEyesSpace, placing) {
 	const box = placing.box;
+	return fromTheMiddleOf(inTheEyesSpace, placing).multiply(new Matrix4().makeScale(box.width, box.height, UNSCALED));
+}
+
+/**
+ * The matrix that carries a point, in the frame's pixels from the middle of a box on a plane, into the eye's own
+ * space: the plane the engine's matrix carries from the middle it names into that space.
+ * @param {Matrix} inTheEyesSpace @param {SurfacePlacing} placing
+ */
+function fromTheMiddleOf(inTheEyesSpace, placing) {
+	const box = placing.box;
 	const fromTheMiddle = new Vector3(
 		box.left + box.width * HALF - placing.middle.x,
 		placing.middle.y - (box.top + box.height * HALF),
 		ON_ITS_PLANE
 	);
-	return matrixOf(inTheEyesSpace)
-		.multiply(new Matrix4().makeTranslation(fromTheMiddle))
-		.multiply(new Matrix4().makeScale(box.width, box.height, UNSCALED));
+	return matrixOf(inTheEyesSpace).multiply(new Matrix4().makeTranslation(fromTheMiddle));
 }
 
 /**

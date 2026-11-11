@@ -21,12 +21,20 @@
  * Story button at 26.6 s). The stylesheet drops the markup's shadow where the room draws a body, as it would lie on the
  * face's own plane over the walls (`stage/stage.css`). It is laid over what lies there in linear light, as three lays a
  * film's light, writing no depth, nearer by depth's offset than the page it lies on.
+ *
+ * A piece's hole may be sunk into the page as a pit: its outline drawn back behind the window's plane as deep as the
+ * film names, seen from inside alone, so it stands open at its mouth, where the page's surface lays nothing and writes
+ * no depth (`stage/page-picture.js`). Its walls are the body's matter too, of the body's colour darker the deeper, and
+ * lit from within by the same law, written once for both. A piece lying on its plane stands in its pit, as the promo's
+ * plates fill the pits they left (`story-parts.js`).
  */
 import {
+	BackSide,
 	BufferGeometry,
 	Color,
 	ExtrudeGeometry,
 	Float32BufferAttribute,
+	FrontSide,
 	Matrix4,
 	Mesh,
 	MeshBasicMaterial,
@@ -39,15 +47,36 @@ import {
 import { matrixOf, placedBy } from './matrices.js';
 import { PREMULTIPLIED, valuesSet } from './passes.js';
 import { WORLD_PARTS } from './see-through.js';
-/** @import { HSL, Object3D } from 'three' */
+/** @import { HSL, Object3D, Side } from 'three' */
+/** @import { DrawnScene } from '../src/scene.ts' */
 /** @import { DrawnObject } from '../src/props/object.ts' */
-/** @import { Corners, DrawnBody, DrawnPiece } from '../src/props/piece.ts' */
+/** @import { Corners, DrawnBody, DrawnHole, DrawnPiece } from '../src/props/piece.ts' */
 /** @import { Look } from '../src/props/look.ts' */
+/** @import { Box, Size } from '../src/domain/geometry.ts' */
 
 /**
- * What a piece's walls are built of, in the frame's pixels: its figure's size, its corners, and its body's thickness,
- * colour and glow; not how high its face stands, which moves the shadow alone, so a piece rising keeps its walls.
- * @typedef {{ readonly width: number, readonly height: number, readonly corners: Corners, readonly thickness: number, readonly walls: string, readonly glow: number }} Measures
+ * What walls are built of, in the frame's pixels: the size of the outline they are drawn back from and its corners, how
+ * deep they are drawn back, their colour and their glow. A piece's are its figure's and its body's: not how high its
+ * face stands, which moves the shadow alone, so a piece rising keeps its walls.
+ * @typedef {{ readonly width: number, readonly height: number, readonly corners: Corners, readonly depth: number, readonly walls: string, readonly glow: number }} Measures
+ */
+/**
+ * How walls of a kind are drawn: the side of their faces the eye sees, how dark they are, a share of their colour, at
+ * their face and at their back, and whether a lid closes their back.
+ * @typedef {{ readonly seenFrom: Side, readonly face: number, readonly back: number, readonly floored: boolean }} WallsKind
+ */
+/**
+ * A pit sunk into the page as the room draws it, on the window's plane where the screen lies there, in the frame's
+ * pixels as large as the screen shows there: its mouth, how round its corners are, how far it is open, as far as its
+ * hole has come, and how deep it is; its walls' colour; and their glow.
+ * @typedef {{
+ *   readonly mouth: Box,
+ *   readonly corner: number,
+ *   readonly open: number,
+ *   readonly depth: number,
+ *   readonly walls: string,
+ *   readonly glow: number
+ * }} SunkPit
  */
 
 // The shadow of a piece with a body, as the promo's column cast it (`lift.js` SHADOW, LIFT): as dark as 0.8 at its
@@ -58,13 +87,22 @@ const COLUMNS_DROP = 14;
 const COLUMNS_RISE = 12;
 const SHADOW_DROP_A_HEIGHT = COLUMNS_DROP / COLUMNS_RISE;
 const SHADOW_SOFT_A_HEIGHT = 1;
-// How dark the walls are at the back, a share of their colour at the face, as both the promo's walls darken
-const BACK_SHADE = 0.35;
-// How light the light inside a body is, in its walls' own hue, as the promo's story parts are lit (`story-parts.js`
-// GLOW)
+// A body's walls: seen from outside, as they stand out of the page; whole at the face and 0.35 of their colour at the
+// back, as both the promo's walls darken; no lid at either end, as the piece's face is their front: a lid there showed
+// whole behind a face that fades. A pit's: seen from inside alone, so it stands open at its mouth; 0.6 of its colour at
+// the mouth and 0.18 at its floor, deep in the window's shade (`story-parts.js` PIT); its floor a lid at its back
+/** @type {WallsKind} */
+const BODY_WALLS = { seenFrom: FrontSide, face: 1, back: 0.35, floored: false };
+/** @type {WallsKind} */
+const PIT_WALLS = { seenFrom: BackSide, face: 0.6, back: 0.18, floored: true };
+// How light the light inside walls is, in their own hue, as the promo's story parts are lit (`story-parts.js` GLOW)
 const GLOW_LIGHTNESS = 0.6;
-// Which of the groups three cuts an extrusion's points into holds its sides: the lids at both ends come first
+// The groups three cuts an extrusion's points into: its two lids, the back's points first, then its sides; and the one
+// material walls are drawn in, which each group kept names
+const LIDS = 0;
 const SIDES = 1;
+const LIDS_IN_A_GROUP = 2;
+const THE_WALLS_MATERIAL = 0;
 // How finely a corner is cut, in straight lines a quarter-turn
 const CORNER_SEGMENTS = 16;
 // The walls and the shadow moved neither across nor down from the piece's middle, but the shadow dropped
@@ -99,6 +137,8 @@ const LAID_AFTER_THE_PAGE = 0.5;
 const NONE_BUILT = '';
 /** What a piece of markup with no body brings into the world: nothing. @type {readonly Object3D[]} */
 const NO_PARTS = [];
+/** The pits under the screen where it shows a page of the film's own, or under a hole with none. @type {readonly SunkPit[]} */
+const NO_PITS = [];
 
 // The shadow's square, its points placed from its middle in the frame's pixels as its size has them
 const SHADOW_VERTEX = `
@@ -160,13 +200,103 @@ export class PieceBodies {
 	}
 }
 
-/** One piece's walls and shadow, the walls as last built, and the measures they were built of. */
+/**
+ * The pits sunk into the page under the holes pieces of it leave, each by its place among an exposure's: its walls, as
+ * last built.
+ */
+export class PagePits {
+	constructor() {
+		/** @type {Walls[]} */
+		this.pits = [];
+	}
+
+	/**
+	 * A pit posed by its place among an exposure's: its walls seen from inside, built of its mouth and depth where those
+	 * are not what they were built of, and placed by a matrix, its mouth's middle at its origin.
+	 * @param {number} place @param {SunkPit} pit @param {Matrix4} placing @returns {Object3D}
+	 */
+	posed(place, pit, placing) {
+		while (this.pits.length <= place) this.pits.push(new Walls(PIT_WALLS));
+		const { width, height } = pit.mouth;
+		const corners = { topLeft: pit.corner, topRight: pit.corner, bottomRight: pit.corner, bottomLeft: pit.corner };
+		const measures = { width, height, corners, depth: pit.depth, walls: pit.walls, glow: pit.glow };
+		return wallsAt(this.pits, place).posed(measures, placing);
+	}
+}
+
+/**
+ * The pits sunk into the page under the holes on the screen, where it shows the filmed page, which the holes are left
+ * in, each where the screen lies on the window's plane, as large as it shows there; none where it shows a page of the
+ * film's own.
+ * @param {DrawnScene} scene @param {Size} screen @returns {readonly SunkPit[]}
+ */
+export function pitsSunkIn(scene, screen) {
+	const filmed = scene.screen.filmed;
+	if (filmed === null) return NO_PITS;
+	const scale = filmed.box.width / screen.width;
+	return scene.holes.flatMap((hole) => pitUnder(hole, filmed.box, scale));
+}
+
+/**
+ * The pit a hole on the screen is sunk into the page as, where it has one: where it lies on the window's plane, the
+ * screen lying there in a box at a scale.
+ * @param {DrawnHole} hole @param {Box} screenBox @param {number} scale @returns {readonly SunkPit[]}
+ */
+function pitUnder(hole, screenBox, scale) {
+	if (hole.pit === null) return NO_PITS;
+	const mouth = {
+		left: screenBox.left + hole.box.left * scale,
+		top: screenBox.top + hole.box.top * scale,
+		width: hole.box.width * scale,
+		height: hole.box.height * scale
+	};
+	return [
+		{
+			mouth,
+			corner: hole.corner * scale,
+			open: hole.shown,
+			depth: hole.pit.depth * scale,
+			walls: hole.pit.walls,
+			glow: hole.pit.glow
+		}
+	];
+}
+
+/**
+ * Walls of a kind drawn back from an outline: as last built, and the measures they were built of, built anew only as
+ * those change. Their one material is given as a list, so three draws the groups of points they keep alone.
+ */
+class Walls {
+	/** @param {WallsKind} kind */
+	constructor(kind) {
+		this.mesh = new Mesh(new BufferGeometry(), [new MeshBasicMaterial({ vertexColors: true, side: kind.seenFrom })]);
+		this.mesh.matrixAutoUpdate = false;
+		this.mesh.layers.set(WORLD_PARTS.opaque);
+		this.kind = kind;
+		this.builtOf = NONE_BUILT;
+	}
+
+	/**
+	 * The walls posed: built of their measures where those are not what they were built of, and placed by a matrix,
+	 * their face at its origin.
+	 * @param {Measures} measures @param {Matrix4} placing
+	 */
+	posed(measures, placing) {
+		const builtOf = JSON.stringify(measures);
+		if (builtOf !== this.builtOf) {
+			this.mesh.geometry.dispose();
+			this.mesh.geometry = wallsOf(measures, this.kind);
+			this.builtOf = builtOf;
+		}
+		placedBy(this.mesh, placing);
+		return this.mesh;
+	}
+}
+
+/** One piece's walls and shadow. */
 class PieceBody {
 	constructor() {
-		this.walls = new Mesh(new BufferGeometry(), new MeshBasicMaterial({ vertexColors: true }));
-		this.walls.matrixAutoUpdate = false;
-		this.walls.layers.set(WORLD_PARTS.opaque);
-		this.builtOf = NONE_BUILT;
+		this.walls = new Walls(BODY_WALLS);
 		this.shadow = new Mesh(
 			new PlaneGeometry(),
 			new ShaderMaterial({
@@ -194,28 +324,14 @@ class PieceBody {
 	}
 
 	/**
-	 * The walls posed for a piece: built of its figure, corners and body where those are not what they were built of,
-	 * and placed by its matrix, its face at its own origin.
+	 * The walls posed for a piece: built of its figure, corners and body, and placed by its matrix, its face at its own
+	 * origin.
 	 * @param {DrawnPiece} piece @param {DrawnBody} body @param {Matrix4} placing
 	 */
 	wallsPosed(piece, body, placing) {
-		/** @type {Measures} */
-		const measures = {
-			width: piece.figure.width,
-			height: piece.figure.height,
-			corners: piece.corners,
-			thickness: body.thickness,
-			walls: body.walls,
-			glow: body.glow
-		};
-		const builtOf = JSON.stringify(measures);
-		if (builtOf !== this.builtOf) {
-			this.walls.geometry.dispose();
-			this.walls.geometry = wallsOf(measures);
-			this.builtOf = builtOf;
-		}
-		placedBy(this.walls, placing);
-		return this.walls;
+		const { width, height } = piece.figure;
+		const { walls, glow } = body;
+		return this.walls.posed({ width, height, corners: piece.corners, depth: body.thickness, walls, glow }, placing);
 	}
 
 	/**
@@ -247,36 +363,28 @@ class PieceBody {
 }
 
 /**
- * A piece's walls: its outline drawn back from its face as thick as its body is, its face at their origin toward
- * three's z, with no lid at either end, as the piece's face is their front: a lid there showed whole behind a face
- * that fades. Each point is coloured as far toward its back as it stands, its body's colour at the face, darkening
- * toward the back, and the light inside them (`glowOf`) added all over as strongly as the body's glow.
- * @param {Measures} measures
+ * Walls of a kind: an outline, its corners as CSS rounds them, drawn back as deep as named, its face at their origin
+ * toward three's z, no lid at its face and one at its back where the kind is floored; each point coloured as far toward
+ * their back as it stands, from the share of their colour the kind has at the face to its share at the back, and the
+ * light inside them (`glowOf`) added all over as strongly as their glow. One law for a piece's body and a pit, so a
+ * change to it moves both.
+ * @param {Measures} measures @param {WallsKind} kind
  */
-function wallsOf(measures) {
-	const { thickness } = measures;
-	const outline = outlineOf(
-		measures.width,
-		measures.height,
-		cornersAsCssDraws(measures.width, measures.height, measures.corners)
-	);
-	const geometry = new ExtrudeGeometry(outline, {
-		depth: thickness,
-		bevelEnabled: false,
-		curveSegments: CORNER_SEGMENTS
-	});
-	const sides = geometry.groups[SIDES];
-	if (sides === undefined) throw new Error("three built a piece's walls with no sides");
-	geometry.setDrawRange(sides.start, sides.count);
-	geometry.translate(UNMOVED, UNMOVED, -thickness);
-	const face = new Color(measures.walls);
-	const back = face.clone().multiplyScalar(BACK_SHADE);
-	const glow = glowOf(face).multiplyScalar(measures.glow);
+function wallsOf(measures, kind) {
+	const { width, height, depth } = measures;
+	const outline = outlineOf(width, height, cornersAsCssDraws(width, height, measures.corners));
+	const geometry = new ExtrudeGeometry(outline, { depth, bevelEnabled: false, curveSegments: CORNER_SEGMENTS });
+	keptOfTheExtrusion(geometry, kind.floored);
+	geometry.translate(UNMOVED, UNMOVED, -depth);
+	const colour = new Color(measures.walls);
+	const face = colour.clone().multiplyScalar(kind.face);
+	const back = colour.clone().multiplyScalar(kind.back);
+	const glow = glowOf(colour).multiplyScalar(measures.glow);
 	const position = geometry.getAttribute('position');
 	const colours = new Float32Array(position.count * CHANNELS);
 	const shade = new Color();
 	for (let point = 0; point < position.count; point++) {
-		const towardTheFace = (position.getZ(point) + thickness) / thickness;
+		const towardTheFace = (position.getZ(point) + depth) / depth;
 		shade
 			.copy(back)
 			.lerp(face, towardTheFace)
@@ -288,7 +396,21 @@ function wallsOf(measures) {
 }
 
 /**
- * The colour a body's walls glow in, lit from within: their own hue, as saturated, at the light's lightness, so black
+ * An extrusion cut to the groups of its points three draws in the walls' one material: its sides, and the lid at its
+ * back, which three builds first of the two lids, where it is floored; never the lid at its face.
+ * @param {ExtrudeGeometry} geometry @param {boolean} floored
+ */
+function keptOfTheExtrusion(geometry, floored) {
+	const lids = geometry.groups[LIDS];
+	const sides = geometry.groups[SIDES];
+	if (lids === undefined || sides === undefined) throw new Error('three built walls with no lids or no sides');
+	geometry.clearGroups();
+	if (floored) geometry.addGroup(lids.start, lids.count / LIDS_IN_A_GROUP, THE_WALLS_MATERIAL);
+	geometry.addGroup(sides.start, sides.count, THE_WALLS_MATERIAL);
+}
+
+/**
+ * The colour walls glow in, lit from within: their own hue, as saturated, at the light's lightness, so black
  * or grey walls glow grey-white and coloured ones in their colour, as the promo's story parts glow (`walls.js` of the
  * film, `glowOf`).
  * @param {Color} walls
@@ -339,4 +461,11 @@ function bodyAt(bodies, place) {
 	const body = bodies[place];
 	if (body === undefined) throw new Error(`the room has built no body for piece ${place + 1} in the world`);
 	return body;
+}
+
+/** @param {readonly Walls[]} pits @param {number} place */
+function wallsAt(pits, place) {
+	const walls = pits[place];
+	if (walls === undefined) throw new Error(`the room has built no pit ${place + 1} in the page`);
+	return walls;
 }

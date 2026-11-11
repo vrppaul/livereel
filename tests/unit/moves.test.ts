@@ -1766,9 +1766,59 @@ test("a piece lifted with a hole leaves on the screen, where it was lifted, the 
 	const area = piece.show(OTHER, { hole: { ground: '#112233', line: 'dashed' }, as: 'area' });
 	const both = await setIn(area, coming, 1, FULL_HD);
 	expect(drawn(both, cameraOf(both, FULL_HD), 0, FULL_HD, NONE_SHARPER).holes).toEqual([
-		{ name: 'piece', box: CARD, ground: CARDS_GROUND, line: null, corner: 0, shown: 0.5 },
-		{ name: 'area', box: OTHER, ground: '#112233', line: 'dashed', corner: 0, shown: 1 }
+		{ name: 'piece', box: CARD, ground: CARDS_GROUND, line: null, corner: 0, shown: 0.5, pit: null },
+		{ name: 'area', box: OTHER, ground: '#112233', line: 'dashed', corner: 0, shown: 1, pit: null }
 	]);
+});
+
+test("a piece's hole reaching past it is as much wider each way and as much rounder; one sunk into the page as a pit is as deep, its walls its piece's body's colour, lit from within as faintly as the film names, none where it names none; a piece of the page shows it flat", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const socket = piece.show('#card', {
+		inside: 'world',
+		corner: 6,
+		body: { thickness: 12, walls: '#e6e8ec' },
+		hole: { ground: '#07090d', reach: 3 }
+	});
+	const sunk = piece.show(OTHER, {
+		inside: 'world',
+		body: { thickness: 14, walls: '#1d2a44' },
+		hole: { ground: '#112233', reach: 2, pit: { depth: 14 } },
+		as: 'part'
+	});
+	const both = await setIn(sunk, await setIn(socket, wide, 1, FULL_HD), 1, FULL_HD);
+	const page = await setIn(piece.show(WHOLE_SCREEN, { as: 'page' }), both, 1, FULL_HD);
+	const scene = drawn(page, cameraOf(page, FULL_HD), 0, FULL_HD, NONE_SHARPER);
+	const pageShows = scene.objects.find((object) => object.name === 'page')!.content;
+	// The card, 400 to 600 across and 300 to 400 down, the other 1200 to 1300 and 600 to 660; the screen's pixels the
+	// frame's in the page lifted whole
+	const socketBox = { left: 397, top: 297, width: 206, height: 106 };
+	const pitBox = { left: 1198, top: 598, width: 104, height: 64 };
+	expect([scene.holes, pageShows.holes]).toEqual([
+		[
+			{ name: 'piece', box: socketBox, ground: '#07090d', line: null, corner: 9, shown: 1, pit: null },
+			{
+				name: 'part',
+				box: pitBox,
+				ground: '#112233',
+				line: null,
+				corner: 2,
+				shown: 1,
+				pit: { depth: 14, walls: '#1d2a44', glow: 0 }
+			}
+		],
+		[
+			{ name: 'piece', box: socketBox, ground: '#07090d', line: null, corner: 9, shown: 1, pit: null },
+			{ name: 'part', box: pitBox, ground: '#112233', line: null, corner: 2, shown: 1, pit: null }
+		]
+	]);
+});
+
+test("a hole's pit is refused on a piece with no body, whose colour its walls take", () => {
+	expect(() => piece.show('#card', { inside: 'world', hole: { pit: { depth: 14 } } })).toThrow(
+		new FilmError(
+			"piece.show sinks a hole's pit with walls of the piece's body's colour: give the piece a body, body: { thickness, walls }"
+		)
+	);
 });
 
 test('a piece lifted with a corner is drawn with its corners so round, as large as it shows the page, and leaves its hole as round on the screen and in a piece that shows it', async () => {

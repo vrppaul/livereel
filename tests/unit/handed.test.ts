@@ -189,6 +189,12 @@ test('every function a film calls refuses what it is handed in no form it takes,
 			`piece.show's hole's ground is "blue": it is the ground the page draws behind the block, "page", or a colour in hex`
 		)
 	);
+	expect(() => piece.show('#chart', { hole: { reach: -3 } })).toThrow(
+		new FilmError("piece.show's hole's reach is -3: it is a number of pixels, 0 or more")
+	);
+	expect(() => piece.show('#chart', { hole: { pit: { glow: 0.02 } as never } })).toThrow(
+		new FilmError("piece.show's hole's pit's depth is undefined: it is a number of pixels, 0 or more")
+	);
 	expect(() => outline.show('#chart', { line: 'dotted' as never })).toThrow(
 		new FilmError(`outline.show's line is "dotted": it is how a line is drawn: "solid" or "dashed"`)
 	);

@@ -18,20 +18,27 @@
  *
  * The page's surface lays, as the browser lays them in the window's view: the screen's ground and the picture, cut to
  * the screen's rounded box and the view's, showing as far as the screen is clear less how clear its own markup is
- * there; over them that markup, as the window's surface holds it; and over all, what lies over the page.
+ * there; over them that markup, as the window's surface holds it; and over all, what lies over the page. Over the mouth
+ * of each pit sunk into the page (`stage/piece-body.js`) it lays none of the screen, as far as the pit's hole has come,
+ * and writes no depth where it lays nothing, so the pit drawn behind the window's plane shows through it, as the
+ * promo's pits show through a picture of the page cleared at their mouths (a still of 2026-11-11: walls behind the
+ * plane showed through a mouth cleared so, and were hidden where it was not). GLSL sizes a list by a count it is
+ * compiled with, so the surface is compiled anew, by three, as the number of pits changes.
  */
 import { Camera, Color, LinearMipmapLinearFilter, Texture, Vector2, Vector4, WebGLRenderTarget } from 'three';
 import { SRGB_CURVES, WRITTEN, passOver, valuesOfTheBox, valuesSet } from './passes.js';
-/** @import { WebGLRenderer } from 'three' */
+/** @import { ShaderMaterial, WebGLRenderer } from 'three' */
 /** @import { DrawnScene } from '../src/scene.ts' */
 /** @import { Box, Size } from '../src/domain/geometry.ts' */
+/** @import { SunkPit } from './piece-body.js' */
 
 /**
  * What the page's surface lays, as the shader takes it: the texture of what lies over the page and whether anything
  * does; the texture it samples the picture from and whether it draws one; the box of the window's plane both surfaces
  * are laid out over; where the screen lies on that plane and how round its corners are; the part of it the view shows
- * and how round its corners are; how clear the screen is; and its ground. Every box in the frame's pixels on the
- * window's plane.
+ * and how round its corners are; how clear the screen is; its ground; and the mouth of each pit sunk into the page, how
+ * round its corners are, and how far it is open, as far as its hole has come. Every box and corner in the frame's
+ * pixels on the window's plane.
  * @typedef {{
  *   readonly overThePage: Texture | null,
  *   readonly anythingOver: boolean,
@@ -43,7 +50,10 @@ import { SRGB_CURVES, WRITTEN, passOver, valuesOfTheBox, valuesSet } from './pas
  *   readonly shownBox: Vector4,
  *   readonly shownCorner: number,
  *   readonly shown: number,
- *   readonly ground: Vector4
+ *   readonly ground: Vector4,
+ *   readonly mouths: readonly Vector4[],
+ *   readonly mouthCorners: readonly number[],
+ *   readonly mouthsOpen: readonly number[]
  * } & SharpPartLaid} PageLaid
  */
 
@@ -101,13 +111,16 @@ const NO_PART_KEPT_SHARP = {
 // smaller copies of itself
 const BLURRED_ACROSS_LAYER = { depthBuffer: false };
 const BLURRED_LAYER = { depthBuffer: false, generateMipmaps: true, minFilter: LinearMipmapLinearFilter };
+// The name of the count of pits sunk into the page the page's surface is compiled with, as its shader reads it
+const PITS = 'PITS';
 
 /**
  * The page's surface, all in the screen's colours, premultiplied, read back into linear light: the screen's ground and
  * the page's picture, where it draws one, showing as far as the screen is clear less how clear the window's surface is
- * there, as its markup over the page is as clear as the screen, cut to the screen's rounded box and the view's, each
- * edge smoothed over a pixel of the frame as the eye sees it; over them the window's surface; over all, what lies over
- * the page, where anything does. None drawn, nor its depth, where it is clear.
+ * there, as its markup over the page is as clear as the screen, cut to the screen's rounded box and the view's; over
+ * them the window's surface; all of it as far as no pit's mouth is open there; over all, what lies over the page,
+ * where anything does. Each edge smoothed over a pixel of the frame as the eye sees it; none drawn, nor its depth,
+ * where it is clear.
  */
 export const PAGE_SURFACE_FRAGMENT = `
 uniform sampler2D surface;
@@ -127,6 +140,11 @@ uniform sampler2D sharpPicture;
 uniform vec2 screenSize;
 uniform vec4 sharpBox;
 uniform float sharpEdge;
+#if ${PITS} > 0
+uniform vec4 mouths[${PITS}];
+uniform float mouthCorners[${PITS}];
+uniform float mouthsOpen[${PITS}];
+#endif
 varying vec2 shareOfTheSurface;
 ${SRGB_CURVES}
 float pastTheEdge(vec2 point, vec4 box, float corner) {
@@ -134,6 +152,20 @@ float pastTheEdge(vec2 point, vec4 box, float corner) {
 	float rounding = min(corner, min(halfSize.x, halfSize.y));
 	vec2 fromTheCorner = abs(point - box.xy - halfSize) - halfSize + rounding;
 	return length(max(fromTheCorner, 0.0)) + min(max(fromTheCorner.x, fromTheCorner.y), 0.0) - rounding;
+}
+// How much of a pixel stands inside an edge it stands so far past, the edge smoothed over a pixel of the frame
+float insideTheEdge(float past) {
+	return clamp(${HALF_A_PIXEL} - past / max(fwidth(past), ${NARROWEST_PIXEL}), 0.0, 1.0);
+}
+// How far open the pits' mouths stand at a point of the window's plane: the most any mouth that holds it is open
+float openAt(vec2 point) {
+	float open = 0.0;
+#if ${PITS} > 0
+	for (int pit = 0; pit < ${PITS}; pit++) {
+		open = max(open, insideTheEdge(pastTheEdge(point, mouths[pit], mouthCorners[pit])) * mouthsOpen[pit]);
+	}
+#endif
+	return open;
 }
 // How much of the unblurred picture shows at a point of the screen, in its pixels: whole over the part kept sharp,
 // none from as far past each side of it as its edge, across and down apart and one in the other, as the flat stage's
@@ -145,20 +177,19 @@ float sharpAt(vec2 onTheScreen) {
 }
 void main() {
 	vec4 screen = texture2D(surface, shareOfTheSurface);
+	vec2 point = surfaceBox.xy + shareOfTheSurface * surfaceBox.zw;
 	vec4 under = vec4(0.0);
 	if (pictured) {
-		vec2 point = surfaceBox.xy + shareOfTheSurface * surfaceBox.zw;
 		float past = max(pastTheEdge(point, screenBox, screenCorner), pastTheEdge(point, shownBox, shownCorner));
-		float inside = clamp(${HALF_A_PIXEL} - past / max(fwidth(past), ${NARROWEST_PIXEL}), 0.0, 1.0);
 		vec2 shareOfTheScreen = (point - screenBox.xy) / screenBox.zw;
 		vec4 page = texture2D(picture, shareOfTheScreen);
 		if (keepsAPartSharp) {
 			page = mix(page, texture2D(sharpPicture, shareOfTheScreen), sharpAt(shareOfTheScreen * screenSize));
 		}
-		under = inside * max(shown - screen.a, 0.0) * (page + (1.0 - page.a) * ground);
+		under = insideTheEdge(past) * max(shown - screen.a, 0.0) * (page + (1.0 - page.a) * ground);
 	}
 	vec4 over = anythingOver ? texture2D(overThePage, shareOfTheSurface) : vec4(0.0);
-	vec4 drawn = over + (1.0 - over.a) * (screen + under);
+	vec4 drawn = over + (1.0 - over.a) * (1.0 - openAt(point)) * (screen + under);
 	if (drawn.a < ${DRAWN_AT_LEAST}) discard;
 	gl_FragColor = inLinearLight(drawn);
 }`;
@@ -205,8 +236,23 @@ export function pageSurfaceValues() {
 		sharpPicture: { value: null },
 		screenSize: { value: new Vector2() },
 		sharpBox: { value: new Vector4() },
-		sharpEdge: { value: NO_EDGE }
+		sharpEdge: { value: NO_EDGE },
+		mouths: { value: [] },
+		mouthCorners: { value: [] },
+		mouthsOpen: { value: [] }
 	};
+}
+
+/**
+ * A page's surface's material compiled to clear the mouths of as many pits as it lays: anew, by three, only as that
+ * count changes, set before the material is first drawn.
+ * @param {ShaderMaterial} material @param {PageLaid} laid
+ */
+export function compiledForThePits(material, laid) {
+	const count = laid.mouths.length;
+	if (material.defines[PITS] === count) return;
+	material.defines = { ...material.defines, [PITS]: count };
+	material.needsUpdate = true;
 }
 
 /**
@@ -266,10 +312,12 @@ export class PagePicture {
 	 * What the page's surface of an exposure lays with the window's surface, both laid out over a box of the window's
 	 * plane, and what lies over the page, where anything does: the page's picture, blurred as the window shades it, over
 	 * the screen's ground, cut and as clear as the screen, where the screen shows the filmed page; nothing where it
-	 * shows a page of the film's own, which stands on its ground in the window's surface (`stage.css`).
-	 * @param {DrawnScene} scene @param {Box} surface @param {Texture | null} overThePage @returns {PageLaid}
+	 * shows a page of the film's own, which stands on its ground in the window's surface (`stage.css`); and the mouths of
+	 * the pits sunk into the page, open as far as each has come.
+	 * @param {DrawnScene} scene @param {Box} surface @param {Texture | null} overThePage
+	 * @param {readonly SunkPit[]} pits @returns {PageLaid}
 	 */
-	laidWith(scene, surface, overThePage) {
+	laidWith(scene, surface, overThePage, pits) {
 		const filmed = scene.screen.filmed;
 		const laid = {
 			overThePage,
@@ -278,7 +326,10 @@ export class PagePicture {
 			shownBox: valuesOfTheBox(scene.window.reach),
 			shownCorner: scene.window.corner,
 			shown: scene.window.pageShown,
-			ground: this.ground
+			ground: this.ground,
+			mouths: pits.map((pit) => valuesOfTheBox(pit.mouth)),
+			mouthCorners: pits.map((pit) => pit.corner),
+			mouthsOpen: pits.map((pit) => pit.open)
 		};
 		if (filmed === null) {
 			return {
