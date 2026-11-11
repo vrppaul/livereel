@@ -142,6 +142,7 @@ import {
 import {
 	FOCAL_LENGTH,
 	PageOfBoxes,
+	PageOfLetters,
 	PageScrollingBy,
 	PicturesHeld,
 	SMALL,
@@ -214,6 +215,20 @@ const PAGE = new PageOfBoxes(
 		['#other', OTHER]
 	]),
 	new Map([['#card', CARDS_GROUND]])
+);
+// The page the card is lifted off with the letters it carries, the first of its code's 420 across and 330 down, a
+// letter stepping 12 and 20 tall; the other block's first letter half as large, from 1210 across and 615 down; one
+// below the screen's foot; and hidden blocks, which lay out none
+const CARDS_CODE = '#card .code';
+const LETTERED_PAGE = new PageOfLetters(
+	PAGE.boxes,
+	new Map([
+		[CARDS_CODE, { left: 420, top: 330, width: 12, height: 20 }],
+		['#other', { left: 1210, top: 615, width: 6, height: 10 }],
+		['#low', { left: 100, top: 1100, width: 6, height: 10 }],
+		['#block', null],
+		['#card', null]
+	])
 );
 const SCROLLED_IN = "scroll it in with page.scrollTo, ending before this move's share begins";
 const ACTED_IN = 'bring it in with an act, as no move of livereel scrolls the page sideways';
@@ -1132,7 +1147,8 @@ test('a piece of the page is born over its block as the camera shows it, cut to 
 			hole: null,
 			lines: null,
 			picture: FOLLOWING,
-			body: null
+			body: null,
+			firstLetter: null
 		}
 	]);
 });
@@ -1232,7 +1248,8 @@ test('a piece, or an outline, goes back over its block as the camera shows it th
 			hole: null,
 			lines: null,
 			picture: FOLLOWING,
-			body: null
+			body: null,
+			firstLetter: null
 		},
 		1,
 		0,
@@ -1437,6 +1454,50 @@ test('a piece lying on the page from the moment it sets off is refused a fall: n
 		)
 	);
 });
+
+test("a piece carrying its letters lands them on a block's letters: grown as far as a letter of the block steps against one of its own, its first letter where theirs starts, its middle on theirs", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setOnLetters(piece.show('#card', { letters: CARDS_CODE }), wide, 1);
+	const landed = await setOnLetters(piece.onto('#other'), lifted, 1);
+	// The card's first letter, 20 in from its left and 40 down to its middle, half as large on the other block's, from
+	// 1210 across and 620 down to its middle: the card 200 × 100 from 1200 and 600, half as large
+	expect([drawnObjectsIn(landed, FULL_HD)[0]!.box, drawnObjectsIn(landed, FULL_HD)[0]!.content]).toEqual([
+		closeToBox({ left: 1200, top: 600, width: 100, height: 50 }),
+		expect.objectContaining({ fit: expect.closeTo(0.5) })
+	]);
+});
+
+test('a piece carrying letters is refused onto a box of the screen, a hidden block and one whose letters stand off the screen; and lifted naming a hidden block', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setOnLetters(piece.show('#card', { letters: CARDS_CODE }), wide, 1);
+	await expect(async () => piece.onto(OTHER).begin(onLetters(lifted))).rejects.toThrow(
+		new FilmError(
+			"piece.onto lands the piece's letters on a block's letters, and a box of the screen holds none: name the block by its selector"
+		)
+	);
+	await expect(async () => piece.onto('#block').begin(onLetters(lifted))).rejects.toThrow(
+		new FilmError("piece.onto's #block lays out no letters, as it is hidden: show it first")
+	);
+	await expect(async () => piece.onto('#low').begin(onLetters(lifted))).rejects.toThrow(
+		new FilmError(
+			`piece.onto's #low stands off the page's screen, at left 100, top 1100 of a screen 1920 × 1080: ${SCROLLED_IN}`
+		)
+	);
+	await expect(async () => piece.show('#card', { letters: '#card' }).begin(onLetters(wide))).rejects.toThrow(
+		new FilmError("piece.show's letters, #card, lays out none, as it is hidden: name a block it shows")
+	);
+});
+
+/** A beginning in full HD on the page of letters. */
+function onLetters(scene: Scene): Beginning {
+	return { ...beginningIn(scene, FULL_HD), page: LETTERED_PAGE };
+}
+
+/** A scene a move has set so far along, begun in full HD on the page of letters. */
+async function setOnLetters(move: Move, scene: Scene, progress: number): Promise<Scene> {
+	const change = await move.begin(onLetters(scene));
+	return change(scene, progress);
+}
 
 test('a piece in the world fallen onto a block goes down with the screen, as one lying on the page does', async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);

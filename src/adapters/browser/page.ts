@@ -1,11 +1,15 @@
 /**
- * The filmed page as moves read it and type into it: where its blocks stand, the ground behind them, its scroll, its
- * keyboard; and a page of the film's own as moves measure it, among the rest how far down it scrolls with what is typed
- * into its blocks, how far down its document a block stands, and what a block the film types into shows as its text.
+ * The filmed page as moves read it and type into it: where its blocks and their letters stand, the ground behind
+ * them, its scroll, its keyboard; and a page of the film's own as moves measure it, among the rest how far down it
+ * scrolls with what is typed into its blocks, how far down its document a block stands, and what a block the film types
+ * into shows as its text.
  *
  * The functions handed to the page run there, each alone: none may call another of this module. The block a scroll
  * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a
- * canvas of the page's own, which turns any colour CSS writes, in whatever form, into its channels.
+ * canvas of the page's own, which turns any colour CSS writes, in whatever form, into its channels. Where a block's
+ * letters start, and how far one steps, is read off a letter set there for the measure and taken out at once, as the
+ * page lays it: never off the block's box, which holds its padding too, nor off its own letters, of which a blank line
+ * of code has none.
  *
  * A block a scroll moves, and every block whose scroll carries the source of a piece riding its block, is told by a key
  * the take gives it, the same however a film selects the block, so a scroll and a ride meet on the block itself, never
@@ -101,6 +105,9 @@ const GROUND_ASKED: GroundAsked = { canvasSide: 1, whole: 255 };
 // The ground read where no block a block stands in draws one: white, the browser's canvas in the light scheme a film
 // asks for where it names none; a page that lets the dark scheme in shows its canvas dark, which is not read
 const WHITE: Channels = { red: 255, green: 255, blue: 255, alpha: 255 };
+// The letter set at the start of a block's text to find where its letters start and how far one steps: a figure, as
+// wide as every letter of the monospace fonts code is set in
+const A_LETTER = '0';
 
 export class PlaywrightPage implements FilmedPage {
 	readonly frame: Frame;
@@ -130,6 +137,10 @@ export class PlaywrightPage implements FilmedPage {
 	async groundBehind(target: string): Promise<string> {
 		const block = await this.found(target);
 		return hexOf((await block.evaluate(groundOf, GROUND_ASKED)) ?? WHITE);
+	}
+
+	async letterAtTheStart(target: string): Promise<Box | null> {
+		return (await this.found(target)).evaluate(letterAtTheStartOf, A_LETTER);
 	}
 
 	async scrollCourse(target: string, aim: ScrollAim): Promise<ScrollCourse> {
@@ -296,6 +307,24 @@ function groundOf(block: Element, asked: GroundAsked): Channels | null {
 		if (alpha === asked.whole) return { red, green, blue, alpha };
 	}
 	return null;
+}
+
+/**
+ * The box a letter takes set at the start of a block's text: before the first text it holds, in that text's own
+ * font, or into the block where it holds none; taken out again at once. None where the block lays out no letter, as
+ * it is hidden.
+ */
+function letterAtTheStartOf(block: Element, letter: string): Box | null {
+	const set = document.createTextNode(letter);
+	const first = document.createTreeWalker(block, NodeFilter.SHOW_TEXT).nextNode();
+	if (first instanceof Text) first.before(set);
+	else block.prepend(set);
+	const range = document.createRange();
+	range.selectNodeContents(set);
+	const [taken] = range.getClientRects();
+	set.remove();
+	if (taken === undefined || taken.width === 0) return null;
+	return { left: taken.left, top: taken.top, width: taken.width, height: taken.height };
 }
 
 /**

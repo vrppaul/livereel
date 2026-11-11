@@ -263,7 +263,7 @@ and the moves of each part of the scene:
   `terminal.lean({ tilt, turn, roll, over, about })`, `terminal.leave({ toward, leave, edge })`; the terminal stands `at` a place, read as
   the window reads one, across most of the frame in its middle where none is named; each move of it takes `as` to
   name which
-- `piece.show(target, { every, air, corner, hole, lines, picture, body, rides, enter, edge, as, inside, group,
+- `piece.show(target, { every, air, corner, hole, lines, picture, body, rides, letters, enter, edge, as, inside, group,
   zIndex })`, `piece.to(place, { scale, depth })`, `piece.onto(target, { fall })`, `piece.lean({ tilt, turn, roll, over, about })`, `piece.back()`,
   `piece.hide({ toward, leave, edge, sheen })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
@@ -273,7 +273,8 @@ and the moves of each part of the scene:
   held as it is lifted; `inside: 'world'`, with a `body: { thickness, walls, glow }` where named, riding its block as
   the page scrolls, `rides: 'its block'`, where named; carried `onto` another block, it lies on the page there: from
   the frame in the window, keeping that place on the screen as the camera moves; from the world on the page in the
-  world, keeping its body and falling onto it on the curve `fall` names; each move of it takes `as` to name which
+  world, keeping its body and falling onto it on the curve `fall` names; one carrying the `letters` of a block of its
+  source lands them letter on letter on the block's; each move of it takes `as` to name which
 - `outline.show(target, { every, line, enter, edge, as, group, zIndex })`, `outline.to(place, { scale, depth })`,
   `outline.lean({ tilt, turn, roll, over, about })`, `outline.back()`, `outline.hide({ toward, leave, edge })`; a ring round a
   selector's blocks or a box of the screen, `'solid'` or `'dashed'`; each move of it takes `as` to name which
@@ -715,6 +716,26 @@ past the figure's far side as far as the light trails, so the light runs off
 the piece before it is gone. The light lies on the piece's object, over its
 figure alone, so it is blurred and held as the piece is, and casts none of
 its shadow. A sheen with any other way of going is refused.
+
+A piece lands as large as the block holds it, in its middle, unless it
+carries letters: lifted naming the block of its source whose letters it
+carries, `piece.show(ROW, { letters: ROW_CODE })`, the span of the row
+that holds its code, it lands them letter on letter on the block's,
+`piece.onto(REVIEW_ROW_CODE)`, the review's cell of that line's code, as the
+promo lands a terminal's diff line on the review's row: grown as far as a
+letter of the block steps against one of its own, so its letters stand as
+large as the block's and over the same columns, its first letter where the
+block's starts, its middle on theirs. Where letters start and
+how far one steps is read off a letter the page sets at the start of the
+block's text and takes out at once, past the block's padding, so a blank line
+of code lands as its neighbours do. The film names the block because only it
+knows which of a source's letters are the block's: a terminal sets the diff's
+sign before the code, the review in a column of its own, so the terminal's
+page holds the code in a span of its own. The piece's letters are read as it
+is lifted, off the page it is lifted off, a page of the film's own too; the
+block's as it lands. A box of the screen holds no letters, so landing letters
+on one is refused, as is a hidden block; a film's set measured no letters,
+so it is refused there.
 
 A piece lifted `inside: 'world'` rides its block as the page scrolls where the
 film asks: `piece.show(TASK, { inside: 'world', rides: 'its block' })`, then

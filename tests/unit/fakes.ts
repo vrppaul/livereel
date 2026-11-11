@@ -89,6 +89,11 @@ export class PageOfBoxes implements FilmedPage {
 		return Promise.resolve(this.grounds.get(target)!);
 	}
 
+	/** A page of boxes lays out no letters. */
+	letterAtTheStart(): Promise<Box | null> {
+		return Promise.resolve(null);
+	}
+
 	scrollCourse(): Promise<ScrollCourse> {
 		return Promise.resolve({ start: 0, end: 0, block: THE_PAGES_OWN_SCROLL, scroll: () => Promise.resolve() });
 	}
@@ -105,6 +110,24 @@ export class PageOfBoxes implements FilmedPage {
 
 	press(): Promise<void> {
 		return Promise.resolve();
+	}
+}
+
+/**
+ * A page of boxes where a letter set at the start of each block's text stands as a table says, a block that lays out
+ * none, hidden, named with none.
+ */
+export class PageOfLetters extends PageOfBoxes {
+	readonly firstLetters: ReadonlyMap<string, Box | null>;
+
+	constructor(boxes: ReadonlyMap<string, Box>, firstLetters: ReadonlyMap<string, Box | null>) {
+		super(boxes);
+		this.firstLetters = firstLetters;
+	}
+
+	/** A test names only the blocks whose letters its page has. */
+	letterAtTheStart(target: string): Promise<Box | null> {
+		return Promise.resolve(this.firstLetters.get(target) as Box | null);
 	}
 }
 

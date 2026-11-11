@@ -22,15 +22,25 @@
  * with no body cannot give; and draw lines from itself to its source. Its corners, and its hole's, are as round as the
  * film names, square where it names none: the film knows how round a block of its page is drawn, which no box read off
  * the page says. Every move of it takes the piece named `piece`, or the one the film names `as`.
+ *
+ * Lifted naming a block of its source whose letters it carries, it lands them letter on letter on the letters of a
+ * block it is carried onto, as the claude-review promo lands a terminal's diff line on the review's row: grown as far
+ * as a letter of the block steps against one of its own, so its letters stand as large as theirs and column on
+ * column, its first letter where theirs starts, its middle on theirs. Where letters start, and how far one steps, is
+ * read off a letter the page sets at the start of the block's text, so a blank line of code lands as its neighbours
+ * do. Only the film knows which of its source's letters are the block's: the diff's sign stands in a terminal's line
+ * and in a column of its own on the review. Its letters are measured as it is lifted, off the page it is lifted off
+ * as it stands then, as its picture is taken; the block's as it lands.
  */
 import { type Camera, boxOnTheFrame } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import { type Box, type FrameSide, type Size, frameScaleOf } from '../domain/geometry.ts';
+import { type Box, type FrameSide, type Size, frameScaleOf, middleY } from '../domain/geometry.ts';
 import {
 	AN_OPAQUE_COLOUR,
 	A_COLOUR,
 	A_COUNT,
 	A_PIXELS,
+	A_SELECTOR,
 	A_SHARE,
 	type Form,
 	type Kind,
@@ -44,7 +54,16 @@ import {
 } from '../domain/handed.ts';
 import type { Place } from '../domain/place.ts';
 import { screenBoxUnder } from '../domain/placement.ts';
-import { A_TARGET, type Beginning, type Move, type Target, refuseWhereLive } from '../direction/move.ts';
+import {
+	A_TARGET,
+	type Beginning,
+	type Move,
+	THE_FIRST,
+	type Target,
+	refuseOffTheScreen,
+	refuseWhereLive,
+	shownBox
+} from '../direction/move.ts';
 import {
 	type Body,
 	type Corners,
@@ -138,8 +157,9 @@ export interface BodyScript {
  * the hole it leaves and the line the lines from it to its source are drawn in, where the film names them; the
  * `picture` it is drawn from, the page's as it changes, `'following'`, where the film names none, or one of its source
  * held as it is lifted, `'held'`; how it comes up; which piece; the world it stands `inside`, which the eye moves
- * through, or the group it stands in, if either; its `body` in the world, if the film names one; and whether it
- * `rides` its block in the world, `'its block'`, carried up by the film's scrolls of every block its source stands in.
+ * through, or the group it stands in, if either; its `body` in the world, if the film names one; whether it `rides`
+ * its block in the world, `'its block'`, carried up by the film's scrolls of every block its source stands in; and the
+ * block whose `letters` it carries, a selector, which it lands on a block's letters, if the film names one.
  */
 export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript {
 	readonly every?: number;
@@ -151,6 +171,7 @@ export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScri
 	readonly inside?: 'world';
 	readonly body?: BodyScript;
 	readonly rides?: 'its block';
+	readonly letters?: string;
 }
 
 /** How a piece goes: as any object does, and with the sheen a wipe trails, where the film names one. */
@@ -186,7 +207,7 @@ interface HoleAsked {
 /**
  * What a piece is lifted with, as it is made: how its source is taken, how many blocks, with how much air round them
  * and where it is born; how round its corners are, the hole it leaves, if any, its lines, if any, the kind of picture
- * it is drawn from, and its body, if any.
+ * it is drawn from, its body, if any, and the block whose letters it carries, if any.
  */
 interface Lifting extends Taking {
 	readonly corner: number;
@@ -194,6 +215,7 @@ interface Lifting extends Taking {
 	readonly lines: Stroke | null;
 	readonly picture: PiecePicture['kind'];
 	readonly body: Body | null;
+	readonly letters: string | null;
 }
 
 const PIECE = 'piece' satisfies ShownKind;
@@ -242,6 +264,8 @@ const A_PIECE_PICTURE: Kind<PiecePicture['kind']> = new OneOf(
 const BODY_FORM: Form<BodyScript> = { thickness: needed(A_PIXELS), walls: needed(AN_OPAQUE_COLOUR), glow: A_SHARE };
 // A body's walls, or a pit's, lit from within by no light where the film names none
 const NO_GLOW = 0;
+// A piece that carries no letters where the film names no block of them, and lands as large as a block holds it
+const CARRIES_NONE = null;
 const PIECE_FORM: Form<PieceScript> = {
 	every: A_COUNT,
 	air: A_PIXELS,
@@ -254,6 +278,7 @@ const PIECE_FORM: Form<PieceScript> = {
 	body: new OfForm(BODY_FORM, 'a body: { thickness, walls, glow }'),
 	// The page finds the blocks a piece's source stands in, so the film names none, and none by a selector it mistypes
 	rides: new Literal('its block'),
+	letters: A_SELECTOR,
 	...IN_PLACE_SHOW_FORM,
 	...NAMED_FORM,
 	...GROUPED_FORM
@@ -272,16 +297,27 @@ export function show(target: Target, script: PieceScript = {}): Move {
 	assertWritten(script, PIECE_FORM, 'piece.show');
 	const body = script.body === undefined ? null : bodyAsked(script.body, script.inside);
 	const lifting: Lifting = {
-		every: script.every ?? ONE_BLOCK,
-		air: script.air ?? NO_AIR,
+		...takingOf(script),
 		corner: script.corner ?? SQUARE,
 		hole: script.hole === undefined ? null : holeAsked(target, script.hole, body),
 		lines: script.lines ?? null,
 		picture: script.picture ?? FOLLOWING_THE_PAGE.kind,
-		bornIn: script.inside ?? BORN_ON_THE_FRAME,
-		body
+		body,
+		letters: script.letters ?? CARRIES_NONE
 	};
 	return { ...pieceComing(target, script, lifting), holdsThePage: lifting.picture === 'held' };
+}
+
+/**
+ * How a piece's source is taken off its target as the film names it: off its first block where it names no more, with
+ * no air round them where it names none, born on the frame where it names nothing to stand inside.
+ */
+function takingOf(script: PieceScript): Taking {
+	return {
+		every: script.every ?? ONE_BLOCK,
+		air: script.air ?? NO_AIR,
+		bornIn: script.inside ?? BORN_ON_THE_FRAME
+	};
 }
 
 /**
@@ -309,11 +345,55 @@ export function to(place: Place, script: ToScript = {}): Move {
 
 /**
  * The piece carried onto the first block a selector matches, or a box of the screen, as large as the block holds its
- * source, to lie on the page there: it lands on the block wherever the camera goes on its way, and keeps that place on
- * the screen after. One standing off the page in the world falls onto it as it travels, on the curve `fall` names.
+ * source, in its middle, or with the letters it carries on the block's, to lie on the page there: it lands on the block
+ * wherever the camera goes on its way, and keeps that place on the screen after. One standing off the page in the world
+ * falls onto it as it travels, on the curve `fall` names.
  */
 export function onto(target: Target, script: OntoScript = {}): Move {
-	return objectOnto(PIECE, 'piece.onto', target, script);
+	assertKind(target, A_TARGET, "piece.onto's target");
+	return objectOnto(PIECE, 'piece.onto', script, (beginning, piece) => landedOn(beginning, target, piece.content));
+}
+
+/**
+ * The box a piece lies in on the block a target names, as the move begins: the block's, which holds its source as large
+ * as it can, in its middle; or, where the piece carries letters, the one that lays them on the block's.
+ */
+async function landedOn(beginning: Beginning, target: Target, piece: Piece): Promise<Box> {
+	if (piece.firstLetter === CARRIES_NONE) return shownBox(beginning, target, THE_FIRST, 'piece.onto');
+	return letterOnLetter(piece.source, piece.firstLetter, await firstLetterLandedOn(beginning, target));
+}
+
+/**
+ * Where the first letter of the block a piece lands its letters on stands on the screen, read as the move begins:
+ * refused for a box of the screen, which holds no letters, a block that lays out none, and one standing wholly off the
+ * screen.
+ */
+async function firstLetterLandedOn(beginning: Beginning, target: Target): Promise<Box> {
+	if (typeof target !== 'string') {
+		throw new FilmError(
+			"piece.onto lands the piece's letters on a block's letters, and a box of the screen holds none: name the block by its selector"
+		);
+	}
+	const named = `piece.onto's ${target}`;
+	const letter = await beginning.page.letterAtTheStart(target);
+	if (letter === null) throw new FilmError(`${named} lays out no letters, as it is hidden: show it first`);
+	refuseOffTheScreen(letter, target, beginning.format.screen, named);
+	return letter;
+}
+
+/**
+ * The box a piece's source lies in with the letters it carries on a block's: grown as far as a letter of the block
+ * steps against one of its own, so each of its letters stands as large as theirs and over the same column, its first
+ * letter where theirs starts, its middle on theirs.
+ */
+function letterOnLetter(source: Box, carried: Box, onto: Box): Box {
+	const growth = onto.width / carried.width;
+	return {
+		left: onto.left - (carried.left - source.left) * growth,
+		top: middleY(onto) - (middleY(carried) - source.top) * growth,
+		width: source.width * growth,
+		height: source.height * growth
+	};
 }
 
 /** The piece leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled by `roll`. */
@@ -459,7 +539,7 @@ function bodyAsked(body: BodyScript, inside: PieceScript['inside']): Body {
 /**
  * A piece of the page over a target, cut to the part of it the camera shows, its corners as round as the film names,
  * the hole it leaves filled as the page draws it now and as round, drawn from the picture the film names, with the
- * body it names, and the box of the frame it shows there.
+ * body it names, carrying the letters of the block it names as they stand now, and the box of the frame it shows there.
  */
 async function lifted(beginning: Beginning, target: Target, lifting: Lifting): Promise<Coming> {
 	const camera = cameraOverItsPicture(beginning, lifting.picture, 'piece.show');
@@ -479,9 +559,22 @@ async function lifted(beginning: Beginning, target: Target, lifting: Lifting): P
 		hole,
 		lines: lifting.lines,
 		picture,
-		body: lifting.body
+		body: lifting.body,
+		firstLetter: lifting.letters === CARRIES_NONE ? CARRIES_NONE : await firstLetterCarried(beginning, lifting.letters)
 	};
 	return { content: piece, box };
+}
+
+/**
+ * Where the first letter of the block a piece carries the letters of stands on the screen, as the page it is lifted off
+ * stands; refused where the block lays out none.
+ */
+async function firstLetterCarried(beginning: Beginning, block: string): Promise<Box> {
+	const letter = await beginning.page.letterAtTheStart(block);
+	if (letter === null) {
+		throw new FilmError(`piece.show's letters, ${block}, lays out none, as it is hidden: name a block it shows`);
+	}
+	return letter;
 }
 
 /** The picture a piece is drawn from: the page's, or one of its source the take holds now, as the page stands. */

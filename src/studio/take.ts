@@ -126,6 +126,7 @@ const NO_RIDE_ON_AN_OWN_PAGE =
 const PAGE_UNREAD_AHEAD: FilmedPage = {
 	box: refusedAhead,
 	groundBehind: refusedAhead,
+	letterAtTheStart: refusedAhead,
 	scrollCourse: refusedAhead,
 	blocksHolding: refusedAhead,
 	type: refusedAhead,
@@ -783,6 +784,10 @@ class OwnPageShown implements FilmedPage {
 
 	groundBehind(target: string): Promise<string> {
 		return this.measured.groundBehind(target);
+	}
+
+	letterAtTheStart(target: string): Promise<Box | null> {
+		return this.measured.letterAtTheStart(target);
 	}
 
 	scrollCourse(target: string, aim: ScrollAim): Promise<ScrollCourse> {

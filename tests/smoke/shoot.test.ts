@@ -16,7 +16,7 @@ import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
 import { ZOOM_AT_MOST } from '../../src/domain/camera.ts';
 import { FilmError, SetupError, TakeError } from '../../src/domain/errors.ts';
-import type { Size } from '../../src/domain/geometry.ts';
+import type { Box, Size } from '../../src/domain/geometry.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
 import type { Exposures, Filmed, Footage, FramesHanded, Opened, PicturedStage } from '../../src/studio/ports.ts';
 import { type BlockHolding, ownPageOf } from '../../src/direction/page.ts';
@@ -643,6 +643,57 @@ test('the ground behind a block is the first the blocks it stands in draw whole,
 	}).formats.get('small')!;
 	await shoot(film, shootingInto(new EveryFrameCounted(), 'software'));
 	expect(grounds).toEqual(['#f6f7f9ff', '#123456ff', '#ffffffff']);
+});
+
+// A page of blocks set in a monospace font past a padding: one whose text starts with a word of six letters, a blank
+// one and one holding text, alike but for that, and a hidden one
+const LETTERS = new URL('./letters.html', import.meta.url).href;
+
+// How many letters the word the block of code starts with holds
+const LETTERS_IN_THE_WORD = 6;
+
+/**
+ * What a page of letters reads: the letter set at the start of the block of code and the word it starts with; the
+ * letter set at the start of the blank block and of the one holding text, each from its block's top; and the letter
+ * at the start of the hidden block.
+ */
+interface LettersRead {
+	readonly code: Box;
+	readonly word: Box;
+	readonly blank: Box;
+	readonly filled: Box;
+	readonly hidden: Box | null;
+}
+
+test("a letter set at the start of a block's text stands over its first letter, as wide as one steps, and where a blank block's would start; a hidden block lays out none", async () => {
+	const read: LettersRead[] = [];
+	const steps = [
+		act(async (context: ActContext) => {
+			const page = new PlaywrightPage(context.page, context.page.page().keyboard);
+			const blank = (await page.letterAtTheStart('[data-testid=blank]'))!;
+			const filled = (await page.letterAtTheStart('[data-testid=filled]'))!;
+			read.push({
+				code: (await page.letterAtTheStart('[data-testid=code]'))!,
+				word: await page.box('[data-testid=word]', 1),
+				blank: { ...blank, top: blank.top - (await page.box('[data-testid=blank]', 1)).top },
+				filled: { ...filled, top: filled.top - (await page.box('[data-testid=filled]', 1)).top },
+				hidden: await page.letterAtTheStart('[data-testid=hidden]')
+			});
+		})
+	];
+	const film = defineFilm({
+		formats: { small: SMALL },
+		address: LETTERS,
+		ready: (context) => context.page.locator('main').waitFor(),
+		steps: () => steps
+	}).formats.get('small')!;
+	await shoot(film, shootingInto(new EveryFrameCounted(), 'software'));
+	const [{ code, word, blank, filled, hidden }] = read as [LettersRead];
+	expect([code, blank, hidden]).toEqual([
+		{ ...word, width: expect.closeTo(word.width / LETTERS_IN_THE_WORD, 1) },
+		filled,
+		null
+	]);
 });
 
 // A page whose column scrolls of itself, a row in it, and the page tall enough to scroll the column away

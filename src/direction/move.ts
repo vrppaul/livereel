@@ -396,14 +396,21 @@ export async function shownBox(beginning: Beginning, target: Target, every: numb
 	if (box.width === NO_SIZE && box.height === NO_SIZE) {
 		throw new FilmError(`${named} ${typeof target === 'string' ? HIDDEN_SAID : NO_SIZE_GIVEN}`);
 	}
-	if (liesOutside(box, screen)) {
-		const where = `at left ${Math.round(box.left)}, top ${Math.round(box.top)}`;
-		throw new FilmError(
-			`${named} stands off the page's screen, ${where} of a screen ${screen.width} × ${screen.height}: ` +
-				broughtInto(target, box, screen)
-		);
-	}
+	refuseOffTheScreen(box, target, screen, named);
 	return box;
+}
+
+/**
+ * Refuses what a move goes to, a target's box or a part of it, where it stands wholly off the page's screen, in the
+ * words a refusal names it by, saying how it comes onto the screen.
+ */
+export function refuseOffTheScreen(box: Box, target: Target, screen: Size, named: string): void {
+	if (!liesOutside(box, screen)) return;
+	const where = `at left ${Math.round(box.left)}, top ${Math.round(box.top)}`;
+	throw new FilmError(
+		`${named} stands off the page's screen, ${where} of a screen ${screen.width} × ${screen.height}: ` +
+			broughtInto(target, box, screen)
+	);
 }
 
 /**

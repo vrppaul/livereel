@@ -422,6 +422,10 @@ class TimedPage implements FilmedPage {
 		return this.timings.timed('page.groundBehind', () => this.page.groundBehind(target));
 	}
 
+	letterAtTheStart(target: string): Promise<Box | null> {
+		return this.timings.timed('page.letterAtTheStart', () => this.page.letterAtTheStart(target));
+	}
+
 	async scrollCourse(target: string, aim: ScrollAim): Promise<ScrollCourse> {
 		const course = await this.timings.timed('page.scrollCourse', () => this.page.scrollCourse(target, aim));
 		return { ...course, scroll: (top) => this.timings.timed('page.scroll', () => course.scroll(top)) };

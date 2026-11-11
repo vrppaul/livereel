@@ -7,10 +7,11 @@
  * A state is pictured as the app's tab shows it once its fonts have loaded, at the screen's size and the set's
  * sharpness, as a PNG, its text caret kept and anything still animating set at its end; every block each of the set's
  * targets matches is measured then, with the ground behind the first, as a live page's are, so a take reads the set as
- * it would have read the app. A target that matched nothing in a state is not kept for it. The state shown is held
- * here, as an act shows it: a move reads its targets from it, and the scroll and keys the set's pictures stood still
- * for are refused. A film shot on its set has no app, so an act that asks for the page is refused, saying how a state
- * is shown, where it would have waited on livereel's own page for a block it never has.
+ * it would have read the app; their letters are not, as no film on a set asked for them. A target that matched nothing
+ * in a state is not kept for it. The state shown is held here, as an act shows it: a move reads its targets from it,
+ * and the scroll and keys the set's pictures stood still for are refused. A film shot on its set has no app, so an act
+ * that asks for the page is refused, saying how a state is shown, where it would have waited on livereel's own page for
+ * a block it never has.
  */
 import type { Browser as Playwright, Frame, Page } from 'playwright-core';
 import { FilmError } from '../../domain/errors.ts';
@@ -59,6 +60,9 @@ const NO_RIDE_ON_THE_SET =
 const NO_APP =
 	"a film shot on its set acts on no app, and an act's context.page is livereel's page of the set: show a state " +
 	'with context.set.show(name)';
+const NO_LETTERS_SHOT =
+	"the film's set shot where its targets' blocks stand, not their letters: a piece carries letters off a page filmed " +
+	"live, or one of the film's own, and lands them on one";
 const SET_BEING_SHOT =
 	"context.set shows the film's set as the film is shot on it, not as the set is shot: ready waits on the app itself";
 
@@ -140,6 +144,11 @@ class SetPage implements FilmedPage {
 
 	groundBehind(target: string): Promise<string> {
 		return Promise.resolve().then(() => this.shotOf(target).ground);
+	}
+
+	/** The set shot where its targets' blocks stood, not their letters. */
+	letterAtTheStart(): Promise<Box | null> {
+		return Promise.reject(new FilmError(NO_LETTERS_SHOT));
 	}
 
 	scrollCourse(): Promise<ScrollCourse> {

@@ -98,7 +98,6 @@ import { A_CURVE, type Ease } from '../domain/curves.ts';
 import { type Path, type Through, pathOf } from '../domain/path.ts';
 import { MOVES_WITH_THE_CURVE, type MovingBy, namedToward } from '../domain/toward.ts';
 import {
-	A_TARGET,
 	type Beginning,
 	type Change,
 	type Move,
@@ -108,7 +107,6 @@ import {
 	type Timing,
 	type TimingScript,
 	objectPart,
-	shownBox,
 	shownPart,
 	timingOf,
 	untilTheEnd
@@ -745,22 +743,26 @@ export function objectCarriedTo(
 }
 
 /**
- * An object of a kind carried onto the first block a selector matches, or a box of the screen, to lie on the page as
- * large as the block: from where it stands as the move begins, measured on the screen as the camera shows it then, so
- * it lands on the block wherever the camera goes on its way, and keeps that place on the screen after. One standing in
- * the world comes down onto the block as it goes, from as near the eye and as leant as it stood, so it falls as it
+ * An object of a kind carried onto a block of the page, to lie on the page in the box of the screen `landedOn` works
+ * out of the object as the move begins: from where it stands then, measured on the screen as the camera shows it then,
+ * so it lands on the block wherever the camera goes on its way, and keeps that place on the screen after. One standing
+ * in the world comes down onto the block as it goes, from as near the eye and as leant as it stood, so it falls as it
  * travels: its travel on the move's curve, its fall on the one the film names, so the fall gathers speed apart from
  * the travel, or on the move's too.
  */
-export function objectOnto(kind: ShownKind, move: string, target: Target, script: OntoScript): Move {
-	assertKind(target, A_TARGET, `${move}'s target`);
+export function objectOnto<Kind extends ShownKind>(
+	kind: Kind,
+	move: string,
+	script: OntoScript,
+	landedOn: (beginning: Beginning, object: ShowingOf<Kind>) => Promise<Box>
+): Move {
 	assertWritten(script, ONTO_FORM, move);
 	const name = script.as ?? kind;
 	return {
 		part: objectPart(name),
 		valueNames: HELD_ANEW,
 		timing: timingOf(script),
-		begin: (beginning) => laidOnto(beginning, name, kind, target, script, move)
+		begin: (beginning) => laidOnto(beginning, name, kind, script, landedOn, move)
 	};
 }
 
@@ -1315,17 +1317,17 @@ async function carriedToBox(
 }
 
 /**
- * The object on its way onto a block of the page, from where it stood as the move began to lying on the block: what it
- * lands in written into it at once, its box and how it stands there on their way, travelling on the move's curve and
- * falling on the one the film names, or on the move's; a fall named for one lying flat on the page from the start,
- * where nothing of it falls, is refused.
+ * The object on its way onto a block of the page, from where it stood as the move began to lying in the box of the
+ * screen `landedOn` works out of it: what it lands in written into it at once, its box and how it stands there on their
+ * way, travelling on the move's curve and falling on the one the film names, or on the move's; a fall named for one
+ * lying flat on the page from the start, where nothing of it falls, is refused.
  */
-async function laidOnto(
+async function laidOnto<Kind extends ShownKind>(
 	beginning: Beginning,
 	name: ObjectName,
-	kind: ShownKind,
-	target: Target,
+	kind: Kind,
 	script: OntoScript,
+	landedOn: (beginning: Beginning, object: ShowingOf<Kind>) => Promise<Box>,
 	move: string
 ): Promise<Change> {
 	const object = standingOfKind(beginning, name, move, kind);
@@ -1335,7 +1337,7 @@ async function laidOnto(
 			`${move} names a fall for the ${name}, which lies flat on the page from the moment it sets off: nothing of it falls, leave fall out`
 		);
 	}
-	const end = await shownBox(beginning, target, THE_FIRST, move);
+	const end = await landedOn(beginning, object);
 	return crossing(name, landing.holder, landing.from, { ...landing.lying, box: end }, script.fall);
 }
 

@@ -21,6 +21,9 @@
  * no body for the window. Its hole may reach past its edge, a socket the walls come up out of; or be sunk into the page
  * as a pit with walls of the body's colour, which the room draws behind the window's plane, the page cleared over its
  * mouth, going down with the screen, and the flat stage draws as a hole of its colour.
+ *
+ * It may carry letters, those of a block of its source the film names, measured as it is lifted where the first of
+ * them starts and how far one steps, so it lands them on another block's letters (`src/moves/piece.ts`).
  */
 import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
 import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
@@ -115,7 +118,8 @@ export interface DrawnBody extends Body {
  * was lifted off it, which its hole belongs to; how round each of its corners is, in the same pixels — as the film
  * names for a rounded block, and as the window where the corner stands on a corner of what the window shows — the hole
  * it leaves there, if any, the line the lines from it to its source are drawn in, if it draws any, the picture it is
- * drawn from, and its body, if it has one.
+ * drawn from, its body, if it has one, and, where it carries letters, which it lands on a block's letters, the box
+ * their first letter takes, as wide as a letter of theirs steps, in the screen's pixels as its source.
  */
 export interface Piece {
 	readonly kind: 'piece';
@@ -126,6 +130,7 @@ export interface Piece {
 	readonly lines: Stroke | null;
 	readonly picture: PiecePicture;
 	readonly body: Body | null;
+	readonly firstLetter: Box | null;
 }
 
 /**

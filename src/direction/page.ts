@@ -41,12 +41,12 @@ export type PageShown = 'framed' | 'pictured';
 export type BlockHolding = 'text alone' | 'elements' | 'its value';
 
 /**
- * A page as a move measures it: where its blocks stand and the ground behind them, in its pixels how far down it
- * scrolls at most with a text written into each of some blocks, and how far down its document a block's top stands,
- * however far it is scrolled, and what a block shows as its text; as a page of the film's own is measured, which no
- * key reaches and the film alone runs and types into.
+ * A page as a move measures it: where its blocks and their letters stand and the ground behind them, in its pixels
+ * how far down it scrolls at most with a text written into each of some blocks, and how far down its document a
+ * block's top stands, however far it is scrolled, and what a block shows as its text; as a page of the film's own is
+ * measured, which no key reaches and the film alone runs and types into.
  */
-export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind'> & {
+export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind' | 'letterAtTheStart'> & {
 	/**
 	 * Measured with each block a typed text names, the first its CSS selector matches, holding that text and every other
 	 * holding what it held; each holds what it held again after, as the stage writes what stands typed in each exposure.
@@ -70,6 +70,13 @@ export interface FilmedPage {
 	 * background the blocks it stands in draw whole, or white where none does.
 	 */
 	readonly groundBehind: (target: string) => Promise<string>;
+	/**
+	 * Where a letter set at the start of the text of the first block a target matches stands on the screen, as the page
+	 * lays it in that text's font, or where the text would start in a block holding none: the box it takes, as wide as a
+	 * letter steps, past the block's padding. None where the block lays out no letter, as it is hidden. A target the
+	 * page lacks is refused at once.
+	 */
+	readonly letterAtTheStart: (target: string) => Promise<Box | null>;
 	/** The scroll a target takes to reach its aim; a target the page lacks is refused at once. */
 	readonly scrollCourse: (target: string, aim: ScrollAim) => Promise<ScrollCourse>;
 	/**
