@@ -65,6 +65,7 @@ export const DRAWN_AS_A_ROOM: StageDrawing = {
 	laidOut: roomLaidOut,
 	drawn: drawnInTheRoom,
 	finished: (page) => page.evaluate(cardFinished),
+	scalesItsFrame: true,
 	saidInSoftware:
 		'the room is drawn in software, where a frame takes about 150 times as long to draw as on a graphics card: ' +
 		'--renderer gpu draws it on the card, where the machine has one'

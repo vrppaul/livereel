@@ -44,7 +44,7 @@ import { resolve } from 'node:path';
 import { type Browser as Playwright, type Frame, type Page, chromium } from 'playwright-core';
 import { ZOOM_AT_MOST } from '../../domain/camera.ts';
 import { FilmError, SetupError } from '../../domain/errors.ts';
-import { type Size, frameScaleOf } from '../../domain/geometry.ts';
+import { type Box, type Size, boxOf, frameScaleOf } from '../../domain/geometry.ts';
 import { type MotionBlur, mostExposuresOf } from '../../domain/shutter.ts';
 import type { Drawing, PageKind, StagePlace } from '../../direction/film.ts';
 import type { ActContext, FilmedPage, MeasuredPage, OwnPage } from '../../direction/page.ts';
@@ -82,12 +82,14 @@ import { DRAWN_AS_A_ROOM } from './room.ts';
 import { AppOpenedForSet, NoSetShown, SET_PAGE, setShownIn } from './set.ts';
 import {
 	DRAWN_FLAT,
+	type Layout,
 	NO_THINGS,
 	ONE_AT_A_TIME,
 	type Opening,
 	PlaywrightFramedStage,
 	PlaywrightPicturedStage,
 	type StageDrawing,
+	handedInOf,
 	layoutOf,
 	openPage,
 	ownPagesLaid,
@@ -172,13 +174,15 @@ interface Forcing {
 /**
  * How a stage showing the page's pictures takes and draws them: how many of a picture's pixels a page's pixel takes
  * for a camera at a zoom of 1, as sharp as the film is shot; how many of a frame's exposures it draws at once; the
- * bounds its pictures are taken within; and how it draws a frame, flat or as a room.
+ * bounds its pictures are taken within; how it draws a frame, flat or as a room, and the part of it a frame is handed
+ * on from.
  */
 interface Picturing {
 	readonly pixelsAtZoomOne: number;
 	readonly exposuresAtOnce: number;
 	readonly bounds: readonly PictureBound[];
 	readonly drawing: StageDrawing;
+	readonly handedIn: Box;
 	/** The film's things module, where it names one: its file on the disk. */
 	readonly things: string | null;
 }
@@ -370,7 +374,8 @@ export class Chromium implements Browser, DrawnBrowser, SetBrowser {
 				case 'set': {
 					const bounds = boundsOf(picturePixels, await cardSideIn(onTheCard, stage, this.warn));
 					const things = setting.things === null ? null : resolve(this.filmFolder, setting.things);
-					const picturing = { pixelsAtZoomOne, exposuresAtOnce, bounds, drawing, things };
+					const handedIn = handedInOf(drawing, setting.format.frame, sharpness, setting.framesHanded);
+					const picturing = { pixelsAtZoomOne, exposuresAtOnce, bounds, drawing, handedIn, things };
 					return await pictured(browser, stage, setting, filmed, picturing, this.warn);
 				}
 				case 'dynamic':
@@ -436,9 +441,15 @@ async function pictured(
 	picturing: Picturing,
 	warn: Warn
 ): Promise<Opened> {
-	const { pixelsAtZoomOne, exposuresAtOnce, bounds, drawing } = picturing;
+	const { pixelsAtZoomOne, exposuresAtOnce, bounds, drawing, handedIn } = picturing;
 	await drawing.opened(stage, picturing.things);
-	const thingsBuilt = await stageSetUp(stage, setting, drawing, exposuresAtOnce, picturing.things);
+	const thingsBuilt = await stageSetUp(
+		stage,
+		setting,
+		drawing,
+		layoutOf(setting.format, exposuresAtOnce, handedIn),
+		picturing.things
+	);
 	const tab = await browser.newPage({
 		viewport: setting.format.screen,
 		deviceScaleFactor: pixelsAtZoomOne * ZOOM_AT_MOST,
@@ -452,7 +463,7 @@ async function pictured(
 	const shown = await shownIn(tab, filmed);
 	const session = await tab.context().newCDPSession(tab);
 	const filmedTab = { tab, session, screen: setting.format.screen, pixelsAtZoomOne, bounds, changes };
-	const picturedStage = new PlaywrightPicturedStage(stage, filmedTab, watch, exposuresAtOnce, drawing, warn);
+	const picturedStage = new PlaywrightPicturedStage(stage, filmedTab, watch, exposuresAtOnce, drawing, handedIn, warn);
 	const ownPages = ownPagesOn(stage, setting.ownPages);
 	return new OpenedChromium(browser, picturedStage, shown, time, { ownPages, thingsBuilt });
 }
@@ -636,7 +647,7 @@ async function forcedOn(page: Page, blurred: readonly string[], stageAtTheTop: b
 }
 
 /**
- * The stage set to the film's format, drawing so many exposures of a frame at once, laid out as it draws them, and
+ * The stage set to the film's format by its layout, laid out as it draws its frames and hands them on, and
  * asked for its colour scheme and stilled motion. What the film writes in CSS, in its theme or in a look's move, is
  * refused where CSS cannot read it as the stage sets it, where the stage would draw without a word what the film never
  * asked for: a font CSS reads as no list of families a fallback can follow, as one with a quote left open, which runs
@@ -647,11 +658,10 @@ async function stageSetUp(
 	page: Page,
 	setting: Setting,
 	drawing: StageDrawing,
-	exposuresAtOnce: number,
+	layout: Layout,
 	things: string | null
 ): Promise<readonly string[]> {
 	await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: setting.colourScheme });
-	const layout = layoutOf(setting.format, exposuresAtOnce);
 	await page.evaluate(setUpStage, layout);
 	const thingsBuilt = await drawing.laidOut(page, layout, things);
 	refusedWhereMoving(setting.ownPages, await page.evaluate(ownPagesLaid, setting.ownPages));
@@ -673,7 +683,13 @@ function refusedWhereMoving(pages: readonly OwnPage[], moving: readonly string[]
 
 /** The stage set up and the page opened in its frame, as far as it loads: its frame; a framed page is drawn flat. */
 async function framed(page: Page, setting: Setting, opening: Opening): Promise<Frame> {
-	await stageSetUp(page, setting, DRAWN_FLAT, ONE_AT_A_TIME, NO_THINGS_MODULE);
+	await stageSetUp(
+		page,
+		setting,
+		DRAWN_FLAT,
+		layoutOf(setting.format, ONE_AT_A_TIME, boxOf(setting.format.frame)),
+		NO_THINGS_MODULE
+	);
 	const [filmed] = await Promise.all([
 		page.waitForEvent(NAVIGATED, { predicate: isInTheStagesFrame }),
 		page.evaluate(openPage, opening)

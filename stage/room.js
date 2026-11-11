@@ -61,7 +61,8 @@ import { WindowBody } from './body.js';
 import { Lens, SPREADS_REACHED } from './lens.js';
 import { WorldLighting } from './lighting.js';
 import { matrixOf, projectionOnto } from './matrices.js';
-import { ADDED, LAID_OVER, SRGB_CURVES, WRITTEN, passOver, valuesSet } from './passes.js';
+import { ADDED, LAID_OVER, SRGB_CURVES, passOver, valuesSet } from './passes.js';
+import { FrameShown } from './shown.js';
 import { SeeThroughField, WORLD_PARTS, hasAPartSeenThrough, partsDrawn, sortedBySeeingThrough } from './see-through.js';
 import { Things, isAThing } from './things.js';
 /** @import { DrawnScene, ObjectList } from '../src/scene.ts' */
@@ -276,8 +277,8 @@ ${SRGB_CURVES}
 void main() {
 	gl_FragColor = inTheScreensColours(texture2D(drawn, shareOfTheFrame));
 }`;
-// An exposure, drawn in the screen's colours, added into the frame at its weight as linear light; and the frame drawn
-// on the canvas in the screen's colours: each as the canvas shows it, opaque, what is clear in it over nothing
+// An exposure, drawn in the screen's colours, added into the frame at its weight as linear light, as the canvas shows
+// it, opaque, what is clear in it over nothing
 const WEIGHED_FRAGMENT = `
 uniform sampler2D drawn;
 uniform float weight;
@@ -285,13 +286,6 @@ varying vec2 shareOfTheFrame;
 ${SRGB_CURVES}
 void main() {
 	gl_FragColor = vec4(decoded(texture2D(drawn, shareOfTheFrame).rgb) * weight, weight);
-}`;
-const SHOWN_FRAGMENT = `
-uniform sampler2D drawn;
-varying vec2 shareOfTheFrame;
-${SRGB_CURVES}
-void main() {
-	gl_FragColor = vec4(encoded(texture2D(drawn, shareOfTheFrame).rgb), 1.0);
 }`;
 
 /**
@@ -419,7 +413,7 @@ class Room {
 			WEIGHED_FRAGMENT,
 			ADDED
 		);
-		this.shown = passOver({ drawn: { value: this.frame.texture } }, SHOWN_FRAGMENT, WRITTEN);
+		this.shown = new FrameShown(this.frame.texture, this.drawnSize, inTheDrawingsPixels(layout.handedIn));
 		// How many of the drawing's pixels a pixel of a frame 1080 high takes, as the engine's blur is measured in them
 		this.pixelsOfOne = layout.frameScale * window.devicePixelRatio;
 		// three draws nothing without a camera: the passes place their own points; the world's camera takes the
@@ -529,8 +523,7 @@ class Room {
 		}
 		const bloom = scenesAt(scenes, FIRST).world.bloom;
 		if (bloom !== null) this.bloomed(bloom);
-		this.renderer.setRenderTarget(null);
-		this.renderer.render(this.shown, this.camera);
+		this.shown.shown(this.renderer);
 		return null;
 	}
 
@@ -905,6 +898,12 @@ function clearRound(box) {
  */
 function sizedTo(layer, box) {
 	layer.setSize(Math.round(box.width * window.devicePixelRatio), Math.round(box.height * window.devicePixelRatio));
+}
+
+/** A box of the frame in the drawing's pixels. @param {Box} box @returns {Box} */
+function inTheDrawingsPixels(box) {
+	const density = window.devicePixelRatio;
+	return { left: box.left * density, top: box.top * density, width: box.width * density, height: box.height * density };
 }
 
 /** A box grown on every side by so many pixels. @param {Box} box @param {number} pixels @returns {Box} */

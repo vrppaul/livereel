@@ -71,7 +71,7 @@ function shotOnSet(steps: readonly Step[], set: SetFolderOnDisk) {
 		browser: new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER),
 		footage: new NoFrames(),
 		track: SILENT,
-		quality: { sharpness: 1, blurred: false }
+		quality: { sharpness: 1, blurred: false, framesHanded: 'scaled' }
 	});
 }
 
@@ -93,7 +93,7 @@ function shootingLive(): Shooting {
 		browser: new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER),
 		footage: new NoFrames(),
 		track: SILENT,
-		quality: { sharpness: 1, blurred: false }
+		quality: { sharpness: 1, blurred: false, framesHanded: 'scaled' }
 	};
 }
 

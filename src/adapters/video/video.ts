@@ -6,7 +6,8 @@
  * to the disk. A frame of several exposures is blended (`exposures.ts`) beside the take, which shoots on, several
  * frames at once, and each goes into ffmpeg in the order shot once the frames before it have: a blend had held the
  * take for a quarter of a blurred shoot (12.6 s of 50.7 s on a 2.7 s piece of the README film, measured 2026-10-30).
- * The frames are shot sharper than the frame and scaled down, so text stays crisp when the camera comes close.
+ * The frames are shot sharper than the frame and scaled down, so text stays crisp when the camera comes close: the
+ * flat stage's here, a room's on the graphics card before they leave the browser, which come at the frame's size.
  */
 import { type ChildProcessByStdio, spawn } from 'node:child_process';
 import { once } from 'node:events';

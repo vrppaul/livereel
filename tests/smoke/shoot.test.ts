@@ -1,7 +1,9 @@
 // A film shot for real, in a browser, of a page on the disk: the frames it keeps, its one still, keys typed into it
-import { mkdtemp, readdir } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { mkdtemp, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { promisify } from 'node:util';
 import { chromium } from 'playwright-core';
 import { expect, test } from 'vitest';
 import { Chromium, type Renderer } from '../../src/adapters/browser/chromium.ts';
@@ -16,7 +18,7 @@ import { ZOOM_AT_MOST } from '../../src/domain/camera.ts';
 import { FilmError, SetupError, TakeError } from '../../src/domain/errors.ts';
 import type { Size } from '../../src/domain/geometry.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
-import type { Exposures, Filmed, Footage, Opened, PicturedStage } from '../../src/studio/ports.ts';
+import type { Exposures, Filmed, Footage, FramesHanded, Opened, PicturedStage } from '../../src/studio/ports.ts';
 import { FILMS_FOLDER, NO_SET } from './app.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
 import {
@@ -52,6 +54,12 @@ const OWN_PAGE = { html: '<!doctype html><body style="margin: 0"><h2 id="ours" s
 const ONLY_OURS = '#ours';
 // The window leant back and swung, as the room places it by the engine's matrix
 const LEANT = { tilt: 12, turn: -7 };
+// Frames handed on scaled to the frame's own size, as a video keeps them, or as sharp as drawn, as a still keeps its
+// frame; a film shot at twice the frame's size each way, and its frame at that size
+const SCALED: FramesHanded = 'scaled';
+const SHARP: FramesHanded = 'sharp';
+const TWICE = 2;
+const TWICE_THE_FRAME = { width: 640, height: 640 };
 // A card of the film's things module, as wide as half a frame 1080 high and a third as tall, about the frame's middle
 const A_CARD = { at: 'whole', reach: { width: 540, height: 360 }, values: { turn: 0 } } as const;
 
@@ -88,6 +96,43 @@ class EveryFrameCounted implements Footage {
 	complete(): boolean {
 		return false;
 	}
+}
+
+/** Footage that keeps each frame's own image, as the take hands it. */
+class ImagesKept implements Footage {
+	readonly images: Uint8Array[] = [];
+
+	expect(): void {}
+
+	keeps(): boolean {
+		return true;
+	}
+
+	keep(_shot: number, exposures: Exposures): Promise<void> {
+		this.images.push(exposures.own);
+		return Promise.resolve();
+	}
+
+	complete(): boolean {
+		return false;
+	}
+}
+
+/** An image's size, as ffprobe reads it. */
+async function sizeOf(image: Uint8Array): Promise<Size> {
+	const file = join(await scratch(), 'frame.jpg');
+	await writeFile(file, image);
+	const { stdout } = await promisify(execFile)('ffprobe', [
+		'-v',
+		'error',
+		'-show_entries',
+		'stream=width,height',
+		'-of',
+		'json',
+		file
+	]);
+	const [stream] = (JSON.parse(stdout) as { streams: Size[] }).streams;
+	return { width: stream!.width, height: stream!.height };
 }
 
 function filmOf(steps: readonly Step[]) {
@@ -130,13 +175,18 @@ function shootingInto(footage: Footage, renderer: Renderer): Shooting {
 		browser: new Chromium(renderer, WARNED_TO_NOBODY, FILMS_FOLDER),
 		footage,
 		track: SILENT,
-		quality: { sharpness: 1, blurred: false }
+		quality: { sharpness: 1, blurred: false, framesHanded: SCALED }
 	};
 }
 
 /** A film shot as `shootingInto` shoots it, a fast camera blurred as the film says. */
 function blurredShootingInto(footage: Footage, renderer: Renderer): Shooting {
-	return { ...shootingInto(footage, renderer), quality: { sharpness: 1, blurred: true } };
+	return { ...shootingInto(footage, renderer), quality: { sharpness: 1, blurred: true, framesHanded: SCALED } };
+}
+
+/** A film shot as `shootingInto` shoots it, at twice the frame's size each way, its frames handed on so. */
+function sharpShootingInto(footage: Footage, framesHanded: FramesHanded): Shooting {
+	return { ...shootingInto(footage, 'gpu'), quality: { sharpness: TWICE, blurred: false, framesHanded } };
 }
 
 async function scratch(): Promise<string> {
@@ -179,6 +229,15 @@ test("a film drawn as a room is shot, every frame kept, in software or on the gr
 		[0, 1, 2, 3, 4, 5],
 		1
 	]);
+});
+
+test("a room hands a video its frames scaled down to the frame's own size, and a still its frame as sharp as it is drawn", async () => {
+	const scaled = new ImagesKept();
+	const sharp = new ImagesKept();
+	const film = filmWritten([hold({ seconds: 0.05 })], { drawing: 'room' });
+	await shoot(film, sharpShootingInto(scaled, SCALED));
+	await shoot(film, sharpShootingInto(sharp, SHARP));
+	expect([await sizeOf(scaled.images[0]!), await sizeOf(sharp.images[0]!)]).toEqual([SMALL.frame, TWICE_THE_FRAME]);
 });
 
 test("a film's things are built by its module and drawn in the room, every frame kept, in software or on the graphics card, as they come up, turn and move", async () => {
@@ -624,7 +683,7 @@ test('an act waiting on what the page does after a delay of its own is answered,
 });
 
 test('a page in a tab of its own is heard to change of itself, once', async () => {
-	const setting = { ...timedFilmOf([], {}), ownPages: NO_OWN_PAGES };
+	const setting = { ...timedFilmOf([], {}), ownPages: NO_OWN_PAGES, framesHanded: SCALED };
 	await using opened = await new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER).open(setting, liveAt(TIMED), 1);
 	const stage = opened.stage as PicturedStage;
 	const page = opened.act.page;
@@ -686,7 +745,11 @@ const TALL_FILM = defineFilm({
 test("a picture of a screen taller at livereel's closest than a JPEG holds is taken as close as one holds it, the person told once that it is drawn softer", async () => {
 	const warned: string[] = [];
 	const browser = new Chromium('software', (said) => warned.push(said), FILMS_FOLDER);
-	await using opened = await browser.open({ ...TALL_FILM, ownPages: NO_OWN_PAGES }, liveAt(PAGE), 1);
+	await using opened = await browser.open(
+		{ ...TALL_FILM, ownPages: NO_OWN_PAGES, framesHanded: SCALED },
+		liveAt(PAGE),
+		1
+	);
 	const stage = opened.stage as PlaywrightPicturedStage;
 	await stage.retakePage(ZOOM_AT_MOST);
 	await stage.retakePage(ZOOM_AT_MOST);
@@ -701,7 +764,7 @@ test("a picture of a screen taller at livereel's closest than a JPEG holds is ta
 /** The dense page in a tab of its own, the stage showing its pictures at the draft's sharpness. */
 function denseOpened(): Promise<Opened> {
 	return new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER).open(
-		{ ...DENSE_FILM, ownPages: NO_OWN_PAGES },
+		{ ...DENSE_FILM, ownPages: NO_OWN_PAGES, framesHanded: SCALED },
 		liveAt(DENSE),
 		1
 	);

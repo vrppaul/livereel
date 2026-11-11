@@ -18,7 +18,7 @@ import { MILLISECONDS_A_SECOND, secondsSaid, shotAt } from '../domain/time.ts';
 import type { DrawnFilm, DrawnFilmInFormat } from '../direction/drawn-film.ts';
 import type { Film, FilmInFormat } from '../direction/film.ts';
 import { shootDrawn } from '../studio/draw.ts';
-import type { DrawnBrowser, Footage, Track } from '../studio/ports.ts';
+import type { DrawnBrowser, Footage, FramesHanded, Track } from '../studio/ports.ts';
 import { shootSet } from '../studio/set.ts';
 import { type Quality, type Shooting, type Shot, shoot } from '../studio/shoot.ts';
 import { Chromium, RENDERERS, type Renderer } from '../adapters/browser/chromium.ts';
@@ -68,10 +68,14 @@ const SILENCE: VideoSound = { track: SILENT, laying: NOTHING_LAID };
 // once; or sharp enough to zoom into and to angle without the text going soft, a fast move blurred as the film says
 const QUALITY_NAMES = ['draft', 'finest'] as const;
 type QualityName = (typeof QUALITY_NAMES)[number];
-const QUALITIES: Readonly<Record<QualityName, Quality>> = {
+const QUALITIES: Readonly<Record<QualityName, Omit<Quality, 'framesHanded'>>> = {
 	draft: { sharpness: 1, blurred: false },
 	finest: { sharpness: 2, blurred: true }
 };
+// A video's frames are scaled to the frame's own size, by the stage where it can, else by ffmpeg; a still keeps its
+// frame as sharp as it is drawn, to be looked at closely
+const SCALED_FOR_A_VIDEO: FramesHanded = 'scaled';
+const SHARP_FOR_A_STILL: FramesHanded = 'sharp';
 // Every file a command writes is named from the same stem, the film file's name and its format's; a still after its
 // moment, in seconds
 const APART = '-';
@@ -192,7 +196,7 @@ async function shootCommand(given: readonly string[]): Promise<void> {
 	const kinds = kindsAsked(values.as);
 	const sheetRate = sheetRateAsked(values.sheet, values['sheet-rate'], SHOOT);
 	const profile = new Profile(() => performance.now(), values.profile);
-	const shotWith = shotWithAsked(values, file, SHOOT, profile);
+	const shotWith = shotWithAsked(values, file, SHOOT, profile, SCALED_FOR_A_VIDEO);
 	await ffmpegNeeded();
 	await encodersNeeded(kinds);
 	const film = formatAsked(await loadedFilm(file), values.format, SHOOT);
@@ -235,7 +239,7 @@ async function clipCommand(given: readonly string[]): Promise<void> {
 	const to = momentAsked(values.to, TO_SAID, CLIP);
 	const sheetRate = sheetRateAsked(values.sheet, values['sheet-rate'], CLIP);
 	const profile = new Profile(() => performance.now(), values.profile);
-	const shotWith = shotWithAsked(values, file, CLIP, profile);
+	const shotWith = shotWithAsked(values, file, CLIP, profile, SCALED_FOR_A_VIDEO);
 	await ffmpegNeeded();
 	const film = formatAsked(await loadedFilm(file), values.format, CLIP);
 	const kept = shotsBetween(from, to, film.framesPerSecond);
@@ -267,7 +271,7 @@ async function stillCommand(given: readonly string[]): Promise<void> {
 	const out = theOut(values.out, STILL);
 	const moment = momentAsked(values.at, AT_SAID, STILL);
 	const profile = new Profile(() => performance.now(), values.profile);
-	const shotWith = shotWithAsked(values, file, STILL, profile);
+	const shotWith = shotWithAsked(values, file, STILL, profile, SHARP_FOR_A_STILL);
 	await ffmpegNeeded();
 	const film = formatAsked(await loadedFilm(file), values.format, STILL);
 	await mkdir(out, { recursive: true });
@@ -481,13 +485,14 @@ function nameOf(file: string): string {
 /**
  * What a command shoots a film file with: the film's serve command run in the file's folder, as a project's command
  * runs in its own; and how finely the film is shot and the browser its frames are drawn in, as the command line names
- * them, timed.
+ * them, timed; its frames handed as the command's footage keeps them.
  */
 function shotWithAsked(
 	asked: { quality: string; renderer: string },
 	file: string,
 	command: Command,
-	profile: Profile
+	profile: Profile,
+	framesHanded: FramesHanded
 ): ShotWith {
 	const quality = nameAsked(asked.quality, QUALITY_NAMES, QUALITY_SAYS, command);
 	const renderer = nameAsked(asked.renderer, RENDERERS, RENDERER_SAYS, command);
@@ -495,7 +500,7 @@ function shotWithAsked(
 	const chromium = new Chromium(renderer, warn, filmFolder);
 	return {
 		server: new CommandServer(filmFolder, ANSWERED_WITHIN_MILLISECONDS),
-		quality: QUALITIES[quality],
+		quality: { ...QUALITIES[quality], framesHanded },
 		browser: profile.browser(chromium),
 		drawnBrowser: profile.drawnBrowser(chromium)
 	};

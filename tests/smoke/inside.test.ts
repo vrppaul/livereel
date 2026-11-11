@@ -88,7 +88,7 @@ async function reachedAs(showing: Pick<Script<'small'>, 'stage' | 'page'>): Prom
 		browser: new Chromium('software', (line) => warned.push(line), FILMS_FOLDER),
 		footage: new NoFrames(),
 		track: SILENT,
-		quality: { sharpness: 1, blurred: false }
+		quality: { sharpness: 1, blurred: false, framesHanded: 'scaled' }
 	});
 	return { seen, warned };
 }

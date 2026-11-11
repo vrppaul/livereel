@@ -134,13 +134,22 @@ export interface Opened extends AsyncDisposable {
  * What the stage and the page are set as for a take: the film's format, where the stage stands, the colour scheme the
  * page is asked for, the blocks it blurs, all the film writes in CSS, in its theme or its looks' moves, which the
  * browser reads before anything is shot, how the stage draws a frame, flat or as a room, and the film's things module
- * the room loads, how a fast move is blurred in the take, which says how many exposures a frame is made of at most, and
- * the pages of the film's own its moves show, which the stage lays before anything is shot.
+ * the room loads, how a fast move is blurred in the take, which says how many exposures a frame is made of at most, the
+ * pages of the film's own its moves show, which the stage lays before anything is shot, and how its frames are handed
+ * to the footage.
  */
 export type Setting = Pick<
 	FilmInFormat,
 	'format' | 'stage' | 'colourScheme' | 'blurred' | 'css' | 'drawing' | 'things' | 'motionBlur'
-> & { readonly ownPages: readonly OwnPage[] };
+> & { readonly ownPages: readonly OwnPage[]; readonly framesHanded: FramesHanded };
+
+/**
+ * How a take's frames are handed to its footage where the stage draws them sharper than the frame: scaled down to the
+ * frame's own size, as a video keeps them, by a stage that can scale its frame without a change of look, the room; or
+ * as sharp as they are drawn, as a still keeps its frame to be looked at closely, and as the flat stage hands every
+ * frame, whose text the browser would draw anew, not scale, at the frame's own size.
+ */
+export type FramesHanded = 'scaled' | 'sharp';
 
 /**
  * The page a take films, which decides how it is shown: the live page at its address, as what serves it answers there,

@@ -27,21 +27,24 @@
  * where it draws (`bounds.ts`): one asked larger, of a tall screen or a part grown far, is taken as large as it may,
  * softer, and the person is told so once.
  *
- * A frame is captured by Playwright at the page's device scale, the film's sharpness. A capture of livereel's own, on
- * a CDP session apart from Playwright's, came back at the page's own pixels whatever that scale, every full shoot as
- * soft as a draft; and it was no quicker (measured 2026-10-25 at 1920 × 1080: 33 ms against 35 ms at 1×, 142 ms
- * against 134 ms at 2×). Its own device metrics set on it bring it to the film's sharpness, at 127–133 ms a capture
- * against Playwright's 135–137 on a 2.7 s piece of the README film (2026-10-30): too little for a second session's
- * metrics to keep in step with Playwright's as an act lays the screen flat. The page's text caret is kept, as a person
- * sees it typing, and stands steady (`chromium.ts`). Whether the filmed page and its stage are still there, the stage
- * answers from its watch (`watch.ts`): a framed page's, or a tab's, which can take no stage away nor refuse a frame.
+ * A frame is captured by Playwright at the page's device scale, the film's sharpness; a room's frame for a video from
+ * the corner of the room's canvas it is scaled down into, at the frame's own size, a quarter of the pixels to read
+ * back and encode (`handedInOf`; a frame of 3840 × 2160 captured in 120.7 ms, its corner in 55.1, 2026-11-11). A
+ * capture of livereel's own, on a CDP session apart from Playwright's, came back at the page's own pixels whatever that
+ * scale, every full shoot as soft as a draft; and it was no quicker (measured 2026-10-25 at 1920 × 1080: 33 ms against
+ * 35 ms at 1×, 142 ms against 134 ms at 2×). Its own device metrics set on it bring it to the film's sharpness, at
+ * 127–133 ms a capture against Playwright's 135–137 on a 2.7 s piece of the README film (2026-10-30): too little for a
+ * second session's metrics to keep in step with Playwright's as an act lays the screen flat. The page's text caret is
+ * kept, as a person sees it typing, and stands steady (`chromium.ts`). Whether the filmed page and its stage are still
+ * there, the stage answers from its watch (`watch.ts`): a framed page's, or a tab's, which can take no stage away nor
+ * refuse a frame.
  */
 import type { CDPSession, Frame, Page } from 'playwright-core';
 import type { Format } from '../../domain/format.ts';
 import { type Box, type Size, boxOf, frameScaleOf } from '../../domain/geometry.ts';
 import type { OwnPage } from '../../direction/page.ts';
 import type { DrawnScene, ObjectList } from '../../scene.ts';
-import type { FramedStage, PicturedStage } from '../../studio/ports.ts';
+import type { FramedStage, FramesHanded, PicturedStage } from '../../studio/ports.ts';
 import { type PictureBound, scaleWithin } from './bounds.ts';
 import type { ChangesHeard } from './changes.ts';
 import type { FrameWatch, TabWatch } from './watch.ts';
@@ -54,13 +57,15 @@ export const STAGE_PAGE = 'stage.html';
 /**
  * How the stage is laid out for a take: the frame it fills, the screen the camera moves in it, and how large the stage
  * draws on it against the frames its look was made on: the camera's zoom, and what stands over the frame; and how many
- * exposures of a frame it draws at once, each a whole drawing of the stage laid over those before. The eye is in the
- * matrices the engine hands the stage with each frame.
+ * exposures of a frame it draws at once, each a whole drawing of the stage laid over those before; and the part of the
+ * stage, in its own pixels, a frame is handed on from. The eye is in the matrices the engine hands the stage with each
+ * frame.
  */
 export interface Layout {
 	readonly format: Format;
 	readonly frameScale: number;
 	readonly exposures: number;
+	readonly handedIn: Box;
 }
 
 /**
@@ -126,7 +131,8 @@ declare global {
  * How the stage draws a frame, flat or as a room (`room.ts`): the flags the browser is launched with for it, how the
  * stage is opened, serving the film's things module where it names one, and then laid out, loading it: the names it
  * builds a thing by, none for a stage that draws no things; how a frame's exposures are drawn on it, and waited on to
- * the end of their drawing; and what the person who asks for software is told, if anything.
+ * the end of their drawing; whether it scales its frame down to the frame's own size without a change of look; and
+ * what the person who asks for software is told, if anything.
  */
 export interface StageDrawing {
 	readonly flags: readonly string[];
@@ -134,12 +140,14 @@ export interface StageDrawing {
 	readonly laidOut: (page: Page, layout: Layout, things: string | null) => Promise<readonly string[]>;
 	readonly drawn: (page: Page, exposures: readonly DrawnScene[]) => Promise<void>;
 	readonly finished: (page: Page) => Promise<void>;
+	readonly scalesItsFrame: boolean;
 	readonly saidInSoftware: string | null;
 }
 
 /**
  * The stage drawn flat: opened from the package's files as they stand, laid out by its markup, drawn by it alone, as
- * the browser lays out and paints it in its capture, so nothing goes on drawing past its draw.
+ * the browser lays out and paints it in its capture, so nothing goes on drawing past its draw. Captured at the frame's
+ * own size, the browser would draw its text anew at that size, not scale it: its frames are handed as sharp as drawn.
  */
 export const DRAWN_FLAT: StageDrawing = {
 	flags: [],
@@ -147,8 +155,21 @@ export const DRAWN_FLAT: StageDrawing = {
 	laidOut: () => Promise.resolve(NO_THINGS),
 	drawn: drawnOn,
 	finished: () => Promise.resolve(),
+	scalesItsFrame: false,
 	saidInSoftware: null
 };
+
+/**
+ * The part of a stage, in its own pixels, a frame drawn so sharp is handed on from, where it is asked to be handed so:
+ * the whole frame, as sharp as drawn, or by a drawing that does not scale its frame; else the frame's top left corner,
+ * as many of the stage's pixels as the frame has of its own, which the drawing scales its frame down into, a pixel of
+ * the drawing to a pixel of the frame. The room's canvas is held at the drawing's size: the browser paints the markup
+ * laid in it as densely as the canvas is drawn, and a canvas of the frame's own size drew every surface half as sharp.
+ */
+export function handedInOf(drawing: StageDrawing, frame: Size, sharpness: number, asked: FramesHanded): Box {
+	const scaled = drawing.scalesItsFrame && asked === SCALED;
+	return boxOf(scaled ? { width: frame.width / sharpness, height: frame.height / sharpness } : frame);
+}
 
 // A stage that draws no things of a film's own: flat CSS draws no three.js
 export const NO_THINGS: readonly string[] = [];
@@ -156,6 +177,8 @@ export const NO_THINGS: readonly string[] = [];
 export const JPEG_QUALITY = 92;
 // A stage that draws one exposure of a frame at a time
 export const ONE_AT_A_TIME = 1;
+// A frame asked to be handed on scaled to the frame's own size
+const SCALED: FramesHanded = 'scaled';
 // The page's picture is taken as a JPEG: the format as CDP names it, and the type of image the stage is handed
 const PICTURE_FORMAT = 'jpeg';
 const PICTURE_TYPE = 'image/jpeg';
@@ -205,12 +228,12 @@ export class PlaywrightFramedStage implements FramedStage {
 	}
 
 	capture(): Promise<Uint8Array> {
-		return capturedOf(this.page);
+		return capturedOf(this.page, boxOf(this.format.frame));
 	}
 
 	private async sizedTo(format: Format): Promise<void> {
 		await this.page.setViewportSize(format.frame);
-		await this.page.evaluate(setUpStage, layoutOf(format, this.exposuresAtOnce));
+		await this.page.evaluate(setUpStage, layoutOf(format, this.exposuresAtOnce, boxOf(format.frame)));
 	}
 }
 
@@ -239,6 +262,7 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	readonly watch: TabWatch;
 	readonly exposuresAtOnce: number;
 	readonly drawing: StageDrawing;
+	readonly handedIn: Box;
 	readonly warn: Warn;
 	// The page's picture last taken, in base64, none before the first; how many pictures of a part of the screen the
 	// stage holds, each by its number, counted from 1; and whether the person has been told a picture was taken softer
@@ -253,6 +277,7 @@ export class PlaywrightPicturedStage implements PicturedStage {
 		watch: TabWatch,
 		exposuresAtOnce: number,
 		drawing: StageDrawing,
+		handedIn: Box,
 		warn: Warn
 	) {
 		this.page = page;
@@ -260,6 +285,7 @@ export class PlaywrightPicturedStage implements PicturedStage {
 		this.watch = watch;
 		this.exposuresAtOnce = exposuresAtOnce;
 		this.drawing = drawing;
+		this.handedIn = handedIn;
 		this.warn = warn;
 	}
 
@@ -344,15 +370,15 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	}
 
 	capture(): Promise<Uint8Array> {
-		return capturedOf(this.page);
+		return capturedOf(this.page, this.handedIn);
 	}
 }
 
 /**
- * The stage's layout for a format, drawing so many exposures of a frame at once.
+ * The stage's layout for a format, drawing so many exposures of a frame at once, handing each on from that part of it.
  */
-export function layoutOf(format: Format, exposures: number): Layout {
-	return { format, frameScale: frameScaleOf(format.frame), exposures };
+export function layoutOf(format: Format, exposures: number, handedIn: Box): Layout {
+	return { format, frameScale: frameScaleOf(format.frame), exposures, handedIn };
 }
 
 function drawnOn(page: Page, exposures: readonly DrawnScene[]): Promise<void> {
@@ -369,9 +395,11 @@ function saidOf(zoom: number): number {
 	return Number(zoom.toFixed(PLACES_SAID));
 }
 
-/** A page as it shows now, as a JPEG at its device scale, its text caret kept. */
-function capturedOf(page: Page): Promise<Buffer> {
-	return page.screenshot({ type: 'jpeg', quality: JPEG_QUALITY, caret: 'initial' });
+/** A part of a page as it shows now, as a JPEG at its device scale, its text caret kept. */
+function capturedOf(page: Page, part: Box): Promise<Buffer> {
+	// eslint-disable-next-line id-length -- Playwright names the corner a capture is clipped at `x` and `y`
+	const clip = { x: part.left, y: part.top, width: part.width, height: part.height };
+	return page.screenshot({ type: 'jpeg', quality: JPEG_QUALITY, caret: 'initial', clip });
 }
 
 // What follows runs in the stage page, each function handed over alone

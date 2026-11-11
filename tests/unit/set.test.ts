@@ -282,7 +282,7 @@ test('a film shot on its set opens the browser on the set as it was shot, with n
 		browser: new BrowserThatSays(happened),
 		footage: new FootageOf([0]),
 		track: new TrackThatKeeps(),
-		quality: { sharpness: 1, blurred: false }
+		quality: { sharpness: 1, blurred: false, framesHanded: 'scaled' }
 	};
 	const shotAs = (changed: Partial<ShotAs>) => ({
 		...shooting,

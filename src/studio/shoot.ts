@@ -18,16 +18,17 @@ import type { FilmInFormat } from '../direction/film.ts';
 import type { FilmSet } from '../direction/set.ts';
 import { type Step, cssIn, framesIn, ownPagesIn, soundsIn } from '../direction/steps.ts';
 import { openingScene } from '../scene.ts';
-import type { Browser, Footage, Opened, PageServer, SetFolder, SetShot, Track } from './ports.ts';
+import type { Browser, Footage, FramesHanded, Opened, PageServer, SetFolder, SetShot, Track } from './ports.ts';
 import { Take } from './take.ts';
 
 /**
- * How finely a film is shot: how many of its frames' pixels are captured for each of the frame's own, and whether a
- * fast move is blurred as the film says.
+ * How finely a film is shot: how many of its frames' pixels are drawn for each of the frame's own, whether a fast move
+ * is blurred as the film says, and how its frames are handed to the footage.
  */
 export interface Quality {
 	readonly sharpness: number;
 	readonly blurred: boolean;
+	readonly framesHanded: FramesHanded;
 }
 
 /**
@@ -65,7 +66,13 @@ export async function shoot(film: FilmInFormat, shooting: Shooting): Promise<Sho
 	await shooting.track.expect(soundsIn(steps));
 	const motionBlur = shooting.quality.blurred ? film.motionBlur : null;
 	const scripted = { steps, motionBlur };
-	const setting = { ...film, css: [...film.css, ...cssIn(steps)], motionBlur, ownPages: ownPagesIn(steps) };
+	const setting = {
+		...film,
+		css: [...film.css, ...cssIn(steps)],
+		motionBlur,
+		ownPages: ownPagesIn(steps),
+		framesHanded: shooting.quality.framesHanded
+	};
 	const sharpness = shooting.quality.sharpness;
 	if (film.set !== null) {
 		const set = setAsTheFilmNamesIt(await shooting.set.read(), film, film.set);

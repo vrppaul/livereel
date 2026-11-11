@@ -76,7 +76,7 @@ const SHOOTING: Shooting = {
 	browser: new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER),
 	footage: new NoFrames(),
 	track: SILENT,
-	quality: { sharpness: 1, blurred: false }
+	quality: { sharpness: 1, blurred: false, framesHanded: 'scaled' }
 };
 
 async function farTop(context: ActContext, seen: (number | string | null)[]): Promise<void> {

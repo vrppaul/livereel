@@ -106,7 +106,7 @@ checked frame by frame on contact sheets and stills. Install it with
 | `--as mp4\|webm\|gif` | `shoot` | the kind of video, an MP4 where none is named; `--as mp4 --as gif` makes both from one take, each at the film's own frame and rate |
 | `--sheet` | `shoot`, `clip` | its frames side by side, a frame a second: `film-square-sheet.png` |
 | `--sheet-rate FRAMES_A_SECOND` | `shoot`, `clip` | how many frames a second the sheet shows: 6 to follow a move as an eye does |
-| `--quality draft\|finest` | `shoot`, `clip`, `still` | `finest`, the default, shoots at twice the frame's width and height and blurs a fast move as the film says; `draft` shoots at the frame's own size, unblurred: quicker and softer |
+| `--quality draft\|finest` | `shoot`, `clip`, `still` | `finest`, the default, shoots at twice the frame's width and height and blurs a fast move as the film says; `draft` shoots at the frame's own size, unblurred: quicker and softer. A room scales a video's frame down to the frame's own size on the graphics card, by the filter ffmpeg scales the flat stage's frames by; a still keeps its frame at the size it is drawn |
 | `--renderer software\|gpu` | `shoot`, `clip`, `still`, `set` | where the frames are drawn: in software, the default, or on the graphics card |
 | `--profile` | `shoot`, `clip`, `still` | where the shoot's time went: each part of the browser and the footage the frames waited on, its calls, the time each took and its share, the rest, and the blends of exposures; a room's frame is waited on until the graphics card has drawn it, so `stage.draw` is its drawing and `stage.capture` its way out of the browser, a wait a shoot without `--profile` does not make |
 
@@ -1246,8 +1246,9 @@ What `room` costs:
   the graphics card, 300 frames of a lit window with a body, a thing through it and the
   eye's focus opening took 80.5 and 83.6 s (`--profile`, 2026-11-10).
   Drawing is the slowest step: with the page fading as the focus opens, a
-  frame took 258.8 and 252.2 ms to draw at 3840 × 2160 and 150.6 and 145.9
-  ms to capture (`--profile`, 2026-11-11).
+  frame took 287.9 and 301.7 ms to draw at 3840 × 2160 and 63.9 and 73.3
+  ms to capture at 1920 × 1080 (`--profile`, 2026-11-11, the card shared
+  with other shoots); the README film drawn as a room took 354.9 s.
 - What is seen through, a thing of glass, and a page fading or coming up
   while a thing stands in the world, is drawn and blurred as a field of
   its own while it stands: the same 300 frames with the page fading over
