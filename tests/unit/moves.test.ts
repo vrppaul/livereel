@@ -1118,6 +1118,7 @@ test('a piece of the page is born over its block as the camera shows it, cut to 
 		{
 			kind: 'piece',
 			source: SHOWN_AT_TWO,
+			liftedOff: THE_FILMED_PAGE,
 			corners: SQUARE_CORNERS,
 			hole: null,
 			lines: null,
@@ -1217,6 +1218,7 @@ test('a piece, or an outline, goes back over its block as the camera shows it th
 		{
 			kind: 'piece',
 			source: SHOWN_AT_TWO,
+			liftedOff: THE_FILMED_PAGE,
 			corners: SQUARE_CORNERS,
 			hole: null,
 			lines: null,
@@ -1890,6 +1892,15 @@ test("a piece is drawn as large as its box holds all of its source, in its middl
 		[],
 		[2.2]
 	]);
+});
+
+test('a hole is drawn only while the screen shows the page its piece was lifted off', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card', { hole: {} }), wide, 1, FULL_HD);
+	const ownShown = await setIn(screenShows(OWN_PAGE), lifted, 1, FULL_HD);
+	const filmedAgain = await setIn(screenShows('filmed'), ownShown, 1, FULL_HD);
+	const holesIn = (scene: Scene) => drawn(scene, cameraOf(scene, FULL_HD), 0, FULL_HD, NONE_SHARPER).holes.length;
+	expect([lifted, ownShown, filmedAgain].map(holesIn)).toEqual([1, 0, 1]);
 });
 
 test("a piece lifted with a hole leaves on the screen, where it was lifted, the ground the page draws behind its block or the film's colour, ringed in the line the film names, as far as the piece has come and not gone", async () => {

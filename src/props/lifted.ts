@@ -1,6 +1,7 @@
 /**
  * What a piece of the page (`src/props/piece.ts`) leaves on the page and draws to it, worked out from the objects as
- * the stage draws them. A hole stands on the screen, where the piece was lifted, so the camera and the window carry it
+ * the stage draws them. A hole is left in the page the piece was lifted off, and drawn only while the screen shows that
+ * page. It stands on the screen, where the piece was lifted, so the camera and the window carry it
  * with the page, as the light: the piece keeps a box of the screen, not a block, and the hole keeps it too, as far past
  * it as it reaches; but a piece riding a block's scroll keeps the block, and its hole and its source are carried up the
  * screen with it. Lines run on the frame from the piece's source, as the camera shows it now, to the piece, as it is
@@ -14,6 +15,7 @@ import { type Box, type Point, type Segment, type Size, segmentBetween, withAir 
 import { type Holders, type Scrolled, onTheFrame, screenBoxUnder } from '../domain/placement.ts';
 import { type FrameObject, type ObjectEntry, type ObjectName, drawnOnTheFrame } from './object.ts';
 import { type DrawnHole, type Hole, type Piece, figureIn } from './piece.ts';
+import { type PageOfTheScreen, isOnePage } from './screen.ts';
 import type { Stroke } from './stroke.ts';
 import { presentShare } from './way.ts';
 
@@ -63,12 +65,17 @@ const LAST = -1;
 const BEFORE_THE_LAST = -2;
 
 /**
- * The holes the pieces among objects leave on the screen, each where its piece was lifted, or, riding a block's scroll,
- * as far up the screen as the film has scrolled the block since.
+ * The holes the pieces among objects leave on the screen while it shows a page, each where its piece was lifted, or,
+ * riding a block's scroll, as far up the screen as the film has scrolled the block since: those alone of pieces lifted
+ * off that page, as a hole is left in the page, not the screen.
  */
-export function drawnHoles(objects: readonly ObjectEntry[], scrolled: Scrolled): readonly DrawnHole[] {
+export function drawnHoles(
+	objects: readonly ObjectEntry[],
+	scrolled: Scrolled,
+	shown: PageOfTheScreen
+): readonly DrawnHole[] {
 	return piecesAmong(objects).flatMap(({ name, object, piece }) =>
-		piece.hole === null
+		piece.hole === null || !isOnePage(piece.liftedOff, shown)
 			? []
 			: [drawnHole(name, screenBoxUnder(piece.source, object.inside, scrolled), piece.hole, presentShare(object))]
 	);

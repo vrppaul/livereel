@@ -55,7 +55,7 @@ import {
 	type PiecePicture,
 	type Pit
 } from '../props/piece.ts';
-import { THE_FILMED_PAGE } from '../props/screen.ts';
+import { THE_FILMED_PAGE, pageShownBy } from '../props/screen.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
@@ -398,7 +398,17 @@ async function lifted(beginning: Beginning, target: Target, lifting: Lifting): P
 	const corners = cornersOf(source, shown, lifting.corner, windowCorner);
 	const hole = lifting.hole === null ? null : await holeOf(beginning, lifting.hole, lifting.corner);
 	const picture = await pictureOf(beginning, lifting.picture, source);
-	const piece: Piece = { kind: PIECE, source, corners, hole, lines: lifting.lines, picture, body: lifting.body };
+	const liftedOff = pageShownBy(beginning.scene.screen.shows);
+	const piece: Piece = {
+		kind: PIECE,
+		source,
+		liftedOff,
+		corners,
+		hole,
+		lines: lifting.lines,
+		picture,
+		body: lifting.body
+	};
 	return { content: piece, box };
 }
 

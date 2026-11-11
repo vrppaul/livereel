@@ -75,6 +75,29 @@ import type { TypedText } from '../domain/typing.ts';
 /** What the screen shows: the filmed page, or a page of the film's own by its key, drawn as far as it reaches. */
 export type Shows = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string; readonly reach: Reach };
 
+/** A page the screen may show, however far it is drawn: the filmed page, or a page of the film's own by its key. */
+export type PageOfTheScreen = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string };
+
+/** The page the screen shows in front, however far it is drawn. */
+export function pageShownBy(shows: Shows): PageOfTheScreen {
+	switch (shows.kind) {
+		case 'filmed':
+			return shows;
+		case 'own':
+			return { kind: 'own', key: shows.key };
+	}
+}
+
+/** Whether two pages of the screen are one: both the filmed page, or the film's own by one key. */
+export function isOnePage(first: PageOfTheScreen, second: PageOfTheScreen): boolean {
+	switch (first.kind) {
+		case 'filmed':
+			return second.kind === 'filmed';
+		case 'own':
+			return second.kind === 'own' && second.key === first.key;
+	}
+}
+
 /**
  * How far a page of the film's own the screen shows in front is drawn: cut at the screen's edges, `'screen'`; or on
  * past its top and foot as far as its document runs and the frame sees, `'document'`.

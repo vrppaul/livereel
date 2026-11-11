@@ -84,6 +84,7 @@ import {
 	THE_FILMED_PAGE,
 	drawnScreen,
 	ownPageStanding,
+	pageShownBy,
 	pageShownOn,
 	pastTheScreen,
 	pictureSweptBy,
@@ -503,7 +504,7 @@ export function drawn(
 	sharper: readonly SharperPicture[]
 ): DrawnScene {
 	const everyObject = [...scene.objects, ...scene.leaving];
-	const holes = drawnHoles(everyObject, scene.scrolled);
+	const holes = drawnHoles(everyObject, scene.scrolled, pageShownBy(scene.screen.shows));
 	const sharpness = sharpnessOf(camera, format.frame);
 	const around: Surroundings = {
 		screen: scene.screen,

@@ -25,6 +25,7 @@ import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domai
 import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
 import type { Stance } from '../domain/stance.ts';
 import type { ObjectName } from './object.ts';
+import type { PageOfTheScreen } from './screen.ts';
 import type { Stroke } from './stroke.ts';
 
 /**
@@ -109,14 +110,16 @@ export interface DrawnBody extends Body {
 }
 
 /**
- * A piece of the page: the part of the screen it shows, in the screen's pixels, how round each of its corners is, in
- * the same pixels — as the film names for a rounded block, and as the window where the corner stands on a corner of
- * what the window shows — the hole it leaves there, if any, the line the lines from it to its source are drawn in, if
- * it draws any, the picture it is drawn from, and its body, if it has one.
+ * A piece of the page: the part of the screen it shows, in the screen's pixels, and the page the screen showed as it
+ * was lifted off it, which its hole belongs to; how round each of its corners is, in the same pixels — as the film
+ * names for a rounded block, and as the window where the corner stands on a corner of what the window shows — the hole
+ * it leaves there, if any, the line the lines from it to its source are drawn in, if it draws any, the picture it is
+ * drawn from, and its body, if it has one.
  */
 export interface Piece {
 	readonly kind: 'piece';
 	readonly source: Box;
+	readonly liftedOff: PageOfTheScreen;
 	readonly corners: Corners;
 	readonly hole: Hole | null;
 	readonly lines: Stroke | null;
