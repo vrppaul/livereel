@@ -2889,11 +2889,26 @@ test('the page is shaded as far as its move has come toward the values the film 
 		)
 	).toEqual([
 		null,
-		{ dim: 0.3, fade: 0, blur: 0 },
-		{ dim: 0.3, fade: 0.5, blur: 8 },
-		{ dim: 0.3, fade: 0.5, blur: 8 },
+		{ dim: 0.3, fade: 0, blur: 0, reaching: 'page' },
+		{ dim: 0.3, fade: 0.5, blur: 8, reaching: 'page' },
+		{ dim: 0.3, fade: 0.5, blur: 8, reaching: 'page' },
 		null,
 		null
+	]);
+});
+
+test("the shade reaches the page alone till a film has it reach the whole window, from the move's start as its values go on through those between, and the stage is handed how far it reaches", async () => {
+	const reaching = await setAt(windowShade({ blur: 8, reaching: 'window' }), OPENING_IN_SMALL, 0.5);
+	const backToThePage = await setAt(windowShade({ reaching: 'page' }), reaching, 0);
+	expect(
+		[OPENING_IN_SMALL, reaching, backToThePage].map((scene) => [
+			scene.window.reaching,
+			drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).window.shade
+		])
+	).toEqual([
+		['page', null],
+		['window', { dim: 0, fade: 0, blur: 4, reaching: 'window' }],
+		['page', { dim: 0, fade: 0, blur: 4, reaching: 'page' }]
 	]);
 });
 

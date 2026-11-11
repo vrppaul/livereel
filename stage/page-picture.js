@@ -21,6 +21,9 @@
  * sharp the picture is laid unblurred, or blurred
  * apart by as much as the part softens, softening into the page's past the part's edge as the flat stage's mask has it
  * (`.sharp-part` in `stage.css`): never a sharp picture faded into a blurred one, which reads as two pictures at once.
+ * Where the shade reaching the whole window blurs the window's body, the picture is laid unblurred and the eye's lens
+ * blurs the page with its body as one (`blurredWithTheWindow`, `stage/body.js`): blurred apart, the page's outline
+ * stood sharp round a soft page, a bright line where the claude-review promo's lens softened all of its slab.
  *
  * The page's surface lays, as the browser lays them in the window's view: the screen's ground and the picture, cut to
  * the screen's rounded box and the view's, showing as far as the screen is clear less how clear its own markup is
@@ -98,7 +101,8 @@ import { SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOfTheBox, valuesSet } 
  */
 
 /**
- * What the page's surface reads of what stands behind it, as the room hands it before each field of the world it draws:
+ * What the page's surface, and the window's body, read of what stands behind them, as the room hands it before each
+ * field of the world it draws:
  * the world the room has laid so far, as light, premultiplied, over the frame; the film's ground, in the screen's
  * colours, over the frame, its rows from its top; and where a pixel of the layer the surface is drawn into stands on
  * the frame, in shares of it: how far a pixel reaches across and up, and where the layer's bottom left corner stands.
@@ -160,6 +164,38 @@ const WRITTEN_IN_THE_SCREENS_COLOURS = true;
 const PITS = 'PITS';
 
 /**
+ * What stands behind a pixel as the eye sees it, as light, premultiplied: the world the room has laid so far over the
+ * film's ground (`BehindThePage`), which the page's surface and the window's body fade into as far as the shade fades
+ * them (`stage/body.js`). It reads the screen's colours by `SRGB_CURVES`, which a shader holds before it.
+ */
+export const WHAT_STANDS_BEHIND = `
+uniform sampler2D behindSoFar;
+uniform sampler2D filmsGround;
+uniform vec4 layerOnTheFrame;
+vec4 behindAt() {
+	vec2 shareOfTheFrame = gl_FragCoord.xy * layerOnTheFrame.xy + layerOnTheFrame.zw;
+	vec4 world = inTheScreensColours(texture2D(behindSoFar, shareOfTheFrame));
+	vec4 filmsGroundThere = texture2D(filmsGround, vec2(shareOfTheFrame.x, 1.0 - shareOfTheFrame.y));
+	return inLinearLight(world + (1.0 - world.a) * filmsGroundThere);
+}`;
+
+/**
+ * How much of the part of the screen the shade's blur leaves sharp shows at a point of the screen, in its pixels: whole
+ * over the part, none from as far past each side of it as its edge, across and down apart and one in the other, as
+ * the flat stage's mask has it (`--sharp-across`, `--sharp-down` in `tokens.css`); the part's box and edge in the
+ * screen's pixels. The page's surface lays the part's own picture so far over the page's (`SharpPartLaid`); where the
+ * room blurs the whole window through the lens, the body's spreads keep the part so far from the blur (`body.js`).
+ */
+export const THE_PART_KEPT_SHARP = `
+uniform vec4 sharpBox;
+uniform float sharpEdge;
+float sharpAt(vec2 onTheScreen) {
+	vec2 past = max(max(sharpBox.xy - onTheScreen, onTheScreen - sharpBox.xy - sharpBox.zw), 0.0);
+	vec2 kept = clamp(1.0 - past / sharpEdge, 0.0, 1.0);
+	return kept.x * kept.y;
+}`;
+
+/**
  * The page's surface, all in the screen's colours, premultiplied, read back into linear light: the screen's ground and
  * the page's picture, where it draws one, showing as far as the screen is clear less how clear the window's surface is
  * there, as its markup over the page is as clear as the screen, cut to the screen's rounded box and the view's; over
@@ -182,15 +218,10 @@ uniform vec4 shownBox;
 uniform float shownCorner;
 uniform float shown;
 uniform float faded;
-uniform sampler2D behindSoFar;
-uniform sampler2D filmsGround;
-uniform vec4 layerOnTheFrame;
 uniform vec4 ground;
 uniform bool keepsAPartSharp;
 uniform sampler2D sharpPicture;
 uniform vec2 screenSize;
-uniform vec4 sharpBox;
-uniform float sharpEdge;
 #if ${PITS} > 0
 uniform vec4 mouths[${PITS}];
 uniform float mouthCorners[${PITS}];
@@ -198,6 +229,7 @@ uniform float mouthsOpen[${PITS}];
 #endif
 varying vec2 shareOfTheSurface;
 ${SRGB_CURVES}
+${WHAT_STANDS_BEHIND}
 float pastTheEdge(vec2 point, vec4 box, float corner) {
 	vec2 halfSize = box.zw * 0.5;
 	float rounding = min(corner, min(halfSize.x, halfSize.y));
@@ -218,21 +250,7 @@ float openAt(vec2 point) {
 #endif
 	return open;
 }
-// How much of the part's own picture shows at a point of the screen, in its pixels: whole over the part kept sharp,
-// none from as far past each side of it as its edge, across and down apart and one in the other, as the flat stage's
-// mask has it (\`--sharp-across\`, \`--sharp-down\` in \`tokens.css\`)
-float sharpAt(vec2 onTheScreen) {
-	vec2 past = max(max(sharpBox.xy - onTheScreen, onTheScreen - sharpBox.xy - sharpBox.zw), 0.0);
-	vec2 kept = clamp(1.0 - past / sharpEdge, 0.0, 1.0);
-	return kept.x * kept.y;
-}
-// What stands behind the pixel as the eye sees it, as light: the world laid so far over the film's ground
-vec4 behindAt() {
-	vec2 shareOfTheFrame = gl_FragCoord.xy * layerOnTheFrame.xy + layerOnTheFrame.zw;
-	vec4 world = inTheScreensColours(texture2D(behindSoFar, shareOfTheFrame));
-	vec4 filmsGroundThere = texture2D(filmsGround, vec2(shareOfTheFrame.x, 1.0 - shareOfTheFrame.y));
-	return inLinearLight(world + (1.0 - world.a) * filmsGroundThere);
-}
+${THE_PART_KEPT_SHARP}
 void main() {
 	vec4 screen = texture2D(surface, shareOfTheSurface);
 	vec2 point = surfaceBox.xy + shareOfTheSurface * surfaceBox.zw;
@@ -471,13 +489,14 @@ export class PagePicture {
 		this.uploadedAnew();
 		const zoom = scene.camera.pose.zoom;
 		const shade = scene.window.shade;
+		const blurredHere = shade !== null && !blurredWithTheWindow(scene.window);
 		return {
 			...laid,
-			picture: this.seenBlurred(this.pageBlurred, shade === null ? UNBLURRED : shade.blur, zoom),
+			picture: this.seenBlurred(this.pageBlurred, blurredHere ? shade.blur : UNBLURRED, zoom),
 			pictured: true,
 			screenBox: valuesOfTheBox(filmed.box),
 			screenCorner: filmed.corner,
-			...this.sharpPartLaid(scene.window.sharp, zoom)
+			...(blurredHere ? this.sharpPartLaid(scene.window.sharp, zoom) : NO_PART_KEPT_SHARP)
 		};
 	}
 
@@ -520,6 +539,17 @@ export class PagePicture {
 		}
 		this.uploaded = address;
 	}
+}
+
+/**
+ * Whether the room blurs the page with the window's body, through the eye's lens, where the shade reaching the whole
+ * window blurs the body (`stage/body.js`): the page's picture is laid unblurred then, and the part the blur leaves
+ * sharp is kept so by the body's spreads, as the page and its body blurred apart left the page's outline sharp round a
+ * soft page.
+ * @param {DrawnScene['window']} window
+ */
+export function blurredWithTheWindow(window) {
+	return window.body !== null && window.body.shade !== null && window.body.shade.blur > UNBLURRED;
 }
 
 /**

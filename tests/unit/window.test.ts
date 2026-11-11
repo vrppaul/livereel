@@ -119,7 +119,8 @@ test("a window lifted whole, with a body, hands the stage its slab: the rim and 
 			metal: BODY.metal,
 			roughness: BODY.roughness,
 			glass: BODY.glass,
-			placing: carriedTo(window.inTheEyesSpace, ITS_TOP_RIGHT)
+			placing: carriedTo(window.inTheEyesSpace, ITS_TOP_RIGHT),
+			shade: null
 		}
 	]);
 });
@@ -174,6 +175,27 @@ test("a body comes as far as the window lifts and the screen comes up in it, rou
 		BODY.glass * 0.25,
 		carriedTo(window.inTheEyesSpace, SHOWN_MIDDLE_FROM_THE_WINDOWS),
 		LOW.box.height / 2
+	]);
+});
+
+test('a shade reaching the window fades its body as far as the page and blurs it as the page, at its softest as large as the frame shows the slab, its glass fading with it; the body unshaded where the shade reaches the page alone, or only dims', () => {
+	const reaching = { ...WITH_A_BODY, fade: 0.25, blur: 8, reaching: 'window' };
+	const atRest = drawnWindow(LIFTED, AT_ITS_EDGES, reaching, AROUND).body!;
+	const turned = drawnWindow({ ...LIFTED, angle: TURNED[0] }, AT_ITS_EDGES, reaching, AROUND).body!;
+	const pageAlone = drawnWindow(LIFTED, AT_ITS_EDGES, { ...reaching, reaching: 'page' }, AROUND).body!;
+	const dimmed = drawnWindow(LIFTED, AT_ITS_EDGES, { ...WITH_A_BODY, dim: 0.5, reaching: 'window' }, AROUND).body!;
+	expect([
+		atRest.shade,
+		atRest.glass,
+		turned.shade!.softestBlur > 8,
+		[pageAlone.shade, pageAlone.glass],
+		[dimmed.shade, dimmed.glass]
+	]).toEqual([
+		{ fade: 0.25, blur: 8, softestBlur: 8 },
+		BODY.glass * 0.75,
+		true,
+		[null, BODY.glass],
+		[null, BODY.glass]
 	]);
 });
 

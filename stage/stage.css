@@ -152,6 +152,12 @@ body {
 	opacity: calc(var(--lift) * var(--screen-shown));
 }
 
+/* The window's shadow and edge where the shade reaches the whole window (`src/props/window.ts`): faded as far as the page and blurred as the page, its blur in pixels of a frame 1080 high drawn in the frame's own. In the room a window with a body has neither, and its body is shaded instead (`body.js`) */
+[data-shade-reaching='window'] .view-shadow {
+	filter: blur(calc(var(--shade-blur) * var(--frame-scale) * 1px));
+	opacity: calc(var(--lift) * var(--page-shown));
+}
+
 /* The camera moves the screen, laid out at its own size, about its top left corner: the point looked at to the view's middle, brought close, its zoom counted as on a frame the stage's look was made on; and turned over about the view's middle where the eye sees a page on the window's back, as it is mounted, so seen through the window's back it stands upright, framed as the front is: top to bottom for one upright once the window is turned over round its width, side to side for one upright once it is turned round its upright */
 .camera {
 	--mirrored-across: 1;
@@ -1555,6 +1561,11 @@ body {
 [data-shaded] .swept,
 [data-shaded] .holes {
 	filter: blur(calc(var(--shade-blur) * 1px / var(--zoom)));
+}
+
+/* In the room a window with a body the shade reaches is blurred whole, its page with it, by the eye's lens (`body.js`), so the page's markup is drawn unblurred, as its picture is (`page-picture.js`) */
+.room .window[data-body][data-shade-reaching='window'] :is(.page, .swept, .holes) {
+	filter: none;
 }
 
 /* The part of the page the shade's blur leaves sharp (`src/props/window.ts`): the page's picture laid again over the screen, unblurred but where it softens (below), through a mask whole over the part and softening into the blurred page past it (`--sharp-across` and `--sharp-down` in `tokens.css`). The picture the sweep holds and the holes over it blur with the rest. The room draws the part in the page's picture itself (`page-picture.js`), so this one stands unseen there */

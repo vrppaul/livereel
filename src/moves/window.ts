@@ -37,7 +37,15 @@ import { between, namedToward, shareToward } from '../domain/toward.ts';
 import { type ValuesMoving, valuesToward, valuesWith } from '../domain/values.ts';
 import { SLAB_KINDS, SLAB_NAMES, type Slab, type SlabScript } from '../props/body.ts';
 import { besideTheWindow } from '../props/note.ts';
-import { type PageWindow, SHADE_KINDS, SHADE_NAMES, type Shade, type ShadeWritten } from '../props/window.ts';
+import {
+	A_SHADE_REACH,
+	type PageWindow,
+	SHADE_KINDS,
+	SHADE_NAMES,
+	type Shade,
+	type ShadeReach,
+	type ShadeWritten
+} from '../props/window.ts';
 import { trackOf } from '../domain/track.ts';
 import {
 	A_TARGET,
@@ -74,11 +82,13 @@ export interface WindowHideScript extends TimingScript {
 /**
  * How far the page is dimmed, `dim`, and faded into the film's ground, `fade`, each from 0 none to 1 whole, how far it
  * is blurred, `blur`, in pixels of a frame 1080 high, the part of it the blur leaves `sharp`, a block or a box of the
- * screen, or none, `'none'`, and how far that part softens toward the blur, `sharpSoftens`, from 0 none to 1 as soft
- * as the page round it; any left out as it stands.
+ * screen, or none, `'none'`, how far that part softens toward the blur, `sharpSoftens`, from 0 none to 1 as soft as
+ * the page round it, and how far the shade reaches, `reaching`, the page alone, `'page'`, or the whole window,
+ * `'window'`; any left out as it stands.
  */
 export interface ShadeScript extends TimingScript, Partial<ShadeWritten> {
 	readonly sharp?: Target;
+	readonly reaching?: ShadeReach;
 }
 
 // No part of the page left sharp, as a film names it: written as a selector is, one no block of a page answers to
@@ -87,10 +97,10 @@ const NONE_SHARP = 'none';
 const TO_FORM: Form<WindowToScript> = { depth: A_NUMBER, ...TIMING_FORM };
 const SHOW_FORM: Form<WindowShowScript> = { at: needed(A_PLACE), from: needed(A_FRAME_SIDE), ...TIMING_FORM };
 const HIDE_FORM: Form<WindowHideScript> = { toward: needed(A_FRAME_SIDE), ...TIMING_FORM };
-const SHADE_FORM: Form<ShadeScript> = { ...SHADE_KINDS, sharp: A_TARGET, ...TIMING_FORM };
-// The window's values a shade sets: the shade's own, and the part of the page its blur leaves sharp; and that part,
-// as a refusal names it
-const SHADED = [...SHADE_NAMES, 'sharp'] as const satisfies readonly (keyof PageWindow)[];
+const SHADE_FORM: Form<ShadeScript> = { ...SHADE_KINDS, sharp: A_TARGET, reaching: A_SHADE_REACH, ...TIMING_FORM };
+// The window's values a shade sets: the shade's own, the part of the page its blur leaves sharp and how far it
+// reaches; and that part, as a refusal names it
+const SHADED = [...SHADE_NAMES, 'sharp', 'reaching'] as const satisfies readonly (keyof PageWindow)[];
 const SHARP_MOVE = "window.shade's sharp";
 // The window's values a move that carries it sets, and one that leans it; what each writes is held to them
 const CARRIED = ['box', 'lift', 'depth'] as const satisfies readonly (keyof Placing)[];
@@ -264,15 +274,17 @@ function leaning(beginning: Beginning, script: LeanScript): Change {
 
 /**
  * The page's shade on its way from how it stands to the film's, the values it names written into the window; and the
- * part of the page its blur leaves sharp, where the film names one, from the move's start, as a part has no values
- * between one and the next, and slid across the page its edge would slide over the words.
+ * part of the page its blur leaves sharp and how far the shade reaches, where the film names them, from the move's
+ * start, as neither has values between one and the next, and slid across the page a part's edge would slide over the
+ * words.
  */
 async function shading(beginning: Beginning, script: ShadeScript): Promise<Change> {
 	const start: Shade = beginning.scene.window;
 	const end = valuesWith(start, script, SHADE_KINDS);
 	const names = namesGiven(script, SHADE_NAMES);
 	const sharp = script.sharp === undefined ? {} : { sharp: await sharpRead(beginning, script.sharp) };
-	return writing((progress) => ({ ...namedToward(SHADE_KINDS, start, end, names, progress), ...sharp }));
+	const reaching = script.reaching === undefined ? {} : { reaching: script.reaching };
+	return writing((progress) => ({ ...namedToward(SHADE_KINDS, start, end, names, progress), ...sharp, ...reaching }));
 }
 
 /**

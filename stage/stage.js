@@ -130,6 +130,8 @@ const SHEEN_COLOUR = '--sheen-colour';
 // window shades the page by, which it has not where the page is unshaded: so neither is drawn with a filter at all
 const EFFECTS = 'data-effects';
 const SHADED = 'data-shaded';
+// The attribute that names how far the window's shade reaches, which an unshaded window has not
+const SHADE_REACHING = 'data-shade-reaching';
 // The attribute the window bears while the shade's blur leaves a part of the page sharp, which it has not where the
 // blur leaves none, so no second picture of the page is drawn; and the one it bears while that part softens toward
 // the blur, which it has not where the part is wholly sharp, so the part is drawn with no filter at all
@@ -307,11 +309,12 @@ class WindowDrawer {
 
 /**
  * How the window shades the page, drawn on its root: how far the page is dimmed and blurred, as far as it fades being
- * how much of it shows (`WindowDrawer`); with no filter at all, where it is unshaded.
+ * how much of it shows (`WindowDrawer`), and how far the shade reaches; with no filter at all, where it is unshaded.
  * @param {Staged} root @param {DrawnScene['window']['shade']} shade
  */
 function shadeDrawn(root, shade) {
 	root.toggleAttribute(SHADED, shade !== null);
+	named(root, SHADE_REACHING, shade === null ? null : shade.reaching);
 	if (shade === null) return;
 	numbered(root, { '--shade-dim': shade.dim, '--shade-blur': shade.blur });
 }

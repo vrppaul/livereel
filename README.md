@@ -234,7 +234,7 @@ and the moves of each part of the scene:
   under a point off the frame, or where the eye sees past the window's plane as the move begins; where the window
   turns so the eye sees past its plane there later, the focus stands as far as can be
 - `window.to(place, { depth })`, `window.show({ at, from })`, `window.hide({ toward })`, `window.lean({ tilt, turn, roll, over, about })`,
-  `window.shade({ dim, fade, blur, sharp, sharpSoftens })`, `window.body({ thickness, rim, metal, roughness, glass }, { within })`
+  `window.shade({ dim, fade, blur, sharp, sharpSoftens, reaching })`, `window.body({ thickness, rim, metal, roughness, glass }, { within })`
 - `light.on(target, { dim })`, `light.to(target)`, `light.off()`
 - `callout.show(target, text, { side })`, `callout.hide()`
 - `note.show(target, text, { at })`, `note.hide()`
@@ -1027,6 +1027,18 @@ drawn from the page's picture, so a
 page framed live is refused, as one the screen shows a page of the film's
 own in place of; the picture the sweep holds and the holes over the part
 blur with the rest.
+The shade reaches the page alone, so a film fading one page over another
+keeps its slab whole while the page goes. `window.shade({ blur: 8, fade:
+0.78, reaching: 'window' })` has it reach the whole window, as a promo's lens
+softens and fades all of its slab: in a room its blur and fade reach the
+window's body, its rim and sides fading into what stands behind them as far
+as the page and the whole window blurred as one by the eye's lens, the page,
+its outline and the body, each point as wide as the shade blurs the page and
+wider as the eye sees it nearer, but the part kept sharp; on the flat stage
+they reach the window's edge and shadow. The dim stays the screen's, and
+what lies over the page in a room's window, a callout or pins, blurs with
+it. Like `sharp`, `reaching` is named from the move's start, and
+`reaching: 'page'` takes it back.
 Start the words once the window has drawn back, so they come up on the
 ground, not over the page. A film shot in several formats names places of
 its own in each format and writes them once (below, "Formats").

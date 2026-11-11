@@ -431,7 +431,10 @@ test("a move that sets the values a film names refuses one naming none, and each
 		new FilmError('piece.effects\'s colour is "blue": it is a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa')
 	);
 	expect(() => pageWindow.shade({})).toThrow(
-		new FilmError('window.shade names none of dim, fade, blur, sharpSoftens, sharp')
+		new FilmError('window.shade names none of dim, fade, blur, sharpSoftens, sharp, reaching')
+	);
+	expect(() => pageWindow.shade({ reaching: 'body' as 'window' })).toThrow(
+		new FilmError('window.shade\'s reaching is "body": it is how far the shade reaches: "page" or "window"')
 	);
 	expect(() => look.to({})).toThrow(/^look\.to names none of ground, /);
 	expect(() => world.to({})).toThrow(

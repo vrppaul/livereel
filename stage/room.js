@@ -65,11 +65,17 @@ import {
 	WebGLRenderer
 } from 'three';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { WindowBody } from './body.js';
+import { WindowBlurred, WindowBody } from './body.js';
 import { Lens, SPREADS_REACHED, sceneFieldOf, sideHalvedEvenly } from './lens.js';
 import { WorldLighting } from './lighting.js';
 import { matrixOf, placedBy, projectionOnto } from './matrices.js';
-import { PAGE_SURFACE_FRAGMENT, PagePicture, compiledForThePits, pageSurfaceValues } from './page-picture.js';
+import {
+	PAGE_SURFACE_FRAGMENT,
+	PagePicture,
+	blurredWithTheWindow,
+	compiledForThePits,
+	pageSurfaceValues
+} from './page-picture.js';
 import { PagePits, PieceBodies, pitsSunkIn } from './piece-body.js';
 import { ADDED, LAID_OVER, PREMULTIPLIED, SRGB_CURVES, passOver, valuesSet } from './passes.js';
 import { FrameShown } from './shown.js';
@@ -90,6 +96,7 @@ import { Things, isAThing } from './things.js';
 /** @import { DrawnBloom } from '../src/props/lighting.ts' */
 /** @import { ThingObject } from './things.js' */
 /** @import { BesideThePage, SeenThroughField, WorldPart } from './see-through.js' */
+/** @import { SceneField } from './lens.js' */
 /** @import { Laying } from './laying.js' */
 /** @import { BehindThePage, PageLaid } from './page-picture.js' */
 /** @import { SunkPit } from './piece-body.js' */
@@ -229,6 +236,8 @@ const WHOLLY_SHOWN = 1;
 const SHARP = 0;
 const NO_SIZE = 0;
 const NONE_STANDING = 0;
+// A field of the world no pixel of which spreads of its own, but by the eye's lens
+const NO_SPREADS_OF_THEIR_OWN = null;
 // What writes depth is laid as a film's light is, in linear light; and markup standing in the world is seen through
 // beside the page whole, round its letters and in its shadows
 /** @type {Laying} */
@@ -480,6 +489,7 @@ class Room {
 		});
 		this.seeThrough = new SeeThroughLayer(THREES_LAYER, PAST_WHITE);
 		this.lens = new Lens(this.pixelsOfOne, layout.frameScale, window.devicePixelRatio);
+		this.windowBlurred = new WindowBlurred(this.pixelsOfOne, layout.format.screen);
 		// The world as the eye's lens sees it, each field laid over the ones before (`laying.js`); then laid over the
 		// exposure in the screen's colours once
 		this.worldSeen = new WorldSeen(drawnWidth, drawnHeight, PAST_WHITE);
@@ -713,10 +723,21 @@ class Room {
 		// Where the eye blurs nothing and the page is not seen through, nothing parts a film's things seen through from
 		// what writes depth but how they are laid: drawn after it into its layer, three lays them over it in linear light,
 		// as their field would be laid, where they are laid first
+		const holdsTheWindow = window !== null;
 		if (eye.lens === null && pageSeen === null && first === 'thingsSeenThrough') {
-			return { scene: world, writingDepth: ['opaque', first], seenThroughFields: seenThroughFieldsOf(null, others) };
+			return {
+				scene: world,
+				writingDepth: ['opaque', first],
+				seenThroughFields: seenThroughFieldsOf(null, others),
+				holdsTheWindow
+			};
 		}
-		return { scene: world, writingDepth: ['opaque'], seenThroughFields: seenThroughFieldsOf(pageSeen, beside) };
+		return {
+			scene: world,
+			writingDepth: ['opaque'],
+			seenThroughFields: seenThroughFieldsOf(pageSeen, beside),
+			holdsTheWindow
+		};
 	}
 
 	/**
@@ -769,21 +790,38 @@ class Room {
 		this.behindThePageSet(gathered);
 		partsDrawn(this.renderer, world.scene, this.worldCamera, world.writingDepth);
 		const opaque = sceneFieldOf(this.worldLayer.texture, this.worldLayer);
+		const opaqueSpreads = this.windowSpreadsOver(opaque, scene, world.holdsTheWindow);
 		this.worldSeen.fieldLaid(this.renderer, WHAT_WRITES_DEPTH_LAID, (target) =>
-			this.lens.laid(this.renderer, opaque, gathered, this.frameBox, scene.eye, target)
+			this.lens.laid(this.renderer, opaque, gathered, this.frameBox, scene.eye, target, opaqueSpreads)
 		);
 		for (const field of world.seenThroughFields) {
 			this.behindThePageSet(gathered);
 			const drawnField = this.seeThrough.drawn(this.renderer, world.scene, this.worldCamera, this.worldLayer, field);
+			const spreads = this.windowSpreadsOver(drawnField, scene, field.holding === 'pageSeenThrough');
 			this.worldSeen.fieldLaid(this.renderer, field.laid, (target) =>
-				this.lens.laid(this.renderer, drawnField, gathered, this.frameBox, scene.eye, target)
+				this.lens.laid(this.renderer, drawnField, gathered, this.frameBox, scene.eye, target, spreads)
 			);
 		}
 	}
 
 	/**
-	 * What the page's surface reads of what stands behind it, where its shade fades it (`page-picture.js`), set as the
-	 * room has laid the world so far: that world, the film's ground, and where a pixel of the layers the world is drawn
+	 * How wide the window's shade blurs the whole window at each pixel of a field that holds the window, its page or its
+	 * body, as the lens takes it, where the shade blurs the whole window (`blurredWithTheWindow`); none where it does
+	 * not, or the field holds none of the window.
+	 * @param {SceneField} field @param {DrawnScene} scene @param {boolean} holdsTheWindow @returns {Texture | null}
+	 */
+	windowSpreadsOver(field, scene, holdsTheWindow) {
+		const body = scene.window.body;
+		if (!holdsTheWindow || !blurredWithTheWindow(scene.window) || body === null || body.shade === null) {
+			return NO_SPREADS_OF_THEIR_OWN;
+		}
+		const toTheEye = this.worldCamera.projectionMatrixInverse;
+		return this.windowBlurred.spreadsOver(this.renderer, field, toTheEye, scene, body, body.shade);
+	}
+
+	/**
+	 * What the page's surface and the window's body read of what stands behind them, where the shade fades them
+	 * (`page-picture.js`, `body.js`), set as the room has laid the world so far: that world, the film's ground, and where a pixel of the layers the world is drawn
 	 * into over the box the lens gathers stands on the frame.
 	 * @param {Box} gathered
 	 */
@@ -801,6 +839,7 @@ class Room {
 			)
 		};
 		for (const page of this.pageSurfaces) valuesSet(page.material, behind);
+		this.body.behindSet(behind);
 	}
 
 	/**
@@ -871,7 +910,8 @@ class Room {
 
 	/**
 	 * The box of the frame the world is drawn into for a frame's exposures: as far past each edge of the frame as the
-	 * lens's blur gathers there, from the softest point the frame shows of its window or of an object in it, rounded up
+	 * lens's blur gathers there, from the softest point the frame shows of its window or of an object in it, or of the
+	 * window's slab the shade blurs whole, rounded up
 	 * to a step of the drawing's pixels; grown about the frame till each side halves evenly down to the coarsest copy
 	 * the lens reads of it (`sideHalvedEvenly`), so the blur's light is the same wherever the frame falls in it; and no
 	 * longer a side than the graphics card's largest texture, a power of two, past which a blur by the frame's edge
@@ -882,7 +922,8 @@ class Room {
 		const softest = Math.max(
 			SHARP,
 			...scenes.map((scene) => scene.window.softestOutOfFocus ?? SHARP),
-			...scenes.flatMap(objectsIn).map((object) => object.softestOutOfFocus ?? SHARP)
+			...scenes.flatMap(objectsIn).map((object) => object.softestOutOfFocus ?? SHARP),
+			...scenes.map((scene) => scene.window.body?.shade?.softestBlur ?? SHARP)
 		);
 		if (softest === SHARP) return this.frameBox;
 		const widestSpread = softest * this.pixelsOfOne;
@@ -950,12 +991,13 @@ class Room {
  * }} StandingApart
  */
 /**
- * A world the room draws apart: the scene it is drawn from, the parts of it drawn with what writes depth, and the
- * fields of what is seen through it is drawn with.
+ * A world the room draws apart: the scene it is drawn from, the parts of it drawn with what writes depth, the fields
+ * of what is seen through it is drawn with, and whether the window stands in it.
  * @typedef {{
  *   readonly scene: Scene,
  *   readonly writingDepth: readonly WorldPart[],
- *   readonly seenThroughFields: readonly SeenThroughField[]
+ *   readonly seenThroughFields: readonly SeenThroughField[],
+ *   readonly holdsTheWindow: boolean
  * }} WorldApart
  */
 /**

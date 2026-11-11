@@ -2,7 +2,10 @@
 /**
  * The eye's lens over the world the room draws as one scene (`stage/room.js`): each pixel blurred by how far what it
  * shows stands from the focus, read off the scene's depth by the engine's own law (`src/domain/focus.ts`), which the
- * scene's eye hands as a spread per nearness and the focus's nearness (`LensLaw`), or none where the eye is open none.
+ * scene's eye hands as a spread per nearness and the focus's nearness (`LensLaw`), or none where the eye is open none;
+ * or by a spread of its own a field is handed for each of its pixels, whichever is wider, as the claude-review promo's
+ * lens took the wider of its depth's blur and a blur of its own: the window's shade blurring the whole window
+ * (`stage/body.js`). A pixel's own spread never puts it in the near field, which the law alone tells.
  *
  * A lens blurs what stands before its focus over what stands behind it, so the scene is split at the focus into two
  * fields:
@@ -41,6 +44,7 @@
  * it is the room's (`stage/laying.js`).
  */
 import {
+	DataTexture,
 	HalfFloatType,
 	LinearFilter,
 	LinearMipmapLinearFilter,
@@ -116,6 +120,10 @@ const SMALLER_A_COPY = 2;
 // A pass's target before it is first sized, and a field's smaller copies before it is first sized
 const A_PIXEL = 1;
 const NO_SMALLER_COPY = 0;
+// The law of an eye open none, which spreads no depth at all; and a pixel's four values where it spreads none of its
+// own
+const NO_LAW = new Vector2(0, 0);
+const NO_SPREAD_A_PIXEL = [0, 0, 0, 0];
 // A field as large as the scene's layer, in half floats, with smaller copies for wide spreads
 const FIELD = {
 	type: HalfFloatType,
@@ -132,11 +140,13 @@ const TILES_WIDENED = { type: HalfFloatType, depthBuffer: false, minFilter: Line
 // How the tiles and the split read the scene's depth: how near the eye a stored depth stands, one over how far before
 // it, in pixels of a frame 1080 high, three's perspective storing it between the depth's near and far, in the frame's
 // pixels (three's own reading, its view's depth negative before the eye); how wide the engine's law, its spread per
-// nearness and the focus's nearness, spreads it, in the drawing's pixels; whether anything was drawn there, and whether
-// it is the near field's, nearer than the focus; and the nearest depth round a pixel
+// nearness and the focus's nearness, spreads it, in the drawing's pixels; how wide a pixel of the field spreads, by
+// that law or by a spread of its own the field is handed, whichever is wider; whether anything was drawn there, and
+// whether it is the near field's, nearer than the focus by the law; and the nearest depth round a pixel
 const DEPTH_READ = `
 #include <packing>
 uniform sampler2D depth;
+uniform sampler2D ownSpreads;
 uniform vec2 depthRange;
 uniform float frameScale;
 uniform float pixelsOfOne;
@@ -148,6 +158,9 @@ float nearnessOf(float stored) {
 }
 float spreadOf(float stored) {
 	return law.x * abs(law.y - nearnessOf(stored)) * pixelsOfOne;
+}
+float spreadAt(vec2 share, float stored) {
+	return max(spreadOf(stored), texture2D(ownSpreads, share).r);
 }
 bool isDrawn(float stored) {
 	return stored < NOTHING_DRAWN;
@@ -214,10 +227,10 @@ void main() {
 	float nearest = nearestRound(shareOfTheFrame);
 	bool near = isNear(nearest);
 	bool drawn = isDrawn(nearest);
-	float spread = drawn ? spreadOf(nearest) : NOTHING_DRAWN_ROUND;
+	float spread = drawn ? spreadAt(shareOfTheFrame, nearest) : NOTHING_DRAWN_ROUND;
 	bool spreading = !near && spreads(drawn, spread);
 	float own = texture2D(depth, shareOfTheFrame).x;
-	float ownSpread = isDrawn(own) && !near ? spreadOf(own) : NO_FAR_DEPTH_HERE;
+	float ownSpread = isDrawn(own) && !near ? spreadAt(shareOfTheFrame, own) : NO_FAR_DEPTH_HERE;
 	vec4 light = texture2D(drawnLight, shareOfTheFrame);
 	nearLight = near ? light : vec4(0.0);
 	farLight = near ? vec4(0.0) : light;
@@ -296,10 +309,11 @@ void main() {
 		for (int across = 0; across < TILE; across++) {
 			ivec2 texel = tile * TILE + ivec2(across, down);
 			if (texel.x >= size.x || texel.y >= size.y) continue;
-			float nearest = nearestRound((vec2(texel) + PIXEL_MIDDLE) / vec2(size));
+			vec2 share = (vec2(texel) + PIXEL_MIDDLE) / vec2(size);
+			float nearest = nearestRound(share);
 			if (!isDrawn(nearest)) continue;
-			if (isNear(nearest)) widest.x = max(widest.x, spreadOf(nearest));
-			else widest.y = max(widest.y, spreadOf(nearest));
+			if (isNear(nearest)) widest.x = max(widest.x, spreadAt(share, nearest));
+			else widest.y = max(widest.y, spreadAt(share, nearest));
 		}
 	}
 	gl_FragColor = vec4(widest, 0.0, 1.0);
@@ -457,6 +471,9 @@ export class Lens {
 	constructor(pixelsOfOne, frameScale, pixelsOfAFramePixel) {
 		this.pixelsOfOne = pixelsOfOne;
 		this.frameScale = frameScale;
+		// A field's spreads of its own where it is handed none: none at any pixel
+		this.noSpreadsOfTheirOwn = new DataTexture(new Uint8Array(NO_SPREAD_A_PIXEL), A_PIXEL, A_PIXEL);
+		this.noSpreadsOfTheirOwn.needsUpdate = true;
 		// The scene split at the focus, each part a layer of it in its place
 		this.parts = new WebGLRenderTarget(A_PIXEL, A_PIXEL, { ...FIELD, count: Object.keys(SPLIT_PARTS).length });
 		this.tilesFound = new WebGLRenderTarget(A_PIXEL, A_PIXEL, TILES_FOUND);
@@ -552,15 +569,17 @@ export class Lens {
 	}
 
 	/**
-	 * A field of the world's scene, holding a box of the frame, laid over the frame's box of the target blurred by the
-	 * eye's lens at each pixel, or as it stands where the eye has none, open none; the field's depth read as the eye that
-	 * saw it, so far before the frame, stored it.
+	 * A field of the world's scene, holding a box of the frame, laid over the frame's box of the target blurred at each
+	 * pixel by the eye's lens or by a spread of its own the field is handed, whichever is wider, or as it stands where
+	 * the eye has no lens, open none, and the field no spreads of its own; the field's depth read as the eye that saw
+	 * it, so far before the frame, stored it.
 	 * @param {WebGLRenderer} renderer @param {SceneField} field @param {Box} drawn @param {Box} shown @param {DrawnEye} eye
-	 * @param {WebGLRenderTarget} target
+	 * @param {WebGLRenderTarget} target @param {Texture | null} ownSpreads how wide each pixel of the field spreads of
+	 * its own, in the drawing's pixels, as the field lies; none where none does
 	 */
-	laid(renderer, field, drawn, shown, eye, target) {
+	laid(renderer, field, drawn, shown, eye, target, ownSpreads) {
 		const boxes = { drawnBox: valuesOfTheBox(drawn), shownBox: valuesOfTheBox(shown) };
-		if (eye.lens === null) {
+		if (eye.lens === null && ownSpreads === null) {
 			valuesSet(this.asItStands.material, { drawnLight: field.light, ...boxes });
 			drawnInto(renderer, this.asItStands, target);
 			return;
@@ -569,8 +588,9 @@ export class Lens {
 		const range = depthRangeOf(eye.distance);
 		const depthRead = {
 			depth: field.depth,
+			ownSpreads: ownSpreads ?? this.noSpreadsOfTheirOwn,
 			depthRange: new Vector2(range.near, range.far),
-			law: new Vector2(eye.lens.perNearness, eye.lens.inFocus)
+			law: eye.lens === null ? NO_LAW : new Vector2(eye.lens.perNearness, eye.lens.inFocus)
 		};
 		valuesSet(this.found.material, depthRead);
 		drawnInto(renderer, this.found, this.tilesFound);
@@ -599,12 +619,14 @@ export class Lens {
 
 /**
  * The values a pass that reads the scene's depth takes (`DEPTH_READ`): the drawing's pixels of a pixel of a frame 1080
- * high and the frame's scale, set once; the depth, its range and the lens's law set as each field is laid.
+ * high and the frame's scale, set once; the depth, the spreads of its own, its range and the lens's law set as each
+ * field is laid.
  * @param {number} pixelsOfOne @param {number} frameScale
  */
 function depthReadValues(pixelsOfOne, frameScale) {
 	return {
 		depth: { value: null },
+		ownSpreads: { value: null },
 		depthRange: { value: new Vector2() },
 		frameScale: { value: frameScale },
 		pixelsOfOne: { value: pixelsOfOne },
