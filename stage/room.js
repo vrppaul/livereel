@@ -25,7 +25,8 @@
  * in a surface of its own laid out alike; the page's surface lays the screen's ground and the page's picture under the
  * one, as dense as the picture was taken, and the other over all (`stage/page-picture.js`). The world is drawn as far
  * past the frame as the lens's blur gathers at its edges, to a step, so the layers it is drawn into keep their size
- * while the blur gathers alike.
+ * while the blur gathers alike, and a little farther, so each side of them halves evenly down to the coarsest copy the
+ * lens reads.
  *
  * The exposures are added up in linear light, as a shutter gathers the light of each moment: a glint that moves draws a
  * streak as bright as its light, where averaged in the screen's colours it went dark. Where the world asks, the frame
@@ -62,7 +63,7 @@ import {
 } from 'three';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { WindowBody } from './body.js';
-import { Lens, SPREADS_REACHED, sceneFieldOf } from './lens.js';
+import { Lens, SPREADS_REACHED, sceneFieldOf, sideHalvedEvenly } from './lens.js';
 import { WorldLighting } from './lighting.js';
 import { matrixOf, projectionOnto } from './matrices.js';
 import { PAGE_SURFACE_FRAGMENT, PagePicture, pageSurfaceValues } from './page-picture.js';
@@ -148,7 +149,8 @@ const EDGE_CLEAR = 2;
 // over, which grew a little each frame as the eye's focus opened: the room drew a frame of 3840 × 2160, the page fading
 // as the focus opens, in 366 ms by its steps' clock, and with the reach to a step of 256 in 278 ms, of 128 in 261, of
 // 64 in 261 (2026-11-11). A step wider draws the world over more pixels than the blur reads; one narrower makes the
-// layers anew more often as the blur grows
+// layers anew more often as the blur grows. It is for speed alone: the blur's light is the same at any step, the
+// layers' sides halving evenly to the copies the lens reads (`sideHalvedEvenly`)
 const REACH_STEP = 128;
 // A plane the eye sees edge-on, carried onto a line; and the fourth value of a point of the frame seen back onto the
 // plane where it sees no point of it before the eye
@@ -811,8 +813,10 @@ class Room {
 	/**
 	 * The box of the frame the world is drawn into for a frame's exposures: as far past each edge of the frame as the
 	 * lens's blur gathers there, from the softest point the frame shows of its window or of an object in it, rounded up
-	 * to a step of the drawing's pixels, and no farther than the graphics card's largest texture leaves room for, past
-	 * which a blur by the frame's edge gathers nothing; the frame itself where the eye's focus blurs none.
+	 * to a step of the drawing's pixels; grown about the frame till each side halves evenly down to the coarsest copy
+	 * the lens reads of it (`sideHalvedEvenly`), so the blur's light is the same wherever the frame falls in it; and no
+	 * longer a side than the graphics card's largest texture, a power of two, past which a blur by the frame's edge
+	 * gathers nothing. The frame itself where the eye's focus blurs none.
 	 * @param {readonly DrawnScene[]} scenes @returns {Box}
 	 */
 	gatheredFor(scenes) {
@@ -822,10 +826,12 @@ class Room {
 			...scenes.flatMap(objectsIn).map((object) => object.softestOutOfFocus ?? SHARP)
 		);
 		if (softest === SHARP) return this.frameBox;
-		const roomLeft = (this.renderer.capabilities.maxTextureSize - Math.max(this.drawnSize.x, this.drawnSize.y)) * HALF;
-		const gathers = Math.ceil((SPREADS_REACHED * softest * this.pixelsOfOne) / REACH_STEP) * REACH_STEP;
-		const reach = Math.min(gathers, Math.floor(roomLeft));
-		return grownBy(this.frameBox, reach / window.devicePixelRatio);
+		const widestSpread = softest * this.pixelsOfOne;
+		const reach = Math.ceil((SPREADS_REACHED * widestSpread) / REACH_STEP) * REACH_STEP;
+		const largest = this.renderer.capabilities.maxTextureSize;
+		const across = Math.min(sideHalvedEvenly(this.drawnSize.x + reach + reach, widestSpread), largest);
+		const down = Math.min(sideHalvedEvenly(this.drawnSize.y + reach + reach, widestSpread), largest);
+		return grownTo(this.frameBox, across / window.devicePixelRatio, down / window.devicePixelRatio);
 	}
 
 	/**
@@ -1031,6 +1037,11 @@ function grownBy(box, pixels) {
 		width: box.width + pixels + pixels,
 		height: box.height + pixels + pixels
 	};
+}
+
+/** A box grown about its middle to a size. @param {Box} box @param {number} width @param {number} height @returns {Box} */
+function grownTo(box, width, height) {
+	return { left: box.left - (width - box.width) * HALF, top: box.top - (height - box.height) * HALF, width, height };
 }
 
 /** The least box both boxes stand in. @param {Box} first @param {Box} second @returns {Box} */

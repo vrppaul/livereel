@@ -3,7 +3,7 @@ import { expect, test } from 'vitest';
 import { type DrawnEye, drawnEye, eyeAtRest } from '../../src/domain/eye.ts';
 import { lensLawOf } from '../../src/domain/focus.ts';
 import type { Size } from '../../src/domain/geometry.ts';
-import { Lens } from '../../stage/lens.js';
+import { Lens, sideHalvedEvenly } from '../../stage/lens.js';
 
 // A frame 1080 high, drawn at twice its pixels, as a still is
 const FRAME: Size = { width: 1920, height: 1080 };
@@ -59,4 +59,18 @@ test('what stands nearer the eye than all the rest is a world apart, its nearest
 	const lens = new Lens(FRAME_SCALE * DRAWN_AT_TWICE, FRAME_SCALE, DRAWN_AT_TWICE);
 	const apart = CASES.map((each) => lens.apartBeforeTheRest(each.eye, each.standing).map((one) => one.name));
 	expect(apart).toEqual(CASES.map((each) => each.apart));
+});
+
+// A layer's side asked for and the widest spread of the blur read from it, in the drawing's pixels: a wide blur, whose
+// gather reads copies of 128 pixels; a narrow one, of 2; one under a pixel's spread, which reads the drawing itself
+const SIDES = [
+	{ asked: 3696, widestSpread: 232, side: 3712 },
+	{ asked: 5376, widestSpread: 232, side: 5376 },
+	{ asked: 3697, widestSpread: 2, side: 3698 },
+	{ asked: 3697, widestSpread: 0.1, side: 3697 }
+];
+
+test("a layer's side is the least whole number of the pixels of the coarsest copy its widest blur reads, no shorter than asked", () => {
+	const sides = SIDES.map((each) => sideHalvedEvenly(each.asked, each.widestSpread));
+	expect(sides).toEqual(SIDES.map((each) => each.side));
 });

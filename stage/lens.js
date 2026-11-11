@@ -111,6 +111,8 @@ const THE_DRAWINGS_OWN_SPACING = 1;
 const MOST_LEVELS = 16;
 const WHOLLY_TAKEN = 0.999;
 const A_PIXELS_WORTH = 1;
+// How many times shorter a side of each smaller copy is than the one before's
+const SMALLER_A_COPY = 2;
 // A pass's target before it is first sized, and a field's smaller copies before it is first sized
 const A_PIXEL = 1;
 const NO_SMALLER_COPY = 0;
@@ -165,14 +167,16 @@ float nearestRound(vec2 share) {
 }`;
 
 // How far apart the samples of a gather of a radius stand, in the drawing's pixels, and so the pixels of the smaller
-// copy it reads them from: no nearer than the drawing's own
+// copy it reads them from: as far as each of its samples' share of the disc is wide, a radius times √(π / samples), no
+// nearer than the drawing's own
+const SAMPLES_APART_PER_RADIUS = Math.sqrt(Math.PI / SAMPLES);
 const SAMPLES_APART = `
 const int SAMPLES = ${SAMPLES};
 const float SPREADS_REACHED = float(${SPREADS_REACHED});
-const float PI = ${Math.PI};
+const float SAMPLES_APART_PER_RADIUS = ${SAMPLES_APART_PER_RADIUS};
 const float THE_DRAWINGS_OWN_SPACING = float(${THE_DRAWINGS_OWN_SPACING});
 float gapFor(float radius) {
-	return max(radius * sqrt(PI / float(SAMPLES)), THE_DRAWINGS_OWN_SPACING);
+	return max(radius * SAMPLES_APART_PER_RADIUS, THE_DRAWINGS_OWN_SPACING);
 }`;
 
 // The parts the scene is split into at the focus: the near field's light, the far field's, the far field's light its
@@ -606,6 +610,22 @@ function depthReadValues(pixelsOfOne, frameScale) {
 		pixelsOfOne: { value: pixelsOfOne },
 		law: { value: new Vector2() }
 	};
+}
+
+/**
+ * The least side of a layer the lens reads a field from, no shorter than asked, that halves evenly down to the coarsest
+ * smaller copy a blur of the widest spread reads, the coarser of the two its samples' gap falls between: a whole number
+ * of that copy's pixels, in the drawing's. The card makes each copy half the one before, rounded down, and read from
+ * copies of sides that do not halve evenly, a blur's light followed where the frame fell among their pixels: a window
+ * blurred wide in the frame's middle, 162.4 thousandths of linear light a pixel unblurred, read 154.9 with the world
+ * drawn 768 pixels past the frame and 178.2 at 832, and with the sides halving evenly to the copies read, 161.8 at
+ * every place the frame was moved to (2026-11-11).
+ * @param {number} side @param {number} widestSpread
+ */
+export function sideHalvedEvenly(side, widestSpread) {
+	const gap = Math.max(SPREADS_REACHED * widestSpread * SAMPLES_APART_PER_RADIUS, THE_DRAWINGS_OWN_SPACING);
+	const coarsestPixel = SMALLER_A_COPY ** Math.ceil(Math.log2(gap));
+	return Math.ceil(side / coarsestPixel) * coarsestPixel;
 }
 
 /**
