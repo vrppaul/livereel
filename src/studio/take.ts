@@ -13,7 +13,8 @@
  * behind it. A sound a move makes is heard as the move is set at or past its point, on the frame being made.
  * A frame is drawn only when the footage keeps it, and drawn again where anything on it moved fast while its shutter
  * was open — the camera, its window, the cursor, the light, an object or what it shows — as the scene stood at moments
- * of that time: the scene the frame before left, every move begun by then set as far as it had come. How far is
+ * of that time: the scene the frame before left, every move begun by then set as far as it had come, and what is worked
+ * out from the moment, as a terminal's spinner, worked out at that one. How far is
  * measured from where things stood as the shutter opened to where they stand, apart on each side of a moment a move
  * begins at, so what a move sets as it begins is not taken for a move. Each drawing is an exposure of the frame
  * (`src/domain/shutter.ts`), so what slides in and what it pushes off are each drawn along their own way. A move's
@@ -66,6 +67,7 @@ import type { Cut, Play, Step } from '../direction/steps.ts';
 import {
 	type DrawnScene,
 	type Scene,
+	type SceneAt,
 	type SceneSeen,
 	drawingOf,
 	drawn,
@@ -409,8 +411,8 @@ export class Take {
 	 * stage draws so many at once, captured as the frame; else each captured, for the footage to blend.
 	 */
 	private async exposed(time: FrameTime, pageMovesOn: boolean): Promise<Exposures> {
-		const own = seenIn(this.scene, this.format);
-		const along = (await this.alsoExposed(time)).map((scene) => seenIn(scene, this.format));
+		const own = seenIn({ scene: this.scene, moment: this.moment() }, this.format);
+		const along = (await this.alsoExposed(time)).map((exposure) => seenIn(exposure, this.format));
 		const pageChanged = await this.pageShown(this.opened.stage, this.zoomPictured(own, along, pageMovesOn));
 		await this.pictures.serve(await this.partsAskedFor(time, [own, ...along]), pageChanged);
 		const ownDrawn = this.drawnAt(own);
@@ -424,14 +426,14 @@ export class Take {
 	}
 
 	/**
-	 * The scenes a frame is exposed at besides its own, as they stood along its time: as many as the smear while its
-	 * shutter is open takes; none where the film is not blurred.
+	 * The scenes a frame is exposed at besides its own, each at its moment, as they stood along its time: as many as the
+	 * smear while its shutter is open takes; none where the film is not blurred.
 	 */
-	private async alsoExposed(time: FrameTime): Promise<readonly Scene[]> {
+	private async alsoExposed(time: FrameTime): Promise<readonly SceneAt[]> {
 		const blur = this.motionBlur;
 		if (blur === null) return [];
 		const smear = await this.smearOf(time, blur);
-		const scenes: Scene[] = [];
+		const scenes: SceneAt[] = [];
 		for (const back of alsoExposedBack(smear, this.format.frame, blur)) scenes.push(await this.sceneBack(time, back));
 		return scenes;
 	}
@@ -462,20 +464,25 @@ export class Take {
 	 * The scene as it stood so far back from the frame's moment, a share of the time from the frame before: the scene the
 	 * frame before left, with every move of the frame's time begun by then set as far as it had come.
 	 */
-	private sceneBack(time: FrameTime, back: number): Promise<Scene> {
+	private sceneBack(time: FrameTime, back: number): Promise<SceneAt> {
 		const progress = progressBack(time, back);
 		return this.sceneOf(time, progress, begunBy(time.moves, progress));
 	}
 
 	/**
-	 * The scene at a point of the frame's step: the scene the frame before left, with the moves of the frame's time named
-	 * set as far as each had come there, one ended at its end, in the order they began, so a move that takes over from
-	 * another of its part sets what it sets once that one is done.
+	 * The scene at a point of the frame's step, and its moment: the scene the frame before left, with the moves of the
+	 * frame's time named set as far as each had come there, one ended at its end, in the order they began, so a move that
+	 * takes over from another of its part sets what it sets once that one is done.
 	 */
-	private async sceneOf(time: FrameTime, progress: number, begun: readonly Running[]): Promise<Scene> {
+	private async sceneOf(time: FrameTime, progress: number, begun: readonly Running[]): Promise<SceneAt> {
 		let scene = time.before;
 		for (const ran of begun) scene = await ran.change(scene, easedAlong(ran, progress));
-		return scene;
+		return { scene, moment: this.momentAt(time, progress) };
+	}
+
+	/** The moment of the film a point of the frame's step stands at: so many frames' time back from the frame's own. */
+	private momentAt(time: FrameTime, progress: number): number {
+		return this.moment() - (time.progress - progress) / time.frameShare / this.framesPerSecond;
 	}
 
 	/**
@@ -569,9 +576,9 @@ export class Take {
 		return this.pageStandsStill && this.lastCaptured?.drawing === drawing ? this.lastCaptured.image : undefined;
 	}
 
-	/** An exposure as the stage draws it at the frame's moment, from the pictures it holds sharper for the frame. */
+	/** An exposure as the stage draws it at its own moment, from the pictures it holds sharper for the frame. */
 	private drawnAt(exposure: SceneSeen): DrawnScene {
-		return drawn(exposure.scene, exposure.camera, this.moment(), this.format, this.pictures.sharper);
+		return drawn(exposure.scene, exposure.camera, exposure.moment, this.format, this.pictures.sharper);
 	}
 
 	/** A frame's exposures drawn on the stage at once, and captured. */

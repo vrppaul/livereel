@@ -89,6 +89,7 @@ import { appearedOf, comingUpIn, groundOf, saidOf } from '../../src/props/words.
 import {
 	type DrawnScene,
 	type Scene,
+	type SceneAt,
 	cameraOf,
 	drawn,
 	frameShiftBetween,
@@ -292,6 +293,11 @@ async function setAt(move: Move, scene: Scene, progress: number): Promise<Scene>
 async function setIn(move: Move, scene: Scene, progress: number, format: Format): Promise<Scene> {
 	const change = await move.begin(beginningIn(scene, format));
 	return change(scene, progress);
+}
+
+/** A scene at the film's first moment, where what a test measures is worked out from none. */
+function atTheStart(scene: Scene): SceneAt {
+	return { scene, moment: 0 };
 }
 
 /** A scene as the stage draws it, in a format, by the scene's own camera. */
@@ -1166,7 +1172,11 @@ test("a disc sweeping the screen moves on the frame as far as its ring grows, so
 	);
 	const quarterOfTheWay = (Math.hypot(1920 - 150, 1080 - 120) + 90) / 4;
 	expect(
-		frameShiftBetween(await begun(OPENING_IN_FULL_HD, 0.25), await begun(OPENING_IN_FULL_HD, 0.5), FULL_HD)
+		frameShiftBetween(
+			atTheStart(await begun(OPENING_IN_FULL_HD, 0.25)),
+			atTheStart(await begun(OPENING_IN_FULL_HD, 0.5)),
+			FULL_HD
+		)
 	).toBeCloseTo(quarterOfTheWay);
 });
 
@@ -1178,7 +1188,9 @@ test("a disc's ring growing while the camera pans down moves on the frame as far
 	const lower = await setIn(cameraTo({ focusX: 960, focusY: 570, zoom: 2 }), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const round = { left: 940, top: 520, width: 40, height: 40 };
 	const begun = await screenSweep({ round }).begin(beginningHolding(atTheMiddle, FULL_HD, new PicturesHeld()));
-	expect(frameShiftBetween(await begun(atTheMiddle, 0.25), await begun(lower, 0.28), FULL_HD)).toBeCloseTo(106.42);
+	expect(
+		frameShiftBetween(atTheStart(await begun(atTheMiddle, 0.25)), atTheStart(await begun(lower, 0.28)), FULL_HD)
+	).toBeCloseTo(106.42);
 });
 
 test("a band sweeping the screen moves on the frame as far as it crosses the window, so a fast one is drawn at moments of a frame's time", async () => {
@@ -1188,7 +1200,11 @@ test("a band sweeping the screen moves on the frame as far as it crosses the win
 		beginningHolding(OPENING_IN_FULL_HD, FULL_HD, new PicturesHeld())
 	);
 	expect(
-		frameShiftBetween(await begun(OPENING_IN_FULL_HD, 0.25), await begun(OPENING_IN_FULL_HD, 0.5), FULL_HD)
+		frameShiftBetween(
+			atTheStart(await begun(OPENING_IN_FULL_HD, 0.25)),
+			atTheStart(await begun(OPENING_IN_FULL_HD, 0.5)),
+			FULL_HD
+		)
 	).toBeCloseTo(520);
 });
 
@@ -1714,7 +1730,7 @@ test('what stands in a group moves on the frame as its group carries it, so a gr
 	const farthest = Math.max(
 		...cornersOf(wordsPlaced(SMALL, 'left')).map((corner) => 2 * distanceBetween(corner, groupMiddle))
 	);
-	expect(frameShiftBetween(joined, rolled, SMALL)).toBeCloseTo(farthest);
+	expect(frameShiftBetween(atTheStart(joined), atTheStart(rolled), SMALL)).toBeCloseTo(farthest);
 });
 
 test('a piece of the page in a group is pictured as sharp as its group grows it', async () => {
@@ -2200,7 +2216,7 @@ test("a note's words carried beside the window move on the frame as far as its e
 		drawnNote(noted.note!, cameraOf(noted, SMALL), SMALL.frame).place,
 		drawnNote(moved.note!, cameraOf(moved, SMALL), SMALL.frame).place
 	);
-	expect(frameShiftBetween(noted, moved, SMALL)).toBeCloseTo(wordsMoved);
+	expect(frameShiftBetween(atTheStart(noted), atTheStart(moved), SMALL)).toBeCloseTo(wordsMoved);
 });
 
 test("a window move that would carry a standing note's words off the frame, or under the window, is refused as it begins", async () => {

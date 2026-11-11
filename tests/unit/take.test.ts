@@ -19,7 +19,7 @@ import { show } from '../../src/moves/ending.ts';
 import { act as actAtAMoment, speed, type as typeIntoThePage } from '../../src/moves/page.ts';
 import { shows as screenShows, sweep as sweepScreen } from '../../src/moves/screen.ts';
 import { play as playSound } from '../../src/moves/sound.ts';
-import { open, type } from '../../src/moves/terminal.ts';
+import { open, type, works } from '../../src/moves/terminal.ts';
 import { lean as leanTitle, show as showTitle, to as titleTo } from '../../src/moves/title.ts';
 import { to as windowTo } from '../../src/moves/window.ts';
 import { hide as hidePiece, show as showPiece, to as pieceTo } from '../../src/moves/piece.ts';
@@ -468,6 +468,24 @@ test('a frame a caption is wiped in fast in from its left edge, or keys come out
 	expect([captioned.exposed, keyed.exposed]).toEqual([
 		[4, 4],
 		[4, 4]
+	]);
+});
+
+test("a frame exposed along its way draws each exposure at its own moment: a terminal's spinner turning while the shutter is open shows the glyph before the turn and the one after", async () => {
+	const stage = new FramedStageThatKeeps();
+	const footage = new FootageOf([3]);
+	// The camera crossing fast over five frames while the agent works; the fourth frame's moment, a tenth of a second,
+	// is where the spinner, ten glyphs a second, turns from its first glyph to its second, its exposures before it
+	const steps = [
+		cut(cameraTo(CLOSE_ON_THE_MIDDLE), open('A terminal')),
+		play({ seconds: 5 / 30, moves: [cameraTo(CLOSE_AT_THE_RIGHT), works([], 'Thinking')], ease: linear })
+	];
+	await takeOf(footage, stage).run(steps);
+	expect(stage.drawn.map((scene) => scene.objects[0]!.content.lines.map((line) => line.lead))).toEqual([
+		['·'],
+		['·'],
+		['·'],
+		['✢']
 	]);
 });
 

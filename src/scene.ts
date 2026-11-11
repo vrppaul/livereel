@@ -295,9 +295,17 @@ export function picturesHeldIn(scene: Scene): readonly number[] {
 	];
 }
 
-/** A scene at a moment of a frame's time, and the camera that shows it then. */
-export interface SceneSeen {
+/**
+ * A scene as it stands at a moment of the film: what is worked out from the moment, as a terminal's spinner, is worked
+ * out at that one.
+ */
+export interface SceneAt {
 	readonly scene: Scene;
+	readonly moment: number;
+}
+
+/** A scene at a moment of a frame's time, and the camera that shows it then. */
+export interface SceneSeen extends SceneAt {
 	readonly camera: Camera;
 }
 
@@ -341,17 +349,17 @@ const FRAME_SHIFT_OF: { readonly [Name in PropName]: (between: Between) => numbe
 const PROP_NAMES = namesOf(FRAME_SHIFT_OF);
 
 /**
- * How far anything on the frame moves from one scene to another, in the frame's pixels: the farthest what any prop
- * draws goes as their cameras show it, or an object of one name in both, standing or pushed off, as what it stands in
- * carries it; one that comes or goes between them moves nowhere.
+ * How far anything on the frame moves from one scene at its moment to another at its, in the frame's pixels: the
+ * farthest what any prop draws goes as their cameras show it, or an object of one name in both, standing or pushed off,
+ * as what it stands in carries it; one that comes or goes between them moves nowhere.
  */
-export function frameShiftBetween(start: Scene, end: Scene, format: Format): number {
+export function frameShiftBetween(start: SceneAt, end: SceneAt, format: Format): number {
 	return shiftBetween(seenIn(start, format), seenIn(end, format), format);
 }
 
-/** A scene and the camera that shows it. */
-export function seenIn(scene: Scene, format: Format): SceneSeen {
-	return { scene, camera: cameraOf(scene, format) };
+/** A scene at its moment, and the camera that shows it. */
+export function seenIn(at: SceneAt, format: Format): SceneSeen {
+	return { ...at, camera: cameraOf(at.scene, format) };
 }
 
 function shiftBetween(start: SceneSeen, end: SceneSeen, format: Format): number {
