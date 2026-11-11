@@ -24,7 +24,7 @@
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
 /** @import { OwnPage } from '../src/direction/page.ts' */
 /** @import { Drawing } from '../src/direction/film.ts' */
-/** @import { FilmsPictureDecoded, FilmsPictureHanded, HeldPicture, Layout, Opening, PagePicture, StageApi, SurfaceApart } from '../src/adapters/browser/stage.ts' */
+/** @import { FilmsFontHanded, FilmsPictureDecoded, FilmsPictureHanded, HeldPicture, Layout, Opening, PagePicture, StageApi, SurfaceApart } from '../src/adapters/browser/stage.ts' */
 
 /** @typedef {{ readonly draw: (scene: DrawnScene) => void }} Drawer */
 /** A value of the look set whole on the stage, in place of one token: any but the ground's layers, and the way words come up, which the moves that bring them read @typedef {Exclude<keyof Look, 'groundLayers' | 'words'>} WholeLookName */
@@ -1184,8 +1184,11 @@ const HELD_PICTURES = new Map();
  * @type {Map<string, HTMLImageElement>}
  */
 const FILMS_PICTURES = new Map();
-// The size of a picture that decodes to none, which the film is refused for (`films-pictures.ts`)
+// The size of a picture that decodes to none, which the film is refused for (`films-files.ts`)
 const NO_SIZE = 0;
+// A font of the film's own stands for every weight the look sets it at: a variable font's file moves with the weight,
+// a static one's stays as drawn, never thickened or thinned by the browser
+const EVERY_WEIGHT = '1 1000';
 // The custom property an exposure's share is set as: how much of it shows over the exposures laid before it. Laid over
 // so many before it, it shows the whole of its own light in as many parts as there are with it, so each weighs the
 // same
@@ -1390,6 +1393,31 @@ async function decodedSize(image) {
 	} catch {
 		return { width: NO_SIZE, height: NO_SIZE };
 	}
+}
+
+/**
+ * The film's own fonts joining the stage's, each under the family it sets, once its file is read, so every word set
+ * after in that family is set in it: the paths of those the browser reads as no font.
+ * @param {readonly FilmsFontHanded[]} fonts @returns {Promise<readonly string[]>}
+ */
+async function layFonts(fonts) {
+	const joined = await Promise.all(fonts.map((font) => fontJoined(font)));
+	return fonts.filter((_font, place) => !joined[place]).map((font) => font.path);
+}
+
+/**
+ * A font of the film's joining the stage's under its family, where the browser reads its file as one: whether it does.
+ * @param {FilmsFontHanded} font @returns {Promise<boolean>}
+ */
+async function fontJoined(font) {
+	const face = new FontFace(font.family, Uint8Array.fromBase64(font.base64), { weight: EVERY_WEIGHT });
+	try {
+		await face.load();
+	} catch {
+		return false;
+	}
+	document.fonts.add(face);
+	return true;
 }
 
 /** A picture of the film's own the stage holds, by its path. @param {string} path */
@@ -1898,5 +1926,5 @@ function found(element, name) {
 }
 
 /** @type {StageApi} */
-const STAGE = { setup, laidApart, open, show, hold, letGo, layOwnPages, layPictures, apply };
+const STAGE = { setup, laidApart, open, show, hold, letGo, layOwnPages, layPictures, layFonts, apply };
 window.stage = STAGE;

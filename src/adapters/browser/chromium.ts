@@ -74,7 +74,7 @@ import {
 } from './bounds.ts';
 import { ChangesHeard } from './changes.ts';
 import { drawnPageOpened } from './drawn.ts';
-import { filmsPicturesLaid, filmsPicturesRead } from './films-pictures.ts';
+import { filmsFontsLaid, filmsFontsRead, filmsPicturesLaid, filmsPicturesRead } from './films-files.ts';
 import { PlaywrightPageTime } from './clock.ts';
 import { stagedInside } from './inside.ts';
 import { PageMotion } from './motion.ts';
@@ -83,6 +83,7 @@ import { DRAWN_AS_A_ROOM } from './room.ts';
 import { AppOpenedForSet, NoSetShown, SET_PAGE, setShownIn } from './set.ts';
 import {
 	DRAWN_FLAT,
+	type FilmsFontHanded,
 	type FilmsPictureHanded,
 	type Layout,
 	NO_THINGS,
@@ -132,6 +133,18 @@ const THE_PAGE_AT_THE_TOP = false;
 // A family any browser has, set after a film's font to see that it stands as a family of its own
 const FALLBACK_FONT = 'monospace';
 const NO_FONT_FAMILY = 'CSS reads no font family there';
+// How a font is found: letters set in it, a family CSS keeps after it, stand as wide as that family sets them alone
+// only where the font sets none of its own; beside two such families that set them unlike each other, a font as wide
+// as both in turn is none. Chrome's `document.fonts.check` says a family the machine has not is there (probed
+// 2026-11-11). The letters a film sets most, on one line, as large as any width tells them apart
+const FOUND_BY = {
+	beside: ['monospace', 'serif'],
+	letters: 'abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789',
+	size: '100px',
+	oneLine: 'nowrap'
+} as const;
+const NO_SUCH_FONT =
+	"it names no font this machine has or the film brings: name its file in the film's fonts, { 'Inter Tight': './InterTight.ttf' }";
 // The token the stage sets the ground's layers in, and how CSS writes every picture a layer would load, `url()` alone
 // or in `image-set()` (probed 2026-10-31)
 const LAYERS_TOKEN = '--layers-coming';
@@ -144,6 +157,18 @@ const PICTURED = 'the ground draws no picture, only what CSS draws itself';
 interface FontProbe {
 	readonly font: string;
 	readonly fallback: string;
+}
+
+/**
+ * A font a film names, the families CSS keeps it is set beside to see whether it sets letters of its own, and the
+ * letters set, at a size, kept on one line as CSS's `white-space` keeps them.
+ */
+interface FontFoundProbe {
+	readonly font: string;
+	readonly beside: readonly string[];
+	readonly letters: string;
+	readonly size: string;
+	readonly oneLine: string;
 }
 
 /** The ground's layers a film writes, the token the stage sets them in, and how CSS writes a picture. */
@@ -203,10 +228,11 @@ interface SetUp {
 	readonly filmsPictures: ReadonlyMap<string, Size>;
 }
 
-/** What a take is set as, and the film's own pictures it names, read from the disk to be handed to the stage. */
+/** What a take is set as, and the film's own pictures and fonts, read from the disk to be handed to the stage. */
 interface SettingRead {
 	readonly setting: Setting;
 	readonly pictures: readonly FilmsPictureHanded[];
+	readonly fonts: readonly FilmsFontHanded[];
 }
 
 // A page framed live is drawn flat, which loads no things module
@@ -373,6 +399,8 @@ export class Chromium implements Browser, DrawnBrowser, SetBrowser {
 		const memory = gpuMemoryFlagsOf(exposuresAtOnce, setting.format.frame, sharpness, picturePixels);
 		const drawing = DRAWINGS[setting.drawing];
 		const pictures = await filmsPicturesRead(this.filmFolder, setting.pictures);
+		const fonts = await filmsFontsRead(this.filmFolder, setting.fonts);
+		const read = { setting, pictures, fonts };
 		const browser = await launched([...flagsOf(this.renderer, process.platform), ...drawing.flags, ...memory]);
 		try {
 			const onTheCard = await drawsOnTheCard(this.renderer, browser, this.warn);
@@ -390,10 +418,10 @@ export class Chromium implements Browser, DrawnBrowser, SetBrowser {
 					const things = setting.things === null ? null : resolve(this.filmFolder, setting.things);
 					const handedIn = handedInOf(drawing, setting.format.frame, sharpness, setting.framesHanded);
 					const picturing = { pixelsAtZoomOne, exposuresAtOnce, bounds, drawing, handedIn, things };
-					return await pictured(browser, stage, { setting, pictures }, filmed, picturing, this.warn);
+					return await pictured(browser, stage, read, filmed, picturing, this.warn);
 				}
 				case 'dynamic':
-					return await framedLive(browser, stage, { setting, pictures }, filmed.address, this.warn);
+					return await framedLive(browser, stage, read, filmed.address, this.warn);
 			}
 		} catch (fault) {
 			await browser.close();
@@ -666,11 +694,13 @@ async function forcedOn(page: Page, blurred: readonly string[], stageAtTheTop: b
 
 /**
  * The stage set to the film's format by its layout, laid out as it draws its frames and hands them on, and
- * asked for its colour scheme and stilled motion. What the film writes in CSS, in its theme or in a look's move, is
- * refused where CSS cannot read it as the stage sets it, where the stage would draw without a word what the film never
- * asked for: a font CSS reads as no list of families a fallback can follow, as one with a quote left open, which runs
- * on over the stage's own fallbacks to the browser's font; the ground's layers CSS reads as none, which would draw no
- * layers at all, or with a picture in them. The film's own pictures are laid, and refused where one decodes to none.
+ * asked for its colour scheme and stilled motion. The film's own pictures and fonts are laid, and refused where one
+ * decodes to none. What the film writes in CSS, in its theme or in a look's move, is then refused where CSS cannot read
+ * it as the stage sets it, where the stage would draw without a word what the film never asked for: a font CSS reads
+ * as no list of families a fallback can follow, as one with a quote left open, which runs on over the stage's own
+ * fallbacks to the browser's font, or one naming no family this machine has or the film brought, which falls through
+ * to the stage's own; the ground's layers CSS reads as none, which would draw no layers at all, or with a picture in
+ * them.
  */
 async function stageSetUp(
 	page: Page,
@@ -685,6 +715,7 @@ async function stageSetUp(
 	const thingsBuilt = await drawing.laidOut(page, layout, things);
 	refusedWhereMoving(setting.ownPages, await page.evaluate(ownPagesLaid, setting.ownPages));
 	const filmsPictures = await filmsPicturesLaid(page, read.pictures);
+	await filmsFontsLaid(page, read.fonts);
 	for (const named of setting.css) await refusedWhereUnread(page, named);
 	return { thingsBuilt, filmsPictures };
 }
@@ -737,7 +768,9 @@ async function cssFaultOf(page: Page, named: CssNamed): Promise<string | undefin
 	switch (named.kind) {
 		case 'font family': {
 			const followed = await page.evaluate(isFollowedByAFallback, { font: named.value, fallback: FALLBACK_FONT });
-			return followed ? undefined : NO_FONT_FAMILY;
+			if (!followed) return NO_FONT_FAMILY;
+			const found = await page.evaluate(namesAFontHere, { font: named.value, ...FOUND_BY });
+			return found ? undefined : NO_SUCH_FONT;
 		}
 		case 'ground layers':
 			return layersFaultOf(
@@ -794,6 +827,28 @@ function isFollowedByAFallback(probe: FontProbe): boolean {
 	const element = document.createElement('i');
 	element.style.fontFamily = `${probe.font}, ${probe.fallback}`;
 	return element.style.fontFamily.endsWith(`, ${probe.fallback}`);
+}
+
+/**
+ * Whether a font a film names sets letters of its own on the stage, a family the machine has or the film brought, or
+ * one CSS keeps: where it sets none, its letters fall through to the family set after it, as wide as that one sets them
+ * alone, beside each family the probe names.
+ */
+function namesAFontHere(probe: FontFoundProbe): boolean {
+	const element = document.createElement('span');
+	element.style.fontSize = probe.size;
+	element.style.whiteSpace = probe.oneLine;
+	element.textContent = probe.letters;
+	document.body.append(element);
+	let setsItsOwn = false;
+	for (const family of probe.beside) {
+		element.style.fontFamily = family;
+		const alone = element.getBoundingClientRect().width;
+		element.style.fontFamily = `${probe.font}, ${family}`;
+		if (element.getBoundingClientRect().width !== alone) setsItsOwn = true;
+	}
+	element.remove();
+	return setsItsOwn;
 }
 
 /**

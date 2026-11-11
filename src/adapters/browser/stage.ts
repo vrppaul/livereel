@@ -101,6 +101,13 @@ export interface FilmsPictureDecoded extends Size {
 	readonly path: string;
 }
 
+/** A font of the film's own as the stage is handed it: the family it sets, its file's path and its bytes in base64. */
+export interface FilmsFontHanded {
+	readonly family: string;
+	readonly path: string;
+	readonly base64: string;
+}
+
 /**
  * A surface the stage lays an object of markup standing in the world in, apart from the frame's objects, where a frame
  * is drawn as a room: the object's list, standing or pushed off, and its name, and the surface's element, which the
@@ -140,6 +147,11 @@ export interface StageApi {
 	 * the size each decoded at.
 	 */
 	readonly layPictures: (pictures: readonly FilmsPictureHanded[]) => Promise<readonly FilmsPictureDecoded[]>;
+	/**
+	 * The film's own fonts joining the stage's, each under the family it sets, once its file is read: the paths of
+	 * those the browser reads as no font.
+	 */
+	readonly layFonts: (fonts: readonly FilmsFontHanded[]) => Promise<readonly string[]>;
 	/** One frame, drawn whole from each of its exposures' scenes, laid over one another so each weighs the same. */
 	readonly apply: (exposures: readonly DrawnScene[]) => void;
 }
@@ -457,6 +469,11 @@ function pictureLetGo(number: number): void {
 /** The film's own pictures laid on the stage: the size each decoded at. */
 export function picturesLaid(pictures: readonly FilmsPictureHanded[]): Promise<readonly FilmsPictureDecoded[]> {
 	return window.stage.layPictures(pictures);
+}
+
+/** The film's own fonts laid on the stage: the paths of those read as no font. */
+export function fontsLaid(fonts: readonly FilmsFontHanded[]): Promise<readonly string[]> {
+	return window.stage.layFonts(fonts);
 }
 
 /** The pages of the film's own laid on the stage: the keys of those that move of themselves. */

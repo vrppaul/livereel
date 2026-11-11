@@ -40,7 +40,16 @@ import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf
 import { type FilmSet, SET_FORM, type SetScript, setOf } from './set.ts';
 import { SITE_FORM, type Site, type SiteScript, siteOf } from './site.ts';
 import { type Step, depthsIn, placesIn, stepsOf } from './steps.ts';
-import { type CssNamed, THE_FILMS_THEME, cssNamedIn, themeOf } from './theme.ts';
+import {
+	type CssNamed,
+	A_FONTS_SCRIPT,
+	type FilmFont,
+	type FontsScript,
+	THE_FILMS_THEME,
+	cssNamedIn,
+	fontsOf,
+	themeOf
+} from './theme.ts';
 
 // Where the stage a film is shot on stands: apart from the app, or inside it, on its own address
 const STAGES = ['apart', 'inside'] as const;
@@ -109,6 +118,11 @@ export interface Script<Name extends string> extends SiteScript {
 	/** The look the film opens on, livereel's save the values given; `look.to` changes it as the film goes. */
 	readonly theme?: Theme;
 	/**
+	 * The film's own font files, each by its path from the film's file, under the family its look names it by (`font`,
+	 * `mono`): one file stands for every weight and style the look sets it at.
+	 */
+	readonly fonts?: FontsScript;
+	/**
 	 * How the world the film opens on looks, its lights, soft boxes and glow, livereel's save the values given: none of
 	 * them; `world.to` changes it as the film goes.
 	 */
@@ -158,6 +172,8 @@ export interface FilmInFormat {
 	readonly stage: StagePlace;
 	readonly look: Look;
 	readonly css: readonly CssNamed[];
+	/** The film's own font files, each by the family it sets; none where it brings none. */
+	readonly fonts: readonly FilmFont[];
 	readonly world: WorldLook;
 	readonly colourScheme: ColourScheme;
 	readonly blurred: readonly string[];
@@ -251,6 +267,7 @@ const FILM_FORM: Form<AnyScript> = {
 	music: anObject<Music>(AN_OBJECT_SAID),
 	motionBlur: anObject<MotionBlurScript>(AN_OBJECT_SAID),
 	theme: anObject<Theme>(AN_OBJECT_SAID),
+	fonts: A_FONTS_SCRIPT,
 	world: anObject<WorldScript>(AN_OBJECT_SAID),
 	framesPerSecond: A_COUNT,
 	eye: new OfForm<EyeScript>({ angleOfView: AN_ANGLE_OF_VIEW }, "the film's eye: { angleOfView }"),
@@ -267,6 +284,7 @@ export class ScriptedFilm<Name extends string> implements Film {
 	readonly motionBlur: MotionBlur | null;
 	readonly look: Look;
 	readonly css: readonly CssNamed[];
+	readonly fonts: readonly FilmFont[];
 	readonly world: WorldLook;
 	readonly stage: StagePlace;
 	readonly colourScheme: ColourScheme;
@@ -292,6 +310,7 @@ export class ScriptedFilm<Name extends string> implements Film {
 		this.css = cssNamedIn(theme, THE_FILMS_THEME);
 		this.world = worldOf(script.world);
 		refuseUnlikeAFilm(script);
+		this.fonts = fontsOf(script.fonts);
 		this.site = siteOf(script);
 		this.set = setOf(script.set);
 		const staging = stagingOf(script);
@@ -315,6 +334,7 @@ export class ScriptedFilm<Name extends string> implements Film {
 			stage: this.stage,
 			look: this.look,
 			css: this.css,
+			fonts: this.fonts,
 			world: this.world,
 			colourScheme: this.colourScheme,
 			blurred: this.blurred,

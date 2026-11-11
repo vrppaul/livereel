@@ -152,6 +152,7 @@ function filmWritten(
 		colourScheme?: 'dark';
 		blurred?: readonly string[];
 		theme?: Theme;
+		fonts?: Readonly<Record<string, string>>;
 		page?: 'dynamic';
 		drawing?: 'room';
 		things?: string;
@@ -473,6 +474,31 @@ test("a font named in no form CSS reads is refused before the film is shot: in t
 		shootingInto(new EveryFrameCounted(), 'software')
 	);
 	await expect(moved).rejects.toThrow(`look.to's mono is "'Menlo": CSS reads no font family there`);
+});
+
+test('a font the film names that neither the machine has nor the film brings is refused before the first frame, as is a font file not there or read as no font; one whose file the film brings is shot', async () => {
+	const counted = new EveryFrameCounted();
+	const steps = [hold({ seconds: 0.1 })];
+	await expect(
+		shoot(filmWritten(steps, { theme: { font: 'Nowhere Sans' } }), shootingInto(counted, 'software'))
+	).rejects.toThrow(
+		new FilmError(
+			`the film's theme's font is "Nowhere Sans": it names no font this machine has or the film brings: name its file in the film's fonts, { 'Inter Tight': './InterTight.ttf' }`
+		)
+	);
+	await expect(
+		shoot(filmWritten(steps, { fonts: { Missing: 'missing.ttf' } }), shootingInto(counted, 'software'))
+	).rejects.toThrow("the film's font missing.ttf could not be read");
+	await expect(
+		shoot(filmWritten(steps, { fonts: { Unread: 'not-a-picture.png' } }), shootingInto(counted, 'software'))
+	).rejects.toThrow(
+		new FilmError("the film's font not-a-picture.png is read as no font: give a TrueType, OpenType or WOFF file")
+	);
+	const brought = await shoot(
+		filmWritten(steps, { fonts: { 'Brought Sans': 'inter-tight-latin.ttf' }, theme: { font: 'Brought Sans' } }),
+		shootingInto(counted, 'software')
+	);
+	expect([counted.kept, brought.frames]).toEqual([[0, 1, 2], 3]);
 });
 
 test("the ground's layers CSS reads are let through: a film whose theme lays a grid of dots and a gradient with a colour of its own over its ground is shot", async () => {

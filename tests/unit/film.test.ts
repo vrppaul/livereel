@@ -53,12 +53,12 @@ function stepsGiven(steps: unknown) {
 test('a film in no form of one is refused as it is defined, where it stands: its names, its formats and where their captions stand, its functions', () => {
 	expect(() => defineFilm(null as never)).toThrow(
 		new FilmError(
-			'the film is null: it is an object of formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, world, framesPerSecond, eye, colourScheme, blurred, page, drawing, things'
+			'the film is null: it is an object of formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, fonts, world, framesPerSecond, eye, colourScheme, blurred, page, drawing, things'
 		)
 	);
 	expect(() => filmWritten({ motionblur: {} })).toThrow(
 		new FilmError(
-			'the film names motionblur: it names formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, world, framesPerSecond, eye, colourScheme, blurred, page, drawing, things, or fewer'
+			'the film names motionblur: it names formats, address, serve, stage, ready, set, steps, sounds, music, motionBlur, theme, fonts, world, framesPerSecond, eye, colourScheme, blurred, page, drawing, things, or fewer'
 		)
 	);
 	expect(() => filmWritten({ colourScheme: 'night' })).toThrow(
@@ -332,6 +332,25 @@ test("a film's things module is its path, none where it names none; refused in a
 		new FilmError(
 			"the film's things is \"./things.ts\": it is a JavaScript module's path, from the film's file, ending in .js"
 		)
+	);
+});
+
+test("a film's own fonts are its files, each by the family it sets, none where it names none; fonts in no form of families and paths are refused as the film is defined", () => {
+	const films = [filmWritten({}), filmWritten({ fonts: { 'Inter Tight': './InterTight.ttf', Mono: 'mono.woff2' } })];
+	expect(films.map((film) => film.formats.get('small')!.fonts)).toEqual([
+		[],
+		[
+			{ family: 'Inter Tight', file: './InterTight.ttf' },
+			{ family: 'Mono', file: 'mono.woff2' }
+		]
+	]);
+	expect(() => filmWritten({ fonts: './InterTight.ttf' })).toThrow(
+		new FilmError(
+			"the film's fonts is \"./InterTight.ttf\": it is the film's font files by the family each sets: { 'Inter Tight': './InterTight.ttf' }"
+		)
+	);
+	expect(() => filmWritten({ fonts: { 'Inter Tight': '' } })).toThrow(
+		new FilmError("the film's fonts's Inter Tight is \"\": it is a file's path, from the film's file")
 	);
 });
 

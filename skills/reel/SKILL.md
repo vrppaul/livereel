@@ -373,7 +373,10 @@ frame: `titleSize`, `captionSize`, `noteSize`, `calloutSize`, `pinSize`,
 `endingCommandSize` and `paneCorner`; `titleMargin`, how far in from the
 frame's sides a title over the whole frame stands, and
 `captionGroundHeight`, how far the ground darkens under a caption. As CSS
-names a family installed on the machine: `font` and `mono`. As CSS's
+names a family, one the machine has or one whose file the film brings in
+`defineFilm`'s `fonts` (`{ 'Inter Tight': './InterTight-SemiBold.ttf' }`, a
+file standing for every weight), refused before the shoot where it names
+neither: `font` and `mono`. As CSS's
 `background` writes them, its lengths in pixels of a 1080 frame:
 `groundLayers`, laid over the ground and its glow — a grid of dots
 (`'radial-gradient(#ffffff26 2px, transparent 2.5px) 0 0 / 36px 36px'`),

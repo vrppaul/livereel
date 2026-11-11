@@ -603,7 +603,8 @@ not run, one that animates or transitions of itself is refused before the
 film is shot, as what moves in a film is the film's, and it moves only as
 the film runs it (`screen.scrolls`, below), and an address in it
 is read from the stage's own folder, so name an image or a font by a whole
-address or a `data:` URL. While the page of the film's own shows, a move
+address or a `data:` URL: the film's `fonts` set the look's words, not
+its pages. While the page of the film's own shows, a move
 finds blocks on it by their selectors, and the filmed page behind it is
 still acted on, scrolled and typed into; a piece of the page and a lens,
 drawn from the filmed page's picture, are refused, and so is the swap while
@@ -751,8 +752,8 @@ values; what the film leaves out stays livereel's:
 | `ink` | the words of titles, captions, callouts, notes and the ending | `#f4f6fa` |
 | `quietInk` | what stands back: a quietened pin's label, the ending's line | `#8b95a7` |
 | `accent`, `accentInk` | pins' marks and a note's line, and a pin's number on its mark | `#ffb224`, `#10141b` |
-| `font` | the font of titles, captions and the ending, as CSS names a family (`'Inter, sans-serif'`) | the system's sans |
-| `mono` | the font of the terminal, the code and the ending's command | the system's monospace |
+| `font` | the font of titles, captions and the ending, as CSS names a family (`'Inter, sans-serif'`): the machine's, or one the film brings in `fonts` | the system's sans |
+| `mono` | the font of the terminal, the code and the ending's command, the same way | the system's monospace |
 | `titleSize`, `captionSize` | how large a title's and a caption's letters are, in pixels | `92`, `56` |
 | `titleMargin` | how far in from the frame's sides a title over the whole frame stands, in pixels | `160` |
 | `captionGroundHeight` | how far from the frame's foot, or its top, the ground under a caption darkens, in pixels | `380` |
@@ -771,8 +772,24 @@ values; what the film leaves out stays livereel's:
 | `words` | how words come up where a film names no way of their own, a title's, a caption's, a callout's and a note's, read as each comes: `'rise'`, `'sharp'`, `'fade'`, `'blur'`, `'mask'`, `'letters'` or `'scramble'`, as `words` names on a title | `'rise'` |
 
 Colours are in hex; sizes in pixels of a frame 1080 on its shorter side,
-scaled to the frame shot. A font falls back to livereel's where the system
-has none; one CSS reads as no family is refused before anything is shot.
+scaled to the frame shot.
+
+A font is one the machine has, or one the film brings as a file:
+`defineFilm` takes `fonts`, each file by its path from the film's file
+(TrueType, OpenType or WOFF) under the family the look names it by. One
+file stands for every weight and style the look sets it at: a variable
+font's moves with `titleWeight`, a static one's stays as drawn.
+
+```ts
+fonts: { 'Inter Tight': './InterTight-SemiBold.ttf' },
+theme: { font: 'Inter Tight', titleWeight: 600 }
+```
+
+A font that names nothing this machine has or the film brings is refused
+before anything is shot, as is one CSS reads as no family and a file read
+as no font: a fallback nobody asked for is a wrong frame. A family CSS
+keeps named after it, `'Inter, sans-serif'`, is a fallback the film asks
+for.
 
 The ground's layers are the film's own CSS, laid wherever the ground is:
 under the page's window, a title card and the ending card. The ending card
@@ -805,7 +822,7 @@ fading out as the new ones fade in over them; in a `cut`, at once.
 ```ts
 play({ seconds: 1.2, moves: [look.to({ ground: '#f5efe6', ink: '#1a1a1a' })] }),  // the ground turns light
 play({ seconds: 1, moves: [look.to({ groundLayers: LINES })] }),                  // the dots fade into lines
-cut(look.to({ font: 'Georgia', paneCorner: 0 })),                                 // a serif, square corners, at once
+cut(look.to({ font: 'Georgia, serif', paneCorner: 0 })),                          // a serif, square corners, at once
 play({ seconds: 6, moves: [look.to({ glowX: 0.9, glowY: 0.1 }), camera.onto(CHART)] }) // the glow drifts as the camera goes
 ```
 
