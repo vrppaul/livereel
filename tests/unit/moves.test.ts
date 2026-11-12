@@ -185,6 +185,9 @@ const GREEN = '#00ff00';
 const HALF_WAY_FROM_THE_ACCENT_TO_BLUE = '#ada08aff';
 const HALF_WAY_FROM_BLUE_TO_GREEN = '#2ec678ff';
 const OTHER = { left: 1200, top: 600, width: 100, height: 60 };
+// A row round the other block, 100 pixels wider each side and 10 taller, on a dark ground
+const ROW = { left: 1100, top: 590, width: 300, height: 80 };
+const ROWS_GROUND = '#0d1117';
 // No move here acts on the page: an act at a moment of a play is the take's, tested there; nor holds a picture of a
 // part of the screen, but where a test hands it a stand-in that does
 const NO_ACT = undefined as never;
@@ -213,9 +216,13 @@ const PAGE = new PageOfBoxes(
 		['#shown-right', SHOWN_RIGHT],
 		['#wide', WIDE],
 		['#card', CARD],
-		['#other', OTHER]
+		['#other', OTHER],
+		['#row', ROW]
 	]),
-	new Map([['#card', CARDS_GROUND]])
+	new Map([
+		['#card', CARDS_GROUND],
+		['#row', ROWS_GROUND]
+	])
 );
 // The page the card is lifted off with the letters it carries, the first of its code's 420 across and 330 down, a
 // letter stepping 12 and 20 tall; the other block's first letter half as large, from 1210 across and 615 down; one
@@ -1160,7 +1167,8 @@ test('a piece of the page is born over its block as the camera shows it, cut to 
 			lines: null,
 			picture: FOLLOWING,
 			body: null,
-			firstLetter: null
+			firstLetter: null,
+			emptied: null
 		}
 	]);
 });
@@ -1261,7 +1269,8 @@ test('a piece, or an outline, goes back over its block as the camera shows it th
 			lines: null,
 			picture: FOLLOWING,
 			body: null,
-			firstLetter: null
+			firstLetter: null,
+			emptied: null
 		},
 		1,
 		0,
@@ -1317,6 +1326,72 @@ test("a piece wiped away with a sheen trails the light as far as the film names,
 		{ from: 'left', faded: 0.0625, edge: 0.3125, colour: '#59c470', over: overTheFigure },
 		{ from: 'left', faded: expect.closeTo(-0.11), edge: expect.closeTo(0.37), colour: null, over: overTheFigure }
 	]);
+});
+
+test('a piece emptying a block stands it empty at once, the ground the page draws behind it over its box, on the page the screen shows then: a hole of its piece, there while the screen shows that page, as far as the piece has come and not gone', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	const emptying = await setIn(piece.empties('#row'), lifted, 0, FULL_HD);
+	const ownShown = await setIn(screenShows(OWN_PAGE), emptying, 1, FULL_HD);
+	const fading = await setIn(piece.hide({ leave: 'fade' }), emptying, 0.25, FULL_HD);
+	const emptied = { name: 'piece', box: ROW, ground: ROWS_GROUND, line: null, corner: 0, pit: null };
+	expect([emptying, ownShown, fading].map((scene) => drawnInFullHdAt(scene, 0).holes)).toEqual([
+		[{ ...emptied, shown: 1 }],
+		[],
+		[{ ...emptied, shown: 0.75 }]
+	]);
+});
+
+test("a piece wiped away from a block it emptied crosses the block and itself as one, from the near side of either to past the far side of both and the light's trail, the block coming out behind the edge, the light over both", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	const landed = await setIn(piece.onto('#other'), lifted, 1, FULL_HD);
+	const emptied = await setIn(piece.empties('#row'), landed, 1, FULL_HD);
+	const named = { leave: 'wipe', edge: 'right', sheen: { colour: '#59c470', width: 25 } } as const;
+	const wiping = await setIn(piece.hide(named), emptied, 0.25, FULL_HD);
+	const object = drawnObjectsIn(wiping, FULL_HD)[0]!;
+	// The card lies in the other block at half its size, 1200 to 1300 across and 605 to 655 down; the row reaches 100
+	// before it and past it, 15 above and below: three figures wide, 25 pixels of light a quarter of one; a quarter
+	// gone, the edge stands 18.75 pixels short of the figure's left
+	expect([object.onItsWay?.cut, object.sheen, drawnInFullHdAt(wiping, 0).holes]).toEqual([
+		{ kind: 'inset', top: 0, right: 0, bottom: 0, left: -0.1875 },
+		{
+			from: 'left',
+			faded: 0.1875,
+			edge: expect.closeTo(0.2708),
+			colour: '#59c470',
+			over: closeToBox({ left: -1, top: -10 / 60, width: 3, height: 80 / 60 })
+		},
+		[
+			{
+				name: 'piece',
+				box: closeToBox({ left: 1181.25, top: 590, width: 218.75, height: 80 }),
+				ground: ROWS_GROUND,
+				line: null,
+				corner: 0,
+				shown: 1,
+				pit: null
+			}
+		]
+	]);
+});
+
+test('a piece empties a block a selector names on the filmed page, and is wiped across it lying on the page alone', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), wide, 1, FULL_HD);
+	const ownShown = await setIn(screenShows(OWN_PAGE), lifted, 1, FULL_HD);
+	const emptied = await setIn(piece.empties('#row'), lifted, 1, FULL_HD);
+	expect(() => piece.empties(ROW as never)).toThrow(/piece\.empties/);
+	await expect(setIn(piece.empties('#row'), ownShown, 1, FULL_HD)).rejects.toThrow(
+		new FilmError(
+			"piece.empties reads #row off the filmed page, and the screen shows the film's own page: show the filmed page first"
+		)
+	);
+	await expect(setIn(piece.hide({ leave: 'wipe' }), emptied, 0.25, FULL_HD)).rejects.toThrow(
+		new FilmError(
+			'piece.hide would wipe the piece across the block it emptied while it stands off the page: carry it onto the page first, piece.onto'
+		)
+	);
 });
 
 test("a sheen trails a wipe's edge alone", () => {

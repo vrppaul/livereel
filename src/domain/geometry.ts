@@ -155,6 +155,21 @@ export function pointAt(box: Box, share: Point): Point {
 	return { left: box.left + share.left * box.width, top: box.top + share.top * box.height };
 }
 
+/** The part of a box given in shares of it, its corner from the box's top left: in what the box stands in. */
+export function boxAt(box: Box, shares: Box): Box {
+	return { ...pointAt(box, shares), width: shares.width * box.width, height: shares.height * box.height };
+}
+
+/** A box in shares of another standing in the same pixels, its corner from that one's top left: as `boxAt` gives it. */
+export function sharesIn(part: Box, box: Box): Box {
+	return {
+		left: (part.left - box.left) / box.width,
+		top: (part.top - box.top) / box.height,
+		width: part.width / box.width,
+		height: part.height / box.height
+	};
+}
+
 /** A size laid from the top left: the whole of a frame or a screen as a box. */
 export function boxOf(size: Size): Box {
 	return { left: 0, top: 0, width: size.width, height: size.height };

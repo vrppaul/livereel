@@ -17,13 +17,19 @@
  * way is counted here too, for the motion blur, alike for an object and for what lies over the frame.
  *
  * A wipe may trail a sheen behind its edge, a light over what the figure no longer covers, as a band of light runs
- * along a line of the page and leaves the page's own row behind it. Its edge then cuts on past the figure's far side
- * as far as the light trails, so the light runs off the figure before the way ends, where it would vanish whole. It
- * lies on the side the wipe has cut, coming and going alike, as all of a way does: going, it trails the edge over what
- * the figure leaves; coming, it would run ahead of it.
+ * along a line of the page and leaves the page's own row behind it. Its edge then cuts on past the far side of what it
+ * crosses as far as the light trails, so the light runs off before the way ends, where it would vanish whole. It lies
+ * on the side the wipe has cut, coming and going alike, as all of a way does: going, it trails the edge over what the
+ * figure leaves; coming, it would run ahead of it.
+ *
+ * A wipe crosses its figure; or a box wider than it, its figure and a block of the page its piece emptied, which comes
+ * out behind the same edge as the claude-review promo's review row comes out behind its band from the row's line
+ * number on, the line lying on its code cut by the band as it passes. The edge then sets off from the box's near side,
+ * before the figure's where the block reaches past it, and the light lies over the whole box.
  */
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import {
+	type Box,
 	CORNER_SHARES,
 	type FrameSide,
 	MIDDLE_SHARE,
@@ -33,6 +39,7 @@ import {
 	UNMOVED,
 	boxOf,
 	distanceBetween,
+	overlapOf,
 	pointAt
 } from '../domain/geometry.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
@@ -64,24 +71,38 @@ export interface Sheen {
 
 /**
  * How an object comes up or goes: in its own way, as what it shows comes up of itself, or in a way of livereel's, a
- * mask's and a wipe's from an edge of its figure, a wipe's with the sheen it trails, if any.
+ * mask's and a wipe's from an edge of its figure, a wipe's with the sheen it trails, if any, crossing a box in shares
+ * of its figure: the figure itself, or a box wider than it.
  */
 export type Way =
 	| { readonly kind: 'own' }
 	| { readonly kind: Exclude<WayName, FromAnEdge> }
 	| { readonly kind: 'mask'; readonly edge: FrameSide }
-	| { readonly kind: 'wipe'; readonly edge: FrameSide; readonly sheen: Sheen | null };
+	| { readonly kind: 'wipe'; readonly edge: FrameSide; readonly sheen: Sheen | null; readonly crossing: Box };
+
+export type Wipe = Extract<Way, { readonly kind: 'wipe' }>;
 
 /**
  * A wipe's sheen as far as the wipe has come: the side of the figure the wipe cuts from, and how far in from that side
- * the light runs, from where it has faded to the edge, each a share of the figure across the way, past it either side
- * where the light runs past it there; and its colour.
+ * of the box it crosses the light runs, from where it has faded to the edge, each a share of that box across the way,
+ * past it either side where the light runs past it there; its colour; and the box it crosses, in shares of the figure,
+ * which the light lies over.
  */
 export interface SheenOnItsWay {
 	readonly from: FrameSide;
 	readonly faded: number;
 	readonly edge: number;
 	readonly colour: string | null;
+	readonly crossing: Box;
+}
+
+/**
+ * Where a wipe's edge sets off across the way, in shares of its figure from the side it cuts from, before it where the
+ * box it crosses reaches past it; and how far the box reaches from there across the way.
+ */
+interface Span {
+	readonly near: number;
+	readonly length: number;
 }
 
 /** How far what comes up and goes has come up and gone. */
@@ -136,6 +157,9 @@ export interface OnItsWay {
 /** An object come up in its own way. */
 export const OWN_WAY: Way = { kind: 'own' };
 
+/** What a wipe crosses where it crosses its figure alone, in shares of the figure. */
+export const THE_FIGURE: Box = { left: 0, top: 0, width: 1, height: 1 };
+
 // The end of a way, how far it has come there; what it has still to go is this less how far it has come
 const END_OF_WAY = 1;
 // All of what comes up and goes, of which a share has gone
@@ -165,10 +189,9 @@ const HALVES = 2;
 // The edge a mask comes from, below the figure, rising, and the edge a wipe comes from, its left, where none is named
 const MASKED_FROM: FrameSide = 'bottom';
 const WIPED_FROM: FrameSide = 'left';
-// A wipe trailing no light, and how far behind its edge that is; all of a figure across a way, in shares of it
+// A wipe trailing no light, and how far behind its edge that is
 const NO_SHEEN = null;
 const NO_TRAIL = 0;
-const ACROSS_THE_FIGURE = 1;
 // Which way each edge lies from the figure's middle, across and down
 const TOWARD: { readonly [Side in FrameSide]: Shift } = {
 	top: { across: 0, down: -1 },
@@ -193,7 +216,7 @@ export function wayNamed(name: WayName | null, edge: FrameSide | null): Way {
 		case 'mask':
 			return { kind: name, edge: edge ?? MASKED_FROM };
 		case 'wipe':
-			return { kind: name, edge: edge ?? WIPED_FROM, sheen: NO_SHEEN };
+			return { kind: name, edge: edge ?? WIPED_FROM, sheen: NO_SHEEN, crossing: THE_FIGURE };
 		case 'fade':
 		case 'iris':
 		case 'grow':
@@ -239,7 +262,7 @@ function onItsWayAt(way: Way, progress: number): OnItsWay | null {
 			return {
 				...AS_IT_STANDS,
 				shadow: progress,
-				cut: { kind: 'inset', ...UNCUT, [acrossFrom(way.edge)]: wipedIn(way.sheen, stillToGo) }
+				cut: { kind: 'inset', ...UNCUT, [acrossFrom(way.edge)]: wipedIn(way, stillToGo) }
 			};
 		case 'iris':
 			return { ...AS_IT_STANDS, shadow: progress, cut: { kind: 'circle', radius: progress } };
@@ -249,21 +272,66 @@ function onItsWayAt(way: Way, progress: number): OnItsWay | null {
 }
 
 /**
- * How far a wipe with so much of its way still to go has cut its figure, in from the side it cuts from: as far, in
- * shares of the figure; with a sheen, that share of the figure and the sheen's trail past it.
+ * How far a wipe with so much of its way still to go has cut its figure, in from the side it cuts from, in shares of
+ * the figure: from the near side of the box it crosses as far across it, and across the sheen's trail past it.
  */
-function wipedIn(sheen: Sheen | null, stillToGo: number): number {
-	return stillToGo * (ACROSS_THE_FIGURE + (sheen?.trail ?? NO_TRAIL));
+function wipedIn(wipe: Wipe, stillToGo: number): number {
+	const span = spanOf(wipe);
+	return span.near + stillToGo * (span.length + (wipe.sheen?.trail ?? NO_TRAIL));
+}
+
+/** Where the box a wipe crosses sets off from the side it cuts from, and how far it reaches across the way. */
+function spanOf(wipe: Wipe): Span {
+	const { left, top, width, height } = wipe.crossing;
+	switch (acrossFrom(wipe.edge)) {
+		case 'left':
+			return { near: left, length: width };
+		case 'right':
+			return { near: FAR_EDGE - (left + width), length: width };
+		case 'top':
+			return { near: top, length: height };
+		case 'bottom':
+			return { near: FAR_EDGE - (top + height), length: height };
+	}
 }
 
 /**
  * A wipe's sheen `progress` of its way in, or as far as it stands on its way out: trailing its edge on the side it
- * has cut. None in any way but a wipe with a sheen, nor at the end of a way, where the figure stands whole.
+ * has cut, in shares of the box the wipe crosses. None in any way but a wipe with a sheen, nor at the end of a way,
+ * where the figure stands whole.
  */
 export function sheenAlong(way: Way, progress: number): SheenOnItsWay | null {
 	if (way.kind !== 'wipe' || way.sheen === null || progress >= END_OF_WAY) return null;
-	const edge = wipedIn(way.sheen, END_OF_WAY - progress);
-	return { from: acrossFrom(way.edge), faded: edge - way.sheen.trail, edge, colour: way.sheen.colour };
+	const span = spanOf(way);
+	const edge = wipedIn(way, END_OF_WAY - progress);
+	return {
+		from: acrossFrom(way.edge),
+		faded: (edge - way.sheen.trail - span.near) / span.length,
+		edge: (edge - span.near) / span.length,
+		colour: way.sheen.colour,
+		crossing: way.crossing
+	};
+}
+
+/**
+ * The part of a block a figure's wipe `progress` of its way in has not crossed, the figure and the block in the same
+ * pixels: all of it on no way and in any other way, none once the edge has passed it.
+ */
+export function stillCovered(way: Way, progress: number, figure: Box, block: Box): Box | null {
+	if (way.kind !== 'wipe' || progress >= END_OF_WAY) return block;
+	const cut = wipedIn(way, END_OF_WAY - progress);
+	// The block laid with its near side on the edge, past it on the side the wipe has not reached: what of the block it
+	// overlaps is what stays covered
+	switch (acrossFrom(way.edge)) {
+		case 'left':
+			return overlapOf(block, { ...block, left: figure.left + cut * figure.width });
+		case 'right':
+			return overlapOf(block, { ...block, left: figure.left + (FAR_EDGE - cut) * figure.width - block.width });
+		case 'top':
+			return overlapOf(block, { ...block, top: figure.top + cut * figure.height });
+		case 'bottom':
+			return overlapOf(block, { ...block, top: figure.top + (FAR_EDGE - cut) * figure.height - block.height });
+	}
 }
 
 /**

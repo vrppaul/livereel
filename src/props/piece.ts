@@ -23,7 +23,8 @@
  * mouth, going down with the screen, and the flat stage draws as a hole of its colour.
  *
  * It may carry letters, those of a block of its source the film names, measured as it is lifted where the first of
- * them starts and how far one steps, so it lands them on another block's letters (`src/moves/piece.ts`).
+ * them starts and how far one steps, so it lands them on another block's letters (`src/moves/piece.ts`). It may empty a
+ * block of the page, which then stands as the page draws it hidden until the piece goes (`src/props/lifted.ts`).
  */
 import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
 import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
@@ -58,6 +59,15 @@ export interface Hole {
 	readonly corner: number;
 	readonly reach: number;
 	readonly pit: Pit | null;
+}
+
+/**
+ * A block of the filmed page a piece empties: its box on the screen, in its pixels, as it stood as it was emptied; and
+ * the ground the page draws behind it, in hex, which stands over it, as the page draws the block hidden.
+ */
+export interface Emptied {
+	readonly box: Box;
+	readonly ground: string;
 }
 
 /**
@@ -135,8 +145,9 @@ export interface DrawnBody extends Body {
  * was lifted off it, which its hole belongs to; how round each of its corners is, in the same pixels — as the film
  * names for a rounded block, and as the window where the corner stands on a corner of what the window shows — the hole
  * it leaves there, if any, the line the lines from it to its source are drawn in, if it draws any, the picture it is
- * drawn from, its body, if it has one, and, where it carries letters, which it lands on a block's letters, the box
- * their first letter takes, as wide as a letter of theirs steps, in the screen's pixels as its source.
+ * drawn from, its body, if it has one, where it carries letters, which it lands on a block's letters, the box their
+ * first letter takes, as wide as a letter of theirs steps, in the screen's pixels as its source; and the block of the
+ * page it empties, if any.
  */
 export interface Piece {
 	readonly kind: 'piece';
@@ -148,6 +159,7 @@ export interface Piece {
 	readonly picture: PiecePicture;
 	readonly body: Body | null;
 	readonly firstLetter: Box | null;
+	readonly emptied: Emptied | null;
 }
 
 /**

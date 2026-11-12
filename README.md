@@ -266,7 +266,7 @@ and the moves of each part of the scene:
   name which
 - `piece.show(target, { every, air, corner, hole, lines, picture, body, rides, letters, enter, edge, as, inside, group,
   zIndex, effects })`, `piece.to(place, { scale, depth })`, `piece.onto(target, { fall })`, `piece.lean({ tilt, turn, roll, over, about })`, `piece.back()`,
-  `piece.hide({ toward, leave, edge, sheen })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
+  `piece.empties(block)`, `piece.hide({ toward, leave, edge, sheen })`; a piece of the page lifted off a selector's blocks or a box of the screen, with
   `air` pixels of the page round them where named, onto the frame, its corners and its hole's as round as `corner` names,
   in the page's pixels (a rounded card's own `border-radius`), square where it names none, and as round as the window
   at a corner standing on a corner of what the window shows, leaving a `hole: { ground, line, reach, pit }` and drawing `lines` to its
@@ -723,9 +723,22 @@ brightest just behind it and fades over `width`, 48 pixels of a frame 1080
 high where none is named, across the piece's figure, brightest down its
 middle; its colour is the look's accent where none is named. The edge goes on
 past the figure's far side as far as the light trails, so the light runs off
-the piece before it is gone. The light lies on the piece's object, over its
-figure alone, so it is blurred and held as the piece is, and casts none of
-its shadow. A sheen with any other way of going is refused.
+the piece before it is gone. The light lies on the piece's object, so it is
+blurred and held as the piece is, and casts none of its shadow. A sheen with
+any other way of going is refused.
+
+A piece may empty a block of the filmed page, the block it is to take the
+place of: `piece.empties(ROW, { as })` stands the block as the page draws it
+hidden, the ground the page draws behind it over its box, both read as the
+move begins, until the piece goes, as the claude-review promo's review comes
+up with the rows its lines will land on empty. Wiped away while it lies on
+the page, the piece and the block go behind one edge, which sets off from the
+near side of either and runs past the far side of both, the block's own row
+coming out behind it and the light over both: the promo's band along a row,
+from its line number on, with the line lying on its code cut as it passes.
+Gone in any other way, the block comes back as the piece fades. A box of the
+screen, a page of the film's own on the screen and a wipe across the block
+while the piece stands off the page are refused.
 
 A piece lands as large as the block holds it, in its middle, unless it
 carries letters: lifted naming the block of its source whose letters it

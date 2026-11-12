@@ -23,6 +23,10 @@
  * film names, square where it names none: the film knows how round a block of its page is drawn, which no box read off
  * the page says. Every move of it takes the piece named `piece`, or the one the film names `as`.
  *
+ * It may empty a block of the filmed page, which then stands as the page draws it hidden until the piece goes; wiped
+ * away while it lies on the page, it and the block go behind one edge, set off from the near side of either, as the
+ * claude-review promo's band runs along a review row from its line number, the line lying on its code cut as it passes.
+ *
  * Lifted naming a block of its source whose letters it carries, it lands them letter on letter on the letters of a
  * block it is carried onto, as the claude-review promo lands a terminal's diff line on the review's row: grown as far
  * as a letter of the block steps against one of its own, so its letters stand as large as theirs and column on
@@ -34,7 +38,7 @@
  */
 import { type Camera, boxOnTheFrame } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import { type Box, type FrameSide, type Size, frameScaleOf, middleY } from '../domain/geometry.ts';
+import { type Box, type FrameSide, type Size, boxAround, frameScaleOf, middleY, sharesIn } from '../domain/geometry.ts';
 import {
 	AN_OPAQUE_COLOUR,
 	A_COLOUR,
@@ -53,20 +57,25 @@ import {
 	needed
 } from '../domain/handed.ts';
 import type { Place } from '../domain/place.ts';
-import { screenBoxUnder } from '../domain/placement.ts';
+import { ON_THE_PAGE, ON_THE_PAGE_IN_THE_WORLD, screenBoxUnder } from '../domain/placement.ts';
 import {
 	A_TARGET,
 	type Beginning,
+	type Change,
 	type Move,
 	THE_FIRST,
 	type Target,
 	refuseOffTheScreen,
 	refuseWhereLive,
-	shownBox
+	shownBox,
+	timingOf
 } from '../direction/move.ts';
+import { figureOnThePage } from '../props/lifted.ts';
+import type { ObjectName } from '../props/object.ts';
 import {
 	type Body,
 	type Corners,
+	type Emptied,
 	FOLLOWING_THE_PAGE,
 	type Hole,
 	type Piece,
@@ -93,9 +102,11 @@ import {
 	type ShowingOf,
 	type ShownKind,
 	type ShownStandingOutScript,
+	TAKEN_FORM,
 	THE_STEPS_CURVE,
 	type TakenScript,
 	type ToScript,
+	contentMove,
 	objectBack,
 	objectEffects,
 	objectHide,
@@ -103,7 +114,9 @@ import {
 	objectOnto,
 	objectShow,
 	objectShowRiding,
-	objectTo
+	objectTo,
+	showing,
+	standingOfKind
 } from './object.ts';
 import {
 	BORN_ON_THE_FRAME,
@@ -115,8 +128,8 @@ import {
 	overItsSource,
 	sourceOf
 } from './source.ts';
-import type { Sheen } from '../props/way.ts';
-import { IN_PLACE_SHOW_FORM, type InPlaceShowScript, wayOf } from './way.ts';
+import { type Sheen, THE_FIGURE, type Wipe } from '../props/way.ts';
+import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
 
 /**
  * What fills the part of the screen a piece is lifted off: the ground the page draws behind its block, `'page'`, where
@@ -235,6 +248,14 @@ const PIECE_HIDE_FORM: Form<PieceHideScript> = {
 // where it names no colour
 const SHEEN_TRAILS = 48;
 const ACCENTED = null;
+// A wipe trailing no light where the film names none
+const NO_SHEEN = null;
+const PIECE_EMPTIES = 'piece.empties';
+// What a piece lies in where it lies on the page, carried there from the frame or from the world, so it shares the
+// screen's pixels with a block of the page
+const LYING_ON_THE_PAGE = [ON_THE_PAGE, ON_THE_PAGE_IN_THE_WORLD];
+// A piece lifted empties no block
+const EMPTIES_NONE = null;
 // The length of a figure a wipe from each of its edges crosses
 const LENGTH_ACROSS_FROM: { readonly [Edge in FrameSide]: keyof Size } = {
 	left: 'width',
@@ -458,21 +479,73 @@ function refuseFollowingOverOwnPage(beginning: Beginning, picture: PiecePicture[
 }
 
 /**
+ * The piece emptying a block of the filmed page from the move's moment: the block stands as the page draws it hidden,
+ * the ground the page draws behind it over its box, both read as the move begins, until the piece goes, and a wipe
+ * takes it away with the piece. Refused while the screen shows a page of the film's own, which the block is not of.
+ */
+export function empties(block: string, script: TakenScript = {}): Move {
+	assertKind(block, A_SELECTOR, "piece.empties's block");
+	assertWritten(script, TAKEN_FORM, PIECE_EMPTIES);
+	const name = script.as ?? PIECE;
+	return contentMove(name, timingOf(script), (beginning) => emptying(beginning, name, block));
+}
+
+/** The piece of a name with a block of the filmed page emptied, read as the move begins. */
+async function emptying(beginning: Beginning, name: ObjectName, block: string): Promise<Change> {
+	const piece = standingOfKind(beginning, name, PIECE_EMPTIES, PIECE);
+	if (beginning.scene.screen.shows.kind !== THE_FILMED_PAGE.kind) {
+		throw new FilmError(
+			`${PIECE_EMPTIES} reads ${block} off the filmed page, and the screen shows the film's own page: show the filmed page first`
+		);
+	}
+	const emptied: Emptied = {
+		box: await shownBox(beginning, block, THE_FIRST, PIECE_EMPTIES),
+		ground: await beginning.page.groundBehind(block)
+	};
+	return showing(name, () => ({ ...piece.content, emptied }));
+}
+
+/**
  * The piece going where it stands, or sliding out past a side of the frame; once gone, there is none. Wiped away, it
- * may trail a sheen behind the wipe's edge, as far as the film names across its figure as it stands as it sets off. A
- * sheen in any other way of going is refused as the move is made.
+ * may trail a sheen behind the wipe's edge, as far as the film names across its figure as it stands as it sets off; a
+ * sheen in any other way of going is refused as the move is made. A wipe crosses it and the block it emptied as one.
  */
 export function hide(script: PieceHideScript = {}): Move {
 	assertWritten(script, PIECE_HIDE_FORM, PIECE_HIDE);
 	const { sheen, ...going } = script;
-	if (sheen === undefined) return objectHide(PIECE, PIECE_HIDE, going, GOES_AS_IT_STANDS);
-	const wipe = wayOf(going.leave, going.edge, PIECE_HIDE);
-	if (wipe.kind !== 'wipe')
+	if (sheen !== undefined && going.leave !== 'wipe') {
 		throw new FilmError(`${PIECE_HIDE} names a sheen, which trails a wipe's edge: leave: 'wipe'`);
-	return objectHide(PIECE, PIECE_HIDE, going, GOES_AS_IT_STANDS, (piece, frame) => ({
+	}
+	return objectHide(PIECE, PIECE_HIDE, going, GOES_AS_IT_STANDS, (named, piece, frame) =>
+		named.kind === 'wipe' ? pieceWiped(named, piece, sheen, frame) : named
+	);
+}
+
+/**
+ * A piece's wipe as it sets off: trailing the sheen the film names, if any, and crossing the piece and the block it
+ * emptied, if any, as one.
+ */
+function pieceWiped(wipe: Wipe, piece: ShowingOf<'piece'>, sheen: SheenScript | undefined, frame: Size): Wipe {
+	const emptied = piece.content.emptied;
+	return {
 		...wipe,
-		sheen: sheenAcross(piece, wipe.edge, sheen, frame)
-	}));
+		sheen: sheen === undefined ? NO_SHEEN : sheenAcross(piece, wipe.edge, sheen, frame),
+		crossing: emptied === null ? THE_FIGURE : crossingWith(piece, emptied.box)
+	};
+}
+
+/**
+ * What a piece's wipe crosses as the piece lies on the page, in shares of its figure: its figure and a block it
+ * emptied, as one box; refused while it stands off the page, where the block's edge and its own could not be one.
+ */
+function crossingWith(piece: ShowingOf<'piece'>, block: Box): Box {
+	if (!LYING_ON_THE_PAGE.some((holder) => holder.kind === piece.inside.kind)) {
+		throw new FilmError(
+			`${PIECE_HIDE} would wipe the ${PIECE} across the block it emptied while it stands off the page: carry it onto the page first, piece.onto`
+		);
+	}
+	const figure = figureOnThePage(piece, piece.content);
+	return sharesIn(boxAround([figure, block]), figure);
 }
 
 /**
@@ -557,7 +630,8 @@ async function lifted(beginning: Beginning, target: Target, lifting: Lifting): P
 		lines: lifting.lines,
 		picture,
 		body: lifting.body,
-		firstLetter: lifting.letters === CARRIES_NONE ? CARRIES_NONE : await firstLetterCarried(beginning, lifting.letters)
+		firstLetter: lifting.letters === CARRIES_NONE ? CARRIES_NONE : await firstLetterCarried(beginning, lifting.letters),
+		emptied: EMPTIES_NONE
 	};
 	return { content: piece, box };
 }

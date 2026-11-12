@@ -10,16 +10,31 @@
  * nor each other and move without a jump as the piece travels. There are none while one holds the other, as while the
  * piece stands over its source, nor while the two cross as a bar across a bar, where the outline round both joins them
  * four times. Both come and go with the piece.
+ *
+ * A block of the filmed page a piece empties stands as a hole too, the ground the page draws behind it over the block's
+ * box, where the block stood as it was emptied, while the screen shows the filmed page: as the claude-review
+ * promo's review shows the rows its lines land on hidden until each line's band crosses its row. It fades as the piece
+ * goes, as a hole does; but a wipe takes it away behind its edge, as it takes the piece, whole ahead of the edge.
  */
 import type { Camera } from '../domain/camera.ts';
-import type { Fraction } from '../domain/fraction.ts';
-import { type Box, type Point, type Segment, type Size, segmentBetween, withAir } from '../domain/geometry.ts';
+import { type Fraction, WHOLE } from '../domain/fraction.ts';
+import {
+	type Box,
+	type Point,
+	type Segment,
+	type Size,
+	middleX,
+	middleY,
+	placedFrom,
+	segmentBetween,
+	withAir
+} from '../domain/geometry.ts';
 import { type Holders, type Scrolled, onTheFrame, screenBoxUnder } from '../domain/placement.ts';
 import { type FrameObject, type ObjectEntry, type ObjectName, drawnOnTheFrame } from './object.ts';
 import { type DrawnHole, type Hole, type Piece, figureIn } from './piece.ts';
-import { type Screen, isOnePage, pageShownBy } from './screen.ts';
+import { type PageOfTheScreen, type Screen, THE_FILMED_PAGE, isOnePage, pageShownBy } from './screen.ts';
 import type { Stroke } from './stroke.ts';
-import { presentShare } from './way.ts';
+import { presentShare, stillCovered } from './way.ts';
 
 /**
  * A piece's lines to its source as the stage draws them: the piece's name, the line they are drawn in, the two on the
@@ -65,12 +80,16 @@ const ON_THE_LINE = 1e-6;
 // The last thing of a list, and the one before it, counted from its end
 const LAST = -1;
 const BEFORE_THE_LAST = -2;
+// A block a piece empties stands as a hole with no line round it, its corners square, sunk as no pit
+const NO_LINE = null;
+const SQUARE = 0;
+const NO_PIT = null;
 
 /**
  * The holes the pieces among objects leave on the screen while it shows a page, each where its piece was lifted, or,
  * riding its block, as far up the screen as the film has scrolled the blocks that carry its source since, in all:
  * those alone of pieces lifted off that page, as a hole is left in the page, not the screen; each pit as clear as the
- * screen has come up.
+ * screen has come up. And the blocks of that page the pieces empty.
  */
 export function drawnHoles(
 	objects: readonly ObjectEntry[],
@@ -78,11 +97,21 @@ export function drawnHoles(
 	screen: Pick<Screen, 'shows' | 'shown'>
 ): readonly DrawnHole[] {
 	const page = pageShownBy(screen.shows);
-	return piecesAmong(objects).flatMap(({ name, object, piece }) =>
-		piece.hole === null || !isOnePage(piece.liftedOff, page)
-			? []
-			: [drawnHole(name, screenBoxUnder(piece.source, object.inside, scrolled), piece.hole, object, screen.shown)]
-	);
+	return piecesAmong(objects).flatMap((standing) => [
+		...holeLeftBy(standing, page, scrolled, screen.shown),
+		...(isOnePage(THE_FILMED_PAGE, page) ? blockEmptiedBy(standing) : [])
+	]);
+}
+
+/** The hole a piece leaves, as the stage draws it, while the screen shows the page it was lifted off; none else. */
+function holeLeftBy(
+	{ name, object, piece }: PieceStanding,
+	page: PageOfTheScreen,
+	scrolled: Scrolled,
+	screenShown: Fraction
+): readonly DrawnHole[] {
+	if (piece.hole === null || !isOnePage(piece.liftedOff, page)) return [];
+	return [drawnHole(name, screenBoxUnder(piece.source, object.inside, scrolled), piece.hole, object, screenShown)];
 }
 
 /**
@@ -99,6 +128,36 @@ function drawnHole(name: ObjectName, source: Box, hole: Hole, object: FrameObjec
 		corner: hole.corner + reach,
 		shown: presentShare(object),
 		pit: pit === null ? null : { ...pit, clear: screenShown }
+	};
+}
+
+/**
+ * The block of the filmed page a piece empties, if any, as the stage draws it: the part of it the piece's wipe has not
+ * crossed, whole, none once the wipe has passed it; in any other way, all of it, as far as the piece has come and not
+ * gone.
+ */
+function blockEmptiedBy({ name, object, piece }: PieceStanding): readonly DrawnHole[] {
+	if (piece.emptied === null) return [];
+	const present = presentShare(object);
+	const covered = stillCovered(object.way, present, figureOnThePage(object, piece), piece.emptied.box);
+	if (covered === null) return [];
+	const { ground } = piece.emptied;
+	const shown = object.way.kind === 'wipe' ? WHOLE : present;
+	return [{ name, box: covered, ground, line: NO_LINE, corner: SQUARE, shown, pit: NO_PIT }];
+}
+
+/**
+ * Where a piece's figure stands on the screen while it lies on the page, in the screen's pixels: the part of its box
+ * its source is drawn in, grown about the box's middle as far as the piece stands grown.
+ */
+export function figureOnThePage(object: FrameObject, piece: Piece): Box {
+	const figure = placedFrom(figureIn(piece.source, object.box), object.box);
+	const middle = { left: middleX(object.box), top: middleY(object.box) };
+	return {
+		left: middle.left + (figure.left - middle.left) * object.scale,
+		top: middle.top + (figure.top - middle.top) * object.scale,
+		width: figure.width * object.scale,
+		height: figure.height * object.scale
 	};
 }
 

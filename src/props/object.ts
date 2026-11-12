@@ -63,6 +63,7 @@ import {
 	type PointMoved,
 	type Size,
 	UNMOVED,
+	boxAt,
 	boxOf,
 	distanceBetween,
 	frameScaleOf,
@@ -203,10 +204,11 @@ export interface DrawnObject extends DrawnPlacement {
 }
 
 /**
- * A wipe's sheen as the stage draws it on an object: as far as the wipe has come, over the part of the object's box its
- * figure stands in, in shares of the box, which the light is cut to.
+ * A wipe's sheen as the stage draws it on an object: as far as the wipe has come, over what the wipe crosses, in shares
+ * of the object's box — the part its figure stands in, or past it over a block of the page its piece emptied — which
+ * the light is cut to.
  */
-interface DrawnSheen extends SheenOnItsWay {
+interface DrawnSheen extends Omit<SheenOnItsWay, 'crossing'> {
 	readonly over: Box;
 }
 
@@ -389,10 +391,15 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	return { ...drawn, onItsWay, sheen, effects, melt, outOfFocus, softestOutOfFocus, magnified, content };
 }
 
-/** The sheen an object's wipe trails as far as it has come, over its figure in a box; none where it trails none. */
+/**
+ * The sheen an object's wipe trails as far as it has come, over what the wipe crosses of its figure in a box, and past
+ * it; none where it trails none.
+ */
 function drawnSheen(object: FrameObject, content: DrawnContent, box: Box): DrawnSheen | null {
 	const sheen = sheenAlong(object.way, presentShare(object));
-	return sheen === null ? null : { ...sheen, over: figureShareOf(content, box) };
+	if (sheen === null) return null;
+	const { crossing, ...light } = sheen;
+	return { ...light, over: boxAt(figureShareOf(content, box), crossing) };
 }
 
 /**

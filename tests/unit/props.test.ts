@@ -18,7 +18,7 @@ import {
 	pastTheScreen
 } from '../../src/props/screen.ts';
 import { cameraOf, drawn, openingScene } from '../../src/scene.ts';
-import { type Way, alongItsWay, sheenAlong } from '../../src/props/way.ts';
+import { THE_FIGURE, type Way, alongItsWay, sheenAlong, stillCovered } from '../../src/props/way.ts';
 import { NONE, WHOLE, fractionOf } from '../../src/domain/fraction.ts';
 import {
 	type DrawnWords,
@@ -290,7 +290,7 @@ test("a figure a quarter of its way in a way of livereel's stands as the way has
 		alongItsWay({ kind: 'fade' }, 0.25),
 		alongItsWay({ kind: 'mask', edge: 'bottom' }, 0.25),
 		alongItsWay({ kind: 'mask', edge: 'left' }, 0.25),
-		alongItsWay({ kind: 'wipe', edge: 'left', sheen: null }, 0.25),
+		alongItsWay({ kind: 'wipe', edge: 'left', sheen: null, crossing: THE_FIGURE }, 0.25),
 		alongItsWay({ kind: 'iris' }, 0.25),
 		alongItsWay({ kind: 'grow' }, 0.25),
 		alongItsWay({ kind: 'mask', edge: 'top' }, 1),
@@ -320,16 +320,41 @@ test("a figure a quarter of its way in a way of livereel's stands as the way has
 });
 
 test('a wipe with a sheen cuts its figure on past its far side as far as the light trails, so the light runs off it: a quarter gone back to its right edge, trailing a quarter of the figure, its edge 0.3125 in from the left and the light back to 0.0625; a wipe with none, and one at the end of its way, has no light', () => {
-	const lit: Way = { kind: 'wipe', edge: 'right', sheen: { colour: '#59c470', trail: 0.25 } };
+	const lit: Way = { kind: 'wipe', edge: 'right', sheen: { colour: '#59c470', trail: 0.25 }, crossing: THE_FIGURE };
 	expect([
 		alongItsWay(lit, 0.75)?.cut,
 		sheenAlong(lit, 0.75),
-		sheenAlong({ kind: 'wipe', edge: 'right', sheen: null }, 0.75),
+		sheenAlong({ kind: 'wipe', edge: 'right', sheen: null, crossing: THE_FIGURE }, 0.75),
 		sheenAlong(lit, 1)
 	]).toEqual([
 		{ kind: 'inset', top: 0, right: 0, bottom: 0, left: 0.3125 },
-		{ from: 'left', faded: 0.0625, edge: 0.3125, colour: '#59c470' },
+		{ from: 'left', faded: 0.0625, edge: 0.3125, colour: '#59c470', crossing: THE_FIGURE },
 		null,
+		null
+	]);
+});
+
+test("a wipe crossing a box wider than its figure sets off from the box's near side and runs past its far side and the light's trail, its light in shares of the box, and leaves of a block what its edge has not crossed: three figures wide from one before it, a quarter gone back to its right edge, its edge 0.1875 of the figure short of its left and the light back to 0.4375 short, 0.2708 and 0.1875 of the box; a block from 100 before the figure, 100 wide, covered from 18.75 before it; from its left edge with no light, to 25 past its right; the whole block on no way and in a fade, none once the edge has passed it", () => {
+	const crossing = { left: -1, top: -0.2, width: 3, height: 1.6 };
+	const fromTheLeft: Way = { kind: 'wipe', edge: 'right', sheen: { colour: null, trail: 0.25 }, crossing };
+	const fromTheRight: Way = { kind: 'wipe', edge: 'left', sheen: null, crossing };
+	const figure = { left: 1200, top: 605, width: 100, height: 50 };
+	const block = { left: 1100, top: 590, width: 300, height: 80 };
+	expect([
+		alongItsWay(fromTheLeft, 0.75)?.cut,
+		sheenAlong(fromTheLeft, 0.75),
+		stillCovered(fromTheLeft, 0.75, figure, block),
+		stillCovered(fromTheRight, 0.75, figure, block),
+		stillCovered(fromTheLeft, 1, figure, block),
+		stillCovered({ kind: 'fade' }, 0.25, figure, block),
+		stillCovered(fromTheRight, 0, figure, block)
+	]).toEqual([
+		{ kind: 'inset', top: 0, right: 0, bottom: 0, left: -0.1875 },
+		{ from: 'left', faded: 0.1875, edge: expect.closeTo(0.2708), colour: null, crossing },
+		{ left: 1181.25, top: 590, width: 218.75, height: 80 },
+		{ left: 1100, top: 590, width: 225, height: 80 },
+		block,
+		block,
 		null
 	]);
 });

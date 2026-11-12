@@ -175,10 +175,14 @@ soft past 2.2, the infographics.
 - A change of the whole frame from one scene to the next: a new ground opening as a disc, or rising as a wave, not the
   ground's colour faded alone.
 - A line of light sweeping across the page or an object that stays, apart from the light's spot on a block: a piece
-  wiped away trails one behind its edge (`piece.hide({ leave: 'wipe', sheen })`), over its own figure alone. The
-  claude-review promo's band along a diff line lights the review's whole row, from its line number on, where beats
-  3–4's draft lights the code the line covers; and the promo's rows stand empty under the falling lines until each
-  lands, where the draft shows the review's own rows under them (2026-11-11, `waveP/band`, session cc0f17ef).
+  wiped away trails one behind its edge (`piece.hide({ leave: 'wipe', sheen })`), over itself and a block it emptied.
+- A piece's wipe across a block it emptied sets off from the block's side, where the claude-review promo's band sets
+  off from the row's line number and shows the strip before it at once: beats 3–4's row 64 at the cut's 14.45 s has
+  its edge about 90 px of the frame short of the number where the cut's stands on the sign, worked out as the number
+  coming out about 0.12 s late; at 14.60 s the two stand in step (2026-11-12, `waveT/row/pairs`).
+- A piece shows the holes on the screen standing in its source's part of the screen, of whichever page the screen
+  shows, though one holding its picture was lifted off another: a block the review empties would show over a terminal
+  line lifted where its rows stand on the screen (none in beats 3–4, whose rows and lines stand apart), 2026-11-12.
 - A vignette over the frame. Grain that changes from frame to frame, as film's does: the ground's grain (`world.grain`)
   stands still, as the reference promo's did.
 - The flat stage lays the grain's filter over every exposure's ground as it captures, though every exposure's ground is

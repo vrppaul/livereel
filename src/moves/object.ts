@@ -348,7 +348,7 @@ export const TO_FORM: Form<ToScript> = {
 };
 export const HIDE_FORM: Form<HideScript> = { toward: A_FRAME_SIDE, ...LEAVE_FORM, ...TIMING_FORM, ...NAMED_FORM };
 export const LEAN_OBJECT_FORM: Form<ObjectLeanScript> = { ...LEAN_FORM, ...NAMED_FORM };
-const TAKEN_FORM: Form<TakenScript> = { ...NAMED_FORM, ...TIMING_FORM };
+export const TAKEN_FORM: Form<TakenScript> = { ...NAMED_FORM, ...TIMING_FORM };
 const ONTO_FORM: Form<OntoScript> = { fall: A_CURVE, ...TAKEN_FORM };
 const STANDING_OUT_FORM: Form<StandingOutScript> = {
 	ring: A_SHARE,
@@ -413,8 +413,11 @@ export interface OwnGoing<Kind extends ShownKind> {
 /** What a kind shows as it goes, from what it showed: a title's words at the pace the hide names. */
 type ShownAsItGoes<Kind extends ShownKind> = (shown: ShownOf<Kind>) => ShownOf<Kind>;
 
-/** The way an object of a kind goes, worked out of it as it stands as it sets off, on a frame of a size. */
-export type WayFor<Kind extends ShownKind> = (object: ShowingOf<Kind>, frame: Size) => Way;
+/**
+ * The way an object of a kind goes, worked out of the way the film names and of the object as it stands as it sets
+ * off, on a frame of a size.
+ */
+export type WayFor<Kind extends ShownKind> = (named: Way, object: ShowingOf<Kind>, frame: Size) => Way;
 
 /**
  * How a kind whose module reads how far it has gone goes in its own way: showing what it showed, on its step's curve.
@@ -703,16 +706,16 @@ export function objectEffects(kind: ShownKind, move: string, script: EffectsScri
 
 /**
  * An object of a kind going where it stands, in its own way, as what it shows goes, on the kind's own curve unless the
- * film names one, what it shows set off as the kind sets it; or in a way of livereel's the film names, or the way the
- * kind's move works out of the object as it sets off, as a piece's wipe trails a sheen as far across it as it stands;
- * or sliding out past a side of the frame where the film names one; once gone, there is none.
+ * film names one, what it shows set off as the kind sets it; or in a way of livereel's the film names, as the kind's
+ * move works it out of the object as it sets off, as a piece's wipe crosses a block it emptied and trails a sheen as
+ * far across it as it stands; or sliding out past a side of the frame where the film names one; once gone, none.
  */
 export function objectHide<Kind extends ShownKind>(
 	kind: Kind,
 	move: string,
 	script: HideScript,
 	own: OwnGoing<Kind>,
-	setOffIn?: WayFor<Kind>
+	wayFor: WayFor<Kind> = asNamed
 ): Move {
 	assertWritten(script, HIDE_FORM, move);
 	const name = script.as ?? kind;
@@ -722,13 +725,12 @@ export function objectHide<Kind extends ShownKind>(
 		throw new FilmError(`${move} goes from its place in a way, or slides out toward a side: not both`);
 	}
 	const curve = toward === null && way.kind === OWN_WAY.kind ? own.curve : THE_STEPS_CURVE;
-	const wayFor = setOffIn ?? (() => way);
 	return {
 		part: objectPart(name),
 		timing: timingOf(curve === null ? script : { ease: curve, ...script }),
 		begin: (beginning) =>
 			toward === null
-				? objectGoing(beginning, name, kind, wayFor, own.shownAsItGoes, move)
+				? objectGoing(beginning, name, kind, way, wayFor, own.shownAsItGoes, move)
 				: slidingOut(beginning, name, kind, toward, move)
 	};
 }
@@ -1467,19 +1469,20 @@ function onTheFramesPlane(holder: Holder, name: ObjectName, move: string): OnThe
 }
 
 /**
- * The object going where it stands, in the way `wayFor` names for it as it stands as it sets off, on the film's frame,
- * showing what its kind has it show as it goes; once gone, none.
+ * The object going where it stands, in the way `wayFor` works out of the way the film names and of the object as it
+ * stands as it sets off, on the film's frame, showing what its kind has it show as it goes; once gone, none.
  */
 function objectGoing<Kind extends ShownKind>(
 	beginning: Beginning,
 	name: ObjectName,
 	kind: Kind,
+	named: Way,
 	wayFor: WayFor<Kind>,
 	shownAsItGoes: ShownAsItGoes<Kind>,
 	move: string
 ): Change {
 	const object = standingOfKind(beginning, name, move, kind);
-	const way = wayFor(object, beginning.format.frame);
+	const way = wayFor(named, object, beginning.format.frame);
 	const setOff = { ...object, content: shownAsItGoes(object.content) };
 	return (scene, progress) => withObject(scene, name, goneIn(setOff, way, progress));
 }
@@ -1487,6 +1490,11 @@ function objectGoing<Kind extends ShownKind>(
 /** What a kind shows as it goes where its going changes nothing of it: what it showed. */
 function asItShowed<Shown>(shown: Shown): Shown {
 	return shown;
+}
+
+/** The way a kind goes where its move works out nothing of it: the way the film names. */
+function asNamed(named: Way): Way {
+	return named;
 }
 
 /**
