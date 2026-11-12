@@ -120,9 +120,8 @@ const NO_TEXTS_TYPED: readonly TypedText[] = [];
 // What a move of the frame begun ahead of its share says as it reads more than the scene; and the page it is handed
 const READ_AHEAD =
 	'a move of the camera, the window or the eye beginning while a page runs with its pace judged on the frame is begun as the run begins, to know where the frame will stand: begun so early, it may read the scene alone, not the page or where the frame will stand; let it begin once the run is at rest';
-// What a piece riding its block lifted off a page of the film's own is told
-const NO_RIDE_ON_AN_OWN_PAGE =
-	"a page of the film's own moves by its run alone (screen.scrolls), which carries no piece riding its block: lift it riding nothing";
+// The blocks of a page of the film's own whose scroll a move of the film's moves: none, as its run alone moves it
+const NO_BLOCK_SCROLLED: readonly BlockKey[] = [];
 const PAGE_UNREAD_AHEAD: FilmedPage = {
 	box: refusedAhead,
 	groundBehind: refusedAhead,
@@ -823,9 +822,12 @@ class OwnPageShown implements FilmedPage {
 		return this.filmed.scrollCourse(target, aim);
 	}
 
-	/** The film's own page runs by its run alone, which no scroll of the filmed page's moves, so nothing on it rides. */
+	/**
+	 * The film's own page runs by its run alone, which no scroll of the film's moves, so a piece lifted riding it rides
+	 * the page, not a scroll.
+	 */
 	blocksHolding(): Promise<readonly BlockKey[]> {
-		return Promise.reject(new FilmError(NO_RIDE_ON_AN_OWN_PAGE));
+		return Promise.resolve(NO_BLOCK_SCROLLED);
 	}
 
 	type(text: string): Promise<void> {

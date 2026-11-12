@@ -9,17 +9,17 @@
  * standing in the world, where what stands on it stands off it as freely as in the world, as a piece falls onto a
  * block; a group of objects, a placement on the frame, in its box's pixels from its corner; a point of the screen or of
  * an object, the frame's plane in its pixels from where the eye sees that point on each frame, which words beside a
- * part stand on; and the page's scrolls, the world's plane carried up as far as the film scrolls the blocks that carry
- * a piece's source, which the piece rides. Something placed on a plane stands about its box's middle as the plane's
- * stance carries it there and as its own stance does. The flat stage lays it in the frame, seen from the eye in
- * perspective about its box's middle, or, on the window's plane, in the window, by those stances alone, as the window's
- * element carries what is laid in it; the room reads where it stands in the eye's own space. Where a point of anything
- * placed is seen on the frame is one function, `pointOnTheFrame`, which the motion blur, a lens, a note, the pins and a
- * piece's lines read through the camera's module or the object's, and a point of the screen `onTheFrame`. Something
- * carried from one holder into another, a piece from the world onto the page in the world or an object joining a leant
- * group, is placed there where it stood by one function too, `carriedInto`; and something on the frame's plane, which
- * rides with the eye, handed into the world where the eye sees it, as far before the eye as what it stands on, by
- * `handedIntoTheWorld`.
+ * part stand on; and a ride, the page in the world as the page a piece was lifted off lies there, carried up as far as
+ * the film scrolls the blocks that carry the piece's source and laid where a fade from that page lays it, which the
+ * piece rides. Something placed on a plane stands about its box's middle as the plane's stance carries it there and as
+ * its own stance does. The flat stage lays it in the frame, seen from the eye in perspective about its box's middle,
+ * or, on the window's plane, in the window, by those stances alone, as the window's element carries what is laid in
+ * it; the room reads where it stands in the eye's own space. Where a point of anything placed is seen on the frame is
+ * one function, `pointOnTheFrame`, which the motion blur, a lens, a note, the pins and a piece's lines read through the
+ * camera's module or the object's, and a point of the screen `onTheFrame`. Something carried from one holder into
+ * another, a piece from the world onto the page in the world or an object joining a leant group, is placed there where
+ * it stood by one function too, `carriedInto`; and something on the frame's plane, which rides with the eye, handed
+ * into the world where the eye sees it, as far before the eye as what it stands on, by `handedIntoTheWorld`.
  *
  * The camera's module builds on this one, as it reads where the window stands; this one reads of the camera only how
  * it frames the page in its view (`src/domain/framing.ts`), and holds the arithmetic of a box about its middle on the
@@ -31,7 +31,14 @@
  */
 import type { Camera, View } from './camera.ts';
 import { type Eye, eyeAtRest, inTheEyesSpace, seenByTheEye, turnOf } from './eye.ts';
-import { boxInTheView, boxOfTheScreenIn, pointInTheView } from './framing.ts';
+import {
+	type Lying,
+	OVER_THE_SCREEN,
+	boxInTheView,
+	boxOfTheScreenIn,
+	framingWhereItLies,
+	pointInTheView
+} from './framing.ts';
 import {
 	type Box,
 	HALVES,
@@ -83,14 +90,37 @@ export type GroupName = string;
  * What a placement is read in: one that lasts the whole film; a group of objects by its name, with the zIndex of what
  * stands in it there, how high it is drawn among the others of the group, where the film names one, a group going with
  * what stands in it; a point of something that stands in the world, where the eye sees it on the frame as each frame is
- * drawn, which words beside a part stand off; or the world as the page's scrolls carry a ride, up the world as far as
- * the film scrolls the blocks that carry the rider's source, so a piece lifted off a block rides it.
+ * drawn, which words beside a part stand off; or a ride, the page in the world as the page the rider was lifted off
+ * lies there, so a piece lifted off a block rides it wherever the camera, the window, the page's scrolls and a fade
+ * from that page take it.
  */
 export type Holder =
 	| LastingHolder
 	| { readonly kind: 'group'; readonly name: GroupName; readonly zIndex: number | null }
 	| { readonly kind: 'point'; readonly of: PointOf }
-	| { readonly kind: 'scroll'; readonly ride: Ride };
+	| { readonly kind: 'ride'; readonly ride: Ride };
+
+/** A page the screen may show, however far it is drawn: the filmed page, or a page of the film's own by its key. */
+export type PageOfTheScreen = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string };
+
+/** Whether two pages of the screen are one: both the filmed page, or the film's own by one key. */
+export function isOnePage(first: PageOfTheScreen, second: PageOfTheScreen): boolean {
+	switch (first.kind) {
+		case 'filmed':
+			return second.kind === 'filmed';
+		case 'own':
+			return second.kind === 'own' && second.key === first.key;
+	}
+}
+
+/**
+ * A page the screen faded from, and how it lies on the screen as the fade laid it over the page coming, where the
+ * camera showed it as the fade began.
+ */
+export interface FadedFrom {
+	readonly from: PageOfTheScreen;
+	readonly lies: Lying;
+}
 
 /**
  * The key the page knows a block of it by, the same however a film selects the block (`FilmedPage.blocksHolding`), so
@@ -106,15 +136,15 @@ export type BlockKey = number;
 export type Scrolled = ReadonlyMap<BlockKey, number>;
 
 /**
- * What something riding the page's scrolls rides: every block whose scroll carries its source, by its key, as the page
- * found them as the rider was placed (`FilmedPage.blocksHolding`); how far the film had scrolled them in all then, in
- * the page's pixels; and how many of the world's pixels a pixel of the screen took then, as the camera showed the page
- * from the eye at rest, which a pixel of the scrolls carries the rider.
+ * What something riding its block rides: the page the screen showed as the rider was placed, whose source it was
+ * lifted off; every block of it whose scroll carries that source, by its key, as the page found them then
+ * (`FilmedPage.blocksHolding`), none on a page whose blocks no scroll of the film's moves; and how far the film had
+ * scrolled them in all then, in the page's pixels.
  */
 export interface Ride {
+	readonly page: PageOfTheScreen;
 	readonly blocks: readonly BlockKey[];
 	readonly from: number;
-	readonly scale: number;
 }
 
 /**
@@ -169,14 +199,16 @@ type Rider = 'eye' | 'world';
 
 /**
  * What holders are read off as a frame is drawn: the camera, which shows the window and frames the page in it, where
- * each group standing stands, where each object standing stands, by its name, and how far the film has scrolled each
- * block it scrolls, which carries a rider whose source that scroll carries.
+ * each group standing stands, where each object standing stands, by its name, how far the film has scrolled each
+ * block it scrolls, which carries a rider whose source that scroll carries, and the page the screen last faded from,
+ * where it shows that page no more, which lies where the fade laid it.
  */
 export interface Holders {
 	readonly camera: Camera;
 	readonly groups: ReadonlyMap<GroupName, Placement>;
 	readonly objects: ReadonlyMap<string, HeldPlacement>;
 	readonly scrolled: Scrolled;
+	readonly fadedFrom: FadedFrom | null;
 }
 
 /**
@@ -269,8 +301,9 @@ const AT_THE_EYE = 0;
 /**
  * The plane of a holder, as the holders stand: a group's, the frame's carried by the group's box and stance; a point's,
  * the frame's, its corner where the eye sees the point now, so what stands off it rides with the eye and goes with the
- * point as the point moves on the frame; a ride's, the world's carried up it as far as the film has scrolled the ride's
- * blocks since it began, as many of its pixels a pixel of the scrolls as the ride's scale.
+ * point as the point moves on the frame; a ride's, the page's in the world as the camera frames the page ridden where
+ * it lies on the screen now (`cameraOnItsPage`), so what rides it goes where the camera, the window, the scrolls and a
+ * fade take its source.
  */
 export function planeOf(holder: Holder, holders: Holders, frame: Size): Plane {
 	switch (holder.kind) {
@@ -282,11 +315,8 @@ export function planeOf(holder: Holder, holders: Holders, frame: Size): Plane {
 			const corner = pointSeenOnTheFrame(holder.of, holders, frame);
 			return { ...lastingPlaneOf(ON_THE_FRAME, holders.camera, frame), box: { ...corner, ...NO_SIZE } };
 		}
-		case 'scroll': {
-			const world = lastingPlaneOf(IN_THE_WORLD, holders.camera, frame);
-			const carriedUp = scrolledSince(holder.ride, holders.scrolled) * holder.ride.scale;
-			return { ...world, box: { ...world.box, top: world.box.top - carriedUp } };
-		}
+		case 'ride':
+			return pagesPlaneInTheWorld(cameraOnItsPage(holder, holders), frame);
 		case 'frame':
 		case 'world':
 		case 'window':
@@ -337,13 +367,42 @@ function scrolledSince(ride: Ride, scrolled: Scrolled): number {
 }
 
 /**
- * A box of the screen as it stands now under something placed over it in a holder: riding the page's scrolls, carried
- * up the screen as far as the film has scrolled the ride's blocks since it began, as the block's own parts are; in any
- * other holder, as it is.
+ * A box of the screen under something placed in a holder, where it stands now on its page, in the pixels the screen
+ * shows that page whole in: riding it, carried up as far as the film has scrolled the ride's blocks since it began, as
+ * the block's own parts are; in any other holder, as it is. Where the page itself lies on the screen is `lyingUnder`'s.
  */
 export function screenBoxUnder(box: Box, holder: Holder, scrolled: Scrolled): Box {
-	if (holder.kind !== 'scroll') return box;
+	if (holder.kind !== 'ride') return box;
 	return { ...box, top: box.top - scrolledSince(holder.ride, scrolled) };
+}
+
+/**
+ * How the page under something placed in a holder lies on the screen now, as the holders stand: riding it, where the
+ * screen lays it, carried up as far as the film has scrolled the ride's blocks since it began; in any other holder,
+ * over the whole screen.
+ */
+export function lyingUnder(holder: Holder, holders: Holders): Lying {
+	if (holder.kind !== 'ride') return OVER_THE_SCREEN;
+	const laid = lyingOnTheScreen(holder.ride.page, holders.fadedFrom);
+	const carriedUp = scrolledSince(holder.ride, holders.scrolled) * laid.scale;
+	return { ...laid, corner: { ...laid.corner, top: laid.corner.top - carriedUp } };
+}
+
+/**
+ * How a page lies on the screen: where the screen last faded from it and shows it no more, where the fade laid it; any
+ * other over the whole screen, the page it shows, and one it cut away from, which the page shown in its place covers.
+ */
+function lyingOnTheScreen(page: PageOfTheScreen, fadedFrom: FadedFrom | null): Lying {
+	return fadedFrom !== null && isOnePage(page, fadedFrom.from) ? fadedFrom.lies : OVER_THE_SCREEN;
+}
+
+/**
+ * The camera as it frames the page under something placed in a holder, as the holders stand: the holders' camera,
+ * framing that page where it lies on the screen now (`lyingUnder`).
+ */
+export function cameraOnItsPage(holder: Holder, holders: Holders): Camera {
+	const camera = holders.camera;
+	return { ...camera, pose: framingWhereItLies(camera.pose, lyingUnder(holder, holders)) };
 }
 
 /**

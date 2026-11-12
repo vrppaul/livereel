@@ -271,8 +271,8 @@ and the moves of each part of the scene:
   in the page's pixels (a rounded card's own `border-radius`), square where it names none, and as round as the window
   at a corner standing on a corner of what the window shows, leaving a `hole: { ground, line, reach, pit }` and drawing `lines` to its
   source where named; drawn from the page's picture as it changes, or, `picture: 'held'`, from a picture of its source
-  held as it is lifted; `inside: 'world'`, with a `body: { thickness, walls, glow }` where named, riding its block as
-  the page scrolls, `rides: 'its block'`, where named; carried `onto` another block, it lies on the page there: from
+  held as it is lifted; `inside: 'world'`, with a `body: { thickness, walls, glow }` where named, riding its block
+  wherever the camera, the window, the page's scrolls and a fade take it, `rides: 'its block'`, where named; carried `onto` another block, it lies on the page there: from
   the frame in the window, keeping that place on the screen as the camera moves; from the world on the page in the
   world, keeping its body and falling onto it on the curve `fall` names; one carrying the `letters` of a block of its
   source lands them letter on letter on the block's; each move of it takes `as` to name which
@@ -762,13 +762,20 @@ the film's own too; the block's as it lands. A box of the screen holds no
 letters, so landing letters on one is refused, as is a hidden block; a
 film's set measured no letters, so it is refused there.
 
-A piece lifted `inside: 'world'` rides its block as the page scrolls where the
-film asks: `piece.show(TASK, { inside: 'world', rides: 'its block' })`, then
-`page.scrollBy('[data-testid=story-view]', { pixels: 280 })` in a `play`,
-carries it up the world as far as the scroll moves the column it stands in, as
-many of the world's pixels to a pixel of the scroll as the camera showed the
-page as it was lifted, so it stays over its block as the story slides under the
-parts lifted off it. The page finds, as it is lifted, every block whose scroll
+A piece lifted `inside: 'world'` rides its block where the film asks:
+`piece.show(TASK, { inside: 'world', rides: 'its block' })` stands it on the
+page in the world, off it as freely as anywhere in the world, so it goes
+where its block goes. The camera framing the page anew, closer, farther or
+elsewhere, and the window moving carry it as they carry the page; and
+`page.scrollBy('[data-testid=story-view]', { pixels: 280 })` in a `play`
+carries it up as far as the scroll moves the column it stands in, so it stays
+over its block as the story slides under the parts lifted off it. While the
+screen fades from the page it was lifted off, and after, it goes where the
+fade lays that page: lines lifted off a terminal riding their blocks draw back
+with the fading terminal as the camera draws back the review coming under it.
+A page the screen cut away from with no fade lies where the screen does. Its
+depth stays in pixels of a frame 1080 high as the camera draws back, where
+one eye drawing back from both would shrink it with the page. The page finds, as it is lifted, every block whose scroll
 carries its source (for a box of the screen, the block shown at its middle
 too), and a `page.scrollBy` or `page.scrollTo` of any of them carries it,
 however the film selects that block: `page.scrollTo(TASK, { top: 0 })` scrolls
@@ -780,11 +787,13 @@ is taken as carried, though it stops once it sticks. Its hole and its pit, its
 lines to its source, what it draws from the page's picture, its body's shadow
 and words standing beside it go with it. A scroll an act does, or the page does by itself,
 carries it nowhere. Carried `to` a place, it stands there however far the block
-has scrolled and rides on from there; `back` takes it over its source where
-the block stands then; carried `onto` the page, it lies there and rides no
-more. A piece riding anything but inside the world is refused, and so is one
-riding on the film's set or off a page of the film's own, which no scroll of
-the film's moves.
+has scrolled and rides on from there, refused while the window leans, as a
+box of the frame lies on a leant page as no box; `back` takes it over its
+source where the block stands then; carried `onto` the page, it lies there
+and rides no more. A piece riding anything but inside the world is refused,
+and so is one riding on the film's set, which never scrolls. Off a page of
+the film's own it rides the page, which no scroll of the film's moves, nor
+does the page's own run carry it.
 
 A piece lifted `inside: 'world'` may have a body, as a real button rises out
 of the page as a column: `piece.show(STORY, { inside: 'world', corner: 6,
@@ -869,8 +878,9 @@ after it in the same cut, the page going stands as it stood while the
 camera frames the page coming at once, closer or farther: one page fading
 over another, each at its own scale. From there the page going lies on the
 page coming where the cut left it, so the camera's moves after carry the two
-together: a camera drawing back draws both back, as one eye would. The page
-going lies over the screen
+together: a camera drawing back draws both back, as one eye would, and a
+piece riding its block off the page going goes with that page, so lines
+lifted off a terminal draw back with it. The page going lies over the screen
 and the light, under a callout, the pins and the cursor, and the window's
 shade dims and fades the page coming alone, so `window.shade({ fade: 1 })`
 in the same cut, brought to `0` over the next play, brings the page coming

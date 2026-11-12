@@ -29,11 +29,10 @@
 import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
 import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
 import { type Fraction, NONE, fractionOf } from '../domain/fraction.ts';
-import { ON_ITS_PLANE } from '../domain/placement.ts';
+import { ON_ITS_PLANE, type PageOfTheScreen } from '../domain/placement.ts';
 import type { Stance } from '../domain/stance.ts';
 import { type Effects, unfaded } from './effects.ts';
 import type { ObjectName } from './object.ts';
-import type { PageOfTheScreen } from './screen.ts';
 import type { Stroke } from './stroke.ts';
 
 /**

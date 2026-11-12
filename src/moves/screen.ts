@@ -51,7 +51,8 @@
 import { A_CURVE, type Ease, FASTEST_SPEED, type Stretch, easeInOutSine, linear } from '../domain/curves.ts';
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
-import { runCarriedUnder, screenFramedBy } from '../domain/camera.ts';
+import { runCarriedUnder } from '../domain/camera.ts';
+import { lyingFramedBy } from '../domain/framing.ts';
 import {
 	A_FRAME_SIDE,
 	A_POINT_OF_THE_FRAME,
@@ -134,6 +135,7 @@ import {
 	fadesAt,
 	judgedToRest,
 	momentsJudgedAt,
+	pageShownBy,
 	pastTheScreen,
 	runToRest,
 	setOff,
@@ -440,8 +442,9 @@ async function fadingInto(beginning: Beginning, shows: Shows, script: FadeScript
 	const framedNow = cameraOf(beginning.scene, format).pose;
 	const framingThePageComing = (await beginning.cameraAt(stretch.moment)).pose;
 	const fade: Fade = {
+		from: pageShownBy(beginning.scene.screen.shows),
+		lies: lyingFramedBy(framedNow, framingThePageComing),
 		picture: await beginning.holdPicture(boxOf(format.screen)),
-		lies: screenFramedBy(framedNow, framingThePageComing, format.screen),
 		over: { moment: stretch.moment, seconds: script.seconds, ease: script.ease ?? FADES_ALONG }
 	};
 	return (scene) => withProp(scene, 'screen', { ...scene.screen, shows, fade });

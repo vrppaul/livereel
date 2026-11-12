@@ -71,6 +71,7 @@ import {
 	middleY,
 	pointAt
 } from '../domain/geometry.ts';
+import { pointWhereItLies } from '../domain/framing.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
 import { ITS_MIDDLE, carried, longestScaleSeen } from '../domain/matrix.ts';
 import { ONE_FRAME, pastTheEdge } from '../domain/place.ts';
@@ -79,12 +80,13 @@ import {
 	type GroupName,
 	type Holder,
 	type Holders,
-	IN_THE_WORLD,
+	ON_THE_PAGE_IN_THE_WORLD,
 	type Placed,
 	type Scrolled,
 	carriedAboutItsMiddle,
 	drawnPlacement,
 	groupNamed,
+	lyingUnder,
 	placed,
 	planeOf,
 	pointOnTheFrame,
@@ -455,7 +457,8 @@ export function standingInTheWorld(object: FrameObject, holders: Holders, frame:
  * Where the eye focuses to see an object sharp, its middle where it stands now: at that spot of what it stands in, its
  * box's middle where its stance moves it, brought out by its depth and round the point it turns about, placed as each
  * frame is drawn; in a group, which goes with what stands in it, or beside a point, so far before the eye, as either
- * rides with it; riding a block's scroll, at the spot of the world it stands at now, which the scroll carries no more.
+ * rides with it; riding a page, at the spot of the page in the world it stands over now, where that page lies on the
+ * screen, which the page's scrolls and a fade from it carry no more.
  */
 export function focusOn(object: FrameObject, holders: Holders, frame: Size): Focus {
 	const holder = object.inside;
@@ -465,10 +468,9 @@ export function focusOn(object: FrameObject, holders: Holders, frame: Size): Foc
 		case 'group':
 		case 'point':
 			return { kind: 'distance', distance: distanceOfItsMiddle(placedInItsHolder(object, holders, frame), frame) };
-		case 'scroll': {
-			const carriedPlane = planeOf(holder, holders, frame).box;
-			const inTheWorld = { left: point.left + carriedPlane.left, top: point.top + carriedPlane.top };
-			return { kind: 'spot', holder: IN_THE_WORLD, point: inTheWorld, depth: moved.out };
+		case 'ride': {
+			const onTheScreen = pointWhereItLies(lyingUnder(holder, holders), point);
+			return { kind: 'spot', holder: ON_THE_PAGE_IN_THE_WORLD, point: onTheScreen, depth: moved.out };
 		}
 		case 'frame':
 		case 'world':
@@ -610,16 +612,16 @@ function pageFitOf(object: FrameObject, laid: Box, camera: Camera, frame: Size):
 
 /**
  * How much of an object what it stands in lets show, among what stands round it: all of it on the frame, in the world,
- * riding a block's scroll there, and beside a point; in the page's window, on the page in it, or on the page in the
- * world, as a piece falls onto a block, as much as the screen has come up out of the ground; in a group, as much as
- * the group has not gone. It fades the object whole, a piece's body as it grows, and what it shows stands as far along
- * as its own moves have it: words typed stay typed as their key was heard.
+ * riding a page there, standing off it, and beside a point; in the page's window, on the page in it, or on the page in
+ * the world, as a piece falls onto a block, as much as the screen has come up out of the ground; in a group, as much
+ * as the group has not gone. It fades the object whole, a piece's body as it grows, and what it shows stands as far
+ * along as its own moves have it: words typed stay typed as their key was heard.
  */
 function heldIn(object: FrameObject, around: Surroundings): number {
 	switch (object.inside.kind) {
 		case 'frame':
 		case 'world':
-		case 'scroll':
+		case 'ride':
 		case 'point':
 			return WHOLLY_HELD;
 		case 'window':

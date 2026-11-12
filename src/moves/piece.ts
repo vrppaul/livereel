@@ -4,8 +4,10 @@
  * part the camera shows there (`src/moves/source.ts`); then carried, grown, brought near, turned and put away as any
  * object is, and taken back over its source as the camera shows it then, face-on and as large as it was. It does not
  * follow the camera between, until it is carried onto a block of the page: it lies on the page then, and the camera
- * frames it as it frames the page. A piece is drawn from the page's picture, so a page framed live, which has none, is
- * refused; and it stands over its source only on a window that faces the frame, where the source shows as a box.
+ * frames it as it frames the page; lifted into the world riding its block, it stands on the page there from the start,
+ * carried as the camera frames the page, as the film scrolls its block and as a fade from its page lays that page. A
+ * piece is drawn from the page's picture, so a page framed live, which has none, is refused; and it stands over its
+ * source only on a window that faces the frame, where the source shows as a box.
  * Lifted `picture: 'held'`, it is drawn from a picture of its source alone, which the take holds as it is lifted, as
  * sharp as the page's picture is where the page stands still: it shows what the page showed there then, as the page
  * changes under it. So it alone is lifted off a page of the film's own, which the filmed page's picture is not of: the
@@ -57,7 +59,7 @@ import {
 	needed
 } from '../domain/handed.ts';
 import type { Place } from '../domain/place.ts';
-import { ON_THE_PAGE, ON_THE_PAGE_IN_THE_WORLD, screenBoxUnder } from '../domain/placement.ts';
+import { ON_THE_PAGE, ON_THE_PAGE_IN_THE_WORLD, cameraOnItsPage } from '../domain/placement.ts';
 import {
 	A_TARGET,
 	type Beginning,
@@ -84,6 +86,7 @@ import {
 	figureIn
 } from '../props/piece.ts';
 import { THE_FILMED_PAGE, pageShownBy } from '../props/screen.ts';
+import { holdersIn } from '../scene.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
@@ -172,8 +175,9 @@ export interface BodyScript {
  * its source are drawn in, where the film names them; the `picture` it is drawn from, the page's as it changes,
  * `'following'`, where the film names none, or one of its source held as it is lifted, `'held'`; how it comes up; which
  * piece; the world it stands `inside`, which the eye moves through, or the group it stands in, if either; its `body` in
- * the world, if the film names one; whether it `rides` its block in the world, `'its block'`, carried up by the film's
- * scrolls of every block whose scroll carries its source; the block whose `letters` it carries, a selector, which it
+ * the world, if the film names one; whether it `rides` its block in the world, `'its block'`, standing on the page
+ * there, carried as the camera frames the page, by the film's scrolls of every block whose scroll carries its source
+ * and where a fade from the page lays it; the block whose `letters` it carries, a selector, which it
  * lands on a block's letters, if the film names one; and how it stands out as it comes up, `effects`.
  */
 export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript, ShownStandingOutScript {
@@ -252,7 +256,8 @@ const ACCENTED = null;
 const NO_SHEEN = null;
 const PIECE_EMPTIES = 'piece.empties';
 // What a piece lies in where it lies on the page, carried there from the frame or from the world, so it shares the
-// screen's pixels with a block of the page
+// screen's pixels with a block of the page; not a ride, whose box stands in its page's pixels as the ride began, laid
+// where that page lies now
 const LYING_ON_THE_PAGE = [ON_THE_PAGE, ON_THE_PAGE_IN_THE_WORLD];
 // A piece lifted empties no block
 const EMPTIES_NONE = null;
@@ -315,9 +320,9 @@ const PIECE_FORM: Form<PieceScript> = {
  * where the camera shows it, cut to the part it shows, its corners as round as the film names, leaving the hole and
  * drawing the lines the film names, drawn from the picture the film names: in place of any piece of its name, in its
  * own way, fading up whole, or in a way of livereel's the film names, with the body the film names; in the world,
- * riding its block as the film scrolls any block that carries the target, where the film asks. A hole over a box of the
- * screen, which has no block to read the ground behind, is refused unless the film names its colour; a pit on a piece
- * with no body, whose colour its walls take, is refused.
+ * riding its block wherever the camera, the window, the film's scrolls and a fade take it, where the film asks. A
+ * hole over a box of the screen, which has no block to read the ground behind, is refused unless the film names its
+ * colour; a pit on a piece with no body, whose colour its walls take, is refused.
  */
 export function show(target: Target, script: PieceScript = {}): Move {
 	assertKind(target, A_TARGET, "piece.show's target");
@@ -437,17 +442,21 @@ export function effects(script: EffectsScript): Move {
 }
 
 /**
- * The piece taken back over its source as the camera shows it then, where the block it rides stands then, face-on by
- * its nearest whole turns, as large as its source shows there and on the frame's plane.
+ * The piece taken back over its source as the camera shows it then, on the page it rides where that page lies then,
+ * face-on by its nearest whole turns, as large as its source shows there and on the frame's plane.
  */
 export function back(script: TakenScript = {}): Move {
-	return objectBack(PIECE, 'piece.back', script, (beginning, piece) =>
-		boxOnTheFrame(
-			cameraOverItsPicture(beginning, piece.content.picture.kind, 'piece.back'),
-			beginning.format.frame,
-			screenBoxUnder(piece.content.source, piece.inside, beginning.scene.scrolled)
-		)
-	);
+	return objectBack(PIECE, 'piece.back', script, overItsSourceNow);
+}
+
+/**
+ * The box of the frame a piece's source stands in as a move begins, as the camera shows it on the page the piece rides
+ * where that page lies then; refused as the picture the piece is drawn from asks.
+ */
+function overItsSourceNow(beginning: Beginning, piece: ShowingOf<'piece'>): Box {
+	const camera = cameraOverItsPicture(beginning, piece.content.picture.kind, 'piece.back');
+	const onItsPage = cameraOnItsPage(piece.inside, holdersIn(beginning.scene, camera));
+	return boxOnTheFrame(onItsPage, beginning.format.frame, piece.content.source);
 }
 
 /**

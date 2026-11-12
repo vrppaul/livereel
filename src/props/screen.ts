@@ -65,12 +65,13 @@ import { type Camera, type SeenBetween, screenPlaneSeen, screenPointShift, viewO
 import { type HermiteEnd, type Stretch, hermiteBetween, hermiteSpeedBetween } from '../domain/curves.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
 import type { Format } from '../domain/format.ts';
-import { boxInTheView } from '../domain/framing.ts';
-import { facesTheEye, windowInTheWorld } from '../domain/placement.ts';
+import { boxInTheView, whereItLies } from '../domain/framing.ts';
+import { type FadedFrom, type PageOfTheScreen, facesTheEye, isOnePage, windowInTheWorld } from '../domain/placement.ts';
 import {
 	type Box,
 	type FrameSide,
 	type Point,
+	type Size,
 	UNMOVED,
 	boxOf,
 	cornersOf,
@@ -90,9 +91,6 @@ import type { TypedText } from '../domain/typing.ts';
 /** What the screen shows: the filmed page, or a page of the film's own by its key, drawn as far as it reaches. */
 export type Shows = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string; readonly reach: Reach };
 
-/** A page the screen may show, however far it is drawn: the filmed page, or a page of the film's own by its key. */
-export type PageOfTheScreen = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string };
-
 /** The page the screen shows in front, however far it is drawn. */
 export function pageShownBy(shows: Shows): PageOfTheScreen {
 	switch (shows.kind) {
@@ -100,16 +98,6 @@ export function pageShownBy(shows: Shows): PageOfTheScreen {
 			return shows;
 		case 'own':
 			return { kind: 'own', key: shows.key };
-	}
-}
-
-/** Whether two pages of the screen are one: both the filmed page, or the film's own by one key. */
-export function isOnePage(first: PageOfTheScreen, second: PageOfTheScreen): boolean {
-	switch (first.kind) {
-		case 'filmed':
-			return second.kind === 'filmed';
-		case 'own':
-			return second.kind === 'own' && second.key === first.key;
 	}
 }
 
@@ -275,14 +263,13 @@ type BandSweep = BandShape & SweepOfAnyShape;
 type DiscSweep = DiscShape & SweepOfAnyShape;
 
 /**
- * The screen fading from a page it showed: a picture of that page, held by its number as the fade began; the box of the
- * screen it lies over, in its pixels, where the camera showed it as the fade began, framed as the step the fade began
- * in leaves the camera, so the camera frames it as it frames the page coming; and the stretch of the film's time it
- * goes from whole to none over, on its curve.
+ * The screen fading from a page it showed: the page, and how it lies on the screen, where the camera showed it as the
+ * fade began, framed as the step the fade began in leaves the camera, so the camera frames it as it frames the page
+ * coming (`FadedFrom`); a picture of that page, held by its number as the fade began; and the stretch of the film's
+ * time it goes from whole to none over, on its curve.
  */
-export interface Fade {
+export interface Fade extends FadedFrom {
 	readonly picture: number;
-	readonly lies: Box;
 	readonly over: Stretch;
 }
 
@@ -482,20 +469,30 @@ export function drawnScreen(
 		return { shown: screen.shown, shows, sweep: null, fade: null, backUpright: backPage.upright, filmed: null };
 	}
 	const sweep = screen.sweep === null ? null : drawnSweep(screen.sweep, partSwept(camera, format), camera.pose.zoom);
-	const fade = drawnFade(screen, moment);
+	const fade = drawnFade(screen, format.screen, moment);
 	const filmed = screen.shows.kind === 'filmed' ? filmedLaid(camera, format, paneCorner) : null;
 	return { shown: screen.shown, shows: frontDrawn(screen, moment, past), sweep, fade, backUpright: null, filmed };
 }
 
 /**
- * The page a screen fades from as the stage draws it at a moment: none where the screen fades from none, or has faded
- * from it whole by then.
+ * The page a screen of a size fades from as the stage draws it at a moment, over the box of the screen it lies over:
+ * none where the screen fades from none, or has faded from it whole by then.
  */
-function drawnFade(screen: Screen, moment: number): DrawnFade | null {
+function drawnFade(screen: Screen, size: Size, moment: number): DrawnFade | null {
 	const fade = screen.fade;
 	if (fade === null || !fadesAt(fade, moment)) return null;
 	const gone = fade.over.ease(shareThrough(fade.over, moment));
-	return { picture: fade.picture, box: fade.lies, shown: fractionOf((WHOLE - gone) * screen.shown) };
+	const box = whereItLies(fade.lies, boxOf(size));
+	return { picture: fade.picture, box, shown: fractionOf((WHOLE - gone) * screen.shown) };
+}
+
+/**
+ * The page a screen last faded from, where it shows that page no more: none where it never faded, or shows that page
+ * again.
+ */
+export function pageFadedFrom(screen: Screen): FadedFrom | null {
+	const fade = screen.fade;
+	return fade === null || isOnePage(fade.from, pageShownBy(screen.shows)) ? null : fade;
 }
 
 /** Whether a screen still fades from a page at a moment: before its fade's end. */

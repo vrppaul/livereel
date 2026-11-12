@@ -3,9 +3,26 @@
  * view's middle as the camera's zoom takes it from its focus, before the view's stance carries it anywhere. Apart from
  * the camera's module, as where the view stands (`src/domain/placement.ts`) reads the page in it so, and the camera
  * reads where the view stands to keep what it frames framed there.
+ *
+ * And how a page lies on the screen where it lies elsewhere than over the whole screen: a page the screen fades from,
+ * laid over the page coming where one pose framed it as another frames the page coming, and the part of a page the
+ * film's scrolls have carried up the screen. A camera frames such a page as it frames the screen, by a pose of its
+ * own, so what stands on it is framed by the arithmetic above.
  */
 import type { Camera, Pose } from './camera.ts';
-import { type Box, HALVES, type Point, type Size, boxBetween, frameScaleOf } from './geometry.ts';
+import { type Box, HALVES, type Point, type Size, UNMOVED, boxBetween, frameScaleOf } from './geometry.ts';
+
+/**
+ * How a page lies on the screen: where its top left corner stands, in the screen's pixels, and how many of those a
+ * pixel of the page takes.
+ */
+export interface Lying {
+	readonly corner: Point;
+	readonly scale: number;
+}
+
+/** A page lying over the whole screen, as the screen shows it. */
+export const OVER_THE_SCREEN: Lying = { corner: UNMOVED, scale: 1 };
 
 /** The frame's own pixels a page's pixel takes in a pose, on a frame of this size. */
 export function frameZoomOf(pose: Pose, frame: Size): number {
@@ -36,6 +53,41 @@ export function boxInTheView(camera: Camera, frame: Size, box: Box): Box {
 		pointInTheView(camera, frame, { left: box.left, top: box.top }),
 		pointInTheView(camera, frame, { left: box.left + box.width, top: box.top + box.height })
 	);
+}
+
+/**
+ * How the page one pose frames lies on the screen another pose frames, both in one view: the point the first looks at
+ * where the second looks, larger by as many times as the first comes closer. The stage draws the screen by a pose
+ * (`.camera` in `stage/stage.css`), so a page laid there so stands on the frame as the first pose would draw it.
+ */
+export function lyingFramedBy(framing: Pose, framedNow: Pose): Lying {
+	const closer = framing.zoom / framedNow.zoom;
+	return {
+		corner: { left: framedNow.focusX - framing.focusX * closer, top: framedNow.focusY - framing.focusY * closer },
+		scale: closer
+	};
+}
+
+/** Where a point of a page stands on the screen, in its pixels, the page lying there so. */
+export function pointWhereItLies(lying: Lying, point: Point): Point {
+	return { left: lying.corner.left + point.left * lying.scale, top: lying.corner.top + point.top * lying.scale };
+}
+
+/** Where a box of a page stands on the screen, in its pixels, the page lying there so. */
+export function whereItLies(lying: Lying, box: Box): Box {
+	return { ...pointWhereItLies(lying, box), width: box.width * lying.scale, height: box.height * lying.scale };
+}
+
+/**
+ * The pose that frames a page lying on the screen so as a pose frames the screen: `lyingFramedBy` undone, so a box of
+ * the page stands in the view where the box of the screen it lies over stands.
+ */
+export function framingWhereItLies(pose: Pose, lying: Lying): Pose {
+	return {
+		focusX: (pose.focusX - lying.corner.left) / lying.scale,
+		focusY: (pose.focusY - lying.corner.top) / lying.scale,
+		zoom: pose.zoom * lying.scale
+	};
 }
 
 /**

@@ -675,22 +675,16 @@ test("a piece lifted holding its picture while a page of the film's own runs has
 	expect([stage.held.map((asked) => asked.page), ownPage.stood.at(-1)]).toEqual([['own'], standing]);
 });
 
-test("a piece riding its block lifted off a page of the film's own, which no scroll of the film's moves, is refused as it begins", async () => {
+test("a piece riding its block is lifted off a page of the film's own, whose blocks no scroll of the film's moves", async () => {
 	const steps = [
 		cut(screenShows(OWN_PAGE)),
-		cut(showPiece('#first', { picture: 'held', inside: 'world', rides: 'its block' }))
+		cut(showPiece('#first', { picture: 'held', inside: 'world', rides: 'its block' })),
+		hold({ seconds: 1 / 30 })
 	];
+	const stage = new PicturedStageThatKeeps();
 	const ownPage = ownPageRead(new PageOfBoxes(PAGE));
-	const take = takeShowingOwnPage(new FootageOf([1]), new PicturedStageThatKeeps(), new PageOfBoxes(PAGE), ownPage);
-	await expect(take.run(steps)).rejects.toThrow(
-		new TakeError(
-			new FilmError(
-				"a page of the film's own moves by its run alone (screen.scrolls), which carries no piece riding its block: lift it riding nothing"
-			),
-			0,
-			2
-		)
-	);
+	await takeShowingOwnPage(new FootageOf([0]), stage, new PageOfBoxes(PAGE), ownPage).run(steps);
+	expect(stage.drawn.map((scene) => scene.objects.length)).toEqual([1]);
 });
 
 test("keys typed into the page while the screen shows the film's own go to the filmed page behind it", async () => {

@@ -92,6 +92,7 @@ import {
 	THE_FILMED_PAGE,
 	drawnScreen,
 	ownPageStanding,
+	pageFadedFrom,
 	pageShownOn,
 	pastTheScreen,
 	picturesHeldOn,
@@ -295,8 +296,8 @@ function withoutWhatStandsBeside(scene: Scene, name: ObjectName): Scene {
 }
 
 /**
- * Whether what an object stands in stands in a scene: the frame, the world, the window, the page and over it, a
- * block's scroll and a point of the screen always, a group while it stands, a point of an object while the object does.
+ * Whether what an object stands in stands in a scene: the frame, the world, the window, the page and over it, a ride
+ * and a point of the screen always, a group while it stands, a point of an object while the object does.
  */
 function itsHolderStands(scene: Scene, object: FrameObject): boolean {
 	const holder = object.inside;
@@ -310,7 +311,7 @@ function itsHolderStands(scene: Scene, object: FrameObject): boolean {
 		case 'window':
 		case 'page':
 		case 'pageInTheWorld':
-		case 'scroll':
+		case 'ride':
 			return true;
 	}
 }
@@ -370,11 +371,12 @@ export function partsAskedSharperIn(scene: Scene, camera: Camera, frame: Size): 
 }
 
 /**
- * What the objects of a scene stand in, seen by a camera: it, the groups standing, the objects standing and how far the
- * film has scrolled each block it scrolls.
+ * What the objects of a scene stand in, seen by a camera: it, the groups standing, the objects standing, how far the
+ * film has scrolled each block it scrolls, and the page the screen last faded from, where it shows it no more.
  */
 export function holdersIn(scene: Scene, camera: Camera): Holders {
-	return { camera, groups: scene.groups, objects: scene.objects, scrolled: scene.scrolled };
+	const { groups, objects, scrolled } = scene;
+	return { camera, groups, objects, scrolled, fadedFrom: pageFadedFrom(scene.screen) };
 }
 
 /**
@@ -531,12 +533,11 @@ export function drawn(
 	const holes = drawnHoles(everyObject, scene.scrolled, scene.screen);
 	const sharpness = sharpnessOf(camera, format.frame);
 	const around: Surroundings = {
+		...holdersIn(scene, camera),
+		// Each group whole, how it orders and how far it has gone, where the holders read where it stands alone
+		groups: scene.groups,
 		screen: scene.screen,
 		frame: format.frame,
-		camera,
-		groups: scene.groups,
-		objects: scene.objects,
-		scrolled: scene.scrolled,
 		holes,
 		sharpness,
 		sharper
