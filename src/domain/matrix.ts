@@ -197,6 +197,9 @@ const ALL_OF_IT = 1;
 const TWICE_AS_FAR = 2;
 const AS_LARGE_AS_IT_STANDS = 1;
 
+/** A plane the eye sees no larger than it stands, all of it: one part, drawn as large as it stands. */
+export const UNMAGNIFIED: readonly MagnifiedPart[] = [{ reaches: Infinity, times: AS_LARGE_AS_IT_STANDS }];
+
 // How far an entry of a matrix may stand from the one that carries every point where it stands, while it is still
 // taken to: whole turns leave 2.4e-16, a pixel moved leaves 1
 const UNMOVED_WITHIN = 1e-9;
@@ -403,8 +406,21 @@ export function magnifiedByDistance(matrix: Matrix, laid: Box, part: Box, within
 		nearnessOfItsPlane(matrix) === null
 			? []
 			: carriedWithin(matrix, { left: middleX(laid), top: middleY(laid) }, part, within);
-	if (seen.length === NONE_SEEN) return [{ reaches: Infinity, times: AS_LARGE_AS_IT_STANDS }];
+	if (seen.length === NONE_SEEN) return UNMAGNIFIED;
 	return partsFrom(matrix, seen, Math.min(...seen.map((point) => point.seenFrom)));
+}
+
+/**
+ * Parts of a plane magnified as many times at most as what is drawn on it holds, and never fewer than once: drawn
+ * denser than its own pixels, a picture holds the same picture stretched. Neighbouring parts left alike are one,
+ * reaching as far as the farther, so no part is painted and drawn apart at a density another has.
+ */
+export function magnifiedNoFurtherThan(parts: readonly MagnifiedPart[], atMost: number): readonly MagnifiedPart[] {
+	const bounded = parts.map((part) => ({
+		reaches: part.reaches,
+		times: Math.max(AS_LARGE_AS_IT_STANDS, Math.min(part.times, atMost))
+	}));
+	return bounded.filter((part, place) => part.times !== bounded[place + ONE_AFTER]?.times);
 }
 
 /**

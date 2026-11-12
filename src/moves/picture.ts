@@ -95,7 +95,7 @@ export function hide(script: HideScript = {}): Move {
 function pictureComing(beginning: Beginning, file: string, place: Place | null): Coming {
 	const decoded = beginning.filmsPictures.get(file);
 	if (decoded === undefined) throw new Error(`the take laid no picture ${file} on the stage, which its steps show`);
-	const picture: FilmPicture = { kind: PICTURE, file, aspect: decoded.width / decoded.height };
+	const picture: FilmPicture = { kind: PICTURE, file, ...decoded };
 	const format = beginning.format;
 	const box = place === null ? boxOf(format.frame) : READ_AS_THE_WINDOW.placed(format, place, picture);
 	return { content: picture, box };

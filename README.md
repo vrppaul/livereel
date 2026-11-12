@@ -1455,7 +1455,7 @@ export default defineFilm({ drawing: 'room', ... });
 | The shade's blur and fade, a fast move's blur | in the screen's colours, as the browser blends | in linear light, as a lens gathers it: light words on a dark page stay brighter, a glint streaks as bright as it shines; a page of the film's own, the holes and a sweep's picture still blend in the screen's colours |
 | The window's body | its edge and shadow | a slab of metal and glass, `window.body` |
 | A piece's body and pit | its face and shadow; a hole in its `ground` | walls, sockets and pits |
-| Markup in the world, a title or a pane | over the window wherever it stands | hidden by the window and its body where it stands behind them, drawn as densely as the eye magnifies it |
+| Markup in the world, a title or a pane | over the window wherever it stands | hidden by the window and its body where it stands behind them, drawn as densely as the eye magnifies it, a picture no denser than it holds |
 | The cursor | over the page | over all the world drawn, a lifted piece and its shadow too, never blurred by the focus |
 | Things | refused | drawn ("Things") |
 | Bloom | none | light past the page's white glows ("The world's light") |
@@ -1471,7 +1471,9 @@ What a room costs and needs:
   far, `window.to(COVERING, { depth: -3000 })` then `{ depth: 0 }`, never laid small and brought near.
 - Markup standing in the world is drawn as densely as the eye magnifies it, up to the graphics card's largest
   texture; one that would ask more is drawn part by part, each as dense as the eye magnifies it and only as far as
-  the frame shows it. Where the frame shows more of the window's plane than the card holds in one texture, as the
+  the frame shows it. What shows a picture is drawn no denser than its picture: a piece as close as its picture was
+  taken, 2.2 times or a picture held sharper, a picture of the film's own as its file's pixels, an SVG as the eye
+  asks; brought nearer, the eye sees that picture magnified. Where the frame shows more of the window's plane than the card holds in one texture, as the
   eye flying low over a tall screen does, what lies over the page is drawn less densely; a page's picture larger
   than the card's largest texture is shrunk whole to fit it.
 - It draws through Chrome's HTML-in-Canvas, an experiment behind a flag livereel turns on: livereel pins the

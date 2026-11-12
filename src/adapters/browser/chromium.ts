@@ -45,6 +45,7 @@ import { type Browser as Playwright, type Frame, type Page, chromium } from 'pla
 import { ZOOM_AT_MOST } from '../../domain/camera.ts';
 import { FilmError, SetupError } from '../../domain/errors.ts';
 import { type Box, type Size, boxOf, frameScaleOf } from '../../domain/geometry.ts';
+import type { PictureDecoded } from '../../domain/picture.ts';
 import { type MotionBlur, mostExposuresOf } from '../../domain/shutter.ts';
 import type { Drawing, PageKind, StagePlace } from '../../direction/film.ts';
 import type { ActContext, FilmedPage } from '../../direction/page.ts';
@@ -225,12 +226,16 @@ interface LaidOnTheStage extends SetUp {
 /** What the stage set up reads back: the names the film's things module builds a thing by, and the film's pictures. */
 interface SetUp {
 	readonly thingsBuilt: readonly string[];
-	readonly filmsPictures: ReadonlyMap<string, Size>;
+	readonly filmsPictures: ReadonlyMap<string, PictureDecoded>;
 }
 
-/** What a take is set as, and the film's own pictures and fonts, read from the disk to be handed to the stage. */
+/**
+ * What a take is set as, how many of the stage's pixels it draws to a frame's, and the film's own pictures and fonts,
+ * read from the disk to be handed to the stage.
+ */
 interface SettingRead {
 	readonly setting: Setting;
+	readonly sharpness: number;
 	readonly pictures: readonly FilmsPictureHanded[];
 	readonly fonts: readonly FilmsFontHanded[];
 }
@@ -400,7 +405,7 @@ export class Chromium implements Browser, DrawnBrowser, SetBrowser {
 		const drawing = DRAWINGS[setting.drawing];
 		const pictures = await filmsPicturesRead(this.filmFolder, setting.pictures);
 		const fonts = await filmsFontsRead(this.filmFolder, setting.fonts);
-		const read = { setting, pictures, fonts };
+		const read = { setting, sharpness, pictures, fonts };
 		const browser = await launched([...flagsOf(this.renderer, process.platform), ...drawing.flags, ...memory]);
 		try {
 			const onTheCard = await drawsOnTheCard(this.renderer, browser, this.warn);
@@ -443,7 +448,7 @@ class OpenedChromium implements Opened {
 	readonly act: ActContext;
 	readonly time: PageTime;
 	readonly thingsBuilt: readonly string[];
-	readonly filmsPictures: ReadonlyMap<string, Size>;
+	readonly filmsPictures: ReadonlyMap<string, PictureDecoded>;
 
 	constructor(browser: Playwright, stage: Stage, filmed: FilmedShown, time: PageTime, laid: LaidOnTheStage) {
 		this.browser = browser;
@@ -713,7 +718,7 @@ async function stageSetUp(
 	await page.evaluate(setUpStage, layout);
 	const thingsBuilt = await drawing.laidOut(page, layout, things);
 	await page.evaluate(ownPagesLaid, setting.ownPages);
-	const filmsPictures = await filmsPicturesLaid(page, read.pictures);
+	const filmsPictures = await filmsPicturesLaid(page, read.pictures, read.sharpness);
 	await filmsFontsLaid(page, read.fonts);
 	for (const named of setting.css) await refusedWhereUnread(page, named);
 	return { thingsBuilt, filmsPictures };
@@ -727,7 +732,7 @@ async function framed(
 	page: Page,
 	read: SettingRead,
 	opening: Opening
-): Promise<{ readonly filmed: Frame; readonly filmsPictures: ReadonlyMap<string, Size> }> {
+): Promise<{ readonly filmed: Frame; readonly filmsPictures: ReadonlyMap<string, PictureDecoded> }> {
 	const format = read.setting.format;
 	const setUp = await stageSetUp(
 		page,

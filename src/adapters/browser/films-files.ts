@@ -6,14 +6,15 @@
  * joins the stage's fonts under the family it sets, so the look names it as it names one the machine has. A file that
  * is not there, a picture that decodes to no picture with a size, or a font read as none, is refused as the film's
  * before the first frame. One road for flat and the room alike: the stage holds each where any page it is opened on
- * reads it.
+ * reads it. A picture's pixels across are handed in the frame's, at the take's sharpness, which only the browser's
+ * part of livereel knows, so the room draws a picture standing in the world no denser than its file.
  */
 import { readFile } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
 import type { Page } from 'playwright-core';
 import { FilmError } from '../../domain/errors.ts';
-import type { Size } from '../../domain/geometry.ts';
 import type { FilmFont } from '../../direction/theme.ts';
+import type { PictureDecoded } from '../../domain/picture.ts';
 import {
 	type FilmsFontHanded,
 	type FilmsPictureDecoded,
@@ -31,8 +32,10 @@ const BASE64 = 'base64';
 const SVG = '.svg';
 const SVG_TYPE = 'image/svg+xml';
 const TOLD_BY_ITS_BYTES = '';
-// A picture that decodes to no size across or down
+// A picture that decodes to no size across or down; and how many of the frame's pixels across an SVG holds, drawn anew
+// of its lines at any size
 const NO_SIZE = 0;
+const DRAWN_ANEW_AT_ANY_SIZE = Infinity;
 
 /**
  * The film's own pictures read from the film's folder, by the paths the film names them by; refused where one is not
@@ -46,15 +49,32 @@ export async function filmsPicturesRead(
 }
 
 /**
- * The film's own pictures laid on the stage, each by its path and the size it decoded at; refused where one decodes to
- * no picture with a size.
+ * The film's own pictures laid on the stage, each by its path and as it decoded at the take's sharpness
+ * (`pictureDecodedOf`); refused where one decodes to no picture with a size.
  */
 export async function filmsPicturesLaid(
 	stage: Page,
-	pictures: readonly FilmsPictureHanded[]
-): Promise<ReadonlyMap<string, Size>> {
+	pictures: readonly FilmsPictureHanded[],
+	sharpness: number
+): Promise<ReadonlyMap<string, PictureDecoded>> {
 	const decoded = await stage.evaluate(picturesLaid, pictures);
-	return new Map(decoded.map((picture) => [picture.path, sizeOf(picture)]));
+	return new Map(decoded.map((picture) => [picture.path, pictureDecodedOf(picture, sharpness)]));
+}
+
+/**
+ * A picture of the film's as the stage decoded it, at a sharpness, so many of the stage's pixels to a frame's: as wide
+ * against as tall as it decoded, and holding its pixels across, so many to a frame's pixel; endless for an SVG, which
+ * the browser draws anew of its lines at any size. Refused where it decoded to no size, as no file of a picture the
+ * browser draws does.
+ */
+export function pictureDecodedOf(picture: FilmsPictureDecoded, sharpness: number): PictureDecoded {
+	if (picture.width === NO_SIZE || picture.height === NO_SIZE) {
+		throw new FilmError(
+			`the film's picture ${picture.path} decodes to no picture with a size: give a PNG, JPEG, WebP, AVIF or GIF file, or an SVG that names its width and height`
+		);
+	}
+	const sharpAcross = extname(picture.path) === SVG ? DRAWN_ANEW_AT_ANY_SIZE : picture.width / sharpness;
+	return { aspect: picture.width / picture.height, sharpAcross };
 }
 
 /** The film's own fonts read from the film's folder, each with the family it sets; refused where one is not there. */
@@ -91,14 +111,4 @@ async function fileRead(filmFolder: string, path: string, kind: FilesKind): Prom
 	} catch (fault) {
 		throw new FilmError(`the film's ${kind} ${path} could not be read: ${String(fault)}`);
 	}
-}
-
-/** The size a picture decoded at; refused where it decoded to none, as no file of a picture the browser draws does. */
-function sizeOf(picture: FilmsPictureDecoded): Size {
-	if (picture.width === NO_SIZE || picture.height === NO_SIZE) {
-		throw new FilmError(
-			`the film's picture ${picture.path} decodes to no picture with a size: give a PNG, JPEG, WebP, AVIF or GIF file, or an SVG that names its width and height`
-		);
-	}
-	return { width: picture.width, height: picture.height };
 }

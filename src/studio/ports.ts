@@ -10,6 +10,7 @@ import type { ActContext, FilmedPage, MeasuredPage, OwnPage, PageShown } from '.
 import type { Site } from '../direction/site.ts';
 import type { Sound } from '../direction/sound.ts';
 import type { DrawnScene } from '../scene.ts';
+import type { PictureDecoded } from '../domain/picture.ts';
 
 /**
  * The page the film is shot on, and the filmed page on it, one of two kinds: live in its frame, as the stage shows a
@@ -136,7 +137,7 @@ export interface OwnPages {
 /**
  * A browser with the stage and the filmed page open in it, for one take, the page's time standing; and the pages of
  * the film's own as moves read them; and the names the film's things module builds a thing by, none where the stage
- * draws no things; and the film's own pictures the stage laid, by their paths, each as large as its file decoded.
+ * draws no things; and the film's own pictures the stage laid, by their paths, each as its file decoded.
  */
 export interface Opened extends AsyncDisposable {
 	readonly stage: Stage;
@@ -145,7 +146,7 @@ export interface Opened extends AsyncDisposable {
 	readonly act: ActContext;
 	readonly time: PageTime;
 	readonly thingsBuilt: readonly string[];
-	readonly filmsPictures: ReadonlyMap<string, Size>;
+	readonly filmsPictures: ReadonlyMap<string, PictureDecoded>;
 }
 
 /**

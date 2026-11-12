@@ -26,8 +26,9 @@
  * them starts and how far one steps, so it lands them on another block's letters (`src/moves/piece.ts`). It may empty a
  * block of the page, which then stands as the page draws it hidden until the piece goes (`src/props/lifted.ts`).
  */
-import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
-import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
+import { ZOOM_AT_MOST } from '../domain/camera.ts';
+import { type Box, type Size, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
+import { type SharperPicture, magnifiedAtMostOfPicture, pictureOfPart } from '../domain/picture.ts';
 import { type Fraction, NONE, fractionOf } from '../domain/fraction.ts';
 import { ON_ITS_PLANE, type PageOfTheScreen } from '../domain/placement.ts';
 import type { Stance } from '../domain/stance.ts';
@@ -243,6 +244,34 @@ function drawnPictureOf(piece: Piece, sharper: readonly SharperPicture[]): Drawn
 			const sharp = pictureOfPart(sharper, piece.source);
 			return sharp === undefined ? DRAWN_FROM_THE_PAGE : { kind: 'own', number: sharp.number };
 		}
+	}
+}
+
+/**
+ * How many times the eye may magnify a piece laid in a box, among the pictures the stage holds sharper than the page's,
+ * before a denser drawing holds no more of the picture it is drawn from (`drawnPictureOf`), on a frame of a size.
+ */
+export function magnifiedAtMostOfPiece(
+	piece: Piece,
+	box: Box,
+	sharper: readonly SharperPicture[],
+	frame: Size
+): number {
+	return magnifiedAtMostOfPicture(zoomPicturedOf(piece, sharper), fitIn(piece.source, box), frame);
+}
+
+/**
+ * How close the picture a piece is drawn from holds its source, as a pose's zoom has it: the one it holds, as close as
+ * livereel's bound (`src/studio/pictures.ts`); the one held sharper than the page's, as close as it was asked; the
+ * page's, no closer than livereel's bound, past which no picture of the page is taken (`zoomPicturedFor`). A picture
+ * Chrome's bounds take softer than asked (`src/adapters/browser/bounds.ts`) holds less than this says.
+ */
+function zoomPicturedOf(piece: Piece, sharper: readonly SharperPicture[]): number {
+	switch (piece.picture.kind) {
+		case 'held':
+			return ZOOM_AT_MOST;
+		case 'following':
+			return pictureOfPart(sharper, piece.source)?.zoom ?? ZOOM_AT_MOST;
 	}
 }
 

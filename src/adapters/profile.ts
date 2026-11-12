@@ -19,6 +19,7 @@
 import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { ActContext, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import type { DrawnScene } from '../scene.ts';
+import type { PictureDecoded } from '../domain/picture.ts';
 import type { Box, Size } from '../domain/geometry.ts';
 import type { OwnPageStanding } from '../domain/own-page.ts';
 import type { BlockKey } from '../domain/placement.ts';
@@ -256,7 +257,7 @@ class TimedOpened implements Opened {
 	readonly act: ActContext;
 	readonly time: PageTime;
 	readonly thingsBuilt: readonly string[];
-	readonly filmsPictures: ReadonlyMap<string, Size>;
+	readonly filmsPictures: ReadonlyMap<string, PictureDecoded>;
 
 	constructor(opened: Opened, timings: Timings) {
 		this.opened = opened;

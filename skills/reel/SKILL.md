@@ -139,7 +139,8 @@ Shoot with `--renderer gpu`: the frames are drawn on the graphics card, with no 
 Where it reaches no card it draws in software and warns "--renderer gpu reached no graphics card", and a page that
 draws with WebGL may then draw nothing: where a canvas on the contact sheet is empty, shoot again without the flag. A
 room that ends "the graphics card dropped the room's canvas" asked the card for more memory than it had: shoot at
-`--quality draft`, or bring less markup that near the eye there.
+`--quality draft`, or bring less markup that near the eye there. A piece or a picture asks no more than its picture
+holds however near it comes; words, code and panes ask more the nearer.
 
 ### A film's shape
 

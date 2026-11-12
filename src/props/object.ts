@@ -53,7 +53,7 @@ import {
 	softestOutOfFocusSeen
 } from '../domain/focus.ts';
 import type { Fraction } from '../domain/fraction.ts';
-import type { PartAsked, SharperPicture } from '../domain/picture.ts';
+import { type PartAsked, type SharperPicture, magnifiedAtMostOfPicture } from '../domain/picture.ts';
 import {
 	type Box,
 	CORNER_SHARES,
@@ -74,7 +74,14 @@ import {
 } from '../domain/geometry.ts';
 import { pointWhereItLies } from '../domain/framing.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
-import { ITS_MIDDLE, type MagnifiedPart, carried, magnifiedByDistance } from '../domain/matrix.ts';
+import {
+	ITS_MIDDLE,
+	type MagnifiedPart,
+	UNMAGNIFIED,
+	carried,
+	magnifiedByDistance,
+	magnifiedNoFurtherThan
+} from '../domain/matrix.ts';
 import { ONE_FRAME, pastTheEdge } from '../domain/place.ts';
 import {
 	type DrawnPlacement,
@@ -102,8 +109,15 @@ import { type Groups, groupShare } from './group.ts';
 import { type DrawnLens, type Lens, drawnLens, lensFit, pageMovedIn } from './lens.ts';
 import type { Look } from './look.ts';
 import { type DrawnOutline, type Outline, drawnOutline } from './outline.ts';
-import { type DrawnHole, type DrawnPiece, type Piece, drawnPiece, pageFitOfPiece } from './piece.ts';
-import { type DrawnFilmPicture, type FilmPicture, drawnFilmPicture } from './picture.ts';
+import {
+	type DrawnHole,
+	type DrawnPiece,
+	type Piece,
+	drawnPiece,
+	magnifiedAtMostOfPiece,
+	pageFitOfPiece
+} from './piece.ts';
+import { type DrawnFilmPicture, type FilmPicture, drawnFilmPicture, magnifiedAtMostOfFilmPicture } from './picture.ts';
 import {
 	type OnItsWay,
 	type SheenOnItsWay,
@@ -189,8 +203,9 @@ export type Objects = ReadonlyMap<ObjectName, FrameObject>;
  * point of its box the frame shows, on the frame in pixels of a frame 1080 high, none where sharp, which bounds how far
  * past the frame's edge the room's lens gathers it, as the window's softest point does; how many times the eye
  * magnifies it, part by part by how far it sees each part from, nearest first, the most of the frame's pixels a pixel
- * of its box takes where the frame shows that part, so the room draws each part that many times as densely; and its
- * content as drawn. Both blurs are none, and it is magnified once, all of it, but for what stands in the world.
+ * of its box takes where the frame shows that part, but no more than what it shows holds (`magnifiedAtMostOf`), so the
+ * room draws each part that many times as densely; and its content as drawn. Both blurs are none, and it is magnified
+ * once, all of it, but for what stands in the world.
  */
 export interface DrawnObject extends DrawnPlacement {
 	readonly name: ObjectName;
@@ -226,8 +241,8 @@ const AS_THEY_CAME = 0;
 const WHOLLY_HELD = 1;
 // Where the left and top edges of what an object stands in are, in its own pixels
 const NEAR_EDGE = 0;
-// An object the eye sees no larger than its box, all of it: a pixel of its box takes one of the frame's, or fewer
-const UNMAGNIFIED: readonly MagnifiedPart[] = [{ reaches: Infinity, times: 1 }];
+// Markup, which the browser draws anew at any density, as densely as the eye magnifies it
+const AS_THE_EYE_ASKS = Infinity;
 // All of an object's box, in shares of it
 const ALL_OF_THE_BOX: Box = { left: 0, top: 0, width: 1, height: 1 };
 
@@ -389,7 +404,7 @@ export function drawnObject(name: ObjectName, object: FrameObject, moment: numbe
 	const { sharpness, frame } = around;
 	const outOfFocus = inTheWorld ? outOfFocusBeforeItsMatrix(placing, laid, sharpness, frame) : null;
 	const softestOutOfFocus = inTheWorld ? softestOutOfFocusSeen(placing, laid, laid, sharpness, frame) : null;
-	const magnified = inTheWorld ? magnifiedSeen(standing, frame) : UNMAGNIFIED;
+	const magnified = inTheWorld ? magnifiedSeen(object, standing, around) : UNMAGNIFIED;
 	const drawn = { ...drawnPlacement(standing), name, face, clear: held * unfaded(object) };
 	return { ...drawn, onItsWay, sheen, effects, melt, outOfFocus, softestOutOfFocus, magnified, content };
 }
@@ -426,12 +441,52 @@ function figureShareOf(content: DrawnContent, box: Box): Box {
 }
 
 /**
- * How many times the eye magnifies something placed on a frame of a size, part by part by how far it sees each part
- * from (`magnifiedByDistance`): the most of the frame's pixels a pixel of its box takes where the frame shows that
- * part; once where it is drawn no larger, or the frame shows none of it.
+ * How many times the eye magnifies an object standing so, part by part by how far it sees each part from
+ * (`magnifiedByDistance`): the most of the frame's pixels a pixel of its box takes where the frame shows that part;
+ * once where it is drawn no larger, or the frame shows none of it; and no more than what it shows holds
+ * (`magnifiedAtMostOf`), which the room draws it no denser than.
  */
-function magnifiedSeen(standing: Placed, frame: Size): readonly MagnifiedPart[] {
-	return magnifiedByDistance(standing.placing, standing.laid, standing.laid, boxOf(frame));
+function magnifiedSeen(object: FrameObject, standing: Placed, around: Surroundings): readonly MagnifiedPart[] {
+	const seen = magnifiedByDistance(standing.placing, standing.laid, standing.laid, boxOf(around.frame));
+	return magnifiedNoFurtherThan(seen, magnifiedAtMostOf(object, standing.laid, around));
+}
+
+/**
+ * How many times the eye may magnify what an object laid in a box shows before a denser drawing holds no more of it,
+ * among what stands round it: a piece, as close as the picture it is drawn from holds its source; a lens, as close as
+ * the page's picture holds the page, which no picture of it passes livereel's bound; a picture of the film's, as many
+ * pixels as its file holds; markup, which the browser draws anew at any density, and a thing, which the room draws in
+ * three, as far as the eye asks. A piece's figure is a picture (`.piece .way` in `stage/stage.css`), so the plates of
+ * the promo's dive, drawn at the eye's 33.0 times from pictures that hold 2.35, asked the graphics card for 98 million
+ * texels each where the frame showed 1.18 million pixels of each, and the card dropped the canvas (2026-11-12).
+ */
+function magnifiedAtMostOf(object: FrameObject, box: Box, around: Surroundings): number {
+	const content = contentAsItStands(object, around.scrolled);
+	switch (content.kind) {
+		case 'piece':
+			return magnifiedAtMostOfPiece(content, box, around.sharper, around.frame);
+		case 'lens':
+			return magnifiedAtMostOfPicture(ZOOM_AT_MOST, lensFit(content, around.camera, around.frame), around.frame);
+		case 'picture':
+			return magnifiedAtMostOfFilmPicture(content, box);
+		case 'title':
+		case 'code':
+		case 'terminal':
+		case 'ending':
+		case 'outline':
+		case 'thing':
+			return AS_THE_EYE_ASKS;
+	}
+}
+
+/**
+ * What an object shows as it stands, as the film has scrolled the blocks of the page: a piece riding a block, the part
+ * of the screen under it now; any other, what it shows.
+ */
+function contentAsItStands(object: FrameObject, scrolled: Scrolled): Content {
+	const content = object.content;
+	if (content.kind !== 'piece') return content;
+	return { ...content, source: screenBoxUnder(content.source, object.inside, scrolled) };
 }
 
 /**
@@ -639,7 +694,7 @@ function drawnContent(
 	moment: number,
 	around: Surroundings
 ): DrawnContent {
-	const content = object.content;
+	const content = contentAsItStands(object, around.scrolled);
 	const presences = presencesIn(object.way, object);
 	const figure = presences.figure;
 	switch (content.kind) {
@@ -653,7 +708,7 @@ function drawnContent(
 			return drawnEnding(content, object.way, object);
 		case 'piece':
 			return drawnPiece(
-				{ ...content, source: screenBoxUnder(content.source, object.inside, around.scrolled) },
+				content,
 				standing.laid,
 				object,
 				presentShare(figure),

@@ -30,6 +30,7 @@ import { A_CURVE, type Ease, type Stretch } from '../domain/curves.ts';
 import type { CssNamed } from './theme.ts';
 import type { GroupName } from '../domain/placement.ts';
 import type { ObjectName } from '../props/object.ts';
+import type { PictureDecoded } from '../domain/picture.ts';
 import { THE_FILMED_PAGE } from '../props/screen.ts';
 import { type PropName, type PropStates, type Scene, withProp } from '../scene.ts';
 import type { Action, FilmedPage, MeasuredPage, OwnPage, PageShown } from './page.ts';
@@ -236,8 +237,8 @@ export interface Beginning {
 	readonly step: StepBegunIn;
 	/** The names the film's things module builds a thing by: none where the film draws no things of its own. */
 	readonly thingsBuilt: readonly string[];
-	/** The film's own pictures the stage laid, by the path the film names each, and the size each file decoded at. */
-	readonly filmsPictures: ReadonlyMap<string, Size>;
+	/** The film's own pictures the stage laid, by the path the film names each, and as each file decoded. */
+	readonly filmsPictures: ReadonlyMap<string, PictureDecoded>;
 }
 
 /**

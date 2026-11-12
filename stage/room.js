@@ -9,8 +9,9 @@
  * the engine's matrix places it in the eye's own space, its texture read back into linear light; the window's body and
  * glass round it (`stage/body.js`); the film's things in the world (`stage/things.js`); each object of markup standing
  * in the world, a title, code, the terminal or a piece, on a surface of its own the stage lays it in apart from the
- * frame's, drawn face-on into a texture as many times as densely as the eye magnifies it (`DrawnObject.magnified`), so
- * brought near it is as sharp as the page beside it; one that would ask more than the world's own layer holds, part by
+ * frame's, drawn face-on into a texture as many times as densely as the eye magnifies it, but no denser than what it
+ * shows holds (`DrawnObject.magnified`), so brought near it is as sharp as the page beside it; let go once no exposure
+ * of a frame draws it; one that would ask more than the world's own layer holds, part by
  * part by how far the eye sees each part from, each only as far as the frame shows it, each painted and drawn into a
  * texture of its own in turn, as one element is laid out at one density at a time; and stood where the engine's matrix
  * places its box, a piece's body standing with it (`stage/piece-body.js`); all seen in perspective from the eye and lit
@@ -433,6 +434,12 @@ class SurfaceTexture {
 		if (this.shrinks) context.generateMipmap(context.TEXTURE_2D);
 		return this.texture;
 	}
+
+	/** The card's texture deleted, its memory given back: nothing draws from it after. */
+	letGo() {
+		this.texture.dispose();
+		this.context.deleteTexture(this.source);
+	}
 }
 
 /**
@@ -603,6 +610,7 @@ class Room {
 			const composed = this.exposureDrawn(surfacesAt(this.exposureSurfaces, place), standing, scene, gathered);
 			if (composed !== DRAWN) return composed;
 		}
+		this.markupUndrawnLetGo(standings);
 		const bloom = scenesAt(scenes, FIRST).world.bloom;
 		if (bloom !== null) this.bloomed(bloom);
 		this.shown.shown(this.renderer);
@@ -1043,6 +1051,22 @@ class Room {
 		const parts = markupAt(this.markup, place);
 		while (parts.length <= part) parts.push(markupInTheWorld(this.renderer));
 		return markupAt(parts, part);
+	}
+
+	/**
+	 * Each part of a surface of markup in the world that no exposure of a frame drew let go, as the frame is composed: a
+	 * texture keeps the size it was last drawn at, and over the promo's dive the card held 1278 MB of them, every part
+	 * at its last size, where a frame drew at most 1000 (2026-11-12). A part one stands at again is made anew.
+	 * @param {readonly ExposureStanding[]} standings
+	 */
+	markupUndrawnLetGo(standings) {
+		for (const [place, parts] of this.markup.entries()) {
+			const drawn = Math.max(NONE_STANDING, ...standings.map((standing) => partsDrawnAt(standing, place)));
+			for (const part of parts.splice(drawn)) {
+				this.laidAt.delete(part.light);
+				markupLetGo(part);
+			}
+		}
 	}
 
 	/**
@@ -1765,6 +1789,28 @@ function markupInTheWorld(renderer) {
 		light: surfaceInTheWorld(MARKUP_SEEN_THROUGH, 'surfacesSeenThrough', MARKUP_PART_FRAGMENT, markupPartValues()),
 		depth: surfaceInTheWorld(MARKUP_DEPTH_ALONE, 'surfacesDepth', MARKUP_PART_FRAGMENT, markupPartValues())
 	};
+}
+
+/**
+ * A part of a surface of markup in the world let go: its texture deleted on the card, and its light and depth taken out
+ * of the world they stood in last, their shape and material given back.
+ * @param {MarkupInTheWorld} part
+ */
+function markupLetGo(part) {
+	part.texture.letGo();
+	for (const surface of [part.light, part.depth]) {
+		surface.removeFromParent();
+		surface.geometry.dispose();
+		surface.material.dispose();
+	}
+}
+
+/**
+ * How many parts an exposure drew of its object of markup at a place among its own: none where it stands none there.
+ * @param {ExposureStanding} standing @param {number} place
+ */
+function partsDrawnAt(standing, place) {
+	return standing.markup[place]?.parts.length ?? NONE_STANDING;
 }
 
 /**

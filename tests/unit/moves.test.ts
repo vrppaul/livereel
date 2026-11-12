@@ -1,7 +1,7 @@
 import { CubicBezierCurve3, Matrix4, Quaternion, Vector3 } from 'three';
 import { expect, test } from 'vitest';
 import { AS_PLACED, FACE_ON } from '../../src/domain/stance.ts';
-import { type Camera, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
+import { type Camera, ZOOM_AT_MOST, placedIn, underTheFrame, wholeView, windowView } from '../../src/domain/camera.ts';
 import { type EyePlace, type Focus, type Viewpoint, eyeAtRest } from '../../src/domain/eye.ts';
 import { gazeOf } from '../../src/domain/flight.ts';
 import * as eye from '../../src/moves/eye.ts';
@@ -80,10 +80,11 @@ import {
 	pointOnTheFrame,
 	windowInTheWorld
 } from '../../src/domain/placement.ts';
-import type { DrawnPiece, Piece } from '../../src/props/piece.ts';
+import type { DrawnPiece, Piece, PiecePicture } from '../../src/props/piece.ts';
+import type { DrawnFilmPicture } from '../../src/props/picture.ts';
 import { SCREEN_UP, THE_FILMED_PAGE, drawnScreen, pastTheScreen } from '../../src/props/screen.ts';
 import type { DrawnWindow } from '../../src/props/window.ts';
-import { ONE_FRAME, pastTheEdge, windowPlaced, wordsPlaced } from '../../src/domain/place.ts';
+import { ONE_FRAME, type Place, pastTheEdge, windowPlaced, wordsPlaced } from '../../src/domain/place.ts';
 import * as keys from '../../src/moves/keys.ts';
 import * as look from '../../src/moves/look.ts';
 import * as note from '../../src/moves/note.ts';
@@ -196,9 +197,14 @@ const NO_ACT = undefined as never;
 const NO_PICTURE_HELD = undefined as never;
 // The things the film's module builds, as a room loaded it: a card
 const THINGS_BUILT = ['card'];
-// The film's own pictures the stage laid, by their paths, as their files were decoded: a mark four times as wide as
-// tall
-const FILMS_PICTURES = new Map([['mark.png', { width: 400, height: 100 }]]);
+// The film's own pictures the stage laid, by their paths, as their files were decoded, four times as wide as tall: a
+// mark of 400 pixels across at the frame's sharpness, a detailed one of 4000, and a mark drawn of lines
+const DETAILED_ACROSS = 4000;
+const FILMS_PICTURES = new Map([
+	['mark.png', { aspect: 4, sharpAcross: 400 }],
+	['detailed.png', { aspect: 4, sharpAcross: DETAILED_ACROSS }],
+	['mark.svg', { aspect: 4, sharpAcross: Infinity }]
+]);
 const PAGE = new PageOfBoxes(
 	new Map([
 		['#block', BLOCK],
@@ -1247,7 +1253,7 @@ test("a picture of the film's comes up in its place, or over the whole frame, dr
 		drawnObject('picture', placed, 0, AROUND_IN_FULL_HD).content,
 		drawnObject('card', whole, 0, AROUND_IN_FULL_HD).content
 	]).toEqual([
-		{ kind: 'picture', file: 'mark.png', aspect: 4 },
+		{ kind: 'picture', file: 'mark.png', aspect: 4, sharpAcross: 400 },
 		{ left: 480, top: 270, width: 960, height: 540 },
 		{ kind: 'picture', file: 'mark.png', figure: { left: 0, top: 150, width: 960, height: 240 }, shown: 0.5 },
 		{ kind: 'picture', file: 'mark.png', figure: { left: 0, top: 300, width: 1920, height: 480 }, shown: 1 }
@@ -4906,6 +4912,91 @@ test('a title in the world the eye skims is magnified part by part: each part re
 	expect([reaches.length > 2, reaches.at(-1)]).toEqual([true, Infinity]);
 	expect(doubled).toEqual(doubled.map(() => expect.closeTo(2)));
 	expect(lessMagnified).toEqual(lessMagnified.map(() => true));
+});
+
+// A picture of a piece's source held sharper than the page's, as close as a pose at a zoom of 3 shows it, by its
+// number; and a piece brought three quarters of the way to the eye, which magnifies it four times
+const SHARPER_ZOOM = 3;
+const SHARPER_NUMBER = 9;
+const THREE_QUARTERS_TO_THE_EYE = 1500;
+
+/** How many of the frame's pixels a screen's pixel takes in a piece or a lens as drawn. */
+function fitOf(object: DrawnObject): number {
+	return (object.content as DrawnPiece).fit;
+}
+
+// A place in the middle of the frame a tenth of it wide and high, where the eye sees a piece brought near it
+const A_TENTH_IN_THE_MIDDLE = { left: 0.45, top: 0.45, width: 0.1, height: 0.1 } as const;
+
+/**
+ * A scene shot in a format with a piece of the card in the world, drawn from a picture so, by a name, carried to a
+ * place.
+ */
+async function withAPieceInTheWorld(
+	picture: PiecePicture['kind'],
+	name: string,
+	scene: Scene,
+	format: Format,
+	place: Place
+): Promise<Scene> {
+	const lifted = await heldIn(
+		piece.show('#card', { picture, inside: 'world', as: name }),
+		scene,
+		format,
+		new PicturesHeld()
+	);
+	return setIn(piece.to(place, { as: name }), lifted, 1, format);
+}
+
+test("a piece in the world brought near the eye is magnified no further than the picture it is drawn from holds of its pixels to a pixel of its box: the one it holds and the page's as livereel's bound takes them, one held sharper at its own zoom", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const holding = await withAPieceInTheWorld('held', 'held', wide, FULL_HD, A_TENTH_IN_THE_MIDDLE);
+	const pieces = await withAPieceInTheWorld('following', 'following', holding, FULL_HD, A_TENTH_IN_THE_MIDDLE);
+	const heldNear = await setIn(piece.effects({ as: 'held', depth: THREE_QUARTERS_TO_THE_EYE }), pieces, 1, FULL_HD);
+	const near = await setIn(piece.effects({ as: 'following', depth: THREE_QUARTERS_TO_THE_EYE }), heldNear, 1, FULL_HD);
+	const camera = cameraOf(near, FULL_HD);
+	const [held, following] = drawn(near, camera, 0, FULL_HD, NONE_SHARPER).objects;
+	const sharper = [{ part: (following!.content as DrawnPiece).source, zoom: SHARPER_ZOOM, number: SHARPER_NUMBER }];
+	const [, drawnSharper] = drawn(near, camera, 0, FULL_HD, sharper).objects;
+	const frameScale = frameScaleOf(FULL_HD.frame);
+	expect([held!.magnified, following!.magnified, drawnSharper!.magnified]).toEqual([
+		[{ reaches: Infinity, times: expect.closeTo((ZOOM_AT_MOST * frameScale) / fitOf(held!)) }],
+		[{ reaches: Infinity, times: expect.closeTo((ZOOM_AT_MOST * frameScale) / fitOf(following!)) }],
+		[{ reaches: Infinity, times: expect.closeTo((SHARPER_ZOOM * frameScale) / fitOf(drawnSharper!)) }]
+	]);
+});
+
+test('a piece in the world the eye skims past its picture is drawn in one part as dense as its picture holds as far as the eye magnifies it more, each part beyond less', async () => {
+	const held = await withAPieceInTheWorld('held', 'piece', OPENING_IN_SMALL, SMALL, IN_THE_MIDDLE);
+	const leant = await setAt(piece.lean({ tilt: LEANT_FAR_BACK }), held, 1);
+	const skimmed = await setAt(piece.effects({ depth: ALMOST_AT_THE_EYE }), leant, 1);
+	const [drawnPiece] = drawnObjectsIn(skimmed, SMALL);
+	const holds = (ZOOM_AT_MOST * frameScaleOf(SMALL.frame)) / fitOf(drawnPiece!);
+	const [nearest, ...beyond] = drawnPiece!.magnified.map((part) => part.times);
+	expect([nearest, beyond.map((times) => times < holds)]).toEqual([expect.closeTo(holds), beyond.map(() => true)]);
+});
+
+test("a picture of the film's own in the world brought near is magnified no further than its file's pixels across its figure; one drawn of lines, as far as the eye asks: twice, half-way to the eye", async () => {
+	const pictured = await setIn(
+		picture.show('detailed.png', { at: MIDDLE_HALF, inside: 'world' }),
+		OPENING_IN_FULL_HD,
+		1,
+		FULL_HD
+	);
+	const drawnOfLines = await setIn(
+		picture.show('mark.svg', { as: 'lines', at: MIDDLE_HALF, inside: 'world' }),
+		pictured,
+		1,
+		FULL_HD
+	);
+	const pictureNear = await setIn(picture.effects({ depth: ALMOST_AT_THE_EYE }), drawnOfLines, 1, FULL_HD);
+	const near = await setIn(picture.effects({ as: 'lines', depth: HALF_WAY_TO_THE_EYE }), pictureNear, 1, FULL_HD);
+	const [detailed, lines] = drawnObjectsIn(near, FULL_HD);
+	const figure = (detailed!.content as DrawnFilmPicture).figure;
+	expect([detailed!.magnified, lines!.magnified]).toEqual([
+		[{ reaches: Infinity, times: expect.closeTo(DETAILED_ACROSS / figure.width) }],
+		[{ reaches: Infinity, times: expect.closeTo(2) }]
+	]);
 });
 
 test('a focus pulled from a near title to the page goes evenly in how sharp it leaves things: half way, the page is half as soft', async () => {
