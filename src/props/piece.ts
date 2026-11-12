@@ -27,8 +27,8 @@
  * block of the page, which then stands as the page draws it hidden until the piece goes (`src/props/lifted.ts`).
  */
 import { ZOOM_AT_MOST } from '../domain/camera.ts';
-import { type Box, type Size, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
-import { type SharperPicture, magnifiedAtMostOfPicture, pictureOfPart } from '../domain/picture.ts';
+import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
+import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
 import { type Fraction, NONE, fractionOf } from '../domain/fraction.ts';
 import { ON_ITS_PLANE, type PageOfTheScreen } from '../domain/placement.ts';
 import type { Stance } from '../domain/stance.ts';
@@ -114,7 +114,17 @@ export const FOLLOWING_THE_PAGE: PiecePicture = { kind: 'following' };
  */
 export type DrawnPicture = { readonly kind: 'page' } | { readonly kind: 'own'; readonly number: number };
 
-const DRAWN_FROM_THE_PAGE: DrawnPicture = { kind: 'page' };
+/**
+ * What the stage draws a piece from, and how close that picture holds the piece's source, as a pose's zoom has it,
+ * past which a denser drawing of the piece holds no more of it.
+ */
+export interface DrawnFrom {
+	readonly picture: DrawnPicture;
+	readonly zoom: number;
+}
+
+// The page's picture, taken no closer than livereel's bound (`zoomPicturedFor`)
+const DRAWN_FROM_THE_PAGE: DrawnFrom = { picture: { kind: 'page' }, zoom: ZOOM_AT_MOST };
 
 /**
  * A piece's body: how thick it is, back from its face, in the screen's pixels, as its corners are; the colour of its
@@ -190,8 +200,7 @@ const SHOWN_FLAT = null;
 /**
  * A piece as the stage draws it in a box, standing as large and as far out as it stands and as faded, as far as it has
  * come up and not gone, and as much of it as what it stands in lets show, showing those of the holes on the screen in
- * its source, drawn from the picture it holds, or from one of its source the stage holds sharper than the page's where
- * it is drawn from the page's.
+ * its source, drawn from a picture (`drawnFromOf`).
  */
 export function drawnPiece(
 	piece: Piece,
@@ -200,7 +209,7 @@ export function drawnPiece(
 	shown: number,
 	held: number,
 	holes: readonly DrawnHole[],
-	sharper: readonly SharperPicture[]
+	picture: DrawnPicture
 ): DrawnPiece {
 	const source = piece.source;
 	const fit = fitIn(source, box);
@@ -212,7 +221,7 @@ export function drawnPiece(
 		corners: cornersAt(piece.corners, fit),
 		holes: holesShown(holes, source, fit),
 		shown,
-		picture: drawnPictureOf(piece, sharper),
+		picture,
 		body: piece.body === null ? null : drawnBody(piece.body, fit, standing, shown, held)
 	};
 }
@@ -233,45 +242,20 @@ function drawnBody(body: Body, fit: number, standing: Standing, shown: number, h
 }
 
 /**
- * What the stage draws a piece from: the picture it holds; else a picture of its source the stage holds sharper than
- * the page's, where there is one; else the page's.
+ * What the stage draws a piece from, among the pictures of parts of the screen it holds sharper than the page's: the
+ * picture the piece holds, as close as livereel's bound (`src/studio/pictures.ts`); else one of its source held
+ * sharper, as close as it was asked; else the page's. A picture Chrome's bounds take softer than asked
+ * (`src/adapters/browser/bounds.ts`) holds less than its zoom says.
  */
-function drawnPictureOf(piece: Piece, sharper: readonly SharperPicture[]): DrawnPicture {
+export function drawnFromOf(piece: Piece, sharper: readonly SharperPicture[]): DrawnFrom {
 	switch (piece.picture.kind) {
 		case 'held':
-			return { kind: 'own', number: piece.picture.number };
+			return { picture: { kind: 'own', number: piece.picture.number }, zoom: ZOOM_AT_MOST };
 		case 'following': {
 			const sharp = pictureOfPart(sharper, piece.source);
-			return sharp === undefined ? DRAWN_FROM_THE_PAGE : { kind: 'own', number: sharp.number };
+			if (sharp === undefined) return DRAWN_FROM_THE_PAGE;
+			return { picture: { kind: 'own', number: sharp.number }, zoom: sharp.zoom };
 		}
-	}
-}
-
-/**
- * How many times the eye may magnify a piece laid in a box, among the pictures the stage holds sharper than the page's,
- * before a denser drawing holds no more of the picture it is drawn from (`drawnPictureOf`), on a frame of a size.
- */
-export function magnifiedAtMostOfPiece(
-	piece: Piece,
-	box: Box,
-	sharper: readonly SharperPicture[],
-	frame: Size
-): number {
-	return magnifiedAtMostOfPicture(zoomPicturedOf(piece, sharper), fitIn(piece.source, box), frame);
-}
-
-/**
- * How close the picture a piece is drawn from holds its source, as a pose's zoom has it: the one it holds, as close as
- * livereel's bound (`src/studio/pictures.ts`); the one held sharper than the page's, as close as it was asked; the
- * page's, no closer than livereel's bound, past which no picture of the page is taken (`zoomPicturedFor`). A picture
- * Chrome's bounds take softer than asked (`src/adapters/browser/bounds.ts`) holds less than this says.
- */
-function zoomPicturedOf(piece: Piece, sharper: readonly SharperPicture[]): number {
-	switch (piece.picture.kind) {
-		case 'held':
-			return ZOOM_AT_MOST;
-		case 'following':
-			return pictureOfPart(sharper, piece.source)?.zoom ?? ZOOM_AT_MOST;
 	}
 }
 

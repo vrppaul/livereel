@@ -200,12 +200,13 @@ interface Forcing {
 }
 
 /**
- * How a stage showing the page's pictures takes and draws them: how many of a picture's pixels a page's pixel takes
- * for a camera at a zoom of 1, as sharp as the film is shot; how many of a frame's exposures it draws at once; the
- * bounds its pictures are taken within; how it draws a frame, flat or as a room, and the part of it a frame is handed
- * on from.
+ * How a stage showing the page's pictures takes and draws them: how many of its pixels it draws to a frame's; how many
+ * of a picture's pixels a page's pixel takes for a camera at a zoom of 1, as sharp as the film is shot; how many of a
+ * frame's exposures it draws at once; the bounds its pictures are taken within; how it draws a frame, flat or as a
+ * room, and the part of it a frame is handed on from.
  */
 interface Picturing {
+	readonly sharpness: number;
 	readonly pixelsAtZoomOne: number;
 	readonly exposuresAtOnce: number;
 	readonly bounds: readonly PictureBound[];
@@ -229,13 +230,9 @@ interface SetUp {
 	readonly filmsPictures: ReadonlyMap<string, PictureDecoded>;
 }
 
-/**
- * What a take is set as, how many of the stage's pixels it draws to a frame's, and the film's own pictures and fonts,
- * read from the disk to be handed to the stage.
- */
+/** What a take is set as, and the film's own pictures and fonts, read from the disk to be handed to the stage. */
 interface SettingRead {
 	readonly setting: Setting;
-	readonly sharpness: number;
 	readonly pictures: readonly FilmsPictureHanded[];
 	readonly fonts: readonly FilmsFontHanded[];
 }
@@ -405,7 +402,7 @@ export class Chromium implements Browser, DrawnBrowser, SetBrowser {
 		const drawing = DRAWINGS[setting.drawing];
 		const pictures = await filmsPicturesRead(this.filmFolder, setting.pictures);
 		const fonts = await filmsFontsRead(this.filmFolder, setting.fonts);
-		const read = { setting, sharpness, pictures, fonts };
+		const read = { setting, pictures, fonts };
 		const browser = await launched([...flagsOf(this.renderer, process.platform), ...drawing.flags, ...memory]);
 		try {
 			const onTheCard = await drawsOnTheCard(this.renderer, browser, this.warn);
@@ -423,11 +420,11 @@ export class Chromium implements Browser, DrawnBrowser, SetBrowser {
 					const bounds = boundsOf(picturePixels, await cardSideIn(onTheCard, stage, this.warn));
 					const things = setting.things === null ? null : resolve(this.filmFolder, setting.things);
 					const handedIn = handedInOf(drawing, setting.format.frame, sharpness, setting.framesHanded);
-					const picturing = { pixelsAtZoomOne, exposuresAtOnce, bounds, drawing, handedIn, things };
+					const picturing = { sharpness, pixelsAtZoomOne, exposuresAtOnce, bounds, drawing, handedIn, things };
 					return await pictured(browser, stage, read, filmed, picturing, ownPages, this.warn);
 				}
 				case 'dynamic':
-					return await framedLive(browser, stage, read, filmed.address, ownPages ?? NO_OWN_PAGES, this.warn);
+					return await framedLive(browser, stage, read, filmed.address, sharpness, ownPages ?? NO_OWN_PAGES, this.warn);
 			}
 		} catch (fault) {
 			await browser.close();
@@ -499,6 +496,7 @@ async function pictured(
 	const setUp = await stageSetUp(
 		stage,
 		read,
+		picturing.sharpness,
 		drawing,
 		layoutOf(setting.format, exposuresAtOnce, drawing, handedIn),
 		picturing.things
@@ -562,13 +560,15 @@ function liveIn(frame: Frame, tab: Page): FilmedShown {
 }
 
 /**
- * A dynamic page opened live in the stage's frame, the stage standing where the film asks; refused where it is gone.
+ * A dynamic page opened live in the stage's frame, the stage standing where the film asks and drawing so many of its
+ * pixels to a frame's; refused where the page is gone.
  */
 async function framedLive(
 	browser: Playwright,
 	stage: Page,
 	read: SettingRead,
 	address: string,
+	sharpness: number,
 	ownPages: OwnPages,
 	warn: Warn
 ): Promise<Opened> {
@@ -577,7 +577,7 @@ async function framedLive(
 	const time = await PlaywrightPageTime.installedOn(stage, warn);
 	const opening = await staged(stage, setting.stage, address, warn);
 	const watch = new FrameWatch(stage, setting.stage, address);
-	const { filmed, filmsPictures } = await framed(stage, read, opening);
+	const { filmed, filmsPictures } = await framed(stage, read, sharpness, opening);
 	const absence = await watch.absence(filmed);
 	if (absence !== undefined) throw absence;
 	const framedStage = new PlaywrightFramedStage(stage, setting.format, watch, filmed);
@@ -699,16 +699,17 @@ async function forcedOn(page: Page, blurred: readonly string[], stageAtTheTop: b
 /**
  * The stage set to the film's format by its layout, laid out as it draws its frames and hands them on, and
  * asked for its colour scheme and stilled motion. The film's own pictures and fonts are laid, and refused where one
- * decodes to none. What the film writes in CSS, in its theme or in a look's move, is then refused where CSS cannot read
- * it as the stage sets it, where the stage would draw without a word what the film never asked for: a font CSS reads
- * as no list of families a fallback can follow, as one with a quote left open, which runs on over the stage's own
- * fallbacks to the browser's font, or one naming no family this machine has or the film brought, which falls through
- * to the stage's own; the ground's layers CSS reads as none, which would draw no layers at all, or with a picture in
- * them.
+ * decodes to none, each picture's pixels across read in the frame's at the stage's sharpness. What the film writes in
+ * CSS, in its theme or in a look's move, is then refused where CSS cannot read it as the stage sets it, where the stage
+ * would draw without a word what the film never asked for: a font CSS reads as no list of families a fallback can
+ * follow, as one with a quote left open, which runs on over the stage's own fallbacks to the browser's font, or one
+ * naming no family this machine has or the film brought, which falls through to the stage's own; the ground's layers
+ * CSS reads as none, which would draw no layers at all, or with a picture in them.
  */
 async function stageSetUp(
 	page: Page,
 	read: SettingRead,
+	sharpness: number,
 	drawing: StageDrawing,
 	layout: Layout,
 	things: string | null
@@ -718,25 +719,27 @@ async function stageSetUp(
 	await page.evaluate(setUpStage, layout);
 	const thingsBuilt = await drawing.laidOut(page, layout, things);
 	await page.evaluate(ownPagesLaid, setting.ownPages);
-	const filmsPictures = await filmsPicturesLaid(page, read.pictures, read.sharpness);
+	const filmsPictures = await filmsPicturesLaid(page, read.pictures, sharpness);
 	await filmsFontsLaid(page, read.fonts);
 	for (const named of setting.css) await refusedWhereUnread(page, named);
 	return { thingsBuilt, filmsPictures };
 }
 
 /**
- * The stage set up and the page opened in its frame, as far as it loads: its frame, and the film's own pictures the
- * stage laid; a framed page is drawn flat.
+ * The stage set up at a sharpness and the page opened in its frame, as far as it loads: its frame, and the film's own
+ * pictures the stage laid; a framed page is drawn flat.
  */
 async function framed(
 	page: Page,
 	read: SettingRead,
+	sharpness: number,
 	opening: Opening
 ): Promise<{ readonly filmed: Frame; readonly filmsPictures: ReadonlyMap<string, PictureDecoded> }> {
 	const format = read.setting.format;
 	const setUp = await stageSetUp(
 		page,
 		read,
+		sharpness,
 		DRAWN_FLAT,
 		layoutOf(format, ONE_AT_A_TIME, DRAWN_FLAT, boxOf(format.frame)),
 		NO_THINGS_MODULE

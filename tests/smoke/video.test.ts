@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { EncodingError } from '../../src/domain/errors.ts';
 import type { Size } from '../../src/domain/geometry.ts';
-import { type FilmSound, fileSound } from '../../src/direction/sound.ts';
+import { AS_LOUD_AS_ITS_FILE, type FilmSound, fileSound, livereelSound } from '../../src/direction/sound.ts';
 import { blended } from '../../src/adapters/video/exposures.ts';
 import { Soundtrack } from '../../src/adapters/video/soundtrack.ts';
 import { EVERY_SHOT, FRAMES_QUEUED_AT_MOST, VideoFootage } from '../../src/adapters/video/video.ts';
@@ -35,6 +35,16 @@ const WHITE = 255;
 const WAITING = 'waiting';
 const KEPT = 'kept';
 const A_MOMENT_MILLISECONDS = 50;
+// A tone the test makes for a film's key, a sine as ffmpeg makes it, an eighth of full scale, half a second long; and
+// as many frames as half a second holds, so the key is heard whole
+const TONE = 'tone.wav';
+const A_TONE = 'sine=frequency=440:duration=0.5';
+const HALF_A_SECOND_OF_FRAMES = 15;
+// Keys laid four times as loud as their file, which peak louder by twenty decibels for each tenfold
+const FOUR_TIMES = 4;
+const DECIBELS_A_TENFOLD = 20;
+// The loudest a sound peaks, as ffmpeg's volumedetect says it, in decibels under full scale
+const PEAK_SAID = /max_volume: (-?[\d.]+) dB/;
 
 async function scratch(): Promise<string> {
 	return mkdtemp(join(tmpdir(), 'livereel-video-'));
@@ -84,6 +94,36 @@ function framesOf(video: string): string {
 		{ encoding: 'utf8' }
 	);
 	return ran.stdout.trim();
+}
+
+/** A tone made in a folder, as ffmpeg makes it, the file a film there names as its key. */
+function toneIn(directory: string): void {
+	spawnSync('ffmpeg', ['-loglevel', 'error', '-f', 'lavfi', '-i', A_TONE, join(directory, TONE)]);
+}
+
+/** A video of half a second, by its name in a folder, whose film there strikes its key once at its start at a volume. */
+async function keyStruckAt(keyVolume: number, directory: string, name: string): Promise<string> {
+	const video = join(directory, name);
+	const footage = new VideoFootage(video, FRAME, RATE, EVERY_SHOT, blended);
+	const image = jpegOf(FRAME, 'gray');
+	for (const shot of Array(HALF_A_SECOND_OF_FRAMES).keys()) await footage.keep(shot, { earlier: [], own: image });
+	const key = { kind: 'file', path: `./${TONE}` } as const;
+	const track = new Soundtrack(join(directory, 'film.ts'), {
+		livereels: { ...SOUNDLESS.livereels, key, keyVolume },
+		music: null
+	});
+	track.hear(0, livereelSound('key'));
+	await footage.finish(track);
+	await footage[Symbol.asyncDispose]();
+	return video;
+}
+
+/** The loudest a video's sound peaks, in decibels under full scale, as ffmpeg reads it. */
+function peakOf(video: string): number {
+	const read = spawnSync('ffmpeg', ['-i', video, '-map', '0:a', '-af', 'volumedetect', '-f', 'null', '-'], {
+		encoding: 'utf8'
+	});
+	return Number(PEAK_SAID.exec(read.stderr)![1]);
 }
 
 test('a frame of several exposures is one frame of the video', async () => {
@@ -159,6 +199,14 @@ test("a frame's exposures are blended, each weighing the same: three black and o
 	const frame = await blended({ earlier: [black, black, black], own: white });
 	// 255 / 4, within 5 levels of it: a JPEG may round a flat grey; one exposure kept is 0 or 255, two blended 128
 	expect(greyOf(frame)).toBeCloseTo(64, -1);
+});
+
+test("a key laid at the film's keyVolume comes out that much louder in the track than as loud as its file: at 4, 12 dB", async () => {
+	const directory = await scratch();
+	toneIn(directory);
+	const asItsFile = await keyStruckAt(AS_LOUD_AS_ITS_FILE, directory, 'as-its-file.mp4');
+	const louder = await keyStruckAt(FOUR_TIMES, directory, 'louder.mp4');
+	expect(peakOf(louder) - peakOf(asItsFile)).toBeCloseTo(DECIBELS_A_TENFOLD * Math.log10(FOUR_TIMES), 0);
 });
 
 test("exposures ffmpeg cannot read are refused in ffmpeg's words", async () => {

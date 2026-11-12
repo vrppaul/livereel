@@ -4999,6 +4999,18 @@ test("a picture of the film's own in the world brought near is magnified no furt
 	]);
 });
 
+test("a picture of the film's own in the world whose file holds fewer pixels across than its figure is drawn at its box's density brought near, never coarser: 400 across a figure 960 wide, half-way to the eye", async () => {
+	const pictured = await setIn(
+		picture.show('mark.png', { at: MIDDLE_HALF, inside: 'world' }),
+		OPENING_IN_FULL_HD,
+		1,
+		FULL_HD
+	);
+	const near = await setIn(picture.effects({ depth: HALF_WAY_TO_THE_EYE }), pictured, 1, FULL_HD);
+	const [coarse] = drawnObjectsIn(near, FULL_HD);
+	expect(coarse!.magnified).toEqual([{ reaches: Infinity, times: 1 }]);
+});
+
 test('a focus pulled from a near title to the page goes evenly in how sharp it leaves things: half way, the page is half as soft', async () => {
 	const near = await withNearTitles(OPENING_IN_SMALL);
 	const onTheTitle = await setAt(eye.focus({ object: 'near' }, { aperture: OPENED }), near, 1);

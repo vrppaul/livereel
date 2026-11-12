@@ -26,8 +26,8 @@ import {
 /** What a file of the film's is, as a refusal names it. */
 type FilesKind = 'picture' | 'font';
 
-// How a file's bytes are handed: in base64; a picture in an SVG file typed as one, which the browser draws no SVG
-// without; any other kind of image untyped, the browser telling it by its bytes
+// How a file's bytes are handed: in base64; a picture in an SVG file, told by its name's ending in any case, typed as
+// one, which the browser draws no SVG without; any other kind of image untyped, the browser telling it by its bytes
 const BASE64 = 'base64';
 const SVG = '.svg';
 const SVG_TYPE = 'image/svg+xml';
@@ -73,7 +73,7 @@ export function pictureDecodedOf(picture: FilmsPictureDecoded, sharpness: number
 			`the film's picture ${picture.path} decodes to no picture with a size: give a PNG, JPEG, WebP, AVIF or GIF file, or an SVG that names its width and height`
 		);
 	}
-	const sharpAcross = extname(picture.path) === SVG ? DRAWN_ANEW_AT_ANY_SIZE : picture.width / sharpness;
+	const sharpAcross = isAnSvg(picture.path) ? DRAWN_ANEW_AT_ANY_SIZE : picture.width / sharpness;
 	return { aspect: picture.width / picture.height, sharpAcross };
 }
 
@@ -95,7 +95,12 @@ export async function filmsFontsLaid(stage: Page, fonts: readonly FilmsFontHande
 
 async function pictureRead(filmFolder: string, path: string): Promise<FilmsPictureHanded> {
 	const base64 = await fileRead(filmFolder, path, 'picture');
-	return { path, base64, type: extname(path) === SVG ? SVG_TYPE : TOLD_BY_ITS_BYTES };
+	return { path, base64, type: isAnSvg(path) ? SVG_TYPE : TOLD_BY_ITS_BYTES };
+}
+
+/** Whether a picture's file is an SVG, by its name's ending, written in capitals or not: `MARK.SVG` is one. */
+function isAnSvg(path: string): boolean {
+	return extname(path).toLowerCase() === SVG;
 }
 
 async function fontRead(filmFolder: string, font: FilmFont): Promise<FilmsFontHanded> {

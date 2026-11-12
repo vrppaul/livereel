@@ -34,18 +34,14 @@ const ITS_HEIGHT = 1;
 
 /** A picture as the stage draws it in a box, as far as it has come up and not gone. */
 export function drawnFilmPicture(picture: FilmPicture, box: Box, shown: number): DrawnFilmPicture {
-	return { kind: 'picture', file: picture.file, figure: figureOf(picture, box), shown };
+	const proportions = boxOf({ width: picture.aspect, height: ITS_HEIGHT });
+	return { kind: 'picture', file: picture.file, figure: figureIn(proportions, box), shown };
 }
 
 /**
- * How many times the eye may magnify a picture laid in a box before a denser drawing holds no more of its file: the
- * frame's pixels across its file holds, for each of its figure's.
+ * How many times the eye may magnify a picture as the stage draws it before a denser drawing holds no more of its
+ * file: the frame's pixels across its file holds, for each of its figure's.
  */
-export function magnifiedAtMostOfFilmPicture(picture: FilmPicture, box: Box): number {
-	return picture.sharpAcross / figureOf(picture, box).width;
-}
-
-/** The part of a box a picture is drawn in, as large as the box holds all of it, in its middle. */
-function figureOf(picture: FilmPicture, box: Box): Box {
-	return figureIn(boxOf({ width: picture.aspect, height: ITS_HEIGHT }), box);
+export function magnifiedAtMostOfFilmPicture(picture: FilmPicture, drawn: DrawnFilmPicture): number {
+	return picture.sharpAcross / drawn.figure.width;
 }
