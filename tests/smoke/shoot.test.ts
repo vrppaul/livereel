@@ -331,8 +331,8 @@ test("the room is refused as the machine's to put right where the browser draws 
 });
 
 test("a room whose canvas the graphics card drops ends the shoot at that frame as the machine's to put right, naming the moment, and keeps no frame drawn without it", async () => {
-	// The hold's three frames and the play's first, which drops the canvas once drawn; the next finds it dropped
-	const keptBeforeTheDrop = [0, 1, 2, 3];
+	// The hold's three frames; the play's first drops the canvas once drawn, and is refused as it is captured
+	const keptBeforeTheDrop = [0, 1, 2];
 	const counted = new EveryFrameCounted();
 	const steps = [hold({ seconds: 0.1 }), play({ seconds: 0.1, moves: [thing.show('dropper', A_CARD)] })];
 	const film = filmWritten(steps, { drawing: 'room', things: './canvas-lost.js' });
@@ -340,6 +340,17 @@ test("a room whose canvas the graphics card drops ends the shoot at that frame a
 		new TakeError(new SetupError(CANVAS_DROPPED), keptBeforeTheDrop.length / RATE, 2)
 	);
 	expect(counted.kept).toEqual(keptBeforeTheDrop);
+});
+
+test("a still whose one frame drops the room's canvas as it is drawn writes nothing, and ends as the machine's to put right", async () => {
+	const directory = await scratch();
+	const footage = new StillFootage(join(directory, 'still.jpg'), 0, RATE, blended);
+	const steps = [play({ seconds: 0.1, moves: [thing.show('dropper', A_CARD)] })];
+	const film = filmWritten(steps, { drawing: 'room', things: './canvas-lost.js' });
+	await expect(shoot(film, shootingInto(footage, 'gpu'))).rejects.toThrow(
+		new TakeError(new SetupError(CANVAS_DROPPED), 0, 1)
+	);
+	expect(await readdir(directory)).toEqual([]);
 });
 
 test('a still is the one frame written, and nothing after it is shot', async () => {

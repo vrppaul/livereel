@@ -171,9 +171,9 @@ declare global {
  * How the stage draws a frame, flat or as a room (`room.ts`), by the name the film gives it, which the stage is laid
  * out for: the flags the browser is launched with for it, how the stage is opened, serving the film's things module
  * where it names one, and then laid out, loading it: the names it builds a thing by, none for a stage that draws no
- * things; how a frame's exposures are drawn on it, and waited on to the end of their drawing; whether it scales its
- * frame down to the frame's own size without a change of look; and what the person who asks for software is told, if
- * anything.
+ * things; how a frame's exposures are drawn on it, and waited on to the end of their drawing; how a part of the frame
+ * drawn is captured; whether it scales its frame down to the frame's own size without a change of look; and what the
+ * person who asks for software is told, if anything.
  */
 export interface StageDrawing {
 	readonly name: Drawing;
@@ -182,6 +182,7 @@ export interface StageDrawing {
 	readonly laidOut: (page: Page, layout: Layout, things: string | null) => Promise<readonly string[]>;
 	readonly drawn: (page: Page, exposures: readonly DrawnScene[]) => Promise<void>;
 	readonly finished: (page: Page) => Promise<void>;
+	readonly captured: (page: Page, part: Box) => Promise<Uint8Array>;
 	readonly scalesItsFrame: boolean;
 	readonly saidInSoftware: string | null;
 }
@@ -198,6 +199,7 @@ export const DRAWN_FLAT: StageDrawing = {
 	laidOut: () => Promise.resolve(NO_THINGS),
 	drawn: drawnOn,
 	finished: () => Promise.resolve(),
+	captured: capturedOf,
 	scalesItsFrame: false,
 	saidInSoftware: null
 };
@@ -419,7 +421,7 @@ export class PlaywrightPicturedStage implements PicturedStage {
 	}
 
 	capture(): Promise<Uint8Array> {
-		return capturedOf(this.page, this.handedIn);
+		return this.drawing.captured(this.page, this.handedIn);
 	}
 }
 
@@ -470,7 +472,7 @@ async function partPictured(source: PictureTab, part: Box, scale: number): Promi
 }
 
 /** A part of a page as it shows now, as a JPEG at its device scale, its text caret kept. */
-function capturedOf(page: Page, part: Box): Promise<Buffer> {
+export function capturedOf(page: Page, part: Box): Promise<Buffer> {
 	// eslint-disable-next-line id-length -- Playwright names the corner a capture is clipped at `x` and `y`
 	const clip = { x: part.left, y: part.top, width: part.width, height: part.height };
 	return page.screenshot({ type: 'jpeg', quality: JPEG_QUALITY, caret: 'initial', clip });

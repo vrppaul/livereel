@@ -578,8 +578,9 @@ class Room {
 	 * drawn, the farther parts of its markup with it, and added into the frame at an equal weight; the frame glowing
 	 * round its light past white where the world asks, and shown on the canvas once the card has drawn it. Refused, with
 	 * what the film is told, where its things module throws building or setting a thing; lost where the card has
-	 * dropped the canvas, as it was handed the frame or as it drew it. A card out of memory says so after the frame it
-	 * failed in (the probe of beats 7–8, 2026-11-12: lost as the next frame was composed), so that frame may be kept.
+	 * dropped the canvas, as it was handed the frame or as it drew it. A card out of memory may say so only after the
+	 * frame it failed in is composed (the probe of beats 7–8, 2026-11-12), which its capture then refuses (`canvasLost`,
+	 * read by `roomCaptured` in `src/adapters/browser/room.ts`).
 	 * @param {readonly DrawnScene[]} scenes @returns {Promise<Composed>}
 	 */
 	async compose(scenes) {
@@ -1864,6 +1865,10 @@ const ROOM_API = {
 	finish: () => {
 		if (laidOut === null) throw new Error('the room is waited on to draw before it is laid out');
 		laidOut.finished();
+	},
+	canvasLost: () => {
+		if (laidOut === null) throw new Error('the room is asked of its canvas before it is laid out');
+		return laidOut.canvasLost();
 	}
 };
 window.room = ROOM_API;

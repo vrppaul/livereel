@@ -15,9 +15,10 @@
 import { readFile } from 'node:fs/promises';
 import type { Page, Route } from 'playwright-core';
 import { FilmError, SetupError } from '../../domain/errors.ts';
+import type { Box } from '../../domain/geometry.ts';
 import type { DrawnScene } from '../../scene.ts';
 import { FILE_SENT, NO_SUCH_FILE, type ServedFile, filesNamed, stageFiles } from './stage-files.ts';
-import { type Layout, STAGE_PAGE, type StageDrawing } from './stage.ts';
+import { type Layout, STAGE_PAGE, type StageDrawing, capturedOf } from './stage.ts';
 
 /**
  * What the room's script answers under `window.room` (`stage/room.js`): the stage's surfaces laid in the room's
@@ -40,6 +41,8 @@ export interface RoomApi {
 	 * WebGL's `finish` returns at once in Chrome.
 	 */
 	readonly finish: () => void;
+	/** Whether the graphics card has dropped the room's canvas, which draws nothing after. */
+	readonly canvasLost: () => boolean;
 }
 
 /**
@@ -75,6 +78,7 @@ export const DRAWN_AS_A_ROOM: StageDrawing = {
 	laidOut: roomLaidOut,
 	drawn: drawnInTheRoom,
 	finished: (page) => page.evaluate(cardFinished),
+	captured: roomCaptured,
 	scalesItsFrame: true,
 	saidInSoftware:
 		'the room is drawn in software, where a frame takes about 150 times as long to draw as on a graphics card: ' +
@@ -238,4 +242,20 @@ function composedInTheRoom(exposures: readonly DrawnScene[]): Promise<Composed> 
 /** The room's frame drawn to its end on the graphics card. */
 function cardFinished(): void {
 	window.room.finish();
+}
+
+/**
+ * The frame captured off the room kept only where the graphics card still holds its canvas: refused as the machine's
+ * where it dropped it, as a card out of memory says so only after the frame that asked too much is composed, and a
+ * still, which composes no frame after it, kept a bare frame (the promo's dive at the finest quality, 2026-11-12).
+ */
+async function roomCaptured(page: Page, part: Box): Promise<Uint8Array> {
+	const captured = await capturedOf(page, part);
+	if (await page.evaluate(roomsCanvasLost)) throw new SetupError(CANVAS_DROPPED);
+	return captured;
+}
+
+/** Whether the graphics card has dropped the room's canvas. */
+function roomsCanvasLost(): boolean {
+	return window.room.canvasLost();
 }
