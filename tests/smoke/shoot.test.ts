@@ -702,6 +702,72 @@ test("the letter at the start of a block stands over its first laid-out letter, 
 	]);
 });
 
+// The same page's lines drawn larger: twice as large by a transform and by zoom, and five thirds as large by a
+// transform whose matrix CSS writes in six figures, about letters an even count of pixels shorter than their line;
+// each a line holding a word of three letters and a blank line
+const DRAWN_LARGER: readonly LinesDrawnLarger[] = [
+	{
+		filled: '[data-testid=transformed-filled]',
+		word: '[data-testid=transformed-word]',
+		blank: '[data-testid=transformed-blank]'
+	},
+	{ filled: '[data-testid=zoomed-filled]', word: '[data-testid=zoomed-word]', blank: '[data-testid=zoomed-blank]' },
+	{ filled: '[data-testid=thirds-filled]', word: '[data-testid=thirds-word]', blank: '[data-testid=thirds-blank]' }
+];
+const LETTERS_IN_A_WORD_DRAWN_LARGER = 3;
+// How many decimals of a pixel a blank line's letter stands where a filled one's does: the six figures CSS writes a
+// transform's matrix in leave it a hundred-thousandth off
+const BLANK_AS_FILLED_TO = 3;
+
+/** A line holding a word and a blank line, both drawn larger than the page lays them out. */
+interface LinesDrawnLarger {
+	readonly filled: string;
+	readonly word: string;
+	readonly blank: string;
+}
+
+/**
+ * What a page reads of lines drawn larger: the letter at the start of the line holding a word, and the word; the
+ * letter at the start of the blank line and of the filled one, each from its line's top.
+ */
+interface LargerRead {
+	readonly letter: Box;
+	readonly word: Box;
+	readonly blank: Box;
+	readonly filled: Box;
+}
+
+test("the letter at the start of a block the page draws larger, by a transform or by zoom, stands over its first letter as the page draws it, as wide as one steps there, and a blank block's as large where a filled one's starts", async () => {
+	const read: LargerRead[] = [];
+	const steps = [
+		act(async (context: ActContext) => {
+			const page = new PlaywrightPage(context.page, context.page.page().keyboard);
+			for (const lines of DRAWN_LARGER) {
+				const letter = (await page.letterAtTheStart(lines.filled))!;
+				const blank = (await page.letterAtTheStart(lines.blank))!;
+				read.push({
+					letter,
+					word: await page.box(lines.word, 1),
+					blank: { ...blank, top: blank.top - (await page.box(lines.blank, 1)).top },
+					filled: { ...letter, top: letter.top - (await page.box(lines.filled, 1)).top }
+				});
+			}
+		})
+	];
+	await shoot(lettersFilm(steps), shootingInto(new EveryFrameCounted(), 'software'));
+	expect(read.map(({ letter, blank }) => ({ letter, blank }))).toEqual(
+		read.map(({ word, filled }) => ({
+			letter: { ...word, width: expect.closeTo(word.width / LETTERS_IN_A_WORD_DRAWN_LARGER, 1) },
+			blank: {
+				left: expect.closeTo(filled.left, BLANK_AS_FILLED_TO),
+				top: expect.closeTo(filled.top, BLANK_AS_FILLED_TO),
+				width: expect.closeTo(filled.width, BLANK_AS_FILLED_TO),
+				height: expect.closeTo(filled.height, BLANK_AS_FILLED_TO)
+			}
+		}))
+	);
+});
+
 test('measuring where letters start changes nothing in the page', async () => {
 	const changes: number[] = [];
 	const steps = [

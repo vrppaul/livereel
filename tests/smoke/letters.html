@@ -15,6 +15,24 @@
 				padding: 10px 0 0 30px;
 				min-height: 31px;
 			}
+			/* Lines the page draws twice as large: by a transform, after it lays them out, and by zoom, as it lays them */
+			.transformed {
+				transform: scale(2);
+				transform-origin: 0 0;
+			}
+			.zoomed {
+				zoom: 2;
+			}
+			/* And five thirds as large, a scale CSS writes its matrix short of, in six figures */
+			.transformed-by-thirds {
+				transform: scale(1.6666667);
+				transform-origin: 0 0;
+			}
+			/* Lines whose leading is an even count of pixels about their letters, a whole count above them */
+			.evenly-led p {
+				line-height: 30px;
+				min-height: 30px;
+			}
 		</style>
 	</head>
 	<body>
@@ -28,6 +46,18 @@
 			<p data-testid="blank"></p>
 			<p data-testid="filled">abc</p>
 			<p data-testid="hidden" hidden>abc</p>
+			<div class="transformed">
+				<p data-testid="transformed-filled"><span data-testid="transformed-word">abc</span></p>
+				<p data-testid="transformed-blank"></p>
+			</div>
+			<div class="zoomed">
+				<p data-testid="zoomed-filled"><span data-testid="zoomed-word">abc</span></p>
+				<p data-testid="zoomed-blank"></p>
+			</div>
+			<div class="transformed-by-thirds evenly-led">
+				<p data-testid="thirds-filled"><span data-testid="thirds-word">abc</span></p>
+				<p data-testid="thirds-blank"></p>
+			</div>
 		</main>
 	</body>
 </html>

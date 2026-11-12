@@ -739,7 +739,8 @@ block's starts, its middle on theirs. Where letters start is read off the
 block's first letter as the page lays it out, past its padding and what of
 its markup lays out nothing, and in a blank line of code off its content box,
 so it lands as its neighbours do; how far one steps, off the font they are
-set in. Nothing is written into the page to measure it. The film names the
+set in, as large as the page draws them, a block it scales by a transform or
+`zoom` too. Nothing is written into the page to measure it. The film names the
 block because only it knows which of a source's letters are the block's: a
 terminal sets the diff's sign before the code, the review in a column of its
 own, so the terminal's page holds the code in a span of its own. The piece's

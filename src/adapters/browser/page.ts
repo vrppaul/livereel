@@ -8,8 +8,10 @@
  * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a
  * canvas of the page's own, which turns any colour CSS writes, in whatever form, into its channels. Where a block's
  * letters start is read off what the page lays out, its first letter, or, where it lays out none, as a blank line of
- * code, its content box; how far a letter steps in their font, and how tall it stands, off a canvas too. No letter is
- * set into the page to measure it: only an act changes the filmed page, and a page watching itself would see one.
+ * code, its content box; how far a letter steps in their font, and how tall it stands, off a canvas too, which knows
+ * the font but not the scale the page draws it at: the first letter's box carries that scale, and a blank block is
+ * drawn as much larger as the transforms over it make it. No letter is set into the page to measure it: only an act
+ * changes the filmed page, and a page watching itself would see one.
  *
  * A block a scroll moves, and every block whose scroll carries the source of a piece riding its block, is told by a key
  * the take gives it, the same however a film selects the block, so a scroll and a ride meet on the block itself, never
@@ -64,20 +66,44 @@ interface GroundAsked {
 	readonly whole: number;
 }
 
-/** A font as a canvas is handed it: CSS's `font` shorthand, and how far apart its letters stand, as CSS writes each. */
+/**
+ * A font as a canvas is handed it, as large as the page lays it out: CSS's `font` shorthand, and how far apart its
+ * letters stand, as CSS writes each.
+ */
 interface CanvasFont {
 	readonly font: string;
 	readonly letterSpacing: string;
 }
 
+/** How many times larger the transforms over a block draw it than the page lays it out, across and down. */
+interface DrawnLarger {
+	readonly across: number;
+	readonly down: number;
+}
+
 /**
- * Where a block's letters start on the screen as the page lays them out, and the font they are set in: the box its
- * first letter takes, or, for a block that lays out none, its content box, which a letter would stand in the middle of.
+ * Where a block's letters start on the screen, as the page draws them, and the font they are set in, as large as the
+ * page lays it out: the box its first letter takes, which carries every scale the page draws the letter at; or, for a
+ * block that lays out none, its content box, which a letter would stand in the middle of, and how much larger than it
+ * lays the box out the transforms over the block draw it.
  */
-interface LettersStart extends CanvasFont {
+type LettersStart = FirstLetterLaid | BlankBlockLaid;
+
+/** What a block's letter stands in on the screen, where and how tall, and the font it is set in. */
+interface LetterStandsIn {
 	readonly left: number;
 	readonly top: number;
 	readonly height: number;
+	readonly font: CanvasFont;
+}
+
+interface FirstLetterLaid extends LetterStandsIn {
+	readonly kind: 'letter';
+}
+
+interface BlankBlockLaid extends LetterStandsIn {
+	readonly kind: 'blank';
+	readonly drawnLarger: DrawnLarger;
 }
 
 /** A letter handed to the page to measure on a canvas, in a font. */
@@ -137,6 +163,8 @@ const WHITE: Channels = { red: 255, green: 255, blue: 255, alpha: 255 };
 const A_LETTER = '0';
 // What the page answers where a block lays out nothing, as it is hidden
 const NONE_LAID = null;
+// Chromium lays a page out in sixty-fourths of a pixel
+const LAYOUT_UNITS_A_PIXEL = 64;
 
 export class PlaywrightPage implements FilmedPage {
 	readonly frame: Frame;
@@ -171,12 +199,13 @@ export class PlaywrightPage implements FilmedPage {
 	async letterAtTheStart(target: string): Promise<Box | null> {
 		const start = await (await this.found(target)).evaluate(lettersStartOf);
 		if (start === NONE_LAID) return null;
-		const { left, top, height, ...font } = start;
-		const letter = await this.frame.evaluate(letterMeasured, { letter: A_LETTER, ...font });
-		// The letter in the middle of what it stands in, the leading above it rounded down to a whole pixel, as Chromium
-		// lays a line's letters out in its height: none for a letter's own box
-		const leadingAbove = Math.floor((height - letter.height) * MIDDLE_SHARE.top);
-		return { left, top: top + leadingAbove, width: letter.width, height: letter.height };
+		const letter = await this.frame.evaluate(letterMeasured, { letter: A_LETTER, ...start.font });
+		switch (start.kind) {
+			case 'letter':
+				return letterOver(start, letter);
+			case 'blank':
+				return letterInTheMiddle(start, letter);
+		}
 	}
 
 	async scrollCourse(target: string, aim: ScrollAim): Promise<ScrollCourse> {
@@ -314,6 +343,34 @@ async function stillOpen(handle: JSHandle): Promise<boolean> {
 	}
 }
 
+/**
+ * The letter over the first one the page laid out of a block: where that one stands, as tall, and as wide as a letter
+ * steps, the canvas's step grown as many times as that letter's box is taller than the font on the canvas.
+ */
+function letterOver(laid: FirstLetterLaid, letter: LetterMeasured): Box {
+	const { left, top, height } = laid;
+	return { left, top, width: (letter.width * height) / letter.height, height };
+}
+
+/**
+ * A letter in the middle of a blank block's content box, drawn as much larger as the transforms over the block draw it:
+ * the leading above it rounded down to a whole pixel of the page's layout, as Chromium lays a line's letters out in its
+ * height.
+ */
+function letterInTheMiddle(blank: BlankBlockLaid, letter: LetterMeasured): Box {
+	const { left, top, height, drawnLarger } = blank;
+	// The box as tall as the page lays it out, to its unit of layout: the transforms are read off a matrix CSS writes in
+	// six figures, which could leave an even leading a hair short of its whole pixels
+	const laidHeight = Math.round((height / drawnLarger.down) * LAYOUT_UNITS_A_PIXEL) / LAYOUT_UNITS_A_PIXEL;
+	const leadingAbove = Math.floor((laidHeight - letter.height) * MIDDLE_SHARE.top);
+	return {
+		left,
+		top: top + leadingAbove * drawnLarger.down,
+		width: letter.width * drawnLarger.across,
+		height: letter.height * drawnLarger.down
+	};
+}
+
 // What follows runs in the page, each function handed over alone
 
 /** A block as a handle the page keeps for the move that scrolls it. */
@@ -349,37 +406,50 @@ function groundOf(block: Element, asked: GroundAsked): Channels | null {
 }
 
 /**
- * Where a block's letters start, read off what the page lays out and never written into it: the box of the first
- * letter of its text the page lays out, in that letter's own font, past text it lays out nothing of, as the indentation
- * of its markup; or, where it lays out no letter, as a blank line of code, its content box, inside its border and
- * padding, in the block's own font. None where the block lays out nothing, as it is hidden.
+ * Where a block's letters start, read off what the page lays out and draws, never written into it: the box of the
+ * first letter of its text the page lays out, in that letter's own font, past text it lays out nothing of, as the
+ * indentation of its markup; or, where it lays out no letter, as a blank line of code, its content box, inside its
+ * border and padding, in the block's own font, with the transforms over the block multiplied, each read off its matrix.
+ * The font is handed as large as the page lays it out: its computed size and spacing times the zoom over it, which they
+ * leave out. None where the block lays out nothing, as it is hidden.
  */
 function lettersStartOf(block: Element): LettersStart | null {
-	const letter = document.createRange();
+	const textLaid = document.createRange();
 	const texts = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+	// The first stretch of a text the page lays out on a line: where its first letter laid out stands, and as tall
 	let laid: DOMRect | undefined;
 	let setIn = block;
 	for (let text = texts.nextNode(); laid === undefined && text instanceof Text; text = texts.nextNode()) {
-		for (let place = 0; laid === undefined && place < text.length; place += 1) {
-			letter.setStart(text, place);
-			letter.setEnd(text, place + 1);
-			laid = [...letter.getClientRects()].find((box) => box.width > 0);
-		}
+		textLaid.selectNodeContents(text);
+		laid = [...textLaid.getClientRects()].find((stretch) => stretch.width > 0);
 		// A text in the block stands in an element of it, which the type checker cannot see
 		if (laid !== undefined) setIn = text.parentElement ?? block;
 	}
 	const style = getComputedStyle(setIn);
+	const zoom = setIn.currentCSSZoom;
+	// Letters spaced `normal`, a keyword, not a length, stand as far apart as the font sets them
+	const spacing = setIn.computedStyleMap().get('letter-spacing');
 	const font = {
-		font: `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`,
-		letterSpacing: style.letterSpacing
+		font: `${style.fontStyle} ${style.fontWeight} ${parseFloat(style.fontSize) * zoom}px ${style.fontFamily}`,
+		letterSpacing: `${spacing instanceof CSSUnitValue ? spacing.value * zoom : 0}px`
 	};
-	if (laid !== undefined) return { left: laid.left, top: laid.top, height: laid.height, ...font };
+	if (laid !== undefined) return { kind: 'letter', left: laid.left, top: laid.top, height: laid.height, font };
 	const [own] = block.getClientRects();
 	if (own === undefined) return null;
-	const top = own.top + parseFloat(style.borderTopWidth) + parseFloat(style.paddingTop);
-	const bottom = own.bottom - parseFloat(style.borderBottomWidth) - parseFloat(style.paddingBottom);
-	const left = own.left + parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft);
-	return { left, top, height: bottom - top, ...font };
+	// The transforms of the block and of every element it stands in, the block's first, as the page draws it
+	let drawn = new DOMMatrixReadOnly();
+	for (let holder: Element | null = block; holder !== null; holder = holder.parentElement) {
+		drawn = new DOMMatrixReadOnly(getComputedStyle(holder).transform).multiply(drawn);
+	}
+	const drawnLarger = { across: Math.hypot(drawn.a, drawn.b), down: Math.hypot(drawn.c, drawn.d) };
+	// How many times larger than its style computes them the page draws the block's border and padding: zoomed as it
+	// lays them out, then transformed
+	const acrossDrawn = zoom * drawnLarger.across;
+	const downDrawn = zoom * drawnLarger.down;
+	const top = own.top + (parseFloat(style.borderTopWidth) + parseFloat(style.paddingTop)) * downDrawn;
+	const bottom = own.bottom - (parseFloat(style.borderBottomWidth) + parseFloat(style.paddingBottom)) * downDrawn;
+	const left = own.left + (parseFloat(style.borderLeftWidth) + parseFloat(style.paddingLeft)) * acrossDrawn;
+	return { kind: 'blank', left, top, height: bottom - top, font, drawnLarger };
 }
 
 /**
