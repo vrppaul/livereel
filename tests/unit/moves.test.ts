@@ -4839,9 +4839,18 @@ const LEANT_BACK = 50;
 const LEANT_FAR_BACK = 80;
 const ALMOST_AT_THE_EYE = FOCAL_LENGTH - 40;
 
-/** How many times the eye magnifies each object of a scene shot in the small format, as the room is handed it. */
+/**
+ * How many times the eye magnifies each object of a scene shot in the small format, as the room is handed it, where
+ * all of it is one part.
+ */
 function magnifiedIn(scene: Scene): readonly number[] {
-	return drawnObjectsIn(scene, SMALL).map((object) => object.magnified);
+	return drawnObjectsIn(scene, SMALL).flatMap((object) => object.magnified.map((part) => part.times));
+}
+
+/** How far each part of the first object of a scene shot in the small format reaches, and how magnified it is. */
+function partsOfTheFirstIn(scene: Scene): { readonly reaches: readonly number[]; readonly times: readonly number[] } {
+	const parts = drawnObjectsIn(scene, SMALL)[0]!.magnified;
+	return { reaches: parts.map((part) => part.reaches), times: parts.map((part) => part.times) };
 }
 
 /** A scene with a title in the world in the frame's middle. */
@@ -4873,7 +4882,7 @@ test('a title in the world leant back is magnified as the eye sees its foot, the
 	const drawnTitle = drawnObjectsIn(leant, SMALL)[0]!;
 	const footsCorner = translation({ across: -drawnTitle.box.width / 2, down: drawnTitle.box.height / 2, out: 0 });
 	const atItsCorner = longestScaleAtItsMiddle(chained([drawnTitle.transform.matrix as Matrix, footsCorner]));
-	expect(drawnTitle.magnified).toBeCloseTo(atItsCorner);
+	expect(drawnTitle.magnified).toEqual([{ reaches: Infinity, times: expect.closeTo(atItsCorner) }]);
 });
 
 test("a title in the world whose foot passes behind the eye is magnified as much as what the frame shows of it, finite; one wholly past the frame's edge, once", async () => {
@@ -4882,6 +4891,17 @@ test("a title in the world whose foot passes behind the eye is magnified as much
 	const pastTheEdge = await setAt(title.show('Words', { from: 'left', inside: 'world' }), OPENING_IN_SMALL, 0);
 	const [passingTitle] = magnifiedIn(passing);
 	expect([Number.isFinite(passingTitle), passingTitle! > 1, ...magnifiedIn(pastTheEdge)]).toEqual([true, true, 1]);
+});
+
+test('a title in the world the eye skims is magnified part by part: each part reaching twice as far as the one before, the nearer the more, the last on past all', async () => {
+	const leant = await setAt(title.lean({ tilt: LEANT_FAR_BACK }), await withATitleInTheMiddle(), 1);
+	const skimmed = await setAt(title.effects({ depth: ALMOST_AT_THE_EYE }), leant, 1);
+	const { reaches, times } = partsOfTheFirstIn(skimmed);
+	const doubled = reaches.slice(1, -1).map((reach, place) => reach / reaches[place]!);
+	const lessMagnified = times.slice(1).map((magnified, place) => magnified < times[place]!);
+	expect([reaches.length > 2, reaches.at(-1)]).toEqual([true, Infinity]);
+	expect(doubled).toEqual(doubled.map(() => expect.closeTo(2)));
+	expect(lessMagnified).toEqual(lessMagnified.map(() => true));
 });
 
 test('a focus pulled from a near title to the page goes evenly in how sharp it leaves things: half way, the page is half as soft', async () => {

@@ -1814,7 +1814,11 @@ What `room` costs:
   Markup standing in the world, a title, code or a piece shown `inside:
   'world'`, is drawn as many times as densely as the eye magnifies it, so
   brought near it is as sharp as the page beside it, up to the graphics
-  card's largest texture.
+  card's largest texture. One that would ask more pixels than the frame's
+  world holds is drawn part by part by how far the eye sees each part from,
+  each as dense as the eye magnifies it and only as far as the frame shows
+  it: two plates the promo's dive flies between asked 3.4 GB of the card
+  drawn whole at their nearest point's density, and under 0.8 GB so.
 - It draws through Chrome's HTML-in-Canvas, an experiment of Chrome's behind
   a flag livereel turns on, renamed twice before: livereel pins the browser
   `npx livereel setup` installs, and refuses a browser without it, or one

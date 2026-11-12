@@ -73,13 +73,25 @@ interface CarriedPoint {
 }
 
 /**
- * An edge of a box of the frame as a cut through the eye: how far inside it a carried point stands, none on it, less
- * than none past it, is so much of its across, its down and how far it is seen from.
+ * An edge a polygon of carried points is cut at: of a box of the frame, a cut through the eye, or a distance from it:
+ * how far inside it a carried point stands, none on it, less than none past it, is so much of its across, its down
+ * and how far it is seen from, and so much more, none for an edge through the eye.
  */
 interface Edge {
 	readonly across: number;
 	readonly down: number;
 	readonly seenFrom: number;
+	readonly beyond: number;
+}
+
+/**
+ * A part of a plane a matrix carries, by how far the eye sees it from: what stands farther than the part before it
+ * reaches, the eye for the first, and no farther than it reaches itself, Infinity for the last; and how many times
+ * the matrix draws it as long at most, where a box of the frame shows it, never fewer than once.
+ */
+export interface MagnifiedPart {
+	readonly reaches: number;
+	readonly times: number;
 }
 
 /** A way or a place across and down the frame, from the middle a matrix carries about. */
@@ -175,6 +187,15 @@ const NEARER_BY_ITS_OUT = -1;
 // that is not seen
 const FROM_ITS_MIDDLE: Way = { across: 0, down: 0 };
 const NONE_SEEN = 0;
+// An edge of the frame cuts through the eye, standing no distance from it; an edge at a distance from the eye takes
+// none of a point's across and down, and all of how far it is seen from
+const THROUGH_THE_EYE = 0;
+const NONE_OF_IT = 0;
+const ALL_OF_IT = 1;
+// How much farther each part of a plane magnified part by part reaches than the one before; and a part drawn no
+// larger than it stands
+const TWICE_AS_FAR = 2;
+const AS_LARGE_AS_IT_STANDS = 1;
 
 // How far an entry of a matrix may stand from the one that carries every point where it stands, while it is still
 // taken to: whole turns leave 2.4e-16, a pixel moved leaves 1
@@ -368,6 +389,54 @@ export function longestScaleSeen(matrix: Matrix, laid: Box, part: Box, within: B
 }
 
 /**
+ * How many times a matrix draws a box of the plane it carries about the middle of another box of it as long, part by
+ * part by how far the eye sees each part from, where a box of the frame shows it (`longestScaleSeen`): from the
+ * nearest point shown, each part reaching twice as far as the one before, till one the matrix draws no larger, or the
+ * farthest point shown, which reaches on past all; one part, drawn as large as it stands, where the frame shows none of
+ * the box or the matrix sees it edge-on. The plane is drawn about as many times smaller as it is seen from farther, so
+ * a part as dense as the eye magnifies its nearest point is about twice as dense as the eye needs at most. One density
+ * for all of a plane the eye skims, its nearest point's, asked the graphics card for more than it holds: two plates of
+ * the promo's dive asked 1.5 and 1.9 GB at 11.98 s, and the card lost the room's canvas (2026-11-12).
+ */
+export function magnifiedByDistance(matrix: Matrix, laid: Box, part: Box, within: Box): readonly MagnifiedPart[] {
+	const seen =
+		nearnessOfItsPlane(matrix) === null
+			? []
+			: carriedWithin(matrix, { left: middleX(laid), top: middleY(laid) }, part, within);
+	if (seen.length === NONE_SEEN) return [{ reaches: Infinity, times: AS_LARGE_AS_IT_STANDS }];
+	return partsFrom(matrix, seen, Math.min(...seen.map((point) => point.seenFrom)));
+}
+
+/**
+ * The parts of a polygon of carried points that stand no nearer than a distance, each reaching twice as far as the
+ * one before, as `magnifiedByDistance` parts them.
+ */
+function partsFrom(matrix: Matrix, seen: readonly CarriedPoint[], from: number): readonly MagnifiedPart[] {
+	const reaches = from * TWICE_AS_FAR;
+	const times = largestOf(matrix, cutAt(seen, nearerThan(reaches)));
+	const farther = cutAt(seen, fartherThan(reaches));
+	if (farther.length === NONE_SEEN || times === AS_LARGE_AS_IT_STANDS) {
+		return [{ reaches: Infinity, times: largestOf(matrix, seen) }];
+	}
+	return [{ reaches, times }, ...partsFrom(matrix, farther, reaches)];
+}
+
+/** How many times a matrix draws a polygon of carried points as long at most, never fewer than once. */
+function largestOf(matrix: Matrix, points: readonly CarriedPoint[]): number {
+	return Math.max(AS_LARGE_AS_IT_STANDS, ...points.map((point) => longestScaleAt(matrix, point)));
+}
+
+/** The edge that keeps what is seen from no farther than a distance. */
+function nearerThan(distance: number): Edge {
+	return { across: NONE_OF_IT, down: NONE_OF_IT, seenFrom: -ALL_OF_IT, beyond: distance };
+}
+
+/** The edge that keeps what is seen from no nearer than a distance. */
+function fartherThan(distance: number): Edge {
+	return { across: NONE_OF_IT, down: NONE_OF_IT, seenFrom: ALL_OF_IT, beyond: -distance };
+}
+
+/**
  * How many times as long a matrix draws, at a point of the plane it carries, what it carries there, along the way it
  * draws it longest: how far the point seen moves for a step across and a step down the plane, the point and its
  * neighbour each divided by how far it is seen from.
@@ -532,7 +601,8 @@ function edgeThrough(inward: Way, place: Way): Edge {
 	return {
 		across: inward.across,
 		down: inward.down,
-		seenFrom: -(inward.across * place.across + inward.down * place.down)
+		seenFrom: -(inward.across * place.across + inward.down * place.down),
+		beyond: THROUGH_THE_EYE
 	};
 }
 
@@ -555,7 +625,7 @@ function cutAt(points: readonly CarriedPoint[], edge: Edge): readonly CarriedPoi
 
 /** How far inside an edge a carried point stands: none on it, less than none past it. */
 function insideOf(edge: Edge, point: CarriedPoint): number {
-	return edge.across * point.across + edge.down * point.down + edge.seenFrom * point.seenFrom;
+	return edge.across * point.across + edge.down * point.down + edge.seenFrom * point.seenFrom + edge.beyond;
 }
 
 /** The point after one of a polygon going round it, the first after the last. */

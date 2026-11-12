@@ -74,7 +74,7 @@ import {
 } from '../domain/geometry.ts';
 import { pointWhereItLies } from '../domain/framing.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
-import { ITS_MIDDLE, carried, longestScaleSeen } from '../domain/matrix.ts';
+import { ITS_MIDDLE, type MagnifiedPart, carried, magnifiedByDistance } from '../domain/matrix.ts';
 import { ONE_FRAME, pastTheEdge } from '../domain/place.ts';
 import {
 	type DrawnPlacement,
@@ -188,9 +188,9 @@ export type Objects = ReadonlyMap<ObjectName, FrameObject>;
  * frame 1080 high of its box before its matrix, none where sharp, for the flat stage; how soft it draws the softest
  * point of its box the frame shows, on the frame in pixels of a frame 1080 high, none where sharp, which bounds how far
  * past the frame's edge the room's lens gathers it, as the window's softest point does; how many times the eye
- * magnifies it, the most of the frame's pixels a pixel of its box takes where the frame shows it, so the room draws its
- * surface that many times as densely; and its content as drawn. Both blurs are none, and it is magnified once, but for
- * what stands in the world.
+ * magnifies it, part by part by how far it sees each part from, nearest first, the most of the frame's pixels a pixel
+ * of its box takes where the frame shows that part, so the room draws each part that many times as densely; and its
+ * content as drawn. Both blurs are none, and it is magnified once, all of it, but for what stands in the world.
  */
 export interface DrawnObject extends DrawnPlacement {
 	readonly name: ObjectName;
@@ -202,7 +202,7 @@ export interface DrawnObject extends DrawnPlacement {
 	readonly melt: Melting | null;
 	readonly outOfFocus: number | null;
 	readonly softestOutOfFocus: number | null;
-	readonly magnified: number;
+	readonly magnified: readonly MagnifiedPart[];
 	readonly content: DrawnContent;
 }
 
@@ -226,8 +226,8 @@ const AS_THEY_CAME = 0;
 const WHOLLY_HELD = 1;
 // Where the left and top edges of what an object stands in are, in its own pixels
 const NEAR_EDGE = 0;
-// An object the eye sees no larger than its box: a pixel of its box takes one of the frame's, or fewer
-const UNMAGNIFIED = 1;
+// An object the eye sees no larger than its box, all of it: a pixel of its box takes one of the frame's, or fewer
+const UNMAGNIFIED: readonly MagnifiedPart[] = [{ reaches: Infinity, times: 1 }];
 // All of an object's box, in shares of it
 const ALL_OF_THE_BOX: Box = { left: 0, top: 0, width: 1, height: 1 };
 
@@ -426,13 +426,12 @@ function figureShareOf(content: DrawnContent, box: Box): Box {
 }
 
 /**
- * How many times the eye magnifies something placed on a frame of a size: the most of the frame's pixels a pixel of its
- * box takes where the frame shows it, at its nearest part there; once where it is drawn no larger, or the frame shows
- * none of it.
+ * How many times the eye magnifies something placed on a frame of a size, part by part by how far it sees each part
+ * from (`magnifiedByDistance`): the most of the frame's pixels a pixel of its box takes where the frame shows that
+ * part; once where it is drawn no larger, or the frame shows none of it.
  */
-function magnifiedSeen(standing: Placed, frame: Size): number {
-	const longest = longestScaleSeen(standing.placing, standing.laid, standing.laid, boxOf(frame));
-	return Math.max(UNMAGNIFIED, longest ?? UNMAGNIFIED);
+function magnifiedSeen(standing: Placed, frame: Size): readonly MagnifiedPart[] {
+	return magnifiedByDistance(standing.placing, standing.laid, standing.laid, boxOf(frame));
 }
 
 /**

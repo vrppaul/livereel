@@ -10,8 +10,11 @@
  * glass round it (`stage/body.js`); the film's things in the world (`stage/things.js`); each object of markup standing
  * in the world, a title, code, the terminal or a piece, on a surface of its own the stage lays it in apart from the
  * frame's, drawn face-on into a texture as many times as densely as the eye magnifies it (`DrawnObject.magnified`), so
- * brought near it is as sharp as the page beside it, and stood where the engine's matrix places its box, a piece's body
- * standing with it (`stage/piece-body.js`); all seen in perspective from the eye and lit as it sees the room
+ * brought near it is as sharp as the page beside it; one that would ask more than the world's own layer holds, part by
+ * part by how far the eye sees each part from, each only as far as the frame shows it, each painted and drawn into a
+ * texture of its own in turn, as one element is laid out at one density at a time; and stood where the engine's matrix
+ * places its box, a piece's body standing with it (`stage/piece-body.js`); all seen in perspective from the eye and lit
+ * as it sees the room
  * (`stage/lighting.js`), hiding one another by depth alone; but what stands before all the rest while the eye's focus
  * blurs it near, a world of its own drawn apart and laid over the rest (`worldBuilt`). The eye's lens blurs each pixel
  * of the world by how far what it shows stands from the focus, or, where the window's shade blurs the whole window,
@@ -90,6 +93,7 @@ import {
 import { Things, isAThing } from './things.js';
 /** @import { DrawnScene } from '../src/scene.ts' */
 /** @import { DrawnObject } from '../src/props/object.ts' */
+/** @import { MagnifiedPart } from '../src/domain/matrix.ts' */
 /** @import { DrawnWindow } from '../src/props/window.ts' */
 /** @import { DrawnBloom } from '../src/props/lighting.ts' */
 /** @import { ThingObject } from './things.js' */
@@ -237,6 +241,21 @@ const ON_ITS_PLANE = 0;
 const UNSCALED = 1;
 // A page shown whole, which nothing is seen through
 const WHOLLY_SHOWN = 1;
+// A surface of markup in the world is drawn part by part as far as the eye sees each from: the nearest part reaching
+// from the eye, and its texture drawn with the frame's paint; each after it at its place among them, the one after the
+// one before
+const FROM_THE_EYE = 0;
+const NEAREST = 0;
+const ONE_MORE = 1;
+// An edge of a box of the frame as a cut through the eye, keeping what stands inward of it, toward the box's middle,
+// and outward on the far side: none of a point carried across or down, all of how far it is seen from, as named; a
+// cut through the eye stands no distance from it; and a point on the edge is kept
+const INWARD = 1;
+const OUTWARD = -1;
+const NONE_OF_IT = 0;
+const ALL_OF_IT = 1;
+const THROUGH_THE_EYE = 0;
+const ON_THE_EDGE = 0;
 // A blur of none, which the eye's focus draws sharp; a box of no size; and a list of which nothing stands
 const SHARP = 0;
 const NO_SIZE = 0;
@@ -306,16 +325,32 @@ void main() {
 	vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
 	#include <clipping_planes_vertex>
 }`;
-// An object's surface, or the cursor's: its texture as the browser drew it, in the screen's colours, premultiplied by
-// how clear it is, so three lays it over what its field holds, or the cursor's over the world laid, as the browser
-// lays it (`see-through.js`); none drawn, nor its depth, where it is clear; cut where its material asks. The page's
-// lays the window's surface over the page's picture (`page-picture.js`)
-const OBJECTS_SURFACE_FRAGMENT = `
-#include <clipping_planes_pars_fragment>
+// The cursor's surface: its texture as the browser drew it, in the screen's colours, premultiplied by how clear it is,
+// so three lays it over the world laid as the browser lays it; none drawn where it is clear. The page's lays the
+// window's surface over the page's picture (`page-picture.js`)
+const CURSORS_SURFACE_FRAGMENT = `
 uniform sampler2D surface;
 varying vec2 shareOfTheSurface;
 void main() {
+	vec4 drawn = texture2D(surface, shareOfTheSurface);
+	if (drawn.a < ${DRAWN_AT_LEAST}) discard;
+	gl_FragColor = drawn;
+}`;
+// A part of an object's surface: its texture drawn as the cursor's, laid over what its field holds (`see-through.js`),
+// none drawn, nor its depth, where it is clear; cut where its material asks; and drawn only where the eye sees the
+// surface from farther than the part before it reaches and no farther than it reaches itself, so no pixel of the
+// surface is laid by two parts. How far the eye sees a point of the plane from goes evenly across it: so much for its
+// share across the surface, so much for its share down, so much at its top left corner
+const MARKUP_PART_FRAGMENT = `
+#include <clipping_planes_pars_fragment>
+uniform sampler2D surface;
+uniform vec3 seenFromAlong;
+uniform vec2 seenFromWithin;
+varying vec2 shareOfTheSurface;
+void main() {
 	#include <clipping_planes_fragment>
+	float seenFrom = dot(vec3(shareOfTheSurface, 1.0), seenFromAlong);
+	if (seenFrom <= seenFromWithin.x || seenFrom > seenFromWithin.y) discard;
 	vec4 drawn = texture2D(surface, shareOfTheSurface);
 	if (drawn.a < ${DRAWN_AT_LEAST}) discard;
 	gl_FragColor = drawn;
@@ -467,7 +502,7 @@ class Room {
 		this.pageDepth = surfaceInTheWorld(PAGE_DEPTH_ALONE, 'pageDepth', PAGE_SURFACE_FRAGMENT, pageSurfaceValues());
 		this.pageSurfaces = [this.page, this.pageSeenThrough, this.pageDepth];
 		// The cursor's surface, on the page's plane, laid over all the world drawn
-		this.cursor = surfaceDrawn(LAID_OVER, OBJECTS_SURFACE_FRAGMENT, objectsSurfaceValues());
+		this.cursor = surfaceDrawn(LAID_OVER, CURSORS_SURFACE_FRAGMENT, { surface: { value: null } });
 		/** The screen's size, in its pixels @type {Size} */
 		this.screen = layout.format.screen;
 		this.pagePicture = new PagePicture(
@@ -482,13 +517,14 @@ class Room {
 		/** The surfaces the canvas painted anew for the frame composed last @type {ReadonlySet<Element>} */
 		this.repainted = new Set();
 		/**
-		 * Each surface of markup in the world as the world draws it, by its place among an exposure's
-		 * @type {MarkupInTheWorld[]}
+		 * Each part of each surface of markup in the world as the world draws it, by the surface's place among an
+		 * exposure's, then the part's among the surface's, nearest the eye first
+		 * @type {MarkupInTheWorld[][]}
 		 */
 		this.markup = [];
 		/**
-		 * The light of each surface of markup in the world by its place among what stands in the world, in the order the
-		 * scene lays it, as the exposure drawn last set it
+		 * The light of each part of a surface of markup in the world by the surface's place among what stands in the
+		 * world, in the order the scene lays it, as the exposure drawn last set it
 		 * @type {Map<Object3D, number>}
 		 */
 		this.laidAt = new Map();
@@ -533,11 +569,11 @@ class Room {
 
 	/**
 	 * One frame composed from its exposures: the window's surface of each laid out as far as its scene reaches, and as
-	 * far past the frame as the lens's blur of any of them gathers, and a surface over each object of markup standing in
-	 * the world where the stage laid it; the surfaces of those it has painted, each exposure drawn and added into the
-	 * frame at an equal weight; the frame glowing round its light past white where the world asks, and shown on the
-	 * canvas once the card has drawn it. What the film is told where its things module throws building or setting a
-	 * thing, none where the frame is drawn.
+	 * far past the frame as the lens's blur of any of them gathers, and a surface over the nearest part shown of each
+	 * object of markup standing in the world where the stage laid it; the surfaces of those it has painted, each exposure
+	 * drawn, the farther parts of its markup with it, and added into the frame at an equal weight; the frame glowing
+	 * round its light past white where the world asks, and shown on the canvas once the card has drawn it. What the film
+	 * is told where its things module throws building or setting a thing, none where the frame is drawn.
 	 * @param {readonly DrawnScene[]} scenes @returns {Promise<string | null>}
 	 */
 	async compose(scenes) {
@@ -553,7 +589,7 @@ class Room {
 		}
 		const standings = pagePlacings.map((placing, place) => ({
 			placing,
-			markup: this.stage.laidApart(place).map((apart) => this.markupLaidOut(apart, scenesAt(scenes, place)))
+			markup: this.stage.laidApart(place).map((apart) => this.markupLaidOut(apart, scenesAt(scenes, place), gathered))
 		}));
 		this.repainted = await paintedOf(this.canvas);
 		const first = surfacesAt(this.exposureSurfaces, FIRST);
@@ -566,6 +602,8 @@ class Room {
 		valuesSet(this.weighed.material, { weight: WHOLE / scenes.length });
 		for (const [place, standing] of standings.entries()) {
 			const scene = scenesAt(scenes, place);
+			// Each exposure's farther parts are painted in turn, as one element is laid out for one part at a time
+			await this.markupDrawn(standing.markup);
 			const refused = this.exposureDrawn(surfacesAt(this.exposureSurfaces, place), standing, scene, gathered);
 			if (refused !== null) return refused;
 		}
@@ -712,13 +750,12 @@ class Room {
 		const windowBuilt = { drawn: window, pageMatrix, body, pits: this.pitsPosed(pits, window) };
 		const posed = things.map((thing) => this.things.posedAs(thing).placed);
 		for (const placed of posed) sortedBySeeingThrough(placed);
-		for (const [place, markup] of standing.markup.entries()) this.markupAdded(place, markup);
 		/** @type {readonly StandingApart[]} */
 		const standingApart = [
 			...posed.map((placed) => standingOf([placed], seenThroughIn(placed))),
 			...standing.markup.map((markup, place) =>
 				standingOf(
-					[...markupPartsAt(this.markup, place), ...this.pieceBodies.posed(place, markup.object, scene.look)],
+					[...this.markupAdded(place, markup), ...this.pieceBodies.posed(place, markup.object, scene.look)],
 					MARKUP_BESIDE_THE_PAGE
 				)
 			)
@@ -876,37 +913,110 @@ class Room {
 	}
 
 	/**
-	 * An object of markup standing in the world laid out where the stage laid it apart: its surface laid in the canvas,
-	 * where it is not yet, over its box and as far past it as anything it shows draws, as many times as densely as the
-	 * eye magnifies it, so the eye sees none of its pixels larger than the frame's, or as densely as the card holds it.
-	 * @param {SurfaceApart} apart @param {DrawnScene} scene @returns {MarkupStanding}
+	 * An object of markup standing in the world laid out where the stage laid it apart, part by part as the engine
+	 * magnifies it (`DrawnObject.magnified`), each part a surface over its box and as far past it as anything it shows
+	 * draws, as many times as densely as the eye magnifies the part, so the eye sees none of its pixels larger than the
+	 * frame's, or as densely as the card holds it. One that asks no more pixels drawn whole, at the density of its
+	 * nearest part, than the box the world is drawn over holds is laid over all of that as one part; one that asks
+	 * more, each part over what that box shows of it as far as the eye sees it from within the part, none where it shows
+	 * none. Its element laid in the canvas, where it is not yet, over its nearest part shown. A surface that fits is not
+	 * cut, as its texels and their smaller copies would stand elsewhere and draw its letters otherwise: beats 3-4's
+	 * lifted lines, magnified 1.1 times and cut at the frame's edge, came out at SSIM 0.9976 against the uncut (draft,
+	 * 2 s, 2026-11-12), where cutting saves less than the world's own layer holds.
+	 * @param {SurfaceApart} apart @param {DrawnScene} scene @param {Box} gathered @returns {MarkupStanding}
 	 */
-	markupLaidOut(apart, scene) {
+	markupLaidOut(apart, scene, gathered) {
 		const object = objectNamed(scene[apart.list], apart.name);
-		const box = clearRound(grownBy(object.box, this.reachPastTheBox));
+		const stretches = stretchesOf(object.magnified);
+		const grown = clearRound(grownBy(object.box, this.reachPastTheBox));
+		const times = Math.max(AS_THE_PAGE, ...stretches.map((stretch) => stretch.times));
+		const whole = { nearest: FROM_THE_EYE, reaches: Infinity, times };
+		const parts = fitsIn(grown, this.densityOf(grown, whole.times), gathered)
+			? [this.markupPartOver(object, grown, whole)]
+			: stretches.flatMap((stretch) => this.markupPartShown(object, grown, gathered, stretch));
 		if (apart.element.parentElement !== this.canvas) this.canvas.append(apart.element);
-		laidOutAs(apart.element, box, this.densityOf(box, object.magnified));
-		const laidAt = placeInTheWorld(scene, apart);
-		return { object, element: apart.element, placing: { box, middle: middleOf(object.box) }, laidAt };
+		const [nearest] = parts;
+		if (nearest !== undefined) laidOutAs(apart.element, nearest.placing.box, nearest.density);
+		return { object, element: apart.element, parts, laidAt: placeInTheWorld(scene, apart) };
 	}
 
 	/**
-	 * An object of markup standing in the world added to the world, by its place among the exposure's: its surface
-	 * drawn into a texture of its own and stood where the engine's matrix places the object's box's middle, its light
-	 * and its depth apart, as what is seen through is drawn, its light laid at its place in the scene's order.
-	 * @param {number} place @param {MarkupStanding} markup
+	 * A part of an object of markup standing in the world, as far as the eye sees it from, over what the box the world is
+	 * drawn over shows of its grown box within that stretch; none where it shows none of it.
+	 * @param {DrawnObject} object @param {Box} grown @param {Box} gathered @param {MagnifiedStretch} stretch
+	 * @returns {readonly MarkupPart[]}
+	 */
+	markupPartShown(object, grown, gathered, stretch) {
+		const shown = shownOf(grown, entriesOf(object.transform), middleOf(object.box), gathered, stretch);
+		return shown === null ? [] : [this.markupPartOver(object, clearRound(shown), stretch)];
+	}
+
+	/**
+	 * A part of an object of markup standing in the world laid over a box on its plane, as many times as densely as the
+	 * eye magnifies it, or as the card holds it.
+	 * @param {DrawnObject} object @param {Box} box @param {MagnifiedStretch} stretch @returns {MarkupPart}
+	 */
+	markupPartOver(object, box, stretch) {
+		const placing = { box, middle: middleOf(object.box) };
+		return { placing, density: this.densityOf(box, stretch.times), stretch, entries: entriesOf(object.transform) };
+	}
+
+	/**
+	 * The parts of an exposure's markup standing in the world drawn into their textures: the nearest of each as the
+	 * canvas painted it with the frame; each farther one once its element is laid out over it and the canvas has
+	 * painted it so, all the objects' parts at the same place among their own in one paint.
+	 * @param {readonly MarkupStanding[]} markup
+	 */
+	async markupDrawn(markup) {
+		for (const [place, standing] of markup.entries()) {
+			if (standing.parts.length > NONE_STANDING) {
+				this.markupPartAt(place, NEAREST).texture.drawnFrom(standing.element, this.repainted);
+			}
+		}
+		const mostParts = Math.max(NONE_STANDING, ...markup.map((standing) => standing.parts.length));
+		for (let part = NEAREST + ONE_MORE; part < mostParts; part += ONE_MORE) {
+			const laying = markup.flatMap((standing, place) => partLaying(standing, place, part));
+			for (const { element, laid } of laying) laidOutAs(element, laid.placing.box, laid.density);
+			const repainted = await paintedOf(this.canvas);
+			for (const { place, element } of laying) this.markupPartAt(place, part).texture.drawnFrom(element, repainted);
+		}
+	}
+
+	/**
+	 * An object of markup standing in the world added to the world, by its place among the exposure's: each part of its
+	 * surface, drawn into a texture of its own, stood where the engine's matrix places the object's box's middle, its
+	 * light and its depth apart, as what is seen through is drawn, its light laid at the object's place in the scene's
+	 * order. The parts of the world it stands as.
+	 * @param {number} place @param {MarkupStanding} markup @returns {readonly Object3D[]}
 	 */
 	markupAdded(place, markup) {
-		while (this.markup.length <= place) this.markup.push(markupInTheWorld(this.renderer));
-		const inTheWorld = markupAt(this.markup, place);
-		inTheWorld.texture.drawnFrom(markup.element, this.repainted);
-		const matrix = surfaceMatrixOf(markup.object.inTheEyesSpace, markup.placing);
-		for (const surface of [inTheWorld.light, inTheWorld.depth]) {
-			valuesSet(surface.material, { surface: inTheWorld.texture.texture });
-			placedBy(surface, matrix);
-			this.world.add(surface);
+		/** @type {Object3D[]} */
+		const added = [];
+		for (const [partPlace, part] of markup.parts.entries()) {
+			const inTheWorld = this.markupPartAt(place, partPlace);
+			const matrix = surfaceMatrixOf(markup.object.inTheEyesSpace, part.placing);
+			const values = { surface: inTheWorld.texture.texture, ...seenFromValuesOf(part) };
+			for (const surface of [inTheWorld.light, inTheWorld.depth]) {
+				valuesSet(surface.material, values);
+				placedBy(surface, matrix);
+				this.world.add(surface);
+				added.push(surface);
+			}
+			this.laidAt.set(inTheWorld.light, markup.laidAt);
 		}
-		this.laidAt.set(inTheWorld.light, markup.laidAt);
+		return added;
+	}
+
+	/**
+	 * A part of a surface of markup in the world as the world draws it, by the surface's place among an exposure's and
+	 * the part's among the surface's: made the first time one stands there.
+	 * @param {number} place @param {number} part @returns {MarkupInTheWorld}
+	 */
+	markupPartAt(place, part) {
+		while (this.markup.length <= place) this.markup.push([]);
+		const parts = markupAt(this.markup, place);
+		while (parts.length <= part) parts.push(markupInTheWorld(this.renderer));
+		return markupAt(parts, part);
 	}
 
 	/**
@@ -984,14 +1094,35 @@ class Room {
  * @typedef {{ readonly box: Box, readonly middle: Vector2 }} SurfacePlacing
  */
 /**
- * An object of markup standing in the world as the room lays it: the object, the surface's element, where the surface
- * stands on the object's plane, and its place among what stands in the world in the order the scene lays it.
+ * An object of markup standing in the world as the room lays it: the object, the surface's element, the parts of the
+ * surface the world draws, nearest the eye first, and its place among what stands in the world in the order the scene
+ * lays it.
  * @typedef {{
  *   readonly object: DrawnObject,
  *   readonly element: Element,
- *   readonly placing: SurfacePlacing,
+ *   readonly parts: readonly MarkupPart[],
  *   readonly laidAt: number
  * }} MarkupStanding
+ */
+/**
+ * A part of an object of markup by how far the eye sees it from: farther than the nearest, no farther than it
+ * reaches, and how many times the eye magnifies it there (`MagnifiedPart` in `src/domain/matrix.ts`).
+ * @typedef {{ readonly nearest: number, readonly reaches: number, readonly times: number }} MagnifiedStretch
+ */
+/**
+ * A part of a surface of markup in the world as the room lays it: where it stands on the object's plane, how densely
+ * it is drawn, how far the eye sees it from, and every entry of the matrix that places it about the object's middle.
+ * @typedef {{
+ *   readonly placing: SurfacePlacing,
+ *   readonly density: number,
+ *   readonly stretch: MagnifiedStretch,
+ *   readonly entries: Matrix
+ * }} MarkupPart
+ */
+/**
+ * A point of a box on a plane as a cut keeps it: where it stands on the plane from the middle the matrix carries the
+ * plane about, and where the matrix carries it before it is seen, across, down and how far it is seen from.
+ * @typedef {{ readonly onThePlane: Vector2, readonly carried: Vector3 }} PointCut
  */
 /**
  * What the page's surface lays, as its material takes it: the window's surface, and with it what lies over the page
@@ -1120,16 +1251,157 @@ function seenOf(standing, entries, middle, shown) {
 	return seen.width > NO_SIZE && seen.height > NO_SIZE ? seen : standing;
 }
 
-/** A box's four corners. @param {Box} box */
+/** A box's four corners, going round it. @param {Box} box */
 function cornersOf(box) {
 	const right = box.left + box.width;
 	const bottom = box.top + box.height;
 	return [
 		new Vector2(box.left, box.top),
 		new Vector2(right, box.top),
-		new Vector2(box.left, bottom),
-		new Vector2(right, bottom)
+		new Vector2(right, bottom),
+		new Vector2(box.left, bottom)
 	];
+}
+
+/**
+ * Whether a surface laid over a box at a density holds no more pixels than another box of the frame does at the
+ * page's own. @param {Box} box @param {number} density @param {Box} within
+ */
+function fitsIn(box, density, within) {
+	return box.width * density * box.height * density <= within.width * within.height;
+}
+
+/**
+ * Each part of an object of markup as the engine magnifies it, nearest the eye first, with how far the part before it
+ * reaches, which it stands farther than: the eye, for the first.
+ * @param {readonly MagnifiedPart[]} magnified @returns {readonly MagnifiedStretch[]}
+ */
+function stretchesOf(magnified) {
+	return magnified.map((part, place) => ({
+		nearest: magnified[place - ONE_MORE]?.reaches ?? FROM_THE_EYE,
+		reaches: part.reaches,
+		times: part.times
+	}));
+}
+
+/**
+ * The part of a box on a plane a box of the frame shows, within a stretch of how far the eye sees it from: the least
+ * box round it, on the plane, in the frame's pixels; none where it shows none. The box's corners, carried by the
+ * plane's matrix about its middle, are cut at each edge of the frame's box through the eye and at each end of the
+ * stretch, as the engine cuts what the frame shows of a plane (`carriedWithin` in `src/domain/matrix.ts`), each point
+ * keeping where it stands on the plane.
+ * @param {Box} box @param {Matrix} entries @param {Vector2} middle @param {Box} shown
+ * @param {MagnifiedStretch} stretch @returns {Box | null}
+ */
+function shownOf(box, entries, middle, shown, stretch) {
+	const corners = cornersOf(box).map((corner) => pointCutOf(entries, corner.sub(middle)));
+	const edges = [...edgesOf(shown, middle), fartherThan(stretch.nearest), nearerThan(stretch.reaches)];
+	const kept = edges.reduce(cutAt, corners);
+	if (kept.length === NONE_STANDING) return null;
+	return boxOfPoints(kept.map((point) => point.onThePlane.clone().add(middle)));
+}
+
+/**
+ * A point of a plane as a matrix carries it about the plane's middle, out none, before it is seen.
+ * @param {Matrix} entries @param {Vector2} onThePlane @returns {PointCut}
+ */
+function pointCutOf(entries, onThePlane) {
+	const carried = new Vector3(
+		entries.m11 * onThePlane.x + entries.m21 * onThePlane.y + entries.m41,
+		entries.m12 * onThePlane.x + entries.m22 * onThePlane.y + entries.m42,
+		entries.m14 * onThePlane.x + entries.m24 * onThePlane.y + entries.m44
+	);
+	return { onThePlane, carried };
+}
+
+/**
+ * The edges of a box of the frame, from the middle a matrix carries a plane about, as cuts through the eye: how far
+ * inside each a carried point stands is so much of its across, its down, how far it is seen from, and none more.
+ * @param {Box} box @param {Vector2} middle @returns {readonly Vector4[]}
+ */
+function edgesOf(box, middle) {
+	const left = box.left - middle.x;
+	const top = box.top - middle.y;
+	return [
+		new Vector4(INWARD, NONE_OF_IT, -left, THROUGH_THE_EYE),
+		new Vector4(NONE_OF_IT, INWARD, -top, THROUGH_THE_EYE),
+		new Vector4(OUTWARD, NONE_OF_IT, left + box.width, THROUGH_THE_EYE),
+		new Vector4(NONE_OF_IT, OUTWARD, top + box.height, THROUGH_THE_EYE)
+	];
+}
+
+/** The edge that keeps what is seen from no nearer than a distance. @param {number} distance */
+function fartherThan(distance) {
+	return new Vector4(NONE_OF_IT, NONE_OF_IT, INWARD, -distance);
+}
+
+/** The edge that keeps what is seen from no farther than a distance. @param {number} distance */
+function nearerThan(distance) {
+	return new Vector4(NONE_OF_IT, NONE_OF_IT, OUTWARD, distance);
+}
+
+/**
+ * A polygon of points going round cut at an edge: each point inside it kept, and where a side crosses it, the point
+ * it crosses at, so what is kept goes round too.
+ * @param {readonly PointCut[]} points @param {Vector4} edge @returns {readonly PointCut[]}
+ */
+function cutAt(points, edge) {
+	/** @type {PointCut[]} */
+	const kept = [];
+	for (const [place, point] of points.entries()) {
+		const next = points[(place + ONE_MORE) % points.length] ?? point;
+		const inside = insideOf(edge, point);
+		const nextInside = insideOf(edge, next);
+		const isKept = inside >= ON_THE_EDGE;
+		if (isKept) kept.push(point);
+		if (isKept !== nextInside >= ON_THE_EDGE) kept.push(pointBetween(point, next, inside / (inside - nextInside)));
+	}
+	return kept;
+}
+
+/**
+ * How far inside an edge a point stands: none on it, less than none past it.
+ * @param {Vector4} edge @param {PointCut} point
+ */
+function insideOf(edge, point) {
+	return edge.dot(new Vector4(point.carried.x, point.carried.y, point.carried.z, ALL_OF_IT));
+}
+
+/**
+ * A point a share of the way from one to another, on the plane and as it is carried, as a side between them is cut.
+ * @param {PointCut} start @param {PointCut} end @param {number} share @returns {PointCut}
+ */
+function pointBetween(start, end, share) {
+	return {
+		onThePlane: start.onThePlane.clone().lerp(end.onThePlane, share),
+		carried: start.carried.clone().lerp(end.carried, share)
+	};
+}
+
+/**
+ * The values a part of a surface of markup is cut to how far the eye sees it from by (`MARKUP_PART_FRAGMENT`): how far
+ * it sees a point of the surface from, so much for its share across, so much for its share down, so much at its top
+ * left corner, the plane's matrix dividing the point by its across, down and own entries; and the stretch it draws.
+ * @param {MarkupPart} part
+ */
+function seenFromValuesOf(part) {
+	const { box, middle } = part.placing;
+	const { m14, m24, m44 } = part.entries;
+	const corner = m14 * (box.left - middle.x) + m24 * (box.top - middle.y) + m44;
+	return {
+		seenFromAlong: new Vector3(m14 * box.width, m24 * box.height, corner),
+		seenFromWithin: new Vector2(part.stretch.nearest, part.stretch.reaches)
+	};
+}
+
+/**
+ * An exposure's object of markup, by its place among the exposure's, as its part at a place among its own is laid
+ * out: none where it has no part there.
+ * @param {MarkupStanding} standing @param {number} place @param {number} part
+ */
+function partLaying(standing, place, part) {
+	const laid = standing.parts[part];
+	return laid === undefined ? [] : [{ place, element: standing.element, laid }];
 }
 
 /** The least box the points stand in. @param {readonly Vector2[]} points @returns {Box} */
@@ -1464,19 +1736,21 @@ function laidAsThreeLaysThem(first, second) {
 function markupInTheWorld(renderer) {
 	return {
 		texture: new SurfaceTexture(renderer, SHRINKS),
-		light: surfaceInTheWorld(
-			MARKUP_SEEN_THROUGH,
-			'surfacesSeenThrough',
-			OBJECTS_SURFACE_FRAGMENT,
-			objectsSurfaceValues()
-		),
-		depth: surfaceInTheWorld(MARKUP_DEPTH_ALONE, 'surfacesDepth', OBJECTS_SURFACE_FRAGMENT, objectsSurfaceValues())
+		light: surfaceInTheWorld(MARKUP_SEEN_THROUGH, 'surfacesSeenThrough', MARKUP_PART_FRAGMENT, markupPartValues()),
+		depth: surfaceInTheWorld(MARKUP_DEPTH_ALONE, 'surfacesDepth', MARKUP_PART_FRAGMENT, markupPartValues())
 	};
 }
 
-/** The values an object's surface's material starts with, its own: no texture yet. */
-function objectsSurfaceValues() {
-	return { surface: { value: null } };
+/**
+ * The values a part of a surface of markup's material starts with, its own: no texture yet, and how far the eye sees
+ * it from set as each exposure stands it.
+ */
+function markupPartValues() {
+	return {
+		surface: { value: null },
+		seenFromAlong: { value: new Vector3() },
+		seenFromWithin: { value: new Vector2() }
+	};
 }
 
 /**
@@ -1497,21 +1771,14 @@ function reachPastTheBox() {
 	return Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue(REACH_PAST_THE_BOX));
 }
 
-/** @param {readonly MarkupInTheWorld[]} markup @param {number} place */
+/**
+ * What the room holds of markup in the world at a place: a surface's parts, or one part.
+ * @template Held @param {readonly Held[]} markup @param {number} place @returns {Held}
+ */
 function markupAt(markup, place) {
 	const inTheWorld = markup[place];
-	if (inTheWorld === undefined) throw new Error(`the room has drawn no surface ${place + 1} of markup in the world`);
+	if (inTheWorld === undefined) throw new Error(`the room has drawn no markup ${place + 1} in the world`);
 	return inTheWorld;
-}
-
-/**
- * The parts in the world's scene of a surface of markup standing in the world, by its place among an exposure's: its
- * light and its depth.
- * @param {readonly MarkupInTheWorld[]} markup @param {number} place @returns {readonly Object3D[]}
- */
-function markupPartsAt(markup, place) {
-	const inTheWorld = markupAt(markup, place);
-	return [inTheWorld.light, inTheWorld.depth];
 }
 
 /** @param {readonly DrawnScene[]} scenes @param {number} place */
