@@ -77,7 +77,7 @@ const NOTHING_SEEN_THROUGH = [];
 /**
  * How what each field holds is drawn into it, in the screen's colours or as light, and how the field is laid over what
  * lies under it, as the browser lays it or in linear light. Markup is drawn as the browser drew it, so three lays its
- * surfaces over one another as the browser lays them (`OBJECTS_SURFACE_FRAGMENT` in `stage/room.js`), and is laid so. A
+ * surfaces over one another as the browser lays them (`MARKUP_PART_FRAGMENT` in `stage/room.js`), and is laid so. A
  * film's things are its light. The page is laid as markup is: its fade is the stylesheet's, and laid in linear light
  * over what stood behind it, a half-faded page over a glass cube read 13.27 levels off the old room, which laid its
  * layers in the screen's colours, on average over 900 × 560 pixels of a 3840 still, and 1.79 laid so (a probe film,

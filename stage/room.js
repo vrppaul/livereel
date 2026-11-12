@@ -14,12 +14,11 @@
  * part by how far the eye sees each part from, each only as far as the frame shows it, each painted and drawn into a
  * texture of its own in turn, as one element is laid out at one density at a time; and stood where the engine's matrix
  * places its box, a piece's body standing with it (`stage/piece-body.js`); all seen in perspective from the eye and lit
- * as it sees the room
- * (`stage/lighting.js`), hiding one another by depth alone; but what stands before all the rest while the eye's focus
- * blurs it near, a world of its own drawn apart and laid over the rest (`worldBuilt`). The eye's lens blurs each pixel
- * of the world by how far what it shows stands from the focus, or, where the window's shade blurs the whole window,
- * as wide as the shade blurs the window there where that is wider (`stage/lens.js`, `WindowBlurred` in
- * `stage/body.js`); its fields are laid over one another each by its law (`stage/laying.js`) and the whole over the
+ * as it sees the room (`stage/lighting.js`), hiding one another by depth alone; but what stands before all the rest
+ * while the eye's focus blurs it near, a world of its own drawn apart and laid over the rest (`worldBuilt`). The eye's
+ * lens blurs each pixel of the world by how far what it shows stands from the focus, or, where the window's shade blurs
+ * the whole window, as wide as the shade blurs the window there where that is wider (`stage/lens.js`, `WindowBlurred`
+ * in `stage/body.js`); its fields are laid over one another each by its law (`stage/laying.js`) and the whole over the
  * ground; over that the cursor, on the page's plane where the eye sees it but over whatever stands nearer, unblurred,
  * as the reference promo drew its pointer over its world past its lens (`pointer.js` of the film): laid in the world, a
  * piece lifted off the page and its shadow lay over it, grey and soft (beats 5–6's draft at 4.4 s, 2026-11-11); then
@@ -1193,7 +1192,7 @@ class Room {
  * }} WorldApart
  */
 /**
- * A surface of markup standing in the world as the world draws it: its texture, its light and its depth.
+ * A part of a surface of markup standing in the world as the world draws it: its texture, its light and its depth.
  * @typedef {{
  *   readonly texture: SurfaceTexture,
  *   readonly light: Mesh<PlaneGeometry, ShaderMaterial>,

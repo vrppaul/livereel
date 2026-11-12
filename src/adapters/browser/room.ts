@@ -121,7 +121,7 @@ const NO_ELEMENT_DRAWING =
 // What the person is told where the graphics card drops the room's canvas as a frame is drawn
 const CANVAS_DROPPED =
 	"the graphics card dropped the room's canvas, which draws nothing after: it ran out of memory, or was reset; shoot " +
-	'again, or ask less of it, at `--quality draft` or a smaller format, or with fewer things near the eye';
+	'again, or ask less of it, at `--quality draft` or a smaller format, or with less markup near the eye';
 
 /** What a page offers the room: WebGL, and HTML-in-Canvas in it. */
 type RoomLack = 'none' | 'webgl' | 'element drawing';

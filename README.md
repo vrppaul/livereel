@@ -893,9 +893,10 @@ is refused on a page framed live, from a page the window shades, from a page
 of the film's own that runs or is drawn past its screen, as its picture
 would drop each at once, and while the screen still fades from the page
 before. The page stands as written: its scripts do not run, one that
-animates or transitions of itself is refused before the film is shot, as what moves in a film is the film's, it moves only as
-the film runs it (`screen.scrolls`, below), no key reaches it but as the
-film types into it (`screen.type`, below), and an address in it
+animates or transitions of itself is refused before the film is shot, as
+what moves in a film is the film's, it moves only as the film runs it
+(`screen.scrolls`, below), no key reaches it but as the film types into
+it (`screen.type`, below), and an address in it
 is read from the stage's own folder, so name an image or a font by a whole
 address or a `data:` URL: the film's `fonts` set the look's words, not
 its pages. While the page of the film's own shows, a move

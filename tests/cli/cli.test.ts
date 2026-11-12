@@ -26,6 +26,8 @@ const DRAWN_UNANSWERED = 'tests/cli/films/drawn-unanswered.ts';
 // A film shot on its set, and the folder its set is shot into, beside it
 const ON_SET = 'tests/cli/films/on-set.ts';
 const ON_SET_FOLDER = 'tests/cli/films/on-set-small.set';
+// A film of a room whose canvas is dropped once a frame is drawn, as a graphics card out of memory drops it
+const CANVAS_DROPPED = 'tests/cli/films/canvas-dropped.ts';
 const AS_A_MODULE = JSON.stringify({ type: 'module' });
 // An ffmpeg that is there, but lists the MP4's encoders alone, H.264 and AAC, whatever it is asked
 const FFMPEG_OF_MP4_ALONE =
@@ -406,6 +408,14 @@ test("a browser not installed, or a Node too old for livereel, is refused as the
 		'livereel still: the browser films are shot in is not installed: run `npx livereel setup`\n',
 		3,
 		'livereel needs Node 22.20 or later; this is Node 20.0.0\n'
+	]);
+});
+
+test("a film whose canvas the graphics card drops as it is shot is refused as the machine's, saying the moment", () => {
+	const ran = livereel('shoot', CANVAS_DROPPED, '--out', scratch(), '--renderer', 'gpu');
+	expect([ran.code, ran.said]).toEqual([
+		3,
+		expect.stringMatching(/^livereel shoot: at 0\.\d+ s, step 2: the graphics card dropped the room's canvas/)
 	]);
 });
 

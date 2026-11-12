@@ -23,7 +23,7 @@ import {
 	pointAt
 } from '../../src/domain/geometry.ts';
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
-import { type Beginning, type Move, ownPagesOf } from '../../src/direction/move.ts';
+import { type Beginning, type Move, type StepBegunIn, ownPagesOf } from '../../src/direction/move.ts';
 import { pageKeyOf } from '../../src/direction/page.ts';
 import { play } from '../../src/direction/steps.ts';
 import { onto, to as cameraTo } from '../../src/moves/camera.ts';
@@ -348,9 +348,13 @@ const FOLLOWING = { kind: 'following' };
 const DRAWN_FROM_THE_PAGE = { kind: 'page' };
 // No picture of a part of the screen the stage holds sharper than the page's
 const NONE_SHARPER: readonly never[] = [];
-// The step a move of a cut begins in; and a play no move here asks where the frame will stand
-const IN_A_CUT = { kind: 'cut' };
-const IN_A_PLAY = { kind: 'play' };
+// The step a move of a cut begins in; and a play no move here asks where the frame will stand, which refuses one that
+// does
+const IN_A_CUT: StepBegunIn = { kind: 'cut' };
+const IN_A_PLAY: StepBegunIn = {
+	kind: 'play',
+	cameraAt: () => Promise.reject(new Error('no move of these tests asks where the frame will stand'))
+};
 // The middle of an object's box, in shares of it
 const BOX_MIDDLE: Point = { left: 0.5, top: 0.5 };
 // How a group grown and leant at once refuses an object joining it

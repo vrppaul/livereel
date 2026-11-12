@@ -72,7 +72,7 @@ const A_CARD = { at: 'whole', reach: { width: 540, height: 360 }, values: { turn
 // What a film is told where the graphics card drops the room's canvas
 const CANVAS_DROPPED =
 	"the graphics card dropped the room's canvas, which draws nothing after: it ran out of memory, or was reset; shoot " +
-	'again, or ask less of it, at `--quality draft` or a smaller format, or with fewer things near the eye';
+	'again, or ask less of it, at `--quality draft` or a smaller format, or with less markup near the eye';
 
 /** What a film that shows a thing its module builds none of is told, as its first step begins. */
 function unbuiltRefusalOf(made: string): TakeError {
