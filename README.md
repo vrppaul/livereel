@@ -775,9 +775,10 @@ fade lays that page: lines lifted off a terminal riding their blocks draw back
 with the fading terminal as the camera draws back the review coming under it.
 A page the screen cut away from with no fade lies where the screen does. Its
 depth stays in pixels of a frame 1080 high as the camera draws back, where
-one eye drawing back from both would shrink it with the page. The page finds, as it is lifted, every block whose scroll
-carries its source (for a box of the screen, the block shown at its middle
-too), and a `page.scrollBy` or `page.scrollTo` of any of them carries it,
+one eye drawing back from both would shrink it with the page. The page
+finds, as it is lifted, every block whose scroll carries its source (for a
+box of the screen, the block shown at its middle too), and a
+`page.scrollBy` or `page.scrollTo` of any of them carries it,
 however the film selects that block: `page.scrollTo(TASK, { top: 0 })` scrolls
 the column that holds the task, and carries it. Those are the blocks the source
 stands in as the browser lays it out: past a block placed `absolute` or

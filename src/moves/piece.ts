@@ -131,7 +131,7 @@ import {
 	overItsSource,
 	sourceOf
 } from './source.ts';
-import { type Sheen, THE_FIGURE, type Wipe } from '../props/way.ts';
+import { NO_SHEEN, type Sheen, THE_FIGURE, type Wipe } from '../props/way.ts';
 import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
 
 /**
@@ -252,8 +252,7 @@ const PIECE_HIDE_FORM: Form<PieceHideScript> = {
 // where it names no colour
 const SHEEN_TRAILS = 48;
 const ACCENTED = null;
-// A wipe trailing no light where the film names none
-const NO_SHEEN = null;
+// The move that empties a block, as its refusals name it
 const PIECE_EMPTIES = 'piece.empties';
 // What a piece lies in where it lies on the page, carried there from the frame or from the world, so it shares the
 // screen's pixels with a block of the page; not a ride, whose box stands in its page's pixels as the ride began, laid

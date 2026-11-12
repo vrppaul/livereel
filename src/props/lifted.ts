@@ -24,10 +24,13 @@ import {
 	type Point,
 	type Segment,
 	type Size,
+	boxOf,
 	middleX,
 	middleY,
 	placedFrom,
+	pointAt,
 	segmentBetween,
+	sharesIn,
 	withAir
 } from '../domain/geometry.ts';
 import {
@@ -208,7 +211,7 @@ function linesOf(object: FrameObject, piece: Piece, holders: Holders, frame: Siz
 
 /** Where the corners of a box of the screen stand on the frame, as a camera shows them, in order round it. */
 function sourceCorners(source: Box, camera: Camera, frame: Size): readonly Point[] {
-	return CORNERS_ROUND.map((corner) => onTheFrame(camera, frame, pointOf(source, corner)));
+	return CORNERS_ROUND.map((corner) => onTheFrame(camera, frame, pointAt(source, corner)));
 }
 
 /**
@@ -216,23 +219,8 @@ function sourceCorners(source: Box, camera: Camera, frame: Size): readonly Point
  * what it stands in, in order round it.
  */
 function pieceCorners(object: FrameObject, piece: Piece, holders: Holders, frame: Size): readonly Point[] {
-	const figure = sharesOf(figureIn(piece.source, object.box), object.box);
-	return CORNERS_ROUND.map((corner) => drawnOnTheFrame(object, holders, frame, pointOf(figure, corner)));
-}
-
-/** A point of a box, given in shares of it, as a point of what the box stands in. */
-function pointOf(box: Box, share: Point): Point {
-	return { left: box.left + share.left * box.width, top: box.top + share.top * box.height };
-}
-
-/** A box in shares of a size it stands in. */
-function sharesOf(box: Box, within: Size): Box {
-	return {
-		left: box.left / within.width,
-		top: box.top / within.height,
-		width: box.width / within.width,
-		height: box.height / within.height
-	};
+	const figure = sharesIn(figureIn(piece.source, object.box), boxOf(object.box));
+	return CORNERS_ROUND.map((corner) => drawnOnTheFrame(object, holders, frame, pointAt(figure, corner)));
 }
 
 /** The corners of the source, or of the piece, each told whose it is. */

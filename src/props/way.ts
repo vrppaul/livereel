@@ -189,8 +189,8 @@ const HALVES = 2;
 // The edge a mask comes from, below the figure, rising, and the edge a wipe comes from, its left, where none is named
 const MASKED_FROM: FrameSide = 'bottom';
 const WIPED_FROM: FrameSide = 'left';
-// A wipe trailing no light, and how far behind its edge that is
-const NO_SHEEN = null;
+// A wipe trailing no light, as one does where the film names none, and how far behind its edge that is
+export const NO_SHEEN = null;
 const NO_TRAIL = 0;
 // Which way each edge lies from the figure's middle, across and down
 const TOWARD: { readonly [Side in FrameSide]: Shift } = {

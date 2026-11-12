@@ -69,7 +69,8 @@ import {
 	frameScaleOf,
 	middleX,
 	middleY,
-	pointAt
+	pointAt,
+	sharesIn
 } from '../domain/geometry.ts';
 import { pointWhereItLies } from '../domain/framing.ts';
 import { type Kind, OneOf } from '../domain/handed.ts';
@@ -413,7 +414,7 @@ function figureShareOf(content: DrawnContent, box: Box): Box {
 		case 'piece':
 		case 'lens':
 		case 'picture':
-			return shareOfABox(content.figure, box);
+			return sharesIn(content.figure, boxOf(box));
 		case 'title':
 		case 'code':
 		case 'terminal':
@@ -422,16 +423,6 @@ function figureShareOf(content: DrawnContent, box: Box): Box {
 		case 'thing':
 			return ALL_OF_THE_BOX;
 	}
-}
-
-/** A box in another, measured from that one's top left corner, in shares of it. */
-function shareOfABox(part: Box, box: Box): Box {
-	return {
-		left: part.left / box.width,
-		top: part.top / box.height,
-		width: part.width / box.width,
-		height: part.height / box.height
-	};
 }
 
 /**

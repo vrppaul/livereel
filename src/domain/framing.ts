@@ -73,6 +73,14 @@ export function pointWhereItLies(lying: Lying, point: Point): Point {
 	return { left: lying.corner.left + point.left * lying.scale, top: lying.corner.top + point.top * lying.scale };
 }
 
+/**
+ * How a page lies on the screen where it lies on another page as `inner` says and that page on the screen as `outer`
+ * says: as the part of a page a ride's scrolls carry up lies on its page, which a fade laid elsewhere.
+ */
+export function lyingWithin(outer: Lying, inner: Lying): Lying {
+	return { corner: pointWhereItLies(outer, inner.corner), scale: outer.scale * inner.scale };
+}
+
 /** Where a box of a page stands on the screen, in its pixels, the page lying there so. */
 export function whereItLies(lying: Lying, box: Box): Box {
 	return { ...pointWhereItLies(lying, box), width: box.width * lying.scale, height: box.height * lying.scale };

@@ -37,13 +37,16 @@ import {
 	boxInTheView,
 	boxOfTheScreenIn,
 	framingWhereItLies,
-	pointInTheView
+	lyingWithin,
+	pointInTheView,
+	whereItLies
 } from './framing.ts';
 import {
 	type Box,
 	HALVES,
 	type Point,
 	type Size,
+	UNMOVED,
 	boxCentredOn,
 	boxOf,
 	middleX,
@@ -367,25 +370,31 @@ function scrolledSince(ride: Ride, scrolled: Scrolled): number {
 }
 
 /**
- * A box of the screen under something placed in a holder, where it stands now on its page, in the pixels the screen
- * shows that page whole in: riding it, carried up as far as the film has scrolled the ride's blocks since it began, as
- * the block's own parts are; in any other holder, as it is. Where the page itself lies on the screen is `lyingUnder`'s.
+ * How the part of a page a ride carries lies on that page as the screen showed it whole when the ride began: carried
+ * up as far as the film has scrolled the ride's blocks since, as the block's own parts are.
  */
-export function screenBoxUnder(box: Box, holder: Holder, scrolled: Scrolled): Box {
-	if (holder.kind !== 'ride') return box;
-	return { ...box, top: box.top - scrolledSince(holder.ride, scrolled) };
+function carriedUpByItsScrolls(ride: Ride, scrolled: Scrolled): Lying {
+	return { ...OVER_THE_SCREEN, corner: { ...UNMOVED, top: -scrolledSince(ride, scrolled) } };
 }
 
 /**
- * How the page under something placed in a holder lies on the screen now, as the holders stand: riding it, where the
- * screen lays it, carried up as far as the film has scrolled the ride's blocks since it began; in any other holder,
- * over the whole screen.
+ * A box of the screen under something placed in a holder, where it stands now on its page, in the pixels the screen
+ * shows that page whole in: riding it, carried up its scrolls (`carriedUpByItsScrolls`); in any other holder, as it
+ * is. Where the page itself lies on the screen is `lyingUnder`'s.
+ */
+export function screenBoxUnder(box: Box, holder: Holder, scrolled: Scrolled): Box {
+	if (holder.kind !== 'ride') return box;
+	return whereItLies(carriedUpByItsScrolls(holder.ride, scrolled), box);
+}
+
+/**
+ * How the page under something placed in a holder lies on the screen now, as the holders stand: riding it, carried up
+ * its scrolls, on the page where the screen lays that; in any other holder, over the whole screen.
  */
 export function lyingUnder(holder: Holder, holders: Holders): Lying {
 	if (holder.kind !== 'ride') return OVER_THE_SCREEN;
 	const laid = lyingOnTheScreen(holder.ride.page, holders.fadedFrom);
-	const carriedUp = scrolledSince(holder.ride, holders.scrolled) * laid.scale;
-	return { ...laid, corner: { ...laid.corner, top: laid.corner.top - carriedUp } };
+	return lyingWithin(laid, carriedUpByItsScrolls(holder.ride, holders.scrolled));
 }
 
 /**

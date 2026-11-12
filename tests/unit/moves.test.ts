@@ -12,6 +12,7 @@ import {
 	type Box,
 	CORNER_SHARES,
 	type Point,
+	type Segment,
 	boxOf,
 	boxToward,
 	cornersOf,
@@ -5731,5 +5732,50 @@ test("a piece riding its block while the screen fades from its page goes where t
 		whereItStood,
 		whereItStood,
 		cornersOfTheFrameBox({ left: 1080, top: 570, width: 50, height: 30 })
+	]);
+});
+
+/** The scene a fade from the page a scene's screen shows sets in a cut that frames the page coming anew, as it ends. */
+async function fadedInACutFramingAnew(scene: Scene): Promise<Scene> {
+	const fading = await setHoldingAt(screenShows(OWN_PAGE, { fade: FADING_TWO_SECONDS }), scene, 1, new PicturesHeld());
+	return withFadeLaid(await setIn(cameraTo(FOUR_TIMES_ON_THE_MIDDLE), fading, 1, FULL_HD), FULL_HD);
+}
+
+/** Where the frame of a scene shot full HD shows the spot the eye focuses on to see its piece sharp. */
+function pieceFocusSeenIn(scene: Scene): Point {
+	const camera = cameraOf(scene, FULL_HD);
+	const focus = focusOn(scene.objects.get('piece')!, holdersIn(scene, camera), FULL_HD.frame);
+	return onTheFrame(camera, FULL_HD.frame, focus.point);
+}
+
+test('the eye focused on a piece riding its block while the screen fades from its page focuses where the fade lays that page: on the piece, where it stood on the frame', async () => {
+	const lifted = await liftedRiding();
+	const faded = await fadedInACutFramingAnew(lifted);
+	expect(pieceFocusSeenIn(faded)).toEqual(closeToPoint(pieceFocusSeenIn(lifted)));
+});
+
+/** The segments of the lines a scene shot full HD draws, each from its source to its piece. */
+function segmentsDrawnIn(scene: Scene): readonly Segment[] {
+	return drawn(scene, cameraOf(scene, FULL_HD), 0, FULL_HD, NONE_SHARPER).lines.flatMap((lines) => lines.segments);
+}
+
+/** A segment as a test takes it: where it starts, how long it is and its angle, each close to the one named. */
+function closeToSegment(segment: Segment): Segment {
+	return {
+		from: closeToPoint(segment.from),
+		length: expect.closeTo(segment.length),
+		angle: expect.closeTo(segment.angle)
+	};
+}
+
+test('a piece riding its block while the screen fades from its page draws its lines to its source where the fade lays that page: as they stood, the piece and its source where they stood on the frame', async () => {
+	const close = await setIn(cameraTo(MIDDLE_AT_TWO), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setOnTheScrollingPage(piece.show('#other', { ...RIDING_ITS_BLOCK, lines: 'solid' }), close, 0);
+	const aside = await setIn(piece.to(UPPER_LEFT), lifted, 1, FULL_HD);
+	const faded = await fadedInACutFramingAnew(aside);
+	const twoLines = 2;
+	expect([segmentsDrawnIn(aside).length, segmentsDrawnIn(faded)]).toEqual([
+		twoLines,
+		segmentsDrawnIn(aside).map(closeToSegment)
 	]);
 });
