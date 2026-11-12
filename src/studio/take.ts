@@ -337,13 +337,34 @@ export class Take {
 		}
 	}
 
+	/**
+	 * A cut: its moves begun one after another, each on the scene the ones before it left, and set at their ends; a move
+	 * that asks where the frame will stand is told the camera the cut leaves the frame seen by, as the frame after the
+	 * cut is the first to show it.
+	 */
 	private async cut(step: Cut): Promise<void> {
-		for (const move of step.moves) {
-			const atOnce: Stretch = { moment: this.moment(), seconds: AT_ONCE, ease: move.timing.ease ?? linear };
-			const change = await this.changeOf(move, atOnce, () => Promise.resolve(cameraOf(this.scene, this.format)));
+		for (const [place, move] of step.moves.entries()) {
+			const change = await this.changeOf(this.scene, move, atOnceBy(move, this.moment()), () =>
+				this.cameraLeftBy(step.moves.slice(place + 1))
+			);
 			await this.set(change, AT_THEIR_ENDS, AT_THEIR_ENDS, movesThePage(move));
 			this.heard(soundsOf(move), AT_THEIR_ENDS);
 		}
+	}
+
+	/**
+	 * The camera a cut leaves the frame seen by, foreseen from a move of it: the scene as it stands, every move of the
+	 * camera, the window and the eye still to come in the cut begun on it in turn and set at its end, each told the
+	 * camera as it stands then where it asks.
+	 */
+	private async cameraLeftBy(toCome: readonly Move[]): Promise<Camera> {
+		let scene = this.scene;
+		for (const move of toCome.filter(movesTheFrame)) {
+			const standing = cameraOf(scene, this.format);
+			const change = await this.changeOf(scene, move, atOnceBy(move, this.moment()), () => Promise.resolve(standing));
+			scene = await change(scene, AT_THEIR_ENDS, AT_THEIR_ENDS);
+		}
+		return cameraOf(scene, this.format);
 	}
 
 	/**
@@ -433,7 +454,7 @@ export class Take {
 			return begunAhead;
 		}
 		const stretch = stretchIn(move, foresight.playTime);
-		const change = await this.changeOf(move, stretch, (moment) => this.cameraForeseen(foresight, moment));
+		const change = await this.changeOf(this.scene, move, stretch, (moment) => this.cameraForeseen(foresight, moment));
 		return runningOf(move, stretch, change);
 	}
 
@@ -467,10 +488,14 @@ export class Take {
 	}
 
 	/**
-	 * A move begun as the scene stands, over a stretch of the film's time, where the frame will stand along it foreseen.
+	 * A move begun on a scene, over a stretch of the film's time, where the frame will stand along it foreseen.
 	 */
-	private async changeOf(move: Move, stretch: Stretch, cameraAt: (moment: number) => Promise<Camera>): Promise<Change> {
-		const scene = this.scene;
+	private async changeOf(
+		scene: Scene,
+		move: Move,
+		stretch: Stretch,
+		cameraAt: (moment: number) => Promise<Camera>
+	): Promise<Change> {
 		return move.begin({
 			scene,
 			page: await this.pageShownIn(scene, stretch.moment),
@@ -864,6 +889,11 @@ function askableAtAnyMoment(moves: readonly Running[]): Running[] {
  */
 function movesForeseen(foresight: Foresight): readonly Running[] {
 	return [...foresight.running, ...foresight.ahead.values()];
+}
+
+/** The stretch a move of a cut takes at a moment: none, on the curve the move names, straight where it names none. */
+function atOnceBy(move: Move, moment: number): Stretch {
+	return { moment, seconds: AT_ONCE, ease: move.timing.ease ?? linear };
 }
 
 /** A move of the frame begun ahead of its share refused where it reads the page, or where the frame will stand. */

@@ -1106,6 +1106,23 @@ test("a fade of the screen in a cut has the stage hold a picture of the whole sc
 	]);
 });
 
+// The camera showing the small format's whole screen, and twice as close on the middle of its left half
+const THE_SMALL_SCREEN_WHOLE: Pose = { focusX: 300, focusY: 200, zoom: 1.8 };
+const TWICE_CLOSE_ON_THE_LEFT: Pose = { focusX: 150, focusY: 200, zoom: 3.6 };
+
+test('a fade of the screen in a cut before a camera move lays the page going over the page coming where the camera showed it as the cut began, framed as the cut leaves the camera, and carries it as the camera moves after, as the page coming', async () => {
+	const stage = new PicturedStageThatKeeps();
+	await unblurredTakeOf(new FootageOf([0, 1]), stage).run([
+		cut(cameraTo(THE_SMALL_SCREEN_WHOLE)),
+		cut(screenShows('filmed', { fade: { seconds: 3 / 30, ease: linear } }), cameraTo(TWICE_CLOSE_ON_THE_LEFT)),
+		play({ seconds: 2 / 30, moves: [cameraTo(THE_SMALL_SCREEN_WHOLE)] })
+	]);
+	// The whole screen as the camera showed it, half as large as the close camera shows the page coming, its middle
+	// where that camera looks: the middle of the left half, wherever the camera goes
+	const leftHalfsMiddle = { left: 0, top: 100, width: 300, height: 200 };
+	expect(stage.drawn.map((scene) => scene.screen.fade?.box)).toEqual([leftHalfsMiddle, leftHalfsMiddle]);
+});
+
 test("a static page moving under a camera that crosses the frame fast is pictured as close as the frame's closest exposure", async () => {
 	const stage = new PicturedStageThatKeeps();
 	const take = new Take({

@@ -10,13 +10,15 @@
  * share a step. The page a move of the film's own names is the stage's to lay before the film is shot.
  *
  * Or the screen fades from the page it showed into the one it shows, as a film's cut dissolves: the move holds a
- * picture of the page as it begins, and of how the camera frames it then, and the screen fades from it over as many
- * seconds of the film's time as the film names, on a curve, past the move's step. So a fade written in a cut, before a
- * camera move in the same cut, keeps the page going framed as it stood while the camera frames the page coming at once:
- * one page fading over another, each at its own scale. A fade is refused as it begins where its picture would drop
- * something at once: on a page framed live, which has no picture; from a page the window shades, as the picture is
- * unshaded; from a page of the film's own that runs, as the picture stands still; from one drawn past its screen, as
- * the picture holds the screen alone; and while the screen still fades from the page before, whose picture would go.
+ * picture of the page as it begins, laid over the page coming where the camera shows the page going then, as its step
+ * leaves the camera, and the screen fades from it over as many seconds of the film's time as the film names, on a
+ * curve, past the move's step. So a fade written in a cut, before a camera move in the same cut, keeps the page going
+ * framed as it stood while the camera frames the page coming at once: one page fading over another, each at its own
+ * scale; and the camera's moves after carry the two together. A fade is refused as it begins where its picture would
+ * drop something at once: on a page framed live, which has no picture; from a page the window shades, as the picture
+ * is unshaded; from a page of the film's own that runs, as the picture stands still; from one drawn past its screen,
+ * as the picture holds the screen alone; and while the screen still fades from the page before, whose picture would
+ * go.
  *
  * Light sweeps away the picture the screen shows, a band crossing it or a disc opening round a block, over a move's
  * share, to the page as it stands behind it: the picture is held as the move begins, as a piece holding its picture
@@ -49,7 +51,7 @@
 import { A_CURVE, type Ease, FASTEST_SPEED, type Stretch, easeInOutSine, linear } from '../domain/curves.ts';
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
-import { runCarriedUnder } from '../domain/camera.ts';
+import { runCarriedUnder, screenFramedBy } from '../domain/camera.ts';
 import {
 	A_FRAME_SIDE,
 	A_POINT_OF_THE_FRAME,
@@ -427,16 +429,20 @@ function showingMove(
 
 /**
  * The screen fading from the page it shows as the move begins into another: a picture of the whole screen held then,
- * framed as the camera frames it then, fading over the film's time from the move's moment, as many seconds as the film
- * names, on its curve; refused where it would drop at once what the screen shows (`refuseFadingFrom`).
+ * lying over the page coming where the camera shows the page going then, as the camera stands at the move's moment once
+ * its step has set it, fading over the film's time from that moment, as many seconds as the film names, on its curve;
+ * refused where it would drop at once what the screen shows (`refuseFadingFrom`).
  */
 async function fadingInto(beginning: Beginning, shows: Shows, script: FadeScript): Promise<Change> {
 	refuseWhereLive(beginning, SHOWS_FADE);
 	refuseFadingFrom(beginning);
+	const { format, stretch } = beginning;
+	const framedNow = cameraOf(beginning.scene, format).pose;
+	const framingThePageComing = (await beginning.cameraAt(stretch.moment)).pose;
 	const fade: Fade = {
-		picture: await beginning.holdPicture(boxOf(beginning.format.screen)),
-		framing: cameraOf(beginning.scene, beginning.format).pose,
-		over: { moment: beginning.stretch.moment, seconds: script.seconds, ease: script.ease ?? FADES_ALONG }
+		picture: await beginning.holdPicture(boxOf(format.screen)),
+		lies: screenFramedBy(framedNow, framingThePageComing, format.screen),
+		over: { moment: stretch.moment, seconds: script.seconds, ease: script.ease ?? FADES_ALONG }
 	};
 	return (scene) => withProp(scene, 'screen', { ...scene.screen, shows, fade });
 }

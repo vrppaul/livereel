@@ -854,7 +854,10 @@ the film's time as `seconds` names, on `ease`, `easeInOutSine` where it
 names none, on past its step. Written first in a `cut`, with a camera move
 after it in the same cut, the page going stands as it stood while the
 camera frames the page coming at once, closer or farther: one page fading
-over another, each at its own scale. The page going lies over the screen
+over another, each at its own scale. From there the page going lies on the
+page coming where the cut left it, so the camera's moves after carry the two
+together: a camera drawing back draws both back, as one eye would. The page
+going lies over the screen
 and the light, under a callout, the pins and the cursor, and the window's
 shade dims and fades the page coming alone, so `window.shade({ fade: 1 })`
 in the same cut, brought to `0` over the next play, brings the page coming

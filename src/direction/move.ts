@@ -225,7 +225,8 @@ export interface Beginning {
 	/**
 	 * The camera the frame will be seen by at a moment of the move's stretch, asked one moment after another: as the
 	 * step will stand then, every move of the camera, the window and the eye that begins by then among it, begun ahead of
-	 * its share on the scene alone where it has yet to begin; in a cut, the camera as it stands.
+	 * its share on the scene alone where it has yet to begin; in a cut, the camera the cut leaves, which the frame after
+	 * it is the first seen by.
 	 */
 	readonly cameraAt: (moment: number) => Promise<Camera>;
 	/** The names the film's things module builds a thing by: none where the film draws no things of its own. */

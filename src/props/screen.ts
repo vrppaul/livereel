@@ -13,13 +13,14 @@
  * picture kept outside it alone.
  *
  * Or the screen fades from the page it showed into the one it shows now: a picture of that page, held as the fade
- * began, lies over the screen as the camera framed the page then, whatever the camera frames now, so the page coming
- * may be framed closer or farther than the page going, and goes from whole to none over a stretch of the film's time,
- * on its curve, as clear as the screen has come up. It is the page going, not the screen: the window's shade dims,
- * fades and blurs the page coming alone, so that page may come up out of the dark under the one going, as the
- * claude-review promo's review comes up under its terminal; and the light, the cursor and the holes, which lie on the
- * page coming, lie under it. Its stretch is the film's time, not a move's share, so a fade begun in a cut, where the
- * camera may move at once to frame the page coming, goes on over the steps after it.
+ * began, lies over the page coming where the camera showed the page going then, as the step the fade begins in leaves
+ * the camera, so a cut may frame the page coming closer or farther than the page going; from there the camera frames
+ * the two as one, so they draw back or travel together, as under the claude-review promo's one eye. It goes from whole
+ * to none over a stretch of the film's time, on its curve, as clear as the screen has come up. It is the page going,
+ * not the screen: the window's shade dims, fades and blurs the page coming alone, so that page may come up out of the
+ * dark under the one going, as the promo's review comes up under its terminal; and the light, the cursor and the
+ * holes, which lie on the page coming, lie under it. Its stretch is the film's time, not a move's share, so a fade
+ * begun in a cut goes on over the steps after it.
  *
  * The window's back may show a page of the film's own too, as a slab's back wears a picture of its own: where the eye
  * sees the window's back, the screen shows it in place of what it shows in front, framed by the camera as the front
@@ -60,15 +61,7 @@
  * scrolled that much less, what is typed into it written there as on the screen. The camera cuts its picture at the
  * sheet's edges where it cut it at the screen's.
  */
-import {
-	type Camera,
-	type Pose,
-	type SeenBetween,
-	screenFramedBy,
-	screenPlaneSeen,
-	screenPointShift,
-	viewOnTheScreen
-} from '../domain/camera.ts';
+import { type Camera, type SeenBetween, screenPlaneSeen, screenPointShift, viewOnTheScreen } from '../domain/camera.ts';
 import { type HermiteEnd, type Stretch, hermiteBetween, hermiteSpeedBetween } from '../domain/curves.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
 import type { Format } from '../domain/format.ts';
@@ -78,7 +71,6 @@ import {
 	type Box,
 	type FrameSide,
 	type Point,
-	type Size,
 	UNMOVED,
 	boxOf,
 	cornersOf,
@@ -283,19 +275,20 @@ type BandSweep = BandShape & SweepOfAnyShape;
 type DiscSweep = DiscShape & SweepOfAnyShape;
 
 /**
- * The screen fading from a page it showed: a picture of that page, held by its number as the fade began; how the camera
- * framed it then; and the stretch of the film's time it goes from whole to none over, on its curve.
+ * The screen fading from a page it showed: a picture of that page, held by its number as the fade began; the box of the
+ * screen it lies over, in its pixels, where the camera showed it as the fade began, framed as the step the fade began
+ * in leaves the camera, so the camera frames it as it frames the page coming; and the stretch of the film's time it
+ * goes from whole to none over, on its curve.
  */
 export interface Fade {
 	readonly picture: number;
-	readonly framing: Pose;
+	readonly lies: Box;
 	readonly over: Stretch;
 }
 
 /**
- * The page the screen fades from as the stage draws it: the picture held; where the whole screen stood as the camera
- * framed it as the fade began, in the screen's pixels as the camera frames them now; and how much of it still shows,
- * as far as the fade has left it and the screen has come up.
+ * The page the screen fades from as the stage draws it: the picture held; the box of the screen it lies over, in its
+ * pixels; and how much of it still shows, as far as the fade has left it and the screen has come up.
  */
 interface DrawnFade {
 	readonly picture: number;
@@ -489,24 +482,20 @@ export function drawnScreen(
 		return { shown: screen.shown, shows, sweep: null, fade: null, backUpright: backPage.upright, filmed: null };
 	}
 	const sweep = screen.sweep === null ? null : drawnSweep(screen.sweep, partSwept(camera, format), camera.pose.zoom);
-	const fade = drawnFade(screen, camera.pose, format.screen, moment);
+	const fade = drawnFade(screen, moment);
 	const filmed = screen.shows.kind === 'filmed' ? filmedLaid(camera, format, paneCorner) : null;
 	return { shown: screen.shown, shows: frontDrawn(screen, moment, past), sweep, fade, backUpright: null, filmed };
 }
 
 /**
- * The page a screen fades from as the stage draws it at a moment, the camera framing the screen of a size by a pose
- * now: none where the screen fades from none, or has faded from it whole by then.
+ * The page a screen fades from as the stage draws it at a moment: none where the screen fades from none, or has faded
+ * from it whole by then.
  */
-function drawnFade(screen: Screen, framedNow: Pose, size: Size, moment: number): DrawnFade | null {
+function drawnFade(screen: Screen, moment: number): DrawnFade | null {
 	const fade = screen.fade;
 	if (fade === null || !fadesAt(fade, moment)) return null;
 	const gone = fade.over.ease(shareThrough(fade.over, moment));
-	return {
-		picture: fade.picture,
-		box: screenFramedBy(fade.framing, framedNow, size),
-		shown: fractionOf((WHOLE - gone) * screen.shown)
-	};
+	return { picture: fade.picture, box: fade.lies, shown: fractionOf((WHOLE - gone) * screen.shown) };
 }
 
 /** Whether a screen still fades from a page at a moment: before its fade's end. */

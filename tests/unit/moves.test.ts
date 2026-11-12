@@ -1744,9 +1744,16 @@ test("a piece holding its picture and a sweep of the screen are drawn from pictu
 const CLOSE_AT_THE_TOP_LEFT = { focusX: 500, focusY: 300, zoom: 2 };
 const FADING_TWO_SECONDS = { seconds: 2, ease: linear };
 
-/** A beginning in full HD at a moment of the film, done at once, whose take holds pictures in a stand-in. */
+/**
+ * A beginning in full HD at a moment of the film, done at once, whose take holds pictures in a stand-in: a move alone
+ * in its cut, which leaves the camera as it stands.
+ */
 function beginningHoldingAt(scene: Scene, moment: number, pictures: PicturesHeld): Beginning {
-	return { ...beginningHolding(scene, FULL_HD, pictures), stretch: { moment, seconds: 0, ease: linear } };
+	return {
+		...beginningHolding(scene, FULL_HD, pictures),
+		stretch: { moment, seconds: 0, ease: linear },
+		cameraAt: () => Promise.resolve(cameraOf(scene, FULL_HD))
+	};
 }
 
 /** The scene a move sets, begun at a moment of a film shot in full HD whose take holds pictures, at its end. */
@@ -1760,7 +1767,7 @@ function drawnInFullHdAt(scene: Scene, moment: number): DrawnScene {
 	return drawn(scene, cameraOf(scene, FULL_HD), moment, FULL_HD, NONE_SHARPER);
 }
 
-test("a page shown with a fade holds a picture of the whole screen as the page it leaves stands as the move begins, and fades it, framed as the camera framed it then, over the film's time from the move's moment, as many seconds as the film names, on the curve it names, or easeInOutSine where it names none", async () => {
+test("a page shown with a fade holds a picture of the whole screen as the page it leaves stands as the move begins, and fades it, lying over the whole screen where its cut leaves the camera as it framed the page going, over the film's time from the move's moment, as many seconds as the film names, on the curve it names, or easeInOutSine where it names none", async () => {
 	const pictures = new PicturesHeld();
 	const close = await setIn(cameraTo(CLOSE_AT_THE_TOP_LEFT), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const own = await setIn(screenShows(OWN_PAGE), close, 1, FULL_HD);
@@ -1774,21 +1781,20 @@ test("a page shown with a fade holds a picture of the whole screen as the page i
 	expect([pictures.parts, named.screen.shows, named.screen.fade, plain.screen.shows.kind, plain.screen.fade]).toEqual([
 		[WHOLE_SCREEN, WHOLE_SCREEN],
 		THE_FILMED_PAGE,
-		{ picture: 1, framing: CLOSE_AT_THE_TOP_LEFT, over: { moment: 1.5, seconds: 2.4, ease: easeOutCubic } },
+		{ picture: 1, lies: WHOLE_SCREEN, over: { moment: 1.5, seconds: 2.4, ease: easeOutCubic } },
 		'own',
-		{ picture: 2, framing: { focusX: 960, focusY: 540, zoom: 1 }, over: { moment: 2, seconds: 1, ease: easeInOutSine } }
+		{ picture: 2, lies: WHOLE_SCREEN, over: { moment: 2, seconds: 1, ease: easeInOutSine } }
 	]);
 });
 
-test("the page a screen fades from is drawn framed as the camera framed it as the fade began, in the screen's pixels as the camera frames them now, as clear as the fade leaves it at the moment on its curve and as far as the screen has come up, and laid over the page apart in a room; none from the fade's end", async () => {
+test("the page a screen fades from is drawn over the box of the screen it lies over, which a camera moving after the fade frames as it frames the page coming, as clear as the fade leaves it at the moment on its curve and as far as the screen has come up, and laid over the page apart in a room; none from the fade's end", async () => {
 	const own = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const fading = await setHoldingAt(screenShows('filmed', { fade: FADING_TWO_SECONDS }), own, 1, new PicturesHeld());
 	const close = await setIn(cameraTo(CLOSE_AT_THE_TOP_LEFT), fading, 1, FULL_HD);
 	const halfDown = await setIn(lower(), close, 0.5, FULL_HD);
-	// The whole screen at a zoom of 1 half as large as the camera at 2 shows it, its middle where the camera looks
 	const [halfWay, ended] = [1.5, 3].map((moment) => drawnInFullHdAt(halfDown, moment));
 	expect([halfWay!.screen.fade, halfWay!.overThePage, ended!.screen.fade, ended!.overThePage]).toEqual([
-		{ picture: 1, box: { left: 20, top: 30, width: 960, height: 540 }, shown: 0.375 },
+		{ picture: 1, box: WHOLE_SCREEN, shown: 0.375 },
 		true,
 		null,
 		false
