@@ -1495,6 +1495,8 @@ real keyboards, each key one of four strikes in turn. `defineFilm` takes:
   film's file, any kind ffmpeg reads, or `{ enabled: false }` to turn it off, as
   `sounds: { key: { enabled: false } }`. The click and the ending may stand beside a keyboard; a key given so
   takes the keyboard's place, and is never named beside it;
+- `sounds: { keyVolume }`, how loud every key is heard, on any keyboard or from a file in its place: 1 as loud
+  as its file. livereel's keys peak about 12 dB under its click, so keys under music want about 4;
 - `sounds: { enabled: false }` for none of livereel's but a keyboard a typing names;
 - `music: { file, volume }`, a track under the whole film, `volume` 1 as loud as the file, cut to the film's
   length and faded out at its end.

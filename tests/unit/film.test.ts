@@ -1,5 +1,5 @@
 // A film in its formats: each by its name, and the steps told which one they are shot in; its music's volume, its
-// keys, and its blur
+// keys and how loud they are, and its blur
 import { expect, test } from 'vitest';
 import { wholePose } from '../../src/domain/camera.ts';
 import { FilmError } from '../../src/domain/errors.ts';
@@ -195,10 +195,28 @@ test("each of livereel's sounds a film turns off is off, and the rest stay liver
 		(film) => film.formats.get('small')!.sound.livereels
 	);
 	expect(sounds).toEqual([
-		{ click: { kind: 'off' }, key: membrane, ending: own },
-		{ click: own, key: { kind: 'off' }, ending: own },
-		{ click: own, key: membrane, ending: { kind: 'off' } }
+		{ click: { kind: 'off' }, key: membrane, ending: own, keyVolume: 1 },
+		{ click: own, key: { kind: 'off' }, ending: own, keyVolume: 1 },
+		{ click: own, key: membrane, ending: { kind: 'off' }, keyVolume: 1 }
 	]);
+});
+
+test("livereel's keys are as loud as the film says, beside a keyboard or a file in their place, and as loud as their files where it says nothing", () => {
+	const volumes = [
+		filmSounding({}),
+		filmSounding({ keyVolume: 4 }),
+		filmSounding({ keyboard: 'laptop', keyVolume: 0.5 }),
+		filmSounding({ key: './key.wav', keyVolume: 0 })
+	].map((film) => film.formats.get('small')!.sound.livereels.keyVolume);
+	expect(volumes).toEqual([1, 4, 0.5, 0]);
+});
+
+test('a key volume that is no level is refused as the film is defined, where it stands: not a number, endless, below none', () => {
+	expect(() => filmSounding({ keyVolume: '4' } as unknown as LivereelSoundsScript)).toThrow(
+		new FilmError('the film\'s sounds.keyVolume is "4": it is a number, 0 or more, 1 as loud as the file')
+	);
+	expect(() => filmSounding({ keyVolume: Number.POSITIVE_INFINITY })).toThrow(FilmError);
+	expect(() => filmSounding({ keyVolume: -1 })).toThrow(FilmError);
 });
 
 test('a sound written as neither a file nor `{ enabled: false }` is refused as the film is defined, by its name', () => {
@@ -225,7 +243,7 @@ function filmPlaying(music: unknown) {
 }
 
 const SOUNDS_FORMS =
-	'they are { enabled: false } to turn them all off, or an object of enabled, keyboard, click, key, ending';
+	'they are { enabled: false } to turn them all off, or an object of enabled, keyboard, click, key, ending, keyVolume';
 const BLUR_FORMS = 'it is { enabled: false } to turn it off, or an object of shutter, exposuresAtMost, either or both';
 const MUSIC_FORMS = 'it is an object of file, volume';
 const SWITCHED = 'it is false to turn it off, or true, or left out';
@@ -238,7 +256,7 @@ test("a film's sounds, blur or music written in none of their forms is refused a
 		new FilmError(`the film's sounds are []: ${SOUNDS_FORMS}`)
 	);
 	expect(() => filmSounding({ enable: false } as unknown as LivereelSoundsScript)).toThrow(
-		new FilmError("the film's sounds names enable: it names enabled, keyboard, click, key, ending, or fewer")
+		new FilmError("the film's sounds names enable: it names enabled, keyboard, click, key, ending, keyVolume, or fewer")
 	);
 	expect(() => filmSounding({ enabled: null } as unknown as LivereelSoundsScript)).toThrow(
 		new FilmError(`the film's sounds.enabled is null: ${SWITCHED}`)

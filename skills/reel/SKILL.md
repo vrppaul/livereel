@@ -341,6 +341,8 @@ and on a page of the film's own. Motion blur is `defineFilm`'s `motionBlur` ("Mo
   it, `page.type(strokes, { keyboard: 'butterfly' })`: two people typing, or a film that shows the keyboards off.
 - Music only where the user asks for it, and quiet under the clicks (`volume` about 0.3). Keep `sound.play` for what
   the page itself would make sound.
+- Music the user wants as loud as its file buries the keys, which peak about 12 dB under the click:
+  `sounds: { keyVolume }` of about 4 brings them up to the click, heard over music that runs 6 dB under that.
 - A `theme` where the user names a brand's look; leave out what they do not name: livereel's own is a dark ground,
   white ink and an amber accent. A light `terminal` needs all six code colours given. The window's body is the
   window's, `window.body`, not the theme's.

@@ -110,8 +110,8 @@ export interface Script<Name extends string> extends SiteScript {
 	readonly steps: (whole: Pose, formatName: NoInfer<Name>) => readonly Step[];
 	/**
 	 * livereel's sounds: files of the film's in place of those it gives, a path each from the film's file, and its keys
-	 * on one of livereel's keyboards (`membrane` where none is named) or in a file of its own, one or the other; or
-	 * `{ enabled: false }` for none.
+	 * on one of livereel's keyboards (`membrane` where none is named) or in a file of its own, one or the other, every
+	 * key at `keyVolume` (1 as loud as its file); or `{ enabled: false }` for none.
 	 */
 	readonly sounds?: LivereelSoundsScript;
 	readonly music?: Music;

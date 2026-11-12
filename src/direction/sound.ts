@@ -17,8 +17,10 @@ import {
 	A_PATH,
 	type Handed,
 	OneOf,
+	Plain,
 	assertKind,
 	described,
+	isNoneOrMore,
 	isObjectOfValues,
 	refuseNamesBeyond
 } from '../domain/handed.ts';
@@ -56,16 +58,22 @@ type FileOrTurnedOff = string | TurnedOff;
 /** What a film writes in place of livereel's sounds, those it names; the rest stay livereel's. */
 export type SoundsInPlace = Partial<Readonly<Record<LivereelSound, FileOrTurnedOff>>>;
 
+/** How loud a film's keys are laid, on whichever keyboard or from its file in their place: 1 as loud as their files. */
+interface KeyVolumeScript {
+	readonly keyVolume?: number;
+}
+
 /**
  * livereel's sounds as a film writes them: `{ enabled: false }` for all of them off; or livereel's, with a file of the
- * film's in place of those it names or those turned off, and its keys on one of livereel's keyboards or written in its
- * place, not both.
+ * film's in place of those it names or those turned off, its keys on one of livereel's keyboards or written in its
+ * place, not both, and as loud as it says.
  */
 // The keyboard's form comes last: a name livereel has not is then said not to be a `KeyboardSound`
 export type LivereelSoundsScript =
 	| TurnedOff
-	| ({ readonly enabled?: true; readonly keyboard?: never } & SoundsInPlace)
-	| ({ readonly enabled?: true; readonly keyboard?: KeyboardSound; readonly key?: never } & Omit<SoundsInPlace, 'key'>);
+	| ({ readonly enabled?: true; readonly keyboard?: never } & KeyVolumeScript & SoundsInPlace)
+	| ({ readonly enabled?: true; readonly keyboard?: KeyboardSound; readonly key?: never } & KeyVolumeScript &
+			Omit<SoundsInPlace, 'key'>);
 
 /** What the film put in place of one of livereel's sounds, as a film is shot with it: its file, or the sound off. */
 export type FileOrOff = { readonly kind: 'file'; readonly path: string } | { readonly kind: 'off' };
@@ -76,11 +84,15 @@ export type SoundSource = { readonly kind: 'livereel' } | FileOrOff;
 /** livereel's key as a film is shot with it: one of livereel's keyboards, or what the film put in its place. */
 export type KeySource = OnAKeyboard | FileOrOff;
 
-/** livereel's sounds as a film is shot with them: where each one comes from. */
+/**
+ * livereel's sounds as a film is shot with them: where each one comes from, and how loud every key is laid, a key a
+ * typing strikes on a keyboard of its own too.
+ */
 export interface LivereelSounds {
 	readonly click: SoundSource;
 	readonly key: KeySource;
 	readonly ending: SoundSource;
+	readonly keyVolume: number;
 }
 
 /** A track under the whole film, at `volume` (1 as it is), cut to the film's length and faded out at its end. */
@@ -88,6 +100,11 @@ export interface Music {
 	readonly file: string;
 	readonly volume: number;
 }
+
+/** A sound laid as loud as its file holds it. */
+export const AS_LOUD_AS_ITS_FILE = 1;
+/** How loud a sound is laid against its file: none at least, heard not at all, with no bound above. */
+const A_VOLUME = new Plain(isNoneOrMore, `a number, 0 or more, ${AS_LOUD_AS_ITS_FILE} as loud as the file`);
 
 /** What a film says of its sounds: where each of livereel's comes from, any of them off; and its music. */
 export interface FilmSound {
@@ -106,16 +123,21 @@ const AS_IT_BEGINS = 0;
 const LIVEREELS_KEYBOARD: KeyboardSound = 'membrane';
 const LIVEREELS_OWN: SoundSource = { kind: 'livereel' };
 const LIVEREELS_KEYS: KeySource = onAKeyboard(LIVEREELS_KEYBOARD);
-const ALL_LIVEREELS: LivereelSounds = { click: LIVEREELS_OWN, key: LIVEREELS_KEYS, ending: LIVEREELS_OWN };
+const ALL_LIVEREELS: LivereelSounds = {
+	click: LIVEREELS_OWN,
+	key: LIVEREELS_KEYS,
+	ending: LIVEREELS_OWN,
+	keyVolume: AS_LOUD_AS_ITS_FILE
+};
 const OFF: FileOrOff = { kind: 'off' };
-const ALL_OFF: LivereelSounds = { click: OFF, key: OFF, ending: OFF };
+// A key a typing strikes on a keyboard of its own is heard though the film's sounds are off, as loud as its file
+const ALL_OFF: LivereelSounds = { click: OFF, key: OFF, ending: OFF, keyVolume: AS_LOUD_AS_ITS_FILE };
 // Where a film writes livereel's sounds and its music, and the names it writes each with
 const SOUNDS = 'sounds';
-const SOUNDS_FORM = ['enabled', 'keyboard', 'click', 'key', 'ending'];
+const KEY_VOLUME = 'keyVolume';
+const SOUNDS_FORM = ['enabled', 'keyboard', 'click', 'key', 'ending', KEY_VOLUME];
 const MUSIC = 'music';
 const MUSIC_FORM = ['file', 'volume'];
-// The quietest music, heard not at all
-const SILENT = 0;
 const KEY_AND_KEYBOARD =
 	'the film gives its keys a file or turns them off, and names a keyboard: it does one or the other';
 const FILE_OR_TURNED_OFF = 'a sound is a file, or { enabled: false } to turn it off';
@@ -124,8 +146,9 @@ const MUSIC_FORMS = `it is an object of ${MUSIC_FORM.join(', ')}`;
 
 /**
  * livereel's sounds, read as a film whose types nobody checked may hand them: where each one comes from, every one
- * livereel's where the film says nothing of them, all of them off where it turns them off. Anything but an object, a
- * name the sounds have not, or a sound in no form of one is refused by where it stands.
+ * livereel's where the film says nothing of them, all of them off where it turns them off; and how loud its keys are,
+ * as loud as their files where it says nothing. Anything but an object, a name the sounds have not, a sound in no form
+ * of one, or a key volume that is no level is refused by where it stands.
  */
 export function livereelSoundsOf(written: unknown): LivereelSounds {
 	if (written === undefined) return ALL_LIVEREELS;
@@ -134,7 +157,12 @@ export function livereelSoundsOf(written: unknown): LivereelSounds {
 	}
 	refuseNamesBeyond(written, SOUNDS_FORM, `the film's ${SOUNDS}`);
 	if (turnedOffBy(written, SOUNDS)) return ALL_OFF;
-	return { click: sourceOf(written.click, 'click'), key: keyOf(written), ending: sourceOf(written.ending, 'ending') };
+	return {
+		click: sourceOf(written.click, 'click'),
+		key: keyOf(written),
+		ending: sourceOf(written.ending, 'ending'),
+		keyVolume: keyVolumeOf(written.keyVolume)
+	};
 }
 
 /**
@@ -147,12 +175,15 @@ export function musicOf(written: unknown): Music | null {
 	if (!isObjectOfValues(written)) throw new FilmError(`the film's ${MUSIC} is ${described(written)}: ${MUSIC_FORMS}`);
 	refuseNamesBeyond(written, MUSIC_FORM, `the film's ${MUSIC}`);
 	assertKind(written.file, A_PATH, `the film's ${MUSIC}.file`);
-	if (!(typeof written.volume === 'number' && Number.isFinite(written.volume) && written.volume >= SILENT)) {
-		throw new FilmError(
-			`the film's ${MUSIC}.volume is ${described(written.volume)}: it is a number, ${SILENT} or more, 1 as loud as the file`
-		);
-	}
+	assertKind(written.volume, A_VOLUME, `the film's ${MUSIC}.volume`);
 	return { file: written.file, volume: written.volume };
+}
+
+/** How loud the film's keys are, as loud as their files where it says nothing; a volume that is no level is refused. */
+function keyVolumeOf(written: unknown): number {
+	if (written === undefined) return AS_LOUD_AS_ITS_FILE;
+	assertKind(written, A_VOLUME, `the film's ${SOUNDS}.${KEY_VOLUME}`);
+	return written;
 }
 
 /** One of livereel's sounds: what the film writes in its place where it names one, livereel's own otherwise. */

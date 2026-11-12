@@ -170,7 +170,8 @@ soft past 2.2, the infographics.
 - The film's time from its voice: steps timed by the voice-over files' measured lengths, a beat's hit on a line's key
   word, air between lines, and a cue sheet the captions and the SRT are written from.
 - The mix: loudness to −14 LUFS with the true peak at −1 dBTP or under (ffmpeg's `loudnorm`), the music ducked under
-  the voice, a file per stem (voice, sounds), and the video also without sound.
+  the voice, a file per stem (voice, sounds), and the video also without sound. A film says how loud its keys are
+  (`sounds.keyVolume`), not yet its click or its ending: none has asked.
 - A safe area a format names: the share of the frame kept clear of what matters while the voice speaks, checked.
 - An object carried to a block of the page as the camera shows it (`to(selector)`), along a curve, as the cursor's bow,
   and vanishing into it: the sites' tags flying into the search field.

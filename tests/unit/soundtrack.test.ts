@@ -1,10 +1,10 @@
 // The files a film's sounds are laid from: the film's, found from its folder and refused before anything is shot, and
-// livereel's keys, the strikes of the film's keyboard in turn
+// livereel's keys, the strikes of the film's keyboard in turn; and how loud each is laid
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
-import { type LivereelSounds, type SoundSource, livereelSound } from '../../src/direction/sound.ts';
+import { type LivereelSounds, type SoundSource, fileSound, livereelSound } from '../../src/direction/sound.ts';
 import { Soundtrack } from '../../src/adapters/video/soundtrack.ts';
 
 // A film file in this folder: its sounds are found from here
@@ -13,7 +13,12 @@ const FILM = join(import.meta.dirname, 'film.ts');
 const LIVEREEL_SOUNDS = fileURLToPath(new URL('../../sounds/', import.meta.url));
 const OWN: SoundSource = { kind: 'livereel' };
 const OFF = { kind: 'off' } as const;
-const ON_THE_MEMBRANE: LivereelSounds = { click: OWN, key: { kind: 'keyboard', keyboard: 'membrane' }, ending: OWN };
+const ON_THE_MEMBRANE: LivereelSounds = {
+	click: OWN,
+	key: { kind: 'keyboard', keyboard: 'membrane' },
+	ending: OWN,
+	keyVolume: 1
+};
 const ON_THE_LAPTOP: LivereelSounds = { ...ON_THE_MEMBRANE, key: { kind: 'keyboard', keyboard: 'laptop' } };
 // Five keys typed, a tenth of a second apart, on a keyboard of four strikes
 const KEY_MOMENTS = [0, 0.1, 0.2, 0.3, 0.4];
@@ -50,6 +55,32 @@ test('a key struck on the keyboard a typing names is laid from its strikes in tu
 		['keys/butterfly/2.ogg', [0.1]],
 		['keys/butterfly/3.ogg', [0.2]],
 		['keys/butterfly/4.ogg', [0.3]]
+	]);
+});
+
+test('every key is laid as loud as the film says its keys are, on its keyboard or on one a typing names, and its click as loud as its file', () => {
+	const track = new Soundtrack(FILM, { livereels: { ...ON_THE_MEMBRANE, keyVolume: 4 }, music: null });
+	track.hear(0, livereelSound('key'));
+	track.hear(0.1, { kind: 'keyboard', keyboard: 'butterfly' });
+	track.hear(0.2, livereelSound('click'));
+	expect(track.heardFiles.map((heard) => [relative(LIVEREEL_SOUNDS, heard.file), heard.volume])).toEqual([
+		['keys/membrane/1.ogg', 4],
+		['keys/butterfly/1.ogg', 4],
+		['click.ogg', 1]
+	]);
+});
+
+test("a file of the film heard as its key and as a sound of its own is laid at each one's volume", () => {
+	const key = { kind: 'file', path: './key.wav' } as const;
+	const track = new Soundtrack(FILM, { livereels: { ...ON_THE_MEMBRANE, key, keyVolume: 4 }, music: null });
+	track.hear(0, livereelSound('key'));
+	track.hear(1, fileSound(key.path));
+	track.hear(2, livereelSound('key'));
+	expect(
+		track.heardFiles.map((heard) => [relative(import.meta.dirname, heard.file), heard.volume, heard.moments])
+	).toEqual([
+		['key.wav', 4, [0, 2]],
+		['key.wav', 1, [1]]
 	]);
 });
 

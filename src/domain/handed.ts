@@ -474,7 +474,8 @@ function isCount(written: unknown): written is number {
 	return isNumber(written) && Number.isInteger(written) && written >= 1;
 }
 
-function isNoneOrMore(written: unknown): written is number {
+/** Whether a value is a number of none or more: a length, a brightness, a volume. */
+export function isNoneOrMore(written: unknown): written is number {
 	return isNumber(written) && written >= NONE;
 }
 
