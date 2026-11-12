@@ -69,6 +69,11 @@ const TWICE_THE_FRAME = { width: 640, height: 640 };
 // A card of the film's things module, as wide as half a frame 1080 high and a third as tall, about the frame's middle
 const A_CARD = { at: 'whole', reach: { width: 540, height: 360 }, values: { turn: 0 } } as const;
 
+// What a film is told where the graphics card drops the room's canvas
+const CANVAS_DROPPED =
+	"the graphics card dropped the room's canvas, which draws nothing after: it ran out of memory, or was reset; shoot " +
+	'again, or ask less of it, at `--quality draft` or a smaller format, or with fewer things near the eye';
+
 /** What a film that shows a thing its module builds none of is told, as its first step begins. */
 function unbuiltRefusalOf(made: string): TakeError {
 	return new TakeError(
@@ -323,6 +328,18 @@ test("the room is refused as the machine's to put right where the browser draws 
 	} finally {
 		await withoutTheRoomsFlag.close();
 	}
+});
+
+test("a room whose canvas the graphics card drops ends the shoot at that frame as the machine's to put right, naming the moment, and keeps no frame drawn without it", async () => {
+	// The hold's three frames and the play's first, which drops the canvas once drawn; the next finds it dropped
+	const keptBeforeTheDrop = [0, 1, 2, 3];
+	const counted = new EveryFrameCounted();
+	const steps = [hold({ seconds: 0.1 }), play({ seconds: 0.1, moves: [thing.show('dropper', A_CARD)] })];
+	const film = filmWritten(steps, { drawing: 'room', things: './canvas-lost.js' });
+	await expect(shoot(film, shootingInto(counted, 'gpu'))).rejects.toThrow(
+		new TakeError(new SetupError(CANVAS_DROPPED), keptBeforeTheDrop.length / RATE, 2)
+	);
+	expect(counted.kept).toEqual(keptBeforeTheDrop);
 });
 
 test('a still is the one frame written, and nothing after it is shot', async () => {

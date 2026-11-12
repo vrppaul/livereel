@@ -1823,6 +1823,13 @@ What `room` costs:
   a flag livereel turns on, renamed twice before: livereel pins the browser
   `npx livereel setup` installs, and refuses a browser without it, or one
   that gives the page no WebGL, as the machine's to put right.
+- Where the graphics card drops the room's canvas, out of memory or reset,
+  the shoot or clip ends at the next frame the room composes, saying so
+  with its moment, as the machine's to put right: never a video of the
+  blank page Chrome shows in its place. A card out of memory says so only
+  after the frame it failed in, which may be kept bare; a still whose one
+  frame drops it may end with Chrome's own "Unable to capture screenshot",
+  as one did before.
 
 ### Sound
 

@@ -32,15 +32,24 @@ export interface RoomApi {
 	readonly setup: (layout: Layout, things: string | null) => Promise<ThingsLoaded>;
 	/**
 	 * One frame composed from its exposures' surfaces as the stage drew them, each placed as its scene has it, and the
-	 * film's things among them; what the film is told where its module fails building or setting one, none where not.
+	 * film's things among them.
 	 */
-	readonly compose: (exposures: readonly DrawnScene[]) => Promise<string | null>;
+	readonly compose: (exposures: readonly DrawnScene[]) => Promise<Composed>;
 	/**
 	 * Once the graphics card has done all the room asked of it: `compose` returns with the card's work queued, and
 	 * WebGL's `finish` returns at once in Chrome.
 	 */
 	readonly finish: () => void;
 }
+
+/**
+ * A frame as the room composes it: drawn; refused, with what the film is told, where its things module fails building
+ * or setting a thing; or lost, where the graphics card dropped the room's canvas, which draws nothing after, as it
+ * drops it when a frame asks more memory than it has (beats 7–8 of the claude-review promo, 2026-11-12: every frame
+ * after white, a still's capture refused).
+ */
+export type Composed =
+	{ readonly kind: 'drawn' } | { readonly kind: 'refused'; readonly said: string } | { readonly kind: 'lost' };
 
 /** The film's things module as the room loads it: the names it builds a thing by, or what the film is told. */
 export type ThingsLoaded =
@@ -109,6 +118,10 @@ const NO_WEBGL =
 const NO_ELEMENT_DRAWING =
 	"the room draws the stage through Chrome's HTML-in-Canvas, which this browser lacks: the browser livereel pins " +
 	'has it, installed by `npx livereel setup`';
+// What the person is told where the graphics card drops the room's canvas as a frame is drawn
+const CANVAS_DROPPED =
+	"the graphics card dropped the room's canvas, which draws nothing after: it ran out of memory, or was reset; shoot " +
+	'again, or ask less of it, at `--quality draft` or a smaller format, or with fewer things near the eye';
 
 /** What a page offers the room: WebGL, and HTML-in-Canvas in it. */
 type RoomLack = 'none' | 'webgl' | 'element drawing';
@@ -152,10 +165,20 @@ async function thingsFileOf(things: string): Promise<ServedFile> {
 	}
 }
 
-/** A frame drawn in the room; refused, as the film's, where the film's things module fails building or setting one. */
+/**
+ * A frame drawn in the room; refused, as the film's, where the film's things module fails building or setting one, and
+ * as the machine's where the graphics card dropped the room's canvas, so no frame drawn without it is kept.
+ */
 async function drawnInTheRoom(page: Page, exposures: readonly DrawnScene[]): Promise<void> {
-	const refused = await page.evaluate(composedInTheRoom, exposures);
-	if (refused !== null) throw new FilmError(refused);
+	const composed = await page.evaluate(composedInTheRoom, exposures);
+	switch (composed.kind) {
+		case 'drawn':
+			return;
+		case 'refused':
+			throw new FilmError(composed.said);
+		case 'lost':
+			throw new SetupError(CANVAS_DROPPED);
+	}
 }
 
 /** three's module files and the add-ons the room draws with, by their path under the room's origin. */
@@ -207,7 +230,7 @@ function roomSetUp(laying: { readonly layout: Layout; readonly address: string |
 }
 
 /** One frame drawn by the stage's markup, then composed by the room from its surfaces and the film's things. */
-function composedInTheRoom(exposures: readonly DrawnScene[]): Promise<string | null> {
+function composedInTheRoom(exposures: readonly DrawnScene[]): Promise<Composed> {
 	window.stage.apply(exposures);
 	return window.room.compose(exposures);
 }

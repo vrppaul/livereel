@@ -167,7 +167,10 @@ took about a third as long as in software (the promo, blurred: 98 s against
 graphics card, it draws the frames in software all the same and warns
 "--renderer gpu reached no graphics card"; a page that draws with WebGL may
 then draw nothing. Where it warns and a canvas on the contact sheet is
-empty, shoot the film again without the flag.
+empty, shoot the film again without the flag. A film drawn as a room that
+ends "the graphics card dropped the room's canvas" asked the card for more
+memory than it has at that moment: shoot it at `--quality draft`, or bring
+less markup that near the eye there.
 
 A film is a TypeScript file whose default export is `defineFilm({ formats,
 address, serve, ready, steps })` from `livereel`: its formats by name, each a

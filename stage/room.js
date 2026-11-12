@@ -110,7 +110,7 @@ import { Things, isAThing } from './things.js';
 /** @import { Box } from '../src/domain/geometry.ts' */
 /** @import { Layout, StageApi, SurfaceApart } from '../src/adapters/browser/stage.ts' */
 /** @import { Object3D, RenderItem } from 'three' */
-/** @import { RoomApi, ThingsLoaded } from '../src/adapters/browser/room.ts' */
+/** @import { Composed, RoomApi, ThingsLoaded } from '../src/adapters/browser/room.ts' */
 
 /**
  * WebGL 2 as Chrome gives it with HTML-in-Canvas: an element laid in the canvas drawn into a texture, as the canvas
@@ -247,6 +247,11 @@ const WHOLLY_SHOWN = 1;
 const FROM_THE_EYE = 0;
 const NEAREST = 0;
 const ONE_MORE = 1;
+// A frame the room drew, and one it could not, as the card dropped its canvas
+/** @type {Composed} */
+const DRAWN = { kind: 'drawn' };
+/** @type {Composed} */
+const LOST = { kind: 'lost' };
 // An edge of a box of the frame as a cut through the eye, keeping what stands inward of it, toward the box's middle,
 // and outward on the far side: none of a point carried across or down, all of how far it is seen from, as named; a
 // cut through the eye stands no distance from it; and a point on the edge is kept
@@ -572,25 +577,16 @@ class Room {
 	 * far past the frame as the lens's blur of any of them gathers, and a surface over the nearest part shown of each
 	 * object of markup standing in the world where the stage laid it; the surfaces of those it has painted, each exposure
 	 * drawn, the farther parts of its markup with it, and added into the frame at an equal weight; the frame glowing
-	 * round its light past white where the world asks, and shown on the canvas once the card has drawn it. What the film
-	 * is told where its things module throws building or setting a thing, none where the frame is drawn.
-	 * @param {readonly DrawnScene[]} scenes @returns {Promise<string | null>}
+	 * round its light past white where the world asks, and shown on the canvas once the card has drawn it. Refused, with
+	 * what the film is told, where its things module throws building or setting a thing; lost where the card has
+	 * dropped the canvas, as it was handed the frame or as it drew it. A card out of memory says so after the frame it
+	 * failed in (the probe of beats 7–8, 2026-11-12: lost as the next frame was composed), so that frame may be kept.
+	 * @param {readonly DrawnScene[]} scenes @returns {Promise<Composed>}
 	 */
 	async compose(scenes) {
+		if (this.canvasLost()) return LOST;
 		const gathered = this.gatheredFor(scenes);
-		const pagePlacings = scenes.map((scene) => pagePlacingOf(scene, gathered));
-		for (const [place, surfaces] of this.exposureSurfaces.entries()) {
-			for (const [name, surface] of surfaces) surface.toggleAttribute(HIDDEN, !isPainted(name, place, scenes));
-		}
-		for (const [place, placing] of pagePlacings.entries()) {
-			const surfaces = surfacesAt(this.exposureSurfaces, place);
-			const density = this.densityOf(placing.box, AS_THE_PAGE);
-			for (const name of ON_THE_PAGE) laidOutAs(surfaceOf(surfaces, name), placing.box, density);
-		}
-		const standings = pagePlacings.map((placing, place) => ({
-			placing,
-			markup: this.stage.laidApart(place).map((apart) => this.markupLaidOut(apart, scenesAt(scenes, place), gathered))
-		}));
+		const standings = this.surfacesLaidOut(scenes, gathered);
 		this.repainted = await paintedOf(this.canvas);
 		const first = surfacesAt(this.exposureSurfaces, FIRST);
 		for (const name of SURFACES.filter((each) => !SURFACE_TEXTURES[each].eachExposure)) {
@@ -604,13 +600,40 @@ class Room {
 			const scene = scenesAt(scenes, place);
 			// Each exposure's farther parts are painted in turn, as one element is laid out for one part at a time
 			await this.markupDrawn(standing.markup);
-			const refused = this.exposureDrawn(surfacesAt(this.exposureSurfaces, place), standing, scene, gathered);
-			if (refused !== null) return refused;
+			const composed = this.exposureDrawn(surfacesAt(this.exposureSurfaces, place), standing, scene, gathered);
+			if (composed !== DRAWN) return composed;
 		}
 		const bloom = scenesAt(scenes, FIRST).world.bloom;
 		if (bloom !== null) this.bloomed(bloom);
 		this.shown.shown(this.renderer);
-		return null;
+		return this.canvasLost() ? LOST : DRAWN;
+	}
+
+	/**
+	 * Each exposure's surfaces laid out for a frame, hidden where the frame paints them not: the window's over as much of
+	 * its plane as the box the world is drawn over shows, and each object of markup standing in the world over its
+	 * nearest part shown. Where each exposure's page's surface and markup stand.
+	 * @param {readonly DrawnScene[]} scenes @param {Box} gathered @returns {readonly ExposureStanding[]}
+	 */
+	surfacesLaidOut(scenes, gathered) {
+		const pagePlacings = scenes.map((scene) => pagePlacingOf(scene, gathered));
+		for (const [place, surfaces] of this.exposureSurfaces.entries()) {
+			for (const [name, surface] of surfaces) surface.toggleAttribute(HIDDEN, !isPainted(name, place, scenes));
+		}
+		for (const [place, placing] of pagePlacings.entries()) {
+			const surfaces = surfacesAt(this.exposureSurfaces, place);
+			const density = this.densityOf(placing.box, AS_THE_PAGE);
+			for (const name of ON_THE_PAGE) laidOutAs(surfaceOf(surfaces, name), placing.box, density);
+		}
+		return pagePlacings.map((placing, place) => ({
+			placing,
+			markup: this.stage.laidApart(place).map((apart) => this.markupLaidOut(apart, scenesAt(scenes, place), gathered))
+		}));
+	}
+
+	/** Whether the graphics card has dropped the room's canvas, which draws nothing after. */
+	canvasLost() {
+		return this.renderer.getContext().isContextLost();
 	}
 
 	/**
@@ -627,15 +650,18 @@ class Room {
 
 	/**
 	 * An exposure drawn and added into the frame: its ground; the world as one scene, through the eye's lens; the cursor
-	 * over it, where the scene has one; the film's things on the frame; the frame's surface. What the film is told where
-	 * its module throws building or setting a thing, none where all are drawn.
+	 * over it, where the scene has one; the film's things on the frame; the frame's surface. Refused, with what the film
+	 * is told, where its module throws building or setting a thing; lost where the card dropped the canvas as the module
+	 * built or set one, as the film's own three draws on the card: drawn on, the stage's tab crashed (a thing losing the
+	 * context on purpose, in software, 2026-11-12).
 	 * @param {ReadonlyMap<SurfaceName, Element>} surfaces @param {ExposureStanding} standing @param {DrawnScene} scene
-	 * @param {Box} gathered @returns {string | null}
+	 * @param {Box} gathered @returns {Composed}
 	 */
 	exposureDrawn(surfaces, standing, scene, gathered) {
 		const things = thingsIn(scene);
 		const refused = this.thingsPosed(things);
-		if (refused !== null) return refused;
+		if (refused !== null) return { kind: 'refused', said: refused };
+		if (this.canvasLost()) return LOST;
 		this.lighting.lit(this.renderer, scene.world.lighting);
 		this.renderer.setRenderTarget(this.exposure);
 		this.renderer.clear();
@@ -656,7 +682,7 @@ class Room {
 		this.flatLaid('frame', surfaces);
 		this.renderer.setRenderTarget(this.frame);
 		this.renderer.render(this.weighed, this.camera);
-		return null;
+		return DRAWN;
 	}
 
 	/**
