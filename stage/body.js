@@ -11,11 +11,12 @@
  * soft box glides over in steps. Its faces are built anew only as its measures change, as the window lifts or travels;
  * standing, it is built once.
  *
- * Over the page lies glass: a smooth clear coat on nothing, as three draws one, so all it shows is what it reflects of
- * the world's light, more as the eye sees it more aslant. It is laid over the page drawn before it as three lays a coat
- * over what lies under it: what it reflects added whole, the page under it dimmed by the share the coat reflects, as
- * premultiplied light is laid, and it writes no depth. It lies on the page's plane, drawn nearer by depth's offset, so
- * it wins the plane the page shares with it.
+ * Over the page lies glass: a smooth clear coat on nothing, as three draws one, so it shows what it reflects of the
+ * world's light, more as the eye sees it more aslant, and the glint of a strip of light the slab keeps standing near
+ * it (`NEAR_STRIP`), the slab's own light. It is laid over the page drawn before it as three lays a coat over what lies
+ * under it: what it reflects added whole, the page under it dimmed by the share the coat reflects, as premultiplied
+ * light is laid, and it writes no depth. It lies on the page's plane, drawn nearer by depth's offset, so it wins the
+ * plane the page shares with it.
  *
  * Where the window's shade reaches the whole window (`BodyShade` in `src/props/window.ts`), the body is shaded as the
  * page is: its metal faded in light into what stands behind it as far as the page has faded (`WHAT_STANDS_BEHIND` in
@@ -44,7 +45,7 @@ import {
 	valuesOfTheBox,
 	valuesSet
 } from './passes.js';
-/** @import { BodyShade, DrawnBody, DrawnWindow } from '../src/props/window.ts' */
+/** @import { BlurSeen, BodyBlur, DrawnBody, DrawnWindow } from '../src/props/window.ts' */
 /** @import { DrawnScene } from '../src/scene.ts' */
 /** @import { Box, Size } from '../src/domain/geometry.ts' */
 /** @import { BehindThePage } from './page-picture.js' */
@@ -238,7 +239,8 @@ void main() {
 	float spread = seenOnTheFrame ? spreadOnTheFrame : spreadAPixelAway / -inTheEyesSpace.z;
 	gl_FragColor = vec4(share * spread, 0.0, 0.0, 0.0);
 }`;
-// Where the shade's blur is as wide as written, read off it: on the frame, at every point
+// Where the shade's blur is as wide as written, read off it: on the frame, at every point, as the engine names it
+/** @type {BlurSeen} */
 const SEEN_ON_THE_FRAME = 'on the frame';
 
 /** The window's body: its slab of metal and the glass over the page, as last built. */
@@ -378,15 +380,15 @@ export class WindowBlurred {
 	 * where it is seen on the frame; but for the part of the screen the blur leaves sharp, its edge in the screen's
 	 * pixels as the camera frames it. The field is seen from the scene's eye through a projection.
 	 * @param {THREE.WebGLRenderer} renderer @param {SceneField} field @param {THREE.Matrix4} fieldToTheEye the field's
-	 * projection undone @param {DrawnScene} scene @param {DrawnBody} body @param {BodyShade} shade
+	 * projection undone @param {DrawnScene} scene @param {DrawnBody} body @param {BodyBlur} blur
 	 * @returns {THREE.Texture}
 	 */
-	spreadsOver(renderer, field, fieldToTheEye, scene, body, shade) {
+	spreadsOver(renderer, field, fieldToTheEye, scene, body, blur) {
 		const window = scene.window;
 		const outer = outerOutlineOf(measuresOf(window, body));
 		const filmed = scene.screen.filmed;
 		const sharp = filmed === null ? null : window.sharp;
-		const spread = shade.blur * this.pixelsOfOne;
+		const spread = blur.width * this.pixelsOfOne;
 		this.spreads.setSize(field.width, field.height);
 		valuesSet(this.pass.material, {
 			depth: field.depth,
@@ -395,7 +397,7 @@ export class WindowBlurred {
 			slabOutline: new THREE.Vector3(outer.width / HALVES, outer.height / HALVES, outer.corner),
 			thickness: body.thickness,
 			spreadAPixelAway: spread * scene.eye.distance,
-			seenOnTheFrame: shade.blurSeen === SEEN_ON_THE_FRAME,
+			seenOnTheFrame: blur.seen === SEEN_ON_THE_FRAME,
 			spreadOnTheFrame: spread,
 			keepsAPartSharp: sharp !== null,
 			pageMiddle: new THREE.Vector2(

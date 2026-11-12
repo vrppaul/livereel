@@ -845,11 +845,11 @@ class Room {
 	 */
 	windowSpreadsOver(field, scene, holdsTheWindow) {
 		const body = scene.window.body;
-		if (!holdsTheWindow || body === null || body.shade === null || body.shade.blur <= SHARP) {
+		if (!holdsTheWindow || body === null || body.shade === null || body.shade.blur === null) {
 			return NO_SPREADS_OF_THEIR_OWN;
 		}
 		const toTheEye = this.worldCamera.projectionMatrixInverse;
-		return this.windowBlurred.spreadsOver(this.renderer, field, toTheEye, scene, body, body.shade);
+		return this.windowBlurred.spreadsOver(this.renderer, field, toTheEye, scene, body, body.shade.blur);
 	}
 
 	/**
@@ -955,7 +955,7 @@ class Room {
 			SHARP,
 			...scenes.map((scene) => scene.window.softestOutOfFocus ?? SHARP),
 			...scenes.flatMap(objectsIn).map((object) => object.softestOutOfFocus ?? SHARP),
-			...scenes.map((scene) => scene.window.body?.shade?.softestBlur ?? SHARP)
+			...scenes.map((scene) => scene.window.body?.shade?.blur?.softest ?? SHARP)
 		);
 		if (softest === SHARP) return this.frameBox;
 		const widestSpread = softest * this.pixelsOfOne;

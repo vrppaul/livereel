@@ -427,12 +427,31 @@ test("a typing into a block a page of the film's own lacks, into one that holds 
 	];
 	const intoItsBody = [cut(screen.shows(OWN_PAGE)), ...typing(screen.type(OWN_PAGE, LS, { into: 'body' }))];
 	await expect(shoot(filmOf(intoNothing), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
-		'nothing on the page matches #nowhere as a CSS selector'
+		'no HTML element of the page matches #nowhere as a CSS selector'
 	);
 	await expect(shoot(filmOf(intoItsBody), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
 		'screen.type types into body, which holds elements of its own that what it types would take the place of: name a span of text alone, as <span id="typed"></span> beside <span class="caret"></span>'
 	);
 	expect(measured).toEqual(['its value', 'text alone', '', '/review-ui']);
+});
+
+// A page of the film's own drawing a shape, an SVG element, whose opacity the stage cannot set on its own style
+const PAGE_WITH_A_SHAPE = {
+	html: '<!doctype html><body><svg><rect class="shape" width="40" height="40"></rect></svg></body>'
+};
+
+test("a blink of a block a page of the film's own lacks, or of one that is no HTML element, as an SVG shape, is refused as it begins, naming the block", async () => {
+	const blinking = (into: string) => [
+		cut(screen.shows(PAGE_WITH_A_SHAPE)),
+		cut(screen.blinks(PAGE_WITH_A_SHAPE, into, { seconds: 1 })),
+		hold({ seconds: 0.1 })
+	];
+	await expect(shoot(filmOf(blinking('#nowhere')), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
+		'no HTML element of the page matches #nowhere as a CSS selector'
+	);
+	await expect(shoot(filmOf(blinking('.shape')), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(
+		'no HTML element of the page matches .shape as a CSS selector'
+	);
 });
 
 test("a page of the film's own that moves of itself is refused before the film is shot, naming how it begins", async () => {

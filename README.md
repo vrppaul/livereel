@@ -745,9 +745,9 @@ block because only it knows which of a source's letters are the block's: a
 terminal sets the diff's sign before the code, the review in a column of its
 own, so the terminal's page holds the code in a span of its own. The piece's
 letters are read as it is lifted, off the page it is lifted off, a page of
-the film's own too; the block's as it lands. A box of the screen holds no letters, so landing letters
-on one is refused, as is a hidden block; a film's set measured no letters,
-so it is refused there.
+the film's own too; the block's as it lands. A box of the screen holds no
+letters, so landing letters on one is refused, as is a hidden block; a
+film's set measured no letters, so it is refused there.
 
 A piece lifted `inside: 'world'` rides its block as the page scrolls where the
 film asks: `piece.show(TASK, { inside: 'world', rides: 'its block' })`, then
@@ -956,22 +956,23 @@ either face of the window, or on none, until the film types into that
 block again, which types it anew from nothing; typing into another block
 keeps it. Text that wraps lengthens the page from the frame its letter
 lands on, so a run goes on to the page's new end and a page drawn past its
-screen reaches as far. A block that holds elements of its own, which its text would take
-the place of, is refused as the move begins, as is an `<input>`, which
-shows its value, not its text, and one the page lacks: type into a span of
-text alone, the caret an element beside it, as
-`<span id="typed"></span><span class="caret"></span>`. A `<textarea>`
-shows its text, so it is typed into as a span is.
+screen reaches as far. A block that holds elements of its own, which its text
+would take the place of, is refused as the move begins, as is an `<input>`,
+which shows its value, not its text, and one the page lacks or that is no HTML
+element, as an SVG shape: type into a span of text alone, the caret an element
+beside it, as `<span id="typed"></span><span class="caret"></span>`. A
+`<textarea>` shows its text, so it is typed into as a span is.
 `screen.type('filmed', …)` is refused: the filmed page is typed into by
-`page.type`. `screen.blinks({ html }, '.caret', { seconds: 1.06 })` blinks
-a block of a page of the film's own, the first its CSS selector matches,
-as a terminal blinks its caret: from the move's moment, or the moment of a
-play `within: { start }` names, the block fades out on a cosine to none
-half a blink on and back to whole, a blink every `seconds`, as the
-claude-review promo's end card blinks its caret, until the film blinks it
-again. It blinks on either face of the window, or on none; a block the
-page lacks is refused as the move begins, and the filmed page, whose own
-motion stays stilled. `screen.sweep()` in a `play` sweeps the picture the screen
+`page.type`. `screen.blinks({ html }, '.caret', { seconds: 1.06 })` blinks a
+block of a page of the film's own, the first its CSS selector matches, as a
+terminal blinks its caret: from the move's moment, or the moment of a play
+`within: { start }` names, the block fades out on a cosine to none half a
+blink on and back to whole, whatever opacity the page's own styles give it, a
+blink every `seconds`, as the claude-review promo's end card blinks its caret,
+until the film blinks it again. It blinks on either face of the window, or on
+none; a block the page lacks, or one that is no HTML element, as an SVG shape,
+is refused as the move begins, and the filmed page, whose own motion stays
+stilled. `screen.sweep()` in a `play` sweeps the picture the screen
 shows away by a band of light, the page as it stands showing behind it: an
 act on the page at a moment of the play, `page.act(action, { within })`, a
 theme turned dark, comes in behind the band. The band crosses what the
@@ -1046,33 +1047,32 @@ the whole window, its body and `reaching: 'window'`, draws it so at every
 point; the flat stage, and a room blurring the page alone, blur the page by
 one width, as written where the frame shows the page largest, so a page
 seen aslant is softer where it stands farther. Like `reaching`, it is named
-from the move's start, and `blurSeen: 'on the page'`, livereel's, takes it
-back. A room blurs the page's picture in linear light, as its eye's lens
-blurs the world,
-so light words on a dark page spread their light where the flat stage, which
-blurs in the screen's colours as the browser does, spreads them dark; the
-holes and the picture a sweep holds, markup, blur in the screen's colours on
-both stages. A room fades the page, its picture and the screen's markup
-over it, in linear light too, into what stands behind it, the film's ground
-or a thing, so a dark page faded into a dark ground keeps its light words
-lighter than flat's, which fades it in the screen's colours; a page of the
-film's own fades in the screen's colours on both stages. The part kept
-sharp is drawn from the page's picture, so `sharp` is refused on a page
-framed live, as on one the screen shows a page of the film's own in place
-of; the picture the sweep holds and the holes over the part blur with the
-rest. The shade reaches the page alone, so a film fading one page over another
-keeps its slab whole while the page goes. `window.shade({ blur: 8, fade:
-0.78, reaching: 'window' })` has it reach the whole window, as a promo's lens
-softens and fades all of its slab: in a room its blur and fade reach the
-window's body, its rim and sides fading into what stands behind them as far
-as the page and the whole window blurred as one by the eye's lens, the page,
-its outline and the body, each point as wide as the shade blurs the page and
-wider as the eye sees it nearer, or as wide on the frame where the blur is
-seen there, but the part kept sharp; on the flat stage
-they reach the window's edge and shadow. The dim stays the screen's, and
-what lies over the page in a room's window, a callout or pins, blurs with
-it. Like `sharp`, `reaching` is named from the move's start, and
-`reaching: 'page'` takes it back.
+from the move's start, so a move changing it changes the blur's width on the
+frame at its first frame, and `blurSeen: 'on the page'`, livereel's, takes it
+back. A room blurs the page's picture in linear light, as its eye's lens blurs
+the world, so light words on a dark page spread their light where the flat
+stage, which blurs in the screen's colours as the browser does, spreads them
+dark; the holes and the picture a sweep holds, markup, blur in the screen's
+colours on both stages. A room fades the page, its picture and the screen's
+markup over it, in linear light too, into what stands behind it, the film's
+ground or a thing, so a dark page faded into a dark ground keeps its light
+words lighter than flat's, which fades it in the screen's colours; a page of
+the film's own fades in the screen's colours on both stages. The part kept
+sharp is drawn from the page's picture, so `sharp` is refused on a page framed
+live, as on one the screen shows a page of the film's own in place of; the
+picture the sweep holds and the holes over the part blur with the rest. The
+shade reaches the page alone, so a film fading one page over another keeps its
+slab whole while the page goes. `window.shade({ blur: 8, fade: 0.78, reaching:
+'window' })` has it reach the whole window, as a promo's lens softens and
+fades all of its slab: in a room its blur and fade reach the window's body,
+its rim and sides fading into what stands behind them as far as the page and
+the whole window blurred as one by the eye's lens, the page, its outline and
+the body, each point as wide as the shade blurs the page and wider as the eye
+sees it nearer, or as wide on the frame where the blur is seen there, but the
+part kept sharp; on the flat stage they reach the window's edge and shadow.
+The dim stays the screen's, and what lies over the page in a room's window, a
+callout or pins, blurs with it. Like `sharp`, `reaching` is named from the
+move's start, and `reaching: 'page'` takes it back.
 Start the words once the window has drawn back, so they come up on the
 ground, not over the page. A film shot in several formats names places of
 its own in each format and writes them once (below, "Formats").
@@ -1261,10 +1261,10 @@ stands dark. Turned past edge-on, the window shows the body's back. It is
 open in front, so a page that fades shows what stands behind the window.
 The glass is a smooth clear coat, which reflects the soft boxes and the
 lights, more as the eye sees it aslant, and dims the page under it by as
-much: a glint glides over a dark page as the window turns toward a box, and
-hardly shows on a white one. It comes with the body, as far as the body has
-come, reflects nothing where the world has no light, and stays over a page
-that fades. A flat film draws the edge and shadow in its place.
+much: a reflection glides over a dark page as the window turns toward a box,
+and hardly shows on a white one. It comes with the body, as far as the body
+has come, reflects nothing where the world has no light, and stays over a
+page that fades. A flat film draws the edge and shadow in its place.
 
 ```ts
 world: { softBoxes: [...] },

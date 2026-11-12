@@ -65,6 +65,11 @@ export class PageOfBoxes implements FilmedPage {
 		this.growth = growth;
 	}
 
+	/** A test names only the blocks its page has. */
+	blockFound(): Promise<void> {
+		return Promise.resolve();
+	}
+
 	/** A test names only the blocks whose holding its page has. */
 	holdingOf(target: string): Promise<BlockHolding> {
 		return Promise.resolve(this.holdings.get(target)!);

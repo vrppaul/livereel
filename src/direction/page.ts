@@ -46,8 +46,8 @@ export type BlockHolding = 'text alone' | 'elements' | 'its value';
 /**
  * A page as a move measures it: where its blocks and their letters stand and the ground behind them, in its pixels
  * how far down it scrolls at most with a text written into each of some blocks, and how far down its document a
- * block's top stands, however far it is scrolled, and what a block shows as its text; as a page of the film's own is
- * measured, which no key reaches and the film alone runs and types into.
+ * block's top stands, however far it is scrolled, and a block the stage writes, found as it finds it, and what it shows
+ * as its text; as a page of the film's own is measured, which no key reaches and the film alone runs and types into.
  */
 export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind' | 'letterAtTheStart'> & {
 	/**
@@ -58,9 +58,12 @@ export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind' | 'letterAtTh
 	/** The first block a target matches; a target the page lacks is refused at once. */
 	readonly documentTop: (target: string) => Promise<number>;
 	/**
-	 * What the first block a target matches as a CSS selector, as the stage finds it, shows as its text; a target the
-	 * page lacks, or that is no CSS selector, is refused at once.
+	 * The first block a target matches as a CSS selector, found as the stage finds a block it writes, typing its text or
+	 * blinking it: an HTML element. A target the page lacks, that is no CSS selector, or whose first match is no HTML
+	 * element, as an SVG shape, is refused at once.
 	 */
+	readonly blockFound: (target: string) => Promise<void>;
+	/** What the block so found shows as its text; refused at once as `blockFound` refuses. */
 	readonly holdingOf: (target: string) => Promise<BlockHolding>;
 };
 

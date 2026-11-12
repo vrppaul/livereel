@@ -1,8 +1,8 @@
 /**
  * The filmed page as moves read it and type into it: where its blocks and their letters stand, the ground behind
  * them, its scroll, its keyboard; and a page of the film's own as moves measure it, among the rest how far down it
- * scrolls with what is typed into its blocks, how far down its document a block stands, and what a block the film types
- * into shows as its text.
+ * scrolls with what is typed into its blocks, how far down its document a block stands, and the block the film types
+ * into or blinks, found as the stage finds it, and what it shows as its text.
  *
  * The functions handed to the page run there, each alone: none may call another of this module. The block a scroll
  * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a
@@ -151,7 +151,7 @@ const SCROLLS = new Set(['auto', 'scroll']);
 const PLACED_APART = new Set(['absolute', 'fixed']);
 // The keys of the frame's document before a move asks for one
 const NONE_KEPT = null;
-// What the page answers where a CSS selector selects no block
+// What the page answers where a CSS selector selects no HTML element
 const NONE_SELECTED = null;
 // A canvas of one pixel reads a colour's alpha from 0 to 255, the most, where the colour is drawn whole
 const GROUND_ASKED: GroundAsked = { canvasSide: 1, whole: 255 };
@@ -241,14 +241,12 @@ export class PlaywrightPage implements FilmedPage {
 		return (await this.found(target)).evaluate(documentTopOf);
 	}
 
-	/**
-	 * What the first block a target matches as a CSS selector, as the stage finds a block to write text into, shows as
-	 * its text; refused at once where the page has none it matches, or the target is no CSS selector.
-	 */
+	async blockFound(target: string): Promise<void> {
+		await this.written(target);
+	}
+
 	async holdingOf(target: string): Promise<BlockHolding> {
-		const holding = await this.frame.evaluate(holdingOfTheBlock, target);
-		if (holding === NONE_SELECTED) throw new FilmError(`nothing on the page matches ${target} as a CSS selector`);
-		return holding;
+		return (await this.written(target)).evaluate(holdingOfTheBlock);
 	}
 
 	type(text: string): Promise<void> {
@@ -264,6 +262,16 @@ export class PlaywrightPage implements FilmedPage {
 		const blocks = this.frame.locator(target);
 		if ((await blocks.count()) === 0) throw nothingMatches(target);
 		return blocks.first().evaluateHandle(itself);
+	}
+
+	/**
+	 * The block the stage writes, typing its text or blinking it, found as it finds it (`blockOf` in
+	 * `stage/own-page.js`): the first a CSS selector matches, an HTML element; refused at once where there is none.
+	 */
+	private async written(target: string): Promise<JSHandle<HTMLElement>> {
+		const block = (await this.frame.evaluateHandle(writtenBlockOf, target)).asElement();
+		if (block === NONE_SELECTED) throw new FilmError(`no HTML element of the page matches ${target} as a CSS selector`);
+		return block;
 	}
 
 	/** The first `every` blocks a selector matches, refused at once where it matches none. */
@@ -484,14 +492,21 @@ function scrollLengthTyped(typed: readonly TypedText[]): number {
 }
 
 /**
- * What the first block a CSS selector matches shows as its text: its value, where it is an input, told by the element's
- * own interface, which holds no text and shows its value alone; elements of its own; or its text alone, as a text area
- * shows it while nobody has edited it. None selected where it matches none, or is no CSS selector.
+ * The first block a CSS selector matches, where it is an HTML element: none selected where the selector matches none,
+ * its first match is no HTML element, as an SVG shape, or it is no CSS selector.
  */
-function holdingOfTheBlock(target: string): BlockHolding | null {
+function writtenBlockOf(target: string): HTMLElement | null {
 	if (!CSS.supports(`selector(${target})`)) return null;
 	const block = document.querySelector(target);
-	if (block === null) return null;
+	return block instanceof HTMLElement ? block : null;
+}
+
+/**
+ * What a block shows as its text: its value, where it is an input, told by the element's own interface, which holds no
+ * text and shows its value alone; elements of its own; or its text alone, as a text area shows it while nobody has
+ * edited it.
+ */
+function holdingOfTheBlock(block: HTMLElement): BlockHolding {
 	if (block instanceof HTMLInputElement) return 'its value';
 	return block.childElementCount > 0 ? 'elements' : 'text alone';
 }

@@ -180,22 +180,25 @@ test("a body comes as far as the window lifts and the screen comes up in it, rou
 	]);
 });
 
-test('a shade reaching the window fades its body as far as the page and blurs it as the page, at its softest as large as the frame shows the slab, its glass fading with it; the body unshaded where the shade reaches the page alone, or only dims', () => {
+test('a shade reaching the window fades its body as far as the page and blurs it as the page, at its softest as large as the frame shows the slab, its glass fading with it, and hands it no blur where it fades alone; the body unshaded where the shade reaches the page alone, or only dims', () => {
 	const reaching = { ...WITH_A_BODY, fade: 0.25, blur: 8, reaching: 'window' };
 	const atRest = drawnWindow(LIFTED, AT_ITS_EDGES, reaching, AROUND).body!;
 	const turned = drawnWindow({ ...LIFTED, angle: TURNED[0] }, AT_ITS_EDGES, reaching, AROUND).body!;
+	const fadedAlone = drawnWindow(LIFTED, AT_ITS_EDGES, { ...reaching, blur: 0 }, AROUND).body!;
 	const pageAlone = drawnWindow(LIFTED, AT_ITS_EDGES, { ...reaching, reaching: 'page' }, AROUND).body!;
 	const dimmed = drawnWindow(LIFTED, AT_ITS_EDGES, { ...WITH_A_BODY, dim: 0.5, reaching: 'window' }, AROUND).body!;
 	expect([
 		atRest.shade,
 		atRest.glass,
-		turned.shade!.softestBlur > 8,
+		turned.shade!.blur!.softest > 8,
+		fadedAlone.shade,
 		[pageAlone.shade, pageAlone.glass],
 		[dimmed.shade, dimmed.glass]
 	]).toEqual([
-		{ fade: 0.25, blur: 8, softestBlur: 8 },
+		{ fade: 0.25, blur: { width: 8, softest: 8 } },
 		BODY.glass * 0.75,
 		true,
+		{ fade: 0.25, blur: null },
 		[null, BODY.glass],
 		[null, BODY.glass]
 	]);
@@ -216,9 +219,9 @@ test("a shade's blur seen on the frame is as wide on the frame wherever the eye 
 	]).toEqual([
 		4,
 		{ box: part, edge: 2, blur: 2, softens: 0.5 },
-		{ fade: 0, blur: 8, blurSeen: 'on the frame', softestBlur: 8 },
+		{ fade: 0, blur: { width: 8, seen: 'on the frame', softest: 8 } },
 		8,
-		{ fade: 0, blur: 8, blurSeen: 'on the page', softestBlur: 16 }
+		{ fade: 0, blur: { width: 8, seen: 'on the page', softest: 16 } }
 	]);
 });
 

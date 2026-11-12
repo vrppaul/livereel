@@ -656,10 +656,11 @@ export function blinks(page: OwnPageNamed, into: string, script: BlinksScript): 
 
 /**
  * A block of a page of the film's own, by the page's key, blinking from the moment its move begins: found as the move
- * begins as the stage finds it in each exposure's copy, so a selector the page lacks is refused then.
+ * begins as the stage finds it in each exposure's copy, so a selector the page lacks, or one that matches no HTML
+ * element, whose opacity the stage cannot set, is refused then.
  */
 async function blinking(beginning: Beginning, key: string, into: string, seconds: number): Promise<Change> {
-	await (await beginning.ownPage(key)).holdingOf(into);
+	await (await beginning.ownPage(key)).blockFound(into);
 	const blink: Blink = { since: beginning.stretch.moment, seconds };
 	return (scene) => blinkSet(scene, key, into, blink);
 }
