@@ -102,8 +102,8 @@ first, then a storyboard, then the steps, checked frame by frame on contact shee
 
 Every file is named after the film's file and its format. `livereel --help` gives each command's usage. A
 command that refuses says why on stderr, and exits by whose it is to put right: 1 the film, 2 the command line or
-the film's file, 3 the machine, which lacks what a film is shot with: the browser, ffmpeg or its encoder of the
-kind asked, or a Node new enough.
+the film's file, 3 the machine: it lacks the browser, ffmpeg, its encoder of the kind asked or a Node new enough,
+or its graphics card dropped the room's canvas.
 
 `--renderer gpu` draws the frames on the graphics card, in the same headless browser, and needs no screen: a
 blurred film shoots in about a third of the time it takes in software. It reaches the card through Vulkan on
@@ -198,8 +198,8 @@ The page's own time is the film's. Its timers, its animation frames and its date
 run on a frame's length with each, so a note the page takes away after 2 s goes 2 s into the film, however long
 the shoot takes, on the same frame in every shot. While an `act`, or the film's `ready`, waits on the page, its
 time runs as the wall's, as the page needs it to answer: a search that waits for the typing to stop, data that
-loads. The film's time stands through an act, so the page comes out of it ahead and stands until the film
-catches up: what it set runs out as far into the film as it said, however long the acts after it took, and an
+loads. The film's time stands through an act, so the page leaves the act ahead of the film and waits for
+it: a timer it set ends as far into the film as it said, however long the acts after it took, and an
 animation its script draws stands for as long as the act took. A Web Worker's timers, and the date the page
 starts at, the machine's, are the wall's.
 
@@ -337,8 +337,7 @@ static page is refused:
 What `inside` costs:
 
 - The frame is sandboxed short of moving the page it stands in, so a page that breaks out of frames stays in the
-  stage, and a link to `_top` does nothing. A real app, claude-review, was filmed whole under it; a popup, a
-  download or storage access is not tried yet.
+  stage, and a link to `_top` does nothing. A popup, a download or storage access is not tried yet.
 - Only the app's own site is signed in: a page of another site the frame goes to gets only its cookies of
   `SameSite=None`. Such a page is shown even where it refuses to be framed.
 - The app's scripts can reach the stage, which stands on their origin.
@@ -538,9 +537,9 @@ block wider than the window at that distance is cut at its edges and a phone's p
 framed closer, the window stands still and the page grows in it.
 
 `depth` brings the window that many frame pixels toward the eye on its way, larger and farther from the frame's
-middle as the eye sees it: a slab coming at the eye with its body; a depth below none takes it back. It is less
-than the eye's focal length, refused before anything is shot where the window would stand at the eye or behind
-it. A depth goes on the move's curve and is kept where a move names none. Over the whole frame the window stays
+middle as the eye sees it: a slab coming at the eye with its body; a depth below none takes it back. Keep it under
+the eye's focal length: a depth that stands the window at the eye or behind it is refused before anything is
+shot. A depth goes on the move's curve and is kept where a move names none. Over the whole frame the window stays
 the frame itself, flat on it, at any depth. A window off its plane has the page's picture taken as sharp as
 livereel's bound, 2.2.
 
@@ -580,7 +579,7 @@ that runs from the first frame is `screen.behind` and `screen.scrolls` of the sa
 
 In a room the window may have a body, as a tablet has: a slab of metal round the page, its corners the page's
 grown by its rim, in place of the window's edge and shadow. `window.body(body, { within })` sets any of its
-values; what a move leaves out stays, and the window opens on livereel's, of no thickness, which is none:
+values; what a move leaves out stays, and the window opens with no body:
 
 | Value | What it sets | livereel's |
 |---|---|---|
@@ -668,11 +667,11 @@ the side across, so the next slide's words push the last one's away. What slides
 so what leaves and what comes move as one sheet: the window, a title over the whole frame and the card with its
 ground among them.
 
-**Carried.** `title.to(place, { scale, depth, through })`, and every object's `to` but a lens's, carries it to another place
-through the boxes between, a title reading as it did; it grows about its middle by `scale` and comes `depth`
-frame pixels toward the eye, less than the eye's focal length, larger and farther from the frame's middle as the
-eye sees it. Each is kept where a move leaves it out. `through` names places it passes on one curve, as
-`camera.onto` passes blocks ("The camera"): `title.to('right', { through: ['top'] })`.
+**Carried.** Every object's `to` but a lens's, as `title.to(place, { scale, depth, through })`, carries it to
+another place through the boxes between; a title's words stay as they were. It grows about its middle by `scale`
+and comes `depth` frame pixels toward the eye, less than the eye's focal length, larger and farther from the
+frame's middle as the eye sees it. Each is kept where a move leaves it out. `through` names places it passes on
+one curve, as `camera.onto` passes blocks ("The camera"): `title.to('right', { through: ['top'] })`.
 
 **Leant.** `title.lean({ tilt, turn, roll, over, about })` leans it as the window leans ("Leaning"). Turned away
 from the eye, it shows its back: a title card's ground or a pane blank, and words on no ground nothing, never
@@ -863,10 +862,10 @@ up `at` a place, across most of the frame in its middle where none is named (`{ 
 0.86, height: 0.56 }` for a few lines); in a `cut`, there at once. `terminal.type(strokes, { keyboard, as })`
 types into it, each key heard; `terminal.submit({ as })`, in a `cut`, presses Enter. `terminal.works(lines,
 thinking, { thinkingShare, as })` shows the agent thinking, its spinner beside the words `thinking`, for
-`thinkingShare` of the move, then its lines one after another; a line is `{ kind, text }`, its kind `asked`,
-`work` (a tool and what it is used on), `said`, `done` or `thinking`. `terminal.leave({ toward, leave, edge, as
-})` lets it go where it stands, or slides it out whole `toward` a side. `terminal.to`, `terminal.lean` and
-`terminal.effects` move it as any object.
+`thinkingShare` of the move, 0.22 where none is named, then its lines one after another; a line is
+`{ kind, text }`, its kind `asked`, `work` (a tool and what it is used on), `said`, `done` or `thinking`.
+`terminal.leave({ toward, leave, edge, as })` lets it go where it stands, or slides it out whole `toward` a side.
+`terminal.to`, `terminal.lean` and `terminal.effects` move it as any object.
 
 ### The light and the cursor
 
@@ -942,13 +941,13 @@ piece that lies on the page from the moment it sets off.
 **Letters on letters.** A piece lifted naming the block of its source whose letters it carries,
 `piece.show(ROW, { letters: ROW_CODE })`, lands them letter on letter on the block it is carried onto,
 `piece.onto(REVIEW_ROW_CODE)`: grown as far as a letter of the block steps against one of its own, its first
-letter where the block's starts, its middle on theirs. Where letters start is read off the block's first letter as
-the page lays it out, and in a blank line of code off its content box; how far one steps, off the font they are
-set in, a block scaled by a transform or `zoom` too. The film names the block because only it knows which of a
-source's letters are the block's: a terminal sets the diff's sign before the code, the review in a column of its
-own, so the terminal's page holds the code in a span of its own. The source's letters are read as it is lifted,
-the block's as it lands. Refused: landing letters on a box of the screen or a hidden block, and letters on a
-film's set.
+letter where the block's starts, its middle on theirs. Where letters start is read off the block's first letter,
+past its padding, as the page lays it out, and in a blank line of code off its content box; how far one steps,
+off the font they are set in, a block scaled by a transform or `zoom` too. The film names the block because only
+it knows which of a source's letters are the block's: a terminal sets the diff's sign before the code, the review
+in a column of its own, so the terminal's page holds the code in a span of its own. The source's letters are read
+as it is lifted, the block's as it lands. Refused: landing letters on a box of the screen or a hidden block, and
+letters on a film's set.
 
 **Riding its block.** `piece.show(TASK, { inside: 'world', rides: 'its block' })` stands it on the page in the
 world, off it as freely as anywhere, so it goes where its block goes. The camera framing the page anew and the
@@ -1100,11 +1099,11 @@ leant.
 
 The camera chooses what of the page the window shows. `camera.to(pose)` goes to a pose: the whole screen's,
 `whole`, which `steps` is handed, or one written out, `{ focusX, focusY, zoom }`. `camera.onto(target, { every,
-air, zoomAtMost })` frames the first `every` blocks a selector matches, or a box of the screen, at its middle,
-`air` of the page's pixels round them, no closer than `zoomAtMost`, in whatever window stands, and keeps them
-framed as the window moves or leans. Frame by selector, so one script fits every format. Its zoom goes by even
-steps of scale, 1 to 4 at 2 half way, the point of the page that stands at one place on the frame at both ends
-staying there all the way.
+air, zoomAtMost, through, shape, pace })` frames the first `every` blocks a selector matches, or a box of the
+screen, at its middle, `air` of the page's pixels round them, 80 where none is named, no closer than
+`zoomAtMost`, in whatever window stands, and keeps them framed as the window moves or leans. Frame by selector, so
+one script fits every format. Its zoom goes by even steps of scale, 1 to 4 at 2 half way, the point of the page
+that stands at one place on the frame at both ends staying there all the way.
 
 Both pass the poses, or the blocks, `through` names on their way, each framed as its own is, on one curve:
 `shape: 'smooth'`, the default, or `'straight'`, and `pace: 'even'`, as long a stretch of the way in each equal
@@ -1452,7 +1451,7 @@ export default defineFilm({ drawing: 'room', ... });
 |---|---|---|
 | A window leant or brought near | as soft as the browser draws a layer in 3D, about one of its pixels a page's pixel | as sharp as the page's picture; what lies over the page in the window as dense as the page's device scale |
 | The eye's focus | each plane as soft as its point nearest the focus | each point by its own distance; what stands nearer the eye than all else is blurred apart, its blurred edge showing what it hides |
-| The shade's blur and fade, a fast move's blur | in the screen's colours, as the browser blends | in linear light, as a lens gathers it: light words on a dark page stay brighter, a glint streaks as bright as it shines; a page of the film's own, the holes and a sweep's picture still blend in the screen's colours |
+| The shade's blur and fade, a fast move's blur | in the screen's colours, as the browser blends | in linear light, as a lens gathers it: light words on a dark page stay brighter, a glint streaks as bright as it shines; markup over the page, a page of the film's own, the holes and a sweep's picture still blend in the screen's colours |
 | The window's body | its edge and shadow | a slab of metal and glass, `window.body` |
 | A piece's body and pit | its face and shadow; a hole in its `ground` | walls, sockets and pits |
 | Markup in the world, a title or a pane | over the window wherever it stands | hidden by the window and its body where it stands behind them, drawn as densely as the eye magnifies it, a picture no denser than it holds |
@@ -1471,10 +1470,11 @@ What a room costs and needs:
   far, `window.to(COVERING, { depth: -3000 })` then `{ depth: 0 }`, never laid small and brought near.
 - Markup standing in the world is drawn as densely as the eye magnifies it, up to the graphics card's largest
   texture; one that would ask more is drawn part by part, each as dense as the eye magnifies it and only as far as
-  the frame shows it. What shows a picture is drawn no denser than its picture: a piece as close as its picture was
-  taken, 2.2 times or a picture held sharper, a picture of the film's own as its file's pixels, an SVG as the eye
-  asks; brought nearer, the eye sees that picture magnified. Where the frame shows more of the window's plane than the card holds in one texture, as the
-  eye flying low over a tall screen does, what lies over the page is drawn less densely; a page's picture larger
+  the frame shows it. What shows a picture is drawn no denser than the picture holds: a piece at the zoom its
+  picture was taken at, 2.2, or a sharper one's own; a picture of the film's own at its file's pixels; an SVG as
+  densely as the eye asks. Nearer than that, the eye sees the picture stretched. Where the frame shows more of the
+  window's plane than the card holds in one texture, as the eye flying low over a tall screen does, what lies over
+  the page is drawn less densely; a page's picture larger
   than the card's largest texture is shrunk whole to fit it.
 - It draws through Chrome's HTML-in-Canvas, an experiment behind a flag livereel turns on: livereel pins the
   browser `npx livereel setup` installs, and refuses a browser without it, or one that gives the page no WebGL, as
@@ -1497,7 +1497,7 @@ real keyboards, each key one of four strikes in turn. `defineFilm` takes:
   `sounds: { key: { enabled: false } }`. The click and the ending may stand beside a keyboard; a key given so
   takes the keyboard's place, and is never named beside it;
 - `sounds: { keyVolume }`, how loud every key is heard, on any keyboard or from a file in its place: 1 as loud
-  as its file. livereel's keys peak about 12 dB under its click, so keys under music want about 4;
+  as its file. livereel's keys peak about 12 dB under its click: set about 4 for keys heard under music;
 - `sounds: { enabled: false }` for none of livereel's but a keyboard a typing names;
 - `music: { file, volume }`, a track under the whole film, `volume` 1 as loud as the file, cut to the film's
   length and faded out at its end.

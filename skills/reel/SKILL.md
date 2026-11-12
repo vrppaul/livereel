@@ -140,7 +140,7 @@ Where it reaches no card it draws in software and warns "--renderer gpu reached 
 draws with WebGL may then draw nothing: where a canvas on the contact sheet is empty, shoot again without the flag. A
 room that ends "the graphics card dropped the room's canvas" asked the card for more memory than it had: shoot at
 `--quality draft`, or bring less markup that near the eye there. A piece or a picture asks no more than its picture
-holds however near it comes; words, code and panes ask more the nearer.
+holds however near it comes; words, code, panes and an SVG ask more the nearer.
 
 ### A film's shape
 
@@ -236,7 +236,7 @@ its screen is refused. `reaches: 'document'` draws a page past the screen's top 
 |---|---|
 | `window.to(place, { depth })` | the page drawn back into a window at a place, `'whole'` back to the frame; `depth` toward the eye, under the focal length; travels apart from the camera |
 | `window.show({ at, from })`, `window.hide({ toward })` | the window sliding in whole from past a side, or out; with words sliding the other way, a push |
-| `window.lean({ tilt, turn, roll, over, about })` | leant back, swung, rolled, turned over, in degrees, about its middle or a point `about` names, changed only while face-on ("Leaning") |
+| `window.lean({ tilt, turn, roll, over, about })` | leant back, swung, rolled, turned over, in degrees, about its middle or a point `about` names, `about` changed only while the window faces the frame ("Leaning") |
 | `screen.rise()`, `screen.lower()` | the screen up out of the ground, or down into it; at once in a `cut` |
 | `screen.behind({ html }, { upright, within })`, `screen.behind('none')` | a page of the film's own on the window's back, upright once turned `'over'` or `'round'`; frame the whole screen before the window turns ("Its back") |
 | `window.body({ thickness, rim, metal, roughness, glass, glint }, { within })` | a room only: a slab of metal and glass round the page, none by default; set in the first `cut`; give the world soft boxes to see it ("Its body") |
@@ -340,10 +340,10 @@ and on a page of the film's own. Motion blur is `defineFilm`'s `motionBlur` ("Mo
 - Sounds are few and quiet: a click, the keys, the ending. Leave the keyboard as livereel sets it unless the user asks
   for another; the README names each by the keyboard it was recorded on. One typing heard on another keyboard names
   it, `page.type(strokes, { keyboard: 'butterfly' })`: two people typing, or a film that shows the keyboards off.
-- Music only where the user asks for it, and quiet under the clicks (`volume` about 0.3). Keep `sound.play` for what
-  the page itself would make sound.
-- Music the user wants as loud as its file buries the keys, which peak about 12 dB under the click:
-  `sounds: { keyVolume }` of about 4 brings them up to the click, heard over music that runs 6 dB under that.
+- Music only where the user asks for it, and quiet under the clicks (`volume` about 0.3) unless they want it as
+  loud as its file. Music that loud buries the keys, which peak about 12 dB under the click:
+  `sounds: { keyVolume: 4 }` lifts them to the click's level. Keep `sound.play` for what the page itself would
+  make sound.
 - A `theme` where the user names a brand's look; leave out what they do not name: livereel's own is a dark ground,
   white ink and an amber accent. A light `terminal` needs all six code colours given. The window's body is the
   window's, `window.body`, not the theme's.

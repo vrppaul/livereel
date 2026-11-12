@@ -301,13 +301,16 @@ function inTurn(files: readonly string[], timesHeard: number): string | undefine
 	return files.length === 0 ? undefined : files[timesHeard % files.length];
 }
 
-/** Where each input stands: the picture, each sound file once, the silence, the music. */
+/** Where each input stands: the picture, each file heard once at each volume, the silence, the music. */
 function layoutOf(heard: readonly HeardFile[]): Layout {
 	const silence = FIRST_SOUND + heard.length;
 	return { firstSound: FIRST_SOUND, silence, music: silence + 1 };
 }
 
-/** ffmpeg's inputs in the layout's order: the picture, each sound file once, the silence as long as the film, music. */
+/**
+ * ffmpeg's inputs in the layout's order: the picture, each file heard once at each volume, the silence as long as
+ * the film, music.
+ */
 function inputsOf(picture: string, heard: readonly HeardFile[], seconds: number, music: Music | null): string[] {
 	const sounds = heard.flatMap((sound) => ['-i', sound.file]);
 	const silence = ['-f', 'lavfi', '-t', String(seconds), '-i', SILENCE];
