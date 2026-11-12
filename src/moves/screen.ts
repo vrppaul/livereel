@@ -10,15 +10,16 @@
  * share a step. The page a move of the film's own names is the stage's to lay before the film is shot.
  *
  * Or the screen fades from the page it showed into the one it shows, as a film's cut dissolves: the move holds a
- * picture of the page as it begins, laid over the page coming where the camera shows the page going then, as its step
- * leaves the camera, and the screen fades from it over as many seconds of the film's time as the film names, on a
- * curve, past the move's step. So a fade written in a cut, before a camera move in the same cut, keeps the page going
- * framed as it stood while the camera frames the page coming at once: one page fading over another, each at its own
- * scale; and the camera's moves after carry the two together. A fade is refused as it begins where its picture would
- * drop something at once: on a page framed live, which has no picture; from a page the window shades, as the picture
- * is unshaded; from a page of the film's own that runs, as the picture stands still; from one drawn past its screen,
- * as the picture holds the screen alone; and while the screen still fades from the page before, whose picture would
- * go.
+ * picture of the page as it begins, laid over the page coming where the camera shows the page going then, and the
+ * screen fades from it over as many seconds of the film's time as the film names, on a curve, past the move's step. In
+ * a cut the move holds the page going where the camera frames it, which the take lays it by once every move of the cut
+ * is set (`src/studio/take.ts`), so no move of the cut is begun twice to foresee the camera it leaves. So a fade
+ * written in a cut, before a camera move in the same cut, keeps the page going framed as it stood while the camera
+ * frames the page coming at once: one page fading over another, each at its own scale; and the camera's moves after
+ * carry the two together. A fade is refused as it begins where its picture would drop something at once: on a page
+ * framed live, which has no picture; from a page the window shades, as the picture is unshaded; from a page of the
+ * film's own that runs, as the picture stands still; from one drawn past its screen, as the picture holds the screen
+ * alone; and while the screen still fades from the page before, whose picture would go.
  *
  * Light sweeps away the picture the screen shows, a band crossing it or a disc opening round a block, over a move's
  * share, to the page as it stands behind it: the picture is held as the move begins, as a piece holding its picture
@@ -51,8 +52,8 @@
 import { A_CURVE, type Ease, FASTEST_SPEED, type Stretch, easeInOutSine, linear } from '../domain/curves.ts';
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
-import { runCarriedUnder } from '../domain/camera.ts';
-import { lyingFramedBy } from '../domain/framing.ts';
+import { type Camera, runCarriedUnder } from '../domain/camera.ts';
+import { OVER_THE_SCREEN } from '../domain/framing.ts';
 import {
 	A_FRAME_SIDE,
 	A_POINT_OF_THE_FRAME,
@@ -113,9 +114,9 @@ import {
 	CUT_AT_THE_SCREEN,
 	DRAWN_TO_ITS_DOCUMENT,
 	type Fade,
+	type FadeLies,
 	type Knot,
 	NO_BLOCK_BLINKING,
-	NO_SECONDS,
 	type OwnDocument,
 	type Reach,
 	SCREEN_DOWN,
@@ -317,8 +318,9 @@ const FADE_FORM: Form<FadeScript> = { seconds: needed(SOME_SECONDS), ease: A_CUR
 const A_FADE: Kind<FadeScript> = new OfForm<FadeScript>(FADE_FORM, 'a fade: { seconds, ease }');
 const FILMED_SHOWS_FORM: Form<FilmedShowsScript> = { fade: A_FADE, ...MOMENT_FORM };
 const SHOWS_FORM: Form<ShowsScript> = { reaches: A_REACH, ...FILMED_SHOWS_FORM };
-// A fade's curve where the film names none: a play's
+// A fade's curve where the film names none: a play's; and the page a fade in a play leaves, laid over the whole screen
 const FADES_ALONG: Ease = easeInOutSine;
+const LAID_OVER_THE_SCREEN: FadeLies = { kind: 'laid', lying: OVER_THE_SCREEN };
 // The move that shows a page, and its fade, as refusals name them
 const SHOWS = 'screen.shows';
 const SHOWS_FADE = "screen.shows' fade";
@@ -431,23 +433,36 @@ function showingMove(
 
 /**
  * The screen fading from the page it shows as the move begins into another: a picture of the whole screen held then,
- * lying over the page coming where the camera shows the page going then, as the camera stands at the move's moment once
- * its step has set it, fading over the film's time from that moment, as many seconds as the film names, on its curve;
- * refused where it would drop at once what the screen shows (`refuseFadingFrom`).
+ * lying over the page coming where the camera shows the page going then (`pageGoingLies`), fading over the film's time
+ * from the move's moment, as many seconds as the film names, on its curve; refused where it would drop at once what the
+ * screen shows (`refuseFadingFrom`).
  */
 async function fadingInto(beginning: Beginning, shows: Shows, script: FadeScript): Promise<Change> {
 	refuseWhereLive(beginning, SHOWS_FADE);
 	refuseFadingFrom(beginning);
 	const { format, stretch } = beginning;
-	const framedNow = cameraOf(beginning.scene, format).pose;
-	const framingThePageComing = (await beginning.cameraAt(stretch.moment)).pose;
 	const fade: Fade = {
 		from: pageShownBy(beginning.scene.screen.shows),
-		lies: lyingFramedBy(framedNow, framingThePageComing),
+		lies: pageGoingLies(beginning),
 		picture: await beginning.holdPicture(boxOf(format.screen)),
 		over: { moment: stretch.moment, seconds: script.seconds, ease: script.ease ?? FADES_ALONG }
 	};
 	return (scene) => withProp(scene, 'screen', { ...scene.screen, shows, fade });
+}
+
+/**
+ * Where the page a fade leaves lies as the fade begins: in a play, over the whole screen, as the camera at the fade's
+ * moment frames it and the page coming alike, a move of the frame setting nothing at the moment it begins; in a cut,
+ * held where the camera frames it now, which the take lays it by once every move of the cut is set, as the cut's moves
+ * after the fade may frame the page coming anew.
+ */
+function pageGoingLies(beginning: Beginning): FadeLies {
+	switch (beginning.step.kind) {
+		case 'play':
+			return LAID_OVER_THE_SCREEN;
+		case 'cut':
+			return { kind: 'held', framing: cameraOf(beginning.scene, beginning.format).pose };
+	}
 }
 
 /**
@@ -729,23 +744,45 @@ async function comingToRest(
 	}
 	const stretch = beginning.stretch;
 	const from = standingOn(screen, key, stretch.moment);
-	if (stretch.seconds === NO_SECONDS) return runSet(key, runToRest(from, stretch, rest));
+	const step = beginning.step;
+	switch (step.kind) {
+		case 'cut':
+			return runSet(key, runToRest(from, stretch, rest));
+		case 'play':
+			return runSet(key, await runToRestInAPlay(beginning, step.cameraAt, from, rest, script, target));
+	}
+}
+
+/**
+ * A page of the film's own brought to rest in a play from where it stands, along the page or with its pace judged at
+ * the point of the frame the film names, where the play foresees the frame will stand at a moment: refused where it
+ * would turn back on its way, along the page or across the frame there.
+ */
+async function runToRestInAPlay(
+	beginning: Beginning,
+	cameraAt: (moment: number) => Promise<Camera>,
+	from: Knot,
+	rest: number,
+	script: ScrollToScript,
+	target: string
+): Promise<Scroll> {
 	refuseRunningAway(from.pace, rest - from.top, target);
 	if (script.judged === undefined) {
-		refuseRunningPast(from.pace, rest - from.top, stretch, target);
-		return runSet(key, runToRest(from, stretch, rest));
+		refuseRunningPast(from.pace, rest - from.top, beginning.stretch, target);
+		return runToRest(from, beginning.stretch, rest);
 	}
-	return runSet(key, await judgedRun(beginning, from, rest, script.judged, target));
+	return judgedRun(beginning, cameraAt, from, rest, script.judged, target);
 }
 
 /**
  * A page of the film's own brought to rest from where it stands, its pace judged at a point of the frame, in shares of
- * it: the frame measured where it will stand at each moment the run is judged at, one after another, as the take may
- * begin moves of the frame ahead to answer each; refused where the eye sees past the window's plane there, and where
- * the run would turn back across the frame there.
+ * it: the frame measured where the play foresees it will stand at each moment the run is judged at, one after another,
+ * as the take may begin moves of the frame ahead to answer each; refused where the eye sees past the window's plane
+ * there, and where the run would turn back across the frame there.
  */
 async function judgedRun(
 	beginning: Beginning,
+	cameraAt: (moment: number) => Promise<Camera>,
 	from: Knot,
 	rest: number,
 	judged: Point,
@@ -755,7 +792,7 @@ async function judgedRun(
 	const point = pointAt(boxOf(frame), judged);
 	const carried: number[] = [];
 	for (const moment of momentsJudgedAt(beginning.stretch)) {
-		const carry = runCarriedUnder(await beginning.cameraAt(moment), frame, point);
+		const carry = runCarriedUnder(await cameraAt(moment), frame, point);
 		if (carry === null) throw new FilmError(SEEN_PAST_THE_PLANE);
 		carried.push(carry);
 	}

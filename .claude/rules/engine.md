@@ -26,9 +26,8 @@ How a module is built is said in its comment at the top. The stage has its own r
 - The page's own time is the film's (`PageTime` in `src/studio/ports.ts`): the take begins it with the film and runs it on with each frame at the scene's `pageSpeed`, a field of the scene that no prop is and the stage never draws.
 - Anything that waits on the page — an act, the film's `ready` — waits inside `time.running`.
 - A move reads what it starts from once, as its share of its step begins, and becomes a change that knows its start and end; its prop at any moment follows from those, its eased progress and the share of its time gone (`Change`).
-- But a move of the camera, the window or the eye may be begun ahead of its share for a move that asks where the frame will stand (`Beginning.cameraAt`): a run judged on the frame, or a fade.
-- In a play, on the scene foreseen where its share starts, reading the scene alone.
-- In a cut, once more for each move before it that asks, on the scene the moves before the asker leave and the cut's moves of the frame between, reading the page as it stands (`Take.cameraLeftBy`).
+- But a move of the camera, the window or the eye may be begun ahead of its share, on the scene foreseen at its start, for a run judged on the frame in a play (`Beginning.step`); begun so, it reads the scene alone.
+- A cut foresees no frame and begins no move twice: what lies where the frame it leaves stands, the page a fade leaves, is held as the frame stands and laid by the take once every move of the cut is set (`fadeLaidOn`).
 - What a move sets running on with time, a page's run, follows from the stretch of the film's time its share takes (`Beginning.stretch`) and the moment it is drawn at.
 - Two moves of one part — a prop, or the page — share a step only one after the other: `play` and `cut` refuse them at once, unless each sets values of the part the other does not (`Move.valueNames`), as two moves of the look may.
 - A move that finds nothing to start from throws as it begins (`present` in `src/direction/move.ts`); nothing checks for it frame by frame.

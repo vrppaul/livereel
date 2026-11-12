@@ -194,10 +194,21 @@ export const A_MOVE: Kind<Move> = new Plain(isMove, 'a move, as camera.onto or l
 export const A_MOVES: Kind<readonly Move[]> = new ListOf(A_MOVE, 'a list of moves');
 
 /**
+ * The step a move begins in, as the take tells it: a play, which foresees the camera the frame will be seen by at a
+ * moment of the move's stretch, asked one moment after another, as the step will stand then, every move of the camera,
+ * the window and the eye that begins by then among it, begun ahead of its share on the scene alone where it has yet to
+ * begin; or a cut, whose moves are set at once, one after another, so the frame after it is the first to show where
+ * they leave the camera, the window and the eye, which no move of it can know as it begins.
+ */
+export type StepBegunIn =
+	{ readonly kind: 'play'; readonly cameraAt: (moment: number) => Promise<Camera> } | { readonly kind: 'cut' };
+
+/**
  * What a move reads as its share begins: the scene, the page, the format, and how the stage shows the page; the
  * stretch of the film's time its share takes, for a move that sets what runs on with time; the take's way to act on
  * the page, for a move that acts as it begins; its way to hold a picture of a part of the screen, for a move that lifts
- * what is drawn from one; and where the frame will stand along its stretch, for a move judged on the frame.
+ * what is drawn from one; and the step it begins in, for a move judged on the frame and a fade, which lays the page it
+ * leaves where the frame shows it.
  */
 export interface Beginning {
 	readonly scene: Scene;
@@ -222,13 +233,7 @@ export interface Beginning {
 	 * back; only where the stage shows the filmed page's picture, not the page live.
 	 */
 	readonly holdPicture: (part: Box) => Promise<number>;
-	/**
-	 * The camera the frame will be seen by at a moment of the move's stretch, asked one moment after another: as the
-	 * step will stand then, every move of the camera, the window and the eye that begins by then among it, begun ahead of
-	 * its share on the scene alone where it has yet to begin; in a cut, the camera the cut leaves, which the frame after
-	 * it is the first seen by.
-	 */
-	readonly cameraAt: (moment: number) => Promise<Camera>;
+	readonly step: StepBegunIn;
 	/** The names the film's things module builds a thing by: none where the film draws no things of its own. */
 	readonly thingsBuilt: readonly string[];
 	/** The film's own pictures the stage laid, by the path the film names each, and the size each file decoded at. */

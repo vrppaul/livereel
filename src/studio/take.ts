@@ -7,7 +7,9 @@
  * stand at its start, and one that begins as an act is done reads the page it left — then sets at its end every
  * change ended by the frame, and every other at its eased progress. One move at most drives a part, or a value of it,
  * at any point, so the order moves are written in matters nowhere but between two acts at one moment. A cut begins
- * its moves and sets each at its end, with no frame between; an act between steps is a cut of one. A move begins
+ * its moves and sets each at its end, with no frame between, and no move of it is told where the frame will stand,
+ * which none can know before the cut is set: the page a fade in it leaves is held where the camera framed it, and laid
+ * where the camera the cut leaves shows it once every move is set. An act between steps is a cut of one. A move begins
  * knowing the stretch of the film's time its share takes: a play's begins a frame before its first frame, which stands
  * a frame's share along it, and a cut's moves take none, at the moment of the frame after them, as their sounds are
  * heard. A move judged on the frame, as a page's run brought to rest, asks as it begins where the frame will stand at
@@ -78,6 +80,7 @@ import {
 	type Change,
 	type Move,
 	type Share,
+	type StepBegunIn,
 	movesTheFrame,
 	movesThePage,
 	soundsOf
@@ -99,6 +102,7 @@ import {
 	pictureZoomsIn,
 	seenIn,
 	showingTheFilmedPage,
+	withFadeLaid,
 	withPagesLaid
 } from '../scene.ts';
 import { type PartPictures, picturesOn } from './pictures.ts';
@@ -120,6 +124,10 @@ const NO_TEXTS_TYPED: readonly TypedText[] = [];
 // What a move of the frame begun ahead of its share says as it reads more than the scene; and the page it is handed
 const READ_AHEAD =
 	'a move of the camera, the window or the eye beginning while a page runs with its pace judged on the frame is begun as the run begins, to know where the frame will stand: begun so early, it may read the scene alone, not the page or where the frame will stand; let it begin once the run is at rest';
+// The step a cut's moves begin in, which foresees nothing; and the play a move of the frame begun ahead of its share
+// begins in, which it may not ask where the frame will stand
+const IN_A_CUT: StepBegunIn = { kind: 'cut' };
+const IN_A_PLAY_BEGUN_AHEAD: StepBegunIn = { kind: 'play', cameraAt: refusedAhead };
 // The blocks of a page of the film's own whose scroll a move of the film's moves: none, as its run alone moves it
 const NO_BLOCK_SCROLLED: readonly BlockKey[] = [];
 const PAGE_UNREAD_AHEAD: FilmedPage = {
@@ -337,33 +345,17 @@ export class Take {
 	}
 
 	/**
-	 * A cut: its moves begun one after another, each on the scene the ones before it left, and set at their ends; a move
-	 * that asks where the frame will stand is told the camera the cut leaves the frame seen by, as the frame after the
-	 * cut is the first to show it.
+	 * A cut: its moves begun one after another, each on the scene the ones before it left, and set at their ends; then
+	 * the page a fade in it leaves, held where the camera framed it, laid where the camera the cut leaves shows it, as
+	 * the frame after the cut is the first seen by that camera.
 	 */
 	private async cut(step: Cut): Promise<void> {
-		for (const [place, move] of step.moves.entries()) {
-			const change = await this.changeOf(this.scene, move, atOnceBy(move, this.moment()), () =>
-				this.cameraLeftBy(step.moves.slice(place + 1))
-			);
+		for (const move of step.moves) {
+			const change = await this.changeOf(move, atOnceBy(move, this.moment()), IN_A_CUT);
 			await this.set(change, AT_THEIR_ENDS, AT_THEIR_ENDS, movesThePage(move));
 			this.heard(soundsOf(move), AT_THEIR_ENDS);
 		}
-	}
-
-	/**
-	 * The camera a cut leaves the frame seen by, foreseen from a move of it: the scene as it stands, every move of the
-	 * camera, the window and the eye still to come in the cut begun on it in turn and set at its end, each told the
-	 * camera as it stands then where it asks.
-	 */
-	private async cameraLeftBy(toCome: readonly Move[]): Promise<Camera> {
-		let scene = this.scene;
-		for (const move of toCome.filter(movesTheFrame)) {
-			const standing = cameraOf(scene, this.format);
-			const change = await this.changeOf(scene, move, atOnceBy(move, this.moment()), () => Promise.resolve(standing));
-			scene = await change(scene, AT_THEIR_ENDS, AT_THEIR_ENDS);
-		}
-		return cameraOf(scene, this.format);
+		this.scene = withFadeLaid(this.scene, this.format);
 	}
 
 	/**
@@ -453,8 +445,8 @@ export class Take {
 			return begunAhead;
 		}
 		const stretch = stretchIn(move, foresight.playTime);
-		const change = await this.changeOf(this.scene, move, stretch, (moment) => this.cameraForeseen(foresight, moment));
-		return runningOf(move, stretch, change);
+		const inThePlay: StepBegunIn = { kind: 'play', cameraAt: (moment) => this.cameraForeseen(foresight, moment) };
+		return runningOf(move, stretch, await this.changeOf(move, stretch, inThePlay));
 	}
 
 	/**
@@ -486,15 +478,9 @@ export class Take {
 		}
 	}
 
-	/**
-	 * A move begun on a scene, over a stretch of the film's time, where the frame will stand along it foreseen.
-	 */
-	private async changeOf(
-		scene: Scene,
-		move: Move,
-		stretch: Stretch,
-		cameraAt: (moment: number) => Promise<Camera>
-	): Promise<Change> {
+	/** A move begun as the scene stands, over a stretch of the film's time, in a step. */
+	private async changeOf(move: Move, stretch: Stretch, step: StepBegunIn): Promise<Change> {
+		const scene = this.scene;
 		return move.begin({
 			scene,
 			page: await this.pageShownIn(scene, stretch.moment),
@@ -504,7 +490,7 @@ export class Take {
 			ownPage: (key) => this.ownPageAt(scene, key, stretch.moment),
 			act: (action) => this.acted(action),
 			holdPicture: (part) => this.pictures.hold(part, scene.screen.shows.kind),
-			cameraAt,
+			step,
 			thingsBuilt: this.opened.thingsBuilt,
 			filmsPictures: this.opened.filmsPictures
 		});
@@ -524,7 +510,7 @@ export class Take {
 			ownPage: refusedAhead,
 			act: refusedAhead,
 			holdPicture: refusedAhead,
-			cameraAt: refusedAhead,
+			step: IN_A_PLAY_BEGUN_AHEAD,
 			thingsBuilt: this.opened.thingsBuilt,
 			filmsPictures: this.opened.filmsPictures
 		};

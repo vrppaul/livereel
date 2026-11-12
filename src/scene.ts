@@ -91,6 +91,7 @@ import {
 	type Screen,
 	THE_FILMED_PAGE,
 	drawnScreen,
+	fadeLaidOn,
 	ownPageStanding,
 	pageFadedFrom,
 	pageShownOn,
@@ -261,6 +262,14 @@ export function withPagesLaid(scene: Scene, scrollLengths: ReadonlyMap<string, n
 	return withProp(scene, 'screen', { ...scene.screen, documents: new Map([...scene.screen.documents, ...laid]) });
 }
 
+/**
+ * The scene as a cut leaves it, in the format it is shot in: the page a fade in the cut leaves, held where the camera
+ * framed it, laid where the scene's camera shows it now, so the camera frames it as one with the page coming.
+ */
+export function withFadeLaid(scene: Scene, format: Format): Scene {
+	return withProp(scene, 'screen', fadeLaidOn(scene.screen, cameraOf(scene, format).pose));
+}
+
 /** A page of the film's own the stage laid, by its key, as it stands in the scene at a moment. */
 export function ownPageStandingIn(scene: Scene, key: string, moment: number): OwnPageStanding {
 	return ownPageStanding(scene.screen, key, moment);
@@ -376,7 +385,7 @@ export function partsAskedSharperIn(scene: Scene, camera: Camera, frame: Size): 
  */
 export function holdersIn(scene: Scene, camera: Camera): Holders {
 	const { groups, objects, scrolled } = scene;
-	return { camera, groups, objects, scrolled, fadedFrom: pageFadedFrom(scene.screen) };
+	return { camera, groups, objects, scrolled, fadedFrom: pageFadedFrom(scene.screen, camera.pose) };
 }
 
 /**

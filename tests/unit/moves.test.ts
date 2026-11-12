@@ -21,7 +21,6 @@ import {
 	middleY,
 	pointAt
 } from '../../src/domain/geometry.ts';
-import { OVER_THE_SCREEN } from '../../src/domain/framing.ts';
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
 import { type Beginning, type Move, ownPagesOf } from '../../src/direction/move.ts';
 import { pageKeyOf } from '../../src/direction/page.ts';
@@ -137,6 +136,7 @@ import {
 	openingScene,
 	partsAskedSharperIn,
 	pictureZoomsIn,
+	withFadeLaid,
 	withObject,
 	withPagesLaid,
 	withProp
@@ -347,6 +347,9 @@ const FOLLOWING = { kind: 'following' };
 const DRAWN_FROM_THE_PAGE = { kind: 'page' };
 // No picture of a part of the screen the stage holds sharper than the page's
 const NONE_SHARPER: readonly never[] = [];
+// The step a move of a cut begins in; and a play no move here asks where the frame will stand
+const IN_A_CUT = { kind: 'cut' };
+const IN_A_PLAY = { kind: 'play' };
 // The middle of an object's box, in shares of it
 const BOX_MIDDLE: Point = { left: 0.5, top: 0.5 };
 // How a group grown and leant at once refuses an object joining it
@@ -407,6 +410,7 @@ function scrollingFrom(scene: Scene, moment: number, seconds: number): Beginning
 	return {
 		...beginningIn(scene, FULL_HD),
 		stretch: { moment, seconds, ease: linear },
+		step: IN_A_PLAY,
 		ownPage: () => Promise.resolve(new PageOfBoxes(OWN_PAGE_BLOCKS, new Map(), OWN_PAGE_LENGTH))
 	};
 }
@@ -481,7 +485,10 @@ async function standingFromTheStart(): Promise<Scene> {
  * middle on the screen's, at the zoom a curve of the moment gives.
  */
 function judgedFrom(scene: Scene, moment: number, seconds: number, zoomAt: (at: number) => number): Beginning {
-	return { ...scrollingFrom(scene, moment, seconds), cameraAt: (at) => Promise.resolve(wholeScreenAt(zoomAt(at))) };
+	return {
+		...scrollingFrom(scene, moment, seconds),
+		step: { kind: 'play', cameraAt: (at) => Promise.resolve(wholeScreenAt(zoomAt(at))) }
+	};
 }
 
 /** A camera on the whole full-HD screen, face-on, its middle on the screen's, at a zoom. */
@@ -1820,30 +1827,26 @@ test("a piece holding its picture and a sweep of the screen are drawn from pictu
 const CLOSE_AT_THE_TOP_LEFT = { focusX: 500, focusY: 300, zoom: 2 };
 const FADING_TWO_SECONDS = { seconds: 2, ease: linear };
 
-/**
- * A beginning in full HD at a moment of the film, done at once, whose take holds pictures in a stand-in: a move alone
- * in its cut, which leaves the camera as it stands.
- */
+/** A beginning in full HD at a moment of the film, in a cut, whose take holds pictures in a stand-in. */
 function beginningHoldingAt(scene: Scene, moment: number, pictures: PicturesHeld): Beginning {
 	return {
 		...beginningHolding(scene, FULL_HD, pictures),
 		stretch: { moment, seconds: 0, ease: linear },
-		cameraAt: () => Promise.resolve(cameraOf(scene, FULL_HD))
+		step: IN_A_CUT
 	};
 }
 
-/** The scene a move sets, begun at a moment of a film shot in full HD whose take holds pictures, at its end. */
+/** The scene a move sets, begun in a cut at a moment of a film shot in full HD whose take holds pictures, at its end. */
 async function setHoldingAt(move: Move, scene: Scene, moment: number, pictures: PicturesHeld): Promise<Scene> {
 	const change = await move.begin(beginningHoldingAt(scene, moment, pictures));
 	return change(scene, 1);
 }
-
 /** A scene as the stage draws it, in full HD, by the scene's own camera, at a moment. */
 function drawnInFullHdAt(scene: Scene, moment: number): DrawnScene {
 	return drawn(scene, cameraOf(scene, FULL_HD), moment, FULL_HD, NONE_SHARPER);
 }
 
-test("a page shown with a fade holds a picture of the whole screen as the page it leaves stands as the move begins, and fades that page, lying over the whole screen where its cut leaves the camera as it framed the page going, over the film's time from the move's moment, as many seconds as the film names, on the curve it names, or easeInOutSine where it names none", async () => {
+test("a page shown with a fade in a cut holds a picture of the whole screen as the page it leaves stands as the move begins, and fades that page, held where the camera framed it then until the cut lays it, over the film's time from the move's moment, as many seconds as the film names, on the curve it names, or easeInOutSine where it names none", async () => {
 	const pictures = new PicturesHeld();
 	const close = await setIn(cameraTo(CLOSE_AT_THE_TOP_LEFT), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const own = await setIn(screenShows(OWN_PAGE), close, 1, FULL_HD);
@@ -1859,24 +1862,24 @@ test("a page shown with a fade holds a picture of the whole screen as the page i
 		THE_FILMED_PAGE,
 		{
 			from: { kind: 'own', key: pageKeyOf(OWN_PAGE.html) },
-			lies: OVER_THE_SCREEN,
+			lies: { kind: 'held', framing: CLOSE_AT_THE_TOP_LEFT },
 			picture: 1,
 			over: { moment: 1.5, seconds: 2.4, ease: easeOutCubic }
 		},
 		'own',
 		{
 			from: THE_FILMED_PAGE,
-			lies: OVER_THE_SCREEN,
+			lies: { kind: 'held', framing: { focusX: 960, focusY: 540, zoom: 1 } },
 			picture: 2,
 			over: { moment: 2, seconds: 1, ease: easeInOutSine }
 		}
 	]);
 });
 
-test("the page a screen fades from is drawn over the box of the screen it lies over, which a camera moving after the fade frames as it frames the page coming, as clear as the fade leaves it at the moment on its curve and as far as the screen has come up, and laid over the page apart in a room; none from the fade's end", async () => {
+test("the page a screen fades from is drawn over the box of the screen its cut lays it over, which a camera moving after the cut frames as it frames the page coming, as clear as the fade leaves it at the moment on its curve and as far as the screen has come up, and laid over the page apart in a room; none from the fade's end", async () => {
 	const own = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const fading = await setHoldingAt(screenShows('filmed', { fade: FADING_TWO_SECONDS }), own, 1, new PicturesHeld());
-	const close = await setIn(cameraTo(CLOSE_AT_THE_TOP_LEFT), fading, 1, FULL_HD);
+	const close = await setIn(cameraTo(CLOSE_AT_THE_TOP_LEFT), withFadeLaid(fading, FULL_HD), 1, FULL_HD);
 	const halfDown = await setIn(lower(), close, 0.5, FULL_HD);
 	const [halfWay, ended] = [1.5, 3].map((moment) => drawnInFullHdAt(halfDown, moment));
 	expect([halfWay!.screen.fade, halfWay!.overThePage, ended!.screen.fade, ended!.overThePage]).toEqual([
@@ -2025,7 +2028,7 @@ test("a page of the film's own comes to rest with a block that far below the scr
 	const running = await runningFromTheStart();
 	const toRest = screenScrollTo(OWN_PAGE, INPUT, { top: 200 });
 	const inAPlay = await (await toRest.begin(scrollingFrom(running, 3, 2)))(running, 1);
-	const inACut = await (await toRest.begin(scrollingFrom(running, 3, 0)))(running, 1);
+	const inACut = await (await toRest.begin({ ...scrollingFrom(running, 3, 0), step: IN_A_CUT }))(running, 1);
 	expect([3, 5, 9].map((moment) => scrolledIn(inAPlay, moment))).toEqual([300, 700, 700]);
 	expect([3, 9].map((moment) => scrolledIn(inACut, moment))).toEqual([700, 700]);
 });
@@ -2123,7 +2126,7 @@ test("screen.scrollTo refuses, as it begins, a pace judged at a point of the fra
 	};
 	const toRest = screenScrollTo(OWN_PAGE, INPUT, { top: 200, judged: { left: 0.5, top: 0 } });
 	await expect(
-		toRest.begin({ ...scrollingFrom(running, 3, 2), cameraAt: () => Promise.resolve(edgeOn) })
+		toRest.begin({ ...scrollingFrom(running, 3, 2), step: { kind: 'play', cameraAt: () => Promise.resolve(edgeOn) } })
 	).rejects.toThrow(
 		new FilmError(
 			"screen.scrollTo judges its pace at a point of the frame where the eye sees past the window's plane while the page runs: judge it where the eye sees that plane all through the move"
@@ -5715,20 +5718,18 @@ test('a piece riding its block leans with the window, so carrying it to a place 
 // The camera four times as close on the screen's middle, as a cut frames the page coming while the screen fades
 const FOUR_TIMES_ON_THE_MIDDLE = { focusX: 960, focusY: 540, zoom: 4 };
 
-test("a piece riding its block while the screen fades from its page goes where the fade lays that page: where it stood as the fade's cut frames the page coming anew, and with the page going as the camera moves after", async () => {
+test("a piece riding its block while the screen fades from its page goes where the fade lays that page: where it stood, as a move later in the fade's cut frames the page coming anew and once the cut is laid, and with the page going as the camera moves after", async () => {
 	const lifted = await liftedRiding();
-	const framedAnew = await setIn(cameraTo(FOUR_TIMES_ON_THE_MIDDLE), lifted, 1, FULL_HD);
-	const beginning = {
-		...beginningHoldingAt(lifted, 1, new PicturesHeld()),
-		cameraAt: () => Promise.resolve(cameraOf(framedAnew, FULL_HD))
-	};
-	const fading = (await screenShows(OWN_PAGE, { fade: FADING_TWO_SECONDS }).begin(beginning))(lifted, 1);
-	const cut = await setIn(cameraTo(FOUR_TIMES_ON_THE_MIDDLE), fading, 1, FULL_HD);
+	const fading = await setHoldingAt(screenShows(OWN_PAGE, { fade: FADING_TWO_SECONDS }), lifted, 1, new PicturesHeld());
+	const framedAnew = await setIn(cameraTo(FOUR_TIMES_ON_THE_MIDDLE), fading, 1, FULL_HD);
+	const cut = withFadeLaid(framedAnew, FULL_HD);
 	const drawnBack = await setIn(cameraTo(WHOLE_AT_ONE), cut, 1, FULL_HD);
 	// The page going lies at half the scale of the page coming, its corner at 480, 270 of it, as the camera at 2 framed
 	// it where the camera at 4 frames the page coming: its source there at 1080, 570, which the camera at 1 shows as is
-	expect([cornersDrawnIn(cut), cornersDrawnIn(drawnBack)]).toEqual([
-		cornersDrawnIn(lifted).map(closeToPoint),
+	const whereItStood = cornersDrawnIn(lifted).map(closeToPoint);
+	expect([cornersDrawnIn(framedAnew), cornersDrawnIn(cut), cornersDrawnIn(drawnBack)]).toEqual([
+		whereItStood,
+		whereItStood,
 		cornersOfTheFrameBox({ left: 1080, top: 570, width: 50, height: 30 })
 	]);
 });

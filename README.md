@@ -880,17 +880,19 @@ over another, each at its own scale. From there the page going lies on the
 page coming where the cut left it, so the camera's moves after carry the two
 together: a camera drawing back draws both back, as one eye would, and a
 piece riding its block off the page going goes with that page, so lines
-lifted off a terminal draw back with it. The page going lies over the screen
-and the light, under a callout, the pins and the cursor, and the window's
-shade dims and fades the page coming alone, so `window.shade({ fade: 1 })`
-in the same cut, brought to `0` over the next play, brings the page coming
-up out of the dark under the one going. A fade is refused on a page framed
-live, from a page the window shades, from a page of the film's own that
-runs or is drawn past its screen, as its picture would drop each at once,
-and while the screen still fades from the page before. The page stands as
-written: its scripts do
-not run, one that animates or transitions of itself is refused before the
-film is shot, as what moves in a film is the film's, it moves only as
+lifted off a terminal draw back with it. Every move of the cut reads the page
+and the scene as the moves before it left them. Written in a `play`, the page
+going lies on the page coming from the fade's moment, as one camera frames
+both, so a camera moving on in the play carries the two together. The page
+going lies over the screen and the light, under a callout, the pins and the
+cursor, and the window's shade dims and fades the page coming alone, so
+`window.shade({ fade: 1 })` in the same cut, brought to `0` over the next
+play, brings the page coming up out of the dark under the one going. A fade
+is refused on a page framed live, from a page the window shades, from a page
+of the film's own that runs or is drawn past its screen, as its picture
+would drop each at once, and while the screen still fades from the page
+before. The page stands as written: its scripts do not run, one that
+animates or transitions of itself is refused before the film is shot, as what moves in a film is the film's, it moves only as
 the film runs it (`screen.scrolls`, below), no key reaches it but as the
 film types into it (`screen.type`, below), and an address in it
 is read from the stage's own folder, so name an image or a font by a whole

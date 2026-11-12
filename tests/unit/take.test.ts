@@ -8,7 +8,8 @@ import { easeOutCubic, linear } from '../../src/domain/curves.ts';
 import { type Beginning, type Bounds, type Change, type Move, timingOf } from '../../src/direction/move.ts';
 import { cut, hold, play } from '../../src/direction/steps.ts';
 import { act } from '../../src/moves/act.ts';
-import { to as cameraTo } from '../../src/moves/camera.ts';
+import { onto as cameraOnto, to as cameraTo } from '../../src/moves/camera.ts';
+import { focus as eyeFocus } from '../../src/moves/eye.ts';
 import { show as showCaption } from '../../src/moves/caption.ts';
 import { scrollTo as scrollCodeTo, show as showCode } from '../../src/moves/code.ts';
 import { show as showKeys } from '../../src/moves/keys.ts';
@@ -207,7 +208,7 @@ class AskingTheFrame implements Move {
 	}
 
 	async begin(beginning: Beginning): Promise<Change> {
-		for (const moment of this.moments) this.cameras.push(await beginning.cameraAt(moment));
+		for (const moment of this.moments) this.cameras.push(await beginning.step.cameraAt(moment));
 		return (scene) => scene;
 	}
 }
@@ -1115,6 +1116,56 @@ test('a fade of the screen in a cut before a camera move lays the page going ove
 	// where that camera looks: the middle of the left half, wherever the camera goes
 	const leftHalfsMiddle = { left: 0, top: 100, width: 300, height: 200 };
 	expect(stage.drawn.map((scene) => scene.screen.fade?.box)).toEqual([leftHalfsMiddle, leftHalfsMiddle]);
+});
+
+test('a fade of the screen in a cut is begun once, so a move after it in the cut reads what the moves between left: the eye focuses on words shown after the fade', async () => {
+	const stage = new PicturedStageThatKeeps();
+	await unblurredTakeOf(new FootageOf([0, 1]), stage).run([
+		cut(
+			screenShows('filmed', { fade: { seconds: 3 / 30, ease: linear } }),
+			showTitle('Words', { at: LEFT_HALF, as: 'words' }),
+			eyeFocus({ object: 'words' })
+		),
+		hold({ seconds: 2 / 30 })
+	]);
+	expect(stage.drawn.length).toBe(2);
+});
+
+test("a fade of the screen in a cut before a camera move onto a block lays the page going where it stood as the cut began, whatever the page going held at that block's place", async () => {
+	const stage = new PicturedStageThatKeeps();
+	// The film's own page holds the block elsewhere than the filmed page does
+	const own = new PageOfBoxes(
+		new Map([
+			['#first', FIRST],
+			['#second', { left: 400, top: 300, width: 80, height: 40 }]
+		])
+	);
+	await takeShowingOwnPage(new FootageOf([0, 1]), stage, new PageOfBoxes(PAGE), ownPageRead(own), UNBLURRED).run([
+		cut(screenShows(OWN_PAGE)),
+		cut(screenShows('filmed', { fade: { seconds: 3 / 30, ease: linear } }), cameraOnto('#second')),
+		hold({ seconds: 2 / 30 })
+	]);
+	// The whole screen as the camera at 1.8 showed it, 9/11 as large as the camera at 2.2 onto the filmed page's block
+	// frames the page coming: its left edge on the frame's, where it stood
+	const whereItStood = {
+		left: expect.closeTo(0),
+		top: expect.closeTo(400 / 11),
+		width: expect.closeTo(5400 / 11),
+		height: expect.closeTo(3600 / 11)
+	};
+	expect(stage.drawn.map((scene) => scene.screen.fade?.box)).toEqual([whereItStood, whereItStood]);
+});
+
+test('a fade of the screen in a play lies over the whole screen from its moment, so a camera move onto a block from the same moment begins at its share, reading the page, and carries the two pages together', async () => {
+	const stage = new PicturedStageThatKeeps();
+	await unblurredTakeOf(new FootageOf([0, 1, 2]), stage).run([
+		play({
+			seconds: 3 / 30,
+			moves: [screenShows('filmed', { fade: { seconds: 3 / 30, ease: linear } }), cameraOnto('#second')]
+		})
+	]);
+	const theWholeScreen = { left: 0, top: 0, width: 600, height: 400 };
+	expect(stage.drawn.map((scene) => scene.screen.fade?.box)).toEqual([theWholeScreen, theWholeScreen, theWholeScreen]);
 });
 
 test("a static page moving under a camera that crosses the frame fast is pictured as close as the frame's closest exposure", async () => {
