@@ -92,8 +92,8 @@ import { WORLD_PARTS } from './see-through.js';
  * A pit sunk into the page as the room draws it, on the window's plane where the screen lies there, in the frame's
  * pixels as large as the screen shows there: its mouth, how round its corners are, how far it is open, as far as its
  * hole has come, and how deep it is; its walls' colour; their glow; how clear they are, from 0 to 1, as far as the
- * screen it is sunk into has come up; and how far the window's shade reaches it, from 0 to 1, as far as its piece,
- * none where its piece stands in no shade.
+ * screen it is sunk into has come up; and how far the window's shade reaches it, from 0 to 1, wholly where its piece
+ * stands in the shade, none where it stands in no shade.
  * @typedef {{
  *   readonly mouth: Box,
  *   readonly corner: number,

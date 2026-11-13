@@ -43,7 +43,7 @@ import {
 	screenBoxUnder
 } from '../domain/placement.ts';
 import { type FrameObject, type ObjectEntry, type ObjectName, drawnOnTheFrame } from './object.ts';
-import { type DrawnHole, type Hole, type Piece, type PitStanding, figureIn, shadedAt } from './piece.ts';
+import { type DrawnHole, type Hole, type InTheShade, type Piece, type PitStanding, figureIn } from './piece.ts';
 import { type Screen, THE_FILMED_PAGE, pageShownBy } from './screen.ts';
 import type { Stroke } from './stroke.ts';
 import { presentShare, stillCovered } from './way.ts';
@@ -96,12 +96,15 @@ const BEFORE_THE_LAST = -2;
 const NO_LINE = null;
 const SQUARE = 0;
 const NO_PIT = null;
+// A pit the window's shade reaches not at all, its piece standing in no shade
+const IN_NO_SHADE = null;
 
 /**
  * The holes the pieces among objects leave on the screen while it shows a page, each where its piece was lifted, or,
  * riding its block, as far up the screen as the film has scrolled the blocks that carry its source since, in all:
  * those alone of pieces lifted off that page, as a hole is left in the page, not the screen; each pit as clear as the
- * screen has come up and as far in the window's shade as its piece. And the blocks of that page the pieces empty.
+ * screen has come up and wholly in the window's shade where its piece stands in it. And the blocks of that page the
+ * pieces empty.
  */
 export function drawnHoles(
 	objects: readonly ObjectEntry[],
@@ -124,14 +127,24 @@ function holeLeftBy(
 ): readonly DrawnHole[] {
 	if (piece.hole === null || !isOnePage(piece.liftedOff, page)) return [];
 	const source = screenBoxUnder(piece.source, object.inside, scrolled);
-	const pitStanding = { clear: screenShown, shaded: shadedAt(piece.inTheShade, object.depth) };
+	const pitStanding = { clear: screenShown, shaded: pitShaded(piece.inTheShade) };
 	return [drawnHole(name, source, piece.hole, object, pitStanding)];
+}
+
+/**
+ * How far the window's shade reaches a pit: wholly where its piece stands in the shade, however far the piece has
+ * risen, as a pit is a hole in the page and the shade reaches all of the page, as the claude-review promo's lens fades
+ * and blurs its pits with the page (a pit cleared with its risen piece stood out light from the faded page round it, as
+ * the owner saw it on 2026-11-13); not at all where its piece stands in no shade.
+ */
+function pitShaded(inTheShade: InTheShade | null): Fraction | null {
+	return inTheShade === null ? IN_NO_SHADE : WHOLE;
 }
 
 /**
  * A hole as the stage draws it on the screen: over its piece's source and as far past it each way as it reaches, its
  * corners as much rounder, as far as its piece has come and not gone; its pit, if any, as clear as the screen has come
- * up and as far in the window's shade as its piece.
+ * up and wholly in the window's shade where its piece stands in it.
  */
 function drawnHole(
 	name: ObjectName,

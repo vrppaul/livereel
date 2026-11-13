@@ -3025,7 +3025,7 @@ test("a hole's pit is as clear as the screen it is sunk into has come up, as its
 	]).toEqual([1, 0.5, 0]);
 });
 
-test("a piece in the world lifted into the window's shade is reached by it as far as its face stands below the height it clears the shade at, and its pit as far as it is: whole on the page, half half way up, none there and past it; one lifted into no shade is not in it at all", async () => {
+test("a piece in the world lifted into the window's shade is reached by it as far as its face stands below the height it clears the shade at: whole on the page, half half way up, none there and past it; its pit, a hole in the page, wholly however far it rises; one lifted into no shade is not in it at all", async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const body = { thickness: 14, walls: '#1d2a44' };
 	const lifting = { inside: 'world', body, hole: { ground: '#112233', pit: { depth: 14 } } } as const;
@@ -3039,9 +3039,9 @@ test("a piece in the world lifted into the window's shade is reached by it as fa
 	const scenes = [shaded, await raisedTo(30), await raisedTo(60), await raisedTo(90), unshaded];
 	expect(scenes.map((scene) => [pieceShaded(scene), pitShaded(scene)])).toEqual([
 		[1, 1],
-		[0.5, 0.5],
-		[0, 0],
-		[0, 0],
+		[0.5, 1],
+		[0, 1],
+		[0, 1],
 		[null, null]
 	]);
 });

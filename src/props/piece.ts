@@ -86,7 +86,8 @@ export interface DrawnHole extends Omit<Hole, 'reach' | 'pit'> {
 /**
  * How a hole's pit stands as the room draws it: how clear its walls are, as far as the screen it is sunk into has come
  * up, from 0 to 1: nothing lies over its mouth to hide it as the screen goes down; and how far the window's shade
- * reaches it, as far as it reaches its piece, from 0 to 1, none where its piece stands in no shade.
+ * reaches it, from 0 to 1, wholly where its piece stands in the shade, as it is a hole in the page, none where its
+ * piece stands in no shade.
  */
 export interface PitStanding {
 	readonly clear: Fraction;
@@ -253,7 +254,7 @@ export function drawnPiece(
  * that plane, none from the height it clears the shade at, evenly between; not at all where the film lifts it into no
  * shade, so it and its pit stand as the room draws what stands clear of the shade.
  */
-export function shadedAt(inTheShade: InTheShade | null, depth: number): Fraction | null {
+function shadedAt(inTheShade: InTheShade | null, depth: number): Fraction | null {
 	if (inTheShade === null) return IN_NO_SHADE;
 	return fractionOf(WHOLE - Math.max(depth, ON_ITS_PLANE) / inTheShade.clearAt);
 }

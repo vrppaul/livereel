@@ -988,8 +988,9 @@ as dark while a shade fades the page, unless its piece stands in the shade. A ro
 
 **In the shade.** A piece lifted off a shaded page may stand in the window's shade, as the claude-review promo's lens
 keeps a lifted part as soft and faded as its page as far as it has not risen: `shade: { clearAt: 56 }` has the shade
-reach it, and its walls and pit, wholly while its face lies on the page, less as `depth` brings it toward the eye,
-and not at all from 56 frame pixels on. The room blurs it and its pit by the shade's own law, through the eye's lens
+reach it and its walls wholly while its face lies on the page, less as `depth` brings it toward the eye, and not at
+all from 56 frame pixels on; its pit, a hole in the page, it reaches wholly however far the piece rises, so the pit
+stays as dark as the soft page round it. The room blurs it and its pit by the shade's own law, through the eye's lens
 in light, and fades them in light into what stands behind the page, so lying on its page a piece shows as the page
 round it, but for the shade's `dim`, which stays the screen's alone, and lifted whole it stands sharp and clear: the
 film writes no blur or fade of its own for it. A room
