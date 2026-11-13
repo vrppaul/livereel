@@ -1187,7 +1187,8 @@ test('a piece of the page is born over its block as the camera shows it, cut to 
 			picture: FOLLOWING,
 			body: null,
 			firstLetter: null,
-			emptied: null
+			emptied: null,
+			inTheShade: null
 		}
 	]);
 });
@@ -1289,7 +1290,8 @@ test('a piece, or an outline, goes back over its block as the camera shows it th
 			picture: FOLLOWING,
 			body: null,
 			firstLetter: null,
-			emptied: null
+			emptied: null,
+			inTheShade: null
 		},
 		1,
 		0,
@@ -2273,7 +2275,8 @@ test("a piece is drawn as large as its box holds all of its source, in its middl
 			holes: [],
 			shown: 1,
 			picture: DRAWN_FROM_THE_PAGE,
-			body: null
+			body: null,
+			shaded: null
 		},
 		[{ part: PAST_THE_SHOWN_EDGE, zoom: 19.2 }],
 		[],
@@ -2349,7 +2352,7 @@ test("a piece's hole reaching past it is as much wider each way and as much roun
 				line: null,
 				corner: 2,
 				shown: 1,
-				pit: { depth: 14, walls: '#1d2a44', glow: 0, clear: 1 }
+				pit: { depth: 14, walls: '#1d2a44', glow: 0, clear: 1, shaded: null }
 			}
 		],
 		[
@@ -3020,6 +3023,37 @@ test("a hole's pit is as clear as the screen it is sunk into has come up, as its
 		pitIn(await setIn(lower(), sunk, 0.5, FULL_HD)),
 		pitIn(await setIn(lower(), sunk, 1, FULL_HD))
 	]).toEqual([1, 0.5, 0]);
+});
+
+test("a piece in the world lifted into the window's shade is reached by it as far as its face stands below the height it clears the shade at, and its pit as far as it is: whole on the page, half half way up, none there and past it; one lifted into no shade is not in it at all", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const body = { thickness: 14, walls: '#1d2a44' };
+	const lifting = { inside: 'world', body, hole: { ground: '#112233', pit: { depth: 14 } } } as const;
+	const shaded = await setIn(piece.show(OTHER, { ...lifting, shade: { clearAt: 60 } }), wide, 1, FULL_HD);
+	const unshaded = await setIn(piece.show(OTHER, lifting), wide, 1, FULL_HD);
+	const raisedTo = (depth: number) => setIn(piece.effects({ depth }), shaded, 1, FULL_HD);
+	const pieceShaded = (scene: Scene) =>
+		drawnObject('piece', scene.objects.get('piece')!, 0, AROUND_IN_FULL_HD).content.shaded;
+	const pitShaded = (scene: Scene) =>
+		drawn(scene, cameraOf(scene, FULL_HD), 0, FULL_HD, NONE_SHARPER).holes[0]!.pit!.shaded;
+	const scenes = [shaded, await raisedTo(30), await raisedTo(60), await raisedTo(90), unshaded];
+	expect(scenes.map((scene) => [pieceShaded(scene), pitShaded(scene)])).toEqual([
+		[1, 1],
+		[0.5, 0.5],
+		[0, 0],
+		[0, 0],
+		[null, null]
+	]);
+});
+
+test("a piece is lifted into the window's shade inside the world alone, where it stands over the page it was lifted off, and clears it at a height more than none", () => {
+	const shade = { clearAt: 60 };
+	expect(() => piece.show('#card', { shade })).toThrow(
+		new FilmError(
+			"piece.show lifts a piece into the window's shade inside the world alone, where it stands over the page it was lifted off: lift it inside: 'world'"
+		)
+	);
+	expect(() => piece.show('#card', { inside: 'world', shade: { clearAt: 0 } })).toThrow(FilmError);
 });
 
 test('an object brought toward the eye by its effects stands in its box, as near as a carry brings it, and a carry naming no depth, to a place or to a block, leaves the depth they set, whichever is written first', async () => {

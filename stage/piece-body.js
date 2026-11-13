@@ -29,9 +29,13 @@
  * no depth (`stage/page-picture.js`). Its walls are the body's matter too, of the body's colour darker the deeper, and
  * lit from within by the same law, written once for both. A piece lying on its plane stands in its pit, as the promo's
  * plates fill the pits they left (`story-parts.js`). It is a hole in the screen, not in the page's picture: a shade
- * fading the page leaves it, as the promo's pits stand dark in a faded page, and nothing lies over its mouth to hide it
- * as the screen goes down, so its walls are laid over what lies behind them as far as the screen has come up, as the
- * window's body stands as thick.
+ * fading the page leaves it, and nothing lies over its mouth to hide it as the screen goes down, so its walls are laid
+ * over what lies behind them as far as the screen has come up, as the window's body stands as thick.
+ *
+ * Where the film stands a piece in the window's shade, its walls and its pit fade in light into what stands behind
+ * them as far as the shade reaches them and the page has faded, as the window's metal does (`Fading` in `body.js`), so
+ * a piece lying on its faded page shows no pit lighter than the page round it, as the promo's lens fades all it keeps
+ * not sharp, pits too; the window's spreads blur them by the same share (`WindowBlurred`).
  */
 import {
 	BackSide,
@@ -49,6 +53,7 @@ import {
 	Vector2,
 	Vector4
 } from 'three';
+import { Fading } from './body.js';
 import { matrixOf, placedBy } from './matrices.js';
 import { PAST_A_ROUNDED_BOX, PREMULTIPLIED, valuesSet } from './passes.js';
 import { WORLD_PARTS } from './see-through.js';
@@ -58,6 +63,7 @@ import { WORLD_PARTS } from './see-through.js';
 /** @import { Corners, DrawnBody, DrawnHole, DrawnPiece } from '../src/props/piece.ts' */
 /** @import { Look } from '../src/props/look.ts' */
 /** @import { Box, Size } from '../src/domain/geometry.ts' */
+/** @import { BehindThePage } from './page-picture.js' */
 
 /**
  * What walls are built of, in the frame's pixels: the size of the outline they are drawn back from and its corners, how
@@ -85,8 +91,9 @@ import { WORLD_PARTS } from './see-through.js';
 /**
  * A pit sunk into the page as the room draws it, on the window's plane where the screen lies there, in the frame's
  * pixels as large as the screen shows there: its mouth, how round its corners are, how far it is open, as far as its
- * hole has come, and how deep it is; its walls' colour; their glow; and how clear they are, from 0 to 1, as far as the
- * screen it is sunk into has come up.
+ * hole has come, and how deep it is; its walls' colour; their glow; how clear they are, from 0 to 1, as far as the
+ * screen it is sunk into has come up; and how far the window's shade reaches it, from 0 to 1, as far as its piece,
+ * none where its piece stands in no shade.
  * @typedef {{
  *   readonly mouth: Box,
  *   readonly corner: number,
@@ -94,7 +101,8 @@ import { WORLD_PARTS } from './see-through.js';
  *   readonly depth: number,
  *   readonly walls: string,
  *   readonly glow: number,
- *   readonly clear: number
+ *   readonly clear: number,
+ *   readonly shaded: number | null
  * }} SunkPit
  */
 
@@ -154,6 +162,8 @@ const LAID_AFTER_THE_PAGE = 0.5;
 const NONE_BUILT = '';
 // Walls shown whole, opaque
 const WHOLLY_SHOWN = 1;
+// How far the window's shade reaches walls whose piece stands in no shade: not at all
+const IN_NO_SHADE = 0;
 /** What a piece of markup with no body brings into the world: nothing. @type {readonly Object3D[]} */
 const NO_PARTS = [];
 /**
@@ -205,19 +215,27 @@ export class PieceBodies {
 
 	/**
 	 * What an object of markup standing in the world brings into the world beside its surface, by its place among an
-	 * exposure's: a piece with a body its walls, placed by its matrix, and its shadow where it casts one, in the look's
-	 * shadow colour; anything else nothing.
-	 * @param {number} place @param {DrawnObject} object @param {Look} look @returns {readonly Object3D[]}
+	 * exposure's: a piece with a body its walls, placed by its matrix, faded as far as the page has faded where the
+	 * window's shade reaches the piece, and its shadow where it casts one, in the look's shadow colour; anything else
+	 * nothing.
+	 * @param {number} place @param {DrawnObject} object @param {Look} look @param {number} pageFaded how far the page has
+	 * faded into what stands behind it @returns {readonly Object3D[]}
 	 */
-	posed(place, object, look) {
+	posed(place, object, look, pageFaded) {
 		const piece = object.content;
 		if (piece.kind !== 'piece' || piece.body === null) return NO_PARTS;
 		while (this.bodies.length <= place) this.bodies.push(new PieceBody());
 		const body = bodyAt(this.bodies, place);
 		const placing = matrixOf(object.inTheEyesSpace);
+		body.walls.fading.fadedAsFarAs(pageFaded * (piece.shaded ?? IN_NO_SHADE));
 		const walls = body.wallsPosed(piece, piece.body, placing);
 		if (piece.body.shadow === NO_SHADOW) return [walls];
 		return [walls, body.shadowPosed(piece, piece.body, placing, look.paneShadowColour)];
+	}
+
+	/** What every piece's walls fade into, as the room has laid the world before them. @param {BehindThePage} behind */
+	behindSet(behind) {
+		for (const body of this.bodies) body.walls.fading.behindSet(behind);
 	}
 }
 
@@ -233,17 +251,25 @@ export class PagePits {
 
 	/**
 	 * A pit posed by its place among an exposure's: its walls seen from inside, built of its mouth and depth where those
-	 * are not what they were built of, placed by a matrix, its mouth's middle at its origin, and as clear as the pit is.
-	 * @param {number} place @param {SunkPit} pit @param {Matrix4} placing @returns {Object3D}
+	 * are not what they were built of, placed by a matrix, its mouth's middle at its origin, as clear as the pit is, and
+	 * faded as far as the page has faded where the window's shade reaches the pit.
+	 * @param {number} place @param {SunkPit} pit @param {Matrix4} placing @param {number} pageFaded how far the page has
+	 * faded into what stands behind it @returns {Object3D}
 	 */
-	posed(place, pit, placing) {
+	posed(place, pit, placing, pageFaded) {
 		while (this.pits.length <= place) this.pits.push(new Walls(PIT_WALLS));
 		const { width, height } = pit.mouth;
 		const corners = { topLeft: pit.corner, topRight: pit.corner, bottomRight: pit.corner, bottomLeft: pit.corner };
 		const measures = { width, height, corners, depth: pit.depth, walls: pit.walls, glow: pit.glow };
 		const walls = wallsAt(this.pits, place);
 		walls.shownAsFarAs(pit.clear);
+		walls.fading.fadedAsFarAs(pageFaded * (pit.shaded ?? IN_NO_SHADE));
 		return walls.posed(measures, placing);
+	}
+
+	/** What every pit's walls fade into, as the room has laid the world before them. @param {BehindThePage} behind */
+	behindSet(behind) {
+		for (const pit of this.pits) pit.fading.behindSet(behind);
 	}
 }
 
@@ -281,7 +307,8 @@ function pitUnder(hole, screenBox, scale) {
 			depth: hole.pit.depth * scale,
 			walls: hole.pit.walls,
 			glow: hole.pit.glow,
-			clear: hole.pit.clear
+			clear: hole.pit.clear,
+			shaded: hole.pit.shaded
 		}
 	];
 }
@@ -294,6 +321,7 @@ class Walls {
 	/** @param {WallsKind} kind */
 	constructor(kind) {
 		this.material = new MeshBasicMaterial({ vertexColors: true, side: kind.seenFrom });
+		this.fading = new Fading(this.material);
 		this.mesh = new Mesh(new BufferGeometry(), [this.material]);
 		this.mesh.matrixAutoUpdate = false;
 		this.mesh.layers.set(WORLD_PARTS.opaque);

@@ -164,6 +164,18 @@ export function drawnInto(renderer, pass, target) {
 	renderer.render(pass, PASSES_SEEN_BY);
 }
 
+/**
+ * A material compiled for as many of something as a count its shader sizes a list by, under a name it reads: GLSL sizes
+ * a list by a count it is compiled with, so three compiles it anew, only as that count changes, set before the
+ * material is first drawn.
+ * @param {ShaderMaterial} material @param {string} name @param {number} count
+ */
+export function compiledForCount(material, name, count) {
+	if (material.defines[name] === count) return;
+	material.defines = { ...material.defines, [name]: count };
+	material.needsUpdate = true;
+}
+
 /** A box of the frame as a shader takes it: its left, top, width and height. @param {Box} box */
 export function valuesOfTheBox(box) {
 	return new Vector4(box.left, box.top, box.width, box.height);

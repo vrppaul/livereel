@@ -983,8 +983,17 @@ so its ground shows round the walls. Or a pit sunk into the page: `hole: { reach
 0.018 } }` sinks it that deep, in the page's pixels, its walls the body's colour, 0.6 of it at the mouth and 0.18
 at the floor, lit by `glow` as the body's walls are. The page is cleared over its mouth as far as the piece has
 come, so a part lifted shows the pit it left and lying back stands in it; it goes down with the screen and stays
-as dark while a shade fades the page. A room only: flat draws the hole in its `ground`. Refused: a pit on a piece
-with no body.
+as dark while a shade fades the page, unless its piece stands in the shade. A room only: flat draws the hole in its
+`ground`. Refused: a pit on a piece with no body.
+
+**In the shade.** A piece lifted off a shaded page may stand in the window's shade, as the claude-review promo's lens
+keeps a lifted part as soft and faded as its page as far as it has not risen: `shade: { clearAt: 56 }` has the shade
+reach it, and its walls and pit, wholly while its face lies on the page, less as `depth` brings it toward the eye,
+and not at all from 56 frame pixels on. The room blurs it and its pit by the shade's own law, through the eye's lens
+in light, and fades them in light into what stands behind the page, so lying on its page a piece shows as the page
+round it, and lifted whole it stands sharp and clear: the film writes no blur or fade of its own for it. A room
+only, where the shade blurs the whole window: flat draws it as a piece in no shade. Refused: a piece in the shade
+anywhere but in the world.
 
 **A sheen.** Wiped away, a piece may trail a light over the page it leaves: `piece.hide({ leave: 'wipe', edge:
 'right', sheen: { colour: '#59c470' } })` runs a band along a line that has landed on its row, the line gone

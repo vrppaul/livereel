@@ -60,7 +60,7 @@ import {
 	WebGLRenderTarget
 } from 'three';
 import { PAST_A_ROUNDED_BOX, SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOfTheBox, valuesSet } from './passes.js';
-/** @import { ShaderMaterial, WebGLRenderer } from 'three' */
+/** @import { WebGLRenderer } from 'three' */
 /** @import { DrawnScene } from '../src/scene.ts' */
 /** @import { Box, Size } from '../src/domain/geometry.ts' */
 /** @import { SunkPit } from './piece-body.js' */
@@ -165,7 +165,7 @@ const BLURRED_LAYER = { depthBuffer: false, generateMipmaps: true, minFilter: Li
 const WRITTEN_AS_LIGHT = false;
 const WRITTEN_IN_THE_SCREENS_COLOURS = true;
 // The name of the count of pits sunk into the page the page's surface is compiled with, as its shader reads it
-const PITS = 'PITS';
+export const PITS = 'PITS';
 
 /**
  * What stands behind a pixel as the eye sees it, as light, premultiplied: the world the room has laid so far over the
@@ -347,18 +347,6 @@ export function pageSurfaceValues() {
 		mouthCorners: { value: [] },
 		mouthsOpen: { value: [] }
 	};
-}
-
-/**
- * A page's surface's material compiled to clear the mouths of as many pits as it lays: anew, by three, only as that
- * count changes, set before the material is first drawn.
- * @param {ShaderMaterial} material @param {PageLaid} laid
- */
-export function compiledForThePits(material, laid) {
-	const count = laid.mouths.length;
-	if (material.defines[PITS] === count) return;
-	material.defines = { ...material.defines, [PITS]: count };
-	material.needsUpdate = true;
 }
 
 /**

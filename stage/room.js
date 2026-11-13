@@ -76,9 +76,9 @@ import { WindowBlurred, WindowBody } from './body.js';
 import { Lens, SPREADS_REACHED, sceneFieldOf, sideHalvedEvenly } from './lens.js';
 import { WorldLighting } from './lighting.js';
 import { matrixOf, placedBy, projectionOnto } from './matrices.js';
-import { PAGE_SURFACE_FRAGMENT, PagePicture, compiledForThePits, pageSurfaceValues } from './page-picture.js';
+import { PAGE_SURFACE_FRAGMENT, PITS, PagePicture, WHAT_STANDS_BEHIND, pageSurfaceValues } from './page-picture.js';
 import { PagePits, PieceBodies, pitsSunkIn } from './piece-body.js';
-import { ADDED, LAID_OVER, PREMULTIPLIED, SRGB_CURVES, passOver, valuesSet } from './passes.js';
+import { ADDED, LAID_OVER, PREMULTIPLIED, SRGB_CURVES, compiledForCount, passOver, valuesSet } from './passes.js';
 import { FrameShown } from './shown.js';
 import { WorldSeen } from './laying.js';
 import {
@@ -102,6 +102,7 @@ import { Things, isAThing } from './things.js';
 /** @import { Laying } from './laying.js' */
 /** @import { BehindThePage, PageLaid } from './page-picture.js' */
 /** @import { SunkPit } from './piece-body.js' */
+/** @import { ShadedBox } from './body.js' */
 /** @import { Size } from '../src/domain/geometry.ts' */
 /** @import { Texture } from 'three' */
 /** @import { DrawnEye } from '../src/domain/eye.ts' */
@@ -267,6 +268,10 @@ const NO_SIZE = 0;
 const NONE_STANDING = 0;
 // A field of the world no pixel of which spreads of its own, but by the eye's lens
 const NO_SPREADS_OF_THEIR_OWN = null;
+// No box the window's shade reaches; and how far back from its face a piece with no body reaches: not past it
+/** @type {readonly ShadedBox[]} */
+const NO_SHADED_BOXES = [];
+const REACHES_NO_FARTHER_BACK = 0;
 // What writes depth is laid as a film's light is, in linear light; and markup standing in the world is seen through
 // beside the page whole, round its letters and in its shadows
 /** @type {Laying} */
@@ -345,21 +350,34 @@ void main() {
 // none drawn, nor its depth, where it is clear; cut where its material asks; and drawn only where the eye sees the
 // surface from farther than the part before it reaches and no farther than it reaches itself, so no pixel of the
 // surface is laid by two parts. How far the eye sees a point of the plane from goes evenly across it: so much for its
-// share across the surface, so much for its share down, so much at its top left corner
+// share across the surface, so much for its share down, so much at its top left corner. Where the window's shade
+// reaches a piece, faded in light into what stood behind the window, as the page's surface fades into what stands
+// behind it (`page-picture.js`): its light as far as it has not faded and that light by the share faded, as far as the
+// surface covers the pixel, turned back into the screen's colours its field is drawn in. Faded so into the page that
+// lies behind it, a piece lying on its faded page came out lighter than the page round it
 const MARKUP_PART_FRAGMENT = `
 #include <clipping_planes_pars_fragment>
 uniform sampler2D surface;
 uniform vec3 seenFromAlong;
 uniform vec2 seenFromWithin;
+uniform float faded;
 varying vec2 shareOfTheSurface;
+${SRGB_CURVES}
+${WHAT_STANDS_BEHIND}
+vec4 fadedInLight(vec4 drawn) {
+	vec3 light = inLinearLight(drawn).rgb * (1.0 - faded) + behindAt().rgb * faded * drawn.a;
+	return inTheScreensColours(vec4(light, drawn.a));
+}
 void main() {
 	#include <clipping_planes_fragment>
 	float seenFrom = dot(vec3(shareOfTheSurface, 1.0), seenFromAlong);
 	if (seenFrom <= seenFromWithin.x || seenFrom > seenFromWithin.y) discard;
 	vec4 drawn = texture2D(surface, shareOfTheSurface);
 	if (drawn.a < ${DRAWN_AT_LEAST}) discard;
-	gl_FragColor = drawn;
+	gl_FragColor = faded > 0.0 ? fadedInLight(drawn) : drawn;
 }`;
+// A surface faded none
+const NONE_FADED = 0;
 // A surface laid flat over the whole frame, as it stands, its texture's rows from its top
 const FLAT_SURFACE_FRAGMENT = `
 uniform sampler2D surface;
@@ -773,7 +791,7 @@ class Room {
 		this.world.clear();
 		this.beforeTheRest.clear();
 		for (const page of this.pageSurfaces) {
-			compiledForThePits(page.material, pageLaid);
+			compiledForCount(page.material, PITS, pageLaid.mouths.length);
 			valuesSet(page.material, pageLaid);
 			placedBy(page, pageMatrix);
 		}
@@ -781,7 +799,8 @@ class Room {
 		// Where the window has a body, it stands within its slab; where it has none, the page draws its shadow past its
 		// edge, on its plane, so it stands on all of the page's surface
 		const windowStanding = { box: boxHolding(body === null ? [this.page] : [body.slab]) };
-		const windowBuilt = { drawn: window, pageMatrix, body, pits: this.pitsPosed(pits, window) };
+		const placedPits = pitsPlaced(pits, window);
+		const windowBuilt = { drawn: window, pageMatrix, body, pits: this.pitsPosed(placedPits, window.pageFaded) };
 		const posed = things.map((thing) => this.things.posedAs(thing).placed);
 		for (const placed of posed) sortedBySeeingThrough(placed);
 		/** @type {readonly StandingApart[]} */
@@ -789,7 +808,10 @@ class Room {
 			...posed.map((placed) => standingOf([placed], seenThroughIn(placed))),
 			...standing.markup.map((markup, place) =>
 				standingOf(
-					[...this.markupAdded(place, markup), ...this.pieceBodies.posed(place, markup.object, scene.look)],
+					[
+						...this.markupAdded(place, markup, window.pageFaded),
+						...this.pieceBodies.posed(place, markup.object, scene.look, window.pageFaded)
+					],
 					MARKUP_BESIDE_THE_PAGE
 				)
 			)
@@ -802,7 +824,8 @@ class Room {
 			this.worldApartBuilt(this.world, windowApart ? null : windowBuilt, rest, eye),
 			this.worldApartBuilt(this.beforeTheRest, windowApart ? windowBuilt : null, before, eye)
 		];
-		return worlds.filter((world) => world !== null);
+		const shaded = shadedBoxesOf(standing.markup, placedPits);
+		return worlds.filter((world) => world !== null).map((world) => ({ ...world, shaded }));
 	}
 
 	/**
@@ -815,7 +838,7 @@ class Room {
 	 * world, the parts drawn with what writes depth and the fields of what is seen through it is drawn with; none where
 	 * it holds nothing.
 	 * @param {Scene} world @param {WindowBuilt | null} window @param {readonly StandingApart[]} standing
-	 * @param {DrawnEye} eye @returns {WorldApart | null}
+	 * @param {DrawnEye} eye @returns {WorldBuilt | null}
 	 */
 	worldApartBuilt(world, window, standing, eye) {
 		if (window === null && standing.length === NONE_STANDING) return null;
@@ -859,15 +882,13 @@ class Room {
 	}
 
 	/**
-	 * The pits sunk into the window's page posed, each by its place among them under its mouth, where the screen lies on
-	 * the window's plane.
-	 * @param {readonly SunkPit[]} pits @param {DrawnWindow} window @returns {readonly Object3D[]}
+	 * The pits sunk into the window's page posed, each by its place among them where it is placed, faded as far as the
+	 * page has where the window's shade reaches it.
+	 * @param {readonly PlacedPit[]} pits @param {number} pageFaded how far the page has faded into what stands behind it
+	 * @returns {readonly Object3D[]}
 	 */
-	pitsPosed(pits, window) {
-		const middle = middleOf(window.box);
-		return pits.map((pit, place) =>
-			this.pagePits.posed(place, pit, fromTheMiddleOf(window.pageSurface.inTheEyesSpace, { box: pit.mouth, middle }))
-		);
+	pitsPosed(pits, pageFaded) {
+		return pits.map(({ pit, placing }, place) => this.pagePits.posed(place, pit, placing, pageFaded));
 	}
 
 	/**
@@ -884,24 +905,28 @@ class Room {
 	 * A world apart drawn, lit as the eye sees the room, each field of it laid through the lens over the one before, the
 	 * lowest first: what writes depth, drawn into the world's layer; then each field of what is seen through, drawn over
 	 * that depth into one layer, one field at a time, each laid before the next is drawn. The page, in whichever field it
-	 * stands, reads what the room has laid so far as what stands behind it.
+	 * stands, reads what the room has laid so far as what stands behind it; a piece the window's shade reaches reads what
+	 * the room had laid before the world that holds the window, kept as it stood where the page fades.
 	 * @param {DrawnScene} scene @param {WorldApart} world @param {Box} gathered
 	 */
 	worldApartDrawn(scene, world, gathered) {
 		this.lighting.shiningIn(world.scene, scene.eye.roomInTheEyesSpace);
+		if (world.holdsTheWindow && scene.window.pageFaded > NONE_FADED) {
+			this.worldSeen.keptBeforeTheWindow(this.renderer);
+		}
 		this.renderer.setRenderTarget(this.worldLayer);
 		this.renderer.clear();
 		this.behindThePageSet(gathered);
 		partsDrawn(this.renderer, world.scene, this.worldCamera, world.writingDepth);
 		const opaque = sceneFieldOf(this.worldLayer.texture, this.worldLayer);
-		const opaqueSpreads = this.windowSpreadsOver(opaque, scene, world.holdsTheWindow);
+		const opaqueSpreads = this.windowSpreadsOver(opaque, scene, world.holdsTheWindow, world.shaded);
 		this.worldSeen.fieldLaid(this.renderer, WHAT_WRITES_DEPTH_LAID, (target) =>
 			this.lens.laid(this.renderer, opaque, gathered, this.frameBox, scene.eye, target, opaqueSpreads)
 		);
 		for (const field of world.seenThroughFields) {
 			this.behindThePageSet(gathered);
 			const drawnField = this.seeThrough.drawn(this.renderer, world.scene, this.worldCamera, this.worldLayer, field);
-			const spreads = this.windowSpreadsOver(drawnField, scene, field.holding === 'pageSeenThrough');
+			const spreads = this.windowSpreadsOver(drawnField, scene, field.holding === 'pageSeenThrough', world.shaded);
 			this.worldSeen.fieldLaid(this.renderer, field.laid, (target) =>
 				this.lens.laid(this.renderer, drawnField, gathered, this.frameBox, scene.eye, target, spreads)
 			);
@@ -910,23 +935,29 @@ class Room {
 
 	/**
 	 * How wide the window's shade blurs the whole window at each pixel of a field that holds the window, its page or its
-	 * body, as the lens takes it, where the shade blurs the window's body, which the room blurs the page with; none where
-	 * it blurs none of it, or the field holds none of the window.
-	 * @param {SceneField} field @param {DrawnScene} scene @param {boolean} holdsTheWindow @returns {Texture | null}
+	 * body, and the pieces and pits it reaches in any field, as the lens takes it, where the shade blurs the window's
+	 * body, which the room blurs the page with; none where it blurs none of it, or the field holds none of the window
+	 * and the shade reaches no piece.
+	 * @param {SceneField} field @param {DrawnScene} scene @param {boolean} holdsTheWindow
+	 * @param {readonly ShadedBox[]} shaded the boxes of the pieces and pits the shade reaches @returns {Texture | null}
 	 */
-	windowSpreadsOver(field, scene, holdsTheWindow) {
+	windowSpreadsOver(field, scene, holdsTheWindow, shaded) {
 		const body = scene.window.body;
-		if (!holdsTheWindow || body === null || body.shade === null || body.shade.blur === null) {
+		const reachesNone = !holdsTheWindow && shaded.length === NONE_STANDING;
+		if (reachesNone || body === null || body.shade === null || body.shade.blur === null) {
 			return NO_SPREADS_OF_THEIR_OWN;
 		}
 		const toTheEye = this.worldCamera.projectionMatrixInverse;
-		return this.windowBlurred.spreadsOver(this.renderer, field, toTheEye, scene, body, body.shade.blur);
+		const reaching = { slab: holdsTheWindow, shaded };
+		return this.windowBlurred.spreadsOver(this.renderer, field, toTheEye, scene, body, body.shade.blur, reaching);
 	}
 
 	/**
-	 * What the page's surface and the window's body read of what stands behind them, where the shade fades them
-	 * (`page-picture.js`, `body.js`), set as the room has laid the world so far: that world, the film's ground, and where
-	 * a pixel of the layers the world is drawn into over the box the lens gathers stands on the frame.
+	 * What the page's surface, the window's body and the walls of pieces and their pits read of what stands behind them,
+	 * where the shade fades them (`page-picture.js`, `body.js`, `piece-body.js`), set as the room has laid the world so
+	 * far: that world, the film's ground, and where a pixel of the layers the world is drawn into over the box the lens
+	 * gathers stands on the frame; and what a surface of markup reads, where the shade reaches a piece: the world as it
+	 * stood before the window was laid, as a piece lying on the page fades into what the page fades into, not the page.
 	 * @param {Box} gathered
 	 */
 	behindThePageSet(gathered) {
@@ -943,7 +974,11 @@ class Room {
 			)
 		};
 		for (const page of this.pageSurfaces) valuesSet(page.material, behind);
-		this.body.behindSet(behind);
+		this.body.fading.behindSet(behind);
+		this.pieceBodies.behindSet(behind);
+		this.pagePits.behindSet(behind);
+		const beforeTheWindow = { ...behind, behindSoFar: this.worldSeen.beforeTheWindow.texture };
+		for (const part of this.markup.flat()) valuesSet(part.light.material, beforeTheWindow);
 	}
 
 	/**
@@ -1020,16 +1055,20 @@ class Room {
 	 * An object of markup standing in the world added to the world, by its place among the exposure's: each part of its
 	 * surface, drawn into a texture of its own, stood where the engine's matrix places the object's box's middle, its
 	 * light and its depth apart, as what is seen through is drawn, its light laid at the object's place in the scene's
-	 * order. The parts of the world it stands as.
-	 * @param {number} place @param {MarkupStanding} markup @returns {readonly Object3D[]}
+	 * order, and faded as far as the page has faded where the window's shade reaches a piece. The parts of the world it
+	 * stands as.
+	 * @param {number} place @param {MarkupStanding} markup @param {number} pageFaded how far the page has faded into what
+	 * stands behind it @returns {readonly Object3D[]}
 	 */
-	markupAdded(place, markup) {
+	markupAdded(place, markup, pageFaded) {
 		/** @type {Object3D[]} */
 		const added = [];
+		const content = markup.object.content;
+		const faded = content.kind === 'piece' ? pageFaded * (content.shaded ?? NONE_FADED) : NONE_FADED;
 		for (const [partPlace, part] of markup.parts.entries()) {
 			const inTheWorld = this.markupPartAt(place, partPlace);
 			const matrix = surfaceMatrixOf(markup.object.inTheEyesSpace, part.placing);
-			const values = { surface: inTheWorld.texture.texture, ...seenFromValuesOf(part) };
+			const values = { surface: inTheWorld.texture.texture, faded, ...seenFromValuesOf(part) };
 			for (const surface of [inTheWorld.light, inTheWorld.depth]) {
 				valuesSet(surface.material, values);
 				placedBy(surface, matrix);
@@ -1214,7 +1253,17 @@ class Room {
  *   readonly writingDepth: readonly WorldPart[],
  *   readonly seenThroughFields: readonly SeenThroughField[],
  *   readonly holdsTheWindow: boolean
- * }} WorldApart
+ * }} WorldBuilt
+ */
+/**
+ * A world the room draws apart, as built, and the boxes of the pieces and pits of the exposure the window's shade
+ * reaches, which the window's spreads blur in any of its fields.
+ * @typedef {WorldBuilt & { readonly shaded: readonly ShadedBox[] }} WorldApart
+ */
+/**
+ * A pit sunk into the window's page and the matrix that places it under its mouth, where the screen lies on the
+ * window's plane, its mouth's middle at its origin.
+ * @typedef {{ readonly pit: SunkPit, readonly placing: Matrix4 }} PlacedPit
  */
 /**
  * A part of a surface of markup standing in the world as the world draws it: its texture, its light and its depth.
@@ -1252,6 +1301,57 @@ function middleOf(box) {
 function surfaceMatrixOf(inTheEyesSpace, placing) {
 	const box = placing.box;
 	return fromTheMiddleOf(inTheEyesSpace, placing).multiply(new Matrix4().makeScale(box.width, box.height, UNSCALED));
+}
+
+/**
+ * Each pit sunk into the window's page with the matrix that places it under its mouth, where the screen lies on the
+ * window's plane.
+ * @param {readonly SunkPit[]} pits @param {DrawnWindow} window @returns {readonly PlacedPit[]}
+ */
+function pitsPlaced(pits, window) {
+	const middle = middleOf(window.box);
+	return pits.map((pit) => ({
+		pit,
+		placing: fromTheMiddleOf(window.pageSurface.inTheEyesSpace, { box: pit.mouth, middle })
+	}));
+}
+
+/**
+ * The boxes of the pieces standing in an exposure's world and of the pits sunk into its page the window's shade
+ * reaches, as the window's spreads read them: a piece's figure about its middle, reaching back as far as its walls; a
+ * pit's mouth, reaching back as deep as it is. A piece risen clear of the shade stands as a box reached by none, so the
+ * spreads keep it, and its pit, sharp within the slab the shade blurs.
+ * @param {readonly MarkupStanding[]} markup @param {readonly PlacedPit[]} pits @returns {readonly ShadedBox[]}
+ */
+function shadedBoxesOf(markup, pits) {
+	return [...markup.flatMap((standing) => pieceShaded(standing.object)), ...pits.flatMap(pitShaded)];
+}
+
+/** A piece's box the window's shade reaches, if the film lifts it into the shade. @param {DrawnObject} object */
+function pieceShaded(object) {
+	const piece = object.content;
+	if (piece.kind !== 'piece' || piece.shaded === null) return NO_SHADED_BOXES;
+	const { topLeft, topRight, bottomRight, bottomLeft } = piece.corners;
+	const corner = Math.max(topLeft, topRight, bottomRight, bottomLeft);
+	const back = piece.body === null ? REACHES_NO_FARTHER_BACK : piece.body.thickness;
+	return [shadedBox(matrixOf(object.inTheEyesSpace), piece.figure, corner, back, piece.shaded)];
+}
+
+/** A pit's box the window's shade reaches, if its piece stands in the shade. @param {PlacedPit} placed */
+function pitShaded({ pit, placing }) {
+	if (pit.shaded === null) return NO_SHADED_BOXES;
+	return [shadedBox(placing, pit.mouth, pit.corner, pit.depth, pit.shaded)];
+}
+
+/**
+ * A box the window's shade reaches by a share, placed by a matrix about its middle, so large and round, reaching so far
+ * back from its face.
+ * @param {Matrix4} placing @param {Size} size @param {number} corner @param {number} back @param {number} shaded
+ * @returns {ShadedBox}
+ */
+function shadedBox(placing, size, corner, back, shaded) {
+	const outline = new Vector4(size.width * HALF, size.height * HALF, corner, back);
+	return { eyeToTheBox: placing.clone().invert(), outline, shaded };
 }
 
 /**
@@ -1821,7 +1921,11 @@ function markupPartValues() {
 	return {
 		surface: { value: null },
 		seenFromAlong: { value: new Vector3() },
-		seenFromWithin: { value: new Vector2() }
+		seenFromWithin: { value: new Vector2() },
+		faded: { value: NONE_FADED },
+		behindSoFar: { value: null },
+		filmsGround: { value: null },
+		layerOnTheFrame: { value: new Vector4() }
 	};
 }
 

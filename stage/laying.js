@@ -39,13 +39,29 @@ void main() {
 	vec4 laid = over + (1.0 - over.a) * below;
 	gl_FragColor = inLinearLight(laid);
 }`;
+// A layer as it stands, copied
+const COPIED_FRAGMENT = `
+uniform sampler2D laid;
+varying vec2 shareOfTheFrame;
+void main() {
+	gl_FragColor = texture2D(laid, shareOfTheFrame);
+}`;
 
-/** The world as the lens lays it, field over field: the layer laid so far, and what lays markup into the other. */
+/**
+ * The world as the lens lays it, field over field: the layer laid so far, what lays markup into the other, and the
+ * world as it stood before the window was laid.
+ */
 export class WorldSeen {
 	/** @param {number} width @param {number} height @param {RenderTargetOptions} drawnAs */
 	constructor(width, height, drawnAs) {
 		/** The layer the world is laid in so far @type {WebGLRenderTarget} */
 		this.seen = new WebGLRenderTarget(width, height, drawnAs);
+		/**
+		 * The world laid before the window, which a piece the window's shade reaches fades into as the page does
+		 * @type {WebGLRenderTarget}
+		 */
+		this.beforeTheWindow = new WebGLRenderTarget(width, height, drawnAs);
+		this.copying = passOver({ laid: { value: this.seen.texture } }, COPIED_FRAGMENT, WRITTEN);
 		/**
 		 * The layer a field of markup is laid into with all under it, then the one laid so far
 		 * @type {WebGLRenderTarget}
@@ -58,6 +74,16 @@ export class WorldSeen {
 			AS_THE_BROWSER_FRAGMENT,
 			WRITTEN
 		);
+	}
+
+	/**
+	 * What is laid so far kept as the world before the window, as the window's world is about to be laid over it. The
+	 * layer laid so far changes places with the other as markup is laid, so it is read where it stands now.
+	 * @param {WebGLRenderer} renderer
+	 */
+	keptBeforeTheWindow(renderer) {
+		valuesSet(this.copying.material, { laid: this.seen.texture });
+		drawnInto(renderer, this.copying, this.beforeTheWindow);
 	}
 
 	/** Nothing laid yet. @param {WebGLRenderer} renderer */

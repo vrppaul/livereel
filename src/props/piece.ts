@@ -29,7 +29,7 @@
 import { ZOOM_AT_MOST } from '../domain/camera.ts';
 import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
 import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
-import { type Fraction, NONE, fractionOf } from '../domain/fraction.ts';
+import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
 import { ON_ITS_PLANE, type PageOfTheScreen } from '../domain/placement.ts';
 import type { Stance } from '../domain/stance.ts';
 import { type Effects, unfaded } from './effects.ts';
@@ -84,11 +84,26 @@ export interface DrawnHole extends Omit<Hole, 'reach' | 'pit'> {
 }
 
 /**
- * A hole's pit as the room draws it: as deep, its walls' colour and glow, and how clear its walls are, as far as the
- * screen it is sunk into has come up, from 0 to 1: nothing lies over its mouth to hide it as the screen goes down.
+ * How a hole's pit stands as the room draws it: how clear its walls are, as far as the screen it is sunk into has come
+ * up, from 0 to 1: nothing lies over its mouth to hide it as the screen goes down; and how far the window's shade
+ * reaches it, as far as it reaches its piece, from 0 to 1, none where its piece stands in no shade.
  */
-interface DrawnPit extends Pit {
+export interface PitStanding {
 	readonly clear: Fraction;
+	readonly shaded: Fraction | null;
+}
+
+/** A hole's pit as the room draws it: as deep, its walls' colour and glow, standing as it does. */
+type DrawnPit = Pit & PitStanding;
+
+/**
+ * How a piece lifted into the world stands in the window's shade: reached by it as the page is while its face lies on
+ * the page's plane, the less the farther it stands out toward the eye, and none from a height on, in pixels of a frame
+ * 1080 high, as the claude-review promo's lens keeps a part lifted off its soft and faded page as soft and as faded as
+ * the page as far as it has not risen (`story-parts.js` `sharpOnly`).
+ */
+export interface InTheShade {
+	readonly clearAt: number;
 }
 
 /** How round each corner of a piece is: a radius, in the pixels its box is in. */
@@ -156,8 +171,8 @@ export interface DrawnBody extends Body {
  * names for a rounded block, and as the window where the corner stands on a corner of what the window shows — the hole
  * it leaves there, if any, the line the lines from it to its source are drawn in, if it draws any, the picture it is
  * drawn from, its body, if it has one, where it carries letters, which it lands on a block's letters, the box their
- * first letter takes, as wide as a letter of theirs steps, in the screen's pixels as its source; and the block of the
- * page it empties, if any.
+ * first letter takes, as wide as a letter of theirs steps, in the screen's pixels as its source; the block of the page
+ * it empties, if any; and how it stands in the window's shade, if the film lifts it into the shade.
  */
 export interface Piece {
 	readonly kind: 'piece';
@@ -170,13 +185,16 @@ export interface Piece {
 	readonly body: Body | null;
 	readonly firstLetter: Box | null;
 	readonly emptied: Emptied | null;
+	readonly inTheShade: InTheShade | null;
 }
 
 /**
  * A piece as the stage draws it: its source, how many of the frame's pixels a screen's pixel takes in its box, the part
  * of its box the source is drawn in, in the frame's pixels from the box's top left corner, how round each of its
  * corners is, in the same pixels, the holes it shows there, how far it has come up and not gone in its own way, fading
- * whole, from 0 to 1, the picture it is drawn from, and its body, none where it has none or none of it shows.
+ * whole, from 0 to 1, the picture it is drawn from, its body, none where it has none or none of it shows, and how far
+ * the window's shade reaches it, from 0 to 1, which the stage shades it by as the window's shade stands, none where it
+ * stands in no shade.
  */
 export interface DrawnPiece {
 	readonly kind: 'piece';
@@ -188,6 +206,7 @@ export interface DrawnPiece {
 	readonly shown: number;
 	readonly picture: DrawnPicture;
 	readonly body: DrawnBody | null;
+	readonly shaded: Fraction | null;
 }
 
 /** How large a piece stands and how far out toward the eye, how far it has faded, and how strong its shadow is. */
@@ -196,6 +215,8 @@ type Standing = Pick<Stance, 'scale' | 'depth'> & Pick<Effects, 'fade' | 'shadow
 // A body of no thickness, which is none; and a hole a figure of the page shows, with no pit sunk under it
 const NO_THICKNESS = 0;
 const SHOWN_FLAT = null;
+// A piece, and its pit, the window's shade reaches not at all, where the film lifts it into no shade
+const IN_NO_SHADE = null;
 
 /**
  * A piece as the stage draws it in a box, standing as large and as far out as it stands and as faded, as far as it has
@@ -222,8 +243,19 @@ export function drawnPiece(
 		holes: holesShown(holes, source, fit),
 		shown,
 		picture,
-		body: piece.body === null ? null : drawnBody(piece.body, fit, standing, shown, held)
+		body: piece.body === null ? null : drawnBody(piece.body, fit, standing, shown, held),
+		shaded: shadedAt(piece.inTheShade, standing.depth)
 	};
+}
+
+/**
+ * How far the window's shade reaches a piece whose face stands so far out of the plane it was lifted from: whole on
+ * that plane, none from the height it clears the shade at, evenly between; not at all where the film lifts it into no
+ * shade, so it and its pit stand as the room draws what stands clear of the shade.
+ */
+export function shadedAt(inTheShade: InTheShade | null, depth: number): Fraction | null {
+	if (inTheShade === null) return IN_NO_SHADE;
+	return fractionOf(WHOLE - Math.max(depth, ON_ITS_PLANE) / inTheShade.clearAt);
 }
 
 /**

@@ -43,7 +43,7 @@ import {
 	screenBoxUnder
 } from '../domain/placement.ts';
 import { type FrameObject, type ObjectEntry, type ObjectName, drawnOnTheFrame } from './object.ts';
-import { type DrawnHole, type Hole, type Piece, figureIn } from './piece.ts';
+import { type DrawnHole, type Hole, type Piece, type PitStanding, figureIn, shadedAt } from './piece.ts';
 import { type Screen, THE_FILMED_PAGE, pageShownBy } from './screen.ts';
 import type { Stroke } from './stroke.ts';
 import { presentShare, stillCovered } from './way.ts';
@@ -101,7 +101,7 @@ const NO_PIT = null;
  * The holes the pieces among objects leave on the screen while it shows a page, each where its piece was lifted, or,
  * riding its block, as far up the screen as the film has scrolled the blocks that carry its source since, in all:
  * those alone of pieces lifted off that page, as a hole is left in the page, not the screen; each pit as clear as the
- * screen has come up. And the blocks of that page the pieces empty.
+ * screen has come up and as far in the window's shade as its piece. And the blocks of that page the pieces empty.
  */
 export function drawnHoles(
 	objects: readonly ObjectEntry[],
@@ -123,15 +123,23 @@ function holeLeftBy(
 	screenShown: Fraction
 ): readonly DrawnHole[] {
 	if (piece.hole === null || !isOnePage(piece.liftedOff, page)) return [];
-	return [drawnHole(name, screenBoxUnder(piece.source, object.inside, scrolled), piece.hole, object, screenShown)];
+	const source = screenBoxUnder(piece.source, object.inside, scrolled);
+	const pitStanding = { clear: screenShown, shaded: shadedAt(piece.inTheShade, object.depth) };
+	return [drawnHole(name, source, piece.hole, object, pitStanding)];
 }
 
 /**
  * A hole as the stage draws it on the screen: over its piece's source and as far past it each way as it reaches, its
  * corners as much rounder, as far as its piece has come and not gone; its pit, if any, as clear as the screen has come
- * up.
+ * up and as far in the window's shade as its piece.
  */
-function drawnHole(name: ObjectName, source: Box, hole: Hole, object: FrameObject, screenShown: Fraction): DrawnHole {
+function drawnHole(
+	name: ObjectName,
+	source: Box,
+	hole: Hole,
+	object: FrameObject,
+	pitStanding: PitStanding
+): DrawnHole {
 	const { reach, pit, ...drawn } = hole;
 	return {
 		...drawn,
@@ -139,7 +147,7 @@ function drawnHole(name: ObjectName, source: Box, hole: Hole, object: FrameObjec
 		box: withAir(source, reach),
 		corner: hole.corner + reach,
 		shown: presentShare(object),
-		pit: pit === null ? null : { ...pit, clear: screenShown }
+		pit: pit === null ? null : { ...pit, ...pitStanding }
 	};
 }
 

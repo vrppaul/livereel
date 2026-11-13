@@ -48,6 +48,7 @@ import {
 	A_PIXELS,
 	A_SELECTOR,
 	A_SHARE,
+	A_SIZE,
 	type Form,
 	type Kind,
 	Literal,
@@ -80,6 +81,7 @@ import {
 	type Emptied,
 	FOLLOWING_THE_PAGE,
 	type Hole,
+	type InTheShade,
 	type Piece,
 	type PiecePicture,
 	type Pit,
@@ -169,6 +171,15 @@ export interface BodyScript {
 }
 
 /**
+ * How a piece lifted into the world stands in the window's shade, as a film writes it: reached by it as the page is
+ * while it lies on the page, and none from the height its face clears the shade at, `clearAt`, in pixels of a frame
+ * 1080 high, as `effects({ depth })` brings it out.
+ */
+export interface ShadeScript {
+	readonly clearAt: number;
+}
+
+/**
  * How a piece is lifted: off the first `every` blocks a selector matches, together, with `air` clear round them, in the
  * page's pixels; how round the corners of what it lifts are, `corner`, a radius in the page's pixels: a rounded card's
  * own `border-radius`, where it lifts the card alone and whole; the hole it leaves and the line the lines from it to
@@ -178,7 +189,8 @@ export interface BodyScript {
  * the world, if the film names one; whether it `rides` its block in the world, `'its block'`, standing on the page
  * there, carried as the camera frames the page, by the film's scrolls of every block whose scroll carries its source
  * and where a fade from the page lays it; the block whose `letters` it carries, a selector, which it
- * lands on a block's letters, if the film names one; and how it stands out as it comes up, `effects`.
+ * lands on a block's letters, if the film names one; how it stands out as it comes up, `effects`; and whether it stands
+ * in the window's `shade` in the world, and to what height, where the film names it.
  */
 export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript, ShownStandingOutScript {
 	readonly every?: number;
@@ -191,6 +203,7 @@ export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScri
 	readonly body?: BodyScript;
 	readonly rides?: 'its block';
 	readonly letters?: string;
+	readonly shade?: ShadeScript;
 }
 
 /** How a piece goes: as any object does, and with the sheen a wipe trails, where the film names one. */
@@ -229,7 +242,8 @@ interface HoleAsked {
 /**
  * What a piece is lifted with, as it is made: how its source is taken, how many blocks, with how much air round them
  * and where it is born; how round its corners are, the hole it leaves, if any, its lines, if any, the kind of picture
- * it is drawn from, its body, if any, and the block whose letters it carries, if any.
+ * it is drawn from, its body, if any, the block whose letters it carries, if any, and how it stands in the window's
+ * shade, if it does.
  */
 interface Lifting extends Taking {
 	readonly corner: number;
@@ -238,6 +252,7 @@ interface Lifting extends Taking {
 	readonly picture: PiecePicture['kind'];
 	readonly body: Body | null;
 	readonly letters: string | null;
+	readonly inTheShade: InTheShade | null;
 }
 
 const PIECE = 'piece' satisfies ShownKind;
@@ -296,6 +311,9 @@ const BODY_FORM: Form<BodyScript> = { thickness: needed(A_PIXELS), walls: needed
 const NO_GLOW = 0;
 // A piece that carries no letters where the film names no block of them, and lands as large as a block holds it
 const CARRIES_NONE = null;
+// A piece the window's shade reaches none of where the film lifts it into no shade
+const IN_NO_SHADE = null;
+const SHADE_FORM: Form<ShadeScript> = { clearAt: needed(A_SIZE) };
 const PIECE_FORM: Form<PieceScript> = {
 	every: A_COUNT,
 	air: A_PIXELS,
@@ -309,6 +327,7 @@ const PIECE_FORM: Form<PieceScript> = {
 	// The page finds the blocks that carry a piece's source, so the film names none, and none by a selector it mistypes
 	rides: new Literal('its block'),
 	letters: A_SELECTOR,
+	shade: new OfForm(SHADE_FORM, "the window's shade it stands in: { clearAt }"),
 	...IN_PLACE_SHOW_FORM,
 	...NAMED_FORM,
 	...GROUPED_FORM,
@@ -334,9 +353,23 @@ export function show(target: Target, script: PieceScript = {}): Move {
 		lines: script.lines ?? null,
 		picture: script.picture ?? FOLLOWING_THE_PAGE.kind,
 		body,
-		letters: script.letters ?? CARRIES_NONE
+		letters: script.letters ?? CARRIES_NONE,
+		inTheShade: script.shade === undefined ? IN_NO_SHADE : inTheShadeAsked(script.shade, script.inside)
 	};
 	return { ...pieceComing(target, script, lifting), holdsThePage: lifting.picture === 'held' };
+}
+
+/**
+ * How a piece stands in the window's shade as the film names it: refused anywhere but inside the world, where it stands
+ * over the page it was lifted off as the window does.
+ */
+function inTheShadeAsked(shade: ShadeScript, inside: PieceScript['inside']): InTheShade {
+	if (inside !== 'world') {
+		throw new FilmError(
+			"piece.show lifts a piece into the window's shade inside the world alone, where it stands over the page it was lifted off: lift it inside: 'world'"
+		);
+	}
+	return { clearAt: shade.clearAt };
 }
 
 /**
@@ -639,7 +672,8 @@ async function lifted(beginning: Beginning, target: Target, lifting: Lifting): P
 		picture,
 		body: lifting.body,
 		firstLetter: lifting.letters === CARRIES_NONE ? CARRIES_NONE : await firstLetterCarried(beginning, lifting.letters),
-		emptied: EMPTIES_NONE
+		emptied: EMPTIES_NONE,
+		inTheShade: lifting.inTheShade
 	};
 	return { content: piece, box };
 }

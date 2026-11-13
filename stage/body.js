@@ -40,6 +40,7 @@ import {
 	PREMULTIPLIED,
 	SRGB_CURVES,
 	WRITTEN,
+	compiledForCount,
 	drawnInto,
 	passOver,
 	valuesOfTheBox,
@@ -51,6 +52,16 @@ import {
 /** @import { BehindThePage } from './page-picture.js' */
 /** @import { SceneField } from './lens.js' */
 
+/**
+ * A box of a piece or a pit the window's shade reaches, as the window's spreads read it: the matrix that carries the
+ * eye's space onto it, its middle at the origin and its face toward three's z; its outline's half width, half height
+ * and corner, and how far it reaches back from its face, in the frame's pixels; and the share the shade reaches it by.
+ * @typedef {{
+ *   readonly eyeToTheBox: THREE.Matrix4,
+ *   readonly outline: THREE.Vector4,
+ *   readonly shaded: number
+ * }} ShadedBox
+ */
 /**
  * The body's measures, as its faces are built from them, in the frame's pixels: the page's width, height and corners,
  * the rim and the thickness.
@@ -167,11 +178,11 @@ const ON_THE_PAGES_PLANE = 0;
 const NONE_BUILT = '';
 // Where three's own declarations of a fragment shader stand, which a body's own come after
 const THREES_DECLARATIONS = '#include <common>';
-// The metal faded in light into what stands behind it as far as the shade fades the body; as three lit it where the
-// shade fades it none, so a body unshaded draws the same light as before
-const THE_METAL_FADED = `
+// What a material draws faded in light into what stands behind it as far as the shade fades it; as three drew it where
+// the shade fades it none, so what is unshaded draws the same light as before
+const THE_LIGHT_FADED = `
 if (faded > 0.0) gl_FragColor.rgb = mix(gl_FragColor.rgb, behindAt().rgb, faded);`;
-// A body faded none
+// Faded none
 const NONE_FADED = 0;
 // What the spreads the shade blurs the body by are drawn into: one value a pixel, in half floats, read pixel by pixel,
 // unblended with the pixel beside, which may be another thing's; and their size before they are first drawn
@@ -189,6 +200,10 @@ const SET_AS_DRAWN = 0;
 // a pixel before the eye to a hundred eye distances, `depthRangeOf` in `matrices.js`), and the offsets by depth the
 // page and the glass are drawn nearer by
 const ON_A_FACE = 2;
+// The name of the count of the boxes of pieces and pits the shade reaches the spreads are compiled with, as their
+// shader reads it
+const SHADED = 'SHADED';
+const NONE_SHADED = 0;
 // How wide each pixel of a field spreads where its depth falls within the window's slab, on the page, in a pit sunk
 // into it, on the rim, the sides or the back: none where nothing was drawn or what was drawn stands off the slab; else
 // as wide as the shade blurs the window's plane, grown as the eye sees the point nearer, its spread a pixel away over
@@ -197,13 +212,18 @@ const ON_A_FACE = 2;
 // its share of the blur. A point of the field is read back into the eye's space by the field's projection undone, onto
 // the slab by its placing undone, and onto the screen from the page's middle on the window's plane, down the plane
 // where the slab's axes go up; the slab's outline is a rounded rectangle about the page's middle, its half width, half
-// height and corner
+// height and corner. Where a piece of the page or its pit the shade reaches stands, it spreads by the share the shade
+// reaches it, kept from the blur as far as the piece has risen out of the shade, as the claude-review promo's lens kept
+// a lifted part and its pit: each such box read back onto it by its own placing undone, its outline's half width, half
+// height and corner about its middle, and how far it reaches back from its face. The slab is read only in a field
+// that holds the window: a field of markup holds words standing on the slab's face, which the shade leaves sharp
 const SPREADS_FRAGMENT = `
 uniform sampler2D depth;
 uniform mat4 fieldToTheEye;
 uniform mat4 eyeToTheSlab;
 uniform vec3 slabOutline;
 uniform float thickness;
+uniform bool slabReached;
 uniform float spreadAPixelAway;
 uniform bool seenOnTheFrame;
 uniform float spreadOnTheFrame;
@@ -211,11 +231,20 @@ uniform bool keepsAPartSharp;
 uniform vec2 pageMiddle;
 uniform vec4 screenBox;
 uniform float partSoftens;
+#if ${SHADED} > 0
+uniform mat4 eyeToTheShaded[${SHADED}];
+uniform vec4 shadedOutlines[${SHADED}];
+uniform float shadedShares[${SHADED}];
+#endif
 varying vec2 shareOfTheFrame;
 const float NOTHING_DRAWN = float(${NOTHING_DRAWN});
 const float ON_A_FACE = float(${ON_A_FACE});
 ${THE_PART_KEPT_SHARP}
 ${PAST_A_ROUNDED_BOX}
+bool standsWithin(vec3 point, vec3 outline, float back) {
+	return pastARoundedBox(point.xy, outline.xy, outline.z) <= ON_A_FACE
+		&& point.z <= ON_A_FACE && point.z >= -back - ON_A_FACE;
+}
 void main() {
 	float stored = texture2D(depth, shareOfTheFrame).x;
 	if (stored >= NOTHING_DRAWN) {
@@ -225,16 +254,24 @@ void main() {
 	vec4 seen = fieldToTheEye * vec4(vec3(shareOfTheFrame, stored) * 2.0 - 1.0, 1.0);
 	vec3 inTheEyesSpace = seen.xyz / seen.w;
 	vec3 onTheSlab = (eyeToTheSlab * vec4(inTheEyesSpace, 1.0)).xyz;
-	bool withinTheSlab = pastARoundedBox(onTheSlab.xy, slabOutline.xy, slabOutline.z) <= ON_A_FACE
-		&& onTheSlab.z <= ON_A_FACE && onTheSlab.z >= -thickness - ON_A_FACE;
-	if (!withinTheSlab) {
+	bool reached = slabReached && standsWithin(onTheSlab, slabOutline, thickness);
+	float share = 1.0;
+	#if ${SHADED} > 0
+	for (int box = 0; box < ${SHADED}; box++) {
+		vec4 outline = shadedOutlines[box];
+		if (standsWithin((eyeToTheShaded[box] * vec4(inTheEyesSpace, 1.0)).xyz, outline.xyz, outline.w)) {
+			reached = true;
+			share = shadedShares[box];
+		}
+	}
+	#endif
+	if (!reached) {
 		gl_FragColor = vec4(0.0);
 		return;
 	}
-	float share = 1.0;
 	if (keepsAPartSharp) {
 		vec2 onThePlane = pageMiddle + vec2(onTheSlab.x, -onTheSlab.y);
-		share = mix(1.0, partSoftens, sharpAt((onThePlane - screenBox.xy) / screenBox.zw));
+		share *= mix(1.0, partSoftens, sharpAt((onThePlane - screenBox.xy) / screenBox.zw));
 	}
 	float spread = seenOnTheFrame ? spreadOnTheFrame : spreadAPixelAway / -inTheEyesSpace.z;
 	gl_FragColor = vec4(share * spread, 0.0, 0.0, 0.0);
@@ -246,16 +283,8 @@ const SEEN_ON_THE_FRAME = 'on the frame';
 /** The window's body: its slab of metal and the glass over the page, as last built. */
 export class WindowBody {
 	constructor() {
-		// How far the metal has faded into what stands behind it, and what stands behind it, as the page's surface reads
-		// it (`BehindThePage`)
-		this.fading = {
-			faded: { value: NONE_FADED },
-			behindSoFar: { value: /** @type {THREE.Texture | null} */ (null) },
-			filmsGround: { value: /** @type {THREE.Texture | null} */ (null) },
-			layerOnTheFrame: { value: new THREE.Vector4() }
-		};
 		this.metal = new THREE.MeshStandardMaterial({ metalness: WHOLLY_METAL });
-		this.metal.onBeforeCompile = (shader) => fadedIntoWhatStandsBehind(shader, this.fading);
+		this.fading = new Fading(this.metal);
 		this.glassCoat = new THREE.MeshPhysicalMaterial({
 			...GLASS_UNDER_ITS_COAT,
 			clearcoatRoughness: GLASS_COAT_ROUGHNESS,
@@ -292,7 +321,7 @@ export class WindowBody {
 		this.builtFor(measuresOf(window, body));
 		this.metal.color.set(body.metal);
 		this.metal.roughness = body.roughness;
-		this.fading.faded.value = body.shade === null ? NONE_FADED : body.shade.fade;
+		this.fading.fadedAsFarAs(body.shade === null ? NONE_FADED : body.shade.fade);
 		this.glassCoat.clearcoat = body.glass;
 		this.glinting.glint.value = body.glint;
 		this.glinting.pageWidth.value = window.reach.width;
@@ -303,17 +332,6 @@ export class WindowBody {
 			part.matrixWorldNeedsUpdate = true;
 		}
 		return { slab: this.slab, glass: this.glass };
-	}
-
-	/**
-	 * What the metal fades into, set as the room has laid the world so far, as it sets the page's (`behindThePageSet` in
-	 * `room.js`).
-	 * @param {BehindThePage} behind
-	 */
-	behindSet(behind) {
-		this.fading.behindSoFar.value = behind.behindSoFar;
-		this.fading.filmsGround.value = behind.filmsGround;
-		this.fading.layerOnTheFrame.value = behind.layerOnTheFrame;
 	}
 
 	/**
@@ -357,6 +375,10 @@ export class WindowBlurred {
 				eyeToTheSlab: { value: new THREE.Matrix4() },
 				slabOutline: { value: new THREE.Vector3() },
 				thickness: { value: SET_AS_DRAWN },
+				slabReached: { value: true },
+				eyeToTheShaded: { value: [] },
+				shadedOutlines: { value: [] },
+				shadedShares: { value: [] },
 				spreadAPixelAway: { value: SET_AS_DRAWN },
 				seenOnTheFrame: { value: false },
 				spreadOnTheFrame: { value: SET_AS_DRAWN },
@@ -371,31 +393,40 @@ export class WindowBlurred {
 			SPREADS_FRAGMENT,
 			WRITTEN
 		);
+		compiledForCount(this.pass.material, SHADED, NONE_SHADED);
 	}
 
 	/**
 	 * How wide each pixel of a field spreads, in the drawing's pixels, where its depth falls within the window's slab,
-	 * the window blurred whole by the shade as it reaches it: as many times the shade's blur as the eye sees the point
-	 * nearer than the frame, the page standing on the frame seen at its own size, or the shade's blur at every point,
-	 * where it is seen on the frame; but for the part of the screen the blur leaves sharp, its edge in the screen's
-	 * pixels as the camera frames it. The field is seen from the scene's eye through a projection.
+	 * the window blurred whole by the shade as it reaches it, where the field holds the window, or within a box of a
+	 * piece or a pit the shade reaches, by the share it reaches it: as many times the shade's blur as the eye sees the
+	 * point nearer than the frame, the page standing on the frame seen at its own size, or the shade's blur at every
+	 * point, where it is seen on the frame; but for the part of the screen the blur leaves sharp, its edge in the
+	 * screen's pixels as the camera frames it. The field is seen from the scene's eye through a projection.
 	 * @param {THREE.WebGLRenderer} renderer @param {SceneField} field @param {THREE.Matrix4} fieldToTheEye the field's
 	 * projection undone @param {DrawnScene} scene @param {DrawnBody} body @param {BodyBlur} blur
+	 * @param {{ readonly slab: boolean, readonly shaded: readonly ShadedBox[] }} reaching whether the field holds the
+	 * window, and the boxes of pieces and pits the shade reaches
 	 * @returns {THREE.Texture}
 	 */
-	spreadsOver(renderer, field, fieldToTheEye, scene, body, blur) {
+	spreadsOver(renderer, field, fieldToTheEye, scene, body, blur, reaching) {
 		const window = scene.window;
 		const outer = outerOutlineOf(measuresOf(window, body));
 		const filmed = scene.screen.filmed;
 		const sharp = filmed === null ? null : window.sharp;
 		const spread = blur.width * this.pixelsOfOne;
 		this.spreads.setSize(field.width, field.height);
+		compiledForCount(this.pass.material, SHADED, reaching.shaded.length);
 		valuesSet(this.pass.material, {
 			depth: field.depth,
 			fieldToTheEye,
 			eyeToTheSlab: matrixOf(body.placing).invert(),
 			slabOutline: new THREE.Vector3(outer.width / HALVES, outer.height / HALVES, outer.corner),
 			thickness: body.thickness,
+			slabReached: reaching.slab,
+			eyeToTheShaded: reaching.shaded.map((box) => box.eyeToTheBox),
+			shadedOutlines: reaching.shaded.map((box) => box.outline),
+			shadedShares: reaching.shaded.map((box) => box.shaded),
 			spreadAPixelAway: spread * scene.eye.distance,
 			seenOnTheFrame: blur.seen === SEEN_ON_THE_FRAME,
 			spreadOnTheFrame: spread,
@@ -452,15 +483,46 @@ function outerOutlineOf(measures) {
 }
 
 /**
- * The metal's shader written to fade its light into what stands behind it as far as the shade fades the body, its
- * values the body's own.
- * @param {THREE.WebGLProgramParametersWithUniforms} shader @param {WindowBody['fading']} fading
+ * How far a material three draws fades in light into what stands behind it, as far as the window's shade fades what it
+ * draws: the window's metal, as far as the shade fades the body, and a piece's walls and its pit, as far as the shade
+ * reaches them (`stage/piece-body.js`); and what stands behind it, set as the room has laid the world before it, as it
+ * sets the page's (`behindThePageSet` in `room.js`).
  */
-function fadedIntoWhatStandsBehind(shader, fading) {
-	Object.assign(shader.uniforms, fading);
+export class Fading {
+	/** @param {THREE.Material} material */
+	constructor(material) {
+		this.uniforms = {
+			faded: { value: NONE_FADED },
+			behindSoFar: { value: /** @type {THREE.Texture | null} */ (null) },
+			filmsGround: { value: /** @type {THREE.Texture | null} */ (null) },
+			layerOnTheFrame: { value: new THREE.Vector4() }
+		};
+		material.onBeforeCompile = (shader) => fadedIntoWhatStandsBehind(shader, this.uniforms);
+	}
+
+	/** Faded as far as a share, from 0 none to 1 whole. @param {number} share */
+	fadedAsFarAs(share) {
+		this.uniforms.faded.value = share;
+	}
+
+	/** What it fades into, as the room has laid it. @param {BehindThePage} behind */
+	behindSet(behind) {
+		this.uniforms.behindSoFar.value = behind.behindSoFar;
+		this.uniforms.filmsGround.value = behind.filmsGround;
+		this.uniforms.layerOnTheFrame.value = behind.layerOnTheFrame;
+	}
+}
+
+/**
+ * A material's shader written to fade its light into what stands behind it as far as the shade fades it, its values a
+ * fading's own.
+ * @param {THREE.WebGLProgramParametersWithUniforms} shader @param {Fading['uniforms']} uniforms
+ */
+function fadedIntoWhatStandsBehind(shader, uniforms) {
+	Object.assign(shader.uniforms, uniforms);
 	shader.fragmentShader = shader.fragmentShader
 		.replace(THREES_DECLARATIONS, `${THREES_DECLARATIONS}\nuniform float faded;${SRGB_CURVES}${WHAT_STANDS_BEHIND}`)
-		.replace(THREES_OUTPUT, `${THREES_OUTPUT}${THE_METAL_FADED}`);
+		.replace(THREES_OUTPUT, `${THREES_OUTPUT}${THE_LIGHT_FADED}`);
 }
 
 /**
