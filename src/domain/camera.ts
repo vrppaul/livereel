@@ -24,6 +24,7 @@ import type { Format } from './format.ts';
 import { boxInTheView, frameZoomOf } from './framing.ts';
 import { type Fraction, NONE, WHOLE } from './fraction.ts';
 import {
+	BOX_SPACE,
 	type Box,
 	CORNER_SHARES,
 	type Point,
@@ -45,7 +46,7 @@ import {
 	withAir
 } from './geometry.ts';
 import { A_NUMBER, type Kind, OfForm, Plain, needed } from './handed.ts';
-import { NO_KEYS, type PathSpace, type Through, alongPath } from './path.ts';
+import { NO_KEYS, type OnItsPath, type PathSpace, type Through, alongPath } from './path.ts';
 import {
 	type Matrix,
 	type Spot,
@@ -69,7 +70,7 @@ import {
 	stanceMatrixBack
 } from './stance.ts';
 import { between, shareByScale } from './toward.ts';
-import { ARRIVED, type Track, alongTrack, arrivedAt } from './track.ts';
+import { ARRIVED, arrivedAt } from './track.ts';
 
 /**
  * The point of the screen at the view's middle, and how close. `zoom` is the frame's pixels a page's pixel takes on a
@@ -122,12 +123,13 @@ export interface Aiming {
 }
 
 /**
- * The window as a scene holds it, all the camera reads of it: its box on its way, as the camera keeps what it frames in
- * the part of the window on the frame as the window goes, and what comes up beside the window is placed beside where it
- * goes; and how far it stands off the ground and how it stands, as far along as the moves that set them have come.
+ * The window as a scene holds it, all the camera reads of it: its box on its path, through the places a move names, as
+ * the camera keeps what it frames in the part of the window on the frame as the window goes, and what comes up beside
+ * the window is placed beside where it goes; and how far it stands off the ground and how it stands, as far along as
+ * the moves that set them have come.
  */
 export interface Placing extends Stance {
-	readonly box: Track<Box>;
+	readonly box: OnItsPath<Box>;
 	readonly lift: Fraction;
 }
 
@@ -221,13 +223,14 @@ export function viewOver(box: Box, frame: Size): View {
 
 /** The window standing in a view: its box there already, lifted and standing as the view. */
 export function placedIn(view: View): Placing {
-	return { ...view, box: arrivedAt(view.box) };
+	return { ...view, box: { ...arrivedAt(view.box), through: NO_KEYS } };
 }
 
-/** Where the window stands, so far on its way: its box as far along as its move, lifted and standing as it is. */
+/** Where the window stands so far: its box as far along its path as its move, lifted and standing as it is. */
 export function viewOf(placing: Placing): View {
+	const { from, through, to, progress } = placing.box;
 	return {
-		box: alongTrack(placing.box, boxToward),
+		box: alongPath(from, through, to, BOX_SPACE, progress),
 		lift: placing.lift,
 		scale: placing.scale,
 		depth: placing.depth,
@@ -247,7 +250,8 @@ export function standingAt(pose: Pose): Aiming {
  * its path: a path through keys may bow past the edge between them, and a zoom from a screen too short to fill the
  * frame would show the screen's edge where it kept its still point still. A block is framed in the part of the window
  * on the frame, its share of the window going from where the window stood to where it goes as the window does, so a
- * window sliding whole carries the page with it. The window's plane is seen from the eye where it stands.
+ * window sliding whole carries the page with it; through places on its way, the share goes from end to end all the
+ * same. The window's plane is seen from the eye where it stands.
  */
 export function seenThrough(aiming: Aiming, window: Placing, eye: Eye, format: Format): Camera {
 	const view = viewOf(window);

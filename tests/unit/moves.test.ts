@@ -3293,6 +3293,30 @@ test('code or a group carried to a place through another stands there on its way
 	]);
 });
 
+test('the window carried to a place through another stands there on its way, where a pace by keys puts it, and ends where it goes', async () => {
+	const throughTheTop = windowTo('right', { through: ['top'], pace: 'keys' });
+	const [halfWay, arrived] = await Promise.all(
+		[0.5, 1].map((progress) => setAt(throughTheTop, OPENING_IN_SMALL, progress))
+	);
+	const [atTheTop, onTheRight] = await Promise.all(
+		['top', 'right'].map((place) => setAt(windowTo(place), OPENING_IN_SMALL, 1))
+	);
+	expect([cameraOf(halfWay!, SMALL).view.box, cameraOf(arrived!, SMALL).view.box]).toEqual([
+		cameraOf(atTheTop!, SMALL).view.box,
+		cameraOf(onTheRight!, SMALL).view.box
+	]);
+});
+
+test("a window move through a place that would carry a standing note's words off the frame, or under the window, is refused as it begins", async () => {
+	const windowed = await setAt(windowTo('right'), OPENING_IN_SMALL, 1);
+	const noted = await setAt(note.show('#block', 'Here'), windowed, 1);
+	await expect(async () => windowTo('right', { through: ['left'] }).begin(beginningOf(noted))).rejects.toThrow(
+		new FilmError(
+			"window.to would carry the note's words off the frame, or under the window: hide the note first, with note.hide(), or move the window where its words keep beside it"
+		)
+	);
+});
+
 test('words carried through a place of another size stand as large as where they go all the way, so their lines break once', async () => {
 	const titled = await setAt(title.show('Here', { at: 'left' }), OPENING_IN_SMALL, 1);
 	const there = (await setAt(title.to('right'), titled, 1)).objects.get('title')!.box;
@@ -3316,6 +3340,9 @@ test('a shape or a pace with no keys to go through, and keys none, are refused a
 	);
 	expect(() => group.to('right', { pace: 'keys' })).toThrow(
 		"group.to's shape and pace say how a path goes through keys: name the keys in through, or leave them out"
+	);
+	expect(() => windowTo('right', { shape: 'straight' })).toThrow(
+		"window.to's shape and pace say how a path goes through keys: name the keys in through, or leave them out"
 	);
 });
 

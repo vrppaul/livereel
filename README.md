@@ -522,13 +522,15 @@ live, which has no picture.
 
 ## What it lies on: the window
 
-`window.to(place, { depth })` draws the page back off the frame's edges into a window on the ground, its corners
-rounding, its edge and shadow coming up, carries it from one place to another, and, `window.to('whole')`, brings
-it back to fill the frame. Start words once the window has drawn back, so they come up on the ground, not over
-the page. The words take about a third of the frame, or the share a format's `split` gives them; the window takes
-the whole rest, whatever the page's shape. `window.show({ at: 'whole', from: 'right' })` slides it in whole from
-past a side of the frame to its place, and `window.hide({ toward: 'left' })` slides it out as far, where it stays
-until a move brings it back: with words sliding the other way in the same step, a push.
+`window.to(place, { depth, through, shape, pace })` draws the page back off the frame's edges into a window on the
+ground, its corners rounding, its edge and shadow coming up, carries it from one place to another, and,
+`window.to('whole')`, brings it back to fill the frame. `through` names places its box passes on the way, on one
+curve, as an object's `to` passes them ("The camera"); its lift and depth go from end to end. Start words once the
+window has drawn back, so they come up on the ground, not over the page. The words take about a third of the frame,
+or the share a format's `split` gives them; the window takes the whole rest, whatever the page's shape.
+`window.show({ at: 'whole', from: 'right' })` slides it in whole from past a side of the frame to its place, and
+`window.hide({ toward: 'left' })` slides it out as far, where it stays until a move brings it back: with words
+sliding the other way in the same step, a push.
 
 The window moves apart from the camera: the camera keeps what it frames framed in whatever window stands, so
 `window.to` and `camera.onto` share a step in either order. Inside the window the camera frames as on the whole
@@ -1107,8 +1109,8 @@ that stands at one place on the frame at both ends staying there all the way.
 
 Both pass the poses, or the blocks, `through` names on their way, each framed as its own is, on one curve:
 `shape: 'smooth'`, the default, or `'straight'`, and `pace: 'even'`, as long a stretch of the way in each equal
-share of the move, the default, or `'keys'`, an equal share from each key to the next. Every object's `to`,
-`group.to` and `eye.to` take `through`, `shape` and `pace` the same way.
+share of the move, the default, or `'keys'`, an equal share from each key to the next. `window.to`, every object's
+`to`, `group.to` and `eye.to` take `through`, `shape` and `pace` the same way.
 
 The camera at `whole` shows the page as large in a smaller window, cut by its edge: frame the whole screen,
 `camera.onto(screen, { air: 0 })` with the screen's box, and the page stays whole in whatever window stands.

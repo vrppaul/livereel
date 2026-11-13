@@ -23,11 +23,3 @@ export function trackOf<Value>(from: Value, to: Value, progress: number): Track<
 export function arrivedAt<Value>(value: Value): Track<Value> {
 	return trackOf(value, value, ARRIVED);
 }
-
-/** Where a value stands so far on its way, by how a value of its kind goes from one to another. */
-export function alongTrack<Value>(
-	track: Track<Value>,
-	toward: (start: Value, end: Value, progress: number) => Value
-): Value {
-	return toward(track.from, track.to, track.progress);
-}

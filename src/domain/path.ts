@@ -1,8 +1,8 @@
 /**
  * A value's path through keys: from where it stood, through the keys a film names, to where it goes — the camera past
- * blocks on its way to the one it frames, an object or a group past places on its way to its own. A film writes the
- * places a shot passes, not the times it passes them, as After Effects' roving keys and Motion Canvas' curves have
- * it; the move's curve eases the whole path at once.
+ * blocks on its way to the one it frames, the window, an object or a group past places on its way to its own. A film
+ * writes the places a shot passes, not the times it passes them, as After Effects' roving keys and Motion Canvas'
+ * curves have it; the move's curve eases the whole path at once.
  *
  * With no key between, a value goes as its kind goes from one end to the other (`toward`), as every move went before
  * a path had keys, so a move that names none draws as it drew. Through keys the path takes the film's course: its
@@ -20,6 +20,7 @@
  */
 import { type Kind, OneOf } from './handed.ts';
 import { type Toward, between } from './toward.ts';
+import type { Track } from './track.ts';
 
 /** How a path goes through its keys: curved through them, or straight from one to the next. */
 export type Shape = 'smooth' | 'straight';
@@ -53,6 +54,14 @@ export interface PathSpace<Value> {
 export interface Through<Key> {
 	readonly keys: readonly Key[];
 	readonly course: Course;
+}
+
+/**
+ * A value on its path as a scene holds it from frame to frame: where it stood as its move began, the keys it passes
+ * and the course through them, where it goes, and how far along it is; at 1, there.
+ */
+export interface OnItsPath<Value> extends Track<Value> {
+	readonly through: Through<Value>;
 }
 
 /** A value's path, worked out once: where it stands `progress` of the way along. */

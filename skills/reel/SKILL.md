@@ -79,7 +79,7 @@ which are the tool's:
 | lift, glow | `piece.effects({ shadow, glow, ring, scale, depth })`, and every object's, at its show as `effects` |
 | focus, soft page | `window.shade({ dim, fade, blur, sharp })`, `eye.focus(on, { aperture })` |
 | camera move | a `play({ seconds, moves, ease })` |
-| flight, path | `camera.onto(last, { through })`, an object's `to(place, { through })`; `eye.fly(legs)` low over the page |
+| flight, path | `camera.onto(last, { through })`, `window.to(place, { through })`, an object's `to(place, { through })`; `eye.fly(legs)` low over the page |
 | light | `light.on`, `light.to`, `light.off`: one block lit, the rest dimmed |
 | cast | what the page shows, opened and closed by `act` |
 | action | a click (`cursor.click`), keys (`typing(page.type(strokes))`), anything in an `act`; mid-play, `page.act` |
@@ -234,7 +234,7 @@ its screen is refused. `reaches: 'document'` draws a page past the screen's top 
 
 | Move | |
 |---|---|
-| `window.to(place, { depth })` | the page drawn back into a window at a place, `'whole'` back to the frame; `depth` toward the eye, under the focal length; travels apart from the camera |
+| `window.to(place, { depth, through, shape, pace })` | the page drawn back into a window at a place, `'whole'` back to the frame; `depth` toward the eye, under the focal length; `through` places on one curve, as an object's `to`; travels apart from the camera |
 | `window.show({ at, from })`, `window.hide({ toward })` | the window sliding in whole from past a side, or out; with words sliding the other way, a push |
 | `window.lean({ tilt, turn, roll, over, about })` | leant back, swung, rolled, turned over, in degrees, about its middle or a point `about` names, `about` changed only while the window faces the frame ("Leaning") |
 | `screen.rise()`, `screen.lower()` | the screen up out of the ground, or down into it; at once in a `cut` |
@@ -480,5 +480,10 @@ A full shoot takes minutes: run it in the background. A clip of a few seconds ta
 - A window that comes from far to cover the frame with a page on it is laid where it ends and started far,
   `window.to(COVERING, { depth: -3000 })` then `{ depth: 0 }`, never laid small and brought near: a room draws the
   window as dense as its laid box, so one brought nearer shows its text magnified and soft.
+- A page drawn back from close to a slab is the camera's till it fills the window and the window's after, as
+  `camera.onto(screen, { air: 0 })` keeps it whole there: give both moves keys read off one way at even steps of it,
+  `camera.to(pose, { through, pace: 'keys' })` then `window.to(place, { through, pace: 'keys' })`, each on its part of
+  one curve, so the page's way and speed run on through the hand-off; a window going straight where the way bends
+  turns there at once.
 - An outline and a lens, and a piece lifted onto the frame, need the eye looking straight ahead at the window: send it
   so first, `eye.to('rest')`. A piece lifted `inside: 'world'` is taken off wherever the eye stands.
