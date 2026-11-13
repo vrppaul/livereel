@@ -11,7 +11,7 @@ import type {
 } from '../../src/direction/page.ts';
 import type { BlockKey } from '../../src/domain/placement.ts';
 import type { Sound } from '../../src/direction/sound.ts';
-import { type Box, type Corners, type Format, SQUARE_CORNERS } from '../../src/domain/geometry.ts';
+import { type Box, type Corners, type Format, SQUARE_CORNERS, boxAround } from '../../src/domain/geometry.ts';
 import type { TypedText } from '../../src/domain/typing.ts';
 import type { OwnPageStanding } from '../../src/domain/own-page.ts';
 import type { DrawnScene } from '../../src/scene.ts';
@@ -122,6 +122,25 @@ export class PageOfBoxes implements FilmedPage {
 
 	press(): Promise<void> {
 		return Promise.resolve();
+	}
+}
+
+/**
+ * A page of boxes where a selector matches several blocks, standing as a table says in the page's order: the box of
+ * the first so many is the box round them together, as a live page answers.
+ */
+export class PageOfBlockLists extends PageOfBoxes {
+	readonly blockLists: ReadonlyMap<string, readonly [Box, ...Box[]]>;
+
+	constructor(blockLists: ReadonlyMap<string, readonly [Box, ...Box[]]>) {
+		super(new Map());
+		this.blockLists = blockLists;
+	}
+
+	/** A test names only the blocks its page has. */
+	override box(target: string, every: number): Promise<Box> {
+		const [first, ...others] = this.blockLists.get(target)!.slice(0, every);
+		return Promise.resolve(boxAround([first!, ...others]));
 	}
 }
 

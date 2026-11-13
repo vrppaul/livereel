@@ -135,9 +135,10 @@ lavapipe.
 | `sounds`, `music` | livereel's sounds, and a track under the film | "What is heard" |
 
 A target, what a move reads on the page, is a selector, of which a move that takes `every` reads the first
-`every` blocks, or a box of the page's screen, `{ left, top, width, height }` in its pixels, for what a page draws
-with nothing to select: a canvas, or a frame exported from a design. A block is read as its move's share begins,
-where the screen shows it then.
+`every` blocks, and a stretch kept sharp in the shade all of them, or a box of the page's screen,
+`{ left, top, width, height }` in its pixels, for what a page draws with nothing to select: a canvas, or a frame
+exported from a design. A block is read as its move's share begins, where the screen shows it then; the part kept
+sharp, on the frames that draw it.
 
 ## How time goes
 
@@ -1281,8 +1282,17 @@ stands clear of it, a piece lifted off it, a title or code. It sets only what it
   blur over half as far as the blur past it: the part lies on the page, so the camera, the window and the eye
   carry it, and a title over the blur stays as sharp as it stands. A move naming another part keeps it sharp from
   the move's start, never slid: to hand the sharp part on mid-glide, bring the blur to 0 over the glide's first
-  half and back with the new part over its second. `sharp: 'none'` keeps none. The part is drawn from the page's
-  picture, so `sharp` is refused on a page framed live and on a page of the film's own.
+  half and back with the new part over its second. `sharp: 'none'` keeps none. The part is read off the page on
+  the first frame that blurs the page after the move names it, and again after every move of the page, an act, a
+  typing or a scroll, and every change the page makes of itself, so it stays on its blocks while the page lays them
+  out anew under it. It is drawn from the page's picture, so `sharp` is refused on a page framed live and
+  on a page of the film's own.
+- `sharp: { blocks: '[data-testid=row], [data-testid=thread]', across: '[data-testid=card]' }` keeps a stretch of
+  blocks sharp that no one block is: every block `blocks` matches, together, as wide across as every block `across`
+  matches, where named, which may reach past the blocks. A line and the thread under it stay sharp as wide as the
+  thread's card, so a bar the page draws down the line's edge and a scroll bar laid over its end stay soft with the
+  page round them. Every match counts, one off the screen or laying out nothing too: scope the selectors to the
+  part of the page meant.
 - `sharpSoftens: 0.75` softens the part kept sharp three quarters of the way toward the blur, the page round it as
   soft as it was: written beside a lift's `effects`, on its curve and in its time, the part softens as far as the
   piece has risen; `sharpSoftens: 0` makes it sharp again. A share, not pixels, so the part is never softer than

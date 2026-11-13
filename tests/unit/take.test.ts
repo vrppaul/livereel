@@ -50,6 +50,8 @@ import {
 
 const FIRST = { left: 10, top: 10, width: 100, height: 50 };
 const SECOND = { left: 200, top: 100, width: 80, height: 40 };
+// A block an act has taken wholly off the small format's screen, past its left
+const OFF_THE_SCREEN = { left: -500, top: 10, width: 100, height: 50 };
 const PAGE = new Map([
 	['#first', FIRST],
 	['#second', SECOND]
@@ -750,22 +752,63 @@ test('a move of the eye begun ahead of its share reads an object where a move ru
 	expect(reading.read).toEqual(stage.drawn.map((scene) => scene.objects[0]!.box));
 });
 
-test('a move of the window that reads the page is refused where it would be begun ahead of its share, as a move asking where the frame will stand asks', async () => {
+test('a shade keeping a part of the page sharp may be begun ahead of its share, as a move asking where the frame will stand asks: the take reads the part off the page on the frame', async () => {
+	const stage = new PicturedStageThatKeeps();
 	const moves = [
 		new AskingTheFrame({ start: 0 }, [5 / RATE]),
 		windowShade({ blur: 4, sharp: '#first', within: { start: 0.5 } })
 	];
-	await expect(
-		unblurredTakeOf(new FootageOf([5]), new PicturedStageThatKeeps()).run([play({ seconds: 6 / RATE, moves })])
-	).rejects.toThrow(
-		new TakeError(
-			new FilmError(
-				'a move of the camera, the window or the eye beginning while a page runs with its pace judged on the frame is begun as the run begins, to know where the frame will stand: begun so early, it may read the scene alone, not the page or where the frame will stand; let it begin once the run is at rest'
-			),
-			0,
-			1
-		)
-	);
+	await unblurredTakeOf(new FootageOf([5]), stage).run([play({ seconds: 6 / RATE, moves })]);
+	expect(stage.drawn.map((scene) => scene.window.sharp?.box)).toEqual([FIRST]);
+});
+
+test('the part of the page a shade keeps sharp is read off the page again after an act, so it stays on the block the film named as the page lays it out anew', async () => {
+	const boxes = new Map(PAGE);
+	const stage = new PicturedStageThatKeeps();
+	const take = new Take({
+		opened: openedOn(new PageOfBoxes(boxes), stage),
+		footage: new FootageOf([0, 1]),
+		track: new TrackThatKeeps(),
+		format: SMALL,
+		opening: openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
+		motionBlur: null,
+		framesPerSecond: RATE
+	});
+	await take.run([
+		cut(windowShade({ blur: 4, sharp: '#first' })),
+		hold({ seconds: 1 / RATE }),
+		act(() => {
+			boxes.set('#first', SECOND);
+			return Promise.resolve();
+		}),
+		hold({ seconds: 1 / RATE })
+	]);
+	expect(stage.drawn.map((scene) => scene.window.sharp?.box)).toEqual([FIRST, SECOND]);
+});
+
+test('the part of the page a shade keeps sharp is not read while the page is blurred none, so an act may take its block off the screen then', async () => {
+	const boxes = new Map(PAGE);
+	const stage = new PicturedStageThatKeeps();
+	const take = new Take({
+		opened: openedOn(new PageOfBoxes(boxes), stage),
+		footage: new FootageOf([0, 1]),
+		track: new TrackThatKeeps(),
+		format: SMALL,
+		opening: openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
+		motionBlur: null,
+		framesPerSecond: RATE
+	});
+	await take.run([
+		cut(windowShade({ blur: 4, sharp: '#first' })),
+		hold({ seconds: 1 / RATE }),
+		cut(windowShade({ blur: 0 })),
+		act(() => {
+			boxes.set('#first', OFF_THE_SCREEN);
+			return Promise.resolve();
+		}),
+		hold({ seconds: 1 / RATE })
+	]);
+	expect(stage.drawn.map((scene) => scene.window.sharp?.box)).toEqual([FIRST, undefined]);
 });
 
 test("a page framed live is acted on laid flat as the filmed page, while the screen shows the film's own", async () => {

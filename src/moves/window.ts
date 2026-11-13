@@ -42,27 +42,26 @@ import { besideTheWindow } from '../props/note.ts';
 import {
 	A_BLUR_SEEN,
 	A_SHADE_REACH,
+	A_SHARP_PART,
 	type BlurSeen,
 	type PageWindow,
 	SHADE_KINDS,
 	SHADE_NAMES,
 	type Shade,
 	type ShadeReach,
-	type ShadeWritten
+	type ShadeWritten,
+	type SharpNamed
 } from '../props/window.ts';
 import {
-	A_TARGET,
 	type Beginning,
 	type Change,
 	type Move,
-	THE_FIRST,
 	TIMING_FORM,
-	type Target,
 	type TimingScript,
 	refuseWithoutThePicture,
-	shownPart,
 	timingOf
 } from '../direction/move.ts';
+import { SHARP_MOVE } from '../direction/sharp.ts';
 import { withProp } from '../scene.ts';
 import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
 import { type ThroughScript, throughFormOf, throughWritten } from './through.ts';
@@ -88,14 +87,14 @@ export interface WindowHideScript extends TimingScript {
 
 /**
  * How far the page is dimmed, `dim`, and faded into the film's ground, `fade`, each from 0 none to 1 whole, how far it
- * is blurred, `blur`, in pixels of a frame 1080 high, the part of it the blur leaves `sharp`, a block or a box of the
- * screen, or none, `'none'`, how far that part softens toward the blur, `sharpSoftens`, from 0 none to 1 as soft as
- * the page round it, how far the shade reaches, `reaching`, the page alone, `'page'`, or the whole window, `'window'`,
- * and where the blur is as wide as written, `blurSeen`, on the page, `'on the page'`, or on the frame,
- * `'on the frame'`; any left out as it stands.
+ * is blurred, `blur`, in pixels of a frame 1080 high, the part of it the blur leaves `sharp`, a block, a box of the
+ * screen or a stretch of blocks, or none, `'none'`, how far that part softens toward the blur, `sharpSoftens`, from 0
+ * none to 1 as soft as the page round it, how far the shade reaches, `reaching`, the page alone, `'page'`, or the whole
+ * window, `'window'`, and where the blur is as wide as written, `blurSeen`, on the page, `'on the page'`, or on the
+ * frame, `'on the frame'`; any left out as it stands.
  */
 export interface ShadeScript extends TimingScript, Partial<ShadeWritten> {
-	readonly sharp?: Target;
+	readonly sharp?: SharpNamed;
 	readonly reaching?: ShadeReach;
 	readonly blurSeen?: BlurSeen;
 }
@@ -112,7 +111,7 @@ const SHOW_FORM: Form<WindowShowScript> = { at: needed(A_PLACE), from: needed(A_
 const HIDE_FORM: Form<WindowHideScript> = { toward: needed(A_FRAME_SIDE), ...TIMING_FORM };
 const SHADE_FORM: Form<ShadeScript> = {
 	...SHADE_KINDS,
-	sharp: A_TARGET,
+	sharp: A_SHARP_PART,
 	reaching: A_SHADE_REACH,
 	blurSeen: A_BLUR_SEEN,
 	...TIMING_FORM
@@ -120,7 +119,6 @@ const SHADE_FORM: Form<ShadeScript> = {
 // The window's values a shade sets: the shade's own, the part of the page its blur leaves sharp, how far it reaches
 // and where its blur is as wide as written; and that part, as a refusal names it
 const SHADED = [...SHADE_NAMES, 'sharp', 'reaching', 'blurSeen'] as const satisfies readonly (keyof PageWindow)[];
-const SHARP_MOVE = "window.shade's sharp";
 // The window's values a move that carries it sets, and one that leans it; what each writes is held to them
 const CARRIED = ['box', 'lift', 'depth'] as const satisfies readonly (keyof Placing)[];
 const LEANT = ['angle', 'about'] as const satisfies readonly (keyof Placing)[];
@@ -303,11 +301,11 @@ function leaning(beginning: Beginning, script: LeanScript): Change {
  * film names them, from the move's start, as none has values between one and the next, and slid across the page a
  * part's edge would slide over the words.
  */
-async function shading(beginning: Beginning, script: ShadeScript): Promise<Change> {
+function shading(beginning: Beginning, script: ShadeScript): Change {
 	const start: Shade = beginning.scene.window;
 	const end = valuesWith(start, script, SHADE_KINDS);
 	const names = namesGiven(script, SHADE_NAMES);
-	const sharp = script.sharp === undefined ? {} : { sharp: await sharpRead(beginning, script.sharp) };
+	const sharp = script.sharp === undefined ? {} : { sharpNamed: sharpNamedFrom(beginning, script.sharp) };
 	const reaching = script.reaching === undefined ? {} : { reaching: script.reaching };
 	const blurSeen = script.blurSeen === undefined ? {} : { blurSeen: script.blurSeen };
 	return writing((progress) => ({
@@ -319,14 +317,14 @@ async function shading(beginning: Beginning, script: ShadeScript): Promise<Chang
 }
 
 /**
- * The part of the screen the shade's blur leaves sharp, as the move begins: what the screen shows of the block or the
- * box the film names, refused where the stage draws no picture of the filmed page, which the part is drawn from; none
- * where the film names none.
+ * The part of the page the shade's blur leaves sharp as the film names it, which the take reads off the page
+ * (`src/direction/sharp.ts`), refused where the stage draws no picture of the filmed page, which the part is drawn
+ * from; none where the film names none.
  */
-async function sharpRead(beginning: Beginning, sharp: Target): Promise<Box | null> {
+function sharpNamedFrom(beginning: Beginning, sharp: SharpNamed): SharpNamed | null {
 	if (sharp === NONE_SHARP) return null;
 	refuseWithoutThePicture(beginning, SHARP_MOVE);
-	return shownPart(beginning, sharp, THE_FIRST, SHARP_MOVE);
+	return sharp;
 }
 
 /**

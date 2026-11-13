@@ -26,6 +26,7 @@ import {
 } from '../../src/domain/geometry.ts';
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
 import { type Beginning, type Move, type StepBegunIn, ownPagesOf } from '../../src/direction/move.ts';
+import { sharpPartRead } from '../../src/direction/sharp.ts';
 import { type Rounding, pageKeyOf } from '../../src/direction/page.ts';
 import { play } from '../../src/direction/steps.ts';
 import { onto, to as cameraTo } from '../../src/moves/camera.ts';
@@ -147,6 +148,7 @@ import {
 } from '../../src/scene.ts';
 import {
 	FOCAL_LENGTH,
+	PageOfBlockLists,
 	PageOfBoxes,
 	PageOfLetters,
 	PageOfRoundedBlocks,
@@ -3272,20 +3274,73 @@ test("the shade's blur is seen on the page till a film has it seen on the frame,
 	]);
 });
 
-test("the shade's blur leaves a part of the screen sharp, a block or a box, the new part from the move's start as the blur goes on through the values between, and none where the film names none", async () => {
+test("the shade's blur leaves a part of the page sharp as the film names it, a block, a box or a stretch, the new part from the move's start as the blur goes on through the values between, and none where the film names none", async () => {
 	const box = { left: 300, top: 50, width: 120, height: 60 };
+	const stretch = { blocks: '#line, #thread', across: '.card' };
 	const onTheBlock = await setAt(windowShade({ blur: 8, sharp: '#block' }), OPENING_IN_SMALL, 0.5);
 	const handedOn = await setAt(windowShade({ sharp: box }), onTheBlock, 0);
-	const noneKept = await setAt(windowShade({ sharp: 'none' }), handedOn, 0);
-	expect([onTheBlock, handedOn, noneKept].map((scene) => [scene.window.blur, scene.window.sharp])).toEqual([
-		[4, BLOCK],
+	const onTheStretch = await setAt(windowShade({ sharp: stretch }), handedOn, 0);
+	const noneKept = await setAt(windowShade({ sharp: 'none' }), onTheStretch, 0);
+	expect(
+		[onTheBlock, handedOn, onTheStretch, noneKept].map((scene) => [scene.window.blur, scene.window.sharpNamed])
+	).toEqual([
+		[4, '#block'],
 		[4, box],
+		[4, stretch],
 		[4, null]
 	]);
 });
 
+// A line of the page and the thread under it, as wide as the page; the thread's card inside it, as two blocks, the
+// card's frame and its words, which reach past the frame's right edge
+const LINE = { left: 50, top: 100, width: 500, height: 20 };
+const THREAD = { left: 50, top: 120, width: 500, height: 200 };
+const CARD_FRAME = { left: 62, top: 128, width: 476, height: 180 };
+const CARD_WORDS = { left: 70, top: 140, width: 474, height: 40 };
+const PAGE_OF_A_THREAD = new PageOfBlockLists(
+	new Map([
+		['#line, #thread', [LINE, THREAD]],
+		['.card', [CARD_FRAME, CARD_WORDS]]
+	])
+);
+
+/** A scene as the take leaves it on a frame, the part its shade keeps sharp read off the page: the test's block. */
+function readAsTheBlock(scene: Scene): Scene {
+	return withProp(scene, 'window', { ...scene.window, sharp: BLOCK });
+}
+
+test("a stretch of the page kept sharp is read as every block its blocks' selector matches, together, as wide across as every block its across's selector matches", async () => {
+	const onThePage = { page: PAGE_OF_A_THREAD, format: SMALL };
+	expect([
+		await sharpPartRead(onThePage, { blocks: '#line, #thread' }),
+		await sharpPartRead(onThePage, { blocks: '#line, #thread', across: '.card' })
+	]).toEqual([
+		{ left: 50, top: 100, width: 500, height: 220 },
+		{ left: 62, top: 100, width: 482, height: 220 }
+	]);
+});
+
+test("a box the shade's blur leaves sharp is refused in a box's words where a value of it is wrong", () => {
+	expect(() => windowShade({ sharp: { ...LINE, width: 'wide' } as unknown as Box })).toThrow(
+		new FilmError('window.shade\'s sharp\'s width is "wide": it is a number of pixels, 0 or more')
+	);
+});
+
+test("a stretch of the page the shade's blur leaves sharp is refused where it names no blocks, or names them other than by a selector", () => {
+	expect(() => windowShade({ sharp: { across: '.card' } as unknown as { blocks: string } })).toThrow(
+		new FilmError(
+			"window.shade's sharp's blocks is undefined: it is a selector: a string that names blocks of the page"
+		)
+	);
+	expect(() => windowShade({ sharp: { blocks: '#line', across: LINE } as unknown as { blocks: string } })).toThrow(
+		new FilmError(
+			'window.shade\'s sharp\'s across is {"left":50,"top":100,"width":500,"height":20}: it is a selector: a string that names blocks of the page'
+		)
+	);
+});
+
 test("the stage is handed the part the shade's blur leaves sharp, its edge softening over half as far as the blur; none where the page is blurred none", async () => {
-	const blurred = await setAt(windowShade({ blur: 8, sharp: '#block' }), OPENING_IN_SMALL, 1);
+	const blurred = readAsTheBlock(await setAt(windowShade({ blur: 8, sharp: '#block' }), OPENING_IN_SMALL, 1));
 	const unblurred = await setAt(windowShade({ blur: 0 }), blurred, 1);
 	expect(
 		[blurred, unblurred].map((scene) => drawn(scene, cameraOf(scene, SMALL), 0, SMALL, NONE_SHARPER).window.sharp)
@@ -3293,7 +3348,7 @@ test("the stage is handed the part the shade's blur leaves sharp, its edge softe
 });
 
 test("the part the shade's blur leaves sharp softens toward the blur as far as the film names, a share of the way through the values between, and the stage is handed the share and the part blurred by that share of the page's blur; wholly sharp where it softens none", async () => {
-	const kept = await setAt(windowShade({ blur: 8, sharp: '#block' }), OPENING_IN_SMALL, 1);
+	const kept = readAsTheBlock(await setAt(windowShade({ blur: 8, sharp: '#block' }), OPENING_IN_SMALL, 1));
 	const softening = await setAt(windowShade({ sharpSoftens: 0.75 }), kept, 0.5);
 	const softened = await setAt(windowShade({ sharpSoftens: 0.75 }), kept, 1);
 	const sharpAgain = await setAt(windowShade({ sharpSoftens: 0 }), softened, 1);
@@ -3318,7 +3373,7 @@ test("a part of the page kept sharp in the shade's blur is refused where the sta
 	);
 	expect(() => windowShade({ sharp: 3 as unknown as string })).toThrow(
 		new FilmError(
-			"window.shade's sharp is 3: it is a selector: a string that names blocks of the page, or a box of the page's screen: { left, top, width, height }, in its pixels"
+			"window.shade's sharp is 3: it is a selector: a string that names blocks of the page, a box of the page's screen: { left, top, width, height }, in its pixels, or a stretch of the page: { blocks, across }, selectors, every block each matches together"
 		)
 	);
 });

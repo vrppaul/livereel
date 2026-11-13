@@ -23,7 +23,9 @@
  * move. A move begins on the page the screen shows: where that is a page of the film's own, it measures blocks there,
  * and pictures parts of it, on its copy apart from the stage's stood as the page stands at the move's moment, and its
  * scroll and keys go to the filmed page behind it. A sound a move makes is heard as the move is set at or past its
- * point, on the frame being made.
+ * point, on the frame being made. The part of the page the shade keeps sharp is read off the page by the take, not by
+ * the move that names it, on the frame after it is named and after any move of the page since, as a move's change
+ * writes its values on every frame and would keep the box it read where the page had stood.
  * A frame is drawn only when the footage keeps it, and drawn again where anything on it moved fast while its shutter
  * was open — the camera, its window, the cursor, the light, an object or what it shows — as the scene stood at moments
  * of that time: the scene the frame before left, every move begun by then set as far as it had come, and what is worked
@@ -103,8 +105,10 @@ import {
 	seenIn,
 	showingTheFilmedPage,
 	withFadeLaid,
-	withPagesLaid
+	withPagesLaid,
+	withProp
 } from '../scene.ts';
+import { sharpPartRead } from '../direction/sharp.ts';
 import { type PartPictures, picturesOn } from './pictures.ts';
 import type { Exposures, Footage, FramedStage, Opened, PicturedStage, Stage, Track } from './ports.ts';
 
@@ -112,6 +116,8 @@ import type { Exposures, Footage, FramedStage, Opened, PicturedStage, Stage, Tra
 const HALF_WAY = 0.5;
 // How far a frame smears where nothing on it moves
 const NOTHING_SMEARED = 0;
+// The shade's blur of a page blurred none, which keeps no part of it sharp
+const UNBLURRED = 0;
 // The end of a step, where every move of it stands at its end; and how many parts a frame asks where it asks none
 const AT_THEIR_ENDS = 1;
 const NONE = 0;
@@ -230,6 +236,11 @@ export class Take {
 	// speed; and the film's moment they took it to
 	private pageMoment = 0;
 	private pageRunAt = 0;
+	// The part of the page the shade keeps sharp as the film named it when its box was last read, none before the
+	// first; and whether a move of the page, an act among them, or the page itself, as its picture heard, may have
+	// changed the page since
+	private sharpReadFrom: Scene['window']['sharpNamed'] = null;
+	private pageChangedSinceSharpRead = false;
 
 	constructor(setup: TakeSetup) {
 		this.opened = setup.opened;
@@ -559,6 +570,7 @@ export class Take {
 	private async set(change: Change, progress: number, timeGone: number, changesThePage: boolean): Promise<void> {
 		this.scene = await change(this.scene, progress, timeGone);
 		this.pageChangedSinceTaken ||= changesThePage;
+		this.pageChangedSinceSharpRead ||= changesThePage;
 	}
 
 	/**
@@ -569,11 +581,31 @@ export class Take {
 	private async frame(time: FrameTime, pageMovesOn: boolean): Promise<void> {
 		await this.pageTimeRunOn(time.before);
 		await this.refusedWhereGone();
+		await this.sharpPartReadAnew();
 		if (this.footage.keeps(this.shot)) {
 			await this.footage.keep(this.shot, await this.exposed(time, pageMovesOn));
 		}
 		await this.pictures.letGoUnnamedBy(this.scene, this.moment());
 		this.shot += 1;
+	}
+
+	/**
+	 * The part of the screen the shade's blur leaves sharp read off the filmed page, whose picture it is drawn from,
+	 * where the film has named another part, or the page may have changed since it was read, so the part stays on the
+	 * blocks the film named it by; none where the film names none. Read only on a frame that blurs the page, as no
+	 * other draws a part sharp, so a part named and left behind unblurred is never read where the page has since taken
+	 * it away.
+	 */
+	private async sharpPartReadAnew(): Promise<void> {
+		const { sharpNamed: named, blur } = this.scene.window;
+		if (blur <= UNBLURRED) return;
+		const asRead = named === this.sharpReadFrom && !this.pageChangedSinceSharpRead;
+		this.pageChangedSinceSharpRead = false;
+		if (asRead) return;
+		this.sharpReadFrom = named;
+		const reading = { page: this.opened.page, format: this.format };
+		const sharp = named === null ? null : await sharpPartRead(reading, named);
+		this.scene = withProp(this.scene, 'window', { ...this.scene.window, sharp });
 	}
 
 	/**
@@ -712,7 +744,10 @@ export class Take {
 			case 'framed':
 				return false;
 			case 'pictured':
-				if (stage.changedOfItself()) this.pageChangedSinceTaken = true;
+				if (stage.changedOfItself()) {
+					this.pageChangedSinceTaken = true;
+					this.pageChangedSinceSharpRead = true;
+				}
 				return this.pageMayHaveChanged() && !(await this.pageRetaken(stage, zoom));
 		}
 	}

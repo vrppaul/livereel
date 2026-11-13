@@ -40,8 +40,28 @@ import type { Eye } from '../domain/eye.ts';
 import { type Sharpness, outOfFocusOnTheFrame, softestOutOfFocusSeen } from '../domain/focus.ts';
 import { type Matrix, type Spot, chained, inThreesAxes, longestScaleSeen, translation } from '../domain/matrix.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
-import { A_PIXELS, A_SHARE, OneOf } from '../domain/handed.ts';
-import { type Box, type Size, boxAround, boxOf, frameScaleOf, middleX, middleY, withAir } from '../domain/geometry.ts';
+import {
+	A_PIXELS,
+	A_SELECTOR,
+	A_SHARE,
+	EitherOf,
+	FormByName,
+	type Kind,
+	OfForm,
+	OneOf,
+	needed
+} from '../domain/handed.ts';
+import {
+	A_BOX,
+	type Box,
+	type Size,
+	boxAround,
+	boxOf,
+	frameScaleOf,
+	middleX,
+	middleY,
+	withAir
+} from '../domain/geometry.ts';
 import {
 	type DrawnPlacement,
 	ON_ITS_PLANE,
@@ -105,10 +125,47 @@ export const A_BLUR_SEEN = new OneOf(
 export const LIVEREELS_BLUR_SEEN: BlurSeen = ON_THE_PAGE;
 
 /**
- * The window: where it stands, how it shades the page, the part of the screen its blur leaves sharp, how far its shade
- * reaches, where its blur is as wide as written, and its body.
+ * A stretch of the page the shade's blur leaves sharp, which no one block is: every block `blocks` matches, together,
+ * as a selector list names a line and the thread under it; as wide across as every block `across` matches together,
+ * where named, which may reach past the blocks, so what the page draws past a thread's card, a bar down the line's
+ * edge and a scroll bar laid over its end, stands soft with the page round them.
+ */
+export interface SharpStretch {
+	readonly blocks: string;
+	readonly across?: string;
+}
+
+/**
+ * The part of the page the shade's blur leaves sharp as a film names it: the first block a selector matches, a box of
+ * the screen, or a stretch of blocks.
+ */
+export type SharpNamed = string | Box | SharpStretch;
+
+// A stretch kept sharp as a film writes it; and a part kept sharp, a selector, or an object told a stretch by a name
+// only a stretch has, else a box, each refused in its own words
+const A_SHARP_STRETCH = new OfForm<SharpStretch>(
+	{ blocks: needed(A_SELECTOR), across: A_SELECTOR },
+	'a stretch of the page: { blocks, across }, selectors, every block each matches together'
+);
+export const A_SHARP_PART: Kind<SharpNamed> = new EitherOf<string, Box | SharpStretch>(
+	A_SELECTOR,
+	new FormByName<Box | SharpStretch>(
+		[
+			['blocks', A_SHARP_STRETCH],
+			['across', A_SHARP_STRETCH]
+		],
+		A_BOX,
+		`${A_SELECTOR.said}, ${A_BOX.said}, or ${A_SHARP_STRETCH.said}`
+	)
+);
+
+/**
+ * The window: where it stands, how it shades the page, the part of the page its blur leaves sharp as the film named it
+ * and the part of the screen that showed when the take last read it, which the take reads anew wherever the page may
+ * have changed since, how far its shade reaches, where its blur is as wide as written, and its body.
  */
 export interface PageWindow extends Placing, Shade {
+	readonly sharpNamed: SharpNamed | null;
 	readonly sharp: Box | null;
 	readonly reaching: ShadeReach;
 	readonly blurSeen: BlurSeen;

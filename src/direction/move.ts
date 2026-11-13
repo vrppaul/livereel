@@ -212,6 +212,12 @@ export const A_MOVES: Kind<readonly Move[]> = new ListOf(A_MOVE, 'a list of move
 export type StepBegunIn =
 	{ readonly kind: 'play'; readonly cameraAt: (moment: number) => Promise<Camera> } | { readonly kind: 'cut' };
 
+/** What a block is read off: the page, and the format, whose screen the page is laid out on. */
+export interface PageReading {
+	readonly page: FilmedPage;
+	readonly format: Format;
+}
+
 /**
  * What a move reads as its share begins: the scene, the page, the format, and how the stage shows the page; the
  * stretch of the film's time its share takes, for a move that sets what runs on with time; the take's way to act on
@@ -219,10 +225,8 @@ export type StepBegunIn =
  * what is drawn from one; and the step it begins in, for a move judged on the frame and a fade, which lays the page it
  * leaves where the frame shows it.
  */
-export interface Beginning {
+export interface Beginning extends PageReading {
 	readonly scene: Scene;
-	readonly page: FilmedPage;
-	readonly format: Format;
 	readonly pageShown: PageShown;
 	/** The moment the share begins, how long it lasts, none in a cut, and the curve the move goes along it on. */
 	readonly stretch: Stretch;
@@ -414,9 +418,9 @@ export function refuseWithoutThePicture(beginning: Beginning, move: string): voi
  * in the move's own words: the move would go where nothing of the block shows. A block above or below is scrolled in
  * by `page.scrollTo`; one beside the screen, by an act, as no move of livereel scrolls the page sideways.
  */
-export async function shownBox(beginning: Beginning, target: Target, every: number, move: string): Promise<Box> {
-	const box = typeof target === 'string' ? await beginning.page.box(target, every) : target;
-	const screen = beginning.format.screen;
+export async function shownBox(reading: PageReading, target: Target, every: number, move: string): Promise<Box> {
+	const box = typeof target === 'string' ? await reading.page.box(target, every) : target;
+	const screen = reading.format.screen;
 	const named = `${move}'s ${targetSaid(target)}`;
 	if (box.width === NO_SIZE && box.height === NO_SIZE) {
 		throw new FilmError(`${named} ${typeof target === 'string' ? HIDDEN_SAID : NO_SIZE_GIVEN}`);
@@ -454,8 +458,8 @@ export const THE_FIRST = 1;
  * What the page's screen shows of a target, the blocks a selector matches or a box, refused as `shownBox` refuses:
  * the part a camera can frame and a cursor rest on, as nothing past the screen is drawn.
  */
-export async function shownPart(beginning: Beginning, target: Target, every: number, move: string): Promise<Box> {
-	return partWithin(await shownBox(beginning, target, every, move), beginning.format.screen);
+export async function shownPart(reading: PageReading, target: Target, every: number, move: string): Promise<Box> {
+	return partWithin(await shownBox(reading, target, every, move), reading.format.screen);
 }
 
 /** A target as a refusal names it: its selector, or the box as the film wrote it. */

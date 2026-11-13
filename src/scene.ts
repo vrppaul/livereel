@@ -217,6 +217,7 @@ export function openingScene(format: Format, look: Look, world: WorldLook, focal
 		window: {
 			...placedIn(wholeView(format.frame)),
 			...UNSHADED,
+			sharpNamed: null,
 			sharp: null,
 			reaching: LIVEREELS_REACH,
 			blurSeen: LIVEREELS_BLUR_SEEN,
