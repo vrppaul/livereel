@@ -62,7 +62,7 @@ import {
 import { PAST_A_ROUNDED_BOX, SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOfTheBox, valuesSet } from './passes.js';
 /** @import { WebGLRenderer } from 'three' */
 /** @import { DrawnScene } from '../src/scene.ts' */
-/** @import { Box, Size } from '../src/domain/geometry.ts' */
+/** @import { Box, Corners, Size } from '../src/domain/geometry.ts' */
 /** @import { SunkPit } from './piece-body.js' */
 
 /**
@@ -86,7 +86,7 @@ import { PAST_A_ROUNDED_BOX, SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOf
  *   readonly faded: number,
  *   readonly ground: Vector4,
  *   readonly mouths: readonly Vector4[],
- *   readonly mouthCorners: readonly number[],
+ *   readonly mouthCorners: readonly Vector4[],
  *   readonly mouthsOpen: readonly number[]
  * } & SharpPartLaid} PageLaid
  */
@@ -240,18 +240,26 @@ uniform bool keepsAPartSharp;
 uniform sampler2D sharpPicture;
 #if ${PITS} > 0
 uniform vec4 mouths[${PITS}];
-uniform float mouthCorners[${PITS}];
+uniform vec4 mouthCorners[${PITS}];
 uniform float mouthsOpen[${PITS}];
 #endif
 varying vec2 shareOfTheSurface;
 ${SRGB_CURVES}
 ${WHAT_STANDS_BEHIND}
 ${PAST_A_ROUNDED_BOX}
-// How far a point stands past the edge of a box, by its left, top, width and height, its corners as round as named or
+// How round the corner of a box is in the quarter of it a point stands in, from its middle, down the page, its corners
+// top left, top right, bottom right and bottom left
+float cornerNearest(vec2 fromTheMiddle, vec4 corners) {
+	if (fromTheMiddle.y < 0.0) return fromTheMiddle.x < 0.0 ? corners.x : corners.y;
+	return fromTheMiddle.x < 0.0 ? corners.w : corners.z;
+}
+// How far a point stands past the edge of a box, by its left, top, width and height, each corner as round as named or
 // as half its shorter side, as CSS rounds a box no further
-float pastTheEdge(vec2 point, vec4 box, float corner) {
+float pastTheEdge(vec2 point, vec4 box, vec4 corners) {
 	vec2 halfSize = box.zw * 0.5;
-	return pastARoundedBox(point - box.xy - halfSize, halfSize, min(corner, min(halfSize.x, halfSize.y)));
+	vec2 fromTheMiddle = point - box.xy - halfSize;
+	float corner = cornerNearest(fromTheMiddle, corners);
+	return pastARoundedBox(fromTheMiddle, halfSize, min(corner, min(halfSize.x, halfSize.y)));
 }
 // How much of a pixel stands inside an edge it stands so far past, the edge smoothed over a pixel of the frame
 float insideTheEdge(float past) {
@@ -478,7 +486,7 @@ export class PagePicture {
 			faded: scene.window.pageFaded,
 			ground: this.ground,
 			mouths: pits.map((pit) => valuesOfTheBox(pit.mouth)),
-			mouthCorners: pits.map((pit) => pit.corner),
+			mouthCorners: pits.map((pit) => cornersInOrder(pit.corners)),
 			mouthsOpen: pits.map((pit) => pit.open)
 		};
 		if (filmed === null) {
@@ -552,4 +560,12 @@ function screenGround() {
 	const token = getComputedStyle(document.documentElement).getPropertyValue(SCREEN_GROUND).trim();
 	const colour = new Color(token).convertLinearToSRGB();
 	return new Vector4(colour.r, colour.g, colour.b, WHOLE);
+}
+
+/**
+ * A box's corners as the page's shader reads them: top left, top right, bottom right and bottom left.
+ * @param {Corners} corners @returns {Vector4}
+ */
+function cornersInOrder(corners) {
+	return new Vector4(corners.topLeft, corners.topRight, corners.bottomRight, corners.bottomLeft);
 }

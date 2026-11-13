@@ -41,8 +41,9 @@
  * refuse a frame.
  */
 import type { CDPSession, Frame, Page } from 'playwright-core';
+import { type Channels, meanInLinearLight, opaqueHexOf } from '../../domain/colour.ts';
 import type { Format } from '../../domain/format.ts';
-import { type Box, type Size, boxOf, frameScaleOf } from '../../domain/geometry.ts';
+import { type Box, type FrameSide, type Point, type Size, boxOf, frameScaleOf } from '../../domain/geometry.ts';
 import type { Drawing } from '../../direction/film.ts';
 import type { OwnPage } from '../../direction/page.ts';
 import type { DrawnScene, ObjectList } from '../../scene.ts';
@@ -94,6 +95,14 @@ export interface HeldPicture extends PagePicture {
 	readonly number: number;
 }
 
+/** A picture the stage reads pixels off, and the points of it it reads, in its pixels from its top left. */
+export interface PixelsAsked extends PagePicture {
+	readonly points: readonly Point[];
+}
+
+/** How CDP is asked to take a picture: as a JPEG this good, or as a PNG. */
+type PictureTaken = { readonly format: 'jpeg'; readonly quality: number } | { readonly format: 'png' };
+
 /** A picture of the film's own as the stage is handed it, by the path the film names it by. */
 export interface FilmsPictureHanded extends PagePicture {
 	readonly path: string;
@@ -142,6 +151,8 @@ export interface StageApi {
 	readonly hold: (picture: HeldPicture) => Promise<void>;
 	/** A picture of a part of the screen held let go, by its number, its address with it. */
 	readonly letGo: (number: number) => void;
+	/** The pixels of a picture at points of it, each its channels from 0 to 255, as the picture decodes. */
+	readonly pixelsAt: (asked: PixelsAsked) => Promise<readonly Channels[]>;
 	/**
 	 * The pages of the film's own laid out in the screen's place in every exposure, hidden until a frame shows one, each
 	 * loaded with its fonts, its scripts kept from running; moves read them in a tab of their own (`own-pages.ts`).
@@ -224,9 +235,18 @@ export const JPEG_QUALITY = 92;
 export const ONE_AT_A_TIME = 1;
 // A frame asked to be handed on scaled to the frame's own size
 const SCALED: FramesHanded = 'scaled';
-// The page's picture is taken as a JPEG: the format as CDP names it, and the type of image the stage is handed
-const PICTURE_FORMAT = 'jpeg';
+// The page's picture is taken as a JPEG: as CDP is asked for it, and the type of image the stage is handed
+const PICTURE_TAKEN: PictureTaken = { format: 'jpeg', quality: JPEG_QUALITY };
 const PICTURE_TYPE = 'image/jpeg';
+// A part of the screen read for the colour of its edge is taken as a PNG, whose pixels no compression bleeds into one
+// another, two of its pixels to the page's whatever the shoot's quality and frame, and read 1.5 of the page's pixels
+// in from the middle of a side, past a border of a pixel, as the claude-review promo reads a thing's walls off its
+// picture (lift.js COLUMN edgeReadIn, walls.js edgeColour)
+const EDGE_TAKEN: PictureTaken = { format: 'png' };
+const EDGE_TYPE = 'image/png';
+const EDGE_READ = { scale: 2, inFromTheSide: 1.5 };
+const HALF = 0.5;
+const FIRST_PIXEL = 0;
 // How many decimal places a zoom is said to
 const PLACES_SAID = 2;
 
@@ -374,6 +394,14 @@ export class PlaywrightPicturedStage implements PicturedStage {
 		return this.page.evaluate(pictureLetGo, number);
 	}
 
+	async edgeColour(part: Box, sides: readonly FrameSide[], page: PicturedPage): Promise<string> {
+		const picture = await partPictured(this.tabOf(page), part, EDGE_READ.scale, EDGE_TAKEN);
+		const size = { width: Math.round(part.width * EDGE_READ.scale), height: Math.round(part.height * EDGE_READ.scale) };
+		const points = sides.map((side) => edgePointOf(side, size));
+		const pixels = await this.page.evaluate(pixelsRead, { base64: picture, type: EDGE_TYPE, points });
+		return opaqueHexOf(meanInLinearLight(pixels));
+	}
+
 	/** The tab a page is pictured in: the filmed page's, or the one the film's own pages stand in. */
 	private tabOf(page: PicturedPage): PictureTab {
 		switch (page) {
@@ -395,7 +423,7 @@ export class PlaywrightPicturedStage implements PicturedStage {
 		if (taken.heldBy !== null && !this.softerSaid) {
 			this.saySofter(part, zoom, taken.scale / pixelsAtZoomOne, taken.heldBy);
 		}
-		return partPictured(source, part, taken.scale);
+		return partPictured(source, part, taken.scale, PICTURE_TAKEN);
 	}
 
 	/**
@@ -448,10 +476,10 @@ function saidOf(zoom: number): number {
 }
 
 /**
- * A part of the screen as a tab shows it once its fonts have loaded, as a JPEG at a scale of its pixels to the page's,
- * which Chrome draws the page anew at, its text caret kept: its bytes in base64.
+ * A part of the screen as a tab shows it once its fonts have loaded, taken as asked at a scale of its pixels to the
+ * page's, which Chrome draws the page anew at, its text caret kept: its bytes in base64.
  */
-async function partPictured(source: PictureTab, part: Box, scale: number): Promise<string> {
+async function partPictured(source: PictureTab, part: Box, scale: number, taken: PictureTaken): Promise<string> {
 	await source.tab.evaluate(fontsLoaded);
 	const { cssVisualViewport } = await source.session.send('Page.getLayoutMetrics');
 	const clip = {
@@ -463,11 +491,7 @@ async function partPictured(source: PictureTab, part: Box, scale: number): Promi
 		height: part.height,
 		scale
 	};
-	const { data } = await source.session.send('Page.captureScreenshot', {
-		format: PICTURE_FORMAT,
-		quality: JPEG_QUALITY,
-		clip
-	});
+	const { data } = await source.session.send('Page.captureScreenshot', { ...taken, clip });
 	return data;
 }
 
@@ -500,6 +524,31 @@ function pictureHeld(picture: HeldPicture): Promise<void> {
 
 function pictureLetGo(number: number): void {
 	window.stage.letGo(number);
+}
+
+function pixelsRead(asked: PixelsAsked): Promise<readonly Channels[]> {
+	return window.stage.pixelsAt(asked);
+}
+
+/**
+ * The pixel of a picture so large read for the colour of a side of its edge: the side's middle, so far in, no farther
+ * than the picture's middle, so a part a few pixels across is read inside itself.
+ */
+function edgePointOf(side: FrameSide, picture: Size): Point {
+	const middle = { left: Math.floor(picture.width * HALF), top: Math.floor(picture.height * HALF) };
+	const inFromTheSide = Math.floor(EDGE_READ.inFromTheSide * EDGE_READ.scale);
+	const across = Math.min(inFromTheSide, middle.left);
+	const down = Math.min(inFromTheSide, middle.top);
+	switch (side) {
+		case 'left':
+			return { left: Math.max(FIRST_PIXEL, across), top: middle.top };
+		case 'right':
+			return { left: Math.max(FIRST_PIXEL, picture.width - 1 - across), top: middle.top };
+		case 'top':
+			return { left: middle.left, top: Math.max(FIRST_PIXEL, down) };
+		case 'bottom':
+			return { left: middle.left, top: Math.max(FIRST_PIXEL, picture.height - 1 - down) };
+	}
 }
 
 /** The film's own pictures laid on the stage: the size each decoded at. */

@@ -8,9 +8,10 @@ import { access, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { FilmError } from '../domain/errors.ts';
-import { A_BOX, type Size } from '../domain/geometry.ts';
+import { A_BOX, type Corners, type Size } from '../domain/geometry.ts';
 import {
 	A_COLOUR,
+	A_PIXELS,
 	A_SELECTOR,
 	A_SHARPNESS,
 	A_SIZE,
@@ -35,14 +36,21 @@ const NO_SUCH_FILE = 'ENOENT';
 // A folder taken whole, what is in it with it, and one the set is shot into made with those it stands in
 const WHOLE = { recursive: true, force: true } as const;
 const WITH_ITS_FOLDERS = { recursive: true } as const;
+const CORNERS_FORM: Form<Corners> = {
+	topLeft: needed(A_PIXELS),
+	topRight: needed(A_PIXELS),
+	bottomRight: needed(A_PIXELS),
+	bottomLeft: needed(A_PIXELS)
+};
 const TARGET_FORM: Form<TargetShot> = {
 	target: needed(A_SELECTOR),
 	boxes: needed(new ListOf(A_BOX, 'a list of boxes')),
-	ground: needed(A_COLOUR)
+	ground: needed(A_COLOUR),
+	corners: needed(new OfForm(CORNERS_FORM, 'corners: { topLeft, topRight, bottomRight, bottomLeft }'))
 };
 const STATE_FORM: Form<StateNoted> = {
 	name: needed(A_STATE_NAME),
-	targets: needed(new ListOf(new OfForm(TARGET_FORM, 'a target as shot: { target, boxes, ground }'), 'a list'))
+	targets: needed(new ListOf(new OfForm(TARGET_FORM, 'a target as shot: { target, boxes, ground, corners }'), 'a list'))
 };
 const SET_FILE_FORM: Form<SetNoted> = {
 	screen: needed(new OfForm<Size>({ width: needed(A_SIZE), height: needed(A_SIZE) }, 'a size: { width, height }')),

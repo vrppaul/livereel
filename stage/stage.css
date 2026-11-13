@@ -346,7 +346,7 @@ body {
 	pointer-events: none;
 }
 
-/* A hole: the part of the screen a piece was lifted off, its corners as round as its piece's, filled with its colour, as far as its piece has come; ringed in the accent where it has a line, as wide on the frame however close the camera comes */
+/* A hole: the part of the screen a piece was lifted off, each corner as round as its piece's block draws it, filled with its colour, as far as its piece has come; ringed in the accent where it has a line, as wide on the frame however close the camera comes */
 .hole {
 	position: absolute;
 	left: calc(var(--left) * 1px);
@@ -354,7 +354,8 @@ body {
 	width: calc(var(--width) * 1px);
 	height: calc(var(--height) * 1px);
 	box-sizing: border-box;
-	border-radius: calc(var(--corner) * 1px);
+	border-radius: calc(var(--corner-top-left) * 1px) calc(var(--corner-top-right) * 1px)
+		calc(var(--corner-bottom-right) * 1px) calc(var(--corner-bottom-left) * 1px);
 	background: var(--hole-ground);
 	opacity: var(--shown);
 }
@@ -1415,7 +1416,7 @@ body {
 	background-repeat: no-repeat;
 }
 
-/* A piece of the page's corners, each as round as the engine works it out — the film's, or the window's where it stands on the window's corner — the holes it shows cut to them, so the shadow, the glow and the ring of its effects follow them */
+/* A piece of the page's corners, each as round as the engine works it out — its block's, the film's for a stretch of the page, or the window's where it stands on the window's corner — the holes it shows cut to them, so the shadow, the glow and the ring of its effects follow them */
 .piece .way {
 	border-radius: calc(var(--corner-top-left) * 1px / var(--frame-scale))
 		calc(var(--corner-top-right) * 1px / var(--frame-scale)) calc(var(--corner-bottom-right) * 1px / var(--frame-scale))
@@ -1430,7 +1431,9 @@ body {
 	top: calc(var(--top) * 1px / var(--frame-scale));
 	width: calc(var(--width) * 1px / var(--frame-scale));
 	height: calc(var(--height) * 1px / var(--frame-scale));
-	border-radius: calc(var(--corner) * 1px / var(--frame-scale));
+	border-radius: calc(var(--corner-top-left) * 1px / var(--frame-scale))
+		calc(var(--corner-top-right) * 1px / var(--frame-scale)) calc(var(--corner-bottom-right) * 1px / var(--frame-scale))
+		calc(var(--corner-bottom-left) * 1px / var(--frame-scale));
 }
 
 /* An outline's figure: a ring a little clear of its box on every side, in the accent's colour, whole or in dashes */

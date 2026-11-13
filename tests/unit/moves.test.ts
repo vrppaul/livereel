@@ -11,6 +11,7 @@ import type { Format } from '../../src/domain/format.ts';
 import {
 	type Box,
 	CORNER_SHARES,
+	type FrameSide,
 	type Point,
 	type Segment,
 	boxOf,
@@ -147,6 +148,7 @@ import {
 	FOCAL_LENGTH,
 	PageOfBoxes,
 	PageOfLetters,
+	PageOfRoundedBlocks,
 	PageScrollingBy,
 	PicturesHeld,
 	SMALL,
@@ -192,9 +194,10 @@ const OTHER = { left: 1200, top: 600, width: 100, height: 60 };
 const ROW = { left: 1100, top: 590, width: 300, height: 80 };
 const ROWS_GROUND = '#0d1117';
 // No move here acts on the page: an act at a moment of a play is the take's, tested there; nor holds a picture of a
-// part of the screen, but where a test hands it a stand-in that does
+// part of the screen, nor reads the colour of its edge, but where a test hands it a stand-in that does
 const NO_ACT = undefined as never;
 const NO_PICTURE_HELD = undefined as never;
+const NO_EDGE_READ = undefined as never;
 // The things the film's module builds, as a room loaded it: a card
 const THINGS_BUILT = ['card'];
 // The film's own pictures the stage laid, by their paths, as their files were decoded, four times as wide as tall: a
@@ -205,7 +208,10 @@ const FILMS_PICTURES = new Map([
 	['detailed.png', { aspect: 4, sharpAcross: DETAILED_ACROSS }],
 	['mark.svg', { aspect: 4, sharpAcross: Infinity }]
 ]);
-const PAGE = new PageOfBoxes(
+// How round the page draws the card: rounder at its top than at its foot; and the colour a stage reads along an edge
+const CARDS_CORNERS = { topLeft: 18, topRight: 18, bottomRight: 6, bottomLeft: 6 };
+const EDGE_READ = '#2c3a52';
+const PAGE = new PageOfRoundedBlocks(
 	new Map([
 		['#block', BLOCK],
 		['#below', BELOW],
@@ -230,7 +236,8 @@ const PAGE = new PageOfBoxes(
 	new Map([
 		['#card', CARDS_GROUND],
 		['#row', ROWS_GROUND]
-	])
+	]),
+	new Map([['#card', CARDS_CORNERS]])
 );
 // The page the card is lifted off with the letters it carries, the first of its code's 420 across and 330 down, a
 // letter stepping 12 and 20 tall; the other block's first letter half as large, from 1210 across and 615 down; one
@@ -386,6 +393,7 @@ function beginningIn(scene: Scene, format: Format): Beginning {
 		pageShown: 'pictured',
 		act: NO_ACT,
 		holdPicture: NO_PICTURE_HELD,
+		edgeColour: NO_EDGE_READ,
 		thingsBuilt: THINGS_BUILT,
 		filmsPictures: FILMS_PICTURES
 	};
@@ -400,6 +408,16 @@ function beginningHolding(scene: Scene, format: Format, pictures: PicturesHeld):
 async function heldIn(move: Move, scene: Scene, format: Format, pictures: PicturesHeld): Promise<Scene> {
 	const change = await move.begin(beginningHolding(scene, format, pictures));
 	return change(scene, 1);
+}
+
+/** A take's way to read the colour along a part's edge, as a move asks it: each part and its sides kept, one colour. */
+class EdgesRead {
+	readonly asked: { readonly part: Box; readonly sides: readonly FrameSide[] }[] = [];
+
+	read(part: Box, sides: readonly FrameSide[]): Promise<string> {
+		this.asked.push({ part, sides });
+		return Promise.resolve(EDGE_READ);
+	}
 }
 
 /** The scene a move sets, begun on a scene, at a progress of its way. */
@@ -1355,7 +1373,7 @@ test('a piece emptying a block stands it empty at once, the ground the page draw
 	const emptying = await setIn(piece.empties('#row'), lifted, 0, FULL_HD);
 	const ownShown = await setIn(screenShows(OWN_PAGE), emptying, 1, FULL_HD);
 	const fading = await setIn(piece.hide({ leave: 'fade' }), emptying, 0.25, FULL_HD);
-	const emptied = { name: 'piece', box: ROW, ground: ROWS_GROUND, line: null, corner: 0, pit: null };
+	const emptied = { name: 'piece', box: ROW, ground: ROWS_GROUND, line: null, corners: SQUARE_CORNERS, pit: null };
 	expect([emptying, ownShown, fading].map((scene) => drawnInFullHdAt(scene, 0).holes)).toEqual([
 		[{ ...emptied, shown: 1 }],
 		[],
@@ -1389,7 +1407,7 @@ test("a piece wiped away from a block it emptied crosses the block and itself as
 				box: closeToBox({ left: 1181.25, top: 590, width: 218.75, height: 80 }),
 				ground: ROWS_GROUND,
 				line: null,
-				corner: 0,
+				corners: SQUARE_CORNERS,
 				shown: 1,
 				pit: null
 			}
@@ -2309,14 +2327,14 @@ test('while the screen fades from one page into another, the holes left in the p
 	]);
 });
 
-test("a piece lifted with a hole leaves on the screen, where it was lifted, the ground the page draws behind its block or the film's colour, ringed in the line the film names, as far as the piece has come and not gone", async () => {
+test("a piece lifted with a hole leaves on the screen, where it was lifted, the ground the page draws behind its block or the film's colour, as round as the block is drawn, ringed in the line the film names, as far as the piece has come and not gone", async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const coming = await setIn(piece.show('#card', { hole: {} }), wide, 0.5, FULL_HD);
 	const area = piece.show(OTHER, { hole: { ground: '#112233', line: 'dashed' }, as: 'area' });
 	const both = await setIn(area, coming, 1, FULL_HD);
 	expect(drawn(both, cameraOf(both, FULL_HD), 0, FULL_HD, NONE_SHARPER).holes).toEqual([
-		{ name: 'piece', box: CARD, ground: CARDS_GROUND, line: null, corner: 0, shown: 0.5, pit: null },
-		{ name: 'area', box: OTHER, ground: '#112233', line: 'dashed', corner: 0, shown: 1, pit: null }
+		{ name: 'piece', box: CARD, ground: CARDS_GROUND, line: null, corners: CARDS_CORNERS, shown: 0.5, pit: null },
+		{ name: 'area', box: OTHER, ground: '#112233', line: 'dashed', corners: SQUARE_CORNERS, shown: 1, pit: null }
 	]);
 });
 
@@ -2324,7 +2342,6 @@ test("a piece's hole reaching past it is as much wider each way and as much roun
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const socket = piece.show('#card', {
 		inside: 'world',
-		corner: 6,
 		body: { thickness: 12, walls: '#e6e8ec' },
 		hole: { ground: '#07090d', reach: 3 }
 	});
@@ -2342,22 +2359,19 @@ test("a piece's hole reaching past it is as much wider each way and as much roun
 	// frame's in the page lifted whole
 	const socketBox = { left: 397, top: 297, width: 206, height: 106 };
 	const pitBox = { left: 1198, top: 598, width: 104, height: 64 };
+	// The card's corners each 3 rounder, the other block's, square, 2
+	const socketCorners = { topLeft: 21, topRight: 21, bottomRight: 9, bottomLeft: 9 };
+	const pitCorners = { topLeft: 2, topRight: 2, bottomRight: 2, bottomLeft: 2 };
+	const socketHole = { name: 'piece', box: socketBox, ground: '#07090d', line: null, corners: socketCorners, shown: 1 };
+	const pitHole = { name: 'part', box: pitBox, ground: '#112233', line: null, corners: pitCorners, shown: 1 };
 	expect([scene.holes, pageShows.holes]).toEqual([
 		[
-			{ name: 'piece', box: socketBox, ground: '#07090d', line: null, corner: 9, shown: 1, pit: null },
-			{
-				name: 'part',
-				box: pitBox,
-				ground: '#112233',
-				line: null,
-				corner: 2,
-				shown: 1,
-				pit: { depth: 14, walls: '#1d2a44', glow: 0, clear: 1, shaded: null }
-			}
+			{ ...socketHole, pit: null },
+			{ ...pitHole, pit: { depth: 14, walls: '#1d2a44', glow: 0, clear: 1, shaded: null } }
 		],
 		[
-			{ name: 'piece', box: socketBox, ground: '#07090d', line: null, corner: 9, shown: 1, pit: null },
-			{ name: 'part', box: pitBox, ground: '#112233', line: null, corner: 2, shown: 1, pit: null }
+			{ ...socketHole, pit: null },
+			{ ...pitHole, pit: null }
 		]
 	]);
 });
@@ -2365,29 +2379,75 @@ test("a piece's hole reaching past it is as much wider each way and as much roun
 test("a hole's pit is refused on a piece with no body, whose colour its walls take", () => {
 	expect(() => piece.show('#card', { inside: 'world', hole: { pit: { depth: 14 } } })).toThrow(
 		new FilmError(
-			"piece.show sinks a hole's pit with walls of the piece's body's colour: give the piece a body, body: { thickness, walls }"
+			"piece.show sinks a hole's pit with walls of the piece's body's colour: give the piece a body, body: { thickness }"
 		)
 	);
 });
 
-test('a piece lifted with a corner is drawn with its corners so round, as large as it shows the page, and leaves its hole as round on the screen and in a piece that shows it', async () => {
+test('a piece lifted off one block whole is drawn with each corner as round as the page draws the block, as large as it shows the page, and leaves its hole as round on the screen and in a piece that shows it', async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const screenLifted = await setIn(piece.show(WHOLE_SCREEN, { as: 'screen' }), wide, 1, FULL_HD);
-	const cardLifted = await setIn(piece.show('#card', { corner: 18, hole: {} }), screenLifted, 1, FULL_HD);
+	const cardLifted = await setIn(piece.show('#card', { hole: {} }), screenLifted, 1, FULL_HD);
 	const cardFilling = await setIn(piece.to({ left: 0, top: 0, width: 1, height: 1 }), cardLifted, 1, FULL_HD);
 	const screenSmaller = await setIn(piece.to(UPPER_RIGHT_CORNER, { as: 'screen' }), cardFilling, 1, FULL_HD);
 	const scene = drawn(screenSmaller, cameraOf(screenSmaller, FULL_HD), 0, FULL_HD, NONE_SHARPER);
 	const contents = new Map(scene.objects.map((object) => [object.name, object.content]));
 	// The card, 200 × 100, fills the frame's 1920 × 1080 at 9.6 times as large; the whole screen stands in a quarter of
 	// the frame across and down, a quarter as large; the screen shows the page's pixels as the frame's
-	const cardCorner = expect.closeTo(172.8);
+	const top = expect.closeTo(172.8);
+	const foot = expect.closeTo(57.6);
 	expect([contents.get('piece'), contents.get('screen'), scene.holes]).toEqual([
+		expect.objectContaining({ corners: { topLeft: top, topRight: top, bottomRight: foot, bottomLeft: foot } }),
 		expect.objectContaining({
-			corners: { topLeft: cardCorner, topRight: cardCorner, bottomRight: cardCorner, bottomLeft: cardCorner }
+			holes: [
+				expect.objectContaining({
+					name: 'piece',
+					corners: { topLeft: 4.5, topRight: 4.5, bottomRight: 1.5, bottomLeft: 1.5 }
+				})
+			]
 		}),
-		expect.objectContaining({ holes: [expect.objectContaining({ name: 'piece', corner: 4.5 })] }),
-		[expect.objectContaining({ name: 'piece', corner: 18 })]
+		[expect.objectContaining({ name: 'piece', corners: CARDS_CORNERS })]
 	]);
+});
+
+test('a piece lifted with a corner off a stretch of the page, with air round its block or off several, is as round as the film names; one block lifted alone refuses a corner, as the page draws it', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const liftedCorners = async (move: Move) => (await setIn(move, wide, 1, FULL_HD)).objects.get('piece')!.content;
+	expect([
+		await liftedCorners(piece.show('#card', { air: 10, corner: 8 })),
+		await liftedCorners(piece.show('#card', { every: 2, corner: 8 }))
+	]).toEqual([
+		expect.objectContaining({ corners: { topLeft: 8, topRight: 8, bottomRight: 8, bottomLeft: 8 } }),
+		expect.objectContaining({ corners: { topLeft: 8, topRight: 8, bottomRight: 8, bottomLeft: 8 } })
+	]);
+	expect(() => piece.show('#card', { corner: 8 })).toThrow(
+		new FilmError(
+			'piece.show lifts #card alone, as round as the page draws it: drop corner, which rounds a stretch of the page only, lifted with air or off several blocks'
+		)
+	);
+});
+
+test("a piece's body has walls of the colour the page shows along the edge of the part it is lifted off, on every side the camera did not cut, where the film names none", async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const edges = new EdgesRead();
+	const change = await piece
+		.show(OTHER, { inside: 'world', body: { thickness: 12 } })
+		.begin({ ...beginningIn(wide, FULL_HD), edgeColour: (part, sides) => edges.read(part, sides) });
+	const content = change(wide, 1).objects.get('piece')!.content;
+	expect([content, edges.asked]).toEqual([
+		expect.objectContaining({ body: { thickness: 12, walls: EDGE_READ, glow: 0 } }),
+		[{ part: OTHER, sides: ['left', 'right', 'top', 'bottom'] }]
+	]);
+});
+
+test('a piece lifted off a block the camera cuts is square at each corner the cut runs through, as drawn at the others', async () => {
+	// The camera at 2 shows 480 to 1440 across and 270 to 810 down: the card, 400 to 600 and 300 to 400, is cut at its
+	// left, its top corners 18 round and its foot's 6
+	const close = await setIn(cameraTo(MIDDLE_AT_TWO), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const lifted = await setIn(piece.show('#card'), close, 1, FULL_HD);
+	expect(lifted.objects.get('piece')!.content).toEqual(
+		expect.objectContaining({ corners: { topLeft: 0, topRight: 18, bottomRight: 6, bottomLeft: 0 } })
+	);
 });
 
 test('a piece lifted into the world with a body is drawn with walls as thick as its fit and scale show its thickness and as far as it has come, its face as high over where it was lifted as it stands out', async () => {

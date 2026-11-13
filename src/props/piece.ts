@@ -27,7 +27,15 @@
  * block of the page, which then stands as the page draws it hidden until the piece goes (`src/props/lifted.ts`).
  */
 import { ZOOM_AT_MOST } from '../domain/camera.ts';
-import { type Box, boxOf, measuredFrom, overlapOf, resizedAbout } from '../domain/geometry.ts';
+import {
+	type Box,
+	type Corners,
+	boxOf,
+	cornersTimes,
+	measuredFrom,
+	overlapOf,
+	resizedAbout
+} from '../domain/geometry.ts';
 import { type SharperPicture, pictureOfPart } from '../domain/picture.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
 import { ON_ITS_PLANE, type PageOfTheScreen } from '../domain/placement.ts';
@@ -49,14 +57,14 @@ export interface Pit {
 
 /**
  * What fills the part of the screen a piece was lifted off: a colour, in hex, the line round its edge, if any, how
- * round its corners are, as its piece's, and how far past the piece's edge it reaches each way, its corners as much
- * rounder, in the screen's pixels; and the pit it is sunk into the page as, if any, which the room draws where the flat
- * stage draws its colour.
+ * round each of its corners is, as its piece's block draws them, and how far past the piece's edge it reaches each way,
+ * its corners as much rounder, in the screen's pixels; and the pit it is sunk into the page as, if any, which the room
+ * draws where the flat stage draws its colour.
  */
 export interface Hole {
 	readonly ground: string;
 	readonly line: Stroke | null;
-	readonly corner: number;
+	readonly corners: Corners;
 	readonly reach: number;
 	readonly pit: Pit | null;
 }
@@ -105,14 +113,6 @@ type DrawnPit = Pit & PitStanding;
  */
 export interface InTheShade {
 	readonly clearAt: number;
-}
-
-/** How round each corner of a piece is: a radius, in the pixels its box is in. */
-export interface Corners {
-	readonly topLeft: number;
-	readonly topRight: number;
-	readonly bottomRight: number;
-	readonly bottomLeft: number;
 }
 
 /**
@@ -240,7 +240,7 @@ export function drawnPiece(
 		source,
 		fit,
 		figure: figureIn(source, box),
-		corners: cornersAt(piece.corners, fit),
+		corners: cornersTimes(piece.corners, fit),
 		holes: holesShown(holes, source, fit),
 		shown,
 		picture,
@@ -305,16 +305,6 @@ export function pageFitOfPiece(piece: Piece, box: Box): number | null {
 	}
 }
 
-/** Corners as round as a figure drawn at a fit shows them. */
-function cornersAt(corners: Corners, fit: number): Corners {
-	return {
-		topLeft: corners.topLeft * fit,
-		topRight: corners.topRight * fit,
-		bottomRight: corners.bottomRight * fit,
-		bottomLeft: corners.bottomLeft * fit
-	};
-}
-
 /**
  * The holes on the screen a figure drawn from a source at a fit shows, each cut to the source and laid where it stands
  * in the figure, in the frame's pixels from its top left corner; none of those outside it.
@@ -330,7 +320,9 @@ export function holesShown(holes: readonly DrawnHole[], source: Box, fit: number
 function holeShown(hole: DrawnHole, source: Box, fit: number): readonly DrawnHole[] {
 	const shown = overlapOf(hole.box, source);
 	if (shown === null) return [];
-	return [{ ...hole, box: measuredFrom(shown, source, fit), corner: hole.corner * fit, pit: SHOWN_FLAT }];
+	return [
+		{ ...hole, box: measuredFrom(shown, source, fit), corners: cornersTimes(hole.corners, fit), pit: SHOWN_FLAT }
+	];
 }
 
 /** How many of the frame's pixels a screen's pixel takes in a box that holds all of a source, as large as it can. */

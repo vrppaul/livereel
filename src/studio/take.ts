@@ -67,7 +67,7 @@
 import { type Camera, ZOOM_AT_MOST, flatCamera, zoomPicturedFor } from '../domain/camera.ts';
 import { FilmError, TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
-import type { Box } from '../domain/geometry.ts';
+import type { Box, Corners } from '../domain/geometry.ts';
 import { type PartAsked, closestOf } from '../domain/picture.ts';
 import type { BlockKey } from '../domain/placement.ts';
 import { type MotionBlur, alsoExposedBack } from '../domain/shutter.ts';
@@ -133,6 +133,7 @@ const NO_BLOCK_SCROLLED: readonly BlockKey[] = [];
 const PAGE_UNREAD_AHEAD: FilmedPage = {
 	box: refusedAhead,
 	groundBehind: refusedAhead,
+	cornersOf: refusedAhead,
 	letterAtTheStart: refusedAhead,
 	scrollCourse: refusedAhead,
 	blocksHolding: refusedAhead,
@@ -490,6 +491,7 @@ export class Take {
 			ownPage: (key) => this.ownPageAt(scene, key, stretch.moment),
 			act: (action) => this.acted(action),
 			holdPicture: (part) => this.pictures.hold(part, scene.screen.shows.kind),
+			edgeColour: (part, sides) => this.pictures.edgeColour(part, sides, scene.screen.shows.kind),
 			step,
 			thingsBuilt: this.opened.thingsBuilt,
 			filmsPictures: this.opened.filmsPictures
@@ -510,6 +512,7 @@ export class Take {
 			ownPage: refusedAhead,
 			act: refusedAhead,
 			holdPicture: refusedAhead,
+			edgeColour: refusedAhead,
 			step: IN_A_PLAY_BEGUN_AHEAD,
 			thingsBuilt: this.opened.thingsBuilt,
 			filmsPictures: this.opened.filmsPictures
@@ -798,6 +801,10 @@ class OwnPageShown implements FilmedPage {
 
 	groundBehind(target: string): Promise<string> {
 		return this.measured.groundBehind(target);
+	}
+
+	cornersOf(target: string): Promise<Corners> {
+		return this.measured.cornersOf(target);
 	}
 
 	letterAtTheStart(target: string): Promise<Box | null> {

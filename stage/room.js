@@ -77,7 +77,7 @@ import { Lens, SPREADS_REACHED, sceneFieldOf, sideHalvedEvenly } from './lens.js
 import { WorldLighting } from './lighting.js';
 import { matrixOf, placedBy, projectionOnto } from './matrices.js';
 import { PAGE_SURFACE_FRAGMENT, PITS, PagePicture, WHAT_STANDS_BEHIND, pageSurfaceValues } from './page-picture.js';
-import { PagePits, PieceBodies, pitsSunkIn } from './piece-body.js';
+import { PagePits, PieceBodies, leastRound, pitsSunkIn } from './piece-body.js';
 import { ADDED, LAID_OVER, PREMULTIPLIED, SRGB_CURVES, compiledForCount, passOver, valuesSet } from './passes.js';
 import { FrameShown } from './shown.js';
 import { WorldSeen } from './laying.js';
@@ -1333,17 +1333,14 @@ function shadedBoxesOf(markup, pits) {
 function pieceShaded(object) {
 	const piece = object.content;
 	if (piece.kind !== 'piece' || piece.shaded === null) return NO_SHADED_BOXES;
-	// Rounded as its least round corner, so no square corner of its figure falls outside the box
-	const { topLeft, topRight, bottomRight, bottomLeft } = piece.corners;
-	const corner = Math.min(topLeft, topRight, bottomRight, bottomLeft);
 	const back = piece.body === null ? REACHES_NO_FARTHER_BACK : piece.body.thickness;
-	return [shadedBox(matrixOf(object.inTheEyesSpace), piece.figure, corner, back, piece.shaded)];
+	return [shadedBox(matrixOf(object.inTheEyesSpace), piece.figure, leastRound(piece.corners), back, piece.shaded)];
 }
 
 /** A pit's box the window's shade reaches, if its piece stands in the shade. @param {PlacedPit} placed */
 function pitShaded({ pit, placing }) {
 	if (pit.shaded === null) return NO_SHADED_BOXES;
-	return [shadedBox(placing, pit.mouth, pit.corner, pit.depth, pit.shaded)];
+	return [shadedBox(placing, pit.mouth, leastRound(pit.corners), pit.depth, pit.shaded)];
 }
 
 /**

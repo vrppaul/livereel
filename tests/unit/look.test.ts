@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { colourToward } from '../../src/domain/colour.ts';
+import { colourToward, meanInLinearLight } from '../../src/domain/colour.ts';
 import { valuesToward, valuesWith } from '../../src/domain/values.ts';
 import { LIVEREELS_LOOK, LOOK_KINDS } from '../../src/props/look.ts';
 
@@ -10,6 +10,17 @@ test('colours mix in each channel and in their alpha, from any form of hex, and 
 		colourToward('#0b0e14', '#fff', 0),
 		colourToward('#0b0e14', '#fff', 1)
 	]).toEqual(['#808080c0', '#484a4fff', '#0b0e14', '#fff']);
+});
+
+test('colours mixed as light mixes average in linear light, drawn whole: black and white to a light grey, one colour to itself', () => {
+	const black = { red: 0, green: 0, blue: 0, alpha: 255 };
+	const white = { red: 255, green: 255, blue: 255, alpha: 255 };
+	const blue = { red: 29, green: 42, blue: 68, alpha: 128 };
+	// Half of white's light, 0.5 in linear light, is 188 of 255 in sRGB
+	expect([meanInLinearLight([black, white]), meanInLinearLight([blue, blue])]).toEqual([
+		{ red: 188, green: 188, blue: 188, alpha: 255 },
+		{ ...blue, alpha: 255 }
+	]);
 });
 
 test("a theme's value written as undefined is left out, as a film whose types nobody checked may write it", () => {

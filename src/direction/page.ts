@@ -7,7 +7,7 @@
  * Playwright already offers.
  */
 import type { Frame } from 'playwright-core';
-import type { Box } from '../domain/geometry.ts';
+import type { Box, Corners } from '../domain/geometry.ts';
 import { A_FUNCTION_SAID, type Kind, aFunction } from '../domain/handed.ts';
 import type { BlockKey } from '../domain/placement.ts';
 import type { TypedText } from '../domain/typing.ts';
@@ -44,12 +44,13 @@ export type PageShown = 'framed' | 'pictured';
 export type BlockHolding = 'text alone' | 'elements' | 'its value';
 
 /**
- * A page as a move measures it: where its blocks and their letters stand and the ground behind them, in its pixels
- * how far down it scrolls at most with a text written into each of some blocks, and how far down its document a
- * block's top stands, however far it is scrolled, and a block the stage writes, found as it finds it, and what it shows
- * as its text; as a page of the film's own is measured, which no key reaches and the film alone runs and types into.
+ * A page as a move measures it: where its blocks and their letters stand, how round and on what ground they are drawn;
+ * in its pixels, how far down it scrolls at most with a text written into each of some blocks, and how far down its
+ * document a block's top stands, however far it is scrolled, and a block the stage writes, found as it finds it, and
+ * what it shows as its text; as a page of the film's own is measured, which no key reaches and the film alone runs and
+ * types into.
  */
-export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind' | 'letterAtTheStart'> & {
+export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind' | 'cornersOf' | 'letterAtTheStart'> & {
 	/**
 	 * Measured with each block a typed text names, the first its CSS selector matches, holding that text and every other
 	 * holding what it held; each holds what it held again after, as the stage writes what stands typed in each exposure.
@@ -76,6 +77,11 @@ export interface FilmedPage {
 	 * background the blocks it stands in draw whole, or white where none does.
 	 */
 	readonly groundBehind: (target: string) => Promise<string>;
+	/**
+	 * How round each corner of the first block a target matches is drawn, in the screen's pixels, as its border radii
+	 * come out on its box. A target the page lacks is refused at once.
+	 */
+	readonly cornersOf: (target: string) => Promise<Corners>;
 	/**
 	 * Where the letters of the first block a target matches start on the screen, as the page lays them out, read
 	 * without writing into it: the box its first laid-out letter takes, or, in a block that lays out none, the box a

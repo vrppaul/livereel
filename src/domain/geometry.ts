@@ -54,6 +54,44 @@ export const A_BOX: OfForm<Box> = new OfForm<Box>(
 	"a box of the page's screen: { left, top, width, height }, in its pixels"
 );
 
+/** How round each corner of a box is: a radius, in the pixels the box is in. */
+export interface Corners {
+	readonly topLeft: number;
+	readonly topRight: number;
+	readonly bottomRight: number;
+	readonly bottomLeft: number;
+}
+
+// A corner with no rounding
+const SQUARE = 0;
+/** A box's corners drawn square, as its edges meet. */
+export const SQUARE_CORNERS: Corners = cornersAlike(SQUARE);
+
+/** Every corner of a box as round as one radius. */
+export function cornersAlike(radius: number): Corners {
+	return { topLeft: radius, topRight: radius, bottomRight: radius, bottomLeft: radius };
+}
+
+/** Corners as round as a box drawn so many times as large shows them. */
+export function cornersTimes(corners: Corners, times: number): Corners {
+	return {
+		topLeft: corners.topLeft * times,
+		topRight: corners.topRight * times,
+		bottomRight: corners.bottomRight * times,
+		bottomLeft: corners.bottomLeft * times
+	};
+}
+
+/** Corners as round as a box grown so far past each edge shows them: each as much rounder. */
+export function cornersReaching(corners: Corners, reach: number): Corners {
+	return {
+		topLeft: corners.topLeft + reach,
+		topRight: corners.topRight + reach,
+		bottomRight: corners.bottomRight + reach,
+		bottomLeft: corners.bottomLeft + reach
+	};
+}
+
 /** A straight line as the stage draws one: where it starts, how long it is, and its angle in degrees, clockwise. */
 export interface Segment {
 	readonly from: Point;

@@ -20,7 +20,8 @@
 /** @import { DrawnContent, DrawnObject } from '../src/props/object.ts' */
 /** @import { DrawnLines } from '../src/props/lifted.ts' */
 /** @import { DrawnHole, DrawnPicture } from '../src/props/piece.ts' */
-/** @import { Box, Segment } from '../src/domain/geometry.ts' */
+/** @import { Box, Corners, Segment } from '../src/domain/geometry.ts' */
+/** @import { Channels } from '../src/domain/colour.ts' */
 /** @import { Transform } from '../src/domain/stance.ts' */
 /** @import { GroundLayers, Look } from '../src/props/look.ts' */
 /** @import { OwnPage } from '../src/direction/page.ts' */
@@ -34,6 +35,7 @@
  *   Layout,
  *   Opening,
  *   PagePicture,
+ *   PixelsAsked,
  *   StageApi,
  *   SurfaceApart
  * } from '../src/adapters/browser/stage.ts'
@@ -1120,12 +1122,7 @@ class PieceDrawer {
 		sourceDrawn(this.element, piece.source, piece.fit);
 		pictureDrawn(this.element, piece.picture);
 		this.element.toggleAttribute(WITH_A_BODY, piece.body !== null);
-		numbered(this.element, {
-			'--corner-top-left': piece.corners.topLeft,
-			'--corner-top-right': piece.corners.topRight,
-			'--corner-bottom-right': piece.corners.bottomRight,
-			'--corner-bottom-left': piece.corners.bottomLeft
-		});
+		numbered(this.element, cornersNumbered(piece.corners));
 		drawnByName(this.holes, piece.holes);
 	}
 }
@@ -1396,6 +1393,8 @@ const HELD_PICTURES = new Map();
 const FILMS_PICTURES = new Map();
 // The size of a picture that decodes to none, which the film is refused for (`films-files.ts`)
 const NO_SIZE = 0;
+// A canvas a picture's pixels are read off, read often enough to keep in memory the processor reads
+const READ_OFTEN = { willReadFrequently: true };
 // A font of the film's own stands for every weight the look sets it at: a variable font's file moves with the weight,
 // a static one's stays as drawn, never thickened or thinned by the browser
 const EVERY_WEIGHT = '1 1000';
@@ -1589,6 +1588,31 @@ async function hold(picture) {
 function letGo(number) {
 	URL.revokeObjectURL(heldPicture(number).src);
 	HELD_PICTURES.delete(number);
+}
+
+/**
+ * The pixels of a picture at points of it, each its channels from 0 to 255, as the picture decodes.
+ * @param {PixelsAsked} asked @returns {Promise<readonly Channels[]>}
+ */
+async function pixelsAt(asked) {
+	const image = new Image();
+	image.src = addressOf(asked);
+	await image.decode();
+	URL.revokeObjectURL(image.src);
+	const paint = new OffscreenCanvas(image.naturalWidth, image.naturalHeight).getContext('2d', READ_OFTEN);
+	if (paint === null) throw new Error('the stage gives no canvas to read a picture on');
+	paint.drawImage(image, 0, 0);
+	return asked.points.map((point) => channelsOf(paint.getImageData(point.left, point.top, 1, 1).data));
+}
+
+/**
+ * A pixel's four channels, from 0 to 255, as a canvas reads them out.
+ * @param {Uint8ClampedArray} pixel @returns {Channels}
+ */
+function channelsOf(pixel) {
+	// A pixel's data holds its four channels always; the defaults tell the type checker so
+	const [red = 0, green = 0, blue = 0, alpha = 0] = pixel;
+	return { red, green, blue, alpha };
 }
 
 /**
@@ -2067,9 +2091,22 @@ function holeElement() {
  */
 function holeDrawn(element, hole) {
 	placed(element, hole.box);
-	numbered(element, { '--corner': hole.corner, '--shown': hole.shown });
+	numbered(element, { ...cornersNumbered(hole.corners), '--shown': hole.shown });
 	element.style.setProperty(HOLE_GROUND, hole.ground);
 	named(element, STROKE, hole.line);
+}
+
+/**
+ * How round each corner of a box is, as the properties its rule rounds it by.
+ * @param {Corners} corners @returns {Record<string, number>}
+ */
+function cornersNumbered(corners) {
+	return {
+		'--corner-top-left': corners.topLeft,
+		'--corner-top-right': corners.topRight,
+		'--corner-bottom-right': corners.bottomRight,
+		'--corner-bottom-left': corners.bottomLeft
+	};
 }
 
 /** A piece's two lines to its source. */
@@ -2159,5 +2196,5 @@ function found(element, name) {
 }
 
 /** @type {StageApi} */
-const STAGE = { setup, laidApart, open, show, hold, letGo, layOwnPages, layPictures, layFonts, apply };
+const STAGE = { setup, laidApart, open, show, hold, letGo, pixelsAt, layOwnPages, layPictures, layFonts, apply };
 window.stage = STAGE;

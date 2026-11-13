@@ -33,6 +33,11 @@ const NO_DIGIT = '0';
 // How far along a colour's way is: not yet on it, and arrived
 const NOT_ON_ITS_WAY = 0;
 const ARRIVED = 1;
+// Light from none to whole, as a channel holds it in linear light; and sRGB's curve: straight, at this slope, below
+// this share of a channel, a power curve above it, offset so far
+const NO_LIGHT = 0;
+const WHOLE_LIGHT = 1;
+const SRGB = { straightBelow: 0.04045, slope: 12.92, offset: 0.055, power: 2.4 };
 
 /** A colour `progress` of the way from one to another. */
 export function colourToward(start: string, end: string, progress: number): string {
@@ -85,6 +90,47 @@ function channelAt(digits: string, first: number): number {
 /** A colour written whole in hex, `#rrggbbaa`. */
 export function hexOf(channels: Channels): string {
 	return HASH + [channels.red, channels.green, channels.blue, channels.alpha].map(twoDigits).join('');
+}
+
+/** A colour drawn whole, written in hex with no alpha, `#rrggbb`, as three reads one: its alpha left out. */
+export function opaqueHexOf(channels: Channels): string {
+	return HASH + [channels.red, channels.green, channels.blue].map(twoDigits).join('');
+}
+
+/**
+ * The colour some colours mix to as light mixes, each weighing the same: their channels in sRGB taken into linear
+ * light, averaged there and taken back, drawn whole.
+ */
+export function meanInLinearLight(colours: readonly Channels[]): Channels {
+	return {
+		red: meanChannel(colours.map((colour) => colour.red)),
+		green: meanChannel(colours.map((colour) => colour.green)),
+		blue: meanChannel(colours.map((colour) => colour.blue)),
+		alpha: OPAQUE
+	};
+}
+
+/** Channels in sRGB, from 0 to 255, averaged in linear light and taken back to sRGB. */
+function meanChannel(channels: readonly number[]): number {
+	const linear = channels.map(linearOf).reduce((sum, channel) => sum + channel, NO_LIGHT) / channels.length;
+	return srgbOf(linear);
+}
+
+/** A channel in sRGB, from 0 to 255, in linear light, from 0 to 1. */
+function linearOf(channel: number): number {
+	const share = channel / OPAQUE;
+	return share <= SRGB.straightBelow
+		? share / SRGB.slope
+		: ((share + SRGB.offset) / (WHOLE_LIGHT + SRGB.offset)) ** SRGB.power;
+}
+
+/** A channel in linear light, from 0 to 1, in sRGB, from 0 to 255. */
+function srgbOf(linear: number): number {
+	const share =
+		linear <= SRGB.straightBelow / SRGB.slope
+			? linear * SRGB.slope
+			: (WHOLE_LIGHT + SRGB.offset) * linear ** (WHOLE_LIGHT / SRGB.power) - SRGB.offset;
+	return Math.round(share * OPAQUE);
 }
 
 function twoDigits(channel: number): string {

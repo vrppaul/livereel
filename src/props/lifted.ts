@@ -22,9 +22,11 @@ import { type Fraction, WHOLE } from '../domain/fraction.ts';
 import {
 	type Box,
 	type Point,
+	SQUARE_CORNERS,
 	type Segment,
 	type Size,
 	boxOf,
+	cornersReaching,
 	middleX,
 	middleY,
 	placedFrom,
@@ -94,7 +96,6 @@ const LAST = -1;
 const BEFORE_THE_LAST = -2;
 // A block a piece empties stands as a hole with no line round it, its corners square, sunk as no pit
 const NO_LINE = null;
-const SQUARE = 0;
 const NO_PIT = null;
 // A pit the window's shade reaches not at all, its piece standing in no shade
 const IN_NO_SHADE = null;
@@ -158,7 +159,7 @@ function drawnHole(
 		...drawn,
 		name,
 		box: withAir(source, reach),
-		corner: hole.corner + reach,
+		corners: cornersReaching(hole.corners, reach),
 		shown: presentShare(object),
 		pit: pit === null ? null : { ...pit, ...pitStanding }
 	};
@@ -176,7 +177,7 @@ function blockEmptiedBy({ name, object, piece }: PieceStanding): readonly DrawnH
 	if (covered === null) return [];
 	const { ground } = piece.emptied;
 	const shown = object.way.kind === 'wipe' ? WHOLE : present;
-	return [{ name, box: covered, ground, line: NO_LINE, corner: SQUARE, shown, pit: NO_PIT }];
+	return [{ name, box: covered, ground, line: NO_LINE, corners: SQUARE_CORNERS, shown, pit: NO_PIT }];
 }
 
 /**

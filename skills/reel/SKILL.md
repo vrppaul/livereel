@@ -284,10 +284,11 @@ window, `effects({ ring, glow, shadow, blur, colour, melt, fade, scale, depth })
 | `thing.to(place, { scale, depth })`, `thing.lean(...)`, `thing.hide({ toward })` | as any object; no ways or effects |
 | `ending.show({ name, line, command }, { from, enter, edge })`, `ending.hide({ toward, leave, edge })` | the end card on the frame's ground, with a chime; first or last, never carried ("The ending card") |
 
-A piece in a few words: `corner: 18` lifts a rounded card with its round corners; `hole: {}` leaves its place
+A piece in a few words: lifted off one block, it is as round as the page draws it, and `corner` rounds only a
+stretch lifted with `air` or off several blocks or a box; `hole: {}` leaves its place
 empty; `lines: 'solid'` ties it to its source; `picture: 'held'` keeps it as it was lifted while the page changes;
 `inside: 'world'` stands it in the world, and only there may it ride its block's scroll (`rides: 'its block'`), have
-walls (`body: { thickness, walls, glow }`), leave a socket or pit (`hole: { reach, pit: { depth, glow } }`) and stand
+walls (`body: { thickness, glow }`, of the colour along its edge, or `walls` named), leave a socket or pit (`hole: { reach, pit: { depth, glow } }`) and stand
 in the window's shade, as soft and faded as its page until it rises `clearAt` that many pixels (`shade: { clearAt }`),
 the last three a room's alone; a piece in the shade is never given a blur or fade of the page's by hand; `letters`
 names the block of its source whose letters land letter on letter on the block `onto` names. A thing is lit by the
@@ -386,8 +387,8 @@ recipe, in this order, each leaving the page as it found it: read its act for th
 | the stack turns | as layers, then a slow `group.lean({ roll: -135 })`, a quarter round on a turntable |
 | a carousel | the cards in a group with `order: 'depth'`, each `piece.to(place, { depth })` round the frame's middle a third of a turn apart and `piece.lean({ turn })` facing out; `group.to('whole', { depth })` by the ring's reach; `group.lean({ turn: 360 })` over the page faded by `window.shade({ fade: 0.9 })` |
 
-- A card with rounded corners is lifted with them: `piece.show(card, { corner: 18 })`, its `border-radius` read off the
-  page's stylesheet; the film plays every card so.
+- A card with rounded corners is lifted with them: `piece.show(card)` reads its `border-radius` off the page, and off
+  the one block a bare wrapper holds; the film never types a radius or a colour the page draws.
 - A piece stands where it was lifted, and the film knows no place of it: grow it there by `effects({ scale })`, about
   its middle, or bring it near by `effects({ depth })`, which grows it about the frame's middle, as a block lifted
   toward the eye looks.

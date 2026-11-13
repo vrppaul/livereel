@@ -2,7 +2,7 @@
 // on its set, against a browser that keeps what it was opened on
 import { expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';
-import type { Size } from '../../src/domain/geometry.ts';
+import { SQUARE_CORNERS, type Size } from '../../src/domain/geometry.ts';
 import { defineFilm } from '../../src/direction/film.ts';
 import type { FilmInFormat } from '../../src/direction/film.ts';
 import type { SetContext } from '../../src/direction/set.ts';
@@ -147,7 +147,7 @@ class BrowserThatSays implements Browser, SetBrowser {
 }
 
 function shotOf(target: string): TargetShot {
-	return { target, boxes: [WHERE], ground: GROUND };
+	return { target, boxes: [WHERE], ground: GROUND, corners: SQUARE_CORNERS };
 }
 
 /** A film written with these, its set's scenario as given, made ready by saying so. */

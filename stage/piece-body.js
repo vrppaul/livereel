@@ -60,9 +60,9 @@ import { WORLD_PARTS } from './see-through.js';
 /** @import { HSL, Object3D, Side } from 'three' */
 /** @import { DrawnScene } from '../src/scene.ts' */
 /** @import { DrawnObject } from '../src/props/object.ts' */
-/** @import { Corners, DrawnBody, DrawnHole, DrawnPiece } from '../src/props/piece.ts' */
+/** @import { DrawnBody, DrawnHole, DrawnPiece } from '../src/props/piece.ts' */
 /** @import { Look } from '../src/props/look.ts' */
-/** @import { Box, Size } from '../src/domain/geometry.ts' */
+/** @import { Box, Corners, Size } from '../src/domain/geometry.ts' */
 /** @import { BehindThePage } from './page-picture.js' */
 
 /**
@@ -90,13 +90,13 @@ import { WORLD_PARTS } from './see-through.js';
  */
 /**
  * A pit sunk into the page as the room draws it, on the window's plane where the screen lies there, in the frame's
- * pixels as large as the screen shows there: its mouth, how round its corners are, how far it is open, as far as its
- * hole has come, and how deep it is; its walls' colour; their glow; how clear they are, from 0 to 1, as far as the
+ * pixels as large as the screen shows there: its mouth, how round each of its corners is, how far it is open, as far as
+ * its hole has come, and how deep it is; its walls' colour; their glow; how clear they are, from 0 to 1, as far as the
  * screen it is sunk into has come up; and how far the window's shade reaches it, from 0 to 1, wholly where its piece
  * stands in the shade, none where it stands in no shade.
  * @typedef {{
  *   readonly mouth: Box,
- *   readonly corner: number,
+ *   readonly corners: Corners,
  *   readonly open: number,
  *   readonly depth: number,
  *   readonly walls: string,
@@ -259,8 +259,7 @@ export class PagePits {
 	posed(place, pit, placing, pageFaded) {
 		while (this.pits.length <= place) this.pits.push(new Walls(PIT_WALLS));
 		const { width, height } = pit.mouth;
-		const corners = { topLeft: pit.corner, topRight: pit.corner, bottomRight: pit.corner, bottomLeft: pit.corner };
-		const measures = { width, height, corners, depth: pit.depth, walls: pit.walls, glow: pit.glow };
+		const measures = { width, height, corners: pit.corners, depth: pit.depth, walls: pit.walls, glow: pit.glow };
 		const walls = wallsAt(this.pits, place);
 		walls.shownAsFarAs(pit.clear);
 		walls.fading.fadedAsFarAs(pageFaded * (pit.shaded ?? IN_NO_SHADE));
@@ -302,7 +301,7 @@ function pitUnder(hole, screenBox, scale) {
 	return [
 		{
 			mouth,
-			corner: hole.corner * scale,
+			corners: cornersScaled(hole.corners, scale),
 			open: hole.shown,
 			depth: hole.pit.depth * scale,
 			walls: hole.pit.walls,
@@ -311,6 +310,28 @@ function pitUnder(hole, screenBox, scale) {
 			shaded: hole.pit.shaded
 		}
 	];
+}
+
+/**
+ * A box's least round corner, which a shader that rounds a box as one radius rounds it by, so no square corner of the
+ * box falls outside it.
+ * @param {Corners} corners @returns {number}
+ */
+export function leastRound(corners) {
+	return Math.min(corners.topLeft, corners.topRight, corners.bottomRight, corners.bottomLeft);
+}
+
+/**
+ * Corners as round as a box drawn at a scale shows them.
+ * @param {Corners} corners @param {number} scale @returns {Corners}
+ */
+function cornersScaled(corners, scale) {
+	return {
+		topLeft: corners.topLeft * scale,
+		topRight: corners.topRight * scale,
+		bottomRight: corners.bottomRight * scale,
+		bottomLeft: corners.bottomLeft * scale
+	};
 }
 
 /**

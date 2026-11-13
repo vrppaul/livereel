@@ -20,12 +20,14 @@ import { cameraOf } from '../scene.ts';
 
 /**
  * A source read off the page: the part of the screen it is, the part of the screen it was cut to, which the window's
- * corners round, and the box of the frame the camera shows the source in.
+ * corners round, the box of the frame the camera shows the source in, and the blocks it was taken off, whole, as far
+ * past what was cut to as they reach.
  */
 export interface Source {
 	readonly source: Box;
 	readonly shown: Box;
 	readonly box: Box;
+	readonly whole: Box;
 }
 
 // A source of the first block a selector matches, where the film names no more, and of the blocks alone, no air round
@@ -80,7 +82,7 @@ export async function sourceOf(
 	if (shown === null || source === null) {
 		throw new FilmError(`${move}'s ${targetSaid(target)} stands outside ${SHOWN_SAID[taking.bornIn]}: frame it first`);
 	}
-	return { source, shown, box: boxOnTheFrame(camera, beginning.format.frame, source) };
+	return { source, shown, box: boxOnTheFrame(camera, beginning.format.frame, source), whole: block };
 }
 
 /**

@@ -12,7 +12,15 @@
 import type { Camera } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
-import { A_BOX, type Box, type Size, liesAboveOrBelow, liesOutside, partWithin } from '../domain/geometry.ts';
+import {
+	A_BOX,
+	type Box,
+	type FrameSide,
+	type Size,
+	liesAboveOrBelow,
+	liesOutside,
+	partWithin
+} from '../domain/geometry.ts';
 import type { PlaceNamed } from '../domain/place.ts';
 import type { DepthNamed } from '../domain/stance.ts';
 import {
@@ -234,6 +242,11 @@ export interface Beginning {
 	 * back; only where the stage shows the filmed page's picture, not the page live.
 	 */
 	readonly holdPicture: (part: Box) => Promise<number>;
+	/**
+	 * The colour the page the screen shows, as it stands now, shows along the edge of a part of the screen, on the sides
+	 * named, in hex with no alpha; only where the stage shows the filmed page's picture, not the page live.
+	 */
+	readonly edgeColour: (part: Box, sides: readonly FrameSide[]) => Promise<string>;
 	readonly step: StepBegunIn;
 	/** The names the film's things module builds a thing by: none where the film draws no things of its own. */
 	readonly thingsBuilt: readonly string[];

@@ -20,7 +20,7 @@ import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { ActContext, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import type { DrawnScene } from '../scene.ts';
 import type { PictureDecoded } from '../domain/picture.ts';
-import type { Box, Size } from '../domain/geometry.ts';
+import type { Box, Corners, FrameSide, Size } from '../domain/geometry.ts';
 import type { OwnPageStanding } from '../domain/own-page.ts';
 import type { BlockKey } from '../domain/placement.ts';
 import type {
@@ -372,6 +372,10 @@ class TimedPicturedStage extends TimedDrawingStage<PicturedStage> implements Pic
 		return this.timings.timed(`stage.holdPicture of the ${page} page`, () => this.stage.holdPicture(part, zoom, page));
 	}
 
+	edgeColour(part: Box, sides: readonly FrameSide[], page: PicturedPage): Promise<string> {
+		return this.timings.timed(`stage.edgeColour of the ${page} page`, () => this.stage.edgeColour(part, sides, page));
+	}
+
 	letGo(number: number): Promise<void> {
 		return this.timings.timed('stage.letGo', () => this.stage.letGo(number));
 	}
@@ -421,6 +425,10 @@ class TimedPage implements FilmedPage {
 
 	groundBehind(target: string): Promise<string> {
 		return this.timings.timed('page.groundBehind', () => this.page.groundBehind(target));
+	}
+
+	cornersOf(target: string): Promise<Corners> {
+		return this.timings.timed('page.cornersOf', () => this.page.cornersOf(target));
 	}
 
 	letterAtTheStart(target: string): Promise<Box | null> {

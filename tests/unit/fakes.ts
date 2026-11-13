@@ -10,7 +10,7 @@ import type {
 } from '../../src/direction/page.ts';
 import type { BlockKey } from '../../src/domain/placement.ts';
 import type { Sound } from '../../src/direction/sound.ts';
-import type { Box, Format } from '../../src/domain/geometry.ts';
+import { type Box, type Corners, type Format, SQUARE_CORNERS } from '../../src/domain/geometry.ts';
 import type { TypedText } from '../../src/domain/typing.ts';
 import type { OwnPageStanding } from '../../src/domain/own-page.ts';
 import type { DrawnScene } from '../../src/scene.ts';
@@ -38,10 +38,12 @@ const A_LONG_PAGE = 100000;
 const NOTHING_GROWS = (): number => 0;
 // The key a test's page knows the block that scrolls the page itself by
 export const THE_PAGES_OWN_SCROLL: BlockKey = 0;
-
+// The colour a test's stage reads along the edge of a part of its page's picture
+const BLACK_EDGE = '#000000';
 /**
  * A page whose blocks stand where a table says, the ground behind each as another says, as far as it scrolls with
- * nothing typed and so much farther as a rule says of what is typed, each block holding what a third table says.
+ * nothing typed and so much farther as a rule says of what is typed, each block holding what a third table says, each
+ * drawn square.
  */
 export class PageOfBoxes implements FilmedPage {
 	readonly boxes: ReadonlyMap<string, Box>;
@@ -63,6 +65,10 @@ export class PageOfBoxes implements FilmedPage {
 		this.length = length;
 		this.holdings = holdings;
 		this.growth = growth;
+	}
+
+	cornersOf(): Promise<Corners> {
+		return Promise.resolve(SQUARE_CORNERS);
 	}
 
 	/** A test names only the blocks its page has. */
@@ -133,6 +139,27 @@ export class PageOfLetters extends PageOfBoxes {
 	/** A test names only the blocks whose letters its page has. */
 	letterAtTheStart(target: string): Promise<Box | null> {
 		return Promise.resolve(this.firstLetters.get(target) as Box | null);
+	}
+}
+
+/**
+ * A page of boxes, the ground behind each as a table says, where the blocks another table names are drawn as round as
+ * it says, the rest square.
+ */
+export class PageOfRoundedBlocks extends PageOfBoxes {
+	readonly corners: ReadonlyMap<string, Corners>;
+
+	constructor(
+		boxes: ReadonlyMap<string, Box>,
+		grounds: ReadonlyMap<string, string>,
+		corners: ReadonlyMap<string, Corners>
+	) {
+		super(boxes, grounds);
+		this.corners = corners;
+	}
+
+	cornersOf(target: string): Promise<Corners> {
+		return Promise.resolve(this.corners.get(target) ?? SQUARE_CORNERS);
 	}
 }
 
@@ -270,6 +297,11 @@ export class PicturedStageThatKeeps extends StageThatKeeps implements PicturedSt
 	holdPicture(part: Box, zoom: number, page: PicturedPage): Promise<number> {
 		this.held.push({ part, zoom, page });
 		return Promise.resolve(this.held.length);
+	}
+
+	/** A test's page shows no colour along any edge but black. */
+	edgeColour(): Promise<string> {
+		return Promise.resolve(BLACK_EDGE);
 	}
 
 	letGo(number: number): Promise<void> {

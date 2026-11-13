@@ -6,10 +6,18 @@
 	</head>
 	<body style="background: #f6f7f9">
 		<main style="background: rgb(0 0 0 / 10%)">
-			<div data-testid="card" style="background: #ffffff">A card on a tinted band</div>
+			<div data-testid="card" style="background: #ffffff; border-radius: 8px 8px 4px 4px">A card on a tinted band</div>
 		</main>
 		<section style="background: #123456">
 			<p data-testid="note">A note on a dark band</p>
+			<div
+				data-testid="badge"
+				style="width: 100px; height: 40px; border-radius: 10% / 50%; transform: scale(2); transform-origin: 0 0"
+			></div>
+			<div data-testid="wrapper">
+				<div style="height: 30px; border-radius: 12px; background: #345678"></div>
+			</div>
+			<div data-testid="mixed" style="width: 100px; height: 40px; border-radius: calc(10% + 4px)"></div>
 		</section>
 	</body>
 </html>

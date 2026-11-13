@@ -16,7 +16,14 @@ const SET: SetNoted = {
 	states: [
 		{
 			name: 'opened',
-			targets: [{ target: '#refresh', boxes: [{ left: 1, top: 2, width: 3, height: 4 }], ground: '#ffffffff' }]
+			targets: [
+				{
+					target: '#refresh',
+					boxes: [{ left: 1, top: 2, width: 3, height: 4 }],
+					ground: '#ffffffff',
+					corners: { topLeft: 4, topRight: 4, bottomRight: 2, bottomLeft: 2 }
+				}
+			]
 		}
 	]
 };

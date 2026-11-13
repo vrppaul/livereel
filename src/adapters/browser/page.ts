@@ -28,7 +28,15 @@
 import type { Frame, JSHandle, Keyboard } from 'playwright-core';
 import { type Channels, hexOf } from '../../domain/colour.ts';
 import { FilmError } from '../../domain/errors.ts';
-import { type Box, MIDDLE_SHARE, type Point, boxAround, pointAt } from '../../domain/geometry.ts';
+import {
+	type Box,
+	type Corners,
+	MIDDLE_SHARE,
+	type Point,
+	type Size,
+	boxAround,
+	pointAt
+} from '../../domain/geometry.ts';
 import { described } from '../../domain/handed.ts';
 import type { ActContext, BlockHolding, FilmedPage, ScrollAim, ScrollCourse } from '../../direction/page.ts';
 import type { BlockKey } from '../../domain/placement.ts';
@@ -64,6 +72,28 @@ interface BlockWritten {
 interface GroundAsked {
 	readonly canvasSide: number;
 	readonly whole: number;
+}
+
+/**
+ * How a block's corners are rounded, as the page reads them: each corner's radius as CSS computes it, the box the block
+ * lays out, and the box it is drawn as.
+ */
+interface RadiiRead {
+	readonly radii: readonly string[];
+	readonly laid: Size;
+	readonly drawn: Size;
+}
+
+/**
+ * What a block that paints nothing computes, handed to the page: its ground's colour and picture, its shadow, and, on
+ * each of the properties its border's widths are set by, a width.
+ */
+interface PaintsNone {
+	readonly colour: string;
+	readonly picture: string;
+	readonly shadow: string;
+	readonly borderWidths: readonly string[];
+	readonly border: string;
 }
 
 /**
@@ -155,6 +185,32 @@ const NONE_KEPT = null;
 const NONE_SELECTED = null;
 // A canvas of one pixel reads a colour's alpha from 0 to 255, the most, where the colour is drawn whole
 const GROUND_ASKED: GroundAsked = { canvasSide: 1, whole: 255 };
+// The properties a block's corners are rounded by: top left, top right, bottom right, bottom left
+const CORNER_RADII = [
+	'border-top-left-radius',
+	'border-top-right-radius',
+	'border-bottom-right-radius',
+	'border-bottom-left-radius'
+];
+// What a block that paints nothing of its own computes; and a block it holds standing as large and where it does,
+// within half a pixel, as a wrapper holds the card it lays out
+const PAINTS_NONE: PaintsNone = {
+	colour: 'rgba(0, 0, 0, 0)',
+	picture: 'none',
+	shadow: 'none',
+	borderWidths: ['border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width'],
+	border: '0px'
+};
+const AS_LARGE_WITHIN = 0.5;
+// A radius CSS computes as one across and one down, a space apart, each a length in pixels or a percentage of the box,
+// a number and its unit and nothing else; and as a percentage of the box
+const RADII_APART = ' ';
+const LENGTH_READ = /^-?[\d.]+(?:e-?\d+)?(?:px|%)$/u;
+const A_SHARE_SIGN = '%';
+const SHARES_WHOLE = 100;
+const SQUARE_WRITTEN = '0px';
+const SQUARE = 0;
+const NOT_SCALED = 1;
 // The ground read where no block a block stands in draws one: white, the browser's canvas in the light scheme a film
 // asks for where it names none; a page that lets the dark scheme in shows its canvas dark, which is not read
 const WHITE: Channels = { red: 255, green: 255, blue: 255, alpha: 255 };
@@ -194,6 +250,26 @@ export class PlaywrightPage implements FilmedPage {
 	async groundBehind(target: string): Promise<string> {
 		const block = await this.found(target);
 		return hexOf((await block.evaluate(groundOf, GROUND_ASKED)) ?? WHITE);
+	}
+
+	async cornersOf(target: string): Promise<Corners> {
+		const drawing = await this.drawingOf(await this.found(target));
+		return cornersFrom(await drawing.evaluate(radiiRead, CORNER_RADII), target);
+	}
+
+	/**
+	 * The block that draws a block: the block itself, or, where it paints nothing of its own, the one block it holds,
+	 * where that one stands as large and where it does, as a wrapper holds the card it lays out, and so on down.
+	 */
+	private async drawingOf(block: JSHandle<Element>): Promise<JSHandle<Element>> {
+		let drawing = block;
+		while (
+			(await drawing.evaluate(paintsNothing, PAINTS_NONE)) &&
+			(await drawing.evaluate(holdsOneAsLarge, AS_LARGE_WITHIN))
+		) {
+			drawing = await drawing.evaluateHandle(firstHeld);
+		}
+		return drawing;
 	}
 
 	async letterAtTheStart(target: string): Promise<Box | null> {
@@ -411,6 +487,96 @@ function groundOf(block: Element, asked: GroundAsked): Channels | null {
 		if (alpha === asked.whole) return { red, green, blue, alpha };
 	}
 	return null;
+}
+
+/** Whether a block paints nothing of its own: no ground, picture, border or shadow. */
+function paintsNothing(block: Element, none: PaintsNone): boolean {
+	const style = getComputedStyle(block);
+	return (
+		style.backgroundColor === none.colour &&
+		style.backgroundImage === none.picture &&
+		style.boxShadow === none.shadow &&
+		none.borderWidths.every((width) => style.getPropertyValue(width) === none.border)
+	);
+}
+
+/** Whether a block holds one block alone, standing as large and where it does, within so many pixels. */
+function holdsOneAsLarge(block: Element, within: number): boolean {
+	const held = block.firstElementChild;
+	if (block.children.length !== 1 || held === null) return false;
+	const outer = block.getBoundingClientRect();
+	const inner = held.getBoundingClientRect();
+	return (
+		Math.abs(inner.left - outer.left) < within &&
+		Math.abs(inner.top - outer.top) < within &&
+		Math.abs(inner.width - outer.width) < within &&
+		Math.abs(inner.height - outer.height) < within
+	);
+}
+
+/** The first block a block holds, asked of one that holds one. */
+function firstHeld(block: Element): Element {
+	const held = block.firstElementChild;
+	if (held === null) throw new Error('a block asked for the block it holds holds none');
+	return held;
+}
+
+/**
+ * How a block's corners are rounded, read off the page: each corner's border radius as CSS computes it, top left, top
+ * right, bottom right, bottom left; the box the block lays out, which a share of it is written of; and the box it is
+ * drawn as, as the transforms over it scale it.
+ */
+function radiiRead(block: Element, radii: readonly string[]): RadiiRead {
+	const style = getComputedStyle(block);
+	const bounds = block.getBoundingClientRect();
+	const laid = block instanceof HTMLElement ? { width: block.offsetWidth, height: block.offsetHeight } : bounds;
+	return {
+		radii: radii.map((property) => style.getPropertyValue(property)),
+		laid: { width: laid.width, height: laid.height },
+		drawn: { width: bounds.width, height: bounds.height }
+	};
+}
+
+/**
+ * How round each corner of a block is drawn, in the screen's pixels, as its radii read come out on its box: a share of
+ * its width across and of its height down where written as one; of an elliptical corner the narrower way, as the stage
+ * rounds a corner as a circle; as many times as large across and down as the block is drawn. Refused where a radius is
+ * written in a way it cannot be read, as a `calc()` mixing a share and pixels.
+ */
+function cornersFrom(read: RadiiRead, target: string): Corners {
+	const across = read.laid.width > 0 ? read.drawn.width / read.laid.width : NOT_SCALED;
+	const down = read.laid.height > 0 ? read.drawn.height / read.laid.height : NOT_SCALED;
+	const radii = read.radii.map((radius) => radiusOf(radius, read.laid, { across, down }));
+	const unread = read.radii.find((_, place) => Number.isNaN(radii[place]));
+	if (unread !== undefined) {
+		throw new FilmError(
+			`piece.show reads how round ${target} is drawn, and its border radius ${unread} is no length it reads: lift it with air and name its corner`
+		);
+	}
+	// Each of the four properties gives a radius always; the defaults tell the type checker so
+	const [topLeft = SQUARE, topRight = SQUARE, bottomRight = SQUARE, bottomLeft = SQUARE] = radii;
+	return { topLeft, topRight, bottomRight, bottomLeft };
+}
+
+/**
+ * How round a corner is drawn, in the screen's pixels, as CSS computes its radius on a box laid out so large and drawn
+ * so many times as large across and down: one length, or one across and one down, each in pixels or as a share of the
+ * box; the narrower way.
+ */
+function radiusOf(
+	computed: string,
+	laid: Size,
+	drawnTimes: { readonly across: number; readonly down: number }
+): number {
+	const [across = SQUARE_WRITTEN, down = across] = computed.split(RADII_APART);
+	return Math.min(lengthOf(across, laid.width) * drawnTimes.across, lengthOf(down, laid.height) * drawnTimes.down);
+}
+
+/** A length CSS computes, in pixels or as a share of a length, in pixels; none it reads, not a number, else. */
+function lengthOf(computed: string, ofLength: number): number {
+	if (!LENGTH_READ.test(computed)) return Number.NaN;
+	const value = Number.parseFloat(computed);
+	return computed.endsWith(A_SHARE_SIGN) ? (value / SHARES_WHOLE) * ofLength : value;
 }
 
 /**

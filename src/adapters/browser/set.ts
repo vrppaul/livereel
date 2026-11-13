@@ -6,8 +6,9 @@
  *
  * A state is pictured as the app's tab shows it once its fonts have loaded, at the screen's size and the set's
  * sharpness, as a PNG, its text caret kept and anything still animating set at its end; every block each of the set's
- * targets matches is measured then, with the ground behind the first, as a live page's are, so a take reads the set as
- * it would have read the app; their letters are not, as no film on a set asked for them. A target that matched nothing
+ * targets matches is measured then, with the ground behind the first and its corners, as a live page's are, so a take
+ * reads the set as it would have read the app; their letters are not, as no film on a set asked for them. A set shot
+ * before corners were kept is refused, to be shot again. A target that matched nothing
  * in a state is not kept for it. The state shown is held here, as an act shows it: a move reads its targets from it,
  * and the scroll and keys the set's pictures stood still for are refused. A film shot on its set has no app, so an act
  * that asks for the page is refused, saying how a state is shown, where it would have waited on livereel's own page for
@@ -15,7 +16,7 @@
  */
 import type { Browser as Playwright, Frame, Page } from 'playwright-core';
 import { FilmError } from '../../domain/errors.ts';
-import { type Box, boxAround } from '../../domain/geometry.ts';
+import { type Box, type Corners, boxAround } from '../../domain/geometry.ts';
 import type { BlockKey } from '../../domain/placement.ts';
 import type { ActContext, FilmedPage, PageMotionSwitch, ScrollCourse, SetShown } from '../../direction/page.ts';
 import type { OpenedForSet, SetShot, StateShot, StateTaken, TargetShot } from '../../studio/ports.ts';
@@ -146,6 +147,10 @@ class SetPage implements FilmedPage {
 		return Promise.resolve().then(() => this.shotOf(target).ground);
 	}
 
+	cornersOf(target: string): Promise<Corners> {
+		return Promise.resolve().then(() => this.shotOf(target).corners);
+	}
+
 	/** The set shot where its targets' blocks stood, not their letters. */
 	letterAtTheStart(): Promise<Box | null> {
 		return Promise.reject(new FilmError(NO_LETTERS_SHOT));
@@ -216,7 +221,13 @@ export class AppOpenedForSet implements OpenedForSet {
 		const shot: TargetShot[] = [];
 		for (const target of targets) {
 			const boxes = await this.page.boxes(target);
-			if (boxes.length > 0) shot.push({ target, boxes, ground: await this.page.groundBehind(target) });
+			if (boxes.length === 0) continue;
+			shot.push({
+				target,
+				boxes,
+				ground: await this.page.groundBehind(target),
+				corners: await this.page.cornersOf(target)
+			});
 		}
 		return { name, picture, targets: shot };
 	}

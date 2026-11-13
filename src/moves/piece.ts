@@ -21,9 +21,13 @@
  * Lifted, it may leave a hole: the ground the page draws behind its block, read as it is lifted, or a colour the film
  * names, where a box of the screen, with no block behind it, needs one; reaching past the piece as far as the film
  * names, a socket its body comes up out of; sunk into the page as a pit with walls of its body's colour, which a piece
- * with no body cannot give; and draw lines from itself to its source. Its corners, and its hole's, are as round as the
- * film names, square where it names none: the film knows how round a block of its page is drawn, which no box read off
- * the page says. Every move of it takes the piece named `piece`, or the one the film names `as`.
+ * with no body cannot give; and draw lines from itself to its source. A piece of one block lifted alone has its
+ * corners, and its hole's, as round as the page draws the block's, read off it as it is lifted: the page knows how it
+ * draws a block, so the film never copies it. A stretch of the page, with air round its blocks, several blocks or a box
+ * of the screen, has no corners of its own: they are as round as the film names, square where it names none. A body's
+ * walls are of the colour the page shows along the piece's edge as it is lifted, as the claude-review promo reads a
+ * thing's walls off its picture, where the film names none. Every move of it takes the piece named `piece`, or the one
+ * the film names `as`.
  *
  * It may empty a block of the filmed page, which then stands as the page draws it hidden until the piece goes; wiped
  * away while it lies on the page, it and the block go behind one edge, set off from the near side of either, as the
@@ -40,7 +44,18 @@
  */
 import { type Camera, boxOnTheFrame } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
-import { type Box, type FrameSide, type Size, boxAround, frameScaleOf, middleY, sharesIn } from '../domain/geometry.ts';
+import {
+	type Box,
+	type Corners,
+	FRAME_SIDES,
+	type FrameSide,
+	type Size,
+	boxAround,
+	cornersAlike,
+	frameScaleOf,
+	middleY,
+	sharesIn
+} from '../domain/geometry.ts';
 import {
 	AN_OPAQUE_COLOUR,
 	A_COLOUR,
@@ -77,7 +92,6 @@ import { figureOnThePage } from '../props/lifted.ts';
 import type { ObjectName } from '../props/object.ts';
 import {
 	type Body,
-	type Corners,
 	type Emptied,
 	FOLLOWING_THE_PAGE,
 	type Hole,
@@ -161,12 +175,12 @@ export interface PitScript {
 
 /**
  * A piece's body as a film writes it: how thick it is back from its face, in the page's pixels, as its corners are;
- * its walls' colour, in hex with no alpha; and how strongly a light in their own hue shows through them, from 0 to 1,
- * none where the film names none.
+ * its walls' colour, in hex with no alpha, the colour the page shows along the piece's edge where the film names none;
+ * and how strongly a light in their own hue shows through them, from 0 to 1, none where the film names none.
  */
 export interface BodyScript {
 	readonly thickness: number;
-	readonly walls: string;
+	readonly walls?: string;
 	readonly glow?: number;
 }
 
@@ -181,16 +195,16 @@ export interface ShadeScript {
 
 /**
  * How a piece is lifted: off the first `every` blocks a selector matches, together, with `air` clear round them, in the
- * page's pixels; how round the corners of what it lifts are, `corner`, a radius in the page's pixels: a rounded card's
- * own `border-radius`, where it lifts the card alone and whole; the hole it leaves and the line the lines from it to
- * its source are drawn in, where the film names them; the `picture` it is drawn from, the page's as it changes,
- * `'following'`, where the film names none, or one of its source held as it is lifted, `'held'`; how it comes up; which
- * piece; the world it stands `inside`, which the eye moves through, or the group it stands in, if either; its `body` in
- * the world, if the film names one; whether it `rides` its block in the world, `'its block'`, standing on the page
- * there, carried as the camera frames the page, by the film's scrolls of every block whose scroll carries its source
- * and where a fade from the page lays it; the block whose `letters` it carries, a selector, which it
- * lands on a block's letters, if the film names one; how it stands out as it comes up, `effects`; and whether it stands
- * in the window's `shade` in the world, and to what height, where the film names it.
+ * page's pixels; how round the corners of a stretch of the page it lifts are, `corner`, a radius in the page's pixels,
+ * which one block lifted alone refuses, as it is as round as the page draws it; the hole it leaves and the line the
+ * lines from it to its source are drawn in, where the film names them; the `picture` it is drawn from, the page's as
+ * it changes, `'following'`, where the film names none, or one of its source held as it is lifted, `'held'`; how it
+ * comes up; which piece; the world it stands `inside`, which the eye moves through, or the group it stands in, if
+ * either; its `body` in the world, if the film names one; whether it `rides` its block in the world, `'its block'`,
+ * standing on the page there, carried as the camera frames the page, by the film's scrolls of every block whose scroll
+ * carries its source and where a fade from the page lays it; the block whose `letters` it carries, a selector, which
+ * it lands on a block's letters, if the film names one; how it stands out as it comes up, `effects`; and whether it
+ * stands in the window's `shade` in the world, and to what height, where the film names it.
  */
 export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript, ShownStandingOutScript {
 	readonly every?: number;
@@ -230,13 +244,34 @@ type Filling =
 
 /**
  * A hole as a piece is made: how it is filled, the line round its edge, if any, how far past the piece it reaches, and
- * its pit, if any.
+ * its pit, if any, whose walls are its piece's body's as the piece is lifted.
  */
 interface HoleAsked {
 	readonly filling: Filling;
 	readonly line: Stroke | null;
 	readonly reach: number;
-	readonly pit: Pit | null;
+	readonly pit: Omit<Pit, 'walls'> | null;
+}
+
+/** Whether each side of a part of the screen stands on a side of another part. */
+type SidesStanding = { readonly [Side in FrameSide]: boolean };
+
+/**
+ * How round a piece's corners are, as it is made: as the page draws its one block, read off it as it is lifted; or as
+ * round as the film names each, square where it names none.
+ */
+type CornersAsked =
+	{ readonly kind: 'its block'; readonly block: string } | { readonly kind: 'named'; readonly radius: number };
+
+/**
+ * The colour of a body's walls, as a piece is made: the colour its picture shows along its edge as it is lifted, or the
+ * colour the film names.
+ */
+type WallsAsked = { readonly kind: 'its edge' } | { readonly kind: 'named'; readonly colour: string };
+
+/** A piece's body as it is made: as the film writes it, its walls' colour still to read where it names none. */
+interface BodyAsked extends Omit<Body, 'walls'> {
+	readonly walls: WallsAsked;
 }
 
 /**
@@ -246,11 +281,11 @@ interface HoleAsked {
  * as the film writes it, if it does.
  */
 interface Lifting extends Taking {
-	readonly corner: number;
+	readonly corners: CornersAsked;
 	readonly hole: HoleAsked | null;
 	readonly lines: Stroke | null;
 	readonly picture: PiecePicture['kind'];
-	readonly body: Body | null;
+	readonly body: BodyAsked | null;
 	readonly letters: string | null;
 	readonly shade: ShadeScript | null;
 }
@@ -282,8 +317,10 @@ const LENGTH_ACROSS_FROM: { readonly [Edge in FrameSide]: keyof Size } = {
 	top: 'height',
 	bottom: 'height'
 };
-// A piece's corners where the film names none: square, as its box
+// The corners of a stretch of the page where the film names none: square, as its box
 const SQUARE = 0;
+// A body's walls where the film names no colour: of the colour the piece's picture shows along its edge
+const OF_ITS_EDGE: WallsAsked = { kind: 'its edge' };
 // How near, in the page's pixels, an edge of a piece stands to an edge of what the camera shows to stand on it
 const ON_THE_EDGE = 0.5;
 // The word a film names the ground the page draws behind a block by, for a hole
@@ -306,7 +343,7 @@ const A_PIECE_PICTURE: Kind<PiecePicture['kind']> = new OneOf(
 	PIECE_PICTURES,
 	`what a piece is drawn from: "following", the page's picture as it changes, or "held", a picture of its source held as it is lifted`
 );
-const BODY_FORM: Form<BodyScript> = { thickness: needed(A_PIXELS), walls: needed(AN_OPAQUE_COLOUR), glow: A_SHARE };
+const BODY_FORM: Form<BodyScript> = { thickness: needed(A_PIXELS), walls: AN_OPAQUE_COLOUR, glow: A_SHARE };
 // A body's walls, or a pit's, lit from within by no light where the film names none
 const NO_GLOW = 0;
 // A piece that carries no letters where the film names no block of them, and lands as large as a block holds it
@@ -335,20 +372,22 @@ const PIECE_FORM: Form<PieceScript> = {
 };
 /**
  * A piece of the page lifted off a target, a selector's first `every` blocks together or a box of the screen, over
- * where the camera shows it, cut to the part it shows, its corners as round as the film names, leaving the hole and
- * drawing the lines the film names, drawn from the picture the film names: in place of any piece of its name, in its
- * own way, fading up whole, or in a way of livereel's the film names, with the body the film names; in the world,
- * riding its block wherever the camera, the window, the film's scrolls and a fade take it, where the film asks. A
- * hole over a box of the screen, which has no block to read the ground behind, is refused unless the film names its
- * colour; a pit on a piece with no body, whose colour its walls take, is refused.
+ * where the camera shows it, cut to the part it shows, its corners as round as its one block's or as the film names,
+ * leaving the hole and drawing the lines the film names, drawn from the picture the film names: in place of any piece
+ * of its name, in its own way, fading up whole, or in a way of livereel's the film names, with the body the film names;
+ * in the world, riding its block wherever the camera, the window, the film's scrolls and a fade take it, where the film
+ * asks. A hole over a box of the screen, which has no block to read the ground behind, is refused unless the film
+ * names its colour; a pit on a piece with no body, whose colour its walls take, is refused; and a corner named for one
+ * block lifted alone, which the page draws.
  */
 export function show(target: Target, script: PieceScript = {}): Move {
 	assertKind(target, A_TARGET, "piece.show's target");
 	assertWritten(script, PIECE_FORM, 'piece.show');
+	const taking = takingOf(script);
 	const body = script.body === undefined ? null : bodyAsked(script.body, script.inside);
 	const lifting: Lifting = {
-		...takingOf(script),
-		corner: script.corner ?? SQUARE,
+		...taking,
+		corners: cornersAsked(target, taking, script.corner),
 		hole: script.hole === undefined ? null : holeAsked(target, script.hole, body),
 		lines: script.lines ?? null,
 		picture: script.picture ?? FOLLOWING_THE_PAGE.kind,
@@ -391,6 +430,25 @@ function takingOf(script: PieceScript): Taking {
 		air: script.air ?? NO_AIR,
 		bornIn: script.inside ?? BORN_ON_THE_FRAME
 	};
+}
+
+/**
+ * How round a piece's corners are as the film lifts it: as the page draws its block, where it lifts one block alone,
+ * and a corner it names for one is refused; as round as it names else, square where it names none.
+ */
+function cornersAsked(target: Target, taking: Taking, corner: number | undefined): CornersAsked {
+	if (!isOneBlockAlone(target, taking)) return { kind: 'named', radius: corner ?? SQUARE };
+	if (corner !== undefined) {
+		throw new FilmError(
+			`piece.show lifts ${target} alone, as round as the page draws it: drop corner, which rounds a stretch of the page only, lifted with air or off several blocks`
+		);
+	}
+	return { kind: 'its block', block: target };
+}
+
+/** Whether a piece is lifted off one block alone: a selector's first block, with no air round it. */
+function isOneBlockAlone(target: Target, taking: Taking): target is string {
+	return typeof target === 'string' && taking.every === ONE_BLOCK && taking.air === NO_AIR;
 }
 
 /**
@@ -614,7 +672,7 @@ function sheenAcross(piece: ShowingOf<'piece'>, edge: FrameSide, sheen: SheenScr
  * names, of the piece's body's colour; filled with a colour it names, or with the ground behind the block a selector
  * names, refused for a box of the screen, which names no block.
  */
-function holeAsked(target: Target, hole: HoleScript, body: Body | null): HoleAsked {
+function holeAsked(target: Target, hole: HoleScript, body: BodyAsked | null): HoleAsked {
 	const ground = hole.ground ?? PAGES_GROUND;
 	const shaped = {
 		line: hole.line ?? null,
@@ -631,55 +689,60 @@ function holeAsked(target: Target, hole: HoleScript, body: Body | null): HoleAsk
 }
 
 /**
- * A pit as the film names it, its walls the piece's body's colour, lit from within by none where it names no glow;
- * refused on a piece with no body.
+ * A pit as the film names it, lit from within by none where it names no glow, its walls to be its piece's body's
+ * colour; refused on a piece with no body.
  */
-function pitAsked(pit: PitScript, body: Body | null): Pit {
+function pitAsked(pit: PitScript, body: BodyAsked | null): Omit<Pit, 'walls'> {
 	if (body === null) {
 		throw new FilmError(
-			"piece.show sinks a hole's pit with walls of the piece's body's colour: give the piece a body, body: { thickness, walls }"
+			"piece.show sinks a hole's pit with walls of the piece's body's colour: give the piece a body, body: { thickness }"
 		);
 	}
-	return { depth: pit.depth, walls: body.walls, glow: pit.glow ?? NO_GLOW };
+	return { depth: pit.depth, glow: pit.glow ?? NO_GLOW };
 }
 
 /**
- * A body as the film names it, its walls lit from within by none where it names no glow; refused but inside the world,
- * as the frame, a group and the window are drawn flat over everything in the room.
+ * A body as the film names it, its walls of the colour it names or of its edge's, lit from within by none where it
+ * names no glow; refused but inside the world, as the frame, a group and the window are drawn flat over everything in
+ * the room.
  */
-function bodyAsked(body: BodyScript, inside: PieceScript['inside']): Body {
+function bodyAsked(body: BodyScript, inside: PieceScript['inside']): BodyAsked {
 	if (inside !== 'world') {
 		throw new FilmError(
 			"piece.show draws a piece's body inside the world alone, as the frame, a group and the window are drawn flat over everything: lift it inside: 'world'"
 		);
 	}
-	return { thickness: body.thickness, walls: body.walls, glow: body.glow ?? NO_GLOW };
+	const walls: WallsAsked = body.walls === undefined ? OF_ITS_EDGE : { kind: 'named', colour: body.walls };
+	return { thickness: body.thickness, walls, glow: body.glow ?? NO_GLOW };
 }
 
 /**
- * A piece of the page over a target, cut to the part of it the camera shows, its corners as round as the film names,
- * the hole it leaves filled as the page draws it now and as round, drawn from the picture the film names, with the
- * body it names, carrying the letters of the block it names as they stand now, and the box of the frame it shows there.
+ * A piece of the page over a target, cut to the part of it the camera shows, its corners as round as its block's as
+ * the page draws it now or as the film names, the hole it leaves filled as the page draws it now and as round, drawn
+ * from the picture the film names, with the body it names, its walls of the colour of its edge now where it names
+ * none, carrying the letters of the block it names as they stand now, and the box of the frame it shows there.
  */
 async function lifted(beginning: Beginning, target: Target, lifting: Lifting): Promise<Coming> {
 	const camera = cameraOverItsPicture(beginning, lifting.picture, 'piece.show');
-	const { source, shown, box } = await sourceOf(beginning, camera, target, lifting, 'piece.show');
+	const { source, shown, box, whole } = await sourceOf(beginning, camera, target, lifting, 'piece.show');
+	const uncut = sidesStandingOn(source, whole);
+	const ownCorners = squareWhereCut(await cornersTaken(beginning, lifting.corners), uncut);
 	// The window's corner as the look rounds it on the frame, in the page's pixels as the camera shows them there
 	const windowCorner =
 		(beginning.scene.look.paneCorner * frameScaleOf(beginning.format.frame) * source.width) / box.width;
-	const corners = cornersOf(source, shown, lifting.corner, windowCorner);
-	const hole = lifting.hole === null ? null : await holeOf(beginning, lifting.hole, lifting.corner);
+	const body = lifting.body === null ? null : await bodyTaken(beginning, lifting.body, source, edgeSides(uncut));
+	const hole = lifting.hole === null ? null : await holeOf(beginning, lifting.hole, ownCorners, body);
 	const picture = await pictureOf(beginning, lifting.picture, source);
 	const liftedOff = pageShownBy(beginning.scene.screen.shows);
 	const piece: Piece = {
 		kind: PIECE,
 		source,
 		liftedOff,
-		corners,
+		corners: cornersOf(ownCorners, sidesStandingOn(source, shown), windowCorner),
 		hole,
 		lines: lifting.lines,
 		picture,
-		body: lifting.body,
+		body,
 		firstLetter: lifting.letters === CARRIES_NONE ? CARRIES_NONE : await firstLetterCarried(beginning, lifting.letters),
 		emptied: EMPTIES_NONE,
 		inTheShade: inTheShadeIn(lifting.shade, beginning.format.frame)
@@ -709,38 +772,98 @@ async function pictureOf(beginning: Beginning, kind: PiecePicture['kind'], sourc
 	}
 }
 
+/** How round a piece's own corners are as it is lifted: as the page draws its block now, or alike as the film names. */
+async function cornersTaken(beginning: Beginning, asked: CornersAsked): Promise<Corners> {
+	switch (asked.kind) {
+		case 'its block':
+			return beginning.page.cornersOf(asked.block);
+		case 'named':
+			return cornersAlike(asked.radius);
+	}
+}
+
 /**
- * How round each corner of a piece is: as the film names, and as the window, where it is rounder, at a corner that
- * stands on a corner of what the camera shows, which the window rounds.
+ * A piece's body as it is lifted off a part of the screen: its walls of the colour the film names, or of the colour the
+ * page shows along the part's edge now, on the sides named.
  */
-function cornersOf(source: Box, shown: Box, corner: number, windowCorner: number): Corners {
-	const left = standsOn(source.left, shown.left);
-	const top = standsOn(source.top, shown.top);
-	const right = standsOn(source.left + source.width, shown.left + shown.width);
-	const bottom = standsOn(source.top + source.height, shown.top + shown.height);
+async function bodyTaken(
+	beginning: Beginning,
+	asked: BodyAsked,
+	source: Box,
+	sides: readonly FrameSide[]
+): Promise<Body> {
+	switch (asked.walls.kind) {
+		case 'its edge':
+			return { ...asked, walls: await beginning.edgeColour(source, sides) };
+		case 'named':
+			return { ...asked, walls: asked.walls.colour };
+	}
+}
+
+/**
+ * How round each corner of a piece is: as its own, and as the window, where it is rounder, at a corner that stands on
+ * a corner of what the camera shows, which the window rounds.
+ */
+function cornersOf(own: Corners, onWhatIsShown: SidesStanding, windowCorner: number): Corners {
+	const { left, top, right, bottom } = onWhatIsShown;
 	return {
-		topLeft: left && top ? Math.max(corner, windowCorner) : corner,
-		topRight: right && top ? Math.max(corner, windowCorner) : corner,
-		bottomRight: right && bottom ? Math.max(corner, windowCorner) : corner,
-		bottomLeft: left && bottom ? Math.max(corner, windowCorner) : corner
+		topLeft: left && top ? Math.max(own.topLeft, windowCorner) : own.topLeft,
+		topRight: right && top ? Math.max(own.topRight, windowCorner) : own.topRight,
+		bottomRight: right && bottom ? Math.max(own.bottomRight, windowCorner) : own.bottomRight,
+		bottomLeft: left && bottom ? Math.max(own.bottomLeft, windowCorner) : own.bottomLeft
 	};
 }
 
-/** Whether an edge of a piece stands on an edge of what the camera shows. */
-function standsOn(edge: number, shownEdge: number): boolean {
-	return Math.abs(edge - shownEdge) < ON_THE_EDGE;
+/**
+ * A piece's own corners where the camera cut its blocks: square at a corner either side of which was cut, as a cut
+ * runs straight through a block, as drawn at the others.
+ */
+function squareWhereCut(own: Corners, uncut: SidesStanding): Corners {
+	const { left, top, right, bottom } = uncut;
+	return {
+		topLeft: left && top ? own.topLeft : SQUARE,
+		topRight: right && top ? own.topRight : SQUARE,
+		bottomRight: right && bottom ? own.bottomRight : SQUARE,
+		bottomLeft: left && bottom ? own.bottomLeft : SQUARE
+	};
+}
+
+/**
+ * The sides of a piece its edge is read on for its walls' colour: those the camera did not cut, where the blocks' own
+ * edge is; every side where it cut them all.
+ */
+function edgeSides(uncut: SidesStanding): readonly FrameSide[] {
+	const whole = FRAME_SIDES.filter((side) => uncut[side]);
+	return whole.length > 0 ? whole : FRAME_SIDES;
+}
+
+/** Which sides of a part of the screen stand on the same sides of a part round it. */
+function sidesStandingOn(part: Box, around: Box): SidesStanding {
+	return {
+		left: standsOn(part.left, around.left),
+		top: standsOn(part.top, around.top),
+		right: standsOn(part.left + part.width, around.left + around.width),
+		bottom: standsOn(part.top + part.height, around.top + around.height)
+	};
+}
+
+/** Whether an edge of a piece stands on an edge of another part. */
+function standsOn(edge: number, otherEdge: number): boolean {
+	return Math.abs(edge - otherEdge) < ON_THE_EDGE;
 }
 
 /**
  * A hole as it is filled, with its colour or the ground the page draws behind its block as the move begins, its
- * corners as round as its piece's.
+ * corners as round as its piece's own, its pit's walls its piece's body's.
  */
-async function holeOf(beginning: Beginning, asked: HoleAsked, corner: number): Promise<Hole> {
-	const { filling, ...shaped } = asked;
+async function holeOf(beginning: Beginning, asked: HoleAsked, corners: Corners, body: Body | null): Promise<Hole> {
+	const { filling, pit: pitShaped, ...shaped } = asked;
+	// A pit is asked for a piece with a body alone (pitAsked)
+	const pit = pitShaped === null || body === null ? null : { ...pitShaped, walls: body.walls };
 	switch (filling.kind) {
 		case 'colour':
-			return { ...shaped, ground: filling.colour, corner };
+			return { ...shaped, pit, ground: filling.colour, corners };
 		case 'behind':
-			return { ...shaped, ground: await beginning.page.groundBehind(filling.selector), corner };
+			return { ...shaped, pit, ground: await beginning.page.groundBehind(filling.selector), corners };
 	}
 }

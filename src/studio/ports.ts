@@ -3,7 +3,7 @@
  * stage and the page open, footage to keep frames in, and a track to keep sounds in. The adapters answer these; the
  * studio names no process, browser or file of its own, and blends no image.
  */
-import type { Box, Size } from '../domain/geometry.ts';
+import type { Box, Corners, FrameSide, Size } from '../domain/geometry.ts';
 import type { OwnPageStanding } from '../domain/own-page.ts';
 import type { FilmInFormat, PageKind } from '../direction/film.ts';
 import type { ActContext, FilmedPage, MeasuredPage, OwnPage, PageShown } from '../direction/page.ts';
@@ -70,6 +70,11 @@ export interface PicturedStage extends DrawingStage {
 	 * which a drawn piece names it.
 	 */
 	readonly holdPicture: (part: Box, zoom: number, page: PicturedPage) => Promise<number>;
+	/**
+	 * The colour a page as it stands now shows along the edge of a part of the screen, in its pixels, on the sides named,
+	 * in hex with no alpha: its picture read at the middle of each, a little in, mixed in linear light.
+	 */
+	readonly edgeColour: (part: Box, sides: readonly FrameSide[], page: PicturedPage) => Promise<string>;
 	/** A picture of a part of the screen the stage holds let go, by its number: no frame drawn after names it. */
 	readonly letGo: (number: number) => Promise<void>;
 	/**
@@ -191,12 +196,13 @@ export interface Browser {
 
 /**
  * Where a target of the film stood in a state of its set, where it matched any block: every block it matched, in the
- * page's order, and the ground behind the first, in hex.
+ * page's order; the ground behind the first, in hex; and how round the page drew each of its corners.
  */
 export interface TargetShot {
 	readonly target: string;
 	readonly boxes: readonly Box[];
 	readonly ground: string;
+	readonly corners: Corners;
 }
 
 /** A state of a set as its scenario marked it: its name, and where the set's targets stood, those that matched. */

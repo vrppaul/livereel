@@ -16,7 +16,7 @@ import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
 import { ZOOM_AT_MOST } from '../../src/domain/camera.ts';
 import { FilmError, SetupError, TakeError } from '../../src/domain/errors.ts';
-import type { Box, Size } from '../../src/domain/geometry.ts';
+import type { Box, Corners, Size } from '../../src/domain/geometry.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
 import type { Exposures, Filmed, Footage, FramesHanded, Opened, PicturedStage } from '../../src/studio/ports.ts';
 import { type BlockHolding, ownPageOf } from '../../src/direction/page.ts';
@@ -668,8 +668,9 @@ test('a scroll of a block the page does not have is refused as its share begins,
 	await expect(shooting).rejects.toThrow('nothing on the page matches [data-testid=nowhere]');
 });
 
-// A page whose blocks stand on grounds of their own: a card on a band tinted over the page's light ground, and a note on
-// a dark band
+// A page whose blocks stand on grounds of their own: a card on a band tinted over the page's light ground, rounder at
+// its top than at its foot, and on a dark band a note and a badge 100 × 40 rounded a tenth across and half down at
+// each corner, drawn twice as large
 const GROUNDS = new URL('./grounds.html', import.meta.url).href;
 
 test('the ground behind a block is the first the blocks it stands in draw whole, a tint over it seen through, and white where none draws one', async () => {
@@ -690,6 +691,36 @@ test('the ground behind a block is the first the blocks it stands in draw whole,
 	}).formats.get('small')!;
 	await shoot(film, shootingInto(new EveryFrameCounted(), 'software'));
 	expect(grounds).toEqual(['#f6f7f9ff', '#123456ff', '#ffffffff']);
+});
+
+test('each corner of a block is as round as its radius comes out on its box: a share of it where written so, the narrower way, as large as it is drawn, off the block a bare wrapper holds; a radius it cannot read refused', async () => {
+	const corners: Corners[] = [];
+	const refusals: string[] = [];
+	const steps = [
+		act(async (context: ActContext) => {
+			const page = new PlaywrightPage(context.page, context.page.page().keyboard);
+			for (const block of ['card', 'badge', 'wrapper']) corners.push(await page.cornersOf(`[data-testid=${block}]`));
+			await page.cornersOf('[data-testid=mixed]').catch((refused: Error) => refusals.push(refused.message));
+		})
+	];
+	const film = defineFilm({
+		formats: { small: SMALL },
+		address: GROUNDS,
+		ready: (context) => context.page.locator('main').waitFor(),
+		steps: () => steps
+	}).formats.get('small')!;
+	await shoot(film, shootingInto(new EveryFrameCounted(), 'software'));
+	// The badge a tenth of 100 across and half of 40 down, 10 the narrower, twice as large; the wrapper's card 12
+	expect([corners, refusals]).toEqual([
+		[
+			{ topLeft: 8, topRight: 8, bottomRight: 4, bottomLeft: 4 },
+			{ topLeft: 20, topRight: 20, bottomRight: 20, bottomLeft: 20 },
+			{ topLeft: 12, topRight: 12, bottomRight: 12, bottomLeft: 12 }
+		],
+		[
+			'piece.show reads how round [data-testid=mixed] is drawn, and its border radius calc(10% + 4px) is no length it reads: lift it with air and name its corner'
+		]
+	]);
 });
 
 // A page of lines of code set in a monospace font past a padding, each a line tall: one whose markup is indented

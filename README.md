@@ -899,11 +899,17 @@ densely as the eye magnifies it, so give it a file at least as large as the fram
 `piece.show(target, { every, air, corner, hole, lines, picture, inside, body, rides, letters, enter, edge, as,
 group, zIndex, effects })` lifts a piece of the page onto the frame: the first `every` blocks a selector matches,
 together, or a box of the screen, with `air` pixels of the page round them where named, over where the camera
-shows them, cut to the part it shows. Its corners, and its hole's, are as round as `corner` names in the page's
-pixels, a rounded card's own `border-radius`, square where none is named, and as round as the window at a corner
-standing on a corner of what the window shows. `piece.to`, `piece.lean` and `piece.effects` move it as any
-object; `piece.back({ as })` takes it back over its source as the camera shows it then, face-on and as large as it
-was, without spinning back a whole turn; `piece.hide({ toward, leave, edge, sheen, as })` puts it away.
+shows them, cut to the part it shows. `piece.to`, `piece.lean` and `piece.effects` move it as any object;
+`piece.back({ as })` takes it back over its source as the camera shows it then, face-on and as large as it was,
+without spinning back a whole turn; `piece.hide({ toward, leave, edge, sheen, as })` puts it away.
+
+**Its corners.** Lifted off one block alone, its corners, and its hole's, are as round as the page draws the
+block's, each read off its `border-radius` as it is lifted, a share of its box or an ellipse's narrower way, as
+large as transforms draw it; a block that paints nothing of its own and holds one block as large, as a wrapper holds
+a card, is read off the block it holds. So a film never copies the page's shape. A stretch of the page, with `air`
+round its blocks, several blocks or a box of the screen, is as round as `corner` names in the page's pixels, square
+where none is named. A corner the camera cuts through is square; one on a corner of what the window shows is as
+round as the window. Refused: `corner` for one block alone, and a radius it cannot read, as a `calc()`.
 
 **Its picture.** It is drawn from the page's picture, so it shows what the page shows there as the page changes,
 and a page scrolled under it shows what scrolls into that part of the screen. Grown flat past 2.2 times, it is
@@ -967,11 +973,12 @@ place, it stands there and rides on, refused while the window leans; `back` take
 block stands then; `onto` ends the ride. Refused: riding anywhere but in the world, and on a set.
 
 **A body.** A piece lifted `inside: 'world'` may have a body, as a real button rises out of the page as a column:
-`piece.show(STORY, { inside: 'world', corner: 6, body: { thickness: 12, walls: '#222935', glow: 0.02 }, hole: {
-ground: '#07090d' } })`, then `piece.effects({ depth: 11.25, shadow: 1 })`. Its walls go back from its face
-`thickness` of the page's pixels, matte, the colour `walls` names at the face darkening to 0.35 of it at the back,
-with a light inside them, their own hue at a lightness of 0.6, added as strongly as `glow`, 0 to 1. On the plane
-it was lifted from they stand behind the page, which hides them; as `depth` brings the face toward the eye they
+`piece.show(STORY, { inside: 'world', body: { thickness: 12, glow: 0.02 }, hole: { ground: '#07090d' } })`, then
+`piece.effects({ depth: 11.25, shadow: 1 })`. Its walls go back from its face `thickness` of the page's pixels,
+matte, of the colour the page shows along the piece's edge as it is lifted, read at the middle of each side 1.5 of
+the page's pixels in and the four mixed, or of the colour `walls` names, at the face darkening to 0.35 of it at the
+back, with a light inside them, their own hue at a lightness of 0.6, added as strongly as `glow`, 0 to 1. On the
+plane it was lifted from they stand behind the page, which hides them; as `depth` brings the face toward the eye they
 come up out of it, growing back from the face as it comes and shrinking into it as it goes, and its shadow lies on
 that plane under it, as dark as `shadow` is strong, dropped toward its foot and soft as far as the face stands
 high. A room only: flat draws the face and its shadow on the face's own plane. Refused: a body anywhere but in the
