@@ -3046,6 +3046,12 @@ test("a piece in the world lifted into the window's shade is reached by it as fa
 	]);
 });
 
+test("a piece clears the window's shade at a height counted as its depth is, in pixels of a frame 1080 high, on a frame of any size: half way up on a frame 400 high", async () => {
+	const lifted = await setAt(piece.show('#card', { inside: 'world', shade: { clearAt: 60 } }), OPENING_IN_SMALL, 1);
+	const halfWay = await setAt(piece.effects({ depth: 30 }), lifted, 1);
+	expect(drawnObject('piece', halfWay.objects.get('piece')!, 0, AROUND_IN_FULL_HD).content.shaded).toBe(0.5);
+});
+
 test("a piece is lifted into the window's shade inside the world alone, where it stands over the page it was lifted off, and clears it at a height more than none", () => {
 	const shade = { clearAt: 60 };
 	expect(() => piece.show('#card', { shade })).toThrow(
@@ -3053,7 +3059,9 @@ test("a piece is lifted into the window's shade inside the world alone, where it
 			"piece.show lifts a piece into the window's shade inside the world alone, where it stands over the page it was lifted off: lift it inside: 'world'"
 		)
 	);
-	expect(() => piece.show('#card', { inside: 'world', shade: { clearAt: 0 } })).toThrow(FilmError);
+	expect(() => piece.show('#card', { inside: 'world', shade: { clearAt: 0 } })).toThrow(
+		new FilmError("piece.show's shade's clearAt is 0: it is a number of pixels, more than 0")
+	);
 });
 
 test('an object brought toward the eye by its effects stands in its box, as near as a carry brings it, and a carry naming no depth, to a place or to a block, leaves the depth they set, whichever is written first', async () => {

@@ -911,7 +911,7 @@ class Room {
 	 */
 	worldApartDrawn(scene, world, gathered) {
 		this.lighting.shiningIn(world.scene, scene.eye.roomInTheEyesSpace);
-		if (world.holdsTheWindow && scene.window.pageFaded > NONE_FADED) {
+		if (world.holdsTheWindow && scene.window.pageFaded > NONE_FADED && world.shaded.length > NONE_STANDING) {
 			this.worldSeen.keptBeforeTheWindow(this.renderer);
 		}
 		this.renderer.setRenderTarget(this.worldLayer);
@@ -1068,7 +1068,9 @@ class Room {
 		for (const [partPlace, part] of markup.parts.entries()) {
 			const inTheWorld = this.markupPartAt(place, partPlace);
 			const matrix = surfaceMatrixOf(markup.object.inTheEyesSpace, part.placing);
-			const values = { surface: inTheWorld.texture.texture, faded, ...seenFromValuesOf(part) };
+			const values = { surface: inTheWorld.texture.texture, ...seenFromValuesOf(part) };
+			// The depth alone writes no colour, so its surface is faded none and reads nothing behind it
+			valuesSet(inTheWorld.light.material, { faded });
 			for (const surface of [inTheWorld.light, inTheWorld.depth]) {
 				valuesSet(surface.material, values);
 				placedBy(surface, matrix);
@@ -1331,8 +1333,9 @@ function shadedBoxesOf(markup, pits) {
 function pieceShaded(object) {
 	const piece = object.content;
 	if (piece.kind !== 'piece' || piece.shaded === null) return NO_SHADED_BOXES;
+	// Rounded as its least round corner, so no square corner of its figure falls outside the box
 	const { topLeft, topRight, bottomRight, bottomLeft } = piece.corners;
-	const corner = Math.max(topLeft, topRight, bottomRight, bottomLeft);
+	const corner = Math.min(topLeft, topRight, bottomRight, bottomLeft);
 	const back = piece.body === null ? REACHES_NO_FARTHER_BACK : piece.body.thickness;
 	return [shadedBox(matrixOf(object.inTheEyesSpace), piece.figure, corner, back, piece.shaded)];
 }

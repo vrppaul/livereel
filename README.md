@@ -991,7 +991,8 @@ keeps a lifted part as soft and faded as its page as far as it has not risen: `s
 reach it, and its walls and pit, wholly while its face lies on the page, less as `depth` brings it toward the eye,
 and not at all from 56 frame pixels on. The room blurs it and its pit by the shade's own law, through the eye's lens
 in light, and fades them in light into what stands behind the page, so lying on its page a piece shows as the page
-round it, and lifted whole it stands sharp and clear: the film writes no blur or fade of its own for it. A room
+round it, but for the shade's `dim`, which stays the screen's alone, and lifted whole it stands sharp and clear: the
+film writes no blur or fade of its own for it. A room
 only, where the shade blurs the whole window: flat draws it as a piece in no shade. Refused: a piece in the shade
 anywhere but in the world.
 

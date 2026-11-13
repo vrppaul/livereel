@@ -290,8 +290,9 @@ empty; `lines: 'solid'` ties it to its source; `picture: 'held'` keeps it as it 
 walls (`body: { thickness, walls, glow }`), leave a socket or pit (`hole: { reach, pit: { depth, glow } }`) and stand
 in the window's shade, as soft and faded as its page until it rises `clearAt` that many pixels (`shade: { clearAt }`),
 the last three a room's alone; a piece in the shade is never given a blur or fade of the page's by hand; `letters`
-names the block of its source whose letters land letter on letter on the block `onto` names. A thing is lit by the world's `lights` and `softBoxes`, never the theme's; glass in it writes no depth,
-`depthWrite: false`. Never wrap what three.js does in a thing: build it in the module.
+names the block of its source whose letters land letter on letter on the block `onto` names. A thing is lit by the
+world's `lights` and `softBoxes`, never the theme's; glass in it writes no depth, `depthWrite: false`. Never wrap
+what three.js does in a thing: build it in the module.
 
 **Where it is seen from** (README "Where it is seen from")
 

@@ -242,8 +242,8 @@ interface HoleAsked {
 /**
  * What a piece is lifted with, as it is made: how its source is taken, how many blocks, with how much air round them
  * and where it is born; how round its corners are, the hole it leaves, if any, its lines, if any, the kind of picture
- * it is drawn from, its body, if any, the block whose letters it carries, if any, and how it stands in the window's
- * shade, if it does.
+ * it is drawn from, its body, if any, the block whose letters it carries, if any, and the window's shade it stands in,
+ * as the film writes it, if it does.
  */
 interface Lifting extends Taking {
 	readonly corner: number;
@@ -252,7 +252,7 @@ interface Lifting extends Taking {
 	readonly picture: PiecePicture['kind'];
 	readonly body: Body | null;
 	readonly letters: string | null;
-	readonly inTheShade: InTheShade | null;
+	readonly shade: ShadeScript | null;
 }
 
 const PIECE = 'piece' satisfies ShownKind;
@@ -354,22 +354,31 @@ export function show(target: Target, script: PieceScript = {}): Move {
 		picture: script.picture ?? FOLLOWING_THE_PAGE.kind,
 		body,
 		letters: script.letters ?? CARRIES_NONE,
-		inTheShade: script.shade === undefined ? IN_NO_SHADE : inTheShadeAsked(script.shade, script.inside)
+		shade: script.shade === undefined ? IN_NO_SHADE : shadeAsked(script.shade, script.inside)
 	};
 	return { ...pieceComing(target, script, lifting), holdsThePage: lifting.picture === 'held' };
 }
 
 /**
- * How a piece stands in the window's shade as the film names it: refused anywhere but inside the world, where it stands
+ * The window's shade a piece stands in as the film names it: refused anywhere but inside the world, where it stands
  * over the page it was lifted off as the window does.
  */
-function inTheShadeAsked(shade: ShadeScript, inside: PieceScript['inside']): InTheShade {
+function shadeAsked(shade: ShadeScript, inside: PieceScript['inside']): ShadeScript {
 	if (inside !== 'world') {
 		throw new FilmError(
 			"piece.show lifts a piece into the window's shade inside the world alone, where it stands over the page it was lifted off: lift it inside: 'world'"
 		);
 	}
-	return { clearAt: shade.clearAt };
+	return shade;
+}
+
+/**
+ * How a piece stands in the window's shade on a frame, as the film names it: the height it clears the shade at counted
+ * in the frame's own pixels, as its depth is, where the film writes it in pixels of a frame 1080 high.
+ */
+function inTheShadeIn(shade: ShadeScript | null, frame: Size): InTheShade | null {
+	if (shade === null) return IN_NO_SHADE;
+	return { clearAt: shade.clearAt * frameScaleOf(frame) };
 }
 
 /**
@@ -673,7 +682,7 @@ async function lifted(beginning: Beginning, target: Target, lifting: Lifting): P
 		body: lifting.body,
 		firstLetter: lifting.letters === CARRIES_NONE ? CARRIES_NONE : await firstLetterCarried(beginning, lifting.letters),
 		emptied: EMPTIES_NONE,
-		inTheShade: lifting.inTheShade
+		inTheShade: inTheShadeIn(lifting.shade, beginning.format.frame)
 	};
 	return { content: piece, box };
 }
