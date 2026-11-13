@@ -483,6 +483,7 @@ class Room {
 			preserveDrawingBuffer: true,
 			alpha: false
 		});
+		this.renderer.debug.onShaderError = shaderRefused;
 		this.renderer.setPixelRatio(window.devicePixelRatio);
 		this.renderer.setSize(layout.format.frame.width, layout.format.frame.height, false);
 		this.renderer.autoClear = false;
@@ -1987,6 +1988,23 @@ function surfaceOf(surfaces, name) {
 	const surface = surfaces.get(name);
 	if (surface === undefined) throw new Error(`the room's exposure has no ${name} surface`);
 	return surface;
+}
+
+/**
+ * A shader three could not build, which it would only log and then draw nothing with: thrown, so the frame being drawn
+ * ends with what the card said of it.
+ * @param {WebGLRenderingContext} card @param {WebGLProgram} program @param {WebGLShader} vertexShader
+ * @param {WebGLShader} fragmentShader
+ */
+function shaderRefused(card, program, vertexShader, fragmentShader) {
+	const said = [
+		card.getProgramInfoLog(program),
+		card.getShaderInfoLog(vertexShader),
+		card.getShaderInfoLog(fragmentShader)
+	];
+	throw new Error(
+		`the room could not build a shader: ${said.filter((line) => line !== null && line !== '').join(' ')}`
+	);
 }
 
 /** The room laid out once, as the stage is: none before. @type {Room | null} */

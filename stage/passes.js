@@ -124,13 +124,20 @@ vec4 inLinearLight(vec4 screens) {
 
 /**
  * How far a point stands outside a box with round corners, all as round, both about the box's middle: Inigo Quilez's
- * distance to a rounded box, below none inside it. The page's surface cuts the screen and the pits' mouths by it, the
- * window's spreads find the slab by it, and a piece's shadow fades out past its outline by it.
+ * distance to a rounded box, below none inside it. The page's surface cuts the screen by it, and the window's spreads
+ * find the slab by it. And outside a box rounded at each corner as its own, top left, top right, bottom right and
+ * bottom left, the point measured down the box from its middle: outside one rounded at every corner as the corner of
+ * the quarter it stands in. The page's surface cuts the pits' mouths by it, and a piece's shadow fades out past its
+ * outline by it.
  */
 export const PAST_A_ROUNDED_BOX = `
 float pastARoundedBox(vec2 fromTheMiddle, vec2 halfSize, float corner) {
 	vec2 fromTheCorner = abs(fromTheMiddle) - halfSize + corner;
 	return length(max(fromTheCorner, 0.0)) + min(max(fromTheCorner.x, fromTheCorner.y), 0.0) - corner;
+}
+float pastABoxRoundedAtEach(vec2 fromTheMiddle, vec2 halfSize, vec4 corners) {
+	vec2 side = fromTheMiddle.y < 0.0 ? corners.xy : corners.wz;
+	return pastARoundedBox(fromTheMiddle, halfSize, fromTheMiddle.x < 0.0 ? side.x : side.y);
 }`;
 
 /**

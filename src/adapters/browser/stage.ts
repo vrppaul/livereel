@@ -246,7 +246,9 @@ const EDGE_TAKEN: PictureTaken = { format: 'png' };
 const EDGE_TYPE = 'image/png';
 const EDGE_READ = { scale: 2, inFromTheSide: 1.5 };
 const HALF = 0.5;
+// The first pixel of a picture's row or column, and how far before its length the last stands
 const FIRST_PIXEL = 0;
+const LAST_PIXEL_BACK = 1;
 // How many decimal places a zoom is said to
 const PLACES_SAID = 2;
 
@@ -543,11 +545,11 @@ function edgePointOf(side: FrameSide, picture: Size): Point {
 		case 'left':
 			return { left: Math.max(FIRST_PIXEL, across), top: middle.top };
 		case 'right':
-			return { left: Math.max(FIRST_PIXEL, picture.width - 1 - across), top: middle.top };
+			return { left: Math.max(FIRST_PIXEL, picture.width - LAST_PIXEL_BACK - across), top: middle.top };
 		case 'top':
 			return { left: middle.left, top: Math.max(FIRST_PIXEL, down) };
 		case 'bottom':
-			return { left: middle.left, top: Math.max(FIRST_PIXEL, picture.height - 1 - down) };
+			return { left: middle.left, top: Math.max(FIRST_PIXEL, picture.height - LAST_PIXEL_BACK - down) };
 	}
 }
 

@@ -147,7 +147,7 @@ class BrowserThatSays implements Browser, SetBrowser {
 }
 
 function shotOf(target: string): TargetShot {
-	return { target, boxes: [WHERE], ground: GROUND, corners: SQUARE_CORNERS };
+	return { target, boxes: [WHERE], ground: GROUND, rounding: SQUARE_CORNERS };
 }
 
 /** A film written with these, its set's scenario as given, made ready by saying so. */

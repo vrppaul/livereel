@@ -62,14 +62,39 @@ export interface Corners {
 	readonly bottomLeft: number;
 }
 
-// A corner with no rounding
+// A corner with no rounding; and corners shrunk none, as CSS shrinks them only where two on a side reach past it
 const SQUARE = 0;
+const UNSHRUNK = 1;
 /** A box's corners drawn square, as its edges meet. */
 export const SQUARE_CORNERS: Corners = cornersAlike(SQUARE);
 
 /** Every corner of a box as round as one radius. */
 export function cornersAlike(radius: number): Corners {
 	return { topLeft: radius, topRight: radius, bottomRight: radius, bottomLeft: radius };
+}
+
+/**
+ * Corners as CSS draws them on a box so large: each as named, all shrunk alike where two on a side reach past it, so
+ * they meet there, a pill's 9999 pixels as half its shorter side.
+ */
+export function cornersFitting(corners: Corners, size: Size): Corners {
+	const shrunk = Math.min(
+		UNSHRUNK,
+		shrunkToMeet(size.width, corners.topLeft, corners.topRight),
+		shrunkToMeet(size.width, corners.bottomLeft, corners.bottomRight),
+		shrunkToMeet(size.height, corners.topLeft, corners.bottomLeft),
+		shrunkToMeet(size.height, corners.topRight, corners.bottomRight)
+	);
+	return cornersTimes(corners, shrunk);
+}
+
+/**
+ * How far the two corners at the ends of a side so long are shrunk to meet on it: none where they meet on it or are
+ * square.
+ */
+function shrunkToMeet(side: number, oneEnd: number, otherEnd: number): number {
+	const reach = oneEnd + otherEnd;
+	return reach > side ? side / reach : UNSHRUNK;
 }
 
 /** Corners as round as a box drawn so many times as large shows them. */

@@ -16,10 +16,10 @@ import { SILENT } from '../../src/adapters/video/soundtrack.ts';
 import { StillFootage } from '../../src/adapters/video/still.ts';
 import { ZOOM_AT_MOST } from '../../src/domain/camera.ts';
 import { FilmError, SetupError, TakeError } from '../../src/domain/errors.ts';
-import type { Box, Corners, Size } from '../../src/domain/geometry.ts';
+import type { Box, Size } from '../../src/domain/geometry.ts';
 import { type Shooting, shoot } from '../../src/studio/shoot.ts';
 import type { Exposures, Filmed, Footage, FramesHanded, Opened, PicturedStage } from '../../src/studio/ports.ts';
-import { type BlockHolding, ownPageOf } from '../../src/direction/page.ts';
+import { type BlockHolding, type Rounding, ownPageOf } from '../../src/direction/page.ts';
 import { FILMS_FOLDER, NO_SET } from './app.ts';
 import { WARNED_TO_NOBODY } from './warned.ts';
 import {
@@ -693,14 +693,14 @@ test('the ground behind a block is the first the blocks it stands in draw whole,
 	expect(grounds).toEqual(['#f6f7f9ff', '#123456ff', '#ffffffff']);
 });
 
-test('each corner of a block is as round as its radius comes out on its box: a share of it where written so, the narrower way, as large as it is drawn, off the block a bare wrapper holds; a radius it cannot read refused', async () => {
-	const corners: Corners[] = [];
-	const refusals: string[] = [];
+test("each corner of a block is as round as its radius comes out on its box: a share of it where written so, the narrower way, as large as it is drawn, off the block a bare wrapper holds, a rounded one's own; a radius no length reads said as CSS computes it", async () => {
+	const roundings: Rounding[] = [];
 	const steps = [
 		act(async (context: ActContext) => {
 			const page = new PlaywrightPage(context.page, context.page.page().keyboard);
-			for (const block of ['card', 'badge', 'wrapper']) corners.push(await page.cornersOf(`[data-testid=${block}]`));
-			await page.cornersOf('[data-testid=mixed]').catch((refused: Error) => refusals.push(refused.message));
+			for (const block of ['card', 'badge', 'wrapper', 'clipping', 'mixed']) {
+				roundings.push(await page.roundingOf(`[data-testid=${block}]`));
+			}
 		})
 	];
 	const film = defineFilm({
@@ -710,17 +710,31 @@ test('each corner of a block is as round as its radius comes out on its box: a s
 		steps: () => steps
 	}).formats.get('small')!;
 	await shoot(film, shootingInto(new EveryFrameCounted(), 'software'));
-	// The badge a tenth of 100 across and half of 40 down, 10 the narrower, twice as large; the wrapper's card 12
-	expect([corners, refusals]).toEqual([
-		[
-			{ topLeft: 8, topRight: 8, bottomRight: 4, bottomLeft: 4 },
-			{ topLeft: 20, topRight: 20, bottomRight: 20, bottomLeft: 20 },
-			{ topLeft: 12, topRight: 12, bottomRight: 12, bottomLeft: 12 }
-		],
-		[
-			'piece.show reads how round [data-testid=mixed] is drawn, and its border radius calc(10% + 4px) is no length it reads: lift it with air and name its corner'
-		]
+	// The badge a tenth of 100 across and half of 40 down, 10 the narrower, twice as large; the wrapper's card 12; the
+	// rounded wrapper clipping a square block its own 10
+	expect(roundings).toEqual([
+		{ topLeft: 8, topRight: 8, bottomRight: 4, bottomLeft: 4 },
+		{ topLeft: 20, topRight: 20, bottomRight: 20, bottomLeft: 20 },
+		{ topLeft: 12, topRight: 12, bottomRight: 12, bottomLeft: 12 },
+		{ topLeft: 10, topRight: 10, bottomRight: 10, bottomLeft: 10 },
+		{ unread: 'calc(10% + 4px)' }
 	]);
+});
+
+test('the colour along the edge of a part of the screen is its fill inside a border of a pixel, alike at any sharpness, on the sides named', async () => {
+	const setting = { ...filmOf([]), ownPages: NO_OWN_PAGES, pictures: NO_PICTURES, framesHanded: SCALED };
+	const edges: string[] = [];
+	for (const sharpness of [1, 2]) {
+		await using opened = await new Chromium('software', WARNED_TO_NOBODY, FILMS_FOLDER).open(
+			setting,
+			liveAt(GROUNDS),
+			sharpness
+		);
+		const edged = await opened.page.box('[data-testid=edged]', 1);
+		edges.push(await (opened.stage as PicturedStage).edgeColour(edged, ['left', 'right', 'top', 'bottom'], 'filmed'));
+	}
+	// The block's fill, #1d2a44, read 1.5 of the page's pixels in, past its border of #0969da a pixel wide
+	expect(edges).toEqual(['#1d2a44', '#1d2a44']);
 });
 
 // A page of lines of code set in a monospace font past a padding, each a line tall: one whose markup is indented

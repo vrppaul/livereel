@@ -52,6 +52,7 @@ import {
 	type Size,
 	boxAround,
 	cornersAlike,
+	cornersFitting,
 	frameScaleOf,
 	middleY,
 	sharesIn
@@ -88,6 +89,7 @@ import {
 	shownBox,
 	timingOf
 } from '../direction/move.ts';
+import type { Rounding } from '../direction/page.ts';
 import { figureOnThePage } from '../props/lifted.ts';
 import type { ObjectName } from '../props/object.ts';
 import {
@@ -726,7 +728,7 @@ async function lifted(beginning: Beginning, target: Target, lifting: Lifting): P
 	const camera = cameraOverItsPicture(beginning, lifting.picture, 'piece.show');
 	const { source, shown, box, whole } = await sourceOf(beginning, camera, target, lifting, 'piece.show');
 	const uncut = sidesStandingOn(source, whole);
-	const ownCorners = squareWhereCut(await cornersTaken(beginning, lifting.corners), uncut);
+	const ownCorners = cornersFitting(squareWhereCut(await cornersTaken(beginning, lifting.corners), uncut), source);
 	// The window's corner as the look rounds it on the frame, in the page's pixels as the camera shows them there
 	const windowCorner =
 		(beginning.scene.look.paneCorner * frameScaleOf(beginning.format.frame) * source.width) / box.width;
@@ -772,14 +774,25 @@ async function pictureOf(beginning: Beginning, kind: PiecePicture['kind'], sourc
 	}
 }
 
-/** How round a piece's own corners are as it is lifted: as the page draws its block now, or alike as the film names. */
+/**
+ * How round a piece's own corners are as it is lifted: as the page draws its block now, refused where it writes a
+ * radius no length reads; or alike as the film names.
+ */
 async function cornersTaken(beginning: Beginning, asked: CornersAsked): Promise<Corners> {
 	switch (asked.kind) {
 		case 'its block':
-			return beginning.page.cornersOf(asked.block);
+			return cornersRead(await beginning.page.roundingOf(asked.block), asked.block);
 		case 'named':
 			return cornersAlike(asked.radius);
 	}
+}
+
+/** A block's corners as the page reads them, refused where it writes a radius no length reads, as a `calc()`. */
+function cornersRead(rounding: Rounding, block: string): Corners {
+	if (!('unread' in rounding)) return rounding;
+	throw new FilmError(
+		`piece.show reads how round ${block} is drawn, and its border radius ${rounding.unread} is no length it reads: lift it with air and name its corner`
+	);
 }
 
 /**

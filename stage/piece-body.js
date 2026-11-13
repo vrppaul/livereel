@@ -144,8 +144,6 @@ const QUARTER_TURN = Math.PI / HALVES;
 const HALF_TURN = Math.PI;
 const THREE_QUARTERS = HALF_TURN + QUARTER_TURN;
 const WHOLE_TURN = HALF_TURN * HALVES;
-// A corner's radius shrunk none, as CSS shrinks corners only where two on a side reach past it
-const UNSHRUNK = 1;
 // The values a colour's three channels are kept in, one after another, for each point of the walls
 const CHANNELS = 3;
 // A shadow of no strength, which is drawn none; and the shadow's square, its depth unscaled
@@ -191,15 +189,10 @@ uniform float darkness;
 uniform vec3 colour;
 varying vec2 fromTheMiddle;
 ${PAST_A_ROUNDED_BOX}
-float outsideTheOutline(vec2 point) {
-	vec2 side = corners.xy;
-	if (point.x < 0.0) side = corners.zw;
-	float radius = side.x;
-	if (point.y < 0.0) radius = side.y;
-	return pastARoundedBox(point, halfSize, radius);
-}
 void main() {
-	float shade = darkness * (1.0 - smoothstep(-blur, blur, outsideTheOutline(fromTheMiddle)));
+	// Three's y runs up the outline, the corners' order down it
+	float outside = pastABoxRoundedAtEach(vec2(fromTheMiddle.x, -fromTheMiddle.y), halfSize, corners);
+	float shade = darkness * (1.0 - smoothstep(-blur, blur, outside));
 	gl_FragColor = vec4(colour * shade, shade);
 }`;
 
@@ -433,11 +426,11 @@ class PieceBody {
 		const blur = body.height * SHADOW_SOFT_A_HEIGHT;
 		const width = piece.figure.width + blur * HALVES;
 		const height = piece.figure.height + blur * HALVES;
-		const corners = cornersAsCssDraws(piece.figure.width, piece.figure.height, piece.corners);
+		const { corners } = piece;
 		valuesSet(this.shadow.material, {
 			size: new Vector2(width, height),
 			halfSize: new Vector2(piece.figure.width / HALVES, piece.figure.height / HALVES),
-			corners: new Vector4(corners.topRight, corners.bottomRight, corners.topLeft, corners.bottomLeft),
+			corners: new Vector4(corners.topLeft, corners.topRight, corners.bottomRight, corners.bottomLeft),
 			blur,
 			darkness: SHADOW_DARKEST * body.shadow,
 			colour: new Color(colour)
@@ -452,7 +445,7 @@ class PieceBody {
 }
 
 /**
- * Walls of a kind: an outline, its corners as CSS rounds them, drawn back as deep as named, its face at their origin
+ * Walls of a kind: an outline, its corners as the engine fits them, drawn back as deep as named, its face at its origin
  * toward three's z, no lid at its face and one at its back where the kind is floored; each point coloured as far toward
  * their back as it stands, from the share of their colour the kind has at the face to its share at the back, and the
  * light inside them (`glowOf`) added all over as strongly as their glow. One law for a piece's body and a pit, so a
@@ -461,7 +454,7 @@ class PieceBody {
  */
 function wallsOf(measures, kind) {
 	const { width, height, depth } = measures;
-	const outline = outlineOf(width, height, cornersAsCssDraws(width, height, measures.corners));
+	const outline = outlineOf(width, height, measures.corners);
 	const geometry = new ExtrudeGeometry(outline, { depth, bevelEnabled: false, curveSegments: CORNER_SEGMENTS });
 	keptOfTheExtrusion(geometry, kind.floored);
 	geometry.translate(UNMOVED, UNMOVED, -depth);
@@ -507,27 +500,6 @@ function keptOfTheExtrusion(geometry, floored) {
 function glowOf(walls) {
 	const own = walls.getHSL(/** @type {HSL} */ ({}));
 	return new Color().setHSL(own.h, own.s, GLOW_LIGHTNESS);
-}
-
-/**
- * A box's corners as CSS rounds them: each as named, all shrunk alike where two on a side reach past it, so they meet
- * there.
- * @param {number} width @param {number} height @param {Corners} corners @returns {Corners}
- */
-function cornersAsCssDraws(width, height, corners) {
-	const shrunk = Math.min(
-		UNSHRUNK,
-		width / (corners.topLeft + corners.topRight),
-		width / (corners.bottomLeft + corners.bottomRight),
-		height / (corners.topLeft + corners.bottomLeft),
-		height / (corners.topRight + corners.bottomRight)
-	);
-	return {
-		topLeft: corners.topLeft * shrunk,
-		topRight: corners.topRight * shrunk,
-		bottomRight: corners.bottomRight * shrunk,
-		bottomLeft: corners.bottomLeft * shrunk
-	};
 }
 
 /**

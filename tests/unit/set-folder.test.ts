@@ -21,7 +21,7 @@ const SET: SetNoted = {
 					target: '#refresh',
 					boxes: [{ left: 1, top: 2, width: 3, height: 4 }],
 					ground: '#ffffffff',
-					corners: { topLeft: 4, topRight: 4, bottomRight: 2, bottomLeft: 2 }
+					rounding: { topLeft: 4, topRight: 4, bottomRight: 2, bottomLeft: 2 }
 				}
 			]
 		}

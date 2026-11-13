@@ -28,17 +28,9 @@
 import type { Frame, JSHandle, Keyboard } from 'playwright-core';
 import { type Channels, hexOf } from '../../domain/colour.ts';
 import { FilmError } from '../../domain/errors.ts';
-import {
-	type Box,
-	type Corners,
-	MIDDLE_SHARE,
-	type Point,
-	type Size,
-	boxAround,
-	pointAt
-} from '../../domain/geometry.ts';
+import { type Box, MIDDLE_SHARE, type Point, type Size, boxAround, pointAt } from '../../domain/geometry.ts';
 import { described } from '../../domain/handed.ts';
-import type { ActContext, BlockHolding, FilmedPage, ScrollAim, ScrollCourse } from '../../direction/page.ts';
+import type { ActContext, BlockHolding, FilmedPage, Rounding, ScrollAim, ScrollCourse } from '../../direction/page.ts';
 import type { BlockKey } from '../../domain/placement.ts';
 import type { TypedText } from '../../domain/typing.ts';
 
@@ -85,14 +77,15 @@ interface RadiiRead {
 }
 
 /**
- * What a block that paints nothing computes, handed to the page: its ground's colour and picture, its shadow, and, on
- * each of the properties its border's widths are set by, a width.
+ * What a bare block computes, handed to the page: its ground's colour and picture, its shadow, and, on each of the
+ * properties its border's widths and its corners' radii are set by, a length of none.
  */
-interface PaintsNone {
+interface Bare {
 	readonly colour: string;
 	readonly picture: string;
 	readonly shadow: string;
 	readonly borderWidths: readonly string[];
+	readonly radii: readonly string[];
 	readonly border: string;
 }
 
@@ -192,13 +185,14 @@ const CORNER_RADII = [
 	'border-bottom-right-radius',
 	'border-bottom-left-radius'
 ];
-// What a block that paints nothing of its own computes; and a block it holds standing as large and where it does,
-// within half a pixel, as a wrapper holds the card it lays out
-const PAINTS_NONE: PaintsNone = {
+// What a bare block computes, painting nothing of its own and rounding nothing; and a block it holds standing as large
+// and where it does, within half a pixel, as a wrapper holds the card it lays out
+const BARE: Bare = {
 	colour: 'rgba(0, 0, 0, 0)',
 	picture: 'none',
 	shadow: 'none',
 	borderWidths: ['border-top-width', 'border-right-width', 'border-bottom-width', 'border-left-width'],
+	radii: CORNER_RADII,
 	border: '0px'
 };
 const AS_LARGE_WITHIN = 0.5;
@@ -252,21 +246,19 @@ export class PlaywrightPage implements FilmedPage {
 		return hexOf((await block.evaluate(groundOf, GROUND_ASKED)) ?? WHITE);
 	}
 
-	async cornersOf(target: string): Promise<Corners> {
+	async roundingOf(target: string): Promise<Rounding> {
 		const drawing = await this.drawingOf(await this.found(target));
-		return cornersFrom(await drawing.evaluate(radiiRead, CORNER_RADII), target);
+		return roundingFrom(await drawing.evaluate(radiiRead, CORNER_RADII));
 	}
 
 	/**
-	 * The block that draws a block: the block itself, or, where it paints nothing of its own, the one block it holds,
-	 * where that one stands as large and where it does, as a wrapper holds the card it lays out, and so on down.
+	 * The block that draws a block: the block itself, or, where it is bare, painting and rounding nothing of its own, the
+	 * one block it holds, where that one stands as large and where it does, as a wrapper holds the card it lays out, and
+	 * so on down.
 	 */
 	private async drawingOf(block: JSHandle<Element>): Promise<JSHandle<Element>> {
 		let drawing = block;
-		while (
-			(await drawing.evaluate(paintsNothing, PAINTS_NONE)) &&
-			(await drawing.evaluate(holdsOneAsLarge, AS_LARGE_WITHIN))
-		) {
+		while ((await drawing.evaluate(isBare, BARE)) && (await drawing.evaluate(holdsOneAsLarge, AS_LARGE_WITHIN))) {
 			drawing = await drawing.evaluateHandle(firstHeld);
 		}
 		return drawing;
@@ -489,14 +481,18 @@ function groundOf(block: Element, asked: GroundAsked): Channels | null {
 	return null;
 }
 
-/** Whether a block paints nothing of its own: no ground, picture, border or shadow. */
-function paintsNothing(block: Element, none: PaintsNone): boolean {
+/**
+ * Whether a block is bare: it paints nothing of its own, no ground, picture, border or shadow, and rounds nothing, so a
+ * rounded block clipping what it holds is no wrapper.
+ */
+function isBare(block: Element, bare: Bare): boolean {
 	const style = getComputedStyle(block);
 	return (
-		style.backgroundColor === none.colour &&
-		style.backgroundImage === none.picture &&
-		style.boxShadow === none.shadow &&
-		none.borderWidths.every((width) => style.getPropertyValue(width) === none.border)
+		style.backgroundColor === bare.colour &&
+		style.backgroundImage === bare.picture &&
+		style.boxShadow === bare.shadow &&
+		bare.borderWidths.every((width) => style.getPropertyValue(width) === bare.border) &&
+		bare.radii.every((radius) => style.getPropertyValue(radius) === bare.border)
 	);
 }
 
@@ -540,19 +536,15 @@ function radiiRead(block: Element, radii: readonly string[]): RadiiRead {
 /**
  * How round each corner of a block is drawn, in the screen's pixels, as its radii read come out on its box: a share of
  * its width across and of its height down where written as one; of an elliptical corner the narrower way, as the stage
- * rounds a corner as a circle; as many times as large across and down as the block is drawn. Refused where a radius is
- * written in a way it cannot be read, as a `calc()` mixing a share and pixels.
+ * rounds a corner as a circle; as many times as large across and down as the block is drawn. Where a radius is written
+ * so no length reads it, as a `calc()` mixing a share and pixels: that radius as CSS computes it.
  */
-function cornersFrom(read: RadiiRead, target: string): Corners {
+function roundingFrom(read: RadiiRead): Rounding {
 	const across = read.laid.width > 0 ? read.drawn.width / read.laid.width : NOT_SCALED;
 	const down = read.laid.height > 0 ? read.drawn.height / read.laid.height : NOT_SCALED;
 	const radii = read.radii.map((radius) => radiusOf(radius, read.laid, { across, down }));
 	const unread = read.radii.find((_, place) => Number.isNaN(radii[place]));
-	if (unread !== undefined) {
-		throw new FilmError(
-			`piece.show reads how round ${target} is drawn, and its border radius ${unread} is no length it reads: lift it with air and name its corner`
-		);
-	}
+	if (unread !== undefined) return { unread };
 	// Each of the four properties gives a radius always; the defaults tell the type checker so
 	const [topLeft = SQUARE, topRight = SQUARE, bottomRight = SQUARE, bottomLeft = SQUARE] = radii;
 	return { topLeft, topRight, bottomRight, bottomLeft };

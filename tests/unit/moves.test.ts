@@ -16,6 +16,7 @@ import {
 	type Segment,
 	boxOf,
 	boxToward,
+	cornersAlike,
 	cornersOf,
 	distanceBetween,
 	frameScaleOf,
@@ -25,7 +26,7 @@ import {
 } from '../../src/domain/geometry.ts';
 import { windowOn, wordsOn } from '../../src/domain/split.ts';
 import { type Beginning, type Move, type StepBegunIn, ownPagesOf } from '../../src/direction/move.ts';
-import { pageKeyOf } from '../../src/direction/page.ts';
+import { type Rounding, pageKeyOf } from '../../src/direction/page.ts';
 import { play } from '../../src/direction/steps.ts';
 import { onto, to as cameraTo } from '../../src/moves/camera.ts';
 import * as group from '../../src/moves/group.ts';
@@ -2427,17 +2428,38 @@ test('a piece lifted with a corner off a stretch of the page, with air round its
 	);
 });
 
-test("a piece's body has walls of the colour the page shows along the edge of the part it is lifted off, on every side the camera did not cut, where the film names none", async () => {
+test("a piece's body, and the pit it is sunk into, have walls of the colour the page shows along the edge of the part it is lifted off, on every side the camera did not cut, where the film names none", async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const edges = new EdgesRead();
+	const sunk = { inside: 'world', body: { thickness: 12 }, hole: { ground: '#07090d', pit: { depth: 14 } } } as const;
 	const change = await piece
-		.show(OTHER, { inside: 'world', body: { thickness: 12 } })
+		.show(OTHER, sunk)
 		.begin({ ...beginningIn(wide, FULL_HD), edgeColour: (part, sides) => edges.read(part, sides) });
 	const content = change(wide, 1).objects.get('piece')!.content;
 	expect([content, edges.asked]).toEqual([
-		expect.objectContaining({ body: { thickness: 12, walls: EDGE_READ, glow: 0 } }),
+		expect.objectContaining({
+			body: { thickness: 12, walls: EDGE_READ, glow: 0 },
+			hole: expect.objectContaining({ pit: { depth: 14, walls: EDGE_READ, glow: 0 } })
+		}),
 		[{ part: OTHER, sides: ['left', 'right', 'top', 'bottom'] }]
 	]);
+});
+
+test('a piece lifted off a block drawn rounder than it holds, as a pill, is as round as CSS draws it, its corners meeting on its shorter side; one whose radius no length reads is refused as it is lifted', async () => {
+	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
+	const roundings = new Map<string, Rounding>([
+		['#card', cornersAlike(9999)],
+		['#other', { unread: 'calc(10% + 4px)' }]
+	]);
+	const page = new PageOfRoundedBlocks(PAGE.boxes, PAGE.grounds, roundings);
+	const change = await piece.show('#card').begin({ ...beginningIn(wide, FULL_HD), page });
+	// The card 200 × 100: each corner half its height
+	expect(change(wide, 1).objects.get('piece')!.content).toEqual(expect.objectContaining({ corners: cornersAlike(50) }));
+	await expect(piece.show('#other').begin({ ...beginningIn(wide, FULL_HD), page })).rejects.toThrow(
+		new FilmError(
+			'piece.show reads how round #other is drawn, and its border radius calc(10% + 4px) is no length it reads: lift it with air and name its corner'
+		)
+	);
 });
 
 test('a piece lifted off a block the camera cuts is square at each corner the cut runs through, as drawn at the others', async () => {

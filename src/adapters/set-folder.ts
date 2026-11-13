@@ -15,6 +15,8 @@ import {
 	A_SELECTOR,
 	A_SHARPNESS,
 	A_SIZE,
+	A_STRING,
+	EitherOf,
 	type Form,
 	ListOf,
 	OfForm,
@@ -46,11 +48,18 @@ const TARGET_FORM: Form<TargetShot> = {
 	target: needed(A_SELECTOR),
 	boxes: needed(new ListOf(A_BOX, 'a list of boxes')),
 	ground: needed(A_COLOUR),
-	corners: needed(new OfForm(CORNERS_FORM, 'corners: { topLeft, topRight, bottomRight, bottomLeft }'))
+	rounding: needed(
+		new EitherOf<Corners, { readonly unread: string }>(
+			new OfForm(CORNERS_FORM, 'corners: { topLeft, topRight, bottomRight, bottomLeft }'),
+			new OfForm({ unread: needed(A_STRING) }, 'corners, or a radius no length reads: { unread }')
+		)
+	)
 };
 const STATE_FORM: Form<StateNoted> = {
 	name: needed(A_STATE_NAME),
-	targets: needed(new ListOf(new OfForm(TARGET_FORM, 'a target as shot: { target, boxes, ground, corners }'), 'a list'))
+	targets: needed(
+		new ListOf(new OfForm(TARGET_FORM, 'a target as shot: { target, boxes, ground, rounding }'), 'a list')
+	)
 };
 const SET_FILE_FORM: Form<SetNoted> = {
 	screen: needed(new OfForm<Size>({ width: needed(A_SIZE), height: needed(A_SIZE) }, 'a size: { width, height }')),

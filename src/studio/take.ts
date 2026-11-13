@@ -67,7 +67,7 @@
 import { type Camera, ZOOM_AT_MOST, flatCamera, zoomPicturedFor } from '../domain/camera.ts';
 import { FilmError, TakeError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
-import type { Box, Corners } from '../domain/geometry.ts';
+import type { Box } from '../domain/geometry.ts';
 import { type PartAsked, closestOf } from '../domain/picture.ts';
 import type { BlockKey } from '../domain/placement.ts';
 import { type MotionBlur, alsoExposedBack } from '../domain/shutter.ts';
@@ -85,7 +85,7 @@ import {
 	movesThePage,
 	soundsOf
 } from '../direction/move.ts';
-import type { Action, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
+import type { Action, FilmedPage, MeasuredPage, Rounding, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import type { Cue } from '../direction/sound.ts';
 import type { Cut, Play, Step } from '../direction/steps.ts';
 import {
@@ -133,7 +133,7 @@ const NO_BLOCK_SCROLLED: readonly BlockKey[] = [];
 const PAGE_UNREAD_AHEAD: FilmedPage = {
 	box: refusedAhead,
 	groundBehind: refusedAhead,
-	cornersOf: refusedAhead,
+	roundingOf: refusedAhead,
 	letterAtTheStart: refusedAhead,
 	scrollCourse: refusedAhead,
 	blocksHolding: refusedAhead,
@@ -803,8 +803,8 @@ class OwnPageShown implements FilmedPage {
 		return this.measured.groundBehind(target);
 	}
 
-	cornersOf(target: string): Promise<Corners> {
-		return this.measured.cornersOf(target);
+	roundingOf(target: string): Promise<Rounding> {
+		return this.measured.roundingOf(target);
 	}
 
 	letterAtTheStart(target: string): Promise<Box | null> {

@@ -5,6 +5,7 @@ import type {
 	BlockHolding,
 	FilmedPage,
 	PageMotionSwitch,
+	Rounding,
 	ScrollAim,
 	ScrollCourse
 } from '../../src/direction/page.ts';
@@ -67,7 +68,7 @@ export class PageOfBoxes implements FilmedPage {
 		this.growth = growth;
 	}
 
-	cornersOf(): Promise<Corners> {
+	roundingOf(): Promise<Corners> {
 		return Promise.resolve(SQUARE_CORNERS);
 	}
 
@@ -147,19 +148,19 @@ export class PageOfLetters extends PageOfBoxes {
  * it says, the rest square.
  */
 export class PageOfRoundedBlocks extends PageOfBoxes {
-	readonly corners: ReadonlyMap<string, Corners>;
+	readonly roundings: ReadonlyMap<string, Rounding>;
 
 	constructor(
 		boxes: ReadonlyMap<string, Box>,
 		grounds: ReadonlyMap<string, string>,
-		corners: ReadonlyMap<string, Corners>
+		roundings: ReadonlyMap<string, Rounding>
 	) {
 		super(boxes, grounds);
-		this.corners = corners;
+		this.roundings = roundings;
 	}
 
-	cornersOf(target: string): Promise<Corners> {
-		return Promise.resolve(this.corners.get(target) ?? SQUARE_CORNERS);
+	roundingOf(target: string): Promise<Rounding> {
+		return Promise.resolve(this.roundings.get(target) ?? SQUARE_CORNERS);
 	}
 }
 

@@ -1393,7 +1393,7 @@ const HELD_PICTURES = new Map();
 const FILMS_PICTURES = new Map();
 // The size of a picture that decodes to none, which the film is refused for (`films-files.ts`)
 const NO_SIZE = 0;
-// A canvas a picture's pixels are read off, read often enough to keep in memory the processor reads
+// A canvas a picture's pixels are read off, a pixel at a time, kept where the processor reads it rather than the card
 const READ_OFTEN = { willReadFrequently: true };
 // A font of the film's own stands for every weight the look sets it at: a variable font's file moves with the weight,
 // a static one's stays as drawn, never thickened or thinned by the browser

@@ -50,7 +50,7 @@ export type BlockHolding = 'text alone' | 'elements' | 'its value';
  * what it shows as its text; as a page of the film's own is measured, which no key reaches and the film alone runs and
  * types into.
  */
-export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind' | 'cornersOf' | 'letterAtTheStart'> & {
+export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind' | 'roundingOf' | 'letterAtTheStart'> & {
 	/**
 	 * Measured with each block a typed text names, the first its CSS selector matches, holding that text and every other
 	 * holding what it held; each holds what it held again after, as the stage writes what stands typed in each exposure.
@@ -68,6 +68,12 @@ export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind' | 'cornersOf'
 	readonly holdingOf: (target: string) => Promise<BlockHolding>;
 };
 
+/**
+ * How round a block's corners are as the page reads them: each corner's radius; or, where one is written so no length
+ * reads it, as a `calc()` mixing a share and pixels, that radius as CSS computes it, which a piece of it refuses.
+ */
+export type Rounding = Corners | { readonly unread: string };
+
 /** The filmed page as a move reads it and types into it. */
 export interface FilmedPage {
 	/** Where a block stands on the screen; with `every`, the first that many that match, together. */
@@ -78,10 +84,11 @@ export interface FilmedPage {
 	 */
 	readonly groundBehind: (target: string) => Promise<string>;
 	/**
-	 * How round each corner of the first block a target matches is drawn, in the screen's pixels, as its border radii
-	 * come out on its box. A target the page lacks is refused at once.
+	 * How round each corner of the first block a target matches is drawn, or of the one block it holds where it is a bare
+	 * wrapper, in the screen's pixels, as its border radii come out on its box. A target the page lacks is refused at
+	 * once.
 	 */
-	readonly cornersOf: (target: string) => Promise<Corners>;
+	readonly roundingOf: (target: string) => Promise<Rounding>;
 	/**
 	 * Where the letters of the first block a target matches start on the screen, as the page lays them out, read
 	 * without writing into it: the box its first laid-out letter takes, or, in a block that lays out none, the box a

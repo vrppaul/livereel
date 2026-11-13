@@ -17,10 +17,10 @@
  * asked for its profile waits on nothing more than its frames, and says nothing of where its time went.
  */
 import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
-import type { ActContext, FilmedPage, MeasuredPage, ScrollAim, ScrollCourse } from '../direction/page.ts';
+import type { ActContext, FilmedPage, MeasuredPage, Rounding, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import type { DrawnScene } from '../scene.ts';
 import type { PictureDecoded } from '../domain/picture.ts';
-import type { Box, Corners, FrameSide, Size } from '../domain/geometry.ts';
+import type { Box, FrameSide, Size } from '../domain/geometry.ts';
 import type { OwnPageStanding } from '../domain/own-page.ts';
 import type { BlockKey } from '../domain/placement.ts';
 import type {
@@ -427,8 +427,8 @@ class TimedPage implements FilmedPage {
 		return this.timings.timed('page.groundBehind', () => this.page.groundBehind(target));
 	}
 
-	cornersOf(target: string): Promise<Corners> {
-		return this.timings.timed('page.cornersOf', () => this.page.cornersOf(target));
+	roundingOf(target: string): Promise<Rounding> {
+		return this.timings.timed('page.roundingOf', () => this.page.roundingOf(target));
 	}
 
 	letterAtTheStart(target: string): Promise<Box | null> {

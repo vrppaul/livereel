@@ -247,19 +247,17 @@ varying vec2 shareOfTheSurface;
 ${SRGB_CURVES}
 ${WHAT_STANDS_BEHIND}
 ${PAST_A_ROUNDED_BOX}
-// How round the corner of a box is in the quarter of it a point stands in, from its middle, down the page, its corners
-// top left, top right, bottom right and bottom left
-float cornerNearest(vec2 fromTheMiddle, vec4 corners) {
-	if (fromTheMiddle.y < 0.0) return fromTheMiddle.x < 0.0 ? corners.x : corners.y;
-	return fromTheMiddle.x < 0.0 ? corners.w : corners.z;
-}
-// How far a point stands past the edge of a box, by its left, top, width and height, each corner as round as named or
+// How far a point stands past the edge of a box, by its left, top, width and height, its corners as round as named or
 // as half its shorter side, as CSS rounds a box no further
-float pastTheEdge(vec2 point, vec4 box, vec4 corners) {
+float pastTheEdge(vec2 point, vec4 box, float corner) {
 	vec2 halfSize = box.zw * 0.5;
-	vec2 fromTheMiddle = point - box.xy - halfSize;
-	float corner = cornerNearest(fromTheMiddle, corners);
-	return pastARoundedBox(fromTheMiddle, halfSize, min(corner, min(halfSize.x, halfSize.y)));
+	return pastARoundedBox(point - box.xy - halfSize, halfSize, min(corner, min(halfSize.x, halfSize.y)));
+}
+// How far a point stands past the edge of a pit's mouth, by its left, top, width and height, each corner as round as
+// named, top left, top right, bottom right and bottom left, as the engine fits them to the mouth
+float pastTheMouth(vec2 point, vec4 mouth, vec4 corners) {
+	vec2 halfSize = mouth.zw * 0.5;
+	return pastABoxRoundedAtEach(point - mouth.xy - halfSize, halfSize, corners);
 }
 // How much of a pixel stands inside an edge it stands so far past, the edge smoothed over a pixel of the frame
 float insideTheEdge(float past) {
@@ -270,7 +268,7 @@ float openAt(vec2 point) {
 	float open = 0.0;
 #if ${PITS} > 0
 	for (int pit = 0; pit < ${PITS}; pit++) {
-		open = max(open, insideTheEdge(pastTheEdge(point, mouths[pit], mouthCorners[pit])) * mouthsOpen[pit]);
+		open = max(open, insideTheEdge(pastTheMouth(point, mouths[pit], mouthCorners[pit])) * mouthsOpen[pit]);
 	}
 #endif
 	return open;

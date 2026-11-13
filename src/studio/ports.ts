@@ -3,10 +3,10 @@
  * stage and the page open, footage to keep frames in, and a track to keep sounds in. The adapters answer these; the
  * studio names no process, browser or file of its own, and blends no image.
  */
-import type { Box, Corners, FrameSide, Size } from '../domain/geometry.ts';
+import type { Box, FrameSide, Size } from '../domain/geometry.ts';
 import type { OwnPageStanding } from '../domain/own-page.ts';
 import type { FilmInFormat, PageKind } from '../direction/film.ts';
-import type { ActContext, FilmedPage, MeasuredPage, OwnPage, PageShown } from '../direction/page.ts';
+import type { ActContext, FilmedPage, MeasuredPage, OwnPage, PageShown, Rounding } from '../direction/page.ts';
 import type { Site } from '../direction/site.ts';
 import type { Sound } from '../direction/sound.ts';
 import type { DrawnScene } from '../scene.ts';
@@ -202,7 +202,7 @@ export interface TargetShot {
 	readonly target: string;
 	readonly boxes: readonly Box[];
 	readonly ground: string;
-	readonly corners: Corners;
+	readonly rounding: Rounding;
 }
 
 /** A state of a set as its scenario marked it: its name, and where the set's targets stood, those that matched. */
