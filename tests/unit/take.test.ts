@@ -275,6 +275,71 @@ class StageChangingOfItself extends PicturedStageThatKeeps {
 	}
 }
 
+/** Where a block of the page stands once its time is run on to a frame, and whether that changed the page. */
+interface BlockRun {
+	readonly box: Box;
+	readonly changed: boolean;
+}
+
+/**
+ * A page whose own time, as a timer of its own, stands a block where each run on to a frame puts it, in turn, and is
+ * heard to have changed the page until the take asks, as the page's changes are heard.
+ */
+class PageTimeMovingABlock extends PageTimeLogged {
+	readonly boxes: Map<string, Box>;
+	readonly block: string;
+	readonly runs: BlockRun[];
+	private heard = false;
+
+	constructor(boxes: Map<string, Box>, block: string, runs: readonly BlockRun[]) {
+		super();
+		this.boxes = boxes;
+		this.block = block;
+		this.runs = [...runs];
+	}
+
+	override runTo(moment: number): Promise<void> {
+		const run = this.runs.shift()!;
+		this.boxes.set(this.block, run.box);
+		this.heard = run.changed;
+		return super.runTo(moment);
+	}
+
+	/** Whether the page changed since the take last asked; asked, it has not. */
+	heardSinceAsked(): boolean {
+		const heard = this.heard;
+		this.heard = false;
+		return heard;
+	}
+}
+
+/** A stage showing a picture of a page whose changes of itself its time hears. */
+class StageHearingItsPage extends PicturedStageThatKeeps {
+	readonly time: PageTimeMovingABlock;
+
+	constructor(time: PageTimeMovingABlock) {
+		super();
+		this.time = time;
+	}
+
+	override changedOfItself(): boolean {
+		return this.time.heardSinceAsked();
+	}
+}
+
+/** An unblurred take of a page of boxes, on a stage and the page's own time, keeping the frames its footage keeps. */
+function unblurredTakeOn(boxes: Map<string, Box>, stage: Stage, footage: FootageOf, time = new PageTimeLogged()): Take {
+	return new Take({
+		opened: openedOn(new PageOfBoxes(boxes), stage, time),
+		footage,
+		track: new TrackThatKeeps(),
+		format: SMALL,
+		opening: openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
+		motionBlur: null,
+		framesPerSecond: RATE
+	});
+}
+
 function takeOf(
 	footage: FootageOf,
 	stage: Stage,
@@ -765,16 +830,7 @@ test('a shade keeping a part of the page sharp may be begun ahead of its share, 
 test('the part of the page a shade keeps sharp is read off the page again after an act, so it stays on the block the film named as the page lays it out anew', async () => {
 	const boxes = new Map(PAGE);
 	const stage = new PicturedStageThatKeeps();
-	const take = new Take({
-		opened: openedOn(new PageOfBoxes(boxes), stage),
-		footage: new FootageOf([0, 1]),
-		track: new TrackThatKeeps(),
-		format: SMALL,
-		opening: openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
-		motionBlur: null,
-		framesPerSecond: RATE
-	});
-	await take.run([
+	await unblurredTakeOn(boxes, stage, new FootageOf([0, 1])).run([
 		cut(windowShade({ blur: 4, sharp: '#first' })),
 		hold({ seconds: 1 / RATE }),
 		act(() => {
@@ -786,19 +842,23 @@ test('the part of the page a shade keeps sharp is read off the page again after 
 	expect(stage.drawn.map((scene) => scene.window.sharp?.box)).toEqual([FIRST, SECOND]);
 });
 
+test('the part of the page a shade keeps sharp is read again on the frame the page moves its block of itself, as a timer of its own does', async () => {
+	const boxes = new Map(PAGE);
+	// The page's own time moves the block as it runs on to the second frame
+	const time = new PageTimeMovingABlock(boxes, '#first', [
+		{ box: FIRST, changed: false },
+		{ box: SECOND, changed: true }
+	]);
+	const stage = new StageHearingItsPage(time);
+	const take = unblurredTakeOn(boxes, stage, new FootageOf([0, 1]), time);
+	await take.run([cut(windowShade({ blur: 4, sharp: '#first' })), hold({ seconds: 2 / RATE })]);
+	expect(stage.drawn.map((scene) => scene.window.sharp?.box)).toEqual([FIRST, SECOND]);
+});
+
 test('the part of the page a shade keeps sharp is not read while the page is blurred none, so an act may take its block off the screen then', async () => {
 	const boxes = new Map(PAGE);
 	const stage = new PicturedStageThatKeeps();
-	const take = new Take({
-		opened: openedOn(new PageOfBoxes(boxes), stage),
-		footage: new FootageOf([0, 1]),
-		track: new TrackThatKeeps(),
-		format: SMALL,
-		opening: openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH),
-		motionBlur: null,
-		framesPerSecond: RATE
-	});
-	await take.run([
+	await unblurredTakeOn(boxes, stage, new FootageOf([0, 1])).run([
 		cut(windowShade({ blur: 4, sharp: '#first' })),
 		hold({ seconds: 1 / RATE }),
 		cut(windowShade({ blur: 0 })),

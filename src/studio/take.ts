@@ -24,8 +24,8 @@
  * and pictures parts of it, on its copy apart from the stage's stood as the page stands at the move's moment, and its
  * scroll and keys go to the filmed page behind it. A sound a move makes is heard as the move is set at or past its
  * point, on the frame being made. The part of the page the shade keeps sharp is read off the page by the take, not by
- * the move that names it, on the frame after it is named and after any move of the page since, as a move's change
- * writes its values on every frame and would keep the box it read where the page had stood.
+ * the move that names it, on the frame after it is named and after any change of the page since, a move's or its own,
+ * as a move's change writes its values on every frame and would keep the box it read where the page had stood.
  * A frame is drawn only when the footage keeps it, and drawn again where anything on it moved fast while its shutter
  * was open — the camera, its window, the cursor, the light, an object or what it shows — as the scene stood at moments
  * of that time: the scene the frame before left, every move begun by then set as far as it had come, and what is worked
@@ -226,21 +226,22 @@ export class Take {
 	readonly pictures: PartPictures;
 	private scene: Scene;
 	private shot = 0;
-	// The last exposures captured at once, none before the first; and, where the stage shows a picture of the page,
-	// whether the page may have changed since its picture was last taken, as it may before the first, and whether it
-	// stood still as it was, its picture alike to the one before, as a framed page never is
+	// The last exposures captured at once, none before the first; how many times the page may have changed, by a move
+	// of it, an act among them, or of itself; where the stage shows a picture of the page, how many changes its picture
+	// was last taken after, none before the first, and whether the page stood still as it was, its picture alike to the
+	// one before, as a framed page never is
 	private lastCaptured: Captured | null = null;
-	private pageChangedSinceTaken = true;
+	private pageChanges = 0;
+	private pictureTakenAfter: number | null = null;
 	private pageStandsStill = false;
 	// How far the film's frames have taken the page's own time since the film began, in its own seconds, at the scene's
 	// speed; and the film's moment they took it to
 	private pageMoment = 0;
 	private pageRunAt = 0;
 	// The part of the page the shade keeps sharp as the film named it when its box was last read, none before the
-	// first; and whether a move of the page, an act among them, or the page itself, as its picture heard, may have
-	// changed the page since
+	// first, and how many changes of the page it was read after
 	private sharpReadFrom: Scene['window']['sharpNamed'] = null;
-	private pageChangedSinceSharpRead = false;
+	private sharpReadAfter = 0;
 
 	constructor(setup: TakeSetup) {
 		this.opened = setup.opened;
@@ -375,7 +376,7 @@ export class Take {
 	 * picture, it leaves it behind the page.
 	 */
 	private acted(action: Action): Promise<void> {
-		this.pageChangedSinceTaken = true;
+		this.pageChanges += 1;
 		const stage = this.opened.stage;
 		switch (stage.kind) {
 			case 'framed':
@@ -564,23 +565,23 @@ export class Take {
 	}
 
 	/**
-	 * A change set at a progress, with a share of its time gone; a change of the page itself leaves the page's picture
-	 * behind the page.
+	 * A change set at a progress, with a share of its time gone; a change of the page itself counted, as it leaves the
+	 * page's picture and the part kept sharp behind the page.
 	 */
 	private async set(change: Change, progress: number, timeGone: number, changesThePage: boolean): Promise<void> {
 		this.scene = await change(this.scene, progress, timeGone);
-		this.pageChangedSinceTaken ||= changesThePage;
-		this.pageChangedSinceSharpRead ||= changesThePage;
+		if (changesThePage) this.pageChanges += 1;
 	}
 
 	/**
-	 * One frame: the page's own time run on to its moment, then the frame exposed along its time and kept where the
-	 * footage keeps it, and counted; refused where the stage or its page is gone. Whether a move of the page runs on past
-	 * it says whether a picture of the page serves this frame alone.
+	 * One frame: the page's own time run on to its moment, a change it made of itself heard, then the frame exposed along
+	 * its time and kept where the footage keeps it, and counted; refused where the stage or its page is gone. Whether a
+	 * move of the page runs on past it says whether a picture of the page serves this frame alone.
 	 */
 	private async frame(time: FrameTime, pageMovesOn: boolean): Promise<void> {
 		await this.pageTimeRunOn(time.before);
 		await this.refusedWhereGone();
+		this.changesOfItselfHeard();
 		await this.sharpPartReadAnew();
 		if (this.footage.keeps(this.shot)) {
 			await this.footage.keep(this.shot, await this.exposed(time, pageMovesOn));
@@ -599,10 +600,9 @@ export class Take {
 	private async sharpPartReadAnew(): Promise<void> {
 		const { sharpNamed: named, blur } = this.scene.window;
 		if (blur <= UNBLURRED) return;
-		const asRead = named === this.sharpReadFrom && !this.pageChangedSinceSharpRead;
-		this.pageChangedSinceSharpRead = false;
-		if (asRead) return;
+		if (named === this.sharpReadFrom && this.sharpReadAfter === this.pageChanges) return;
 		this.sharpReadFrom = named;
+		this.sharpReadAfter = this.pageChanges;
 		const reading = { page: this.opened.page, format: this.format };
 		const sharp = named === null ? null : await sharpPartRead(reading, named);
 		this.scene = withProp(this.scene, 'window', { ...this.scene.window, sharp });
@@ -744,12 +744,18 @@ export class Take {
 			case 'framed':
 				return false;
 			case 'pictured':
-				if (stage.changedOfItself()) {
-					this.pageChangedSinceTaken = true;
-					this.pageChangedSinceSharpRead = true;
-				}
 				return this.pageMayHaveChanged() && !(await this.pageRetaken(stage, zoom));
 		}
+	}
+
+	/**
+	 * A change the page shown as a picture made of itself since the take last asked counted, before anything of the
+	 * frame reads the page: on every frame, kept or not, as the part kept sharp is read on every frame that blurs and the
+	 * next frame's exposures are built from this one's scene. A page live in its frame is captured as it stands.
+	 */
+	private changesOfItselfHeard(): void {
+		const stage = this.opened.stage;
+		if (stage.kind === 'pictured' && stage.changedOfItself()) this.pageChanges += 1;
 	}
 
 	/**
@@ -774,7 +780,7 @@ export class Take {
 
 	/** Whether the page may stand otherwise than its picture: changed since, not yet still, or moving of itself. */
 	private pageMayHaveChanged(): boolean {
-		return this.pageChangedSinceTaken || !this.pageStandsStill || this.opened.act.motion.released;
+		return this.pictureTakenAfter !== this.pageChanges || !this.pageStandsStill || this.opened.act.motion.released;
 	}
 
 	/**
@@ -782,8 +788,8 @@ export class Take {
 	 * nothing done to the page between them and its own motion stilled. Whether it came out as the last one did.
 	 */
 	private async pageRetaken(stage: PicturedStage, zoom: number): Promise<boolean> {
-		const changedBefore = this.pageChangedSinceTaken;
-		this.pageChangedSinceTaken = false;
+		const changedBefore = this.pictureTakenAfter !== this.pageChanges;
+		this.pictureTakenAfter = this.pageChanges;
 		const alike = await stage.retakePage(zoom);
 		this.pageStandsStill = alike && !changedBefore && !this.opened.act.motion.released;
 		return alike;
