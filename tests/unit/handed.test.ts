@@ -57,14 +57,16 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => camera.onto('#block', { airr: 80 } as never)).toThrow(
 		new FilmError(
-			'camera.onto names airr: it names every, air, zoomAtMost, through, shape, pace, within, ease, or fewer'
+			'camera.onto names airr: it names every, air, zoomAtMost, through, shape, pace, within, after, takes, ease, or fewer'
 		)
 	);
 	expect(() => camera.onto('#block', { every: 1.5 })).toThrow(
 		new FilmError("camera.onto's every is 1.5: it is a whole count, 1 or more")
 	);
 	expect(() => camera.onto('#block', 5 as never)).toThrow(
-		new FilmError('camera.onto is handed 5 for an object of every, air, zoomAtMost, through, shape, pace, within, ease')
+		new FilmError(
+			'camera.onto is handed 5 for an object of every, air, zoomAtMost, through, shape, pace, within, after, takes, ease'
+		)
 	);
 	expect(() => pageWindow.show({ at: 'right' } as never)).toThrow(
 		new FilmError(`window.show's from is undefined: it is ${SIDE}`)
@@ -85,7 +87,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => light.to(5 as never)).toThrow(new FilmError(`light.to's target is 5: it is ${TARGET}`));
 	expect(() => light.to('#block', { dim: 0.5 } as never)).toThrow(
-		new FilmError('light.to names dim: it names within, ease, or fewer')
+		new FilmError('light.to names dim: it names within, after, takes, ease, or fewer')
 	);
 	expect(() => light.off({ within: { start: '0' as never } })).toThrow(
 		new FilmError('light.off\'s within\'s start is "0": it is a number')
@@ -156,7 +158,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => piece.show(5 as never)).toThrow(new FilmError(`piece.show's target is 5: it is ${TARGET}`));
 	expect(() => piece.show('#chart', { from: 'left' } as never)).toThrow(
 		new FilmError(
-			'piece.show names from: it names every, air, corner, hole, lines, picture, inside, body, rides, letters, shade, enter, edge, within, ease, as, group, zIndex, effects, or fewer'
+			'piece.show names from: it names every, air, corner, hole, lines, picture, inside, body, rides, letters, shade, enter, edge, within, after, takes, ease, as, group, zIndex, effects, or fewer'
 		)
 	);
 	expect(() => piece.show('#chart', { letters: 5 as never })).toThrow(
@@ -175,7 +177,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => piece.onto(5 as never)).toThrow(new FilmError(`piece.onto's target is 5: it is ${TARGET}`));
 	expect(() => piece.onto('#chart', { scale: 2 } as never)).toThrow(
-		new FilmError('piece.onto names scale: it names fall, as, within, ease, or fewer')
+		new FilmError('piece.onto names scale: it names fall, as, within, after, takes, ease, or fewer')
 	);
 	expect(() => code.show('x', { at: 'left', group: '' })).toThrow(
 		new FilmError(`code.show's group is "": it is a name, a string with something in it`)
@@ -188,7 +190,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		new FilmError('group.lean\'s roll is "half": it is a number')
 	);
 	expect(() => group.hide({ toward: 'left' } as never)).toThrow(
-		new FilmError('group.hide names toward: it names as, within, ease, or fewer')
+		new FilmError('group.hide names toward: it names as, within, after, takes, ease, or fewer')
 	);
 	expect(() => piece.show('#chart', { hole: { ground: 'blue' } })).toThrow(
 		new FilmError(
@@ -210,7 +212,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		)
 	);
 	expect(() => title.hide({ at: 'left' } as never)).toThrow(
-		new FilmError('title.hide names at: it names words, toward, leave, edge, within, ease, as, or fewer')
+		new FilmError('title.hide names at: it names words, toward, leave, edge, within, after, takes, ease, as, or fewer')
 	);
 	expect(() => title.show('ab', { enter: 'spin' as never })).toThrow(
 		new FilmError(
@@ -272,7 +274,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() =>
 		screen.scrollTo({ html: '<p>Runs</p>' }, '#input', { top: 0, ease: (progress: number) => progress } as never)
-	).toThrow(new FilmError(`screen.scrollTo names ease: it names top, judged, within, or fewer`));
+	).toThrow(new FilmError(`screen.scrollTo names ease: it names top, judged, within, after, takes, or fewer`));
 	expect(() => screen.type('filmed' as never, [STROKE], { into: '#typed' })).toThrow(
 		new FilmError(
 			`screen.type's page is "filmed": it is a page of the film's own, { html }; the filmed page is typed into by page.type`
@@ -476,7 +478,7 @@ test('an object comes up standing out by the effects its show names, refused whe
 		new FilmError("title.show's effects's blur is -1: it is a number of pixels, 0 or more")
 	);
 	expect(() => ending.show(CARD, { effects: { blur: 4 } } as never)).toThrow(
-		new FilmError('ending.show names effects: it names from, enter, edge, as, within, ease, or fewer')
+		new FilmError('ending.show names effects: it names from, enter, edge, as, within, after, takes, ease, or fewer')
 	);
 });
 

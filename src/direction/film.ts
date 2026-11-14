@@ -39,7 +39,7 @@ import type { ActContext } from './page.ts';
 import { type FilmSound, type LivereelSoundsScript, type Music, livereelSoundsOf, musicOf } from './sound.ts';
 import { type FilmSet, SET_FORM, type SetScript, setOf } from './set.ts';
 import { SITE_FORM, type Site, type SiteScript, siteOf } from './site.ts';
-import { type Step, depthsIn, placesIn, stepsOf } from './steps.ts';
+import { type Step, type StepShot, depthsIn, placesIn, stepsOf } from './steps.ts';
 import {
 	type CssNamed,
 	A_FONTS_SCRIPT,
@@ -191,7 +191,7 @@ export interface FilmInFormat {
 	readonly site: Site;
 	readonly set: FilmSet | null;
 	readonly ready: (context: ActContext) => Promise<void>;
-	readonly steps: (whole: Pose) => readonly Step[];
+	readonly steps: (whole: Pose) => readonly StepShot[];
 }
 
 export interface Film {
@@ -427,11 +427,11 @@ function refuseUnlikeAFilm(written: unknown): void {
  * something nearer than its eye of this focal length rests.
  */
 function checkedSteps(
-	steps: readonly Step[],
+	steps: readonly StepShot[],
 	format: Format,
 	formatName: string,
 	focalLength: number
-): readonly Step[] {
+): readonly StepShot[] {
 	assertPlacesOf(format, placesIn(steps), `the film's ${formatName} format`);
 	assertNearerThanTheEye(depthsIn(steps), focalLength);
 	return steps;

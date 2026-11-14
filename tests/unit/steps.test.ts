@@ -1,7 +1,18 @@
 import { expect, test } from 'vitest';
+import { linear } from '../../src/domain/curves.ts';
 import { FilmError } from '../../src/domain/errors.ts';
 import { keystrokes } from '../../src/domain/typing.ts';
-import { cssIn, cut, framesIn, hold, ownPagesIn, picturesIn, play, typing } from '../../src/direction/steps.ts';
+import {
+	cssIn,
+	cut,
+	framesIn,
+	hold,
+	ownPagesIn,
+	picturesIn,
+	play,
+	stepsOf,
+	typing
+} from '../../src/direction/steps.ts';
 import { act } from '../../src/moves/act.ts';
 import { hide, show } from '../../src/moves/caption.ts';
 import { hide as cursorGone } from '../../src/moves/cursor.ts';
@@ -97,7 +108,7 @@ test('an act at a moment of a play is refused while a move of the page runs acro
 test("an act on the page at the moment a move that holds the page's picture begins is refused, in a play or a cut, as the act is done first and the picture would hold the page it leaves: a sweep of the screen, a piece holding its picture; an act a moment after is taken", () => {
 	const actedAt = (start: number) => actAtAMoment(() => Promise.resolve(), { within: { start } });
 	const refusal = new FilmError(
-		"an act on the page at the moment a move that holds the page's picture begins, as screen.sweep or piece.show({ picture: 'held' }), is done first, and the picture would hold the page as the act leaves it: put the act a moment after, within: { start }"
+		"an act on the page at the moment a move that holds the page's picture begins, as screen.sweep or piece.show({ picture: 'held' }), is done first, and the picture would hold the page as the act leaves it: put the act a moment after, within: { start } or after"
 	);
 	expect(() => play({ seconds: 1, moves: [sweep(), actedAt(0)] })).toThrow(refusal);
 	expect(() => play({ seconds: 1, moves: [sweep({ within: { start: 0.5 } }), actedAt(0.5)] })).toThrow(refusal);
@@ -163,6 +174,65 @@ test('moves of one prop one after the other share a step, moves of two props sha
 	const together = play({ seconds: 1, moves: [show('Words'), on('#block')] });
 	const sounds = play({ seconds: 1, moves: [playSound('./one.wav'), playSound('./two.wav'), show('Words')] });
 	expect([after.moves.length, together.moves.length, sounds.moves.length]).toEqual([2, 2, 3]);
+});
+
+test("a move timed in its play's seconds runs over the share of the play they make: from so many seconds after it begins, for so many or on to its end, or at that moment", () => {
+	const timed = play({
+		seconds: 4,
+		moves: [
+			show('Words', { after: 1, takes: 2 }),
+			on('#block', { after: 3 }),
+			actAtAMoment(() => Promise.resolve(), { after: 2 })
+		]
+	});
+	expect(timed.moves.map((move) => [move.timing.within.start, move.timing.within.end])).toEqual([
+		[0.25, 0.75],
+		[0.75, 1],
+		[0.5, 0.5]
+	]);
+});
+
+test("a move timed in seconds is refused past its play's end, timed by a share of its step too, and in a cut, which takes no time", () => {
+	expect(() => play({ seconds: 2, moves: [show('Words', { after: 1, takes: 1.5 })] })).toThrow(
+		new FilmError("a move runs from 1 s for 1.5 s of a play of 2 s: it runs past the play's end")
+	);
+	expect(() => show('Words', { after: 1, within: { end: 0.5 } })).toThrow(
+		new FilmError("a move is timed by a share of its step, within, or by its play's seconds, after and takes: not both")
+	);
+	expect(() => cut(show('Words', { after: 1 }))).toThrow(
+		new FilmError("a cut's moves are made at once: after and takes time a move in a play")
+	);
+});
+
+test("a move timed in seconds runs from its play's start where it names only how long it takes, and ends exactly where the next begins or the play ends, however the seconds add up", () => {
+	const met = play({
+		seconds: 11.69,
+		moves: [show('Words', { takes: 1.1 }), hide({ after: 1.1, takes: 2.2 }), on('#block', { after: 9.4, takes: 2.29 })]
+	});
+	expect(met.moves.map((move) => [move.timing.within.start, move.timing.within.end])).toEqual([
+		[0, 1.1 / 11.69],
+		[1.1 / 11.69, 3.3 / 11.69],
+		[9.4 / 11.69, 1]
+	]);
+});
+
+test("a move timed in seconds is refused in seconds where it starts or stands past its play's end", () => {
+	expect(() => play({ seconds: 4, moves: [show('Words', { after: 4 })] })).toThrow(
+		new FilmError('a move from 4 s starts past a play of 4 s')
+	);
+	expect(() => play({ seconds: 4, moves: [actAtAMoment(() => Promise.resolve(), { after: 4.5 })] })).toThrow(
+		new FilmError('a move at 4.5 s stands past a play of 4 s')
+	);
+});
+
+test("a play written out by hand has its moves' seconds worked out as play makes them, and a cut written so refuses them", () => {
+	const [played] = stepsOf([
+		{ kind: 'play', seconds: 4, moves: [show('Words', { after: 1, takes: 2 })], ease: linear }
+	]);
+	expect([played!.moves[0]!.timing.within.start, played!.moves[0]!.timing.within.end]).toEqual([0.25, 0.75]);
+	expect(() => stepsOf([{ kind: 'cut', moves: [show('Words', { after: 1 })] }])).toThrow(
+		new FilmError("a cut's moves are made at once: after and takes time a move in a play")
+	);
 });
 
 test("a film's length is its plays' frames at its rate: a cut and an act take none", () => {

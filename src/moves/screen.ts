@@ -87,7 +87,6 @@ import { A_STROKES, type Keystroke, textsTypedAlong, typedAlong } from '../domai
 import {
 	A_TARGET,
 	type Beginning,
-	type Bounds,
 	type Change,
 	MOMENT_FORM,
 	type MomentScript,
@@ -96,6 +95,8 @@ import {
 	TIMING_FORM,
 	type Target,
 	type TimingScript,
+	WHEN_FORM,
+	type WhenScript,
 	momentTimingOf,
 	refuseWhereLive,
 	shownPart,
@@ -187,13 +188,12 @@ export interface ScrollsScript extends TimingScript {
 
 /**
  * Where a film brings a page of its own to rest, its block's top so many pixels below the screen's top, and over what
- * share of the step: its curve is the run's own, along the page, or across the frame at the point it is `judged` at,
- * in shares of the frame.
+ * share of the step or seconds of its play: its curve is the run's own, along the page, or across the frame at the
+ * point it is `judged` at, in shares of the frame.
  */
-export interface ScrollToScript {
+export interface ScrollToScript extends WhenScript {
 	readonly top: number;
 	readonly judged?: Point;
-	readonly within?: Bounds;
 }
 
 /** The block of a page of its own a film types `into`, by its CSS selector, the typing's timing, and its keyboard. */
@@ -311,7 +311,7 @@ const SCROLLS_FORM: Form<ScrollsScript> = { pace: needed(A_NUMBER), ...TIMING_FO
 const SCROLL_TO_FORM: Form<ScrollToScript> = {
 	top: needed(A_NUMBER),
 	judged: A_POINT_OF_THE_FRAME,
-	within: TIMING_FORM.within
+	...WHEN_FORM
 };
 const BACK_FORM: Form<BackScript> = { upright: needed(AN_UPRIGHT), ...MOMENT_FORM };
 const FADE_FORM: Form<FadeScript> = { seconds: needed(SOME_SECONDS), ease: A_CURVE };
@@ -383,7 +383,8 @@ export function lower(script: TimingScript = {}): Move {
 /**
  * The screen showing the filmed page, `'filmed'`, or a page of the film's own, `{ html }`, a whole document in HTML
  * laid out at the screen's size, cut at the screen's edges, or, `reaches: 'document'`, drawn on past its top and foot
- * as far as its document runs and the frame sees: at once, or at the moment of a play `within: { start }` names; and
+ * as far as its document runs and the frame sees: at once, or at the moment of a play `within: { start }` or `after`
+ * names; and
  * fading from the page it showed over the `fade` the film names, where it names one.
  */
 export function shows(page: typeof FILMED, script?: FilmedShowsScript): Move;
@@ -501,7 +502,7 @@ function refuseFadingFrom(beginning: Beginning): void {
 /**
  * The window's back showing a page of the film's own, `{ html }`, laid out at the screen's size, mounted `upright` as
  * the film names it, or none, `'none'`, the screen seen through it: at once, or at the moment of a play
- * `within: { start }` names.
+ * `within: { start }` or `after` names.
  */
 export function behind(page: typeof NONE_ON_THE_BACK, script?: MomentScript): Move;
 export function behind(page: OwnPageNamed, script: BackScript): Move;
@@ -660,7 +661,8 @@ function documentSet(scene: Scene, key: string, ownDocument: OwnDocument): Scene
 
 /**
  * A block of a page of the film's own, `{ html }`, by its CSS selector, blinking a blink every so many `seconds` from
- * the move's moment, at once or at the moment of a play `within: { start }` names, until the film blinks it again:
+ * the move's moment, at once or at the moment of a play `within: { start }` or `after` names, until the film blinks it
+ * again:
  * whole as it begins, it fades out on a cosine to none half a blink on and back, as a terminal's caret blinks. It
  * blinks whichever face of the window shows the page, or none; a selector the page lacks is refused as it begins.
  */

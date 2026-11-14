@@ -147,7 +147,8 @@ export interface Over {
 
 /**
  * How long a leg takes beside the flight's other legs, in proportion to theirs: legs that take 2, 2.5 and 3 split a
- * move of 7.5 s into those seconds. Every leg names it, or none.
+ * move of 7.5 s into those seconds. Every leg names it, or none. The flight's own `takes`, its seconds of its play, is
+ * the time they split.
  */
 interface TimedLeg {
 	readonly takes?: number;

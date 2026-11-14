@@ -16,7 +16,7 @@ import type { MotionBlur } from '../domain/shutter.ts';
 import { momentOf } from '../domain/time.ts';
 import type { FilmInFormat } from '../direction/film.ts';
 import type { FilmSet } from '../direction/set.ts';
-import { type Step, cssIn, framesIn, ownPagesIn, picturesIn, soundsIn } from '../direction/steps.ts';
+import { type StepShot, cssIn, framesIn, ownPagesIn, picturesIn, soundsIn } from '../direction/steps.ts';
 import { openingScene } from '../scene.ts';
 import type { Browser, Footage, FramesHanded, Opened, PageServer, SetFolder, SetShot, Track } from './ports.ts';
 import { Take } from './take.ts';
@@ -56,7 +56,7 @@ const NO_TARGETS = 'none';
 
 /** A film's steps as a take runs them, and how a fast move is blurred in it: not at all for a draft. */
 interface Scripted {
-	readonly steps: readonly Step[];
+	readonly steps: readonly StepShot[];
 	readonly motionBlur: MotionBlur | null;
 }
 

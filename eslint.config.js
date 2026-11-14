@@ -184,8 +184,10 @@ const SCRIPT_KEYWORDS = [
 	'top',
 	// The leg of a flight a key of the eye's gaze is reached by, counted in place as the legs are listed
 	'by',
-	// How long a leg of a flight takes beside the others
-	'takes'
+	// How long a leg of a flight takes beside the others, or a move in its play's seconds; and how many seconds after
+	// its play begins a move does
+	'takes',
+	'after'
 ];
 const KEYWORD = `/^(${SCRIPT_KEYWORDS.join('|')})$/`;
 const A_NUMBER = 'Literal[raw=/^[0-9.]/]';

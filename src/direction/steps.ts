@@ -34,10 +34,13 @@ import {
 	A_MOVE,
 	A_MOVES,
 	type Move,
+	type MoveInItsStep,
 	type Part,
 	type Share,
 	cssOf,
 	depthsOf,
+	inACut,
+	inAPlayOf,
 	movesThePage,
 	ownPagesOf,
 	picturesOf,
@@ -46,6 +49,7 @@ import {
 } from './move.ts';
 import type { Sound } from './sound.ts';
 
+/** So many seconds of frames, and the moves over them, as a film writes them, by hand too. */
 export interface Play {
 	readonly kind: 'play';
 	readonly seconds: number;
@@ -60,6 +64,18 @@ export interface Cut {
 }
 
 export type Step = Play | Cut;
+
+/** A play as the take shoots it: each move's share of it worked out. */
+export interface PlayShot extends Play {
+	readonly moves: readonly MoveInItsStep[];
+}
+
+/** A cut as the take shoots it: each move's share of its step its own. */
+export interface CutShot extends Cut {
+	readonly moves: readonly MoveInItsStep[];
+}
+
+export type StepShot = PlayShot | CutShot;
 
 /** How a film writes a play: its seconds, its moves, and the curve its moves take where they name none. */
 export interface PlayScript {
@@ -104,32 +120,36 @@ const A_STEP_SAID = 'a step, as play, hold, cut or act makes one';
 const A_TYPED_MOVE = new Plain(isTypedMove, 'a move that types, as terminal.type or page.type makes one');
 // What a step says of an act at the moment a move that holds the page's picture begins
 const ACT_IN_A_HOLD =
-	"an act on the page at the moment a move that holds the page's picture begins, as screen.sweep or piece.show({ picture: 'held' }), is done first, and the picture would hold the page as the act leaves it: put the act a moment after, within: { start }";
+	"an act on the page at the moment a move that holds the page's picture begins, as screen.sweep or piece.show({ picture: 'held' }), is done first, and the picture would hold the page as the act leaves it: put the act a moment after, within: { start } or after";
 const UNSPREAD = 'spread the steps cursor.click and typing give among the others, as ...cursor.click(action)';
 
-/** So many seconds of frames, every move eased along them, each over its own share of the step. */
-export function play(script: PlayScript): Play {
+/**
+ * So many seconds of frames, every move eased along them, each over its own share of the step, or over the seconds of
+ * the play it names.
+ */
+export function play(script: PlayScript): PlayShot {
 	assertWritten(script, PLAY_FORM, 'play');
-	const moves = script.moves ?? [];
+	const moves = (script.moves ?? []).map((move) => inAPlayOf(move, script.seconds));
 	refuseTogether(moves);
 	return { kind: 'play', seconds: script.seconds, moves, ease: script.ease ?? easeInOutSine };
 }
 
 /** So many seconds of frames with nothing moving. */
-export function hold(script: HoldScript): Play {
+export function hold(script: HoldScript): PlayShot {
 	assertWritten(script, HOLD_FORM, 'hold');
 	return play({ seconds: script.seconds });
 }
 
 /** The scene changed at once, between two frames: a cursor gone, a terminal opened, the camera elsewhere. */
-export function cut(...moves: readonly Move[]): Cut {
-	assertKind(moves, A_MOVES, "cut's moves");
+export function cut(...written: readonly Move[]): CutShot {
+	assertKind(written, A_MOVES, "cut's moves");
+	const moves = written.map(inACut);
 	refuseTogether(moves);
 	return { kind: 'cut', moves };
 }
 
 /** As long as the person takes to type, and a beat after the last key. */
-export function typing(move: Move & Typed): readonly Step[] {
+export function typing(move: Move & Typed): readonly StepShot[] {
 	assertKind(move, A_TYPED_MOVE, "typing's move");
 	return [
 		play({ seconds: typingSeconds(move.strokes), moves: [move], ease: linear }),
@@ -194,7 +214,7 @@ export function depthsIn(steps: readonly Step[]): readonly DepthNamed[] {
 }
 
 /** Moves refused together in one step: two on one part at once, and an act at the moment one holds the page begins. */
-function refuseTogether(moves: readonly Move[]): void {
+function refuseTogether(moves: readonly MoveInItsStep[]): void {
 	refuseClashes(moves);
 	refuseActsAsAHoldBegins(moves);
 }
@@ -203,7 +223,7 @@ function refuseTogether(moves: readonly Move[]): void {
  * An act on the page at the moment a move that holds the page's picture begins, refused: the take does what is done
  * at a moment before what begins then, so the picture would hold the page as the act leaves it.
  */
-function refuseActsAsAHoldBegins(moves: readonly Move[]): void {
+function refuseActsAsAHoldBegins(moves: readonly MoveInItsStep[]): void {
 	const holdsBegin = moves.filter((move) => move.holdsThePage === true).map((move) => move.timing.within.start);
 	if (moves.some((move) => isAnAct(move) && holdsBegin.includes(move.timing.within.start))) {
 		throw new FilmError(ACT_IN_A_HOLD);
@@ -211,12 +231,12 @@ function refuseActsAsAHoldBegins(moves: readonly Move[]): void {
 }
 
 /** Whether a move acts on the page: one of the page done at a moment. */
-function isAnAct(move: Move): boolean {
+function isAnAct(move: MoveInItsStep): boolean {
 	return movesThePage(move) && move.timing.within.start === move.timing.within.end;
 }
 
 /** Two moves of one part at once in one step, refused by naming the part, or the value of it both set. */
-function refuseClashes(moves: readonly Move[]): void {
+function refuseClashes(moves: readonly MoveInItsStep[]): void {
 	const taken = moves.flatMap(partTaken);
 	const clash = taken
 		.flatMap((part, place) => taken.slice(place + 1).map((later) => clashOf(part, later)))
@@ -225,7 +245,7 @@ function refuseClashes(moves: readonly Move[]): void {
 }
 
 /** The part a move changes, and the share of its step it takes; a move that only makes a sound takes none. */
-function partTaken(move: Move): PartTaken[] {
+function partTaken(move: MoveInItsStep): PartTaken[] {
 	return move.part === null ? [] : [{ part: move.part, valueNames: move.valueNames, within: move.timing.within }];
 }
 
@@ -251,7 +271,7 @@ function isClash(clash: string | undefined): clash is string {
  * steps of a click or a typing left in a list of their own, not spread among the others, are refused with how to
  * spread them; anything else that is no step, by its place.
  */
-export function stepsOf(written: unknown): readonly Step[] {
+export function stepsOf(written: unknown): readonly StepShot[] {
 	if (!Array.isArray(written)) {
 		throw new FilmError(`the film's steps are ${described(written)}: they are a list of steps`);
 	}
@@ -262,7 +282,7 @@ export function stepsOf(written: unknown): readonly Step[] {
  * One of the steps a film gives: a list there is a click or a typing not spread; a step of a kind livereel has is held
  * to that kind's form, and its moves to the rule `play` and `cut` hold them to, written by hand as the types allow.
  */
-function stepOf(written: unknown, place: number): Step {
+function stepOf(written: unknown, place: number): StepShot {
 	const at = `the film's steps[${place}]`;
 	if (Array.isArray(written)) throw new FilmError(`${at} is a list: ${UNSPREAD}`);
 	if (!isObjectOfValues(written) || !isStepKind(written.kind)) {
@@ -270,8 +290,12 @@ function stepOf(written: unknown, place: number): Step {
 	}
 	const form: Kind<Step> = STEP_FORMS[written.kind];
 	assertKind(written, form, at);
-	refuseTogether(written.moves);
-	return written;
+	switch (written.kind) {
+		case 'play':
+			return play({ seconds: written.seconds, moves: written.moves, ease: written.ease });
+		case 'cut':
+			return cut(...written.moves);
+	}
 }
 
 function isStepKind(written: unknown): written is Step['kind'] {

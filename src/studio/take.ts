@@ -81,6 +81,7 @@ import {
 	type Beginning,
 	type Change,
 	type Move,
+	type MoveInItsStep,
 	type Share,
 	type StepBegunIn,
 	movesTheFrame,
@@ -89,7 +90,7 @@ import {
 } from '../direction/move.ts';
 import type { Action, FilmedPage, MeasuredPage, Rounding, ScrollAim, ScrollCourse } from '../direction/page.ts';
 import type { Cue } from '../direction/sound.ts';
-import type { Cut, Play, Step } from '../direction/steps.ts';
+import type { CutShot, PlayShot, StepShot } from '../direction/steps.ts';
 import {
 	type DrawnScene,
 	type Scene,
@@ -177,8 +178,8 @@ interface PlayTime {
 interface Foresight {
 	readonly scene: Scene;
 	readonly running: readonly Running[];
-	readonly unbegun: readonly Move[];
-	readonly ahead: Map<Move, Running>;
+	readonly unbegun: readonly MoveInItsStep[];
+	readonly ahead: Map<MoveInItsStep, Running>;
 	readonly playTime: PlayTime;
 }
 
@@ -264,7 +265,7 @@ export class Take {
 	 * its document stands, then every step in turn, until the steps or the footage run out; then the stage asked once
 	 * more, so a last frame kept as its page went is not kept without a word.
 	 */
-	async run(steps: readonly Step[]): Promise<void> {
+	async run(steps: readonly StepShot[]): Promise<void> {
 		this.scene = withPagesLaid(this.scene, await this.scrollLengthsLaid());
 		this.opened.time.begin();
 		let begun = 0;
@@ -310,7 +311,7 @@ export class Take {
 		return this.opened.stage.absence().catch(() => undefined);
 	}
 
-	private step(step: Step): Promise<void> {
+	private step(step: StepShot): Promise<void> {
 		switch (step.kind) {
 			case 'play':
 				return this.play(step);
@@ -319,7 +320,7 @@ export class Take {
 		}
 	}
 
-	private async play(step: Play): Promise<void> {
+	private async play(step: PlayShot): Promise<void> {
 		const frames = framesOf(step.seconds, this.framesPerSecond);
 		const playTime: PlayTime = {
 			start: momentOf(this.shot - A_FRAME, this.framesPerSecond),
@@ -329,7 +330,7 @@ export class Take {
 		let waiting = [...step.moves];
 		let running: Running[] = [];
 		// The moves of the frame begun ahead of their share, as a move judged on the frame asks, each kept until its share
-		const ahead = new Map<Move, Running>();
+		const ahead = new Map<MoveInItsStep, Running>();
 		for (let index = 1; index <= frames; index += 1) {
 			if (this.finished()) return;
 			const progress = index / frames;
@@ -362,7 +363,7 @@ export class Take {
 	 * the page a fade in it leaves, held where the camera framed it, laid where the camera the cut leaves shows it, as
 	 * the frame after the cut is the first seen by that camera.
 	 */
-	private async cut(step: Cut): Promise<void> {
+	private async cut(step: CutShot): Promise<void> {
 		for (const move of step.moves) {
 			const change = await this.changeOf(move, atOnceBy(move, this.moment()), IN_A_CUT);
 			await this.set(change, AT_THEIR_ENDS, AT_THEIR_ENDS, movesThePage(move));
@@ -451,7 +452,7 @@ export class Take {
 	 * A move of a play begun as its share starts, or the one begun ahead of it for a move judged on the frame, taken as
 	 * it was begun then; a move begun now foresees the frame by the play as it stands.
 	 */
-	private async begunInPlay(move: Move, foresight: Foresight): Promise<Running> {
+	private async begunInPlay(move: MoveInItsStep, foresight: Foresight): Promise<Running> {
 		const begunAhead = foresight.ahead.get(move);
 		if (begunAhead !== undefined) {
 			foresight.ahead.delete(move);
@@ -889,7 +890,7 @@ async function sceneAlong(scene: Scene, progress: number, moves: readonly Runnin
 }
 
 /** The stretch of a play's time a move's share takes, on the move's own curve or the play's. */
-function stretchIn(move: Move, playTime: PlayTime): Stretch {
+function stretchIn(move: MoveInItsStep, playTime: PlayTime): Stretch {
 	const within = move.timing.within;
 	return {
 		moment: playTime.start + within.start * playTime.seconds,
@@ -901,7 +902,7 @@ function stretchIn(move: Move, playTime: PlayTime): Stretch {
 /**
  * A move begun over a stretch of a play: its share, its curve, what it sets and whether that is the page, its sounds.
  */
-function runningOf(move: Move, stretch: Stretch, change: Change): Running {
+function runningOf(move: MoveInItsStep, stretch: Stretch, change: Change): Running {
 	return {
 		within: move.timing.within,
 		ease: stretch.ease,
@@ -961,7 +962,7 @@ function inOrder(first: number, second: number): number {
  * Moves in the order they begin: by where their shares start, and of two that start alike the one that ends first, so
  * a move done at a moment, as an act, is done before any that begins as it is done reads the scene and the page.
  */
-function inBeginningOrder(first: Move, second: Move): number {
+function inBeginningOrder(first: MoveInItsStep, second: MoveInItsStep): number {
 	const startsApart = first.timing.within.start - second.timing.within.start;
 	return startsApart === 0 ? first.timing.within.end - second.timing.within.end : startsApart;
 }

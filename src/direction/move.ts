@@ -31,6 +31,8 @@ import {
 	ListOf,
 	OfForm,
 	Plain,
+	SOME_OR_NO_SECONDS,
+	SOME_SECONDS,
 	described,
 	isObjectOfValues
 } from '../domain/handed.ts';
@@ -69,6 +71,15 @@ const STEP_START = 0;
 const STEP_END = 1;
 const NONE_OF_IT = 0;
 const ALL_OF_IT = 1;
+// Where a play starts, in its seconds; and the grid of a second its moves' seconds are held to, a microsecond's
+const PLAY_START = 0;
+const STEPS_OF_A_SECOND = 1_000_000;
+// What a move timed both ways is refused with, one at a moment so too, and one timed in a play's seconds in a cut
+const TIMED_BOTH_WAYS =
+	"a move is timed by a share of its step, within, or by its play's seconds, after and takes: not both";
+const MOMENT_TIMED_BOTH_WAYS =
+	'a move at a moment is at a share of its step, within: { start }, or so many seconds after its play begins, after: not both';
+const TIMED_IN_A_CUT = "a cut's moves are made at once: after and takes time a move in a play";
 // The size of a block the page lays out none of, and how a block off the screen is brought in, above or below it and
 // beside it; a box the film gives stands where it says, so it is given anew
 const NO_SIZE = 0;
@@ -154,23 +165,98 @@ export class Share {
 	}
 }
 
-/** The share of its step a move takes, and its own curve where it does not take its step's. */
+/**
+ * How long a move a film times in seconds takes: so many seconds, on to the play's end, or none, done at its moment.
+ */
+type Taken =
+	{ readonly kind: 'seconds'; readonly seconds: number } | { readonly kind: 'toTheEnd' } | { readonly kind: 'atOnce' };
+
+/**
+ * The part of its play a move a film times in seconds takes: from so many seconds after the play begins, as long as
+ * it takes. A play turns it into its share once it knows its own length, so a long play's moves are written at the
+ * moments a film reads off a cut or its music. Seconds are held to a grid as they are turned, so a move written to
+ * end with the play, or where the next begins, ends there exactly, as 1.1 + 2.2 is not 3.3 in a computer's numbers.
+ */
+class SecondsOfThePlay {
+	readonly after: number;
+	readonly taken: Taken;
+
+	constructor(after: number, taken: Taken) {
+		this.after = after;
+		this.taken = taken;
+	}
+
+	/** Its share of a play so many seconds long; refused, in seconds, where it does not stand within the play. */
+	shareOf(playSeconds: number): Share {
+		const start = heldToTheGrid(this.after);
+		const playEnd = heldToTheGrid(playSeconds);
+		switch (this.taken.kind) {
+			case 'atOnce':
+				if (start > playEnd) throw new FilmError(`a move at ${this.after} s stands past a play of ${playSeconds} s`);
+				return Share.at(start / playEnd);
+			case 'toTheEnd':
+				if (start >= playEnd) throw new FilmError(`a move from ${this.after} s starts past a play of ${playSeconds} s`);
+				return Share.of({ start: start / playEnd });
+			case 'seconds': {
+				const end = heldToTheGrid(this.after + this.taken.seconds);
+				if (end > playEnd) {
+					throw new FilmError(
+						`a move runs from ${this.after} s for ${this.taken.seconds} s of a play of ${playSeconds} s: it runs past the play's end`
+					);
+				}
+				return Share.of({ start: start / playEnd, end: end / playEnd });
+			}
+		}
+	}
+}
+
+// A move timed from a moment on to its play's end, and one done at its moment
+const TO_THE_PLAYS_END: Taken = { kind: 'toTheEnd' };
+const AT_ITS_MOMENT: Taken = { kind: 'atOnce' };
+
+/** Seconds held to the grid a play's moves meet on. */
+function heldToTheGrid(seconds: number): number {
+	return Math.round(seconds * STEPS_OF_A_SECOND) / STEPS_OF_A_SECOND;
+}
+
+/** Where in its step a move runs, as the film writes it: a share of the step, or seconds of its play. */
+type Within = Share | SecondsOfThePlay;
+
+/** A move's timing as a film writes it: where in its step it runs, and its own curve where it takes not its step's. */
 export interface Timing {
-	readonly within: Share;
+	readonly within: Within;
 	readonly ease: Ease | null;
 }
 
-/** How a film writes a move's timing, every part of it optional. */
-export interface TimingScript {
+/** A move's timing in the step it stands in, its share of the step worked out. */
+interface TimingInItsStep extends Timing {
+	readonly within: Share;
+}
+
+/**
+ * When in its step a move runs, as a film writes it, every part optional: a share of its step, `within`, or, in a
+ * play, from `after` seconds of it, the play's start where left out, for `takes` seconds, on to its end where left out.
+ */
+export interface WhenScript {
 	readonly within?: Bounds;
+	readonly after?: number;
+	readonly takes?: number;
+}
+
+/** How a film writes a move's timing: when it runs, and its own curve. */
+export interface TimingScript extends WhenScript {
 	readonly ease?: Ease;
 }
 
-/** A move's timing as a film hands it, which every move's options take beside their own. */
-export const TIMING_FORM: Form<TimingScript> = {
+/** When a move runs, as a film hands it, for a move whose curve is its own, as a run brought to rest is. */
+export const WHEN_FORM: Form<WhenScript> = {
 	within: new OfForm<Bounds>({ start: A_NUMBER, end: A_NUMBER }, 'a share of the step: { start, end }'),
-	ease: A_CURVE
+	after: SOME_OR_NO_SECONDS,
+	takes: SOME_SECONDS
 };
+
+/** A move's timing as a film hands it, which every move's options take beside their own. */
+export const TIMING_FORM: Form<TimingScript> = { ...WHEN_FORM, ease: A_CURVE };
 
 /** Where in its step a move done at a moment is done: at `start`, a share of the step. */
 interface Start {
@@ -178,21 +264,51 @@ interface Start {
 }
 
 /**
- * The timing of a move done at a moment, as a sound heard or an act: where in its step it is done, the step's start
- * where none is given; it takes no time, so it takes no end and no curve.
+ * The timing of a move done at a moment, as a sound heard or an act: where in its step it is done, a share of it or,
+ * in a play, so many seconds `after` the play begins, the step's start where neither is given; it takes no time, so
+ * it takes no end and no curve.
  */
 export interface MomentScript {
 	readonly within?: Start;
+	readonly after?: number;
 }
 
 /** The timing of a move done at a moment, as a film hands it. */
 export const MOMENT_FORM: Form<MomentScript> = {
-	within: new OfForm<Start>({ start: A_NUMBER }, 'a moment of the step: { start }')
+	within: new OfForm<Start>({ start: A_NUMBER }, 'a moment of the step: { start }'),
+	after: SOME_OR_NO_SECONDS
 };
 
-/** The timing of a move done at a moment: a share of its step that takes no time, and no curve of its own. */
+/** The timing of a move done at a moment: a moment of its step that takes no time, and no curve of its own. */
 export function momentTimingOf(script: MomentScript): Timing {
-	return { within: Share.at(script.within?.start ?? STEP_START), ease: null };
+	if (script.after === undefined) return { within: Share.at(script.within?.start ?? STEP_START), ease: null };
+	if (script.within !== undefined) throw new FilmError(MOMENT_TIMED_BOTH_WAYS);
+	return { within: new SecondsOfThePlay(script.after, AT_ITS_MOMENT), ease: null };
+}
+
+/**
+ * A move as it stands in a play so many seconds long: the very move where it is timed by a share of its step, else
+ * with its share of the play worked out of its seconds.
+ */
+export function inAPlayOf(move: Move, playSeconds: number): MoveInItsStep {
+	if (isInItsStep(move)) return move;
+	return { ...move, timing: { ...move.timing, within: shareInAPlayOf(move.timing.within, playSeconds) } };
+}
+
+/** The share of a play so many seconds long a move's timing names: its share, or the share its seconds make. */
+function shareInAPlayOf(within: Within, playSeconds: number): Share {
+	return within instanceof Share ? within : within.shareOf(playSeconds);
+}
+
+/** A move as it stands in a cut, which takes no time: one timed in seconds of a play is refused. */
+export function inACut(move: Move): MoveInItsStep {
+	if (isInItsStep(move)) return move;
+	throw new FilmError(TIMED_IN_A_CUT);
+}
+
+/** Whether a move's share of its step is its own already, timed by a share of it, so it stands in any step as it is. */
+function isInItsStep(move: Move): move is MoveInItsStep {
+	return move.timing.within instanceof Share;
 }
 
 /** The change of a move that changes nothing on the scene: the scene as it stands. */
@@ -267,8 +383,8 @@ export type Change = (scene: Scene, progress: number, timeGone: number) => Scene
 
 /**
  * A move as livereel's moves make one (`camera.onto`, `light.on`). A film names its type, to hand moves on from a
- * helper of its own, and makes none itself: a step takes only a move whose share is a `Share`, which livereel alone
- * makes (`A_MOVE`).
+ * helper of its own, and makes none itself: a step takes only a move whose timing livereel made, a `Share` or seconds
+ * of its play (`A_MOVE`).
  */
 export interface Move {
 	readonly part: Part;
@@ -307,8 +423,25 @@ export interface Move {
 	readonly begin: (beginning: Beginning) => Change | Promise<Change>;
 }
 
+/** A move as it stands in its step, a play or a cut: its share of the step worked out. */
+export interface MoveInItsStep extends Move {
+	readonly timing: TimingInItsStep;
+}
+
+/**
+ * A move's timing as a film writes it: a share of its step, or seconds of its play, not both; its own curve where it
+ * names one.
+ */
 export function timingOf(script: TimingScript): Timing {
-	return { within: Share.of(script.within), ease: script.ease ?? null };
+	return { within: withinOf(script), ease: script.ease ?? null };
+}
+
+/** Where in its step a move runs, as its timing names it: seconds of its play where it names them, else a share. */
+function withinOf(script: TimingScript): Within {
+	if (script.after === undefined && script.takes === undefined) return Share.of(script.within);
+	if (script.within !== undefined) throw new FilmError(TIMED_BOTH_WAYS);
+	const taken: Taken = script.takes === undefined ? TO_THE_PLAYS_END : { kind: 'seconds', seconds: script.takes };
+	return new SecondsOfThePlay(script.after ?? PLAY_START, taken);
 }
 
 /** Whether a move changes the page itself, its scroll or its keys, rather than a prop drawn over it. */
@@ -472,6 +605,6 @@ function isMove(written: unknown): written is Move {
 		isObjectOfValues(written) &&
 		typeof written.begin === 'function' &&
 		isObjectOfValues(written.timing) &&
-		written.timing.within instanceof Share
+		(written.timing.within instanceof Share || written.timing.within instanceof SecondsOfThePlay)
 	);
 }

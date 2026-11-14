@@ -168,9 +168,11 @@ no page. Shoot the set again after the app, a format, the targets or the sharpne
   them.
 - Write a step's timing, framing and rhythm as numbers in place, each the value of its keyword (`seconds`, `start`,
   `end`, `air`, `zoomAtMost`, `every`, `tilt`, `turn`, `roll`, `scale`, `depth`, `dim`, `fade`, `ring`, `glow`,
-  `shadow`, `blur`, `thinkingShare`, `seed`, `slipAt`, `pace`, `pixels`, `top`); any other number is a constant at the
-  top.
+  `shadow`, `blur`, `thinkingShare`, `seed`, `slipAt`, `pace`, `pixels`, `top`, `takes`, `after`); any other number is
+  a constant at the top.
 - Every move that runs over time takes `within: { start, end }`, its share of the step, and `ease`, its own curve.
+  In a long play timed to a cut or music, give it the play's seconds instead: `{ after: 2.2, takes: 0.9 }`, and a
+  move at a moment `{ after: 2.2 }`; never work seconds out into shares by hand.
   Two moves of one part run at once only where each names values the other does not (`window.to` beside
   `window.lean`, two `effects`); otherwise give them shares one after the other.
 - Frame by selector, so one script fits every format. A pose in numbers, or a box of the screen for a page with

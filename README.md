@@ -164,6 +164,20 @@ A move that runs over time takes a share of its step, `within: { start, end }`, 
 where left out, and a curve of its own, `ease`. A move made at a moment, as `page.act`, `sound.play`,
 `screen.shows`, `screen.behind` and `screen.blinks`, takes `within: { start }` alone.
 
+In a play, a move may be timed in the play's seconds instead: `after` seconds from the play's start, its start
+where left out, for `takes` seconds, or on to its end where `takes` is left out; a move made at a moment takes
+`after` alone. A long play whose moves stand at moments read off a cut or its music is written so; seconds are
+held to a microsecond, so a move ends exactly where the next begins or the play ends. One past the play's end,
+one timed both ways, and one in a cut are refused.
+
+```ts
+play({ seconds: 11.69, moves: [
+	eye.onto(ASKED, { fills: 0.94, after: 0, takes: 2.2 }),
+	page.act(answered, { after: 9.4 }),
+	cursor.press({ after: 3.3, takes: 0.02 })
+] })
+```
+
 livereel's curves: `linear`, `easeInOutSine` (a step's own), `easeInOutCubic`, `easeInCubic`, `easeOutCubic`,
 `easeOutQuint`, and `easeOutBack`, which passes its end by a tenth of the way and settles back on it: a place, a
 scale or an angle bounces with it, while what comes up or goes never passes whole or none, and a blur or a length
