@@ -26,15 +26,15 @@
  *
  * The window's surface is drawn from a picture of it as sharp as the browser draws a page face-on, and filtered as it
  * shrinks into the distance: the browser draws a layer leant in 3D at about one of its pixels a page's pixel, however
- * close the eye comes, so text near the eye of a window leant back came out soft (SSIM 0.79–0.85 at 4–9×, probed
- * 2026-11-02). It reaches as far past the frame as the camera's picture does on its plane, as the eye may see the plane
- * past the frame's edge, and is drawn less densely where its texture would pass the graphics card's largest. It holds
- * the screen's own markup over the page; what lies over the page in the window, a callout, pins, an object in it,
- * stands in a surface of its own laid out alike; the page's surface lays the screen's ground and the page's picture
- * under the one, as dense as the picture was taken, and the other over all (`stage/page-picture.js`). The cursor stands
- * in a third surface laid out alike, which the room lays over the world. The world is drawn as far past the frame as
- * the lens's blur gathers at its edges, to a step, so the layers it is drawn into keep their size while the blur
- * gathers alike, and a little farther, so each side of them halves evenly down to the coarsest copy the lens reads.
+ * close the eye comes, so text near the eye of a window leant back would come out soft. It reaches as far past the
+ * frame as the camera's picture does on its plane, as the eye may see the plane past the frame's edge, and is drawn
+ * less densely where its texture would pass the graphics card's largest. It holds the screen's own markup over the
+ * page; what lies over the page in the window, a callout, pins, an object in it, stands in a surface of its own laid
+ * out alike; the page's surface lays the screen's ground and the page's picture under the one, as dense as the picture
+ * was taken, and the other over all (`stage/page-picture.js`). The cursor stands in a third surface laid out alike,
+ * which the room lays over the world. The world is drawn as far past the frame as the lens's blur gathers at its edges,
+ * to a step, so the layers it is drawn into keep their size while the blur gathers alike, and a little farther, so each
+ * side of them halves evenly down to the coarsest copy the lens reads.
  *
  * The exposures are added up in linear light, as a shutter gathers the light of each moment: a glint that moves draws a
  * streak as bright as its light, where averaged in the screen's colours it went dark. Where the world asks, the frame
@@ -161,11 +161,11 @@ const NOWHERE = 0;
 const EDGE_CLEAR = 2;
 // The step the world's reach past the frame is rounded up to, in the drawing's pixels. three makes a layer anew as its
 // size changes, and the world's layer, the see-through layer and the lens's own are sized to the box the world is drawn
-// over, which grew a little each frame as the eye's focus opened: the room drew a frame of 3840 × 2160, the page fading
-// as the focus opens, in 366 ms by its steps' clock, and with the reach to a step of 256 in 278 ms, of 128 in 261, of
-// 64 in 261 (2026-11-11). A step wider draws the world over more pixels than the blur reads; one narrower makes the
-// layers anew more often as the blur grows. It is for speed alone: the blur's light is the same at any step, the
-// layers' sides halving evenly to the copies the lens reads (`sideHalvedEvenly`)
+// over, which grew a little each frame as the eye's focus opened: the room drew a 3840 × 2160 frame, the page fading as
+// the focus opens, in 366 ms with the reach unrounded, in 278 ms to a step of 256, and in 261 to 128 or 64. A step
+// wider draws the world over more pixels than the blur reads; one narrower makes the layers anew more often as the blur
+// grows. It is for speed alone: the blur's light is the same at any step, the layers' sides halving evenly to the
+// copies the lens reads (`sideHalvedEvenly`)
 const REACH_STEP = 128;
 // A plane the eye sees edge-on, carried onto a line; and the fourth value of a point of the frame seen back onto the
 // plane where it sees no point of it before the eye
@@ -604,8 +604,8 @@ class Room {
 	 * round its light past white where the world asks, and shown on the canvas once the card has drawn it. Refused, with
 	 * what the film is told, where its things module throws building or setting a thing; lost where the card has
 	 * dropped the canvas, as it was handed the frame or as it drew it. A card out of memory may say so only after the
-	 * frame it failed in is composed (the probe of beats 7–8, 2026-11-12), which its capture then refuses (`canvasLost`,
-	 * read by `roomCaptured` in `src/adapters/browser/room.ts`).
+	 * frame it failed in is composed, which its capture then refuses (`canvasLost`, read by `roomCaptured` in
+	 * `src/adapters/browser/room.ts`).
 	 * @param {readonly DrawnScene[]} scenes @returns {Promise<Composed>}
 	 */
 	async compose(scenes) {
@@ -678,8 +678,8 @@ class Room {
 	 * An exposure drawn and added into the frame: its ground; the world as one scene, through the eye's lens; the cursor
 	 * over it, where the scene has one; the film's things on the frame; the frame's surface. Refused, with what the film
 	 * is told, where its module throws building or setting a thing; lost where the card dropped the canvas as the module
-	 * built or set one, as the film's own three draws on the card: drawn on, the stage's tab crashed (a thing losing the
-	 * context on purpose, in software, 2026-11-12).
+	 * built or set one, as the film's own three draws on the card: drawn on, a context lost on purpose in software
+	 * crashed the stage's tab.
 	 * @param {ReadonlyMap<SurfaceName, Element>} surfaces @param {ExposureStanding} standing @param {DrawnScene} scene
 	 * @param {Box} gathered @returns {Composed}
 	 */
@@ -776,11 +776,11 @@ class Room {
 	 * there. What of the window, the things and the objects of markup stands nearer the eye than all the rest while the
 	 * eye's focus blurs it near (`apartBeforeTheRest`) is a world of its own, drawn and blurred apart and laid over the
 	 * rest, which is drawn without it: one depth a pixel cannot hold what a near thing hides, and the lens, reading one,
-	 * carried what stood round its hole on into it, so a sharp edge behind a blurred cube ended where the cube's blur
-	 * began (a probe film, d at 1 s, 2026-11-11). Parted by what stands, each whole, no surface is cut: parted by a plane
-	 * at the focus, a page crossing it was cut in two, and laid by its clearness on both sides drew a line where it was
-	 * cut, or a band where the two sides lay over one another. Each world is built by `worldApartBuilt`; the worlds the
-	 * room draws, the rest first, none that holds nothing.
+	 * would carry what stood round its hole on into it, so a sharp edge behind a blurred cube would end where the cube's
+	 * blur began. Parted by what stands, each whole, no surface is cut: parted by a plane at the focus, a page crossing
+	 * it would be cut in two, and laid by its clearness on both sides draw a line where it was cut, or a band where the
+	 * two sides lay over one another. Each world is built by `worldApartBuilt`; the worlds the room draws, the rest
+	 * first, none that holds nothing.
 	 * @param {DrawnScene} scene @param {PageSurfaceLaid} pageLaid @param {Matrix4} pageMatrix the matrix that places the
 	 * page's square @param {ExposureStanding} standing @param {readonly ThingObject[]} things
 	 * @param {readonly SunkPit[]} pits @returns {readonly WorldApart[]}
@@ -989,9 +989,8 @@ class Room {
 	 * nearest part, than the box the world is drawn over holds is laid over all of that as one part; one that asks
 	 * more, each part over what that box shows of it as far as the eye sees it from within the part, none where it shows
 	 * none. Its element laid in the canvas, where it is not yet, over its nearest part shown. A surface that fits is not
-	 * cut, as its texels and their smaller copies would stand elsewhere and draw its letters otherwise: beats 3-4's
-	 * lifted lines, magnified 1.1 times and cut at the frame's edge, came out at SSIM 0.9976 against the uncut (draft,
-	 * 2 s, 2026-11-12), where cutting saves less than the world's own layer holds.
+	 * cut, as its texels and their smaller copies would stand elsewhere and draw its letters otherwise, where cutting
+	 * saves less than the world's own layer holds.
 	 * @param {SurfaceApart} apart @param {DrawnScene} scene @param {Box} gathered @returns {MarkupStanding}
 	 */
 	markupLaidOut(apart, scene, gathered) {
@@ -1705,8 +1704,7 @@ function surfaceIn(exposure, name) {
 
 /**
  * The canvas painted, what the stage drew in it with it: once it says it has, the children it painted anew, whose
- * rendering changed since it last painted (a probe of 2026-11-11: a frame of the window standing still repainted its
- * surface in 29 of 301 paints).
+ * rendering changed since it last painted: a window standing still repainted its surface in 29 of 301 paints.
  * @param {PaintingCanvas} canvas @returns {Promise<ReadonlySet<Element>>}
  */
 function paintedOf(canvas) {

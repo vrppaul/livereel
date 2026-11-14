@@ -269,8 +269,7 @@ const LAYERS_SET_AS = { going: '--layers-going', coming: '--layers-coming', come
 // The attribute the stage's root bears while the world has grain, which lays the ground through the grain's filter
 const GRAINED = 'data-grain';
 // The noise the grain's filter makes (`stage.html`): each colour round the middle of its whole, spread by 27 of its 255
-// levels, its standard deviation (26.4 to 27.2 by colour, measured 2026-11-11 on Chrome 156, in software and on the
-// card)
+// levels, its standard deviation (26.4 to 27.2 by colour on Chrome 156, in software and on the card)
 const GRAIN_NOISE = { middle: 0.5, spreadInLevels: 27, levels: 255 };
 // The weights of the filter's last step, its attributes: how much of the noise it adds, and what it adds to all
 const GRAIN_WEIGHTS = { noise: 'k3', toAll: 'k4' };
@@ -1559,7 +1558,7 @@ function open(opening) {
  * shows it whole; and set on the stage's root as the picture every piece of the page is drawn from. It is shown at an
  * address of the stage's own, short however large the picture: Chrome drops a custom property's value longer than
  * 2,097,152 characters, which a dense page's picture, taken as sharp as livereel's closest camera needs it, passes as a
- * data URL (measured 2026-11-03).
+ * data URL.
  * The address of the picture it takes the place of is let go once nothing shows it.
  * @param {PagePicture} picture @returns {Promise<void>}
  */

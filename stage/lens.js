@@ -30,8 +30,8 @@
  * pixel's light with its neighbours' as far as its pixels stand apart, so a sample that spreads is read from copies of
  * the far field's light that reaches as far as the widest far blur round it reads them apart, for the share of each
  * copy's pixel that light holds: read from copies of all of it, a sharp cube's green edge mixed into a page blurred
- * beside it spread green over the page 30 pixels of a 3840 still (2026-11-10). A sample whose light reaches less far is
- * read from the far field as it was split, no coarser than its own reach.
+ * beside it spread green over the page. A sample whose light reaches less far is read from the far field as it was
+ * split, no coarser than its own reach.
  *
  * The split reads each pixel by the nearest depth round it, as a pixel at the edge of what the scene drew holds a share
  * of the nearer thing's light while its one depth, of a single sample, may be the farther one's or nothing's. It writes
@@ -265,8 +265,8 @@ bool isSpreadingIn(vec4 measured) {
 	return measured.b > HALF_MARKED;
 }
 // What the split measured of the pixel a point falls in, a share of the field across and up, unblended with its
-// neighbours: blended, a sample between a sharp cube's pixel and a blurred page's took a reach between theirs, and
-// carried the cube's green 13 pixels of a 3840 still into the page (2026-11-10)
+// neighbours: blended, a sample between a sharp thing's pixel and a blurred page's would take a reach between theirs,
+// and carry the thing's colour into the page
 vec4 measuredAt(vec2 share) {
 	ivec2 size = textureSize(measures, ${FULL_SIZE});
 	return texelFetch(measures, clamp(ivec2(share * vec2(size)), ivec2(0), size - 1), ${FULL_SIZE});
@@ -277,8 +277,8 @@ vec4 measuredAt(vec2 share) {
 // the far field there, and laid under those before it for what they leave. Every pass after reads the far field so,
 // with no hole in it. Gathered round each pixel with the hole left out, a pixel inside the near field's edge found
 // half its disc and took the rest from coarse copies, which mixed in what stood far off along the edge, where a pixel
-// outside it found all its disc: the near field's edge drew a hard line over the far field (a blurred cube over a dark
-// block beside a white page, 2026-11-10); and laid under one another by the share each holds, the copies did the same
+// outside it found all its disc: the near field's edge drew a hard line over the far field; and laid under one another
+// by the share each holds, the copies did the same
 const FAR_FIELD_WHOLE_FRAGMENT = `
 uniform sampler2D farLight;
 uniform float coarsestLevel;
@@ -543,13 +543,12 @@ export class Lens {
 	 * nearest of it while any of it stands in the near field, and each farther one while all of it does; nearest first.
 	 * Parted so, a cube before a page stays apart while the focus is pulled through it, and joins the rest only where
 	 * nothing of it is blurred near, where the two drawings agree: parted by whether all of it stood in the near field,
-	 * it joined the rest while its near face was still blurred wide, and the fill's guess of what it hid came back at
-	 * once, 48 levels between two frames where the frames round them step 19 (a probe film, `n-pull` at 0.9667 s,
-	 * 2026-11-11). And a window whose near corner alone is blurred stays with the rest behind a title blurred before it:
-	 * taken apart with the title, what the title's blur hides of the window is guessed, and the page under the title's
-	 * shadow, drawn in one field with it, was blurred as the title (`w-titles` at 1.3 s, 2026-11-11). What stands among
-	 * the rest's depths, a cube through a page, is never apart. Nothing is where the eye blurs nothing, nor all that
-	 * stands.
+	 * it would join the rest while its near face was still blurred wide, and the fill's guess of what it hid would come
+	 * back at once, from one frame to the next. And a window whose near corner alone is blurred stays with the rest
+	 * behind a title blurred before it: taken apart with the title, what the title's blur hides of the window would be
+	 * guessed, and the page under the title's shadow, drawn in one field with it, blurred as the title. What stands
+	 * among the rest's depths, a cube through a page, is never apart. Nothing is where the eye blurs nothing, nor all
+	 * that stands.
 	 * @template {{ readonly box: Box3 }} Standing
 	 * @param {DrawnEye} eye @param {readonly Standing[]} standing @returns {readonly Standing[]}
 	 */
@@ -651,9 +650,8 @@ function depthReadValues(pixelsOfOne, frameScale) {
  * smaller copy a blur of the widest spread reads, the coarser of the two its samples' gap falls between: a whole number
  * of that copy's pixels, in the drawing's. The card makes each copy half the one before, rounded down, and read from
  * copies of sides that do not halve evenly, a blur's light followed where the frame fell among their pixels: a window
- * blurred wide in the frame's middle, 162.4 thousandths of linear light a pixel unblurred, read 154.9 with the world
- * drawn 768 pixels past the frame and 178.2 at 832, and with the sides halving evenly to the copies read, 161.8 at
- * every place the frame was moved to (2026-11-11).
+ * blurred wide in the frame's middle read 154.9 or 178.2 thousandths of linear light by where the frame fell, 162.4
+ * unblurred, and 161.8 wherever it fell with the sides halving evenly.
  * @param {number} side @param {number} widestSpread
  */
 export function sideHalvedEvenly(side, widestSpread) {

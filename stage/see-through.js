@@ -17,18 +17,17 @@
  * one another there as the browser lays them, and the field is turned into light once drawn, for the lens. The page
  * lies alone in its field with the window's glass over it, both drawn as light, the glass a film's light laid over the
  * page as three lays a coat, so its reflection past white stays whole for the glow; the field is laid as the browser
- * lays the page. Drawn with the page in its field, markup before it had the page under its faint shadow blurred by the
- * shadow's depth, not the page's: a title in focus before a page blurred by the focus left a band of the page sharp
- * under its shadow, cut hard where the shadow ends (a probe film, `w-titles` at 1.8 s, 2026-11-11).
+ * lays the page. Drawn with the page in its field, markup before it would have the page under its faint shadow blurred
+ * by the shadow's depth, not the page's: under a title in focus before a blurred page, a band of the page sharp under
+ * its shadow, cut hard where the shadow ends.
  *
  * Nothing seen through writes depth, so it is laid in the order it is drawn, and three draws whole meshes, the farthest
  * first: a thing passing through the fading page would be laid wholly over the page or wholly under it. So where the
  * page is seen through, what is seen through beside it is cut at its plane, and drawn as fields behind the page; then
- * the page, and what stands before it. Drawn as one field, the nearest surface's depth was the page's where what stood
- * behind showed through it: a title in the world behind a half-faded page in focus was sharp where it was seen through
- * the page and blurred beside it (a probe film, `w-titles` at 1.3 s, 2026-11-11). A mesh's own faces three lays in the
- * order of its materials, so a box of six see-through materials lays a back face drawn after a front face over it; one
- * material drawn on both sides is laid its back faces first.
+ * the page, and what stands before it. Drawn as one field, the nearest surface's depth would be the page's where what
+ * stood behind showed through it: a title behind a half-faded page in focus would be sharp through the page and blurred
+ * beside it. A mesh's own faces three lays in the order of its materials, so a box of six see-through materials lays a
+ * back face drawn after a front face over it; one material drawn on both sides is laid its back faces first.
  *
  * Which field a part of the world is drawn in is told by three's layers, which a camera draws one or more of at a time:
  * the world's lights are in all of them, as three lights a part only by lights in its own.
@@ -79,12 +78,11 @@ const NOTHING_SEEN_THROUGH = [];
  * lies under it, as the browser lays it or in linear light. Markup is drawn as the browser drew it, so three lays its
  * surfaces over one another as the browser lays them (`MARKUP_PART_FRAGMENT` in `stage/room.js`), and is laid so. A
  * film's things are its light. The page is laid as markup is: its fade is the stylesheet's, and laid in linear light
- * over what stood behind it, a half-faded page over a glass cube read 13.27 levels off the old room, which laid its
- * layers in the screen's colours, on average over 900 × 560 pixels of a 3840 still, and 1.79 laid so (a probe film,
- * `see` at 1.8 s, 2026-11-11); it is drawn as light, as the glass over it is drawn as a film's light. The share the
- * window's shade fades it by the page's surface lays in light itself, from what the room has laid behind it
- * (`stage/page-picture.js`): the field holds the page as clear as its screen has come up, and the browser's law lays
- * that alone.
+ * over what stood behind it: a half-faded page over a glass cube came out 13 levels off the old room, which laid its
+ * layers in the screen's colours, and laid so, under 2; it is drawn as light, as the glass over it is drawn as a film's
+ * light. The share the window's shade fades it by the page's surface lays in light itself, from what the room has laid
+ * behind it (`stage/page-picture.js`): the field holds the page as clear as its screen has come up, and the browser's
+ * law lays that alone.
  * @type {{
  *   readonly [Holding in SeenThroughHolding]: { readonly inTheScreensColours: boolean, readonly laid: Laying }
  * }}

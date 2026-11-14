@@ -9,7 +9,7 @@
 		<script defer src="stage.js"></script>
 	</head>
 	<body>
-		<!-- The world's grain, the filter the ground is laid through where the world has any: a fractal noise a pixel of the frame apart (at a frequency of 1 its lattice falls on the pixels, where such noise is nought; at 0.8 a pixel's noise and the next one's are all but unrelated, correlated by -0.07, measured 2026-11-11), each colour apart, made opaque, then added to the ground's colours as strongly as the world's grain says (`WorldDrawer` in `stage.js`), in the screen's colours, as the browser draws the ground -->
+		<!-- The world's grain, the filter the ground is laid through where the world has any: a fractal noise a pixel of the frame apart (at a frequency of 1 its lattice falls on the pixels, where such noise is nought; at 0.8 a pixel's noise and the next one's are all but unrelated, correlated by -0.07), each colour apart, made opaque, then added to the ground's colours as strongly as the world's grain says (`WorldDrawer` in `stage.js`), in the screen's colours, as the browser draws the ground -->
 		<svg class="grain" data-prop="world" aria-hidden="true">
 			<filter id="grain" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
 				<feTurbulence type="fractalNoise" baseFrequency="0.8" />

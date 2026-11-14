@@ -7,7 +7,7 @@
  * the screen's colours, across and then down, as ffmpeg scaled a frame captured at the drawing's size before
  * (`scale=…:flags=lanczos`, `src/adapters/video/video.ts`). The canvas keeps the drawing's size, as the browser paints
  * the markup laid in it as densely as the canvas is drawn. Chrome's own scaling as it captures, a box of 2 × 2, drew
- * small text softer (the prober's, 2026-11-11).
+ * small text softer.
  */
 import { Camera, HalfFloatType, WebGLRenderTarget } from 'three';
 import { SRGB_CURVES, WRITTEN, passOver } from './passes.js';

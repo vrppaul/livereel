@@ -27,7 +27,7 @@ body {
 	isolation: isolate;
 }
 
-/* A surface of an exposure, over the whole frame: its ground, its window, what stands on its frame, one over the other in that order, laid in the room's canvas apart where a film is drawn as a room. It is a picture of its own, all it holds drawn in it, as the canvas draws a child of its own into a texture with no more than that child paints itself. Its size is the frame's, written out: in the canvas, which lays out what is laid in it as no box does, `inset` sizes it to none (probed 2026-11-04) */
+/* A surface of an exposure, over the whole frame: its ground, its window, what stands on its frame, one over the other in that order, laid in the room's canvas apart where a film is drawn as a room. It is a picture of its own, all it holds drawn in it, as the canvas draws a child of its own into a texture with no more than that child paints itself. Its size is the frame's, written out: in the canvas, which lays out what is laid in it as no box does, `inset` sizes it to none */
 .surface {
 	position: absolute;
 	left: 0;
@@ -69,7 +69,7 @@ body {
 	height: calc(var(--frame-height) * 1px);
 }
 
-/* The layers a film lays over the ground, wherever the ground is, under all else there and cut at its box: those going, fading out, and those coming, fading in, added together in a group of their own and laid over the ground as one, so half-way each stands at half its strength and the ground shows through no more than either lets it (laid one over the other, the ground had shown through both: a quarter of it half-way, a grey flash between two coloured layers, the review of 2026-10-31) */
+/* The layers a film lays over the ground, wherever the ground is, under all else there and cut at its box: those going, fading out, and those coming, fading in, added together in a group of their own and laid over the ground as one, so half-way each stands at half its strength and the ground shows through no more than either lets it (laid one over the other, the ground would show through both: a quarter of it half-way, a grey flash between two coloured layers) */
 .layers {
 	position: absolute;
 	inset: 0;
