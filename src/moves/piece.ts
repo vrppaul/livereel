@@ -245,14 +245,13 @@ type Filling =
 	{ readonly kind: 'behind'; readonly selector: string } | { readonly kind: 'colour'; readonly colour: string };
 
 /**
- * A hole as a piece is made: how it is filled, the line round its edge, if any, how far past the piece it reaches, and
- * its pit, if any, whose walls are its piece's body's as the piece is lifted.
+ * A hole as a piece is made: how it is filled, the line round its edge, if any, and how far past the piece it reaches;
+ * the pit it is sunk into is its piece's body's (`BodyAsked`).
  */
 interface HoleAsked {
 	readonly filling: Filling;
 	readonly line: Stroke | null;
 	readonly reach: number;
-	readonly pit: Omit<Pit, 'walls'> | null;
 }
 
 /** Whether each side of a part of the screen stands on a side of another part. */
@@ -271,10 +270,23 @@ type CornersAsked =
  */
 type WallsAsked = { readonly kind: 'its edge' } | { readonly kind: 'named'; readonly colour: string };
 
-/** A piece's body as it is made: as the film writes it, its walls' colour still to read where it names none. */
+/**
+ * A piece's body as it is made: as the film writes it, its walls' colour still to read where it names none; and the pit
+ * its hole is sunk into, if any, whose walls are the body's, so a piece has a pit only where it has a body.
+ */
 interface BodyAsked extends Omit<Body, 'walls'> {
 	readonly walls: WallsAsked;
+	readonly pit: Omit<Pit, 'walls'> | null;
 }
+
+/** A piece's body as it is lifted, its walls' colour read, and its hole's pit, if any, walled as the body is. */
+interface BodyTaken {
+	readonly body: Body;
+	readonly pit: Pit | null;
+}
+
+// A piece lifted with no body, which sinks its hole into no pit
+const NO_BODY = { body: null, pit: null } as const;
 
 /**
  * What a piece is lifted with, as it is made: how its source is taken, how many blocks, with how much air round them
@@ -386,11 +398,12 @@ export function show(target: Target, script: PieceScript = {}): Move {
 	assertKind(target, A_TARGET, "piece.show's target");
 	assertWritten(script, PIECE_FORM, 'piece.show');
 	const taking = takingOf(script);
-	const body = script.body === undefined ? null : bodyAsked(script.body, script.inside);
+	const pit = script.hole?.pit === undefined ? null : pitAsked(script.hole.pit, script.body);
+	const body = script.body === undefined ? null : bodyAsked(script.body, script.inside, pit);
 	const lifting: Lifting = {
 		...taking,
 		corners: cornersAsked(target, taking, script.corner),
-		hole: script.hole === undefined ? null : holeAsked(target, script.hole, body),
+		hole: script.hole === undefined ? null : holeAsked(target, script.hole),
 		lines: script.lines ?? null,
 		picture: script.picture ?? FOLLOWING_THE_PAGE.kind,
 		body,
@@ -670,17 +683,13 @@ function sheenAcross(piece: ShowingOf<'piece'>, edge: FrameSide, sheen: SheenScr
 }
 
 /**
- * The hole a film names, reaching as far as it names past the piece, none where it names no reach, sunk as the pit it
- * names, of the piece's body's colour; filled with a colour it names, or with the ground behind the block a selector
- * names, refused for a box of the screen, which names no block.
+ * The hole a film names, reaching as far as it names past the piece, none where it names no reach; filled with a
+ * colour it names, or with the ground behind the block a selector names, refused for a box of the screen, which names
+ * no block. The pit it names is the piece's body's (`bodyAsked`).
  */
-function holeAsked(target: Target, hole: HoleScript, body: BodyAsked | null): HoleAsked {
+function holeAsked(target: Target, hole: HoleScript): HoleAsked {
 	const ground = hole.ground ?? PAGES_GROUND;
-	const shaped = {
-		line: hole.line ?? null,
-		reach: hole.reach ?? NO_REACH,
-		pit: hole.pit === undefined ? null : pitAsked(hole.pit, body)
-	};
+	const shaped = { line: hole.line ?? null, reach: hole.reach ?? NO_REACH };
 	if (ground !== PAGES_GROUND) return { filling: { kind: 'colour', colour: ground }, ...shaped };
 	if (typeof target !== 'string') {
 		throw new FilmError(
@@ -694,8 +703,8 @@ function holeAsked(target: Target, hole: HoleScript, body: BodyAsked | null): Ho
  * A pit as the film names it, lit from within by none where it names no glow, its walls to be its piece's body's
  * colour; refused on a piece with no body.
  */
-function pitAsked(pit: PitScript, body: BodyAsked | null): Omit<Pit, 'walls'> {
-	if (body === null) {
+function pitAsked(pit: PitScript, body: BodyScript | undefined): Omit<Pit, 'walls'> {
+	if (body === undefined) {
 		throw new FilmError(
 			"piece.show sinks a hole's pit with walls of the piece's body's colour: give the piece a body, body: { thickness }"
 		);
@@ -705,17 +714,17 @@ function pitAsked(pit: PitScript, body: BodyAsked | null): Omit<Pit, 'walls'> {
 
 /**
  * A body as the film names it, its walls of the colour it names or of its edge's, lit from within by none where it
- * names no glow; refused but inside the world, as the frame, a group and the window are drawn flat over everything in
- * the room.
+ * names no glow, with its hole's pit, if any; refused but inside the world, as the frame, a group and the window are
+ * drawn flat over everything in the room.
  */
-function bodyAsked(body: BodyScript, inside: PieceScript['inside']): BodyAsked {
+function bodyAsked(body: BodyScript, inside: PieceScript['inside'], pit: Omit<Pit, 'walls'> | null): BodyAsked {
 	if (inside !== 'world') {
 		throw new FilmError(
 			"piece.show draws a piece's body inside the world alone, as the frame, a group and the window are drawn flat over everything: lift it inside: 'world'"
 		);
 	}
 	const walls: WallsAsked = body.walls === undefined ? OF_ITS_EDGE : { kind: 'named', colour: body.walls };
-	return { thickness: body.thickness, walls, glow: body.glow ?? NO_GLOW };
+	return { thickness: body.thickness, walls, glow: body.glow ?? NO_GLOW, pit };
 }
 
 /**
@@ -732,8 +741,9 @@ async function lifted(beginning: Beginning, target: Target, lifting: Lifting): P
 	// The window's corner as the look rounds it on the frame, in the page's pixels as the camera shows them there
 	const windowCorner =
 		(beginning.scene.look.paneCorner * frameScaleOf(beginning.format.frame) * source.width) / box.width;
-	const body = lifting.body === null ? null : await bodyTaken(beginning, lifting.body, source, edgeSides(uncut));
-	const hole = lifting.hole === null ? null : await holeOf(beginning, lifting.hole, ownCorners, body);
+	const { body, pit } =
+		lifting.body === null ? NO_BODY : await bodyTaken(beginning, lifting.body, source, edgeSides(uncut));
+	const hole = lifting.hole === null ? null : await holeOf(beginning, lifting.hole, ownCorners, pit);
 	const picture = await pictureOf(beginning, lifting.picture, source);
 	const liftedOff = pageShownBy(beginning.scene.screen.shows);
 	const piece: Piece = {
@@ -797,19 +807,31 @@ function cornersRead(rounding: Rounding, block: string): Corners {
 
 /**
  * A piece's body as it is lifted off a part of the screen: its walls of the colour the film names, or of the colour the
- * page shows along the part's edge now, on the sides named.
+ * page shows along the part's edge now, on the sides named; its hole's pit, if any, walled alike.
  */
 async function bodyTaken(
 	beginning: Beginning,
 	asked: BodyAsked,
 	source: Box,
 	sides: readonly FrameSide[]
-): Promise<Body> {
-	switch (asked.walls.kind) {
+): Promise<BodyTaken> {
+	const { walls: wallsAsked, pit, ...shape } = asked;
+	const walls = await wallsTaken(beginning, wallsAsked, source, sides);
+	return { body: { ...shape, walls }, pit: pit === null ? null : { ...pit, walls } };
+}
+
+/** The colour of a body's walls: the film's, or the colour the page shows along the part's edge now. */
+async function wallsTaken(
+	beginning: Beginning,
+	asked: WallsAsked,
+	source: Box,
+	sides: readonly FrameSide[]
+): Promise<string> {
+	switch (asked.kind) {
 		case 'its edge':
-			return { ...asked, walls: await beginning.edgeColour(source, sides) };
+			return beginning.edgeColour(source, sides);
 		case 'named':
-			return { ...asked, walls: asked.walls.colour };
+			return asked.colour;
 	}
 }
 
@@ -867,12 +889,10 @@ function standsOn(edge: number, otherEdge: number): boolean {
 
 /**
  * A hole as it is filled, with its colour or the ground the page draws behind its block as the move begins, its
- * corners as round as its piece's own, its pit's walls its piece's body's.
+ * corners as round as its piece's own, sunk into the pit its piece's body walls, if any.
  */
-async function holeOf(beginning: Beginning, asked: HoleAsked, corners: Corners, body: Body | null): Promise<Hole> {
-	const { filling, pit: pitShaped, ...shaped } = asked;
-	// A pit is asked for a piece with a body alone (pitAsked)
-	const pit = pitShaped === null || body === null ? null : { ...pitShaped, walls: body.walls };
+async function holeOf(beginning: Beginning, asked: HoleAsked, corners: Corners, pit: Pit | null): Promise<Hole> {
+	const { filling, ...shaped } = asked;
 	switch (filling.kind) {
 		case 'colour':
 			return { ...shaped, pit, ground: filling.colour, corners };
