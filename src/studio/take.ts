@@ -49,18 +49,17 @@
  * nor captured again: holds are near half a film's frames. A picture is taken as sharp as a camera as close as
  * livereel's bound shows it, so it serves every frame after it; on a frame a move of the page runs on past, or while
  * its own motion is let go, as sharp as that frame's cameras show it, as the next frame takes another: the whole
- * screen as sharp as the bound costs about three times what it costs as sharp as the camera showing all of it (253–269
- * against 81–83 ms, a 1040 × 1080 screen, 2026-10-30). A move's last frame is pictured as sharp as the bound, so the
- * picture after it can come out alike. A piece that holds its picture has the stage hold one of its source alone as
- * the move lifting it begins, as sharp as the bound, which no picture of the page taken after takes the place of. A
- * piece drawn from the page's picture larger than the bound is drawn from a picture of its source alone the stage holds
- * as close as the frame, or the moves running over it at their ends, draw it (`src/studio/pictures.ts`): Chrome draws
- * the part anew at that scale, so the piece stays as sharp as a tab that close. It is taken anew where the page's
- * picture comes out otherwise than the last, and kept between, as a clip costs as much as a picture of the page and
- * more as it grows: a name grown to the whole frame, one clip of 122–148 ms on the card; a line 900 pixels wide grown
- * 21 times, 765 ms (2026-11-04). A piece drawn from one asks the page's picture no closer. A stage with the page live
- * in its frame, as it shows a dynamic one, is captured every frame, as the page changes of itself, and is laid flat
- * for an act.
+ * screen as sharp as the bound costs about three times what it costs as sharp as the camera showing all of it. A
+ * move's last frame is pictured as sharp as the bound, so the picture after it can come out alike. A piece that holds
+ * its picture has the stage hold one of its source alone as the move lifting it begins, as sharp as the bound, which
+ * no picture of the page taken after takes the place of. A piece drawn from the page's picture larger than the bound
+ * is drawn from a picture of its source alone the stage holds as close as the frame, or the moves running over it at
+ * their ends, draw it (`src/studio/pictures.ts`): Chrome draws the part anew at that scale, so the piece stays as
+ * sharp as a tab that close. It is taken anew where the page's picture comes out otherwise than the last, and kept
+ * between, as a clip costs as much as a picture of the page and more as it grows: a line 900 pixels wide grown 21
+ * times took 765 ms. A piece drawn from one asks the page's picture no closer. A stage with the page live in its
+ * frame, as it shows a dynamic one, is captured every frame, as the page changes of itself, and is laid flat for an
+ * act.
  * A fault in a step is raised again with the moment and the step it was met at. Before each frame, after each act,
  * and of any fault a step meets, the take asks the stage whether it and its page are still there: where one is gone,
  * the take is refused by why, in place of what its loss made a step fail at (a selector that matches nothing on

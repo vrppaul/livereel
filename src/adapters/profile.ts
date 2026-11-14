@@ -10,11 +10,11 @@
  * is not counted.
  *
  * A stage that draws on the graphics card, as a room does, has the card's work queued as its draw returns, and the
- * card does it inside the capture after: timed so, a room's frame of 3840 × 2160, the page fading as the eye's focus
- * opens, told 15.6 ms of drawing and 446.9 of capture, where waited on it told 329.9 and 140.6 (2026-11-11). So a
- * profile taken waits, as it times a draw, for the stage's drawing to finish, and the capture is the frame's way out of
- * the browser alone. The wait stops the card's queue once a frame, so only a profile taken wraps the ports: a shoot not
- * asked for its profile waits on nothing more than its frames, and says nothing of where its time went.
+ * card does it inside the capture after: timed so, a room's frame told 15.6 ms of drawing and 446.9 of capture, where
+ * waited on it told 329.9 and 140.6. So a profile taken waits, as it times a draw, for the stage's drawing to finish,
+ * and the capture is the frame's way out of the browser alone. The wait stops the card's queue once a frame, so only a
+ * profile taken wraps the ports: a shoot not asked for its profile waits on nothing more than its frames, and says
+ * nothing of where its time went.
  */
 import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { ActContext, FilmedPage, MeasuredPage, Rounding, ScrollAim, ScrollCourse } from '../direction/page.ts';

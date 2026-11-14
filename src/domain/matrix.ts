@@ -381,8 +381,8 @@ export function longestScaleAtItsMiddle(matrix: Matrix): number {
  * How many times as long a matrix draws a box of the plane it carries about the middle of another box of it, along the
  * way it draws it longest, where it draws it largest of all the part a box of the frame shows: a plane brought near or
  * leant toward the eye as large as its nearest part the frame shows. It is read at the corners of that part, past which
- * no point is drawn larger (no point inside drew larger in 2,703 random stances seen, 2026-11-11). None where the frame
- * shows none of the box, or the matrix sees the plane edge-on, through the eye, where a point is seen from no distance.
+ * no point is drawn larger (none inside did in 2,703 random stances). None where the frame shows none of the box, or
+ * the matrix sees the plane edge-on, through the eye, where a point is seen from no distance.
  */
 export function longestScaleSeen(matrix: Matrix, laid: Box, part: Box, within: Box): number | null {
 	if (nearnessOfItsPlane(matrix) === null) return null;

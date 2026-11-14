@@ -187,8 +187,7 @@ const NO_ANGLE = 0;
 const A_HALF_TURN = 180;
 // How near the eye's sight may come to the line its up points along, in degrees, at any step of its way: nearer, the
 // eye's across turns round faster than an eye can follow as its sight sweeps past, as one that passes beside the top
-// of what it looks at with its up kept does (a pass 60 pixels of a frame 1080 high beside it, 2000 above, turned the
-// picture 152° in two frames of a move of two seconds, review of the eye's up, 2026-11-09)
+// of what it looks at with its up kept does: a pass 60 pixels beside it turned the picture 152° in two frames
 const SIGHT_OFF_ITS_UP_AT_LEAST = 5;
 // How many steps of its way a move of the eye checks as it begins, the ends among them, for a sight too near its up
 // on the way or an across turned back between two of them, as an eye flips passing over the top of its aim

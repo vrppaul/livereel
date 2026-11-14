@@ -5,14 +5,11 @@
  * frames; these, which no frame shows, stand as a move's moment has them, whatever frame was drawn last.
  *
  * A part of a copy is pictured as a part of the filmed page is (`stage.ts`): by CDP's capture of its tab, clipped to
- * the part at the scale asked. The stage's own tab could not picture it: it is the frame's size, and a copy laid past
- * its edge is measured there, but CDP's capture is clipped to the viewport, and HTML-in-Canvas draws a canvas past it
- * as nothing (probed 2026-11-11); a stage's tab made wide enough to hold the copy beside the frame cost every frame of
- * a room film (a capture 53.9–54.3 ms against 35.6–36.1 at draft, `62b4f9e`). A row of a terminal's page pictured at
- * 2.2 here came out as sharp as one drawn by HTML-in-Canvas in a canvas inside the viewport (a mean gradient 4.864
- * against 4.866, probed 2026-11-11). The tab costs a film with such a page a browser opened in 559–566 ms against
- * 282–380, and a held picture of a terminal's line 41 ms at draft, 64 at the finest (`--profile`, 2026-11-11). Its
- * device scale changed no layout of the terminal's: its 318 blocks stood alike at 1, 2, 2.2 and 4.4.
+ * the part at the scale asked, as sharp as HTML-in-Canvas draws it. Not in the stage's own tab: it is the frame's
+ * size, and both CDP's capture and HTML-in-Canvas leave out what lies past its edge; made wide enough to hold the copy
+ * beside the frame, it made every frame's capture half as long again. The tab costs a film with such a page about a
+ * quarter of a second as the browser opens, and its device scale moved no block of a terminal's page: its 318 blocks
+ * stood alike at 1, 2, 2.2 and 4.4.
  */
 import type { Browser as Playwright, CDPSession, Frame, Page } from 'playwright-core';
 import { FilmError } from '../../domain/errors.ts';

@@ -5,7 +5,7 @@
  * three.js comes as ES modules alone, and a page opened from `file://` loads no module: its origin is `null`, and
  * Chrome refuses a module from it as a request of another origin. Playwright answers every request to the room's
  * origin from the package's files, before anything reaches the network, so no server runs and the name needs no DNS;
- * over HTTPS the page is a secure context, as a page over plain HTTP is not (probed 2026-11-02).
+ * over HTTPS the page is a secure context, as a page over plain HTTP is not.
  *
  * The room draws the stage's markup through HTML-in-Canvas: Chrome draws an element laid in a canvas into a WebGL
  * texture (`texElementImage2D`). It is an experiment of Chrome's, behind a flag, renamed in Chrome 150 and again in
@@ -67,8 +67,8 @@ declare global {
  * The stage drawn as a room: the browser launched with HTML-in-Canvas, the stage opened on the room's origin, its
  * surfaces laid in the room's canvas, before the pages of the film's own are laid in them, as a frame moved in the
  * document loads its page anew; and each frame drawn by the stage's markup, then composed by the room. In software a
- * frame of 1920 × 1080, the page fading as the eye's focus opens, took 30.6 s to draw, where the graphics card drew one
- * in 197 ms (`--profile` of 30 frames each, 2026-11-11), so the person who asked for software is told.
+ * frame of 1920 × 1080, the page fading out of focus, took 30.6 s to draw, where the graphics card drew one in 197
+ * ms, so the person who asked for software is told.
  */
 export const DRAWN_AS_A_ROOM: StageDrawing = {
 	name: 'room',

@@ -4,8 +4,8 @@
  *
  * Every frame goes into ffmpeg as it is shot, so the video is encoded while the film is shot and no frame is written
  * to the disk. A frame of several exposures is blended (`exposures.ts`) beside the take, which shoots on, several
- * frames at once, and each goes into ffmpeg in the order shot once the frames before it have: a blend had held the
- * take for a quarter of a blurred shoot (12.6 s of 50.7 s on a 2.7 s piece of the README film, measured 2026-10-30).
+ * frames at once, and each goes into ffmpeg in the order shot once the frames before it have: waited on, the blends
+ * held the take for a quarter of a blurred shoot.
  * The frames are shot sharper than the frame and scaled down, so text stays crisp when the camera comes close: the
  * flat stage's here, a room's on the graphics card before they leave the browser, which come at the frame's size.
  */
@@ -47,9 +47,8 @@ const SHEET_TILE_WIDTH = 360;
 const SHEET_STEP_TAKEN_WITHIN = 0.999;
 const THE_FIRST_FRAME = ['-frames:v', '1'];
 const STOP = 'SIGKILL';
-// How many frames may be kept and not yet written, blending or waiting on ffmpeg, while the take shoots on: the 2.7 s
-// piece of the README film took 42.4 s with 3, the take still waiting 0.9 s on them; 41.0–41.8 s with 5; 41.8–42.4 s
-// with 9, the blends taking the captures' cores (measured 2026-10-30, two shoots each)
+// How many frames may be kept and not yet written, blending or waiting on ffmpeg, while the take shoots on: with 3 the
+// take still waited on them, and with 9 the blends took the captures' cores; 5 shot quickest
 export const FRAMES_QUEUED_AT_MOST = 5;
 // What a frame kept first is written after; and the last of a list, counted from its end
 const NOTHING_QUEUED = Promise.resolve();

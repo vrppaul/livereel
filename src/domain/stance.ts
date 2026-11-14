@@ -13,10 +13,10 @@
  *
  * The stage is handed a flat 2D matrix where the thing faces the frame, at any size, depth or roll, and a 3D one only
  * where it leans: a 3D transform, of no angle too, costs the graphics card a layer in every exposure of a frame, and a
- * frame of 16 exposures then outran the card's memory the stage asks for, and drew objects in some of them not at
- * all, with no error (README film, `--renderer gpu`, 2026-10-30). Which side of an object faces the eye is read off
- * the matrix, so the stage draws the back of one that has turned away, never what it shows mirrored; the window turned
- * half round shows the page mirrored, or a page of the film's own on its back (`Back` in `src/props/screen.ts`).
+ * frame of 16 exposures then outran the card's memory the stage asks for, and drew objects in some of them not at all,
+ * with no error. Which side of an object faces the eye is read off the matrix, so the stage draws the back of one that
+ * has turned away, never what it shows mirrored; the window turned half round shows the page mirrored, or a page of the
+ * film's own on its back (`Back` in `src/props/screen.ts`).
  */
 import { Euler, MathUtils } from 'three';
 import { FilmError } from './errors.ts';

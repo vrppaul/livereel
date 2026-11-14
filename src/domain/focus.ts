@@ -13,8 +13,8 @@
  * its lens reads it (`LensLaw`, on the scene's eye), and of the window only its softest point the frame shows, which
  * bounds how far past the frame's edge its blur gathers.
  * The window is blurred on the frame, round its cut, so out of focus on the ground it spreads past its edge, and the
- * page past the frame's edge blurs into the frame (probed 2026-11-03: a blur on the view itself, under its cut, kept
- * the window's edge hard). An object is blurred on its own element, which Chrome blurs before its matrix carries it, so
+ * page past the frame's edge blurs into the frame; not on the view itself, under its cut, which kept the window's edge
+ * hard. An object is blurred on its own element, which Chrome blurs before its matrix carries it, so
  * its number is handed in the object's own pixels, over how long the matrix draws it along its longest way at its
  * middle: a blur of 4 under a matrix that draws it twice as large spread 7.8 on the frame, flat or in 3D, software or
  * the card. What stands on the frame, or in a group on it, rides with the eye and stays sharp, as words laid over a
@@ -94,8 +94,8 @@ export const AT_THE_EYE = 0;
 const A_DISCS_WIDTH_IN_SPREADS = 4;
 // How far a blur may spread, in the frame's own pixels, and be handed as none: a filter spreading 0.2 of a device pixel
 // or less drew the same to the byte as one of 1e-12, software and on the card, where 0.3 did not on the card, and the
-// stage draws a frame at twice its pixels at most; a filter of any blur redraws text apart from none, SSIM 0.994
-// (probed 2026-11-03), so what spreads less is handed as sharp, with no filter at all
+// stage draws a frame at twice its pixels at most; a filter of any blur redraws text apart from none, so what spreads
+// less is handed as sharp, with no filter at all
 const SHARP_WITHIN = 0.1;
 // The reciprocal of a focus's distance as far as can be: a focus goes no farther
 const AS_FAR_AS_CAN_BE = 0;

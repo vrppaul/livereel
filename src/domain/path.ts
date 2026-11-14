@@ -11,9 +11,9 @@
  * of the path in each equal share of the move, measured as the kind measures a step on the frame, or `keys`, an equal
  * share of the move from each key to the next. Spaced by the frame, a smooth path neither loops nor cusps on the frame,
  * but a value's own numbers may swing a little past a key where one kind of motion gives way to another: a pan of
- * 1000 pixels then a zoom at its end swung the focus 91 pixels past it and back (the review of b6a0901). The path
- * stands on each key exactly where the film put it. Past either end, on a curve that passes it, the value goes
- * straight on along the path's first or last stretch, which a smooth path's mirrored ends leave its tangent there.
+ * 1000 pixels then a zoom at its end swung the focus 91 pixels past it and back. The path stands on each key exactly
+ * where the film put it. Past either end, on a curve that passes it, the value goes straight on along the path's first
+ * or last stretch, which a smooth path's mirrored ends leave its tangent there.
  *
  * What a kind of value is on a path — its numbers, and how far apart two stand on the frame — is the kind's
  * (`PathSpace`): a box's in `src/domain/geometry.ts`, a pose's in `src/domain/camera.ts`.

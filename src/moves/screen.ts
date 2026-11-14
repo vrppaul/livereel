@@ -243,8 +243,8 @@ type ShapeNamed =
 // What a move of the screen that has nothing to move from says
 const UP_ALREADY = 'screen.rise raises a screen already up: lower it first, with cut(screen.lower())';
 const DOWN_ALREADY = 'screen.lower lowers a screen already down';
-// What a run of a page that cannot run says, and how far such a page scrolls: run without a word, it stood still in
-// every frame, as the first film to run a page found (2026-11-11)
+// What a run of a page that cannot run says, and how far such a page scrolls: run without a word, it would stand still
+// in every frame
 const SCROLLS_NOWHERE =
 	'screen.scrolls runs a page that scrolls nowhere: the screen holds all of it, or its own styles hide what runs past the screen, as overflow: hidden on its body does; give it more than the screen holds and let it scroll';
 const NO_LENGTH = 0;

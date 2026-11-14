@@ -2,16 +2,12 @@
  * How large a picture of the page Chrome takes whole where it draws, and the memory it is told of for the largest.
  *
  * CDP's capture draws a picture as one surface at its scale, and one too large for where it draws comes out with no
- * error, but wrong (measured 2026-11-04 on Chrome 156, a 1040 px wide page of lines at a scale of 4.4). On the
- * graphics card it is drawn no larger than the card's largest texture on a side, as WebGL reports it, and past that
- * shows the page from elsewhere in its place: 16,384 px on an Iris Xe through Vulkan, 3,723 of the page's pixels down
- * at 4.4 and 8,200 at 2. Chrome draws a picture only as far as the memory it holds for drawing, and leaves the rest
- * blank: in software a picture 4,576 px across was drawn 26,600 to 28,200 px down with no flag as with 512 MB told,
- * its bytes drawn from 0.84 to 1.01 times the megabytes told at 256, 512 and 768; whole at 52,800 with 1,024, and at
- * 65,472 with 1,498, 1.25 times its bytes. Told none, it drew a picture of 116 million px whole, on the card too, and
- * one of 175 million there with a blank foot (the review of step 6). It refuses a picture of more than 2 GiB outright,
- * "Unable to capture screenshot": 517.7 million px came out, 544.2 million did not (the same review). And a JPEG holds
- * no picture taller or wider than 65,500 px: the stage cannot decode one Chrome took larger.
+ * error, but wrong. On the graphics card it is drawn no larger than the card's largest texture on a side, as WebGL
+ * reports it, and past that shows the page from elsewhere in its place. Chrome draws a picture only as far as the
+ * memory it holds for drawing, and leaves the rest blank, drawing as little as 0.84 of the bytes it is told: told
+ * none, it drew 116 million pixels whole, and told 1.25 times a picture's bytes, it drew that picture whole. It
+ * refuses a picture of more than 2 GiB outright, "Unable to capture screenshot". And a JPEG holds no picture taller or
+ * wider than 65,500 px: the stage cannot decode one Chrome took larger.
  *
  * So a picture is taken within these bounds: as close as asked where it fits them, else as close as the tightest lets
  * it, and drawn softer. Chrome is told memory for 1.25 times the bytes of the largest picture of the screen livereel

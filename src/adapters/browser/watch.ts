@@ -5,10 +5,10 @@
  *
  * Chrome shows a page that refuses to be framed and one it could not reach alike, on an error page of its own. The
  * answer the frame's page came with tells them apart, and names the page that refused, past any redirect: it is the
- * frame's own answer, as the frame asked for it, not one asked for again. On the stage apart a click may take the
- * stage itself away, as a link to `_top` does: Chrome stops a page of another site moving the page it is framed in
- * only without a click (measured 2026-10-27). A page in a tab of its own refuses no frame and takes no stage away: it
- * is watched only for a page Chrome could not reach (`TabWatch`).
+ * frame's own answer, as the frame asked for it, not one asked for again. On the stage apart a click may take the stage
+ * itself away, as a link to `_top` does: Chrome stops a page of another site moving the page it is framed in only
+ * without a click. A page in a tab of its own refuses no frame and takes no stage away: it is watched only for a page
+ * Chrome could not reach (`TabWatch`).
  */
 import type { Frame, Page, Request, Response } from 'playwright-core';
 import { FilmError } from '../../domain/errors.ts';

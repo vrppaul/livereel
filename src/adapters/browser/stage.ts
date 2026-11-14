@@ -11,34 +11,27 @@
  * and an act is done in the page's own tab, at no scale. Such a stage draws a frame flat, by its markup alone
  * (`DRAWN_FLAT`), or as a room, its markup composed in WebGL (`room.ts`). The picture is taken as sharp as a camera at
  * the zoom the take names shows the page, up to as far as a camera comes in where a film names no bound
- * (`ZOOM_AT_MOST`), so text the camera comes close to stays as crisp as the live frame shows it: the README film's
- * close shots at 4× against the live frame, SSIM 0.990–0.992, alike to the eye at twice their size (2026-10-30).
+ * (`ZOOM_AT_MOST`), so text the camera comes close to stays as crisp as the live frame shows it.
  *
  * The page's picture is taken by CDP's capture on livereel's own session with its tab, clipped to the screen at a
- * scale of the picture's pixels to the page's, which Chrome draws the page anew at: on a tab at 4.4×, at a scale of 2
- * in 81–83 ms and alike to a picture of a tab at 2× (SSIM 1.0), at 4.4 in 253–269 ms against Playwright's 340–348,
- * alike to its picture (SSIM 1.0); a 1040 × 1080 screen, 2026-10-30. Playwright's own picture takes none but the tab's
- * device scale. As Playwright's did, a picture waits for the page's fonts: CDP's does not, and text in a face still
- * loading, which Chrome hides for up to 3 s, came out missing in two pictures alike, so the page was held standing
- * still without it (probed 2026-10-30). A picture of a part of the screen a piece is drawn from, the one it holds or
- * one sharper than the page's, is taken the same way, clipped to that part, and handed to the stage by its number,
- * which keeps it until the take lets it go: Chrome draws the part anew at the clip's scale, a clip at 12 of a page at
- * 4.4 alike to a tab at 12 (SSIM 1.0, probed 2026-11-02); one of a page of the film's own, from the tab its copy
- * stands in (`own-pages.ts`). Every picture is taken no larger than Chrome takes one whole
- * where it draws (`bounds.ts`): one asked larger, of a tall screen or a part grown far, is taken as large as it may,
- * softer, and the person is told so once.
+ * scale of the picture's pixels to the page's, which Chrome draws the page anew at, so one tab serves every scale, as
+ * sharp as a tab at that scale and quicker than Playwright's picture, which takes the tab's device scale alone. CDP's
+ * capture does not wait for the page's fonts, as Playwright's does, so a picture waits for them: Chrome hides text in
+ * a face still loading for up to 3 s, and two pictures alike without it would hold the page still with its text
+ * missing. A picture of a part of the screen a piece is drawn from, the one it holds or one
+ * sharper than the page's, is taken the same way, clipped to that part, and handed to the stage by its number, which
+ * keeps it until the take lets it go; one of a page of the film's own, from the tab its copy stands in
+ * (`own-pages.ts`). Every picture is taken no larger than Chrome takes one whole where it draws (`bounds.ts`): one
+ * asked larger, of a tall screen or a part grown far, is taken as large as it may, softer, and the person is told so
+ * once.
  *
  * A frame is captured by Playwright at the page's device scale, the film's sharpness; a room's frame for a video from
- * the corner of the room's canvas it is scaled down into, at the frame's own size, a quarter of the pixels to read
- * back and encode (`handedInOf`; a frame of 3840 × 2160 captured in 120.7 ms, its corner in 55.1, 2026-11-11). A
- * capture of livereel's own, on a CDP session apart from Playwright's, came back at the page's own pixels whatever that
- * scale, every full shoot as soft as a draft; and it was no quicker (measured 2026-10-25 at 1920 × 1080: 33 ms against
- * 35 ms at 1×, 142 ms against 134 ms at 2×). Its own device metrics set on it bring it to the film's sharpness, at
- * 127–133 ms a capture against Playwright's 135–137 on a 2.7 s piece of the README film (2026-10-30): too little for a
- * second session's metrics to keep in step with Playwright's as an act lays the screen flat. The page's text caret is
- * kept, as a person sees it typing, and stands steady (`chromium.ts`). Whether the filmed page and its stage are still
- * there, the stage answers from its watch (`watch.ts`): a framed page's, or a tab's, which can take no stage away nor
- * refuse a frame.
+ * the corner of the room's canvas it is scaled down into, at the frame's own size, a quarter of the pixels to read back
+ * and encode (`handedInOf`). Not by a CDP session of livereel's own: it captures at the page's own pixels unless given
+ * device metrics of its own, which make it barely quicker, too little to keep them in step with Playwright's as an act
+ * lays the screen flat. The page's text caret is kept, as a person sees it typing, and stands steady (`chromium.ts`).
+ * Whether the filmed page and its stage are still there, the stage answers from its watch (`watch.ts`): a framed
+ * page's, or a tab's, which can take no stage away nor refuse a frame.
  */
 import type { CDPSession, Frame, Page } from 'playwright-core';
 import { type Channels, meanInLinearLight, opaqueHexOf } from '../../domain/colour.ts';

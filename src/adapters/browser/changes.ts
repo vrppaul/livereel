@@ -4,11 +4,11 @@
  *
  * Every document the tab opens is watched from its first moment: its elements, their attributes and their text. Each
  * change is told to livereel through a binding of the tab as it is made, so a change a timer of the page makes is heard
- * before the clock that ran the timer returns, and after the page goes elsewhere (measured 2026-10-31). What changes no
- * element of the document is not heard: a canvas drawn on, a video playing, a style the page moves by its own
- * animations, and a change inside a shadow root, as a block in one is not blurred either; a page that does those is
- * framed live (`page: 'dynamic'`). A shadow root opened in the page was heard too where its `attachShadow` was wrapped
- * (probed 2026-10-31), which takes a script of more than one function in the page: not built.
+ * before the clock that ran the timer returns, and after the page goes elsewhere. What changes no element of the
+ * document is not heard: a canvas drawn on, a video playing, a style the page moves by its own animations, and a
+ * change inside a shadow root, as a block in one is not blurred either; a page that does those is framed live
+ * (`page: 'dynamic'`). Hearing a shadow root would take wrapping `attachShadow`, a script of more than one function in
+ * the page: not built.
  */
 import type { Page } from 'playwright-core';
 

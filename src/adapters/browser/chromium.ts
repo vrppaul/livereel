@@ -4,37 +4,33 @@
  * a page of livereel's, pictured as a static page is (`set.ts`). And the app opened alone, for its set to be shot.
  *
  * A static page's tab is the page's own: it opens the film's address at the top, first-party to its cookies, so a
- * page that refuses to be framed or signs in is filmed as it comes, and its pictures are taken only as it changes, not
- * every frame, which had cost a second capture a frame (347 ms against 202 on the whole screen, measured 2026-10-27).
- * A dynamic page's stage stands apart from the app, a file of the package (`stage/stage.html`), or inside it, on the
- * app's own address, where the film asks for it (`inside.ts`). Apart, the page is framed as it comes and nothing of
- * its answers is touched: a redirect lands in the frame, and a page that refuses to be framed is refused, its refusal
- * named (`watch.ts`). Chrome's Local Network Access checks stay on, and every page is granted `local-network-access`,
- * as a live app is filmed for what its server says: a page left as it came hears what its server on this machine
- * pushes down a WebSocket even without it, but one the stage inside the app answers anew hears nothing until granted
- * it (measured 2026-10-27; held by `tests/smoke/inside.test.ts`). It is granted everywhere else too, so a page of a
- * public site that asks this machine is heard as it was while the checks were turned off; that is not measured.
+ * page that refuses to be framed or signs in is filmed as it comes, and its pictures are taken only as it changes: a
+ * picture every frame cost a second capture a frame. A dynamic page's stage stands apart from the app, a file of the
+ * package (`stage/stage.html`), or inside it, on the app's own address, where the film asks for it (`inside.ts`).
+ * Apart, the page is framed as it comes and nothing of its answers is touched: a redirect lands in the frame, and a
+ * page that refuses to be framed is refused, its refusal named (`watch.ts`). Chrome's Local Network Access checks stay
+ * on, and every page is granted `local-network-access`: a page the stage inside the app answers anew hears nothing its
+ * server on this machine pushes until granted it (`tests/smoke/inside.test.ts`). Granted to every other page too, a
+ * public site's page that asks this machine is heard as with the checks off, which is untried.
  *
  * The page's own motion is stilled, by the reduced motion it is asked for, so every move in the film is the film's; its
  * own time is the film's, on a clock installed before it opens (`clock.ts`), and a static page tells of every change
  * it makes to its document (`changes.ts`), so its picture is taken anew.
- * Launched headless, Playwright starts Chromium's headless shell, which draws every frame in software unless asked to
- * draw on the graphics card, through ANGLE onto the system's own graphics interface; it stays headless, and needs no
- * screen. On Linux, Vulkan reached an Intel Iris Xe with no screen named, and a wide blurred film took 271 s against
- * 495 s in software, its frames alike (SSIM 0.998 on average, 0.996 at the least; measured 2026-10-26). Metal
- * on macOS and Direct3D 11 on Windows are untried. Where it reaches no graphics card, the shell draws in software all
- * the same: where Vulkan finds no driver at all, through SwiftShader, WebGL drawn; where it finds Mesa's software
- * Vulkan alone (lavapipe), the page has no WebGL (both measured on Linux 2026-10-27). The person is warned, as Chrome
- * tells it, and the film is shot. A page that cannot be reached, or refuses its frame, is refused as it is opened, by
- * why, rather than when the film first waits on it.
+ *
+ * Launched headless, Playwright starts Chromium's headless shell, which draws in software unless asked to draw on the
+ * graphics card, through ANGLE onto the system's own graphics interface, needing no screen. On Linux through Vulkan a
+ * wide blurred film took 271 s against 495 s in software, its frames alike. Metal on macOS and Direct3D 11 on Windows
+ * are untried. Where it reaches no graphics card, the shell draws in software all the same, with WebGL through
+ * SwiftShader where Vulkan finds no driver, and with none where it finds Mesa's software Vulkan alone (lavapipe); the
+ * person is warned, as Chrome tells it, and the film is shot. A page that cannot be reached, or refuses its frame, is
+ * refused as it is opened, by why, rather than when the film first waits on it.
  *
  * On the graphics card, a stage showing a static page's picture draws a frame's exposures at once, each a copy of its
- * drawing laid over the ones before so each weighs the same, and is captured once: 16 exposures of a fast camera on
- * the README film's format took 273–321 ms against 1899 ms captured one at a time and 484 ms more for ffmpeg's blend,
- * the two frames alike (SSIM 0.9956; measured 2026-10-30). In software the copies took 2666 ms against 2962 ms, and the
- * ground's gradient came out banded (SSIM 0.985), so there a stage draws one exposure at a time, as a framed page's
- * stage does: no copy of the stage can show its live frame again. Chrome is told it has GPU memory enough for the
- * copies, or it leaves parts of them undrawn.
+ * drawing laid over the ones before so each weighs the same, and is captured once: 16 exposures of a fast camera took
+ * 273–321 ms against 1899 ms captured one at a time, the frames alike. In software the copies saved little and banded
+ * the ground's gradient, so there a stage draws one exposure at a time, as a framed page's stage does: no copy of the
+ * stage can show its live frame again. Chrome is told it has GPU memory enough for the copies, or it leaves parts of
+ * them undrawn.
  *
  * A static page's stage draws a frame flat, as the browser draws its markup, or, where the film names it, as a room:
  * launched, opened, laid out and drawn as `room.ts` has it, which the person who asks for software is told costs a
@@ -116,11 +112,10 @@ const NOT_INSTALLED = 'the browser films are shot in is not installed: run `npx 
 // system installs them, which differs between Linux distributions, Docker and Windows
 const NO_LIBRARIES = 'Host system is missing dependencies';
 // How a block the film blurs is blurred: 12 of the page's pixels, as no letter of a line reads through, the camera
-// close or not (looked at 2026-10-28)
+// close or not
 const BLURRING = { property: 'filter', value: 'blur(12px)' } as const;
 // The page's text caret stands shown and never blinks on the wall clock, so a hold shows it as it was, and a static
-// page's pictures come out alike once it is typed into: of 12 pictures over 1.5 s after typing, 2 unlike as it blinks,
-// all alike held (measured 2026-10-30 on Chrome 156)
+// page's pictures come out alike once it is typed into, where a blinking caret leaves two pictures in twelve unlike
 const STEADY_CARET: ForcedRule = { selector: '*', property: 'caret-animation', value: 'manual' };
 // What the film forces on the page stands whatever the page's own style says
 const OVER_THE_PAGES_OWN = 'important';
@@ -136,8 +131,8 @@ const FALLBACK_FONT = 'monospace';
 const NO_FONT_FAMILY = 'CSS reads no font family there';
 // How a font is found: letters set in it, a family CSS keeps after it, stand as wide as that family sets them alone
 // only where the font sets none of its own; beside two such families that set them unlike each other, a font as wide
-// as both in turn is none. Chrome's `document.fonts.check` says a family the machine has not is there (probed
-// 2026-11-11). The letters a film sets most, on one line, as large as any width tells them apart
+// as both in turn is none. Not `document.fonts.check`, which says a family the machine has not is there. The letters
+// a film sets most, on one line, as large as any width tells them apart
 const FOUND_BY = {
 	beside: ['monospace', 'serif'],
 	letters: 'abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789',
@@ -147,7 +142,7 @@ const FOUND_BY = {
 const NO_SUCH_FONT =
 	"it names no font this machine has or the film brings: name its file in the film's fonts, { 'Inter Tight': './InterTight.ttf' }";
 // The token the stage sets the ground's layers in, and how CSS writes every picture a layer would load, `url()` alone
-// or in `image-set()` (probed 2026-10-31)
+// or in `image-set()`
 const LAYERS_TOKEN = '--layers-coming';
 const PICTURE = 'url(';
 const NO_LAYERS = 'CSS reads no background layers there';
@@ -248,8 +243,7 @@ type Pictured = Extract<Filmed, { kind: 'static' | 'set' }>;
 const USE_ANGLE = '--use-angle=';
 const CARD_INTERFACES = { linux: 'vulkan', darwin: 'metal', win32: 'd3d11' } as const;
 // Chrome's compositing as CDP's `SystemInfo.getInfo` reports it, and what it reports on the graphics card: `enabled`
-// with Vulkan on the card, `disabled_software` with no driver for one or with lavapipe alone (measured on Linux
-// 2026-10-26 and 2026-10-27)
+// with Vulkan on the card, `disabled_software` with no driver for one or with lavapipe alone
 const COMPOSITING = 'gpu_compositing';
 const ON_THE_CARD = 'enabled';
 const UNTOLD = '--renderer gpu: Chrome did not tell whether it reached a graphics card';
@@ -257,16 +251,14 @@ const NO_CARD_SIDE =
 	"--renderer gpu: Chrome gives the page no WebGL to read the graphics card's largest texture by, so a picture of the " +
 	'page larger than it on a side may come out wrong with no error: shoot a tall or wide screen in software';
 // The flag telling Chrome how much GPU memory it has, in megabytes, and how much it needs told for each byte of the
-// stage's copies of a frame to draw them whole: 16 copies of a 3840 × 2160 frame, as the README film shoots, drew the
-// window pushing the card off whole at 4 times their bytes, as at 5 and 6, and left the page's tiles grey at 3, with
-// no error (measured 2026-10-30); a frame larger, or a card with less memory, is not tried. The page's pictures need
-// memory of their own, added to it (`bounds.ts`)
+// stage's copies of a frame to draw them whole: 16 copies of a 3840 × 2160 frame drew whole at 4 times their bytes,
+// and at 3 left the page's tiles grey with no error; a larger frame, or a card with less memory, is untried. The
+// page's pictures need memory of their own, added to it (`bounds.ts`)
 const GPU_MEMORY = '--force-gpu-mem-available-mb=';
 const GPU_MEMORY_FOR_A_COPY_BYTE = 4;
 // How many exposures of a frame the stage lays over one another at most; a frame of more is captured at each. With a
-// window lifted and the camera angled, a layered capture against the exposures captured one by one and blended: 16 in
-// 510 ms, SSIM 0.9947; 32 in 1297 ms, 0.9885, edges banded; 64 in 8125 ms, 0.976, no quicker than its 64 captures
-// (the review of ac4d1ca, 2026-10-30)
+// window lifted and the camera angled, 16 came out alike to the exposures captured one by one and blended; 32 banded
+// the edges, and 64 were no quicker than their 64 captures
 const LAID_AT_ONCE_AT_MOST = 16;
 
 type System = keyof typeof CARD_INTERFACES;
@@ -658,10 +650,10 @@ async function compositingOf(browser: Playwright): Promise<string | undefined> {
 
 /**
  * The stage opened where the film asks for it; how its frame then opens the page. Apart from the app the frame is not
- * sandboxed, so the page does all it would, and nothing a sandbox changes for an app (a popup, a download, storage)
- * is a risk of the simple stage: Chrome stops a page of another site moving the page it is framed in, but not on a
- * click, so a click on a link to `_top` takes the stage away (measured 2026-10-27), and the take is refused, saying
- * so and naming the stage inside the app, where the frame is sandboxed against it (`watch.ts`).
+ * sandboxed, so the page does all it would, and nothing a sandbox changes for an app (a popup, a download, storage) is
+ * a risk of the simple stage: Chrome stops a page of another site moving the page it is framed in, but not on a click,
+ * so a click on a link to `_top` takes the stage away, and the take is refused, saying so and naming the stage inside
+ * the app, where the frame is sandboxed against it (`watch.ts`).
  */
 async function staged(page: Page, stage: StagePlace, address: string, warn: Warn): Promise<Opening> {
 	switch (stage) {
@@ -689,7 +681,7 @@ async function unreadRefused(page: Page, blurred: readonly string[]): Promise<vo
  * opens, by a style sheet each is given as it is made, a rule a selector, so a page the film goes on to has it too;
  * where the stage stands at the top, its own document is given none. A document that sets its own adopted style
  * sheets in place of all loses them, and a block in a shadow root is not blurred; its field's caret, inherited from its
- * host, stands steady all the same (probed 2026-10-30).
+ * host, stands steady all the same.
  */
 async function forcedOn(page: Page, blurred: readonly string[], stageAtTheTop: boolean): Promise<void> {
 	const rules = [STEADY_CARET, ...blurred.map((selector) => ({ selector, ...BLURRING }))];

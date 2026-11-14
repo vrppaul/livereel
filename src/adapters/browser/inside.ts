@@ -5,13 +5,12 @@
  * Framed in a stage of another site, a page is a third party to it, and its cookies of `SameSite=Lax` go with none of
  * its own requests: an app that signs in shows nobody signed in. On its own origin the page is first-party to the
  * stage: its cookies go, a sign-in made in the frame holds, and a redirect lands in the frame as the browser follows
- * it (measured 2026-10-27). CDP's `Fetch`, on a session of livereel's own, answers the stage's address with the
- * package's stage files and, as each page's answer comes, fulfils a page that refuses to be framed anew without its
- * refusal; every other answer, and every step of a redirect, goes on as it came. The frame is sandboxed short of
- * moving the page it stands in: on one origin a page that breaks out of frames (`top.location = …`) would take the
- * stage with it at any time, where Chrome lets a page of another site do it only on a click. A link to `_top` then
- * does nothing (measured 2026-10-27). A page answered anew hears its server on this machine only as the browser is
- * granted `local-network-access` (`chromium.ts`).
+ * it. CDP's `Fetch`, on a session of livereel's own, answers the stage's address with the package's stage files and, as
+ * each page's answer comes, fulfils a page that refuses to be framed anew without its refusal; every other answer, and
+ * every step of a redirect, goes on as it came. The frame is sandboxed short of moving the page it stands in: on one
+ * origin a page that breaks out of frames (`top.location = …`) would take the stage with it at any time, where Chrome
+ * lets a page of another site do it only on a click. A link to `_top` then does nothing. A page answered anew hears its
+ * server on this machine only as the browser is granted `local-network-access` (`chromium.ts`).
  */
 import type { CDPSession, Page } from 'playwright-core';
 import { FilmError } from '../../domain/errors.ts';
