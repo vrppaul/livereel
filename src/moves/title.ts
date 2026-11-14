@@ -48,12 +48,10 @@ import type { TitleType, TitleWords, WordsDown } from '../props/title.ts';
 import { A_WORDING, type Said, type Wording, saidOf } from '../props/words.ts';
 import {
 	type Coming,
-	type EffectsScript,
 	HIDE_FORM,
 	type HideScript,
 	NESTED_FORM,
 	type NestedScript,
-	type ObjectLeanScript,
 	type PlaceReading,
 	type PointAsked,
 	SHOWN_STANDING_OUT_FORM,
@@ -61,15 +59,10 @@ import {
 	type ShowScript,
 	type ShownKind,
 	type ShownStandingOutScript,
-	type TakenScript,
-	type ToScript,
-	objectEffects,
 	objectHide,
-	objectIntoTheWorld,
-	objectLean,
+	objectMovesOf,
 	objectShow,
-	objectShowBeside,
-	objectTo
+	objectShowBeside
 } from './object.ts';
 import {
 	A_WORDS_GOING,
@@ -286,22 +279,32 @@ function titleBeside(setting: Setting, beside: BesideScript, beginning: Beginnin
 	return { content: words, box: standing.boxOff(beside.gap * frameScaleOf(frame), frame) };
 }
 
+const TITLE_MOVES = objectMovesOf(TITLE, TITLE_READING);
+
 /**
  * The title carried to another place, through the boxes between, reading as it did, growing to `scale` and coming
  * `depth` toward the eye on the way where the film names them.
  */
-export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(TITLE, 'title.to', place, script, TITLE_READING);
-}
+export const to = TITLE_MOVES.to;
 
 /**
  * The title, on the frame or beside a part, handed into the world where the eye sees it as the move begins, square to
  * the eye, as far before it as the frame or the part's point, its words going on as they stood, so the eye moves past
  * it from then on.
  */
-export function intoTheWorld(script: TakenScript = {}): Move {
-	return objectIntoTheWorld(TITLE, 'title.intoTheWorld', script);
-}
+export const intoTheWorld = TITLE_MOVES.intoTheWorld;
+
+/**
+ * The title leant back from its top edge by `tilt`, swung about its middle by `turn`, rolled in its own plane by
+ * `roll` and turned over by `over`, its ground with it.
+ */
+export const lean = TITLE_MOVES.lean;
+
+/**
+ * The title standing out as the film names, its ground with it: ringed, glowing, casting a shadow, blurred, grown or
+ * brought toward the eye where it stands.
+ */
+export const effects = TITLE_MOVES.effects;
 
 /**
  * The title going, and its ground with it, its words one after another at an even pace unless the film names a curve,
@@ -316,22 +319,6 @@ export function hide(script: TitleHideScript = {}): Move {
 		curve: WORDS_COME_AND_GO_ON,
 		shownAsItGoes: (title) => setOffGoing(title, words, TITLE_HIDE)
 	});
-}
-
-/**
- * The title leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled in its own plane by
- * `roll`, its ground with it.
- */
-export function lean(script: ObjectLeanScript): Move {
-	return objectLean(TITLE, 'title.lean', script);
-}
-
-/**
- * The title standing out as the film names, its ground with it: ringed, glowing, casting a shadow, blurred, grown or
- * brought toward the eye where it stands.
- */
-export function effects(script: EffectsScript): Move {
-	return objectEffects(TITLE, 'title.effects', script);
 }
 
 /**

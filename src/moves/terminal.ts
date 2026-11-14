@@ -7,7 +7,7 @@
  * of it takes the terminal named `terminal`, or the one the film names `as`.
  */
 import { A_NUMBER, A_STRING, type Form, assertKind, assertWritten } from '../domain/handed.ts';
-import { A_PLACE, type Place } from '../domain/place.ts';
+import { A_PLACE, type Place, windowPlaced } from '../domain/place.ts';
 import { linear } from '../domain/curves.ts';
 import { A_STROKES, type Keystroke, typedAlong } from '../domain/typing.ts';
 import { type Beginning, type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
@@ -16,28 +16,19 @@ import type { Typed } from '../direction/steps.ts';
 import type { ObjectName } from '../props/object.ts';
 import { A_LINES, type Terminal, type TerminalLine, openTerminal } from '../props/terminal.ts';
 import {
-	type EffectsScript,
-	GOES_AS_IT_STANDS,
-	type HideScript,
 	NAMED_FORM,
 	NESTED_FORM,
 	type NamedScript,
 	type NestedScript,
-	type ObjectLeanScript,
-	READ_AS_THE_WINDOW,
 	SHOWN_STANDING_OUT_FORM,
 	SHOW_FORM,
 	type ShowScript,
 	type ShownKind,
 	type ShownStandingOutScript,
 	THE_STEPS_CURVE,
-	type ToScript,
 	contentMove,
-	objectEffects,
-	objectHide,
-	objectLean,
+	objectMovesOf,
 	objectShow,
-	objectTo,
 	showing,
 	standingOfKind
 } from './object.ts';
@@ -93,7 +84,7 @@ export function open(title: string, script: TerminalScript = {}): Move {
 	const named = script.at ?? null;
 	return objectShow(TERMINAL, 'terminal.open', script, named, THE_STEPS_CURVE, (beginning) => ({
 		content: terminal,
-		box: READ_AS_THE_WINDOW.placed(beginning.format, named ?? MOST_OF_THE_FRAME, terminal)
+		box: windowPlaced(beginning.format, named ?? MOST_OF_THE_FRAME)
 	}));
 }
 
@@ -138,37 +129,31 @@ export function works(lines: readonly TerminalLine[], thinking: string, script: 
 	);
 }
 
+const TERMINAL_MOVES = objectMovesOf(TERMINAL);
+
 /**
  * The terminal carried to another place, through the boxes between, growing to `scale` and coming `depth` toward the
  * eye on the way where the film names them.
  */
-export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(TERMINAL, 'terminal.to', place, script, READ_AS_THE_WINDOW);
-}
+export const to = TERMINAL_MOVES.to;
 
 /**
- * The terminal leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled in its own plane by
- * `roll`.
+ * The terminal leant back from its top edge by `tilt`, swung about its middle by `turn`, rolled in its own plane by
+ * `roll` and turned over by `over`.
  */
-export function lean(script: ObjectLeanScript): Move {
-	return objectLean(TERMINAL, 'terminal.lean', script);
-}
+export const lean = TERMINAL_MOVES.lean;
 
 /**
  * The terminal standing out as the film names: ringed, glowing, casting a shadow, blurred, grown or brought toward the
  * eye where it stands.
  */
-export function effects(script: EffectsScript): Move {
-	return objectEffects(TERMINAL, 'terminal.effects', script);
-}
+export const effects = TERMINAL_MOVES.effects;
 
 /**
  * The terminal giving way to what comes after it where it stands, or sliding out whole past a side of the frame; once
  * gone, there is none.
  */
-export function leave(script: HideScript = {}): Move {
-	return objectHide(TERMINAL, 'terminal.leave', script, GOES_AS_IT_STANDS);
-}
+export const hide = TERMINAL_MOVES.hide;
 
 function typingInto(beginning: Beginning, name: ObjectName, strokes: readonly Keystroke[]): Change {
 	const terminal = standingOfKind(beginning, name, 'terminal.type', TERMINAL).content;

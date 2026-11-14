@@ -650,7 +650,7 @@ rising. Or whole, in a way the film names, `enter`, and goes in one, `leave`, on
 ```ts
 play({ seconds: 0.9, moves: [title.show('Out of nothing', { enter: 'mask' })] }),
 play({ seconds: 0.9, moves: [code.show(LINES, { at: 'left', enter: 'wipe' })] }),
-play({ seconds: 0.6, moves: [terminal.leave({ leave: 'iris' })] }),
+play({ seconds: 0.6, moves: [terminal.hide({ leave: 'iris' })] }),
 ```
 
 `'fade'` fades its figure in; `'mask'` brings it out from behind an edge of its own, out of nothing, its foot
@@ -867,7 +867,7 @@ types into it, each key heard; `terminal.submit({ as })`, in a `cut`, presses En
 thinking, { thinkingShare, as })` shows the agent thinking, its spinner beside the words `thinking`, for
 `thinkingShare` of the move, 0.22 where none is named, then its lines one after another; a line is
 `{ kind, text }`, its kind `asked`, `work` (a tool and what it is used on), `said`, `done` or `thinking`.
-`terminal.leave({ toward, leave, edge, as })` lets it go where it stands, or slides it out whole `toward` a side.
+`terminal.hide({ toward, leave, edge, as })` lets it go where it stands, or slides it out whole `toward` a side.
 `terminal.to`, `terminal.lean` and `terminal.effects` move it as any object.
 
 ### The light and the cursor

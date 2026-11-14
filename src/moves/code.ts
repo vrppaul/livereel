@@ -27,28 +27,20 @@ import {
 } from '../props/code.ts';
 import type { ObjectName } from '../props/object.ts';
 import {
-	type EffectsScript,
-	GOES_AS_IT_STANDS,
-	type HideScript,
 	NAMED_FORM,
 	NESTED_FORM,
 	type NamedScript,
 	type NestedScript,
-	type ObjectLeanScript,
 	type PlaceReading,
 	SHOWN_STANDING_OUT_FORM,
 	SHOW_FORM,
 	type ShowScript,
 	type ShownKind,
 	type ShownStandingOutScript,
-	type ToScript,
 	contentMove,
 	fromItsBox,
-	objectEffects,
-	objectHide,
-	objectLean,
+	objectMovesOf,
 	objectShow,
-	objectTo,
 	showing,
 	standingOfKind
 } from './object.ts';
@@ -123,13 +115,28 @@ export function show(text: string, script: CodeScript): Move {
 	}));
 }
 
+const CODE_MOVES = objectMovesOf(CODE, CODE_READING);
+
 /**
  * The code shown carried to another place, through the boxes between, growing to `scale` and coming `depth` toward
  * the eye on the way where the film names them.
  */
-export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(CODE, 'code.to', place, script, CODE_READING);
-}
+export const to = CODE_MOVES.to;
+
+/**
+ * The code shown leant back from its top edge by `tilt`, swung about its middle by `turn`, rolled in its own plane by
+ * `roll` and turned over by `over`, its pane with it.
+ */
+export const lean = CODE_MOVES.lean;
+
+/**
+ * The code shown standing out as the film names, its pane with it: ringed, glowing, casting a shadow, blurred, grown
+ * or brought toward the eye where it stands.
+ */
+export const effects = CODE_MOVES.effects;
+
+/** The code on the screen going, its pane with it, or sliding out past a side of the frame; once gone, none. */
+export const hide = CODE_MOVES.hide;
 
 /**
  * A line of the code shown lit, by its number or by what it says, or the lines from it through another; the rest dim,
@@ -152,27 +159,6 @@ export function scrollTo(line: LineNamed, script: ScrollScript = {}): Move {
 	assertWritten(script, SCROLL_FORM, 'code.scrollTo');
 	const name = script.as ?? CODE;
 	return contentMove(name, timingOf(script), (beginning) => scrolling(beginning, name, line));
-}
-
-/**
- * The code shown leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled in its own plane
- * by `roll`, its pane with it.
- */
-export function lean(script: ObjectLeanScript): Move {
-	return objectLean(CODE, 'code.lean', script);
-}
-
-/**
- * The code shown standing out as the film names, its pane with it: ringed, glowing, casting a shadow, blurred, grown
- * or brought toward the eye where it stands.
- */
-export function effects(script: EffectsScript): Move {
-	return objectEffects(CODE, 'code.effects', script);
-}
-
-/** The code on the screen going, its pane with it, or sliding out past a side of the frame; once gone, none. */
-export function hide(script: HideScript = {}): Move {
-	return objectHide(CODE, 'code.hide', script, GOES_AS_IT_STANDS);
 }
 
 function lighting(beginning: Beginning, name: ObjectName, firstNamed: LineNamed, lastNamed: LineNamed): Change {

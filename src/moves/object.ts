@@ -424,9 +424,13 @@ export const GOES_AS_IT_STANDS = { curve: THE_STEPS_CURVE, shownAsItGoes: asItSh
 
 /**
  * How a pane reads a place, as the page's window reads one — a terminal, a piece of the page, an outline — setting off
- * toward it from its box as it stands, growing or shrinking along the way.
+ * toward it from its box as it stands, growing or shrinking along the way. Its readings take nothing a kind shows, so
+ * it is any kind's reading, as `objectMovesOf` hands it.
  */
-export const READ_AS_THE_WINDOW: PlaceReading<ShownKind> = { placed: windowPlaced, settingOff: fromItsBox };
+const READ_AS_THE_WINDOW = {
+	placed: windowPlaced,
+	settingOff: fromItsBox
+} as const satisfies PlaceReading<ShownKind>;
 
 /**
  * An object's values, or a group's, a move that carries it writes; an object's one that leans it, and one of what it
@@ -637,10 +641,48 @@ function holderNamed(script: NestedScript, move: string): Holder {
 }
 
 /**
+ * The moves an object of a kind takes as every kind does, each named after the kind's own: a kind makes them once,
+ * `const THING_MOVES = objectMovesOf(THING, THING_READING)`, exports each it offers under a comment of its own words,
+ * `export const to = THING_MOVES.to`, as a film author's editor shows that comment, and writes the rest itself.
+ */
+export interface ObjectMoves {
+	/**
+	 * The object carried to another place, through the places between, growing to `scale` and coming `depth` toward the
+	 * eye on the way where the film names them.
+	 */
+	readonly to: (place: Place, script?: ToScript) => Move;
+	/** The object leant back by `tilt`, swung by `turn`, rolled by `roll` and turned over by `over`. */
+	readonly lean: (script: ObjectLeanScript) => Move;
+	/** The object standing out as the film names: ringed, glowing, casting a shadow, blurred, grown or brought near. */
+	readonly effects: (script: EffectsScript) => Move;
+	/** The object going where it stands, in its own way, or sliding out past a side of the frame; once gone, none. */
+	readonly hide: (script?: HideScript) => Move;
+	/**
+	 * The object, on the frame or beside a part, handed into the world where the eye sees it as the move begins, so the
+	 * eye moves past it from then on.
+	 */
+	readonly intoTheWorld: (script?: TakenScript) => Move;
+}
+
+/** The moves every kind takes alike, made for a kind: it reads a place as the window does, unless it hands its own. */
+export function objectMovesOf<Kind extends ShownKind>(
+	kind: Kind,
+	reading: PlaceReading<Kind> = READ_AS_THE_WINDOW
+): ObjectMoves {
+	return {
+		to: (place, script = {}) => objectTo(kind, `${kind}.to`, place, script, reading),
+		lean: (script) => objectLean(kind, `${kind}.lean`, script),
+		effects: (script) => objectEffects(kind, `${kind}.effects`, script),
+		hide: (script = {}) => objectHide(kind, `${kind}.hide`, script, GOES_AS_IT_STANDS),
+		intoTheWorld: (script = {}) => objectIntoTheWorld(kind, `${kind}.intoTheWorld`, script)
+	};
+}
+
+/**
  * An object of a kind carried to a place, read as the kind reads one, through the places the film names on its way,
  * growing to the film's scale and coming to its depth on the way, where it names them.
  */
-export function objectTo<Kind extends ShownKind>(
+function objectTo<Kind extends ShownKind>(
 	kind: Kind,
 	move: string,
 	place: Place,
@@ -687,7 +729,7 @@ function carriedNamed(script: ToScript): readonly (keyof Carried)[] {
  * and glow, a melt toward a side, or larger or nearer the eye where it stands; it sets those alone, so it shares a step
  * with a move that carries it, one that leans it, or another of how it stands out naming others.
  */
-export function objectEffects(kind: ShownKind, move: string, script: EffectsScript): Move {
+function objectEffects(kind: ShownKind, move: string, script: EffectsScript): Move {
 	assertWritten(script, EFFECTS_FORM, move);
 	const names = namesSetBy(script, EFFECTS_IN_PLACE_NAMES, move);
 	const name = script.as ?? kind;
@@ -735,7 +777,7 @@ export function objectHide<Kind extends ShownKind>(
  * An object of a kind leant back from its top edge by `tilt`, swung by `turn`, rolled in its own plane by `roll` and
  * turned over round its own width by `over`, about a point of its box.
  */
-export function objectLean(kind: ShownKind, move: string, script: ObjectLeanScript): Move {
+function objectLean(kind: ShownKind, move: string, script: ObjectLeanScript): Move {
 	assertWritten(script, LEAN_OBJECT_FORM, move);
 	const name = script.as ?? kind;
 	return {
@@ -818,7 +860,7 @@ export function objectOnto<Kind extends ShownKind>(
  * What it stands in and where it stands there are written into it at once, so nothing of it moves, and what it shows
  * goes on as it was.
  */
-export function objectIntoTheWorld(kind: ShownKind, move: string, script: TakenScript): Move {
+function objectIntoTheWorld(kind: ShownKind, move: string, script: TakenScript): Move {
 	assertWritten(script, TAKEN_FORM, move);
 	const name = script.as ?? kind;
 	return {

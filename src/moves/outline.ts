@@ -7,33 +7,23 @@
  */
 import { boxOnTheFrame } from '../domain/camera.ts';
 import { A_COUNT, type Form, assertKind, assertWritten } from '../domain/handed.ts';
-import type { Place } from '../domain/place.ts';
 import { A_TARGET, type Beginning, type Move, type Target } from '../direction/move.ts';
 import type { Outline } from '../props/outline.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
-	type EffectsScript,
-	GOES_AS_IT_STANDS,
 	GROUPED_FORM,
 	type GroupedScript,
-	type HideScript,
 	NAMED_FORM,
 	type NamedScript,
-	type ObjectLeanScript,
-	READ_AS_THE_WINDOW,
 	SHOWN_STANDING_OUT_FORM,
 	type ShownKind,
 	type ShownStandingOutScript,
 	THE_STEPS_CURVE,
 	type TakenScript,
-	type ToScript,
 	objectBack,
-	objectEffects,
-	objectHide,
-	objectLean,
-	objectShow,
-	objectTo
+	objectMovesOf,
+	objectShow
 } from './object.ts';
 import {
 	BORN_ON_THE_FRAME,
@@ -83,23 +73,25 @@ export function show(target: Target, script: OutlineScript = {}): Move {
 	);
 }
 
-/** The outline carried to a place, filling it, growing to `scale` and coming `depth` toward the eye on the way. */
-export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(OUTLINE, 'outline.to', place, script, READ_AS_THE_WINDOW);
-}
+const OUTLINE_MOVES = objectMovesOf(OUTLINE);
 
-/** The outline leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled by `roll`. */
-export function lean(script: ObjectLeanScript): Move {
-	return objectLean(OUTLINE, 'outline.lean', script);
-}
+/** The outline carried to a place, filling it, growing to `scale` and coming `depth` toward the eye on the way. */
+export const to = OUTLINE_MOVES.to;
+
+/**
+ * The outline leant back from its top edge by `tilt`, swung about its middle by `turn`, rolled by `roll` and turned
+ * over by `over`.
+ */
+export const lean = OUTLINE_MOVES.lean;
 
 /**
  * The outline standing out as the film names: ringed, glowing, casting a shadow, blurred, grown or brought toward the
  * eye where it stands.
  */
-export function effects(script: EffectsScript): Move {
-	return objectEffects(OUTLINE, 'outline.effects', script);
-}
+export const effects = OUTLINE_MOVES.effects;
+
+/** The outline going where it stands, or sliding out past a side of the frame; once gone, there is none. */
+export const hide = OUTLINE_MOVES.hide;
 
 /**
  * The outline taken back round its source as the camera shows it then, face-on by its nearest whole turns, as large as
@@ -113,11 +105,6 @@ export function back(script: TakenScript = {}): Move {
 			outline.content.source
 		)
 	);
-}
-
-/** The outline going where it stands, or sliding out past a side of the frame; once gone, there is none. */
-export function hide(script: HideScript = {}): Move {
-	return objectHide(OUTLINE, 'outline.hide', script, GOES_AS_IT_STANDS);
 }
 
 /** An outline round a target, cut to the part of it the camera shows, and the box of the frame it shows there. */

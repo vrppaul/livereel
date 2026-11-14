@@ -13,11 +13,8 @@ import { A_MAGNIFICATION, type Lens } from '../props/lens.ts';
 import type { FrameObject } from '../props/object.ts';
 import {
 	type Coming,
-	type EffectsScript,
-	GOES_AS_IT_STANDS,
 	GROUPED_FORM,
 	type GroupedScript,
-	type HideScript,
 	NAMED_FORM,
 	type NamedScript,
 	SHOWN_STANDING_OUT_FORM,
@@ -26,8 +23,7 @@ import {
 	THE_STEPS_CURVE,
 	type TakenScript,
 	objectCarriedTo,
-	objectEffects,
-	objectHide,
+	objectMovesOf,
 	objectShow
 } from './object.ts';
 import { NO_PLACE, ONE_BLOCK_ON_THE_FRAME, cameraOverThePicture, sourceOf } from './source.ts';
@@ -86,18 +82,16 @@ export function to(target: Target, script: TakenScript = {}): Move {
 	return objectCarriedTo(LENS, 'lens.to', script, (beginning, object) => roundIts(beginning, target, object));
 }
 
+const LENS_MOVES = objectMovesOf(LENS);
+
 /**
  * The lens standing out as the film names: ringed, glowing, casting a shadow, blurred, grown or brought toward the eye
  * where it stands.
  */
-export function effects(script: EffectsScript): Move {
-	return objectEffects(LENS, 'lens.effects', script);
-}
+export const effects = LENS_MOVES.effects;
 
 /** The lens going where it stands, or sliding out past a side of the frame; once gone, there is none. */
-export function hide(script: HideScript = {}): Move {
-	return objectHide(LENS, 'lens.hide', script, GOES_AS_IT_STANDS);
-}
+export const hide = LENS_MOVES.hide;
 
 /** A lens round the middle of a target where the camera shows it, and its box there, as wide as its glass is. */
 async function over(beginning: Beginning, target: Target, glass: Glass): Promise<Coming> {

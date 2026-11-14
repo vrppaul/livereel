@@ -569,7 +569,7 @@ function actTheCredit(): readonly Step[] {
 		play({
 			seconds: 1,
 			moves: [
-				terminal.leave({ toward: 'left' }),
+				terminal.hide({ toward: 'left' }),
 				window.show({ at: UNDER_THE_HEADLINE_WINDOW, from: 'right' }),
 				camera.onto(CARDS),
 				window.lean({ tilt: 14, turn: 16 })

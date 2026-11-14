@@ -265,7 +265,7 @@ window, `effects({ ring, glow, shadow, blur, colour, melt, fade, scale, depth })
 | `code.to(place, { scale, depth })`, `code.lean(...)`, `code.effects(...)`, `code.hide({ toward, leave, edge })` | as any object |
 | `terminal.open(title, { at, from, enter, edge, as, inside, group, zIndex, effects })` | an agent's terminal, across most of the frame unless `at` says |
 | `terminal.type(strokes, { keyboard })`, `terminal.submit()`, `terminal.works(lines, thinking, { thinkingShare })` | keys typed; Enter, in a `cut`; thinking, then lines `{ kind, text }`, a kind `asked`, `work`, `said`, `done` or `thinking` |
-| `terminal.to(place, { scale, depth })`, `terminal.lean(...)`, `terminal.effects(...)`, `terminal.leave({ toward, leave, edge })` | as any object; `leave` lets it go |
+| `terminal.to(place, { scale, depth })`, `terminal.lean(...)`, `terminal.effects(...)`, `terminal.hide({ toward, leave, edge })` | as any object; `hide` lets it go |
 | `light.on(target, { dim })`, `light.to(target)`, `light.off()` | one block lit, the rest dimmed; carried; put out ("The light and the cursor") |
 | `cursor.to(target, { entering, bow, into })` | along an arc to rest a little into a block, or at `into`, in shares of it; from `entering` where it is off the screen |
 | `cursor.click(action, { sound })`, `cursor.press({ sound })`, `cursor.release()`, `cursor.hide()` | a click's steps, the camera stopping, spread with `...`; in a play, press, `page.act` and release; hide in a `cut` |

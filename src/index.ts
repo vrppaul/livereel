@@ -62,6 +62,7 @@ export {
 export type { Ease, Speeds } from './domain/curves.ts';
 export type { Pose } from './domain/camera.ts';
 export type { LeanScript } from './moves/lean.ts';
+export type { EffectsScript, HideScript, ObjectLeanScript, TakenScript, ToScript } from './moves/object.ts';
 export type { EyePlace, EyePlaceOrRest } from './domain/eye.ts';
 export type { Spot } from './domain/matrix.ts';
 export type { Format } from './domain/format.ts';

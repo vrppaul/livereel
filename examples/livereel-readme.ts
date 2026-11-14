@@ -669,7 +669,7 @@ function actTheEnding(): readonly Step[] {
 	return [
 		play({
 			seconds: 1.2,
-			moves: [terminal.leave({ toward: 'left' }), ending.show(CARD, { from: 'right' })],
+			moves: [terminal.hide({ toward: 'left' }), ending.show(CARD, { from: 'right' })],
 			ease: easeInOutCubic
 		}),
 		hold({ seconds: 2.5 })

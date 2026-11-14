@@ -28,17 +28,14 @@ import {
 	GOES_AS_IT_STANDS,
 	NAMED_FORM,
 	type NamedScript,
-	type ObjectLeanScript,
 	type PlaceReading,
 	type ShownKind,
 	THE_STEPS_CURVE,
-	type ToScript,
 	contentMove,
 	fromItsBox,
 	objectHide,
-	objectLean,
+	objectMovesOf,
 	objectShow,
-	objectTo,
 	showing,
 	standingOfKind
 } from './object.ts';
@@ -105,15 +102,13 @@ function builtIn(beginning: Beginning, thing: Thing, at: Place): Coming {
 	return { content: thing, box: THING_READING.placed(beginning.format, at, thing) };
 }
 
-/** The thing carried to a place, through the places the film names on its way, growing and coming near as it names. */
-export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(THING, 'thing.to', place, script, THING_READING);
-}
+const THING_MOVES = objectMovesOf(THING, THING_READING);
 
-/** The thing leant back, swung and rolled as the film names, about its box's middle. */
-export function lean(script: ObjectLeanScript): Move {
-	return objectLean(THING, 'thing.lean', script);
-}
+/** The thing carried to a place, through the places the film names on its way, growing and coming near as it names. */
+export const to = THING_MOVES.to;
+
+/** The thing leant back, swung, rolled and turned over as the film names, about its box's middle. */
+export const lean = THING_MOVES.lean;
 
 /** The thing's numbers going to those the film names, each from where it stood; the rest kept as they stand. */
 export function set(values: ThingValues, script: ThingSetScript = {}): Move {

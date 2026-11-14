@@ -9,16 +9,7 @@ import { assertKind, assertWritten } from '../domain/handed.ts';
 import type { Move } from '../direction/move.ts';
 import { heardAsItBegins, livereelSound } from '../direction/sound.ts';
 import { A_CARD, type EndingCard } from '../props/ending.ts';
-import {
-	GOES_AS_IT_STANDS,
-	type HideScript,
-	SHOW_FORM,
-	type ShowScript,
-	type ShownKind,
-	THE_STEPS_CURVE,
-	objectHide,
-	objectShow
-} from './object.ts';
+import { SHOW_FORM, type ShowScript, type ShownKind, THE_STEPS_CURVE, objectMovesOf, objectShow } from './object.ts';
 
 const ENDING = 'ending' satisfies ShownKind;
 
@@ -35,7 +26,7 @@ export function show(card: EndingCard, script: ShowScript = {}): Move {
 	};
 }
 
+const ENDING_MOVES = objectMovesOf(ENDING);
+
 /** The card on the screen going where it stands, or sliding out past a side of the frame; once gone, there is none. */
-export function hide(script: HideScript = {}): Move {
-	return objectHide(ENDING, 'ending.hide', script, GOES_AS_IT_STANDS);
-}
+export const hide = ENDING_MOVES.hide;

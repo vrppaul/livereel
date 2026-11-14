@@ -75,7 +75,6 @@ import {
 	assertWritten,
 	needed
 } from '../domain/handed.ts';
-import type { Place } from '../domain/place.ts';
 import { ON_THE_PAGE, ON_THE_PAGE_IN_THE_WORLD, cameraOnItsPage } from '../domain/placement.ts';
 import {
 	A_TARGET,
@@ -108,7 +107,6 @@ import { holdersIn } from '../scene.ts';
 import { A_STROKE, type Stroke } from '../props/stroke.ts';
 import {
 	type Coming,
-	type EffectsScript,
 	GOES_AS_IT_STANDS,
 	GROUPED_FORM,
 	type GroupedScript,
@@ -116,9 +114,7 @@ import {
 	type HideScript,
 	NAMED_FORM,
 	type NamedScript,
-	type ObjectLeanScript,
 	type OntoScript,
-	READ_AS_THE_WINDOW,
 	SHOWN_STANDING_OUT_FORM,
 	type ShowingOf,
 	type ShownKind,
@@ -126,16 +122,13 @@ import {
 	TAKEN_FORM,
 	THE_STEPS_CURVE,
 	type TakenScript,
-	type ToScript,
 	contentMove,
 	objectBack,
-	objectEffects,
 	objectHide,
-	objectLean,
+	objectMovesOf,
 	objectOnto,
 	objectShow,
 	objectShowRiding,
-	objectTo,
 	showing,
 	standingOfKind
 } from './object.ts';
@@ -481,13 +474,25 @@ function pieceComing(target: Target, script: PieceScript, lifting: Lifting): Mov
 	);
 }
 
+const PIECE_MOVES = objectMovesOf(PIECE);
+
 /**
  * The piece carried to a place, as large as the place holds its source, growing to `scale` and coming `depth` toward
  * the eye on the way where the film names them.
  */
-export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(PIECE, 'piece.to', place, script, READ_AS_THE_WINDOW);
-}
+export const to = PIECE_MOVES.to;
+
+/**
+ * The piece leant back from its top edge by `tilt`, swung about its middle by `turn`, rolled by `roll` and turned over
+ * by `over`.
+ */
+export const lean = PIECE_MOVES.lean;
+
+/**
+ * The piece standing out as the film names: ringed, glowing, casting a shadow, blurred, grown or brought toward the eye
+ * where it stands, lifting off the page.
+ */
+export const effects = PIECE_MOVES.effects;
 
 /**
  * The piece carried onto the first block a selector matches, or a box of the screen, as large as the block holds its
@@ -540,19 +545,6 @@ function letterOnLetter(source: Box, carried: Box, onto: Box): Box {
 		width: source.width * growth,
 		height: source.height * growth
 	};
-}
-
-/** The piece leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled by `roll`. */
-export function lean(script: ObjectLeanScript): Move {
-	return objectLean(PIECE, 'piece.lean', script);
-}
-
-/**
- * The piece standing out as the film names: ringed, glowing, casting a shadow, blurred, grown or brought toward the eye
- * where it stands, lifting off the page.
- */
-export function effects(script: EffectsScript): Move {
-	return objectEffects(PIECE, 'piece.effects', script);
 }
 
 /**

@@ -8,30 +8,21 @@
  */
 import { boxOf } from '../domain/geometry.ts';
 import { A_PATH, type Form, assertKind, assertWritten } from '../domain/handed.ts';
-import { A_PLACE, type Place } from '../domain/place.ts';
+import { A_PLACE, type Place, windowPlaced } from '../domain/place.ts';
 import type { Beginning, Move } from '../direction/move.ts';
 import type { FilmPicture } from '../props/picture.ts';
 import {
 	type Coming,
-	type EffectsScript,
-	GOES_AS_IT_STANDS,
-	type HideScript,
 	NESTED_FORM,
 	type NestedScript,
-	type ObjectLeanScript,
-	READ_AS_THE_WINDOW,
 	SHOWN_STANDING_OUT_FORM,
 	SHOW_FORM,
 	type ShowScript,
 	type ShownKind,
 	type ShownStandingOutScript,
 	THE_STEPS_CURVE,
-	type ToScript,
-	objectEffects,
-	objectHide,
-	objectLean,
-	objectShow,
-	objectTo
+	objectMovesOf,
+	objectShow
 } from './object.ts';
 
 /**
@@ -61,31 +52,28 @@ export function show(file: string, script: PictureScript = {}): Move {
 	return { ...showing, pictures: [file] };
 }
 
+const PICTURE_MOVES = objectMovesOf(PICTURE);
+
 /**
  * The picture carried to another place, as large as the place holds it, growing to `scale` and coming `depth` toward
  * the eye on the way where the film names them.
  */
-export function to(place: Place, script: ToScript = {}): Move {
-	return objectTo(PICTURE, 'picture.to', place, script, READ_AS_THE_WINDOW);
-}
+export const to = PICTURE_MOVES.to;
 
-/** The picture leant back from its top edge by `tilt`, swung about its middle by `turn` and rolled by `roll`. */
-export function lean(script: ObjectLeanScript): Move {
-	return objectLean(PICTURE, 'picture.lean', script);
-}
+/**
+ * The picture leant back from its top edge by `tilt`, swung about its middle by `turn`, rolled by `roll` and turned
+ * over by `over`.
+ */
+export const lean = PICTURE_MOVES.lean;
 
 /**
  * The picture standing out as the film names: ringed, glowing, casting a shadow, blurred, melting toward a side, grown
  * or brought toward the eye where it stands.
  */
-export function effects(script: EffectsScript): Move {
-	return objectEffects(PICTURE, 'picture.effects', script);
-}
+export const effects = PICTURE_MOVES.effects;
 
 /** The picture going where it stands, or sliding out past a side of the frame; once gone, there is none. */
-export function hide(script: HideScript = {}): Move {
-	return objectHide(PICTURE, 'picture.hide', script, GOES_AS_IT_STANDS);
-}
+export const hide = PICTURE_MOVES.hide;
 
 /**
  * A picture and its box as its move begins: as wide against as tall as the stage decoded its file, over the whole frame
@@ -97,6 +85,6 @@ function pictureComing(beginning: Beginning, file: string, place: Place | null):
 	if (decoded === undefined) throw new Error(`the take laid no picture ${file} on the stage, which its steps show`);
 	const picture: FilmPicture = { kind: PICTURE, file, ...decoded };
 	const format = beginning.format;
-	const box = place === null ? boxOf(format.frame) : READ_AS_THE_WINDOW.placed(format, place, picture);
+	const box = place === null ? boxOf(format.frame) : windowPlaced(format, place);
 	return { content: picture, box };
 }

@@ -118,7 +118,7 @@ import { press, release, to as cursorTo } from '../../src/moves/cursor.ts';
 import { off, on as lightOn, to as lightTo } from '../../src/moves/light.ts';
 import {
 	effects as terminalEffects,
-	leave,
+	hide as terminalHide,
 	open,
 	submit,
 	to as terminalTo,
@@ -796,7 +796,7 @@ test('what is put away — the light, a callout, pins, a note, a title, a captio
 		(await setAt(note.hide(), noted, 1)).note,
 		(await setAt(caption.hide(), captioned, 1)).caption,
 		(await setAt(keys.hide(), pressed, 1)).keys,
-		[...(await setAt(leave(), TYPED, 1)).objects.keys()],
+		[...(await setAt(terminalHide(), TYPED, 1)).objects.keys()],
 		[...(await setAt(ending.hide(), carded, 1)).objects.keys()],
 		[...(await setAt(title.hide(), titled, 1)).objects.keys()],
 		[...(await setAt(code.hide(), coded, 1)).objects.keys()]
@@ -3873,7 +3873,7 @@ test('a cursor pressed goes in as the press goes on, and comes back out as it is
 
 test('a terminal opened comes up as its move goes on, and one left goes as its move goes on', async () => {
 	const opened = (await setAt(open('A terminal'), OPENING_IN_SMALL, 0.25)).objects.get('terminal')!;
-	const leaving = (await setAt(leave(), TYPED, 0.25)).objects.get('terminal')!;
+	const leaving = (await setAt(terminalHide(), TYPED, 0.25)).objects.get('terminal')!;
 	expect([
 		drawnObject('terminal', opened, 0, NOTHING_AROUND).content.shown,
 		drawnObject('terminal', leaving, 0, NOTHING_AROUND).content.shown
@@ -3891,7 +3891,7 @@ test('every object, a caption and keys come up in a way the film names, and go i
 	const hides = [
 		title.hide({ leave: 'fade' }),
 		code.hide({ leave: 'fade' }),
-		leave({ leave: 'fade' }),
+		terminalHide({ leave: 'fade' }),
 		ending.hide({ leave: 'fade' })
 	];
 	const coming = await Promise.all(shows.map((move) => setAt(move, OPENING_IN_SMALL, 0.25)));
