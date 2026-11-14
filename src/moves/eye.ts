@@ -212,8 +212,7 @@ type DegreesKeyScript = GazeKeyScript & { readonly degrees: number };
 
 /**
  * The degrees of a heading toward a block of the page from where the eye stands as its key is reached, held from there
- * as a number, as the promo's run turns back from the bearing the Story button had where the eye had sunk
- * (`to-the-story.js` `turnedMost`).
+ * as a number, where `{ toward }` follows the block wherever the eye stands.
  */
 interface DegreesToward {
 	readonly toward: Target;

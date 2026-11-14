@@ -23,13 +23,12 @@
  * `stage/page-picture.js`); and the page and its body blurred as one by the eye's lens, as wide as the shade's blur,
  * grown as the eye sees each point nearer or as wide on the frame at every point, as the shade has its blur seen, but
  * the part of the screen the blur leaves sharp, so the slab's rim and sides and the page's outline soften with the
- * page, as the claude-review promo's lens softened all of its slab. The lens blurs by depth (`stage/lens.js`), and the
- * slab stands at about one depth with the page, so the window is handed the lens as spreads of its own
- * (`WindowBlurred`): each pixel of a field holding the window whose depth falls within the slab, read back onto it,
- * spreads as wide as the shade blurs it there. Read off the depth, what stands before the slab keeps its own spread, as
- * the depth hides the slab there. The engine hands the page's picture unblurred then (`pictureBlur` in its window):
- * blurred in its picture, the page's outline stood sharp round a soft page, a bright line on beats 7–8 of the promo's
- * draft at film seconds 4 and 15.8 where the cut has none.
+ * page. The lens blurs by depth (`stage/lens.js`), and the slab stands at about one depth with the page, so the window
+ * is handed the lens as spreads of its own (`WindowBlurred`): each pixel of a field holding the window whose depth
+ * falls within the slab, read back onto it, spreads as wide as the shade blurs it there. Read off the depth, what
+ * stands before the slab keeps its own spread, as the depth hides the slab there. The engine hands the page's picture
+ * unblurred then (`pictureBlur` in its window): blurred in its picture too, the page's outline would stand sharp round
+ * a soft page, a bright line.
  */
 import * as THREE from 'three';
 import { matrixOf } from './matrices.js';
@@ -96,13 +95,12 @@ const GLASS_DRAWN_LAST = 1;
 // A coat of none, which is no coat: three would draw the black face under it whole
 const NO_COAT = 0;
 // The strip of light standing near the glass, whose glint the glass catches as the slab's own light (`Slab.glint` in
-// `src/props/body.ts`), as the claude-review promo lays one on its slabs' glass (`GLINT` in its `slab.js`): a long soft
-// strip standing square to the glass and before it, in the slab's own frame, so it goes where the slab goes and its
-// glint moves on the glass as the eye moves and grows as the eye comes near, as a near light's would. Its measures are
-// the promo's in the page's widths, so it lies alike on a page of any size: how far before the glass it stands; where
-// its middle line passes, left of the page's middle and above it; how far it leans from upright toward the left, in
-// degrees, the promo's key light's lean; how wide it is, its light falling off as a bell across it; how long; and the
-// share of its half-length its brightness holds before it fades to its end. The way along it, up and to the left
+// `src/props/body.ts`): a long soft strip standing square to the glass and before it, in the slab's own frame, so it
+// goes where the slab goes and its glint moves on the glass as the eye moves and grows as the eye comes near, as a
+// near light's would. Its measures are in the page's widths, so it lies alike on a page of any size: how far before the
+// glass it stands; where its middle line passes, left of the page's middle and above it; how far it leans from upright
+// toward the left, in degrees; how wide it is, its light falling off as a bell across it; how long; and the share of
+// its half-length its brightness holds before it fades to its end. The way along it, up and to the left
 const NEAR_STRIP = {
 	standsOff: 0.75,
 	through: { across: -0.375, up: 0.625 },
@@ -213,10 +211,10 @@ const NONE_SHADED = 0;
 // the slab by its placing undone, and onto the screen from the page's middle on the window's plane, down the plane
 // where the slab's axes go up; the slab's outline is a rounded rectangle about the page's middle, its half width, half
 // height and corner. Where a piece of the page or its pit the shade reaches stands, it spreads by the share the shade
-// reaches it, kept from the blur as far as the piece has risen out of the shade, as the claude-review promo's lens kept
-// a lifted part and its pit: each such box read back onto it by its own placing undone, its outline's half width, half
-// height and corner about its middle, and how far it reaches back from its face. The slab is read only in a field
-// that holds the window: a field of markup holds words standing on the slab's face, which the shade leaves sharp
+// reaches it, kept from the blur as far as the piece has risen out of the shade: each such box read back onto it by
+// its own placing undone, its outline's half width, half height and corner about its middle, and how far it reaches
+// back from its face. The slab is read only in a field that holds the window: a field of markup holds words standing
+// on the slab's face, which the shade leaves sharp
 const SPREADS_FRAGMENT = `
 uniform sampler2D depth;
 uniform mat4 fieldToTheEye;

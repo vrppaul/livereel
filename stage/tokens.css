@@ -148,9 +148,8 @@
 	 * how far in from the side the wipe cuts from the light has faded and where the edge stands, in shares of the figure:
 	 * from nothing where it has faded, rising to its brightest just behind the edge, a share of its trail, and to nothing
 	 * again at the edge itself, so no line of it shows there; across the way, brightest down the figure's middle and
-	 * fading to nothing at its sides. Its colour is the film's or the accent, at its brightest laid as strongly, and as
-	 * near the edge, as the claude-review promo's band along a line of its review: 0.18 of its colour, 0.004 of the page
-	 * behind the edge of a trail of 0.03 (into-review.js SHEEN).
+	 * fading to nothing at its sides. Its colour is the film's or the accent, laid at 18% where it is brightest, a
+	 * share of its trail behind the edge.
 	 */
 	--sheen-drawn-in: var(--sheen-colour, var(--accent));
 	--sheen-strongest: 18%;

@@ -3,9 +3,9 @@
  * livereel's blur with any of its values the film gives in their place.
  *
  * livereel opens the shutter for half the time from the frame before, as a film camera does, and blends up to sixteen
- * exposures: the owner's eye took that over the whole time in eight on the promo and the README film, whose smears had
- * shown their copies (2026-10-30). A shutter open for more than the whole time is refused, as what moved before the
- * frame before is not known; so is a blur of fewer than two exposures at most, which is the frame alone.
+ * exposures: chosen by the owner's eye over a shutter open the whole time in eight, whose smears showed their copies. A
+ * shutter open for more than the whole time is refused, as what moved before the frame before is not known; so is a
+ * blur of fewer than two exposures at most, which is the frame alone.
  */
 import { FilmError } from '../domain/errors.ts';
 import type { MotionBlur } from '../domain/shutter.ts';

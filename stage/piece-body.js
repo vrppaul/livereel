@@ -7,35 +7,34 @@
  * same matrix behind it, so the two stand as one wherever the eye goes, and the room's lens blurs them by depth as all
  * else.
  *
- * The walls are the page's matter, as the promo drew a button rising as a column and a part lifted as a plate: matte
- * and lit by no light of the world's, their colour the film's at the face darkening toward the back, a light in their
- * own hue showing through as faintly as the film names. They write depth, so standing behind the page's plane, as a
+ * The walls are the page's matter, as a button rising stands as a column and a part lifted as a plate: matte and lit by
+ * no light of the world's, their colour the film's at the face darkening toward the back, a light in their own hue
+ * showing through as faintly as the film names. They write depth, so standing behind the page's plane, as a
  * piece on the plane it was lifted from stands, the page hides them, and they come up out of it as the piece stands
  * out. They are built anew only as their own measures change: a piece standing, or rising with its walls whole, keeps
  * the walls it has. A piece faded into what lies behind it lays them over what lies behind them as far as it is clear,
  * as the stylesheet lays its face.
  *
  * The shadow lies as far behind the face as the face stands out, on the plane the piece was lifted from, as dark as
- * the piece's shadow is strong and as clear as the face is drawn, and dropped toward its foot and
- * soft as far as the face stands high, as the promo's column cast it: the stylesheet's shadow of an object standing out
- * is measured in the object's own pixels, so a button seen four times as large cast it four times as far and as soft,
- * spread too thin to show (the asking beats' Story button at 26.6 s). The stylesheet drops the markup's shadow where
- * the room draws a body, as it would lie on the face's own plane over the walls (`stage/stage.css`). It is laid over
- * what lies there in linear light, as three lays a film's light, writing no depth, nearer by depth's offset than the
- * page it lies on.
+ * the piece's shadow is strong and as clear as the face is drawn, and dropped toward its foot and soft as far as the
+ * face stands high: the stylesheet's shadow of an object standing out is measured in the object's own pixels, so a
+ * button seen four times as large would cast it four times as far and as soft, spread too thin to show. The stylesheet
+ * drops the markup's shadow where the room draws a body, as it would lie on the face's own plane over the walls
+ * (`stage/stage.css`). It is laid over what lies there in linear light, as three lays a film's light, writing no
+ * depth, nearer by depth's offset than the page it lies on.
  *
  * A piece's hole may be sunk into the page as a pit: its outline drawn back behind the window's plane as deep as the
  * film names, seen from inside alone, so it stands open at its mouth, where the page's surface lays nothing and writes
  * no depth (`stage/page-picture.js`). Its walls are the body's matter too, of the body's colour darker the deeper, and
- * lit from within by the same law, written once for both. A piece lying on its plane stands in its pit, as the promo's
- * plates fill the pits they left (`story-parts.js`). It is a hole in the screen, not in the page's picture: a shade
- * fading the page leaves it, and nothing lies over its mouth to hide it as the screen goes down, so its walls are laid
- * over what lies behind them as far as the screen has come up, as the window's body stands as thick.
+ * lit from within by the same law, written once for both. A piece lying on its plane stands in its pit, filling it. It
+ * is a hole in the screen, not in the page's picture: a shade fading the page leaves it, and nothing lies over its
+ * mouth to hide it as the screen goes down, so its walls are laid over what lies behind them as far as the screen has
+ * come up, as the window's body stands as thick.
  *
  * Where the film stands a piece in the window's shade, its walls and its pit fade in light into what stands behind
  * them as far as the shade reaches them and the page has faded, as the window's metal does (`Fading` in `body.js`), so
- * a piece lying on its faded page shows no pit lighter than the page round it, as the promo's lens fades all it keeps
- * not sharp, pits too; the window's spreads blur them by the same share (`WindowBlurred`).
+ * a piece lying on its faded page shows no pit lighter than the page round it; the window's spreads blur them by the
+ * same share (`WindowBlurred`).
  */
 import {
 	BackSide,
@@ -106,23 +105,22 @@ import { WORLD_PARTS } from './see-through.js';
  * }} SunkPit
  */
 
-// The shadow of a piece with a body, as the promo's column cast it (`lift.js` SHADOW, LIFT): as dark as 0.8 at its
-// strongest; dropped toward its foot 14 of the page's pixels for a rise of 12; and soft for as far each way as the face
-// stands high
+// The shadow of a piece with a body: as dark as 0.8 at its strongest; dropped toward its foot 14 of the page's pixels
+// for a rise of 12; and soft for as far each way as the face stands high
 const SHADOW_DARKEST = 0.8;
-const COLUMNS_DROP = 14;
-const COLUMNS_RISE = 12;
-const SHADOW_DROP_A_HEIGHT = COLUMNS_DROP / COLUMNS_RISE;
+const SHADOW_DROP_PIXELS = 14;
+const FACE_RISE_PIXELS = 12;
+const SHADOW_DROP_A_HEIGHT = SHADOW_DROP_PIXELS / FACE_RISE_PIXELS;
 const SHADOW_SOFT_A_HEIGHT = 1;
 // A body's walls: seen from outside, as they stand out of the page; whole at the face and 0.35 of their colour at the
-// back, as both the promo's walls darken; no lid at either end, as the piece's face is their front: a lid there showed
-// whole behind a face that fades. A pit's: seen from inside alone, so it stands open at its mouth; 0.6 of its colour at
-// the mouth and 0.18 at its floor, deep in the window's shade (`story-parts.js` PIT); its floor a lid at its back
+// back; no lid at either end, as the piece's face is their front: a lid there would show whole behind a face that
+// fades. A pit's: seen from inside alone, so it stands open at its mouth; 0.6 of its colour at the mouth and 0.18 at
+// its floor, deep in the window's shade; its floor a lid at its back
 /** @type {WallsKind} */
 const BODY_WALLS = { seenFrom: FrontSide, face: 1, back: 0.35, floored: false };
 /** @type {WallsKind} */
 const PIT_WALLS = { seenFrom: BackSide, face: 0.6, back: 0.18, floored: true };
-// How light the light inside walls is, in their own hue, as the promo's story parts are lit (`story-parts.js` GLOW)
+// How light the light inside walls is, in their own hue
 const GLOW_LIGHTNESS = 0.6;
 // The groups three cuts an extrusion's points into: its two lids, the back's points first, then its sides; and the one
 // material walls are drawn in, which each group kept names
@@ -492,9 +490,8 @@ function keptOfTheExtrusion(geometry, floored) {
 }
 
 /**
- * The colour walls glow in, lit from within: their own hue, as saturated, at the light's lightness, so black
- * or grey walls glow grey-white and coloured ones in their colour, as the promo's story parts glow (`walls.js` of the
- * film, `glowOf`).
+ * The colour walls glow in, lit from within: their own hue, as saturated, at the light's lightness, so black or grey
+ * walls glow grey-white and coloured ones in their colour.
  * @param {Color} walls
  */
 function glowOf(walls) {

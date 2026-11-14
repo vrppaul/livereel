@@ -25,22 +25,20 @@
  * corners, and its hole's, as round as the page draws the block's, read off it as it is lifted: the page knows how it
  * draws a block, so the film never copies it. A stretch of the page, with air round its blocks, several blocks or a box
  * of the screen, has no corners of its own: they are as round as the film names, square where it names none. A body's
- * walls are of the colour the page shows along the piece's edge as it is lifted, as the claude-review promo reads a
- * thing's walls off its picture, where the film names none. Every move of it takes the piece named `piece`, or the one
- * the film names `as`.
+ * walls are of the colour the page shows along the piece's edge as it is lifted, where the film names none. Every move
+ * of it takes the piece named `piece`, or the one the film names `as`.
  *
  * It may empty a block of the filmed page, which then stands as the page draws it hidden until the piece goes; wiped
- * away while it lies on the page, it and the block go behind one edge, set off from the near side of either, as the
- * claude-review promo's band runs along a review row from its line number, the line lying on its code cut as it passes.
+ * away while it lies on the page, it and the block go behind one edge, set off from the near side of either.
  *
  * Lifted naming a block of its source whose letters it carries, it lands them letter on letter on the letters of a
- * block it is carried onto, as the claude-review promo lands a terminal's diff line on the review's row: grown as far
- * as a letter of the block steps against one of its own, so its letters stand as large as theirs and column on
- * column, its first letter where theirs starts, its middle on theirs. Where letters start is read off the block's
- * first laid-out letter, or, in a blank line of code, off its content box, so it lands as its neighbours do; how far
- * one steps, off the font they are set in. Only the film knows which of its source's letters are the block's: the
- * diff's sign stands in a terminal's line and in a column of its own on the review. Its letters are measured as it is
- * lifted, off the page it is lifted off as it stands then, as its picture is taken; the block's as it lands.
+ * block it is carried onto: grown as far as a letter of the block steps against one of its own, so its letters stand as
+ * large as theirs and column on column, its first letter where theirs starts, its middle on theirs. Where letters start
+ * is read off the block's first laid-out letter, or, in a blank line of code, off its content box, so it lands as its
+ * neighbours do; how far one steps, off the font they are set in. Only the film knows which of its source's letters are
+ * the block's: a diff line's sign may stand in the line it is lifted from and in a column of its own beside the block.
+ * Its letters are measured as it is lifted, off the page it is lifted off as it stands then, as its picture is taken;
+ * the block's as it lands.
  */
 import { type Camera, boxOnTheFrame } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -304,9 +302,8 @@ const PIECE_HIDE_FORM: Form<PieceHideScript> = {
 	...HIDE_FORM,
 	sheen: new OfForm(SHEEN_FORM, 'a sheen: { colour, width }')
 };
-// How far a sheen trails where the film names no width: as far as the claude-review promo's band running along a line
-// of its review trails its edge, 0.03 of the review's 1600 pixels (into-review.js SHEEN); and in the look's accent
-// where it names no colour
+// How far a sheen trails where the film names no width, in pixels of a frame 1080 high; and in the look's accent where
+// it names no colour
 const SHEEN_TRAILS = 48;
 const ACCENTED = null;
 // The move that empties a block, as its refusals name it

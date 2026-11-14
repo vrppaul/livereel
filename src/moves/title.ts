@@ -12,10 +12,9 @@
  * A title stands beside a part instead where the film names one: a block of the page, or an object, a piece lifted off
  * the page among them. It stands on the frame, as large as its letters are set wherever the eye stands, off a point of
  * that part's side as the eye sees the point on each frame (`src/domain/placement.ts`), so it rides with the part as
- * the eye, the window, the camera and the part itself move, as the claude-review promo's lines stand beside its plates
- * and over its window's words. Its box is a frame wide and high, off that point, its words reading from its near edge
- * and breaking only where the film breaks them. Handed into the world, it stands there beside the part, where the eye
- * saw it, and the eye moves past it.
+ * the eye, the window, the camera and the part itself move. Its box is a frame wide and high, off that point, its words
+ * reading from its near edge and breaking only where the film breaks them. Handed into the world, it stands there
+ * beside the part, where the eye saw it, and the eye moves past it.
  */
 import { FilmError } from '../domain/errors.ts';
 import { type Box, HALVES, type Point, type Size, boxOf, frameScaleOf } from '../domain/geometry.ts';

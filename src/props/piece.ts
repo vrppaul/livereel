@@ -108,8 +108,8 @@ type DrawnPit = Pit & PitStanding;
 /**
  * How a piece lifted into the world stands in the window's shade: reached by it as the page is while its face lies on
  * the page's plane, the less the farther it stands out toward the eye, and none from a height on, in the frame's own
- * pixels as its depth is, as the claude-review promo's lens keeps a part lifted off its soft and faded page as soft and
- * as faded as the page as far as it has not risen (`story-parts.js` `sharpOnly`).
+ * pixels as its depth is, so a part lifted off a soft and faded page stays as soft and as faded as the page as far as
+ * it has not risen.
  */
 export interface InTheShade {
 	readonly clearAt: number;

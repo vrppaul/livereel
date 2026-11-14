@@ -240,8 +240,7 @@ const PICTURE_TAKEN: PictureTaken = { format: 'jpeg', quality: JPEG_QUALITY };
 const PICTURE_TYPE = 'image/jpeg';
 // A part of the screen read for the colour of its edge is taken as a PNG, whose pixels no compression bleeds into one
 // another, two of its pixels to the page's whatever the shoot's quality and frame, and read 1.5 of the page's pixels
-// in from the middle of a side, past a border of a pixel, as the claude-review promo reads a thing's walls off its
-// picture (lift.js COLUMN edgeReadIn, walls.js edgeColour)
+// in from the middle of a side, past a border of a pixel
 const EDGE_TAKEN: PictureTaken = { format: 'png' };
 const EDGE_TYPE = 'image/png';
 const EDGE_READ = { scale: 2, inFromTheSide: 1.5 };

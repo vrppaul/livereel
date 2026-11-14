@@ -6,41 +6,35 @@
  *
  * The way is three.js's curves, flown by its length, so the eye goes as far in each equal share of the flight's own
  * progress, whatever bends the way takes; past either end, as a curve that bounces takes it, it goes straight on along
- * the way there. Or the film times its legs apart, each taking its share of the move's time, as the promo's run to the
- * Story button flies legs of 2, 2.5 and 3 s (`to-the-story.js`): the eye passes each leg's end as its share ends, on a
- * cubic Hermite curve of the way's length over the time through those knots, from rest to rest, as fast through each
- * knot as from the knot before to the knot after but never running past the next and back. A leg goes straight to a
- * point; or bends, arriving at its point heading the way the film names, as a parabola does, its turn as far before
- * the point as `bend` shares of the leg's chord; or goes on ahead, straight along the way's last heading, so many
- * times as long as the leg before; or goes along a figure the film draws itself in three.js, its points across, down
- * and out, set off from where the leg starts wherever the film drew it, for a shape no leg of livereel's draws. A leg
- * after another leaves heading as that one arrived, but a figure, which leaves as the film drew it. Where the way is
- * smooth, a leg to a point arrives heading the way a figure after it leaves, or from where it starts toward the next
- * leg's point, as a Catmull-Rom curve does, but never higher or lower than the two points either side of it: where
- * the way sinks to a point and runs on level, it flattens there, as a smooth way that sinks to a point and runs on low
- * dipped under the page (the review of the flight, 2026-11-09). A way that reaches the page's plane anywhere is
- * refused.
+ * the way there. Or the film times its legs apart, each taking its share of the move's time: the eye passes each leg's
+ * end as its share ends, on a cubic Hermite curve of the way's length over the time through those knots, from rest to
+ * rest, as fast through each knot as from the knot before to the knot after but never running past the next and back.
+ * A leg goes straight to a point; or bends, arriving at its point heading the way the film names, as a parabola does,
+ * its turn as far before the point as `bend` shares of the leg's chord; or goes on ahead, straight along the way's last
+ * heading, so many times as long as the leg before; or goes along a figure the film draws itself in three.js, its
+ * points across, down and out, set off from where the leg starts wherever the film drew it, for a shape no leg of
+ * livereel's draws. A leg after another leaves heading as that one arrived, but a figure, which leaves as the film drew
+ * it. Where the way is smooth, a leg to a point arrives heading the way a figure after it leaves, or from where it
+ * starts toward the next leg's point, as a Catmull-Rom curve does, but never higher or lower than the two points either
+ * side of it, so a way that sinks to a point and runs on level flattens there rather than dipping under the page. A way
+ * that reaches the page's plane anywhere is refused.
  *
- * The gaze is two values apart, as a person flying low over a page turns and tips their head: the heading, which way
- * on the window's plane the eye looks, in degrees from up the page clockwise, and the tip, how far its sight lifts off
- * the plane, from looking straight down onto it at -90 through level at 0. Each follows rules reached at moments of
- * the flight, at a leg's end or past it by a share of the next leg: a value of degrees, a heading toward a spot or
- * along the way, a tip that holds a spot so far down the frame. Each rule is read where the eye stands as it flies, so
- * one that holds a spot holds it all along: between two rules the gaze goes from the one before to the one after, both
- * read where the eye stands, easing in and out over the flight's time between them; past the last it follows the
- * last; a heading turns the short way round. The flight's time is its legs' where the film times them apart, so the
- * promo's eye turns to the Story button over its first leg's 2 s however its pace sets off from rest
- * (`to-the-story.js`), where easing by the way, which the pace eases already, turned it late; on an even pace the time
- * and the way go together. The eye never rolls but as it sets off: a roll it stood with eases away by the end of the
- * first leg.
+ * The gaze is two values apart, as a person flying low over a page turns and tips their head: the heading, which way on
+ * the window's plane the eye looks, in degrees from up the page clockwise, and the tip, how far its sight lifts off the
+ * plane, from looking straight down onto it at -90 through level at 0. Each follows rules reached at moments of the
+ * flight, at a leg's end or past it by a share of the next leg: a value of degrees, a heading toward a spot or along
+ * the way, a tip that holds a spot so far down the frame. Each rule is read where the eye stands as it flies, so one
+ * that holds a spot holds it all along: between two rules the gaze goes from the one before to the one after, both read
+ * where the eye stands, easing in and out over the flight's time between them; past the last it follows the last; a
+ * heading turns the short way round. The flight's time is its legs' where the film times them apart, so a key at a
+ * leg's end is reached as that leg's time ends, however the pace sets off from rest: eased by the way, which the pace
+ * eases already, the gaze would turn late. On an even pace the time and the way go together. The eye never rolls but as
+ * it sets off: a roll it stood with eases away by the end of the first leg.
  *
- * Between two keys heading and tip ease each apart, as the promo's run to the Story button turns toward it over its
- * sinking and tips its gaze over the rise. Or the film turns the view whole, as the promo's dive turns the eye from how
- * it looked to looking level along the gap in one rotation (`ending.js`, three's quaternions slerped): from how the eye
- * looks at one moment a key or the first leg's end names to how it looks at the next, each read where it stands, the
- * roll it set off with among it. A turn of heading alone, or of tip alone, goes the same either way; one of both apart
- * sweeps the heading round at a pace of its own, and from looking down the dive's lines turned up to 8° ahead of the
- * cut's.
+ * Between two keys heading and tip ease each apart. Or the film turns the view whole, in one rotation (three's
+ * quaternions slerped): from how the eye looks at one moment a key or the first leg's end names to how it looks at the
+ * next, each read where it stands, the roll it set off with among it. A turn of heading alone, or of tip alone, goes
+ * the same either way; one of both apart sweeps the heading round at a pace of its own.
  */
 import { CubicBezierCurve3, Curve, CurvePath, LineCurve3, Matrix4, Quaternion, Vector3, type Vector3Like } from 'three';
 import { FilmError } from './errors.ts';

@@ -5,7 +5,7 @@
  * A film's frames are encoded into an MP4 as they are shot (`video.ts`); a WebM or a GIF is made from that MP4 once
  * it is whole, so one take gives every kind asked. Each is the film at its own frame and rate. A GIF's palette is
  * worked out from the whole film in a pass of its own, so no film is held in memory whole, and the GIF keeps the
- * film's time (measured on the promo: 20.0 s at 1920 × 1080 and 30 frames a second, 35 MB, made in 21 s). A kind is
+ * film's time: a film of 20 s at 1920 × 1080 and 30 frames a second made a GIF of 35 MB in 21 s. A kind is
  * written under a name of its own until it is whole, as the MP4 is.
  */
 import { rename, rm } from 'node:fs/promises';
@@ -43,8 +43,8 @@ export const SHOT_INTO = 'mp4' as const satisfies Kind;
 
 export type MadeKind = Exclude<Kind, typeof SHOT_INTO>;
 
-// VP9 as close to the MP4 as matters (SSIM 0.991 against it on the promo, 2.8 MB to its 3.0 MB, 30 s for its 20 s),
-// its rows encoded at once; the film's sound, where it has any, in Opus
+// VP9 as close to the MP4 as matters (measured on a film of 20 s: SSIM 0.991 against it, 2.8 MB to its 3.0 MB, made in
+// 30 s), its rows encoded at once; the film's sound, where it has any, in Opus
 const WEBM = [
 	'-c:v',
 	KINDS.webm.picture,

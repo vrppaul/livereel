@@ -25,12 +25,12 @@
  * plane till the middle shows where the film names on the frame, its top up the plane. Worked out in the plane's own
  * axes, the place rides the plane as the eye rides the window. The eye goes there on its straight way by even steps of
  * the scale it shows the plane at, as the camera zooms, or as far in each share of its move where a film names it
- * (`pacedBeforeAPlane`): the claude-review promo's cut goes both ways.
+ * (`pacedBeforeAPlane`).
  *
- * The eye sees as a lens does: focused at a point and open so wide. Open none, a pinhole, as every film was seen before
- * it could open, it sees all sharp; open, it draws what stands in the world nearer or farther than its focus the softer
- * the farther it stands off it (`src/domain/focus.ts`). Where it stands and where it focuses are values of their own,
- * so a move of one shares a step with a move of the other.
+ * The eye sees as a lens does: focused at a point and open so wide. Open none, a pinhole, it sees all sharp; open, it
+ * draws what stands in the world nearer or farther than its focus the softer the farther it stands off it
+ * (`src/domain/focus.ts`). Where it stands and where it focuses are values of their own, so a move of one shares a step
+ * with a move of the other.
  */
 import { FilmError } from './errors.ts';
 import { Quaternion, Vector3 } from 'three';
@@ -344,7 +344,7 @@ export function pathThatSees(path: Path<Viewpoint>, move: string): Path<Viewpoin
 	return path;
 }
 
-/** Whether an eye stands at rest for its focal length, where every film was seen from before the eye could move. */
+/** Whether an eye stands at rest for its focal length. */
 export function isAtRest(eye: Eye): boolean {
 	return EYE_SPACE.distance(eye, eyeAtRest(eye.focalLength)) === NOT_MOVED;
 }

@@ -17,12 +17,11 @@
  * screen, as one camera frames both at the fade's moment. In a cut the page going is held where the camera framed it,
  * whatever the cut's moves after the fade frame, until every move of the cut is set; then it is laid where the camera
  * the cut leaves shows it, so a cut may frame the page coming closer or farther than the page going. From there the
- * camera frames the two as one, so they draw back or travel together, as under the claude-review promo's one eye. It
- * goes from whole to none over a stretch of the film's time, on its curve, as clear as the screen has come up. It is
- * the page going, not the screen: the window's shade dims, fades and blurs the page coming alone, so that page may come
- * up out of the dark under the one going, as the promo's review comes up under its terminal; and the light, the cursor
- * and the holes, which lie on the page coming, lie under it. Its stretch is the film's time, not a move's share, so a
- * fade begun in a cut goes on over the steps after it.
+ * camera frames the two as one, so they draw back or travel together. It goes from whole to none over a stretch of the
+ * film's time, on its curve, as clear as the screen has come up. It is the page going, not the screen: the window's
+ * shade dims, fades and blurs the page coming alone, so that page may come up out of the dark under the one going; and
+ * the light, the cursor and the holes, which lie on the page coming, lie under it. Its stretch is the film's time, not
+ * a move's share, so a fade begun in a cut goes on over the steps after it.
  *
  * The window's back may show a page of the film's own too, as a slab's back wears a picture of its own: where the eye
  * sees the window's back, the screen shows it in place of what it shows in front, framed by the camera as the front
@@ -585,8 +584,7 @@ export function ownPageStanding(screen: Screen, key: string, moment: number): Ow
 
 /**
  * The blocks of a page the film blinks as they stand at a moment: each as clear as a cosine of its blink, whole as the
- * blink begins and at each blink's end, none half way, fading out and in, as a terminal's caret blinks in the
- * claude-review promo (`end-card.js` `faceAt`).
+ * blink begins and at each blink's end, none half way, fading out and in, as a terminal's caret blinks.
  */
 function blinkingAt(blocks: BlinkingBlocks, moment: number): readonly BlockBlinking[] {
 	return [...blocks].map(([into, blink]) => ({

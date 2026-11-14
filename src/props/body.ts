@@ -18,8 +18,8 @@ import { type KindsOf, ValueKind, asWritten } from '../domain/values.ts';
  * round, each in pixels of a frame 1080 on its shorter side; the metal's colour, in hex with no alpha, and how rough
  * it is, from 0, a mirror, to 1, matte; how much of the world's light the glass over the page reflects, from 0, none,
  * to 1, a whole coat of it; and how bright the glint of a strip of light standing near the glass shines on it at its
- * brightest, 0 none, 1 the page's white: the slab's own light, not the world's, as the claude-review promo lays a
- * near strip on its slabs' glass, whose glint moves on the glass as the eye moves (`stage/body.js`).
+ * brightest, 0 none, 1 the page's white: the slab's own light, not the world's, whose glint moves on the glass as the
+ * eye moves (`stage/body.js`).
  */
 export interface Slab {
 	readonly thickness: number;
@@ -51,8 +51,8 @@ export const SLAB_KINDS: KindsOf<Slab> = {
 export const SLAB_NAMES = namesOf(SLAB_KINDS);
 
 /**
- * livereel's own body: no thickness, so none, its rim, a dark metal half rough and glass as strong as the reference
- * promo's, with no glint of its own, for a film that names only how thick.
+ * livereel's own body: no thickness, so none, its rim, a dark metal half rough and glass, with no glint of its own, for
+ * a film that names only how thick.
  */
 export const LIVEREELS_SLAB: Slab = {
 	thickness: 0,

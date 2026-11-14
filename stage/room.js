@@ -20,10 +20,9 @@
  * lens blurs each pixel of the world by how far what it shows stands from the focus, or, where the window's shade blurs
  * the whole window, as wide as the shade blurs the window there where that is wider (`stage/lens.js`, `WindowBlurred`
  * in `stage/body.js`); its fields are laid over one another each by its law (`stage/laying.js`) and the whole over the
- * ground; over that the cursor, on the page's plane where the eye sees it but over whatever stands nearer, unblurred,
- * as the reference promo drew its pointer over its world past its lens (`pointer.js` of the film): laid in the world, a
- * piece lifted off the page and its shadow lay over it, grey and soft (beats 5–6's draft at 4.4 s, 2026-11-11); then
- * the film's things on the frame, sharp, then the frame's surface.
+ * ground; over that the cursor, on the page's plane where the eye sees it but over whatever stands nearer, unblurred:
+ * laid in the world, a piece lifted off the page and its shadow would lie over it, grey and soft; then the film's
+ * things on the frame, sharp, then the frame's surface.
  *
  * The window's surface is drawn from a picture of it as sharp as the browser draws a page face-on, and filtered as it
  * shrinks into the distance: the browser draws a layer leant in 3D at about one of its pixels a page's pixel, however
@@ -40,12 +39,12 @@
  * The exposures are added up in linear light, as a shutter gathers the light of each moment: a glint that moves draws a
  * streak as bright as its light, where averaged in the screen's colours it went dark. Where the world asks, the frame
  * glows round its light past the page's white, as a lens blooms, once over the light its exposures gathered: three's
- * own bloom (`UnrealBloomPass`), the reference promo's, its spread a share of a frame 1080 high however large the frame
- * is drawn; the glow lies over all the frame, what stands on it too. One texture of each surface serves every exposure,
- * uploaded anew for each in turn, so the card holds one each, not one each for each exposure: sixteen exposures of a
- * 3840 × 2160 frame would hold 2 GB. A texture last drawn from a surface the canvas has not painted anew since, as it
- * names what it paints anew, is kept as it stands: a frame of one exposure whose window stands still draws the window's
- * texture no more.
+ * own bloom (`UnrealBloomPass`), its spread a share of a frame 1080 high however large the frame is drawn; the glow
+ * lies over all the frame, what stands on it too. One texture of each surface serves every exposure, uploaded anew for
+ * each in turn, so the card holds one each, not one each for each exposure: sixteen exposures of a 3840 × 2160 frame
+ * would hold 2 GB. A texture last drawn from a surface the canvas has not painted anew since, as it names what it
+ * paints anew, is kept as it stands: a frame of one exposure whose window stands still draws the window's texture no
+ * more.
  *
  * three.js keeps no camera of its own: every point is placed by the matrices the engine hands the stage, and the
  * world's camera takes the projection alone. The script is a module, three's being modules alone, which the page loads
@@ -580,9 +579,9 @@ class Room {
 			LINEAR_LAID_FRAGMENT,
 			LAID_OVER
 		);
-		// The glow measured on a frame 1080 high, as the reference promo measured it on one so high, so it spreads over the
-		// same share of any frame drawn at any density, three's bloom gathering it from copies halved from that size; its
-		// strength, spread and threshold set as each frame's world has them
+		// The glow measured on a frame 1080 high, so it spreads over the same share of any frame drawn at any density,
+		// three's bloom gathering it from copies halved from that size; its strength, spread and threshold set as each
+		// frame's world has them
 		const frame = layout.format.frame;
 		const measuredOn = new Vector2(frame.width / layout.frameScale, frame.height / layout.frameScale);
 		this.bloom = new UnrealBloomPass(measuredOn, SET_BY_EACH_FRAME, SET_BY_EACH_FRAME, SET_BY_EACH_FRAME);
@@ -1097,8 +1096,8 @@ class Room {
 
 	/**
 	 * Each part of a surface of markup in the world that no exposure of a frame drew let go, as the frame is composed: a
-	 * texture keeps the size it was last drawn at, and over the promo's dive the card held 1278 MB of them, every part
-	 * at its last size, where a frame drew at most 1000 (2026-11-12). A part one stands at again is made anew.
+	 * texture keeps the size it was last drawn at, and over an eye's dive past many surfaces the card held 1278 MB of
+	 * them, every part at its last size, where a frame drew at most 1000. A part one stands at again is made anew.
 	 * @param {readonly ExposureStanding[]} standings
 	 */
 	markupUndrawnLetGo(standings) {

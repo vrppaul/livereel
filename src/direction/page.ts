@@ -56,7 +56,10 @@ export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind' | 'roundingOf
 	 * holding what it held; each holds what it held again after, as the stage writes what stands typed in each exposure.
 	 */
 	readonly scrollLengthWith: (typed: readonly TypedText[]) => Promise<number>;
-	/** The first block a target matches; a target the page lacks is refused at once. */
+	/**
+	 * How far down the page's document the first block a target matches stands, in its pixels, however far it is
+	 * scrolled; a target the page lacks is refused at once.
+	 */
 	readonly documentTop: (target: string) => Promise<number>;
 	/**
 	 * The first block a target matches as a CSS selector, found as the stage finds a block it writes, typing its text or

@@ -152,8 +152,8 @@ or that already runs; `ready`, when the page stands as the first frame shows it;
 port is the film's: name one the command serves on and nothing else holds. Every other field of `defineFilm` is in the
 README's table, "A film". Read `node_modules/livereel/examples/example-com.ts` first: it is a whole film.
 `examples/livereel-promo.ts` serves an app of its own and clicks it for real; its server is
-`examples/livereel-promo/server.ts`, and what a click brings, data the server and the film both read, `acme.ts` beside
-it. `examples/livereel-recipes.ts` plays the recipes below on that app, an act each.
+`examples/livereel-promo/server.ts`, and what a click brings, data the server and the film both read,
+`examples/livereel-promo/acme.ts`. `examples/livereel-recipes.ts` plays the recipes below on that app, an act each.
 
 A film shot on its set names `set: { scenario, targets, sharpness }`. The scenario is Playwright code run once on the
 app by `livereel set film.ts --format NAME`, after `ready`: it acts on the app as a person would, and marks each state

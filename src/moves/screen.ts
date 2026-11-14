@@ -303,8 +303,7 @@ const A_PAGE_BLINKED: Kind<OwnPageNamed> = new OfForm<OwnPageNamed>(
 );
 const SCREEN_BLINKS = 'screen.blinks';
 const BLINKS_FORM: Form<BlinksScript> = { seconds: needed(SOME_SECONDS), ...MOMENT_FORM };
-// What a typing refused for its block names in its place: a span of text alone, beside the caret, as the promo's input
-// is written
+// What a typing refused for its block names in its place: a span of text alone, beside the caret
 const NAME_A_SPAN = 'name a span of text alone, as <span id="typed"></span> beside <span class="caret"></span>';
 const SCREEN_TYPING_FORM: Form<ScreenTypingScript> = { into: needed(A_SELECTOR), ...TYPING_FORM };
 const SCROLLS_FORM: Form<ScrollsScript> = { pace: needed(A_NUMBER), ...TIMING_FORM };

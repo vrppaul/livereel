@@ -39,6 +39,12 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: references
+        name: the names (every file named is tracked, no scratch folder, src and stage name no film outside livereel)
+        entry: node -C source scripts/check-references.ts
+        language: system
+        pass_filenames: false
+        always_run: true
       - id: versions
         name: the versions (npm's and the plugin's are one)
         entry: node -C source scripts/check-versions.ts

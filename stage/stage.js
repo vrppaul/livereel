@@ -1391,7 +1391,7 @@ const HELD_PICTURES = new Map();
  * @type {Map<string, HTMLImageElement>}
  */
 const FILMS_PICTURES = new Map();
-// The size of a picture that decodes to none, which the film is refused for (`films-files.ts`)
+// The size of a picture that decodes to none, which the film is refused for (`src/adapters/browser/films-files.ts`)
 const NO_SIZE = 0;
 // A canvas a picture's pixels are read off, a pixel at a time, kept where the processor reads it rather than the card
 const READ_OFTEN = { willReadFrequently: true };

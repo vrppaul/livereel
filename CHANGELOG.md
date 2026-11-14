@@ -1,5 +1,7 @@
 # Changelog
 
+- A gate checks what the code and the documents name (`scripts/check-references.ts`): a file named between backticks is one git tracks, no line points into a session's scratch folder, and the engine and the stage name no film outside livereel. The comments that explained a rule by the claude-review promo or by its files now say the rule alone, and `MeasuredPage.documentTop` says what it gives.
+
 - A move in a play may be timed in the play's seconds: `{ after: 2.2, takes: 0.9 }`, from 2.2 s after the play begins for 0.9 s, or on to its end where `takes` is left out, and a move at a moment `{ after: 2.2 }`. The play works out the share of itself they make (`SecondsOfThePlay` in `src/direction/move.ts`), so a film timing a long play to a cut writes its moments as read and no helper of its own turns them into shares. One past the play's end, one timed by `within` too, and one in a cut are refused.
 
 - `terminal.leave` is `terminal.hide`, as every other object goes. The moves every kind of object takes alike, `to`, `lean`, `effects`, `hide` and `intoTheWorld`, are made once for a kind (`objectMovesOf` in `src/moves/object.ts`), where nine kinds wrote 28 of them out, each a function passing its kind and its name on; each keeps its own comment. Their options' types are livereel's to import, as a film's own helpers name them: `ToScript`, `ObjectLeanScript`, `EffectsScript`, `HideScript`, `TakenScript`.

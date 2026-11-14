@@ -1,8 +1,7 @@
 /**
  * The part of the screen the shade's blur leaves sharp, read off the page as the film named it. The take reads it where
  * a film names a part and again wherever the page may have changed since (`src/studio/take.ts`), so the part stays on
- * its blocks while an act narrows the column they stand in: read once as the shade began, it stayed where the page had
- * stood, and the claude-review promo's line kept the wrong row sharp while its diff narrowed over the eye's dive.
+ * its blocks as the page lays them out anew: read once as the shade began, it would stay where the page had stood.
  */
 import type { Box } from '../domain/geometry.ts';
 import type { SharpNamed, SharpStretch } from '../props/window.ts';

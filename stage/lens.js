@@ -3,9 +3,8 @@
  * The eye's lens over the world the room draws as one scene (`stage/room.js`): each pixel blurred by how far what it
  * shows stands from the focus, read off the scene's depth by the engine's own law (`src/domain/focus.ts`), which the
  * scene's eye hands as a spread per nearness and the focus's nearness (`LensLaw`), or none where the eye is open none;
- * or by a spread of its own a field is handed for each of its pixels, whichever is wider, as the claude-review promo's
- * lens took the wider of its depth's blur and a blur of its own: the window's shade blurring the whole window
- * (`stage/body.js`). A pixel's own spread never puts it in the near field, which the law alone tells.
+ * or by a spread of its own a field is handed for each of its pixels, whichever is wider: the window's shade blurring
+ * the whole window (`stage/body.js`). A pixel's own spread never puts it in the near field, which the law alone tells.
  *
  * A lens blurs what stands before its focus over what stands behind it, so the scene is split at the focus into two
  * fields:

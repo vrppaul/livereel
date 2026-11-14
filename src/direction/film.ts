@@ -248,11 +248,10 @@ const ROOM_FOR_A_STATIC_PAGE =
 const SET_FOR_A_STATIC_PAGE =
 	'the film names a set, whose pictures change only as its acts show another state: leave page: "dynamic" out, or ' +
 	'film the live page, without the set';
-// So many frames make a second where a film names no rate: a fast move runs smooth at it, where at 30 it steps (the
-// claude-review promo's dive shot both ways, 2026-11-08)
+// So many frames make a second where a film names no rate: a fast move runs smooth at it, where at 30 it steps
 export const FRAMES_PER_SECOND_WHERE_NONE_IS_NAMED = 60;
-// The eye sees so many degrees across the frame's shorter side where a film names none: a long lens, as the
-// claude-review promo's, which grows what nears it little
+// The eye sees so many degrees across the frame's shorter side where a film names none: a long lens, which grows what
+// nears it little
 const ANGLE_OF_VIEW_WHERE_NONE_IS_NAMED = 24;
 // Where a film's world stands, as a refusal names it
 const THE_FILMS_WORLD = "the film's world";

@@ -7,15 +7,14 @@
  * The blur may leave a part of the screen sharp, as a lens keeps sharp what the eye is drawn to: it is the page's own,
  * not the eye's, as the eye's lens blurs by depth and a page lies at one, and so what stands over the page, a title
  * carried with it or a piece lifted off it, stays as sharp as it stands wherever it stands over the blur. The part may
- * soften toward the blur by a share of its own while the page round it stays as soft as it is, as the claude-review
- * promo's page softens round a button lifted off the part it keeps sharp, as far as the button has risen: a share, not
- * pixels, so the part is never softer than the page round it, and it follows the blur as the blur moves.
+ * soften toward the blur by a share of its own, as far as a button lifted off it has risen, while the page round it
+ * stays as soft as it is: a share, not pixels, so the part is never softer than the page round it, and it follows the
+ * blur as the blur moves.
  * The shade reaches the page alone, as livereel has it, so a film that fades one page over another keeps its slab
- * whole while the page goes; or the whole window, as the claude-review promo's lens softens and fades all of it but
- * what it keeps sharp: its fade and its blur then reach the window's body in a room, which blurs the page and its body
- * as one (`stage/body.js`), or its edge and shadow on the flat stage, as far as they reach the page, the dim staying
- * the dark laid over the screen. A choice, not a value with values between, so a move names it from its start, as it
- * names the part kept sharp.
+ * whole while the page goes; or the whole window, all of it but what it keeps sharp: its fade and its blur then reach
+ * the window's body in a room, which blurs the page and its body as one (`stage/body.js`), or its edge and shadow on
+ * the flat stage, as far as they reach the page, the dim staying the dark laid over the screen. A choice, not a value
+ * with values between, so a move names it from its start, as it names the part kept sharp.
  * One table, `SHADE_KINDS`, says of each value what a film may write for it and how it moves (`src/domain/values.ts`),
  * so a move's shade is checked by it and the window's moved by it, as the body's is by its own (`src/props/body.ts`).
  *
@@ -316,9 +315,9 @@ const NOT_SEEN = 0;
 // its blur on its plane stands as written till the frame shows some of it
 const SEEN_AS_WRITTEN = 1;
 
-// How far past the part the shade's blur leaves sharp the page softens into the blur, as a share of the blur: half, as
-// the claude-review promo softens it, so a part whose edge lies between two rows of words is blurred whole before the
-// next row's letters, and no row is sharp at one end and soft at the other
+// How far past the part the shade's blur leaves sharp the page softens into the blur, as a share of the blur: half, so
+// a part whose edge lies between two rows of words is blurred whole before the next row's letters, and no row is sharp
+// at one end and soft at the other
 const SHARP_EDGE_PER_BLUR = 0.5;
 // A body of no thickness, which is none
 const NO_THICKNESS = 0;

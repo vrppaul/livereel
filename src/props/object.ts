@@ -228,10 +228,9 @@ interface DrawnSheen extends Omit<SheenOnItsWay, 'crossing'> {
  * no more of what it is drawn from: a piece, as close as the picture it is drawn from holds its source; a lens, as
  * close as the page's picture holds the page, which no picture of it passes livereel's bound; a picture of the film's,
  * as many pixels as its file holds; markup, which the browser draws anew at any density, and a thing, which the room
- * draws in three, as far as the eye asks. A piece's figure is a picture (`.piece .way` in `stage/stage.css`), so the
- * plates of the promo's dive, drawn at the eye's 33.0 times from pictures that hold 2.35, asked the graphics card for
- * 98 million texels each where the frame showed 1.18 million pixels of each, and the card dropped the canvas
- * (2026-11-12).
+ * draws in three, as far as the eye asks. A piece's figure is a picture (`.piece .way` in `stage/stage.css`): drawn
+ * as densely as the eye magnifies it, 33 times, from a picture that holds 2.35, a piece asked the graphics card for 98
+ * million texels where the frame showed 1.18 million of its pixels, and the card dropped the canvas.
  */
 interface ContentDrawn {
 	readonly content: DrawnContent;

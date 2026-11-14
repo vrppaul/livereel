@@ -23,9 +23,8 @@
  * figure leaves; coming, it would run ahead of it.
  *
  * A wipe crosses its figure; or a box wider than it, its figure and a block of the page its piece emptied, which comes
- * out behind the same edge as the claude-review promo's review row comes out behind its band from the row's line
- * number on, the line lying on its code cut by the band as it passes. The edge then sets off from the box's near side,
- * before the figure's where the block reaches past it, and the light lies over the whole box.
+ * out behind the same edge. The edge then sets off from the box's near side, before the figure's where the block
+ * reaches past it, and the light lies over the whole box.
  */
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import {

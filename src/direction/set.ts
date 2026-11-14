@@ -51,8 +51,7 @@ export interface FilmSet {
 	readonly sharpness: number;
 }
 
-// A set's pictures where a film names no sharpness: as sharp as the claude-review promo's, whose lines read crisp as
-// the camera came close (the review page shot at 3, 2026-11-06)
+// A set's pictures where a film names no sharpness: a page of code shot at 3 read crisp with the camera close
 const SHARPNESS_WHERE_NONE_IS_NAMED = 3;
 // A state's name names its picture's file too: letters, digits, dashes and underscores, beginning with a letter or
 // digit

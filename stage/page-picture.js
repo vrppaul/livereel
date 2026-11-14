@@ -14,40 +14,33 @@
  * the window shades the page with a blur, the picture is blurred by a Gaussian whose deviation is the shade's blur,
  * nothing past the picture's edge, so the screen's ground shows there: drawn from the smaller copy of the picture whose
  * pixels stand no more than a share of the blur apart, across and then down, and kept while the picture and the blur
- * stand. It is blurred in linear light, as the eye's lens blurs the world (`stage/lens.js`) and the reference promo's
- * lens blurred its page, from a copy of the picture read as light, its smaller copies made in light too, uploaded only
- * where a blur reads it. Blurred in the screen's colours, as the stylesheet blurs it, a page's light words spread dark
- * over a dark page: the soft page of the promo's beats 7–8 read a light's deviation of 2.7 levels of 255 so, 4.9 in
- * light, the promo's own 9.2 (a still at the draft's second 2.5, 2026-11-11). Over a part of the screen the blur leaves
- * sharp the picture is laid unblurred, or blurred apart by as much as the part softens, softening into the page's past
- * the part's edge as the flat stage's mask has it (`.sharp-part` in `stage.css`): never a sharp picture faded into a
- * blurred one, which reads as two pictures at once. Where the shade reaching the whole window blurs the window's body,
- * the engine hands the picture's blur as none (`pictureBlur` in `src/props/window.ts`), and the eye's lens blurs the
- * page with its body as one (`stage/body.js`): blurred apart, the page's outline stood sharp round a soft page, a
- * bright line where the claude-review promo's lens softened all of its slab.
+ * stand. It is blurred in linear light, as the eye's lens blurs the world (`stage/lens.js`), from a copy of the picture
+ * read as light, its smaller copies made in light too, uploaded only where a blur reads it. Blurred in the screen's
+ * colours, as the stylesheet blurs it, a page's light words would spread dark over a dark page. Over a part of the
+ * screen the blur leaves sharp the picture is laid unblurred, or blurred apart by as much as the part softens,
+ * softening into the page's past the part's edge as the flat stage's mask has it (`.sharp-part` in `stage.css`): never
+ * a sharp picture faded into a blurred one, which reads as two pictures at once. Where the shade reaching the whole
+ * window blurs the window's body, the engine hands the picture's blur as none (`pictureBlur` in `src/props/window.ts`),
+ * and the eye's lens blurs the page with its body as one (`stage/body.js`): blurred apart, the page's outline would
+ * stand sharp round a soft page, a bright line.
  *
  * The page's surface lays, as the browser lays them in the window's view: the screen's ground and the picture, cut to
  * the screen's rounded box and the view's, showing as far as the screen is clear less how clear its own markup is
  * there; over them that markup, as the window's surface holds it; and over all, what lies over the page. Over the mouth
  * of each pit sunk into the page (`stage/piece-body.js`) it lays none of the screen, as far as the pit's hole has come,
- * and writes no depth where it lays nothing, so the pit drawn behind the window's plane shows through it, as the
- * promo's pits show through a picture of the page cleared at their mouths (a still of 2026-11-11: walls behind the
- * plane showed through a mouth cleared so, and were hidden where it was not). GLSL sizes a list by a count it is
- * compiled with, so the surface is compiled anew, by three, as the number of pits changes.
+ * and writes no depth where it lays nothing, so the pit drawn behind the window's plane shows through it. GLSL sizes a
+ * list by a count it is compiled with, so the surface is compiled anew, by three, as the number of pits changes.
  *
  * Where the window's shade fades the page, the screen's pane, its picture and its markup over it, is faded in light
- * into what stands behind it, as the reference promo's lens faded its page toward the ground: the surface lays the
- * pane as far as the screen shows it less the fade, as the stylesheet draws it, and adds the light of what stands
- * behind it by the share faded, the world the room has laid so far laid over the film's ground, read where the eye sees
- * the pixel. Left to show through, the faded share was laid over the ground in the screen's colours, as the room lays
- * its world over the ground, and a dark page faded into a dark ground went darker than the promo's: a light's deviation
- * of 5.0 levels of 255 over the soft page of its beats 7–8, 10.2 faded in light, the promo's 9.3 (a still at the
- * draft's second 2.5, 2026-11-11). What the room has laid so far is read as the eye's lens blurred it, and the lens
- * blurs it again with the page, by the page's depth. Where the shade reaches the page alone, the window's edge and
- * shadow, or its body, keep as they stand; where it reaches the whole window, they fade with the page: the edge and
- * shadow as the stylesheet fades them (`.view-shadow` in `stage.css`), the body into the same light of what stands
- * behind it (`stage/body.js`). A page of the film's own, which the window's surface draws, fades in the screen's
- * colours.
+ * into what stands behind it: the surface lays the pane as far as the screen shows it less the fade, as the stylesheet
+ * draws it, and adds the light of what stands behind it by the share faded, the world the room has laid so far laid
+ * over the film's ground, read where the eye sees the pixel. Left to show through, the faded share would be laid over
+ * the ground in the screen's colours, and a dark page faded into a dark ground would go too dark. What the room has
+ * laid so far is read as the eye's lens blurred it, and the lens blurs it again with the page, by the page's depth.
+ * Where the shade reaches the page alone, the window's edge and shadow, or its body, keep as they stand; where it
+ * reaches the whole window, they fade with the page: the edge and shadow as the stylesheet fades them (`.view-shadow`
+ * in `stage.css`), the body into the same light of what stands behind it (`stage/body.js`). A page of the film's own,
+ * which the window's surface draws, fades in the screen's colours.
  */
 import {
 	Color,

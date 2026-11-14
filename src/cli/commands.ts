@@ -3,12 +3,12 @@
  * moments without making the whole, shoot a film's set ahead of it, set a machine up to shoot. A film's set in a
  * format is kept beside its file, named as its videos are (`film-wide.set` beside `film.ts`), so its shoot finds it.
  *
- * Each takes its own options by name and refuses any other, and a wrong value, before anything is started; each
- * says what it made, and how long the making took, and with `--profile` where that time went (`profile.ts`). A film
- * is shot in one of its formats, named with `--format` where it has several, and every file made of it is named after
- * the film file and that format, so one format never writes over another. One take gives every kind of video asked:
- * the MP4 its frames go into, and those made from it. The MP4 is kept only when it is asked for too; otherwise it has
- * a name of its own, so it never takes the place of one made before.
+ * Each takes its own options by name and refuses any other, and a wrong value, before anything is started; each says
+ * what it made, and how long the making took, and with `--profile` where that time went (`src/adapters/profile.ts`). A
+ * film is shot in one of its formats, named with `--format` where it has several, and every file made of it is named
+ * after the film file and that format, so one format never writes over another. One take gives every kind of video
+ * asked: the MP4 its frames go into, and those made from it. The MP4 is kept only when it is asked for too; otherwise
+ * it has a name of its own, so it never takes the place of one made before.
  */
 import { mkdir, rm } from 'node:fs/promises';
 import { basename, dirname, extname, join, resolve as absolute } from 'node:path';

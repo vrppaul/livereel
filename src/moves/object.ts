@@ -41,7 +41,7 @@
  *
  * An object on the frame, or beside a point, which rides with the eye, is handed into the world where the eye sees it
  * as that move begins, at once, square to the eye and as far before it as what it stood on, so it stays there as the
- * eye moves on, as the claude-review promo leaves its lines standing in the world as the eye dives past them.
+ * eye moves on.
  */
 import { boxOnTheScreen, standingAt, viewOf } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';

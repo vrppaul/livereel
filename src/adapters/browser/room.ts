@@ -48,8 +48,7 @@ export interface RoomApi {
 /**
  * A frame as the room composes it: drawn; refused, with what the film is told, where its things module fails building
  * or setting a thing; or lost, where the graphics card dropped the room's canvas, which draws nothing after, as it
- * drops it when a frame asks more memory than it has (beats 7–8 of the claude-review promo, 2026-11-12: every frame
- * after white, a still's capture refused).
+ * drops it when a frame asks more memory than it has: every frame after comes out white.
  */
 export type Composed =
 	{ readonly kind: 'drawn' } | { readonly kind: 'refused'; readonly said: string } | { readonly kind: 'lost' };
@@ -247,7 +246,7 @@ function cardFinished(): void {
 /**
  * The frame captured off the room kept only where the graphics card still holds its canvas: refused as the machine's
  * where it dropped it, as a card out of memory says so only after the frame that asked too much is composed, and a
- * still, which composes no frame after it, kept a bare frame (the promo's dive at the finest quality, 2026-11-12).
+ * still, which composes no frame after it, would keep a bare frame.
  */
 async function roomCaptured(page: Page, part: Box): Promise<Uint8Array> {
 	const captured = await capturedOf(page, part);

@@ -398,8 +398,8 @@ export function longestScaleSeen(matrix: Matrix, laid: Box, part: Box, within: B
  * farthest point shown, which reaches on past all; one part, drawn as large as it stands, where the frame shows none of
  * the box or the matrix sees it edge-on. The plane is drawn about as many times smaller as it is seen from farther, so
  * a part as dense as the eye magnifies its nearest point is about twice as dense as the eye needs at most. One density
- * for all of a plane the eye skims, its nearest point's, asked the graphics card for more than it holds: two plates of
- * the promo's dive asked 1.5 and 1.9 GB at 11.98 s, and the card lost the room's canvas (2026-11-12).
+ * for all of a plane the eye skims, its nearest point's, can ask the graphics card for more than it holds: two plates
+ * an eye dived past asked 1.5 and 1.9 GB, and the card lost the room's canvas.
  */
 export function magnifiedByDistance(matrix: Matrix, laid: Box, part: Box, within: Box): readonly MagnifiedPart[] {
 	const seen =

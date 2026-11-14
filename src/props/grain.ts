@@ -1,15 +1,14 @@
 /**
- * The world's grain, a part of the world's look (`world.grain` in `src/props/world.ts`): a faint noise over the ground,
- * as the reference promo laid one over its backdrop. A glow fading across a dark ground falls into bands, as eight bits
- * hold a colour in 255 steps and a dark glow spans few of them; a noise of a level or so either way hides where one
- * step meets the next. As the promo's, it lies on the ground alone, under the window and all else, so a page and the
- * words over it stand as they are drawn; it moves each colour of each pixel of the frame apart, and stands still from
- * frame to frame, as the promo drew its backdrop once. livereel's own world has none.
+ * The world's grain, a part of the world's look (`world.grain` in `src/props/world.ts`): a faint noise over the ground.
+ * A glow fading across a dark ground falls into bands, as eight bits hold a colour in 255 steps and a dark glow spans
+ * few of them; a noise of a level or so either way hides where one step meets the next. It lies on the ground alone,
+ * under the window and all else, so a page and the words over it stand as they are drawn; it moves each colour of each
+ * pixel of the frame apart, and stands still from frame to frame. livereel's own world has none.
  *
- * A film writes how many levels of 255 it moves a colour either way, evenly, as the promo's moved one level, or turns
- * it off. The world holds the levels, none where it is off, so a move takes the grain through the levels between. The
- * stage is handed how far it spreads a colour (`drawnGrain`), as the stage's noise is of a kind of its own, not even,
- * and drawn as strongly as spreads a colour as far.
+ * A film writes how many levels of 255 it moves a colour either way, evenly, or turns it off. The world holds the
+ * levels, none where it is off, so a move takes the grain through the levels between. The stage is handed how far it
+ * spreads a colour (`drawnGrain`), as the stage's noise is of a kind of its own, not even, and drawn as strongly as
+ * spreads a colour as far.
  */
 import { type Kind, OfForm, Plain, isMoreThanNone, needed } from '../domain/handed.ts';
 import { type TurnedOff, isTurnedOff } from '../domain/turned-off.ts';

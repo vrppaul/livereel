@@ -2,9 +2,8 @@
  * Typing: a person's keys at uneven times, a breath now and then, a wrong key rubbed out; or keys at an even pace.
  *
  * Typing at an even pace reads as a machine, so a person's rhythm is livereel's way; a film keeps the even pace for a
- * cut that types on a beat, as the claude-review promo types its command at twelve letters a second. A person's times
- * are drawn from a seed by a generator of livereel's own (`src/domain/chance.ts`, its gaps lognormal by Box–Muller), so
- * a film typed twice is typed the same on any Node.
+ * cut that types on a beat. A person's times are drawn from a seed by a generator of livereel's own
+ * (`src/domain/chance.ts`, its gaps lognormal by Box–Muller), so a film typed twice is typed the same on any Node.
  */
 import { Chance } from './chance.ts';
 import {

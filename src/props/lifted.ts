@@ -13,9 +13,8 @@
  * piece.
  *
  * A block of the filmed page a piece empties stands as a hole too, the ground the page draws behind it over the block's
- * box, where the block stood as it was emptied, while the screen shows the filmed page: as the claude-review
- * promo's review shows the rows its lines land on hidden until each line's band crosses its row. It fades as the piece
- * goes, as a hole does; but a wipe takes it away behind its edge, as it takes the piece, whole ahead of the edge.
+ * box, where the block stood as it was emptied, while the screen shows the filmed page. It fades as the piece goes, as
+ * a hole does; but a wipe takes it away behind its edge, as it takes the piece, whole ahead of the edge.
  */
 import type { Camera } from '../domain/camera.ts';
 import { type Fraction, WHOLE } from '../domain/fraction.ts';
@@ -134,9 +133,8 @@ function holeLeftBy(
 
 /**
  * How far the window's shade reaches a pit: wholly where its piece stands in the shade, however far the piece has
- * risen, as a pit is a hole in the page and the shade reaches all of the page, as the claude-review promo's lens fades
- * and blurs its pits with the page (a pit cleared with its risen piece stood out light from the faded page round it, as
- * the owner saw it on 2026-11-13); not at all where its piece stands in no shade.
+ * risen, as a pit is a hole in the page and the shade reaches all of the page; a pit cleared as its piece rose would
+ * stand out light from the faded page round it. Not at all where its piece stands in no shade.
  */
 function pitShaded(inTheShade: InTheShade | null): Fraction | null {
 	return inTheShade === null ? IN_NO_SHADE : WHOLE;

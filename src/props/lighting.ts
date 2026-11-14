@@ -130,7 +130,7 @@ export interface DrawnBloom {
 }
 
 // Light brighter than the page's own white alone blooms: the glints on the window's edges, its glass and a film's
-// things, never a page's letters and buttons, which must be read (the reference promo's threshold)
+// things, never a page's letters and buttons, which must be read
 const BRIGHTER_THAN_THE_PAGE = 1.01;
 // How far a cone may open from its middle, in degrees: short of a quarter-turn, past which it is no cone
 const WIDEST_CONE = 90;

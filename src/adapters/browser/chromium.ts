@@ -20,8 +20,8 @@
  * it makes to its document (`changes.ts`), so its picture is taken anew.
  * Launched headless, Playwright starts Chromium's headless shell, which draws every frame in software unless asked to
  * draw on the graphics card, through ANGLE onto the system's own graphics interface; it stays headless, and needs no
- * screen. On Linux, Vulkan reached an Intel Iris Xe with no screen named, and the promo, wide and blurred, took 271 s
- * against 495 s in software, its frames alike (SSIM 0.998 on average, 0.996 at the least; measured 2026-10-26). Metal
+ * screen. On Linux, Vulkan reached an Intel Iris Xe with no screen named, and a wide blurred film took 271 s against
+ * 495 s in software, its frames alike (SSIM 0.998 on average, 0.996 at the least; measured 2026-10-26). Metal
  * on macOS and Direct3D 11 on Windows are untried. Where it reaches no graphics card, the shell draws in software all
  * the same: where Vulkan finds no driver at all, through SwiftShader, WebGL drawn; where it finds Mesa's software
  * Vulkan alone (lavapipe), the page has no WebGL (both measured on Linux 2026-10-27). The person is warned, as Chrome
