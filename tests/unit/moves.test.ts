@@ -186,8 +186,8 @@ const SHOWN_RIGHT = { left: 580, top: 100, width: 20, height: 40 };
 // Blocks of a screen as large as a 1080 frame: a card on a light ground, and another block below to its right
 const CARD = { left: 400, top: 300, width: 200, height: 100 };
 const CARDS_GROUND = '#f6f7f9';
-// Colours of a film's own, the blue claude-review draws its reader's parts in and a green, and the colours half the way
-// to the blue from livereel's amber accent, #ffb224, and from the blue to the green
+// Colours of a film's own, a blue and a green, and the colours half the way to the blue from livereel's amber accent,
+// #ffb224, and from the blue to the green
 const READERS_BLUE = '#5b8def';
 const GREEN = '#00ff00';
 const HALF_WAY_FROM_THE_ACCENT_TO_BLUE = '#ada08aff';
@@ -299,7 +299,7 @@ const ACROSS_THE_FRAME = { left: 0, top: 0.3, width: 1, height: 0.4 } as const;
 // A frame as large as the stage's look was made on, its screen as large: a camera at a zoom of 1 shows the screen's
 // pixels as its own, and one at 2 its middle half twice as large
 const FULL_HD: Format = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } };
-// A page of the film's own
+// A film's own page
 const OWN_PAGE = { html: '<p id="card">Ours</p>' };
 // How much longer than the screen that page is, as far as it scrolls, and a block of it, its top 900 down the page
 const OWN_PAGE_LENGTH = 1000;
@@ -447,7 +447,7 @@ function scrollingFrom(scene: Scene, moment: number, seconds: number): Beginning
 	};
 }
 
-/** A beginning in full HD whose page of the film's own holds the blocks typed into, each holding text alone. */
+/** A beginning in full HD whose film's own page holds the blocks typed into, each holding text alone. */
 function typingFrom(scene: Scene): Beginning {
 	return {
 		...beginningIn(scene, FULL_HD),
@@ -461,14 +461,14 @@ async function blinkedAt(move: Move, scene: Scene, moment: number): Promise<Scen
 	return change(scene, 1);
 }
 
-/** A typing of the line that wraps into a block of the page of the film's own, ten letters a second. */
+/** A typing of the line that wraps into a block of the film's own page, ten letters a second. */
 function typingWrapped(): Move {
 	return screenType(OWN_PAGE, keystrokes(WRAPPING, TEN_A_SECOND), { into: TYPED_INTO });
 }
 
 /**
- * A beginning in full HD at a moment whose page of the film's own holds the blocks typed into and grows by a line for
- * each ten letters typed.
+ * A beginning in full HD at a moment whose film's own page holds the blocks typed into and grows by a line for each
+ * ten letters typed.
  */
 function typingWrappedFrom(scene: Scene, moment: number): Beginning {
 	return {
@@ -484,29 +484,29 @@ function grownByLines(typed: readonly TypedText[]): number {
 	return LINE_HEIGHT * Math.floor(letters / LETTERS_A_LINE);
 }
 
-/** The scene with a text typed whole into a block of its page of the film's own. */
+/** The scene with a text typed whole into a block of the film's own page it shows. */
 async function typedWhole(scene: Scene, text: string, into: string): Promise<Scene> {
 	const typing = await screenType(OWN_PAGE, keystrokes(text, TEN_A_SECOND), { into }).begin(typingFrom(scene));
 	return typing(scene, 1);
 }
 
-/** What stands typed in the page of the film's own a scene's screen shows, as the stage draws it. */
+/** What stands typed in the film's own page a scene's screen shows, as the stage draws it. */
 function typedDrawnIn(scene: Scene): unknown {
 	return drawnSceneIn(scene, FULL_HD).screen.shows.typed;
 }
 
-/** A scene whose page of the film's own runs at 100 pixels a second from the film's start, 300 down at 3 s. */
+/** A scene whose film's own page runs at 100 pixels a second from the film's start, 300 down at 3 s. */
 async function runningFromTheStart(): Promise<Scene> {
 	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	return (await screenScrolls(OWN_PAGE, { pace: 100 }).begin(scrollingFrom(shown, 0, 0)))(shown, 1);
 }
 
-/** How far down the page of the film's own a scene's screen shows stands at a moment, as the stage draws it. */
+/** How far down the film's own page a scene's screen shows stands at a moment, as the stage draws it. */
 function scrolledIn(scene: Scene, moment: number): number {
 	return drawn(scene, cameraOf(scene, FULL_HD), moment, FULL_HD, NONE_SHARPER).screen.shows.scrolled;
 }
 
-/** A scene whose page of the film's own stands at its top from the film's start. */
+/** A scene whose film's own page stands at its top from the film's start. */
 async function standingFromTheStart(): Promise<Scene> {
 	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	return (await screenScrolls(OWN_PAGE, { pace: 0 }).begin(scrollingFrom(shown, 0, 0)))(shown, 1);
@@ -1924,7 +1924,7 @@ test("the page a screen fades from is drawn over the box of the screen its cut l
 	]);
 });
 
-test("a fade is refused as it begins on a page framed live, while the screen still fades from another page, from a page the window shades, from a page of the film's own that runs, and from one drawn past its screen", async () => {
+test("a fade is refused as it begins on a page framed live, while the screen still fades from another page, from a page the window shades, from a film's own page that runs, and from one drawn past its screen", async () => {
 	const pictures = new PicturesHeld();
 	const fade = screenShows('filmed', { fade: FADING_TWO_SECONDS });
 	const own = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
@@ -1979,7 +1979,7 @@ test("the screen showing the film's own page is refused while a lens stands, whi
 	);
 });
 
-test("the window's back shows a page of the film's own, laid by the stage as the screen's are, standing as its mount says, until it shows none and the screen is seen through it; it shares a step with what the screen shows", async () => {
+test("the window's back shows a film's own page, laid by the stage as the screen's are, standing as its mount says, until it shows none and the screen is seen through it; it shares a step with what the screen shows", async () => {
 	const backed = await setAt(screenBehind(OWN_PAGE, { upright: 'round' }), OPENING_IN_SMALL, 1);
 	const bare = await setAt(screenBehind('none'), backed, 1);
 	expect([
@@ -1990,7 +1990,7 @@ test("the window's back shows a page of the film's own, laid by the stage as the
 	expect(() => play({ seconds: 1, moves: [screenShows(OWN_PAGE), screenBehind('none')] })).not.toThrow();
 });
 
-test("a page of the film's own runs from its move's moment, gathering its pace over its share, running on at it, and holding at its end", async () => {
+test("a film's own page runs from its move's moment, gathering its pace over its share, running on at it, and holding at its end", async () => {
 	// A page 1000 pixels longer than the screen, from standing to 100 pixels a second over two seconds from 1 s: 25
 	// pixels down at 2 s, 100 at 3 s, 300 at 5 s, at its end from 10 s on
 	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
@@ -1999,7 +1999,7 @@ test("a page of the film's own runs from its move's moment, gathering its pace o
 	expect([1, 2, 3, 5, 20].map((moment) => scrolledIn(running, moment))).toEqual([0, 25, 100, 300, 1000]);
 });
 
-test("a page of the film's own shown drawn past its screen with nothing past it is refused as it is shown, in the words of the move", async () => {
+test("a film's own page shown drawn past its screen with nothing past it is refused as it is shown, in the words of the move", async () => {
 	const fitting = scrollingFrom(OPENING_ON_A_FITTING_PAGE, 0, 0);
 	await expect(async () => screenShows(OWN_PAGE, { reaches: 'document' }).begin(fitting)).rejects.toThrow(
 		new FilmError(
@@ -2031,7 +2031,7 @@ test('while a typing lengthens a page drawn past its screen, the sheet reaches b
 	]);
 });
 
-test("a page of the film's own takes its pace from where its run stands and as fast as it runs there, and stops at a pace of none", async () => {
+test("a film's own page takes its pace from where its run stands and as fast as it runs there, and stops at a pace of none", async () => {
 	// Running at 100 pixels a second from 0 s, then slowing to none over two seconds from 3 s: 300 pixels down then, 375
 	// at 4 s, and 400 from 5 s on
 	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
@@ -2040,7 +2040,7 @@ test("a page of the film's own takes its pace from where its run stands and as f
 	expect([3, 4, 9].map((moment) => scrolledIn(stopped, moment))).toEqual([300, 375, 400]);
 });
 
-test("a page of the film's own that scrolls nowhere is refused as its run begins, in the words of the move", async () => {
+test("a film's own page that scrolls nowhere is refused as its run begins, in the words of the move", async () => {
 	const shown = await setIn(screenShows(OWN_PAGE), OPENING_ON_A_FITTING_PAGE, 1, FULL_HD);
 	const fitting = scrollingFrom(shown, 0, 0);
 	await expect(async () => screenScrolls(OWN_PAGE, { pace: 100 }).begin(fitting)).rejects.toThrow(
@@ -2050,14 +2050,14 @@ test("a page of the film's own that scrolls nowhere is refused as its run begins
 	);
 });
 
-test("a page of the film's own that runs moves on the frame as far as it runs while the shutter is open, as the camera shows the screen", async () => {
+test("a film's own page that runs moves on the frame as far as it runs while the shutter is open, as the camera shows the screen", async () => {
 	// Face-on, the whole screen at a zoom of 1 on a frame as large: 100 pixels a second, 10 over a tenth of a second
 	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const running = await (await screenScrolls(OWN_PAGE, { pace: 100 }).begin(scrollingFrom(shown, 0, 0)))(shown, 1);
 	expect(frameShiftBetween({ scene: running, moment: 3 }, { scene: running, moment: 3.1 }, FULL_HD)).toBeCloseTo(10);
 });
 
-test("a page of the film's own comes to rest with a block that far below the screen's top as its move's share ends, at once in a cut", async () => {
+test("a film's own page comes to rest with a block that far below the screen's top as its move's share ends, at once in a cut", async () => {
 	// 300 down at 3 s; #input, 900 down the page, brought 200 below the screen's top: the page 700 down
 	const running = await runningFromTheStart();
 	const toRest = screenScrollTo(OWN_PAGE, INPUT, { top: 200 });
@@ -2067,7 +2067,7 @@ test("a page of the film's own comes to rest with a block that far below the scr
 	expect([3, 9].map((moment) => scrolledIn(inACut, moment))).toEqual([700, 700]);
 });
 
-test("a page of the film's own coming to rest sets off at the pace it ran", async () => {
+test("a film's own page coming to rest sets off at the pace it ran", async () => {
 	// At 100 pixels a second, a tenth of a pixel over the first thousandth of a second of its way to rest 400 on
 	const running = await runningFromTheStart();
 	const toRest = await screenScrollTo(OWN_PAGE, INPUT, { top: 200 }).begin(scrollingFrom(running, 3, 2));
@@ -2075,7 +2075,7 @@ test("a page of the film's own coming to rest sets off at the pace it ran", asyn
 	expect(scrolledIn(resting, 3.001) - scrolledIn(resting, 3)).toBeCloseTo(0.1, 3);
 });
 
-test("a page of the film's own taken over while its pace changes sets off as fast as it ran there", async () => {
+test("a film's own page taken over while its pace changes sets off as fast as it ran there", async () => {
 	// Gathering pace evenly from standing to 200 pixels a second over 2 s, it runs at 99 at 0.99 s, between two of
 	// its run's knots: 0.099 of a pixel over the first thousandth of a second of its way to rest from there
 	const shown = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
@@ -2119,7 +2119,7 @@ test('screen.scrollTo refuses, as it begins, a run that would turn back to come 
 	);
 });
 
-test("a page of the film's own brought to rest with its pace judged at a point of the frame has run half its way across the frame there by half its share, from standing, as the frame comes closer", async () => {
+test("a film's own page brought to rest with its pace judged at a point of the frame has run half its way across the frame there by half its share, from standing, as the frame comes closer", async () => {
 	// Standing at its top at 3 s, brought to rest 700 down by 5 s while the frame comes from a zoom of 1 to 2: what the
 	// frame's middle shows has run half its way across the frame by 4 s; run on the page alone, 0.4375 of it
 	const standing = await standingFromTheStart();
@@ -2129,7 +2129,7 @@ test("a page of the film's own brought to rest with its pace judged at a point o
 	expect(halfWay).toBeCloseTo(0.5, 3);
 });
 
-test("a page of the film's own brought to rest with its pace judged on the frame sets off at the pace it ran and stands at its rest as its share ends", async () => {
+test("a film's own page brought to rest with its pace judged on the frame sets off at the pace it ran and stands at its rest as its share ends", async () => {
 	// 300 down and running 100 pixels a second at 3 s: a tenth of a pixel over the first thousandth of a second, and 700
 	// down, where #input stands 200 below the screen's top, from 5 s on
 	const running = await runningFromTheStart();
@@ -2168,7 +2168,7 @@ test("screen.scrollTo refuses, as it begins, a pace judged at a point of the fra
 	);
 });
 
-test("a block of a page of the film's own blinks from its move's moment as often as the film names, another block's blink kept and the same block's taken over", async () => {
+test("a block of a film's own page blinks from its move's moment as often as the film names, another block's blink kept and the same block's taken over", async () => {
 	const front = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const blinking = await blinkedAt(screenBlinks(OWN_PAGE, TYPED_INTO, { seconds: 1.06 }), front, 18);
 	const both = await blinkedAt(screenBlinks(OWN_PAGE, OTHER_TYPED_INTO, { seconds: 2 }), blinking, 19);
@@ -2217,7 +2217,7 @@ test('what a film types into a block of a page of its own stands as far as the t
 	]);
 });
 
-test("a typing into another block of a page of the film's own keeps what stands typed in the first, and one into the same block takes its place", async () => {
+test("a typing into another block of a film's own page keeps what stands typed in the first, and one into the same block takes its place", async () => {
 	const front = await setIn(screenShows(OWN_PAGE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const first = await typedWhole(front, 'ls', TYPED_INTO);
 	const second = await typedWhole(first, 'cd', OTHER_TYPED_INTO);
@@ -5182,7 +5182,7 @@ test('a piece in the world the eye skims past its picture is drawn in one part a
 	expect([nearest, beyond.map((times) => times < holds)]).toEqual([expect.closeTo(holds), beyond.map(() => true)]);
 });
 
-test("a picture of the film's own in the world brought near is magnified no further than its file's pixels across its figure; one drawn of lines, as far as the eye asks: twice, half-way to the eye", async () => {
+test("a film's own picture in the world brought near is magnified no further than its file's pixels across its figure; one drawn of lines, as far as the eye asks: twice, half-way to the eye", async () => {
 	const pictured = await setIn(
 		picture.show('detailed.png', { at: MIDDLE_HALF, inside: 'world' }),
 		OPENING_IN_FULL_HD,
@@ -5205,7 +5205,7 @@ test("a picture of the film's own in the world brought near is magnified no furt
 	]);
 });
 
-test("a picture of the film's own in the world whose file holds fewer pixels across than its figure is drawn at its box's density brought near, never coarser: 400 across a figure 960 wide, half-way to the eye", async () => {
+test("a film's own picture in the world whose file holds fewer pixels across than its figure is drawn at its box's density brought near, never coarser: 400 across a figure 960 wide, half-way to the eye", async () => {
 	const pictured = await setIn(
 		picture.show('mark.png', { at: MIDDLE_HALF, inside: 'world' }),
 		OPENING_IN_FULL_HD,

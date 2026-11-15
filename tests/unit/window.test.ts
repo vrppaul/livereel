@@ -48,7 +48,7 @@ const AROUND: AroundTheWindow = {
 	world: LIT,
 	screen: SCREEN_UP
 };
-// The window's back showing a page of the film's own, upright once turned over
+// The window's back showing a film's own page, upright once turned over
 const SHOWING_A_BACK: AroundTheWindow = {
 	...AROUND,
 	screen: { ...SCREEN_UP, back: { kind: 'own', key: 'back', upright: 'over' } }

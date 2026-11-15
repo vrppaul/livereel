@@ -258,7 +258,7 @@ export abstract class StageThatKeeps {
 	}
 }
 
-/** The pages of the film's own as a take reads them, each by its key, keeping how each was stood, in turn. */
+/** The film's own pages as a take reads them, each by its key, keeping how each was stood, in turn. */
 export class OwnPagesThatKeep implements OwnPages {
 	readonly laid: ReadonlyMap<string, PageOfBoxes>;
 	readonly stood: OwnPageStanding[] = [];

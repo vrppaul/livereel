@@ -32,7 +32,7 @@ test('the steps are handed the name of the format the film is shot in', () => {
 	expect(named).toEqual(['tall']);
 });
 
-/** A film written so, as a film whose types nobody checked may write it, the rest of it as a film needs. */
+/** A film written so, its types stripped as a film's are, the rest of it as a film needs. */
 function filmWritten(written: object) {
 	return defineFilm({
 		formats: { small: SMALL },
@@ -160,7 +160,7 @@ test('music at a volume that is no level is refused as the film is defined: not 
 	expect(() => filmWithMusicAt(-1)).toThrow(FilmError);
 });
 
-/** A film defined with livereel's sounds written so, as a film whose types nobody checked may write them. */
+/** A film defined with livereel's sounds written so, its types stripped as a film's are. */
 function filmSounding(sounds: LivereelSoundsScript) {
 	return defineFilm({
 		formats: { small: SMALL },
@@ -231,7 +231,7 @@ test('a sound written as neither a file nor `{ enabled: false }` is refused as t
 	);
 });
 
-/** A film defined with its music written so, as a film whose types nobody checked may write it. */
+/** A film defined with its music written so, its types stripped as a film's are. */
 function filmPlaying(music: unknown) {
 	return defineFilm({
 		formats: { small: SMALL },

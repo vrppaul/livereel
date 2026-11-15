@@ -52,7 +52,7 @@ const FIELD = '[data-testid=field]';
 const TYPED = 'hello';
 // A short command typed evenly, ten letters a second
 const LS = keystrokes('ls', { lettersPerSecond: 10 });
-// A film that shows no page of its own, opened as a take opens it; a page of the film's own, and a block only it has
+// A film that shows no page of its own, opened as a take opens it; a film's own page, and a block only it has
 const NO_OWN_PAGES: readonly never[] = [];
 // A film that shows no picture of its own
 const NO_PICTURES: readonly never[] = [];
@@ -361,7 +361,7 @@ test('a still is the one frame written, and nothing after it is shot', async () 
 	expect([await readdir(directory), shot.frames]).toEqual([['still.jpg'], 4]);
 });
 
-test("a block only a page of the film's own has is framed while the screen shows that page, and the filmed page is acted on behind it, in its own tab or framed live", async () => {
+test("a block only a film's own page has is framed while the screen shows that page, and the filmed page is acted on behind it, in its own tab or framed live", async () => {
 	const values: string[] = [];
 	const steps = [
 		cut(screen.shows(OWN_PAGE)),
@@ -403,12 +403,12 @@ test("a piece drawn past livereel's bound is shot whole as the page changes unde
 	expect([shot.frames, footage.kept]).toEqual([6, [0, 1, 2, 3, 4, 5]]);
 });
 
-// A page of the film's own 3040 pixels tall, 2720 longer than the screen: a block 2000 down it
+// A film's own page 3040 pixels tall, 2720 longer than the screen: a block 2000 down it
 const TALL_OWN_PAGE = {
 	html: '<!doctype html><body style="margin: 0"><div style="height: 2000px"></div><h2 id="far" style="margin: 0; height: 40px">Far</h2><div style="height: 1000px"></div></body>'
 };
 
-test("a block a page of the film's own is brought to rest by is measured down its document, wherever the page has run", async () => {
+test("a block a film's own page is brought to rest by is measured down its document, wherever the page has run", async () => {
 	// The page run some 600 down by 0.2 s; #far 800 above the screen's top asks it 2800 down, past its 2720
 	const steps = [
 		cut(screen.shows(TALL_OWN_PAGE), screen.scrolls(TALL_OWN_PAGE, { pace: 3000 })),
@@ -420,7 +420,7 @@ test("a block a page of the film's own is brought to rest by is measured down it
 	);
 });
 
-test("a block of a page of the film's own is measured where its copy was last stood, whatever frame the stage last drew", async () => {
+test("a block of a film's own page is measured where its copy was last stood, whatever frame the stage last drew", async () => {
 	// The page stood 1500 down: #far, 2000 down its document, 500 below the screen's top; no frame drawn stood it at 0
 	const tall = ownPageOf(TALL_OWN_PAGE.html, false);
 	const setting = { ...filmOf([]), ownPages: [tall], pictures: NO_PICTURES, framesHanded: SCALED };
@@ -429,9 +429,9 @@ test("a block of a page of the film's own is measured where its copy was last st
 	expect((await opened.ownPages.laid.get(tall.key)!.box('#far', 1)).top).toBe(500);
 });
 
-test("a typing into a block a page of the film's own lacks, into one that holds elements of its own, or into an input, which shows its value, not its text, is refused as it begins, naming the block; a text area shows its text", async () => {
+test("a typing into a block a film's own page lacks, into one that holds elements of its own, or into an input, which shows its value, not its text, is refused as it begins, naming the block; a text area shows its text", async () => {
 	// In the first film's act, the filmed page's input and a text area laid beside it are written as the stage writes a
-	// block typed into, measured as a page of the film's own is, and what each shows is read back
+	// block typed into, measured as a film's own page is, and what each shows is read back
 	const measured: (BlockHolding | string)[] = [];
 	const fieldsMeasured = act(async (context: ActContext) => {
 		const read = new PlaywrightPage(context.page, context.page.page().keyboard);
@@ -464,12 +464,12 @@ test("a typing into a block a page of the film's own lacks, into one that holds 
 	expect(measured).toEqual(['its value', 'text alone', '', '/review-ui']);
 });
 
-// A page of the film's own drawing a shape, an SVG element, whose opacity the stage cannot set on its own style
+// A film's own page drawing a shape, an SVG element, whose opacity the stage cannot set on its own style
 const PAGE_WITH_A_SHAPE = {
 	html: '<!doctype html><body><svg><rect class="shape" width="40" height="40"></rect></svg></body>'
 };
 
-test("a blink of a block a page of the film's own lacks, or of one that is no HTML element, as an SVG shape, is refused as it begins, naming the block", async () => {
+test("a blink of a block a film's own page lacks, or of one that is no HTML element, as an SVG shape, is refused as it begins, naming the block", async () => {
 	const blinking = (into: string) => [
 		cut(screen.shows(PAGE_WITH_A_SHAPE)),
 		cut(screen.blinks(PAGE_WITH_A_SHAPE, into, { seconds: 1 })),
@@ -483,7 +483,7 @@ test("a blink of a block a page of the film's own lacks, or of one that is no HT
 	);
 });
 
-test("a page of the film's own that moves of itself is refused before the film is shot, naming how it begins", async () => {
+test("a film's own page that moves of itself is refused before the film is shot, naming how it begins", async () => {
 	const spinning = '<style>h2 { animation: spin 1s infinite } @keyframes spin { to { rotate: 1turn } }</style>';
 	const steps = [cut(screen.shows({ html: `${spinning}<h2>Spinning</h2>` }))];
 	await expect(shoot(filmOf(steps), shootingInto(new EveryFrameCounted(), 'software'))).rejects.toThrow(

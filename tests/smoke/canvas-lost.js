@@ -1,6 +1,6 @@
 // A film's thing for the smoke tests that drops the room's canvas, as a graphics card out of memory drops it: built,
 // it draws nothing; set, it has the canvas's WebGL lose its context through `WEBGL_lose_context` once the frame is
-// drawn, as the card out of memory dropped it after the frame that asked too much (beats 7-8's dive, 2026-11-12)
+// drawn, as a card out of memory drops it after the frame that asked too much
 const ROOMS_CANVAS = 'canvas.room';
 const ROOMS_WEBGL = 'webgl2';
 const LOSES_ITS_CONTEXT = 'WEBGL_lose_context';

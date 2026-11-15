@@ -23,7 +23,7 @@ test('colours mixed as light mixes average in linear light, drawn whole: black a
 	]);
 });
 
-test("a theme's value written as undefined is left out, as a film whose types nobody checked may write it", () => {
+test("a theme's value written as undefined is left out, read as a film writes it, its types stripped", () => {
 	expect(valuesWith(LIVEREELS_LOOK, { font: undefined } as never, LOOK_KINDS).font).toBe(LIVEREELS_LOOK.font);
 });
 

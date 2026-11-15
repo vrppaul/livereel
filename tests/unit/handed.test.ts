@@ -1,4 +1,4 @@
-// What a film hands each function it calls, as a film whose types nobody checked may hand it: refused where it
+// What a film hands each function it calls, read as a film hands it, its types stripped: refused where it
 // stands, down to the item or the name at fault, where it is in no form the function takes; taken where it is
 import { expect, test } from 'vitest';
 import { FilmError } from '../../src/domain/errors.ts';

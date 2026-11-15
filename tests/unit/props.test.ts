@@ -49,7 +49,7 @@ const AT_THE_START = 0;
 const TWO_AT_ONCE = 2;
 // A page drawn on the screen alone, nothing of it past
 const NOTHING_PAST = null;
-// The screen up with the pages of the film's own the tests name laid on it, nothing typed in each: each 200000 of its
+// The screen up with the film's own pages the tests name laid on it, nothing typed in each: each 200000 of its
 // pixels longer than the screen holds
 const LONG_DOCUMENT = 200000;
 const LAID_LONG: OwnDocument = { typed: new Map(), scrollLength: LONG_DOCUMENT };
@@ -264,7 +264,7 @@ test("a line of the agent's work leads with its tool, and the thinking line with
 	expect(early[1]?.lead).not.toBe(later[1]?.lead);
 });
 
-test("a block of a page of the film's own that blinks stands whole as its blink begins, fades out on a cosine to none half its seconds on, and comes back whole a blink on", () => {
+test("a block of a film's own page that blinks stands whole as its blink begins, fades out on a cosine to none half its seconds on, and comes back whole a blink on", () => {
 	const card: Screen = {
 		...SCREEN_UP,
 		documents: new Map([['card', { typed: new Map(), scrollLength: 0 }]]),
@@ -446,7 +446,7 @@ test("the screen shows the page on the window's back where the eye sees the wind
 	]);
 });
 
-test("a page of the film's own keeps its run whichever face of the window shows it", () => {
+test("a film's own page keeps its run whichever face of the window shows it", () => {
 	const camera = cameraOf(openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH), SMALL);
 	// One page in front and behind, run 40 pixels down by 0 s and on at 10 a second: 60 down at 2 s
 	const running: Scroll = { knots: [{ moment: 0, top: 40, pace: 10 }] };
@@ -468,7 +468,7 @@ test("a page of the film's own keeps its run whichever face of the window shows 
 // A frame whose screen is as large: the camera at a zoom of 1 on its middle shows the whole screen edge to edge
 const SCREEN_AS_LARGE: Format = { frame: { width: 1920, height: 1080 }, screen: { width: 1920, height: 1080 } };
 const ON_THE_WHOLE_SCREEN = { focusX: 960, focusY: 540, zoom: 1 };
-// The whole frame face-on; and leant back 64° about its foot's middle, as the promo's crawl leans
+// The whole frame face-on; and leant back 64° about its foot's middle
 const FACE_ON_WHOLE: Camera = {
 	pose: ON_THE_WHOLE_SCREEN,
 	view: wholeView(SCREEN_AS_LARGE.frame),
@@ -490,18 +490,18 @@ function sheetRunTo(top: number): Screen {
 	return { ...LAID_UP, shows: DRAWN_PAST, scrolls: new Map([['sheet', standing]]) };
 }
 
-test("a page of the film's own drawn as far as its document runs is drawn on the screen alone where the frame sees nothing past the screen, face-on and whole", () => {
+test("a film's own page drawn as far as its document runs is drawn on the screen alone where the frame sees nothing past the screen, face-on and whole", () => {
 	expect(pastTheScreen(sheetRunTo(100000), FACE_ON_WHOLE, SCREEN_AS_LARGE, AT_THE_START)).toBeNull();
 });
 
-test("a page of the film's own drawn as far as its document runs, leant back, is drawn above the screen as far as the frame sees, its top standing at the frame's top edge, and no farther than what has run past the screen's top", () => {
+test("a film's own page drawn as far as its document runs, leant back, is drawn above the screen as far as the frame sees, its top standing at the frame's top edge, and no farther than what has run past the screen's top", () => {
 	const far = pastTheScreen(sheetRunTo(100000), LEANT_BACK, SCREEN_AS_LARGE, AT_THE_START)!;
 	const near = pastTheScreen(sheetRunTo(300), LEANT_BACK, SCREEN_AS_LARGE, AT_THE_START)!;
 	const sheetsTop = onTheFrame(LEANT_BACK, SCREEN_AS_LARGE.frame, { left: 960, top: -far.above });
 	expect([sheetsTop.top, near.above]).toEqual([expect.closeTo(0), 300]);
 });
 
-test("a page of the film's own drawn as far as its document runs is drawn below the screen no farther than its document's end, and on the screen alone run to its end where the frame sees nothing above", () => {
+test("a film's own page drawn as far as its document runs is drawn below the screen no farther than its document's end, and on the screen alone run to its end where the frame sees nothing above", () => {
 	const leantAboutItsTop: Camera = { ...LEANT_BACK, view: { ...LEANT_BACK.view, about: { left: 0.5, top: 0 } } };
 	const nearItsEnd = pastTheScreen(sheetRunTo(LONG_DOCUMENT - 40), leantAboutItsTop, SCREEN_AS_LARGE, AT_THE_START)!;
 	const atItsEnd = pastTheScreen(sheetRunTo(LONG_DOCUMENT), leantAboutItsTop, SCREEN_AS_LARGE, AT_THE_START);
@@ -549,7 +549,7 @@ test('what a film typed into a page of its own drawn past its screen is handed w
 	});
 });
 
-test("the filmed page lies on the window's plane where the camera frames it, as round as a pane at the frame's scale; nowhere where the screen shows a page of the film's own, in front or on the window's back", () => {
+test("the filmed page lies on the window's plane where the camera frames it, as round as a pane at the frame's scale; nowhere where the screen shows a film's own page, in front or on the window's back", () => {
 	// The whole frame, 400 square, a pixel of it 1080 / 400 film pixels: the whole screen, 600 × 400, fitted to it stands
 	// 400 × 266.67 in its middle; a camera at a zoom of 2.7, a page's pixel to a frame's, on the screen's point 150
 	// across and 200 down stands the screen 50 in from the frame's left

@@ -88,7 +88,7 @@ const CLOSE_ON_THE_MIDDLE: Pose = { focusX: 300, focusY: 200, zoom: 2.7 };
 const A_LITTLE_TO_THE_RIGHT: Pose = { ...CLOSE_ON_THE_MIDDLE, focusX: 312 };
 // A film shot unblurred
 const UNBLURRED = null;
-// A page of the film's own
+// A film's own page
 const OWN_PAGE = { html: '<p id="first">Ours</p>' };
 // Forty lines of code, each its number
 const MANY_LINES = [...Array(40).keys()].map((line) => `const line${line} = ${line};`).join('\n');
@@ -656,7 +656,7 @@ test('a frame a light is put on another block in, while its shutter is open, is 
 	expect(footage.exposed).toEqual([1]);
 });
 
-test("the screen shows a page of the film's own from a moment of a play: the exposures before it show the filmed page, those from it the film's own", async () => {
+test("the screen shows a film's own page from a moment of a play: the exposures before it show the filmed page, those from it the film's own", async () => {
 	const stage = new FramedStageThatKeeps();
 	const footage = new FootageOf([0, 1]);
 	// The camera fast over two frames, the second's exposures a sixteenth of the step apart from 0.8125 on
@@ -675,7 +675,7 @@ test("the screen shows a page of the film's own from a moment of a play: the exp
 	]);
 });
 
-test("a page of the film's own runs from the moment its move begins: from a cut's frame on, and in a play from where its share stands on the film's time, a frame before its first frame", async () => {
+test("a film's own page runs from the moment its move begins: from a cut's frame on, and in a play from where its share stands on the film's time, a frame before its first frame", async () => {
 	const cutStage = new FramedStageThatKeeps();
 	const playStage = new FramedStageThatKeeps();
 	const shown = cut(screenShows(OWN_PAGE));
@@ -692,7 +692,7 @@ test("a page of the film's own runs from the moment its move begins: from a cut'
 	]);
 });
 
-test("a page of the film's own runs as far as the stage laid it to scroll, measured before the film begins", async () => {
+test("a film's own page runs as far as the stage laid it to scroll, measured before the film begins", async () => {
 	// At 300 pixels a second from the cut, 10 a frame, on a page that scrolls 15 pixels at most
 	const stage = new FramedStageThatKeeps();
 	const steps = [cut(screenShows(OWN_PAGE)), cut(scrollsScreen(OWN_PAGE, { pace: 300 })), hold({ seconds: 3 / 30 })];
@@ -709,7 +709,7 @@ test("a block a move names is measured on the page the screen shows: the film's 
 	expect(stage.drawn[0]!.light!.box).toEqual(SECOND);
 });
 
-test("a move begun while a page of the film's own runs reads it stood as it stands at the move's moment, not as the frame before drew it", async () => {
+test("a move begun while a film's own page runs reads it stood as it stands at the move's moment, not as the frame before drew it", async () => {
 	// At 300 pixels a second from the cut, 10 a frame; the light begins half-way along a play of four frames after three
 	// held, at the film's 4/30 s, 40 pixels down, where the last frame drawn before it stood the page 30 down
 	const stage = new FramedStageThatKeeps();
@@ -728,7 +728,7 @@ test("a move begun while a page of the film's own runs reads it stood as it stan
 	});
 });
 
-test("a piece lifted holding its picture while a page of the film's own runs has the stage hold a picture of that page, stood as it stands at the move's moment", async () => {
+test("a piece lifted holding its picture while a film's own page runs has the stage hold a picture of that page, stood as it stands at the move's moment", async () => {
 	// At 300 pixels a second from the cut, 10 a frame; the piece lifted by a cut after three frames held, at the film's
 	// 3/30 s, 30 pixels down: the page stood so as the piece begins, which measures its block and pictures it
 	const stage = new PicturedStageThatKeeps();
@@ -743,7 +743,7 @@ test("a piece lifted holding its picture while a page of the film's own runs has
 	expect([stage.held.map((asked) => asked.page), ownPage.stood.at(-1)]).toEqual([['own'], standing]);
 });
 
-test("a piece riding its block is lifted off a page of the film's own, whose blocks no scroll of the film's moves", async () => {
+test("a piece riding its block is lifted off a film's own page, whose blocks no scroll of the film's moves", async () => {
 	const steps = [
 		cut(screenShows(OWN_PAGE)),
 		cut(showPiece('#first', { picture: 'held', inside: 'world', rides: 'its block' })),

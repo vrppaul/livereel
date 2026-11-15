@@ -53,7 +53,7 @@ test("the film's own pages its steps show are found before it is shot, each once
 	expect(ownPagesIn(steps).map((page) => page.html)).toEqual([card.html, terminal.html]);
 });
 
-test("a page of the film's own is laid to be drawn past its screen where any move of the steps shows it so, a typing into it after too", () => {
+test("a film's own page is laid to be drawn past its screen where any move of the steps shows it so, a typing into it after too", () => {
 	const card = { html: '<p>The card</p>' };
 	const terminal = { html: '<pre>A terminal</pre>' };
 	const steps = [
