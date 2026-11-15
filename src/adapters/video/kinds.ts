@@ -4,9 +4,8 @@
  *
  * A film's frames are encoded into an MP4 as they are shot (`video.ts`); a WebM or a GIF is made from that MP4 once it
  * is whole, so one take gives every kind asked. Each is the film at its own frame and rate. A GIF's palette is worked
- * out from the whole film in a pass of its own, so no film is held in memory whole, and the GIF keeps the film's time:
- * a film of 20 s at 1920 × 1080 and 30 frames a second made a GIF of 35 MB in 21 s. A kind is written under a name of
- * its own until it is whole, as the MP4 is.
+ * out from the whole film in a pass of its own, so no film is held in memory whole, and the GIF keeps the film's time.
+ * A kind is written under a name of its own until it is whole, as the MP4 is.
  */
 import { rename, rm } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';

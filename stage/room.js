@@ -1,11 +1,12 @@
 // @ts-check
 /**
  * The stage drawn as a room: each exposure's surfaces, the stage's markup as the flat stage draws it, laid in a canvas
- * the browser draws into textures through HTML-in-Canvas (`texElementImage2D`), and composed in WebGL as three.js
- * scenes with one depth each, seen in perspective from the eye. The browser draws a layer leant in 3D at about one of
- * its pixels a page's pixel however close the eye comes, so text near the eye on a window leant back would come out
- * soft: the room draws every surface face-on, the page from its own picture (`stage/page-picture.js`), and stands each
- * where the engine's matrix places it.
+ * the browser draws into textures through HTML-in-Canvas (`texElementImage2D`), and composed in WebGL as one three.js
+ * scene with one depth, seen in perspective from the eye, but for what stands before all the rest while the eye's focus
+ * blurs it near, a world of its own drawn apart and laid over it (`worldBuilt`). The browser draws a layer leant in 3D
+ * at about one of its pixels a page's pixel however close the eye comes, so text near the eye on a window leant back
+ * would come out soft: the room draws every surface face-on, the page from its own picture (`stage/page-picture.js`),
+ * and stands each where the engine's matrix places it.
  *
  * The script is a module, as three's are, which the page loads only where a film is drawn as a room
  * (`src/adapters/browser/room.ts`); it answers under `window.room`.
@@ -313,7 +314,7 @@ void main() {
 // reaches a piece, faded in light into what stood behind the window, as the page's surface fades into what stands
 // behind it (`page-picture.js`): its light as far as it has not faded and that light by the share faded, as far as the
 // surface covers the pixel, turned back into the screen's colours its field is drawn in. Faded so into the page that
-// lies behind it, a piece lying on its faded page came out lighter than the page round it
+// lies behind it, a piece lying on its faded page would come out lighter than the page round it
 const MARKUP_PART_FRAGMENT = `
 #include <clipping_planes_pars_fragment>
 uniform sampler2D surface;
@@ -797,9 +798,9 @@ class Room {
 	 * (`see-through.js`); markup is seen through, round its letters and in its shadows. A page seen through with nothing
 	 * of its world but its own body standing round it shows what is laid under it, which this world's lens does not blur,
 	 * and its body's rim under its edge, on its own plane: it is drawn with what writes depth, so its edge and the rim
-	 * under it blur as one, where blurred apart they left a light band round a blurred page, and the lens runs once. The
-	 * world, the parts drawn with what writes depth and the fields of what is seen through it is drawn with; none where
-	 * it holds nothing.
+	 * under it blur as one, where blurred apart they would leave a light band round a blurred page, and the lens runs
+	 * once. The world, the parts drawn with what writes depth and the fields of what is seen through it is drawn with;
+	 * none where it holds nothing.
 	 * @param {Scene} world @param {WindowBuilt | null} window @param {readonly StandingApart[]} standing
 	 * @param {DrawnEye} eye @returns {WorldBuilt | null}
 	 */

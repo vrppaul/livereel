@@ -5,13 +5,11 @@
  * The track is as long as the film: a silence that long comes first and sets the length (the mix ends with its first
  * input), each sound is laid over it from its moment, all are mixed as they are (never scaled down by their count), and
  * the music is cut there too, faded out over the film's last seconds. Each file is read once and split for every moment
- * it is heard at. The picture is copied, not encoded again. Measured on an 18.9 s film: 300 keys laid in 3.4 s on the
- * keyboard livereel names, its strikes a quarter of a second long, against 1.8 s for a click of 15 ms; the longer the
- * sounds, the longer the mix. A film with nothing heard and no music gets no track: its picture is put in the video's
- * place as it is. livereel's sounds are CC0 (`sounds/LICENSE.md`), quiet in their files: its keys peak about 12 dB
- * under its click, so a film under music says how loud its keys are, and every key is laid so; a film's other files are
- * laid as they are. A key is one of its keyboard's strikes, each recorded alone, laid in turn, so no two keys running
- * are the same sound.
+ * it is heard at. The picture is copied, not encoded again. A film with nothing heard and no music gets no track: its
+ * picture is put in the video's place as it is. livereel's sounds are CC0 (`sounds/LICENSE.md`), quiet in their files:
+ * its keys peak about 12 dB under its click, so a film under music says how loud its keys are, and every key is laid
+ * so; a film's other files are laid as they are. A key is one of its keyboard's strikes, each recorded alone, laid in
+ * turn, so no two keys running are the same sound.
  */
 import { statSync } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';

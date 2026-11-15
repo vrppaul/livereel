@@ -6,9 +6,8 @@
  *
  * The copies stand in a tab apart from the stage's, which is the frame's size, and both CDP's capture and
  * HTML-in-Canvas leave out what lies past its edge: made wide enough to hold the copy beside the frame, it made every
- * frame's capture half as long again.
- * The tab costs a film with such a page about a quarter of a second as the browser opens, and its device scale moved no
- * block of a terminal's page: its 318 blocks stood alike at 1, 2, 2.2 and 4.4.
+ * frame's capture half as long again. The tab costs a film with such a page about a quarter of a second as the browser
+ * opens.
  */
 import type { Browser as Playwright, CDPSession, Frame, Page } from 'playwright-core';
 import { FilmError } from '../../domain/errors.ts';

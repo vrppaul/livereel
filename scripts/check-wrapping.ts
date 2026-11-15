@@ -1,12 +1,13 @@
 /**
- * Every comment of `src/`, `stage/` and `scripts/` is wrapped tight: no line of a paragraph of prose ends where the
- * next word fits on it, or runs past 120 columns, a tab counted as 2, as Prettier counts it.
+ * Every comment of `src/`, `stage/` and `scripts/` written in whole lines of `// ` or ` * ` is wrapped tight: no line
+ * of a paragraph of prose ends where the next word fits on it, or runs past 120 columns, a tab counted as 2, as
+ * Prettier counts it. A stylesheet's comment written on one line is not read.
  *
- * A comment broken early reads as two thoughts where it holds one, and each rewrite of a sentence leaves one behind:
- * every review found them by hand. A paragraph is a run of whole-line comment lines, `// ` or ` * `, of one prefix; it
- * ends at a blank comment line, a tag (`@`), a list item, an indented line, a code fence, or a sentence that ends at a
- * line's end before one that starts with a capital, which is a paragraph of its own. A code span is never split, so a
- * line ends early where the span after it would not fit. What an `@example` or a fence holds is code, and not read.
+ * A comment broken early reads as two thoughts where it holds one, and each rewrite of a sentence may leave one behind.
+ * A paragraph is a run of whole-line comment lines, `// ` or ` * `, of one prefix; it ends at a blank comment line, a
+ * tag (`@`), a list item, an indented line, a code fence, or a sentence that ends at a line's end before one that
+ * starts with a capital, which is a paragraph of its own. A code span is never split, so a line ends early where the
+ * span after it would not fit. What an `@example` or a fence holds is code, and not read.
  *
  * Run in the repository's root, as pre-commit runs it: `node -C source scripts/check-wrapping.ts`. It prints each
  * paragraph at fault, by its file and the line it goes wrong on, a line each, and exits 1; it prints nothing and exits

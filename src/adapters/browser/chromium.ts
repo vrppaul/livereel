@@ -14,8 +14,8 @@
  *
  * Launched headless, Playwright starts Chromium's headless shell, which draws in software unless asked to draw on the
  * graphics card, through ANGLE onto the system's own graphics interface, needing no screen: on Linux through Vulkan a
- * wide blurred film took 271 s against 495 s in software, its frames alike. Metal on macOS and Direct3D 11 on Windows
- * are untried.
+ * blurred film takes about a third of the time it takes in software, its frames alike. Metal on macOS and Direct3D 11
+ * on Windows are untried.
  */
 import { resolve } from 'node:path';
 import { type Browser as Playwright, type Frame, type Page, chromium } from 'playwright-core';
@@ -675,13 +675,11 @@ async function forcedOn(page: Page, blurred: readonly string[], stageAtTheTop: b
 
 /**
  * The stage set to the film's format by its layout, laid out as it draws its frames and hands them on, and asked for
- * its colour scheme and stilled motion. The film's own pictures and fonts are laid, and refused where one decodes to
- * none, each picture's pixels across read in the frame's at the stage's sharpness. What the film writes in CSS, in its
- * theme or in a look's move, is then refused where CSS cannot read it as the stage sets it, where the stage would draw
- * without a word what the film never asked for: a font CSS reads as no list of families a fallback can follow, as one
- * with a quote left open, which runs on over the stage's own fallbacks to the browser's font, or one naming no family
- * this machine has or the film brought, which falls through to the stage's own; the ground's layers CSS reads as none,
- * which would draw no layers at all, or with a picture in them.
+ * its colour scheme and stilled motion. The film's own pictures and fonts are laid, a picture that decodes to none
+ * refused, and each picture's width read in the frame's pixels at the stage's sharpness. What the film writes in CSS,
+ * in its theme or a look's move, is then refused where the stage would otherwise draw what the film never asked for,
+ * without a word: a font that is no list of families (a quote left open runs on over the stage's own fallbacks), a
+ * family neither this machine has nor the film brought, and ground layers CSS reads as none or that hold a picture.
  */
 async function stageSetUp(
 	page: Page,

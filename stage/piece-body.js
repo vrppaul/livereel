@@ -131,8 +131,9 @@ const UNSCALED = 1;
 // How far depth's offset draws the shadow nearer than the page it lies on, in three's polygon offset steps, past the
 // page's own (`PAGE_NEARER` in `room.js`); and when three draws it among what is seen through in the field of what
 // writes depth: after the page, which is laid by its clearness there too at three's own order of none, and before the
-// window's glass over the page (`GLASS_DRAWN_LAST` in `body.js`). Sorted by its middle's depth alone, it was laid first
-// where the eye looked at the page aslant and its middle stood farther than the page's, and the page hid it
+// window's glass over the page (`GLASS_DRAWN_LAST` in `body.js`). Sorted by its middle's depth alone, it would be laid
+// first where the eye looks at the page aslant and its middle stands farther than the page's, and the page would hide
+// it
 const SHADOW_NEARER = -2;
 const LAID_AFTER_THE_PAGE = 0.5;
 // The measures of walls built of nothing yet

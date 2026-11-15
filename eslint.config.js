@@ -1,14 +1,14 @@
-// What the package and its films are held to that the type checker does not hold: which part may build on which,
-// the code rules of claude-review's page (whole-word names, no helper inside a function, no number without a name),
-// and, in a film, a number only as the value of its script's timing. Formatting is Prettier's, but for how wide a
-// comment's lines run, which it never wraps.
+// What the package and its films are held to that the type checker does not hold: which part may build on which, the
+// code rules of claude-review's page (whole-word names, no helper inside a function, no number without a name), and, in
+// a film, a number only as the value of its script's timing. Formatting is Prettier's, but for how wide a comment's
+// lines run, which it never wraps.
 import { readFileSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
-// What each part of src/ may build on: nothing reaches up into what is built on it. A part is a folder of src/, or
-// the scene and the package's entry, a file each
+// What each part of src/ may build on: nothing reaches up into what is built on it. A part is a folder of src/, or the
+// scene and the package's entry, a file each
 const LAYERS = {
 	domain: [],
 	props: ['domain'],
@@ -44,8 +44,8 @@ const NAMED_AS = {
 	index: 'index\\.ts$'
 };
 const CLIMBED_TO_SOURCE = '^\\.{1,2}/(\\.\\./)*';
-// What each part may take of Playwright and of Node's own modules: nothing, so it is worked out without a browser
-// and without Node; their types alone; or anything
+// What each part may take of Playwright and of Node's own modules: nothing, so it is worked out without a browser and
+// without Node; their types alone; or anything
 const OUTSIDE = {
 	domain: 'nothing',
 	props: 'nothing',
@@ -120,7 +120,7 @@ const layerRules = Object.keys(LAYERS).map((part) => ({
 
 // Short words that still say what they mean; anything else that short abbreviates, and `_` says nothing is kept
 const SHORT_WORDS = ['_', 'id', 'at', 'to', 'ok', 'of', 'on', 'by', 'is', 'as', 'up'];
-// A type parameter is a word, as `Name` or `Served` is, never one letter
+// A type parameter is a word, as `Name` is, never one letter
 const TYPE_NAME = '^[A-Z][a-z]';
 // A helper is a function of its module, with a name and parameters of its own, not a closure in the body of another.
 // A one-line lambda — passed to a call, or held as a property — is still fine; one with a body of statements is a
@@ -156,8 +156,8 @@ const PAGE_GLOBALS = ['window', 'document', 'navigator', 'location', 'getCompute
 	message: 'This part is worked out without a browser: there is no page here.'
 }));
 const WITHOUT_A_PAGE = OWN_CLOCK.filter((files) => files !== 'stage/*.js');
-// The keywords a film writes its timing, framing and rhythm by, in place: a number stands there and nowhere else but
-// in a constant named at the top of the film
+// The keywords a film writes its timing, framing and rhythm by, in place: a number stands there and nowhere else but in
+// a constant named at the top of the film
 const SCRIPT_KEYWORDS = [
 	'seconds',
 	'start',
@@ -184,8 +184,8 @@ const SCRIPT_KEYWORDS = [
 	'top',
 	// The leg of a flight a key of the eye's gaze is reached by, counted in place as the legs are listed
 	'by',
-	// How long a leg of a flight takes beside the others, or a move in its play's seconds; and how many seconds after
-	// its play begins a move does
+	// How long a leg of a flight takes beside the others, or a move in its play's seconds; and how many seconds after its
+	// play begins a move does
 	'takes',
 	'after'
 ];
@@ -240,11 +240,11 @@ export default tseslint.config(
 			// A listener or a thunk is one expression here, and what it hands back is nobody's to read
 			'@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
 			'@typescript-eslint/explicit-function-return-type': ['error', { allowExpressions: true }],
-			// A switch over a union names every kind (engine.md): the type checker refuses a kind left out only where
-			// every case hands back a value, and a switch in a function that hands back nothing let one fall through
+			// A switch over a union names every kind (engine.md): the type checker refuses a kind left out only where every
+			// case hands back a value, and a switch in a function that hands back nothing let one fall through
 			'@typescript-eslint/switch-exhaustiveness-check': ['error', { allowDefaultCaseForExhaustiveSwitch: false }],
-			// A function does one thing (AGENTS.md): ten ways through it at most, the bound McCabe set beside his
-			// measure; a switch over every kind of a union is one decision
+			// A function does one thing (AGENTS.md): ten ways through it at most, the bound McCabe set beside his measure; a
+			// switch over every kind of a union is one decision
 			complexity: ['error', { max: 10, variant: 'modified' }]
 		}
 	},
@@ -280,16 +280,15 @@ export default tseslint.config(
 		rules: { 'no-restricted-globals': ['error', ...WALL_CLOCK, ...PAGE_GLOBALS] }
 	},
 	{
-		// The stage's script: JavaScript whose types JSDoc writes, so the type checker names what is undefined and
-		// works out what a function hands back
+		// The stage's script: JavaScript whose types JSDoc writes, so the type checker names what is undefined and works
+		// out what a function hands back
 		files: ['stage/*.js'],
 		rules: { 'no-undef': 'off', '@typescript-eslint/explicit-function-return-type': 'off' }
 	},
 	{
-		// The script two of the stage's pages load before their own. The browser stands the names declared at the top
-		// of a page's plain scripts in one scope, where a name declared twice stops the second script loading (a
-		// `NAMELESS` in two of them broke every film with a page of its own once), and the type checker, reading each
-		// as a module, cannot see it. So this one declares no name there: strict, all in one block
+		// The script two of the stage's pages load before their own. The browser stands the names declared at the top of a
+		// page's plain scripts in one scope, where a name declared twice stops the second script loading, and the type
+		// checker, reading each as a module, cannot see it. So this one declares no name there: strict, all in one block
 		files: ['stage/own-page.js'],
 		languageOptions: { sourceType: 'script' },
 		rules: { strict: ['error', 'global'], 'no-implicit-globals': ['error', { lexicalBindings: true }] }

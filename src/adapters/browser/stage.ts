@@ -11,8 +11,8 @@
  * The page's picture is taken by CDP's capture on livereel's own session with its tab, clipped to the screen at a scale
  * of the picture's pixels to the page's, which Chrome draws the page anew at, so one tab serves every scale, as sharp
  * as a tab at that scale and quicker than Playwright's picture, which takes the tab's device scale alone. A frame is
- * captured by Playwright at the page's device scale, not by a CDP session of livereel's own: that captures at the
- * page's own pixels unless given device metrics of its own, which make it barely quicker, too little to keep them in
+ * captured by Playwright at the page's device scale. A CDP session of livereel's own would capture at the page's own
+ * pixels unless given device metrics of its own, which make it barely quicker: too little to pay for keeping those in
  * step with Playwright's as an act lays the screen flat.
  */
 import type { CDPSession, Frame, Page } from 'playwright-core';

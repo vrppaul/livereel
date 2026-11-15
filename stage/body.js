@@ -160,8 +160,8 @@ const ON_THE_PAGES_PLANE = 0;
 const NONE_BUILT = '';
 // Where three's own declarations of a fragment shader stand, which a body's own come after
 const THREES_DECLARATIONS = '#include <common>';
-// What a material draws faded in light into what stands behind it as far as the shade fades it; as three drew it where
-// the shade fades it none, so what is unshaded draws the same light as before
+// What a material draws faded in light into what stands behind it as far as the shade fades it; as three draws it where
+// the shade fades it none, so what is unshaded draws three's own light
 const THE_LIGHT_FADED = `
 if (faded > 0.0) gl_FragColor.rgb = mix(gl_FragColor.rgb, behindAt().rgb, faded);`;
 // Faded none

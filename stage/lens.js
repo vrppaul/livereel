@@ -257,10 +257,10 @@ vec4 measuredAt(vec2 share) {
 // The far field made whole: where the near field hides it, carried on into the hole from what of it stands nearest,
 // read from its smaller copies, the finest first, each taken whole once it holds a pixel's worth of the far field, as
 // the far field there, and laid under those before it for what they leave. Every pass after reads the far field so,
-// with no hole in it. Gathered round each pixel with the hole left out, a pixel inside the near field's edge found half
-// its disc and took the rest from coarse copies, which mixed in what stood far off along the edge, where a pixel
-// outside it found all its disc: the near field's edge drew a hard line over the far field; and laid under one another
-// by the share each holds, the copies did the same
+// with no hole in it. Gathered round each pixel with the hole left out, a pixel inside the near field's edge would find
+// half its disc and take the rest from coarse copies, which mix in what stands far off along the edge, where a pixel
+// outside it finds all its disc: the near field's edge would draw a hard line over the far field; and laid under one
+// another by the share each holds, the copies would do the same
 const FAR_FIELD_WHOLE_FRAGMENT = `
 uniform sampler2D farLight;
 uniform float coarsestLevel;

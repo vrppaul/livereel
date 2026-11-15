@@ -9,8 +9,8 @@
  * frame, a 2 s timer ran out on the 59th frame, 1.97 s into the film; run 33, 33 and 34, the film's time and the page's
  * keep together. The clock is never let run of itself: it stops only at a time no earlier than its own, and one let run
  * is stopped later than it can be told. Its every run is an evaluation in each of the page's frames, and each document
- * the context opens first replays Playwright's log of every run, which grows a script a frame: over a 10-minute film a
- * run grew from 0.72 ms to 3.44, and a page going elsewhere from 19 ms to 192.
+ * the context opens first replays Playwright's log of every run, which grows a script a frame: a run, and a page going
+ * elsewhere, cost more the longer the film has run.
  */
 import { performance } from 'node:perf_hooks';
 import { setTimeout as after } from 'node:timers/promises';

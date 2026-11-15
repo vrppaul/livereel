@@ -8,7 +8,7 @@
  * is gone once its session ends. livereel shoots films kept outside it, the claude-review promo among them: a comment
  * that explains a rule of livereel's by one of them says nothing to a reader who has not got that film, and goes stale
  * as the film changes. Film pixels (`SHORTER_SIDE_IN_FILM_PIXELS` in `src/domain/geometry.ts`) have one name: one old
- * name, by a frame's height, was false on a frame taller than wide, and another, after the frame, reads as the frame's
+ * name, by a frame's height, is false on a frame taller than wide, and another, after the frame, reads as the frame's
  * own pixels, which the code counts apart. A film's own page or picture, `ownPage` and `filmsPictures` in the code, has
  * that one name in the prose too, with its noun last, as the reader looks for it. The last three are word checks: they
  * keep these slips from coming back, and prove nothing more. An old name is looked for across line breaks, as its words

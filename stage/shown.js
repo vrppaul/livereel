@@ -4,10 +4,9 @@
  * is handed on from (`Layout.handedIn`): the whole canvas, as drawn, where the frame is handed on as sharp as it is
  * drawn, as a still keeps it; or its top left corner, as many of the drawing's pixels as the frame has of its own,
  * where the frame is handed on at its own size, as a video keeps it: scaled down by Lanczos's filter of three lobes in
- * the screen's colours, across and then down, as ffmpeg scaled a frame captured at the drawing's size before
- * (`scale=…:flags=lanczos`, `src/adapters/video/video.ts`). The canvas keeps the drawing's size, as the browser paints
- * the markup laid in it as densely as the canvas is drawn. Chrome's own scaling as it captures, a box of 2 × 2, drew
- * small text softer.
+ * the screen's colours, across and then down, as ffmpeg scales the flat stage's frames (`scale=…:flags=lanczos`,
+ * `src/adapters/video/video.ts`). The canvas keeps the drawing's size, as the browser paints the markup laid in it as
+ * densely as the canvas is drawn. Chrome's own scaling as it captures, a box of 2 × 2, would draw small text softer.
  */
 import { Camera, HalfFloatType, WebGLRenderTarget } from 'three';
 import { SRGB_CURVES, WRITTEN, passOver } from './passes.js';
@@ -46,8 +45,8 @@ const AS_DRAWN = 1;
 // The ways a frame is scaled, one after the other, as GLSL steps along them
 const ACROSS = 'ivec2(1, 0)';
 const DOWN = 'ivec2(0, 1)';
-// What a pixel scaled across reads of the drawing: its light in the screen's colours, between black and white, as the
-// canvas held it for ffmpeg. What it is scaled across into: half floats, which keep a sum the filter's lobes below none
+// What a pixel scaled across reads of the drawing: its light in the screen's colours, between black and white, as a
+// captured frame holds it. What it is scaled across into: half floats, which keep a sum the filter's lobes below none
 // carry past black or white until it is scaled down too and held between them
 const READ_FROM_THE_DRAWING = 'clamp(encoded(drawn.rgb), 0.0, 1.0)';
 const READ_AS_SCALED = 'drawn.rgb';

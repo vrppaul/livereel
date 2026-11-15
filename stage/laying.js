@@ -7,13 +7,13 @@
  * A film's light, its things, their glass and the window with its body, is laid in linear light, as three lays what is
  * seen through over what stands behind it. Markup is the browser's, and the page seen through with it: a stylesheet's
  * shadow, glow or fade is drawn for the browser to lay in the screen's colours, and laid in linear light over a dark
- * page it would come out lighter than the stylesheet drew it, as a pane's faint shadow and glow came out 9 levels
- * lighter and red: one level of red in the screen's colours over a dark ground is about nine in linear light. So a
- * field of markup, drawn as the browser draws it and blurred as light by the lens as all else is
- * (`stage/see-through.js`), is laid as the browser lays it: what lies under it and the field each turned into the
- * screen's colours, the field laid over by its clearness, and the sum turned back into light. The pass reads what lies
- * under as it lays, so the world is laid into two layers in turn: the one laid so far is read, the other written whole,
- * and they change places. Laid so, where no lens blurs it, markup reads as the browser's own sum.
+ * page it would come out lighter than the stylesheet drew it, a pane's faint shadow and glow lighter and red: one level
+ * of red in the screen's colours over a dark ground is about nine in linear light. So a field of markup, drawn as the
+ * browser draws it and blurred as light by the lens as all else is (`stage/see-through.js`), is laid as the browser
+ * lays it: what lies under it and the field each turned into the screen's colours, the field laid over by its
+ * clearness, and the sum turned back into light. The pass reads what lies under as it lays, so the world is laid into
+ * two layers in turn: the one laid so far is read, the other written whole, and they change places. Laid so, where no
+ * lens blurs it, markup reads as the browser's own sum.
  */
 import { WebGLRenderTarget } from 'three';
 import { SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesSet } from './passes.js';

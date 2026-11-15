@@ -601,7 +601,7 @@ function standingOn(
 /**
  * The matrix that carries a spot of a plane, from its box's middle in its own pixels, into the eye's own space: the
  * plane's middle in what it is laid in, then its stance. `placed` chains the same products with a placement's own in
- * each holder's order of before, which keeps the stage's bytes, so it does not build on this.
+ * each holder's own order, which may differ from this one's in an entry's last bit, so it does not build on this.
  */
 function ownSpaceOf(plane: Plane, frame: Size): Matrix {
 	return chained([

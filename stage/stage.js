@@ -1344,13 +1344,9 @@ class WorldDrawer {
  * An exposure of the frame: its root, a drawer for every prop it draws, for its objects, and for the holes and lines
  * pieces of the page leave and draw, and the page it shows, live or as a picture, and the film's own pages laid in its
  * screen, by their keys. Every prop but the look and the world is drawn in each exposure, as the camera stood at its
- * moment: the type checker refuses a prop without a drawer. The look is the stage's root's, one for every exposure of a
- * frame; the objects' drawer draws those pushed off too, as both lists lay what stands inside the page's window in its
- * one root; the world's grain is drawn on the stage's root, one for every exposure, as the look is; its light lights
- * the room's things and the window's body alone, which the room draws (`stage/things.js`, `stage/body.js`), and its
- * glow the room draws over a frame (`stage/room.js`), as it blurs the world by how the eye sees (`stage/lens.js`) and
- * sees it from where the eye stands, laying what stands in the world in the order the scene hands, and drawing what
- * lies over the page in the window into a texture where anything does.
+ * moment: the type checker refuses a prop without a drawer. The look and the world's grain are drawn once, on the
+ * stage's root; the world's light and glow the room alone draws (`stage/room.js`). The objects' drawer draws those
+ * pushed off too, as both lists lay what stands inside the page's window in its one root.
  * @typedef {{
  *   readonly root: Staged,
  *   readonly drawers: {
