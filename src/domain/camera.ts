@@ -73,9 +73,8 @@ import { between, shareByScale } from './toward.ts';
 import { ARRIVED, arrivedAt } from './track.ts';
 
 /**
- * The point of the screen at the view's middle, and how close. `zoom` is the frame's pixels a page's pixel takes on a
- * frame the stage's look was made on, and in proportion on any other, so a pose shows as much of the page on a frame
- * of any size.
+ * The point of the screen at the view's middle, and how close. `zoom` is the film pixels a page's pixel takes, so a
+ * pose shows as much of the page on a frame of any size.
  */
 export interface Pose {
 	readonly focusX: number;
@@ -285,7 +284,7 @@ function eyeInTheRoom(eye: Eye, view: View, frame: Size): Eye {
 
 /**
  * An eye standing in the room, riding the window as it stands now: where it stands, looks and its top points on the
- * window's own plane, in pixels of a frame 1080 high from the window's middle, `out` away from its face.
+ * window's own plane, in film pixels from the window's middle, `out` away from its face.
  */
 export function eyeInTheWindow(eye: Eye, view: View, frame: Size): Eye {
 	const back = chained([
@@ -297,7 +296,7 @@ export function eyeInTheWindow(eye: Eye, view: View, frame: Size): Eye {
 
 /**
  * The matrix that carries a spot of the window's own plane, from its middle, into the room as the window stands on a
- * frame of this size, in pixels of a frame 1080 high, as the eye's spots are.
+ * frame of this size, in film pixels, as the eye's spots are.
  */
 function windowInTheRoom(view: View, frame: Size): Matrix {
 	return chained([
@@ -307,19 +306,18 @@ function windowInTheRoom(view: View, frame: Size): Matrix {
 }
 
 /**
- * Where the middle of the window's box stands on the frame's plane on a frame of this size, in pixels of a frame 1080
- * high.
+ * Where the middle of the window's box stands on the frame's plane on a frame of this size, in film pixels.
  */
 function windowsMiddle(view: View, frame: Size): Spot {
 	return scaledBy(middleInTheRoom(view.box, frame), 1 / frameScaleOf(frame));
 }
 
-/** How the window stands on a frame of this size, its depth in pixels of a frame 1080 high, as the eye's spots are. */
+/** How the window stands on a frame of this size, its depth in film pixels, as the eye's spots are. */
 function stanceAsTheEyeMeasures(view: View, frame: Size): Stance {
 	return { scale: view.scale, depth: view.depth / frameScaleOf(frame), angle: view.angle, about: view.about };
 }
 
-/** The size of the window's box on a frame of this size, in pixels of a frame 1080 high, as the eye's spots are. */
+/** The size of the window's box on a frame of this size, in film pixels, as the eye's spots are. */
 function sizeAsTheEyeMeasures(view: View, frame: Size): Size {
 	const frameScale = frameScaleOf(frame);
 	return { width: view.box.width / frameScale, height: view.box.height / frameScale };
@@ -518,12 +516,12 @@ function poseToward(start: Pose, end: Pose, progress: number): Pose {
 }
 
 /** How close a camera comes: more than none, as a camera at none shows no page, and its zoom goes by scale. */
-const A_ZOOM: Kind<number> = new Plain(isZoom, "a zoom, the frame's pixels a page's pixel takes, more than 0");
+const A_ZOOM: Kind<number> = new Plain(isZoom, "a zoom, the film pixels a page's pixel takes, more than 0");
 
 /** The closest a film lets the camera come to a block it frames: a zoom, or no bound. */
 export const A_ZOOM_AT_MOST: Kind<number> = new Plain(
 	isZoomOrEndless,
-	"a zoom, the frame's pixels a page's pixel takes, more than 0, or Infinity for no bound"
+	"a zoom, the film pixels a page's pixel takes, more than 0, or Infinity for no bound"
 );
 
 /** A pose as a film hands it, made by livereel or written out whole. */

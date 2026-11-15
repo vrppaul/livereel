@@ -9,7 +9,7 @@ import { Lens, sideHalvedEvenly } from '../../stage/lens.js';
 const FRAME: Size = { width: 1920, height: 1080 };
 const FRAME_SCALE = 1;
 const DRAWN_AT_TWICE = 2;
-// The eye's focal length and how wide it is open, in pixels of a frame 1080 high
+// The eye's focal length and how wide it is open, in film pixels
 const FOCAL_LENGTH = 1300;
 const APERTURE = 60;
 // How far across and up a box of what stands reaches about the eye's sight, which does not count

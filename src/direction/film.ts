@@ -186,7 +186,7 @@ export interface FilmInFormat {
 	readonly sound: FilmSound;
 	readonly motionBlur: MotionBlur | null;
 	readonly framesPerSecond: number;
-	/** How far before its eye the picture plane stands, in pixels of a frame 1080 high, for the angle it sees. */
+	/** How far before its eye the picture plane stands, in film pixels, for the angle it sees. */
 	readonly focalLength: number;
 	readonly site: Site;
 	readonly set: FilmSet | null;

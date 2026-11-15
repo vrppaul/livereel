@@ -1,5 +1,6 @@
 # Changelog
 
+- The unit of a length on the frame or in the world is named film pixels, pixels of a frame whose shorter side is 1080, which is how livereel counts them: the README, the skill, the comments and the refusals called it frame pixels and a pixel of a frame 1080 high, which on a frame taller than wide said the wrong length. The gate of names refuses those names now.
 - A gate checks what the code and the documents name (`scripts/check-references.ts`): a file named between backticks is one git tracks, no line points into a session's scratch folder, and the engine and the stage name no film outside livereel. The comments that explained a rule by the claude-review promo or by its files now say the rule alone, and `MeasuredPage.documentTop` says what it gives.
 
 - A move in a play may be timed in the play's seconds: `{ after: 2.2, takes: 0.9 }`, from 2.2 s after the play begins for 0.9 s, or on to its end where `takes` is left out, and a move at a moment `{ after: 2.2 }`. The play works out the share of itself they make (`SecondsOfThePlay` in `src/direction/move.ts`), so a film timing a long play to a cut writes its moments as read and no helper of its own turns them into shares. One past the play's end, one timed by `within` too, and one in a cut are refused.

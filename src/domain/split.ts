@@ -5,8 +5,8 @@
  * margin, whatever the screen's shape: it shows the part of the page the camera frames, the screen filling it
  * (`keptOnTheScreen` in `src/domain/camera.ts`), so it stands whole on the frame and no ground shows inside it. The
  * share and the margins are the format's own, so a square may give its words less than a wide frame does, and
- * livereel's for what a format leaves out. Lengths are in the frame's pixels, drawn as on a frame the stage's look was
- * made on and scaled to the frame shot, and whole, so the window's edges fall on pixels.
+ * livereel's for what a format leaves out. Lengths are written in film pixels and laid in the frame's, whole, so the
+ * window's edges fall on pixels.
  */
 import type { Format, Split } from './format.ts';
 import { type Box, FRAME_SIDES, type FrameSide, frameScaleOf, wholePixels } from './geometry.ts';

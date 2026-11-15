@@ -95,7 +95,7 @@ body {
 	opacity: var(--layers-come);
 }
 
-/* Under an exposure and the ending card, the frame's layers whole, as large as the frame in pixels of a frame the look was made on, so their lengths are the look's whatever size the frame is shot at */
+/* Under an exposure and the ending card, the frame's layers whole, as large as the frame in film pixels, so their lengths are the look's whatever size the frame is shot at */
 [data-surface='ground'] > .layers::before,
 [data-surface='ground'] > .layers::after,
 .ending .layers::before,
@@ -127,7 +127,7 @@ body {
 /* The camera's view, and its shadow under it: the whole frame, or a window on the ground, drawn about its middle by the matrix the engine places it in the world by and sees it through (`placed` and `pointOnTheFrame` in `src/domain/placement.ts`), with the objects' rules below */
 .view,
 .view-shadow {
-	/* Drawn in the frame's own pixels: a pane's lengths, in a frame 1080's, scaled to the frame shot */
+	/* Drawn in the frame's own pixels: a pane's lengths, in film pixels, scaled to the frame shot */
 	--pane-scale: var(--frame-scale);
 
 	position: absolute;
@@ -152,13 +152,13 @@ body {
 	opacity: calc(var(--lift) * var(--screen-shown));
 }
 
-/* The window's shadow and edge where the shade reaches the whole window (`src/props/window.ts`): faded as far as the page and blurred as the page, its blur in pixels of a frame 1080 high drawn in the frame's own. In the room a window with a body has neither, and its body is shaded instead (`body.js`) */
+/* The window's shadow and edge where the shade reaches the whole window (`src/props/window.ts`): faded as far as the page and blurred as the page, its blur in film pixels drawn in the frame's own. In the room a window with a body has neither, and its body is shaded instead (`body.js`) */
 [data-shade-reaching='window'] .view-shadow {
 	filter: blur(calc(var(--shade-blur) * var(--frame-scale) * 1px));
 	opacity: calc(var(--lift) * var(--page-shown));
 }
 
-/* The camera moves the screen, laid out at its own size, about its top left corner: the point looked at to the view's middle, brought close, its zoom counted as on a frame the stage's look was made on; and turned over about the view's middle where the eye sees a page on the window's back, as it is mounted, so seen through the window's back it stands upright, framed as the front is: top to bottom for one upright once the window is turned over round its width, side to side for one upright once it is turned round its upright */
+/* The camera moves the screen, laid out at its own size, about its top left corner: the point looked at to the view's middle, brought close, its zoom counted in film pixels; and turned over about the view's middle where the eye sees a page on the window's back, as it is mounted, so seen through the window's back it stands upright, framed as the front is: top to bottom for one upright once the window is turned over round its width, side to side for one upright once it is turned round its upright */
 .camera {
 	--mirrored-across: 1;
 	--mirrored-down: 1;
@@ -565,7 +565,7 @@ body {
 	opacity: var(--screen-shown);
 }
 
-/* What stands flat over the frame is sized in pixels of a frame the stage's look was made on, every length of it scaled to the frame shot, so it covers as much of a small frame as of a large one; the page is clicked through it */
+/* What stands flat over the frame is sized in film pixels, every length of it scaled to the frame shot, so it covers as much of a small frame as of a large one; the page is clicked through it */
 .over-the-frame {
 	position: absolute;
 	inset: 0;
@@ -675,7 +675,7 @@ body {
 	visibility: hidden;
 }
 
-/* What an object shows fills its box, sized in pixels of a frame the stage's look was made on and every length of it scaled to the frame shot, as what stands over the frame is: the box's width and height in those pixels are named once for every part of it, as a length under the zoom is never a share of the box, which the zoom would count twice */
+/* What an object shows fills its box, sized in film pixels and every length of it scaled to the frame shot, as what stands over the frame is: the box's width and height in those pixels are named once for every part of it, as a length under the zoom is never a share of the box, which the zoom would count twice */
 .object .content {
 	--content-width: calc(var(--width) * 1px / var(--frame-scale));
 	--content-height: calc(var(--height) * 1px / var(--frame-scale));
@@ -871,7 +871,7 @@ body {
 	opacity: calc(var(--caret) * clamp(0, 2 - (var(--typed) - var(--letter)), 1));
 }
 
-/* A caption and keys, over the whole frame and over every object, keys laid after the caption so they stand over it: sized in pixels of a frame the stage's look was made on and every length of each scaled to the frame shot, as what an object shows is, the frame's size written out as a surface's is; the page is clicked through them */
+/* A caption and keys, over the whole frame and over every object, keys laid after the caption so they stand over it: sized in film pixels and every length of each scaled to the frame shot, as what an object shows is, the frame's size written out as a surface's is; the page is clicked through them */
 .caption,
 .keys {
 	position: absolute;
@@ -1056,7 +1056,7 @@ body {
 	inset: 0;
 }
 
-/* The words stand in the middle of their box down it, or at its foot, as far down it as they stand down themselves, as wide as their one line, or as wide as their box where they break into more, which CSS lays out no narrower. A word is never broken: one too long for its line runs past the box, the words standing as wide as it. The box is in the frame's pixels, and what an object shows in pixels of a frame the stage's look was made on */
+/* The words stand in the middle of their box down it, or at its foot, as far down it as they stand down themselves, as wide as their one line, or as wide as their box where they break into more, which CSS lays out no narrower. A word is never broken: one too long for its line runs past the box, the words standing as wide as it. The box is in the frame's pixels, and what an object shows in film pixels */
 .title .way {
 	position: absolute;
 	left: var(--words-in-from-sides);
@@ -1376,7 +1376,7 @@ body {
 	opacity: var(--shown);
 }
 
-/* A picture of the film's own: the picture the stage holds (`layPictures` in `stage/stage.js`), whole, in the part of its box the engine works out, as large as the box holds it. Its lengths stand in pixels of a frame the look was made on, as all an object shows does. It draws nothing past its box */
+/* A picture of the film's own: the picture the stage holds (`layPictures` in `stage/stage.js`), whole, in the part of its box the engine works out, as large as the box holds it. Its lengths stand in film pixels, as all an object shows does. It draws nothing past its box */
 .picture .way {
 	--way-reach: 0px;
 
@@ -1389,7 +1389,7 @@ body {
 	background-size: 100% 100%;
 }
 
-/* The figure of a piece of the page or a lens: the part of the page's picture over its source, at its fit, a screen's pixel to so many of the frame's, in the part of its box the engine works out; drawn from the page's own picture as the stage last showed it (`show` in `stage/stage.js`), so it shows what the page shows there as it changes. Its lengths stand in pixels of a frame the look was made on, as all an object shows does, so a frame's pixel is a share of the frame's scale. It draws nothing past its box */
+/* The figure of a piece of the page or a lens: the part of the page's picture over its source, at its fit, a screen's pixel to so many of the frame's, in the part of its box the engine works out; drawn from the page's own picture as the stage last showed it (`show` in `stage/stage.js`), so it shows what the page shows there as it changes. Its lengths stand in film pixels, as all an object shows does, so a frame's pixel is a share of the frame's scale. It draws nothing past its box */
 .piece .way,
 .lens .way {
 	--picture-scale: calc(var(--fit) / var(--frame-scale));
@@ -1568,7 +1568,7 @@ body {
 	outline: var(--stroke-width) solid var(--ring-line);
 }
 
-/* The page shaded as the window has it (`src/props/window.ts`), faded with all the screen holds as the screen's own rule draws it: the page, the picture light sweeps away and the holes in it blurred, in pixels of a frame 1080 high, which the camera's zoom would scale, the sweep's own light kept sharp as the light is; and the dark laid over the screen as far as it is dimmed. The window's edge and shadow keep as they stand, and an unshaded page is drawn with none of it */
+/* The page shaded as the window has it (`src/props/window.ts`), faded with all the screen holds as the screen's own rule draws it: the page, the picture light sweeps away and the holes in it blurred, in film pixels, which the camera's zoom would scale, the sweep's own light kept sharp as the light is; and the dark laid over the screen as far as it is dimmed. The window's edge and shadow keep as they stand, and an unshaded page is drawn with none of it */
 [data-shaded] .page,
 [data-shaded] .swept,
 [data-shaded] .holes {
@@ -1597,7 +1597,7 @@ body {
 	visibility: visible;
 }
 
-/* The part of the page the shade's blur leaves sharp softened toward the blur, as far as the window has it, in pixels of a frame 1080 high, which the camera's zoom would scale: blurred before its mask cuts it, so its edge stays where it stood */
+/* The part of the page the shade's blur leaves sharp softened toward the blur, as far as the window has it, in film pixels, which the camera's zoom would scale: blurred before its mask cuts it, so its edge stays where it stood */
 [data-sharp-softened] .sharp-part {
 	filter: blur(calc(var(--sharp-blur) * 1px / var(--zoom)));
 }
@@ -1633,7 +1633,7 @@ body {
 	visibility: hidden;
 }
 
-/* What the eye's focus blurs (`src/domain/focus.ts`), by as many pixels of a frame 1080 high as the engine works out: the window, its shadow and its view with all that lies in it, on the frame, round the view's cut; and an object in the world, in its own box's pixels, as Chrome blurs an element before its matrix grows it. What the eye draws sharp is drawn with no filter at all */
+/* What the eye's focus blurs (`src/domain/focus.ts`), by as many film pixels as the engine works out: the window, its shadow and its view with all that lies in it, on the frame, round the view's cut; and an object in the world, in its own box's pixels, as Chrome blurs an element before its matrix grows it. What the eye draws sharp is drawn with no filter at all */
 .window[data-out-of-focus] .sharpness,
 .object[data-out-of-focus] {
 	filter: blur(calc(var(--out-of-focus) * var(--frame-scale) * 1px));

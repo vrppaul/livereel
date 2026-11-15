@@ -4,12 +4,12 @@
  * things' faces reflect and are lit by, so every glint on them comes from a light the film placed. livereel's own world
  * has neither, as a film of flat light has none to place.
  *
- * A light stands at a spot of the room and aims at another, as the eye does, in pixels of a frame 1080 high from the
- * frame's middle, `out` toward whoever watches; it shines in a cone and falls off by the square of the distance, as
- * light does, so a thing coming toward it brightens and one leaving it dims. Its strength is how bright a white face
- * square to it stands at the spot it aims at, a number a film sets by eye, where three's, a pixel off, runs to
- * millions. A soft box stands round the room's middle, as far off as reflections take it, seen from there as wide and
- * high as the angles it spans: only its direction counts, as for anything a face reflects from afar.
+ * A light stands at a spot of the room and aims at another, as the eye does, in film pixels from the frame's middle,
+ * `out` toward whoever watches; it shines in a cone and falls off by the square of the distance, as light does, so a
+ * thing coming toward it brightens and one leaving it dims. Its strength is how bright a white face square to it stands
+ * at the spot it aims at, a number a film sets by eye, where three's, a pixel off, runs to millions. A soft box stands
+ * round the room's middle, as far off as reflections take it, seen from there as wide and high as the angles it spans:
+ * only its direction counts, as for anything a face reflects from afar.
  *
  * Everything is handed in the room, in three's axes, as it stands while the world does: each thing carries the room
  * into the eye's own space that sees it (`DrawnThing` in `src/props/thing.ts`), so the eye moving moves none of it.
@@ -52,8 +52,8 @@ import { amountToward, halfWay, shareToward } from '../domain/toward.ts';
 /**
  * A light in the room: its colour, in hex; how bright a white face square to it stands at the spot it aims at, 1 its
  * whole colour, brighter nearer it and dimmer farther by the square of the distance; the spot it stands at and the spot
- * it aims at, each in pixels of a frame 1080 high from the frame's middle; how far its cone opens from its middle, in
- * degrees; and how softly the cone's edge falls off, from 0, sharp, to 1, from its middle.
+ * it aims at, each in film pixels from the frame's middle; how far its cone opens from its middle, in degrees; and how
+ * softly the cone's edge falls off, from 0, sharp, to 1, from its middle.
  */
 export interface WorldLight {
 	readonly colour: string;
@@ -274,9 +274,9 @@ function lightAt(lights: readonly WorldLight[], place: number): WorldLight {
 }
 
 /**
- * A light as the stage draws it, its spots in the frame's pixels, so many times a frame 1080 high's: as strong a pixel
- * off as its strength times the square of the pixels to its aim, so falling off by the square it is as strong as
- * written there.
+ * A light as the stage draws it, its spots in the frame's pixels, so many times its film pixels: as strong a pixel off
+ * as its strength times the square of the pixels to its aim, so falling off by the square it is as strong as written
+ * there.
  */
 function drawnLight(light: WorldLight, scale: number): DrawnLight {
 	const at = scaledBy(light.at, scale);

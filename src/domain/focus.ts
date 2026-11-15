@@ -1,9 +1,9 @@
 /**
  * How sharp the eye sees what stands before it. Open `aperture` wide and focused so far before it, the eye draws a
- * point that far sharp, and one nearer or farther as a disc `aperture × focal length × |1/focus − 1/distance|` across
- * on a frame 1080 high, whose plane stands the eye's focal length before it: a thin lens's circle of confusion, as
- * After Effects reckons its camera's depth of field, the aperture in pixels, so a longer lens blurs more. The disc is
- * blurred as a Gaussian of its own spread.
+ * point that far sharp, and one nearer or farther as a disc `aperture × focal length × |1/focus − 1/distance|` film
+ * pixels across on the frame, whose plane stands the eye's focal length before it: a thin lens's circle of confusion,
+ * as After Effects reckons its camera's depth of field, the aperture in pixels, so a longer lens blurs more. The disc
+ * is blurred as a Gaussian of its own spread.
  *
  * The flat stage blurs what stands in the world by one number each — the page's window, with all that lies in it, and
  * each object in the world — as soft as its point nearest the focus: what the eye focuses on is drawn sharp wherever it
@@ -55,8 +55,8 @@ import { AS_PLACED } from './stance.ts';
 import { between } from './toward.ts';
 
 /**
- * How the eye sees as a frame is drawn: how far before it it sees sharp, and its focal length, in pixels of a frame
- * 1080 high, and how wide it is open.
+ * How the eye sees as a frame is drawn: how far before it it sees sharp, and its focal length, in film pixels, and how
+ * wide it is open.
  */
 export interface Sharpness {
 	readonly focusedAt: number;
@@ -66,9 +66,8 @@ export interface Sharpness {
 
 /**
  * The eye's lens as the room's lens reads it off each pixel's depth: a point whose nearness, one over how far before
- * the eye it stands in pixels of a frame 1080 high, is `nearness` spreads `perNearness × |inFocus − nearness|` pixels
- * of a frame 1080 high, as a Gaussian's deviation, and stands nearer than the focus where its nearness passes
- * `inFocus`.
+ * the eye it stands in film pixels, is `nearness` spreads `perNearness × |inFocus − nearness|` film pixels, as a
+ * Gaussian's deviation, and stands nearer than the focus where its nearness passes `inFocus`.
  */
 export interface LensLaw {
 	readonly perNearness: number;
@@ -76,10 +75,10 @@ export interface LensLaw {
 }
 
 /**
- * How soft the eye draws each point of the frame a plane is seen at, in pixels of a frame 1080 high: at a point of the
- * frame, in its own pixels from its top left corner, the size of `atTheCorner + across × left + down × top`, held to
- * `farthest`. The number goes evenly across the frame, as how near the plane stands does: none where the plane stands
- * at the focus, less than none nearer, more farther, and `farthest` where it stands as far as can be, at its horizon.
+ * How soft the eye draws each point of the frame a plane is seen at, in film pixels: at a point of the frame, in its
+ * own pixels from its top left corner, the size of `atTheCorner + across × left + down × top`, held to `farthest`. The
+ * number goes evenly across the frame, as how near the plane stands does: none where the plane stands at the focus,
+ * less than none nearer, more farther, and `farthest` where it stands as far as can be, at its horizon.
  */
 interface BlurAcrossTheFrame {
 	readonly atTheCorner: number;
@@ -118,9 +117,9 @@ export function sharpnessOf(camera: Camera, frame: Size): Sharpness {
 }
 
 /**
- * How far before the eye of a camera a focus stands as a frame of this size is drawn, in pixels of a frame 1080 high:
- * none or less behind the eye. A focus under a point of the frame stands where a focus on the point of the page the
- * frame shows there does, and as far as can be where the eye sees past the window's plane there.
+ * How far before the eye of a camera a focus stands as a frame of this size is drawn, in film pixels: none or less
+ * behind the eye. A focus under a point of the frame stands where a focus on the point of the page the frame shows
+ * there does, and as far as can be where the eye sees past the window's plane there.
  */
 export function focusDistanceOf(focus: Focus, camera: Camera, frame: Size): number {
 	switch (focus.kind) {
@@ -144,7 +143,7 @@ export function focusDistanceOf(focus: Focus, camera: Camera, frame: Size): numb
 
 /**
  * How far before the eye the middle of something placed stands along where the eye looks, on a frame of this size, in
- * pixels of a frame 1080 high: none or less at the eye or behind it. In the eye's own space it looks against `out`.
+ * film pixels: none or less at the eye or behind it. In the eye's own space it looks against `out`.
  */
 export function distanceOfItsMiddle(standing: Placed, frame: Size): number {
 	return -carried(standing.inTheEyesSpace, ITS_MIDDLE).out / frameScaleOf(frame);
@@ -156,9 +155,9 @@ function placementAt(point: Point, depth: number): Placement {
 }
 
 /**
- * How soft the eye draws what a matrix carries about its middle, laid in a box of this size, on the frame, in pixels of
- * a frame 1080 high: the disc its point nearest the focus is drawn as, spread as a Gaussian. None where that spreads
- * too little to show, the eye is open none, or it all stands at the eye or behind it, where nothing of it is seen.
+ * How soft the eye draws what a matrix carries about its middle, laid in a box of this size, on the frame, in film
+ * pixels: the disc its point nearest the focus is drawn as, spread as a Gaussian. None where that spreads too little to
+ * show, the eye is open none, or it all stands at the eye or behind it, where nothing of it is seen.
  */
 export function outOfFocusOnTheFrame(placing: Matrix, laid: Size, sharpness: Sharpness, frame: Size): number | null {
 	if (sharpness.aperture === A_PINHOLE) return null;
@@ -169,8 +168,7 @@ export function outOfFocusOnTheFrame(placing: Matrix, laid: Size, sharpness: Sha
 }
 
 /**
- * How soft the eye draws a point so far before it, in pixels of a frame 1080 high: the disc it is drawn as, spread as a
- * Gaussian.
+ * How soft the eye draws a point so far before it, in film pixels: the disc it is drawn as, spread as a Gaussian.
  */
 export function outOfFocusAt(sharpness: Sharpness, distance: number): number {
 	const law = lawOf(sharpness);
@@ -196,9 +194,9 @@ function lawOf(sharpness: Sharpness): LensLaw {
 }
 
 /**
- * How soft the eye draws what a matrix carries about its middle, laid in a box of this size, in pixels of a frame 1080
- * high of that box before the matrix: as soft as on the frame, over how long the matrix draws it at its middle along
- * its longest way, so a plane turned toward edge-on is as soft along the side the eye still sees whole.
+ * How soft the eye draws what a matrix carries about its middle, laid in a box of this size, in film pixels of that box
+ * before the matrix: as soft as on the frame, over how long the matrix draws it at its middle along its longest way, so
+ * a plane turned toward edge-on is as soft along the side the eye still sees whole.
  */
 export function outOfFocusBeforeItsMatrix(
 	placing: Matrix,
@@ -212,11 +210,10 @@ export function outOfFocusBeforeItsMatrix(
 
 /**
  * How soft the eye draws the softest point the frame shows of what a matrix carries about the middle of a box on the
- * frame, what it shows standing in another box of its plane, in pixels of a frame 1080 high: a disc as wide as the eye
- * is open times how far apart the plane's nearness there and the focus's stand, as `aperture × focal length × |1/focus
- * − 1/distance|` is, spread as a Gaussian, softest at a corner of what the frame shows. None where the eye is open
- * none, sees the plane edge-on, the frame shows none of what it shows, or no point of it the frame shows spreads enough
- * to show.
+ * frame, what it shows standing in another box of its plane, in film pixels: a disc as wide as the eye is open times
+ * how far apart the plane's nearness there and the focus's stand, as `aperture × focal length × |1/focus − 1/distance|`
+ * is, spread as a Gaussian, softest at a corner of what the frame shows. None where the eye is open none, sees the
+ * plane edge-on, the frame shows none of what it shows, or no point of it the frame shows spreads enough to show.
  */
 export function softestOutOfFocusSeen(
 	placing: Matrix,
@@ -252,9 +249,8 @@ function blurAt(blur: BlurAcrossTheFrame, point: Point): number {
 }
 
 /**
- * How far before the eye of a camera it sees sharp as a frame of this size is drawn, in pixels of a frame 1080 high: on
- * its way from where it focused to where it focuses, each placed now, evenly in the reciprocal, and as far as can be at
- * most.
+ * How far before the eye of a camera it sees sharp as a frame of this size is drawn, in film pixels: on its way from
+ * where it focused to where it focuses, each placed now, evenly in the reciprocal, and as far as can be at most.
  */
 function focusedAt(camera: Camera, frame: Size): number {
 	const focusing = camera.eye.focusing;
@@ -278,7 +274,7 @@ function distanceNearest(placing: Matrix, laid: Size, sharpness: Sharpness): num
 
 /**
  * How far before an eye of a focal length a spot of what a matrix carries stands, once carried to where the eye sees
- * it, in pixels of a frame 1080 high: the matrix sees from as far as the focal length at the frame's plane.
+ * it, in film pixels: the matrix sees from as far as the focal length at the frame's plane.
  */
 function distanceAt(placing: Matrix, spot: Spot, focalLength: number): number {
 	return seenFromOf(placing, spot) * focalLength;

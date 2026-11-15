@@ -25,8 +25,8 @@ export type CaptionPlace = (typeof CAPTION_PLACES)[number];
 
 /**
  * How a frame is split between words and the page's window (`src/domain/split.ts`): the share of the frame the words
- * take along the split, from 0 to 1, and, in pixels of a frame 1080 on its shorter side, how far the window stands in
- * from the frame's edges, the words from the frame's edges, and the words from the window.
+ * take along the split, from 0 to 1, and, in film pixels, how far the window stands in from the frame's edges, the
+ * words from the frame's edges, and the words from the window.
  */
 export interface Split {
 	readonly wordsShare?: number;

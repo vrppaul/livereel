@@ -3,7 +3,7 @@
  * `src/domain/camera.ts`), and how the page in it is shaded — dimmed, faded into the film's ground and blurred — so
  * what stands over it, a piece of the page lifted off, stands clear of it. A film moves the shade as it moves places,
  * by one move that sets the values it names (`window.shade` in `src/moves/window.ts`), the dim and the fade as strong
- * as a share from none to whole, the blur in pixels of a frame 1080 high.
+ * as a share from none to whole, the blur in film pixels.
  * The blur may leave a part of the screen sharp, as a lens keeps sharp what the eye is drawn to: it is the page's own,
  * not the eye's, as the eye's lens blurs by depth and a page lies at one, and so what stands over the page, a title
  * carried with it or a piece lifted off it, stays as sharp as it stands wherever it stands over the blur. The part may
@@ -185,8 +185,8 @@ interface DrawnShade extends PageShade {
 /**
  * The part of the screen the shade's blur leaves sharp as the stage draws it: its box, in the screen's pixels; how far
  * past it the page softens into the blur, and how far the part itself is blurred, none where it is wholly sharp, each
- * in pixels of a frame 1080 high, as the blur is; and the share of the page's blur it softens by, as a room's lens
- * blurs it where it blurs the page with the window's body.
+ * in film pixels, as the blur is; and the share of the page's blur it softens by, as a room's lens blurs it where it
+ * blurs the page with the window's body.
  */
 interface SharpPart {
 	readonly box: Box;
@@ -198,18 +198,18 @@ interface SharpPart {
 /**
  * The window as the stage draws it: where it is placed in the world, as the stage draws a placement
  * (`src/domain/placement.ts`), its box on the frame, drawn about its middle; how far the camera's picture reaches on
- * its plane, past the box where the page the screen shows stands past it, how far it stands off the ground, and
- * whether the eye sees the page's side of it or its back, read where it stands before the eye, behind the eye too; the
- * plane the room lays the page's surface on in its one scene; how round the corners of the page the camera's cut shows
- * are, in the frame's pixels, which the stylesheet cuts the page by and the body stands round; its shade and how far it
+ * its plane, past the box where the page the screen shows stands past it, how far it stands off the ground, and whether
+ * the eye sees the page's side of it or its back, read where it stands before the eye, behind the eye too; the plane
+ * the room lays the page's surface on in its one scene; how round the corners of the page the camera's cut shows are,
+ * in the frame's pixels, which the stylesheet cuts the page by and the body stands round; its shade and how far it
  * reaches, none where the page is shaded none, and the part of the screen its blur leaves sharp, none where it blurs
- * none or leaves none, the blur and the part's edge on the window's plane; how soft the eye's focus draws it and all
- * in it, none where sharp: as one, on the frame in pixels of a frame 1080 high, for the flat stage, and at its softest
- * point the frame shows, as far as the room's blur of it gathers past the frame's edge; how much of the page shows,
- * from 0 to 1, as far as the screen has come up and its shade has not faded it, which the stylesheet draws the screen
- * as clear as, and the room reads whether the page is seen through by (`stage/see-through.js`); how much of it has
- * faded into what stands behind it, as far as the screen has come up and its shade fades it, which the room lays in
- * light (`stage/page-picture.js`); and its body, none where it has none.
+ * none or leaves none, the blur and the part's edge on the window's plane; how soft the eye's focus draws it and all in
+ * it, none where sharp: as one, on the frame in film pixels, for the flat stage, and at its softest point the frame
+ * shows, as far as the room's blur of it gathers past the frame's edge; how much of the page shows, from 0 to 1, as far
+ * as the screen has come up and its shade has not faded it, which the stylesheet draws the screen as clear as, and the
+ * room reads whether the page is seen through by (`stage/see-through.js`); how much of it has faded into what stands
+ * behind it, as far as the screen has come up and its shade fades it, which the room lays in light
+ * (`stage/page-picture.js`); and its body, none where it has none.
  */
 export interface DrawnWindow extends DrawnPlacement {
 	readonly reach: Box;
@@ -264,10 +264,10 @@ interface BodyShade {
 }
 
 /**
- * How soft the room draws the window's body: as wide as the shade's blur, in pixels of a frame 1080 high as it is
- * written, and where it is as wide as that: on the window's plane, which the room grows as the eye sees each point of
- * the slab nearer, or on the frame, at every point; and how soft at the softest the frame shows of the slab, as far as
- * the room's blur of it gathers past the frame's edge.
+ * How soft the room draws the window's body: as wide as the shade's blur, in film pixels as it is written, and where it
+ * is as wide as that: on the window's plane, which the room grows as the eye sees each point of the slab nearer, or on
+ * the frame, at every point; and how soft at the softest the frame shows of the slab, as far as the room's blur of it
+ * gathers past the frame's edge.
  */
 export interface BodyBlur {
 	readonly width: number;

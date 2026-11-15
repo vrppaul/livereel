@@ -67,8 +67,8 @@ import { LEAN_FORM, type LeanScript, leantFrom } from './lean.ts';
 import { type ThroughScript, throughFormOf, throughWritten } from './through.ts';
 
 /**
- * How far a move that carries the window to a place brings it toward the eye, `depth`, in pixels of a frame 1080 high;
- * the places its box passes on its way, `through`, and how its path goes through them.
+ * How far a move that carries the window to a place brings it toward the eye, `depth`, in film pixels; the places its
+ * box passes on its way, `through`, and how its path goes through them.
  */
 export interface WindowToScript extends TimingScript, ThroughScript<Place> {
 	readonly depth?: number;
@@ -87,11 +87,11 @@ export interface WindowHideScript extends TimingScript {
 
 /**
  * How far the page is dimmed, `dim`, and faded into the film's ground, `fade`, each from 0 none to 1 whole, how far it
- * is blurred, `blur`, in pixels of a frame 1080 high, the part of it the blur leaves `sharp`, a block, a box of the
- * screen or a stretch of blocks, or none, `'none'`, how far that part softens toward the blur, `sharpSoftens`, from 0
- * none to 1 as soft as the page round it, how far the shade reaches, `reaching`, the page alone, `'page'`, or the whole
- * window, `'window'`, and where the blur is as wide as written, `blurSeen`, on the page, `'on the page'`, or on the
- * frame, `'on the frame'`; any left out as it stands.
+ * is blurred, `blur`, in film pixels, the part of it the blur leaves `sharp`, a block, a box of the screen or a stretch
+ * of blocks, or none, `'none'`, how far that part softens toward the blur, `sharpSoftens`, from 0 none to 1 as soft as
+ * the page round it, how far the shade reaches, `reaching`, the page alone, `'page'`, or the whole window, `'window'`,
+ * and where the blur is as wide as written, `blurSeen`, on the page, `'on the page'`, or on the frame,
+ * `'on the frame'`; any left out as it stands.
  */
 export interface ShadeScript extends TimingScript, Partial<ShadeWritten> {
 	readonly sharp?: SharpNamed;
@@ -220,9 +220,9 @@ export function lean(script: LeanScript): Move {
 }
 
 /**
- * The window on its way from where it stands, through places, to a place, and to the film's depth from its own where
- * it names one, a depth given in pixels of a frame 1080 high; refused where a note's words standing beside it would
- * keep beside it off the frame, or under it, at a place it passes or where it goes.
+ * The window on its way from where it stands, through places, to a place, and to the film's depth from its own where it
+ * names one, a depth given in film pixels; refused where a note's words standing beside it would keep beside it off the
+ * frame, or under it, at a place it passes or where it goes.
  */
 function travelling(beginning: Beginning, place: Place, through: Through<Place>, depth: number | undefined): Change {
 	const from = viewOf(beginning.scene.window);

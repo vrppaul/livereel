@@ -179,8 +179,8 @@ export interface BodyScript {
 
 /**
  * How a piece lifted into the world stands in the window's shade, as a film writes it: reached by it as the page is
- * while it lies on the page, and none from the height its face clears the shade at, `clearAt`, in pixels of a frame
- * 1080 high, as `effects({ depth })` brings it out.
+ * while it lies on the page, and none from the height its face clears the shade at, `clearAt`, in film pixels, as
+ * `effects({ depth })` brings it out.
  */
 export interface ShadeScript {
 	readonly clearAt: number;
@@ -220,8 +220,9 @@ export interface PieceHideScript extends HideScript {
 
 /**
  * The light a piece wiped away trails behind the wipe's edge, over the page it leaves, as a film writes it: its
- * `colour`, in hex with no alpha, the look's accent where the film names none; and how far it trails, `width`, in
- * pixels of a frame 1080 high, as all a piece shows is drawn: on the page, the page's own pixels in a frame 1080 high.
+ * `colour`, in hex with no alpha, the look's accent where the film names none; and how far it trails, `width`, in film
+ * pixels, as all a piece shows is drawn: on the page, a film pixel is as many of the page's pixels as it is of the
+ * frame's off it.
  */
 export interface SheenScript {
 	readonly colour?: string;
@@ -302,8 +303,8 @@ const PIECE_HIDE_FORM: Form<PieceHideScript> = {
 	...HIDE_FORM,
 	sheen: new OfForm(SHEEN_FORM, 'a sheen: { colour, width }')
 };
-// How far a sheen trails where the film names no width, in pixels of a frame 1080 high; and in the look's accent where
-// it names no colour
+// How far a sheen trails where the film names no width, in film pixels; and in the look's accent where it names no
+// colour
 const SHEEN_TRAILS = 48;
 const ACCENTED = null;
 // The move that empties a block, as its refusals name it
@@ -418,7 +419,7 @@ function shadeAsked(shade: ShadeScript, inside: PieceScript['inside']): ShadeScr
 
 /**
  * How a piece stands in the window's shade on a frame, as the film names it: the height it clears the shade at counted
- * in the frame's own pixels, as its depth is, where the film writes it in pixels of a frame 1080 high.
+ * in the frame's own pixels, as its depth is, where the film writes it in film pixels.
  */
 function inTheShadeIn(shade: ShadeScript | null, frame: Size): InTheShade | null {
 	if (shade === null) return IN_NO_SHADE;
@@ -661,9 +662,8 @@ function crossingWith(piece: ShowingOf<'piece'>, block: Box): Box {
 }
 
 /**
- * The sheen a piece trails as the film names it, as far across its figure as the piece stands as it sets off: its
- * width in pixels of a frame 1080 high, as all an object shows is drawn, a share of the figure's length across a wipe
- * from an edge.
+ * The sheen a piece trails as the film names it, as far across its figure as the piece stands as it sets off: its width
+ * in film pixels, as all an object shows is drawn, a share of the figure's length across a wipe from an edge.
  */
 function sheenAcross(piece: ShowingOf<'piece'>, edge: FrameSide, sheen: SheenScript, frame: Size): Sheen {
 	const figure = figureIn(piece.content.source, piece.box);

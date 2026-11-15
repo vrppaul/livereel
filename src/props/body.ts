@@ -15,11 +15,10 @@ import { type KindsOf, ValueKind, asWritten } from '../domain/values.ts';
 
 /**
  * A slab of metal round the page, glass over it: how thick it is, 0 none, and how far its rim reaches past the page all
- * round, each in pixels of a frame 1080 on its shorter side; the metal's colour, in hex with no alpha, and how rough
- * it is, from 0, a mirror, to 1, matte; how much of the world's light the glass over the page reflects, from 0, none,
- * to 1, a whole coat of it; and how bright the glint of a strip of light standing near the glass shines on it at its
- * brightest, 0 none, 1 the page's white: the slab's own light, not the world's, whose glint moves on the glass as the
- * eye moves (`stage/body.js`).
+ * round, each in film pixels; the metal's colour, in hex with no alpha, and how rough it is, from 0, a mirror, to 1,
+ * matte; how much of the world's light the glass over the page reflects, from 0, none, to 1, a whole coat of it; and
+ * how bright the glint of a strip of light standing near the glass shines on it at its brightest, 0 none, 1 the page's
+ * white: the slab's own light, not the world's, whose glint moves on the glass as the eye moves (`stage/body.js`).
  */
 export interface Slab {
 	readonly thickness: number;

@@ -206,8 +206,8 @@ export interface NestedScript extends GroupedScript {
 
 /**
  * Which object is carried to another place, the places it passes `through` on its way and how its way goes through
- * them, and how large it stands there, `scale`, and how far out toward the eye, `depth`, in pixels of a frame 1080
- * high; either left out as it stands.
+ * them, and how large it stands there, `scale`, and how far out toward the eye, `depth`, in film pixels; either left
+ * out as it stands.
  */
 export interface ToScript extends TimingScript, NamedScript, ThroughScript<Place> {
 	readonly scale?: number;
@@ -239,10 +239,9 @@ export interface ObjectLeanScript extends LeanScript, NamedScript {}
 
 /**
  * How an object stands out, as a film writes it as the object comes up or as it moves: a `ring` along its edge, a
- * `glow` round it and a `shadow` under it, each from 0 none to 1 whole, how far it is blurred, `blur`, in pixels of a
- * frame 1080 high, the `colour` of its ring and glow in hex, how far in from a side of what it shows it melts into
- * nothing there, `melt`, a share of it, and how far it has faded into what lies behind it, `fade`, from 0 none to 1
- * whole.
+ * `glow` round it and a `shadow` under it, each from 0 none to 1 whole, how far it is blurred, `blur`, in film pixels,
+ * the `colour` of its ring and glow in hex, how far in from a side of what it shows it melts into nothing there,
+ * `melt`, a share of it, and how far it has faded into what lies behind it, `fade`, from 0 none to 1 whole.
  */
 interface StandingOutScript {
 	readonly ring?: number;
@@ -255,8 +254,8 @@ interface StandingOutScript {
 }
 
 /**
- * Which object stands out, and how, as `StandingOutScript` has it; how many times as large it stands about its
- * middle, `scale`, and how far out toward the eye, `depth`, in pixels of a frame 1080 high; any left out as it stands.
+ * Which object stands out, and how, as `StandingOutScript` has it; how many times as large it stands about its middle,
+ * `scale`, and how far out toward the eye, `depth`, in film pixels; any left out as it stands.
  */
 export interface EffectsScript extends TimingScript, NamedScript, StandingOutScript {
 	readonly scale?: number;
@@ -1189,8 +1188,8 @@ function framesToComeIn(
 
 /**
  * The object of a kind on its way to a place, read as its kind reads one, from the box its kind sets off from, and to
- * the film's scale and depth from its own where it names them, a depth given in pixels of a frame 1080 high: the values
- * named written into it.
+ * the film's scale and depth from its own where it names them, a depth given in film pixels: the values named written
+ * into it.
  */
 function carried<Kind extends ShownKind>(
 	beginning: Beginning,
@@ -1266,8 +1265,8 @@ export function carriedOnPath(
 }
 
 /**
- * The object on its way from how it stands out to the film's, those values it names written into it, a blur and a
- * depth given in pixels of a frame 1080 high.
+ * The object on its way from how it stands out to the film's, those values it names written into it, a blur and a depth
+ * given in film pixels.
  */
 function standingOut(
 	beginning: Beginning,

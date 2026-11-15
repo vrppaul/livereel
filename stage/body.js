@@ -359,7 +359,7 @@ export class WindowBody {
  */
 export class WindowBlurred {
 	/**
-	 * @param {number} pixelsOfOne the drawing's pixels of a pixel of a frame 1080 high
+	 * @param {number} pixelsOfOne the drawing's pixels of a film pixel
 	 * @param {Size} screen the screen's size, in its pixels
 	 */
 	constructor(pixelsOfOne, screen) {

@@ -28,13 +28,12 @@ const STANDING_OUT: Cut = { top: -40, right: 0, bottom: 0, left: -100 };
 // The page the cut standing out shows, and how far its middle stands from the window's, in three's axes, up the frame
 const SHOWN_PAST_ITS_EDGES: Box = { left: 900, top: 560, width: 1900, height: 1040 };
 const SHOWN_MIDDLE_FROM_THE_WINDOWS: Spot = { across: -50, down: 20, out: 0 };
-// A window's body: as thick and as wide a rim as these, in pixels of a frame 1080 high, of a dark metal this rough,
-// glass this strong over the page, its glint this bright; and a window unshaded with it, and with livereel's, of no
-// thickness
+// A window's body: as thick and as wide a rim as these, in film pixels, of a dark metal this rough, glass this strong
+// over the page, its glint this bright; and a window unshaded with it, and with livereel's, of no thickness
 const BODY: Slab = { thickness: 24, rim: 6, metal: '#454b56', roughness: 0.45, glass: 0.4, glint: 0.04 };
 const WITH_A_BODY = { ...UNSHADED, body: BODY };
 const WITH_LIVEREELS_BODY = { ...UNSHADED, body: LIVEREELS_SLAB };
-// The page's corners as round as livereel's look has them, in pixels of a frame 1080 high
+// The page's corners as round as livereel's look has them, in film pixels
 const CORNER = LIVEREELS_LOOK.paneCorner;
 // A world lit by a soft box the glass reflects, overhead
 const OVERHEAD = { colour: '#ffffff', brightness: 12, round: 0, up: 75, width: 33, height: 33, lean: 0 };

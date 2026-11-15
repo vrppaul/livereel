@@ -400,11 +400,11 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		new FilmError("camera.to's pose's focusX is Infinity: it is a number")
 	);
 	expect(() => camera.to({ ...POSE, zoom: 0 })).toThrow(
-		new FilmError("camera.to's pose's zoom is 0: it is a zoom, the frame's pixels a page's pixel takes, more than 0")
+		new FilmError("camera.to's pose's zoom is 0: it is a zoom, the film pixels a page's pixel takes, more than 0")
 	);
 	expect(() => camera.onto('#block', { zoomAtMost: 0 })).toThrow(
 		new FilmError(
-			"camera.onto's zoomAtMost is 0: it is a zoom, the frame's pixels a page's pixel takes, more than 0, or Infinity for no bound"
+			"camera.onto's zoomAtMost is 0: it is a zoom, the film pixels a page's pixel takes, more than 0, or Infinity for no bound"
 		)
 	);
 	expect(() => camera.onto('#block', { air: -150 })).toThrow(

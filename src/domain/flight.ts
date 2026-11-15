@@ -1,8 +1,7 @@
 /**
  * A flight of the eye over the page's window: its way, legs flown one after another from where the eye stands, and its
- * gaze along the way, apart from the way's shape. Every spot of a flight is the window's own, in pixels of a frame 1080
- * high from the window's middle, `out` how high over its face, so the eye rides the window as it stands
- * (`src/domain/eye.ts`).
+ * gaze along the way, apart from the way's shape. Every spot of a flight is the window's own, in film pixels from the
+ * window's middle, `out` how high over its face, so the eye rides the window as it stands (`src/domain/eye.ts`).
  *
  * The way is three.js's curves, flown by its length, so the eye goes as far in each equal share of the flight's own
  * progress, whatever bends the way takes; past either end, as a curve that bounces takes it, it goes straight on along
@@ -46,8 +45,8 @@ import { between } from './toward.ts';
 
 /**
  * A figure a film draws itself in three.js, as a curve of three's: its point at a share of its own parameter, x across,
- * y down and z out in pixels of a frame 1080 high, as a film writes a spot. It is the film's own, of whatever copy of
- * three the film imports, so it is read by its points alone.
+ * y down and z out in film pixels, as a film writes a spot. It is the film's own, of whatever copy of three the film
+ * imports, so it is read by its points alone.
  */
 export interface OwnFigure {
 	readonly getPoint: (share: number) => Vector3Like;
@@ -63,7 +62,7 @@ export type Leg =
 /** A film's own figure as it hands one: any object that gives its points, as every curve of three's does. */
 export const AN_OWN_FIGURE: Kind<OwnFigure> = new Plain(
 	isOwnFigure,
-	'a figure, a curve of three.js whose points are x across, y down and z out in pixels of a frame 1080 high'
+	'a figure, a curve of three.js whose points are x across, y down and z out in film pixels'
 );
 
 /**
@@ -139,8 +138,8 @@ interface PaceKnot extends PaceMark {
 export type Pace = typeof EVENLY | { readonly kind: 'apart'; readonly knots: readonly PaceKnot[] };
 
 /**
- * How the eye sees as it flies: its focal length, how far ahead of it its aim stands, and how high the frame is in
- * pixels of a frame 1080 high, which a tip that holds a spot reads.
+ * How the eye sees as it flies: its focal length, how far ahead of it its aim stands, and how high the frame is in film
+ * pixels, which a tip that holds a spot reads.
  */
 interface FlyingEye {
 	readonly focalLength: number;
@@ -204,7 +203,7 @@ const AT_REST = 0;
 // knots of a pace stand before the first leg's end: the flight's start
 export const THE_FIRST_LEG = 0;
 const KNOTS_BEFORE_THE_LEGS = 1;
-// How short a leg is to go nowhere, in pixels of a frame 1080 high
+// How short a leg is to go nowhere, in film pixels
 const NOWHERE = 1e-6;
 // How many steps of a way are checked for a point on the page's plane or under it, its ends among them
 const STEPS_CHECKED = 256;

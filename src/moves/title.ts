@@ -79,16 +79,15 @@ import {
 
 /**
  * Where a title stands: `at` a place on the frame, or over the whole of it, on its ground, where none is named; how it
- * reads there, `align`, the place's own way where none is named; how large its letters are, `size`, in pixels of a
- * frame 1080 on its shorter side, over the whole frame and in a place alike, where none is named the look's
- * `titleSize`, and in a place a share of it no larger than its width lets a long word stand; how far apart its letters
- * stand past where its font sets them, `letterSpacing`, and how far below one line's foot the next's stands,
- * `lineHeight`, each in times its letters' size, the look's `titleLetterSpacing` and `titleLineHeight` where none is
- * named; the side it slides in `from`, past the frame's edge, rather than coming up in its place, or the way it comes
- * up there, `enter`; how its words come up there, `words`, the theme's way where none is named; which title it is,
- * `as`; and what it stands `inside`, the page's window, its place then a box in the window's shares, or the `group` it
- * stands in. Or the part it stands `beside`, in place of a place and of what it stands in, reading from that part. And
- * how it stands out as it comes up, `effects`.
+ * reads there, `align`, the place's own way where none is named; how large its letters are, `size`, in film pixels,
+ * over the whole frame and in a place alike, where none is named the look's `titleSize`, and in a place a share of it
+ * no larger than its width lets a long word stand; how far apart its letters stand past where its font sets them,
+ * `letterSpacing`, and how far below one line's foot the next's stands, `lineHeight`, each in times its letters' size,
+ * the look's `titleLetterSpacing` and `titleLineHeight` where none is named; the side it slides in `from`, past the
+ * frame's edge, rather than coming up in its place, or the way it comes up there, `enter`; how its words come up there,
+ * `words`, the theme's way where none is named; which title it is, `as`; and what it stands `inside`, the page's
+ * window, its place then a box in the window's shares, or the `group` it stands in. Or the part it stands `beside`, in
+ * place of a place and of what it stands in, reading from that part. And how it stands out as it comes up, `effects`.
  */
 export interface TitleScript extends ShowScript, NestedScript, ShownStandingOutScript {
 	readonly at?: Place;
@@ -102,9 +101,9 @@ export interface TitleScript extends ShowScript, NestedScript, ShownStandingOutS
 
 /**
  * A part a title stands beside, as a film writes it: the block a selector matches, or a box of the screen, `part`, or
- * an object by its name, `object`; the `side` of it its words stand on, its right or its top; how far `along` that
- * side the point they stand off lies, a share of it from its top or its left, its middle where none is named; and how
- * far off that point they stand, `gap`, in pixels of a frame 1080 on its shorter side.
+ * an object by its name, `object`; the `side` of it its words stand on, its right or its top; how far `along` that side
+ * the point they stand off lies, a share of it from its top or its left, its middle where none is named; and how far
+ * off that point they stand, `gap`, in film pixels.
  */
 interface BesideScript {
 	readonly part?: Target;
@@ -258,8 +257,7 @@ function pointAskedBy(script: TitleScript, beside: BesideScript): PointAsked {
 
 /**
  * A title's words and their box beside a part as their move begins: reading from the part, a frame wide and high off
- * the point they stand off, in the frame's pixels, so far off it as the film names in pixels of a frame 1080 on its
- * shorter side.
+ * the point they stand off, in the frame's pixels, as far off it as the film names in film pixels.
  */
 function titleBeside(setting: Setting, beside: BesideScript, beginning: Beginning): Coming {
 	const { said, type } = setting;

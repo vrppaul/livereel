@@ -519,8 +519,8 @@ export class PagePicture {
 	}
 
 	/**
-	 * The picture uploaded as an exposure shows it, blurred by so many pixels of a frame 1080 high, in the picture's
-	 * pixels as many as the stylesheet's in the screen's, which the camera's zoom scales (`[data-shaded] .page`,
+	 * The picture uploaded as an exposure shows it, blurred by so many film pixels, in the picture's pixels as many as
+	 * the stylesheet's in the screen's, which the camera's zoom scales (`[data-shaded] .page`,
 	 * `[data-sharp-softened] .sharp-part` in `stage.css`): by the blur it is handed, or unblurred where it blurs none.
 	 * @param {BlurredPicture} blurred @param {number} blur @param {number} zoom @returns {Texture}
 	 */

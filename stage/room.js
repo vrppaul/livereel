@@ -39,12 +39,12 @@
  * The exposures are added up in linear light, as a shutter gathers the light of each moment: a glint that moves draws a
  * streak as bright as its light, where averaged in the screen's colours it went dark. Where the world asks, the frame
  * glows round its light past the page's white, as a lens blooms, once over the light its exposures gathered: three's
- * own bloom (`UnrealBloomPass`), its spread a share of a frame 1080 high however large the frame is drawn; the glow
- * lies over all the frame, what stands on it too. One texture of each surface serves every exposure, uploaded anew for
- * each in turn, so the card holds one each, not one each for each exposure: sixteen exposures of a 3840 × 2160 frame
- * would hold 2 GB. A texture last drawn from a surface the canvas has not painted anew since, as it names what it
- * paints anew, is kept as it stands: a frame of one exposure whose window stands still draws the window's texture no
- * more.
+ * own bloom (`UnrealBloomPass`), its spread measured in film pixels, so it spreads over as large a share of any frame,
+ * however large the frame is drawn; the glow lies over all the frame, what stands on it too. One texture of each
+ * surface serves every exposure, uploaded anew for each in turn, so the card holds one each, not one each for each
+ * exposure: sixteen exposures of a 3840 × 2160 frame would hold 2 GB. A texture last drawn from a surface the canvas
+ * has not painted anew since, as it names what it paints anew, is kept as it stands: a frame of one exposure whose
+ * window stands still draws the window's texture no more.
  *
  * three.js keeps no camera of its own: every point is placed by the matrices the engine hands the stage, and the
  * world's camera takes the projection alone. The script is a module, three's being modules alone, which the page loads
@@ -507,7 +507,7 @@ class Room {
 			ADDED
 		);
 		this.shown = new FrameShown(this.frame.texture, this.drawnSize, inTheDrawingsPixels(layout.handedIn));
-		// How many of the drawing's pixels a pixel of a frame 1080 high takes, as the engine's blur is measured in them
+		// How many of the drawing's pixels a film pixel takes, as the engine's blur is measured in them
 		this.pixelsOfOne = layout.frameScale * window.devicePixelRatio;
 		// three draws nothing without a camera: the passes place their own points; the world's camera takes the
 		// projection alone, the engine placing every point in the eye's own space
@@ -579,9 +579,9 @@ class Room {
 			LINEAR_LAID_FRAGMENT,
 			LAID_OVER
 		);
-		// The glow measured on a frame 1080 high, so it spreads over the same share of any frame drawn at any density,
-		// three's bloom gathering it from copies halved from that size; its strength, spread and threshold set as each
-		// frame's world has them
+		// The glow measured in film pixels, so it spreads over the same share of any frame drawn at any density, three's
+		// bloom gathering it from copies halved from that size; its strength, spread and threshold set as each frame's
+		// world has them
 		const frame = layout.format.frame;
 		const measuredOn = new Vector2(frame.width / layout.frameScale, frame.height / layout.frameScale);
 		this.bloom = new UnrealBloomPass(measuredOn, SET_BY_EACH_FRAME, SET_BY_EACH_FRAME, SET_BY_EACH_FRAME);
@@ -1938,8 +1938,8 @@ function pictureIn(surface) {
 }
 
 /**
- * How far past its box anything an object shows draws at most, in pixels of a frame 1080 high: the stylesheet's token,
- * registered as a length so the browser works it out to pixels.
+ * How far past its box anything an object shows draws at most, in film pixels: the stylesheet's token, registered as a
+ * length so the browser works it out to pixels.
  */
 function reachPastTheBox() {
 	return Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue(REACH_PAST_THE_BOX));

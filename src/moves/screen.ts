@@ -224,8 +224,8 @@ export interface CrestScript {
  * How light sweeps the screen's picture away: a band from the side of the window it comes `from`, its left where the
  * film names none, slanted from that side by `slant`, degrees clockwise as the upright screen shows it, 30 where it
  * names none; or a disc opening `round` a block of the page, a selector or a box of the screen, at its middle; `width`
- * wide, in pixels of a frame 1080 high, 160 where it names none; and its `crest`'s colours, the look's accent as it
- * stands at an end it names none for.
+ * wide, in film pixels, 160 where it names none; and its `crest`'s colours, the look's accent as it stands at an end it
+ * names none for.
  */
 export interface SweepScript extends TimingScript {
 	readonly round?: Target;
@@ -343,8 +343,7 @@ const SWEEP_FORM: Form<SweepScript> = {
 	...TIMING_FORM
 };
 // A band where the film names none of these: from the window's left, as a wipe comes, slanted a third of the way to
-// lying along its way; and a sweep's light 160 pixels of a frame 1080 high wide, so it reads as a band or a ring round
-// its crest
+// lying along its way; and a sweep's light 160 film pixels wide, so it reads as a band or a ring round its crest
 const SWEPT_FROM: FrameSide = 'left';
 const SLANTED = 30;
 const LIGHT_WIDTH = 160;

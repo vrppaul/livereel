@@ -82,8 +82,7 @@ const STACK = 'stack';
 const FAN = 'fan';
 const RING = 'ring';
 const UNDER = 'page';
-// How far apart the bands of the sliced page and the layers of the stack stand toward the eye, in pixels of a 1080
-// frame
+// How far apart the bands of the sliced page and the layers of the stack stand toward the eye, in film pixels
 const BAND_APART = 70;
 const LAYER_APART = 170;
 // The bands step up toward the eye from the page's foot to its top, which the page lies back from, each drawn over the
@@ -106,7 +105,7 @@ const RINGED_LAYERS: readonly Layer[] = [
 	{ as: 'content-line', target: CONTENT, depth: 2 * LAYER_APART, zIndex: 5 }
 ];
 // The layers' labels, flat on the frame left of each as the stack stands raised, read off a still of it, in shares of
-// the frame; how large their letters are, in pixels of a 1080 frame
+// the frame; how large their letters are, in film pixels
 const LAYER_LABELS = [
 	{ as: 'content-label', text: 'Content', at: { left: 0.18, top: 0.23, width: 0.1, height: 0.06 } },
 	{ as: 'header-label', text: 'Header', at: { left: 0.13, top: 0.4, width: 0.1, height: 0.06 } },
@@ -114,7 +113,7 @@ const LAYER_LABELS = [
 ];
 const LABEL_SIZE = 44;
 // The three cards fanned into the depth, the near one first: where each stands, in shares of the frame, how far toward
-// the eye, in pixels of a 1080 frame, how far blurred, and how high drawn, the near over the far
+// the eye, in film pixels, how far blurred, and how high drawn, the near over the far
 const FAN_CARDS = [
 	{
 		as: 'near',
@@ -142,11 +141,12 @@ const FAN_CARDS = [
 	}
 ];
 // The three cards on a ring round the frame's middle, a third of a turn apart: how far each stands from its middle, in
-// pixels of a 1080 frame, as a depth is given, and the frame's width in those; the place a card stands in on it, in
-// shares of the frame, its middle at the frame's; a degree in radians
+// film pixels, as a depth is given, and the frame's width in those, its shorter side 1080 of them; the place a card
+// stands in on it, in shares of the frame, its middle at the frame's; a degree in radians
 const RING_REACH = 360;
-const DEPTH_FRAME_HEIGHT = 1080;
-const FRAME_WIDTH_IN_DEPTH_PIXELS = (DEPTH_FRAME_HEIGHT * WIDE.frame.width) / WIDE.frame.height;
+const SHORTER_SIDE_IN_FILM_PIXELS = 1080;
+const FRAME_WIDTH_IN_FILM_PIXELS =
+	(SHORTER_SIDE_IN_FILM_PIXELS * WIDE.frame.width) / Math.min(WIDE.frame.width, WIDE.frame.height);
 const ON_THE_RING = { width: 0.25, height: 0.17 };
 const RING_MIDDLE: Box = { left: (1 - ON_THE_RING.width) / 2, top: (1 - ON_THE_RING.height) / 2, ...ON_THE_RING };
 const RADIANS_IN_A_DEGREE = Math.PI / 180;
@@ -241,7 +241,7 @@ function cardUnfanned(card: (typeof FAN_CARDS)[number]): readonly Move[] {
 function ringPlace(degrees: number): Box {
 	return {
 		...RING_MIDDLE,
-		left: RING_MIDDLE.left + (RING_REACH * Math.sin(degrees * RADIANS_IN_A_DEGREE)) / FRAME_WIDTH_IN_DEPTH_PIXELS
+		left: RING_MIDDLE.left + (RING_REACH * Math.sin(degrees * RADIANS_IN_A_DEGREE)) / FRAME_WIDTH_IN_FILM_PIXELS
 	};
 }
 

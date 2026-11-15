@@ -137,13 +137,14 @@ const SIDES = 2;
 // A length of nothing: two boxes that meet only along an edge share no area
 const NO_LENGTH = 0;
 const DEGREES_IN_A_HALF_TURN = 180;
-// The shorter side of the frames the stage's look was made on, 1920 × 1080 and 1080 × 1080: what it draws in the
-// frame's own pixels is drawn as on such a frame, and scaled to the frame shot
-export const LOOK_MADE_ON = 1080;
+// A film pixel, the unit every length a film writes on the frame or in the world is in: a pixel of a frame whose
+// shorter side is 1080, as 1920 × 1080 and 1080 × 1080 are, the frames livereel's look was made on. Any other frame is
+// drawn as such a frame and scaled, so a film's numbers show alike on every format
+export const SHORTER_SIDE_IN_FILM_PIXELS = 1080;
 
-/** How large the stage draws on a frame, against the frames its look was made on: by the frame's shorter side. */
+/** How many of the frame's pixels a film pixel takes on a frame of this size. */
 export function frameScaleOf(frame: Size): number {
-	return Math.min(frame.width, frame.height) / LOOK_MADE_ON;
+	return Math.min(frame.width, frame.height) / SHORTER_SIDE_IN_FILM_PIXELS;
 }
 
 export function middleX(box: Box): number {

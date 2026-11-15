@@ -66,7 +66,8 @@ const SCALED: FramesHanded = 'scaled';
 const SHARP: FramesHanded = 'sharp';
 const TWICE = 2;
 const TWICE_THE_FRAME = { width: 640, height: 640 };
-// A card of the film's things module, as wide as half a frame 1080 high and a third as tall, about the frame's middle
+// A card of the film's things module, 540 film pixels wide, half the frame's shorter side, and two thirds as tall,
+// about the frame's middle
 const A_CARD = { at: 'whole', reach: { width: 540, height: 360 }, values: { turn: 0 } } as const;
 
 // What a film is told where the graphics card drops the room's canvas

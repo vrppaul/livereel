@@ -158,8 +158,8 @@ export function pointTurnedAbout(written: AboutWritten): Point {
 }
 
 /**
- * A depth a move brings something to, in pixels of a frame 1080 high, and the move's value that names it, as a
- * refusal says it: "title.to's depth".
+ * A depth a move brings something to, in film pixels, and the move's value that names it, as a refusal says it:
+ * "title.to's depth".
  */
 export interface DepthNamed {
 	readonly depth: number;
@@ -172,8 +172,8 @@ export function depthsNamed(by: string, depth: number | undefined): readonly Dep
 }
 
 /**
- * The depth a film gives an object, a group or the window, in pixels of a frame 1080 high, as the frame's own pixels;
- * as it stands, where the film gives none.
+ * The depth a film gives an object, a group or the window, from the film pixels it writes to the frame's own; as it
+ * stands where the film gives none.
  */
 export function depthAsked(depth: number | undefined, standing: number, frame: Size): number {
 	return depth === undefined ? standing : depth * frameScaleOf(frame);

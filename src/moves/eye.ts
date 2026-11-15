@@ -1,10 +1,10 @@
 /**
- * The eye: to a place in the room, where it stands and the spot it looks at, each in pixels of a frame 1080 high from
- * the frame's middle, and the way its top points (`src/domain/eye.ts`), through the places the film names on its way,
- * on the course it names (`src/moves/through.ts`). What stands in the world — the page's window, an object a film shows
- * there — is seen from wherever the eye stands; what stands on the frame, a title or a caption, rides with it. What a
- * place leaves out, where the eye stands, what it looks at or the way its top points, stays as it stands as the move
- * begins, at its end and at every key.
+ * The eye: to a place in the room, where it stands and the spot it looks at, each in film pixels from the frame's
+ * middle, and the way its top points (`src/domain/eye.ts`), through the places the film names on its way, on the course
+ * it names (`src/moves/through.ts`). What stands in the world — the page's window, an object a film shows there — is
+ * seen from wherever the eye stands; what stands on the frame, a title or a caption, rides with it. What a place leaves
+ * out, where the eye stands, what it looks at or the way its top points, stays as it stands as the move begins, at its
+ * end and at every key.
  *
  * The path is worked out once, as the move begins, from where the eye stands then: its places are values of the room,
  * and nothing the eye passes moves under it.
@@ -139,7 +139,7 @@ import { type ThroughScript, throughFormOf, throughWritten } from './through.ts'
 /** The places the eye passes on its way to its own, and how its path goes through them. */
 export interface EyeToScript extends TimingScript, ThroughScript<EyePlace> {}
 
-/** A spot over the page's window: `height` pixels of a frame 1080 high over the middle of a block of the page. */
+/** A spot over the page's window: `height` film pixels over the middle of a block of the page. */
 export interface Over {
 	readonly over: Target;
 	readonly height: number;
@@ -174,8 +174,8 @@ interface LegAhead extends TimedLeg {
 }
 
 /**
- * A leg flown along a figure the film draws in three.js, its points x across, y down and z out in pixels of a frame
- * 1080 high, set off from where the leg starts.
+ * A leg flown along a figure the film draws in three.js, its points x across, y down and z out in film pixels, set off
+ * from where the leg starts.
  */
 interface LegAlong extends TimedLeg {
 	readonly along: OwnFigure;
@@ -281,13 +281,13 @@ interface UnderFocus {
 }
 
 /**
- * Where a film focuses the eye: so far before it along where it looks, in pixels of a frame 1080 high; at a spot of the
- * world; on a block of the page, the first a selector matches or a box of the screen, at its middle; on an object,
- * `{ object }` by its name, at its middle; or under a point of the frame, `{ under }`.
+ * Where a film focuses the eye: so far before it along where it looks, in film pixels; at a spot of the world; on a
+ * block of the page, the first a selector matches or a box of the screen, at its middle; on an object, `{ object }` by
+ * its name, at its middle; or under a point of the frame, `{ under }`.
  */
 export type FocusOn = number | Spot | Target | ObjectFocus | UnderFocus;
 
-/** How wide the eye opens as it focuses, `aperture`, in pixels of a frame 1080 high; left out, as wide as it stands. */
+/** How wide the eye opens as it focuses, `aperture`, in film pixels; left out, as wide as it stands. */
 export interface FocusScript extends TimingScript {
 	readonly aperture?: number;
 }
@@ -326,10 +326,10 @@ const ONTO_FORM: Form<OntoScript> = {
 	...TIMING_FORM
 };
 const FOCUS_ON_SAID =
-	'a distance before the eye in pixels of a frame 1080 high, more than 0; a spot { across, down, out }; a selector or a box of the screen; an object, { object }; or under a point of the frame, { under: { left, top } } in shares of it';
+	'a distance before the eye in film pixels, more than 0; a spot { across, down, out }; a selector or a box of the screen; an object, { object }; or under a point of the frame, { under: { left, top } } in shares of it';
 const AN_OVER = new OfForm<Over>(
 	{ over: needed(A_TARGET), height: needed(A_SIZE) },
-	'a spot over the page: { over, height }, a block and how high over it in pixels of a frame 1080 high, more than 0'
+	'a spot over the page: { over, height }, a block and how high over it in film pixels, more than 0'
 );
 const A_LEGS_TIME = new Plain(isMoreThanNone, 'how long the leg takes beside the others, more than 0');
 const A_LEG_BENDING = new OfForm<LegBending>(
@@ -428,8 +428,7 @@ const STRAIGHT_UP = 90;
 // The gaze of the eye standing square before a block, as `viewpointBefore` stands it: heading up the page, its top
 // pointing so, and tipped straight down onto the page
 const UP_THE_PAGE = 0;
-// How near over a block, on the page's plane, the eye stands to have no heading toward it, in pixels of a frame 1080
-// high
+// How near over a block, on the page's plane, the eye stands to have no heading toward it, in film pixels
 const RIGHT_OVER = 1e-6;
 // How far the eye stands turned from square where a film names no turn, and the quarter turn it stays within, in
 // degrees: turned so far, it would stand on the page's plane
@@ -599,7 +598,7 @@ async function broughtBefore(
 
 /**
  * Where the eye stands before a block of the page as a film frames it, the block read as the move begins where the
- * camera shows it in the window then: in the window's own pixels of a frame 1080 high, `out` away from its face.
+ * camera shows it in the window then: in film pixels on the window's own plane, `out` away from its face.
  */
 async function standBefore(
 	beginning: Beginning,
@@ -831,8 +830,8 @@ function boxOnTheWindowsPlane(camera: Camera, frame: Size, box: Box): Box {
 }
 
 /**
- * Where a point of the screen stands on the window's own plane, as the camera shows the page in it: in pixels of a
- * frame 1080 high from the window's middle.
+ * Where a point of the screen stands on the window's own plane, as the camera shows the page in it: in film pixels from
+ * the window's middle.
  */
 function onTheWindowsPlane(camera: Camera, frame: Size, point: Point): Spot {
 	const inTheView = pointInTheView(camera, frame, point);
@@ -891,8 +890,8 @@ function focusUnder(beginning: Beginning, share: Point): Focus {
 }
 
 /**
- * A focus at a spot of the room, as the eye's spots are written, in pixels of a frame 1080 high from the frame's
- * middle: on the world's plane, in the frame's pixels from its top left corner, and as far out of it.
+ * A focus at a spot of the room, as the eye's spots are written, in film pixels from the frame's middle: on the world's
+ * plane, in the frame's pixels from its top left corner, and as far out of it.
  */
 function focusInTheWorld(spot: Spot, frame: Size): Focus {
 	const inTheFrame = scaledBy(spot, frameScaleOf(frame));

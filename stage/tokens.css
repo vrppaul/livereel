@@ -56,7 +56,7 @@
 	--pane-shadow-drop: 60px;
 	--pane-shadow-blur: 140px;
 
-	/* How far past its box anything an object shows draws at most, in pixels of a frame 1080 high: a pane's shadow, dropped and blurred below it. A surface the room stands an object in covers it (`room.js`) */
+	/* How far past its box anything an object shows draws at most, in film pixels: a pane's shadow, dropped and blurred below it. A surface the room stands an object in covers it (`room.js`) */
 	--reach-past-the-box: calc(var(--pane-shadow-drop) + var(--pane-shadow-blur));
 
 	/* How far a key's shadow drops below its cap, and blurs */
@@ -91,9 +91,9 @@
 /*
  * A pane on the ground — the page's window, the screen the page is shown on, the code's pane, the agent's terminal —
  * its edge, and its shadow in the look's colour, as strong as the look has it, from 0 none to 1 livereel's, and as an
- * object's figure's shadow stands. Its lengths are pixels of a frame 1080 on its shorter side, scaled by the pane's own
- * `--pane-scale` (`stage.css`), as each is drawn at a scale of its own: so it is worked out on each pane, where a token
- * on the root would take the root's scale.
+ * object's figure's shadow stands. Its lengths are film pixels, scaled by the pane's own `--pane-scale` (`stage.css`),
+ * as each is drawn at a scale of its own: so it is worked out on each pane, where a token on the root would take the
+ * root's scale.
  */
 .view-shadow,
 .screen,
@@ -119,11 +119,11 @@
 /*
  * An object's effects, each as strong as the film has it, from 0 none to 1 livereel's (`src/props/effects.ts`): the
  * shadow it casts toward its foot as though lifted off what lies under it, in the look's shadow colour, dropping
- * further, softer and darker the stronger it is, and turning with it as it rolls, as a pane's own shadow does; the
- * glow round it; how far it is blurred; and the ring along its edge, the ring and the glow in the colour the film
- * gives them, or the accent where it gives none. Worked out on each object, where the stage sets its strengths, as a
- * token on the root would take none; its lengths are pixels of a frame 1080 high, as what an object shows is drawn in.
- * Its glow and blur stand apart too, for a piece whose body the room draws, the shadow on what lies under it with it.
+ * further, softer and darker the stronger it is, and turning with it as it rolls, as a pane's own shadow does; the glow
+ * round it; how far it is blurred; and the ring along its edge, the ring and the glow in the colour the film gives
+ * them, or the accent where it gives none. Worked out on each object, where the stage sets its strengths, as a token on
+ * the root would take none; its lengths are film pixels, as what an object shows is drawn in. Its glow and blur stand
+ * apart too, for a piece whose body the room draws, the shadow on what lies under it with it.
  */
 .object {
 	--effect-drawn-in: var(--effect-colour, var(--accent));
@@ -170,9 +170,9 @@
  * Light sweeping away the picture the screen showed (`src/props/screen.ts`), a band or a disc's ring: a sheen of light
  * across it, fading to nothing at its sides, and its crest, a thin line along it in the colours the film gives its two
  * ends or the accent where it gives none, glowing in the two mixed. Worked out on the sweep, where the stage sets the
- * crest's colours and the disc's numbers, as a token on the root would take none; its lengths are pixels of a frame
- * 1080 high, scaled by the screen's `--pane-scale`, as the light is drawn on it. The picture swept away by a disc is
- * kept outside it alone.
+ * crest's colours and the disc's numbers, as a token on the root would take none; its lengths are film pixels, scaled
+ * by the screen's `--pane-scale`, as the light is drawn on it. The picture swept away by a disc is kept outside it
+ * alone.
  */
 .sweep {
 	--crest-from: var(--crest-start, var(--accent));

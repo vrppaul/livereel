@@ -3,11 +3,11 @@
  * livereel's draws and three draws in a few tens of lines — an end card standing in the world, a sheen, a sheet leant
  * on the page. It is what an object shows (`src/props/object.ts`), so it stands at a place, on the frame or in the
  * world, travels, grows, comes near and turns as any object does. How far it reaches across and up from its middle is
- * the film's, `reach`, in pixels of a frame 1080 high: its box is that footprint about the place's middle, from whose
- * middle it is built, one of its units a pixel of a frame 1080 high; the box's corners say how far it moves for the
- * motion blur and how far from the eye's focus it reaches. What it shows is the film's: numbers by name, `values`,
- * handed to its module each frame, which sets the three objects it built whole from them and from how far it has come
- * up, and keeps nothing else; a move of its numbers moves nothing the motion blur counts.
+ * the film's, `reach`, in film pixels: its box is that footprint about the place's middle, from whose middle it is
+ * built, one of its units a film pixel; the box's corners say how far it moves for the motion blur and how far from the
+ * eye's focus it reaches. What it shows is the film's: numbers by name, `values`, handed to its module each frame,
+ * which sets the three objects it built whole from them and from how far it has come up, and keeps nothing else; a move
+ * of its numbers moves nothing the motion blur counts.
  *
  * The room draws a thing carried about its box's middle into the eye's own space, written in three's own axes, up the
  * frame, so its faces turn as three's do, and seen from there in perspective. In the world it stands in the room's one
@@ -24,7 +24,7 @@ import { between } from '../domain/toward.ts';
 /** A thing's numbers by name, as its module reads them. */
 export type ThingValues = Readonly<Record<string, number>>;
 
-/** How far a thing reaches across and up, whole, in pixels of a frame 1080 high: its footprint on the frame. */
+/** How far a thing reaches across and up, whole, in film pixels: its footprint on the frame. */
 export interface Reach {
 	readonly width: number;
 	readonly height: number;
@@ -41,12 +41,11 @@ export interface Thing {
 /**
  * A thing as the stage draws it: the name its module builds it by, its numbers, how far it has come up and not gone in
  * its own way, from 0 to 1; the matrix that carries a point of it, in three's own axes — x across, y up, z toward the
- * eye — in pixels of a frame 1080 high from its box's middle, into the eye's own space in the frame's pixels, in
- * three's axes too, the eye at its middle looking down its z, the room standing there as the scene's eye hands it
- * (`DrawnEye` in `src/domain/eye.ts`). How soft the eye's focus draws it is its object's, as of any object in the
- * world, by its box: what it reaches toward or away from the eye past its box's plane is the film's module's and is not
- * counted. Whether it stands in the world, where the eye sees it among the window and every other thing there, is what
- * its object rides.
+ * eye — in film pixels from its box's middle, into the eye's own space in the frame's pixels, in three's axes too, the
+ * eye at its middle looking down its z, the room standing there as the scene's eye hands it (`DrawnEye` in
+ * `src/domain/eye.ts`). How soft the eye's focus draws it is its object's, as of any object in the world, by its box:
+ * what it reaches toward or away from the eye past its box's plane is the film's module's and is not counted. Whether
+ * it stands in the world, where the eye sees it among the window and every other thing there, is what its object rides.
  */
 export interface DrawnThing {
 	readonly kind: 'thing';
@@ -66,7 +65,7 @@ export const THING_VALUES = new RecordOf(A_NUMBER, "numbers by name, as the thin
 /** How far a thing reaches, as a film hands it. */
 export const A_REACH: Kind<Reach> = new OfForm<Reach>(
 	{ width: needed(A_SIZE), height: needed(A_SIZE) },
-	'how far it reaches, whole: { width, height }, in pixels of a frame 1080 high'
+	'how far it reaches, whole: { width, height }, in film pixels'
 );
 
 /**

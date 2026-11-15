@@ -145,12 +145,14 @@ holds however near it comes; words, code, panes and an SVG ask more the nearer.
 ### A film's shape
 
 A film is a TypeScript file whose default export is `defineFilm({ formats, address, serve, ready, steps })` from
-`livereel`: its formats by name, each a frame and the screen its page is laid out on (`{ square: { frame, screen }
-}`); the page's `address`; `serve`, the command that serves it there where the film starts the app (`'npm run dev'`,
-run in the film's folder until the address answers, stopped after the take), left out for a page someone else serves
-or that already runs; `ready`, when the page stands as the first frame shows it; and `steps(whole, formatName)`. The
-port is the film's: name one the command serves on and nothing else holds. Every other field of `defineFilm` is in the
-README's table, "A film". Read `node_modules/livereel/examples/example-com.ts` first: it is a whole film.
+`livereel`: its formats by name, each a frame and the screen its page is laid out on (`{ square: { frame, screen } }`);
+the page's `address`; `serve`, the command that serves it there where the film starts the app (`'npm run dev'`, run in
+the film's folder until the address answers, stopped after the take), left out for a page someone else serves or that
+already runs; `ready`, when the page stands as the first frame shows it; and `steps(whole, formatName)`. The port is the
+film's: name one the command serves on and nothing else holds. Every other field of `defineFilm` is in the README's
+table, "A film". A length on the frame or in the world is in film pixels, pixels of a frame whose shorter side is 1080,
+scaled to the frame shot; one on the page, a box of the screen, `air` or the screen's size, in the page's pixels. Read
+`node_modules/livereel/examples/example-com.ts` first: it is a whole film.
 `examples/livereel-promo.ts` serves an app of its own and clicks it for real; its server is
 `examples/livereel-promo/server.ts`, and what a click brings, data the server and the film both read,
 `examples/livereel-promo/acme.ts`. `examples/livereel-recipes.ts` plays the recipes below on that app, an act each.
@@ -303,7 +305,7 @@ what three.js does in a thing: build it in the module.
 |---|---|
 | `camera.to(pose, { through, shape, pace })` | to a pose, `whole` or `{ focusX, focusY, zoom }`, one per format ("The camera") |
 | `camera.onto(target, { every, air, zoomAtMost, through, shape, pace })` | blocks framed with `air` round them in whatever window stands, and kept framed; keep the zoom at 2.2 or under |
-| `eye.to({ at, aim, up }, { through, shape, pace })`, `eye.to('rest')` | the eye at a spot looking at another, `{ across, down, out }` frame pixels; an up turned half round needs a place between ("The eye") |
+| `eye.to({ at, aim, up }, { through, shape, pace })`, `eye.to('rest')` | the eye at a spot looking at another, `{ across, down, out }` film pixels; an up turned half round needs a place between ("The eye") |
 | `eye.onto(target, { fills, middleAt, turned, pace })` | before a part, filling `fills` of the frame, turned under a quarter round; `pace: 'even'` dives in, the default draws back |
 | `eye.fly(legs, { shape, heading, tip, turning })` | legs `to`, `ahead`, `along` a figure or `onto` a block, timed by `takes`; heading and tip keys by leg; draw it as a room ("A flight") |
 
@@ -318,7 +320,7 @@ the reference. A dive: legs `[{ to: { over: '#gap-start', height: 120 }, arrivin
 
 | Move | |
 |---|---|
-| `eye.focus(on, { aperture })` | the focus so far off, at a spot, a block, `{ object }` or `{ under: { left, top } }`, open `aperture` frame pixels; shares a step with `eye.to` ("Focus") |
+| `eye.focus(on, { aperture })` | the focus so far off, at a spot, a block, `{ object }` or `{ under: { left, top } }`, open `aperture` film pixels; shares a step with `eye.to` ("Focus") |
 | `window.shade({ dim, fade, blur, sharp, sharpSoftens, reaching, blurSeen })` | the page dimmed, faded or blurred behind what stands clear; `sharp` keeps a part, never slid; sets only what it names ("The shade") |
 
 To hand the sharp part on mid-glide: `window.shade({ blur: 0, within: { end: 0.5 } })`, then `window.shade({ blur: 6,

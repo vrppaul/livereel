@@ -30,16 +30,15 @@ import { NO_PLACE, ONE_BLOCK_ON_THE_FRAME, cameraOverThePicture, sourceOf } from
 import { IN_PLACE_SHOW_FORM, type InPlaceShowScript } from './way.ts';
 
 /**
- * How a lens comes: how many times larger it shows the page than the camera does, how wide it is across, in pixels of a
- * frame 1080 high; how it comes up; which lens; the group it stands in, if any; how it stands out as it comes up,
- * `effects`.
+ * How a lens comes: how many times larger it shows the page than the camera does, how wide it is across, in film
+ * pixels; how it comes up; which lens; the group it stands in, if any; how it stands out as it comes up, `effects`.
  */
 export interface LensScript extends InPlaceShowScript, NamedScript, GroupedScript, ShownStandingOutScript {
 	readonly magnification?: number;
 	readonly size?: number;
 }
 
-/** What a lens is born with: how many times larger it shows the page, and how wide it is, in pixels of a 1080 frame. */
+/** What a lens is born with: how many times larger it shows the page, and how wide it is, in film pixels. */
 interface Glass {
 	readonly magnification: number;
 	readonly size: number;
@@ -54,8 +53,8 @@ const LENS_FORM: Form<LensScript> = {
 	...GROUPED_FORM,
 	...SHOWN_STANDING_OUT_FORM
 };
-// A lens shows the page twice as large as the camera does, and stands 320 pixels of a 1080 frame across, as wide for
-// its frame as the board's loupe, where the film names neither
+// A lens shows the page twice as large as the camera does, and stands 320 film pixels across, as wide for its frame as
+// the board's loupe, where the film names neither
 const MAGNIFIED_TWICE = 2;
 const LENS_ACROSS = 320;
 

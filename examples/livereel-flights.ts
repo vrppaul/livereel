@@ -18,7 +18,7 @@ const REFRESH = '[data-testid=refresh]';
 const VISITORS = '[data-testid=visitors]';
 const SIGN_UPS = '[data-testid=sign-ups]';
 const REVENUE = '[data-testid=revenue]';
-// How high over the page the run sinks, runs and rises to, in pixels of a frame 1080 high
+// How high over the page the run sinks, runs and rises to, in film pixels
 const SUNK = 520;
 const RUNNING = 260;
 const OVER_THE_BUTTON = 700;

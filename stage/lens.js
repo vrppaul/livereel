@@ -150,11 +150,11 @@ const TILES_FOUND = { type: HalfFloatType, depthBuffer: false, minFilter: Neares
 const TILES_WIDENED = { type: HalfFloatType, depthBuffer: false, minFilter: LinearFilter, magFilter: LinearFilter };
 
 // How the tiles and the split read the scene's depth: how near the eye a stored depth stands, one over how far before
-// it, in pixels of a frame 1080 high, three's perspective storing it between the depth's near and far, in the frame's
-// pixels (three's own reading, its view's depth negative before the eye); how wide the engine's law, its spread per
-// nearness and the focus's nearness, spreads it, in the drawing's pixels; how wide a pixel of the field spreads, by
-// that law or by a spread of its own the field is handed, whichever is wider; whether anything was drawn there, and
-// whether it is the near field's, nearer than the focus by the law; and the nearest depth round a pixel
+// it, in film pixels, three's perspective storing it between the depth's near and far, in the frame's pixels (three's
+// own reading, its view's depth negative before the eye); how wide the engine's law, its spread per nearness and the
+// focus's nearness, spreads it, in the drawing's pixels; how wide a pixel of the field spreads, by that law or by a
+// spread of its own the field is handed, whichever is wider; whether anything was drawn there, and whether it is the
+// near field's, nearer than the focus by the law; and the nearest depth round a pixel
 const DEPTH_READ = `
 #include <packing>
 uniform sampler2D depth;
@@ -476,8 +476,8 @@ void main() {
 /** The lens: the passes over the frame that read a field of the world's scene and its depth. */
 export class Lens {
 	/**
-	 * @param {number} pixelsOfOne the drawing's pixels of a pixel of a frame 1080 high
-	 * @param {number} frameScale the frame's pixels of a pixel of a frame 1080 high
+	 * @param {number} pixelsOfOne the drawing's pixels of a film pixel
+	 * @param {number} frameScale the frame's pixels of a film pixel
 	 * @param {number} pixelsOfAFramePixel the drawing's pixels of a pixel of the frame, the page's device scale
 	 */
 	constructor(pixelsOfOne, frameScale, pixelsOfAFramePixel) {
@@ -629,9 +629,8 @@ export class Lens {
 }
 
 /**
- * The values a pass that reads the scene's depth takes (`DEPTH_READ`): the drawing's pixels of a pixel of a frame 1080
- * high and the frame's scale, set once; the depth, the spreads of its own, its range and the lens's law set as each
- * field is laid.
+ * The values a pass that reads the scene's depth takes (`DEPTH_READ`): the drawing's pixels of a film pixel and the
+ * frame's scale, set once; the depth, the spreads of its own, its range and the lens's law set as each field is laid.
  * @param {number} pixelsOfOne @param {number} frameScale
  */
 function depthReadValues(pixelsOfOne, frameScale) {

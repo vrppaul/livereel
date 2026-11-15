@@ -9,10 +9,9 @@ import type { Presences } from './way.ts';
 import { type ComingUp, type DrawnWords, type Said, drawnWordsOnGround } from './words.ts';
 
 /**
- * A title's words: what they say, how they read in their box, where they stand down it, how large their letters are,
- * in pixels of a frame 1080 on its shorter side, how far apart its letters and its lines stand, in times its letters'
- * size — each none, as the look has a title's — whether they stand on a ground of their own, and how they come up,
- * word by word or typed.
+ * A title's words: what they say, how they read in their box, where they stand down it, how large their letters are, in
+ * film pixels, how far apart its letters and its lines stand, in times its letters' size — each none, as the look has a
+ * title's — whether they stand on a ground of their own, and how they come up, word by word or typed.
  */
 export interface TitleWords extends Said, TitleType {
 	readonly kind: 'title';

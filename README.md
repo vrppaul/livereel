@@ -240,14 +240,14 @@ The eye sees 24° across the frame's shorter side, a long lens: a window leant b
 its shape, and only a little of its depth shows. `eye: { angleOfView: 40 }` is a wider one, where depth is loud.
 Every format of a film shares its angle.
 
-The look was made on frames 1080 pixels on their shorter side, as 1920 × 1080 and 1080 × 1080 are; any other
-frame is drawn as such a frame and scaled. The caption, the terminal and the ending keep their share of any
-frame, and an angle leans as steeply on any. A size of the look or of a split is in pixels of a frame 1080 on its
-shorter side; any other length on the frame or in the world is in pixels of a frame 1080 high, called **frame
-pixels** below. A zoom, in a pose as in `zoomAtMost`, is the frame's pixels a page's pixel takes on such a frame,
-so a pose and a framing by selector, its `air` in the page's pixels, show as much of the page on a frame of any
-size. A pose in numbers is the film's to give per format: `steps(whole, formatName)` is handed the whole screen's
-pose and the name of the format shot.
+The look was made on frames 1080 pixels on their shorter side, as 1920 × 1080 and 1080 × 1080 are; any other frame
+is drawn as such a frame and scaled. The caption, the terminal and the ending keep their share of any frame, and an
+angle leans as steeply on any. Every length a film writes on the frame or in the world, a size of the look and of a
+split among them, is in pixels of such a frame, called **film pixels** below: on a 1920 × 1080 frame a film pixel
+is a pixel of it, on a 1080 × 1920 frame too, and on a 3840 × 2160 frame two. A zoom, in a pose as in `zoomAtMost`,
+is the film pixels a page's pixel takes, so a pose and a framing by selector, its `air` in the page's pixels, show
+as much of the page on a frame of any size. A pose in numbers is the film's to give per format:
+`steps(whole, formatName)` is handed the whole screen's pose and the name of the format shot.
 
 A screen may be taller than the frame, a page laid out whole for the eye to fly low over:
 `screen: { width: 1040, height: 5000 }`. A static page's picture is then of the whole of it, taken anew each time
@@ -520,7 +520,7 @@ motion stays stilled.
 `screen.sweep({ from, slant, round, width, crest })` in a `play` sweeps the picture the screen shows away by a
 band of light, the page as it stands showing behind it: a theme turned dark by `page.act(action, { within: {
 start: 0.02 } })` in the same play comes in behind the band. The band crosses what the window shows of the screen
-from its left, or the side `from` names, slanted 30° clockwise or as far as `slant` names, 160 frame pixels wide
+from its left, or the side `from` names, slanted 30° clockwise or as far as `slant` names, 160 film pixels wide
 or `width`, its crest in the look's accent as it stands, or running from `crest.start` at its end nearer the top
 to `crest.end`. Or a disc opens `round` a block, a selector or a box of the screen, at its middle, its ring
 growing from there, or from the nearest point the window shows where it shows no middle, to past the farthest
@@ -553,7 +553,7 @@ frame, but never so far back that ground shows in the window, coming closer than
 block wider than the window at that distance is cut at its edges and a phone's page shows a strip of itself;
 framed closer, the window stands still and the page grows in it.
 
-`depth` brings the window that many frame pixels toward the eye on its way, larger and farther from the frame's
+`depth` brings the window that many film pixels toward the eye on its way, larger and farther from the frame's
 middle as the eye sees it: a slab coming at the eye with its body; a depth below none takes it back. Keep it under
 the eye's focal length: a depth that stands the window at the eye or behind it is refused before anything is
 shot. A depth goes on the move's curve and is kept where a move names none. Over the whole frame the window stays
@@ -600,7 +600,7 @@ values; what a move leaves out stays, and the window opens with no body:
 
 | Value | What it sets | livereel's |
 |---|---|---|
-| `thickness`, `rim` | how thick the slab is, `0` none, and how far its rim reaches past the page all round, in frame pixels | `0`, `6` |
+| `thickness`, `rim` | how thick the slab is, `0` none, and how far its rim reaches past the page all round, in film pixels | `0`, `6` |
 | `metal`, `roughness` | the colour of its metal, in hex with no alpha, and how rough it is, from `0`, a mirror, to `1`, matte | `#454b56`, `0.45` |
 | `glass` | how strong the clear coat of glass over the page is, `0` to `1`, a whole coat: 4% reflected face-on, more aslant | `0.4` |
 | `glint` | how bright the glint of the slab's own strip of light shines at its brightest, `0` none, `1` the page's white | `0` |
@@ -686,7 +686,7 @@ ground among them.
 
 **Carried.** Every object's `to` but a lens's, as `title.to(place, { scale, depth, through })`, carries it to
 another place through the boxes between; a title's words stay as they were. It grows about its middle by `scale`
-and comes `depth` frame pixels toward the eye, less than the eye's focal length, larger and farther from the
+and comes `depth` film pixels toward the eye, less than the eye's focal length, larger and farther from the
 frame's middle as the eye sees it. Each is kept where a move leaves it out. `through` names places it passes on
 one curve, as `camera.onto` passes blocks ("The camera"): `title.to('right', { through: ['top'] })`.
 
@@ -704,7 +704,7 @@ standing out from its first frame:
 | `shadow` | a shadow in the look's shadow colour, toward the object's foot, so it turns as the object rolls; 0 none to 1 whole |
 | `glow`, `ring` | the accent lit round it, and a line of the accent along its edge; 0 to 1 |
 | `colour` | the ring and glow in a colour of the film's, `'#5b8def'`: they go to it from the colour they were seen in, or are in it all along where they rise from none; with none they follow the accent as a look's move changes it |
-| `blur` | blurred, in frame pixels |
+| `blur` | blurred, in film pixels |
 | `melt` | `{ toward: 'right', share: 0.6 }`: it melts into nothing at its right side from 0.6 of it in, as two halves of a page melt toward the middle as they part; its shadow and glow follow what is left |
 | `fade` | faded into what lies behind it, its shadow and a piece's walls with it, 0 to 1 |
 | `scale`, `depth` | grown about its middle where it stands, and brought toward the eye, so a block lifted off the page grows in place though the film knows no place of it |
@@ -765,22 +765,22 @@ code.show(LINES, { at: { of: 'left', top: 0.25, height: 0.75 } }),
 ```
 
 Words in a place stand in the middle of their box down it, as large as its width lets, centred in `whole`, `top`
-and `bottom` and read from the left anywhere else; `align: 'start'` or `'center'` says otherwise. A title's
-letters are as large as the look's `titleSize`, and in a place a share of it no larger than the place's width lets
-a long word stand on a line; `size` sets one title's own, in pixels of a 1080 frame: `title.show('Live', { at:
-'left', size: 220 })`. Its letters stand as far apart as the look's `titleLetterSpacing` and its lines as
-`titleLineHeight`; `letterSpacing` and `lineHeight` set one title's own, in times its letters' size, as CSS's
-`em`: a name drawn 9 px closer at 300 px, its lines' feet 290 px apart, is `{ size: 185, letterSpacing: -9 / 300,
-lineHeight: 290 / 300 }`. A word is never broken: one larger than its place runs past it, so check it on a still.
-A line break the film writes breaks the line there, in a title, a caption, a callout, a note and any run:
+and `bottom` and read from the left anywhere else; `align: 'start'` or `'center'` says otherwise. A title's letters
+are as large as the look's `titleSize`, and in a place a share of it no larger than the place's width lets a long
+word stand on a line; `size` sets one title's own, in film pixels: `title.show('Live', { at: 'left', size: 220 })`.
+Its letters stand as far apart as the look's `titleLetterSpacing` and its lines as `titleLineHeight`;
+`letterSpacing` and `lineHeight` set one title's own, in times its letters' size, as CSS's `em`: a name drawn 9 px
+closer at 300 px, its lines' feet 290 px apart, is `{ size: 185, letterSpacing: -9 / 300, lineHeight: 290 / 300 }`.
+A word is never broken: one larger than its place runs past it, so check it on a still. A line break the film
+writes breaks the line there, in a title, a caption, a callout, a note and any run:
 `'each step:\nwhy, then the code'` stands on two lines wherever the place's width would have broken it, so a
-heading on two lines is one title. In a room, a title in the world is cut where its words run past its box
-farther than a pane's shadow reaches.
+heading on two lines is one title. In a room, a title in the world is cut where its words run past its box farther
+than a pane's shadow reaches.
 
 **Beside a part.** `beside` stands a title, in place of a place, off a point of a part: a block of the page,
 `part`, a selector or a box of the screen, or an object, `object`, by its name. It stands on the frame, its
 letters as large wherever the eye stands, off that point as the eye sees it on each frame, so it goes with the
-part as the eye, the window, the camera and the part move. To the part's `right`, its words read from `gap` frame
+part as the eye, the window, the camera and the part move. To the part's `right`, its words read from `gap` film
 pixels right of the point, their middle level with it; over its `top`, they read from the point, their foot `gap`
 above it. The point lies `along` that side, a share from its top or left, its middle where none is named. The
 block is read as the move begins. Its box is a frame wide and high off the point, so its words break only where
@@ -980,7 +980,7 @@ its block as a column slides under it. Those blocks are found as it is lifted (f
 shown at its middle too): the ones its source stands in as the browser lays it out, past a block placed
 `absolute` or `fixed` the one the browser places it from and none between, so a row of a column fixed to the
 screen rides no scroll; a block placed `sticky` is taken as carried, though it stops once it sticks. A fade from
-the page it was lifted off lays it where it lays that page, its depth staying in frame pixels; a page the screen
+the page it was lifted off lays it where it lays that page, its depth staying in film pixels; a page the screen
 cut away from with no fade lies where the screen does. Its hole and pit, its lines, what it draws from the page's
 picture, its shadow and words beside it go with it. A scroll an act does, or the page does by itself, carries it
 nowhere; off a page of the film's own nothing the film scrolls carries it, nor the page's run. Carried `to` a
@@ -1011,7 +1011,7 @@ as dark while a shade fades the page, unless its piece stands in the shade. A ro
 **In the shade.** A piece lifted off a shaded page may stand in the window's shade, as the claude-review promo's lens
 keeps a lifted part as soft and faded as its page as far as it has not risen: `shade: { clearAt: 56 }` has the shade
 reach it and its walls wholly while its face lies on the page, less as `depth` brings it toward the eye, and not at
-all from 56 frame pixels on; its pit, a hole in the page, it reaches wholly however far the piece rises, so the pit
+all from 56 film pixels on; its pit, a hole in the page, it reaches wholly however far the piece rises, so the pit
 stays as dark as the soft page round it. The room blurs it and its pit by the shade's own law, through the eye's lens
 in light, and fades them in light into what stands behind the page, so lying on its page a piece shows as the page
 round it, but for the shade's `dim`, which stays the screen's alone, and lifted whole it stands sharp and clear: the
@@ -1022,7 +1022,7 @@ anywhere but in the world.
 **A sheen.** Wiped away, a piece may trail a light over the page it leaves: `piece.hide({ leave: 'wipe', edge:
 'right', sheen: { colour: '#59c470' } })` runs a band along a line that has landed on its row, the line gone
 behind the edge and the page's own row there. The light rises from nothing at the edge to its brightest just
-behind it and fades over `width`, 48 frame pixels where none is named, across the piece's figure, brightest down
+behind it and fades over `width`, 48 film pixels where none is named, across the piece's figure, brightest down
 its middle, in the look's accent where no `colour` is named. The edge goes on past the figure's far side as far as
 the light trails, so the light runs off before the piece is gone. It is blurred and held as the piece is, and
 casts none of its shadow. Several such hides in one `play`, each its own `within`, run at once. Refused: a sheen
@@ -1056,7 +1056,7 @@ as a piece is, from no picture, so a page framed live takes one too. `outline.to
 moved.
 
 `lens.show(target, { magnification, size, enter, edge, as, group, zIndex, effects })` stands a round glass, `size`
-320 frame pixels across, round a block's middle, showing the page under its own middle `magnification` 2 times as
+320 film pixels across, round a block's middle, showing the page under its own middle `magnification` 2 times as
 large as the camera does. Aim it at a block whose middle is what it should show, a number's own element, not one
 as wide as its card. `lens.to(target, { as })` carries it round another block's middle, what it shows moving under
 it; `lens.effects` and `lens.hide({ toward, leave, edge, as })` as any object. A lens is drawn from the page's
@@ -1093,8 +1093,8 @@ play({ seconds: 1, moves: [thing.set({ turn: 0.5 }), thing.to('whole', { depth: 
 ```
 
 `thing.show(made, { at, reach, values, inside, from, as })` shows the thing the module builds by the name `made`
-at a place, on the frame or `inside: 'world'`; `reach` is how far it reaches across and up, whole, in frame
-pixels. Its box is that footprint about the place's middle, from whose middle it is built, a unit a frame pixel,
+at a place, on the frame or `inside: 'world'`; `reach` is how far it reaches across and up, whole, in film
+pixels. Its box is that footprint about the place's middle, from whose middle it is built, a unit a film pixel,
 its axes three's own, y up the frame. `thing.to(place, { through, scale, depth })`, `thing.lean({ tilt, turn,
 roll, over, about })` and `thing.hide({ toward })` move it as any object; `thing.set(values)` moves its numbers,
 each from where it stood, only those it was shown with. Its box's corners say how near the focus it stands and how
@@ -1152,11 +1152,11 @@ The camera at `whole` shows the page as large in a smaller window, cut by its ed
 
 The eye is what the film is seen from. The page's window and what is shown `inside: 'world'` are seen from
 wherever it stands; what stands on the frame, as a caption, rides with it. It rests straight out from the frame's
-middle as far as its focal length, looking at the middle: 2540.5 frame pixels at the 24° a film sees where it
+middle as far as its focal length, looking at the middle: 2540.5 film pixels at the 24° a film sees where it
 names no `angleOfView`.
 
 `eye.to({ at, aim, up }, { through, shape, pace })` stands it `at` a spot, looking at the spot `aim` names, each
-`{ across, down, out }` in frame pixels from the frame's middle, `out` toward whoever watches, its top pointing
+`{ across, down, out }` in film pixels from the frame's middle, `out` toward whoever watches, its top pointing
 `up`, up the frame, `{ across: 0, down: -1, out: 0 }`, until a film turns it. What a move leaves out stays.
 `eye.to('rest')` sends it back to rest. To look straight down at the frame, point its up into it,
 `{ across: 0, down: 0, out: -1 }`; to roll the picture, turn `up`. Refused: an eye looking at where it stands, or
@@ -1185,11 +1185,11 @@ After `eye.onto` or `eye.fly` the eye rides the window, so a window that leans o
 `eye.fly(legs, { shape, heading, tip, turning })` flies the eye over the page's window from where it stands, leg
 after leg, as a camera over a desk. A leg is one of these, and any may name how long it `takes`:
 
-- `{ to: { over: '#gap', height: 160 } }`: to a spot `height` frame pixels over a block's middle.
+- `{ to: { over: '#gap', height: 160 } }`: to a spot `height` film pixels over a block's middle.
 - `{ to, arriving: 90, bend: 0.5 }`: on a parabola that arrives heading 90°, right along the page, its turn half
   the leg's chord before the spot.
 - `{ ahead: 2 }`: straight on, twice as long as the leg before.
-- `{ along: figure }`: along a three.js `Curve` of the film's own, x across, y down and z out in frame pixels,
+- `{ along: figure }`: along a three.js `Curve` of the film's own, x across, y down and z out in film pixels,
   closed or open, as `new CatmullRomCurve3([...], true)` round a block; set off from where the leg starts wherever
   the film drew it, and never changed after it is handed.
 - `{ onto: '#corner', fills: 1, middleAt: { left: 0.6, top: 0.89 } }`: to where `eye.onto` would stand square
@@ -1256,11 +1256,11 @@ nor `'whole'`.
 
 ### Focus
 
-`eye.focus(on, { aperture })` focuses the eye so far before it, `eye.focus(1800)` in frame pixels; at a spot of
+`eye.focus(on, { aperture })` focuses the eye so far before it, `eye.focus(1800)` in film pixels; at a spot of
 the world, `{ across, down, out }`; on a block of the page, `eye.focus('#thread')`, at its middle; on an object,
 `eye.focus({ object: 'why' })`, at its middle; or under a point of the frame, `eye.focus({ under: { left: 0.25,
 top: 0.26 } })` in shares of it, where the eye sees the window's plane there as each frame is drawn, so the focus
-stays under that point while the window leans and turns beneath it. `aperture` opens it that many frame pixels
+stays under that point while the window leans and turns beneath it. `aperture` opens it that many film pixels
 wide, or it stays as wide as it stands; at rest it is open none, all sharp. What stands in the world nearer or
 farther than the focus is drawn as a disc `aperture × focal length × |1/focus − 1/distance|` across, as a camera's
 lens draws it: with the eye at rest at 24°, a piece at depth 200 focused on with `aperture: 120` leaves the page
@@ -1286,7 +1286,7 @@ stands clear of it, a piece lifted off it, a title or code. It sets only what it
 - `dim` lays the dark over the screen, the light on it included, and `fade` fades the screen into what lies behind
   it, each from 0 none to 1 whole; `window.shade({ dim: 0 })` takes the dark away. One block lit and the rest
   dimmed is `light.on`.
-- `blur` blurs the page and the holes in it, in frame pixels on the page, so an eye brought near sees it wider.
+- `blur` blurs the page and the holes in it, in film pixels on the page, so an eye brought near sees it wider.
   `blurSeen: 'on the frame'` has it as wide on the frame wherever the window and the eye stand, as a lens softens
   by a share of the frame: a page going soft as the eye comes in is as soft on the frame at each moment, and an
   eye diving close over a soft page sees no blur grown wide round it. Flat, the page blurs by one width, as written
@@ -1374,7 +1374,7 @@ shoot. `motionBlur: { enabled: false }` turns it off; `--quality draft` shoots w
 | `cursorSize` | how tall the cursor's arrow stands from its tip to its foot, in pixels of the screen it lies on | `33.5` |
 | `words` | how words come up where a film names no way: `'rise'`, `'sharp'`, `'fade'`, `'blur'`, `'mask'`, `'letters'` or `'scramble'` | `'rise'` |
 
-Colours are in hex; sizes in pixels of a frame 1080 on its shorter side, scaled to the frame shot.
+Colours are in hex; sizes in film pixels, scaled to the frame shot, but `cursorSize`, in the screen's pixels.
 
 A font is one the machine has, or one the film brings as a file: `fonts` names each file by its path from the
 film's file (TrueType, OpenType or WOFF) under the family the look names it by. One file stands for every weight
@@ -1390,9 +1390,9 @@ theme: { font: 'Inter Tight', titleWeight: 600 }
 
 The ground's layers are the film's own CSS, laid wherever the ground is: under the window, a title card and the
 ending. The ending stands on the frame's own ground, so the pattern stands still as it slides in; a title card
-carries its ground with it, so its pattern moves with it. Lengths are in pixels of a frame 1080 on its shorter
-side. The last layer may take a colour, which covers the ground and its glow. Refused before anything is shot:
-layers CSS cannot read, and a picture, `url()`, which the stage would draw only once loaded.
+carries its ground with it, so its pattern moves with it. Lengths are in film pixels. The last layer may take a
+colour, which covers the ground and its glow. Refused before anything is shot: layers CSS cannot read, and a
+picture, `url()`, which the stage would draw only once loaded.
 
 ```ts
 theme: {
@@ -1426,7 +1426,7 @@ play({ seconds: 4, moves: [look.to({ glowX: 0.9 }), look.to({ ink: '#1a1a1a' }, 
 | `bloom`, `bloomRadius` | how strongly light brighter than the page's white glows round itself, `0` none, as three's bloom takes its strength, and how far the glow spreads, from `0`, nearest, to `1`, widest | `0`, `0.4` |
 | `grain` | a faint noise over the ground: `{ levels }`, how many levels of 255 it moves a colour either way, or `{ enabled: false }` | `{ enabled: false }` |
 
-A light stands `at` a spot of the room and aims at another, `aim`, as the eye does, in frame pixels from the
+A light stands `at` a spot of the room and aims at another, `aim`, as the eye does, in film pixels from the
 frame's middle; `angle` is how far its cone opens from its middle, and `softness` its edge, 0 sharp to 1. It falls
 off by the square of the distance: its `strength` is how bright a white face square to it stands at the spot it
 aims at, 1 its whole colour, so a thing there stands as bright as written and one coming toward the light

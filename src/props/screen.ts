@@ -240,9 +240,9 @@ interface Crest {
 
 /**
  * Light sweeping away the picture the screen showed: the picture, held by its number as the sweep began; how wide the
- * light is, in pixels of a frame 1080 high; its crest; and how far it has swept the window. A band comes from a side of
- * the window, slanted from that side, degrees clockwise as the upright screen shows it; a disc opens round a point of
- * the screen, in its pixels.
+ * light is, in film pixels; its crest; and how far it has swept the window. A band comes from a side of the window,
+ * slanted from that side, degrees clockwise as the upright screen shows it; a disc opens round a point of the screen,
+ * in its pixels.
  */
 export type Sweep = SweepShape & SweepOfAnyShape;
 
@@ -329,9 +329,9 @@ interface DrawnBand {
 
 /**
  * A sweep as the stage draws it on the screen, in its pixels: the picture held; its shape; how wide its light is, in
- * pixels of a frame 1080 high; and its crest. A band's shape is its line, and how far from it the far side of the
- * picture still to sweep stands, across and down, past the window; a disc's, its middle and its radius, less than none
- * while its ring has still to come out of its middle.
+ * film pixels; and its crest. A band's shape is its line, and how far from it the far side of the picture still to
+ * sweep stands, across and down, past the window; a disc's, its middle and its radius, less than none while its ring
+ * has still to come out of its middle.
  */
 export interface DrawnSweep {
 	readonly picture: number;
@@ -462,11 +462,11 @@ const NOT_BEGUN = 0;
 const THROUGH = 1;
 
 /**
- * The screen as the stage draws it at a moment of the film, the camera that shows it framing the page in its view, in
- * a format, the eye seeing the window's front or its back, a pane's corners as round as the look has them in pixels of
- * a frame 1080 high: the page on the back, with no sweep and no fade, where the eye sees the back and the back has a
- * page of its own; the screen as it stands where not; a page of the film's own as far down as the film has run it
- * then, the one in front laid as far past the screen as it is drawn (`pastTheScreen`).
+ * The screen as the stage draws it at a moment of the film, the camera that shows it framing the page in its view, in a
+ * format, the eye seeing the window's front or its back, a pane's corners as round as the look has them in film pixels:
+ * the page on the back, with no sweep and no fade, where the eye sees the back and the back has a page of its own; the
+ * screen as it stands where not; a page of the film's own as far down as the film has run it then, the one in front
+ * laid as far past the screen as it is drawn (`pastTheScreen`).
  */
 export function drawnScreen(
 	screen: Screen,
@@ -891,8 +891,8 @@ export function backPageSeen(back: Back, facingTheEye: boolean): BackPage | null
 
 /**
  * A sweep as the stage draws it on the screen, where a part of it, in its pixels, shows in the window at a camera's
- * zoom: its shape there, as far along its way as it has swept, its light in pixels of a frame 1080 high, as many of the
- * screen's as a camera at a zoom of 1 shows.
+ * zoom: its shape there, as far along its way as it has swept, its light in film pixels, as many of the screen's as a
+ * camera at a zoom of 1 shows.
  */
 export function drawnSweep(sweep: Sweep, shown: Box, zoom: number): DrawnSweep {
 	return { picture: sweep.picture, shape: drawnShapeOf(sweep, shown, zoom), width: sweep.width, crest: sweep.crest };

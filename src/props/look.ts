@@ -57,18 +57,18 @@ export interface Look {
 	readonly font: string;
 	/** The font of the terminal, the code and the ending's command, as CSS names a family. */
 	readonly mono: string;
-	/** How large a title's letters are, and a caption's, in pixels of a frame 1080 on its shorter side. */
+	/** How large a title's letters are, and a caption's, in film pixels. */
 	readonly titleSize: number;
 	readonly captionSize: number;
 	/**
 	 * How far in from the frame's sides a title over the whole frame stands, and how far up from the frame's foot, or
-	 * down from its top, the ground under a caption darkens, in pixels of a frame 1080 on its shorter side.
+	 * down from its top, the ground under a caption darkens, in film pixels.
 	 */
 	readonly titleMargin: number;
 	readonly captionGroundHeight: number;
 	/**
-	 * How round the corners of a pane are — the page's window, the code's pane, the agent's terminal — in pixels of a
-	 * frame 1080 on its shorter side: 0, square.
+	 * How round the corners of a pane are — the page's window, the code's pane, the agent's terminal — in film pixels: 0,
+	 * square.
 	 */
 	readonly paneCorner: number;
 	/** The colour of the faint edge round a pane, in hex, its own alpha how faint. */
@@ -106,7 +106,7 @@ export interface Look {
 	readonly titleLineHeight: number;
 	/**
 	 * How large a note's, a callout's, a pin's and a key's letters are, the code's at most, the terminal's, and the
-	 * ending's name's, line's and command's, in pixels of a frame 1080 on its shorter side.
+	 * ending's name's, line's and command's, in film pixels.
 	 */
 	readonly noteSize: number;
 	readonly calloutSize: number;
@@ -136,9 +136,8 @@ export interface Look {
 
 /**
  * The ground's layers as they stand: those going and those coming, each as CSS's `background` writes them, the first
- * layer over the rest, the last alone with a colour of its own, over the ground's, and their lengths in pixels of a
- * frame 1080 on its shorter side; and how far the coming have come in over the going. Layers a film writes stand
- * whole: both alike, come.
+ * layer over the rest, the last alone with a colour of its own, over the ground's, and their lengths in film pixels;
+ * and how far the coming have come in over the going. Layers a film writes stand whole: both alike, come.
  */
 export interface GroundLayers {
 	readonly going: string;

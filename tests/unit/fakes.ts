@@ -29,8 +29,8 @@ import type {
 } from '../../src/studio/ports.ts';
 
 export const SMALL: Format = { frame: { width: 400, height: 400 }, screen: { width: 600, height: 400 } };
-// The eye's focal length a test's scene opens with, in pixels of a frame 1080 high: as far as it stands from the frame
-// at rest, which the numbers the tests work out by hand take
+// The eye's focal length a test's scene opens with, in film pixels: as far as it stands from the frame at rest, which
+// the numbers the tests work out by hand take
 export const FOCAL_LENGTH = 2000;
 
 // How far a test's page scrolls where it names none: far past anything a test runs it; and a page that grows by nothing

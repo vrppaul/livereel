@@ -41,9 +41,9 @@ import {
 } from './object.ts';
 
 /**
- * How a thing comes: the place its middle stands at and how far it reaches about it, in pixels of a frame 1080 high;
- * its numbers; which thing it is, `as`; sliding in whole `from` past a side of the frame where the film names one; and
- * standing `inside` the world where the film names it, on the frame where it names nothing.
+ * How a thing comes: the place its middle stands at and how far it reaches about it, in film pixels; its numbers; which
+ * thing it is, `as`; sliding in whole `from` past a side of the frame where the film names one; and standing `inside`
+ * the world where the film names it, on the frame where it names nothing.
  */
 export interface ThingScript extends TimingScript, NamedScript {
 	readonly at: Place;
@@ -141,7 +141,7 @@ function setting(beginning: Beginning, name: string, values: ThingValues): Chang
 
 /**
  * The box a thing stands in at a place: as far as it reaches, about the middle of where the window would stand there,
- * its reach in pixels of a frame 1080 high grown to the format's frame.
+ * its reach in film pixels grown to the format's frame.
  */
 function reachedIn(format: Format, place: Place, thing: Thing): Box {
 	const placed = windowPlaced(format, place);

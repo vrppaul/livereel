@@ -1,9 +1,9 @@
 /**
- * The eye the room is seen from: where it stands, the spot it looks at and the way its top points, in pixels of a frame
- * 1080 high from the frame's middle, `out` toward whoever watches the film. Until a film moves it, it stands straight
- * out from the frame's middle as far as its focal length, looks at that middle, its top up the frame: its matrix is
- * CSS's `perspective()` alone, worked out with no arithmetic that could leave a trace on it, so it sees the frame's
- * plane as it is drawn.
+ * The eye the room is seen from: where it stands, the spot it looks at and the way its top points, in film pixels from
+ * the frame's middle, `out` toward whoever watches the film. Until a film moves it, it stands straight out from the
+ * frame's middle as far as its focal length, looks at that middle, its top up the frame: its matrix is CSS's
+ * `perspective()` alone, worked out with no arithmetic that could leave a trace on it, so it sees the frame's plane as
+ * it is drawn.
  *
  * What stands in the world — the page's window, an object a film puts there — is seen from wherever the eye stands;
  * what stands on the frame, a title or a caption, rides with the eye and is seen as from where it rests
@@ -37,9 +37,9 @@ import { Quaternion, Vector3 } from 'three';
 import {
 	type Box,
 	HALVES,
-	LOOK_MADE_ON,
 	MIDDLE_SHARE,
 	type Point,
+	SHORTER_SIDE_IN_FILM_PIXELS,
 	type Size,
 	frameScaleOf,
 	middleX,
@@ -74,8 +74,8 @@ import { between, shareByScale } from './toward.ts';
 import { type Track, arrivedAt } from './track.ts';
 
 /**
- * Where the eye stands and the spot it looks at, each in pixels of a frame 1080 high from the frame's middle, and the
- * way its top points: as long as one where a film sends it, any length on the way, where only its direction counts.
+ * Where the eye stands and the spot it looks at, each in film pixels from the frame's middle, and the way its top
+ * points: as long as one where a film sends it, any length on the way, where only its direction counts.
  */
 export interface Viewpoint {
 	readonly at: Spot;
@@ -84,12 +84,12 @@ export interface Viewpoint {
 }
 
 /**
- * Where the eye focuses: so far before it along where it looks, in pixels of a frame 1080 high; or at a spot of
- * something that holds a placement and lasts the whole film, the frame, the world, the page's window or the page, a
- * point of its plane in its pixels from its top left corner (`src/domain/placement.ts`) and how far out of that plane
- * toward the eye, in the frame's pixels, as a placement's depth: placed where it stands as each frame is drawn, as
- * anything placed there is; or under a point of the frame, in its pixels from its top left corner, where the eye sees
- * the page's window's plane there as each frame is drawn, so it stays under that point as the window moves under it.
+ * Where the eye focuses: so far before it along where it looks, in film pixels; or at a spot of something that holds a
+ * placement and lasts the whole film, the frame, the world, the page's window or the page, a point of its plane in its
+ * pixels from its top left corner (`src/domain/placement.ts`) and how far out of that plane toward the eye, in the
+ * frame's pixels, as a placement's depth: placed where it stands as each frame is drawn, as anything placed there is;
+ * or under a point of the frame, in its pixels from its top left corner, where the eye sees the page's window's plane
+ * there as each frame is drawn, so it stays under that point as the window moves under it.
  */
 export type Focus =
 	| { readonly kind: 'distance'; readonly distance: number }
@@ -101,9 +101,9 @@ type EyeHolder = 'world' | 'window';
 
 /**
  * The eye: where it stands and looks, in what it stands in; how far before it its picture plane stands, `focalLength`,
- * in pixels of a frame 1080 high, as far as it stands from the frame at rest; where it focuses, on its way from where
- * it focused as its move began, each end placed where it stands as each frame is drawn; and how wide it is open,
- * `aperture`, in pixels of a frame 1080 high, open none seeing all sharp.
+ * in film pixels, as far as it stands from the frame at rest; where it focuses, on its way from where it focused as its
+ * move began, each end placed where it stands as each frame is drawn; and how wide it is open, `aperture`, in film
+ * pixels, open none seeing all sharp.
  */
 export interface Eye extends Viewpoint {
 	readonly inside: EyeHolder;
@@ -226,7 +226,7 @@ const A_DIRECTION: Kind<Spot> = new Plain(isDirection, 'a direction: { across, d
 /** Where a film sends the eye, as it writes it, the place it names. */
 export const AN_EYE_PLACE: OfForm<EyePlace> = new OfForm<EyePlace>(
 	{ at: A_SPOT, aim: A_SPOT, up: A_DIRECTION },
-	'a place of the eye: { at, aim, up }, each a spot { across, down, out } in pixels of a frame 1080 high from its middle'
+	'a place of the eye: { at, aim, up }, each a spot { across, down, out } in film pixels from its middle'
 );
 
 /** Where a film sends the eye, as it writes it: a place, or back where it rests. */
@@ -238,8 +238,8 @@ export const AN_EYE_PLACE_OR_REST: Kind<EyePlaceOrRest> = new NameOrForm(
 
 /**
  * How the eye goes on a path: by where it stands, where it looks and the way its top points, a step as long as the
- * three move together, in the eye's own pixels of a frame 1080 high, not in how far what the frame shows moves; a turn
- * of its top as long as the arc it swings at as far as the eye stands from its aim, on the mean of its two ends.
+ * three move together, in film pixels the eye itself goes, not in how far what the frame shows moves; a turn of its top
+ * as long as the arc it swings at as far as the eye stands from its aim, on the mean of its two ends.
  */
 export const EYE_SPACE: PathSpace<Viewpoint> = {
 	toward: viewpointToward,
@@ -266,11 +266,11 @@ export const EYE_SPACE: PathSpace<Viewpoint> = {
 };
 
 /**
- * How far before the eye its picture plane stands, in pixels of a frame 1080 high, for it to see so many degrees across
- * the frame's shorter side.
+ * How far before the eye its picture plane stands, in film pixels, for it to see so many degrees across the frame's
+ * shorter side.
  */
 export function focalLengthOf(angleOfView: number): number {
-	return LOOK_MADE_ON / HALVES / Math.tan(radians(angleOfView) / HALVES);
+	return SHORTER_SIDE_IN_FILM_PIXELS / HALVES / Math.tan(radians(angleOfView) / HALVES);
 }
 
 /**
@@ -358,8 +358,7 @@ export function looksStraightAtTheFrame(eye: Viewpoint): boolean {
 
 /**
  * Where the eye stands to see a box of a plane as a framing says, an eye of this focal length on a frame of this size:
- * the box, and the places of the eye, in the plane's own pixels of a frame 1080 high, `out` away from its face; its
- * top up the plane.
+ * the box, and the places of the eye, in film pixels on the plane, `out` away from its face; its top up the plane.
  */
 export function viewpointBefore(box: Box, framing: EyeFraming, focalLength: number, frame: Size): Viewpoint {
 	const frameScale = frameScaleOf(frame);

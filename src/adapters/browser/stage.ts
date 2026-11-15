@@ -51,8 +51,8 @@ export const STAGE_FOLDER = new URL('../../../stage/', import.meta.url);
 export const STAGE_PAGE = 'stage.html';
 
 /**
- * How the stage is laid out for a take: the frame it fills, the screen the camera moves in it, and how large the stage
- * draws on it against the frames its look was made on: the camera's zoom, and what stands over the frame; how many
+ * How the stage is laid out for a take: the frame it fills, the screen the camera moves in it, and how many of the
+ * frame's pixels a film pixel takes, which the camera's zoom and what stands over the frame are scaled by; how many
  * exposures of a frame it draws at once, each a whole drawing of the stage laid over those before; how a frame is
  * drawn, flat by the stage's markup alone or as a room, which composes the surfaces the stage lays its markup in; and
  * the part of the stage, in its own pixels, a frame is handed on from. The eye is in the matrices the engine hands the

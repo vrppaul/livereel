@@ -1140,7 +1140,7 @@ test('an object rolls as it leans, and grows and comes toward the eye as it is c
 	const turned = await setAt(code.lean({ turn: 20 }), leant, 1);
 	const grown = await setAt(code.to('right', { scale: 2, depth: 100 }), turned, 1);
 	const carried = (await setAt(code.to('left'), grown, 1)).objects.get('code')!;
-	// A depth given in pixels of a frame 1080 high stands in the frame's own
+	// A depth given in film pixels stands in the frame's own
 	expect([carried.angle, carried.scale, carried.depth, carried.box]).toEqual([
 		{ ...FACE_ON, tilt: 10, turn: 20, roll: 30 },
 		2,
@@ -2505,7 +2505,7 @@ test("a piece whose corner stands on a corner of what the window shows is as rou
 	const alongTheTop = { left: 0, top: 0, width: 1920, height: 100 };
 	// The camera at 2 shows 480 to 1440 across and 270 to 810 down: this box is cut to that corner of it
 	const pastTheShownCorner = { left: 400, top: 200, width: 200, height: 200 };
-	// The look rounds the window 24 pixels of a 1080 frame: 24 of the page's at the camera at 1, 12 at 2
+	// The look rounds the window 24 film pixels: 24 of the page's at the camera at 1, 12 at 2
 	expect([
 		await liftedContent(piece.show(WHOLE_SCREEN), wide),
 		await liftedContent(piece.show(alongTheTop), wide),
@@ -2587,7 +2587,7 @@ test("a piece's lines cross neither it nor its source while it stands partly ove
 	]);
 });
 
-test("a lens is born round its block's middle as the camera shows it, 320 pixels of a 1080 frame across where the film names no size, or as wide as it names, as wide for its frame on any frame", async () => {
+test("a lens is born round its block's middle as the camera shows it, 320 film pixels across where the film names no size, or as wide as it names, as wide for its frame on any frame", async () => {
 	const wide = await setIn(cameraTo(WHOLE_AT_ONE), OPENING_IN_FULL_HD, 1, FULL_HD);
 	const shown = await setIn(lens.show('#card'), wide, 1, FULL_HD);
 	const named = await setIn(lens.show('#card', { size: 150 }), wide, 1, FULL_HD);
@@ -3130,7 +3130,7 @@ test("a piece in the world lifted into the window's shade is reached by it as fa
 	]);
 });
 
-test("a piece clears the window's shade at a height counted as its depth is, in pixels of a frame 1080 high, on a frame of any size: half way up on a frame 400 high", async () => {
+test("a piece clears the window's shade at a height counted as its depth is, in film pixels, on a frame of any size: half way up on a frame 400 high", async () => {
 	const lifted = await setAt(piece.show('#card', { inside: 'world', shade: { clearAt: 60 } }), OPENING_IN_SMALL, 1);
 	const halfWay = await setAt(piece.effects({ depth: 30 }), lifted, 1);
 	expect(drawnObject('piece', halfWay.objects.get('piece')!, 0, AROUND_IN_FULL_HD).content.shaded).toBe(0.5);
@@ -4340,8 +4340,8 @@ test("a face-on camera onto a block at the screen's foot stops short of showing 
 	expect(underTheFrame(camera, SMALL.frame, frameFootMiddle)!.top).toBeLessThanOrEqual(SMALL.screen.height);
 });
 
-// An eye stood to the right, a little high and nearer the frame, looking at a spot 108 pixels of a frame 1080 high left
-// of the frame's middle: on the small frame 40 of its pixels, a tenth of its width; and a box of the frame around it
+// An eye stood to the right, a little high and nearer the frame, looking at a spot 108 film pixels left of the frame's
+// middle: on the small frame 40 of its pixels, a tenth of its width; and a box of the frame around it
 const EYE_ASIDE: EyePlace = { at: { across: 900, down: -200, out: 1400 }, aim: { across: -108, down: 0, out: 0 } };
 const AROUND_THE_AIM = { left: 0.3, top: 0.4, width: 0.2, height: 0.2 };
 const AIM_AT_REST: Point = { left: 160, top: 200 };
@@ -4681,7 +4681,7 @@ test('a flight refused as it is made: a way of no leg, a leg in no form of one, 
 	);
 	expect(() => eye.fly([{ along: [0, 300] as never }])).toThrow(
 		new FilmError(
-			"eye.fly's way[0]'s along is [0,300]: it is a figure, a curve of three.js whose points are x across, y down and z out in pixels of a frame 1080 high"
+			"eye.fly's way[0]'s along is [0,300]: it is a figure, a curve of three.js whose points are x across, y down and z out in film pixels"
 		)
 	);
 	expect(() => eye.fly([{ to: OVER_THE_BLOCK }], { tip: [{ by: 0, degrees: -100 }] })).toThrow(
@@ -4963,9 +4963,9 @@ test('a title in the world slides in from past the edge as the eye sees it, howe
 	expect(rightEdge.left).toBeLessThanOrEqual(0);
 });
 
-// An eye opened 40 pixels of a frame 1080 high wide: a point twice as far from it as its focus, or half as far, is
-// drawn as a disc 40 across, blurred a quarter of that on the frame; a title in the world half way to the eye from the
-// frame's plane, drawn twice as large there
+// An eye opened 40 film pixels wide: a point twice as far from it as its focus, or half as far, is drawn as a disc 40
+// across, blurred a quarter of that on the frame; a title in the world half way to the eye from the frame's plane,
+// drawn twice as large there
 const OPENED = 40;
 const A_QUARTER_OF_THE_DISC = 10;
 const HALF_WAY_TO_THE_EYE = 1000;
@@ -5359,7 +5359,7 @@ test('a focus on an object that does not stand, or on what stands behind the eye
 
 test('a focus at no distance, or in no form a focus takes, is refused as the move is made', () => {
 	const forms =
-		'a distance before the eye in pixels of a frame 1080 high, more than 0; a spot { across, down, out }; a selector or a box of the screen; an object, { object }; or under a point of the frame, { under: { left, top } } in shares of it';
+		'a distance before the eye in film pixels, more than 0; a spot { across, down, out }; a selector or a box of the screen; an object, { object }; or under a point of the frame, { under: { left, top } } in shares of it';
 	expect(() => eye.focus(0)).toThrow(new FilmError(`eye.focus's focus is 0: it is ${forms}`));
 	expect(() => eye.focus(true as never)).toThrow(new FilmError(`eye.focus's focus is true: it is ${forms}`));
 });
@@ -5432,8 +5432,8 @@ function roundedPoint(point: Point): Point {
 	return { left: Math.round(point.left), top: Math.round(point.top) };
 }
 
-// A card a film's things module builds, open none and glowing whole, 540 across and 270 up of a frame 1080 high, shown
-// about the frame's middle
+// A card a film's things module builds, open none and glowing whole, 540 across and 270 up in film pixels, shown about
+// the frame's middle
 const A_CARD = { open: 0, glow: 1 };
 const CARD_REACH = { width: 540, height: 270 };
 const A_CARD_SHOWN = { at: 'whole', reach: CARD_REACH, values: A_CARD } as const;
@@ -5515,7 +5515,7 @@ test("a thing's numbers go from those it was shown with to those set, the rest k
 	expect(drawnThingIn(halfWay).values).toEqual({ open: 0.5, glow: 1 });
 });
 
-test("a thing is carried into the eye's space by three's own axes on both sides, up the frame, its faces turning as three's do, a unit of it a pixel of a frame 1080 high", async () => {
+test("a thing is carried into the eye's space by three's own axes on both sides, up the frame, its faces turning as three's do, a unit of it a film pixel", async () => {
 	const inTheEyesSpace = drawnThingIn(await cardAt(0)).inTheEyesSpace;
 	const scale = SMALL.frame.height / 1080;
 	expect([inTheEyesSpace.m11, inTheEyesSpace.m22, handednessOf(inTheEyesSpace) > 0]).toEqual([
@@ -5681,8 +5681,8 @@ test('a piece in the world rolled about its foot, carried onto the page, stands 
 	]);
 });
 
-// Words beside a part: to an object's right, the point a fifth down its right side, 70 pixels of a 1080 frame off it,
-// their middle at the left of their box; over a block's top, its left corner, 30 off it, their foot at their box's
+// Words beside a part: to an object's right, the point a fifth down its right side, 70 film pixels off it, their middle
+// at the left of their box; over a block's top, its left corner, 30 off it, read from the left of their box's foot
 const BESIDE_THE_PIECE = { object: 'piece', side: 'right', along: 0.2, gap: 70 } as const;
 const THE_PIECES_POINT: Point = { left: 1, top: 0.2 };
 const WORDS_READ_FROM: Point = { left: 0, top: 0.5 };

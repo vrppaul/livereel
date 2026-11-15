@@ -41,7 +41,7 @@ import { FACE_ON } from '../../src/domain/stance.ts';
 // The side of the page's window the eye sees: its front, or its back
 const SEES_THE_FRONT = true;
 const SEES_THE_BACK = false;
-// How round a pane's corners are, in pixels of a frame 1080 high
+// How round a pane's corners are, in film pixels
 const PANE_CORNER = 24;
 // The moment a screen is drawn at where no page of it runs
 const AT_THE_START = 0;
@@ -401,10 +401,10 @@ test("a band sweeping the screen's picture away crosses the window from the side
 });
 
 test("a band sweeping the screen crosses what the window shows of the screen, not the ground past the screen's edges", () => {
-	// The whole screen, 600 × 400, fitted to a frame 400 square, 1.8 of a frame 1080 high's pixels a page's: the view
-	// shows 100 of ground above the screen and below it, which the band does not cross. Its way down is the screen's
-	// 400 and its own width, 160 / 1.8, so it sets off half of that above the screen's top; it is as long as the
-	// screen's corners stand apart, 721.11
+	// The whole screen, 600 × 400, fitted to a frame 400 square, 1.8 film pixels a page's: the view shows 100 of ground
+	// above the screen and below it, which the band does not cross. Its way down is the screen's 400 and its own width,
+	// 160 / 1.8, so it sets off half of that above the screen's top; it is as long as the screen's corners stand apart,
+	// 721.11
 	const sweep: Sweep = {
 		kind: 'band',
 		picture: 1,
@@ -550,9 +550,9 @@ test('what a film typed into a page of its own drawn past its screen is handed w
 });
 
 test("the filmed page lies on the window's plane where the camera frames it, as round as a pane at the frame's scale; nowhere where the screen shows a page of the film's own, in front or on the window's back", () => {
-	// The whole frame, 400 square, 400 / 1080 of a frame 1080 high's pixels: the whole screen, 600 × 400, fitted to it
-	// stands 400 × 266.67 in its middle; a camera at a zoom of 2.7, a page's pixel to a frame's, on the screen's point
-	// 150 across and 200 down stands the screen 50 in from the frame's left
+	// The whole frame, 400 square, a pixel of it 1080 / 400 film pixels: the whole screen, 600 × 400, fitted to it stands
+	// 400 × 266.67 in its middle; a camera at a zoom of 2.7, a page's pixel to a frame's, on the screen's point 150
+	// across and 200 down stands the screen 50 in from the frame's left
 	const camera = cameraOf(openingScene(SMALL, LIVEREELS_LOOK, LIVEREELS_WORLD, FOCAL_LENGTH), SMALL);
 	const close: Camera = { ...camera, pose: { focusX: 150, focusY: 200, zoom: 2.7 } };
 	const backed: Screen = { ...LAID_UP, back: { kind: 'own', key: 'behind', upright: 'round' } };
