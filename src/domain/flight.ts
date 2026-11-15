@@ -125,8 +125,8 @@ interface FlyingEye {
 }
 
 /**
- * A flight worked out: its way, its pace along it, its gaze's keys and how its view turns between them, the roll it
- * set off with, the eye that flies it.
+ * A flight worked out: its way, its pace along it, its gaze's keys and how its view turns between them, the roll it set
+ * off with, the eye that flies it.
  */
 export interface Flight {
 	readonly way: Way;
@@ -167,8 +167,8 @@ const A_HALF_TURN = 180;
 // A curve's end, by its own parameter; and the share of a way past which it goes on straight
 const ITS_START = 0;
 const ITS_END = 1;
-// A cubic Bézier curve's handle stands a third of the tangent there from its end, so it runs as a Hermite curve of
-// that tangent does; a parabola's tangent at an end is twice the way to its turn
+// A cubic Bézier curve's handle stands a third of the tangent there from its end, so it runs as a Hermite curve of that
+// tangent does; a parabola's tangent at an end is twice the way to its turn
 const THIRDS = 3;
 const A_HANDLE = 1 / THIRDS;
 // A share of a way said as a person reads it, in hundredths
@@ -324,8 +324,8 @@ function sumOf(numbers: readonly number[]): number {
 }
 
 /**
- * The moment of a flight, a share of its move's progress, the eye reaches `by` at: the end of leg `by`, or past it by
- * a share of the next leg's time, 1.5 half way through leg 2.
+ * The moment of a flight, a share of its move's progress, the eye reaches `by` at: the end of leg `by`, or past it by a
+ * share of the next leg's time, 1.5 half way through leg 2.
  */
 export function momentBy(way: Way, pace: Pace, by: number): number {
 	const leg = Math.floor(by);
@@ -501,8 +501,8 @@ function ruled(rule: GazeRule, share: number, at: Vector3, flight: Flight): numb
 }
 
 /**
- * The tip that holds a spot of the window at a share down the frame for an eye standing at another, heading toward
- * it: its sight lifted so far that the spot stands that far below the frame's middle.
+ * The tip that holds a spot of the window at a share down the frame for an eye standing at another, heading toward it:
+ * its sight lifted so far that the spot stands that far below the frame's middle.
  */
 function tipHolding(at: Vector3, spot: Spot, downTheFrame: number, eye: FlyingEye): number {
 	const along = Math.hypot(spot.across - at.x, spot.down - at.y);

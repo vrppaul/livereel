@@ -1,8 +1,8 @@
 /**
- * The world's look, changed as it goes: to the values a film names, through the values between in a play, at once in
- * a cut; what it leaves out stays as the world has it. A move sets the values it names alone, over the world as it
- * stands each frame, so two moves of the world share a step at once where they name no value alike: a glow growing the
- * whole step while the lights change in a share of it.
+ * The world's look, changed as it goes: to the values a film names, through the values between in a play, at once in a
+ * cut; what it leaves out stays as the world has it. A move sets the values it names alone, over the world as it stands
+ * each frame, so two moves of the world share a step at once where they name no value alike: a glow growing the whole
+ * step while the lights change in a share of it.
  */
 import { type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import { assertWritten, namesSetBy } from '../domain/handed.ts';

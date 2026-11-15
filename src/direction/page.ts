@@ -2,8 +2,8 @@
  * What moves and acts may ask of the page being filmed, as the browser adapter answers it, and the pages of the film's
  * own a move may show in its place.
  *
- * A move reads the page as its share begins and, for the page's own scroll and keys, acts on it as it goes. An act
- * is Playwright code: it is handed the filmed page's frame itself, since anything narrower would be a part of what
+ * A move reads the page as its share begins and, for the page's own scroll and keys, acts on it as it goes. An act is
+ * Playwright code: it is handed the filmed page's frame itself, since anything narrower would be a part of what
  * Playwright already offers.
  */
 import type { Frame } from 'playwright-core';
@@ -93,9 +93,9 @@ export interface FilmedPage {
 	 */
 	readonly roundingOf: (target: string) => Promise<Rounding>;
 	/**
-	 * Where the letters of the first block a target matches start on the screen, as the page lays them out, read
-	 * without writing into it: the box its first laid-out letter takes, or, in a block that lays out none, the box a
-	 * letter of its font would take at the start of its content, in its middle; as wide as a letter steps in that font.
+	 * Where the letters of the first block a target matches start on the screen, as the page lays them out, read without
+	 * writing into it: the box its first laid-out letter takes, or, in a block that lays out none, the box a letter of
+	 * its font would take at the start of its content, in its middle; as wide as a letter steps in that font.
 	 * None where the block lays out nothing, as it is hidden. A target the page lacks is refused at once.
 	 */
 	readonly letterAtTheStart: (target: string) => Promise<Box | null>;
@@ -104,8 +104,8 @@ export interface FilmedPage {
 	/**
 	 * Every block whose scroll carries a source, up to the page's root, by the keys the page knows them by: those whose
 	 * scrolls carry all of the first `every` blocks a selector matches, as the page lays them out; for a box of the
-	 * screen, the block the page shows at its middle and those whose scrolls carry it. A source the page lacks is
-	 * refused at once.
+	 * screen, the block the page shows at its middle and those whose scrolls carry it. A source the page lacks is refused
+	 * at once.
 	 */
 	readonly blocksHolding: (source: string | Box, every: number) => Promise<readonly BlockKey[]>;
 	/** Keys a person types into whatever holds the page's keyboard. */

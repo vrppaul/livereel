@@ -2,11 +2,11 @@
  * The kinds of video a film is made as, each a record: what it is written as, and the encoders its picture and its
  * sound are made with.
  *
- * A film's frames are encoded into an MP4 as they are shot (`video.ts`); a WebM or a GIF is made from that MP4 once
- * it is whole, so one take gives every kind asked. Each is the film at its own frame and rate. A GIF's palette is
- * worked out from the whole film in a pass of its own, so no film is held in memory whole, and the GIF keeps the
- * film's time: a film of 20 s at 1920 × 1080 and 30 frames a second made a GIF of 35 MB in 21 s. A kind is
- * written under a name of its own until it is whole, as the MP4 is.
+ * A film's frames are encoded into an MP4 as they are shot (`video.ts`); a WebM or a GIF is made from that MP4 once it
+ * is whole, so one take gives every kind asked. Each is the film at its own frame and rate. A GIF's palette is worked
+ * out from the whole film in a pass of its own, so no film is held in memory whole, and the GIF keeps the film's time:
+ * a film of 20 s at 1920 × 1080 and 30 frames a second made a GIF of 35 MB in 21 s. A kind is written under a name of
+ * its own until it is whole, as the MP4 is.
  */
 import { rename, rm } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
@@ -64,8 +64,8 @@ const WEBM = [
 const PALETTE_MADE = 'palettegen=stats_mode=diff';
 const PALETTE_USED = 'paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle';
 const PALETTE_SUFFIX = '.palette.png';
-// A GIF holds a frame for whole hundredths of a second, and browsers show one held a hundredth or less as held ten:
-// so a GIF is made at no more than 50 frames a second, each held two, though the film runs faster
+// A GIF holds a frame for whole hundredths of a second, and browsers show one held a hundredth or less as held ten: so
+// a GIF is made at no more than 50 frames a second, each held two, though the film runs faster
 const GIF_FRAMES_PER_SECOND_AT_MOST = 50;
 
 function isKind(name: string): name is Kind {
@@ -106,8 +106,8 @@ function encoded(mp4: string, kind: MadeKind, video: string, framesPerSecond: nu
 }
 
 /**
- * A GIF in two passes: the palette worked out from the whole film, then every frame drawn in it, at the film's rate
- * or as many frames a second as a GIF holds, the fewer.
+ * A GIF in two passes: the palette worked out from the whole film, then every frame drawn in it, at the film's rate or
+ * as many frames a second as a GIF holds, the fewer.
  */
 async function gifOf(mp4: string, gif: string, framesPerSecond: number): Promise<void> {
 	const palette = join(dirname(gif), `${basename(gif, extname(gif))}${PALETTE_SUFFIX}`);

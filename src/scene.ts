@@ -1,27 +1,27 @@
 /**
- * What a film's moves set, at one moment: what the stage draws on one frame — every prop's state and the objects on
- * the frame — and the speed the take runs the page's own time at, which the stage draws nothing of.
+ * What a film's moves set, at one moment: what the stage draws on one frame — every prop's state and the objects on the
+ * frame — and the speed the take runs the page's own time at, which the stage draws nothing of.
  *
  * A scene is plain values, never changed in place, but for the curve a fade of the screen goes on, a function the film
  * names, which the stage is never handed: a move's change hands back a scene with its own prop or object set, and the
- * take keeps the one standing. The film's look and the world's are props too, changed by moves as any other. A
- * prop is one of livereel's, each in a slot of its own; an object (`src/props/object.ts`) is the film's, known by a
- * name it gives or its kind's own, so several of a kind stand at once, drawn in the order they first came, the last
- * over the rest: one shown again in place of itself keeps its place. One pushed off by another of its name sliding in
- * is held apart while it goes, so the two stand at once, and drawn over every object standing. A caption and keys lie
- * over every object, keys over the caption. A group of objects (`src/props/group.ts`) is known by a name of its own,
- * and holds no more than how the objects in it stand together; they go with it. `drawn` works out everything the stage
+ * take keeps the one standing. The film's look and the world's are props too, changed by moves as any other. A prop is
+ * one of livereel's, each in a slot of its own; an object (`src/props/object.ts`) is the film's, known by a name it
+ * gives or its kind's own, so several of a kind stand at once, drawn in the order they first came, the last over the
+ * rest: one shown again in place of itself keeps its place. One pushed off by another of its name sliding in is held
+ * apart while it goes, so the two stand at once, and drawn over every object standing. A caption and keys lie over
+ * every object, keys over the caption. A group of objects (`src/props/group.ts`) is known by a name of its own, and
+ * holds no more than how the objects in it stand together; they go with it. `drawn` works out everything the stage
  * needs from it — how far each word of a title, a caption or a callout and each line of code has come, the terminal's
  * spinner, how far keys rise clear of a caption, where a note's line meets the block it names on the frame, the hole a
  * piece of the page leaves and the lines it draws to its source, the part of the screen under a lens, where a band of
  * light sweeping the screen stands across what the window shows of it, how far down a page of the film's own on the
- * screen the film has run it, where an object in a group, or on the page as
- * the camera frames it then, is drawn and in what order, how soft the eye's focus draws the window and each object in
- * the world, where the world's lights stand in the room and how the eye that sees each thing sees the room — so the
- * stage draws numbers and words and decides nothing, and draws no group of its own. What the camera shows is worked out
- * from what it aims at and the window that stands (`cameraOf`), so a camera moving and a window moving in one step make
- * the same frame whichever is set first; a frame is drawn by such a camera, or by the flat one an act is done in. A
- * prop that may be absent is `null`; the compiler holds every prop to a drawn form here and to a drawer on the stage.
+ * screen the film has run it, where an object in a group, or on the page as the camera frames it then, is drawn and in
+ * what order, how soft the eye's focus draws the window and each object in the world, where the world's lights stand in
+ * the room and how the eye that sees each thing sees the room — so the stage draws numbers and words and decides
+ * nothing, and draws no group of its own. What the camera shows is worked out from what it aims at and the window that
+ * stands (`cameraOf`), so a camera moving and a window moving in one step make the same frame whichever is set first; a
+ * frame is drawn by such a camera, or by the flat one an act is done in. A prop that may be absent is `null`; the
+ * compiler holds every prop to a drawn form here and to a drawer on the stage.
  */
 import { type DrawnEye, type Eye, drawnEye, eyeAtRest } from './domain/eye.ts';
 import { lensLawOf, sharpnessOf } from './domain/focus.ts';
@@ -135,8 +135,8 @@ export type Scene = { readonly [Name in PropName]: PropStates[Name] } & {
 	/** Groups of objects, by their own names, each holding how the objects in it stand together. */
 	readonly groups: Groups;
 	/**
-	 * How many of the page's own seconds a second of the film runs: the film's own speed, 1, where it sets none. The
-	 * take runs the page's time by it; the stage draws nothing of it.
+	 * How many of the page's own seconds a second of the film runs: the film's own speed, 1, where it sets none. The take
+	 * runs the page's time by it; the stage draws nothing of it.
 	 */
 	readonly pageSpeed: number;
 	/**
@@ -287,10 +287,10 @@ export function withScrolled(scene: Scene, block: BlockKey, scrolledSoFar: numbe
 }
 
 /**
- * The scene with an object of a name set where it stands, or coming last where none of its name stood; none, gone,
- * and what stands beside it gone with it. One set in a group gone, or beside an object gone, is gone with it, as a
- * group takes what stands in it: a move of it running on as its group goes, or one bringing it into a group going,
- * sets nothing once the group is gone, whichever move began first.
+ * The scene with an object of a name set where it stands, or coming last where none of its name stood; none, gone, and
+ * what stands beside it gone with it. One set in a group gone, or beside an object gone, is gone with it, as a group
+ * takes what stands in it: a move of it running on as its group goes, or one bringing it into a group going, sets
+ * nothing once the group is gone, whichever move began first.
  */
 export function withObject(scene: Scene, name: ObjectName, object: FrameObject | null): Scene {
 	const held = object === null || itsHolderStands(scene, object) ? object : null;
@@ -519,9 +519,9 @@ function objectThen(object: FrameObject, seen: SceneSeen): ObjectThen {
 }
 
 /**
- * A frame's drawn scenes, each an exposure of it, said whole as one line, alike for two only where the stage draws
- * them alike: a scene is plain values, so what it says is all the stage is handed. Two scenes alike made by moves that
- * wrote their values in another order say them apart, and are drawn both: the cost of a frame, never a wrong one.
+ * A frame's drawn scenes, each an exposure of it, said whole as one line, alike for two only where the stage draws them
+ * alike: a scene is plain values, so what it says is all the stage is handed. Two scenes alike made by moves that wrote
+ * their values in another order say them apart, and are drawn both: the cost of a frame, never a wrong one.
  */
 export function drawingOf(exposures: readonly DrawnScene[]): string {
 	return JSON.stringify(exposures);
@@ -608,8 +608,7 @@ function laidInTheWorldOf(scene: Scene, around: Surroundings): readonly ListedOb
 }
 
 /**
- * The objects of a list of the scene's standing in the world, in the order the stage draws them, and where each
- * stands.
+ * The objects of a list of the scene's standing in the world, in the order the stage draws them, and where each stands.
  */
 function standingInTheWorldOf(list: ObjectList, objects: Objects, around: Surroundings): readonly StandingListed[] {
 	return inDrawingOrder(objects, around)

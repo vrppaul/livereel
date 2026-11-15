@@ -1,6 +1,6 @@
 /**
- * A move: one prop of the scene, or the page, changing over a share of a step, the sounds it makes on its way, and
- * the fonts it sets.
+ * A move: one prop of the scene, or the page, changing over a share of a step, the sounds it makes on its way, and the
+ * fonts it sets.
  *
  * A move reads what it starts from once, as its share begins, and becomes a change that knows its start and its end;
  * from then on what it sets at any progress is worked out from those and the progress alone, so a frame is the same
@@ -90,8 +90,8 @@ const HIDDEN_SAID = 'has no size on the page: it is hidden, or holds others alon
 const NO_SIZE_GIVEN = 'has no size: give it a width or a height';
 
 /**
- * What a move goes to on the page: the blocks a selector matches, or a box of the page's screen in its own pixels,
- * for what a page draws with no selector to name it, as a canvas or a frame exported from a design.
+ * What a move goes to on the page: the blocks a selector matches, or a box of the page's screen in its own pixels, for
+ * what a page draws with no selector to name it, as a canvas or a frame exported from a design.
  */
 export type Target = string | Box;
 
@@ -150,8 +150,8 @@ export class Share {
 	}
 
 	/**
-	 * How far along the move is when its step is `progress` along: none before its start, all from its end, and as far
-	 * as the step has come between them; a moment is all done from its moment on.
+	 * How far along the move is when its step is `progress` along: none before its start, all from its end, and as far as
+	 * the step has come between them; a moment is all done from its moment on.
 	 */
 	along(progress: number): number {
 		if (progress >= this.end) return ALL_OF_IT;
@@ -172,10 +172,10 @@ type Taken =
 	{ readonly kind: 'seconds'; readonly seconds: number } | { readonly kind: 'toTheEnd' } | { readonly kind: 'atOnce' };
 
 /**
- * The part of its play a move a film times in seconds takes: from so many seconds after the play begins, as long as
- * it takes. A play turns it into its share once it knows its own length, so a long play's moves are written at the
- * moments a film reads off a cut or its music. Seconds are held to a grid as they are turned, so a move written to
- * end with the play, or where the next begins, ends there exactly, as 1.1 + 2.2 is not 3.3 in a computer's numbers.
+ * The part of its play a move a film times in seconds takes: from so many seconds after the play begins, as long as it
+ * takes. A play turns it into its share once it knows its own length, so a long play's moves are written at the moments
+ * a film reads off a cut or its music. Seconds are held to a grid as they are turned, so a move written to end with the
+ * play, or where the next begins, ends there exactly, as 1.1 + 2.2 is not 3.3 in a computer's numbers.
  */
 class SecondsOfThePlay {
 	readonly after: number;
@@ -234,8 +234,8 @@ interface TimingInItsStep extends Timing {
 }
 
 /**
- * When in its step a move runs, as a film writes it, every part optional: a share of its step, `within`, or, in a
- * play, from `after` seconds of it, the play's start where left out, for `takes` seconds, on to its end where left out.
+ * When in its step a move runs, as a film writes it, every part optional: a share of its step, `within`, or, in a play,
+ * from `after` seconds of it, the play's start where left out, for `takes` seconds, on to its end where left out.
  */
 export interface WhenScript {
 	readonly within?: Bounds;
@@ -264,9 +264,9 @@ interface Start {
 }
 
 /**
- * The timing of a move done at a moment, as a sound heard or an act: where in its step it is done, a share of it or,
- * in a play, so many seconds `after` the play begins, the step's start where neither is given; it takes no time, so
- * it takes no end and no curve.
+ * The timing of a move done at a moment, as a sound heard or an act: where in its step it is done, a share of it or, in
+ * a play, so many seconds `after` the play begins, the step's start where neither is given; it takes no time, so it
+ * takes no end and no curve.
  */
 export interface MomentScript {
 	readonly within?: Start;
@@ -287,8 +287,8 @@ export function momentTimingOf(script: MomentScript): Timing {
 }
 
 /**
- * A move as it stands in a play so many seconds long: the very move where it is timed by a share of its step, else
- * with its share of the play worked out of its seconds.
+ * A move as it stands in a play so many seconds long: the very move where it is timed by a share of its step, else with
+ * its share of the play worked out of its seconds.
  */
 export function inAPlayOf(move: Move, playSeconds: number): MoveInItsStep {
 	if (isInItsStep(move)) return move;
@@ -335,11 +335,11 @@ export interface PageReading {
 }
 
 /**
- * What a move reads as its share begins: the scene, the page, the format, and how the stage shows the page; the
- * stretch of the film's time its share takes, for a move that sets what runs on with time; the take's way to act on
- * the page, for a move that acts as it begins; its way to hold a picture of a part of the screen, for a move that lifts
- * what is drawn from one; and the step it begins in, for a move judged on the frame and a fade, which lays the page it
- * leaves where the frame shows it.
+ * What a move reads as its share begins: the scene, the page, the format, and how the stage shows the page; the stretch
+ * of the film's time its share takes, for a move that sets what runs on with time; the take's way to act on the page,
+ * for a move that acts as it begins; its way to hold a picture of a part of the screen, for a move that lifts what is
+ * drawn from one; and the step it begins in, for a move judged on the frame and a fade, which lays the page it leaves
+ * where the frame shows it.
  */
 export interface Beginning extends PageReading {
 	readonly scene: Scene;
@@ -375,9 +375,9 @@ export interface Beginning extends PageReading {
 }
 
 /**
- * A begun move, `progress` of the way along, eased, with `timeGone` of its share's time gone beside it, for a move
- * that sets some of its values on a curve of its own: the scene with its prop set. A move of the page sets the page's
- * own scroll or keys as it goes, and hands the scene back as it was.
+ * A begun move, `progress` of the way along, eased, with `timeGone` of its share's time gone beside it, for a move that
+ * sets some of its values on a curve of its own: the scene with its prop set. A move of the page sets the page's own
+ * scroll or keys as it goes, and hands the scene back as it was.
  */
 export type Change = (scene: Scene, progress: number, timeGone: number) => Scene | Promise<Scene>;
 
@@ -390,8 +390,8 @@ export interface Move {
 	readonly part: Part;
 	/**
 	 * The names of the values of its part the move sets, where it sets only some, as a move of the look sets those its
-	 * theme names: two moves of one part at once clash only on a value both set. A move that names none sets the whole
-	 * of its part.
+	 * theme names: two moves of one part at once clash only on a value both set. A move that names none sets the whole of
+	 * its part.
 	 */
 	readonly valueNames?: readonly string[];
 	readonly timing: Timing;
@@ -416,8 +416,8 @@ export interface Move {
 	 */
 	readonly pictures?: readonly string[];
 	/**
-	 * Whether the move holds a picture of the page as it begins, as a sweep of the screen and a piece holding its
-	 * picture do, so an act at that moment, done first, would be in it; most hold none.
+	 * Whether the move holds a picture of the page as it begins, as a sweep of the screen and a piece holding its picture
+	 * do, so an act at that moment, done first, would be in it; most hold none.
 	 */
 	readonly holdsThePage?: boolean;
 	readonly begin: (beginning: Beginning) => Change | Promise<Change>;
@@ -548,8 +548,8 @@ export function refuseWithoutThePicture(beginning: Beginning, move: string): voi
 /**
  * Where a block a move goes to stands on the page's screen, read as the move begins: the first `every` a selector
  * matches, together, or the box a film gives. A block with no size, or one standing wholly off the screen, is refused
- * in the move's own words: the move would go where nothing of the block shows. A block above or below is scrolled in
- * by `page.scrollTo`; one beside the screen, by an act, as no move of livereel scrolls the page sideways.
+ * in the move's own words: the move would go where nothing of the block shows. A block above or below is scrolled in by
+ * `page.scrollTo`; one beside the screen, by an act, as no move of livereel scrolls the page sideways.
  */
 export async function shownBox(reading: PageReading, target: Target, every: number, move: string): Promise<Box> {
 	const box = typeof target === 'string' ? await reading.page.box(target, every) : target;
@@ -576,8 +576,8 @@ export function refuseOffTheScreen(box: Box, target: Target, screen: Size, named
 }
 
 /**
- * How what a move goes to comes onto the screen: a block above or below scrolled in, one beside it by an act; a box
- * the film gives stands where it says, so it is given anew.
+ * How what a move goes to comes onto the screen: a block above or below scrolled in, one beside it by an act; a box the
+ * film gives stands where it says, so it is given anew.
  */
 function broughtInto(target: Target, box: Box, screen: Size): string {
 	if (typeof target !== 'string') return GIVEN_ON_IT;
@@ -588,8 +588,8 @@ function broughtInto(target: Target, box: Box, screen: Size): string {
 export const THE_FIRST = 1;
 
 /**
- * What the page's screen shows of a target, the blocks a selector matches or a box, refused as `shownBox` refuses:
- * the part a camera can frame and a cursor rest on, as nothing past the screen is drawn.
+ * What the page's screen shows of a target, the blocks a selector matches or a box, refused as `shownBox` refuses: the
+ * part a camera can frame and a cursor rest on, as nothing past the screen is drawn.
  */
 export async function shownPart(reading: PageReading, target: Target, every: number, move: string): Promise<Box> {
 	return partWithin(await shownBox(reading, target, every, move), reading.format.screen);

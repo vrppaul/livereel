@@ -6,10 +6,10 @@
  * needs left out is refused by where it stands, down to the item or the name at fault, as it was written, so a value
  * meant one way is never read another.
  *
- * A kind lives beside the type it checks (`A_POSE` in the camera's module); only the kinds every part writes are
- * here. A kind checks what makes a value one of its kind — a number is finite, a count whole and 1 or more, a path not
- * empty; a bound beyond that is the film's to choose, and is checked only where livereel has a reason for it, where
- * that reason lives (a step's seconds, the blur's shutter).
+ * A kind lives beside the type it checks (`A_POSE` in the camera's module); only the kinds every part writes are here.
+ * A kind checks what makes a value one of its kind — a number is finite, a count whole and 1 or more, a path not empty;
+ * a bound beyond that is the film's to choose, and is checked only where livereel has a reason for it, where that
+ * reason lives (a step's seconds, the blur's shutter).
  */
 import { FilmError } from './errors.ts';
 
@@ -32,8 +32,8 @@ export class Needed<Value = unknown> {
 }
 
 /**
- * The kind of each value a script names, by its name: the compiler holds a form to every name of its script, each to
- * a kind of its type, and needed where the script must give it.
+ * The kind of each value a script names, by its name: the compiler holds a form to every name of its script, each to a
+ * kind of its type, and needed where the script must give it.
  */
 export type Form<Script> = {
 	readonly [Name in keyof Script]-?: Partial<Pick<Script, Name>> extends Pick<Script, Name>
@@ -248,8 +248,8 @@ export const A_GROUND_LAYERS = new Plain(
 /** A colour a film gives its words or its ground, in the one form checked here rather than in a browser: hex. */
 export const A_COLOUR = new Plain(isHexColour, 'a colour in hex: #rgb, #rgba, #rrggbb or #rrggbbaa');
 /**
- * A colour three reads, in hex with no alpha: a light's, which is laid over nothing, and the metal of the window's
- * body and the walls of a piece's, which are not seen through.
+ * A colour three reads, in hex with no alpha: a light's, which is laid over nothing, and the metal of the window's body
+ * and the walls of a piece's, which are not seen through.
  */
 export const AN_OPAQUE_COLOUR = new Plain(isOpaqueHexColour, 'a colour in hex with no alpha: #rgb or #rrggbb');
 /** A length a film sizes or spaces something by, in pixels: none at least. */

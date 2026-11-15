@@ -121,9 +121,9 @@ export class SetFolderOnDisk implements SetFolder {
 }
 
 /**
- * A set being shot into a folder of its own beside the set's: written whole, the set shot before is set aside, this
- * one put in its place, and the one set aside removed, so the set's place never holds half a set; let go, the folder
- * it was shot into is removed, whatever it holds.
+ * A set being shot into a folder of its own beside the set's: written whole, the set shot before is set aside, this one
+ * put in its place, and the one set aside removed, so the set's place never holds half a set; let go, the folder it was
+ * shot into is removed, whatever it holds.
  */
 class SetTakingOnDisk implements SetTaking {
 	readonly folder: string;

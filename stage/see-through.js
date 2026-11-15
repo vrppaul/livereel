@@ -2,13 +2,13 @@
 /**
  * What the eye sees through in the room's one scene (`stage/room.js`): the page where it fades or is still coming up
  * and a thing or markup stands in the world beside it, a film's things whose material writes no depth, and markup
- * standing in the world. The lens reads one depth a pixel, and what is seen through shows two things at a pixel,
- * itself and what stands behind it: drawn in the world with the rest, a thing of glass was blurred by the depth of
- * what stood behind it, and a fading page, which writes its depth, hid what of such a thing stood behind it and had
- * what stood behind it blurred as the page. So what is seen through is drawn as fields of its own, each blurred by the
- * lens by its own depth and laid over the last, over the field of what writes depth: drawn over that field's depth, so
- * what stands behind an opaque surface stays hidden, with a depth of its own, that of the nearest surface it holds,
- * which the lens blurs all of it by.
+ * standing in the world. The lens reads one depth a pixel, and what is seen through shows two things at a pixel, itself
+ * and what stands behind it: drawn in the world with the rest, a thing of glass was blurred by the depth of what stood
+ * behind it, and a fading page, which writes its depth, hid what of such a thing stood behind it and had what stood
+ * behind it blurred as the page. So what is seen through is drawn as fields of its own, each blurred by the lens by its
+ * own depth and laid over the last, over the field of what writes depth: drawn over that field's depth, so what stands
+ * behind an opaque surface stays hidden, with a depth of its own, that of the nearest surface it holds, which the lens
+ * blurs all of it by.
  *
  * A film's things seen through and markup stand in fields apart, as they are laid by two laws: a film's light in linear
  * light, as three lays one thing over another, and markup, the page seen through with it, as the browser lays it
@@ -94,8 +94,8 @@ const DRAWN = {
 };
 
 /**
- * A field of what is seen through: what it holds, the planes that cut it, none where the page is not seen through or
- * it holds the page, and how it is laid over what lies under it.
+ * A field of what is seen through: what it holds, the planes that cut it, none where the page is not seen through or it
+ * holds the page, and how it is laid over what lies under it.
  * @typedef {{
  *   readonly holding: SeenThroughHolding,
  *   readonly cut: readonly Plane[],
@@ -157,8 +157,8 @@ export class SeeThroughLayer {
 	/**
 	 * A field of what is seen through drawn into the layer from the world's scene, seen by its camera, over the opaque
 	 * field's depth, cut as the field has it: the light of what it holds, in the colours it is drawn in, then its depth,
-	 * its nearest surface's. The field as the lens reads it: its light, turned into light where it was drawn in
-	 * the screen's colours, and its depth.
+	 * its nearest surface's. The field as the lens reads it: its light, turned into light where it was drawn in the
+	 * screen's colours, and its depth.
 	 * @param {WebGLRenderer} renderer @param {Scene} world @param {Camera} seen @param {WebGLRenderTarget} opaque
 	 * @param {SeenThroughField} field @returns {SceneField}
 	 */
@@ -199,8 +199,8 @@ export class SeeThroughLayer {
 }
 
 /**
- * The fields what is seen through is drawn as, the lowest first, each kind beside the page in fields of its own, in
- * the order named: where the page is not seen through, a field of each; where it is, a field of each behind the page's
+ * The fields what is seen through is drawn as, the lowest first, each kind beside the page in fields of its own, in the
+ * order named: where the page is not seen through, a field of each; where it is, a field of each behind the page's
  * plane, then the page with its glass, then a field of each before it. Each field is one run of the lens more.
  * @param {Matrix4 | null} page the matrix that places the page's square, where the page is seen through
  * @param {readonly BesideThePage[]} beside the kinds seen through beside the page, in the order they are laid

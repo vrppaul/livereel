@@ -1,7 +1,7 @@
 /**
- * The package's stage files, read to be answered by an address of livereel's own, where the stage is served rather
- * than opened from the disk: inside the app, on its own origin (`inside.ts`), and drawn as a room, on an origin of its
- * own (`room.ts`). Each is read once, as the stage is opened, with its kind of content.
+ * The package's stage files, read to be answered by an address of livereel's own, where the stage is served rather than
+ * opened from the disk: inside the app, on its own origin (`inside.ts`), and drawn as a room, on an origin of its own
+ * (`room.ts`). Each is read once, as the stage is opened, with its kind of content.
  */
 import { readFile, readdir } from 'node:fs/promises';
 import { extname } from 'node:path';

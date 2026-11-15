@@ -1,8 +1,8 @@
 /**
  * What goes wrong, by whose it is to put right.
  *
- * The command line says each one's message and exits by its kind: a wrong command or film file is the person's
- * typing, a film that cannot be shot is the film's writing, and a machine that lacks a tool is the machine's.
+ * The command line says each one's message and exits by its kind: a wrong command or film file is the person's typing,
+ * a film that cannot be shot is the film's writing, and a machine that lacks a tool is the machine's.
  */
 import { secondsSaid } from './time.ts';
 

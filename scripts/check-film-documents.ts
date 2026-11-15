@@ -3,13 +3,13 @@
  * livereel exports and every move of every prop, and no move that is not there.
  *
  * An agent writes a film from the skill, and a person from the README, so a function either leaves out is one its
- * reader never uses, a move added to the package without a line in both is half done, and a move either names that
- * the package lacks is a film that will not run. A name counts as named where it stands in a document's code, inline
- * or in a block.
+ * reader never uses, a move added to the package without a line in both is half done, and a move either names that the
+ * package lacks is a film that will not run. A name counts as named where it stands in a document's code, inline or in
+ * a block.
  *
- * Run in the repository's root, as pre-commit runs it: `node -C source scripts/check-film-documents.ts`. It prints
- * each name a document leaves out and each it names that is not there, a line each, and exits 1; it prints nothing
- * and exits 0 when the documents and the package agree.
+ * Run in the repository's root, as pre-commit runs it: `node -C source scripts/check-film-documents.ts`. It prints each
+ * name a document leaves out and each it names that is not there, a line each, and exits 1; it prints nothing and exits
+ * 0 when the documents and the package agree.
  */
 import { readFileSync } from 'node:fs';
 import * as livereel from 'livereel';

@@ -1,7 +1,7 @@
 /**
- * The stage and its frame, watched as a film goes, so a frame left on no page, or a stage gone, is said by why: as
- * the frame opens, and whenever the take asks (`src/studio/take.ts`), rather than shot on Chrome's error page or
- * failing at something that error does not name.
+ * The stage and its frame, watched as a film goes, so a frame left on no page, or a stage gone, is said by why: as the
+ * frame opens, and whenever the take asks (`src/studio/take.ts`), rather than shot on Chrome's error page or failing at
+ * something that error does not name.
  *
  * Chrome shows a page that refuses to be framed and one it could not reach alike, on an error page of its own. The
  * answer the frame's page came with tells them apart, and names the page that refused, past any redirect: it is the

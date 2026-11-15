@@ -5,11 +5,11 @@
  * frames; these, which no frame shows, stand as a move's moment has them, whatever frame was drawn last.
  *
  * A part of a copy is pictured as a part of the filmed page is (`stage.ts`): by CDP's capture of its tab, clipped to
- * the part at the scale asked, as sharp as HTML-in-Canvas draws it. Not in the stage's own tab: it is the frame's
- * size, and both CDP's capture and HTML-in-Canvas leave out what lies past its edge; made wide enough to hold the copy
- * beside the frame, it made every frame's capture half as long again. The tab costs a film with such a page about a
- * quarter of a second as the browser opens, and its device scale moved no block of a terminal's page: its 318 blocks
- * stood alike at 1, 2, 2.2 and 4.4.
+ * the part at the scale asked, as sharp as HTML-in-Canvas draws it. Not in the stage's own tab: it is the frame's size,
+ * and both CDP's capture and HTML-in-Canvas leave out what lies past its edge; made wide enough to hold the copy beside
+ * the frame, it made every frame's capture half as long again. The tab costs a film with such a page about a quarter of
+ * a second as the browser opens, and its device scale moved no block of a terminal's page: its 318 blocks stood alike
+ * at 1, 2, 2.2 and 4.4.
  */
 import type { Browser as Playwright, CDPSession, Frame, Page } from 'playwright-core';
 import { FilmError } from '../../domain/errors.ts';
@@ -117,8 +117,8 @@ function frameOf(tab: Page, page: OwnPage): Frame {
 }
 
 /**
- * The film refused where a page of its own moves of itself, by an animation or a transition of its own, which would
- * run on the wall's clock: what moves in a film is the film's, set by its moves; named by how its HTML begins.
+ * The film refused where a page of its own moves of itself, by an animation or a transition of its own, which would run
+ * on the wall's clock: what moves in a film is the film's, set by its moves; named by how its HTML begins.
  */
 function refusedWhereMoving(pages: readonly OwnPage[], moving: readonly string[]): void {
 	const [first] = pages.filter((page) => moving.includes(page.key));

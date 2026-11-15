@@ -3,8 +3,8 @@
  * scrambled letters stand as — is drawn the same on any Node, shot after shot.
  */
 
-// mulberry32's constants: the step its state moves by, the shifts and the odd number it mixes with, and the range
-// of the 32-bit numbers it draws, which a draw is divided by to fall between 0 and 1
+// mulberry32's constants: the step its state moves by, the shifts and the odd number it mixes with, and the range of
+// the 32-bit numbers it draws, which a draw is divided by to fall between 0 and 1
 const MULBERRY_STEP = 0x6d2b79f5;
 const FIRST_SHIFT = 15;
 const SECOND_SHIFT = 7;

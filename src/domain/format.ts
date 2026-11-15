@@ -1,8 +1,8 @@
 /**
  * A film's format: what it is shot at, its frame; what its page is laid out on, its screen; how the frame is split
- * between words and the page's window; where its captions stand; and the places it names of its own, so one script
- * fits every format it is shot in: words `at: 'words'` stand above the page in a square and beside it in a wide frame
- * where each format names `words` so. livereel's split stands where a format gives none, or for what it leaves out, and
+ * between words and the page's window; where its captions stand; and the places it names of its own, so one script fits
+ * every format it is shot in: words `at: 'words'` stand above the page in a square and beside it in a wide frame where
+ * each format names `words` so. livereel's split stands where a format gives none, or for what it leaves out, and
  * captions at the frame's foot.
  */
 import type { Size } from './geometry.ts';

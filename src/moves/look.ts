@@ -1,10 +1,10 @@
 /**
  * The film's look, changed as it goes: to a theme's values, through the values between in a play, at once in a cut.
  * A theme is read as `defineFilm` reads the film's (`src/direction/theme.ts`), so a ground named alone takes its glow
- * with it; what it leaves out stays as the look has it. A move sets the values its theme names alone, over the look
- * as it stands each frame, so two moves of the look share a step at once where they name no value alike: a glow
- * drifting the whole step while the ink changes in a share of it. What it writes in CSS — fonts, the ground's layers —
- * goes with the move, so the browser reads it before the film is shot.
+ * with it; what it leaves out stays as the look has it. A move sets the values its theme names alone, over the look as
+ * it stands each frame, so two moves of the look share a step at once where they name no value alike: a glow drifting
+ * the whole step while the ink changes in a share of it. What it writes in CSS — fonts, the ground's layers — goes with
+ * the move, so the browser reads it before the film is shot.
  */
 import { type Change, type Move, TIMING_FORM, type TimingScript, timingOf } from '../direction/move.ts';
 import { cssNamedIn, themeWritten } from '../direction/theme.ts';

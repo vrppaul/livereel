@@ -1,7 +1,7 @@
 /**
- * What every gate of ours in TypeScript does with the places the repository disagrees with itself: says each on a
- * line of its own, on stdout, and exits 1; where there is none, it says nothing and exits 0. Each imports this module;
- * none runs it.
+ * What every gate of ours in TypeScript does with the places the repository disagrees with itself: says each on a line
+ * of its own, on stdout, and exits 1; where there is none, it says nothing and exits 0. Each imports this module; none
+ * runs it.
  */
 const DISAGREE = 1;
 

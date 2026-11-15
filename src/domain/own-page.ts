@@ -1,6 +1,6 @@
 /**
- * How a page of the film's own stands at a moment, as the screen works it out from the page's run, what the film
- * typed into it and the blocks of it the film blinks (`src/props/screen.ts`). It is one value for all who need it: an
+ * How a page of the film's own stands at a moment, as the screen works it out from the page's run, what the film typed
+ * into it and the blocks of it the film blinks (`src/props/screen.ts`). It is one value for all who need it: an
  * exposure draws the page so, and the take stands the copy of it moves read so as a move begins, so a block is
  * measured, and a part pictured, where the frame of that moment draws it.
  */
@@ -14,8 +14,8 @@ export interface BlockBlinking {
 }
 
 /**
- * A page of the film's own, by its key, as it stands: how far down its scroll the film has run it, in its pixels,
- * what stands typed in it, and how clear each block the film blinks stands.
+ * A page of the film's own, by its key, as it stands: how far down its scroll the film has run it, in its pixels, what
+ * stands typed in it, and how clear each block the film blinks stands.
  */
 export interface OwnPageStanding {
 	readonly key: string;

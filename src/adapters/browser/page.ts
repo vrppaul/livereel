@@ -1,23 +1,23 @@
 /**
- * The filmed page as moves read it and type into it: where its blocks and their letters stand, the ground behind
- * them, its scroll, its keyboard; and a page of the film's own as moves measure it, among the rest how far down it
- * scrolls with what is typed into its blocks, how far down its document a block stands, and the block the film types
- * into or blinks, found as the stage finds it, and what it shows as its text.
+ * The filmed page as moves read it and type into it: where its blocks and their letters stand, the ground behind them,
+ * its scroll, its keyboard; and a page of the film's own as moves measure it, among the rest how far down it scrolls
+ * with what is typed into its blocks, how far down its document a block stands, and the block the film types into or
+ * blinks, found as the stage finds it, and what it shows as its text.
  *
  * The functions handed to the page run there, each alone: none may call another of this module. The block a scroll
- * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a
- * canvas of the page's own, which turns any colour CSS writes, in whatever form, into its channels. Where a block's
- * letters start is read off what the page lays out, its first letter, or, where it lays out none, as a blank line of
- * code, its content box; how far a letter steps in their font, and how tall it stands, off a canvas too, which knows
- * the font but not the scale the page draws it at: the first letter's box carries that scale, and a blank block is
- * drawn as much larger as the transforms over it make it. No letter is set into the page to measure it: only an act
- * changes the filmed page, and a page watching itself would see one.
+ * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a canvas
+ * of the page's own, which turns any colour CSS writes, in whatever form, into its channels. Where a block's letters
+ * start is read off what the page lays out, its first letter, or, where it lays out none, as a blank line of code, its
+ * content box; how far a letter steps in their font, and how tall it stands, off a canvas too, which knows the font but
+ * not the scale the page draws it at: the first letter's box carries that scale, and a blank block is drawn as much
+ * larger as the transforms over it make it. No letter is set into the page to measure it: only an act changes the
+ * filmed page, and a page watching itself would see one.
  *
  * A block a scroll moves, and every block whose scroll carries the source of a piece riding its block, is told by a key
  * the take gives it, the same however a film selects the block, so a scroll and a ride meet on the block itself, never
  * on a selector's text. The keys are held in the frame's document, keyed by the elements themselves, by a handle the
- * take keeps: the page is not changed to name a block, and a document the frame goes on to starts with none, its
- * blocks keyed past the last key given.
+ * take keeps: the page is not changed to name a block, and a document the frame goes on to starts with none, its blocks
+ * keyed past the last key given.
  *
  * Which blocks' scrolls carry a block the page reads off how the browser lays the block out, not off the blocks it
  * stands in: a block placed apart, absolutely or fixed, is laid out from the block the browser places it from, and the
@@ -383,8 +383,8 @@ export class PlaywrightPage implements FilmedPage {
 	}
 
 	/**
-	 * The keys of blocks of the frame's document, in their order: each the one the take gave it, or the next the take
-	 * has not given, in any document, so no two blocks of a take share one.
+	 * The keys of blocks of the frame's document, in their order: each the one the take gave it, or the next the take has
+	 * not given, in any document, so no two blocks of a take share one.
 	 */
 	private async keysOf(blocks: JSHandle<Element[]>): Promise<readonly BlockKey[]> {
 		const keyed = await this.frame.evaluate(blocksKeyed, { keys: await this.keysNow(), blocks, next: this.keysGiven });
@@ -572,10 +572,10 @@ function lengthOf(computed: string, ofLength: number): number {
 }
 
 /**
- * Where a block's letters start, read off what the page lays out and draws, never written into it: the box of the
- * first letter of its text the page lays out, in that letter's own font, past text it lays out nothing of, as the
- * indentation of its markup; or, where it lays out no letter, as a blank line of code, its content box, inside its
- * border and padding, in the block's own font, with the transforms over the block multiplied, each read off its matrix.
+ * Where a block's letters start, read off what the page lays out and draws, never written into it: the box of the first
+ * letter of its text the page lays out, in that letter's own font, past text it lays out nothing of, as the indentation
+ * of its markup; or, where it lays out no letter, as a blank line of code, its content box, inside its border and
+ * padding, in the block's own font, with the transforms over the block multiplied, each read off its matrix.
  * The font is handed as large as the page lays it out: its computed size and spacing times the zoom over it, which they
  * leave out. None where the block lays out nothing, as it is hidden.
  */
@@ -608,8 +608,8 @@ function lettersStartOf(block: Element): LettersStart | null {
 		drawn = new DOMMatrixReadOnly(getComputedStyle(holder).transform).multiply(drawn);
 	}
 	const drawnLarger = { across: Math.hypot(drawn.a, drawn.b), down: Math.hypot(drawn.c, drawn.d) };
-	// How many times larger than its style computes them the page draws the block's border and padding: zoomed as it
-	// lays them out, then transformed
+	// How many times larger than its style computes them the page draws the block's border and padding: zoomed as it lays
+	// them out, then transformed
 	const acrossDrawn = zoom * drawnLarger.across;
 	const downDrawn = zoom * drawnLarger.down;
 	const top = own.top + (parseFloat(style.borderTopWidth) + parseFloat(style.paddingTop)) * downDrawn;
@@ -619,8 +619,8 @@ function lettersStartOf(block: Element): LettersStart | null {
 }
 
 /**
- * How far a letter steps in a font and how tall the font stands, measured on a canvas never put into the document, as
- * a ground is read: its width with the spacing after it, and the font's ascent and descent.
+ * How far a letter steps in a font and how tall the font stands, measured on a canvas never put into the document, as a
+ * ground is read: its width with the spacing after it, and the font's ascent and descent.
  */
 function letterMeasured(asked: LetterAsked): LetterMeasured {
 	const paint = document.createElement('canvas').getContext('2d');
@@ -703,10 +703,10 @@ function newKeys(): BlockKeys {
  * Every block whose scroll carries all the blocks, nearest first: the block each is laid out in, the block that one is
  * laid out in, and so on up to the document's root, which with its body scrolls the page. A block in the page's flow,
  * or offset from its place there, is laid out in the block it stands in; one placed apart, absolutely or fixed, in the
- * block the browser places it from, its offset parent, past the blocks between, whose scrolls leave it where it
- * stands; one fixed to the screen in none, so no scroll carries it. The offset parent is the browser's own reading, so
- * it knows every block that places what is fixed in it: a transform, a filter, containment. An SVG element has none,
- * and is taken as laid out in the block it stands in.
+ * block the browser places it from, its offset parent, past the blocks between, whose scrolls leave it where it stands;
+ * one fixed to the screen in none, so no scroll carries it. The offset parent is the browser's own reading, so it knows
+ * every block that places what is fixed in it: a transform, a filter, containment. An SVG element has none, and is
+ * taken as laid out in the block it stands in.
  */
 function holdersOfAll(asked: HoldersAsked): Element[] {
 	let carryingAll: Element[] | null = null;

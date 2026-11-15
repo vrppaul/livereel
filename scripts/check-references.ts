@@ -6,11 +6,11 @@
  * A name of a file the repository no longer holds sends its reader looking for code that is gone, and a scratch folder
  * is gone once its session ends. livereel shoots films kept outside it, the claude-review promo among them: a comment
  * that explains a rule of livereel's by one of them says nothing to a reader who has not got that film, and goes stale
- * as the film changes. Film pixels (`SHORTER_SIDE_IN_FILM_PIXELS` in `src/domain/geometry.ts`) have one name: one
- * old name, by a frame's height, was false on a frame taller than wide, and another, after the frame, reads as the
- * frame's own pixels, which the code counts apart. The last three are word checks: they keep these slips from coming
- * back, and prove nothing more. An old name is looked for across line breaks, as its words wrap. The changelog is left
- * out, as it tells what was in the names of then; and the tests, held to formatting alone.
+ * as the film changes. Film pixels (`SHORTER_SIDE_IN_FILM_PIXELS` in `src/domain/geometry.ts`) have one name: one old
+ * name, by a frame's height, was false on a frame taller than wide, and another, after the frame, reads as the frame's
+ * own pixels, which the code counts apart. The last three are word checks: they keep these slips from coming back, and
+ * prove nothing more. An old name is looked for across line breaks, as its words wrap. The changelog is left out, as it
+ * tells what was in the names of then; and the tests, held to formatting alone.
  *
  * A script rather than eslint and stylelint rules on comments: the file rule needs one anyway, and it reads code,
  * styles, markup and documents alike.

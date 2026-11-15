@@ -13,8 +13,8 @@ import { TIMING_FORM, type TimingScript, untilTheEnd } from '../direction/move.t
 import { A_WAY, type Way, type WayCome, type WayName, comesFromAnEdge, wayNamed } from '../props/way.ts';
 
 /**
- * The way something comes up in its place, `enter`, one of livereel's, where it does not come up in its own; for a
- * mask or a wipe, the `edge` of its box it comes from, the way's own where none is named.
+ * The way something comes up in its place, `enter`, one of livereel's, where it does not come up in its own; for a mask
+ * or a wipe, the `edge` of its box it comes from, the way's own where none is named.
  */
 export interface EnterScript {
 	readonly enter?: WayName;
@@ -42,8 +42,8 @@ export const IN_PLACE_SHOW_FORM: Form<InPlaceShowScript> = { ...ENTER_FORM, ...T
 export const IN_PLACE_HIDE_FORM: Form<InPlaceHideScript> = { ...LEAVE_FORM, ...TIMING_FORM };
 
 /**
- * The way a film names something to come up or go, from the edge it names; its own way where it names none. An edge
- * is refused for a way that comes from none, and named for no way at all.
+ * The way a film names something to come up or go, from the edge it names; its own way where it names none. An edge is
+ * refused for a way that comes from none, and named for no way at all.
  */
 export function wayOf(name: WayName | undefined, edge: FrameSide | undefined, move: string): Way {
 	if (edge !== undefined && (name === undefined || !comesFromAnEdge(name))) {

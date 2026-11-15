@@ -1,8 +1,8 @@
 /**
  * A film's set shot in one of its formats: the app served by the film's command, opened at the format's screen, made
  * ready by the film's `ready`, then acted on by the set's scenario, each state it marks taken as it stands, with where
- * the set's targets stand, and kept apart from the set shot before; once the scenario is done, the set written whole
- * in its place, so a scenario that fails leaves that one as it was, and what it kept is thrown away. The browser closes
+ * the set's targets stand, and kept apart from the set shot before; once the scenario is done, the set written whole in
+ * its place, so a scenario that fails leaves that one as it was, and what it kept is thrown away. The browser closes
  * before the app's server stops.
  *
  * A state is named by the film to show it, and its picture's file by the name, so a name is taken once, as it is

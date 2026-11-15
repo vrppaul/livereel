@@ -1,10 +1,10 @@
 /**
  * Notes: words on the ground beside the page's window, a line drawn from them to a block in it, in place of any note
  * shown, and going. The block is read as the move's share begins, what the screen shows of it, as a callout's is, and
- * the words' place with it: the film's, or the words' share on the side of the frame clearest of the window. The
- * words stand beyond the window on one side of it, where the line meets them; a note beside a window off the frame,
- * or whose words would stand over the window, as they do while the page fills the frame, is refused there. While it
- * stands the window may move: the words keep beside it (`src/props/note.ts`).
+ * the words' place with it: the film's, or the words' share on the side of the frame clearest of the window. The words
+ * stand beyond the window on one side of it, where the line meets them; a note beside a window off the frame, or whose
+ * words would stand over the window, as they do while the page fills the frame, is refused there. While it stands the
+ * window may move: the words keep beside it (`src/props/note.ts`).
  */
 import { FilmError } from '../domain/errors.ts';
 import { NONE, fractionOf } from '../domain/fraction.ts';

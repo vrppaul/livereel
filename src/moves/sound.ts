@@ -1,6 +1,6 @@
 /**
- * A sound file of the film's at a moment of a step: a move that changes nothing on the scene, so it clashes with
- * none. A sound is heard from its start to its own end, so it takes only a start, no end and no curve.
+ * A sound file of the film's at a moment of a step: a move that changes nothing on the scene, so it clashes with none.
+ * A sound is heard from its start to its own end, so it takes only a start, no end and no curve.
  */
 import { A_PATH, assertKind, assertWritten } from '../domain/handed.ts';
 import { MOMENT_FORM, type MomentScript, type Move, UNCHANGED, momentTimingOf } from '../direction/move.ts';

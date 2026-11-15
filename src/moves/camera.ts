@@ -36,8 +36,8 @@ export interface ToScript extends TimingScript, ThroughScript<Pose> {}
  * How a film frames a block: the first `every` blocks a selector matches, `air` round them in the page's pixels, no
  * closer than `zoomAtMost`, a zoom as a pose has it (`Pose` in `src/domain/camera.ts`). In a window the page fills it
  * before all else: where the screen would not fill it at `zoomAtMost`, the camera comes closer, and the window shows
- * part of the page. The blocks it passes on its way, `through`, the first a selector matches or a box, are framed as
- * it frames its own.
+ * part of the page. The blocks it passes on its way, `through`, the first a selector matches or a box, are framed as it
+ * frames its own.
  */
 export interface OntoScript extends TimingScript, ThroughScript<Target> {
 	readonly every?: number;

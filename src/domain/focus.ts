@@ -83,8 +83,8 @@ const A_DISCS_WIDTH_IN_SPREADS = 4;
 const SHARP_WITHIN = 0.1;
 // The reciprocal of a focus's distance as far as can be: a focus goes no farther
 const AS_FAR_AS_CAN_BE = 0;
-// How far a focus stands under a point of the frame where the eye sees past the window's plane there: as far as can
-// be, where the point the sight meets the plane at runs off to as the plane turns to lie along the sight
+// How far a focus stands under a point of the frame where the eye sees past the window's plane there: as far as can be,
+// where the point the sight meets the plane at runs off to as the plane turns to lie along the sight
 const ENDLESSLY_FAR = Number.POSITIVE_INFINITY;
 // A box's top left corner, in its own pixels
 const ITS_CORNER = 0;
@@ -222,8 +222,8 @@ export function softestOutOfFocusSeen(
 		down,
 		farthest: spread * nearnessInFocus
 	};
-	// The blur goes evenly across what the frame shows but where it is held to its farthest, so it is softest at a
-	// corner of it
+	// The blur goes evenly across what the frame shows but where it is held to its farthest, so it is softest at a corner
+	// of it
 	const softest = Math.max(...seen.map((point) => blurAt(blur, point)));
 	return softest * frameScaleOf(frame) <= SHARP_WITHIN ? null : softest;
 }

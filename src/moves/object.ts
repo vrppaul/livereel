@@ -182,8 +182,8 @@ export interface ToScript extends TimingScript, NamedScript, ThroughScript<Place
 }
 
 /**
- * Which object is put away, and the side of the frame it slides out `toward`, past the frame's edge, if any, or the
- * way it goes from its place.
+ * Which object is put away, and the side of the frame it slides out `toward`, past the frame's edge, if any, or the way
+ * it goes from its place.
  */
 export interface HideScript extends TimingScript, NamedScript, LeaveScript {
 	readonly toward?: FrameSide;
@@ -193,8 +193,8 @@ export interface HideScript extends TimingScript, NamedScript, LeaveScript {
 export interface TakenScript extends TimingScript, NamedScript {}
 
 /**
- * Which object is carried onto a block of the page, and the curve it comes down onto the page on, its `fall`, where
- * it stands off the page's plane: its depth and lean, over the move's whole share as its travel is, on the move's own
+ * Which object is carried onto a block of the page, and the curve it comes down onto the page on, its `fall`, where it
+ * stands off the page's plane: its depth and lean, over the move's whole share as its travel is, on the move's own
  * curve where the film names none.
  */
 export interface OntoScript extends TakenScript {
@@ -338,9 +338,9 @@ export const SHOWN_STANDING_OUT_FORM: Form<ShownStandingOutScript> = {
 };
 // The values of an object, or of a group, a move that carries it may set, and one that leans it; and of an object, one
 // of what it shows; what each writes is held to them. One that carries an object to a place sets its box, and of its
-// scale and depth those the film names; one that carries it to a box read off the page, its box alone; one that
-// carries it onto a block of the page, or hands it into the world, what it stands in and where it stands there, its
-// box and stance, as it reads them anew in the plane of what it then stands in
+// scale and depth those the film names; one that carries it to a box read off the page, its box alone; one that carries
+// it onto a block of the page, or hands it into the world, what it stands in and where it stands there, its box and
+// stance, as it reads them anew in the plane of what it then stands in
 const CARRIED = ['box', 'scale', 'depth'] as const satisfies readonly (keyof FrameObject & keyof Group)[];
 const PLACED = ['box'] as const satisfies readonly (keyof FrameObject)[];
 const HELD_ANEW = ['inside', 'box', 'scale', 'depth', 'angle'] as const satisfies readonly (keyof FrameObject)[];
@@ -378,8 +378,8 @@ export interface OwnGoing<Kind extends ShownKind> {
 type ShownAsItGoes<Kind extends ShownKind> = (shown: ShownOf<Kind>) => ShownOf<Kind>;
 
 /**
- * The way an object of a kind goes, worked out of the way the film names and of the object as it stands as it sets
- * off, on a frame of a size.
+ * The way an object of a kind goes, worked out of the way the film names and of the object as it stands as it sets off,
+ * on a frame of a size.
  */
 export type WayFor<Kind extends ShownKind> = (named: Way, object: ShowingOf<Kind>, frame: Size) => Way;
 
@@ -458,8 +458,8 @@ export function objectShow(
 /**
  * An object of a kind coming up beside a point of a part, as `objectShow` brings one, standing off that point as the
  * eye sees it on the frame, wherever the part goes: the point read as the move begins, of the block a selector matches
- * as the screen shows it then, or of an object standing, which is refused where none of its name stands, or where it
- * is the object coming up.
+ * as the screen shows it then, or of an object standing, which is refused where none of its name stands, or where it is
+ * the object coming up.
  */
 export function objectShowBeside(
 	kind: ShownKind,
@@ -485,11 +485,11 @@ export function objectShowBeside(
 }
 
 /**
- * An object of a kind coming up in the world riding the page its source stands on, a selector's first `every` blocks
- * or a box of the screen, as `objectShow` brings one inside the world: standing on the page in the world from then on
- * as the page it was lifted off lies there, so it goes where the camera, the window, the film's scrolls of any block
- * that carries its source and a fade from that page take the source. One named to stand anywhere but inside the world
- * is refused: what rides the page stands off it in the world.
+ * An object of a kind coming up in the world riding the page its source stands on, a selector's first `every` blocks or
+ * a box of the screen, as `objectShow` brings one inside the world: standing on the page in the world from then on as
+ * the page it was lifted off lies there, so it goes where the camera, the window, the film's scrolls of any block that
+ * carries its source and a fade from that page take the source. One named to stand anywhere but inside the world is
+ * refused: what rides the page stands off it in the world.
  */
 export function objectShowRiding(
 	kind: ShownKind,
@@ -508,8 +508,8 @@ export function objectShowRiding(
 }
 
 /**
- * The ride something is placed on as a move begins, over its source: the page the screen shows then, and every block
- * of it whose scroll carries the source, as the page finds them then, from as far as the film has scrolled them in all
+ * The ride something is placed on as a move begins, over its source: the page the screen shows then, and every block of
+ * it whose scroll carries the source, as the page finds them then, from as far as the film has scrolled them in all
  * then.
  */
 async function rideHeld(beginning: Beginning, source: Target, every: number): Promise<Holder> {
@@ -574,8 +574,8 @@ async function pointHeld(beginning: Beginning, asked: PointAsked, coming: Object
 }
 
 /**
- * Whether an object of a name stands beside another, off a point of it or of one that stands beside it in turn,
- * through however many.
+ * Whether an object of a name stands beside another, off a point of it or of one that stands beside it in turn, through
+ * however many.
  */
 function standsBesideThrough(
 	objects: ReadonlyMap<ObjectName, FrameObject>,
@@ -591,8 +591,8 @@ function standsBesideThrough(
 }
 
 /**
- * What a film names an object to come up standing in: the page's window, the world, a group, at its zIndex there,
- * or, naming none, the frame. A zIndex outside a group is refused, as it orders nothing there.
+ * What a film names an object to come up standing in: the page's window, the world, a group, at its zIndex there, or,
+ * naming none, the frame. A zIndex outside a group is refused, as it orders nothing there.
  */
 function holderNamed(script: NestedScript, move: string): Holder {
 	if (script.inside !== undefined && script.group !== undefined) {
@@ -694,8 +694,8 @@ function carriedNamed(script: ToScript): readonly (keyof Carried)[] {
 }
 
 /**
- * An object of a kind standing out as the film names, with a ring, a glow, a shadow or a blur, a colour of its ring
- * and glow, a melt toward a side, or larger or nearer the eye where it stands; it sets those alone, so it shares a step
+ * An object of a kind standing out as the film names, with a ring, a glow, a shadow or a blur, a colour of its ring and
+ * glow, a melt toward a side, or larger or nearer the eye where it stands; it sets those alone, so it shares a step
  * with a move that carries it, one that leans it, or another of how it stands out naming others.
  */
 function objectEffects(kind: ShownKind, move: string, script: EffectsScript): Move {
@@ -803,8 +803,8 @@ export function objectCarriedTo(
  * out of the object as the move begins: from where it stands then, measured on the screen as the camera shows it then,
  * so it lands on the block wherever the camera goes on its way, and keeps that place on the screen after. One standing
  * in the world comes down onto the block as it goes, from as near the eye and as leant as it stood, so it falls as it
- * travels: its travel on the move's curve, its fall on the one the film names, so the fall gathers speed apart from
- * the travel, or on the move's too.
+ * travels: its travel on the move's curve, its fall on the one the film names, so the fall gathers speed apart from the
+ * travel, or on the move's too.
  */
 export function objectOnto<Kind extends ShownKind>(
 	kind: Kind,
@@ -894,11 +894,11 @@ function seenFrom(beginning: Beginning, holder: Holder): Beginning {
 }
 
 /**
- * A move's beginning as what stands in a holder reads the page through the camera: in the world, riding a page there
- * or not, the camera standing where it stands and seen from the eye at rest, the frame's plane then the world's, so a
- * box read there stands over what it was read off wherever the eye stands; anywhere else, on the page in the world
- * too, which reads the page as the page in the window does, as the eye stands. The camera is stood at its pose, as the
- * eye paces a camera's way through keys.
+ * A move's beginning as what stands in a holder reads the page through the camera: in the world, riding a page there or
+ * not, the camera standing where it stands and seen from the eye at rest, the frame's plane then the world's, so a box
+ * read there stands over what it was read off wherever the eye stands; anywhere else, on the page in the world too,
+ * which reads the page as the page in the window does, as the eye stands. The camera is stood at its pose, as the eye
+ * paces a camera's way through keys.
  */
 function readFrom(beginning: Beginning, holder: Holder): Beginning {
 	switch (holder.kind) {
@@ -920,8 +920,8 @@ function readFrom(beginning: Beginning, holder: Holder): Beginning {
 }
 
 /**
- * A box a move works out as what stands in a holder sees it, as a box in what the holder measures in, for the object
- * of a name: as it is on the frame and inside the window; on the page, in the window or in the world, where the camera
+ * A box a move works out as what stands in a holder sees it, as a box in what the holder measures in, for the object of
+ * a name: as it is on the frame and inside the window; on the page, in the window or in the world, where the camera
  * shows it on the screen as the move begins, the window facing the frame front on; riding a page, so where the camera
  * shows that page as it lies on the screen then, a box read as from the eye at rest, as one in the world is; in a
  * group, measured from the group's corner, where it stands once the group stands as it was placed. Beside a point, a
@@ -955,9 +955,9 @@ function measuredIn(beginning: Beginning, holder: Holder, box: Box, name: Object
  * the page lies on it, and stays so. One on the frame, lying flat, lies on the page from the start, where the camera
  * shows its box, as it stands; leant or near the eye it is refused, as it would lie flat at once. One in the world,
  * riding a page there or not, stands on the page in the world where it stands, carried onto the page's plane standing
- * there, and comes down onto the block on its way, so it falls as it travels: on it, face-on at its nearest whole
- * turns and rolled as it stood; a ride ends there. One on the page in the world already lands so too. One inside the
- * window, in a group or beside a point is refused, as it goes with what it stands in.
+ * there, and comes down onto the block on its way, so it falls as it travels: on it, face-on at its nearest whole turns
+ * and rolled as it stood; a ride ends there. One on the page in the world already lands so too. One inside the window,
+ * in a group or beside a point is refused, as it goes with what it stands in.
  */
 function landingOf(beginning: Beginning, object: FrameObject, name: ObjectName, move: string): Landing {
 	switch (object.inside.kind) {
@@ -1194,8 +1194,8 @@ function carried<Kind extends ShownKind>(
 }
 
 /**
- * The box a place gives an object of a name, read as its kind reads a place in what it stands in, and measured there
- * as the move begins.
+ * The box a place gives an object of a name, read as its kind reads a place in what it stands in, and measured there as
+ * the move begins.
  */
 function placedBoxOf<Kind extends ShownKind>(
 	beginning: Beginning,
@@ -1280,8 +1280,8 @@ function refuseMeltTurned(object: FrameObject, to: EffectsInPlace, name: ObjectN
 }
 
 /**
- * The colour an object's ring and glow set off from toward one a film names: the one they are seen in, their own or
- * the look's accent as it stands as the move begins; where neither shows, the one named, as no other was seen.
+ * The colour an object's ring and glow set off from toward one a film names: the one they are seen in, their own or the
+ * look's accent as it stands as the move begins; where neither shows, the one named, as no other was seen.
  */
 function colourSeenIn(object: FrameObject, named: string | undefined, accent: string): string {
 	const standing = object.colour ?? accent;
@@ -1326,8 +1326,8 @@ function leaning(
 
 /**
  * Where what an object stands in lays it flat on the window's plane, as a refusal says it: inside the window, or on the
- * page in it; none where it stands on the frame, in the world, riding a page there or not, on the page in the world,
- * in a group or beside a point, free to lean and come near.
+ * page in it; none where it stands on the frame, in the world, riding a page there or not, on the page in the world, in
+ * a group or beside a point, free to lean and come near.
  */
 function flatOnTheWindowSaid(holder: Holder): string | null {
 	switch (holder.kind) {
@@ -1457,8 +1457,8 @@ function crossedAt(
 
 /**
  * What an object of a name stands in, where it stands on the frame's own plane, to be handed into the world from: the
- * frame, or a point beside which it stands. One in the world already, riding a page there or not or on the page in
- * the world, is refused, and one inside the window, on the page or in a group, as it goes with its holder.
+ * frame, or a point beside which it stands. One in the world already, riding a page there or not or on the page in the
+ * world, is refused, and one inside the window, on the page or in a group, as it goes with its holder.
  */
 function onTheFramesPlane(holder: Holder, name: ObjectName, move: string): OnTheFramesPlane {
 	switch (holder.kind) {

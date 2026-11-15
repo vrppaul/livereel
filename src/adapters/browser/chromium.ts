@@ -1,12 +1,12 @@
 /**
  * Chromium with the stage open in it and the filmed page shown on it, for one take: a static page in a tab of its own,
- * pictured on the stage; a dynamic one live in the stage's frame (`stage.ts`); or the film's set, laid in that tab on
- * a page of livereel's, pictured as a static page is (`set.ts`). And the app opened alone, for its set to be shot.
+ * pictured on the stage; a dynamic one live in the stage's frame (`stage.ts`); or the film's set, laid in that tab on a
+ * page of livereel's, pictured as a static page is (`set.ts`). And the app opened alone, for its set to be shot.
  *
- * A static page's tab is the page's own: it opens the film's address at the top, first-party to its cookies, so a
- * page that refuses to be framed or signs in is filmed as it comes, and its pictures are taken only as it changes: a
- * picture every frame cost a second capture a frame. A dynamic page's stage stands apart from the app, a file of the
- * package (`stage/stage.html`), or inside it, on the app's own address, where the film asks for it (`inside.ts`).
+ * A static page's tab is the page's own: it opens the film's address at the top, first-party to its cookies, so a page
+ * that refuses to be framed or signs in is filmed as it comes, and its pictures are taken only as it changes: a picture
+ * every frame cost a second capture a frame. A dynamic page's stage stands apart from the app, a file of the package
+ * (`stage/stage.html`), or inside it, on the app's own address, where the film asks for it (`inside.ts`).
  * Apart, the page is framed as it comes and nothing of its answers is touched: a redirect lands in the frame, and a
  * page that refuses to be framed is refused, its refusal named (`watch.ts`). Chrome's Local Network Access checks stay
  * on, and every page is granted `local-network-access`: a page the stage inside the app answers anew hears nothing its
@@ -14,8 +14,8 @@
  * public site's page that asks this machine is heard as with the checks off, which is untried.
  *
  * The page's own motion is stilled, by the reduced motion it is asked for, so every move in the film is the film's; its
- * own time is the film's, on a clock installed before it opens (`clock.ts`), and a static page tells of every change
- * it makes to its document (`changes.ts`), so its picture is taken anew.
+ * own time is the film's, on a clock installed before it opens (`clock.ts`), and a static page tells of every change it
+ * makes to its document (`changes.ts`), so its picture is taken anew.
  *
  * Launched headless, Playwright starts Chromium's headless shell, which draws in software unless asked to draw on the
  * graphics card, through ANGLE onto the system's own graphics interface, needing no screen. On Linux through Vulkan a
@@ -130,9 +130,9 @@ const THE_PAGE_AT_THE_TOP = false;
 const FALLBACK_FONT = 'monospace';
 const NO_FONT_FAMILY = 'CSS reads no font family there';
 // How a font is found: letters set in it, a family CSS keeps after it, stand as wide as that family sets them alone
-// only where the font sets none of its own; beside two such families that set them unlike each other, a font as wide
-// as both in turn is none. Not `document.fonts.check`, which says a family the machine has not is there. The letters
-// a film sets most, on one line, as large as any width tells them apart
+// only where the font sets none of its own; beside two such families that set them unlike each other, a font as wide as
+// both in turn is none. Not `document.fonts.check`, which says a family the machine has not is there. The letters a
+// film sets most, on one line, as large as any width tells them apart
 const FOUND_BY = {
 	beside: ['monospace', 'serif'],
 	letters: 'abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789',
@@ -185,8 +185,8 @@ interface ForcedRule {
 }
 
 /**
- * The rules the film forces on the page, and how far over the page's own style; and whether the document at the top
- * is the stage's own, the page framed in it, and left as it is.
+ * The rules the film forces on the page, and how far over the page's own style; and whether the document at the top is
+ * the stage's own, the page framed in it, and left as it is.
  */
 interface Forcing {
 	readonly rules: readonly ForcedRule[];
@@ -238,8 +238,8 @@ const NO_THINGS_MODULE = null;
 /** The page a take films in a tab of its own, shown on the stage as a picture: static and live, or the film's set. */
 type Pictured = Extract<Filmed, { kind: 'static' | 'set' }>;
 
-// The flag naming the graphics interface ANGLE draws through, and that interface on each system's card, by Node's
-// name for the system
+// The flag naming the graphics interface ANGLE draws through, and that interface on each system's card, by Node's name
+// for the system
 const USE_ANGLE = '--use-angle=';
 const CARD_INTERFACES = { linux: 'vulkan', darwin: 'metal', win32: 'd3d11' } as const;
 // Chrome's compositing as CDP's `SystemInfo.getInfo` reports it, and what it reports on the graphics card: `enabled`
@@ -251,9 +251,9 @@ const NO_CARD_SIDE =
 	"--renderer gpu: Chrome gives the page no WebGL to read the graphics card's largest texture by, so a picture of the " +
 	'page larger than it on a side may come out wrong with no error: shoot a tall or wide screen in software';
 // The flag telling Chrome how much GPU memory it has, in megabytes, and how much it needs told for each byte of the
-// stage's copies of a frame to draw them whole: 16 copies of a 3840 × 2160 frame drew whole at 4 times their bytes,
-// and at 3 left the page's tiles grey with no error; a larger frame, or a card with less memory, is untried. The
-// page's pictures need memory of their own, added to it (`bounds.ts`)
+// stage's copies of a frame to draw them whole: 16 copies of a 3840 × 2160 frame drew whole at 4 times their bytes, and
+// at 3 left the page's tiles grey with no error; a larger frame, or a card with less memory, is untried. The page's
+// pictures need memory of their own, added to it (`bounds.ts`)
 const GPU_MEMORY = '--force-gpu-mem-available-mb=';
 const GPU_MEMORY_FOR_A_COPY_BYTE = 4;
 // How many exposures of a frame the stage lays over one another at most; a frame of more is captured at each. With a
@@ -541,8 +541,8 @@ async function shownIn(tab: Page, filmed: Pictured): Promise<FilmedShown> {
 }
 
 /**
- * The live page in its frame, as a take reads it and an act is handed it, typed into and its motion switched in the
- * tab it stands in: shot on no set.
+ * The live page in its frame, as a take reads it and an act is handed it, typed into and its motion switched in the tab
+ * it stands in: shot on no set.
  */
 function liveIn(frame: Frame, tab: Page): FilmedShown {
 	return {
@@ -587,8 +587,8 @@ async function launched(flags: readonly string[]): Promise<Playwright> {
 }
 
 /**
- * What this machine lacks for the browser to start, where Playwright's fault says so: in livereel's words for a
- * browser never downloaded, in Playwright's own for libraries the system lacks; none for any other fault.
+ * What this machine lacks for the browser to start, where Playwright's fault says so: in livereel's words for a browser
+ * never downloaded, in Playwright's own for libraries the system lacks; none for any other fault.
  */
 function lackOf(fault: unknown): SetupError | undefined {
 	if (!(fault instanceof Error)) return undefined;
@@ -679,9 +679,9 @@ async function unreadRefused(page: Page, blurred: readonly string[]): Promise<vo
 /**
  * What the film forces on the page — the blocks it blurs blurred, the text caret steady — in every document a tab
  * opens, by a style sheet each is given as it is made, a rule a selector, so a page the film goes on to has it too;
- * where the stage stands at the top, its own document is given none. A document that sets its own adopted style
- * sheets in place of all loses them, and a block in a shadow root is not blurred; its field's caret, inherited from its
- * host, stands steady all the same.
+ * where the stage stands at the top, its own document is given none. A document that sets its own adopted style sheets
+ * in place of all loses them, and a block in a shadow root is not blurred; its field's caret, inherited from its host,
+ * stands steady all the same.
  */
 async function forcedOn(page: Page, blurred: readonly string[], stageAtTheTop: boolean): Promise<void> {
 	const rules = [STEADY_CARET, ...blurred.map((selector) => ({ selector, ...BLURRING }))];
@@ -689,14 +689,14 @@ async function forcedOn(page: Page, blurred: readonly string[], stageAtTheTop: b
 }
 
 /**
- * The stage set to the film's format by its layout, laid out as it draws its frames and hands them on, and
- * asked for its colour scheme and stilled motion. The film's own pictures and fonts are laid, and refused where one
- * decodes to none, each picture's pixels across read in the frame's at the stage's sharpness. What the film writes in
- * CSS, in its theme or in a look's move, is then refused where CSS cannot read it as the stage sets it, where the stage
- * would draw without a word what the film never asked for: a font CSS reads as no list of families a fallback can
- * follow, as one with a quote left open, which runs on over the stage's own fallbacks to the browser's font, or one
- * naming no family this machine has or the film brought, which falls through to the stage's own; the ground's layers
- * CSS reads as none, which would draw no layers at all, or with a picture in them.
+ * The stage set to the film's format by its layout, laid out as it draws its frames and hands them on, and asked for
+ * its colour scheme and stilled motion. The film's own pictures and fonts are laid, and refused where one decodes to
+ * none, each picture's pixels across read in the frame's at the stage's sharpness. What the film writes in CSS, in its
+ * theme or in a look's move, is then refused where CSS cannot read it as the stage sets it, where the stage would draw
+ * without a word what the film never asked for: a font CSS reads as no list of families a fallback can follow, as one
+ * with a quote left open, which runs on over the stage's own fallbacks to the browser's font, or one naming no family
+ * this machine has or the film brought, which falls through to the stage's own; the ground's layers CSS reads as none,
+ * which would draw no layers at all, or with a picture in them.
  */
 async function stageSetUp(
 	page: Page,

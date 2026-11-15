@@ -222,8 +222,8 @@ export function middleMovedBy(stance: Stance, box: Size): Spot {
 }
 
 /**
- * The matrix that carries a spot of what faces as an angle, on its own plane, to that angle: turned over round its
- * own width, rolled in its plane, swung about its middle by its turn, then leant back by its tilt, as CSS's
+ * The matrix that carries a spot of what faces as an angle, on its own plane, to that angle: turned over round its own
+ * width, rolled in its plane, swung about its middle by its turn, then leant back by its tilt, as CSS's
  * `rotateX() rotateY() rotateZ() rotateX()` would; so it turns over round its width as it stands rolled and swung.
  */
 export function angledAs(angle: Angle): Matrix {
@@ -254,9 +254,9 @@ export function faceOf(placing: Matrix): Face {
 }
 
 /**
- * How the stage draws something its placing carries about its middle: flat where how it stands before the eye,
- * `stood`, leaves it facing the frame and it stands before the eye, in 3D where it leans or stands behind the eye,
- * where the browser cuts away what the eye cannot see, and a flat matrix would draw it whole, turned over.
+ * How the stage draws something its placing carries about its middle: flat where how it stands before the eye, `stood`,
+ * leaves it facing the frame and it stands before the eye, in 3D where it leans or stands behind the eye, where the
+ * browser cuts away what the eye cannot see, and a flat matrix would draw it whole, turned over.
  */
 export function transformOf(stood: Matrix, placing: Matrix): Transform {
 	const flat = facesTheFrame(stood) && placing.m44 > BEHIND_THE_EYE;
@@ -313,8 +313,8 @@ export function stanceCarriedBy(matrix: Matrix, stood: Stance, box: Size): Stanc
 }
 
 /**
- * Whether an angle leaves what faces so facing the frame with its front, upright, as it stood: by whole turns alone,
- * so it turns nothing about any point.
+ * Whether an angle leaves what faces so facing the frame with its front, upright, as it stood: by whole turns alone, so
+ * it turns nothing about any point.
  */
 export function isFrontOn(angle: Angle): boolean {
 	const angled = angledAs(angle);

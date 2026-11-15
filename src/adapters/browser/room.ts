@@ -3,9 +3,9 @@
  * draws with as it opens.
  *
  * three.js comes as ES modules alone, and a page opened from `file://` loads no module: its origin is `null`, and
- * Chrome refuses a module from it as a request of another origin. Playwright answers every request to the room's
- * origin from the package's files, before anything reaches the network, so no server runs and the name needs no DNS;
- * over HTTPS the page is a secure context, as a page over plain HTTP is not.
+ * Chrome refuses a module from it as a request of another origin. Playwright answers every request to the room's origin
+ * from the package's files, before anything reaches the network, so no server runs and the name needs no DNS; over
+ * HTTPS the page is a secure context, as a page over plain HTTP is not.
  *
  * The room draws the stage's markup through HTML-in-Canvas: Chrome draws an element laid in a canvas into a WebGL
  * texture (`texElementImage2D`). It is an experiment of Chrome's, behind a flag, renamed in Chrome 150 and again in
@@ -21,14 +21,14 @@ import { FILE_SENT, NO_SUCH_FILE, type ServedFile, filesNamed, stageFiles } from
 import { type Layout, STAGE_PAGE, type StageDrawing, capturedOf } from './stage.ts';
 
 /**
- * What the room's script answers under `window.room` (`stage/room.js`): the stage's surfaces laid in the room's
- * canvas, and a frame composed in WebGL from them as the stage drew them.
+ * What the room's script answers under `window.room` (`stage/room.js`): the stage's surfaces laid in the room's canvas,
+ * and a frame composed in WebGL from them as the stage drew them.
  */
 export interface RoomApi {
 	/**
 	 * Every exposure's surfaces laid in the room's canvas, which draws a frame of the layout's size, and the film's
-	 * things module loaded from its address where it names one: the names it builds a thing by, or what the film is
-	 * told where the module fails to load or exports no builders.
+	 * things module loaded from its address where it names one: the names it builds a thing by, or what the film is told
+	 * where the module fails to load or exports no builders.
 	 */
 	readonly setup: (layout: Layout, things: string | null) => Promise<ThingsLoaded>;
 	/**
@@ -67,8 +67,8 @@ declare global {
  * The stage drawn as a room: the browser launched with HTML-in-Canvas, the stage opened on the room's origin, its
  * surfaces laid in the room's canvas, before the pages of the film's own are laid in them, as a frame moved in the
  * document loads its page anew; and each frame drawn by the stage's markup, then composed by the room. In software a
- * frame of 1920 × 1080, the page fading out of focus, took 30.6 s to draw, where the graphics card drew one in 197
- * ms, so the person who asked for software is told.
+ * frame of 1920 × 1080, the page fading out of focus, took 30.6 s to draw, where the graphics card drew one in 197 ms,
+ * so the person who asked for software is told.
  */
 export const DRAWN_AS_A_ROOM: StageDrawing = {
 	name: 'room',
@@ -90,11 +90,11 @@ const ROOM_ORIGIN = 'https://livereel.invalid/';
 const ROOT = '/';
 // Every request under it, as Playwright's glob writes it
 const EVERY_PATH = '**';
-// The room's own script, a module, and the kinds of script the page is given: the module, and the import map that
-// names where three stands for it, which only the room's page is given; where three's files stand under the origin;
-// the files of three's build its module is made of; and its module, as the import map names it. three's add-ons, as
-// the import map names them and as they stand under the origin; those the room draws with, its glow and what that
-// imports, by their paths among the add-ons; and the folder they stand in
+// The room's own script, a module, and the kinds of script the page is given: the module, and the import map that names
+// where three stands for it, which only the room's page is given; where three's files stand under the origin; the files
+// of three's build its module is made of; and its module, as the import map names it. three's add-ons, as the import
+// map names them and as they stand under the origin; those the room draws with, its glow and what that imports, by
+// their paths among the add-ons; and the folder they stand in
 const ROOM_SCRIPT = 'room.js';
 const MODULE = 'module';
 const IMPORT_MAP = 'importmap';

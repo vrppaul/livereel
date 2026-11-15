@@ -396,9 +396,9 @@ export function pictureReachOf(view: Box, cut: Cut): Box {
 }
 
 /**
- * Where the picture is cut on one side of its view: as far past the view's edge as the page reaches, so much of the
- * way as the cut still stands out, where the view meets the frame's edge there; at the view's edge where it stands in
- * from the frame's.
+ * Where the picture is cut on one side of its view: as far past the view's edge as the page reaches, so much of the way
+ * as the cut still stands out, where the view meets the frame's edge there; at the view's edge where it stands in from
+ * the frame's.
  */
 function cutPast(pagePast: number, standsIn: boolean, open: number): number {
 	return standsIn ? NOTHING : open * Math.min(NOTHING, pagePast);
@@ -407,8 +407,8 @@ function cutPast(pagePast: number, standsIn: boolean, open: number): number {
 /**
  * A pose kept off the screen's edge as a face-on view shows it: in a window as close as it takes for the screen to fill
  * it, in the whole frame as far back as the film puts it. Alike at any angle, the angle being the view's, so a lean
- * begun once the camera has come to its aim moves nothing the camera chose; leant far, the view's far corners may
- * show ground.
+ * begun once the camera has come to its aim moves nothing the camera chose; leant far, the view's far corners may show
+ * ground.
  */
 export function keptOnTheScreen(pose: Pose, format: Format, view: View): Pose {
 	const near = view.lift > FLAT ? filling(pose, format, view.box) : pose;
@@ -535,9 +535,9 @@ export function onto(box: Box, view: Size, frame: Size, framing: Framing): Pose 
 }
 
 /**
- * A pose moved as little as it takes for the screen to fill a view of this size, no edge of it showing there;
- * along a side the screen is too short to fill at that zoom, it stands in the view's middle, as much ground showing
- * either side.
+ * A pose moved as little as it takes for the screen to fill a view of this size, no edge of it showing there; along a
+ * side the screen is too short to fill at that zoom, it stands in the view's middle, as much ground showing either
+ * side.
  */
 export function covering(pose: Pose, format: Format, view: Size): Pose {
 	const frameZoom = frameZoomOf(pose, format.frame);
@@ -549,10 +549,10 @@ export function covering(pose: Pose, format: Format, view: Size): Pose {
 }
 
 /**
- * How far the screen moves on the frame from one camera to another, in the frame's pixels: the farthest any point of
- * it goes that a corner of the view shows at the start, or the point nearest the corner where it shows the ground
- * round the screen; a corner that sees past the screen's plane shows none. Along a pan every point moves alike; as the
- * camera comes closer or the view leans, a point at a corner moves most.
+ * How far the screen moves on the frame from one camera to another, in the frame's pixels: the farthest any point of it
+ * goes that a corner of the view shows at the start, or the point nearest the corner where it shows the ground round
+ * the screen; a corner that sees past the screen's plane shows none. Along a pan every point moves alike; as the camera
+ * comes closer or the view leans, a point at a corner moves most.
  */
 export function frameShift(start: Camera, end: Camera, format: Format): number {
 	const moved = cornersOf(start.view.box)
@@ -564,9 +564,9 @@ export function frameShift(start: Camera, end: Camera, format: Format): number {
 }
 
 /**
- * How far the window's edge moves on the frame from one camera's view to another's: the farthest any corner of it
- * goes, as each view stands before the eye that sees it, so a window carried or grown while the camera holds the page
- * still is measured as it moves.
+ * How far the window's edge moves on the frame from one camera's view to another's: the farthest any corner of it goes,
+ * as each view stands before the eye that sees it, so a window carried or grown while the camera holds the page still
+ * is measured as it moves.
  */
 export function viewShift(seen: SeenBetween): number {
 	return Math.max(
@@ -583,8 +583,8 @@ function cornerOnTheFrame(camera: Camera, frame: Size, corner: Point): Point {
 }
 
 /**
- * How far a point of the screen moves on the frame from where it stood, as one camera showed it, to where it stands,
- * as another shows it.
+ * How far a point of the screen moves on the frame from where it stood, as one camera showed it, to where it stands, as
+ * another shows it.
  */
 export function screenPointShift(seen: SeenBetween, start: Point, end: Point): number {
 	return distanceBetween(onTheFrame(seen.start, seen.frame, start), onTheFrame(seen.end, seen.frame, end));
@@ -693,9 +693,9 @@ function seenOnTheScreen(camera: Camera, frame: Size, point: Point): Point {
 
 /**
  * The point of the screen's plane a point of the frame shows from a camera: where the eye's line through it meets the
- * plane, which passes through the view's middle where its stance moves it, brought out by its depth and round the
- * point it turns about, facing as the view leans, carried back to the screen. None where the line meets the plane
- * behind the eye, or never: the point sees past it.
+ * plane, which passes through the view's middle where its stance moves it, brought out by its depth and round the point
+ * it turns about, facing as the view leans, carried back to the screen. None where the line meets the plane behind the
+ * eye, or never: the point sees past it.
  */
 export function underTheFrame(camera: Camera, frame: Size, point: Point): Point | null {
 	const pose = camera.pose;
@@ -707,8 +707,8 @@ export function underTheFrame(camera: Camera, frame: Size, point: Point): Point 
 		left: point.left - frame.width / HALVES,
 		top: point.top - frame.height / HALVES
 	});
-	// How far along the sight from the eye the plane is met: at the point itself, where the screen is face-on to the
-	// eye at rest on the frame's plane
+	// How far along the sight from the eye the plane is met: at the point itself, where the screen is face-on to the eye
+	// at rest on the frame's plane
 	const reach = dotOf(facingNow, wayBetween(sight.from, planesMiddle)) / dotOf(facingNow, sight.along);
 	if (!(reach > 0 && Number.isFinite(reach))) return null;
 	const met = carried(

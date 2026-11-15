@@ -194,8 +194,8 @@ interface DegreesToward {
 }
 
 /**
- * A heading the eye follows: so many degrees from up the page clockwise, written or worked out toward a block where
- * the key is reached; toward a block of the page, wherever the eye stands; or along the way it flies, `along: 'way'`.
+ * A heading the eye follows: so many degrees from up the page clockwise, written or worked out toward a block where the
+ * key is reached; toward a block of the page, wherever the eye stands; or along the way it flies, `along: 'way'`.
  */
 export type HeadingKeyScript =
 	| (GazeKeyScript & { readonly degrees: number | DegreesToward })
@@ -209,9 +209,9 @@ export type HeadingKeyScript =
 export type TipKeyScript = DegreesKeyScript | (GazeKeyScript & { readonly holding: Target; readonly at: number });
 
 /**
- * How a flight goes: its legs joined smoothly where none is named, or straight; its gaze's keys, heading and tip
- * apart, each kept as the eye set off where it names none; and how its view turns between them, heading and tip each
- * apart where it names none, or whole.
+ * How a flight goes: its legs joined smoothly where none is named, or straight; its gaze's keys, heading and tip apart,
+ * each kept as the eye set off where it names none; and how its view turns between them, heading and tip each apart
+ * where it names none, or whole.
  */
 export interface FlyScript extends TimingScript {
 	readonly shape?: Joining;
@@ -558,8 +558,8 @@ function sentAlong(eye: Eye, through: Through<EyePlace>, place: EyePlaceOrRest):
 }
 
 /**
- * The eye on its way from where it stands, read riding the window as it stands as the move begins, to before a block
- * as the film frames it, the block read then where the camera shows it in the window, on its straight way at the pace
+ * The eye on its way from where it stands, read riding the window as it stands as the move begins, to before a block as
+ * the film frames it, the block read then where the camera shows it in the window, on its straight way at the pace
  * named; refused where its up turns half round on the way, it could not see anywhere on it, or it would go by scale
  * from where it shows the page at none.
  */
@@ -641,8 +641,8 @@ function flightsTiming(script: FlyScript, timed: LegsTimed): Timing {
 }
 
 /**
- * Refuses gaze keys reached past the way's last leg, at the end of a leg onto a block, which sets the gaze there, or
- * no farther along than the key before.
+ * Refuses gaze keys reached past the way's last leg, at the end of a leg onto a block, which sets the gaze there, or no
+ * farther along than the key before.
  */
 function refuseKeysOff(keys: readonly GazeKeyScript[], way: readonly LegScript[], named: string): void {
 	const lastLeg = way.length - 1;
@@ -833,9 +833,9 @@ function askedOf(on: FocusOn): FocusAsked {
 }
 
 /**
- * Where the eye focuses on what a film names, read as the move begins: a distance as it is; a spot of the world, on
- * its plane; a block of the page, at its middle as the page lays it out; an object, at its middle where it stands,
- * refused where none of its name stands; a point of the frame, under it.
+ * Where the eye focuses on what a film names, read as the move begins: a distance as it is; a spot of the world, on its
+ * plane; a block of the page, at its middle as the page lays it out; an object, at its middle where it stands, refused
+ * where none of its name stands; a point of the frame, under it.
  */
 async function focusRead(beginning: Beginning, asked: FocusAsked): Promise<Focus> {
 	switch (asked.kind) {
@@ -886,8 +886,8 @@ function refocusing(from: Focus, to: Focus): Change {
 }
 
 /**
- * The eye's focus `progress` of the way from where it focused to where it focuses, and the eye opened so far of the
- * way from how wide it stood to how wide the film names, held between the two.
+ * The eye's focus `progress` of the way from where it focused to where it focuses, and the eye opened so far of the way
+ * from how wide it stood to how wide the film names, held between the two.
  */
 function refocusingAndOpening(from: Focus, to: Focus, openedFrom: number, opened: number): Change {
 	return (scene, progress) =>

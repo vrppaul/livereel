@@ -4,11 +4,11 @@
  * take ends.
  *
  * The address is asked first, before the command runs: a page answering there already would be filmed in place of the
- * command's, so it is refused. The command runs as a process group of its own, so stopping it stops whatever it
- * started too (`npx vite` is a shell, npm and Node), as Playwright stops it. A group of its own hears no Ctrl-C from
- * the terminal, so livereel stops it as it exits, and on Ctrl-C or a request to end exits as a process ended so would,
- * the group stopped on the way. On Windows, untried as the rest of livereel there, the command shares livereel's
- * console and so its Ctrl-C, and its tree is ended by taskkill, as Playwright ends it.
+ * command's, so it is refused. The command runs as a process group of its own, so stopping it stops whatever it started
+ * too (`npx vite` is a shell, npm and Node), as Playwright stops it. A group of its own hears no Ctrl-C from the
+ * terminal, so livereel stops it as it exits, and on Ctrl-C or a request to end exits as a process ended so would, the
+ * group stopped on the way. On Windows, untried as the rest of livereel there, the command shares livereel's console
+ * and so its Ctrl-C, and its tree is ended by taskkill, as Playwright ends it.
  */
 import { type ChildProcessByStdio, spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
@@ -23,12 +23,12 @@ import type { PageServer, ServedPage } from '../studio/ports.ts';
 /** How long a command is given before its page answers, as Playwright gives a test's server: a minute. */
 export const ANSWERED_WITHIN_MILLISECONDS = 60_000;
 // The page answers once its address is answered with a page, a redirect or a refusal: from 200 to 403, as Playwright
-// counts a page answered; 404 and above say a server runs there but serves the page not yet. Where Playwright follows
-// a redirect to its end, livereel takes the redirect itself as the server's answer
+// counts a page answered; 404 and above say a server runs there but serves the page not yet. Where Playwright follows a
+// redirect to its end, livereel takes the redirect itself as the server's answer
 const ANSWERED_FROM = 200;
 const ANSWERED_BELOW = 404;
-// How long livereel waits before asking the address again: a tenth of a second first, twice as long each time after,
-// a second at most
+// How long livereel waits before asking the address again: a tenth of a second first, twice as long each time after, a
+// second at most
 const FIRST_PAUSE_MILLISECONDS = 100;
 const PAUSE_GROWS_BY = 2;
 const PAUSE_AT_MOST_MILLISECONDS = 1000;
@@ -45,8 +45,8 @@ const NO_SUCH_PROCESS = 'ESRCH';
 type CommandProcess = ChildProcessByStdio<null, Readable, Readable>;
 
 /**
- * The film's page served by its command, run in the film's folder, given so many milliseconds to answer; a page
- * someone else serves, left as it is.
+ * The film's page served by its command, run in the film's folder, given so many milliseconds to answer; a page someone
+ * else serves, left as it is.
  */
 export class CommandServer implements PageServer {
 	readonly folder: string;
@@ -185,8 +185,8 @@ class RunningCommand implements ServedPage {
 }
 
 /**
- * Whether a page answers at an address before a signal gives up asking. Any failure to reach it — nothing listening,
- * a connection that says nothing until then — is its not answering yet.
+ * Whether a page answers at an address before a signal gives up asking. Any failure to reach it — nothing listening, a
+ * connection that says nothing until then — is its not answering yet.
  */
 async function answers(address: string, givenUp: AbortSignal): Promise<boolean> {
 	try {

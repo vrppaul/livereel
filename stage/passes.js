@@ -95,10 +95,10 @@ const LARGEST_HALF_FLOAT = '65504.0';
  * screen's colours, and back. And three's linear light, premultiplied by how clear it is, written in the screen's
  * colours as the browser's surfaces are, premultiplied as theirs are: each colour encoded on its own before it is
  * premultiplied. Here three's light enters the screen's colours, so it is held to light that can be: a film's own
- * shader may write a colour below none or no number at all, which three's bloom would spread over the whole frame;
- * such a pixel is drawn clear, its light held between none and the most a half float keeps, its clearness between none
- * and whole. And the screen's colours, premultiplied, turned back into light, linear and premultiplied: clear where
- * they are.
+ * shader may write a colour below none or no number at all, which three's bloom would spread over the whole frame; such
+ * a pixel is drawn clear, its light held between none and the most a half float keeps, its clearness between none and
+ * whole. And the screen's colours, premultiplied, turned back into light, linear and premultiplied: clear where they
+ * are.
  */
 export const SRGB_CURVES = `
 vec3 encoded(vec3 linear) {
@@ -173,8 +173,8 @@ export function drawnInto(renderer, pass, target) {
 
 /**
  * A material compiled for as many of something as a count its shader sizes a list by, under a name it reads: GLSL sizes
- * a list by a count it is compiled with, so three compiles it anew, only as that count changes, set before the
- * material is first drawn.
+ * a list by a count it is compiled with, so three compiles it anew, only as that count changes, set before the material
+ * is first drawn.
  * @param {ShaderMaterial} material @param {string} name @param {number} count
  */
 export function compiledForCount(material, name, count) {

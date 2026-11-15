@@ -28,8 +28,8 @@ interface Paused {
 	readonly responseHeaders?: readonly Header[];
 }
 
-// The ways a page comes from a server, and where the stage stands on the app's origin: a path of livereel's own,
-// which no app is expected to serve
+// The ways a page comes from a server, and where the stage stands on the app's origin: a path of livereel's own, which
+// no app is expected to serve
 const SERVED = new Set(['http:', 'https:']);
 const STAGE_PATH = '/__livereel__/';
 const CONTENT_TYPE = 'Content-Type';

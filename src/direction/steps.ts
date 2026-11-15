@@ -1,13 +1,13 @@
 /**
  * The steps a film is a list of: so many seconds of frames, or a cut.
  *
- * A film reads as a script: `play` for what moves, `cut` for what changes at once; what the page really does — a
- * click, a reply from its server — is a move of the page, `page.act`, in a play or a cut (`act` in `src/moves/act.ts`
- * is a cut of one), and takes no time in the film however long the browser takes. Steps are data; the studio runs
- * them. Two moves of one part may share a step only one after the other, or at once where each sets values of it the
- * other does not, as two moves of the look may: a step that has both on one value at once is refused as it is
- * written, before anything is shot. So is an act on the page at the moment a move that holds the page's picture
- * begins, which the act, done first, would be in.
+ * A film reads as a script: `play` for what moves, `cut` for what changes at once; what the page really does — a click,
+ * a reply from its server — is a move of the page, `page.act`, in a play or a cut (`act` in `src/moves/act.ts` is a cut
+ * of one), and takes no time in the film however long the browser takes. Steps are data; the studio runs them. Two
+ * moves of one part may share a step only one after the other, or at once where each sets values of it the other does
+ * not, as two moves of the look may: a step that has both on one value at once is refused as it is written, before
+ * anything is shot. So is an act on the page at the moment a move that holds the page's picture begins, which the act,
+ * done first, would be in.
  */
 import { FilmError } from '../domain/errors.ts';
 import {
@@ -220,8 +220,8 @@ function refuseTogether(moves: readonly MoveInItsStep[]): void {
 }
 
 /**
- * An act on the page at the moment a move that holds the page's picture begins, refused: the take does what is done
- * at a moment before what begins then, so the picture would hold the page as the act leaves it.
+ * An act on the page at the moment a move that holds the page's picture begins, refused: the take does what is done at
+ * a moment before what begins then, so the picture would hold the page as the act leaves it.
  */
 function refuseActsAsAHoldBegins(moves: readonly MoveInItsStep[]): void {
 	const holdsBegin = moves.filter((move) => move.holdsThePage === true).map((move) => move.timing.within.start);
@@ -267,9 +267,9 @@ function isClash(clash: string | undefined): clash is string {
 }
 
 /**
- * The steps a film's `steps` gives, read as a film whose types nobody checked may hand them: a list of steps. The
- * steps of a click or a typing left in a list of their own, not spread among the others, are refused with how to
- * spread them; anything else that is no step, by its place.
+ * The steps a film's `steps` gives, read as a film whose types nobody checked may hand them: a list of steps. The steps
+ * of a click or a typing left in a list of their own, not spread among the others, are refused with how to spread them;
+ * anything else that is no step, by its place.
  */
 export function stepsOf(written: unknown): readonly StepShot[] {
 	if (!Array.isArray(written)) {

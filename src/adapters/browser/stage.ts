@@ -13,17 +13,16 @@
  * the zoom the take names shows the page, up to as far as a camera comes in where a film names no bound
  * (`ZOOM_AT_MOST`), so text the camera comes close to stays as crisp as the live frame shows it.
  *
- * The page's picture is taken by CDP's capture on livereel's own session with its tab, clipped to the screen at a
- * scale of the picture's pixels to the page's, which Chrome draws the page anew at, so one tab serves every scale, as
- * sharp as a tab at that scale and quicker than Playwright's picture, which takes the tab's device scale alone. CDP's
- * capture does not wait for the page's fonts, as Playwright's does, so a picture waits for them: Chrome hides text in
- * a face still loading for up to 3 s, and two pictures alike without it would hold the page still with its text
- * missing. A picture of a part of the screen a piece is drawn from, the one it holds or one
- * sharper than the page's, is taken the same way, clipped to that part, and handed to the stage by its number, which
- * keeps it until the take lets it go; one of a page of the film's own, from the tab its copy stands in
- * (`own-pages.ts`). Every picture is taken no larger than Chrome takes one whole where it draws (`bounds.ts`): one
- * asked larger, of a tall screen or a part grown far, is taken as large as it may, softer, and the person is told so
- * once.
+ * The page's picture is taken by CDP's capture on livereel's own session with its tab, clipped to the screen at a scale
+ * of the picture's pixels to the page's, which Chrome draws the page anew at, so one tab serves every scale, as sharp
+ * as a tab at that scale and quicker than Playwright's picture, which takes the tab's device scale alone. CDP's capture
+ * does not wait for the page's fonts, as Playwright's does, so a picture waits for them: Chrome hides text in a face
+ * still loading for up to 3 s, and two pictures alike without it would hold the page still with its text missing. A
+ * picture of a part of the screen a piece is drawn from, the one it holds or one sharper than the page's, is taken the
+ * same way, clipped to that part, and handed to the stage by its number, which keeps it until the take lets it go; one
+ * of a page of the film's own, from the tab its copy stands in (`own-pages.ts`). Every picture is taken no larger than
+ * Chrome takes one whole where it draws (`bounds.ts`): one asked larger, of a tall screen or a part grown far, is taken
+ * as large as it may, softer, and the person is told so once.
  *
  * A frame is captured by Playwright at the page's device scale, the film's sharpness; a room's frame for a video from
  * the corner of the room's canvas it is scaled down into, at the frame's own size, a quarter of the pixels to read back
@@ -67,8 +66,8 @@ export interface Layout {
 }
 
 /**
- * How the screen's frame opens the filmed page: at its address, and sandboxed inside the app, where the page could
- * move the stage away whenever it likes, the sandbox's value what the page may still do; none apart from it.
+ * How the screen's frame opens the filmed page: at its address, and sandboxed inside the app, where the page could move
+ * the stage away whenever it likes, the sandbox's value what the page may still do; none apart from it.
  */
 export interface Opening {
 	readonly address: string;
@@ -157,8 +156,8 @@ export interface StageApi {
 	 */
 	readonly layPictures: (pictures: readonly FilmsPictureHanded[]) => Promise<readonly FilmsPictureDecoded[]>;
 	/**
-	 * The film's own fonts joining the stage's, each under the family it sets, once its file is read: the paths of
-	 * those the browser reads as no font.
+	 * The film's own fonts joining the stage's, each under the family it sets, once its file is read: the paths of those
+	 * the browser reads as no font.
 	 */
 	readonly layFonts: (fonts: readonly FilmsFontHanded[]) => Promise<readonly string[]>;
 	/** One frame, drawn whole from each of its exposures' scenes, laid over one another so each weighs the same. */
@@ -232,8 +231,8 @@ const SCALED: FramesHanded = 'scaled';
 const PICTURE_TAKEN: PictureTaken = { format: 'jpeg', quality: JPEG_QUALITY };
 const PICTURE_TYPE = 'image/jpeg';
 // A part of the screen read for the colour of its edge is taken as a PNG, whose pixels no compression bleeds into one
-// another, two of its pixels to the page's whatever the shoot's quality and frame, and read 1.5 of the page's pixels
-// in from the middle of a side, past a border of a pixel
+// another, two of its pixels to the page's whatever the shoot's quality and frame, and read 1.5 of the page's pixels in
+// from the middle of a side, past a border of a pixel
 const EDGE_TAKEN: PictureTaken = { format: 'png' };
 const EDGE_TYPE = 'image/png';
 const EDGE_READ = { scale: 2, inFromTheSide: 1.5 };

@@ -1,10 +1,10 @@
 // @ts-check
 /**
  * The world's light in the room (`src/props/lighting.ts`), which a film's things in a lit material and the window's
- * body are lit by: its lights in a group the matrix each carries takes from the room into the eye's own space that
- * sees it, and its soft boxes drawn once into what three reads reflections from, which the room's turn turns, so a
- * glint stays where its box stands in the room. Each is made anew only as the world changes it, as three keeps what it
- * learns of a light for as long as the page stands.
+ * body are lit by: its lights in a group the matrix each carries takes from the room into the eye's own space that sees
+ * it, and its soft boxes drawn once into what three reads reflections from, which the room's turn turns, so a glint
+ * stays where its box stands in the room. Each is made anew only as the world changes it, as three keeps what it learns
+ * of a light for as long as the page stands.
  */
 import * as THREE from 'three';
 import { matrixOf } from './matrices.js';
@@ -19,8 +19,8 @@ const REACHES_ENDLESSLY = 0;
 const BY_THE_SQUARE = 2;
 // The soft boxes' reflections: drawn unblurred, rough faces blurring them as they read them; looked for from so near
 // the room's middle, the boxes a unit off, to twice as far as the farthest corner of one; and kept so many pixels a
-// side, coarser, a leaning soft box's edge reflecting in steps: a cube of half floats, about 67 MB on the card with
-// its smaller copies, kept while the boxes stand
+// side, coarser, a leaning soft box's edge reflecting in steps: a cube of half floats, about 67 MB on the card with its
+// smaller copies, kept while the boxes stand
 const UNBLURRED = 0;
 const NEAREST_REFLECTED = 0.1;
 const PAST_THE_FARTHEST = 2;

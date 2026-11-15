@@ -4,10 +4,10 @@
  * CDP's capture draws a picture as one surface at its scale, and one too large for where it draws comes out with no
  * error, but wrong. On the graphics card it is drawn no larger than the card's largest texture on a side, as WebGL
  * reports it, and past that shows the page from elsewhere in its place. Chrome draws a picture only as far as the
- * memory it holds for drawing, and leaves the rest blank, drawing as little as 0.84 of the bytes it is told: told
- * none, it drew 116 million pixels whole, and told 1.25 times a picture's bytes, it drew that picture whole. It
- * refuses a picture of more than 2 GiB outright, "Unable to capture screenshot". And a JPEG holds no picture taller or
- * wider than 65,500 px: the stage cannot decode one Chrome took larger.
+ * memory it holds for drawing, and leaves the rest blank, drawing as little as 0.84 of the bytes it is told: told none,
+ * it drew 116 million pixels whole, and told 1.25 times a picture's bytes, it drew that picture whole. It refuses a
+ * picture of more than 2 GiB outright, "Unable to capture screenshot". And a JPEG holds no picture taller or wider than
+ * 65,500 px: the stage cannot decode one Chrome took larger.
  *
  * So a picture is taken within these bounds: as close as asked where it fits them, else as close as the tightest lets
  * it, and drawn softer. Chrome is told memory for 1.25 times the bytes of the largest picture of the screen livereel
@@ -60,8 +60,8 @@ const A_MILLION = 1_000_000;
 
 /**
  * The most pixels a picture of a page of this kind is taken with: as many as the screen's own at livereel's closest,
- * within a JPEG's side and 2 GiB, or as many as Chrome draws whole by itself where that is more; none for a page
- * framed live.
+ * within a JPEG's side and 2 GiB, or as many as Chrome draws whole by itself where that is more; none for a page framed
+ * live.
  */
 export function picturePixelsAtMost(page: PageKind, screen: Size, pixelsAtZoomOne: number): number {
 	switch (page) {

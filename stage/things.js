@@ -16,9 +16,9 @@ import { matrixOf } from './matrices.js';
 /** @import { ThingsLoaded } from '../src/adapters/browser/room.ts' */
 
 /**
- * How a film's module builds a thing and sets it: `build` makes its three objects from the stage's three, once;
- * `set` sets them whole from its numbers and how far it has come up, from 0 to 1, every exposure, with the stage's
- * three for what it makes anew, a colour or a vector.
+ * How a film's module builds a thing and sets it: `build` makes its three objects from the stage's three, once; `set`
+ * sets them whole from its numbers and how far it has come up, from 0 to 1, every exposure, with the stage's three for
+ * what it makes anew, a colour or a vector.
  * @typedef {{
  *   readonly build: (three: typeof THREE) => THREE.Object3D,
  *   readonly set: (built: THREE.Object3D, values: Readonly<Record<string, number>>, shown: number,
@@ -36,8 +36,8 @@ import { matrixOf } from './matrices.js';
  * @typedef {{ readonly made: string, readonly placed: THREE.Group, readonly built: THREE.Object3D }} Standing
  */
 
-// The name a module's default export stands under, and what a builder holds; and what the film is told where its
-// things module exports no builders there
+// The name a module's default export stands under, and what a builder holds; and what the film is told where its things
+// module exports no builders there
 const DEFAULT_EXPORT = 'default';
 const BUILDS = 'build';
 const SETS = 'set';
@@ -57,8 +57,8 @@ export class Things {
 	}
 
 	/**
-	 * The film's module loaded, its default export the builders by name: the names it builds a thing by, or what the
-	 * film is told where it fails to load or exports no builders.
+	 * The film's module loaded, its default export the builders by name: the names it builds a thing by, or what the film
+	 * is told where it fails to load or exports no builders.
 	 * @param {string} address @returns {Promise<ThingsLoaded>}
 	 */
 	async loaded(address) {
@@ -76,8 +76,7 @@ export class Things {
 
 	/**
 	 * A thing posed for an exposure: built the first time, set from its numbers and how far it has come up, and placed
-	 * where its scene has it; what the film is told where its module throws building or setting it, none where it
-	 * stands.
+	 * where its scene has it; what the film is told where its module throws building or setting it, none where it stands.
 	 * @param {ThingObject} thing @returns {string | null}
 	 */
 	posed(thing) {
@@ -136,8 +135,8 @@ export function isAThing(object) {
 }
 
 /**
- * Whether a film's module exports builders: an object of them by name, not a list, each with a `build` and a `set`,
- * and one at least.
+ * Whether a film's module exports builders: an object of them by name, not a list, each with a `build` and a `set`, and
+ * one at least.
  * @param {unknown} exported @returns {exported is Readonly<Record<string, ThingBuilder>>}
  */
 function areBuilders(exported) {

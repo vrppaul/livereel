@@ -2,8 +2,8 @@
  * A table of values a film writes by name and moves, as the film's look and the world's look are: one kind for each
  * value says what a film may write for it, how the table holds what it writes, and how it moves. So the kinds are the
  * form a film's values are checked against (`assertWritten` in `src/domain/handed.ts`), what a film writes takes the
- * place of the values standing, each as the table holds it, and a move sets the values it names alone, each as its
- * kind moves, the rest as they stand each frame: two moves of one table share a step where they name no value alike.
+ * place of the values standing, each as the table holds it, and a move sets the values it names alone, each as its kind
+ * moves, the rest as they stand each frame: two moves of one table share a step where they name no value alike.
  */
 import type { Kind } from './handed.ts';
 import { type MovingBy, type Toward, namedToward, namesOf } from './toward.ts';

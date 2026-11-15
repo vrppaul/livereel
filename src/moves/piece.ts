@@ -139,9 +139,9 @@ export interface PitScript {
 }
 
 /**
- * A piece's body as a film writes it: how thick it is back from its face, in the page's pixels, as its corners are;
- * its walls' colour, in hex with no alpha, the colour the page shows along the piece's edge where the film names none;
- * and how strongly a light in their own hue shows through them, from 0 to 1, none where the film names none.
+ * A piece's body as a film writes it: how thick it is back from its face, in the page's pixels, as its corners are; its
+ * walls' colour, in hex with no alpha, the colour the page shows along the piece's edge where the film names none; and
+ * how strongly a light in their own hue shows through them, from 0 to 1, none where the film names none.
  */
 export interface BodyScript {
 	readonly thickness: number;
@@ -368,9 +368,9 @@ const PIECE_FORM: Form<PieceScript> = {
  * leaving the hole and drawing the lines the film names, drawn from the picture the film names: in place of any piece
  * of its name, in its own way, fading up whole, or in a way of livereel's the film names, with the body the film names;
  * in the world, riding its block wherever the camera, the window, the film's scrolls and a fade take it, where the film
- * asks. A hole over a box of the screen, which has no block to read the ground behind, is refused unless the film
- * names its colour; a pit on a piece with no body, whose colour its walls take, is refused; and a corner named for one
- * block lifted alone, which the page draws.
+ * asks. A hole over a box of the screen, which has no block to read the ground behind, is refused unless the film names
+ * its colour; a pit on a piece with no body, whose colour its walls take, is refused; and a corner named for one block
+ * lifted alone, which the page draws.
  */
 export function show(target: Target, script: PieceScript = {}): Move {
 	assertKind(target, A_TARGET, "piece.show's target");
@@ -659,9 +659,9 @@ function sheenAcross(piece: ShowingOf<'piece'>, edge: FrameSide, sheen: SheenScr
 }
 
 /**
- * The hole a film names, reaching as far as it names past the piece, none where it names no reach; filled with a
- * colour it names, or with the ground behind the block a selector names, refused for a box of the screen, which names
- * no block. The pit it names is the piece's body's (`bodyAsked`).
+ * The hole a film names, reaching as far as it names past the piece, none where it names no reach; filled with a colour
+ * it names, or with the ground behind the block a selector names, refused for a box of the screen, which names no
+ * block. The pit it names is the piece's body's (`bodyAsked`).
  */
 function holeAsked(target: Target, hole: HoleScript): HoleAsked {
 	const ground = hole.ground ?? PAGES_GROUND;
@@ -704,10 +704,10 @@ function bodyAsked(body: BodyScript, inside: PieceScript['inside'], pit: Omit<Pi
 }
 
 /**
- * A piece of the page over a target, cut to the part of it the camera shows, its corners as round as its block's as
- * the page draws it now or as the film names, the hole it leaves filled as the page draws it now and as round, drawn
- * from the picture the film names, with the body it names, its walls of the colour of its edge now where it names
- * none, carrying the letters of the block it names as they stand now, and the box of the frame it shows there.
+ * A piece of the page over a target, cut to the part of it the camera shows, its corners as round as its block's as the
+ * page draws it now or as the film names, the hole it leaves filled as the page draws it now and as round, drawn from
+ * the picture the film names, with the body it names, its walls of the colour of its edge now where it names none,
+ * carrying the letters of the block it names as they stand now, and the box of the frame it shows there.
  */
 async function lifted(beginning: Beginning, target: Target, lifting: Lifting): Promise<Coming> {
 	const camera = cameraOverItsPicture(beginning, lifting.picture, 'piece.show');
@@ -812,8 +812,8 @@ async function wallsTaken(
 }
 
 /**
- * How round each corner of a piece is: as its own, and as the window, where it is rounder, at a corner that stands on
- * a corner of what the camera shows, which the window rounds.
+ * How round each corner of a piece is: as its own, and as the window, where it is rounder, at a corner that stands on a
+ * corner of what the camera shows, which the window rounds.
  */
 function cornersOf(own: Corners, onWhatIsShown: SidesStanding, windowCorner: number): Corners {
 	const { left, top, right, bottom } = onWhatIsShown;
@@ -826,8 +826,8 @@ function cornersOf(own: Corners, onWhatIsShown: SidesStanding, windowCorner: num
 }
 
 /**
- * A piece's own corners where the camera cut its blocks: square at a corner either side of which was cut, as a cut
- * runs straight through a block, as drawn at the others.
+ * A piece's own corners where the camera cut its blocks: square at a corner either side of which was cut, as a cut runs
+ * straight through a block, as drawn at the others.
  */
 function squareWhereCut(own: Corners, uncut: SidesStanding): Corners {
 	const { left, top, right, bottom } = uncut;
@@ -864,8 +864,8 @@ function standsOn(edge: number, otherEdge: number): boolean {
 }
 
 /**
- * A hole as it is filled, with its colour or the ground the page draws behind its block as the move begins, its
- * corners as round as its piece's own, sunk into the pit its piece's body walls, if any.
+ * A hole as it is filled, with its colour or the ground the page draws behind its block as the move begins, its corners
+ * as round as its piece's own, sunk into the pit its piece's body walls, if any.
  */
 async function holeOf(beginning: Beginning, asked: HoleAsked, corners: Corners, pit: Pit | null): Promise<Hole> {
 	const { filling, ...shaped } = asked;

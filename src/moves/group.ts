@@ -69,8 +69,8 @@ const SHOW_FORM: Form<GroupShowScript> = { at: A_PLACE, order: A_GROUP_ORDER, ..
 const HIDE_FORM: Form<GroupHideScript> = { ...NAMED_FORM, ...TIMING_FORM };
 
 /**
- * A group placed in a place, read as the window reads one, the whole frame where the film names none: face-on, as
- * large as its box and on the frame's plane, ordering what stands in it as the film names. One of its name standing is
+ * A group placed in a place, read as the window reads one, the whole frame where the film names none: face-on, as large
+ * as its box and on the frame's plane, ordering what stands in it as the film names. One of its name standing is
  * refused, as a group comes once in its place.
  */
 export function show(script: GroupShowScript = {}): Move {

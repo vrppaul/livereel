@@ -1,7 +1,7 @@
 /**
  * What a film imports from livereel: the steps, the moves of every prop and of the page, the film itself, and the
- * values a film is written with. Nothing else of the package is a promise to a film: a film changes the scene only
- * by moves, in a `play` or at once in a `cut`.
+ * values a film is written with. Nothing else of the package is a promise to a film: a film changes the scene only by
+ * moves, in a `play` or at once in a `cut`.
  */
 export * as camera from './moves/camera.ts';
 export * as eye from './moves/eye.ts';

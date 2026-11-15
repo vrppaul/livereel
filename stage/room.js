@@ -11,18 +11,18 @@
  * in the world, a title, code, the terminal or a piece, on a surface of its own the stage lays it in apart from the
  * frame's, drawn face-on into a texture as many times as densely as the eye magnifies it, but no denser than what it
  * shows holds (`DrawnObject.magnified`), so brought near it is as sharp as the page beside it; let go once no exposure
- * of a frame draws it; one that would ask more than the world's own layer holds, part by
- * part by how far the eye sees each part from, each only as far as the frame shows it, each painted and drawn into a
- * texture of its own in turn, as one element is laid out at one density at a time; and stood where the engine's matrix
- * places its box, a piece's body standing with it (`stage/piece-body.js`); all seen in perspective from the eye and lit
- * as it sees the room (`stage/lighting.js`), hiding one another by depth alone; but what stands before all the rest
- * while the eye's focus blurs it near, a world of its own drawn apart and laid over the rest (`worldBuilt`). The eye's
- * lens blurs each pixel of the world by how far what it shows stands from the focus, or, where the window's shade blurs
- * the whole window, as wide as the shade blurs the window there where that is wider (`stage/lens.js`, `WindowBlurred`
- * in `stage/body.js`); its fields are laid over one another each by its law (`stage/laying.js`) and the whole over the
- * ground; over that the cursor, on the page's plane where the eye sees it but over whatever stands nearer, unblurred:
- * laid in the world, a piece lifted off the page and its shadow would lie over it, grey and soft; then the film's
- * things on the frame, sharp, then the frame's surface.
+ * of a frame draws it; one that would ask more than the world's own layer holds, part by part by how far the eye sees
+ * each part from, each only as far as the frame shows it, each painted and drawn into a texture of its own in turn, as
+ * one element is laid out at one density at a time; and stood where the engine's matrix places its box, a piece's body
+ * standing with it (`stage/piece-body.js`); all seen in perspective from the eye and lit as it sees the room
+ * (`stage/lighting.js`), hiding one another by depth alone; but what stands before all the rest while the eye's focus
+ * blurs it near, a world of its own drawn apart and laid over the rest (`worldBuilt`). The eye's lens blurs each pixel
+ * of the world by how far what it shows stands from the focus, or, where the window's shade blurs the whole window, as
+ * wide as the shade blurs the window there where that is wider (`stage/lens.js`, `WindowBlurred` in `stage/body.js`);
+ * its fields are laid over one another each by its law (`stage/laying.js`) and the whole over the ground; over that the
+ * cursor, on the page's plane where the eye sees it but over whatever stands nearer, unblurred: laid in the world, a
+ * piece lifted off the page and its shadow would lie over it, grey and soft; then the film's things on the frame,
+ * sharp, then the frame's surface.
  *
  * The window's surface is drawn from a picture of it as sharp as the browser draws a page face-on, and filtered as it
  * shrinks into the distance: the browser draws a layer leant in 3D at about one of its pixels a page's pixel, however
@@ -190,10 +190,10 @@ const WHOLE = 1;
 // The first exposure of a frame, whose surfaces drawn once a frame serve every exposure of it
 const FIRST = 0;
 // How each surface's texture is drawn: anew for each exposure, or once a frame, as every exposure's ground is alike,
-// the look being the first exposure's (`apply` in `stage.js`); with smaller copies of itself where the room shrinks
-// it, as it shrinks the window, what lies over its page and the cursor alone, which are laid out over the page's
-// plane; and in what scene it holds anything to draw: what lies over the page only where the scene says anything does,
-// the cursor's surface only where the scene has a cursor
+// the look being the first exposure's (`apply` in `stage.js`); with smaller copies of itself where the room shrinks it,
+// as it shrinks the window, what lies over its page and the cursor alone, which are laid out over the page's plane; and
+// in what scene it holds anything to draw: what lies over the page only where the scene says anything does, the
+// cursor's surface only where the scene has a cursor
 /**
  * @type {{ readonly [Name in SurfaceName]: {
  *   readonly eachExposure: boolean,
@@ -253,8 +253,8 @@ const DRAWN = { kind: 'drawn' };
 /** @type {Composed} */
 const LOST = { kind: 'lost' };
 // An edge of a box of the frame as a cut through the eye, keeping what stands inward of it, toward the box's middle,
-// and outward on the far side: none of a point carried across or down, all of how far it is seen from, as named; a
-// cut through the eye stands no distance from it; and a point on the edge is kept
+// and outward on the far side: none of a point carried across or down, all of how far it is seen from, as named; a cut
+// through the eye stands no distance from it; and a point on the edge is kept
 const INWARD = 1;
 const OUTWARD = -1;
 const NONE_OF_IT = 0;
@@ -278,8 +278,8 @@ const WHAT_WRITES_DEPTH_LAID = 'linearly';
 /** @type {readonly BesideThePage[]} */
 const MARKUP_BESIDE_THE_PAGE = ['surfacesSeenThrough'];
 // What the world and what stands on the frame are drawn into: their light linear, premultiplied, in half floats, which
-// keep it past white; each pixel sampled at four points, so their edges are smoothed as the browser smooths the
-// page's; the world's depth kept for the lens
+// keep it past white; each pixel sampled at four points, so their edges are smoothed as the browser smooths the page's;
+// the world's depth kept for the lens
 const SAMPLES_A_PIXEL = 4;
 const THREES_LAYER = { type: HalfFloatType, samples: SAMPLES_A_PIXEL, depthBuffer: true };
 // What an exposure and the frame are drawn into and laid from: in half floats, which keep light past white
@@ -317,8 +317,8 @@ const PAGE_LAID = {
 // The page seen through laid so too, but writing no depth, as nothing seen through does; and its depth alone
 const PAGE_SEEN_THROUGH = { ...PAGE_LAID, depthWrite: false };
 const PAGE_DEPTH_ALONE = { blending: NoBlending, colorWrite: false, depthWrite: true, ...PAGE_NEARER };
-// A surface of markup standing in the world laid as the page seen through is, and its depth alone, each cut at a
-// fading page's plane as a thing seen through is (`see-through.js`)
+// A surface of markup standing in the world laid as the page seen through is, and its depth alone, each cut at a fading
+// page's plane as a thing seen through is (`see-through.js`)
 const MARKUP_SEEN_THROUGH = { ...PAGE_SEEN_THROUGH, ...MARKUP_NEARER, clipping: true };
 const MARKUP_DEPTH_ALONE = { ...PAGE_DEPTH_ALONE, ...MARKUP_NEARER, clipping: true };
 
@@ -509,8 +509,8 @@ class Room {
 		this.shown = new FrameShown(this.frame.texture, this.drawnSize, inTheDrawingsPixels(layout.handedIn));
 		// How many of the drawing's pixels a film pixel takes, as the engine's blur is measured in them
 		this.pixelsOfOne = layout.frameScale * window.devicePixelRatio;
-		// three draws nothing without a camera: the passes place their own points; the world's camera takes the
-		// projection alone, the engine placing every point in the eye's own space
+		// three draws nothing without a camera: the passes place their own points; the world's camera takes the projection
+		// alone, the engine placing every point in the eye's own space
 		this.camera = new Camera();
 		this.worldCamera = new Camera();
 		this.things = things;
@@ -552,8 +552,8 @@ class Room {
 		 */
 		this.markup = [];
 		/**
-		 * The light of each part of a surface of markup in the world by the surface's place among what stands in the
-		 * world, in the order the scene lays it, as the exposure drawn last set it
+		 * The light of each part of a surface of markup in the world by the surface's place among what stands in the world,
+		 * in the order the scene lays it, as the exposure drawn last set it
 		 * @type {Map<Object3D, number>}
 		 */
 		this.laidAt = new Map();
@@ -602,9 +602,9 @@ class Room {
 	 * object of markup standing in the world where the stage laid it; the surfaces of those it has painted, each exposure
 	 * drawn, the farther parts of its markup with it, and added into the frame at an equal weight; the frame glowing
 	 * round its light past white where the world asks, and shown on the canvas once the card has drawn it. Refused, with
-	 * what the film is told, where its things module throws building or setting a thing; lost where the card has
-	 * dropped the canvas, as it was handed the frame or as it drew it. A card out of memory may say so only after the
-	 * frame it failed in is composed, which its capture then refuses (`canvasLost`, read by `roomCaptured` in
+	 * what the film is told, where its things module throws building or setting a thing; lost where the card has dropped
+	 * the canvas, as it was handed the frame or as it drew it. A card out of memory may say so only after the frame it
+	 * failed in is composed, which its capture then refuses (`canvasLost`, read by `roomCaptured` in
 	 * `src/adapters/browser/room.ts`).
 	 * @param {readonly DrawnScene[]} scenes @returns {Promise<Composed>}
 	 */
@@ -663,8 +663,8 @@ class Room {
 	}
 
 	/**
-	 * The frame's light past the page's white glowing round itself, as strong and as wide as the world has it: the
-	 * world being the first exposure's, as the look's ground is.
+	 * The frame's light past the page's white glowing round itself, as strong and as wide as the world has it: the world
+	 * being the first exposure's, as the look's ground is.
 	 * @param {DrawnBloom} bloom
 	 */
 	bloomed(bloom) {
@@ -758,8 +758,8 @@ class Room {
 	}
 
 	/**
-	 * A surface laid flat over what is drawn of an exposure, as the frame stands: drawn anew from its element first
-	 * where it is drawn for each exposure.
+	 * A surface laid flat over what is drawn of an exposure, as the frame stands: drawn anew from its element first where
+	 * it is drawn for each exposure.
 	 * @param {FlatSurfaceName} name @param {ReadonlyMap<SurfaceName, Element>} surfaces
 	 */
 	flatLaid(name, surfaces) {
@@ -868,9 +868,8 @@ class Room {
 	}
 
 	/**
-	 * The window added to a world, its page seen through where it fades and anything else stands beside it there, and
-	 * the pits sunk into its page: the matrix that places the page's square where it is seen through, none where it is
-	 * not.
+	 * The window added to a world, its page seen through where it fades and anything else stands beside it there, and the
+	 * pits sunk into its page: the matrix that places the page's square where it is seen through, none where it is not.
 	 * @param {Scene} world @param {WindowBuilt} window @param {boolean} besideThePage
 	 */
 	windowAdded(world, window, besideThePage) {
@@ -936,8 +935,8 @@ class Room {
 	/**
 	 * How wide the window's shade blurs the whole window at each pixel of a field that holds the window, its page or its
 	 * body, and the pieces and pits it reaches in any field, as the lens takes it, where the shade blurs the window's
-	 * body, which the room blurs the page with; none where it blurs none of it, or the field holds none of the window
-	 * and the shade reaches no piece.
+	 * body, which the room blurs the page with; none where it blurs none of it, or the field holds none of the window and
+	 * the shade reaches no piece.
 	 * @param {SceneField} field @param {DrawnScene} scene @param {boolean} holdsTheWindow
 	 * @param {readonly ShadedBox[]} shaded the boxes of the pieces and pits the shade reaches @returns {Texture | null}
 	 */
@@ -986,11 +985,11 @@ class Room {
 	 * magnifies it (`DrawnObject.magnified`), each part a surface over its box and as far past it as anything it shows
 	 * draws, as many times as densely as the eye magnifies the part, so the eye sees none of its pixels larger than the
 	 * frame's, or as densely as the card holds it. One that asks no more pixels drawn whole, at the density of its
-	 * nearest part, than the box the world is drawn over holds is laid over all of that as one part; one that asks
-	 * more, each part over what that box shows of it as far as the eye sees it from within the part, none where it shows
-	 * none. Its element laid in the canvas, where it is not yet, over its nearest part shown. A surface that fits is not
-	 * cut, as its texels and their smaller copies would stand elsewhere and draw its letters otherwise, where cutting
-	 * saves less than the world's own layer holds.
+	 * nearest part, than the box the world is drawn over holds is laid over all of that as one part; one that asks more,
+	 * each part over what that box shows of it as far as the eye sees it from within the part, none where it shows none.
+	 * Its element laid in the canvas, where it is not yet, over its nearest part shown. A surface that fits is not cut,
+	 * as its texels and their smaller copies would stand elsewhere and draw its letters otherwise, where cutting saves
+	 * less than the world's own layer holds.
 	 * @param {SurfaceApart} apart @param {DrawnScene} scene @param {Box} gathered @returns {MarkupStanding}
 	 */
 	markupLaidOut(apart, scene, gathered) {
@@ -1031,8 +1030,8 @@ class Room {
 
 	/**
 	 * The parts of an exposure's markup standing in the world drawn into their textures: the nearest of each as the
-	 * canvas painted it with the frame; each farther one once its element is laid out over it and the canvas has
-	 * painted it so, all the objects' parts at the same place among their own in one paint.
+	 * canvas painted it with the frame; each farther one once its element is laid out over it and the canvas has painted
+	 * it so, all the objects' parts at the same place among their own in one paint.
 	 * @param {readonly MarkupStanding[]} markup
 	 */
 	async markupDrawn(markup) {
@@ -1146,8 +1145,8 @@ class Room {
 	 * lens's blur gathers there, from the softest point the frame shows of its window or of an object in it, or of the
 	 * window's slab the shade blurs whole, rounded up to a step of the drawing's pixels; grown about the frame till each
 	 * side halves evenly down to the coarsest copy the lens reads of it (`sideHalvedEvenly`), so the blur's light is the
-	 * same wherever the frame falls in it; and no longer a side than the graphics card's largest texture, a power of
-	 * two, past which a blur by the frame's edge gathers nothing. The frame itself where the eye's focus blurs none.
+	 * same wherever the frame falls in it; and no longer a side than the graphics card's largest texture, a power of two,
+	 * past which a blur by the frame's edge gathers nothing. The frame itself where the eye's focus blurs none.
 	 * @param {readonly DrawnScene[]} scenes @returns {Box}
 	 */
 	gatheredFor(scenes) {
@@ -1195,13 +1194,13 @@ class Room {
  * }} MarkupStanding
  */
 /**
- * A part of an object of markup by how far the eye sees it from: farther than the nearest, no farther than it
- * reaches, and how many times the eye magnifies it there (`MagnifiedPart` in `src/domain/matrix.ts`).
+ * A part of an object of markup by how far the eye sees it from: farther than the nearest, no farther than it reaches,
+ * and how many times the eye magnifies it there (`MagnifiedPart` in `src/domain/matrix.ts`).
  * @typedef {{ readonly nearest: number, readonly reaches: number, readonly times: number }} MagnifiedStretch
  */
 /**
- * A part of a surface of markup in the world as the room lays it: where it stands on the object's plane, how densely
- * it is drawn, how far the eye sees it from, and every entry of the matrix that places it about the object's middle.
+ * A part of a surface of markup in the world as the room lays it: where it stands on the object's plane, how densely it
+ * is drawn, how far the eye sees it from, and every entry of the matrix that places it about the object's middle.
  * @typedef {{
  *   readonly placing: SurfacePlacing,
  *   readonly density: number,
@@ -1215,8 +1214,8 @@ class Room {
  * @typedef {{ readonly onThePlane: Vector2, readonly carried: Vector3 }} PointCut
  */
 /**
- * What the page's surface lays, as its material takes it: the window's surface, and with it what lies over the page
- * and the page's picture under it (`page-picture.js`).
+ * What the page's surface lays, as its material takes it: the window's surface, and with it what lies over the page and
+ * the page's picture under it (`page-picture.js`).
  * @typedef {PageLaid & { readonly surface: Texture }} PageSurfaceLaid
  */
 /**
@@ -1247,8 +1246,8 @@ class Room {
  * }} StandingApart
  */
 /**
- * A world the room draws apart: the scene it is drawn from, the parts of it drawn with what writes depth, the fields
- * of what is seen through it is drawn with, and whether the window stands in it.
+ * A world the room draws apart: the scene it is drawn from, the parts of it drawn with what writes depth, the fields of
+ * what is seen through it is drawn with, and whether the window stands in it.
  * @typedef {{
  *   readonly scene: Scene,
  *   readonly writingDepth: readonly WorldPart[],
@@ -1354,8 +1353,8 @@ function shadedBox(placing, size, corner, back, shaded) {
 }
 
 /**
- * The matrix that carries a point, in the frame's pixels from the middle of a box on a plane, into the eye's own
- * space: the plane the engine's matrix carries from the middle it names into that space.
+ * The matrix that carries a point, in the frame's pixels from the middle of a box on a plane, into the eye's own space:
+ * the plane the engine's matrix carries from the middle it names into that space.
  * @param {Matrix} inTheEyesSpace @param {SurfacePlacing} placing
  */
 function fromTheMiddleOf(inTheEyesSpace, placing) {
@@ -1413,8 +1412,8 @@ function cornersOf(box) {
 }
 
 /**
- * Whether a surface laid over a box at a density holds no more pixels than another box of the frame does at the
- * page's own. @param {Box} box @param {number} density @param {Box} within
+ * Whether a surface laid over a box at a density holds no more pixels than another box of the frame does at the page's
+ * own. @param {Box} box @param {number} density @param {Box} within
  */
 function fitsIn(box, density, within) {
 	return box.width * density * box.height * density <= within.width * within.height;
@@ -1490,8 +1489,8 @@ function nearerThan(distance) {
 }
 
 /**
- * A polygon of points going round cut at an edge: each point inside it kept, and where a side crosses it, the point
- * it crosses at, so what is kept goes round too.
+ * A polygon of points going round cut at an edge: each point inside it kept, and where a side crosses it, the point it
+ * crosses at, so what is kept goes round too.
  * @param {readonly PointCut[]} points @param {Vector4} edge @returns {readonly PointCut[]}
  */
 function cutAt(points, edge) {
@@ -1544,8 +1543,8 @@ function seenFromValuesOf(part) {
 }
 
 /**
- * An exposure's object of markup, by its place among the exposure's, as its part at a place among its own is laid
- * out: none where it has no part there.
+ * An exposure's object of markup, by its place among the exposure's, as its part at a place among its own is laid out:
+ * none where it has no part there.
  * @param {MarkupStanding} standing @param {number} place @param {number} part
  */
 function partLaying(standing, place, part) {
@@ -1815,9 +1814,9 @@ function standingOf(parts, seenThrough) {
 }
 
 /**
- * The kinds seen through beside the page that stand in a world, the farther first, by the middle of the box all of
- * each stands in: so of two kinds one wholly before the other is laid over it. Two kinds that stand in among each other
- * are laid one wholly over the other.
+ * The kinds seen through beside the page that stand in a world, the farther first, by the middle of the box all of each
+ * stands in: so of two kinds one wholly before the other is laid over it. Two kinds that stand in among each other are
+ * laid one wholly over the other.
  * @param {readonly StandingApart[]} standing @returns {readonly BesideThePage[]}
  */
 function kindsFartherFirst(standing) {
@@ -1912,8 +1911,8 @@ function partsDrawnAt(standing, place) {
 }
 
 /**
- * The values a part of a surface of markup's material starts with, its own: no texture yet, and how far the eye sees
- * it from set as each exposure stands it.
+ * The values a part of a surface of markup's material starts with, its own: no texture yet, and how far the eye sees it
+ * from set as each exposure stands it.
  */
 function markupPartValues() {
 	return {

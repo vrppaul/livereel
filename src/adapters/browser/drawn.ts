@@ -1,6 +1,6 @@
 /**
- * A drawn film's page in a tab of its own at the frame's size, a page's pixel a frame's, as the page draws as finely
- * as it wants itself: made ready once it says so, then drawn at each moment asked through the one global it answers
+ * A drawn film's page in a tab of its own at the frame's size, a page's pixel a frame's, as the page draws as finely as
+ * it wants itself: made ready once it says so, then drawn at each moment asked through the one global it answers
  * livereel by (`DrawnFilmPage` in `src/direction/drawn-film.ts`), and captured.
  *
  * Everything read off the page is checked where it enters and refused as the film's, said where it stands: an address

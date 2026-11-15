@@ -1,7 +1,7 @@
 /**
- * What the studio needs of the world to shoot a film: the film's page served, or its set kept, a browser with the
- * stage and the page open, footage to keep frames in, and a track to keep sounds in. The adapters answer these; the
- * studio names no process, browser or file of its own, and blends no image.
+ * What the studio needs of the world to shoot a film: the film's page served, or its set kept, a browser with the stage
+ * and the page open, footage to keep frames in, and a track to keep sounds in. The adapters answer these; the studio
+ * names no process, browser or file of its own, and blends no image.
  */
 import type { Box, FrameSide, Size } from '../domain/geometry.ts';
 import type { OwnPageStanding } from '../domain/own-page.ts';
@@ -33,8 +33,8 @@ interface DrawingStage {
 	 */
 	readonly drawingFinished: () => Promise<void>;
 	/**
-	 * Why the stage, or the page in its frame, is no longer there, where one is not: a click that took the stage away,
-	 * a page that refuses its frame, one that could not be reached; none where both are.
+	 * Why the stage, or the page in its frame, is no longer there, where one is not: a click that took the stage away, a
+	 * page that refuses its frame, one that could not be reached; none where both are.
 	 */
 	readonly absence: () => Promise<Error | undefined>;
 	/** The frame as the stage shows it now, as a JPEG. */
@@ -140,9 +140,9 @@ export interface OwnPages {
 }
 
 /**
- * A browser with the stage and the filmed page open in it, for one take, the page's time standing; and the pages of
- * the film's own as moves read them; and the names the film's things module builds a thing by, none where the stage
- * draws no things; and the film's own pictures the stage laid, by their paths, each as its file decoded.
+ * A browser with the stage and the filmed page open in it, for one take, the page's time standing; and the pages of the
+ * film's own as moves read them; and the names the film's things module builds a thing by, none where the stage draws
+ * no things; and the film's own pictures the stage laid, by their paths, each as its file decoded.
  */
 export interface Opened extends AsyncDisposable {
 	readonly stage: Stage;

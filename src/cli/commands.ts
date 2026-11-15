@@ -1,7 +1,7 @@
 /**
  * The commands: shoot a film whole as a video, shoot a span of it as a clip or one still of it, to look at a few
- * moments without making the whole, shoot a film's set ahead of it, set a machine up to shoot. A film's set in a
- * format is kept beside its file, named as its videos are (`film-wide.set` beside `film.ts`), so its shoot finds it.
+ * moments without making the whole, shoot a film's set ahead of it, set a machine up to shoot. A film's set in a format
+ * is kept beside its file, named as its videos are (`film-wide.set` beside `film.ts`), so its shoot finds it.
  *
  * Each takes its own options by name and refuses any other, and a wrong value, before anything is started; each says
  * what it made, and how long the making took, and with `--profile` where that time went (`src/adapters/profile.ts`). A
@@ -338,8 +338,8 @@ async function shotInto(
 }
 
 /**
- * A film shot into footage, its sounds heard by the track: a film of steps by its take on the stage, its set read
- * from beside its file where it names one; one its own page draws by that page alone, which makes no sound.
+ * A film shot into footage, its sounds heard by the track: a film of steps by its take on the stage, its set read from
+ * beside its file where it names one; one its own page draws by that page alone, which makes no sound.
  */
 function filmedInto(film: AnyFilmInFormat, asked: ShootingAsked, footage: Footage, track: Track): Promise<Shot> {
 	const { shotWith } = asked;
@@ -384,8 +384,8 @@ async function sheetMade(mp4: string, stem: string, seconds: number, sheetRate: 
 }
 
 /**
- * The frames from one moment of a film to just before another, at the film's rate; a span of no frame between them
- * is refused.
+ * The frames from one moment of a film to just before another, at the film's rate; a span of no frame between them is
+ * refused.
  */
 function shotsBetween(from: number, to: number, framesPerSecond: number): ShotsKept {
 	const first = shotAt(from, framesPerSecond);

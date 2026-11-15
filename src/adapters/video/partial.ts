@@ -1,6 +1,6 @@
 /**
- * A video written under a name of its own until it is whole, so one that fails leaves the last good video of its
- * name where it was: the MP4 as its frames come, and every kind made from it.
+ * A video written under a name of its own until it is whole, so one that fails leaves the last good video of its name
+ * where it was: the MP4 as its frames come, and every kind made from it.
  */
 import { basename, dirname, extname, join } from 'node:path';
 

@@ -275,8 +275,8 @@ vec4 measuredAt(vec2 share) {
 // The far field made whole: where the near field hides it, carried on into the hole from what of it stands nearest,
 // read from its smaller copies, the finest first, each taken whole once it holds a pixel's worth of the far field, as
 // the far field there, and laid under those before it for what they leave. Every pass after reads the far field so,
-// with no hole in it. Gathered round each pixel with the hole left out, a pixel inside the near field's edge found
-// half its disc and took the rest from coarse copies, which mixed in what stood far off along the edge, where a pixel
+// with no hole in it. Gathered round each pixel with the hole left out, a pixel inside the near field's edge found half
+// its disc and took the rest from coarse copies, which mixed in what stood far off along the edge, where a pixel
 // outside it found all its disc: the near field's edge drew a hard line over the far field; and laid under one another
 // by the share each holds, the copies did the same
 const FAR_FIELD_WHOLE_FRAGMENT = `
@@ -454,8 +454,8 @@ void main() {
 	Near near = nearBlurred(point, here, widest.x, turn);
 	// Where the far field has no depth of its own, it is blurred as widely as the far field round it; and where the near
 	// field hides it, as much wider, up to the near field's blur, as the near field covers the pixel past its edge, so
-	// what was carried on into the hole from round it is softer the less of it shows, and goes on from the far field
-	// at the edge as it stands
+	// what was carried on into the hole from round it is softer the less of it shows, and goes on from the far field at
+	// the edge as it stands
 	float hidden = clamp((near.cover - EDGE_COVER) / (1.0 - EDGE_COVER), 0.0, 1.0) * widest.x;
 	vec4 far = farBlurred(point, here, measured, measured.a >= 0.0 ? measured.a : max(widest.y, hidden), turn);
 	gl_FragColor = near.light + (1.0 - min(near.cover, 1.0)) * far;
@@ -546,9 +546,9 @@ export class Lens {
 	 * it would join the rest while its near face was still blurred wide, and the fill's guess of what it hid would come
 	 * back at once, from one frame to the next. And a window whose near corner alone is blurred stays with the rest
 	 * behind a title blurred before it: taken apart with the title, what the title's blur hides of the window would be
-	 * guessed, and the page under the title's shadow, drawn in one field with it, blurred as the title. What stands
-	 * among the rest's depths, a cube through a page, is never apart. Nothing is where the eye blurs nothing, nor all
-	 * that stands.
+	 * guessed, and the page under the title's shadow, drawn in one field with it, blurred as the title. What stands among
+	 * the rest's depths, a cube through a page, is never apart. Nothing is where the eye blurs nothing, nor all that
+	 * stands.
 	 * @template {{ readonly box: Box3 }} Standing
 	 * @param {DrawnEye} eye @param {readonly Standing[]} standing @returns {readonly Standing[]}
 	 */
@@ -582,8 +582,8 @@ export class Lens {
 	/**
 	 * A field of the world's scene, holding a box of the frame, laid over the frame's box of the target blurred at each
 	 * pixel by the eye's lens or by a spread of its own the field is handed, whichever is wider, or as it stands where
-	 * the eye has no lens, open none, and the field no spreads of its own; the field's depth read as the eye that saw
-	 * it, so far before the frame, stored it.
+	 * the eye has no lens, open none, and the field no spreads of its own; the field's depth read as the eye that saw it,
+	 * so far before the frame, stored it.
 	 * @param {WebGLRenderer} renderer @param {SceneField} field @param {Box} drawn @param {Box} shown
 	 * @param {DrawnEye} eye @param {WebGLRenderTarget} target @param {Texture | null} ownSpreads how wide each pixel of
 	 * the field spreads of its own, in the drawing's pixels, as the field lies; none where none does

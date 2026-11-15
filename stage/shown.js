@@ -31,8 +31,8 @@ import { SRGB_CURVES, WRITTEN, passOver } from './passes.js';
  * @typedef {{ readonly along: string, readonly read: string, readonly written: string }} Way
  */
 /**
- * The part of what a pass draws into it draws in, in the pixels of what it draws into: its corner nearest their
- * origin, and its size.
+ * The part of what a pass draws into it draws in, in the pixels of what it draws into: its corner nearest their origin,
+ * and its size.
  * @typedef {{ readonly corner: readonly number[], readonly size: readonly number[] }} Part
  */
 

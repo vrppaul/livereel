@@ -1,8 +1,8 @@
 /**
  * The pictures of parts of the screen the stage holds for pieces of the page and a sweep or a fade of the screen, apart
  * from the page's own picture: those pieces hold as they are lifted, the one a sweep or a fade holds as it begins, and
- * those sharper than the page's for pieces drawn past livereel's bound; and the colour a piece's edge shows, read off
- * a picture taken for it and held by none. The take hands them what each frame asks and the scene each frame ends on;
+ * those sharper than the page's for pieces drawn past livereel's bound; and the colour a piece's edge shows, read off a
+ * picture taken for it and held by none. The take hands them what each frame asks and the scene each frame ends on;
  * each picture is held as long as a frame after may draw it, and let go then. A stage that shows the page live holds
  * none, as no piece, sweep or fade stands on it.
  */

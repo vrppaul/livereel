@@ -125,8 +125,8 @@ export type BlockKey = number;
 export type Scrolled = ReadonlyMap<BlockKey, number>;
 
 /**
- * What something riding its block rides: the page the screen showed as the rider was placed, whose source it was
- * lifted off; every block of it whose scroll carries that source, by its key, as the page found them then
+ * What something riding its block rides: the page the screen showed as the rider was placed, whose source it was lifted
+ * off; every block of it whose scroll carries that source, by its key, as the page found them then
  * (`FilmedPage.blocksHolding`), none on a page whose blocks no scroll of the film's moves; and how far the film had
  * scrolled them in all then, in the page's pixels.
  */
@@ -188,9 +188,9 @@ type Rider = 'eye' | 'world';
 
 /**
  * What holders are read off as a frame is drawn: the camera, which shows the window and frames the page in it, where
- * each group standing stands, where each object standing stands, by its name, how far the film has scrolled each
- * block it scrolls, which carries a rider whose source that scroll carries, and the page the screen last faded from,
- * where it shows that page no more, which lies where the fade laid it.
+ * each group standing stands, where each object standing stands, by its name, how far the film has scrolled each block
+ * it scrolls, which carries a rider whose source that scroll carries, and the page the screen last faded from, where it
+ * shows that page no more, which lies where the fade laid it.
  */
 export interface Holders {
 	readonly camera: Camera;
@@ -278,8 +278,8 @@ const NO_SIZE: Size = { width: 0, height: 0 };
 const AS_THEY_COME = 0;
 const ON_ONE_PLANE_WITHIN = 1e-6;
 const FACING_ALIKE_WITHIN = 1e-9;
-// The way out of a face, toward three's z, from its middle; and the sign of a way's share along another that turns
-// from it
+// The way out of a face, toward three's z, from its middle; and the sign of a way's share along another that turns from
+// it
 const A_UNIT_OUT: Spot = { across: 0, down: 0, out: 1 };
 const TURNED_AWAY = 0;
 // How far the film has scrolled a block it never scrolled
@@ -356,8 +356,8 @@ function scrolledSince(ride: Ride, scrolled: Scrolled): number {
 }
 
 /**
- * How the part of a page a ride carries lies on that page as the screen showed it whole when the ride began: carried
- * up as far as the film has scrolled the ride's blocks since, as the block's own parts are.
+ * How the part of a page a ride carries lies on that page as the screen showed it whole when the ride began: carried up
+ * as far as the film has scrolled the ride's blocks since, as the block's own parts are.
  */
 function carriedUpByItsScrolls(ride: Ride, scrolled: Scrolled): Lying {
 	return { ...OVER_THE_SCREEN, corner: { ...UNMOVED, top: -scrolledSince(ride, scrolled) } };
@@ -365,8 +365,8 @@ function carriedUpByItsScrolls(ride: Ride, scrolled: Scrolled): Lying {
 
 /**
  * A box of the screen under something placed in a holder, where it stands now on its page, in the pixels the screen
- * shows that page whole in: riding it, carried up its scrolls (`carriedUpByItsScrolls`); in any other holder, as it
- * is. Where the page itself lies on the screen is `lyingUnder`'s.
+ * shows that page whole in: riding it, carried up its scrolls (`carriedUpByItsScrolls`); in any other holder, as it is.
+ * Where the page itself lies on the screen is `lyingUnder`'s.
  */
 export function screenBoxUnder(box: Box, holder: Holder, scrolled: Scrolled): Box {
 	if (holder.kind !== 'ride') return box;
@@ -488,8 +488,8 @@ function windowsPlane(camera: Camera, frame: Size): Plane {
 /**
  * A placement on a plane as a frame is drawn: standing about its box's middle as the plane's stance carries it there
  * and as its own stance does; laid in the frame, carried into the eye's space from there and seen from the eye in
- * perspective about its box's middle; laid in the window, standing so in it, carried into the eye's space as the
- * window stands.
+ * perspective about its box's middle; laid in the window, standing so in it, carried into the eye's space as the window
+ * stands.
  */
 export function placed(placement: Placement, plane: Plane, frame: Size): Placed {
 	const onThePlane = boxOnThePlane(placement.box, plane.measures, frame);
@@ -522,9 +522,9 @@ export function placed(placement: Placement, plane: Plane, frame: Size): Placed 
  * it into the eye's own space read on the other's plane, and taken apart there into a box as large in what it is laid
  * in as it was and a stance (`stanceCarriedBy`), each value of its angle at its nearest whole turn to where it stood,
  * turning about the point of its box it turned about, the box's middle where the matrix carries it, less how far that
- * stance moves it. None where the other's plane would stretch it: grown and leant from where it
- * stands at once, as a plane grows across and down alone. Every matrix here carries into the eye's own space, before
- * the eye sees anything in perspective, so no plane is ever seen edge-on.
+ * stance moves it. None where the other's plane would stretch it: grown and leant from where it stands at once, as a
+ * plane grows across and down alone. Every matrix here carries into the eye's own space, before the eye sees anything
+ * in perspective, so no plane is ever seen edge-on.
  */
 export function carriedInto(
 	placement: Placement,

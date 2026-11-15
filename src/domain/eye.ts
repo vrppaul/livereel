@@ -107,10 +107,10 @@ export type EyePlaceOrRest = EyePlace | 'rest';
 
 /**
  * The eye as the stage draws a scene by it, once a scene: how far before the frame it stands at rest, its focal length
- * in the frame's pixels, which the room sees the world in perspective from; the matrices that carry the room, about
- * the frame's middle in its pixels, into the eye's own space and into the resting eye's, in three's axes, where the
- * world's lights stand for what stands in the world and for what rides with the eye (`src/props/lighting.ts`); and its
- * lens's law, which the room's lens blurs the world by (`stage/lens.js`), none where it is open none.
+ * in the frame's pixels, which the room sees the world in perspective from; the matrices that carry the room, about the
+ * frame's middle in its pixels, into the eye's own space and into the resting eye's, in three's axes, where the world's
+ * lights stand for what stands in the world and for what rides with the eye (`src/props/lighting.ts`); and its lens's
+ * law, which the room's lens blurs the world by (`stage/lens.js`), none where it is open none.
  */
 export interface DrawnEye {
 	readonly distance: number;
@@ -132,8 +132,8 @@ interface Turned {
 /**
  * How the eye stands before a box of a plane: so far from the box's middle that, seen square, the box fills `fills` of
  * the frame along the side it fills most; turned from square about that middle, looking at it, as `turned` says; and
- * moved along its own picture plane till the middle shows at `middleAt` of the frame, in shares of it from its top
- * left corner.
+ * moved along its own picture plane till the middle shows at `middleAt` of the frame, in shares of it from its top left
+ * corner.
  */
 export interface EyeFraming {
 	readonly fills: number;
@@ -143,8 +143,8 @@ export interface EyeFraming {
 
 /**
  * How the eye goes along its straight way before a plane: `'scale'`, by even steps of the scale it shows the plane at,
- * so the plane grows or shrinks on the frame by the same ratio in each equal share of the move, as the camera zooms;
- * or `'even'`, as far along the way in each equal share.
+ * so the plane grows or shrinks on the frame by the same ratio in each equal share of the move, as the camera zooms; or
+ * `'even'`, as far along the way in each equal share.
  */
 export const PACES_BEFORE_A_PLANE = ['scale', 'even'] as const;
 
@@ -166,14 +166,14 @@ const NO_MOVE: Spot = { across: 0, down: 0, out: 0 };
 const NO_ANGLE = 0;
 const A_HALF_TURN = 180;
 // How near the eye's sight may come to the line its up points along, in degrees, at any step of its way: nearer, the
-// eye's across turns round faster than an eye can follow as its sight sweeps past, as one that passes beside the top
-// of what it looks at with its up kept does: a pass 60 pixels beside it turned the picture 152° in two frames
+// eye's across turns round faster than an eye can follow as its sight sweeps past, as one that passes beside the top of
+// what it looks at with its up kept does: a pass 60 pixels beside it turned the picture 152° in two frames
 const SIGHT_OFF_ITS_UP_AT_LEAST = 5;
-// How many steps of its way a move of the eye checks as it begins, the ends among them, for a sight too near its up
-// on the way or an across turned back between two of them, as an eye flips passing over the top of its aim
+// How many steps of its way a move of the eye checks as it begins, the ends among them, for a sight too near its up on
+// the way or an across turned back between two of them, as an eye flips passing over the top of its aim
 const STEPS_CHECKED = 64;
-// How far the eye's up may turn in one stretch of its way, in degrees: half round, or so near it, which way it rolls
-// is not said by where it sets off and arrives alone
+// How far the eye's up may turn in one stretch of its way, in degrees: half round, or so near it, which way it rolls is
+// not said by where it sets off and arrives alone
 const UP_TURNED_AT_MOST = 179;
 // Where two ways that point apart stand as one goes along the other: none or less
 const POINTING_APART = 0;
@@ -360,8 +360,8 @@ export function viewpointBefore(box: Box, framing: EyeFraming, focalLength: numb
 /**
  * The eye's straight way to a place before a plane, its places in the plane's own axes, `out` away from its face, gone
  * at the pace named: evenly, as the way goes; or by even steps of the scale the eye shows the plane at, the reciprocal
- * of how far out of it the eye stands, refused where it sets off at or behind the plane, where it shows the plane at
- * no scale.
+ * of how far out of it the eye stands, refused where it sets off at or behind the plane, where it shows the plane at no
+ * scale.
  */
 export function pacedBeforeAPlane(
 	way: Path<Viewpoint>,

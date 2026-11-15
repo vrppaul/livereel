@@ -7,9 +7,9 @@
  *
  * A move notes the sounds it makes as cues, each at a point of its way; the take hears a cue on the frame the move is
  * set at or past that point, eased, so a key is heard on the frame its letter shows. A film keeps its own time, so a
- * sound heard is laid at its frame's moment however long the browser took. A sound made in a cut is heard on the
- * frame after it, so one made in a cut that ends the film comes at its end and is not heard: the track is as long as
- * the film. A path is from the film's file.
+ * sound heard is laid at its frame's moment however long the browser took. A sound made in a cut is heard on the frame
+ * after it, so one made in a cut that ends the film comes at its end and is not heard: the track is as long as the
+ * film. A path is from the film's file.
  */
 import { FilmError } from '../domain/errors.ts';
 import { type Keystroke, typingSeconds } from '../domain/typing.ts';
@@ -202,9 +202,9 @@ function inPlaceOf(written: unknown, sound: LivereelSound): FileOrOff {
 }
 
 /**
- * livereel's key: what the film writes in its place, or one of livereel's keyboards, its own where the film names
- * none. Each is read as a film may hand it, as a film runs without its types checked, and refused in its own words
- * where it is in no form of itself; a file or the keys off beside a keyboard is refused.
+ * livereel's key: what the film writes in its place, or one of livereel's keyboards, its own where the film names none.
+ * Each is read as a film may hand it, as a film runs without its types checked, and refused in its own words where it
+ * is in no form of itself; a file or the keys off beside a keyboard is refused.
  */
 function keyOf(written: Handed): KeySource {
 	const inPlace = written.key === undefined ? undefined : inPlaceOf(written.key, 'key');
@@ -242,8 +242,8 @@ export function heardAsItBegins(sound: Sound): Cue {
 }
 
 /**
- * A key heard for every stroke, at its share of the typing: where a letter comes, or one is rubbed out; on the
- * keyboard the typing names, the film's where it names none.
+ * A key heard for every stroke, at its share of the typing: where a letter comes, or one is rubbed out; on the keyboard
+ * the typing names, the film's where it names none.
  */
 export function keysHeard(strokes: readonly Keystroke[], keyboard: KeyboardSound | undefined): readonly Cue[] {
 	const seconds = typingSeconds(strokes);

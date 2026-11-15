@@ -61,8 +61,8 @@ const COLOUR_SCHEMES = ['light', 'dark'] as const;
 
 export type ColourScheme = (typeof COLOUR_SCHEMES)[number];
 
-// How the page changes: by the film's acts and moves of the page and what the page does in answer, then standing as
-// it is, so once two captures come out alike a frame drawn as the one before is that frame; or of itself too, as an
+// How the page changes: by the film's acts and moves of the page and what the page does in answer, then standing as it
+// is, so once two captures come out alike a frame drawn as the one before is that frame; or of itself too, as an
 // animation, a video or live data does, so it is captured every frame
 const PAGE_KINDS = ['static', 'dynamic'] as const;
 
@@ -88,9 +88,9 @@ export interface Script<Name extends string> extends SiteScript {
 	/** The frames the film is shot in, each with the screen its page is laid out on, by the film's own names. */
 	readonly formats: Readonly<Record<Name, Format>>;
 	/**
-	 * Where the stage a dynamic page is framed live in stands: `apart` from the app, where none is named, the page
-	 * framed as it comes; or `inside` the app, on its own address, for a dynamic page that signs in or refuses to be
-	 * framed. A static page stands in a tab of its own, on no stage's frame.
+	 * Where the stage a dynamic page is framed live in stands: `apart` from the app, where none is named, the page framed
+	 * as it comes; or `inside` the app, on its own address, for a dynamic page that signs in or refuses to be framed. A
+	 * static page stands in a tab of its own, on no stage's frame.
 	 */
 	readonly stage?: StagePlace;
 	/**
@@ -132,8 +132,8 @@ export interface Script<Name extends string> extends SiteScript {
 	/** How many frames make a second of the film: 60, where none is named. */
 	readonly framesPerSecond?: number;
 	/**
-	 * The eye the film is seen through: `angleOfView`, the degrees it sees across the frame's shorter side, 24 where
-	 * none is named; the narrower, the farther it stands, and the less what comes toward it, or leans, grows.
+	 * The eye the film is seen through: `angleOfView`, the degrees it sees across the frame's shorter side, 24 where none
+	 * is named; the narrower, the farther it stands, and the less what comes toward it, or leans, grows.
 	 */
 	readonly eye?: EyeScript;
 	/** The colour scheme the page is asked for: `light`, where none is named, or `dark`. */
@@ -141,10 +141,10 @@ export interface Script<Name extends string> extends SiteScript {
 	/** The blocks the page blurs wherever it shows them, by selector: an address, a key, a name no film should show. */
 	readonly blurred?: readonly string[];
 	/**
-	 * How the page changes: `static`, where none is named, by the film's acts and moves of the page and the page's
-	 * answer to them, so it stands in a tab of its own, the stage shows a picture of it taken as it changes, and a
-	 * frame like the one before is not captured again once it stands still; or `dynamic`, of itself too, so it stands
-	 * live in the stage's frame, captured every frame.
+	 * How the page changes: `static`, where none is named, by the film's acts and moves of the page and the page's answer
+	 * to them, so it stands in a tab of its own, the stage shows a picture of it taken as it changes, and a frame like
+	 * the one before is not captured again once it stands still; or `dynamic`, of itself too, so it stands live in the
+	 * stage's frame, captured every frame.
 	 */
 	readonly page?: PageKind;
 	/**
@@ -154,17 +154,17 @@ export interface Script<Name extends string> extends SiteScript {
 	 */
 	readonly drawing?: Drawing;
 	/**
-	 * The film's own things, a JavaScript module by its path from the film's file, whose default export builds each
-	 * thing `thing.show` names in three.js and sets it from its numbers (`src/props/thing.ts`): drawn in a room alone.
+	 * The film's own things, a JavaScript module by its path from the film's file, whose default export builds each thing
+	 * `thing.show` names in three.js and sets it from its numbers (`src/props/thing.ts`): drawn in a room alone.
 	 */
 	readonly things?: string;
 }
 
 /**
- * A film in one of its formats, where its page is and the set it is shot on where it names one, where its stage
- * stands, the look it opens on and what its theme writes in CSS, the world's look it opens on, how its page is asked to
- * look and what it blurs, what it says of its sounds and of its blur, and its own code: its wait for the page, and its
- * steps in this format.
+ * A film in one of its formats, where its page is and the set it is shot on where it names one, where its stage stands,
+ * the look it opens on and what its theme writes in CSS, the world's look it opens on, how its page is asked to look
+ * and what it blurs, what it says of its sounds and of its blur, and its own code: its wait for the page, and its steps
+ * in this format.
  */
 export interface FilmInFormat {
 	/** A film of steps, beside a film its own page draws (`src/direction/drawn-film.ts`). */
@@ -379,10 +379,10 @@ interface Staging {
 }
 
 /**
- * How a film's page is shown, livereel's way where the film names nothing; refused where the two cannot go together:
- * a stage inside the app for a static page, which stands in a tab of its own, the room for a dynamic page, which
- * stands live in a frame the room cannot draw, or a set for a dynamic page, as a set's pictures change only by the
- * film's acts.
+ * How a film's page is shown, livereel's way where the film names nothing; refused where the two cannot go together: a
+ * stage inside the app for a static page, which stands in a tab of its own, the room for a dynamic page, which stands
+ * live in a frame the room cannot draw, or a set for a dynamic page, as a set's pictures change only by the film's
+ * acts.
  */
 function stagingOf(script: Pick<AnyScript, 'stage' | 'page' | 'drawing' | 'set' | 'things'>): Staging {
 	const stage = script.stage ?? STAGE_WHERE_NONE_IS_NAMED;
@@ -408,8 +408,8 @@ function isScriptPath(written: unknown): written is string {
 
 /**
  * A film's script, as a film whose types nobody checked may hand it, refused by its place where it is in no form of
- * one: a name a film has not, its formats, each a frame a video holds, a screen, a split that leaves the words and
- * the window room, and places of its own that each name a place, and its functions.
+ * one: a name a film has not, its formats, each a frame a video holds, a screen, a split that leaves the words and the
+ * window room, and places of its own that each name a place, and its functions.
  */
 function refuseUnlikeAFilm(written: unknown): void {
 	assertWritten(written, FILM_FORM, 'the film');

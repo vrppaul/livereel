@@ -1,9 +1,9 @@
 /**
- * ffmpeg, as the system has it: run to the end, run over what it is handed, asked whether it is there at all, or
- * asked what it encodes.
+ * ffmpeg, as the system has it: run to the end, run over what it is handed, asked whether it is there at all, or asked
+ * what it encodes.
  *
- * ffmpeg is the system's and not a dependency of the package: the builds published on npm are GPL-licensed. A build
- * may lack an encoder a kind of video is made with (VP9 is a library of its own), so what it has is asked.
+ * ffmpeg is the system's and not a dependency of the package: the builds published on npm are GPL-licensed. A build may
+ * lack an encoder a kind of video is made with (VP9 is a library of its own), so what it has is asked.
  */
 import { type ChildProcessByStdio, execFile, spawn } from 'node:child_process';
 import type { Readable, Writable } from 'node:stream';

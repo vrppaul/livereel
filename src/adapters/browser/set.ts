@@ -245,8 +245,8 @@ export class AppOpenedForSet implements OpenedForSet {
 }
 
 /**
- * The set's page opened in the filmed page's tab and its states laid, the first shown, as a take reads it and an act
- * is handed it.
+ * The set's page opened in the filmed page's tab and its states laid, the first shown, as a take reads it and an act is
+ * handed it.
  */
 export async function setShownIn(tab: Page, set: SetShot): Promise<FilmedShown> {
 	await reached(tab, SET_PAGE);

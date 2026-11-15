@@ -1,27 +1,26 @@
 // @ts-check
 /**
- * The body of a piece of the page standing in the world, in the room's one scene (`DrawnBody` in
- * `src/props/piece.ts`): its walls, the piece's outline with its four corners drawn back from its face as thick as the
- * engine hands, and the shadow it casts on the plane it was lifted from. The stage draws the face itself, in a surface
- * of markup of its own the room stands where the piece's matrix places it (`stage/room.js`); the walls stand by the
- * same matrix behind it, so the two stand as one wherever the eye goes, and the room's lens blurs them by depth as all
- * else.
+ * The body of a piece of the page standing in the world, in the room's one scene (`DrawnBody` in `src/props/piece.ts`):
+ * its walls, the piece's outline with its four corners drawn back from its face as thick as the engine hands, and the
+ * shadow it casts on the plane it was lifted from. The stage draws the face itself, in a surface of markup of its own
+ * the room stands where the piece's matrix places it (`stage/room.js`); the walls stand by the same matrix behind it,
+ * so the two stand as one wherever the eye goes, and the room's lens blurs them by depth as all else.
  *
  * The walls are the page's matter, as a button rising stands as a column and a part lifted as a plate: matte and lit by
  * no light of the world's, their colour the film's at the face darkening toward the back, a light in their own hue
- * showing through as faintly as the film names. They write depth, so standing behind the page's plane, as a
- * piece on the plane it was lifted from stands, the page hides them, and they come up out of it as the piece stands
- * out. They are built anew only as their own measures change: a piece standing, or rising with its walls whole, keeps
- * the walls it has. A piece faded into what lies behind it lays them over what lies behind them as far as it is clear,
- * as the stylesheet lays its face.
+ * showing through as faintly as the film names. They write depth, so standing behind the page's plane, as a piece on
+ * the plane it was lifted from stands, the page hides them, and they come up out of it as the piece stands out. They
+ * are built anew only as their own measures change: a piece standing, or rising with its walls whole, keeps the walls
+ * it has. A piece faded into what lies behind it lays them over what lies behind them as far as it is clear, as the
+ * stylesheet lays its face.
  *
- * The shadow lies as far behind the face as the face stands out, on the plane the piece was lifted from, as dark as
- * the piece's shadow is strong and as clear as the face is drawn, and dropped toward its foot and soft as far as the
- * face stands high: the stylesheet's shadow of an object standing out is measured in the object's own pixels, so a
- * button seen four times as large would cast it four times as far and as soft, spread too thin to show. The stylesheet
- * drops the markup's shadow where the room draws a body, as it would lie on the face's own plane over the walls
- * (`stage/stage.css`). It is laid over what lies there in linear light, as three lays a film's light, writing no
- * depth, nearer by depth's offset than the page it lies on.
+ * The shadow lies as far behind the face as the face stands out, on the plane the piece was lifted from, as dark as the
+ * piece's shadow is strong and as clear as the face is drawn, and dropped toward its foot and soft as far as the face
+ * stands high: the stylesheet's shadow of an object standing out is measured in the object's own pixels, so a button
+ * seen four times as large would cast it four times as far and as soft, spread too thin to show. The stylesheet drops
+ * the markup's shadow where the room draws a body, as it would lie on the face's own plane over the walls
+ * (`stage/stage.css`). It is laid over what lies there in linear light, as three lays a film's light, writing no depth,
+ * nearer by depth's offset than the page it lies on.
  *
  * A piece's hole may be sunk into the page as a pit: its outline drawn back behind the window's plane as deep as the
  * film names, seen from inside alone, so it stands open at its mouth, where the page's surface lays nothing and writes
@@ -31,10 +30,10 @@
  * mouth to hide it as the screen goes down, so its walls are laid over what lies behind them as far as the screen has
  * come up, as the window's body stands as thick.
  *
- * Where the film stands a piece in the window's shade, its walls and its pit fade in light into what stands behind
- * them as far as the shade reaches them and the page has faded, as the window's metal does (`Fading` in `body.js`), so
- * a piece lying on its faded page shows no pit lighter than the page round it; the window's spreads blur them by the
- * same share (`WindowBlurred`).
+ * Where the film stands a piece in the window's shade, its walls and its pit fade in light into what stands behind them
+ * as far as the shade reaches them and the page has faded, as the window's metal does (`Fading` in `body.js`), so a
+ * piece lying on its faded page shows no pit lighter than the page round it; the window's spreads blur them by the same
+ * share (`WindowBlurred`).
  */
 import {
 	BackSide,
@@ -150,8 +149,8 @@ const UNSCALED = 1;
 // How far depth's offset draws the shadow nearer than the page it lies on, in three's polygon offset steps, past the
 // page's own (`PAGE_NEARER` in `room.js`); and when three draws it among what is seen through in the field of what
 // writes depth: after the page, which is laid by its clearness there too at three's own order of none, and before the
-// window's glass over the page (`GLASS_DRAWN_LAST` in `body.js`). Sorted by its middle's depth alone, it was laid
-// first where the eye looked at the page aslant and its middle stood farther than the page's, and the page hid it
+// window's glass over the page (`GLASS_DRAWN_LAST` in `body.js`). Sorted by its middle's depth alone, it was laid first
+// where the eye looked at the page aslant and its middle stood farther than the page's, and the page hid it
 const SHADOW_NEARER = -2;
 const LAID_AFTER_THE_PAGE = 0.5;
 // The measures of walls built of nothing yet
@@ -176,9 +175,9 @@ void main() {
 	fromTheMiddle = (uv - 0.5) * size;
 	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }`;
-// The shadow: the piece's outline, its corners as round, as dark as its strength has it within it, soft for as far
-// each way as it blurs, in the look's shadow colour, premultiplied. How far a point stands outside a box rounded at
-// each corner is how far it stands outside one rounded at every corner as its own quarter's is
+// The shadow: the piece's outline, its corners as round, as dark as its strength has it within it, soft for as far each
+// way as it blurs, in the look's shadow colour, premultiplied. How far a point stands outside a box rounded at each
+// corner is how far it stands outside one rounded at every corner as its own quarter's is
 const SHADOW_FRAGMENT = `
 uniform vec2 halfSize;
 uniform vec4 corners;
@@ -195,8 +194,8 @@ void main() {
 }`;
 
 /**
- * The bodies of the pieces of markup standing in an exposure's world, each by its place among them, as the room keeps
- * a surface of each (`stage/room.js`): its walls and its shadow, as last built.
+ * The bodies of the pieces of markup standing in an exposure's world, each by its place among them, as the room keeps a
+ * surface of each (`stage/room.js`): its walls and its shadow, as last built.
  */
 export class PieceBodies {
 	constructor() {
@@ -342,8 +341,8 @@ class Walls {
 	}
 
 	/**
-	 * The walls posed: built of their measures where those are not what they were built of, and placed by a matrix,
-	 * their face at its origin.
+	 * The walls posed: built of their measures where those are not what they were built of, and placed by a matrix, their
+	 * face at its origin.
 	 * @param {Measures} measures @param {Matrix4} placing
 	 */
 	posed(measures, placing) {

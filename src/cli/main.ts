@@ -1,7 +1,7 @@
 /**
- * The command line: a command by name from the table, run; what it refuses said, and the exit code by whose it is
- * to put right — 1 for a film that could not be shot, 2 for a wrong command line or film file, 3 for a machine that
- * lacks what a film is shot with.
+ * The command line: a command by name from the table, run; what it refuses said, and the exit code by whose it is to
+ * put right — 1 for a film that could not be shot, 2 for a wrong command line or film file, 3 for a machine that lacks
+ * what a film is shot with.
  */
 import { LivereelError, SetupError, TakeError, UsageError } from '../domain/errors.ts';
 import { COMMANDS, say } from './commands.ts';
@@ -39,8 +39,8 @@ async function main(given: readonly string[]): Promise<number> {
 }
 
 /**
- * The exit code of a refusal: whose it is to put right; of a fault met while a film was shot, whose that fault is, as
- * a graphics card that drops the room's canvas mid-take is the machine's.
+ * The exit code of a refusal: whose it is to put right; of a fault met while a film was shot, whose that fault is, as a
+ * graphics card that drops the room's canvas mid-take is the machine's.
  */
 function codeOf(refusal: Error): number {
 	if (refusal instanceof TakeError && refusal.cause instanceof Error) return codeOf(refusal.cause);

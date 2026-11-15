@@ -202,9 +202,9 @@ function bezierAt(along: number, first: number, second: number): number {
 }
 
 /**
- * The share of the way a curve soft then held has gone at a share of time: a sine's quarter from rest to its fastest
- * at `fastestAt`, then that speed held, the two scaled so it ends at the end; the held part measured back from the end,
- * so it stands there exactly.
+ * The share of the way a curve soft then held has gone at a share of time: a sine's quarter from rest to its fastest at
+ * `fastestAt`, then that speed held, the two scaled so it ends at the end; the held part measured back from the end, so
+ * it stands there exactly.
  */
 function softThenHeldAt(progress: number, fastestAt: number): number {
 	const fastest = A_QUARTER_TURN / fastestAt;

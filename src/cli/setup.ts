@@ -1,6 +1,6 @@
 /**
- * What a machine needs to shoot films: Chromium's headless shell, at the version this livereel's Playwright drives,
- * and ffmpeg on the path, which livereel leaves to the system, with the encoders of the kinds of video asked.
+ * What a machine needs to shoot films: Chromium's headless shell, at the version this livereel's Playwright drives, and
+ * ffmpeg on the path, which livereel leaves to the system, with the encoders of the kinds of video asked.
  *
  * The browser is installed by Playwright's own command line, found where Playwright's manifest says it is.
  */

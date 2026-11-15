@@ -1,9 +1,9 @@
 /**
- * What the moves of words that come up one after another and go do alike: how a film has a title's or a caption's
- * words come up, `words`, in a way by its name (`src/props/words.ts`), word by word with as many on their way at once
- * as it names, or typed by a person whose rhythm is drawn from a seed, spread over the move's share, each key heard; in
- * the theme's way where it names none, read as the words come, as a callout's and a note's always come; how a title's
- * or a caption's words go, at the pace a hide names or the one they came at; and a callout's or a note's words going.
+ * What the moves of words that come up one after another and go do alike: how a film has a title's or a caption's words
+ * come up, `words`, in a way by its name (`src/props/words.ts`), word by word with as many on their way at once as it
+ * names, or typed by a person whose rhythm is drawn from a seed, spread over the move's share, each key heard; in the
+ * theme's way where it names none, read as the words come, as a callout's and a note's always come; how a title's or a
+ * caption's words go, at the pace a hide names or the one they came at; and a callout's or a note's words going.
  *
  * Words come up in their way only where the object showing them comes up in its place in its own way: one that slides
  * in or comes up in a way of livereel's brings them whole, and one that slides out or goes in a way takes them whole.
@@ -162,8 +162,8 @@ export function refuseWordsTakenWhole(script: WordsTakenWhole, move: string): vo
 }
 
 /**
- * What shows words as it sets off going, a title or a caption: as it stood, its words going at the pace the hide
- * names, or the one they came at.
+ * What shows words as it sets off going, a title or a caption: as it stood, its words going at the pace the hide names,
+ * or the one they came at.
  */
 export function setOffGoing<Shown extends WordsShown>(
 	shown: Shown,
@@ -174,8 +174,8 @@ export function setOffGoing<Shown extends WordsShown>(
 }
 
 /**
- * How words that stand go, read as their going begins: word by word at the pace the hide names, or at the one they
- * came at where it names none; words laid out by letters go together, and a pace named for them is refused.
+ * How words that stand go, read as their going begins: word by word at the pace the hide names, or at the one they came
+ * at where it names none; words laid out by letters go together, and a pace named for them is refused.
  */
 function wordsGoingAt(comingUp: ComingUp, script: WordsGoingScript | undefined, move: string): ComingUp {
 	if (script === undefined) return comingUp;

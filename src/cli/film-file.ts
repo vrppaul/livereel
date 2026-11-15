@@ -3,8 +3,8 @@
  * own page draws, made by `defineDrawnFilm`.
  *
  * Node runs a `.ts` film by stripping its types. The film must import the same livereel as the command runs: a film
- * made by another copy is not this copy's film, and its faults are not this copy's errors, so the copy the film's
- * own folder resolves is compared with this one before the film is loaded, and another is refused by its path.
+ * made by another copy is not this copy's film, and its faults are not this copy's errors, so the copy the film's own
+ * folder resolves is compared with this one before the film is loaded, and another is refused by its path.
  */
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { createRequire, findPackageJSON } from 'node:module';
@@ -17,8 +17,8 @@ import { type Film, ScriptedFilm } from '../direction/film.ts';
 const PACKAGE = 'livereel';
 const MODULE_NOT_FOUND = 'MODULE_NOT_FOUND';
 // Said with a film that does not parse where its project runs it as CommonJS, the one cause Node's own words do not
-// name: Node reads the film's `import` as a SyntaxError (measured on Node 24.14); a project that names no type runs
-// it as a module all the same, and an `.mts` file is one whatever its project says
+// name: Node reads the film's `import` as a SyntaxError (measured on Node 24.14); a project that names no type runs it
+// as a module all the same, and an `.mts` file is one whatever its project says
 const AS_A_MODULE = ` (a film is an ES module: its project's package.json says "type": "module", or the file is named .mts)`;
 const COMMON_JS = 'commonjs';
 const MODULE_EXTENSION = '.mts';
@@ -59,8 +59,8 @@ function livereelOf(path: string): string {
 
 /**
  * The film file run as a module. What stops it running — a syntax error, a module it imports that is not there, a
- * project that runs `.ts` files as CommonJS — is the file's, said as Node says it, and a film that does not parse
- * with how a film is an ES module. What livereel refuses as the film is defined — a film with no format — is said in
+ * project that runs `.ts` files as CommonJS — is the file's, said as Node says it, and a film that does not parse with
+ * how a film is an ES module. What livereel refuses as the film is defined — a film with no format — is said in
  * livereel's own words, as the film's.
  */
 async function imported(file: string, path: string): Promise<unknown> {

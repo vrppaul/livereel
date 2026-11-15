@@ -50,9 +50,9 @@ export function placedBy(mesh, matrix) {
 }
 
 /**
- * The projection that sees the eye's own space in perspective from the eye onto a layer holding a box of the frame:
- * the frame's middle straight before the eye, its picture plane as far before it as the eye stands, and a depth kept
- * from a pixel before the eye to far past the frame.
+ * The projection that sees the eye's own space in perspective from the eye onto a layer holding a box of the frame: the
+ * frame's middle straight before the eye, its picture plane as far before it as the eye stands, and a depth kept from a
+ * pixel before the eye to far past the frame.
  * @param {Box} drawn @param {Box} frame @param {number} eyeDistance
  */
 export function projectionOnto(drawn, frame, eyeDistance) {

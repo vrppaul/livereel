@@ -9,9 +9,9 @@
  * keyboard livereel names, its strikes a quarter of a second long, against 1.8 s for a click of 15 ms; the longer the
  * sounds, the longer the mix. A film with nothing heard and no music gets no track: its picture is put in the video's
  * place as it is. livereel's sounds are CC0 (`sounds/LICENSE.md`), quiet in their files: its keys peak about 12 dB
- * under its click, so a film under music says how loud its keys are, and every key is laid so; a film's other files
- * are laid as they are. A key is one of its keyboard's strikes, each recorded alone, laid in turn, so no two keys
- * running are the same sound.
+ * under its click, so a film under music says how loud its keys are, and every key is laid so; a film's other files are
+ * laid as they are. A key is one of its keyboard's strikes, each recorded alone, laid in turn, so no two keys running
+ * are the same sound.
  */
 import { statSync } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
@@ -133,8 +133,8 @@ export class Soundtrack implements Track, SoundLaying {
 	}
 
 	/**
-	 * Every file the film's moves and its music name, refused at once where it is not a file that is there, or one
-	 * ffmpeg reads no sound from: each read in turn, so the first refused is the first named.
+	 * Every file the film's moves and its music name, refused at once where it is not a file that is there, or one ffmpeg
+	 * reads no sound from: each read in turn, so the first refused is the first named.
 	 */
 	async expect(sounds: readonly Sound[]): Promise<void> {
 		const music = this.music();
@@ -166,8 +166,8 @@ export class Soundtrack implements Track, SoundLaying {
 	}
 
 	/**
-	 * The track laid under the picture, the MP4 written whole under a name of its own and then put in the video's
-	 * place; a picture with nothing to lay under it is put there as it is. The picture is gone either way.
+	 * The track laid under the picture, the MP4 written whole under a name of its own and then put in the video's place;
+	 * a picture with nothing to lay under it is put there as it is. The picture is gone either way.
 	 */
 	async laidUnder(picture: string, video: string, seconds: number): Promise<void> {
 		const heard = this.heardFiles;
@@ -200,8 +200,8 @@ export class Soundtrack implements Track, SoundLaying {
 	}
 
 	/**
-	 * How loud a sound is laid: one of livereel's as loud as the film says it is, a key a typing strikes on a keyboard
-	 * of its own as the film's keys; a file of the film's as loud as it is.
+	 * How loud a sound is laid: one of livereel's as loud as the film says it is, a key a typing strikes on a keyboard of
+	 * its own as the film's keys; a file of the film's as loud as it is.
 	 */
 	private volumeOf(sound: Sound): number {
 		switch (sound.kind) {
@@ -308,8 +308,8 @@ function layoutOf(heard: readonly HeardFile[]): Layout {
 }
 
 /**
- * ffmpeg's inputs in the layout's order: the picture, each file heard once at each volume, the silence as long as
- * the film, music.
+ * ffmpeg's inputs in the layout's order: the picture, each file heard once at each volume, the silence as long as the
+ * film, music.
  */
 function inputsOf(picture: string, heard: readonly HeardFile[], seconds: number, music: Music | null): string[] {
 	const sounds = heard.flatMap((sound) => ['-i', sound.file]);

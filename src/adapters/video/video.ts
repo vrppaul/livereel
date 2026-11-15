@@ -2,12 +2,12 @@
  * A film's frames made a video as they are shot, whole or a span of it to look at a few moments in motion, and a
  * contact sheet of the video.
  *
- * Every frame goes into ffmpeg as it is shot, so the video is encoded while the film is shot and no frame is written
- * to the disk. A frame of several exposures is blended (`exposures.ts`) beside the take, which shoots on, several
- * frames at once, and each goes into ffmpeg in the order shot once the frames before it have: waited on, the blends
- * held the take for a quarter of a blurred shoot.
- * The frames are shot sharper than the frame and scaled down, so text stays crisp when the camera comes close: the
- * flat stage's here, a room's on the graphics card before they leave the browser, which come at the frame's size.
+ * Every frame goes into ffmpeg as it is shot, so the video is encoded while the film is shot and no frame is written to
+ * the disk. A frame of several exposures is blended (`exposures.ts`) beside the take, which shoots on, several frames
+ * at once, and each goes into ffmpeg in the order shot once the frames before it have: waited on, the blends held the
+ * take for a quarter of a blurred shoot.
+ * The frames are shot sharper than the frame and scaled down, so text stays crisp when the camera comes close: the flat
+ * stage's here, a room's on the graphics card before they leave the browser, which come at the frame's size.
  */
 import { type ChildProcessByStdio, spawn } from 'node:child_process';
 import { once } from 'node:events';
@@ -67,10 +67,10 @@ export const EVERY_SHOT: ShotsKept = { first: 0, last: Number.POSITIVE_INFINITY 
 
 /**
  * The MP4's picture is written under a name of its own (`pictureOf`), and the video is put in its place only as the
- * footage is finished, its sound laid under it (`soundtrack.ts`), so a film that fails leaves the last good video
- * where it was. Whatever waits on ffmpeg waits on its end too: a frame handed to an ffmpeg that has stopped is refused,
- * with ffmpeg's own words, rather than waiting on a pipe that will never drain; at once where ffmpeg has stopped as it
- * is kept, or as it comes to be written otherwise.
+ * footage is finished, its sound laid under it (`soundtrack.ts`), so a film that fails leaves the last good video where
+ * it was. Whatever waits on ffmpeg waits on its end too: a frame handed to an ffmpeg that has stopped is refused, with
+ * ffmpeg's own words, rather than waiting on a pipe that will never drain; at once where ffmpeg has stopped as it is
+ * kept, or as it comes to be written otherwise.
  */
 export class VideoFootage implements Footage, AsyncDisposable {
 	readonly encoder: Encoder;
@@ -116,8 +116,8 @@ export class VideoFootage implements Footage, AsyncDisposable {
 	/**
 	 * The frame's blend begun, and its writing queued after the frames before it; where the most are queued, the take
 	 * first waits on the oldest. A fault, a blend's or ffmpeg's, refuses every frame after it, and is met where the take
-	 * next waits, a few frames on, or as the footage is finished: said at that frame's moment, the cost of not waiting
-	 * on each blend.
+	 * next waits, a few frames on, or as the footage is finished: said at that frame's moment, the cost of not waiting on
+	 * each blend.
 	 */
 	async keep(_shot: number, exposures: Exposures): Promise<void> {
 		if (this.stopped()) throw this.words.refusal();
@@ -144,8 +144,8 @@ export class VideoFootage implements Footage, AsyncDisposable {
 	}
 
 	/**
-	 * Every frame written, the last given, the picture written to its end, and the video put in its place, the track
-	 * laid under it for as long as the video is.
+	 * Every frame written, the last given, the picture written to its end, and the video put in its place, the track laid
+	 * under it for as long as the video is.
 	 */
 	async finish(track: SoundLaying): Promise<void> {
 		await this.lastQueued();

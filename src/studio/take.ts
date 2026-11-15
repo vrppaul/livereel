@@ -4,24 +4,24 @@
  * The take alone holds the scene and the count of frames shot. In a play, each frame begins the moves whose share
  * begins by then, in the order their shares begin, the one that ends first of two that begin alike, each after every
  * running change whose share ended before it has been set at its end — so a move reads the scene and the page as they
- * stand at its start, and one that begins as an act is done reads the page it left — then sets at its end every
- * change ended by the frame, and every other at its eased progress. One move at most drives a part, or a value of it,
- * at any point, so the order moves are written in matters nowhere but between two acts at one moment. A cut begins
- * its moves and sets each at its end, with no frame between, and no move of it is told where the frame will stand,
- * which none can know before the cut is set: the page a fade in it leaves is held where the camera framed it, and laid
- * where the camera the cut leaves shows it once every move is set. An act between steps is a cut of one. A move begins
- * knowing the stretch of the film's time its share takes: a play's begins a frame before its first frame, which stands
- * a frame's share along it, and a cut's moves take none, at the moment of the frame after them, as their sounds are
+ * stand at its start, and one that begins as an act is done reads the page it left — then sets at its end every change
+ * ended by the frame, and every other at its eased progress. One move at most drives a part, or a value of it, at any
+ * point, so the order moves are written in matters nowhere but between two acts at one moment. A cut begins its moves
+ * and sets each at its end, with no frame between, and no move of it is told where the frame will stand, which none can
+ * know before the cut is set: the page a fade in it leaves is held where the camera framed it, and laid where the
+ * camera the cut leaves shows it once every move is set. An act between steps is a cut of one. A move begins knowing
+ * the stretch of the film's time its share takes: a play's begins a frame before its first frame, which stands a
+ * frame's share along it, and a cut's moves take none, at the moment of the frame after them, as their sounds are
  * heard. A move judged on the frame, as a page's run brought to rest, asks as it begins where the frame will stand at
  * moments of its share: every move of the camera, the window and the eye that starts by then is begun ahead, in order,
  * on the scene as foreseen where its share starts, and kept for its share, never begun again; begun so early it may
  * read the scene alone, and one that reads the page is refused. The scene is foreseen by every move begun by then but
  * the page's, each set as far as it will have come: the camera follows from the camera, the window and the eye alone,
- * and what a move begun ahead reads, an object the eye focuses on, stands where the moves running will have carried
- * it, but not where a move yet to begin before it, or the page's own scroll, would. A play that asks nothing begins
- * each move at its share. The page is acted on one way: as a move that acts begins, by the way the take hands every
- * move. A move begins on the page the screen shows: where that is a page of the film's own, it measures blocks there,
- * and pictures parts of it, on its copy apart from the stage's stood as the page stands at the move's moment, and its
+ * and what a move begun ahead reads, an object the eye focuses on, stands where the moves running will have carried it,
+ * but not where a move yet to begin before it, or the page's own scroll, would. A play that asks nothing begins each
+ * move at its share. The page is acted on one way: as a move that acts begins, by the way the take hands every move. A
+ * move begins on the page the screen shows: where that is a page of the film's own, it measures blocks there, and
+ * pictures parts of it, on its copy apart from the stage's stood as the page stands at the move's moment, and its
  * scroll and keys go to the filmed page behind it. A sound a move makes is heard as the move is set at or past its
  * point, on the frame being made. The part of the page the shade keeps sharp is read off the page by the take, not by
  * the move that names it, on the frame after it is named and after any change of the page since, a move's or its own,
@@ -32,38 +32,37 @@
  * out from the moment, as a terminal's spinner, worked out at that one. How far is measured from where things stood as
  * the shutter opened to where they stand, apart on each side of a moment a move begins at, so what a move sets as it
  * begins is not taken for a move. Each drawing is an exposure of the frame (`src/domain/shutter.ts`), so what slides in
- * and what it pushes off are each drawn along their own way. A move's change follows from its progress alone, so
- * asking it what it set at an earlier moment changes nothing; a move of the page, which sets the page itself, is never
- * asked, nor foreseen. A stage that draws all of a frame's exposures at once lays them over one another and is
- * captured once, the frame; one that draws fewer is captured at each, the footage blending them: a capture is near all
- * a frame costs. The page's own time — its timers, animation frames and date — is the film's: run on with each frame,
- * kept or not, before the frame is shot, as far as the film went since the last at the speed the scene set on the way,
- * the mean of where it stood and where it stands; so a page's timer set at a speed of 2 runs out in half its delay into
- * the film, however long the browser takes. It runs as the wall's only while an act waits on the page, which needs it
- * to answer, the film's time standing. The take does with the page what the stage's kind asks. A stage that shows a
- * picture of the page, as it shows a static one, takes it anew when the take asks: on a frame after an act, a move of
- * the page or a change the page made of itself, and on every frame until two pictures in a row come out alike, nothing
- * done to the page between them and its own motion not let go, so what it brings — results, an image, a scroll that
- * eases out, a note its timer takes away — is seen.
+ * and what it pushes off are each drawn along their own way. A move's change follows from its progress alone, so asking
+ * it what it set at an earlier moment changes nothing; a move of the page, which sets the page itself, is never asked,
+ * nor foreseen. A stage that draws all of a frame's exposures at once lays them over one another and is captured once,
+ * the frame; one that draws fewer is captured at each, the footage blending them: a capture is near all a frame costs.
+ * The page's own time — its timers, animation frames and date — is the film's: run on with each frame, kept or not,
+ * before the frame is shot, as far as the film went since the last at the speed the scene set on the way, the mean of
+ * where it stood and where it stands; so a page's timer set at a speed of 2 runs out in half its delay into the film,
+ * however long the browser takes. It runs as the wall's only while an act waits on the page, which needs it to answer,
+ * the film's time standing. The take does with the page what the stage's kind asks. A stage that shows a picture of the
+ * page, as it shows a static one, takes it anew when the take asks: on a frame after an act, a move of the page or a
+ * change the page made of itself, and on every frame until two pictures in a row come out alike, nothing done to the
+ * page between them and its own motion not let go, so what it brings — results, an image, a scroll that eases out, a
+ * note its timer takes away — is seen.
  * Once it stands still, a frame the stage would draw as it drew the last one captured is that capture, neither drawn
  * nor captured again: holds are near half a film's frames. A picture is taken as sharp as a camera as close as
  * livereel's bound shows it, so it serves every frame after it; on a frame a move of the page runs on past, or while
- * its own motion is let go, as sharp as that frame's cameras show it, as the next frame takes another: the whole
- * screen as sharp as the bound costs about three times what it costs as sharp as the camera showing all of it. A
- * move's last frame is pictured as sharp as the bound, so the picture after it can come out alike. A piece that holds
- * its picture has the stage hold one of its source alone as the move lifting it begins, as sharp as the bound, which
- * no picture of the page taken after takes the place of. A piece drawn from the page's picture larger than the bound
- * is drawn from a picture of its source alone the stage holds as close as the frame, or the moves running over it at
- * their ends, draw it (`src/studio/pictures.ts`): Chrome draws the part anew at that scale, so the piece stays as
- * sharp as a tab that close. It is taken anew where the page's picture comes out otherwise than the last, and kept
- * between, as a clip costs as much as a picture of the page and more as it grows: a line 900 pixels wide grown 21
- * times took 765 ms. A piece drawn from one asks the page's picture no closer. A stage with the page live in its
- * frame, as it shows a dynamic one, is captured every frame, as the page changes of itself, and is laid flat for an
- * act.
- * A fault in a step is raised again with the moment and the step it was met at. Before each frame, after each act,
- * and of any fault a step meets, the take asks the stage whether it and its page are still there: where one is gone,
- * the take is refused by why, in place of what its loss made a step fail at (a selector that matches nothing on
- * Chrome's error page), and nothing of it is shot.
+ * its own motion is let go, as sharp as that frame's cameras show it, as the next frame takes another: the whole screen
+ * as sharp as the bound costs about three times what it costs as sharp as the camera showing all of it. A move's last
+ * frame is pictured as sharp as the bound, so the picture after it can come out alike. A piece that holds its picture
+ * has the stage hold one of its source alone as the move lifting it begins, as sharp as the bound, which no picture of
+ * the page taken after takes the place of. A piece drawn from the page's picture larger than the bound is drawn from a
+ * picture of its source alone the stage holds as close as the frame, or the moves running over it at their ends, draw
+ * it (`src/studio/pictures.ts`): Chrome draws the part anew at that scale, so the piece stays as sharp as a tab that
+ * close. It is taken anew where the page's picture comes out otherwise than the last, and kept between, as a clip costs
+ * as much as a picture of the page and more as it grows: a line 900 pixels wide grown 21 times took 765 ms. A piece
+ * drawn from one asks the page's picture no closer. A stage with the page live in its frame, as it shows a dynamic one,
+ * is captured every frame, as the page changes of itself, and is laid flat for an act.
+ * A fault in a step is raised again with the moment and the step it was met at. Before each frame, after each act, and
+ * of any fault a step meets, the take asks the stage whether it and its page are still there: where one is gone, the
+ * take is refused by why, in place of what its loss made a step fail at (a selector that matches nothing on Chrome's
+ * error page), and nothing of it is shot.
  */
 import { type Camera, ZOOM_AT_MOST, flatCamera, zoomPicturedFor } from '../domain/camera.ts';
 import { FilmError, TakeError } from '../domain/errors.ts';
@@ -184,8 +183,8 @@ interface Foresight {
 
 /**
  * A frame's time in its play: the scene the frame before left; the moves of the scene that ran over it, those running
- * as the frame before was shot and those begun since, in the order they began; how far along its step the frame is;
- * and the share of the step a frame takes.
+ * as the frame before was shot and those begun since, in the order they began; how far along its step the frame is; and
+ * the share of the step a frame takes.
  */
 interface FrameTime {
 	readonly before: Scene;
@@ -201,9 +200,9 @@ interface Captured {
 }
 
 /**
- * What a take is shot with: the page and the stage opened, where its frames and its sounds go, its format, the scene
- * it opens on, how a fast move is blurred — not at all for a draft, or for a film that wants no blur — and how many
- * frames make a second of the film.
+ * What a take is shot with: the page and the stage opened, where its frames and its sounds go, its format, the scene it
+ * opens on, how a fast move is blurred — not at all for a draft, or for a film that wants no blur — and how many frames
+ * make a second of the film.
  */
 export interface TakeSetup {
 	readonly opened: Opened;
@@ -226,10 +225,10 @@ export class Take {
 	readonly pictures: PartPictures;
 	private scene: Scene;
 	private shot = 0;
-	// The last exposures captured at once, none before the first; how many times the page may have changed, by a move
-	// of it, an act among them, or of itself; where the stage shows a picture of the page, how many changes its picture
-	// was last taken after, none before the first, and whether the page stood still as it was, its picture alike to the
-	// one before, as a framed page never is
+	// The last exposures captured at once, none before the first; how many times the page may have changed, by a move of
+	// it, an act among them, or of itself; where the stage shows a picture of the page, how many changes its picture was
+	// last taken after, none before the first, and whether the page stood still as it was, its picture alike to the one
+	// before, as a framed page never is
 	private lastCaptured: Captured | null = null;
 	private pageChanges = 0;
 	private pictureTakenAfter: number | null = null;
@@ -238,8 +237,8 @@ export class Take {
 	// speed; and the film's moment they took it to
 	private pageMoment = 0;
 	private pageRunAt = 0;
-	// The part of the page the shade keeps sharp as the film named it when its box was last read, none before the
-	// first, and how many changes of the page it was read after
+	// The part of the page the shade keeps sharp as the film named it when its box was last read, none before the first,
+	// and how many changes of the page it was read after
 	private sharpReadFrom: Scene['window']['sharpNamed'] = null;
 	private sharpReadAfter = 0;
 
@@ -285,8 +284,8 @@ export class Take {
 	}
 
 	/**
-	 * A part of the take, at the step of that place in the film; a fault in it raised with the moment and the step it
-	 * was met at, said by why where it can be.
+	 * A part of the take, at the step of that place in the film; a fault in it raised with the moment and the step it was
+	 * met at, said by why where it can be.
 	 */
 	private async taken(place: number, work: () => Promise<void>): Promise<void> {
 		try {
@@ -475,9 +474,9 @@ export class Take {
 	}
 
 	/**
-	 * Every move of the camera, the window and the eye a play has yet to begin whose share starts by a point of it,
-	 * begun ahead of its share in the order they begin, each on the scene as foreseen where its share starts, with the
-	 * moves begun before it but the page's set as far as they will have come, and kept for its share.
+	 * Every move of the camera, the window and the eye a play has yet to begin whose share starts by a point of it, begun
+	 * ahead of its share in the order they begin, each on the scene as foreseen where its share starts, with the moves
+	 * begun before it but the page's set as far as they will have come, and kept for its share.
 	 */
 	private async begunAhead(foresight: Foresight, progress: number): Promise<void> {
 		const due = foresight.unbegun
@@ -593,9 +592,8 @@ export class Take {
 	/**
 	 * The part of the screen the shade's blur leaves sharp read off the filmed page, whose picture it is drawn from,
 	 * where the film has named another part, or the page may have changed since it was read, so the part stays on the
-	 * blocks the film named it by; none where the film names none. Read only on a frame that blurs the page, as no
-	 * other draws a part sharp, so a part named and left behind unblurred is never read where the page has since taken
-	 * it away.
+	 * blocks the film named it by; none where the film names none. Read only on a frame that blurs the page, as no other
+	 * draws a part sharp, so a part named and left behind unblurred is never read where the page has since taken it away.
 	 */
 	private async sharpPartReadAnew(): Promise<void> {
 		const { sharpNamed: named, blur } = this.scene.window;
@@ -749,9 +747,9 @@ export class Take {
 	}
 
 	/**
-	 * A change the page shown as a picture made of itself since the take last asked counted, before anything of the
-	 * frame reads the page: on every frame, kept or not, as the part kept sharp is read on every frame that blurs and the
-	 * next frame's exposures are built from this one's scene. A page live in its frame is captured as it stands.
+	 * A change the page shown as a picture made of itself since the take last asked counted, before anything of the frame
+	 * reads the page: on every frame, kept or not, as the part kept sharp is read on every frame that blurs and the next
+	 * frame's exposures are built from this one's scene. A page live in its frame is captured as it stands.
 	 */
 	private changesOfItselfHeard(): void {
 		const stage = this.opened.stage;
@@ -958,8 +956,8 @@ function inOrder(first: number, second: number): number {
 }
 
 /**
- * Moves in the order they begin: by where their shares start, and of two that start alike the one that ends first, so
- * a move done at a moment, as an act, is done before any that begins as it is done reads the scene and the page.
+ * Moves in the order they begin: by where their shares start, and of two that start alike the one that ends first, so a
+ * move done at a moment, as an act, is done before any that begins as it is done reads the scene and the page.
  */
 function inBeginningOrder(first: MoveInItsStep, second: MoveInItsStep): number {
 	const startsApart = first.timing.within.start - second.timing.within.start;

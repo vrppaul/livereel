@@ -146,8 +146,8 @@ export function placesNamed(by: string, place: Place | null): readonly PlaceName
 }
 
 /**
- * The places moves name, each refused where it names a place neither livereel nor the format has, by the move and
- * where the format stands.
+ * The places moves name, each refused where it names a place neither livereel nor the format has, by the move and where
+ * the format stands.
  */
 export function assertPlacesOf(format: Format, named: readonly PlaceNamed[], where: string): void {
 	for (const { place, by } of named) {
@@ -176,8 +176,8 @@ export function sideBeyond(box: Box, window: Box): FrameSide | null {
 }
 
 /**
- * How words read in a place where the film names no way: centred above, below or over the whole, else from the left;
- * in a format's own place, as in the place it names.
+ * How words read in a place where the film names no way: centred above, below or over the whole, else from the left; in
+ * a format's own place, as in the place it names.
  */
 export function alignmentIn(format: Format, place: Place): Alignment {
 	return READ_CENTRED.includes(namedThrough(format, place)) ? 'center' : 'start';
@@ -257,8 +257,8 @@ function namedThrough(format: Format, place: Place): Place {
 }
 
 /**
- * The place a format's own name names; refused where the format names none so, which a film's places and moves are
- * read for before anything is shot.
+ * The place a format's own name names; refused where the format names none so, which a film's places and moves are read
+ * for before anything is shot.
  */
 function ownPlace(format: Format, name: string): Place {
 	const places = format.places ?? {};

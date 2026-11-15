@@ -1,8 +1,8 @@
 /**
  * Colours a film writes in hex, mixed on their way from one to another: each channel and the alpha moved as far as the
- * way has gone, so a ground fades from dark to light through the colours between. A colour stands as it was written
- * at either end of its way; between them it is written whole, `#rrggbbaa`, as is a colour read off the page, or, for
- * a colour three reads, which has no alpha, `#rrggbb`.
+ * way has gone, so a ground fades from dark to light through the colours between. A colour stands as it was written at
+ * either end of its way; between them it is written whole, `#rrggbbaa`, as is a colour read off the page, or, for a
+ * colour three reads, which has no alpha, `#rrggbb`.
  */
 import { between } from './toward.ts';
 

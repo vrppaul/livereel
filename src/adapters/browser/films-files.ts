@@ -6,8 +6,8 @@
  * joins the stage's fonts under the family it sets, so the look names it as it names one the machine has. A file that
  * is not there, a picture that decodes to no picture with a size, or a font read as none, is refused as the film's
  * before the first frame. One road for flat and the room alike: the stage holds each where any page it is opened on
- * reads it. A picture's pixels across are handed in the frame's, at the take's sharpness, which only the browser's
- * part of livereel knows, so the room draws a picture standing in the world no denser than its file.
+ * reads it. A picture's pixels across are handed in the frame's, at the take's sharpness, which only the browser's part
+ * of livereel knows, so the room draws a picture standing in the world no denser than its file.
  */
 import { readFile } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';

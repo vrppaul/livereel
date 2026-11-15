@@ -6,8 +6,8 @@
  *
  * And how a page lies on the screen where it lies elsewhere than over the whole screen: a page the screen fades from,
  * laid over the page coming where one pose framed it as another frames the page coming, and the part of a page the
- * film's scrolls have carried up the screen. A camera frames such a page as it frames the screen, by a pose of its
- * own, so what stands on it is framed by the arithmetic above.
+ * film's scrolls have carried up the screen. A camera frames such a page as it frames the screen, by a pose of its own,
+ * so what stands on it is framed by the arithmetic above.
  */
 import type { Camera, Pose } from './camera.ts';
 import { type Box, HALVES, type Point, type Size, UNMOVED, boxBetween, frameScaleOf } from './geometry.ts';

@@ -5,10 +5,10 @@
  * itself and as sharply at a slant as the card filters, so a window brought near the eye or leant toward it shows the
  * page as sharp as the picture was taken. Markup, which would reflow drawn denser, stays in the surfaces the browser
  * draws at the frame's own density: the window's, which holds the screen's own markup over the page — the sweep, the
- * holes, the light, the dim — or a page of the film's own; the surface of what lies over the page in the window,
- * apart — a callout, pins, an object inside the window — which the stage lays apart where a frame is drawn as a room,
- * as it lies over the faded screen whole, not faded with it; and the cursor's, which the room lays over all the world
- * it draws (`cursorLaid` in `stage/room.js`).
+ * holes, the light, the dim — or a page of the film's own; the surface of what lies over the page in the window, apart
+ * — a callout, pins, an object inside the window — which the stage lays apart where a frame is drawn as a room, as it
+ * lies over the faded screen whole, not faded with it; and the cursor's, which the room lays over all the world it
+ * draws (`cursorLaid` in `stage/room.js`).
  *
  * The picture is uploaded once each time the stage shows another, not each exposure as the surfaces are drawn. Where
  * the window shades the page with a blur, the picture is blurred by a Gaussian whose deviation is the shade's blur,
@@ -85,9 +85,9 @@ import { PAST_A_ROUNDED_BOX, SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOf
  */
 
 /**
- * What the page's surface lays of the part of the screen the shade's blur leaves sharp, as the shader takes it:
- * whether it lays one; the picture laid over the part, unblurred or as far as the part softens; how large the screen
- * is, in its pixels; and the part's box and how far past it the page softens into the blur, in the screen's pixels.
+ * What the page's surface lays of the part of the screen the shade's blur leaves sharp, as the shader takes it: whether
+ * it lays one; the picture laid over the part, unblurred or as far as the part softens; how large the screen is, in its
+ * pixels; and the part's box and how far past it the page softens into the blur, in the screen's pixels.
  * @typedef {{
  *   readonly keepsAPartSharp: boolean,
  *   readonly sharpPicture: Texture | null,
@@ -99,10 +99,10 @@ import { PAST_A_ROUNDED_BOX, SRGB_CURVES, WRITTEN, drawnInto, passOver, valuesOf
 
 /**
  * What the page's surface, and the window's body, read of what stands behind them, as the room hands it before each
- * field of the world it draws:
- * the world the room has laid so far, as light, premultiplied, over the frame; the film's ground, in the screen's
- * colours, over the frame, its rows from its top; and where a pixel of the layer the surface is drawn into stands on
- * the frame, in shares of it: how far a pixel reaches across and up, and where the layer's bottom left corner stands.
+ * field of the world it draws: the world the room has laid so far, as light, premultiplied, over the frame; the film's
+ * ground, in the screen's colours, over the frame, its rows from its top; and where a pixel of the layer the surface is
+ * drawn into stands on the frame, in shares of it: how far a pixel reaches across and up, and where the layer's bottom
+ * left corner stands.
  * @typedef {{
  *   readonly behindSoFar: Texture,
  *   readonly filmsGround: Texture,
@@ -150,8 +150,8 @@ const NO_PART_KEPT_SHARP = {
 	sharpEdge: NO_EDGE
 };
 // The picture blurred across alone, as light, in half floats, which keep a dark page's light as finely as the screen's
-// colours do; and then down too, in the screen's colours as the page's surface lays the picture, with smaller copies
-// of itself
+// colours do; and then down too, in the screen's colours as the page's surface lays the picture, with smaller copies of
+// itself
 const BLURRED_ACROSS_LAYER = { depthBuffer: false, type: HalfFloatType };
 const BLURRED_LAYER = { depthBuffer: false, generateMipmaps: true, minFilter: LinearMipmapLinearFilter };
 // What a pass of the blur writes: the light it gathers, as it is, or written in the screen's colours
@@ -196,8 +196,8 @@ float sharpAt(vec2 shareOfTheScreen) {
 }`;
 
 /**
- * The values `THE_PART_KEPT_SHARP` reads of the part of the screen the shade's blur leaves sharp: its box and its
- * edge in the screen's pixels, the edge as narrow as the camera's zoom frames the screen larger, as the blur is
+ * The values `THE_PART_KEPT_SHARP` reads of the part of the screen the shade's blur leaves sharp: its box and its edge
+ * in the screen's pixels, the edge as narrow as the camera's zoom frames the screen larger, as the blur is
  * (`seenBlurred`), and the screen's size.
  * @param {NonNullable<DrawnScene['window']['sharp']>} sharp @param {number} zoom @param {Vector2} screenSize
  */
@@ -209,11 +209,11 @@ export function partKeptSharpValues(sharp, zoom, screenSize) {
  * The page's surface, all in the screen's colours, premultiplied, read back into linear light: the screen's ground and
  * the page's picture, where it draws one, showing as far as the screen is clear less how clear the window's surface is
  * there, as its markup over the page is as clear as the screen, cut to the screen's rounded box and the view's; over
- * them the window's surface; all of it as far as no pit's mouth is open there; over all, what lies over the page,
- * where anything does. Each edge smoothed over a pixel of the frame as the eye sees it; none drawn, nor its depth,
- * where it is clear. Where the page has faded, the light of what stands behind it added by the share faded, under the
- * screen's pane alone, where anything of the surface's own is drawn: a page faded whole draws nothing, as what stands
- * behind it shows as it stands.
+ * them the window's surface; all of it as far as no pit's mouth is open there; over all, what lies over the page, where
+ * anything does. Each edge smoothed over a pixel of the frame as the eye sees it; none drawn, nor its depth, where it
+ * is clear. Where the page has faded, the light of what stands behind it added by the share faded, under the screen's
+ * pane alone, where anything of the surface's own is drawn: a page faded whole draws nothing, as what stands behind it
+ * shows as it stands.
  */
 export const PAGE_SURFACE_FRAGMENT = `
 uniform sampler2D surface;
@@ -394,8 +394,8 @@ class BlurredPicture {
 
 	/**
 	 * The picture blurred anew by a deviation in its own pixels: from its smaller copy read as light whose pixels stand
-	 * no farther apart than the most a pixel spreads, across into one layer as light, then down into another as large,
-	 * in the screen's colours.
+	 * no farther apart than the most a pixel spreads, across into one layer as light, then down into another as large, in
+	 * the screen's colours.
 	 * @param {Texture} light @param {HTMLImageElement} image @param {number} spread
 	 */
 	blurredAnew(light, image, spread) {
@@ -459,9 +459,9 @@ export class PagePicture {
 	/**
 	 * What the page's surface of an exposure lays with the window's surface, both laid out over a box of the window's
 	 * plane, and what lies over the page, where anything does: the page's picture, blurred as the window shades it, over
-	 * the screen's ground, cut and as clear as the screen, where the screen shows the filmed page; nothing where it
-	 * shows a page of the film's own, which stands on its ground in the window's surface (`stage.css`); and the mouths of
-	 * the pits sunk into the page, open as far as each has come.
+	 * the screen's ground, cut and as clear as the screen, where the screen shows the filmed page; nothing where it shows
+	 * a page of the film's own, which stands on its ground in the window's surface (`stage.css`); and the mouths of the
+	 * pits sunk into the page, open as far as each has come.
 	 * @param {DrawnScene} scene @param {Box} surface @param {Texture | null} overThePage
 	 * @param {readonly SunkPit[]} pits @returns {PageLaid}
 	 */

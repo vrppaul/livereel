@@ -355,9 +355,9 @@ export function shows(page: ScreenPage, script: ShowsScript = {}): Move {
 }
 
 /**
- * A move showing a page at its moment, by what it shows as it begins: at once; or, where the film names a fade,
- * fading from the page the screen showed, which it holds a picture of as it begins, as a sweep does, so an act at that
- * moment is refused.
+ * A move showing a page at its moment, by what it shows as it begins: at once; or, where the film names a fade, fading
+ * from the page the screen showed, which it holds a picture of as it begins, as a sweep does, so an act at that moment
+ * is refused.
  */
 function showingMove(
 	script: FilmedShowsScript,

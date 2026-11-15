@@ -50,8 +50,8 @@ export interface Through<Key> {
 }
 
 /**
- * A value on its path as a scene holds it from frame to frame: where it stood as its move began, the keys it passes
- * and the course through them, where it goes, and how far along it is; at 1, there.
+ * A value on its path as a scene holds it from frame to frame: where it stood as its move began, the keys it passes and
+ * the course through them, where it goes, and how far along it is; at 1, there.
  */
 export interface OnItsPath<Value> extends Track<Value> {
 	readonly through: Through<Value>;
@@ -100,8 +100,8 @@ export function pathOf<Value>(from: Value, through: Through<Value>, to: Value, s
 }
 
 /**
- * Where a value stands `progress` of its path, for a path whose keys are worked out anew for each frame: on an end
- * with no path worked out, as the value stands at rest before and after its move.
+ * Where a value stands `progress` of its path, for a path whose keys are worked out anew for each frame: on an end with
+ * no path worked out, as the value stands at rest before and after its move.
  */
 export function alongPath<Value>(
 	from: Value,
@@ -145,8 +145,8 @@ class EndToEnd<Value> implements Path<Value> {
 
 /**
  * A path through keys, none standing where the one before it stands, as stretches from each key to the next: how far
- * apart each stretch's knots stand on its curve, and how long each is by the pace. Keys that all stand as one leave
- * the value standing there.
+ * apart each stretch's knots stand on its curve, and how long each is by the pace. Keys that all stand as one leave the
+ * value standing there.
  */
 class ThroughKeys<Value> implements Path<Value> {
 	readonly keys: readonly Value[];

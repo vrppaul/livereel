@@ -70,8 +70,8 @@ const A_TYPIST: Kind<Typist> = new FormByName<Typist>(
 	'a typist: a person, { seed, slipAt, pace }, or an even one, { lettersPerSecond }'
 );
 
-// The usual time between two keys, how unevenly they come, the start of a word a little slower, a longer breath now
-// and then, and how long a wrong key stands before it is rubbed out
+// The usual time between two keys, how unevenly they come, the start of a word a little slower, a longer breath now and
+// then, and how long a wrong key stands before it is rubbed out
 const KEY_SECONDS = 0.085;
 const KEY_SPREAD = 0.45;
 const WORD_START_SLOWER = 1.6;

@@ -1,12 +1,12 @@
 /**
- * A film shot in one of its formats: its steps written and counted, its page served, the browser opened, the page
- * made ready, its own time running as the film's code waits on it, and a take. A film shot on its set has no page
- * served and none made ready: the browser opens the set as it was shot, on the screen it was shot on.
+ * A film shot in one of its formats: its steps written and counted, its page served, the browser opened, the page made
+ * ready, its own time running as the film's code waits on it, and a take. A film shot on its set has no page served and
+ * none made ready: the browser opens the set as it was shot, on the screen it was shot on.
  *
- * The film's length, its sounds, what its looks write in CSS and the pages of its own it shows are known from its
- * steps before its page is served, so footage that cannot be met — a still past the end — or a sound that cannot be
- * laid is refused before any server starts; a font or the ground's layers CSS cannot read is refused before the first
- * frame, and each page of its own is laid on the stage before it. The browser closes before the page's server stops.
+ * The film's length, its sounds, what its looks write in CSS and the pages of its own it shows are known from its steps
+ * before its page is served, so footage that cannot be met — a still past the end — or a sound that cannot be laid is
+ * refused before any server starts; a font or the ground's layers CSS cannot read is refused before the first frame,
+ * and each page of its own is laid on the stage before it. The browser closes before the page's server stops.
  * What the film's own code does — its steps, its wait for the page — is the film's: a fault there is said as the
  * film's, naming where.
  */

@@ -5,9 +5,9 @@
  * Where anything that leans, grows or turns stands on the frame is worked out here once, and the stage is handed the
  * numbers it draws with (`src/domain/stance.ts`), so the two never tell it apart. The entries are named as a DOMMatrix
  * and CSS name them, and `matrix3d()` takes them in that order, `m11` to `m44`: a point is carried as a column of
- * across, down, out toward the eye and 1, `m41`, `m42` and `m43` move it, `m34` sees it in perspective, and the
- * entry `m<column><row>` stands in that column and row. A chain of them reads as a CSS transform list does: the last
- * carries a point first.
+ * across, down, out toward the eye and 1, `m41`, `m42` and `m43` move it, `m34` sees it in perspective, and the entry
+ * `m<column><row>` stands in that column and row. A chain of them reads as a CSS transform list does: the last carries
+ * a point first.
  */
 import { Matrix4 } from 'three';
 import { type Box, type Point, cornersAround, middleX, middleY } from './geometry.ts';
@@ -35,8 +35,8 @@ export interface Matrix {
 }
 
 /**
- * The entries of a matrix that carries a plane flat onto another, as CSS's 2D `matrix()` takes them, `a` to `f`:
- * across and down for each of the plane's own two, and how far it is moved.
+ * The entries of a matrix that carries a plane flat onto another, as CSS's 2D `matrix()` takes them, `a` to `f`: across
+ * and down for each of the plane's own two, and how far it is moved.
  */
 export type FlatMatrix = Pick<Matrix, 'm11' | 'm12' | 'm21' | 'm22' | 'm41' | 'm42'>;
 
@@ -74,8 +74,8 @@ interface CarriedPoint {
 
 /**
  * An edge a polygon of carried points is cut at: of a box of the frame, a cut through the eye, or a distance from it:
- * how far inside it a carried point stands, none on it, less than none past it, is so much of its across, its down
- * and how far it is seen from, and so much more, none for an edge through the eye.
+ * how far inside it a carried point stands, none on it, less than none past it, is so much of its across, its down and
+ * how far it is seen from, and so much more, none for an edge through the eye.
  */
 interface Edge {
 	readonly across: number;
@@ -86,8 +86,8 @@ interface Edge {
 
 /**
  * A part of a plane a matrix carries, by how far the eye sees it from: what stands farther than the part before it
- * reaches, the eye for the first, and no farther than it reaches itself, Infinity for the last; and how many times
- * the matrix draws it as long at most, where a box of the frame shows it, never fewer than once.
+ * reaches, the eye for the first, and no farther than it reaches itself, Infinity for the last; and how many times the
+ * matrix draws it as long at most, where a box of the frame shows it, never fewer than once.
  */
 export interface MagnifiedPart {
 	readonly reaches: number;
@@ -167,8 +167,8 @@ export function unitOf(way: Spot): Spot {
 const DEGREES_IN_A_HALF_TURN = 180;
 // Half of a sum of two lengths is their mean
 const HALVES = 2;
-// How far either axis of a plane may reach out of the frame's plane, for its length, while the plane is still taken
-// to face the frame: a lean so slight moves the far corner of a frame 4096 pixels wide by less than a millionth of a
+// How far either axis of a plane may reach out of the frame's plane, for its length, while the plane is still taken to
+// face the frame: a lean so slight moves the far corner of a frame 4096 pixels wide by less than a millionth of a
 // pixel, where a whole turn's arithmetic leaves 2.4e-16
 const FACING_WITHIN = 1e-9;
 // Where a plane carried stands edge-on to the eye, between showing its front and its back
@@ -192,16 +192,16 @@ const NONE_SEEN = 0;
 const THROUGH_THE_EYE = 0;
 const NONE_OF_IT = 0;
 const ALL_OF_IT = 1;
-// How much farther each part of a plane magnified part by part reaches than the one before; and a part drawn no
-// larger than it stands
+// How much farther each part of a plane magnified part by part reaches than the one before; and a part drawn no larger
+// than it stands
 const TWICE_AS_FAR = 2;
 const AS_LARGE_AS_IT_STANDS = 1;
 
 /** A plane the eye sees no larger than it stands, all of it: one part, drawn as large as it stands. */
 export const UNMAGNIFIED: readonly MagnifiedPart[] = [{ reaches: Infinity, times: AS_LARGE_AS_IT_STANDS }];
 
-// How far an entry of a matrix may stand from the one that carries every point where it stands, while it is still
-// taken to: whole turns leave 2.4e-16, a pixel moved leaves 1
+// How far an entry of a matrix may stand from the one that carries every point where it stands, while it is still taken
+// to: whole turns leave 2.4e-16, a pixel moved leaves 1
 const UNMOVED_WITHIN = 1e-9;
 
 /** A matrix that carries every point where it stands. */
@@ -319,8 +319,8 @@ export function carried(matrix: Matrix, spot: Spot): Spot {
 }
 
 /**
- * How far from its eye a matrix sees a spot, for how far its eye stands from the plane it sees at its own size: what
- * it divides the spot by; less than none behind the eye, and 1 for a matrix that sees nothing in perspective.
+ * How far from its eye a matrix sees a spot, for how far its eye stands from the plane it sees at its own size: what it
+ * divides the spot by; less than none behind the eye, and 1 for a matrix that sees nothing in perspective.
  */
 export function seenFromOf(matrix: Matrix, spot: Spot): number {
 	return matrix.m14 * spot.across + matrix.m24 * spot.down + matrix.m34 * spot.out + matrix.m44;
@@ -343,8 +343,8 @@ export function inverseOf(matrix: Matrix): Matrix {
 }
 
 /**
- * A matrix as three.js holds one, for three's own arithmetic on it: its entries column after column, as
- * `matrix3d()` takes them.
+ * A matrix as three.js holds one, for three's own arithmetic on it: its entries column after column, as `matrix3d()`
+ * takes them.
  */
 export function threesMatrixOf(matrix: Matrix): Matrix4 {
 	return new Matrix4().fromArray(ENTRIES.map((entry) => matrix[entry]));
@@ -393,13 +393,13 @@ export function longestScaleSeen(matrix: Matrix, laid: Box, part: Box, within: B
 
 /**
  * How many times a matrix draws a box of the plane it carries about the middle of another box of it as long, part by
- * part by how far the eye sees each part from, where a box of the frame shows it (`longestScaleSeen`): from the
- * nearest point shown, each part reaching twice as far as the one before, till one the matrix draws no larger, or the
- * farthest point shown, which reaches on past all; one part, drawn as large as it stands, where the frame shows none of
- * the box or the matrix sees it edge-on. The plane is drawn about as many times smaller as it is seen from farther, so
- * a part as dense as the eye magnifies its nearest point is about twice as dense as the eye needs at most. One density
- * for all of a plane the eye skims, its nearest point's, can ask the graphics card for more than it holds: two plates
- * an eye dived past asked 1.5 and 1.9 GB, and the card lost the room's canvas.
+ * part by how far the eye sees each part from, where a box of the frame shows it (`longestScaleSeen`): from the nearest
+ * point shown, each part reaching twice as far as the one before, till one the matrix draws no larger, or the farthest
+ * point shown, which reaches on past all; one part, drawn as large as it stands, where the frame shows none of the box
+ * or the matrix sees it edge-on. The plane is drawn about as many times smaller as it is seen from farther, so a part
+ * as dense as the eye magnifies its nearest point is about twice as dense as the eye needs at most. One density for all
+ * of a plane the eye skims, its nearest point's, can ask the graphics card for more than it holds: two plates an eye
+ * dived past asked 1.5 and 1.9 GB, and the card lost the room's canvas.
  */
 export function magnifiedByDistance(matrix: Matrix, laid: Box, part: Box, within: Box): readonly MagnifiedPart[] {
 	const seen =
@@ -424,8 +424,8 @@ export function magnifiedNoFurtherThan(parts: readonly MagnifiedPart[], atMost: 
 }
 
 /**
- * The parts of a polygon of carried points that stand no nearer than a distance, each reaching twice as far as the
- * one before, as `magnifiedByDistance` parts them.
+ * The parts of a polygon of carried points that stand no nearer than a distance, each reaching twice as far as the one
+ * before, as `magnifiedByDistance` parts them.
  */
 function partsFrom(matrix: Matrix, seen: readonly CarriedPoint[], from: number): readonly MagnifiedPart[] {
 	const reaches = from * TWICE_AS_FAR;
@@ -526,16 +526,16 @@ export function facesTheFrame(matrix: Matrix): boolean {
 }
 
 /**
- * Whether a matrix leaves the room's across where it stood, unrolled: it carries no share of across down the frame,
- * nor turns it back on itself.
+ * Whether a matrix leaves the room's across where it stood, unrolled: it carries no share of across down the frame, nor
+ * turns it back on itself.
  */
 export function keepsItsAcross(matrix: Matrix): boolean {
 	return Math.abs(matrix.m12) <= FACING_WITHIN * Math.hypot(matrix.m11, matrix.m12, matrix.m13) && matrix.m11 > EDGE_ON;
 }
 
 /**
- * A matrix that carries the room's plane onto one facing the frame, written as it carries that plane: flat, every
- * point of it seen from one distance.
+ * A matrix that carries the room's plane onto one facing the frame, written as it carries that plane: flat, every point
+ * of it seen from one distance.
  */
 export function flatOf(matrix: Matrix): FlatMatrix {
 	const seenFrom = matrix.m44;

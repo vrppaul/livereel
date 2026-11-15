@@ -1,10 +1,10 @@
 /**
- * Titles: words that come up one after another, shown by an object (`src/moves/object.ts`): over the whole frame on
- * the film's ground, a title card, or in a place the film names (`src/domain/place.ts`), beside the page's window or
- * alone, in place of the title of its name on the screen, and go. A title is the object named `title`, or one the
- * film names `as`, so several stand at once. Any title slides in from past a side of the frame, pushing the one of its
- * name standing off past the side across, moves to a place, leans, or leaves past a side, its ground with it where it
- * has one. A title may set its letters' own size, and how far apart its letters and lines stand, each in place of the
+ * Titles: words that come up one after another, shown by an object (`src/moves/object.ts`): over the whole frame on the
+ * film's ground, a title card, or in a place the film names (`src/domain/place.ts`), beside the page's window or alone,
+ * in place of the title of its name on the screen, and go. A title is the object named `title`, or one the film names
+ * `as`, so several stand at once. Any title slides in from past a side of the frame, pushing the one of its name
+ * standing off past the side across, moves to a place, leans, or leaves past a side, its ground with it where it has
+ * one. A title may set its letters' own size, and how far apart its letters and lines stand, each in place of the
  * look's; one that sets no size takes, in a place, its size by the width of the place, and its words wrap by it there,
  * so a title moving to a place of another size takes that size as it sets off, where it reads from, and travels whole:
  * its lines change once, where they would break anew on every frame of the way.
@@ -179,16 +179,16 @@ const TITLE_SHOW = 'title.show';
 const TITLE_HIDE = 'title.hide';
 // A title reads a place as words do, and sets off toward one as `settingOff` has it
 const TITLE_READING: PlaceReading<typeof TITLE> = { placed: wordsPlaced, settingOff };
-// Words beside a part read from it; the point they stand off lies the middle of its side where the film names none;
-// the right side's points lie at the box's right edge, the top's at its top edge; words over a part read from the
-// point, at none across from it
+// Words beside a part read from it; the point they stand off lies the middle of its side where the film names none; the
+// right side's points lie at the box's right edge, the top's at its top edge; words over a part read from the point, at
+// none across from it
 const READ_FROM_THE_PART: Alignment = 'start';
 const MIDDLE_OF_THE_SIDE = 0.5;
 const AT_ITS_RIGHT = 1;
 const AT_ITS_TOP = 0;
 const FROM_THE_POINT = 0;
-// Words to a part's right read from `gap` right of the point, their middle level with it; words over its top read
-// from the point, their foot `gap` above it
+// Words to a part's right read from `gap` right of the point, their middle level with it; words over its top read from
+// the point, their foot `gap` above it
 const STANDING_BESIDE: { readonly [Side in BesideSide]: StandingBeside } = {
 	right: {
 		pointAlong: (along) => ({ left: AT_ITS_RIGHT, top: along }),
@@ -205,10 +205,10 @@ const STANDING_BESIDE: { readonly [Side in BesideSide]: StandingBeside } = {
 const IN_THE_MIDDLE: WordsDown = 'middle';
 
 /**
- * A title coming up, its words in the way the film names, typed by a person where it has them typed, each key heard,
- * or in the theme's; over the whole frame its ground first, or in its place; or whole, in a way of livereel's or from
- * past a side of the frame where the film names one, naming no way for its words; words that come up in place come up
- * at an even pace unless the film names a curve. Beside a part, it comes up off the part's point in the same ways.
+ * A title coming up, its words in the way the film names, typed by a person where it has them typed, each key heard, or
+ * in the theme's; over the whole frame its ground first, or in its place; or whole, in a way of livereel's or from past
+ * a side of the frame where the film names one, naming no way for its words; words that come up in place come up at an
+ * even pace unless the film names a curve. Beside a part, it comes up off the part's point in the same ways.
  */
 export function show(text: Wording, script: TitleScript = {}): Move {
 	assertKind(text, A_WORDING, "title.show's text");
@@ -236,8 +236,8 @@ export function show(text: Wording, script: TitleScript = {}): Move {
 
 /**
  * The point of a part a title stands beside asks for, by the side its words stand on and how far along it; refused
- * where the script names a place, what it stands in or how it reads as well, each of which the part sets, or names
- * both a part of the page and an object, or neither.
+ * where the script names a place, what it stands in or how it reads as well, each of which the part sets, or names both
+ * a part of the page and an object, or neither.
  */
 function pointAskedBy(script: TitleScript, beside: BesideScript): PointAsked {
 	if (script.at !== undefined || script.inside !== undefined || script.group !== undefined) {
@@ -292,8 +292,8 @@ export const to = TITLE_MOVES.to;
 export const intoTheWorld = TITLE_MOVES.intoTheWorld;
 
 /**
- * The title leant back from its top edge by `tilt`, swung about its middle by `turn`, rolled in its own plane by
- * `roll` and turned over by `over`, its ground with it.
+ * The title leant back from its top edge by `tilt`, swung about its middle by `turn`, rolled in its own plane by `roll`
+ * and turned over by `over`, its ground with it.
  */
 export const lean = TITLE_MOVES.lean;
 

@@ -2,11 +2,11 @@
  * Code: a pane of the film's code, shown by an object (`src/moves/object.ts`), coming up in a place the film names
  * (`src/domain/place.ts`), beside the page's window or alone, in place of the code of its name shown, from past a side
  * of the frame where the film names one, pushing the code of its name shown off past the side across as it comes;
- * moving to another place; leaning; lines of it lit as they run; scrolled until a line stands at its top; and going,
- * or leaving past a side. Code is the object named `code`, or one the film names `as`, so several panes stand at once.
+ * moving to another place; leaning; lines of it lit as they run; scrolled until a line stands at its top; and going, or
+ * leaving past a side. Code is the object named `code`, or one the film names `as`, so several panes stand at once.
  * A line lit or scrolled to is named by its number, counted from 1 as an editor counts them, or by words only it says,
- * so lines may be added round it and the move still finds it; a line past the last shown, or words no line or more
- * than one says, are refused as the move begins, in its own words.
+ * so lines may be added round it and the move still finds it; a line past the last shown, or words no line or more than
+ * one says, are refused as the move begins, in its own words.
  */
 import { FilmError } from '../domain/errors.ts';
 import { fractionOf } from '../domain/fraction.ts';
@@ -46,10 +46,10 @@ import {
 } from './object.ts';
 
 /**
- * Where code stands, `at` a place on the frame or in what it stands `inside` or in, its `group`, how it comes there
- * and how it stands out as it comes, `effects`, and how its pane fits a line too long, `longLines`: its letters
- * smaller until the widest fits, `'shrink'`, where the film names none, or as large as the look has them, the line cut
- * at the pane's edge, `'cut'`.
+ * Where code stands, `at` a place on the frame or in what it stands `inside` or in, its `group`, how it comes there and
+ * how it stands out as it comes, `effects`, and how its pane fits a line too long, `longLines`: its letters smaller
+ * until the widest fits, `'shrink'`, where the film names none, or as large as the look has them, the line cut at the
+ * pane's edge, `'cut'`.
  */
 export interface CodeScript extends ShowScript, NestedScript, ShownStandingOutScript {
 	readonly at: Place;
@@ -94,8 +94,8 @@ const LIGHTS = 'code.light lights';
 const SCROLLS_TO = 'code.scrollTo scrolls to';
 
 /**
- * Code coming up in its place, its ground first, then its lines one after another at an even pace unless the film
- * names a curve; sliding in whole from past a side of the frame where the film names one.
+ * Code coming up in its place, its ground first, then its lines one after another at an even pace unless the film names
+ * a curve; sliding in whole from past a side of the frame where the film names one.
  */
 export function show(text: string, script: CodeScript): Move {
 	assertKind(text, A_STRING, "code.show's text");
@@ -118,8 +118,8 @@ export function show(text: string, script: CodeScript): Move {
 const CODE_MOVES = objectMovesOf(CODE, CODE_READING);
 
 /**
- * The code shown carried to another place, through the boxes between, growing to `scale` and coming `depth` toward
- * the eye on the way where the film names them.
+ * The code shown carried to another place, through the boxes between, growing to `scale` and coming `depth` toward the
+ * eye on the way where the film names them.
  */
 export const to = CODE_MOVES.to;
 
@@ -130,8 +130,8 @@ export const to = CODE_MOVES.to;
 export const lean = CODE_MOVES.lean;
 
 /**
- * The code shown standing out as the film names, its pane with it: ringed, glowing, casting a shadow, blurred, grown
- * or brought toward the eye where it stands.
+ * The code shown standing out as the film names, its pane with it: ringed, glowing, casting a shadow, blurred, grown or
+ * brought toward the eye where it stands.
  */
 export const effects = CODE_MOVES.effects;
 
@@ -151,8 +151,8 @@ export function light(line: LineNamed, script: LightScript = {}): Move {
 }
 
 /**
- * The code shown scrolled through the lines between until a line, by its number or by what it says, stands at its
- * top; it shares a step with a move that carries the code, and with one that lights its lines one after the other.
+ * The code shown scrolled through the lines between until a line, by its number or by what it says, stands at its top;
+ * it shares a step with a move that carries the code, and with one that lights its lines one after the other.
  */
 export function scrollTo(line: LineNamed, script: ScrollScript = {}): Move {
 	assertKind(line, A_LINE_NAMED, "code.scrollTo's line");
@@ -197,9 +197,9 @@ function numberShown(lines: readonly CodeLine[], named: LineNamed, moveSays: str
 }
 
 /**
- * The number of a line a film names: the number it gives, or that of the one line from `from` on that says the words
- * it gives. Words no line from there says are refused, and so are words more than one says, so a line said again
- * above the one meant never takes the move without a word; the refusal says what the move does to the line.
+ * The number of a line a film names: the number it gives, or that of the one line from `from` on that says the words it
+ * gives. Words no line from there says are refused, and so are words more than one says, so a line said again above the
+ * one meant never takes the move without a word; the refusal says what the move does to the line.
  */
 function numberOf(lines: readonly CodeLine[], named: LineNamed, from: number, moveSays: string): number {
 	if (typeof named === 'number') return named;

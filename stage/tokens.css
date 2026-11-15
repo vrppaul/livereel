@@ -148,8 +148,8 @@
 	 * how far in from the side the wipe cuts from the light has faded and where the edge stands, in shares of the figure:
 	 * from nothing where it has faded, rising to its brightest just behind the edge, a share of its trail, and to nothing
 	 * again at the edge itself, so no line of it shows there; across the way, brightest down the figure's middle and
-	 * fading to nothing at its sides. Its colour is the film's or the accent, laid at 18% where it is brightest, a
-	 * share of its trail behind the edge.
+	 * fading to nothing at its sides. Its colour is the film's or the accent, laid at 18% where it is brightest, a share
+	 * of its trail behind the edge.
 	 */
 	--sheen-drawn-in: var(--sheen-colour, var(--accent));
 	--sheen-strongest: 18%;
@@ -199,10 +199,10 @@
 }
 
 /*
- * A disc's ring, round the disc's middle at its edge: its sheen across it; its glow drawn as the band's box-shadow is, a
- * ring of the glow's colour as wide as the crest and the shadow's spread either side, blurred by half the shadow's blur
- * radius, a box-shadow's blur being twice its Gaussian's spread; and its crest round it from its start at the top to its
- * end at the bottom and back, drawn through a thin ring
+ * A disc's ring, round the disc's middle at its edge: its sheen across it; its glow drawn as the band's box-shadow is,
+ * a ring of the glow's colour as wide as the crest and the shadow's spread either side, blurred by half the shadow's
+ * blur radius, a box-shadow's blur being twice its Gaussian's spread; and its crest round it from its start at the top
+ * to its end at the bottom and back, drawn through a thin ring
  */
 .ring {
 	--ring-half: calc(var(--sweep-width) * var(--pane-scale) * 1px / 2);
@@ -249,10 +249,10 @@
 }
 
 /*
- * The part of the page the shade's blur leaves sharp (`src/props/window.ts`), worked out on the page's picture laid over
- * the screen, where the stage sets the part's box in the screen's pixels and its edge in a frame's, which the camera's
- * zoom would scale: a mask whole over the part, clear from as far past each side of it as its edge, one across and one
- * down, laid one in the other.
+ * The part of the page the shade's blur leaves sharp (`src/props/window.ts`), worked out on the page's picture laid
+ * over the screen, where the stage sets the part's box in the screen's pixels and its edge in a frame's, which the
+ * camera's zoom would scale: a mask whole over the part, clear from as far past each side of it as its edge, one across
+ * and one down, laid one in the other.
  */
 .sharp-part {
 	--sharp-edge-on-the-screen: calc(var(--sharp-edge) * 1px / var(--zoom));

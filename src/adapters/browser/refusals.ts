@@ -1,11 +1,11 @@
 /**
- * A page's refusal to be shown in another page's frame (`X-Frame-Options`, a CSP's `frame-ancestors`), found, and
- * taken off.
+ * A page's refusal to be shown in another page's frame (`X-Frame-Options`, a CSP's `frame-ancestors`), found, and taken
+ * off.
  *
- * On the stage apart from the app a page is framed as it comes, and one that refuses is refused with its refusal
- * named. On the stage inside the app, CDP's `Fetch` takes the refusal off a page that sends one and lets everything
- * else go by untouched (`inside.ts`): a page on the disk refuses nothing, and only a page — not a script or an
- * image — is ever framed.
+ * On the stage apart from the app a page is framed as it comes, and one that refuses is refused with its refusal named.
+ * On the stage inside the app, CDP's `Fetch` takes the refusal off a page that sends one and lets everything else go by
+ * untouched (`inside.ts`): a page on the disk refuses nothing, and only a page — not a script or an image — is ever
+ * framed.
  */
 
 /** A header of a page's answer, as CDP and Playwright list them. */

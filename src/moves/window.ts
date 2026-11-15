@@ -99,8 +99,8 @@ const SHADE_FORM: Form<ShadeScript> = {
 	blurSeen: A_BLUR_SEEN,
 	...TIMING_FORM
 };
-// The window's values a shade sets: the shade's own, the part of the page its blur leaves sharp, how far it reaches
-// and where its blur is as wide as written; and that part, as a refusal names it
+// The window's values a shade sets: the shade's own, the part of the page its blur leaves sharp, how far it reaches and
+// where its blur is as wide as written; and that part, as a refusal names it
 const SHADED = [...SHADE_NAMES, 'sharp', 'reaching', 'blurSeen'] as const satisfies readonly (keyof PageWindow)[];
 // The window's values a move that carries it sets, and one that leans it; what each writes is held to them
 const CARRIED = ['box', 'lift', 'depth'] as const satisfies readonly (keyof Placing)[];
@@ -257,8 +257,8 @@ function placed(beginning: Beginning, place: Place, depth: number): Standing {
 
 /**
  * The window's box, lift and depth on their way from where it stood to where it goes, written into the window as it
- * stands: its box on its path through the boxes between, its lift and depth from end to end, its depth passing its
- * ends with the move's curve, as an object's does.
+ * stands: its box on its path through the boxes between, its lift and depth from end to end, its depth passing its ends
+ * with the move's curve, as an object's does.
  */
 function carried(from: Standing, through: Through<Box>, to: Standing): Change {
 	return writing((progress): Carried => ({

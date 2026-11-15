@@ -93,9 +93,8 @@ export function type(strokes: readonly Keystroke[], script: TypingScript = {}): 
 }
 
 /**
- * The page acted on for real at a moment of a step, while the play's other moves go on: `action(context)` is
- * Playwright code. A move that begins at that moment reads the page it left; two acts at one moment are done in the
- * order written.
+ * The page acted on for real at a moment of a step, while the play's other moves go on: `action(context)` is Playwright
+ * code. A move that begins at that moment reads the page it left; two acts at one moment are done in the order written.
  */
 export function act(action: Action, script: MomentScript = {}): Move {
 	assertKind(action, AN_ACTION, "page.act's action");
@@ -104,8 +103,8 @@ export function act(action: Action, script: MomentScript = {}): Move {
 }
 
 /**
- * The page's own time running at a speed, so many of its seconds to each of the film's: 4 shows a minute of the site
- * in 15 s, 0.5 slows it down, 0 stands it still; from the speed it runs at as the move's share begins.
+ * The page's own time running at a speed, so many of its seconds to each of the film's: 4 shows a minute of the site in
+ * 15 s, 0.5 slows it down, 0 stands it still; from the speed it runs at as the move's share begins.
  */
 export function speed(pageSpeed: number, script: TimingScript = {}): Move {
 	assertKind(pageSpeed, A_PAGE_SPEED, "page.speed's speed");
@@ -128,9 +127,8 @@ async function actedAsItBegins(beginning: Beginning, action: Action): Promise<Ch
 }
 
 /**
- * A block's scroll on its course: the page scrolled so far each frame, and the scene told how far the film has
- * scrolled the block the course truly moves in all, by the key the page knows it by, from how far it had as the move
- * began.
+ * A block's scroll on its course: the page scrolled so far each frame, and the scene told how far the film has scrolled
+ * the block the course truly moves in all, by the key the page knows it by, from how far it had as the move began.
  */
 async function scrolling(beginning: Beginning, target: string, aim: ScrollAim): Promise<Change> {
 	const course = await beginning.page.scrollCourse(target, aim);

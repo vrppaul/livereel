@@ -103,8 +103,8 @@ const TRANSFORM = 'data-transform';
 const FACE = 'data-face';
 // What a custom property's name starts with: a matrix's entries are set as custom properties named as each entry is
 const CUSTOM_PROPERTY = '--';
-// The custom property the page's picture is set as, the image every piece of the page is drawn from; the one a
-// picture a piece holds is set as on its element; and the attribute that names which a piece is drawn from
+// The custom property the page's picture is set as, the image every piece of the page is drawn from; the one a picture
+// a piece holds is set as on its element; and the attribute that names which a piece is drawn from
 const PAGE_PICTURE = '--page-picture';
 const PIECE_PICTURE = '--piece-picture';
 const PICTURE = 'data-picture';
@@ -119,9 +119,9 @@ const CREST_END = '--crest-end';
 const SHAPE = 'data-shape';
 // The custom property the picture of the page the screen fades from is set as on its element
 const FADED_PICTURE = '--faded-picture';
-// A page of the film's own: the class every page the screen shows takes, the attribute the one a frame shows takes,
-// and the one the screen takes while it shows one; the attribute a frame laid as a sheet past the screen takes, and the
-// one the screen takes while it shows a page laid so
+// A page of the film's own: the class every page the screen shows takes, the attribute the one a frame shows takes, and
+// the one the screen takes while it shows one; the attribute a frame laid as a sheet past the screen takes, and the one
+// the screen takes while it shows a page laid so
 const PAGE = 'page';
 const SHOWN = 'data-shown';
 const SHOWS_OWN = 'data-shows-own';
@@ -158,12 +158,12 @@ const SHADED = 'data-shaded';
 // The attribute that names how far the window's shade reaches, which an unshaded window has not
 const SHADE_REACHING = 'data-shade-reaching';
 // The attribute the window bears while the shade's blur leaves a part of the page sharp, which it has not where the
-// blur leaves none, so no second picture of the page is drawn; and the one it bears while that part softens toward
-// the blur, which it has not where the part is wholly sharp, so the part is drawn with no filter at all
+// blur leaves none, so no second picture of the page is drawn; and the one it bears while that part softens toward the
+// blur, which it has not where the part is wholly sharp, so the part is drawn with no filter at all
 const SHARP_PART = 'data-sharp-part';
 const SHARP_PART_SOFTENED = 'data-sharp-softened';
-// The colour of an object's ring and glow the film gave it, which one in the look's accent has not; and the side of
-// its figure an object melts toward, which one melting none has not, so it is drawn with no mask at all
+// The colour of an object's ring and glow the film gave it, which one in the look's accent has not; and the side of its
+// figure an object melts toward, which one melting none has not, so it is drawn with no mask at all
 const EFFECT_COLOUR = '--effect-colour';
 const MELT_TOWARD = 'data-melt-toward';
 // The attribute what the eye's focus blurs is drawn with, which what it draws sharp has not, so that is drawn with no
@@ -211,8 +211,8 @@ const SURFACE_APART = 'template[data-apart]';
 const ON_THE_PAGE = 'template[data-on-the-page]';
 const SURFACE_NAME = 'data-surface';
 const WINDOWS_SURFACE = '[data-surface="window"]';
-// The class of a line of code; each piece of it is classed by its kind; and the attribute that names how a pane fits
-// a line too long
+// The class of a line of code; each piece of it is classed by its kind; and the attribute that names how a pane fits a
+// line too long
 const CODE_LINE = 'code-line';
 const LONG_LINES = 'data-long-lines';
 // The token each value of the film's look set whole takes the place of on the stage
@@ -366,13 +366,12 @@ function sharpPartDrawn(root, sharp) {
 }
 
 /**
- * The screen: how far it has come up, what it shows, the filmed page or one of the film's own laid on it, with what
- * the film typed into it and scrolled as far as the film has run it, or laid so as a sheet past it in a frame of its
- * own, and the
- * picture light sweeps away over it, a band or a disc, and the page it fades from over it; where the eye sees a page on
- * the window's back, how it is mounted, so the stylesheet turns it to stand upright from behind and leaves unseen what
- * lies on the front. Its numbers and names are drawn on each of its roots, one in each surface the window's view
- * stands in; its pages and its sweep stand in the window's surface alone, the page it fades from in the surface of
+ * The screen: how far it has come up, what it shows, the filmed page or one of the film's own laid on it, with what the
+ * film typed into it and scrolled as far as the film has run it, or laid so as a sheet past it in a frame of its own,
+ * and the picture light sweeps away over it, a band or a disc, and the page it fades from over it; where the eye sees a
+ * page on the window's back, how it is mounted, so the stylesheet turns it to stand upright from behind and leaves
+ * unseen what lies on the front. Its numbers and names are drawn on each of its roots, one in each surface the window's
+ * view stands in; its pages and its sweep stand in the window's surface alone, the page it fades from in the surface of
  * what lies over the page where a frame is drawn as a room.
  */
 class ScreenDrawer {
@@ -441,10 +440,10 @@ function sheetLaid(root, sheet) {
 }
 
 /**
- * The page of the film's own the screen shows as the film has it, in the frame that shows it: its frame at the
- * screen's size, or its sheet, where it is laid as one past the screen; what the film typed into its blocks written and
- * those it blinks as clear as they stand, then scrolled as far down as the film has run the page, or, a sheet, to where
- * its top stands. Nothing where the screen shows the filmed page.
+ * The page of the film's own the screen shows as the film has it, in the frame that shows it: its frame at the screen's
+ * size, or its sheet, where it is laid as one past the screen; what the film typed into its blocks written and those it
+ * blinks as clear as they stand, then scrolled as far down as the film has run the page, or, a sheet, to where its top
+ * stands. Nothing where the screen shows the filmed page.
  * @param {OwnFrames} ownPages @param {DrawnScene['screen']['shows']} shows
  */
 function ownPageDrawn(ownPages, shows) {
@@ -471,8 +470,8 @@ function ownFrame(frames, key) {
 }
 
 /**
- * The sheet the screen's page of the film's own is laid as past the screen; none where it is drawn on the screen
- * alone, or the screen shows the filmed page.
+ * The sheet the screen's page of the film's own is laid as past the screen; none where it is drawn on the screen alone,
+ * or the screen shows the filmed page.
  * @param {DrawnScene['screen']['shows']} shows @returns {DrawnSheet | null}
  */
 function sheetShown(shows) {
@@ -950,8 +949,8 @@ class StagedObject {
 }
 
 /**
- * How soft the eye's focus draws the window or an object, drawn on its element: blurred by as many pixels of its own
- * as the engine says; with no filter at all, where the eye draws it sharp.
+ * How soft the eye's focus draws the window or an object, drawn on its element: blurred by as many pixels of its own as
+ * the engine says; with no filter at all, where the eye draws it sharp.
  * @param {Staged} element @param {number | null} outOfFocus
  */
 function focusDrawn(element, outOfFocus) {
@@ -961,9 +960,9 @@ function focusDrawn(element, outOfFocus) {
 }
 
 /**
- * How an object stands out, drawn on its element: ringed, glowing, casting a shadow and blurred as strongly as each
- * is, its ring and glow in the colour the film gave them or the look's accent; with no filter at all, where it stands
- * out in no way.
+ * How an object stands out, drawn on its element: ringed, glowing, casting a shadow and blurred as strongly as each is,
+ * its ring and glow in the colour the film gave them or the look's accent; with no filter at all, where it stands out
+ * in no way.
  * @param {Staged} element @param {DrawnObject['effects']} effects
  */
 function effectsDrawn(element, effects) {
@@ -1164,8 +1163,8 @@ class OutlineDrawer {
 }
 
 /**
- * A picture of the film's own in its object: the picture the stage holds by its file, in the part of its box the
- * engine works out, set whole on its element as the page's is on the root, fading up whole as it comes.
+ * A picture of the film's own in its object: the picture the stage holds by its file, in the part of its box the engine
+ * works out, set whole on its element as the page's is on the root, fading up whole as it comes.
  */
 class PictureDrawer {
 	/** @param {Staged} element */
@@ -1182,8 +1181,8 @@ class PictureDrawer {
 }
 
 /**
- * A thing in its object: nothing the markup draws, as the room draws it from the film's own three.js
- * (`stage/room.js`); its element stands for its box alone.
+ * A thing in its object: nothing the markup draws, as the room draws it from the film's own three.js (`stage/room.js`);
+ * its element stands for its box alone.
  */
 class ThingDrawer {
 	/** @param {DrawnContent} content */
@@ -1394,19 +1393,18 @@ const FILMS_PICTURES = new Map();
 const NO_SIZE = 0;
 // A canvas a picture's pixels are read off, a pixel at a time, kept where the processor reads it rather than the card
 const READ_OFTEN = { willReadFrequently: true };
-// A font of the film's own stands for every weight the look sets it at: a variable font's file moves with the weight,
-// a static one's stays as drawn, never thickened or thinned by the browser
+// A font of the film's own stands for every weight the look sets it at: a variable font's file moves with the weight, a
+// static one's stays as drawn, never thickened or thinned by the browser
 const EVERY_WEIGHT = '1 1000';
 // The custom property an exposure's share is set as: how much of it shows over the exposures laid before it. Laid over
-// so many before it, it shows the whole of its own light in as many parts as there are with it, so each weighs the
-// same
+// so many before it, it shows the whole of its own light in as many parts as there are with it, so each weighs the same
 const SHARE = '--share';
 const WHOLE = 1;
 const ITSELF = 1;
 
 /**
- * The stage laid out, drawing as many exposures of a frame at once as the layout asks, as it is drawn: the first on
- * the markup's own root, a copy of it made for each further one it lacks. An exposure made keeps how it lays markup
+ * The stage laid out, drawing as many exposures of a frame at once as the layout asks, as it is drawn: the first on the
+ * markup's own root, a copy of it made for each further one it lacks. An exposure made keeps how it lays markup
  * standing in the world: a stage laid out anew, as the live page's is for each act, is drawn as it was.
  * @param {Layout} layout
  */
@@ -1462,10 +1460,10 @@ function exposureOf(root, drawing) {
 
 /**
  * What lies over the page in an exposure's window, and its cursor, each laid in a surface of its own after the
- * window's, where the room draws them: what lies over the page — the page the screen fades from, the callout, the
- * pins, the objects standing in the window — which the room lays over the screen and the page's picture, as the screen
- * fades whole, what lies over it does not, and the room lays the picture under the screen's own markup alone; and the
- * cursor, which the room lays over all the world it draws, as nothing standing there, nor the eye's lens, reaches it.
+ * window's, where the room draws them: what lies over the page — the page the screen fades from, the callout, the pins,
+ * the objects standing in the window — which the room lays over the screen and the page's picture, as the screen fades
+ * whole, what lies over it does not, and the room lays the picture under the screen's own markup alone; and the cursor,
+ * which the room lays over all the world it draws, as nothing standing there, nor the eye's lens, reaches it.
  * @param {Staged} root
  */
 function laidApartOverThePage(root) {
@@ -1543,8 +1541,8 @@ function laidApart(exposure) {
 }
 
 /**
- * The page opened in the first exposure's screen's frame, the frame sandboxed first where it is to be: a stage with
- * the page live draws one exposure at a time, as no copy of it can show the page again.
+ * The page opened in the first exposure's screen's frame, the frame sandboxed first where it is to be: a stage with the
+ * page live draws one exposure at a time, as no copy of it can show the page again.
  * @param {Opening} opening
  */
 function open(opening) {
@@ -1554,11 +1552,10 @@ function open(opening) {
 }
 
 /**
- * A picture of the page shown in the frame's place in every exposure, once it is decoded, so the next frame drawn
- * shows it whole; and set on the stage's root as the picture every piece of the page is drawn from. It is shown at an
- * address of the stage's own, short however large the picture: Chrome drops a custom property's value longer than
- * 2,097,152 characters, which a dense page's picture, taken as sharp as livereel's closest camera needs it, passes as a
- * data URL.
+ * A picture of the page shown in the frame's place in every exposure, once it is decoded, so the next frame drawn shows
+ * it whole; and set on the stage's root as the picture every piece of the page is drawn from. It is shown at an address
+ * of the stage's own, short however large the picture: Chrome drops a custom property's value longer than 2,097,152
+ * characters, which a dense page's picture, taken as sharp as livereel's closest camera needs it, passes as a data URL.
  * The address of the picture it takes the place of is let go once nothing shows it.
  * @param {PagePicture} picture @returns {Promise<void>}
  */
