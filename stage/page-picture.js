@@ -5,10 +5,10 @@
  * itself and as sharply at a slant as the card filters, so a window brought near the eye or leant toward it shows the
  * page as sharp as the picture was taken. Markup, which would reflow drawn denser, stays in the surfaces the browser
  * draws at the frame's own density: the window's, which holds the screen's own markup over the page — the sweep, the
- * holes, the light, the dim — or a page of the film's own; the surface of what lies over the page in the window, apart
- * — a callout, pins, an object inside the window — which the stage lays apart where a frame is drawn as a room, as it
- * lies over the faded screen whole, not faded with it; and the cursor's, which the room lays over all the world it
- * draws (`cursorLaid` in `stage/room.js`).
+ * holes, the light, the dim — or a film's own page; the surface of what lies over the page in the window, apart — a
+ * callout, pins, an object inside the window — which the stage lays apart where a frame is drawn as a room, as it lies
+ * over the faded screen whole, not faded with it; and the cursor's, which the room lays over all the world it draws
+ * (`cursorLaid` in `stage/room.js`).
  *
  * The picture is uploaded once each time the stage shows another, not each exposure as the surfaces are drawn. Where
  * the window shades the page with a blur, the picture is blurred by a Gaussian whose deviation is the shade's blur,
@@ -39,8 +39,8 @@
  * laid so far is read as the eye's lens blurred it, and the lens blurs it again with the page, by the page's depth.
  * Where the shade reaches the page alone, the window's edge and shadow, or its body, keep as they stand; where it
  * reaches the whole window, they fade with the page: the edge and shadow as the stylesheet fades them (`.view-shadow`
- * in `stage.css`), the body into the same light of what stands behind it (`stage/body.js`). A page of the film's own,
- * which the window's surface draws, fades in the screen's colours.
+ * in `stage.css`), the body into the same light of what stands behind it (`stage/body.js`). A film's own page, which
+ * the window's surface draws, fades in the screen's colours.
  */
 import {
 	Color,
@@ -460,8 +460,8 @@ export class PagePicture {
 	 * What the page's surface of an exposure lays with the window's surface, both laid out over a box of the window's
 	 * plane, and what lies over the page, where anything does: the page's picture, blurred as the window shades it, over
 	 * the screen's ground, cut and as clear as the screen, where the screen shows the filmed page; nothing where it shows
-	 * a page of the film's own, which stands on its ground in the window's surface (`stage.css`); and the mouths of the
-	 * pits sunk into the page, open as far as each has come.
+	 * a film's own page, which stands on its ground in the window's surface (`stage.css`); and the mouths of the pits
+	 * sunk into the page, open as far as each has come.
 	 * @param {DrawnScene} scene @param {Box} surface @param {Texture | null} overThePage
 	 * @param {readonly SunkPit[]} pits @returns {PageLaid}
 	 */

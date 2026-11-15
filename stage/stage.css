@@ -228,7 +228,7 @@ body {
 	display: none;
 }
 
-/* A page of the film's own, laid over the filmed page's place in the screen and laid out whole, so its fonts load, but unseen until a frame shows it, and never pointed at, as an act is done on the filmed page */
+/* A film's own page, laid over the filmed page's place in the screen and laid out whole, so its fonts load, but unseen until a frame shows it, and never pointed at, as an act is done on the filmed page */
 .page[data-own-page] {
 	position: absolute;
 	inset: 0;
@@ -236,7 +236,7 @@ body {
 	pointer-events: none;
 }
 
-/* A page of the film's own drawn past its screen (`pastTheScreen` in `src/props/screen.ts`): a sheet laid in a frame of its own as far past the screen's top and foot as the engine says, the screen's ground under it and the screen's edge and shadow round it, its corners as round as the screen's; the screen, which no longer cuts what it holds there, draws neither its ground nor its shadow under it */
+/* A film's own page drawn past its screen (`pastTheScreen` in `src/props/screen.ts`): a sheet laid in a frame of its own as far past the screen's top and foot as the engine says, the screen's ground under it and the screen's edge and shadow round it, its corners as round as the screen's; the screen, which no longer cuts what it holds there, draws neither its ground nor its shadow under it */
 [data-past] .screen {
 	overflow: visible;
 	background: none;
@@ -666,7 +666,7 @@ body {
 	overflow: visible;
 }
 
-/* In the room, where the screen shows the filmed page, the room lays the screen's ground and the page's picture under the window's surface itself, the picture as densely as it was taken (`page-picture.js`): the surface holds the screen's own markup over them. A page of the film's own stands on the ground in the surface, as their edges are smoothed together there */
+/* In the room, where the screen shows the filmed page, the room lays the screen's ground and the page's picture under the window's surface itself, the picture as densely as it was taken (`page-picture.js`): the surface holds the screen's own markup over them. A film's own page stands on the ground in the surface, as their edges are smoothed together there */
 .room [data-prop='screen']:not([data-shows-own]) .screen {
 	background: none;
 }
@@ -1368,7 +1368,7 @@ body {
 	margin-right: 0.6em;
 }
 
-/* A piece of the page, a lens, an outline or a picture of the film's own in its object, fading up whole as it comes in its own way and out as it goes */
+/* A piece of the page, a lens, an outline or a film's own picture in its object, fading up whole as it comes in its own way and out as it goes */
 .piece,
 .lens,
 .outline,
@@ -1376,7 +1376,7 @@ body {
 	opacity: var(--shown);
 }
 
-/* A picture of the film's own: the picture the stage holds (`layPictures` in `stage/stage.js`), whole, in the part of its box the engine works out, as large as the box holds it. Its lengths stand in film pixels, as all an object shows does. It draws nothing past its box */
+/* A film's own picture: the picture the stage holds (`layPictures` in `stage/stage.js`), whole, in the part of its box the engine works out, as large as the box holds it. Its lengths stand in film pixels, as all an object shows does. It draws nothing past its box */
 .picture .way {
 	--way-reach: 0px;
 
@@ -1544,7 +1544,7 @@ body {
 	visibility: hidden;
 }
 
-/* An object with its effects: what it shows drawn with the shadow it casts toward its foot and the glow round it, and blurred, as the film has each (`--effects` in `tokens.css`), and its edge ringed, rounded as it is — a title's words, or its card where it stands on one, a pane, a piece of the page, a lens's glass, an outline's ring, a picture of the film's own. One standing out in no way has neither, so it draws as one with no filter does. Its rules stand at the end, after every figure's */
+/* An object with its effects: what it shows drawn with the shadow it casts toward its foot and the glow round it, and blurred, as the film has each (`--effects` in `tokens.css`), and its edge ringed, rounded as it is — a title's words, or its card where it stands on one, a pane, a piece of the page, a lens's glass, an outline's ring, a film's own picture. One standing out in no way has neither, so it draws as one with no filter does. Its rules stand at the end, after every figure's */
 .object[data-effects] .content {
 	filter: var(--effects);
 }
@@ -1614,13 +1614,13 @@ body {
 	opacity: var(--shade-dim);
 }
 
-/* The dim over a page of the film's own drawn past its screen lies over all the sheet drawn */
+/* The dim over a film's own page drawn past its screen lies over all the sheet drawn */
 [data-past] [data-shaded] .screen::after {
 	top: calc(var(--past-above) * -1px);
 	bottom: calc(var(--past-below) * -1px);
 }
 
-/* While the screen shows a page of the film's own, the filmed page, live or pictured, and the holes pieces of it leave stand unseen, laid out as they were; a page of the film's own it does not show stands unseen too */
+/* While the screen shows a film's own page, the filmed page, live or pictured, and the holes pieces of it leave stand unseen, laid out as they were; a film's own page it does not show stands unseen too */
 .page[data-own-page]:not([data-shown]),
 [data-shows-own] .page:not([data-own-page]),
 [data-shows-own] .sharp-part,

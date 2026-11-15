@@ -9,7 +9,7 @@ paths:
 The script is JavaScript with its types in JSDoc, which the type checker reads; the page runs it as it is written.
 Beside it, `stage/set.html`, `stage/set.css` and `stage/set.js` are the page a film's set is shown on, in the filmed page's tab: one state's picture at a time, answering under `window.filmSet` (`SetApi` in `src/adapters/browser/set.ts`).
 `stage/pages.html`, `stage/pages.css` and `stage/pages.js` are the tab the film's own pages are read and pictured in, one copy of each, answering under `window.pages` (`PagesApi` in `src/adapters/browser/own-pages.ts`).
-`stage/own-page.js` lays and stands a page of the film's own for the stage and that tab alike, under `window.ownPage`; it shares one scope with each page's script, so it declares no name at its top (eslint refuses one).
+`stage/own-page.js` lays and stands a film's own page for the stage and that tab alike, under `window.ownPage`; it shares one scope with each page's script, so it declares no name at its top (eslint refuses one).
 
 - The stage draws the scene as `src/scene.ts` hands it over, and decides nothing: what is shown, where and how far along is the film's.
 - Every prop has its drawer in each exposure of `stage/stage.js` (`exposureOf`), the look in `LOOK`, one for every exposure; the type checker refuses a prop without one.
@@ -20,7 +20,7 @@ Beside it, `stage/set.html`, `stage/set.css` and `stage/set.js` are the page a f
 - A drawer sets its prop's numbers, and the colours a film gives or the engine reads off the page (a hole's ground), as bare custom properties, and writes its words; the stylesheet makes the numbers places, sizes and shades.
 - The grain's strength alone is set as attributes, the weights of its SVG filter, which CSS cannot set.
 - The script writes no style, but for pictures, each set whole as a `url()` custom property: the page's on the stage's root, one a piece, a sweep or a fade holds, or a film's own, on its element; CSS takes no address out of one.
-- But a block a page of the film's own blinks stands as clear as the engine hands by its own `opacity`, set on it (`pageWritten` in `stage/own-page.js`): no stylesheet of livereel's reaches into that page.
+- But a block a film's own page blinks stands as clear as the engine hands by its own `opacity`, set on it (`pageWritten` in `stage/own-page.js`): no stylesheet of livereel's reaches into that page.
 - A script reads a token back only where the room draws by it: how far past its box a surface of markup reaches (`--reach-past-the-box`), and the screen's ground under the page's picture.
 - What a drawer is handed by name it names in a class or an attribute: a piece's styles, a callout's `data-side`, a title's `data-align` and `data-words-down`.
 - Nothing on the stage moves of itself: no transition, animation or keyframes in its styles (stylelint refuses them), no timer or clock in its script (eslint refuses them). Every frame is set whole by `apply`.

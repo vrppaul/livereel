@@ -219,14 +219,14 @@ move's first use. A refusal named here changes how a film is written; the README
 | `page.scrollBy(selector, { pixels })` | a block's own scroll moved; scroll in a `play`, a little each frame, or lazy pages show blank |
 | `page.scrollTo(selector, { top })` | scrolled until the block stands `top` below the top of what scrolls it |
 | `page.type(strokes, { keyboard })` | in `typing()`: real keys into whatever holds the page's keyboard |
-| `screen.shows({ html }, { reaches, fade, within })`, `screen.shows('filmed', { fade, within })` | a page of the film's own in the filmed page's place, or the filmed page back; `fade: { seconds, ease }` dissolves ("A page of the film's own") |
+| `screen.shows({ html }, { reaches, fade, within })`, `screen.shows('filmed', { fade, within })` | a film's own page in the filmed page's place, or the filmed page back; `fade: { seconds, ease }` dissolves ("A film's own page") |
 | `screen.scrolls({ html }, { pace })` | its page run `pace` of its pixels a second, 0 stopped, below 0 back up: the only way it moves |
 | `screen.scrollTo({ html }, selector, { top, judged, within })` | brought to rest with a block `top` below the screen's top as its share ends, no `ease`; stop the page first where it would turn back |
 | `screen.type({ html }, strokes, { into, keyboard })` | in `typing()`: what is typed stands as the text of `into`'s block, a span beside its caret, never an `<input>` |
 | `screen.blinks({ html }, selector, { seconds })` | a block blinking as a caret, a blink every `seconds`, until blinked again |
 | `screen.sweep({ from, slant, round, width, crest })` | in a `play`, the picture swept away by a band of light, or a disc `round` a block; act a moment after it begins, `within: { start: 0.02 }` ("A sweep") |
 
-A page of the film's own stands as written: no script of it runs, one that animates of itself is refused, an image or
+A film's own page stands as written: no script of it runs, one that animates of itself is refused, an image or
 a font in it takes a whole address or a `data:` URL, and selectors name its blocks where they stand. Lift a piece off
 it `picture: 'held'`; a lens over it is refused. Write a fade first in a `cut` with the camera's move after it, so the
 page coming is framed at once while the page going stands; with `window.shade({ fade: 1 })` in the cut, brought to 0
@@ -242,7 +242,7 @@ its screen is refused. `reaches: 'document'` draws a page past the screen's top 
 | `window.show({ at, from })`, `window.hide({ toward })` | the window sliding in whole from past a side, or out; with words sliding the other way, a push |
 | `window.lean({ tilt, turn, roll, over, about })` | leant back, swung, rolled, turned over, in degrees, about its middle or a point `about` names, `about` changed only while the window faces the frame ("Leaning") |
 | `screen.rise()`, `screen.lower()` | the screen up out of the ground, or down into it; at once in a `cut` |
-| `screen.behind({ html }, { upright, within })`, `screen.behind('none')` | a page of the film's own on the window's back, upright once turned `'over'` or `'round'`; frame the whole screen before the window turns ("Its back") |
+| `screen.behind({ html }, { upright, within })`, `screen.behind('none')` | a film's own page on the window's back, upright once turned `'over'` or `'round'`; frame the whole screen before the window turns ("Its back") |
 | `window.body({ thickness, rim, metal, roughness, glass, glint }, { within })` | a room only: a slab of metal and glass round the page, none by default; set in the first `cut`; give the world soft boxes to see it ("Its body") |
 
 **What else stands in the world** (README "What else stands in the world")
@@ -327,7 +327,7 @@ To hand the sharp part on mid-glide: `window.shade({ blur: 0, within: { end: 0.5
 sharp: NEXT, within: { start: 0.5 } })`. `sharpSoftens: 0.75` on a lift's curve softens the part as a button rises
 off it. `reaching: 'window'` softens and fades the whole window with the page, so no sharp rim stands round a soft page;
 `blurSeen: 'on the frame'` keeps the blur as wide on the frame as the eye comes in. `sharp` is refused on a live page
-and on a page of the film's own. Motion blur is `defineFilm`'s `motionBlur` ("Motion blur").
+and on a film's own page. Motion blur is `defineFilm`'s `motionBlur` ("Motion blur").
 
 **How the world looks** (README "How the world looks")
 

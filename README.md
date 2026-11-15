@@ -429,9 +429,9 @@ play({ seconds: 3, moves: [
 ] })
 ```
 
-### A page of the film's own
+### A film's own page
 
-`screen.shows({ html })` shows a page of the film's own in the filmed page's place: a whole document the film
+`screen.shows({ html })` shows a film's own page in the filmed page's place: a whole document the film
 writes in HTML and CSS, a slide, a terminal, an end card, laid out at the screen's size, framed by the camera,
 leant and blurred as the filmed page is, its text sharp however close the camera comes. `screen.shows('filmed')`
 brings the filmed page back. In a `cut` it swaps at once; in a `play`, at the moment `within: { start }` names,
@@ -457,10 +457,10 @@ Written in a `play`, the page going lies on the page coming from the fade's mome
 screen and the light, under a callout, the pins and the cursor, and the window's shade dims and fades the page
 coming alone, so `window.shade({ fade: 1 })` in the same cut, brought to `0` over the next play, brings the page
 coming up out of the dark under the one going. Refused: a fade on a page framed live, from a page the window
-shades, from a page of the film's own that runs or is drawn past its screen, and while the screen still fades
+shades, from a film's own page that runs or is drawn past its screen, and while the screen still fades
 from the page before.
 
-**Past the screen.** A page of the film's own is cut at the screen's edges, `reaches: 'screen'`;
+**Past the screen.** A film's own page is cut at the screen's edges, `reaches: 'screen'`;
 `screen.shows({ html }, { reaches: 'document' })` draws it on past the screen's top and foot as far as its
 document runs and the frame sees the window's plane: a window leant back shows what has run past the screen's top
 on up the frame, on the screen's ground, its edge and shadow round the sheet. Its sides are the screen's, so lay
@@ -471,7 +471,7 @@ frame as tall as it is drawn, so `vh` is the sheet's height, and a block `positi
 screen's foot, a prompt, leaps to the sheet's foot as the sheet first shows: lay such a page out in pixels.
 Refused: a page with nothing past its screen, and `reaches` on the filmed page.
 
-**Its run.** `screen.scrolls({ html }, { pace: 480 })` runs a page of the film's own down its scroll at 480 of
+**Its run.** `screen.scrolls({ html }, { pace: 480 })` runs a film's own page down its scroll at 480 of
 its pixels a second until another move of its run, its pace changing from the old to the new over the move's
 share of a `play` on the move's curve, or at once in a `cut`; `pace: 0` stops it, a pace below none runs it back
 up, and it holds at its top and its end. The run is the page's, kept on either face of the window, or on none. It
@@ -531,8 +531,8 @@ The picture is held as the sweep begins, so put the act a moment after it: an ac
 done first and lie under the picture, and the play refuses it; one in a step before lies under it too. The band
 crosses the window, not the page: a camera panning against it faster than it goes brings the picture back over
 page it had swept. A piece drawn from the page's picture and a lens show the page as it stands, behind the band
-already. In a `cut` a sweep ends as it begins, and nothing of it shows. While the screen shows a page of the
-film's own, it sweeps away a picture of that page. Refused: `round` with `from` or `slant`, and a page framed
+already. In a `cut` a sweep ends as it begins, and nothing of it shows. While the screen shows a film's own
+page, it sweeps away a picture of that page. Refused: `round` with `from` or `slant`, and a page framed
 live, which has no picture.
 
 ## What it lies on: the window
@@ -583,7 +583,7 @@ into the ground, the window's shadow and edge with it: over the move's share of 
 
 ### Its back
 
-`screen.behind({ html }, { upright: 'over' })` puts a page of the film's own on the window's back, as a slab
+`screen.behind({ html }, { upright: 'over' })` puts a film's own page on the window's back, as a slab
 wears one: where the eye sees the window's back, the screen shows it in place of its front, mounted so it stands
 upright once the window is turned over round its width, `'over'`, or round its upright, `'round'`. The camera
 frames it as it frames the front, so a camera close on a block of the front shows that part of the back: bring
@@ -901,8 +901,8 @@ bright as the look draws it.
 
 ### Pictures
 
-`picture.show(file, { at, from, enter, edge, as, inside, group, zIndex, effects })` shows a picture of the film's
-own, a mark or a logo, from an image file by its path from the film's file: PNG, JPEG, WebP, AVIF, GIF, or an SVG
+`picture.show(file, { at, from, enter, edge, as, inside, group, zIndex, effects })` shows a film's own
+picture, a mark or a logo, from an image file by its path from the film's file: PNG, JPEG, WebP, AVIF, GIF, or an SVG
 that names its width and height. It stands over the whole frame or `at` a place, read as the window reads one, as
 large as the place holds all of it, in its middle, as wide against as tall as its file. A file that is not there,
 or decodes to no picture, is refused before the first frame. Brought near the eye in the world, a room draws it as
@@ -932,7 +932,7 @@ drawn from a picture of its source alone that close, taken anew as the page chan
 whole frame keeps its edges. Lifted `picture: 'held'`, it is drawn from a picture of its source alone taken as it
 is lifted, as sharp as the page's picture where the page stands still: it shows what the page showed there then,
 so a thread lifted off a review stays as it was while the diff under it is shot anew. Only a held piece is lifted
-off a page of the film's own. A piece or a lens shows the holes other pieces leave in its part of the screen,
+off a film's own page. A piece or a lens shows the holes other pieces leave in its part of the screen,
 whatever picture it is drawn from. Refused: a `'dynamic'` page, which has no picture, and a window that leans,
 rolls or shows its back.
 
@@ -983,7 +983,7 @@ screen rides no scroll; a block placed `sticky` is taken as carried, though it s
 the page it was lifted off lays it where it lays that page, its depth staying in film pixels; a page the screen
 cut away from with no fade lies where the screen does. Its hole and pit, its lines, what it draws from the page's
 picture, its shadow and words beside it go with it. A scroll an act does, or the page does by itself, carries it
-nowhere; off a page of the film's own nothing the film scrolls carries it, nor the page's run. Carried `to` a
+nowhere; off a film's own page nothing the film scrolls carries it, nor the page's run. Carried `to` a
 place, it stands there and rides on, refused while the window leans; `back` takes it over its source where the
 block stands then; `onto` ends the ride. Refused: riding anywhere but in the world, and on a set.
 
@@ -1033,7 +1033,7 @@ ground the page draws behind it over its box, both read as the move begins, unti
 up with the rows its lines will land on empty. Wiped away while it lies on the page, the piece and the block go
 behind one edge, which sets off from the near side of either and runs past the far side of both, the block's own
 row coming out behind it and the light over both. Gone any other way, the block comes back as the piece fades.
-Refused: a box of the screen, a page of the film's own on the screen, and a wipe across the block while the piece
+Refused: a box of the screen, a film's own page on the screen, and a wipe across the block while the piece
 stands off the page.
 
 **In the world.** Lifted `inside: 'world'`, a piece stands over its source on the window's plane wherever the eye
@@ -1300,7 +1300,7 @@ stands clear of it, a piece lifted off it, a title or code. It sets only what it
   the first frame that blurs the page after the move names it, and again after every move of the page, an act, a
   typing or a scroll, and every change the page makes of itself, so it stays on its blocks while the page lays them
   out anew under it. It is drawn from the page's picture, so `sharp` is refused on a page framed live and
-  on a page of the film's own.
+  on a film's own page.
 - `sharp: { blocks: '[data-testid=row], [data-testid=thread]', across: '[data-testid=card]' }` keeps a stretch of
   blocks sharp that no one block is: every block `blocks` matches, together, as wide across as every block `across`
   matches, where named, which may reach past the blocks. A line and the thread under it stay sharp as wide as the
@@ -1495,7 +1495,7 @@ export default defineFilm({ drawing: 'room', ... });
 |---|---|---|
 | A window leant or brought near | as soft as the browser draws a layer in 3D, about one of its pixels a page's pixel | as sharp as the page's picture; what lies over the page in the window as dense as the page's device scale |
 | The eye's focus | each plane as soft as its point nearest the focus | each point by its own distance; what stands nearer the eye than all else is blurred apart, its blurred edge showing what it hides |
-| The shade's blur and fade, a fast move's blur | in the screen's colours, as the browser blends | in linear light, as a lens gathers it: light words on a dark page stay brighter, a glint streaks as bright as it shines; markup over the page, a page of the film's own, the holes and a sweep's picture still blend in the screen's colours |
+| The shade's blur and fade, a fast move's blur | in the screen's colours, as the browser blends | in linear light, as a lens gathers it: light words on a dark page stay brighter, a glint streaks as bright as it shines; markup over the page, a film's own page, the holes and a sweep's picture still blend in the screen's colours |
 | The window's body | its edge and shadow | a slab of metal and glass, `window.body` |
 | A piece's body and pit | its face and shadow; a hole in its `ground` | walls, sockets and pits |
 | Markup in the world, a title or a pane | over the window wherever it stands | hidden by the window and its body where it stands behind them, drawn as densely as the eye magnifies it, a picture no denser than it holds |
@@ -1515,7 +1515,7 @@ What a room costs and needs:
 - Markup standing in the world is drawn as densely as the eye magnifies it, up to the graphics card's largest
   texture; one that would ask more is drawn part by part, each as dense as the eye magnifies it and only as far as
   the frame shows it. What shows a picture is drawn no denser than the picture holds: a piece at the zoom its
-  picture was taken at, 2.2, or a sharper one's own; a picture of the film's own at its file's pixels; an SVG as
+  picture was taken at, 2.2, or a sharper one's own; a film's own picture at its file's pixels; an SVG as
   densely as the eye asks. Nearer than that, the eye sees the picture stretched. Where the frame shows more of the
   window's plane than the card holds in one texture, as the eye flying low over a tall screen does, what lies over
   the page is drawn less densely; a page's picture larger

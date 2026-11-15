@@ -162,7 +162,7 @@ const IN_NO_SHADE = 0;
 /** What a piece of markup with no body brings into the world: nothing. @type {readonly Object3D[]} */
 const NO_PARTS = [];
 /**
- * The pits under the screen where it shows a page of the film's own, or under a hole with none.
+ * The pits under the screen where it shows a film's own page, or under a hole with none.
  * @type {readonly SunkPit[]}
  */
 const NO_PITS = [];
@@ -264,8 +264,8 @@ export class PagePits {
 
 /**
  * The pits sunk into the page under the holes on the screen, where it shows the filmed page, which the holes are left
- * in, each where the screen lies on the window's plane, as large as it shows there; none where it shows a page of the
- * film's own.
+ * in, each where the screen lies on the window's plane, as large as it shows there; none where it shows a film's own
+ * page.
  * @param {DrawnScene} scene @param {Size} screen @returns {readonly SunkPit[]}
  */
 export function pitsSunkIn(scene, screen) {

@@ -1,8 +1,8 @@
 // @ts-check
 /**
- * The tab the pages of the film's own are read in and parts of them pictured: one copy of each, at the screen's size,
- * as the tab is, and at no scale, laid and stood as the stage lays and stands its own (`window.ownPage`), the copy last
- * stood shown alone over the screen's ground, so a picture of a part of the tab is of that page as the stage draws it.
+ * The tab the film's own pages are read in and parts of them pictured: one copy of each, at the screen's size, as the
+ * tab is, and at no scale, laid and stood as the stage lays and stands its own (`window.ownPage`), the copy last stood
+ * shown alone over the screen's ground, so a picture of a part of the tab is of that page as the stage draws it.
  * It answers the browser adapter under `window.pages` (`src/adapters/browser/own-pages.ts`), draws no frame and keeps
  * no time. A plain script, as the stage's is.
  */
@@ -21,7 +21,7 @@ const NO_ANIMATIONS = 0;
 const COPIES = new Map();
 
 /**
- * One copy of each page of the film's own laid, named by its key, by which the adapter finds its frame, once each has
+ * One copy of each of the film's own pages laid, named by its key, by which the adapter finds its frame, once each has
  * loaded and its fonts are ready: the keys of those that move of themselves, by an animation or a transition of their
  * own, which the film refuses.
  * @param {readonly OwnPage[]} pages @returns {Promise<readonly string[]>}
@@ -31,14 +31,14 @@ async function pagesLaid(pages) {
 	return pages.filter((page) => movesOfItself(copyOf(page.key))).map((page) => page.key);
 }
 
-/** A copy of a page of the film's own laid in the tab's body, named by its key. @param {OwnPage} page */
+/** A copy of a film's own page laid in the tab's body, named by its key. @param {OwnPage} page */
 async function copyLaid(page) {
 	COPIES.set(page.key, await window.ownPage.frameLaid(page, (frame) => document.body.append(frame)));
 }
 
 /**
- * The copy of a page of the film's own, by its key, written and scrolled as the page stands at a moment, and shown
- * alone. @param {OwnPageStanding} standing
+ * The copy of a film's own page, by its key, written and scrolled as the page stands at a moment, and shown alone.
+ * @param {OwnPageStanding} standing
  */
 function pageStood(standing) {
 	const stood = copyOf(standing.key);
@@ -46,7 +46,7 @@ function pageStood(standing) {
 	window.ownPage.pageWritten(stood, standing, standing.scrolled);
 }
 
-/** The copy of a page of the film's own, by its key. @param {string} key */
+/** The copy of a film's own page, by its key. @param {string} key */
 function copyOf(key) {
 	const copy = COPIES.get(key);
 	if (copy === undefined) throw new Error(`the tab laid no copy of the film's own page by the key ${key}`);
@@ -54,7 +54,7 @@ function copyOf(key) {
 }
 
 /**
- * Whether a page of the film's own moves of itself, by an animation or a transition of its own.
+ * Whether a film's own page moves of itself, by an animation or a transition of its own.
  * @param {HTMLIFrameElement} frame
  */
 function movesOfItself(frame) {

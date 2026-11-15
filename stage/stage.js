@@ -108,7 +108,7 @@ const CUSTOM_PROPERTY = '--';
 const PAGE_PICTURE = '--page-picture';
 const PIECE_PICTURE = '--piece-picture';
 const PICTURE = 'data-picture';
-// The custom property a picture of the film's own is set as on its element
+// The custom property a film's own picture is set as on its element
 const FILMS_PICTURE = '--films-picture';
 // The custom property the picture light sweeps away is set as on its element, the colours a film gives the light's
 // crest at its two ends, the stylesheet's accent standing at an end it gives none, and the attribute its shape is named
@@ -119,9 +119,9 @@ const CREST_END = '--crest-end';
 const SHAPE = 'data-shape';
 // The custom property the picture of the page the screen fades from is set as on its element
 const FADED_PICTURE = '--faded-picture';
-// A page of the film's own: the class every page the screen shows takes, the attribute the one a frame shows takes, and
-// the one the screen takes while it shows one; the attribute a frame laid as a sheet past the screen takes, and the one
-// the screen takes while it shows a page laid so
+// A film's own page: the class every page the screen shows takes, the attribute the one a frame shows takes, and the
+// one the screen takes while it shows one; the attribute a frame laid as a sheet past the screen takes, and the one the
+// screen takes while it shows a page laid so
 const PAGE = 'page';
 const SHOWN = 'data-shown';
 const SHOWS_OWN = 'data-shows-own';
@@ -129,8 +129,8 @@ const SHEET = 'data-sheet';
 const PAST = 'data-past';
 // How the page the screen shows is mounted where it is the window's back's, which the stylesheet turns it by
 const BACK_UPRIGHT = 'data-back-upright';
-// The exposure the stage's markup lays out; and the key of the page of the film's own a screen showing the filmed page
-// shows: none
+// The exposure the stage's markup lays out; and the key of the film's own page a screen showing the filmed page shows:
+// none
 const FIRST_EXPOSURE = 0;
 const NO_OWN_PAGE = null;
 // The attribute a lens shows nothing by, its middle seeing past the screen, so its glass stands blank
@@ -440,8 +440,8 @@ function sheetLaid(root, sheet) {
 }
 
 /**
- * The page of the film's own the screen shows as the film has it, in the frame that shows it: its frame at the screen's
- * size, or its sheet, where it is laid as one past the screen; what the film typed into its blocks written and those it
+ * The film's own page the screen shows as the film has it, in the frame that shows it: its frame at the screen's size,
+ * or its sheet, where it is laid as one past the screen; what the film typed into its blocks written and those it
  * blinks as clear as they stand, then scrolled as far down as the film has run the page, or, a sheet, to where its top
  * stands. Nothing where the screen shows the filmed page.
  * @param {OwnFrames} ownPages @param {DrawnScene['screen']['shows']} shows
@@ -460,7 +460,7 @@ function ownPageDrawn(ownPages, shows) {
 }
 
 /**
- * A page of the film's own laid in a frame, by its key, among frames of such pages.
+ * A film's own page laid in a frame, by its key, among frames of such pages.
  * @param {ReadonlyMap<string, HTMLIFrameElement>} frames @param {string} key
  */
 function ownFrame(frames, key) {
@@ -470,8 +470,8 @@ function ownFrame(frames, key) {
 }
 
 /**
- * The sheet the screen's page of the film's own is laid as past the screen; none where it is drawn on the screen alone,
- * or the screen shows the filmed page.
+ * The sheet the film's own page the screen shows is laid as past the screen; none where it is drawn on the screen
+ * alone, or the screen shows the filmed page.
  * @param {DrawnScene['screen']['shows']} shows @returns {DrawnSheet | null}
  */
 function sheetShown(shows) {
@@ -526,7 +526,7 @@ function shapeNumbersOf(shape) {
 }
 
 /**
- * The key of the page of the film's own the screen shows; none where it shows the filmed page.
+ * The key of the film's own page the screen shows; none where it shows the filmed page.
  * @param {DrawnScene['screen']['shows']} shows @returns {string | null}
  */
 function ownPageShown(shows) {
@@ -1163,8 +1163,8 @@ class OutlineDrawer {
 }
 
 /**
- * A picture of the film's own in its object: the picture the stage holds by its file, in the part of its box the engine
- * works out, set whole on its element as the page's is on the root, fading up whole as it comes.
+ * A film's own picture in its object: the picture the stage holds by its file, in the part of its box the engine works
+ * out, set whole on its element as the page's is on the root, fading up whole as it comes.
  */
 class PictureDrawer {
 	/** @param {Staged} element */
@@ -1342,14 +1342,14 @@ class WorldDrawer {
 
 /**
  * An exposure of the frame: its root, a drawer for every prop it draws, for its objects, and for the holes and lines
- * pieces of the page leave and draw, and the page it shows, live or as a picture, and the pages of the film's own laid
- * in its screen, by their keys. Every prop but the look and the world is drawn in each exposure, as the camera stood at
- * its moment: the type checker refuses a prop without a drawer. The look is the stage's root's, one for every exposure
- * of a frame; the objects' drawer draws those pushed off too, as both lists lay what stands inside the page's window in
- * its one root; the world's grain is drawn on the stage's root, one for every exposure, as the look is; its light
- * lights the room's things and the window's body alone, which the room draws (`stage/things.js`, `stage/body.js`), and
- * its glow the room draws over a frame (`stage/room.js`), as it blurs the world by how the eye sees (`stage/lens.js`)
- * and sees it from where the eye stands, laying what stands in the world in the order the scene hands, and drawing what
+ * pieces of the page leave and draw, and the page it shows, live or as a picture, and the film's own pages laid in its
+ * screen, by their keys. Every prop but the look and the world is drawn in each exposure, as the camera stood at its
+ * moment: the type checker refuses a prop without a drawer. The look is the stage's root's, one for every exposure of a
+ * frame; the objects' drawer draws those pushed off too, as both lists lay what stands inside the page's window in its
+ * one root; the world's grain is drawn on the stage's root, one for every exposure, as the look is; its light lights
+ * the room's things and the window's body alone, which the room draws (`stage/things.js`, `stage/body.js`), and its
+ * glow the room draws over a frame (`stage/room.js`), as it blurs the world by how the eye sees (`stage/lens.js`) and
+ * sees it from where the eye stands, laying what stands in the world in the order the scene hands, and drawing what
  * lies over the page in the window into a texture where anything does.
  * @typedef {{
  *   readonly root: Staged,
@@ -1620,7 +1620,7 @@ function layPictures(pictures) {
 	return Promise.all(pictures.map((picture) => laidPicture(picture)));
 }
 
-/** A picture of the film's own held by its path, and the size it decoded at. @param {FilmsPictureHanded} picture */
+/** A film's own picture held by its path, and the size it decoded at. @param {FilmsPictureHanded} picture */
 async function laidPicture(picture) {
 	const image = new Image();
 	image.src = addressOf(picture);
@@ -1666,7 +1666,7 @@ async function fontJoined(font) {
 	return true;
 }
 
-/** A picture of the film's own the stage holds, by its path. @param {string} path */
+/** A film's own picture the stage holds, by its path. @param {string} path */
 function filmsPicture(path) {
 	const held = FILMS_PICTURES.get(path);
 	if (held === undefined) throw new Error(`the stage holds no picture of the film's ${path}`);
@@ -1694,10 +1694,10 @@ async function shownIn(exposure, address) {
 }
 
 /**
- * The pages of the film's own laid in the screen of every exposure, over the filmed page's place, each a document of
- * its own at the screen's size, laid out but unseen until a frame shows it, so its fonts load; and again, as a sheet
- * the stylesheet lays as tall as it is drawn past the screen, each a move draws so: once each has loaded and its fonts
- * are ready. Moves read none of them, but the copy of each in a tab of its own (`pages.html`).
+ * The film's own pages laid in the screen of every exposure, over the filmed page's place, each a document of its own
+ * at the screen's size, laid out but unseen until a frame shows it, so its fonts load; and again, as a sheet the
+ * stylesheet lays as tall as it is drawn past the screen, each a move draws so: once each has loaded and its fonts are
+ * ready. Moves read none of them, but the copy of each in a tab of its own (`pages.html`).
  * @param {readonly OwnPage[]} pages
  */
 async function layOwnPages(pages) {
@@ -1708,8 +1708,7 @@ async function layOwnPages(pages) {
 }
 
 /**
- * A page of the film's own laid in an exposure's screen at the screen's size, once it has loaded and its fonts are
- * ready.
+ * A film's own page laid in an exposure's screen at the screen's size, once it has loaded and its fonts are ready.
  * @param {Exposure} exposure @param {OwnPage} page
  */
 async function laidIn(exposure, page) {
@@ -1718,7 +1717,7 @@ async function laidIn(exposure, page) {
 }
 
 /**
- * A page of the film's own laid in an exposure's screen as a sheet past it, once it has loaded and its fonts are ready.
+ * A film's own page laid in an exposure's screen as a sheet past it, once it has loaded and its fonts are ready.
  * @param {Exposure} exposure @param {OwnPage} page
  */
 async function sheetLaidIn(exposure, page) {

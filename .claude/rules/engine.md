@@ -34,7 +34,7 @@ How a module is built is said in its comment at the top. The stage has its own r
 - A cut is moves set at their end at once; a film changes the scene by moves alone.
 - Only an act changes the page itself: `page.act`, done at its moment as it begins (`Beginning.act`), `act` a cut of one; a play changes the scene and, for the page's own scroll or keys, does what that frame wants done.
 - The page's own motion stays stilled (reduced motion): every move in a film is the film's.
-- What changes with time of itself — the spinner, the caret, a page of the film's own the film runs — is worked out from the moment in the prop's state module, each exposure at its own; the stage keeps no time.
+- What changes with time of itself — the spinner, the caret, a film's own page the film runs — is worked out from the moment in the prop's state module, each exposure at its own; the stage keeps no time.
 - A function handed to the page runs there alone: it calls nothing of its module.
 
 ## The command line
