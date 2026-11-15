@@ -3,31 +3,17 @@
  * out by one function for every holder, so the window, an object, a group and a thing stand by the same arithmetic and
  * a new holder is a case of `planeOf`, not of every function that asks where something stands.
  *
- * Every holder is a plane: the frame, which rides with the eye and is seen as from where it rests; the world, which the
- * eye moves past; the page's window, a placement in the world, in its box's own pixels; the page in it, the window's
- * plane with a box of the screen framed onto it as the camera frames the page; the page in the world, that plane
- * standing in the world, where what stands on it stands off it as freely as in the world, as a piece falls onto a
- * block; a group of objects, a placement on the frame, in its box's pixels from its corner; a point of the screen or of
- * an object, the frame's plane in its pixels from where the eye sees that point on each frame, which words beside a
- * part stand on; and a ride, the page in the world as the page a piece was lifted off lies there, carried up as far as
- * the film scrolls the blocks that carry the piece's source and laid where a fade from that page lays it, which the
- * piece rides. Something placed on a plane stands about its box's middle as the plane's stance carries it there and as
- * its own stance does. The flat stage lays it in the frame, seen from the eye in perspective about its box's middle,
- * or, on the window's plane, in the window, by those stances alone, as the window's element carries what is laid in
- * it; the room reads where it stands in the eye's own space. Where a point of anything placed is seen on the frame is
- * one function, `pointOnTheFrame`, which the motion blur, a lens, a note, the pins and a piece's lines read through the
- * camera's module or the object's, and a point of the screen `onTheFrame`. Something carried from one holder into
- * another, a piece from the world onto the page in the world or an object joining a leant group, is placed there where
- * it stood by one function too, `carriedInto`; and something on the frame's plane, which rides with the eye, handed
- * into the world where the eye sees it, as far before the eye as what it stands on, by `handedIntoTheWorld`.
+ * Every holder (`Holder`) is a plane, and something placed on one stands about its box's middle as the plane's stance
+ * and its own carry it. Where a point of anything placed is seen on the frame is one function too, `pointOnTheFrame`;
+ * something carried from one holder into another stands there where it stood, by `carriedInto`; and something on the
+ * frame's plane is handed into the world where the eye sees it, by `handedIntoTheWorld`.
  *
- * The camera's module builds on this one, as it reads where the window stands; this one reads of the camera only how
- * it frames the page in its view (`src/domain/framing.ts`), and holds the arithmetic of a box about its middle on the
- * frame's plane, which both use.
+ * The camera's module builds on this one, as it reads where the window stands; this one reads of the camera only how it
+ * frames the page in its view (`src/domain/framing.ts`).
  *
- * Each matrix is chained in the one order its products have always had, the plane's stance about the box's middle
- * before the box's own and the eye after both: chained otherwise, an entry moves by its last bit, and a box a move
- * works out from it, a slide past the frame's edge, moves with it.
+ * Each matrix is chained in one order, the plane's stance about the box's middle before the box's own and the eye after
+ * both: chained otherwise, an entry can differ in its last bit, and a box a move works out from the matrix, as a slide
+ * past the frame's edge, shifts with it.
  */
 import type { Camera, View } from './camera.ts';
 import { type Eye, eyeAtRest, inTheEyesSpace, seenByTheEye, turnOf } from './eye.ts';

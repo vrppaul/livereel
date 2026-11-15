@@ -5,11 +5,8 @@
  * Every curve takes the share of time gone, from 0 to 1, and gives the share of the way gone, from 0 at its start to 1
  * at its end, exactly at both: a camera that eases in and out reads as a person's hand, a linear one as a machine. One
  * that bounces passes its end on the way and comes back to it; how much of a prop has come up is held to its ends all
- * the same (`src/domain/fraction.ts`). A film makes its own as a designer's tool hands one, `cubicBezier` as CSS draws
- * `cubic-bezier()`; one that sets off and arrives at the speeds it names, each in times its mean speed, `atSpeeds`; and
- * one that sets off softly and holds its speed from a share of its time on, `softThenHeld`, as a flight that dives and
- * runs on along a page does. Each is checked as it is made, as a film's types are stripped. The cubic Hermite curve
- * `atSpeeds` draws runs between any two ends too, as a page's run goes from knot to knot (`src/props/screen.ts`).
+ * the same (`src/domain/fraction.ts`). A film makes its own by `cubicBezier`, `atSpeeds` or `softThenHeld`, each
+ * checked as it is made, as a film's types are stripped.
  */
 import { A_NUMBER, type Form, type Kind, Plain, aFunction, assertKind, assertWritten, needed } from './handed.ts';
 

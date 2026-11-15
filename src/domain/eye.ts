@@ -1,36 +1,16 @@
 /**
  * The eye the room is seen from: where it stands, the spot it looks at and the way its top points, in film pixels from
- * the frame's middle, `out` toward whoever watches the film. Until a film moves it, it stands straight out from the
- * frame's middle as far as its focal length, looks at that middle, its top up the frame: its matrix is CSS's
- * `perspective()` alone, worked out with no arithmetic that could leave a trace on it, so it sees the frame's plane as
- * it is drawn.
+ * the frame's middle, `out` toward whoever watches. At rest it stands its focal length straight out from the frame's
+ * middle and looks at it, so its matrix is CSS's `perspective()` alone, with no arithmetic to leave a trace, and it
+ * sees the frame's plane as it is drawn.
  *
- * What stands in the world — the page's window, an object a film puts there — is seen from wherever the eye stands;
- * what stands on the frame, a title or a caption, rides with the eye and is seen as from where it rests
- * (`src/props/object.ts`). The eye sees as from a picture plane its focal length before it: the longer, the narrower
- * the angle it sees across the frame's shorter side, and the less what comes toward it grows. It keeps its top where
- * the film points it, up the frame until a film turns it: it cannot look near along it, where its across turns round
- * too fast or is lost, nor at where it stands, nor flip over, its across turned back between two steps of its way, as
- * an eye passing over the top of what it looks at with its top kept up would; a move that would take it so anywhere on
- * its way is refused as it begins.
+ * What stands in the world is seen from wherever the eye stands; what stands on the frame, a title or a caption, rides
+ * with the eye (`src/props/object.ts`). The eye stands in the room, or rides the page's window once a flight or a move
+ * before a block leaves it there (`src/moves/eye.ts`): its spots are then the window's own, so a window that leans or
+ * travels in the same step carries it, whichever move is set first.
  *
- * The eye stands in the room, or rides the page's window as a flight over the page leaves it (`src/domain/flight.ts`):
- * then where it stands, looks and its top points are the window's own, from the window's middle on its plane, `out`
- * away from its face, and carried into the room as the window stands as each frame is drawn
- * (`src/domain/camera.ts`), so a window that leans or travels in the same step carries the eye with it whichever is set
- * first.
- *
- * The eye stands before a box of a plane as a film frames it there (`viewpointBefore`): so near that the box fills a
- * share of the frame as it would seen square, turned from square about its middle, and moved along its own picture
- * plane till the middle shows where the film names on the frame, its top up the plane. Worked out in the plane's own
- * axes, the place rides the plane as the eye rides the window. The eye goes there on its straight way by even steps of
- * the scale it shows the plane at, as the camera zooms, or as far in each share of its move where a film names it
- * (`pacedBeforeAPlane`).
- *
- * The eye sees as a lens does: focused at a point and open so wide. Open none, a pinhole, it sees all sharp; open, it
- * draws what stands in the world nearer or farther than its focus the softer the farther it stands off it
- * (`src/domain/focus.ts`). Where it stands and where it focuses are values of their own, so a move of one shares a step
- * with a move of the other.
+ * Where it stands and where it focuses (`focusing`) are values of their own, so a move of one shares a step with a move
+ * of the other; how sharp it sees is `src/domain/focus.ts`'s.
  */
 import { FilmError } from './errors.ts';
 import { Quaternion, Vector3 } from 'three';

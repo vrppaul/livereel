@@ -2,22 +2,12 @@
  * Where the camera looks, where it stands to frame a block of the page, and how far what it shows moves as it goes.
  *
  * Arithmetic on poses and boxes alone, so a film's framing is worked out before a browser is asked anything. The
- * camera's picture shows in a view, the page's window: the whole frame, edge to edge, or a window standing on the
- * film's ground. The window moves apart from the camera, so the camera holds what it aims at — a pose, or a block
- * framed with air round it — and comes to it in whatever window stands as each frame is drawn: a block it frames stays
- * framed as the window travels or grows, in the part of the window on the frame where it runs off the frame's edge. The
- * window leans, not the camera: how it stands is its own (`src/domain/stance.ts`), the screen in it face-on to it, so a
- * window travels and leans by moves of their own, and the camera frames a block alike at any angle. In a window the
- * camera comes as close as it takes for the screen to fill it, so the window shows part of the page and no ground, and
- * moves as little as it takes to keep it so; in the whole frame it moves as little as it takes to show no edge of the
- * screen face-on, along a side the screen is too short to fill at that zoom the screen standing in the frame's middle,
- * as much ground showing on either side of it. It stands so leant or not, so a lean never moves what it frames; a view
- * leant far over the whole frame may show ground at its far corners. What the camera shows where is worked out as the
- * stage draws it (`.camera` in `stage/stage.css`, and the view by where it is placed in the world,
- * `src/domain/placement.ts`): the screen carried by its focus to the view's middle and brought close, the view standing
- * about its middle as it stands, and seen from the eye before the frame's middle, a nearer point larger. Where a point
- * of it is seen on the frame is `pointOnTheFrame` there, a point of the screen `onTheFrame`; how far it moves on the
- * frame is worked out here.
+ * camera's picture shows in a view, the page's window: the whole frame, or a window standing on the film's ground. The
+ * window moves and leans, never the camera (`src/domain/stance.ts`), so the camera holds what it aims at, a pose or a
+ * block framed with air round it, and comes to it in whatever window stands as each frame is drawn: a block it frames
+ * stays framed as the window travels, grows or leans. It keeps the screen's edge out of the view (`keptOnTheScreen`).
+ * What it shows where is worked out as the stage draws it (`.camera` in `stage/stage.css`, the window placed by
+ * `src/domain/placement.ts`).
  */
 import { type Eye, type Viewpoint, eyeAtRest, isAtRest, sightOf } from './eye.ts';
 import type { Format } from './format.ts';

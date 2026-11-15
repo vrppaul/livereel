@@ -2,24 +2,17 @@
  * Where words and the page's window stand on the frame: a place a film names, `whole` or a side of the frame, or a box
  * in shares of the frame or of another place, which may reach past the frame's edge.
  *
- * A name is a place of livereel's split (`split.ts`), as what stands there reads it: on a side, words take their
- * share and the window the whole room across from the words' share on the other side, so words and a window named
- * on sides across from each other stand clear of each other, the split's gap between; `whole` is, for words, the frame
- * inside the margin they keep from its edges, and for the window the frame itself, edge to edge, where it lies flat. A
- * box is the film's own, exact: in shares of the place it names `of`, as what stands in it reads that name, or of the
- * frame edge to edge where it names none, its left and top 0 and its width and height 1 where it leaves them out, so
- * `{ of: 'left', top: 0.22, height: 0.78 }` is the lower part of the left side. Words read from the left in a place,
- * centred where it stands above, below or over the whole, as a title stood in the split. A place is worked out once,
- * as its move begins, in the frame's pixels, whole, so its edges fall on pixels. What comes in from a side, or leaves
- * toward one, travels from or to its box moved a whole frame toward that side. A note's words stand beyond the window
- * on one side of it, where their line meets them.
+ * A name is a place of livereel's split (`split.ts`), read as what stands there reads it: on a side, words take their
+ * share and the window the room across from their share, so words and a window on sides across from each other stand
+ * clear of each other; `whole` is, for words, the frame inside their margin, and for the window the frame edge to edge.
+ * A box is exact, in shares of the place it names `of`, or of the frame, its left and top 0 and its width and height 1
+ * where it leaves them out: `{ of: 'left', top: 0.22, height: 0.78 }` is the lower part of the left side. A place is
+ * worked out once, as its move begins, in whole pixels of the frame, so its edges fall on pixels.
  *
- * A format may name places of its own (`places` in `src/domain/format.ts`), each a place of livereel's, another of its
- * own, or a box in either, so a film names `words` once and each format says where they stand. An own name is the
- * place it names, read as what stands there reads it: `page: 'right'` is the window's room on the right for the window,
- * the words' share there for words. A format's own names are read through as the film is defined, so one that names
- * none, or stands in itself, is refused by its format; the places a move names, as the steps are made, by the move,
- * so nothing is shot before either.
+ * A format may name places of its own (`places` in `src/domain/format.ts`), so a film names `words` once and each
+ * format says where they stand: `page: 'right'` is the window's room on the right for the window, the words' share
+ * there for words. A format's own names are checked as the film is defined, and the places a move names as its steps
+ * are made, so a name that names nothing, or stands in itself through others, is refused before anything is shot.
  */
 import { FilmError } from './errors.ts';
 import type { Format } from './format.ts';

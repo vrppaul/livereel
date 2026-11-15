@@ -4,19 +4,12 @@
  * writes the places a shot passes, not the times it passes them, as After Effects' roving keys and Motion Canvas'
  * curves have it; the move's curve eases the whole path at once.
  *
- * With no key between, a value goes as its kind goes from one end to the other (`toward`), as every move went before
- * a path had keys, so a move that names none draws as it drew. Through keys the path takes the film's course: its
- * shape `smooth`, a centripetal Catmull-Rom curve, which passes through every key with no corner, its knots spaced by
- * how far apart the keys stand on the frame, or `straight`, a line from key to key; its pace `even`, as long a stretch
- * of the path in each equal share of the move, measured as the kind measures a step on the frame, or `keys`, an equal
- * share of the move from each key to the next. Spaced by the frame, a smooth path neither loops nor cusps on the frame,
- * but a value's own numbers may swing a little past a key where one kind of motion gives way to another: a pan of
- * 1000 pixels then a zoom at its end swung the focus 91 pixels past it and back. The path stands on each key exactly
- * where the film put it. Past either end, on a curve that passes it, the value goes straight on along the path's first
- * or last stretch, which a smooth path's mirrored ends leave its tangent there.
- *
- * What a kind of value is on a path — its numbers, and how far apart two stand on the frame — is the kind's
- * (`PathSpace`): a box's in `src/domain/geometry.ts`, a pose's in `src/domain/camera.ts`.
+ * With no key between, a value goes as its kind goes from one end to the other (`toward`). A `smooth` path is a
+ * centripetal Catmull-Rom curve through every key, its knots spaced by how far apart the keys stand on the frame, so it
+ * neither loops nor cusps there; a value's own numbers may still swing a little past a key where one kind of motion
+ * gives way to another, as a pan's focus does past the key a zoom begins at. What a kind of value is on a path, its
+ * numbers and how far apart two stand on the frame, is the kind's (`PathSpace`): a box's in `src/domain/geometry.ts`, a
+ * pose's in `src/domain/camera.ts`.
  */
 import { type Kind, OneOf } from './handed.ts';
 import { type Toward, between } from './toward.ts';

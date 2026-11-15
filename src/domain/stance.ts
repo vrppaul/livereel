@@ -2,21 +2,15 @@
  * How something stands about its box's middle — how large, how far out toward the eye, which way it faces and the point
  * of its box it turns about — and how the stage draws it so: one matrix (`src/domain/matrix.ts`), which the stage draws
  * with and the engine reads where the thing stands on the frame, so a film turns, rolls, grows or brings near anything
- * that stands so by its values alone, with no move of its own for each. An object stands so (`src/props/object.ts`),
- * and the page's window (`src/props/window.ts`), drawn by the one matrix as flat or leant alike. A matrix is read back
- * into a stance too (`stanceCarriedBy`), where something carried into another holder stands there as it stood.
+ * placed, an object, a group or the window, by its values alone, with no move of its own for each.
  *
- * It grows about its box's middle and turns about a point of its box, its middle until a lean names another, as a slab
- * leans back on its foot: the point, of the box as grown, stays where it stood as the angle turns. The point is a share
- * of the box, so it goes with the box as the box travels or grows, and the box's middle is where it stands face-on; it
- * moves nothing while the angle turns nothing, so a lean names another only then, where it cannot jump.
+ * It turns about a point of its box, its middle until a lean names another, as a slab leans back on its foot. The point
+ * is a share of the box, so it goes with the box as the box travels or grows; it moves nothing while the angle turns
+ * nothing, so a lean names another only then, where it cannot jump.
  *
- * The stage is handed a flat 2D matrix where the thing faces the frame, at any size, depth or roll, and a 3D one only
- * where it leans: a 3D transform, of no angle too, costs the graphics card a layer in every exposure of a frame, and a
- * frame of 16 exposures then outran the card's memory the stage asks for, and drew objects in some of them not at all,
- * with no error. Which side of an object faces the eye is read off the matrix, so the stage draws the back of one that
- * has turned away, never what it shows mirrored; the window turned half round shows the page mirrored, or a page of the
- * film's own on its back (`Back` in `src/props/screen.ts`).
+ * The stage is handed a 2D matrix where the thing faces the frame and stands before the eye, and a 3D one only where it
+ * leans or stands behind the eye: a 3D transform, even of no angle, costs the graphics card a layer in every exposure,
+ * so a frame of 16 exposures would outrun the card's memory and leave objects out of some of them, with no error.
  */
 import { Euler, MathUtils } from 'three';
 import { FilmError } from './errors.ts';

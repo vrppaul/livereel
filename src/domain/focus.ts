@@ -1,33 +1,18 @@
 /**
- * How sharp the eye sees what stands before it. Open `aperture` wide and focused so far before it, the eye draws a
- * point that far sharp, and one nearer or farther as a disc `aperture × focal length × |1/focus − 1/distance|` film
- * pixels across on the frame, whose plane stands the eye's focal length before it: a thin lens's circle of confusion,
- * as After Effects reckons its camera's depth of field, the aperture in pixels, so a longer lens blurs more. The disc
- * is blurred as a Gaussian of its own spread.
+ * How sharp the eye sees what stands before it, as a thin lens does: open `aperture` film pixels and focused so far
+ * before it, it draws a point at a distance as a disc `aperture × focal length × |1/focus − 1/distance|` film pixels
+ * across, blurred as a Gaussian whose deviation is a quarter of that. The aperture is in pixels, as After Effects takes
+ * it, so a longer lens blurs more.
  *
- * The flat stage blurs what stands in the world by one number each — the page's window, with all that lies in it, and
- * each object in the world — as soft as its point nearest the focus: what the eye focuses on is drawn sharp wherever it
- * stands on its plane, and a plane that leans away is as sharp at its far edge as at its near. A plane's distance from
- * the eye goes evenly across it, so its corners bound how near and far it stands. The room blurs each pixel by how far
- * what it shows stands from the focus, by this law read off its own depth (`stage/lens.js`): it is handed the law as
- * its lens reads it (`LensLaw`, on the scene's eye), and of the window only its softest point the frame shows, which
- * bounds how far past the frame's edge its blur gathers.
- * The window is blurred on the frame, round its cut, so out of focus on the ground it spreads past its edge, and the
- * page past the frame's edge blurs into the frame; not on the view itself, under its cut, which kept the window's edge
- * hard. An object is blurred on its own element, which Chrome blurs before its matrix carries it, so
- * its number is handed in the object's own pixels, over how long the matrix draws it along its longest way at its
- * middle: a blur of 4 under a matrix that draws it twice as large spread 7.8 on the frame, flat or in 3D, software or
- * the card. What stands on the frame, or in a group on it, rides with the eye and stays sharp, as words laid over a
- * film do.
+ * The flat stage blurs each plane in the world, the window with all in it and each object, by one number: as soft as
+ * its point nearest the focus, so what the eye focuses on stays sharp across its plane. The room blurs each pixel by
+ * its own depth (`stage/lens.js`) and is handed the law itself (`LensLaw`). Chrome blurs an object's element before its
+ * matrix grows it, so the number is divided by how far the matrix stretches it. What rides with the eye on the frame
+ * stays sharp.
  *
- * Where the eye focuses is placed as each frame is drawn (`Focus` in `src/domain/eye.ts`), at both ends of its way: a
- * spot of the frame, the world, the window, the page or over it, placed on that holder's plane as the window, the
- * camera and the eye stand then, as anything placed there is (`src/domain/placement.ts`), so a focus holds on what it
- * was put on while they move; or under a point of the frame, where the eye's line through that point meets the window's
- * plane as the window stands then (`underTheFrame` in `src/domain/camera.ts`), so the focus stays under the point while
- * the window leans and turns beneath it. A focus going from one to another goes evenly in the reciprocal of its
- * distance, as a lens's ring turns, so what it leaves softer softens evenly; it goes no farther than as far as can be,
- * where a spot it was put on stands behind the eye or the eye sees past the window's plane under the point.
+ * A focus is placed anew on each frame (`Focus` in `src/domain/eye.ts`), so it holds on what it was put on while the
+ * window, the camera and the eye move. From one focus to the next it goes evenly in the reciprocal of the distance, as
+ * a lens's ring turns, so what it leaves softens evenly.
  */
 import { type Camera, underTheFrame } from './camera.ts';
 import {
