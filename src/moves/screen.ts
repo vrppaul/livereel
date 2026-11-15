@@ -1,10 +1,9 @@
 /**
  * The screen's moves: coming up out of the ground or going down into it, what it shows in front and on the window's
- * back, a fade from the page it showed, light sweeping its picture away, and a page of the film's own run down its
- * scroll, typed into and blinked. Each move sets only the values of the screen it names, so a rise, a show and a sweep
- * share a step, as do a show, a run and a typing; two runs, or two typings, do not, as the pages' runs are one value
- * and what stands typed in them another. The pages of the film's own a film names are the stage's to lay before the
- * film is shot.
+ * back, a fade from the page it showed, light sweeping its picture away, and a film's own page run down its scroll,
+ * typed into and blinked. Each move sets only the values of the screen it names, so a rise, a show and a sweep share a
+ * step, as do a show, a run and a typing; two runs, or two typings, do not, as the pages' runs are one value and what
+ * stands typed in them another. The pages of its own a film names are the stage's to lay before it is shot.
  */
 import { A_CURVE, type Ease, FASTEST_SPEED, type Stretch, easeInOutSine, linear } from '../domain/curves.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -105,7 +104,7 @@ import { shadesThePage } from '../props/window.ts';
 import { type Scene, cameraOf, withProp } from '../scene.ts';
 import { TYPING_FORM, type TypingScript } from './typing.ts';
 
-/** A page of the film's own as a film names it: its HTML whole. */
+/** A film's own page as the film writes it: its HTML whole. */
 interface OwnPageNamed {
 	readonly html: string;
 }
@@ -158,7 +157,7 @@ export interface ScreenTypingScript extends TypingScript {
 	readonly into: string;
 }
 
-/** How long a blink of a block of a page of the film's own is, in `seconds`, and the moment of a play it begins. */
+/** How long a blink of a block of a film's own page is, in `seconds`, and the moment of a play it begins. */
 export interface BlinksScript extends MomentScript {
 	readonly seconds: number;
 }
@@ -214,19 +213,19 @@ const A_REACH: Kind<Reach> = new OneOf<Reach>(
 const REACHES_NOWHERE =
 	"screen.shows draws a page past its screen that has nothing past it: the screen holds all of it, or its own styles hide what runs past the screen, as overflow: hidden on its body does; give it more than the screen holds, or show it with reaches: 'screen'";
 const ON_THE_SCREEN_ALONE = false;
-// The move that brings a page of the film's own to rest, as its refusals name it, and what it says of a pace judged
-// where the eye sees past the window's plane; the product of the signs of a pace and a way that go opposite ways; and
-// how a way along a page's scroll is said, down where it is more than none
+// The move that brings a film's own page to rest, as its refusals name it, and what it says of a pace judged where the
+// eye sees past the window's plane; the product of the signs of a pace and a way that go opposite ways; and how a way
+// along a page's scroll is said, down where it is more than none
 const SCROLL_TO = 'screen.scrollTo';
 const SEEN_PAST_THE_PLANE = `${SCROLL_TO} judges its pace at a point of the frame where the eye sees past the window's plane while the page runs: judge it where the eye sees that plane all through the move`;
 const OPPOSITE_WAYS = -1;
 const NO_WAY = 0;
 const TOWARD_ITS_END = 'down';
 const TOWARD_ITS_TOP = 'up';
-// A page of the film's own, as a film names it
+// A film's own page, as a film names it
 const OWN_PAGE_FORM: Form<OwnPageNamed> = { html: needed(AN_HTML_PAGE) };
-const OWN_PAGE_SAID = "a page of the film's own, { html }";
-// The filmed page, as a film names it, and the pages of the film's own a move showing it shows: none
+const OWN_PAGE_SAID = "a film's own page, { html }";
+// The filmed page, as a film names it, and the film's own pages a move showing it shows: none
 const FILMED = 'filmed';
 const NO_OWN_PAGES: readonly OwnPage[] = [];
 const A_SCREEN_PAGE: Kind<ScreenPage> = new NameOrForm(
@@ -280,9 +279,9 @@ const LAID_OVER_THE_SCREEN: FadeLies = { kind: 'laid', lying: OVER_THE_SCREEN };
 // The move that shows a page, and its fade, as refusals name them
 const SHOWS = 'screen.shows';
 const SHOWS_FADE = "screen.shows' fade";
-// The screen's values a move that raises or lowers it sets, one that changes what it shows, one that fades into what
-// it shows, a sweep, one that changes what the window's back shows, one that runs a page of the film's own, one that
-// types into one, and one that blinks a block of one
+// The screen's values a move that raises or lowers it sets, one that changes what it shows, one that fades into what it
+// shows, a sweep, one that changes what the window's back shows, one that runs a film's own page, one that types into
+// one, and one that blinks a block of one
 const HOW_FAR_UP = ['shown'] as const satisfies readonly (keyof Screen)[];
 const SHOWING = ['shows'] as const satisfies readonly (keyof Screen)[];
 const FADING_INTO = ['shows', 'fade'] as const satisfies readonly (keyof Screen)[];
@@ -336,10 +335,9 @@ export function lower(script: TimingScript = {}): Move {
 }
 
 /**
- * The screen showing the filmed page, `'filmed'`, or a page of the film's own, `{ html }`, a whole document in HTML
- * laid out at the screen's size, cut at the screen's edges, or, `reaches: 'document'`, drawn on past its top and foot
- * as far as its document runs and the frame sees: at once, or at the moment of a play `within: { start }` or `after`
- * names; and
+ * The screen showing the filmed page, `'filmed'`, or a film's own page, `{ html }`, a whole document in HTML laid out
+ * at the screen's size, cut at the screen's edges, or, `reaches: 'document'`, drawn on past its top and foot as far as
+ * its document runs and the frame sees: at once, or at the moment of a play `within: { start }` or `after` names; and
  * fading from the page it showed over the `fade` the film names, where it names one.
  */
 export function shows(page: typeof FILMED, script?: FilmedShowsScript): Move;
@@ -423,9 +421,9 @@ function pageGoingLies(beginning: Beginning): FadeLies {
 
 /**
  * A fade refused as it begins where its picture would drop at once what the screen shows: while the screen still fades
- * from the page before, whose picture would go; from a page the window shades, as the picture is unshaded; from a page
- * of the film's own that runs, as the picture stands still; and from one drawn past its screen, as the picture holds
- * the screen alone.
+ * from the page before, whose picture would go; from a page the window shades, as the picture is unshaded; from a
+ * film's own page that runs, as the picture stands still; and from one drawn past its screen, as the picture holds the
+ * screen alone.
  */
 function refuseFadingFrom(beginning: Beginning): void {
 	const { scene, format } = beginning;
@@ -455,9 +453,9 @@ function refuseFadingFrom(beginning: Beginning): void {
 }
 
 /**
- * The window's back showing a page of the film's own, `{ html }`, laid out at the screen's size, mounted `upright` as
- * the film names it, or none, `'none'`, the screen seen through it: at once, or at the moment of a play
- * `within: { start }` or `after` names.
+ * The window's back showing a film's own page, `{ html }`, laid out at the screen's size, mounted `upright` as the film
+ * names it, or none, `'none'`, the screen seen through it: at once, or at the moment of a play `within: { start }` or
+ * `after` names.
  */
 export function behind(page: typeof NONE_ON_THE_BACK, script?: MomentScript): Move;
 export function behind(page: OwnPageNamed, script: BackScript): Move;
@@ -479,10 +477,10 @@ export function behind(page: BackPage, script: MomentScript | BackScript = {}): 
 }
 
 /**
- * A page of the film's own, `{ html }`, running down its scroll at a pace, its pixels a second, until another move of
- * its run: from where it stands as the move begins, its pace changing to the one named over the move's share on its
- * curve in a play, at once in a cut; a pace of none stops it, and a pace below none runs it back up. It runs whichever
- * face of the window shows it, or none, and holds at its top and its end.
+ * A film's own page, `{ html }`, running down its scroll at a pace, its pixels a second, until another move of its run:
+ * from where it stands as the move begins, its pace changing to the one named over the move's share on its curve in a
+ * play, at once in a cut; a pace of none stops it, and a pace below none runs it back up. It runs whichever face of the
+ * window shows it, or none, and holds at its top and its end.
  */
 export function scrolls(page: OwnPageNamed, script: ScrollsScript): Move {
 	assertKind(page, A_PAGE_RUN, "screen.scrolls's page");
@@ -498,8 +496,8 @@ export function scrolls(page: OwnPageNamed, script: ScrollsScript): Move {
 }
 
 /**
- * A page of the film's own, by its key, set off running at a pace as its move begins, refused where its document as it
- * stands then scrolls nowhere; what it sets is a run on the film's time, so it is the same at any progress of the move.
+ * A film's own page, by its key, set off running at a pace as its move begins, refused where its document as it stands
+ * then scrolls nowhere; what it sets is a run on the film's time, so it is the same at any progress of the move.
  */
 function running(beginning: Beginning, key: string, pace: number): Change {
 	const screen = beginning.scene.screen;
@@ -508,11 +506,11 @@ function running(beginning: Beginning, key: string, pace: number): Change {
 }
 
 /**
- * Keys typed into a block of a page of the film's own, `{ html }`, `into` by its CSS selector, key by key, each
- * heard on the film's keyboard or the one named, at the times the strokes have them unless the film names a curve:
- * the block shows what stands typed as its text, in place of what the page wrote there, from the move's start; a block
- * that holds elements of its own, or an input, which shows its value, not its text, is refused as it begins. It types
- * whichever face of the window shows the page, or none.
+ * Keys typed into a block of a film's own page, `{ html }`, `into` by its CSS selector, key by key, each heard on the
+ * film's keyboard or the one named, at the times the strokes have them unless the film names a curve: the block shows
+ * what stands typed as its text, in place of what the page wrote there, from the move's start; a block that holds
+ * elements of its own, or an input, which shows its value, not its text, is refused as it begins. It types whichever
+ * face of the window shows the page, or none.
  */
 export function type(page: OwnPageNamed, strokes: readonly Keystroke[], script: ScreenTypingScript): Move & Typed {
 	assertKind(page, A_PAGE_TYPED_INTO, "screen.type's page");
@@ -532,10 +530,9 @@ export function type(page: OwnPageNamed, strokes: readonly Keystroke[], script: 
 }
 
 /**
- * A block of a page of the film's own, by the page's key, showing as much of the strokes as stands typed at each
- * progress, the page as far as it scrolls at most with that text standing typed and what else stands typed in it as
- * the move begins, measured then for each text the strokes leave typed; refused as it begins where the block's text
- * would not show it.
+ * A block of a film's own page, by the page's key, showing as much of the strokes as stands typed at each progress, the
+ * page as far as it scrolls at most with that text standing typed and what else stands typed in it as the move begins,
+ * measured then for each text the strokes leave typed; refused as it begins where the block's text would not show it.
  */
 async function typingInto(
 	beginning: Beginning,
@@ -586,14 +583,14 @@ function refuseUnshown(holding: BlockHolding, into: string): void {
 	}
 }
 
-/** What stands typed in a page of the film's own with a block of it holding a text in place of what it held. */
+/** What stands typed in a film's own page with a block of it holding a text in place of what it held. */
 function typedWith(standing: TypedBlocks, into: string, text: string): TypedBlocks {
 	return new Map([...standing, [into, text]]);
 }
 
 /**
- * A page of the film's own as its document stands with a block of it holding a text, beside what else stands typed in
- * it, as far as it scrolls at most so, measured for each text a typing leaves typed.
+ * A film's own page as its document stands with a block of it holding a text, beside what else stands typed in it, as
+ * far as it scrolls at most so, measured for each text a typing leaves typed.
  */
 function documentTyped(
 	standing: TypedBlocks,
@@ -606,7 +603,7 @@ function documentTyped(
 	return { typed: typedWith(standing, into, text), scrollLength };
 }
 
-/** A page of the film's own, by its key, standing as a document, whatever else the screen stands as. */
+/** A film's own page, by its key, standing as a document, whatever else the screen stands as. */
 function documentSet(scene: Scene, key: string, ownDocument: OwnDocument): Scene {
 	return withProp(scene, 'screen', {
 		...scene.screen,
@@ -615,11 +612,10 @@ function documentSet(scene: Scene, key: string, ownDocument: OwnDocument): Scene
 }
 
 /**
- * A block of a page of the film's own, `{ html }`, by its CSS selector, blinking a blink every so many `seconds` from
- * the move's moment, at once or at the moment of a play `within: { start }` or `after` names, until the film blinks it
- * again:
- * whole as it begins, it fades out on a cosine to none half a blink on and back, as a terminal's caret blinks. It
- * blinks whichever face of the window shows the page, or none; a selector the page lacks is refused as it begins.
+ * A block of a film's own page, `{ html }`, by its CSS selector, blinking a blink every so many `seconds` from the
+ * move's moment, at once or at the moment of a play `within: { start }` or `after` names, until the film blinks it
+ * again: whole as it begins, it fades out on a cosine to none half a blink on and back, as a terminal's caret blinks.
+ * It blinks whichever face of the window shows the page, or none; a selector the page lacks is refused as it begins.
  */
 export function blinks(page: OwnPageNamed, into: string, script: BlinksScript): Move {
 	assertKind(page, A_PAGE_BLINKED, "screen.blinks's page");
@@ -636,9 +632,9 @@ export function blinks(page: OwnPageNamed, into: string, script: BlinksScript): 
 }
 
 /**
- * A block of a page of the film's own, by the page's key, blinking from the moment its move begins: found as the move
- * begins as the stage finds it in each exposure's copy, so a selector the page lacks, or one that matches no HTML
- * element, whose opacity the stage cannot set, is refused then.
+ * A block of a film's own page, by the page's key, blinking from the moment its move begins: found as the move begins
+ * as the stage finds it in each exposure's copy, so a selector the page lacks, or one that matches no HTML element,
+ * whose opacity the stage cannot set, is refused then.
  */
 async function blinking(beginning: Beginning, key: string, into: string, seconds: number): Promise<Change> {
 	await (await beginning.ownPage(key)).blockFound(into);
@@ -646,7 +642,7 @@ async function blinking(beginning: Beginning, key: string, into: string, seconds
 	return (scene) => blinkSet(scene, key, into, blink);
 }
 
-/** A block of a page of the film's own, by the page's key, blinking so, the page's other blocks as they blink. */
+/** A block of a film's own page, by the page's key, blinking so, the page's other blocks as they blink. */
 function blinkSet(scene: Scene, key: string, into: string, blink: Blink): Scene {
 	const blocks = scene.screen.blinks.get(key) ?? NO_BLOCK_BLINKING;
 	return withProp(scene, 'screen', {
@@ -656,13 +652,13 @@ function blinkSet(scene: Scene, key: string, into: string, blink: Blink): Scene 
 }
 
 /**
- * A page of the film's own, `{ html }`, brought to rest where a block of it, by its selector, stands `top` pixels
- * below the screen's top: from where the page stands as the move begins, setting off at the pace it runs there and
- * slowing smoothly to stand still there as the move's share ends, in a play, or at once, in a cut. The block is
- * measured where it stands in the page's document. Its curve is the run's own, a cubic Hermite curve from its pace to
- * rest, so it takes no `ease`: along the page, or, with its pace `judged` at a point of the frame, in shares of it,
- * across the frame there, what the point shows coming to rest on that curve however the window, the eye and the camera
- * move meanwhile. It runs whichever face of the window shows the page, or none.
+ * A film's own page, `{ html }`, brought to rest where a block of it, by its selector, stands `top` pixels below the
+ * screen's top: from where the page stands as the move begins, setting off at the pace it runs there and slowing
+ * smoothly to stand still there as the move's share ends, in a play, or at once, in a cut. The block is measured where
+ * it stands in the page's document. Its curve is the run's own, a cubic Hermite curve from its pace to rest, so it
+ * takes no `ease`: along the page, or, with its pace `judged` at a point of the frame, in shares of it, across the
+ * frame there, what the point shows coming to rest on that curve however the window, the eye and the camera move
+ * meanwhile. It runs whichever face of the window shows the page, or none.
  */
 export function scrollTo(page: OwnPageNamed, target: string, script: ScrollToScript): Move {
 	assertKind(page, A_PAGE_RUN, "screen.scrollTo's page");
@@ -679,10 +675,10 @@ export function scrollTo(page: OwnPageNamed, target: string, script: ScrollToScr
 }
 
 /**
- * A page of the film's own, by its key, brought to rest with a block of it so far below the screen's top as its move
- * begins, its pace judged on the frame where the film names a point: refused where the page cannot scroll there, and
- * where, in a play, it would turn back to come to rest, running away from its rest or too fast to stop short of it. A
- * cut brings it to rest at once, with no pace to judge.
+ * A film's own page, by its key, brought to rest with a block of it so far below the screen's top as its move begins,
+ * its pace judged on the frame where the film names a point: refused where the page cannot scroll there, and where, in
+ * a play, it would turn back to come to rest, running away from its rest or too fast to stop short of it. A cut brings
+ * it to rest at once, with no pace to judge.
  */
 async function comingToRest(
 	beginning: Beginning,
@@ -711,9 +707,9 @@ async function comingToRest(
 }
 
 /**
- * A page of the film's own brought to rest in a play from where it stands, along the page or with its pace judged at
- * the point of the frame the film names, where the play foresees the frame will stand at a moment: refused where it
- * would turn back on its way, along the page or across the frame there.
+ * A film's own page brought to rest in a play from where it stands, along the page or with its pace judged at the point
+ * of the frame the film names, where the play foresees the frame will stand at a moment: refused where it would turn
+ * back on its way, along the page or across the frame there.
  */
 async function runToRestInAPlay(
 	beginning: Beginning,
@@ -732,10 +728,10 @@ async function runToRestInAPlay(
 }
 
 /**
- * A page of the film's own brought to rest from where it stands, its pace judged at a point of the frame, in shares of
- * it: the frame measured where the play foresees it will stand at each moment the run is judged at, one after another,
- * as the take may begin moves of the frame ahead to answer each; refused where the eye sees past the window's plane
- * there, and where the run would turn back across the frame there.
+ * A film's own page brought to rest from where it stands, its pace judged at a point of the frame, in shares of it: the
+ * frame measured where the play foresees it will stand at each moment the run is judged at, one after another, as the
+ * take may begin moves of the frame ahead to answer each; refused where the eye sees past the window's plane there, and
+ * where the run would turn back across the frame there.
  */
 async function judgedRun(
 	beginning: Beginning,
@@ -795,7 +791,7 @@ function downOrUp(pixels: number): string {
 	return pixels > NO_WAY ? TOWARD_ITS_END : TOWARD_ITS_TOP;
 }
 
-/** A page of the film's own, by its key, running as named, whatever else the screen stands as. */
+/** A film's own page, by its key, running as named, whatever else the screen stands as. */
 function runSet(key: string, run: Scroll): Change {
 	return (scene) =>
 		withProp(scene, 'screen', { ...scene.screen, scrolls: new Map([...scene.screen.scrolls, [key, run]]) });
@@ -807,9 +803,9 @@ function backing(shown: Back): Change {
 }
 
 /**
- * A page of the film's own, by its key, as the screen shows it as far as the film names it reaches; refused while a
- * lens stands, as a lens shows the filmed page under it, drawn from its picture, and where it is drawn past its screen
- * and its document as it stands then has nothing past it.
+ * A film's own page, by its key, as the screen shows it as far as the film names it reaches; refused while a lens
+ * stands, as a lens shows the filmed page under it, drawn from its picture, and where it is drawn past its screen and
+ * its document as it stands then has nothing past it.
  */
 function ownPageShown(beginning: Beginning, key: string, reaches: Reach): Shows {
 	const scene = beginning.scene;
@@ -838,12 +834,12 @@ function showing(shows: Shows): Change {
 }
 
 /**
- * The picture the screen shows as the move begins, of the filmed page or a page of the film's own, held, swept away by
- * light over the move's share, the page as it stands showing behind it: so an act on the page at a later moment of the
- * play, or another page shown then, comes in behind the light, and an act at its start is refused, as the picture would
- * hold the page the act leaves. A band comes from the side of the window the film names, slanted, or a disc opens round
- * the block it names, as wide and its crest in the colours it names; refused as it is made where the film names both,
- * and as it begins where the stage shows the filmed page live, with no picture.
+ * The picture the screen shows as the move begins, of the filmed page or a film's own page, held, swept away by light
+ * over the move's share, the page as it stands showing behind it: so an act on the page at a later moment of the play,
+ * or another page shown then, comes in behind the light, and an act at its start is refused, as the picture would hold
+ * the page the act leaves. A band comes from the side of the window the film names, slanted, or a disc opens round the
+ * block it names, as wide and its crest in the colours it names; refused as it is made where the film names both, and
+ * as it begins where the stage shows the filmed page live, with no picture.
  */
 export function sweep(script: SweepScript = {}): Move {
 	assertWritten(script, SWEEP_FORM, SWEEP);

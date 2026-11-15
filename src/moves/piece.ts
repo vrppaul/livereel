@@ -5,7 +5,7 @@
  * stands on the page there from the start.
  *
  * Lifted `picture: 'held'`, it is drawn from a picture of its own source, taken as it is lifted, so it alone may be
- * lifted off a page of the film's own, which the filmed page's picture is not of.
+ * lifted off a film's own page, which the filmed page's picture is not of.
  *
  * What the page knows of a block, the piece reads off it, so the film never copies it: a piece of one block is as round
  * as the page draws the block, and its body's walls take the colour along its edge where the film names none. Which of
@@ -159,29 +159,44 @@ export interface ShadeScript {
 }
 
 /**
- * How a piece is lifted: off the first `every` blocks a selector matches, together, with `air` clear round them, in the
- * page's pixels; how round the corners of a stretch of the page it lifts are, `corner`, a radius in the page's pixels,
- * which one block lifted alone refuses, as it is as round as the page draws it; the hole it leaves and the line the
- * lines from it to its source are drawn in, where the film names them; the `picture` it is drawn from, the page's as
- * it changes, `'following'`, where the film names none, or one of its source held as it is lifted, `'held'`; how it
- * comes up; which piece; the world it stands `inside`, which the eye moves through, or the group it stands in, if
- * either; its `body` in the world, if the film names one; whether it `rides` its block in the world, `'its block'`,
- * standing on the page there, carried as the camera frames the page, by the film's scrolls of every block whose scroll
- * carries its source and where a fade from the page lays it; the block whose `letters` it carries, a selector, which
- * it lands on a block's letters, if the film names one; how it stands out as it comes up, `effects`; and whether it
- * stands in the window's `shade` in the world, and to what height, where the film names it.
+ * How a piece is lifted, and how it comes up, which piece, its group and how it stands out, as any object's show has
+ * them.
  */
 export interface PieceScript extends InPlaceShowScript, NamedScript, GroupedScript, ShownStandingOutScript {
+	/** How many of the first blocks a selector matches it is lifted off, together: one where the film names none. */
 	readonly every?: number;
+	/** How much air stands clear round what it is lifted off, in the page's pixels: none where the film names none. */
 	readonly air?: number;
+	/**
+	 * How round the corners of a stretch of the page it lifts are, a radius in the page's pixels, square where the film
+	 * names none; refused for one block lifted alone, which is as round as the page draws it.
+	 */
 	readonly corner?: number;
+	/** The hole it leaves; none where the film names none. */
 	readonly hole?: HoleScript;
+	/** The line its lines to its source are drawn in; none drawn where the film names none. */
 	readonly lines?: Stroke;
+	/**
+	 * What it is drawn from: the page's picture as it changes, `'following'`, where the film names none, or a picture of
+	 * its source held as it is lifted, `'held'`.
+	 */
 	readonly picture?: PiecePicture['kind'];
+	/**
+	 * The world it stands inside, which the eye moves through, in place of a group; the frame where the film names
+	 * neither.
+	 */
 	readonly inside?: 'world';
+	/** Its body, inside the world alone. */
 	readonly body?: BodyScript;
+	/**
+	 * Whether it rides its block in the world, `'its block'`: standing on the page there, carried as the camera frames
+	 * the page, by the film's scrolls of every block whose scroll carries its source, and where a fade from the page lays
+	 * it.
+	 */
 	readonly rides?: 'its block';
+	/** The block of its source whose letters it carries, a selector, so it lands them on a block's letters (`onto`). */
 	readonly letters?: string;
+	/** How it stands in the window's shade, inside the world alone; in no shade where the film names none. */
 	readonly shade?: ShadeScript;
 }
 
@@ -486,8 +501,8 @@ async function landedOn(beginning: Beginning, target: Target, piece: Piece): Pro
 
 /**
  * Where the first letter of the block a piece lands its letters on stands on the screen, read as the move begins:
- * refused for a box of the screen, which holds no letters, a block that lays out none, and one standing wholly off the
- * screen.
+ * refused for a box of the screen, which holds no letters, a hidden block, which lays out nothing, and a block whose
+ * first letter stands wholly off the screen.
  */
 async function firstLetterLandedOn(beginning: Beginning, target: Target): Promise<Box> {
 	if (typeof target !== 'string') {
@@ -538,8 +553,8 @@ function overItsSourceNow(beginning: Beginning, piece: ShowingOf<'piece'>): Box 
 /**
  * The scene's camera as a move of a piece over its source begins, refused as the picture the piece is drawn from asks:
  * one following the page's picture where the stage shows no picture of the filmed page, and told to hold its own where
- * the screen shows a page of the film's own, which the filmed page's picture is not of; one holding its picture where
- * the stage shows the page live; and either where its window does not face the frame front on.
+ * the screen shows a film's own page, which the filmed page's picture is not of; one holding its picture where the
+ * stage shows the page live; and either where its window does not face the frame front on.
  */
 function cameraOverItsPicture(beginning: Beginning, picture: PiecePicture['kind'], move: string): Camera {
 	refuseWhereLive(beginning, move);
@@ -548,7 +563,7 @@ function cameraOverItsPicture(beginning: Beginning, picture: PiecePicture['kind'
 }
 
 /**
- * A piece following the filmed page's picture refused while the screen shows a page of the film's own in its place; one
+ * A piece following the filmed page's picture refused while the screen shows a film's own page in its place; one
  * holding its picture, taken of whichever page the screen shows, never.
  */
 function refuseFollowingOverOwnPage(beginning: Beginning, picture: PiecePicture['kind'], move: string): void {
@@ -566,7 +581,7 @@ function refuseFollowingOverOwnPage(beginning: Beginning, picture: PiecePicture[
 /**
  * The piece emptying a block of the filmed page from the move's moment: the block stands as the page draws it hidden,
  * the ground the page draws behind it over its box, both read as the move begins, until the piece goes, and a wipe
- * takes it away with the piece. Refused while the screen shows a page of the film's own, which the block is not of.
+ * takes it away with the piece. Refused while the screen shows a film's own page, which the block is not of.
  */
 export function empties(block: string, script: TakenScript = {}): Move {
 	assertKind(block, A_SELECTOR, "piece.empties's block");
@@ -725,7 +740,7 @@ async function lifted(beginning: Beginning, target: Target, lifting: Lifting): P
 
 /**
  * Where the first letter of the block a piece carries the letters of stands on the screen, as the page it is lifted off
- * stands; refused where the block lays out none.
+ * stands; refused where the block is hidden, as it lays out nothing.
  */
 async function firstLetterCarried(beginning: Beginning, block: string): Promise<Box> {
 	const letter = await beginning.page.letterAtTheStart(block);

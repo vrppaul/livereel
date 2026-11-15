@@ -239,16 +239,14 @@ test('every function a film calls refuses what it is handed in no form it takes,
 		new FilmError("screen.rise's within's start is null: it is a number")
 	);
 	expect(() => screen.shows('page' as never)).toThrow(
-		new FilmError(
-			`screen.shows's page is "page": it is the filmed page, "filmed", or a page of the film's own, { html }`
-		)
+		new FilmError(`screen.shows's page is "page": it is the filmed page, "filmed", or a film's own page, { html }`)
 	);
 	expect(() => screen.shows({ html: '' })).toThrow(
 		new FilmError(`screen.shows's page's html is "": it is a page in HTML, a string with something in it`)
 	);
 	expect(() => screen.shows('filmed', { within: { end: 1 } as never })).toThrow(FilmError);
 	expect(() => screen.behind('filmed' as never)).toThrow(
-		new FilmError(`screen.behind's page is "filmed": it is a page of the film's own, { html }, or none, "none"`)
+		new FilmError(`screen.behind's page is "filmed": it is a film's own page, { html }, or none, "none"`)
 	);
 	expect(() => screen.behind({ html: '<p>Behind</p>' }, { upright: 'up' as never })).toThrow(
 		new FilmError(
@@ -257,7 +255,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => screen.scrolls('filmed' as never, { pace: 480 })).toThrow(
 		new FilmError(
-			`screen.scrolls's page is "filmed": it is a page of the film's own, { html }; the filmed page scrolls by page.scrollBy or page.scrollTo`
+			`screen.scrolls's page is "filmed": it is a film's own page, { html }; the filmed page scrolls by page.scrollBy or page.scrollTo`
 		)
 	);
 	expect(() => screen.scrolls({ html: '<p>Runs</p>' }, { pace: 'fast' as never })).toThrow(
@@ -266,7 +264,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	expect(() => screen.scrolls({ html: '<p>Runs</p>' }, {} as never)).toThrow(FilmError);
 	expect(() => screen.scrollTo('filmed' as never, '#input', { top: 0 })).toThrow(
 		new FilmError(
-			`screen.scrollTo's page is "filmed": it is a page of the film's own, { html }; the filmed page scrolls by page.scrollBy or page.scrollTo`
+			`screen.scrollTo's page is "filmed": it is a film's own page, { html }; the filmed page scrolls by page.scrollBy or page.scrollTo`
 		)
 	);
 	expect(() => screen.scrollTo({ html: '<p>Runs</p>' }, 7 as never, { top: 0 })).toThrow(
@@ -277,7 +275,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	).toThrow(new FilmError(`screen.scrollTo names ease: it names top, judged, within, after, takes, or fewer`));
 	expect(() => screen.type('filmed' as never, [STROKE], { into: '#typed' })).toThrow(
 		new FilmError(
-			`screen.type's page is "filmed": it is a page of the film's own, { html }; the filmed page is typed into by page.type`
+			`screen.type's page is "filmed": it is a film's own page, { html }; the filmed page is typed into by page.type`
 		)
 	);
 	expect(() => screen.type({ html: '<p>Typed</p>' }, 'ls' as never, { into: '#typed' })).toThrow(
@@ -288,7 +286,7 @@ test('every function a film calls refuses what it is handed in no form it takes,
 	);
 	expect(() => screen.blinks('filmed' as never, '.caret', { seconds: 1.06 })).toThrow(
 		new FilmError(
-			`screen.blinks's page is "filmed": it is a page of the film's own, { html }; the filmed page's own motion stays stilled`
+			`screen.blinks's page is "filmed": it is a film's own page, { html }; the filmed page's own motion stays stilled`
 		)
 	);
 	expect(() => screen.blinks({ html: '<p>Blinks</p>' }, '.caret', { seconds: 0 })).toThrow(

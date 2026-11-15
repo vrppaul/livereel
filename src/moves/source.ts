@@ -3,11 +3,11 @@
  * outline round it (`src/moves/outline.ts`), a lens over it (`src/moves/lens.ts`). Each is born on the frame over its
  * source as the camera shows it then, cut to the part the camera shows, and stands on the frame after, the camera
  * moving on without it. One born in the world stands over its source on the window's plane wherever the eye stands, so
- * it is cut to the part of the screen the window's picture holds there, which an eye moved near or aside sees past
- * what the frame shows from where the eye rests. A source shows as a box only through a window that faces the frame
- * with its front, upright, so each is refused while the window leans, rolls or shows its back; what is drawn from the
- * page's picture is refused too where the stage shows the page live, with no picture, and while the screen shows a page
- * of the film's own in its place.
+ * it is cut to the part of the screen the window's picture holds there, which an eye moved near or aside sees past what
+ * the frame shows from where the eye rests. A source shows as a box only through a window that faces the frame with its
+ * front, upright, so each is refused while the window leans, rolls or shows its back; what is drawn from the page's
+ * picture is refused too where the stage shows the page live, with no picture, and while the screen shows a film's own
+ * page in its place.
  */
 import { type Camera, boxOnTheFrame, screenPicturedBy, screenShownBy } from '../domain/camera.ts';
 import type { Format } from '../domain/format.ts';
@@ -126,8 +126,8 @@ export function overItsSource(move: string): string {
 
 /**
  * The scene's camera as a move of what is drawn from the page's picture begins: refused where the stage shows no
- * picture of the page, where the screen shows a page of the film's own in its place, and where its window does not
- * face the frame front on.
+ * picture of the page, where the screen shows a film's own page in its place, and where its window does not face the
+ * frame front on.
  */
 export function cameraOverThePicture(beginning: Beginning, move: string): Camera {
 	refuseWithoutThePicture(beginning, move);
