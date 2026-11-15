@@ -1,21 +1,11 @@
 /**
- * The world's light, a part of the world's look (`world.lights`, `world.softBoxes` in `src/props/world.ts`): lights
- * standing in the room that light a film's own things in a lit material, and soft boxes round it, glowing panels the
- * things' faces reflect and are lit by, so every glint on them comes from a light the film placed. livereel's own world
- * has neither, as a film of flat light has none to place.
+ * The world's light (`world.lights`, `world.softBoxes` in `src/props/world.ts`): lights standing in the room, which
+ * light a film's own things in a lit material and the window's body, and soft boxes round it, glowing panels the
+ * things' faces reflect, so every glint on them comes from a light the film placed. A soft box stands as far off as
+ * reflections take it, so only its direction counts.
  *
- * A light stands at a spot of the room and aims at another, as the eye does, in film pixels from the frame's middle,
- * `out` toward whoever watches; it shines in a cone and falls off by the square of the distance, as light does, so a
- * thing coming toward it brightens and one leaving it dims. Its strength is how bright a white face square to it stands
- * at the spot it aims at, a number a film sets by eye, where three's, a pixel off, runs to millions. A soft box stands
- * round the room's middle, as far off as reflections take it, seen from there as wide and high as the angles it spans:
- * only its direction counts, as for anything a face reflects from afar.
- *
- * Everything is handed in the room, in three's axes, as it stands while the world does: each thing carries the room
- * into the eye's own space that sees it (`DrawnThing` in `src/props/thing.ts`), so the eye moving moves none of it.
- *
- * Light brighter than the page's white, a glint off the window's metal or glass or off a thing, may glow round itself,
- * as a lens blooms (`world.bloom`): none in livereel's own world either.
+ * All of it is handed in the room, in three's axes, as it stands while the world does: each thing carries the room into
+ * the eye's own space (`DrawnThing` in `src/props/thing.ts`), so the eye moving moves none of it.
  */
 import { opaqueColourToward } from '../domain/colour.ts';
 import { type Size, frameScaleOf } from '../domain/geometry.ts';
@@ -49,50 +39,59 @@ import {
 } from '../domain/matrix.ts';
 import { amountToward, halfWay, shareToward } from '../domain/toward.ts';
 
-/**
- * A light in the room: its colour, in hex; how bright a white face square to it stands at the spot it aims at, 1 its
- * whole colour, brighter nearer it and dimmer farther by the square of the distance; the spot it stands at and the spot
- * it aims at, each in film pixels from the frame's middle; how far its cone opens from its middle, in degrees; and how
- * softly the cone's edge falls off, from 0, sharp, to 1, from its middle.
- */
+/** A light in the room, its colour in hex and its spots in film pixels from the frame's middle. */
 export interface WorldLight {
 	readonly colour: string;
+	/**
+	 * How bright a white face square to it stands at the spot it aims at, 1 its whole colour, brighter nearer it and
+	 * dimmer farther by the square of the distance: a number a film sets by eye, where three's own, a pixel off, runs to
+	 * millions.
+	 */
 	readonly strength: number;
 	readonly at: Spot;
 	readonly aim: Spot;
+	/** How far its cone opens from its middle, in degrees. */
 	readonly angle: number;
+	/** How softly the cone's edge falls off, from 0, sharp, to 1, from its middle. */
 	readonly softness: number;
 }
 
-/**
- * A soft box round the room: its colour, in hex; how bright its middle glows, 1 its whole colour, falling off softly to
- * nothing at its sides; the way it stands from the room's middle, turned `round` the upright from straight toward the
- * eye at rest, toward the frame's right for more degrees, and `up` from level, toward the frame's top; how wide and
- * high it spans seen from there, in degrees; and how far it turns round its own middle, clockwise for more degrees as
- * seen from beyond it, looking at the room's middle.
- */
+/** A soft box round the room, its colour in hex and its angles in degrees. */
 export interface SoftBox {
 	readonly colour: string;
+	/** How bright its middle glows, 1 its whole colour, falling off softly to nothing at its sides. */
 	readonly brightness: number;
+	/**
+	 * How far the way it stands from the room's middle is turned round the upright from straight toward the eye at rest,
+	 * toward the frame's right for more.
+	 */
 	readonly round: number;
+	/** How far that way is turned up from level, toward the frame's top. */
 	readonly up: number;
+	/** How wide it spans, seen from the room's middle. */
 	readonly width: number;
+	/** How high it spans, seen from the room's middle. */
 	readonly height: number;
+	/** How far it turns round its own middle, clockwise for more as seen from beyond it, looking at the room's middle. */
 	readonly lean: number;
 }
 
 /**
- * A light as the stage draws it: its colour, angle and softness as written; how bright a white face square to it stands
- * a pixel of the frame off it, falling off by the square of the distance in the frame's pixels, so as bright as written
- * at the spot it aims at; and the matrices that carry the room's middle to the spot it stands at and the spot it aims
- * at, in the room in three's axes, in the frame's pixels.
+ * A light as the stage draws it: its colour, angle and softness as written, and its spots in the room in three's axes,
+ * in the frame's pixels.
  */
 export interface DrawnLight {
 	readonly colour: string;
+	/**
+	 * How bright a white face square to it stands a pixel of the frame off it, falling off by the square of the distance,
+	 * so as bright as written at the spot it aims at.
+	 */
 	readonly strengthAPixelOff: number;
 	readonly angle: number;
 	readonly softness: number;
+	/** The matrix that carries the room's middle to the spot it stands at. */
 	readonly standing: Matrix;
+	/** The matrix that carries the room's middle to the spot it aims at. */
 	readonly aimedAt: Matrix;
 }
 
@@ -118,14 +117,17 @@ export interface DrawnLighting {
 
 /**
  * The glow the room draws round a frame's brightest light, once over the light its exposures gathered, as a lens
- * blooms: how strong, as three's bloom takes its strength, which names no share of the light, its glow gathered from
- * several spreads of the light added up; how far it spreads, from 0, nearest, to 1, widest, the same share of the
- * frame however large it is shot; and the light it glows round, past which alone light blooms, in shares of the
- * page's white.
+ * blooms.
  */
 export interface DrawnBloom {
+	/**
+	 * How strong, as three's bloom takes its strength, which names no share of the light: its glow gathered from several
+	 * spreads of the light added up.
+	 */
 	readonly strength: number;
+	/** How far it spreads, from 0, nearest, to 1, widest, the same share of the frame however large it is shot. */
 	readonly radius: number;
+	/** The light it glows round, past which alone light blooms, in shares of the page's white. */
 	readonly threshold: number;
 }
 
@@ -140,8 +142,8 @@ const WIDEST_SPAN = 180;
 const STRAIGHT_UP = 90;
 // Nothing, below which no angle opens and no light aims
 const NONE = 0;
-// A soft box's square stands a unit from the room's middle, its face toward it, flat along the eye's sight; where
-// none stands, the unit is as far as any reaches
+// A soft box's square stands a unit from the room's middle, its face toward it, flat along the eye's sight; where none
+// stands, the unit is as far as any reaches
 const A_UNIT_OUT: Spot = { across: 0, down: 0, out: 1 };
 const FLAT_ALONG_ITS_FACE = 1;
 const A_UNIT = 1;
@@ -237,9 +239,9 @@ export function drawnBloom(strength: number, radius: number): DrawnBloom | null 
 }
 
 /**
- * The world's lights `progress` of the way from some to others: as many as those they go to, each toward the one in
- * its place, so a light fades in by its strength from none; of another number, the others whole half-way, as nothing
- * says which light becomes which, and a cut, which sets a move at its end, changes them at once.
+ * The world's lights `progress` of the way from some to others: as many as those they go to, each toward the one in its
+ * place, so a light fades in by its strength from none; of another number, the others whole half-way, as nothing says
+ * which light becomes which, and a cut, which sets a move at its end, changes them at once.
  */
 export function lightsToward(
 	start: readonly WorldLight[],
@@ -251,9 +253,9 @@ export function lightsToward(
 }
 
 /**
- * A light `progress` of the way to another: its colour mixed with no alpha, as three reads none; its spots evenly,
- * past their ends as a curve takes them, as places go; its strength, cone and softness never past where they start
- * and end, so none goes below none or opens past its widest.
+ * A light `progress` of the way to another: its colour mixed with no alpha, as three reads none; its spots evenly, past
+ * their ends as a curve takes them, as places go; its strength, cone and softness never past where they start and end,
+ * so none goes below none or opens past its widest.
  */
 function lightToward(start: WorldLight, end: WorldLight, progress: number): WorldLight {
 	return {
@@ -292,8 +294,8 @@ function drawnLight(light: WorldLight, scale: number): DrawnLight {
 }
 
 /**
- * A soft box as the stage draws it: a square grown to the box's span a unit off, turned round its own middle, carried
- * a unit out toward the eye at rest, then turned up and round the room's middle, so its face keeps toward it.
+ * A soft box as the stage draws it: a square grown to the box's span a unit off, turned round its own middle, carried a
+ * unit out toward the eye at rest, then turned up and round the room's middle, so its face keeps toward it.
  */
 function drawnSoftBox(box: SoftBox): DrawnSoftBox {
 	const placing = chained([

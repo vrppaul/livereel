@@ -1,22 +1,14 @@
 /**
- * The film's look, a prop like any other: the ground the screen stands on and the titles and ending come up on, its
- * glow and the layers a film lays over them in CSS, the ink of the words livereel writes over the frame, their fonts,
- * sizes and weights, how far apart a title's letters and lines stand, and how they come up, where a title and a
- * caption's ground stand, the accent of the marks, the corners, edge and shadow of what stands on the ground as a pane
- * — the page's window and its screen, the code's pane and the agent's terminal alike — the colours of the code by
- * kind, the cursor, and the agent's terminal and the ending card, their colours and sizes. How the world looks, its
- * light and the glow round it, is a prop of its own (`src/props/world.ts`), and the body of the page's window in a
- * room is the window's own (`src/props/body.ts`). A film opens on livereel's look with its theme's values, and changes
- * it by moves as it goes: in a play, a colour, a size or a shadow moves through the values between, a font, which has
- * none between, changes half-way, and the ground's layers fade into new ones; in a cut, at once. The stage is handed
- * the whole look every frame and sets each value in place of its token (`stage/tokens.css`), the ground's layers part
- * by part.
+ * The film's look, a prop like any other: how what livereel itself draws looks, value by value (`Look`). How the world
+ * looks is a prop of its own (`src/props/world.ts`), and the body of the page's window is the window's
+ * (`src/props/body.ts`). The stage is handed the whole look every frame and sets each value in place of its token
+ * (`stage/tokens.css`), the ground's layers part by part; the way of words it never reads, as the moves that bring
+ * words read it.
  *
  * One table, `LOOK_KINDS`, says of each value what a film may write for it, how the look holds it, how it moves
- * (`src/domain/values.ts`) and what CSS reads it as, so a theme is checked by it and a look moved by it, and livereel's
- * own values stand in `LIVEREELS_LOOK`: a value of the look is its line in the type, in the two tables and in the
- * stage's (`LOOK_TOKENS` in `stage/stage.js`; the ground's layers apart in `LAYERS_SET_AS`), and the compiler refuses
- * one left out of any.
+ * (`src/domain/values.ts`) and what CSS reads it as, and livereel's own values stand in `LIVEREELS_LOOK`: a value of
+ * the look is its line in the type, in the two tables and in the stage's (`LOOK_TOKENS` in `stage/stage.js`, the
+ * ground's layers in `LAYERS_SET_AS`), but for the way of words, and the compiler refuses one left out of any.
  */
 import { colourToward } from '../domain/colour.ts';
 import { type Fraction, WHOLE, fractionOf } from '../domain/fraction.ts';
@@ -42,8 +34,8 @@ export interface Look {
 	/** The colour the ground lightens to where its glow stands, in hex: the ground's own, for a ground of one colour. */
 	readonly glow: string;
 	/**
-	 * Layers laid over the ground and its glow, as a film writes them in CSS (`GroundLayers`): a grid of dots, lines,
-	 * a gradient; `none`, none.
+	 * Layers laid over the ground and its glow, as a film writes them in CSS (`GroundLayers`): a grid of dots, lines, a
+	 * gradient; `none`, none.
 	 */
 	readonly groundLayers: GroundLayers;
 	/** The colour of the words of titles, captions, notes and the ending, in hex. */
@@ -135,13 +127,14 @@ export interface Look {
 }
 
 /**
- * The ground's layers as they stand: those going and those coming, each as CSS's `background` writes them, the first
- * layer over the rest, the last alone with a colour of its own, over the ground's, and their lengths in film pixels;
- * and how far the coming have come in over the going. Layers a film writes stand whole: both alike, come.
+ * The ground's layers as they stand, each set as CSS's `background` writes them: the first layer over the rest, the
+ * last alone with a colour of its own, over the ground's, their lengths in film pixels. Layers a film writes stand
+ * whole: both alike, come.
  */
 export interface GroundLayers {
 	readonly going: string;
 	readonly coming: string;
+	/** How far the coming have come in over the going. */
 	readonly come: Fraction;
 }
 

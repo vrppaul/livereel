@@ -2,7 +2,7 @@
  * A title's words, what an object shows (`src/props/object.ts`): on the film's ground, which comes up under them over
  * the object's whole box and covers what was there, a title card; or on the ground round them, in a place the film
  * names (`src/domain/place.ts`), beside the page's window or alone, or beside a part, so they bring no ground of their
- * own. They come up word by word, or typed by a person.
+ * own.
  */
 import type { Alignment } from '../domain/place.ts';
 import type { Presences } from './way.ts';

@@ -1,16 +1,9 @@
 /**
  * Code, what an object shows (`src/props/object.ts`): a pane of the film's code, beside the page's window, so the
- * viewer reads a line and sees what it does at once, or alone, about what the frame itself shows.
+ * viewer reads a line and sees what it does at once, or alone; `codeOf` reads it as TypeScript is written.
  *
- * A film hands its code as text. It is worked out once, as its move is made, into lines of pieces, each of a kind the
- * stage colours it by, read as TypeScript is written; the indent its lines share is dropped and a tab set as spaces,
- * so it reads as an editor sets it, and its widest line is counted, so the stage sets its letters no larger than that
- * line fits across; or, where the film has its long lines cut, as large as the look has them, a line too long cut at
- * the pane's edge, as an editor's window cuts it. The pane comes up its ground first and its lines one after another,
- * as words do (`src/props/words.ts`). A line lit stands on a bar of the accent, and while any is lit the rest dim.
- *
- * The pane stands no taller than its box, and code longer than that scrolls in it as an editor's does. How far is
- * counted in lines: the stage sets the letters' size, so lines are what the film knows of the pane's height.
+ * The pane stands no taller than its box, and code longer than that scrolls in it as an editor's does, counted in
+ * lines: the stage sets the letters' size, so lines are what the film knows of the pane's height.
  */
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import { type Size, frameScaleOf } from '../domain/geometry.ts';
@@ -53,16 +46,16 @@ export type LongLines = (typeof LONG_LINES)[number];
 
 export const A_WAY_OF_LONG_LINES = new OneOf(LONG_LINES, 'how long lines fit: "shrink" or "cut"');
 
-/**
- * A pane of code: its lines, the key the stage knows them by, how many letters its widest has, how it fits a line too
- * long, and how many lines it has scrolled past its top.
- */
+/** A pane of code. */
 export interface Code {
 	readonly kind: 'code';
 	readonly lines: readonly CodeLine[];
+	/** The key the stage knows its lines by. */
 	readonly key: string;
+	/** How many letters its widest line has. */
 	readonly columns: number;
 	readonly longLines: LongLines;
+	/** How many lines it has scrolled past its top. */
 	readonly scrolled: number;
 }
 
@@ -71,18 +64,18 @@ interface DrawnLine extends CodeLine {
 	readonly appeared: number;
 }
 
-/**
- * Code as the stage draws it: each line's progress, how far the pane's ground has come up, how far the lines not lit
- * are dimmed: as far as the light on all its lines comes to, at most whole, so a light moving from one line to
- * another, one going out as the other comes on, keeps the rest dimmed; how it fits a line too long, and how many lines
- * it has scrolled past its top.
- */
+/** Code as the stage draws it. */
 export interface DrawnCode {
 	readonly kind: 'code';
 	readonly lines: readonly DrawnLine[];
 	readonly key: string;
 	readonly columns: number;
+	/** How far the pane's ground has come up. */
 	readonly ground: number;
+	/**
+	 * How far the lines not lit are dimmed: as far as the light on all its lines comes to, at most whole, so a light
+	 * moving from one line to another, one going out as the other comes on, keeps the rest dimmed.
+	 */
 	readonly dimmed: number;
 	readonly longLines: LongLines;
 	readonly scrolled: number;
@@ -133,9 +126,9 @@ export function drawnCode(code: Code, shown: number, gone: number): DrawnCode {
 }
 
 /**
- * How far code's lines scroll up its box from one pane to another, in shares of the box's height, on a frame of a
- * size: as many lines as it scrolled, each as tall as the look's line height takes the letters at their largest, which
- * the stage sets smaller in a pane whose widest line would not fit across.
+ * How far code's lines scroll up its box from one pane to another, in shares of the box's height, on a frame of a size:
+ * as many lines as it scrolled, each as tall as the look's line height takes the letters at their largest, which the
+ * stage sets smaller in a pane whose widest line would not fit across.
  */
 export function scrolledShareOf(start: Code, end: Code, look: Look, box: Size, frame: Size): number {
 	const lineHeight = look.codeSize * look.codeLineHeight * frameScaleOf(frame);

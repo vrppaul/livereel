@@ -2,11 +2,7 @@
  * How the world looks, a prop of its own beside the film's look (`src/props/look.ts`), which is how livereel's own
  * things look: the lights and soft boxes that light a film's own things and the window's body in a room
  * (`src/props/lighting.ts`), the glow round the brightest light, as a lens blooms, and a grain over the ground
- * (`src/props/grain.ts`). A film opens on livereel's world, which has none of them, with the values its `world` names,
- * and changes it by moves as it goes (`world.to`): in a play, the glow's strength and spread and the grain's levels
- * through the values between, the lights light by light where they are as many as those they go to, and the soft
- * boxes, or lights of another number, whole, half-way; in a cut, at once. The stage is handed it as it draws it
- * (`DrawnWorld`): the room its light and glow, and either stage its grain.
+ * (`src/props/grain.ts`). livereel's own world has none of them; a film changes it by moves (`world.to`).
  *
  * One table, `WORLD_KINDS`, says of each value what a film may write for it, how the world holds it and how it moves
  * (`src/domain/values.ts`), so the film's world and a move's are checked by it and the world moved by it, and

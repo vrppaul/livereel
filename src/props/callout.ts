@@ -1,8 +1,6 @@
 /**
  * A callout: words on a card of their own beside a block of the page, pointing at it, laid on the screen as the light
- * and the cursor are, so the camera carries it with the page. Its card comes up first and its words one after another
- * on it (`src/props/words.ts`), in the theme's way as it comes; where it stands is read once, as it comes, as the
- * light's box is.
+ * and the cursor are, so the camera carries it with the page.
  */
 import type { Box } from '../domain/geometry.ts';
 import { OneOf } from '../domain/handed.ts';

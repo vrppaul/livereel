@@ -1,12 +1,8 @@
 /**
  * A note: words on the film's ground beside the page's window, and a line drawn from a dot at a block's edge in the
- * window out to them, so they name the block without covering the page. The block is read once, as the note comes, as
- * a callout's is, and where the words stand with it: in a place beyond the window on one side of it. Their place is
- * the window's, kept beside it: as the window moves, the words move as far as the middle of its edge facing them does,
- * and never lean with it, as they stand on the ground. Where the block stands on the frame is worked out every frame
- * from the camera, so the line keeps to the block as the page moves in the window; the words meet it level with the
- * block as far as their place lets. The line is drawn first, as the words' ground would come up, and the words come up
- * at its end, in the theme's way as the note comes.
+ * window out to them, so they name the block without covering the page. The words keep beside the window as it moves
+ * (`besideTheWindow`) but never lean with it, as they stand on the ground; the line is worked out every frame from the
+ * camera, so it keeps to the block as the page moves in the window.
  */
 import { type Camera, type SeenBetween, screenPointShift } from '../domain/camera.ts';
 import {
@@ -43,14 +39,14 @@ export interface Note extends ShownWords {
 	readonly beside: Beside;
 }
 
-/**
- * A note as the stage draws it: the words' box on the frame, its line from the block's edge, where the line meets the
- * words, and how far the whole note has gone, which fades as it goes.
- */
+/** A note as the stage draws it, its line from the block's edge (`Segment`). */
 export interface DrawnNote extends DrawnWords, Segment {
 	readonly side: FrameSide;
+	/** The words' box on the frame. */
 	readonly place: Box;
+	/** Where the line meets the words. */
 	readonly to: Point;
+	/** How far the whole note has gone, which fades as it goes. */
 	readonly gone: number;
 }
 
@@ -81,8 +77,8 @@ export function noteShift(start: Note, end: Note, seen: SeenBetween): number {
 }
 
 /**
- * Where a note's words stand beside the window as it stands now: moved as far as the middle of the window's edge
- * facing them has moved since they were placed beside it.
+ * Where a note's words stand beside the window as it stands now: moved as far as the middle of the window's edge facing
+ * them has moved since they were placed beside it.
  */
 export function besideTheWindow(beside: Beside, window: Box): Box {
 	const placedBy = edgeFacing(beside.window, beside.side);

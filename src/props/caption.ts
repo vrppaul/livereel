@@ -2,9 +2,7 @@
  * A caption, a prop of the scene over the whole frame: words at the frame's foot, or at its top where the format puts
  * them there, on a ground that darkens the frame's edge under them. It lies over the frame alone, over every object,
  * riding with the eye wherever it moves, one at a time and known by no name. Where it stands is the format's, read as
- * the caption comes up, so one film can caption a square at its top and a wide frame at its foot. It comes up and goes
- * in its own way, its words one after another, or in a way of livereel's (`src/props/way.ts`), which brings its words
- * whole while its ground comes in its own way.
+ * the caption comes up, so one film can caption a square at its top and a wide frame at its foot.
  */
 import type { CaptionPlace, Format } from '../domain/format.ts';
 import { type OnItsWay, type WayCome, alongItsWay, presencesIn, presentShare } from './way.ts';

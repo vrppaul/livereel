@@ -2,10 +2,10 @@
  * Things, shown by an object (`src/moves/object.ts`): a film's own, built in three.js by the module the film names
  * (`src/props/thing.ts`), standing in a box at a place on the frame, where it rides with the eye, or in the world,
  * where the eye moves past it. As any object it is carried, grown, brought near, leant and taken away by the moves
- * objects share; its numbers go to new ones by `set`, each from where it stood. It comes up and goes in its own way
- * alone, which its module draws from how far it has come, as livereel's ways and effects are drawn by the stage's
- * markup, which draws nothing of a thing. Every move of it takes the thing named `thing`, or the one the film names
- * `as`.
+ * objects share; its numbers go to new ones by `set`, each from where it stood. It comes up and goes in its own way,
+ * which its module draws from how far it has come, or slides in and out whole past a side of the frame; none of
+ * livereel's ways or effects, which the stage's markup draws, comes to a thing. Every move of it takes the thing named
+ * `thing`, or the one the film names `as`.
  */
 import { FilmError } from '../domain/errors.ts';
 import type { Format } from '../domain/format.ts';
@@ -110,7 +110,10 @@ export const to = THING_MOVES.to;
 /** The thing leant back, swung, rolled and turned over as the film names, about its box's middle. */
 export const lean = THING_MOVES.lean;
 
-/** The thing's numbers going to those the film names, each from where it stood; the rest kept as they stand. */
+/**
+ * The thing's numbers going to those the film names, each from where it stood; the rest kept as they stand. The motion
+ * blur counts none of it, only how the thing's box moves.
+ */
 export function set(values: ThingValues, script: ThingSetScript = {}): Move {
 	assertKind(values, THING_VALUES, "thing.set's values");
 	assertWritten(script, THING_SET_FORM, 'thing.set');

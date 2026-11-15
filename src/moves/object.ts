@@ -154,7 +154,9 @@ export interface ShowScript extends TimingScript, NamedScript, EnterScript {
 
 /**
  * The `group` of objects an object comes up standing in, if any, and its `zIndex` there, how high it is drawn among the
- * others of the group: the higher over the lower, and as they came where it is alike, as where the film names none.
+ * others of the group: the higher over the lower, and as they came where it is alike, as where the film names none. An
+ * object joins a group only as it comes, where it would stand on the frame however the group stands, so it stands still
+ * as it joins.
  */
 export interface GroupedScript {
 	readonly group?: GroupName;

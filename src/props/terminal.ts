@@ -1,9 +1,6 @@
 /**
  * An agent's terminal, what an object shows (`src/props/object.ts`): its log above the line being typed, a window on
  * the ground filling the object's box, a little smaller while it comes up or goes.
- *
- * What moves of itself in it — the spinner of an agent at work, the caret's blink — is worked out from the film's
- * moment here, so the stage draws a terminal as it is handed and keeps no time of its own.
  */
 import { A_STRING, type Kind, ListOf, OfForm, OneOf, needed } from '../domain/handed.ts';
 

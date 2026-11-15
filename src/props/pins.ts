@@ -1,8 +1,8 @@
 /**
  * Pins: numbered marks laid on blocks of the page one after another, a path the viewer follows. Each new pin comes up
- * with its label; the labels before it quieten, their numbers staying. They lie on the screen as the light does, so
- * the camera carries them with the page; each block is read once, as its pin comes. Which way a label runs is worked
- * out every frame from where the camera shows the block, so it runs toward the view's middle and stays on the frame.
+ * with its label; the labels before it quieten, their numbers staying. They lie on the screen as the light does, so the
+ * camera carries them with the page; each block is read once, as its pin comes. Which way a label runs is worked out
+ * every frame from where the camera shows the block, so it runs toward the view's middle and stays on the frame.
  */
 import type { Camera } from '../domain/camera.ts';
 import type { Fraction } from '../domain/fraction.ts';

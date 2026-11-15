@@ -1,26 +1,8 @@
 /**
- * Words that come up one after another over a ground, and go: a caption's, at the frame's foot, a title's, over the
- * frame or a half of it, a callout's, on its card, and a note's.
- *
- * A film writes what is said as plain words, or as runs of them, each set its own way: italic, underlined, struck
- * through, in an ink or on a marker of its own colour. The words are worked out once, as their move is made, with a
- * key the stage knows them by: a word is a list of pieces, each the part of one run within it, after the space before
- * it, a piece of its own, set as the run it was written in sets it, so an underline or a marker runs on under the
- * space between two words of one run and stops where the run does; the browser drops a space that ends a line, and
- * its underline or marker with it. The space comes up with the word after it. A line break the film writes between two
- * words, in whichever run, stands in place of that space, as many as it writes, and the stage breaks the line there.
- *
- * Words come up in a way the film names, or the theme's (`WORDS_WAYS`). Word by word, so many words are on their way at
- * once as the film names, or `ON_THEIR_WAY_AT_ONCE`: each comes up over the share of the whole that many take, setting
- * off as the one that many before it arrives, so the last arrives as the whole does; and the stage draws its way by
- * name. They go so too, the first first, each as it came run back. Letter by letter, every word stands laid out from
- * the start, so no line breaks anew as they come: the letters fade up one after another at an even pace; or stand as
- * signs drawn by chance, which settle into the letters a few behind those coming (`src/domain/chance.ts`); or are typed
- * as a person types them (`src/domain/typing.ts`), each shown once its key has come, a caret after the last letter
- * typed until every one is; and such words go together. The space before a word is its first letter. Every piece's
- * letters are worked out with its words, so the stage lays such a word out one letter to an element as it is handed
- * them. The ground under the words comes up twice as fast as they do. The stage is handed every word's progress and how
- * far it has gone, and of a word laid out by letters, how many of its letters stand and the sign each stands as.
+ * Words that come up one after another over a ground, and go: a caption's, a title's, a callout's and a note's. They
+ * are worked out once, as their move is made, with a key the stage knows them by (`Said`). A word is a list of pieces,
+ * each set as the run of words it was written in sets it, and the space before it is a piece of its own, set the same
+ * way, so an underline or a marker runs on under the space between two words of one run and stops where the run does.
  */
 import { Chance, seedOf } from '../domain/chance.ts';
 import type { Fraction } from '../domain/fraction.ts';
@@ -61,8 +43,9 @@ const STYLES = ['italic', 'underline', 'strike'] as const;
 type Style = (typeof STYLES)[number];
 
 /**
- * A part of a word set one way, or a space between two words: its text, and its letters, each what one key gives, as
- * a person types them; its styles by name, its ink and marker.
+ * A part of a word set one way, or a space between two words: its text, and its letters, each what one key gives, as a
+ * person types them; its styles by name, its ink and marker. The browser drops a space that ends a line, and its
+ * underline or marker with it.
  */
 export interface Piece {
 	readonly text: string;
@@ -72,7 +55,7 @@ export interface Piece {
 	readonly marker: string | null;
 }
 
-/** A word as it is set: the space before it, where a word comes before, and its pieces. */
+/** A word as it is set: the space before it, where a word comes before it, which comes up with the word; its pieces. */
 interface Word {
 	readonly spaceBefore: Piece | null;
 	readonly pieces: readonly Piece[];
@@ -92,8 +75,8 @@ export interface ShownWords extends Said {
 
 /**
  * The ways words come up word by word, each word whole, which the stage draws by its name: each rising out of a blur,
- * rising sharp, fading up where it stands, coming clear out of a blur there, or rising from under its own line, as
- * from under a mask.
+ * rising sharp, fading up where it stands, coming clear out of a blur there, or rising from under its own line, as from
+ * under a mask.
  */
 const WORD_BY_WORD_WAYS = ['rise', 'sharp', 'fade', 'blur', 'mask'] as const;
 
@@ -127,9 +110,9 @@ export const AN_AT_ONCE: Kind<number> = new Plain(
 type LetterByLetterWay = Exclude<WordsWay, WordByWordWay>;
 
 /**
- * How words come up: word by word in a way the stage draws by its name, so many on their way at once; letter by
- * letter, at an even pace, or out of signs; or typed, by the strokes of a person typing them. Words that come up letter
- * by letter are laid out so, so the stage knows them by a key of their own.
+ * How words come up: word by word in a way the stage draws by its name, so many on their way at once; letter by letter,
+ * at an even pace, or out of signs; or typed, by the strokes of a person typing them. Words that come up letter by
+ * letter are laid out one letter to an element, so the stage knows them by a key of their own.
  */
 export type ComingUp = WordByWord | LetterByLetter | Typed;
 
@@ -157,18 +140,20 @@ interface RisingWord extends Word {
 	readonly gone: number;
 }
 
-/**
- * A word laid out letter by letter as the stage draws it: standing whole, how many of its letters stand, the space
- * before it first, whether the caret follows the last of them, and the sign each letter stands as before it settles
- * into its own, by its place in the word, none where it stands as itself; and how far it has gone, as all its words
- * have.
- */
+/** A word laid out letter by letter as the stage draws it, standing whole. */
 interface LetteredWord extends Word {
 	readonly kind: 'lettered';
 	readonly appeared: number;
+	/** How many of its letters stand, the space before it first. */
 	readonly letters: number;
+	/** Whether the caret follows the last of them. */
 	readonly caret: boolean;
+	/**
+	 * The sign each letter stands as before it settles into its own, by its place in the word; none where it stands as
+	 * itself.
+	 */
 	readonly signs: readonly (string | null)[];
+	/** How far it has gone; all such words go together. */
 	readonly gone: number;
 }
 
@@ -200,9 +185,9 @@ const GROUND_COMES_FASTER = 2;
 const WHOLE_WAY = 1;
 // Places among things that come one after another count from none, so the last's stands one short of their count
 const ONE_SHORT = 1;
-// A word laid out letter by letter stands whole, its letters shown one by one; and such words are laid out apart from
-// the same words coming up word by word, one letter to an element, so the stage knows them by a key of their own, this
-// before theirs
+// A word laid out letter by letter stands whole from the start, its letters shown one by one, so no line breaks anew as
+// they come; and such words are laid out apart from the same words coming up word by word, one letter to an element, so
+// the stage knows them by a key of their own, this before theirs
 const STANDS_WHOLE = 1;
 const LETTERED_KEY = 'lettered ';
 // Typed words show a caret after the last letter typed; letters that come up of themselves show none
@@ -379,9 +364,9 @@ function letteredWords(
 
 /**
  * Words scrambled, as far as they have come up, at a moment of the film: their letters come up one after another, each
- * standing as a sign drawn by chance, `SIGNS_A_SECOND` new ones a second, and settle into their own
- * `SIGNS_AHEAD` letters behind, so the last settles as the way ends. The words' key seeds the signs, so other words
- * draw signs of their own.
+ * standing as a sign drawn by chance, `SIGNS_A_SECOND` new ones a second, and settle into their own `SIGNS_AHEAD`
+ * letters behind, so the last settles as the way ends. The words' key seeds the signs, so other words draw signs of
+ * their own.
  */
 function scrambledWords(shown: ShownWords, moment: number): readonly DrawnWord[] {
 	const standing = shown.shown * (lettersIn(shown.words) + SIGNS_AHEAD);
@@ -391,8 +376,8 @@ function scrambledWords(shown: ShownWords, moment: number): readonly DrawnWord[]
 }
 
 /**
- * The sign a scrambled letter stands as, at its place among all, on a draw: none once so many letters have settled,
- * nor for a space, which stands as itself.
+ * The sign a scrambled letter stands as, at its place among all, on a draw: none once so many letters have settled, nor
+ * for a space, which stands as itself.
  */
 function signAt(place: number, letter: string, settled: number, draw: number): string | null {
 	if (place < settled || letter.trim() === '') return AS_ITSELF;
@@ -483,8 +468,8 @@ function spaceSetFor(written: string): string {
 }
 
 /**
- * Of two spaces written one after the other between two words, in two runs, the one set between them: the first,
- * unless the later breaks the line where the first does not.
+ * Of two spaces written one after the other between two words, in two runs, the one set between them: the first, unless
+ * the later breaks the line where the first does not.
  */
 function spaceBetween(first: Piece | null, later: Piece): Piece {
 	return first === null || (breaksTheLine(later) && !breaksTheLine(first)) ? later : first;

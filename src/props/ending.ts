@@ -39,9 +39,9 @@ const WHOLE = 1;
 
 /**
  * The card as the stage draws it, the object showing it as far as `presence` along. In its own way the card comes up
- * and goes whole, its ground and its lines one sheet, where a title card's ground and words come apart in their own
- * way too, as `presencesIn` has them; in a way of livereel's its lines stand whole, for the way to bring, and its
- * ground comes up and goes on the sheet as a title card's does, twice as fast as the way, so the lines stand on it.
+ * and goes whole, its ground and its lines one sheet, where a title card's ground and words come apart in their own way
+ * too, as `presencesIn` has them; in a way of livereel's its lines stand whole, for the way to bring, and its ground
+ * comes up and goes on the sheet as a title card's does, twice as fast as the way, so the lines stand on it.
  */
 export function drawnEnding(ending: Ending, way: Way, presence: Presence): DrawnEnding {
 	return way.kind === OWN_WAY.kind

@@ -1,12 +1,11 @@
 /**
  * A picture of the film's own: an image file the film names, a mark or a logo, shown by an object
- * (`src/props/object.ts`), so it travels, grows, comes near, turns, stands out, comes up and goes as any object does.
- * What is its own is the file it shows, how wide it stands against how tall, as the browser decoded it, and how many
- * of the frame's pixels across its file holds: it is drawn as large as its box holds all of it, in the box's middle, as
- * a piece of the page is (`src/props/piece.ts`). The stage draws it from the file as it holds it (`layPictures` in
- * `stage/stage.js`), at the frame's density on the frame and in the window, and in the world as densely as the eye
- * magnifies it (`DrawnObject.magnified`), as all markup there, but no denser than its file's pixels: past them a denser
- * drawing holds the same pixels stretched.
+ * (`src/props/object.ts`). What is its own is the file it shows, how wide it stands against how tall, as the browser
+ * decoded it, and how many of the frame's pixels across its file holds: it is drawn as large as its box holds all of
+ * it, in the box's middle, as a piece of the page is (`src/props/piece.ts`). The stage draws it from the file as it
+ * holds it (`layPictures` in `stage/stage.js`), at the frame's density on the frame and in the window, and in the world
+ * as densely as the eye magnifies it (`DrawnObject.magnified`), as all markup there, but no denser than its file's
+ * pixels: past them a denser drawing holds the same pixels stretched.
  */
 import { type Box, boxOf } from '../domain/geometry.ts';
 import type { PictureDecoded } from '../domain/picture.ts';
@@ -18,14 +17,13 @@ export interface FilmPicture extends PictureDecoded {
 	readonly file: string;
 }
 
-/**
- * A picture as the stage draws it: its file, the part of its box it is drawn in, in the frame's pixels from the box's
- * top left corner, and how far it has come up and not gone in its own way, fading whole, from 0 to 1.
- */
+/** A picture as the stage draws it. */
 export interface DrawnFilmPicture {
 	readonly kind: 'picture';
 	readonly file: string;
+	/** The part of its box it is drawn in, in the frame's pixels from the box's top left corner. */
 	readonly figure: Box;
+	/** How far it has come up and not gone in its own way, fading whole, from 0 to 1. */
 	readonly shown: number;
 }
 
@@ -39,8 +37,8 @@ export function drawnFilmPicture(picture: FilmPicture, box: Box, shown: number):
 }
 
 /**
- * How many times the eye may magnify a picture as the stage draws it before a denser drawing holds no more of its
- * file: the frame's pixels across its file holds, for each of its figure's.
+ * How many times the eye may magnify a picture as the stage draws it before a denser drawing holds no more of its file:
+ * the frame's pixels across its file holds, for each of its figure's.
  */
 export function magnifiedAtMostOfFilmPicture(picture: FilmPicture, drawn: DrawnFilmPicture): number {
 	return picture.sharpAcross / drawn.figure.width;

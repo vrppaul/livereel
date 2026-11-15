@@ -1,18 +1,13 @@
 /**
- * How an object stands out from what lies under it, apart from where it stands: a ring along its edge and a glow round
- * it, a shadow it casts toward its foot as though lifted off what lies under it, each as strong as a share from none to
- * whole, and how far it is blurred, in film pixels. The ring and the glow are drawn in the look's accent as it stands,
- * until the film names a colour of their own, which they go to from the colour they were seen in, the accent's as it
- * stood where they had none. It may melt into nothing toward a side of what it shows, from as far in as a share of it,
- * its shadow and glow following what is left, as they follow its shape; the side is kept while it melts, and the melt
- * is drawn apart from its filter, so one that only melts draws none. It may fade whole into what lies behind it, a
- * share from none to whole, as the window's shade fades the page into the film's ground, so a piece lifted off a faded
- * page comes up as faded as the page and clears as it rises; the fade is drawn apart from its filter too, as how clear
- * the object is. A film moves them as it moves places, with how large and how far out toward the eye the object stands
- * where it stands (`src/domain/stance.ts`), by one move that sets the values it names (`objectEffects` in
+ * How an object stands out from what lies under it, apart from where it stands: a ring along its edge, a glow round it,
+ * a shadow toward its foot and a blur; a melt into nothing toward a side of what it shows; and a fade into what lies
+ * behind it, as the window's shade fades the page, which a film may use to lift a piece as faded as its page and clear
+ * it as it rises. The melt and the fade are drawn apart from the object's filter, so one that only melts or fades draws
+ * none.
+ *
+ * Their move also sets how large and how far out toward the eye the object stands (`objectEffects` in
  * `src/moves/object.ts`): a block lifted off the page has no place a film knows, so only such a move grows it or brings
- * it near where it is. An object comes up standing out as its show names, so it comes soft or faded from its first
- * frame, and in no way, in the accent, melting none and unfaded, where its show names nothing.
+ * it near where it is.
  */
 import { colourToward } from '../domain/colour.ts';
 import { type Fraction, NONE, WHOLE, fractionOf } from '../domain/fraction.ts';
@@ -38,8 +33,8 @@ interface StandingOut {
 }
 
 /**
- * How far in from a side of what an object shows it melts into nothing at that side, a share of it, and the side:
- * none before a film names one.
+ * How far in from a side of what an object shows it melts into nothing at that side, a share of it, and the side, none
+ * before a film names one; its shadow and glow follow what is left, as they follow its shape.
  */
 interface Melt {
 	readonly toward: FrameSide | null;
@@ -62,9 +57,9 @@ export interface Effects extends StandingOut {
 }
 
 /**
- * What a move of an object's effects sets: how it stands out; the colour of its ring and glow, which moves from the
- * one they stand in, the accent's as it stands where they have none of their own; how it melts and fades; and how
- * large and how far out toward the eye it stands.
+ * What a move of an object's effects sets: how it stands out; the colour of its ring and glow, which moves from the one
+ * they stand in, the accent's as it stands where they have none of their own; how it melts and fades; and how large and
+ * how far out toward the eye it stands.
  */
 export type EffectsInPlace = StandingOut & { readonly colour: string } & Pick<Effects, 'melt' | 'fade'> &
 	Pick<Stance, 'scale' | 'depth'>;
@@ -83,9 +78,9 @@ export const NO_EFFECTS: Effects = { ...IN_NO_WAY, colour: IN_THE_ACCENT, melt: 
 // How far along its way a move stands as it begins
 const NOT_ON_ITS_WAY = 0;
 
-// How each moves: a share between none and whole and a blur between where it starts and ends, however far past its
-// ends a curve takes them; the colour through the colours between; a melt as a share, toward the side it goes to; a
-// fade as a share; the scale and the depth with the curve, as a carry moves them
+// How each moves: a share between none and whole and a blur between where it starts and ends, however far past its ends
+// a curve takes them; the colour through the colours between; a melt as a share, toward the side it goes to; a fade as
+// a share; the scale and the depth with the curve, as a carry moves them
 export const EFFECTS_IN_PLACE: MovingBy<EffectsInPlace> = {
 	ring: MOVES_AS_A_SHARE,
 	glow: MOVES_AS_A_SHARE,

@@ -5,10 +5,6 @@
  * nothing of its own, never another group. It stands on the frame in a box, which it grows, turns and comes near about
  * the middle of, and an object in it has its box in the group's pixels, from the box's top left corner; the box is as
  * large as the group was placed, so a group grows by its scale alone.
- *
- * An object joins a group only as it comes, standing in it where it would stand on the frame, carried into the group's
- * plane however the group stands (`carriedInto`, `src/domain/placement.ts`), so it stands still as it joins. A group
- * goes with every object in it, fading them as it goes; the scene holds no object of a group gone.
  */
 import { FilmError } from '../domain/errors.ts';
 import { type Fraction, WHOLE } from '../domain/fraction.ts';

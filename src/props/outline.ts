@@ -1,9 +1,8 @@
 /**
- * An outline: a ring round a part of the page's screen, its source, standing on the frame round where the camera
- * showed that part as it came, as a piece of the page does (`src/props/piece.ts`), but drawn from no picture: a line in
- * the accent's colour, solid or dashed, a little clear of its box. It is what an object shows (`src/props/object.ts`),
- * so it travels, grows and turns as any object does: it marks a block or an area of the page, or rings what stands
- * apart.
+ * An outline: a ring round a part of the page's screen, its source, standing on the frame round where the camera showed
+ * that part as it came, as a piece of the page does (`src/props/piece.ts`), but drawn from no picture: a line in the
+ * accent's colour, solid or dashed, a little clear of its box. It is what an object shows (`src/props/object.ts`): it
+ * marks a block or an area of the page, or rings what stands apart.
  */
 import type { Box } from '../domain/geometry.ts';
 import type { Stroke } from './stroke.ts';

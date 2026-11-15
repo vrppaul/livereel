@@ -5,10 +5,8 @@
  * under the window and all else, so a page and the words over it stand as they are drawn; it moves each colour of each
  * pixel of the frame apart, and stands still from frame to frame. livereel's own world has none.
  *
- * A film writes how many levels of 255 it moves a colour either way, evenly, or turns it off. The world holds the
- * levels, none where it is off, so a move takes the grain through the levels between. The stage is handed how far it
- * spreads a colour (`drawnGrain`), as the stage's noise is of a kind of its own, not even, and drawn as strongly as
- * spreads a colour as far.
+ * The stage is handed the spread, not the levels (`drawnGrain`): its own noise is not even, so it sets the noise as
+ * strong as gives that spread. A move takes the grain through the levels between.
  */
 import { type Kind, OfForm, Plain, isMoreThanNone, needed } from '../domain/handed.ts';
 import { type TurnedOff, isTurnedOff } from '../domain/turned-off.ts';
