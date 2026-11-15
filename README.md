@@ -431,11 +431,11 @@ play({ seconds: 3, moves: [
 
 ### A film's own page
 
-`screen.shows({ html })` shows a film's own page in the filmed page's place: a whole document the film
-writes in HTML and CSS, a slide, a terminal, an end card, laid out at the screen's size, framed by the camera,
-leant and blurred as the filmed page is, its text sharp however close the camera comes. `screen.shows('filmed')`
-brings the filmed page back. In a `cut` it swaps at once; in a `play`, at the moment `within: { start }` names,
-so a camera flying fast through the swap smears one into the other.
+`screen.shows({ html })` shows a film's own page in the filmed page's place: a whole document the film writes in
+HTML and CSS, a slide, a terminal, an end card, laid out at the screen's size, framed by the camera, leant and
+blurred as the filmed page is, its text sharp however close the camera comes. `screen.shows('filmed')` brings the
+filmed page back. In a `cut` it swaps at once; in a `play`, at the moment `within: { start }` names, so a camera
+flying fast through the swap smears one into the other.
 
 It stands as written: its scripts do not run, and one that animates or transitions of itself is refused before
 the film is shot, as it moves only as the film runs it. An address in it is read from the stage's own folder, so
@@ -457,8 +457,8 @@ Written in a `play`, the page going lies on the page coming from the fade's mome
 screen and the light, under a callout, the pins and the cursor, and the window's shade dims and fades the page
 coming alone, so `window.shade({ fade: 1 })` in the same cut, brought to `0` over the next play, brings the page
 coming up out of the dark under the one going. Refused: a fade on a page framed live, from a page the window
-shades, from a film's own page that runs or is drawn past its screen, and while the screen still fades
-from the page before.
+shades, from a film's own page that runs or is drawn past its screen, and while the screen still fades from the
+page before.
 
 **Past the screen.** A film's own page is cut at the screen's edges, `reaches: 'screen'`;
 `screen.shows({ html }, { reaches: 'document' })` draws it on past the screen's top and foot as far as its
@@ -583,13 +583,13 @@ into the ground, the window's shadow and edge with it: over the move's share of 
 
 ### Its back
 
-`screen.behind({ html }, { upright: 'over' })` puts a film's own page on the window's back, as a slab
-wears one: where the eye sees the window's back, the screen shows it in place of its front, mounted so it stands
-upright once the window is turned over round its width, `'over'`, or round its upright, `'round'`. The camera
-frames it as it frames the front, so a camera close on a block of the front shows that part of the back: bring
-the camera to the whole screen before the window turns. The light, the cursor, a callout, the pins and the objects
-in the window, which lie on the front, stand unseen meanwhile; in a room the page lies on the body's back. A back
-that runs from the first frame is `screen.behind` and `screen.scrolls` of the same page in the opening `cut`.
+`screen.behind({ html }, { upright: 'over' })` puts a film's own page on the window's back, as a slab wears one:
+where the eye sees the window's back, the screen shows it in place of its front, mounted so it stands upright once
+the window is turned over round its width, `'over'`, or round its upright, `'round'`. The camera frames it as it
+frames the front, so a camera close on a block of the front shows that part of the back: bring the camera to the
+whole screen before the window turns. The light, the cursor, a callout, the pins and the objects in the window,
+which lie on the front, stand unseen meanwhile; in a room the page lies on the body's back. A back that runs from
+the first frame is `screen.behind` and `screen.scrolls` of the same page in the opening `cut`.
 `screen.behind('none')` takes it off, and the screen is seen through the window's back, mirrored, as with none.
 
 ### Its body
@@ -901,13 +901,14 @@ bright as the look draws it.
 
 ### Pictures
 
-`picture.show(file, { at, from, enter, edge, as, inside, group, zIndex, effects })` shows a film's own
-picture, a mark or a logo, from an image file by its path from the film's file: PNG, JPEG, WebP, AVIF, GIF, or an SVG
-that names its width and height. It stands over the whole frame or `at` a place, read as the window reads one, as
-large as the place holds all of it, in its middle, as wide against as tall as its file. A file that is not there,
-or decodes to no picture, is refused before the first frame. Brought near the eye in the world, a room draws it as
-densely as the eye magnifies it, so give it a file at least as large as the frame shows it. `picture.to`,
-`picture.lean`, `picture.effects` and `picture.hide({ toward, leave, edge, as })` move it as any object.
+`picture.show(file, { at, from, enter, edge, as, inside, group, zIndex, effects })` shows a film's own picture, a
+mark or a logo, from an image file by its path from the film's file: PNG, JPEG, WebP, AVIF, GIF, or an SVG that
+names its width and height. It stands over the whole frame or `at` a place, read as the window reads one, as large
+as the place holds all of it, in its middle, as wide against as tall as its file. A file that is not there, or
+decodes to no picture, is refused before the first frame. Brought near the eye in the world, a room draws it no
+denser than its file holds, an SVG as densely as the eye asks, so give it a file at least as large as the frame
+shows it. `picture.to`, `picture.lean`, `picture.effects` and `picture.hide({ toward, leave, edge, as })` move it
+as any object.
 
 ### Pieces of the page
 
@@ -1008,16 +1009,15 @@ come, so a part lifted shows the pit it left and lying back stands in it; it goe
 as dark while a shade fades the page, unless its piece stands in the shade. A room only: flat draws the hole in its
 `ground`. Refused: a pit on a piece with no body.
 
-**In the shade.** A piece lifted off a shaded page may stand in the window's shade, as the claude-review promo's lens
-keeps a lifted part as soft and faded as its page as far as it has not risen: `shade: { clearAt: 56 }` has the shade
-reach it and its walls wholly while its face lies on the page, less as `depth` brings it toward the eye, and not at
-all from 56 film pixels on; its pit, a hole in the page, it reaches wholly however far the piece rises, so the pit
-stays as dark as the soft page round it. The room blurs it and its pit by the shade's own law, through the eye's lens
-in light, and fades them in light into what stands behind the page, so lying on its page a piece shows as the page
-round it, but for the shade's `dim`, which stays the screen's alone, and lifted whole it stands sharp and clear: the
-film writes no blur or fade of its own for it. A room
-only, where the shade blurs the whole window: flat draws it as a piece in no shade. Refused: a piece in the shade
-anywhere but in the world.
+**In the shade.** A piece lifted off a shaded page may stand in the window's shade, as soft and faded as its page
+as far as it has not risen: `shade: { clearAt: 56 }` has the shade reach it and its walls wholly while its face lies
+on the page, less as `depth` brings it toward the eye, and not at all from 56 film pixels on; its pit, a hole in the
+page, it reaches wholly however far the piece rises, so the pit stays as dark as the soft page round it. The room
+blurs it and its pit by the shade's own law, through the eye's lens in light, and fades them in light into what
+stands behind the page, so lying on its page a piece shows as the page round it, but for the shade's `dim`, which
+stays the screen's alone, and lifted whole it stands sharp and clear: the film writes no blur or fade of its own for
+it. A room only, where the shade blurs the whole window: flat draws it as a piece in no shade. Refused: a piece in
+the shade anywhere but in the world.
 
 **A sheen.** Wiped away, a piece may trail a light over the page it leaves: `piece.hide({ leave: 'wipe', edge:
 'right', sheen: { colour: '#59c470' } })` runs a band along a line that has landed on its row, the line gone
@@ -1299,8 +1299,8 @@ stands clear of it, a piece lifted off it, a title or code. It sets only what it
   half and back with the new part over its second. `sharp: 'none'` keeps none. The part is read off the page on
   the first frame that blurs the page after the move names it, and again after every move of the page, an act, a
   typing or a scroll, and every change the page makes of itself, so it stays on its blocks while the page lays them
-  out anew under it. It is drawn from the page's picture, so `sharp` is refused on a page framed live and
-  on a film's own page.
+  out anew under it. It is drawn from the page's picture, so `sharp` is refused on a page framed live and on a
+  film's own page.
 - `sharp: { blocks: '[data-testid=row], [data-testid=thread]', across: '[data-testid=card]' }` keeps a stretch of
   blocks sharp that no one block is: every block `blocks` matches, together, as wide across as every block `across`
   matches, where named, which may reach past the blocks. A line and the thread under it stay sharp as wide as the
@@ -1515,11 +1515,10 @@ What a room costs and needs:
 - Markup standing in the world is drawn as densely as the eye magnifies it, up to the graphics card's largest
   texture; one that would ask more is drawn part by part, each as dense as the eye magnifies it and only as far as
   the frame shows it. What shows a picture is drawn no denser than the picture holds: a piece at the zoom its
-  picture was taken at, 2.2, or a sharper one's own; a film's own picture at its file's pixels; an SVG as
-  densely as the eye asks. Nearer than that, the eye sees the picture stretched. Where the frame shows more of the
-  window's plane than the card holds in one texture, as the eye flying low over a tall screen does, what lies over
-  the page is drawn less densely; a page's picture larger
-  than the card's largest texture is shrunk whole to fit it.
+  picture was taken at, 2.2, or a sharper one's own; a film's own picture at its file's pixels; an SVG as densely
+  as the eye asks. Nearer than that, the eye sees the picture stretched. Where the frame shows more of the window's
+  plane than the card holds in one texture, as the eye flying low over a tall screen does, what lies over the page
+  is drawn less densely; a page's picture larger than the card's largest texture is shrunk whole to fit it.
 - It draws through Chrome's HTML-in-Canvas, an experiment behind a flag livereel turns on: livereel pins the
   browser `npx livereel setup` installs, and refuses a browser without it, or one that gives the page no WebGL, as
   the machine's to put right.

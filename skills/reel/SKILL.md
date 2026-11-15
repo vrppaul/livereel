@@ -152,10 +152,10 @@ already runs; `ready`, when the page stands as the first frame shows it; and `st
 film's: name one the command serves on and nothing else holds. Every other field of `defineFilm` is in the README's
 table, "A film". A length on the frame or in the world is in film pixels, pixels of a frame whose shorter side is 1080,
 scaled to the frame shot; one on the page, a box of the screen, `air` or the screen's size, in the page's pixels. Read
-`node_modules/livereel/examples/example-com.ts` first: it is a whole film.
-`examples/livereel-promo.ts` serves an app of its own and clicks it for real; its server is
-`examples/livereel-promo/server.ts`, and what a click brings, data the server and the film both read,
-`examples/livereel-promo/acme.ts`. `examples/livereel-recipes.ts` plays the recipes below on that app, an act each.
+`node_modules/livereel/examples/example-com.ts` first: it is a whole film. `examples/livereel-promo.ts` serves an app of
+its own and clicks it for real; its server is `examples/livereel-promo/server.ts`, and what a click brings, data the
+server and the film both read, `examples/livereel-promo/acme.ts`. `examples/livereel-recipes.ts` plays the recipes below
+on that app, an act each.
 
 A film shot on its set names `set: { scenario, targets, sharpness }`. The scenario is Playwright code run once on the
 app by `livereel set film.ts --format NAME`, after `ready`: it acts on the app as a person would, and marks each state
@@ -172,11 +172,11 @@ no page. Shoot the set again after the app, a format, the targets or the sharpne
   `end`, `air`, `zoomAtMost`, `every`, `tilt`, `turn`, `roll`, `scale`, `depth`, `dim`, `fade`, `ring`, `glow`,
   `shadow`, `blur`, `thinkingShare`, `seed`, `slipAt`, `pace`, `pixels`, `top`, `takes`, `after`); any other number is
   a constant at the top.
-- Every move that runs over time takes `within: { start, end }`, its share of the step, and `ease`, its own curve.
-  In a long play timed to a cut or music, give it the play's seconds instead: `{ after: 2.2, takes: 0.9 }`, and a
-  move at a moment `{ after: 2.2 }`; never work seconds out into shares by hand.
-  Two moves of one part run at once only where each names values the other does not (`window.to` beside
-  `window.lean`, two `effects`); otherwise give them shares one after the other.
+- Every move that runs over time takes `within: { start, end }`, its share of the step, and `ease`, its own curve. In a
+  long play timed to a cut or music, give it the play's seconds instead: `{ after: 2.2, takes: 0.9 }`, and a move at a
+  moment `{ after: 2.2 }`; never work seconds out into shares by hand. Two moves of one part run at once only where each
+  names values the other does not (`window.to` beside `window.lean`, two `effects`); otherwise give them shares one
+  after the other.
 - Frame by selector, so one script fits every format. A pose in numbers, or a box of the screen for a page with
   nothing to select, is given once per format, in a record of the film's format names
   (`Record<keyof typeof FORMATS, Pose>`, or `Box`), picked by the `formatName` that `steps` is handed: the type checker
@@ -288,16 +288,16 @@ window, `effects({ ring, glow, shadow, blur, colour, melt, fade, scale, depth })
 | `thing.to(place, { scale, depth })`, `thing.lean(...)`, `thing.hide({ toward })` | as any object; no ways or effects |
 | `ending.show({ name, line, command }, { from, enter, edge })`, `ending.hide({ toward, leave, edge })` | the end card on the frame's ground, with a chime; first or last, never carried ("The ending card") |
 
-A piece in a few words: lifted off one block, it is as round as the page draws it, and `corner` rounds only a
-stretch lifted with `air` or off several blocks or a box; `hole: {}` leaves its place
-empty; `lines: 'solid'` ties it to its source; `picture: 'held'` keeps it as it was lifted while the page changes;
-`inside: 'world'` stands it in the world, and only there may it ride its block's scroll (`rides: 'its block'`), have
-walls (`body: { thickness, glow }`, of the colour along its edge, or `walls` named), leave a socket or pit (`hole: { reach, pit: { depth, glow } }`) and stand
-in the window's shade, as soft and faded as its page until it rises `clearAt` that many pixels (`shade: { clearAt }`),
-the last three a room's alone; a piece in the shade is never given a blur or fade of the page's by hand; `letters`
-names the block of its source whose letters land letter on letter on the block `onto` names. A thing is lit by the
-world's `lights` and `softBoxes`, never the theme's; glass in it writes no depth, `depthWrite: false`. Never wrap
-what three.js does in a thing: build it in the module.
+A piece in a few words: lifted off one block, it is as round as the page draws it, and `corner` rounds only a stretch
+lifted with `air` or off several blocks or a box; `hole: {}` leaves its place empty; `lines: 'solid'` ties it to its
+source; `picture: 'held'` keeps it as it was lifted while the page changes; `inside: 'world'` stands it in the world,
+and only there may it ride its block's scroll (`rides: 'its block'`), have walls (`body: { thickness, glow }`, of the
+colour along its edge, or `walls` named), leave a socket or pit (`hole: { reach, pit: { depth, glow } }`) and stand in
+the window's shade, as soft and faded as its page until it rises `clearAt` that many pixels (`shade: { clearAt }`), the
+last three a room's alone; a piece in the shade is never given a blur or fade of the page's by hand; `letters` names the
+block of its source whose letters land letter on letter on the block `onto` names. A thing is lit by the world's
+`lights` and `softBoxes`, never the theme's; glass in it writes no depth, `depthWrite: false`. Never wrap what three.js
+does in a thing: build it in the module.
 
 **Where it is seen from** (README "Where it is seen from")
 
@@ -347,10 +347,9 @@ and on a film's own page. Motion blur is `defineFilm`'s `motionBlur` ("Motion bl
 - Sounds are few and quiet: a click, the keys, the ending. Leave the keyboard as livereel sets it unless the user asks
   for another; the README names each by the keyboard it was recorded on. One typing heard on another keyboard names
   it, `page.type(strokes, { keyboard: 'butterfly' })`: two people typing, or a film that shows the keyboards off.
-- Music only where the user asks for it, and quiet under the clicks (`volume` about 0.3) unless they want it as
-  loud as its file. Music that loud buries the keys, which peak about 12 dB under the click:
-  `sounds: { keyVolume: 4 }` lifts them to the click's level. Keep `sound.play` for what the page itself would
-  make sound.
+- Music only where the user asks for it, and quiet under the clicks (`volume` about 0.3) unless they want it as loud as
+  its file. Music that loud buries the keys, which peak about 12 dB under the click: `sounds: { keyVolume: 4 }` lifts
+  them to the click's level. Keep `sound.play` for what the page itself would make sound.
 - A `theme` where the user names a brand's look; leave out what they do not name: livereel's own is a dark ground,
   white ink and an amber accent. A light `terminal` needs all six code colours given. The window's body is the
   window's, `window.body`, not the theme's.
