@@ -18,10 +18,10 @@
  * Run in the repository's root, as pre-commit runs it: `node -C source scripts/check-references.ts`. It prints each
  * line at fault, by its file and line, a line each, and exits 1; it prints nothing and exits 0 where none is.
  */
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, join, normalize } from 'node:path';
 import { reported } from './disagreements.ts';
+import { trackedFiles } from './tracked.ts';
 
 // The folders of code read, and the documents
 const SOURCES = /^(src|stage|scripts|bin|examples)\//;
@@ -69,11 +69,6 @@ interface Line {
 	readonly file: string;
 	readonly number: number;
 	readonly text: string;
-}
-
-/** The repository's files, as git tracks them. */
-function trackedFiles(): string[] {
-	return execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter(Boolean);
 }
 
 /** Whether a file a line names is tracked: from the root, beside the line's file, or in livereel installed. */

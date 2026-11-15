@@ -45,6 +45,12 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: wrapping
+        name: the comments (wrapped tight to 120 columns, no line ending where its next word fits)
+        entry: node -C source scripts/check-wrapping.ts
+        language: system
+        pass_filenames: false
+        always_run: true
       - id: versions
         name: the versions (npm's and the plugin's are one)
         entry: node -C source scripts/check-versions.ts
