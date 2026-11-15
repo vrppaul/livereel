@@ -3,34 +3,27 @@
  * What the eye sees through in the room's one scene (`stage/room.js`): the page where it fades or is still coming up
  * and a thing or markup stands in the world beside it, a film's things whose material writes no depth, and markup
  * standing in the world. The lens reads one depth a pixel, and what is seen through shows two things at a pixel, itself
- * and what stands behind it: drawn in the world with the rest, a thing of glass was blurred by the depth of what stood
- * behind it, and a fading page, which writes its depth, hid what of such a thing stood behind it and had what stood
- * behind it blurred as the page. So what is seen through is drawn as fields of its own, each blurred by the lens by its
- * own depth and laid over the last, over the field of what writes depth: drawn over that field's depth, so what stands
- * behind an opaque surface stays hidden, with a depth of its own, that of the nearest surface it holds, which the lens
- * blurs all of it by.
+ * and what stands behind it: drawn in the world with the rest, a thing of glass would be blurred by the depth of what
+ * stands behind it, and a fading page, which writes its depth, would hide what of such a thing stands behind it. So
+ * what is seen through is drawn as fields of its own, each over the depth of the field of what writes depth, so what
+ * stands behind an opaque surface stays hidden, with a depth of its own, that of the nearest surface it holds, which
+ * the lens blurs all of it by; and each laid over the last.
  *
- * A film's things seen through and markup stand in fields apart, as they are laid by two laws: a film's light in linear
- * light, as three lays one thing over another, and markup, the page seen through with it, as the browser lays it
- * (`stage/laying.js`). Of the two, the farther is laid first (`kindsFartherFirst` in `stage/room.js`). Within its field
- * markup is laid by its law too: drawn in the screen's colours, as the browser drew it, three lays its surfaces over
- * one another there as the browser lays them, and the field is turned into light once drawn, for the lens. The page
- * lies alone in its field with the window's glass over it, both drawn as light, the glass a film's light laid over the
- * page as three lays a coat, so its reflection past white stays whole for the glow; the field is laid as the browser
- * lays the page. Drawn with the page in its field, markup before it would have the page under its faint shadow blurred
- * by the shadow's depth, not the page's: under a title in focus before a blurred page, a band of the page sharp under
- * its shadow, cut hard where the shadow ends.
+ * A film's things seen through and markup stand in fields apart, as they are laid by two laws (`DRAWN`), the farther
+ * laid first (`kindsFartherFirst` in `stage/room.js`). The page lies alone in its field with the window's glass over
+ * it: drawn with the page, markup before it would have the page under its faint shadow blurred by the shadow's depth,
+ * not the page's, a band of the page sharp under a title's shadow, cut hard where the shadow ends.
  *
  * Nothing seen through writes depth, so it is laid in the order it is drawn, and three draws whole meshes, the farthest
- * first: a thing passing through the fading page would be laid wholly over the page or wholly under it. So where the
- * page is seen through, what is seen through beside it is cut at its plane, and drawn as fields behind the page; then
- * the page, and what stands before it. Drawn as one field, the nearest surface's depth would be the page's where what
- * stood behind showed through it: a title behind a half-faded page in focus would be sharp through the page and blurred
- * beside it. A mesh's own faces three lays in the order of its materials, so a box of six see-through materials lays a
- * back face drawn after a front face over it; one material drawn on both sides is laid its back faces first.
+ * first: a thing passing through the fading page would be laid wholly over the page or wholly under it, so what is seen
+ * through beside the page is cut at its plane (`seenThroughFieldsOf`). Drawn as one field, the nearest surface's depth
+ * would be the page's where what stands behind shows through it: a title behind a half-faded page in focus would be
+ * sharp through the page and blurred beside it. A mesh's own faces three lays in the order of its materials, so a box
+ * of six see-through materials lays a back face drawn after a front face over it; one material drawn on both sides is
+ * laid its back faces first.
  *
- * Which field a part of the world is drawn in is told by three's layers, which a camera draws one or more of at a time:
- * the world's lights are in all of them, as three lights a part only by lights in its own.
+ * Which field a part of the world is drawn in is told by three's layers (`WORLD_PARTS`); the world's lights are in all
+ * of them, as three lights a part only by lights in its own.
  */
 import { DepthTexture, DoubleSide, MeshBasicMaterial, Plane, Vector3, WebGLRenderTarget } from 'three';
 import { sceneFieldOf } from './lens.js';
@@ -78,11 +71,11 @@ const NOTHING_SEEN_THROUGH = [];
  * lies under it, as the browser lays it or in linear light. Markup is drawn as the browser drew it, so three lays its
  * surfaces over one another as the browser lays them (`MARKUP_PART_FRAGMENT` in `stage/room.js`), and is laid so. A
  * film's things are its light. The page is laid as markup is: its fade is the stylesheet's, and laid in linear light
- * over what stood behind it: a half-faded page over a glass cube came out 13 levels off the old room, which laid its
- * layers in the screen's colours, and laid so, under 2; it is drawn as light, as the glass over it is drawn as a film's
- * light. The share the window's shade fades it by the page's surface lays in light itself, from what the room has laid
- * behind it (`stage/page-picture.js`): the field holds the page as clear as its screen has come up, and the browser's
- * law lays that alone.
+ * over what stands behind it, as a half-faded page over a glass cube came out 13 levels off laid in the screen's
+ * colours, and under 2 laid so; it is drawn as light, as the glass over it is drawn as a film's light, so the glass's
+ * reflection past white stays whole for the glow. The share the window's shade fades it by the page's surface lays in
+ * light itself, from what the room has laid behind it (`stage/page-picture.js`): the field holds the page as clear as
+ * its screen has come up, and the browser's law lays that alone.
  * @type {{
  *   readonly [Holding in SeenThroughHolding]: { readonly inTheScreensColours: boolean, readonly laid: Laying }
  * }}

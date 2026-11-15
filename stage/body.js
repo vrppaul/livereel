@@ -3,32 +3,15 @@
  * The body of the page's window in the room (`DrawnBody` in `src/props/window.ts`): a slab of metal round the page, as
  * a tablet is made — its sides flat and square to the page, only its corners round, a rim round the page on its front
  * and a back behind — standing round the page in the room's one scene, lit by the world's light as the eye sees the
- * room (`stage/lighting.js`). It is open in front, where the page lies, and each face is drawn on its outer side alone,
- * so a page that fades shows what stands behind the window through it, as it does with no body.
- *
- * Its rim reaches a pixel under the page, so the page's smoothed edge lies over metal, not over the ground between the
- * two. Its sides face straight out from its corners' arcs, where their own faces would cut each round into facets a
- * soft box glides over in steps. Its faces are built anew only as its measures change, as the window lifts or travels;
- * standing, it is built once.
- *
- * Over the page lies glass: a smooth clear coat on nothing, as three draws one, so it shows what it reflects of the
- * world's light, more as the eye sees it more aslant, and the glint of a strip of light the slab keeps standing near it
- * (`NEAR_STRIP`), the slab's own light. It is laid over the page drawn before it as three lays a coat over what lies
- * under it: what it reflects added whole, the page under it dimmed by the share the coat reflects, as premultiplied
- * light is laid, and it writes no depth. It lies on the page's plane, drawn nearer by depth's offset, so it wins the
- * plane the page shares with it.
+ * room (`stage/lighting.js`), with glass over the page that shows what it reflects of the world's light. It is open in
+ * front, where the page lies, and each face is drawn on its outer side alone, so a page that fades shows what stands
+ * behind the window through it, as it does with no body.
  *
  * Where the window's shade reaches the whole window (`BodyShade` in `src/props/window.ts`), the body is shaded as the
- * page is: its metal faded in light into what stands behind it as far as the page has faded (`WHAT_STANDS_BEHIND` in
- * `stage/page-picture.js`); and the page and its body blurred as one by the eye's lens, as wide as the shade's blur,
- * grown as the eye sees each point nearer or as wide on the frame at every point, as the shade has its blur seen, but
- * the part of the screen the blur leaves sharp, so the slab's rim and sides and the page's outline soften with the
- * page. The lens blurs by depth (`stage/lens.js`), and the slab stands at about one depth with the page, so the window
- * is handed the lens as spreads of its own (`WindowBlurred`): each pixel of a field holding the window whose depth
- * falls within the slab, read back onto it, spreads as wide as the shade blurs it there. Read off the depth, what
- * stands before the slab keeps its own spread, as the depth hides the slab there. The engine hands the page's picture
- * unblurred then (`pictureBlur` in its window): blurred in its picture too, the page's outline would stand sharp round
- * a soft page, a bright line.
+ * page is: its metal fades in light into what stands behind it (`Fading`), and the page and its body blur as one by the
+ * eye's lens, so the slab's rim and sides and the page's outline soften with the page. The lens blurs by depth
+ * (`stage/lens.js`), and the slab stands at about one depth with the page, so the window is handed the lens as spreads
+ * of its own (`WindowBlurred`).
  */
 import * as THREE from 'three';
 import { matrixOf } from './matrices.js';
@@ -80,7 +63,8 @@ import {
 
 // How finely a corner is cut, in straight lines a quarter-turn
 const CORNER_SEGMENTS = 16;
-// How far the rim reaches under the page, in the frame's pixels
+// How far the rim reaches under the page, in the frame's pixels, so the page's smoothed edge lies over metal, not over
+// the ground between the two
 const RIM_UNDER_THE_PAGE = 1;
 // The body is metal through and through; the glass is a smooth clear coat over a face of no colour that reflects
 // nothing of its own, so the coat alone shows: no specular of its own, and no metal, which three would have reflect
@@ -355,7 +339,10 @@ export class WindowBody {
 
 /**
  * The spreads the window's shade blurs the whole window by, its page and its body, as the eye's lens takes them
- * (`Lens.laid` in `stage/lens.js`), read off the depth of a field the window is drawn in.
+ * (`Lens.laid` in `stage/lens.js`), read off the depth of a field the window is drawn in: what stands before the slab
+ * keeps its own spread, as the depth hides the slab there. The engine hands the page's picture unblurred meanwhile
+ * (`pictureBlur` in its window): blurred in its picture too, the page's outline would stand sharp round a soft page, a
+ * bright line.
  */
 export class WindowBlurred {
 	/**
@@ -554,7 +541,8 @@ function facesOf(measures, metal) {
 
 /**
  * An extruded outline's sides alone drawn, each point facing straight out from the outline inside its corners' arcs:
- * along a straight side as its face does, round a corner turning smoothly.
+ * along a straight side as its face does, round a corner turning smoothly, where their own faces would cut each round
+ * into facets a soft box glides over in steps.
  * @param {THREE.ExtrudeGeometry} geometry @param {Outline} outline
  */
 function sidesFacingOut(geometry, outline) {

@@ -7,40 +7,19 @@
  * the whole window (`stage/body.js`). A pixel's own spread never puts it in the near field, which the law alone tells.
  *
  * A lens blurs what stands before its focus over what stands behind it, so the scene is split at the focus into two
- * fields:
- * - the far field, what stands at the focus or behind it, and where nothing was drawn: each pixel blurred by its own
- *   spread, each sample weighed by whether its own spread reaches the pixel, so a sharp edge does not bleed into the
- *   blurred ground beside it, and a blurred edge spreads over nothing as far as its own spread; where nothing was
- *   drawn, by the widest far spread round it, so the blur there follows what spreads into it;
- * - the near field, what stands before the focus blurred past a pixel: blurred as one round each pixel by the widest
- *   near spread that reaches it, so a near blur reaches past its own edge, and laid over the far field, which shows
- *   through it as much as the near field leaves of the pixel uncovered, blurred alike. Not as much as it is clear: what
- *   it holds is already all the scene showed there, what stood behind it seen through it, and a half-faded page
- *   crossing from the far field into the near laid over itself by its clearness drew a line along where it crossed.
- *   Where the near field hides the far one, the far field is first made whole, carried on into the hole from what of
- *   it stands nearest, and blurred there the wider the more the near field covers, so it goes on from the far field at
- *   the near field's edge as it stands there.
- * One depth a pixel cannot hold what the near field hides, and what is carried into its hole is a guess: so the room
- * draws what stands before all the rest while the near field holds any of it as a world of its own, laid over the rest,
- * which is drawn without it (`apartBeforeTheRest`, `stage/room.js`), and only what is blurred near among the rest's
- * depths, the near part of a page leant across the focus or a cube through it, leaves a hole to fill.
- * The widest spreads are found per tile of the drawing and widened over every tile they reach. Each sample's place on
- * its spiral is turned from pixel to pixel, so the samples' pattern draws no copies of an edge, and read from the
- * field's smaller copy whose pixels stand as far apart as the samples, so a wide disc is smooth. A copy mixes each
- * pixel's light with its neighbours' as far as its pixels stand apart, so a sample that spreads is read from copies of
- * the far field's light that reaches as far as the widest far blur round it reads them apart, for the share of each
- * copy's pixel that light holds: read from copies of all of it, a sharp cube's green edge mixed into a page blurred
- * beside it spread green over the page. A sample whose light reaches less far is read from the far field as it was
- * split, no coarser than its own reach.
+ * fields: the far field, each pixel blurred by its own spread, so a sharp edge does not bleed into the blurred ground
+ * beside it; and the near field, blurred as one round each pixel by the widest near spread that reaches it, so a near
+ * blur reaches past its own edge. The near field is laid over the far by how much of the pixel it leaves uncovered, not
+ * by how clear it is: what it holds is already all the scene showed there, and a half-faded page crossing from the far
+ * field into the near, laid over itself by its clearness, would draw a line where it crossed.
  *
- * The split reads each pixel by the nearest depth round it, as a pixel at the edge of what the scene drew holds a share
- * of the nearer thing's light while its one depth, of a single sample, may be the farther one's or nothing's. It writes
- * beside the fields what every later pass reads of each pixel: whether the near field holds it, how wide it spreads,
- * where anything was drawn, and whether the far field's copies hold its light; read off each sample's own depth
- * instead, a sharp thing's smoothed edge under a blurred page's depth spread the thing's colour over the page. The lens
- * reads the scene's light linear, premultiplied by how clear it is, and lays it so over what the target it is handed
- * holds, as three lays what is seen through over what stands behind it; how each field is laid over the fields before
- * it is the room's (`stage/laying.js`).
+ * One depth a pixel cannot hold what the near field hides, and what is carried into its hole is a guess: so the room
+ * draws what stands before all the rest while the near field holds any of it as a world of its own
+ * (`apartBeforeTheRest`), and only what is blurred near among the rest's depths, the near part of a page leant across
+ * the focus or a cube through it, leaves a hole to fill. A sample that spreads is read from copies of the far field's
+ * light that reaches as far, as a copy mixes each pixel's light with its neighbours': read from copies of all of it, a
+ * sharp cube's green edge would spread green over a page blurred beside it. How each field is laid over the fields
+ * before it is the room's (`stage/laying.js`).
  */
 import {
 	DataTexture,

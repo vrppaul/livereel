@@ -1,39 +1,20 @@
 // @ts-check
 /**
  * The body of a piece of the page standing in the world, in the room's one scene (`DrawnBody` in `src/props/piece.ts`):
- * its walls, the piece's outline with its four corners drawn back from its face as thick as the engine hands, and the
- * shadow it casts on the plane it was lifted from. The stage draws the face itself, in a surface of markup of its own
- * the room stands where the piece's matrix places it (`stage/room.js`); the walls stand by the same matrix behind it,
- * so the two stand as one wherever the eye goes, and the room's lens blurs them by depth as all else.
+ * its walls, drawn back from its face by the matrix the room stands the face's surface by (`stage/room.js`), so the two
+ * stand as one wherever the eye goes; the shadow it casts on the plane it was lifted from; and the pit its hole may be
+ * sunk into the page as, where the page's surface lays nothing (`stage/page-picture.js`).
  *
  * The walls are the page's matter, as a button rising stands as a column and a part lifted as a plate: matte and lit by
- * no light of the world's, their colour the film's at the face darkening toward the back, a light in their own hue
- * showing through as faintly as the film names. They write depth, so standing behind the page's plane, as a piece on
- * the plane it was lifted from stands, the page hides them, and they come up out of it as the piece stands out. They
- * are built anew only as their own measures change: a piece standing, or rising with its walls whole, keeps the walls
- * it has. A piece faded into what lies behind it lays them over what lies behind them as far as it is clear, as the
- * stylesheet lays its face.
+ * no light of the world's. They write depth, so behind the page's plane the page hides them, and they come up out of it
+ * as the piece stands out. The room casts the shadow itself, as the stylesheet's is measured in the object's own
+ * pixels: a button seen four times as large would cast it four times as far and as soft, spread too thin to show; the
+ * stylesheet drops its own where the room draws a body (`stage/stage.css`).
  *
- * The shadow lies as far behind the face as the face stands out, on the plane the piece was lifted from, as dark as the
- * piece's shadow is strong and as clear as the face is drawn, and dropped toward its foot and soft as far as the face
- * stands high: the stylesheet's shadow of an object standing out is measured in the object's own pixels, so a button
- * seen four times as large would cast it four times as far and as soft, spread too thin to show. The stylesheet drops
- * the markup's shadow where the room draws a body, as it would lie on the face's own plane over the walls
- * (`stage/stage.css`). It is laid over what lies there in linear light, as three lays a film's light, writing no depth,
- * nearer by depth's offset than the page it lies on.
- *
- * A piece's hole may be sunk into the page as a pit: its outline drawn back behind the window's plane as deep as the
- * film names, seen from inside alone, so it stands open at its mouth, where the page's surface lays nothing and writes
- * no depth (`stage/page-picture.js`). Its walls are the body's matter too, of the body's colour darker the deeper, and
- * lit from within by the same law, written once for both. A piece lying on its plane stands in its pit, filling it. It
- * is a hole in the screen, not in the page's picture: a shade fading the page leaves it, and nothing lies over its
- * mouth to hide it as the screen goes down, so its walls are laid over what lies behind them as far as the screen has
- * come up, as the window's body stands as thick.
- *
- * Where the film stands a piece in the window's shade, its walls and its pit fade in light into what stands behind them
- * as far as the shade reaches them and the page has faded, as the window's metal does (`Fading` in `body.js`), so a
- * piece lying on its faded page shows no pit lighter than the page round it; the window's spreads blur them by the same
- * share (`WindowBlurred`).
+ * A pit is a hole in the screen, not in the page's picture: a shade fading the page leaves it, and nothing lies over
+ * its mouth to hide it as the screen goes down, so its walls show as far as the screen has come up. In the window's
+ * shade a piece's walls and its pit fade in light as the window's metal does (`Fading` in `body.js`), so a piece lying
+ * on its faded page shows no pit lighter than the page round it.
  */
 import {
 	BackSide,
