@@ -1,53 +1,10 @@
 /**
- * The screen coming up out of the ground, or going down into it to come up later, from wherever it stands: at once in
- * a cut, so a film may open on the ground alone, or over a move's share in a play. The window's shadow and edge come
- * and go with it. A screen raised that is up, or lowered that is down, has nothing to move from, and is refused as its
- * move begins.
- *
- * The screen shows the filmed page, or a page of the film's own in its place, written whole in HTML: at once in a cut,
- * or at a moment of a play, so the camera may fly on through the swap and the frame's exposures before the moment show
- * the one, those from it the other. How far it has come up and what it shows are set by moves of their own, which
- * share a step. The page a move of the film's own names is the stage's to lay before the film is shot.
- *
- * Or the screen fades from the page it showed into the one it shows, as a film's cut dissolves: the move holds a
- * picture of the page as it begins, laid over the page coming where the camera shows the page going then, and the
- * screen fades from it over as many seconds of the film's time as the film names, on a curve, past the move's step. In
- * a cut the move holds the page going where the camera frames it, which the take lays it by once every move of the cut
- * is set (`src/studio/take.ts`), so no move of the cut is begun twice to foresee the camera it leaves. So a fade
- * written in a cut, before a camera move in the same cut, keeps the page going framed as it stood while the camera
- * frames the page coming at once: one page fading over another, each at its own scale; and the camera's moves after
- * carry the two together. A fade is refused as it begins where its picture would drop something at once: on a page
- * framed live, which has no picture; from a page the window shades, as the picture is unshaded; from a page of the
- * film's own that runs, as the picture stands still; from one drawn past its screen, as the picture holds the screen
- * alone; and while the screen still fades from the page before, whose picture would go.
- *
- * Light sweeps away the picture the screen shows, a band crossing it or a disc opening round a block, over a move's
- * share, to the page as it stands behind it: the picture is held as the move begins, as a piece holding its picture
- * holds one, so an act done at the same moment of the play, which is done first, is under the picture already; an act
- * at a moment after it comes in behind the light. A sweep sets a value of its own, so it shares a step with a move that
- * raises or lowers the screen, or changes what it shows.
- *
- * A page of the film's own runs down its scroll at a pace the film sets, or comes to rest with a block of it where the
- * film names: the move reads where the page stands and how fast it runs as it begins, and sets its run on the film's
- * time, its pace changing over the move's share on its curve, or slowing from it to stand still at the rest as the
- * share ends, refused where it would turn back on its way; where the page stands at any moment is worked out from that
- * run, held at its document's end as it stands then (`src/props/screen.ts`). Its runs are a value of the screen's own,
- * so it shares a step with what the screen shows. A run to rest judged at a point of the frame slows on its curve
- * across the frame there: as it begins it asks where the frame will stand at each moment of its share, which the take
- * works out with every move of the camera, the window and the eye that begins meanwhile (`src/studio/take.ts`).
- *
- * Keys are typed into a block of a page of the film's own, as into the terminal: what stands typed at each progress is
- * set whole, so the block shows it as its text in each exposure, with how far the page scrolls at most with that text
- * standing typed, measured for each stroke's text as the move begins, as a line that wraps lengthens the page. The
- * block is found by a CSS selector, as the stage finds it in each exposure's copy of the page, and measured as the move
- * begins; a block whose text would not show what is typed is refused: one that holds elements, which its text would
- * take the place of, and an input, which shows its value, not its text; a text area shows its text. A page's document,
- * what stands typed in it and how far that lets it scroll, is another value of the screen's own, set by a typing
- * alone, so a typing shares a step with what the screen shows and how its page runs, which read it.
- *
- * A block of a page of the film's own blinks from a moment, as a terminal's caret: the move sets when the blink began
- * and how long a blink is, and how clear the block stands is worked out from the moment (`src/props/screen.ts`). Which
- * blocks blink is a value of the screen's own, so a blink shares a step with what the screen shows, a run and a typing.
+ * The screen's moves: coming up out of the ground or going down into it, what it shows in front and on the window's
+ * back, a fade from the page it showed, light sweeping its picture away, and a page of the film's own run down its
+ * scroll, typed into and blinked. Each move sets only the values of the screen it names, so a rise, a show and a sweep
+ * share a step, as do a show, a run and a typing; two runs, or two typings, do not, as the pages' runs are one value
+ * and what stands typed in them another. The pages of the film's own a film names are the stage's to lay before the
+ * film is shot.
  */
 import { A_CURVE, type Ease, FASTEST_SPEED, type Stretch, easeInOutSine, linear } from '../domain/curves.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -356,7 +313,7 @@ const SWEEP = 'screen.sweep';
 // What a lens shows, which stands over the filmed page alone
 const LENS = 'lens';
 
-/** The screen coming up out of the ground. */
+/** The screen coming up out of the ground; refused as it begins where the screen is up already. */
 export function rise(script: TimingScript = {}): Move {
 	assertWritten(script, TIMING_FORM, 'screen.rise');
 	return {
@@ -367,7 +324,7 @@ export function rise(script: TimingScript = {}): Move {
 	};
 }
 
-/** The screen going down into the ground. */
+/** The screen going down into the ground; refused as it begins where the screen is down already. */
 export function lower(script: TimingScript = {}): Move {
 	assertWritten(script, TIMING_FORM, 'screen.lower');
 	return {
@@ -882,10 +839,11 @@ function showing(shows: Shows): Change {
 
 /**
  * The picture the screen shows as the move begins, of the filmed page or a page of the film's own, held, swept away by
- * light over the move's share, the page as it stands showing behind it: so an act on the page at a moment of the play,
- * or another page shown then, comes in behind the light. A band comes from the side of the window the film names,
- * slanted, or a disc opens round the block it names, as wide and its crest in the colours it names; refused as it is
- * made where the film names both, and as it begins where the stage shows the filmed page live, with no picture.
+ * light over the move's share, the page as it stands showing behind it: so an act on the page at a later moment of the
+ * play, or another page shown then, comes in behind the light, and an act at its start is refused, as the picture would
+ * hold the page the act leaves. A band comes from the side of the window the film names, slanted, or a disc opens round
+ * the block it names, as wide and its crest in the colours it names; refused as it is made where the film names both,
+ * and as it begins where the stage shows the filmed page live, with no picture.
  */
 export function sweep(script: SweepScript = {}): Move {
 	assertWritten(script, SWEEP_FORM, SWEEP);

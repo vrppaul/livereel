@@ -1,47 +1,12 @@
 /**
- * The moves of an object (`src/props/object.ts`), alike whatever it shows, written once for every kind that makes
- * one — a title's words, code, the agent's terminal, the ending card, a piece of the page, an outline, a lens, a thing
- * of the film's own: coming up in its box, in its own way or one of livereel's (`src/moves/way.ts`), or sliding in
- * whole from past a side of the frame, pushing the object of its name standing there off past the side across; carried
- * to another place, growing and coming toward the eye on the way, to a box read off the page, or onto a block of the
- * page to lie there; leant and rolled; set apart from what lies under it, ringed and glowing in the accent or a colour
- * of the film's, casting a shadow, blurred, melted toward a side, faded into what lies behind it, each from its first
- * frame where its show names it, grown or brought toward the eye where it stands (`src/props/effects.ts`); taken back
- * to stand as its box places it; put away where it stands, in its own way or one of livereel's, or slid out past a
- * side. A move takes the object a film names `as`, or its kind's own name, so a film shows several of a kind at once,
- * each moved by its name; it takes only an object of its kind, and refuses one that shows another. What differs by
- * what an object shows is handed here by the kind's own module: the curve it comes up on in its own way, how it reads
- * a place, and the box it sets off from as it is carried there.
+ * The moves of an object (`src/props/object.ts`), alike whatever it shows, made once for every kind of its `Content`
+ * (`objectMovesOf`). What differs by kind is handed here by the kind's own module: the curve it comes up on in its own
+ * way, how it reads a place, and the box it sets off from as it is carried there.
  *
- * A move that carries an object to a place sets its box and the scale and depth the film names, one that carries it to
- * a box read off the page its box, one that carries it onto a block of the page what it stands in and where it stands
- * there, its box, scale, depth and angle, one that leans it its angle and the point of its box it turns about, one of
- * how it stands out the values the film names, one of what it shows its content, each writing only its own into the
- * object as it stands, so they share a step, each as far along as its own share; a move that brings one sets it whole,
- * standing where it comes up and standing out as the film names at its show, in no way where it names nothing, and one
- * that puts it away sets it whole as it stands. A move of an object that is not on the screen is refused as it begins.
- *
- * An object shown into a group (`src/props/group.ts`) reads its place, or its source, as it would on the frame, and
- * stands in the group where it would stand there, carried into the group's plane however the group stands
- * (`carriedInto`, `src/domain/placement.ts`): its box measured there and its stance the group's taken back. A box any
- * later move of it reads on the frame is measured from the group's corner, so it stands there once the group stands as
- * it was placed. It never slides past the frame's edge, as the group's plane may stand turned from the frame's; it goes
- * in its place, or with its group.
- *
- * An object carried onto a block of the page is held by the page from the moment that move begins, its box measured
- * on the screen as the camera shows it then, so it lands on the block wherever the camera goes; a box any later move of
- * it reads on the frame is measured on the screen so too. One standing on the frame lies on the page, carried there
- * lying flat, face-on and at no depth of its own, while the window faces the frame front on, as only then does a box of
- * the frame stand on the screen as a box; it never slides from there, as the page's plane may stand leant from the
- * frame's: it goes in its place. One standing in the world stands on the page in the world, the page's plane standing
- * there, where it stands, wherever the eye stands and however the window stands, leant from that plane or near the eye
- * as it stood, and comes down onto the block on its way, so it falls as it travels, on a curve of its own where the
- * film names one: what lies in the window is drawn flat on it, and what stands on the page in the world is drawn in
- * the world, so it keeps its body and stands off the page.
- *
- * An object on the frame, or beside a point, which rides with the eye, is handed into the world where the eye sees it
- * as that move begins, at once, square to the eye and as far before it as what it stood on, so it stays there as the
- * eye moves on.
+ * A move takes the object a film names `as`, or its kind's own name, so a film shows several of a kind at once; it
+ * refuses an object of another kind, and one not on the screen as it begins. Each move writes only its own values into
+ * the object as it stands, so a move that carries it, one that leans it and one that sets it apart share a step, each
+ * as far along as its own share.
  */
 import { boxOnTheScreen, standingAt, viewOf } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -654,7 +619,10 @@ export interface ObjectMoves {
 	readonly lean: (script: ObjectLeanScript) => Move;
 	/** The object standing out as the film names: ringed, glowing, casting a shadow, blurred, grown or brought near. */
 	readonly effects: (script: EffectsScript) => Move;
-	/** The object going where it stands, in its own way, or sliding out past a side of the frame; once gone, none. */
+	/**
+	 * The object going where it stands, in its own way, or sliding out past a side of the frame; once gone, none. One in
+	 * a group or on the page never slides, as that plane may stand turned from the frame's: it goes in its place.
+	 */
 	readonly hide: (script?: HideScript) => Move;
 	/**
 	 * The object, on the frame or beside a part, handed into the world where the eye sees it as the move begins, so the
@@ -1539,7 +1507,8 @@ function asNamed(named: Way): Way {
 
 /**
  * The object sliding out whole past a side of the frame, a frame away, or farther where it is drawn past its box, until
- * all of it stands past the edge; once there, none.
+ * all of it stands past the edge; once there, none. One in a group or on the page, whose plane may stand turned from
+ * the frame's, is refused.
  */
 function slidingOut(beginning: Beginning, name: ObjectName, kind: ShownKind, toward: FrameSide, move: string): Change {
 	const object = standingOfKind(beginning, name, move, kind);

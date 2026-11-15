@@ -1,32 +1,14 @@
 /**
- * The page's window: where on the frame the camera's picture shows, moved to a place (`src/domain/place.ts`) and
- * brought toward the eye or away from it there, slid in from past a side of the frame or out past one, and leant, apart
- * from the camera, which keeps what it aims at inside it as it goes.
+ * The moves of the page's window, where on the frame the camera's picture shows, apart from the camera, which keeps
+ * what it aims at inside it as it goes. In a place the window stands on the film's ground, its edge and shadow under
+ * it; over the whole frame it is the frame itself, flat on it. So the page draws back off the frame's edges into a
+ * window, travels, and grows back out to fill the frame. A depth as near as the eye at rest, or nearer, is refused
+ * before the film is shot.
  *
- * In a place the window stands on the film's ground, lifted off it, its corners rounded, its edge and shadow under it;
- * over the whole frame, however the place names it, it is the frame itself, flat on it, at any depth. So the page draws
- * back off the frame's edges into a window, travels from one place to another, and grows back out to fill the frame.
- * On its way its box may pass places the film names, on the course it names (`src/moves/through.ts`), as an object's
- * does; its lift and depth go from end to end. Brought toward the eye it is drawn larger and farther from the frame's
- * middle, as an object is: a slab coming at the eye with its body, or, at a depth less than none, drawn back from it.
- * A depth as near as the eye at rest or nearer is refused before the film is shot, as an object's is. What slides moves
- * a whole frame, as words do, so a window and words sliding in one step move as one sheet; a window slid out stays past
- * the edge until a move brings it back. The window holds where it goes, so what comes up beside it while it moves is
- * placed beside where it goes; a note's words keep beside it as it moves, so they come with it on its way, and a move
- * that would carry them off the frame, or under it, where it goes or at a place it passes, is refused.
- *
- * The page in the window is shaded while something stands clear of it: dimmed, faded into the film's ground and
- * blurred, but for a part of it the blur leaves sharp, the window's edge and shadow standing as they are
- * (`src/props/window.ts`).
- *
- * In a room the window may have a body, a slab of metal round the page with glass over it (`src/props/body.ts`),
- * changed to the values a film names, through the values between in a play, at once in a cut.
- *
- * Where the window stands, how it leans, how it shades the page and its body are its own values: a move that carries it
- * sets its box, lift and depth, the depth kept as it stands but where `window.to` names one, as only that move brings
- * the window near; one that leans it its angle and the point of its box it turns about, one that shades the page those
- * of the shade it names, one that changes its body those of the body it names, each writing only its own into the
- * window as it stands, so they share a step, each as far along as its own share.
+ * What slides moves a whole frame, as words do, so a window and words sliding in one step move as one sheet. The window
+ * holds where it goes, so what comes up beside it while it moves is placed beside where it goes, and a note's words
+ * keep beside it on its way. Where it stands, how it leans, how it shades the page and its body are values of its own,
+ * so moves that set different ones share a step; only `window.to` brings the window near.
  */
 import { type Placing, type View, viewOf, viewOver } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';

@@ -1,44 +1,16 @@
 /**
  * Pieces of the page, shown by an object (`src/moves/object.ts`): a block, the first few blocks a selector matches, or
- * a box of the screen lifted off the page onto the frame, over where the camera shows it as it is lifted, cut to the
- * part the camera shows there (`src/moves/source.ts`); then carried, grown, brought near, turned and put away as any
- * object is, and taken back over its source as the camera shows it then, face-on and as large as it was. It does not
- * follow the camera between, until it is carried onto a block of the page: it lies on the page then, and the camera
- * frames it as it frames the page; lifted into the world riding its block, it stands on the page there from the start,
- * carried as the camera frames the page, as the film scrolls its block and as a fade from its page lays that page. A
- * piece is drawn from the page's picture, so a page framed live, which has none, is refused; and it stands over its
- * source only on a window that faces the frame, where the source shows as a box.
- * Lifted `picture: 'held'`, it is drawn from a picture of its source alone, which the take holds as it is lifted, as
- * sharp as the page's picture is where the page stands still: it shows what the page showed there then, as the page
- * changes under it. So it alone is lifted off a page of the film's own, which the filmed page's picture is not of: the
- * take pictures its source on the page's copy apart, as the page stands at the moment it is lifted.
- * Lifted inside the world, it stands there over its source on the window's plane, wherever the eye stands, and the eye
- * moves past it as it moves past the window, the eye's focus blurring it as it stands off it; carried onto a block of
- * the page from there, it sets off from where it stands, while it lies on the window's plane. There alone it may have
- * a body (`src/props/piece.ts`), which the room draws in its one scene: the frame, a group and the window are drawn
- * flat over everything there, so a body anywhere else is refused.
+ * a box of the screen, lifted off the page over where the camera shows it (`src/moves/source.ts`). It does not follow
+ * the camera until it is carried onto a block, where it lies on the page; lifted into the world riding its block, it
+ * stands on the page there from the start.
  *
- * Lifted, it may leave a hole: the ground the page draws behind its block, read as it is lifted, or a colour the film
- * names, where a box of the screen, with no block behind it, needs one; reaching past the piece as far as the film
- * names, a socket its body comes up out of; sunk into the page as a pit with walls of its body's colour, which a piece
- * with no body cannot give; and draw lines from itself to its source. A piece of one block lifted alone has its
- * corners, and its hole's, as round as the page draws the block's, read off it as it is lifted: the page knows how it
- * draws a block, so the film never copies it. A stretch of the page, with air round its blocks, several blocks or a box
- * of the screen, has no corners of its own: they are as round as the film names, square where it names none. A body's
- * walls are of the colour the page shows along the piece's edge as it is lifted, where the film names none. Every move
- * of it takes the piece named `piece`, or the one the film names `as`.
+ * Lifted `picture: 'held'`, it is drawn from a picture of its own source, taken as it is lifted, so it alone may be
+ * lifted off a page of the film's own, which the filmed page's picture is not of.
  *
- * It may empty a block of the filmed page, which then stands as the page draws it hidden until the piece goes; wiped
- * away while it lies on the page, it and the block go behind one edge, set off from the near side of either.
- *
- * Lifted naming a block of its source whose letters it carries, it lands them letter on letter on the letters of a
- * block it is carried onto: grown as far as a letter of the block steps against one of its own, so its letters stand as
- * large as theirs and column on column, its first letter where theirs starts, its middle on theirs. Where letters start
- * is read off the block's first laid-out letter, or, in a blank line of code, off its content box, so it lands as its
- * neighbours do; how far one steps, off the font they are set in. Only the film knows which of its source's letters are
- * the block's: a diff line's sign may stand in the line it is lifted from and in a column of its own beside the block.
- * Its letters are measured as it is lifted, off the page it is lifted off as it stands then, as its picture is taken;
- * the block's as it lands.
+ * What the page knows of a block, the piece reads off it, so the film never copies it: a piece of one block is as round
+ * as the page draws the block, and its body's walls take the colour along its edge where the film names none. Which of
+ * its source's letters are a block's only the film knows, as a diff line's sign may stand in the line or beside it, so
+ * the film names that block (`letters`).
  */
 import { type Camera, boxOnTheFrame } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';

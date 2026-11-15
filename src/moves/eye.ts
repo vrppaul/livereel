@@ -1,32 +1,7 @@
 /**
- * The eye: to a place in the room, where it stands and the spot it looks at, each in film pixels from the frame's
- * middle, and the way its top points (`src/domain/eye.ts`), through the places the film names on its way, on the course
- * it names (`src/moves/through.ts`). What stands in the world — the page's window, an object a film shows there — is
- * seen from wherever the eye stands; what stands on the frame, a title or a caption, rides with it. What a place leaves
- * out, where the eye stands, what it looks at or the way its top points, stays as it stands as the move begins, at its
- * end and at every key.
- *
- * The path is worked out once, as the move begins, from where the eye stands then: its places are values of the room,
- * and nothing the eye passes moves under it.
- *
- * The eye flies over the page's window by a move of its own (`src/domain/flight.ts`): from where it stands, along legs
- * to spots over blocks of the page, its gaze turned by keys of its own; or to where it stands square before a block as
- * the eye coming before it would, the leg setting the gaze square there as it ends, so no key of the film's may be
- * reached by it. The blocks are read once, as the move begins,
- * as the camera shows the page in the window then, and the eye rides the window from then on, so a window that leans
- * or travels carries it, until `eye.to` sends it into the room again. Its legs are timed apart where every one names
- * how long it takes: then their times alone pace it, and its share of the step goes on its own time, on no curve.
- *
- * The eye comes before a block of the page by a move of its own, square to it or turned from square, the block filling
- * a share of the frame, its middle at a point of the frame: the block is read once, as the move begins, where the
- * camera shows it in the window then, and the eye rides the window from then on, as a flight leaves it.
- *
- * The eye focuses, and opens as wide as a film names, by a move of its own, which shares a step with one that sends it
- * somewhere (`src/domain/focus.ts`): so far before it; at a spot of the world; on a block of the page; or on an object,
- * where its middle stands. What it focuses on is read once, as the move begins, and placed where it stands as each
- * frame is drawn, so the focus holds on it while the eye, the window and the camera move. Or it focuses under a point
- * of the frame, where it sees the window's plane there as each frame is drawn, so the focus stays under the point
- * while the window leans and turns beneath it.
+ * The eye's moves (`src/domain/eye.ts`): to a place in the room, flying over the page's window, coming before a block
+ * of the page, and focusing. Each reads what it starts from once, as it begins: a path through the room is worked out
+ * then, its places spots of the room, so nothing the eye passes moves under it.
  */
 import {
 	AN_EYE_PLACE,
@@ -472,7 +447,12 @@ class FocusOnKind implements Kind<FocusOn> {
 
 const A_FOCUS_ON: Kind<FocusOn> = new FocusOnKind();
 
-/** The eye to a place, or back where it rests, through the places the film names on its way. */
+/**
+ * The eye to a place, or back where it rests, through the places the film names on its way (`src/moves/through.ts`),
+ * into the room again where a flight or a move before a block left it riding the window. What a place leaves out, where
+ * the eye stands, what it looks at or the way its top points, stays as it stood as the move began, at its end and at
+ * every key.
+ */
 export function to(place: EyePlaceOrRest, script: EyeToScript = {}): Move {
 	assertKind(place, AN_EYE_PLACE_OR_REST, `${EYE_TO}'s place`);
 	assertWritten(script, TO_FORM, EYE_TO);
@@ -487,8 +467,8 @@ export function to(place: EyePlaceOrRest, script: EyeToScript = {}): Move {
 
 /**
  * The eye flown over the page's window along a way of legs, from where it stands, its gaze turned by the keys the film
- * names and set square by each leg onto a block as it ends, riding the window from then on; paced by the move's curve,
- * or by its legs' times where the film names them.
+ * names and set square by each leg onto a block as it ends, where no key of the film's may be reached, riding the
+ * window from then on; paced by the move's curve, or by its legs' times where the film names them.
  */
 export function fly(way: readonly LegScript[], script: FlyScript = {}): Move {
 	assertKind(way, A_FLIGHTS_WAY, `${EYE_FLY}'s way`);
