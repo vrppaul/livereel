@@ -1,14 +1,6 @@
 /**
- * A film's set shot in one of its formats: the app served by the film's command, opened at the format's screen, made
- * ready by the film's `ready`, then acted on by the set's scenario, each state it marks taken as it stands, with where
- * the set's targets stand, and kept apart from the set shot before; once the scenario is done, the set written whole in
- * its place, so a scenario that fails leaves that one as it was, and what it kept is thrown away. The browser closes
- * before the app's server stops.
- *
- * A state is named by the film to show it, and its picture's file by the name, so a name is taken once, as it is
- * marked, before its picture is: a scenario that marks a state without waiting on it still has each in the order it
- * marked them, and the set waits for every one before it is written. A scenario that marks none is refused, as a film
- * shown on no state has nothing to show.
+ * A film's set shot in one of its formats, kept apart from the set shot before until it is written whole, so a scenario
+ * that fails leaves that one as it was, and what it kept is thrown away.
  */
 import { FilmError } from '../domain/errors.ts';
 import { assertKind } from '../domain/handed.ts';
@@ -28,7 +20,10 @@ export interface SetShooting {
 const NO_SET = 'the film names no set to shoot: give it set: { scenario, targets }';
 const NO_STATE = "the set's scenario marked no state: mark each the film shows, with context.state(name)";
 
-/** A film's set shot in a format, and kept: how many states its scenario marked. */
+/**
+ * A film's set shot in a format, and kept: how many states its scenario marked. A scenario that marks none is refused,
+ * as a film shown on no state has nothing to show.
+ */
 export async function shootSet(film: FilmInFormat, shooting: SetShooting): Promise<number> {
 	const set = film.set;
 	if (set === null) throw new FilmError(NO_SET);
@@ -75,7 +70,11 @@ class StatesMarked {
 		return Promise.all(this.marks);
 	}
 
-	/** The state of this name marked, its name taken as it is; a name taken already is refused. */
+	/**
+	 * The state of this name marked, its name taken as it is; a name taken already is refused. A state is named by the
+	 * film to show it, and its picture's file by the name, so the name is taken before the picture is: a scenario that
+	 * marks a state without waiting on it still has each in the order it marked them.
+	 */
 	private marked(name: string): Promise<void> {
 		assertKind(name, A_STATE_NAME, "the set's state");
 		if (this.names.includes(name)) {

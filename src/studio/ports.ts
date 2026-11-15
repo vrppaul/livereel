@@ -42,8 +42,8 @@ interface DrawingStage {
 }
 
 /**
- * The page a picture of a part of the screen is taken of: the filmed page, in its tab, or the page of the film's own
- * last stood (`OwnPages`), in the tab its copies stand in.
+ * The page a picture of a part of the screen is taken of: the filmed page, in its tab, or the film's own page last
+ * stood (`OwnPages`), in the tab its copies stand in.
  */
 export type PicturedPage = 'filmed' | 'own';
 
@@ -129,45 +129,39 @@ export interface Track {
 	readonly hear: (moment: number, sound: Sound) => void;
 }
 
-/**
- * The pages of the film's own as moves read them and pictures of parts of them are taken: one copy of each, apart from
- * the stage's, at the screen's size and no scale, which no frame shows, by its key; and a copy stood as its page stands
- * at a moment, the only one shown, whatever the frame last drawn showed.
- */
+/** The film's own pages as moves read them and pictures of parts of them are taken. */
 export interface OwnPages {
+	/** One copy of each, apart from the stage's, at the screen's size and no scale, which no frame shows, by its key. */
 	readonly laid: ReadonlyMap<string, MeasuredPage>;
+	/** A page's copy stood as the page stands at a moment, the only one shown, whatever the frame last drawn showed. */
 	readonly stand: (standing: OwnPageStanding) => Promise<void>;
 }
 
-/**
- * A browser with the stage and the filmed page open in it, for one take, the page's time standing; and the pages of the
- * film's own as moves read them; and the names the film's things module builds a thing by, none where the stage draws
- * no things; and the film's own pictures the stage laid, by their paths, each as its file decoded.
- */
+/** A browser with the stage and the filmed page open in it, for one take, the page's time standing. */
 export interface Opened extends AsyncDisposable {
 	readonly stage: Stage;
 	readonly page: FilmedPage;
 	readonly ownPages: OwnPages;
 	readonly act: ActContext;
 	readonly time: PageTime;
+	/** The names the film's things module builds a thing by; none where the stage draws no things. */
 	readonly thingsBuilt: readonly string[];
+	/** The film's own pictures the stage laid, by their paths, each as its file decoded. */
 	readonly filmsPictures: ReadonlyMap<string, PictureDecoded>;
 }
 
 /**
- * What the stage and the page are set as for a take: the film's format, where the stage stands, the colour scheme the
- * page is asked for, the blocks it blurs, all the film writes in CSS, in its theme or its looks' moves, which the
- * browser reads before anything is shot, once it has laid the film's own font files, how the stage draws a frame, flat
- * or as a room, and the film's things module the room loads, how a fast move is blurred in the take, which says how
- * many exposures a frame is made of at most, the pages and the pictures of the film's own its moves show, which the
- * stage lays before anything is shot, each picture by its path from the film's file, and how its frames are handed to
- * the footage.
+ * What the stage and the page are set as for a take, from the film in its format. All the film writes in CSS, in its
+ * theme or its looks' moves, the browser reads before anything is shot, once it has laid the film's own font files; the
+ * blur says how many exposures a frame is made of at most.
  */
 export type Setting = Pick<
 	FilmInFormat,
 	'format' | 'stage' | 'colourScheme' | 'blurred' | 'css' | 'fonts' | 'drawing' | 'things' | 'motionBlur'
 > & {
+	/** The film's own pages its moves show, which the stage lays before anything is shot. */
 	readonly ownPages: readonly OwnPage[];
+	/** The film's own pictures its moves show, each by its path from the film's file, laid before anything is shot. */
 	readonly pictures: readonly string[];
 	readonly framesHanded: FramesHanded;
 };
@@ -194,14 +188,14 @@ export interface Browser {
 	readonly open: (setting: Setting, filmed: Filmed, sharpness: number) => Promise<Opened>;
 }
 
-/**
- * Where a target of the film stood in a state of its set, where it matched any block: every block it matched, in the
- * page's order; the ground behind the first, in hex; and how round the page drew each of its corners.
- */
+/** Where a target of the film stood in a state of its set, where it matched any block. */
 export interface TargetShot {
 	readonly target: string;
+	/** Every block it matched, in the page's order. */
 	readonly boxes: readonly Box[];
+	/** The ground behind the first, in hex. */
 	readonly ground: string;
+	/** How round the page drew each corner of the first. */
 	readonly rounding: Rounding;
 }
 
@@ -221,14 +215,15 @@ export interface StateTaken extends StateNoted {
 	readonly picture: Uint8Array;
 }
 
-/**
- * A film's set as it is written: the screen its states were laid out on, how many of a picture's pixels a page's pixel
- * took, the targets it shot, and its states in the order its scenario marked them.
- */
+/** A film's set as it is written. */
 export interface SetNoted {
+	/** The screen its states were laid out on. */
 	readonly screen: Size;
+	/** How many of a picture's pixels a page's pixel took. */
 	readonly sharpness: number;
+	/** The targets it shot. */
 	readonly targets: readonly string[];
+	/** Its states, in the order its scenario marked them. */
 	readonly states: readonly StateNoted[];
 }
 

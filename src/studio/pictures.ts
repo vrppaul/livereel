@@ -1,10 +1,7 @@
 /**
- * The pictures of parts of the screen the stage holds for pieces of the page and a sweep or a fade of the screen, apart
- * from the page's own picture: those pieces hold as they are lifted, the one a sweep or a fade holds as it begins, and
- * those sharper than the page's for pieces drawn past livereel's bound; and the colour a piece's edge shows, read off a
- * picture taken for it and held by none. The take hands them what each frame asks and the scene each frame ends on;
- * each picture is held as long as a frame after may draw it, and let go then. A stage that shows the page live holds
- * none, as no piece, sweep or fade stands on it.
+ * The pictures of parts of the screen the stage holds apart from the page's own picture, each held as long as a frame
+ * after may draw it and let go then. A stage that shows the page live holds none, as no piece, sweep or fade stands on
+ * it.
  */
 import { ZOOM_AT_MOST } from '../domain/camera.ts';
 import type { Box, FrameSide } from '../domain/geometry.ts';
@@ -14,7 +11,10 @@ import type { PicturedPage, PicturedStage, Stage } from './ports.ts';
 
 /** The pictures of parts of the screen a take has its stage hold for pieces and sweeps. */
 export interface PartPictures {
-	/** The pictures held sharper than the page's, as the last frame made asked them. */
+	/**
+	 * The pictures held sharper than the page's, as the last frame made asked them, for pieces drawn past livereel's
+	 * bound: Chrome draws a part anew at the scale asked, so such a piece stays as sharp as a tab that close.
+	 */
 	readonly sharper: readonly SharperPicture[];
 	/**
 	 * A picture of a part of the screen a piece or a sweep holds, taken of a page as it stands now, as sharp as the
@@ -29,7 +29,8 @@ export interface PartPictures {
 	/**
 	 * One picture for each part asked sharper for a frame, as close as it is asked: one held before kept where it holds
 	 * the part as close and the page's picture came out as it did before, so the page stands as it stood; else one taken
-	 * now. Each held before and not kept is let go.
+	 * now. Each held before and not kept is let go. One is kept while it serves, as a clip costs as much as a picture of
+	 * the page and more as it grows: a line 900 pixels wide grown 21 times took 765 ms.
 	 */
 	readonly serve: (asked: readonly PartAsked[], pageChanged: boolean) => Promise<void>;
 	/**

@@ -1,68 +1,11 @@
 /**
- * One take of a film: its steps run frame by frame on the film's own clock.
+ * One take of a film: its steps run frame by frame on the film's own clock. The take alone holds the scene, the count
+ * of frames shot and how far the page's own time has run.
  *
- * The take alone holds the scene and the count of frames shot. In a play, each frame begins the moves whose share
- * begins by then, in the order their shares begin, the one that ends first of two that begin alike, each after every
- * running change whose share ended before it has been set at its end — so a move reads the scene and the page as they
- * stand at its start, and one that begins as an act is done reads the page it left — then sets at its end every change
- * ended by the frame, and every other at its eased progress. One move at most drives a part, or a value of it, at any
- * point, so the order moves are written in matters nowhere but between two acts at one moment. A cut begins its moves
- * and sets each at its end, with no frame between, and no move of it is told where the frame will stand, which none can
- * know before the cut is set: the page a fade in it leaves is held where the camera framed it, and laid where the
- * camera the cut leaves shows it once every move is set. An act between steps is a cut of one. A move begins knowing
- * the stretch of the film's time its share takes: a play's begins a frame before its first frame, which stands a
- * frame's share along it, and a cut's moves take none, at the moment of the frame after them, as their sounds are
- * heard. A move judged on the frame, as a page's run brought to rest, asks as it begins where the frame will stand at
- * moments of its share: every move of the camera, the window and the eye that starts by then is begun ahead, in order,
- * on the scene as foreseen where its share starts, and kept for its share, never begun again; begun so early it may
- * read the scene alone, and one that reads the page is refused. The scene is foreseen by every move begun by then but
- * the page's, each set as far as it will have come: the camera follows from the camera, the window and the eye alone,
- * and what a move begun ahead reads, an object the eye focuses on, stands where the moves running will have carried it,
- * but not where a move yet to begin before it, or the page's own scroll, would. A play that asks nothing begins each
- * move at its share. The page is acted on one way: as a move that acts begins, by the way the take hands every move. A
- * move begins on the page the screen shows: where that is a page of the film's own, it measures blocks there, and
- * pictures parts of it, on its copy apart from the stage's stood as the page stands at the move's moment, and its
- * scroll and keys go to the filmed page behind it. A sound a move makes is heard as the move is set at or past its
- * point, on the frame being made. The part of the page the shade keeps sharp is read off the page by the take, not by
- * the move that names it, on the frame after it is named and after any change of the page since, a move's or its own,
- * as a move's change writes its values on every frame and would keep the box it read where the page had stood.
- * A frame is drawn only when the footage keeps it, and drawn again where anything on it moved fast while its shutter
- * was open — the camera, its window, the cursor, the light, an object or what it shows — as the scene stood at moments
- * of that time: the scene the frame before left, every move begun by then set as far as it had come, and what is worked
- * out from the moment, as a terminal's spinner, worked out at that one. How far is measured from where things stood as
- * the shutter opened to where they stand, apart on each side of a moment a move begins at, so what a move sets as it
- * begins is not taken for a move. Each drawing is an exposure of the frame (`src/domain/shutter.ts`), so what slides in
- * and what it pushes off are each drawn along their own way. A move's change follows from its progress alone, so asking
- * it what it set at an earlier moment changes nothing; a move of the page, which sets the page itself, is never asked,
- * nor foreseen. A stage that draws all of a frame's exposures at once lays them over one another and is captured once,
- * the frame; one that draws fewer is captured at each, the footage blending them: a capture is near all a frame costs.
- * The page's own time — its timers, animation frames and date — is the film's: run on with each frame, kept or not,
- * before the frame is shot, as far as the film went since the last at the speed the scene set on the way, the mean of
- * where it stood and where it stands; so a page's timer set at a speed of 2 runs out in half its delay into the film,
- * however long the browser takes. It runs as the wall's only while an act waits on the page, which needs it to answer,
- * the film's time standing. The take does with the page what the stage's kind asks. A stage that shows a picture of the
- * page, as it shows a static one, takes it anew when the take asks: on a frame after an act, a move of the page or a
- * change the page made of itself, and on every frame until two pictures in a row come out alike, nothing done to the
- * page between them and its own motion not let go, so what it brings — results, an image, a scroll that eases out, a
- * note its timer takes away — is seen.
- * Once it stands still, a frame the stage would draw as it drew the last one captured is that capture, neither drawn
- * nor captured again: holds are near half a film's frames. A picture is taken as sharp as a camera as close as
- * livereel's bound shows it, so it serves every frame after it; on a frame a move of the page runs on past, or while
- * its own motion is let go, as sharp as that frame's cameras show it, as the next frame takes another: the whole screen
- * as sharp as the bound costs about three times what it costs as sharp as the camera showing all of it. A move's last
- * frame is pictured as sharp as the bound, so the picture after it can come out alike. A piece that holds its picture
- * has the stage hold one of its source alone as the move lifting it begins, as sharp as the bound, which no picture of
- * the page taken after takes the place of. A piece drawn from the page's picture larger than the bound is drawn from a
- * picture of its source alone the stage holds as close as the frame, or the moves running over it at their ends, draw
- * it (`src/studio/pictures.ts`): Chrome draws the part anew at that scale, so the piece stays as sharp as a tab that
- * close. It is taken anew where the page's picture comes out otherwise than the last, and kept between, as a clip costs
- * as much as a picture of the page and more as it grows: a line 900 pixels wide grown 21 times took 765 ms. A piece
- * drawn from one asks the page's picture no closer. A stage with the page live in its frame, as it shows a dynamic one,
- * is captured every frame, as the page changes of itself, and is laid flat for an act.
- * A fault in a step is raised again with the moment and the step it was met at. Before each frame, after each act, and
- * of any fault a step meets, the take asks the stage whether it and its page are still there: where one is gone, the
- * take is refused by why, in place of what its loss made a step fail at (a selector that matches nothing on Chrome's
- * error page), and nothing of it is shot.
+ * In a play each frame begins the moves whose share begins by then, in the order they begin, then sets every running
+ * change at its eased progress. One move at most drives a part, or a value of it, at any point, so the order moves are
+ * written in matters nowhere but between two acts at one moment. A frame is drawn only where the footage keeps it, and
+ * exposed again along its time where anything on it moved fast.
  */
 import { type Camera, ZOOM_AT_MOST, flatCamera, zoomPicturedFor } from '../domain/camera.ts';
 import { FilmError, TakeError } from '../domain/errors.ts';
@@ -124,7 +67,7 @@ const NONE = 0;
 // moment of the frame after them, on their own curve or a straight one, never gone along
 const A_FRAME = 1;
 const AT_ONCE = 0;
-// No text written into a page of the film's own, as the stage lays it
+// No text written into a film's own page, as the stage lays it
 const NO_TEXTS_TYPED: readonly TypedText[] = [];
 // What a move of the frame begun ahead of its share says as it reads more than the scene; and the page it is handed
 const READ_AHEAD =
@@ -133,7 +76,7 @@ const READ_AHEAD =
 // begins in, which it may not ask where the frame will stand
 const IN_A_CUT: StepBegunIn = { kind: 'cut' };
 const IN_A_PLAY_BEGUN_AHEAD: StepBegunIn = { kind: 'play', cameraAt: refusedAhead };
-// The blocks of a page of the film's own whose scroll a move of the film's moves: none, as its run alone moves it
+// The blocks of a film's own page whose scroll a move of the film's moves: none, as its run alone moves it
 const NO_BLOCK_SCROLLED: readonly BlockKey[] = [];
 const PAGE_UNREAD_AHEAD: FilmedPage = {
 	box: refusedAhead,
@@ -146,50 +89,51 @@ const PAGE_UNREAD_AHEAD: FilmedPage = {
 	press: refusedAhead
 };
 
-/**
- * A move begun: the share of its step it runs over, its curve, what it sets and whether that is the page itself, and
- * the sounds it has yet to make.
- */
+/** A move begun, as the take runs it. */
 interface Running {
 	readonly within: Share;
 	readonly ease: Ease;
 	readonly change: Change;
 	readonly movesThePage: boolean;
+	/** The sounds it has yet to make. */
 	readonly unheard: readonly Cue[];
 }
 
-/**
- * A play on the film's time: the moment it begins, a frame before its first frame, which stands a frame's share along
- * it; how long its frames take; and the curve its moves take where they name none.
- */
+/** A play on the film's time. */
 interface PlayTime {
+	/** The moment it begins: a frame before its first frame, which stands a frame's share along it. */
 	readonly start: number;
+	/** How long its frames take. */
 	readonly seconds: number;
+	/** The curve its moves take where they name none. */
 	readonly ease: Ease;
 }
 
-/**
- * A play as a move of it begins, which may ask where the frame will stand later in it: the scene the move begins on,
- * the moves running then but the page's and those yet to begin, the moves of the frame begun ahead of their share and
- * kept for it, and the play's time.
- */
+/** A play as a move of it begins, which may ask where the frame will stand later in it. */
 interface Foresight {
+	/** The scene the move begins on. */
 	readonly scene: Scene;
+	/** The moves running then, but the page's. */
 	readonly running: readonly Running[];
+	/** The moves yet to begin. */
 	readonly unbegun: readonly MoveInItsStep[];
+	/** The moves of the frame begun ahead of their share, each kept for it. */
 	readonly ahead: Map<MoveInItsStep, Running>;
 	readonly playTime: PlayTime;
 }
 
-/**
- * A frame's time in its play: the scene the frame before left; the moves of the scene that ran over it, those running
- * as the frame before was shot and those begun since, in the order they began; how far along its step the frame is; and
- * the share of the step a frame takes.
- */
+/** A frame's time in its play. */
 interface FrameTime {
+	/** The scene the frame before left. */
 	readonly before: Scene;
+	/**
+	 * The moves that ran over it, those running as the frame before was shot and those begun since, in the order they
+	 * began.
+	 */
 	readonly moves: readonly Running[];
+	/** How far along its step the frame is. */
 	readonly progress: number;
+	/** The share of the step a frame takes. */
 	readonly frameShare: number;
 }
 
@@ -199,17 +143,15 @@ interface Captured {
 	readonly image: Uint8Array;
 }
 
-/**
- * What a take is shot with: the page and the stage opened, where its frames and its sounds go, its format, the scene it
- * opens on, how a fast move is blurred — not at all for a draft, or for a film that wants no blur — and how many frames
- * make a second of the film.
- */
+/** What a take is shot with. */
 export interface TakeSetup {
 	readonly opened: Opened;
 	readonly footage: Footage;
 	readonly track: Track;
 	readonly format: Format;
+	/** The scene it opens on. */
 	readonly opening: Scene;
+	/** How a fast move is blurred: not at all for a draft, or for a film that wants no blur. */
 	readonly motionBlur: MotionBlur | null;
 	readonly framesPerSecond: number;
 }
@@ -259,7 +201,7 @@ export class Take {
 	}
 
 	/**
-	 * The film begun where the page's time stands, each page of the film's own the stage laid standing on the screen as
+	 * The film begun where the page's time stands, each of the film's own pages the stage laid standing on the screen as
 	 * its document stands, then every step in turn, until the steps or the footage run out; then the stage asked once
 	 * more, so a last frame kept as its page went is not kept without a word.
 	 */
@@ -275,7 +217,7 @@ export class Take {
 		await this.taken(begun - 1, () => this.refusedWhereGone());
 	}
 
-	/** How far each page of the film's own the stage laid scrolls at most, by its key, as laid: nothing typed into it. */
+	/** How far each of the film's own pages the stage laid scrolls at most, by its key, with nothing typed into it. */
 	private async scrollLengthsLaid(): Promise<ReadonlyMap<string, number>> {
 		const measured = [...this.opened.ownPages.laid].map(
 			async ([key, page]) => [key, await page.scrollLengthWith(NO_TEXTS_TYPED)] as const
@@ -296,7 +238,10 @@ export class Take {
 		}
 	}
 
-	/** A step's fault, or why the stage or its page is gone where one is, which explains it. */
+	/**
+	 * A step's fault, or why the stage or its page is gone where one is, which explains it: a selector that matches
+	 * nothing on Chrome's error page fails for the page's loss.
+	 */
 	private async explained(fault: Error): Promise<Error> {
 		return (await this.absence()) ?? fault;
 	}
@@ -464,7 +409,8 @@ export class Take {
 	/**
 	 * The camera a play's frame will be seen by at a moment of it, foreseen as a move of it begins: every move of the
 	 * frame due to begin by then begun ahead, then the scene the move begins on with each move running but the page's and
-	 * each begun ahead by then set as far as it will have come.
+	 * each begun ahead by then set as far as it will have come. Another move yet to begin, or the page's own scroll, is
+	 * not foreseen: an object the eye focuses on stands where the moves running will have carried it alone.
 	 */
 	private async cameraForeseen(foresight: Foresight, moment: number): Promise<Camera> {
 		const progress = (moment - foresight.playTime.start) / foresight.playTime.seconds;
@@ -531,8 +477,8 @@ export class Take {
 	}
 
 	/**
-	 * The page a move begins on at a moment: the filmed page, or, where the screen shows a page of the film's own, that
-	 * one stood as it stands then, the filmed page behind it still what scrolls and takes keys.
+	 * The page a move begins on at a moment: the filmed page, or, where the screen shows a film's own page, that one
+	 * stood as it stands then, the filmed page behind it still what scrolls and takes keys.
 	 */
 	private async pageShownIn(scene: Scene, moment: number): Promise<FilmedPage> {
 		const shows = scene.screen.shows;
@@ -545,21 +491,21 @@ export class Take {
 	}
 
 	/**
-	 * A page of the film's own, by its key, as a move begun at a moment on a scene reads it: its copy stood as the page
-	 * stands then, once, as it is handed over. No other move stands it before the move has read it, as the take begins
-	 * one move at a time, each to its end, and a move's change reads no page; and the copy stood last is the one shown,
-	 * so a picture of a part of the screen, taken as the move begins, is of the page the screen shows, as no move that
-	 * pictures one (a piece holding its picture, a sweep) reads another page of the film's own.
+	 * A film's own page, by its key, as a move begun at a moment on a scene reads it: its copy stood as the page stands
+	 * then, once, as it is handed over. No other move stands it before the move has read it, as the take begins one move
+	 * at a time, each to its end, and a move's change reads no page; and the copy stood last is the one shown, so a
+	 * picture of a part of the screen, taken as the move begins, is of the page the screen shows, as no move that
+	 * pictures one (a piece holding its picture, a sweep) reads another of the film's own pages.
 	 */
 	private async ownPageAt(scene: Scene, key: string, moment: number): Promise<MeasuredPage> {
 		await this.opened.ownPages.stand(ownPageStandingIn(scene, key, moment));
 		return this.ownPageOf(key);
 	}
 
-	/** A page of the film's own laid apart, by its key, as every page a move shows is laid before the film. */
+	/** A film's own page laid apart, by its key, as every page a move shows is laid before the film. */
 	private ownPageOf(key: string): MeasuredPage {
 		const laid = this.opened.ownPages.laid.get(key);
-		if (laid === undefined) throw new Error(`the stage laid no page of the film's own by the key ${key}`);
+		if (laid === undefined) throw new Error(`the stage laid none of the film's own pages by the key ${key}`);
 		return laid;
 	}
 
@@ -626,7 +572,8 @@ export class Take {
 
 	/**
 	 * The frame drawn as the scene stood at each moment of its time it is exposed at, its own last: all at once where the
-	 * stage draws so many at once, captured as the frame; else each captured, for the footage to blend.
+	 * stage draws so many at once, laid over one another and captured as the frame, as a capture is near all a frame
+	 * costs; else each captured, for the footage to blend.
 	 */
 	private async exposed(time: FrameTime, pageMovesOn: boolean): Promise<Exposures> {
 		const own = seenIn({ scene: this.scene, moment: this.moment() }, this.format);
@@ -717,7 +664,9 @@ export class Take {
 	/**
 	 * How close a picture of the page taken for a frame holds it: as close as the frame's cameras and pieces of the page
 	 * come where it serves that frame alone, as a move of the page runs on past it or its own motion is let go, so the
-	 * next frame takes another; as close as livereel's bound elsewhere, so it serves every frame after it.
+	 * next frame takes another, as the whole screen at the bound costs about three times what it costs as close as a
+	 * camera showing all of it; as close as livereel's bound elsewhere, so it serves every frame after it. A move's last
+	 * frame is pictured at the bound, so the picture after it can come out alike.
 	 */
 	private zoomPictured(own: SceneSeen, along: readonly SceneSeen[], pageMovesOn: boolean): number {
 		const servesThisFrameAlone = pageMovesOn || this.opened.act.motion.released;
@@ -783,7 +732,8 @@ export class Take {
 
 	/**
 	 * The page's picture taken anew, at a zoom; the page standing still where it came out as the last one did with
-	 * nothing done to the page between them and its own motion stilled. Whether it came out as the last one did.
+	 * nothing done to the page between them and its own motion stilled, so what an act brings later — results, an image,
+	 * a scroll that eases out — is seen. Whether it came out as the last one did.
 	 */
 	private async pageRetaken(stage: PicturedStage, zoom: number): Promise<boolean> {
 		const changedBefore = this.pictureTakenAfter !== this.pageChanges;
@@ -795,7 +745,8 @@ export class Take {
 
 	/**
 	 * The last capture at once, where it was drawn as this drawing is on a page standing still as it was then; none
-	 * elsewhere. A picture taken anew alike to the last shows what that capture showed.
+	 * elsewhere. A picture taken anew alike to the last shows what that capture showed. Such holds are near half a film's
+	 * frames.
 	 */
 	private capturedAs(drawing: string): Uint8Array | undefined {
 		return this.pageStandsStill && this.lastCaptured?.drawing === drawing ? this.lastCaptured.image : undefined;
@@ -822,8 +773,8 @@ export class Take {
 }
 
 /**
- * A page of the film's own as a move begins on it while the screen shows it: its blocks measured as a move reads it,
- * its scroll and its keys the filmed page's behind it, as a page the film wrote stands as written.
+ * A film's own page as a move begins on it while the screen shows it: its blocks measured as a move reads it, its
+ * scroll and its keys the filmed page's behind it, as a page the film wrote stands as written.
  */
 class OwnPageShown implements FilmedPage {
 	readonly measured: MeasuredPage;

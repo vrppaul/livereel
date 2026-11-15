@@ -1,14 +1,8 @@
 /**
- * A film shot in one of its formats: its steps written and counted, its page served, the browser opened, the page made
- * ready, its own time running as the film's code waits on it, and a take. A film shot on its set has no page served and
- * none made ready: the browser opens the set as it was shot, on the screen it was shot on.
- *
- * The film's length, its sounds, what its looks write in CSS and the pages of its own it shows are known from its steps
- * before its page is served, so footage that cannot be met — a still past the end — or a sound that cannot be laid is
- * refused before any server starts; a font or the ground's layers CSS cannot read is refused before the first frame,
- * and each page of its own is laid on the stage before it. The browser closes before the page's server stops.
- * What the film's own code does — its steps, its wait for the page — is the film's: a fault there is said as the
- * film's, naming where.
+ * A film shot in one of its formats. What its steps hold — its length, its sounds, what its looks write in CSS, its own
+ * pages and pictures — is known before its page is served, so footage that cannot be met (a still past the end) or a
+ * sound that cannot be laid is refused before any server starts. A film shot on its set has no page served and none
+ * made ready: the browser opens the set as it was shot, on the screen it was shot on.
  */
 import { wholePose } from '../domain/camera.ts';
 import { FilmError, LivereelError } from '../domain/errors.ts';
@@ -21,20 +15,16 @@ import { openingScene } from '../scene.ts';
 import type { Browser, Footage, FramesHanded, Opened, PageServer, SetFolder, SetShot, Track } from './ports.ts';
 import { Take } from './take.ts';
 
-/**
- * How finely a film is shot: how many of its frames' pixels are drawn for each of the frame's own, whether a fast move
- * is blurred as the film says, and how its frames are handed to the footage.
- */
+/** How finely a film is shot. */
 export interface Quality {
+	/** How many of its frames' pixels are drawn for each of the frame's own. */
 	readonly sharpness: number;
+	/** Whether a fast move is blurred as the film says. */
 	readonly blurred: boolean;
 	readonly framesHanded: FramesHanded;
 }
 
-/**
- * What serves the film's page, where its set is kept, the browser it is shot in, where its frames and its sounds go,
- * and how finely.
- */
+/** What a film is shot with, and how finely. */
 export interface Shooting {
 	readonly server: PageServer;
 	readonly set: SetFolder;
