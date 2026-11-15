@@ -34,9 +34,9 @@ export interface DrawnFilmPage {
 	/** How long the film is, in seconds, read once `ready` settles, so the page may set it then. */
 	duration: number;
 	/**
-	 * The frame drawn at a moment of the film, in seconds from its start, the same however the page was asked before, as
-	 * any frame may be shot alone, a still or a clip from the film's middle; settled once drawn, where it hands a
-	 * promise.
+	 * The frame drawn at a moment of the film, in seconds from its start, which must come out the same however the page
+	 * was asked before, as any frame may be shot alone, a still or a clip from the film's middle; settled once drawn,
+	 * where it hands a promise.
 	 */
 	readonly at: (seconds: number) => void | Promise<void>;
 }

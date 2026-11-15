@@ -133,7 +133,10 @@ export function hold(script: HoldScript): PlayShot {
 	return play({ seconds: script.seconds });
 }
 
-/** The scene changed at once, between two frames: a cursor gone, a terminal opened, the camera elsewhere. */
+/**
+ * The scene changed at once, between two frames: a cursor gone, a terminal opened, the camera elsewhere. A sound its
+ * moves make is heard on the frame after it, so none is heard from a cut that ends the film.
+ */
 export function cut(...written: readonly Move[]): CutShot {
 	assertKind(written, A_MOVES, "cut's moves");
 	const moves = written.map(inACut);

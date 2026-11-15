@@ -45,12 +45,14 @@ export type BlockHolding = 'text alone' | 'elements' | 'its value';
 
 /**
  * A film's own page as a move measures it, which no key reaches and the film alone runs and types into: its blocks and
- * their letters read as the filmed page's are, and what its run and its typing read.
+ * their letters read as the filmed page's are; how far it scrolls with a text typed into it, how far down its document
+ * a block stands, and the block the stage types into or blinks.
  */
 export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind' | 'roundingOf' | 'letterAtTheStart'> & {
 	/**
-	 * Measured with each block a typed text names, the first its CSS selector matches, holding that text and every other
-	 * holding what it held; each holds what it held again after, as the stage writes what stands typed in each exposure.
+	 * How far down the page scrolls at most, in its pixels, measured with each block a typed text names, the first its
+	 * CSS selector matches, holding that text and every other holding what it held; each holds what it held again after,
+	 * as the stage writes what stands typed in each exposure.
 	 */
 	readonly scrollLengthWith: (typed: readonly TypedText[]) => Promise<number>;
 	/**

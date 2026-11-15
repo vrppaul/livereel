@@ -1,6 +1,7 @@
 /**
- * A film's set shot in one of its formats, kept apart from the set shot before until it is written whole, so a scenario
- * that fails leaves that one as it was, and what it kept is thrown away.
+ * A film's set shot in one of its formats, through the ports alone: the app served, opened and made ready as for a
+ * shoot, and each state its scenario marks handed to the set's folder (`SetFolder`), which keeps the set apart from the
+ * one shot before until it is written whole.
  */
 import { FilmError } from '../domain/errors.ts';
 import { assertKind } from '../domain/handed.ts';

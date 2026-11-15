@@ -1,10 +1,10 @@
 /**
- * Pictures of the film's own, shown by an object (`src/moves/object.ts`): an image file the film names by its path from
- * its own file, a mark or a logo, over the whole frame or in a place the film names (`src/domain/place.ts`), on the
- * frame, inside the page's window or the world, or in a group; then carried, grown, brought near, leant, set apart and
- * put away as any object is. It reads a place as a pane does, as large as the box holds all of it, in its middle,
- * standing as wide against as tall as its file decoded at, which the stage reads as it lays the film's pictures before
- * the first frame. Every move of it takes the picture named `picture`, or the one the film names `as`.
+ * A film's own pictures, shown by an object (`src/moves/object.ts`): an image file the film names by its path from its
+ * own file, a mark or a logo, over the whole frame or in a place the film names (`src/domain/place.ts`), on the frame,
+ * inside the page's window or the world, or in a group; then carried, grown, brought near, leant, set apart and put
+ * away as any object is. It reads a place as a pane does, as large as the box holds all of it, in its middle, standing
+ * as wide against as tall as its file decoded at, which the stage reads as it lays the film's pictures before the first
+ * frame. Every move of it takes the picture named `picture`, or the one the film names `as`.
  */
 import { boxOf } from '../domain/geometry.ts';
 import { A_PATH, type Form, assertKind, assertWritten } from '../domain/handed.ts';

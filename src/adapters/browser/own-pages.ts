@@ -4,8 +4,9 @@
  * own script (`stage/own-page.js`), the copy last stood shown alone on the screen's ground. The stage's copies draw the
  * frames; these, which no frame shows, stand as a move's moment has them, whatever frame was drawn last.
  *
- * Not in the stage's own tab: it is the frame's size, and both CDP's capture and HTML-in-Canvas leave out what lies
- * past its edge; made wide enough to hold the copy beside the frame, it made every frame's capture half as long again.
+ * The copies stand in a tab apart from the stage's, which is the frame's size, and both CDP's capture and
+ * HTML-in-Canvas leave out what lies past its edge: made wide enough to hold the copy beside the frame, it made every
+ * frame's capture half as long again.
  * The tab costs a film with such a page about a quarter of a second as the browser opens, and its device scale moved no
  * block of a terminal's page: its 318 blocks stood alike at 1, 2, 2.2 and 4.4.
  */
@@ -63,7 +64,7 @@ declare global {
 const PAGES_PAGE = 'pages.html';
 const HTML_SAID = 60;
 
-/** The own pages of a film that shows none: none to read, and none to stand. */
+/** A film's own pages where it shows none: none to read, and none to stand. */
 export const NO_OWN_PAGES: OwnPages = {
 	laid: new Map(),
 	stand: (standing) => Promise.reject(new Error(`the film laid no page of its own by the key ${standing.key}`))

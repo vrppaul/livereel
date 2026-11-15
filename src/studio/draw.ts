@@ -1,9 +1,7 @@
 /**
- * A film its own page draws, shot in one of its formats: its page served, opened at the frame's size and made ready,
- * then each frame the footage keeps drawn at its moment and captured, until the film or the footage runs out.
- *
- * The page says how long the film is, so a still or a clip past its end is refused before the first frame. A frame the
- * footage does not keep is never drawn: each is the page's at its moment alone.
+ * A film its own page draws, shot in one of its formats. The page says how long the film is, so a still or a clip past
+ * its end is refused before the first frame; a frame the footage does not keep is never drawn, as each is the page's at
+ * its moment alone.
  */
 import { momentOf, shotAt } from '../domain/time.ts';
 import type { DrawnFilmInFormat } from '../direction/drawn-film.ts';

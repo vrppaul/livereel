@@ -10,8 +10,8 @@ import { A_KEYBOARD, type KeyboardSound } from '../direction/sound.ts';
 /** A typing's timing, and the keyboard its keys are heard on where it is not the film's. */
 export interface TypingScript extends TimingScript {
 	/**
-	 * The keyboard the typing's keys are heard on whatever the film says of its keys, its sounds turned off too, so one
-	 * film may be heard on several keyboards; the film's where none is named.
+	 * The keyboard the typing's keys are heard on whatever the film says of its keys, even where the film turns its
+	 * sounds off, so one film may be heard on several keyboards; the film's where none is named.
 	 */
 	readonly keyboard?: KeyboardSound;
 }

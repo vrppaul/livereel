@@ -1,7 +1,8 @@
 /**
  * Where a shoot's time goes: every call the take waits on, timed at the ports it is made through, and what none of them
  * took said as the rest — the film's own code, its acts, the sounds read before the first frame, the scene worked out.
- * The footage's blends are timed apart, as they run beside the take rather than in its way.
+ * Where the rest grows, a part of it is timed next, so no second is put down to a guess. The footage's blends are timed
+ * apart, as they run beside the take rather than in its way.
  *
  * A stage that draws on the graphics card, as a room does, has the card's work queued as its draw returns, and the card
  * does it inside the capture after: timed so, a room's frame told 15.6 ms of drawing and 446.9 of capture, where waited

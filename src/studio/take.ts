@@ -263,6 +263,11 @@ export class Take {
 		}
 	}
 
+	/**
+	 * A play, frame by frame: the moves due by each frame begun in the order they begin, each once every running change
+	 * whose share ended before its start is set at its end, so it reads the scene and the page as they stand then, and
+	 * one that begins as an act is done reads the page the act left.
+	 */
 	private async play(step: PlayShot): Promise<void> {
 		const frames = framesOf(step.seconds, this.framesPerSecond);
 		const playTime: PlayTime = {
@@ -410,7 +415,7 @@ export class Take {
 	 * The camera a play's frame will be seen by at a moment of it, foreseen as a move of it begins: every move of the
 	 * frame due to begin by then begun ahead, then the scene the move begins on with each move running but the page's and
 	 * each begun ahead by then set as far as it will have come. Another move yet to begin, or the page's own scroll, is
-	 * not foreseen: an object the eye focuses on stands where the moves running will have carried it alone.
+	 * not foreseen: an object the eye focuses on stands only where the moves running will have carried it.
 	 */
 	private async cameraForeseen(foresight: Foresight, moment: number): Promise<Camera> {
 		const progress = (moment - foresight.playTime.start) / foresight.playTime.seconds;
@@ -664,9 +669,9 @@ export class Take {
 	/**
 	 * How close a picture of the page taken for a frame holds it: as close as the frame's cameras and pieces of the page
 	 * come where it serves that frame alone, as a move of the page runs on past it or its own motion is let go, so the
-	 * next frame takes another, as the whole screen at the bound costs about three times what it costs as close as a
-	 * camera showing all of it; as close as livereel's bound elsewhere, so it serves every frame after it. A move's last
-	 * frame is pictured at the bound, so the picture after it can come out alike.
+	 * next frame takes another; as close as livereel's bound elsewhere, so it serves every frame after it. The whole
+	 * screen at the bound costs about three times what it costs as close as a camera showing all of it. The last frame of
+	 * a move of the page is pictured at the bound, so the picture after it can come out alike.
 	 */
 	private zoomPictured(own: SceneSeen, along: readonly SceneSeen[], pageMovesOn: boolean): number {
 		const servesThisFrameAlone = pageMovesOn || this.opened.act.motion.released;

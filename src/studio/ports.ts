@@ -153,7 +153,7 @@ export interface Opened extends AsyncDisposable {
 /**
  * What the stage and the page are set as for a take, from the film in its format. All the film writes in CSS, in its
  * theme or its looks' moves, the browser reads before anything is shot, once it has laid the film's own font files; the
- * blur says how many exposures a frame is made of at most.
+ * `motionBlur` says how many exposures a frame is made of at most.
  */
 export type Setting = Pick<
 	FilmInFormat,

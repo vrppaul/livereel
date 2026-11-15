@@ -13,7 +13,7 @@ export interface TurnedOff {
 /** The one name a thing turned off is written with. */
 const SWITCH = ['enabled'];
 
-/** Whether what a film hands over, its types checked by nobody, is written as turned off, and as nothing else. */
+/** Whether what a film hands over, its types stripped, is written as turned off, and as nothing else. */
 export function isTurnedOff(written: unknown): written is TurnedOff {
 	return (
 		isObjectOfValues(written) &&

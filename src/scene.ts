@@ -184,7 +184,7 @@ export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 	readonly objects: readonly DrawnObject[];
 	readonly leaving: readonly DrawnObject[];
 	/**
-	 * The objects standing in the world, standing and pushed off, in the order the room lays them one over the other
+	 * The objects in the world, standing and pushed off, in the order the room lays them one over the other
 	 * (`laidFartherFirst` in `src/domain/placement.ts`).
 	 */
 	readonly laidInTheWorld: readonly ListedObject[];

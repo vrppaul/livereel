@@ -1,6 +1,5 @@
 /**
- * The filmed page as moves read it and type into it, and a film's own page as moves measure it. The functions handed to
- * the page run there, each alone: none may call another of this module.
+ * The filmed page as moves read it and type into it, and a film's own page as moves measure it.
  *
  * No letter is set into the page to measure it: only an act changes the filmed page, and a page watching itself would
  * see one. A block a scroll moves, and every block whose scroll carries the source of a piece riding its block, is told
@@ -357,7 +356,10 @@ export class PlaywrightPage implements FilmedPage {
 		return this.courseOn(scroller, await scroller.evaluate(courseTo, { target: block, top }));
 	}
 
-	/** A course found on a block that scrolls, with the key the page knows that block by. */
+	/**
+	 * A course found on a block that scrolls, with the key the page knows that block by; the block kept as a handle for
+	 * the move that scrolls it, released with the browser.
+	 */
 	private async courseOn(scroller: JSHandle<Element>, course: CourseFound): Promise<ScrollCourse> {
 		const [block] = await this.keysOf(await scroller.evaluateHandle(alone));
 		// The page hands back a key for each block it is handed: one here, which the type checker cannot see

@@ -218,7 +218,7 @@ export class AppOpenedForSet implements OpenedForSet {
 
 	/**
 	 * The app as its tab shows it now, once its fonts have loaded, taken as the state of this name, as a PNG, its text
-	 * caret kept and anything still animating set at its end; with where each of the set's targets stands, but one that
+	 * caret kept and anything still animating set at its end; with where each of the set's targets stands, save any that
 	 * matches nothing in it.
 	 */
 	async taken(name: string, targets: readonly string[]): Promise<StateTaken> {

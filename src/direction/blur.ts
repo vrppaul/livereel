@@ -17,7 +17,7 @@ export type MotionBlurScript =
 			 * none is named.
 			 */
 			readonly shutter?: number;
-			/** How many exposures the fastest frame is blended from at most, 2 or more: 16 where none is named. */
+			/** How many exposures the fastest frame is blended from at most, a whole count from 2: 16 where none is named. */
 			readonly exposuresAtMost?: number;
 	  };
 
