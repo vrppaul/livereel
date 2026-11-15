@@ -1,9 +1,9 @@
 // @ts-check
 /**
  * The body of a piece of the page standing in the world, in the room's one scene (`DrawnBody` in `src/props/piece.ts`):
- * its walls, drawn back from its face by the matrix the room stands the face's surface by (`stage/room.js`), so the two
- * stand as one wherever the eye goes; the shadow it casts on the plane it was lifted from; and the pit its hole may be
- * sunk into the page as, where the page's surface lays nothing (`stage/page-picture.js`).
+ * its walls, drawn back from its face and placed by the matrix the room stands the face's surface by (`stage/room.js`),
+ * so the two stand as one wherever the eye goes; the shadow it casts on the plane it was lifted from; and the pit its
+ * hole may be sunk into the page as, where the page's surface lays nothing (`stage/page-picture.js`).
  *
  * The walls are the page's matter, as a button rising stands as a column and a part lifted as a plate: matte and lit by
  * no light of the world's. They write depth, so behind the page's plane the page hides them, and they come up out of it
@@ -95,7 +95,8 @@ const SHADOW_SOFT_A_HEIGHT = 1;
 // A body's walls: seen from outside, as they stand out of the page; whole at the face and 0.35 of their colour at the
 // back; no lid at either end, as the piece's face is their front: a lid there would show whole behind a face that
 // fades. A pit's: seen from inside alone, so it stands open at its mouth; 0.6 of its colour at the mouth and 0.18 at
-// its floor, deep in the window's shade; its floor a lid at its back
+// its floor, deep in the window's shade; its floor a lid at its back. A piece lying on its plane stands in its pit,
+// filling it
 /** @type {WallsKind} */
 const BODY_WALLS = { seenFrom: FrontSide, face: 1, back: 0.35, floored: false };
 /** @type {WallsKind} */

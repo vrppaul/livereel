@@ -9,10 +9,10 @@
  * that explains a rule of livereel's by one of them says nothing to a reader who has not got that film, and goes stale
  * as the film changes. Film pixels (`SHORTER_SIDE_IN_FILM_PIXELS` in `src/domain/geometry.ts`) have one name: one old
  * name, by a frame's height, was false on a frame taller than wide, and another, after the frame, reads as the frame's
- * own pixels, which the code counts apart. A film's own page, `ownPage` in the code, has one name in the prose too. The
- * last three are word checks: they keep these slips from coming back, and prove nothing more. An old name is looked for
- * across line breaks, as its words wrap. The changelog is left out, as it tells what was in the names of then; and the
- * tests, held to formatting alone.
+ * own pixels, which the code counts apart. A film's own page or picture, `ownPage` and `filmsPictures` in the code, has
+ * that one name in the prose too, with its noun last, as the reader looks for it. The last three are word checks: they
+ * keep these slips from coming back, and prove nothing more. An old name is looked for across line breaks, as its words
+ * wrap. The changelog is left out, as it tells what was in the names of then; and the tests, held to formatting alone.
  *
  * A script rather than eslint and stylelint rules on comments: the file rule needs one anyway, and it reads code,
  * styles, markup and documents alike.
@@ -100,11 +100,19 @@ function oldNamesOf(renamed: Renamed): RegExp {
 	);
 }
 
+/** What is renamed, and a pattern of its old names, made once. */
+interface SoughtNames {
+	readonly now: string;
+	readonly oldNames: RegExp;
+}
+
+const SOUGHT: readonly SoughtNames[] = RENAMED.map((renamed) => ({ now: renamed.now, oldNames: oldNamesOf(renamed) }));
+
 /** Each old name a file holds of what is renamed, by the line it starts on. */
-function oldNamesIn(read: FileRead, renamed: Renamed): string[] {
-	return [...read.text.matchAll(oldNamesOf(renamed))].map(
+function oldNamesIn(read: FileRead, sought: SoughtNames): string[] {
+	return [...read.text.matchAll(sought.oldNames)].map(
 		(found) =>
-			`${read.file}:${lineAt(read.text, found.index)} names ${renamed.now} by an old name: ${found[0].replace(WORDS_APART, ' ')}`
+			`${read.file}:${lineAt(read.text, found.index)} names ${sought.now} by an old name: ${found[0].replace(WORDS_APART, ' ')}`
 	);
 }
 
@@ -132,5 +140,5 @@ const filesRead = tracked
 	.map((file) => ({ file, text: readFileSync(file, 'utf8') }));
 reported([
 	...filesRead.flatMap(linesOf).flatMap((line) => faultsOf(line, trackedSet)),
-	...filesRead.flatMap((read) => RENAMED.flatMap((renamed) => oldNamesIn(read, renamed)))
+	...filesRead.flatMap((read) => SOUGHT.flatMap((sought) => oldNamesIn(read, sought)))
 ]);

@@ -2,10 +2,10 @@
 'use strict';
 /**
  * How a film's own page is laid and stood, one way for the stage, which lays it in each exposure's screen, and for the
- * tab whose copy moves read and parts of it are pictured on (`pages.html`), so each stands as the other does at a
- * moment. It answers both under `window.ownPage` (`OwnPageApi` in `src/adapters/browser/own-pages.ts`). It shares one
- * scope with each page's scripts, where a name declared twice stops the second loading, so all it holds stands in one
- * strict block.
+ * tab that lays the copy of it moves read and parts of it are pictured on (`pages.html`), so each stands as the other
+ * does at a moment. It answers both under `window.ownPage` (`OwnPageApi` in `src/adapters/browser/own-pages.ts`). It
+ * shares one scope with each page's scripts, where a name declared twice stops the second loading, so all it holds
+ * stands in one strict block.
  */
 /** @import { OwnPage } from '../src/direction/page.ts' */
 /** @import { OwnPageStanding } from '../src/domain/own-page.ts' */
@@ -60,8 +60,8 @@
 	}
 
 	/**
-	 * The block of a film's own page a film types into or blinks, the first its CSS selector matches, which the move
-	 * found as it began: an element of the page's own window, as the frame's page is a world of its own.
+	 * The block a film types into or blinks on its own page, the first its CSS selector matches, which the move found as
+	 * it began: an element of the page's own window, as the frame's page is a world of its own.
 	 * @param {Document} laid @param {string} into @returns {HTMLElement}
 	 */
 	function blockOf(laid, into) {

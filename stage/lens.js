@@ -9,17 +9,17 @@
  * A lens blurs what stands before its focus over what stands behind it, so the scene is split at the focus into two
  * fields: the far field, each pixel blurred by its own spread, so a sharp edge does not bleed into the blurred ground
  * beside it; and the near field, blurred as one round each pixel by the widest near spread that reaches it, so a near
- * blur reaches past its own edge. The near field is laid over the far by how much of the pixel it leaves uncovered, not
- * by how clear it is: what it holds is already all the scene showed there, and a half-faded page crossing from the far
- * field into the near, laid over itself by its clearness, would draw a line where it crossed.
+ * blur reaches past its own edge. The far field shows through the near as far as the near leaves the pixel uncovered,
+ * not by how clear the near is: what the near holds is already all the scene showed there, and a half-faded page
+ * crossing from the far field into the near, laid over itself by its clearness, would draw a line where it crossed.
  *
  * One depth a pixel cannot hold what the near field hides, and what is carried into its hole is a guess: so the room
  * draws what stands before all the rest while the near field holds any of it as a world of its own
  * (`apartBeforeTheRest`), and only what is blurred near among the rest's depths, the near part of a page leant across
  * the focus or a cube through it, leaves a hole to fill. A sample that spreads is read from copies of the far field's
- * light that reaches as far, as a copy mixes each pixel's light with its neighbours': read from copies of all of it, a
- * sharp cube's green edge would spread green over a page blurred beside it. How each field is laid over the fields
- * before it is the room's (`stage/laying.js`).
+ * light that reaches as far as the copy's pixels stand apart, as a copy mixes each pixel's light with its neighbours':
+ * read from copies of all of it, a sharp cube's green edge would spread green over a page blurred beside it. How each
+ * field is laid over the fields before it is the room's (`stage/laying.js`).
  */
 import {
 	DataTexture,
@@ -87,7 +87,8 @@ const GOLDEN_ANGLE = 2.399963229728653;
 const HALF_TURN = Math.PI;
 const WHOLE_TURN = HALF_TURN + HALF_TURN;
 // Interleaved gradient noise (Jimenez, 2014): a number from 0 to 1 at each pixel, near none of its neighbours', from a
-// pixel's place across and down, which turns each pixel's spiral apart from its neighbours'
+// pixel's place across and down, which turns each pixel's spiral apart from its neighbours', so the samples' pattern
+// draws no copies of an edge
 const NOISE = { scale: 52.9829189, across: 0.06711056, down: 0.00583715 };
 // Where a pixel's middle stands in it, a texture at its full size, and what the split marks as so: whole, or none, half
 // telling them apart
@@ -171,8 +172,8 @@ float nearestRound(vec2 share) {
 }`;
 
 // How far apart the samples of a gather of a radius stand, in the drawing's pixels, and so the pixels of the smaller
-// copy it reads them from: as far as each of its samples' share of the disc is wide, a radius times √(π / samples), no
-// nearer than the drawing's own
+// copy it reads them from, so a wide disc is smooth: as far as each of its samples' share of the disc is wide, a radius
+// times √(π / samples), no nearer than the drawing's own
 const SAMPLES_APART_PER_RADIUS = Math.sqrt(Math.PI / SAMPLES);
 const SAMPLES_APART = `
 const int SAMPLES = ${SAMPLES};
@@ -187,10 +188,12 @@ float gapFor(float radius) {
 // copies hold, and the measures every later pass reads of each pixel — by the nearest depth round it, whether the near
 // field holds it, whole or none, and how wide it spreads, in the drawing's pixels, less than none where nothing was
 // drawn round it; whether the far field's copies hold its light, whole or none; and how wide its own depth spreads,
-// less than none where the far field has no depth of its own there. A sample's reach is read by the nearest depth round
-// it, a pixel's own blur by its own: read by the nearest, a blurred page's pixel touching a sharp thing stood sharp, a
-// line along the thing's edge. One pass writes every part, each into its own layer of the split, by its place there:
-// written a pass a part, each pass read the nine depths round each pixel anew
+// less than none where the far field has no depth of its own there. Each pixel is read by the nearest depth round it,
+// as a pixel at the edge of what the scene drew holds a share of the nearer thing's light while its one depth may be
+// the farther one's or nothing's. A sample's reach is read by the nearest depth round it, a pixel's own blur by its
+// own: read by the nearest, a blurred page's pixel touching a sharp thing stood sharp, a line along the thing's edge.
+// One pass writes every part, each into its own layer of the split, by its place there: written a pass a part, each
+// pass read the nine depths round each pixel anew
 /** @typedef {'nearLight' | 'farLight' | 'spreadingLight' | 'measures'} SplitPart */
 /** @type {{ readonly [Part in SplitPart]: number }} */
 const SPLIT_PARTS = { nearLight: 0, farLight: 1, spreadingLight: 2, measures: 3 };

@@ -366,7 +366,7 @@ function sharpPartDrawn(root, sharp) {
 }
 
 /**
- * The screen: how far it has come up, what it shows, the filmed page or one of the film's own laid on it, with what the
+ * The screen: how far it has come up, what it shows, the filmed page or a film's own page laid on it, with what the
  * film typed into it and scrolled as far as the film has run it, or laid so as a sheet past it in a frame of its own,
  * and the picture light sweeps away over it, a band or a disc, and the page it fades from over it; where the eye sees a
  * page on the window's back, how it is mounted, so the stylesheet turns it to stand upright from behind and leaves
@@ -470,7 +470,7 @@ function ownFrame(frames, key) {
 }
 
 /**
- * The sheet the film's own page the screen shows is laid as past the screen; none where it is drawn on the screen
+ * The sheet past the screen that the film's own page it shows is laid as; none where the page is drawn on the screen
  * alone, or the screen shows the filmed page.
  * @param {DrawnScene['screen']['shows']} shows @returns {DrawnSheet | null}
  */

@@ -4,10 +4,10 @@
  * and a thing or markup stands in the world beside it, a film's things whose material writes no depth, and markup
  * standing in the world. The lens reads one depth a pixel, and what is seen through shows two things at a pixel, itself
  * and what stands behind it: drawn in the world with the rest, a thing of glass would be blurred by the depth of what
- * stands behind it, and a fading page, which writes its depth, would hide what of such a thing stands behind it. So
- * what is seen through is drawn as fields of its own, each over the depth of the field of what writes depth, so what
- * stands behind an opaque surface stays hidden, with a depth of its own, that of the nearest surface it holds, which
- * the lens blurs all of it by; and each laid over the last.
+ * stands behind it, and a fading page, which writes its depth, would hide what of such a thing stands behind it and
+ * have what stands behind it blurred as the page. So what is seen through is drawn as fields of its own, each with a
+ * depth of its own, its nearest surface's, which the lens blurs all of it by; each drawn over the depth of what writes
+ * depth, so what stands behind an opaque surface stays hidden, and laid over the last.
  *
  * A film's things seen through and markup stand in fields apart, as they are laid by two laws (`DRAWN`), the farther
  * laid first (`kindsFartherFirst` in `stage/room.js`). The page lies alone in its field with the window's glass over
@@ -70,12 +70,12 @@ const NOTHING_SEEN_THROUGH = [];
  * How what each field holds is drawn into it, in the screen's colours or as light, and how the field is laid over what
  * lies under it, as the browser lays it or in linear light. Markup is drawn as the browser drew it, so three lays its
  * surfaces over one another as the browser lays them (`MARKUP_PART_FRAGMENT` in `stage/room.js`), and is laid so. A
- * film's things are its light. The page is laid as markup is: its fade is the stylesheet's, and laid in linear light
- * over what stands behind it, as a half-faded page over a glass cube came out 13 levels off laid in the screen's
- * colours, and under 2 laid so; it is drawn as light, as the glass over it is drawn as a film's light, so the glass's
- * reflection past white stays whole for the glow. The share the window's shade fades it by the page's surface lays in
- * light itself, from what the room has laid behind it (`stage/page-picture.js`): the field holds the page as clear as
- * its screen has come up, and the browser's law lays that alone.
+ * film's things are its light. The page is laid as markup is, its fade the stylesheet's: laid in linear light over a
+ * glass cube, a half-faded page would come out 13 levels off the stylesheet's fade, and laid so, under 2. It is drawn
+ * as light, as the glass over it is drawn as a film's light, so the glass's reflection past white stays whole for the
+ * glow. The share the window's shade fades it by the page's surface lays in light itself, from what the room has laid
+ * behind it (`stage/page-picture.js`): the field holds the page as clear as its screen has come up, and the browser's
+ * law lays that alone.
  * @type {{
  *   readonly [Holding in SeenThroughHolding]: { readonly inTheScreensColours: boolean, readonly laid: Laying }
  * }}
