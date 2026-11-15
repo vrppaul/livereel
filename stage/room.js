@@ -1,11 +1,11 @@
 // @ts-check
 /**
  * The stage drawn as a room: each exposure's surfaces, the stage's markup as the flat stage draws it, laid in a canvas
- * the browser draws into textures through HTML-in-Canvas (`texElementImage2D`), and composed in WebGL as one three.js
- * scene with one depth, seen in perspective from the eye. The browser draws a layer leant in 3D at about one of its
- * pixels a page's pixel however close the eye comes, so text near the eye on a window leant back would come out soft:
- * the room draws every surface face-on, the page from its own picture (`stage/page-picture.js`), and stands each where
- * the engine's matrix places it.
+ * the browser draws into textures through HTML-in-Canvas (`texElementImage2D`), and composed in WebGL as three.js
+ * scenes with one depth each, seen in perspective from the eye. The browser draws a layer leant in 3D at about one of
+ * its pixels a page's pixel however close the eye comes, so text near the eye on a window leant back would come out
+ * soft: the room draws every surface face-on, the page from its own picture (`stage/page-picture.js`), and stands each
+ * where the engine's matrix places it.
  *
  * The script is a module, as three's are, which the page loads only where a film is drawn as a room
  * (`src/adapters/browser/room.ts`); it answers under `window.room`.
