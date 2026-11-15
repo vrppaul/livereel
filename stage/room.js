@@ -1,54 +1,14 @@
 // @ts-check
 /**
- * The stage drawn as a room: each exposure's surfaces — its ground, its window and all in it, what stands on its frame
- * — laid in a canvas apart, drawn there by the stage's markup as the flat stage draws them but for the window, which
- * stands face-on, and composed in WebGL. The browser draws each surface into a texture through HTML-in-Canvas
- * (`texElementImage2D`), once the canvas has painted what the stage drew, in the screen's colours, premultiplied.
+ * The stage drawn as a room: each exposure's surfaces, the stage's markup as the flat stage draws it, laid in a canvas
+ * the browser draws into textures through HTML-in-Canvas (`texElementImage2D`), and composed in WebGL as one three.js
+ * scene with one depth, seen in perspective from the eye. The browser draws a layer leant in 3D at about one of its
+ * pixels a page's pixel however close the eye comes, so text near the eye on a window leant back would come out soft:
+ * the room draws every surface face-on, the page from its own picture (`stage/page-picture.js`), and stands each where
+ * the engine's matrix places it.
  *
- * An exposure is its ground; over it the world, one three.js scene with one depth: the page's surface on a plane where
- * the engine's matrix places it in the eye's own space, its texture read back into linear light; the window's body and
- * glass round it (`stage/body.js`); the film's things in the world (`stage/things.js`); each object of markup standing
- * in the world, a title, code, the terminal or a piece, on a surface of its own the stage lays it in apart from the
- * frame's, drawn face-on into a texture as many times as densely as the eye magnifies it, but no denser than what it
- * shows holds (`DrawnObject.magnified`), so brought near it is as sharp as the page beside it; let go once no exposure
- * of a frame draws it; one that would ask more than the world's own layer holds, part by part by how far the eye sees
- * each part from, each only as far as the frame shows it, each painted and drawn into a texture of its own in turn, as
- * one element is laid out at one density at a time; and stood where the engine's matrix places its box, a piece's body
- * standing with it (`stage/piece-body.js`); all seen in perspective from the eye and lit as it sees the room
- * (`stage/lighting.js`), hiding one another by depth alone; but what stands before all the rest while the eye's focus
- * blurs it near, a world of its own drawn apart and laid over the rest (`worldBuilt`). The eye's lens blurs each pixel
- * of the world by how far what it shows stands from the focus, or, where the window's shade blurs the whole window, as
- * wide as the shade blurs the window there where that is wider (`stage/lens.js`, `WindowBlurred` in `stage/body.js`);
- * its fields are laid over one another each by its law (`stage/laying.js`) and the whole over the ground; over that the
- * cursor, on the page's plane where the eye sees it but over whatever stands nearer, unblurred: laid in the world, a
- * piece lifted off the page and its shadow would lie over it, grey and soft; then the film's things on the frame,
- * sharp, then the frame's surface.
- *
- * The window's surface is drawn from a picture of it as sharp as the browser draws a page face-on, and filtered as it
- * shrinks into the distance: the browser draws a layer leant in 3D at about one of its pixels a page's pixel, however
- * close the eye comes, so text near the eye of a window leant back would come out soft. It reaches as far past the
- * frame as the camera's picture does on its plane, as the eye may see the plane past the frame's edge, and is drawn
- * less densely where its texture would pass the graphics card's largest. It holds the screen's own markup over the
- * page; what lies over the page in the window, a callout, pins, an object in it, stands in a surface of its own laid
- * out alike; the page's surface lays the screen's ground and the page's picture under the one, as dense as the picture
- * was taken, and the other over all (`stage/page-picture.js`). The cursor stands in a third surface laid out alike,
- * which the room lays over the world. The world is drawn as far past the frame as the lens's blur gathers at its edges,
- * to a step, so the layers it is drawn into keep their size while the blur gathers alike, and a little farther, so each
- * side of them halves evenly down to the coarsest copy the lens reads.
- *
- * The exposures are added up in linear light, as a shutter gathers the light of each moment: a glint that moves draws a
- * streak as bright as its light, where averaged in the screen's colours it went dark. Where the world asks, the frame
- * glows round its light past the page's white, as a lens blooms, once over the light its exposures gathered: three's
- * own bloom (`UnrealBloomPass`), its spread measured in film pixels, so it spreads over as large a share of any frame,
- * however large the frame is drawn; the glow lies over all the frame, what stands on it too. One texture of each
- * surface serves every exposure, uploaded anew for each in turn, so the card holds one each, not one each for each
- * exposure: sixteen exposures of a 3840 × 2160 frame would hold 2 GB. A texture last drawn from a surface the canvas
- * has not painted anew since, as it names what it paints anew, is kept as it stands: a frame of one exposure whose
- * window stands still draws the window's texture no more.
- *
- * three.js keeps no camera of its own: every point is placed by the matrices the engine hands the stage, and the
- * world's camera takes the projection alone. The script is a module, three's being modules alone, which the page loads
- * only where the film is drawn as a room (`src/adapters/browser/room.ts`); it answers under `window.room`.
+ * The script is a module, as three's are, which the page loads only where a film is drawn as a room
+ * (`src/adapters/browser/room.ts`); it answers under `window.room`.
  */
 import {
 	Box3,
@@ -393,8 +353,9 @@ ${SRGB_CURVES}
 void main() {
 	gl_FragColor = inTheScreensColours(texture2D(drawn, shareOfTheFrame));
 }`;
-// An exposure, drawn in the screen's colours, added into the frame at its weight as linear light, as the canvas shows
-// it, opaque, what is clear in it over nothing
+// An exposure, drawn in the screen's colours, added into the frame at its weight as linear light, as a shutter gathers
+// the light of each moment: a glint that moves draws a streak as bright as its light, where averaged in the screen's
+// colours it would go dark. Opaque, as the canvas shows it, what is clear in it over nothing
 const WEIGHED_FRAGMENT = `
 uniform sampler2D drawn;
 uniform float weight;
@@ -494,7 +455,8 @@ class Room {
 		this.exposure = new WebGLRenderTarget(drawnWidth, drawnHeight, PAST_WHITE);
 		this.frame = new WebGLRenderTarget(drawnWidth, drawnHeight, PAST_WHITE);
 		/**
-		 * The texture each surface is drawn into, for every exposure in turn
+		 * The texture each surface is drawn into, for every exposure in turn, so the card holds one a surface, not one for
+		 * each exposure: sixteen exposures of a 3840 × 2160 frame would hold 2 GB
 		 * @type {ReadonlyMap<SurfaceName, SurfaceTexture>}
 		 */
 		this.textures = new Map(
@@ -729,7 +691,8 @@ class Room {
 	/**
 	 * The cursor laid over all the world drawn of an exposure: its surface drawn anew, stood where the matrix places the
 	 * window's surfaces, laid out over the same box of the page's plane, seen from the eye over the frame, and laid in
-	 * the screen's colours whatever stands nearer the eye.
+	 * the screen's colours whatever stands nearer the eye, unblurred: laid in the world, a piece lifted off the page and
+	 * its shadow would lie over it, grey and soft.
 	 * @param {ReadonlyMap<SurfaceName, Element>} surfaces @param {Matrix4} pageMatrix @param {DrawnScene} scene
 	 */
 	cursorLaid(surfaces, pageMatrix, scene) {
