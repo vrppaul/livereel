@@ -89,7 +89,7 @@ export type Holder =
 	| { readonly kind: 'point'; readonly of: PointOf }
 	| { readonly kind: 'ride'; readonly ride: Ride };
 
-/** A page the screen may show, however far it is drawn: the filmed page, or a page of the film's own by its key. */
+/** A page the screen may show, however far it is drawn: the filmed page, or a film's own page, by its key. */
 export type PageOfTheScreen = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string };
 
 /** Whether two pages of the screen are one: both the filmed page, or the film's own by one key. */

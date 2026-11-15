@@ -51,7 +51,7 @@ import {
 	themeOf
 } from './theme.ts';
 
-// Where the stage a film is shot on stands: apart from the app, or inside it, on its own address
+// Where the stage a film is shot on stands (`Script.stage`)
 const STAGES = ['apart', 'inside'] as const;
 
 export type StagePlace = (typeof STAGES)[number];
@@ -61,16 +61,12 @@ const COLOUR_SCHEMES = ['light', 'dark'] as const;
 
 export type ColourScheme = (typeof COLOUR_SCHEMES)[number];
 
-// How the page changes: by the film's acts and moves of the page and what the page does in answer, then standing as it
-// is, so once two captures come out alike a frame drawn as the one before is that frame; or of itself too, as an
-// animation, a video or live data does, so it is captured every frame
+// How the page changes (`Script.page`)
 const PAGE_KINDS = ['static', 'dynamic'] as const;
 
 export type PageKind = (typeof PAGE_KINDS)[number];
 
-// How the stage draws a frame: as the browser draws a page, the window and each object flat or leant on layers of its
-// own; or as a room, the window drawn in WebGL as a plane at the place the eye sees it, from a picture of it as the
-// browser draws it face-on
+// How the stage draws a frame (`Script.drawing`)
 const DRAWINGS = ['flat', 'room'] as const;
 
 export type Drawing = (typeof DRAWINGS)[number];
@@ -114,6 +110,7 @@ export interface Script<Name extends string> extends SiteScript {
 	 * key at `keyVolume` (1 as loud as its file); or `{ enabled: false }` for none.
 	 */
 	readonly sounds?: LivereelSoundsScript;
+	/** A track under the whole film; none where none is named. */
 	readonly music?: Music;
 	/** How a fast move is blurred, livereel's way save the values given, or `{ enabled: false }` for no blur. */
 	readonly motionBlur?: MotionBlurScript;
@@ -161,10 +158,8 @@ export interface Script<Name extends string> extends SiteScript {
 }
 
 /**
- * A film in one of its formats, where its page is and the set it is shot on where it names one, where its stage stands,
- * the look it opens on and what its theme writes in CSS, the world's look it opens on, how its page is asked to look
- * and what it blurs, what it says of its sounds and of its blur, and its own code: its wait for the page, and its steps
- * in this format.
+ * A film in one of its formats, as the studio shoots it: its script read, livereel's values where it names none, and
+ * its steps in this format.
  */
 export interface FilmInFormat {
 	/** A film of steps, beside a film its own page draws (`src/direction/drawn-film.ts`). */
@@ -360,9 +355,9 @@ export function defineFilm<Name extends string>(script: Script<Name>): Film {
 }
 
 /**
- * The world's look a film opens on, as a film whose types nobody checked may write it: livereel's, with the values the
- * film names in place of its own; anything but an object of the world's values, or a value of another kind, refused by
- * where it stands.
+ * The world's look a film opens on, read as a film hands it, its types stripped: livereel's, with the values the film
+ * names in place of its own; anything but an object of the world's values, or a value of another kind, refused by where
+ * it stands.
  */
 function worldOf(written: unknown): WorldLook {
 	if (written === undefined) return LIVEREELS_WORLD;
@@ -407,9 +402,9 @@ function isScriptPath(written: unknown): written is string {
 }
 
 /**
- * A film's script, as a film whose types nobody checked may hand it, refused by its place where it is in no form of
- * one: a name a film has not, its formats, each a frame a video holds, a screen, a split that leaves the words and the
- * window room, and places of its own that each name a place, and its functions.
+ * A film's script, read as a film hands it, its types stripped, refused by its place where it is in no form of one: a
+ * name a film has not, its formats, each a frame a video holds, a screen, a split that leaves the words and the window
+ * room, and places of its own that each name a place, and its functions.
  */
 function refuseUnlikeAFilm(written: unknown): void {
 	assertWritten(written, FILM_FORM, 'the film');

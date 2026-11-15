@@ -1,17 +1,20 @@
 /**
- * Where a film's page is, and how it comes to be served there: Playwright's `webServer` split, the page's address apart
- * from the command that serves it. A film names the address alone for a page someone else serves, a public site or an
- * app already running; or the command too, which livereel runs in the film's folder for as long as a take lasts, as it
- * would run the project's own server (`npx vite`, `npm run dev`, `node server.ts`). Both are values, so a film hands
- * livereel nothing to run or to stop: what serves the page is a process of its own, and livereel alone starts it, waits
- * for its address and stops it, as the take ends or livereel is stopped.
+ * Where a film's page is, and how it comes to be served there: its address apart from the command that serves it, as
+ * Playwright's `webServer` has them. Both are values, so a film hands livereel nothing to run or to stop: what serves
+ * the page is a process of its own, which livereel alone starts, waits for and stops.
  */
 import { FilmError } from '../domain/errors.ts';
 import { AN_ADDRESS, A_COMMAND, type Form, needed } from '../domain/handed.ts';
 
-/** Where a film's page is, as a film writes it: its address, and the command that serves it there, where it has one. */
+/** Where a film's page is, as a film writes it. */
 export interface SiteScript {
+	/** The page's address: a public site, an app already running, or where `serve` serves the page. */
 	readonly address: string;
+	/**
+	 * The command that serves the page at its address, run in the film's folder for as long as a take lasts, as the
+	 * project's own server is run (`npx vite`, `npm run dev`, `node server.ts`), and stopped as the take ends or livereel
+	 * is stopped; none where someone else serves the page.
+	 */
 	readonly serve?: string;
 }
 

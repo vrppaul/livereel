@@ -1,11 +1,8 @@
 /**
  * A theme as a film writes it: any values of a look (`Look` in `src/props/look.ts`), the look a film opens on in
- * `defineFilm` and the look it moves to in `look.to`. A value it leaves out stays as the look has it, so a film tunes
- * one and keeps the rest. Where the words and the page's window stand on the frame is the format's (`Format` in
- * `src/domain/geometry.ts`). What a theme writes in CSS — a font, the ground's layers, as the look's kinds say
- * (`LOOK_KINDS`) — only a browser reads, so it is handed on with where it stands, and the browser refuses it before the
- * film is shot. A font the look names is one the machine has, or one whose file the film brings by the family it sets
- * (`defineFilm`'s `fonts`), which the browser lays before it reads the look's.
+ * `defineFilm` and the look it moves to in `look.to`. A value it leaves out stays as the look has it. What a theme
+ * writes in CSS — a font, the ground's layers (`LOOK_KINDS`) — only a browser reads, so it is handed on with where it
+ * stands, and the browser refuses it before the film is shot.
  */
 import { A_PATH, RecordOf, assertWritten, namesGiven } from '../domain/handed.ts';
 import { type CssKind, LOOK_KINDS, LOOK_NAMES, type Look, type Theme } from '../props/look.ts';
@@ -47,9 +44,9 @@ export function themeOf(written: unknown): Theme {
 }
 
 /**
- * A theme read as a film whose types nobody checked may hand it: anything but an object of a look's values, or a value
- * of another kind, refused by where it stands. A ground named without a glow is a ground of one colour: the glow the
- * look has belongs to the ground it had.
+ * A theme read as a film hands it, its types stripped: anything but an object of a look's values, or a value of another
+ * kind, refused by where it stands. A ground named without a glow is a ground of one colour: the glow the look has
+ * belongs to the ground it had.
  */
 export function themeWritten(written: unknown, place: string): Theme {
 	assertWritten<Theme>(written, LOOK_KINDS, place);

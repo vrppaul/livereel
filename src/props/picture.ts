@@ -1,11 +1,11 @@
 /**
- * A picture of the film's own: an image file the film names, a mark or a logo, shown by an object
- * (`src/props/object.ts`). What is its own is the file it shows, how wide it stands against how tall, as the browser
- * decoded it, and how many of the frame's pixels across its file holds: it is drawn as large as its box holds all of
- * it, in the box's middle, as a piece of the page is (`src/props/piece.ts`). The stage draws it from the file as it
- * holds it (`layPictures` in `stage/stage.js`), at the frame's density on the frame and in the window, and in the world
- * as densely as the eye magnifies it (`DrawnObject.magnified`), as all markup there, but no denser than its file's
- * pixels: past them a denser drawing holds the same pixels stretched.
+ * A film's own picture: an image file the film names, a mark or a logo, shown by an object (`src/props/object.ts`).
+ * What is its own is the file it shows, how wide it stands against how tall, as the browser decoded it, and how many of
+ * the frame's pixels across its file holds: it is drawn as large as its box holds all of it, in the box's middle, as a
+ * piece of the page is (`src/props/piece.ts`). The stage draws it from the file as it holds it (`layPictures` in
+ * `stage/stage.js`), at the frame's density on the frame and in the window, and in the world as densely as the eye
+ * magnifies it (`DrawnObject.magnified`), as all markup there, but no denser than its file's pixels: past them a denser
+ * drawing holds the same pixels stretched.
  */
 import { type Box, boxOf } from '../domain/geometry.ts';
 import type { PictureDecoded } from '../domain/picture.ts';

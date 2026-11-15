@@ -1,13 +1,9 @@
 /**
- * A move: one prop of the scene, or the page, changing over a share of a step, the sounds it makes on its way, and the
- * fonts it sets.
+ * A move: one part of the scene, or the page, changing over a share of a step; and what a film is read for before it is
+ * shot, as the move names it: its sounds, its CSS, its places and depths, the film's own pages and pictures it shows.
  *
- * A move reads what it starts from once, as its share begins, and becomes a change that knows its start and its end;
- * from then on what it sets at any progress is worked out from those and the progress alone, so a frame is the same
- * whenever it is shot. A move that finds nothing to start from — no light to carry, no block on the page, a block
- * scrolled off the screen — throws as it begins, once. A move that acts on the page for real, at a moment of a play,
- * acts as it begins, by the way the take hands it, so a move that begins after it reads the page it left. A move is a
- * plain object made by a function of its prop's module (`src/moves/`).
+ * A move reads what it starts from once, as its share begins, and becomes a change that knows its start and its end:
+ * what it sets at any progress follows from those alone, so a frame is the same whenever it is shot.
  */
 import type { Camera } from '../domain/camera.ts';
 import { FilmError } from '../domain/errors.ts';
@@ -319,11 +315,10 @@ export const A_MOVE: Kind<Move> = new Plain(isMove, 'a move, as camera.onto or l
 export const A_MOVES: Kind<readonly Move[]> = new ListOf(A_MOVE, 'a list of moves');
 
 /**
- * The step a move begins in, as the take tells it: a play, which foresees the camera the frame will be seen by at a
- * moment of the move's stretch, asked one moment after another, as the step will stand then, every move of the camera,
- * the window and the eye that begins by then among it, begun ahead of its share on the scene alone where it has yet to
- * begin; or a cut, whose moves are set at once, one after another, so the frame after it is the first to show where
- * they leave the camera, the window and the eye, which no move of it can know as it begins.
+ * The step a move begins in, as the take tells it. In a play, `cameraAt` foresees the camera the frame will be seen by
+ * at a moment of the move's stretch, asked one moment after another: every move of the camera, the window and the eye
+ * that begins by then is begun ahead of its share, on the scene alone. A cut's moves are set at once, one after
+ * another, so none of them can know where the frame after the cut will stand.
  */
 export type StepBegunIn =
 	{ readonly kind: 'play'; readonly cameraAt: (moment: number) => Promise<Camera> } | { readonly kind: 'cut' };
@@ -334,32 +329,30 @@ export interface PageReading {
 	readonly format: Format;
 }
 
-/**
- * What a move reads as its share begins: the scene, the page, the format, and how the stage shows the page; the stretch
- * of the film's time its share takes, for a move that sets what runs on with time; the take's way to act on the page,
- * for a move that acts as it begins; its way to hold a picture of a part of the screen, for a move that lifts what is
- * drawn from one; and the step it begins in, for a move judged on the frame and a fade, which lays the page it leaves
- * where the frame shows it.
- */
+/** What a move reads as its share begins. */
 export interface Beginning extends PageReading {
 	readonly scene: Scene;
+	/** How the stage shows the filmed page: live in its frame, or as its picture. */
 	readonly pageShown: PageShown;
-	/** The moment the share begins, how long it lasts, none in a cut, and the curve the move goes along it on. */
+	/**
+	 * The moment the share begins, how long it lasts, none in a cut, and the curve the move goes along it on: for a move
+	 * that sets what runs on with time.
+	 */
 	readonly stretch: Stretch;
 	/**
-	 * A page of the film's own, by its key, as a move measures it, whether or not the screen shows it: as it stands at
-	 * the move's moment.
+	 * A film's own page, by its key, as a move measures it, whether or not the screen shows it: as it stands at the
+	 * move's moment.
 	 */
 	readonly ownPage: (key: string) => Promise<MeasuredPage>;
 	/**
-	 * The page acted on as an `act` acts on it: the film's time standing while the page answers, the stage laid flat for
-	 * it where it shows the page live.
+	 * The page acted on as an `act` acts on it, for a move that acts as it begins: the film's time standing while the
+	 * page answers, the stage laid flat for it where it shows the page live.
 	 */
 	readonly act: (action: Action) => Promise<void>;
 	/**
 	 * A picture of a part of the screen, in its pixels, taken of the page the screen shows as it stands now, the filmed
-	 * page or one of the film's own, and held by the stage, which draws a piece or a sweep from it by the number handed
-	 * back; only where the stage shows the filmed page's picture, not the page live.
+	 * page or a film's own, and held by the stage, which draws a piece or a sweep from it by the number handed back; only
+	 * where the stage shows the filmed page's picture, not the page live.
 	 */
 	readonly holdPicture: (part: Box) => Promise<number>;
 	/**
@@ -367,6 +360,10 @@ export interface Beginning extends PageReading {
 	 * named, in hex with no alpha; only where the stage shows the filmed page's picture, not the page live.
 	 */
 	readonly edgeColour: (part: Box, sides: readonly FrameSide[]) => Promise<string>;
+	/**
+	 * The step the move begins in: for a move judged on the frame, and for a fade, which lays the page it leaves where
+	 * the frame shows it.
+	 */
 	readonly step: StepBegunIn;
 	/** The names the film's things module builds a thing by: none where the film draws no things of its own. */
 	readonly thingsBuilt: readonly string[];
@@ -408,7 +405,7 @@ export interface Move {
 	 * names none has none.
 	 */
 	readonly depths?: readonly DepthNamed[];
-	/** The pages of the film's own the move shows, which the stage lays before the film is shot; most show none. */
+	/** The film's own pages the move shows, which the stage lays before the film is shot; most show none. */
 	readonly ownPages?: readonly OwnPage[];
 	/**
 	 * The film's own pictures the move shows, by their paths, which the stage lays before the film is shot; most show
@@ -464,32 +461,26 @@ export function groupPart(name: GroupName): GroupPart {
 	return `${name} group`;
 }
 
-/** The sounds a move makes on its way: none, for a move that names none. */
 export function soundsOf(move: Move): readonly Cue[] {
 	return move.sounds ?? NO_SOUNDS;
 }
 
-/** What a move writes in CSS: none, for a move that writes none. */
 export function cssOf(move: Move): readonly CssNamed[] {
 	return move.css ?? NO_CSS;
 }
 
-/** The places a move names: none, for a move that names none. */
 export function placesOf(move: Move): readonly PlaceNamed[] {
 	return move.places ?? NO_PLACES;
 }
 
-/** The depths a move brings something to: none, for a move that names none. */
 export function depthsOf(move: Move): readonly DepthNamed[] {
 	return move.depths ?? NO_DEPTHS;
 }
 
-/** The pages of the film's own a move shows: none, for a move that shows none. */
 export function ownPagesOf(move: Move): readonly OwnPage[] {
 	return move.ownPages ?? NO_OWN_PAGES;
 }
 
-/** The film's own pictures a move shows, by their paths: none, for a move that shows none. */
 export function picturesOf(move: Move): readonly string[] {
 	return move.pictures ?? NO_PICTURES;
 }
@@ -522,7 +513,7 @@ function refused(refusal: string): never {
 
 /**
  * A move drawn from a picture of the page the screen shows, which the take holds as it begins, refused where the stage
- * shows the filmed page live, with no picture: a picture of a page of the film's own is taken on its copy apart.
+ * shows the filmed page live, with no picture: a film's own page is pictured on its copy apart.
  */
 export function refuseWhereLive(beginning: Beginning, move: string): void {
 	if (beginning.pageShown !== 'pictured') {
@@ -534,7 +525,7 @@ export function refuseWhereLive(beginning: Beginning, move: string): void {
 
 /**
  * A move drawn from the filmed page's picture as it changes refused as it begins where the stage shows none of it: a
- * page framed live, which has no picture, and one the screen shows a page of the film's own in place of.
+ * page framed live, which has no picture, and one the screen shows a film's own page in place of.
  */
 export function refuseWithoutThePicture(beginning: Beginning, move: string): void {
 	refuseWhereLive(beginning, move);

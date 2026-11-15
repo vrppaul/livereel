@@ -1,15 +1,6 @@
 /**
  * The sounds a film makes: livereel's, which a film may give files in place of or go without, its keys on one of
- * livereel's keyboards; files of the film's; and music under it all.
- *
- * A typing may name a keyboard of its own, as a click may name a file: its keys are heard on it whatever the film says
- * of its keys, so one film can be heard on several keyboards.
- *
- * A move notes the sounds it makes as cues, each at a point of its way; the take hears a cue on the frame the move is
- * set at or past that point, eased, so a key is heard on the frame its letter shows. A film keeps its own time, so a
- * sound heard is laid at its frame's moment however long the browser took. A sound made in a cut is heard on the frame
- * after it, so one made in a cut that ends the film comes at its end and is not heard: the track is as long as the
- * film. A path is from the film's file.
+ * livereel's keyboards; files of the film's; and music under it all. A path is from the film's file.
  */
 import { FilmError } from '../domain/errors.ts';
 import { type Keystroke, typingSeconds } from '../domain/typing.ts';
@@ -46,7 +37,11 @@ export type Sound =
 	| OnAKeyboard
 	| { readonly kind: 'file'; readonly path: string };
 
-/** A sound a move makes once it is `at` that far along its way, from 0 to 1. */
+/**
+ * A sound a move makes once it is `at` that far along its way, from 0 to 1, heard on the frame the move is set at or
+ * past that point, eased, so a key is heard on the frame its letter shows. One made in a cut is heard on the frame
+ * after it, so one made in a cut that ends the film is not heard: the track is as long as the film.
+ */
 export interface Cue {
 	readonly at: number;
 	readonly sound: Sound;
@@ -145,10 +140,10 @@ const SOUNDS_FORMS = `they are { enabled: false } to turn them all off, or an ob
 const MUSIC_FORMS = `it is an object of ${MUSIC_FORM.join(', ')}`;
 
 /**
- * livereel's sounds, read as a film whose types nobody checked may hand them: where each one comes from, every one
- * livereel's where the film says nothing of them, all of them off where it turns them off; and how loud its keys are,
- * as loud as their files where it says nothing. Anything but an object, a name the sounds have not, a sound in no form
- * of one, or a key volume that is no level is refused by where it stands.
+ * livereel's sounds, read as a film hands them, its types stripped: where each one comes from, every one livereel's
+ * where the film says nothing of them, all of them off where it turns them off; and how loud its keys are, as loud as
+ * their files where it says nothing. Anything but an object, a name the sounds have not, a sound in no form of one, or
+ * a key volume that is no level is refused by where it stands.
  */
 export function livereelSoundsOf(written: unknown): LivereelSounds {
 	if (written === undefined) return ALL_LIVEREELS;
@@ -166,9 +161,9 @@ export function livereelSoundsOf(written: unknown): LivereelSounds {
 }
 
 /**
- * The film's music, read as a film whose types nobody checked may hand it: none where it gives none. Anything but an
- * object, a name music has not, a file that is no path, or a volume that is no level — not a number, endless, below
- * none — is refused by where it stands.
+ * The film's music, read as a film hands it, its types stripped: none where it gives none. Anything but an object, a
+ * name music has not, a file that is no path, or a volume that is no level — not a number, endless, below none — is
+ * refused by where it stands.
  */
 export function musicOf(written: unknown): Music | null {
 	if (written === undefined) return null;
@@ -192,8 +187,8 @@ function sourceOf(written: unknown, sound: LivereelSound): SoundSource {
 }
 
 /**
- * What a film writes in place of one of livereel's sounds, read as a film whose types nobody checked may hand it: its
- * file, or the sound off; anything else is refused by the sound's name.
+ * What a film writes in place of one of livereel's sounds, read as a film hands it, its types stripped: its file, or
+ * the sound off; anything else is refused by the sound's name.
  */
 function inPlaceOf(written: unknown, sound: LivereelSound): FileOrOff {
 	if (A_PATH.is(written)) return { kind: 'file', path: written };
@@ -203,8 +198,8 @@ function inPlaceOf(written: unknown, sound: LivereelSound): FileOrOff {
 
 /**
  * livereel's key: what the film writes in its place, or one of livereel's keyboards, its own where the film names none.
- * Each is read as a film may hand it, as a film runs without its types checked, and refused in its own words where it
- * is in no form of itself; a file or the keys off beside a keyboard is refused.
+ * Each is read as a film hands it, its types stripped, and refused in its own words where it is in no form of itself; a
+ * file or the keys off beside a keyboard is refused.
  */
 function keyOf(written: Handed): KeySource {
 	const inPlace = written.key === undefined ? undefined : inPlaceOf(written.key, 'key');

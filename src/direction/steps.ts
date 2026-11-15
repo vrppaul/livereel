@@ -1,13 +1,6 @@
 /**
- * The steps a film is a list of: so many seconds of frames, or a cut.
- *
- * A film reads as a script: `play` for what moves, `cut` for what changes at once; what the page really does — a click,
- * a reply from its server — is a move of the page, `page.act`, in a play or a cut (`act` in `src/moves/act.ts` is a cut
- * of one), and takes no time in the film however long the browser takes. Steps are data; the studio runs them. Two
- * moves of one part may share a step only one after the other, or at once where each sets values of it the other does
- * not, as two moves of the look may: a step that has both on one value at once is refused as it is written, before
- * anything is shot. So is an act on the page at the moment a move that holds the page's picture begins, which the act,
- * done first, would be in.
+ * The steps a film is a list of: so many seconds of frames, or a cut. Steps are data, which the studio runs; what two
+ * moves of one step cannot do together is refused as the step is written, before anything is shot.
  */
 import { FilmError } from '../domain/errors.ts';
 import {
@@ -179,8 +172,8 @@ export function cssIn(steps: readonly Step[]): readonly CssNamed[] {
 }
 
 /**
- * Every page of the film's own the steps' moves show, each once, in the order they are first named, drawn past its
- * screen where any move draws it so, known before anything is shot, so the stage lays each out before the first frame.
+ * Each of the film's own pages the steps' moves show, once, in the order they are first named, drawn past its screen
+ * where any move draws it so: known before anything is shot, so the stage lays each out before the first frame.
  */
 export function ownPagesIn(steps: readonly Step[]): readonly OwnPage[] {
 	const pages = new Map<string, OwnPage>();
@@ -192,7 +185,7 @@ export function ownPagesIn(steps: readonly Step[]): readonly OwnPage[] {
 }
 
 /**
- * Every picture of the film's own the steps' moves show, each file once, in the order they are first named, known
+ * Each of the film's own pictures the steps' moves show, each file once, in the order they are first named: known
  * before anything is shot, so a file that is not there is refused at once and the stage lays each before the first
  * frame.
  */
@@ -267,8 +260,8 @@ function isClash(clash: string | undefined): clash is string {
 }
 
 /**
- * The steps a film's `steps` gives, read as a film whose types nobody checked may hand them: a list of steps. The steps
- * of a click or a typing left in a list of their own, not spread among the others, are refused with how to spread them;
+ * The steps a film's `steps` gives, read as a film hands them, its types stripped: a list of steps. The steps of a
+ * click or a typing left in a list of their own, not spread among the others, are refused with how to spread them;
  * anything else that is no step, by its place.
  */
 export function stepsOf(written: unknown): readonly StepShot[] {
@@ -279,8 +272,9 @@ export function stepsOf(written: unknown): readonly StepShot[] {
 }
 
 /**
- * One of the steps a film gives: a list there is a click or a typing not spread; a step of a kind livereel has is held
- * to that kind's form, and its moves to the rule `play` and `cut` hold them to, written by hand as the types allow.
+ * One of the steps a film gives: a list in its place is a click or a typing left unspread, refused with how to spread
+ * it; a step of a kind livereel has, written by hand as the types allow, is held to that kind's form, and its moves to
+ * the rules of `play` and `cut`.
  */
 function stepOf(written: unknown, place: number): StepShot {
 	const at = `the film's steps[${place}]`;

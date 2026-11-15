@@ -1,27 +1,12 @@
 /**
- * What a film's moves set, at one moment: what the stage draws on one frame — every prop's state and the objects on the
- * frame — and the speed the take runs the page's own time at, which the stage draws nothing of.
+ * What a film's moves set, at one moment: every prop's state and the objects on the frame, which the stage draws, and
+ * the speed the take runs the page's own time at, which it does not.
  *
  * A scene is plain values, never changed in place, but for the curve a fade of the screen goes on, a function the film
- * names, which the stage is never handed: a move's change hands back a scene with its own prop or object set, and the
- * take keeps the one standing. The film's look and the world's are props too, changed by moves as any other. A prop is
- * one of livereel's, each in a slot of its own; an object (`src/props/object.ts`) is the film's, known by a name it
- * gives or its kind's own, so several of a kind stand at once, drawn in the order they first came, the last over the
- * rest: one shown again in place of itself keeps its place. One pushed off by another of its name sliding in is held
- * apart while it goes, so the two stand at once, and drawn over every object standing. A caption and keys lie over
- * every object, keys over the caption. A group of objects (`src/props/group.ts`) is known by a name of its own, and
- * holds no more than how the objects in it stand together; they go with it. `drawn` works out everything the stage
- * needs from it — how far each word of a title, a caption or a callout and each line of code has come, the terminal's
- * spinner, how far keys rise clear of a caption, where a note's line meets the block it names on the frame, the hole a
- * piece of the page leaves and the lines it draws to its source, the part of the screen under a lens, where a band of
- * light sweeping the screen stands across what the window shows of it, how far down a page of the film's own on the
- * screen the film has run it, where an object in a group, or on the page as the camera frames it then, is drawn and in
- * what order, how soft the eye's focus draws the window and each object in the world, where the world's lights stand in
- * the room and how the eye that sees each thing sees the room — so the stage draws numbers and words and decides
- * nothing, and draws no group of its own. What the camera shows is worked out from what it aims at and the window that
- * stands (`cameraOf`), so a camera moving and a window moving in one step make the same frame whichever is set first; a
- * frame is drawn by such a camera, or by the flat one an act is done in. A prop that may be absent is `null`; the
- * compiler holds every prop to a drawn form here and to a drawer on the stage.
+ * names, which the stage is never handed. `drawn` works out from it all the stage needs, so the stage draws numbers and
+ * words, decides nothing, and draws no group of its own. What the camera shows follows from what it aims at and the
+ * window that stands (`cameraOf`), so a camera and a window moving in one step make the same frame whichever is set
+ * first.
  */
 import { type DrawnEye, type Eye, drawnEye, eyeAtRest } from './domain/eye.ts';
 import { lensLawOf, sharpnessOf } from './domain/focus.ts';
@@ -129,10 +114,21 @@ export interface PropStates {
 export type PropName = keyof PropStates;
 
 export type Scene = { readonly [Name in PropName]: PropStates[Name] } & {
+	/**
+	 * The film's objects, each by the name it gives or its kind's own, so several of a kind stand at once; one shown
+	 * again in place of itself keeps its place among them.
+	 */
 	readonly objects: Objects;
-	/** Objects pushed off past the frame's edge by one of their name sliding in, while they go. */
+	/**
+	 * Objects pushed off past the frame's edge by one of their name sliding in, held apart while they go, so each stands
+	 * at once with the one that pushed it off; drawn after every object standing, so over it where both stand on one
+	 * plane.
+	 */
 	readonly leaving: Objects;
-	/** Groups of objects, by their own names, each holding how the objects in it stand together. */
+	/**
+	 * Groups of objects, by their own names, each holding no more than how the objects in it stand together: they go with
+	 * it.
+	 */
 	readonly groups: Groups;
 	/**
 	 * How many of the page's own seconds a second of the film runs: the film's own speed, 1, where it sets none. The take
@@ -183,21 +179,25 @@ interface StandingListed extends ListedObject {
 	readonly standing: Placed;
 }
 
-/**
- * What the stage is handed of a scene: each prop as drawn, the objects standing and pushed off, those of them standing
- * in the world in the order the room lays them one over the other (`laidFartherFirst` in `src/domain/placement.ts`),
- * whether anything lies over the page in the window but the screen's own — the page the screen fades from, a callout,
- * pins, an object standing inside the window — which the room lays over the page apart; what the pieces of the page
- * among them leave on the page and draw to it, holes on the screen and lines on the frame, and the eye as the room sees
- * the world and the frame by it and blurs each pixel of the world by its lens, once a scene.
- */
+/** What the stage is handed of a scene: each prop as drawn, and the objects, standing and pushed off. */
 export type DrawnScene = { readonly [Name in PropName]: DrawnProps[Name] } & {
 	readonly objects: readonly DrawnObject[];
 	readonly leaving: readonly DrawnObject[];
+	/**
+	 * The objects standing in the world, standing and pushed off, in the order the room lays them one over the other
+	 * (`laidFartherFirst` in `src/domain/placement.ts`).
+	 */
 	readonly laidInTheWorld: readonly ListedObject[];
+	/**
+	 * Whether anything lies over the page in the window but the screen's own — the page the screen fades from, a callout,
+	 * pins, an object standing inside the window — which the room lays over the page apart.
+	 */
 	readonly overThePage: boolean;
+	/** The holes the pieces of the page leave on the screen. */
 	readonly holes: readonly DrawnHole[];
+	/** The lines the pieces of the page draw to their sources, on the frame. */
 	readonly lines: readonly DrawnLines[];
+	/** The eye as the room sees the world and the frame by it, and blurs each pixel of the world by its lens. */
 	readonly eye: DrawnEye;
 };
 
@@ -206,8 +206,8 @@ const THE_FILMS_OWN_SPEED = 1;
 
 /**
  * The scene a film opens on, in its look and its world's: the whole screen, face-on, up, unshaded, in the whole frame,
- * the shade reaching the page alone, its blur as wide as written on the page, the window's body livereel's, none;
- * nothing over it; the page's time at the film's own speed; the eye of its focal length at rest.
+ * the shade reaching the page alone, its blur as wide as written on the page, the window's body livereel's slab, of no
+ * thickness; nothing over it; the page's time at the film's own speed; the eye of its focal length at rest.
  */
 export function openingScene(format: Format, look: Look, world: WorldLook, focalLength: number): Scene {
 	return {
@@ -255,8 +255,8 @@ export function showingTheFilmedPage(scene: Scene): Scene {
 }
 
 /**
- * The scene with pages of the film's own laid on its screen, by their keys, as the stage lays each: nothing typed in
- * it, and as far as it then scrolls at most.
+ * The scene with the film's own pages laid on its screen, by their keys, as the stage lays each: nothing typed in it,
+ * and as far as it then scrolls at most.
  */
 export function withPagesLaid(scene: Scene, scrollLengths: ReadonlyMap<string, number>): Scene {
 	const laid = [...scrollLengths].map(([key, scrollLength]) => [key, { typed: NOTHING_TYPED, scrollLength }] as const);
@@ -271,7 +271,7 @@ export function withFadeLaid(scene: Scene, format: Format): Scene {
 	return withProp(scene, 'screen', fadeLaidOn(scene.screen, cameraOf(scene, format).pose));
 }
 
-/** A page of the film's own the stage laid, by its key, as it stands in the scene at a moment. */
+/** A film's own page the stage laid, by its key, as it stands in the scene at a moment. */
 export function ownPageStandingIn(scene: Scene, key: string, moment: number): OwnPageStanding {
 	return ownPageStanding(scene.screen, key, moment);
 }
@@ -357,9 +357,9 @@ export function cameraOf(scene: Scene, format: Format): Camera {
 }
 
 /**
- * How close each piece drawn from the page's picture, or lens, in a scene shows the page, as a pose's zoom has it,
- * standing or pushed off, the page seen by the camera that shows the scene on a frame of a size, so the page's picture
- * is taken as sharp.
+ * How close each piece or lens of a scene drawn from the page's picture, standing or pushed off, shows the page, as a
+ * pose's zoom: the page seen by the camera that shows the scene on a frame of this size, so the page's picture is taken
+ * as sharp.
  */
 export function pictureZoomsIn(scene: Scene, camera: Camera, frame: Size): readonly number[] {
 	const holders = holdersIn(scene, camera);
@@ -428,14 +428,11 @@ interface Between {
 
 // How far anything moves on the frame where nothing does
 const NOTHING_MOVES = 0;
-// How far what each prop draws moves on the frame between two moments, the compiler holding every prop to one: the
-// screen as the camera shows it, the window's edge, the band of light sweeping the screen and a page of the film's own
-// running on it, the light's box and the cursor's tip on the screen, a note's words beside the window and its line's
-// end at its block, and the figure of a caption and of keys as a way of livereel's shifts, grows and cuts it over the
-// whole frame, each where it stands at both, a prop that comes or goes between them moving nowhere. The screen comes up
-// in its place, and a callout and pins lie on the screen, moving only as far as it carries them, which the camera's
-// measures. The look's colours and ground change in place; the sizes it sets, of letters and margins, move words too,
-// which is not counted; the world's light and glow change only how what stands is lit
+// How far what each prop draws moves on the frame between two moments, each where it stands at both, a prop that comes
+// or goes between them moving nowhere; the compiler holds every prop to one. The screen comes up in its place, and a
+// callout and pins lie on it, moving only as far as it carries them, which the camera's shift measures. The look's
+// colours and ground change in place; the sizes it sets, of letters and margins, move words too, which is not counted;
+// the world's light and glow change only how what stands is lit
 const FRAME_SHIFT_OF: { readonly [Name in PropName]: (between: Between) => number } = {
 	look: () => NOTHING_MOVES,
 	world: () => NOTHING_MOVES,

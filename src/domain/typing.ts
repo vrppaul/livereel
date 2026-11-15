@@ -26,8 +26,8 @@ export interface Keystroke {
 }
 
 /**
- * Text typed into a block of a page of the film's own, as the stage writes it and a page is measured with it: the
- * block's selector, and the text.
+ * Text typed into a block of a film's own page, as the stage writes it and a page is measured with it: the block's
+ * selector, and the text.
  */
 export interface TypedText {
 	readonly into: string;

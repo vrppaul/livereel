@@ -363,7 +363,7 @@ export function flatCamera(format: Format, focalLength: number): Camera {
 
 /**
  * The camera as the stage draws it, its cut worked out from where the part of the screen's plane the page shows on, in
- * the screen's pixels, stands in its view: the screen, or a page of the film's own drawn on past it.
+ * the screen's pixels, stands in its view: the screen, or a film's own page drawn on past it.
  */
 export function drawnCamera(camera: Camera, format: Format, pageShownOn: Box): DrawnCamera {
 	const view = camera.view.box;

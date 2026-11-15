@@ -39,8 +39,8 @@ const PICTURE = 'picture' satisfies ShownKind;
 const PICTURE_FORM: Form<PictureScript> = { at: A_PLACE, ...SHOW_FORM, ...NESTED_FORM, ...SHOWN_STANDING_OUT_FORM };
 
 /**
- * A picture of the film's own coming up: in its place, or over the whole frame, fading up whole in its own way, or in a
- * way of livereel's or from past a side of the frame where the film names one.
+ * A film's own picture coming up: in its place, or over the whole frame, fading up whole in its own way, or in a way of
+ * livereel's or from past a side of the frame where the film names one.
  */
 export function show(file: string, script: PictureScript = {}): Move {
 	assertKind(file, A_PATH, "picture.show's file");

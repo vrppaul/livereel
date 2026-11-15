@@ -1,11 +1,6 @@
 /**
  * How what moves fast in a film is blurred, as its author writes it: left out for livereel's blur, turned off, or
  * livereel's blur with any of its values the film gives in their place.
- *
- * livereel opens the shutter for half the time from the frame before, as a film camera does, and blends up to sixteen
- * exposures: chosen by the owner's eye over a shutter open the whole time in eight, whose smears showed their copies. A
- * shutter open for more than the whole time is refused, as what moved before the frame before is not known; so is a
- * blur of fewer than two exposures at most, which is the frame alone.
  */
 import { FilmError } from '../domain/errors.ts';
 import type { MotionBlur } from '../domain/shutter.ts';
@@ -14,11 +9,24 @@ import { type TurnedOff, turnedOffBy } from '../domain/turned-off.ts';
 
 /** A film's blur as it writes it: `{ enabled: false }` for none, or livereel's with any value given in its place. */
 export type MotionBlurScript =
-	TurnedOff | { readonly enabled?: true; readonly shutter?: number; readonly exposuresAtMost?: number };
+	| TurnedOff
+	| {
+			readonly enabled?: true;
+			/**
+			 * The share of the time from the frame before that the shutter is open for, more than 0 and 1 at most: 0.5 where
+			 * none is named.
+			 */
+			readonly shutter?: number;
+			/** How many exposures the fastest frame is blended from at most, 2 or more: 16 where none is named. */
+			readonly exposuresAtMost?: number;
+	  };
 
-// livereel's blur: the shutter open for half the time from the frame before, and at most sixteen exposures a frame,
-// which keep copies a step apart up to sixteen steps a frame and bound the cost of faster ones
+// livereel's blur: the shutter open for half the time from the frame before, as a film camera's is, and at most sixteen
+// exposures a frame, which keep copies a step apart up to sixteen steps a frame and bound the cost of faster ones. A
+// shutter open the whole time, at eight exposures, smeared moves into copies of themselves
 const RECOMMENDED: MotionBlur = { shutter: 0.5, exposuresAtMost: 16 };
+// A shutter open longer than the time from the frame before would need what moved before that frame; a blur of fewer
+// than two exposures is the frame alone
 const WIDEST_SHUTTER = 1;
 const FEWEST_EXPOSURES = 2;
 // Where a film writes its blur, and the names it writes it with
@@ -27,9 +35,9 @@ const BLUR_FORM = ['enabled', 'shutter', 'exposuresAtMost'];
 const BLUR_FORMS = 'it is { enabled: false } to turn it off, or an object of shutter, exposuresAtMost, either or both';
 
 /**
- * The blur a film is shot with, read as a film whose types nobody checked may hand it: livereel's where the film says
- * nothing, none where it is turned off, livereel's with the values the film gives in their place otherwise. Anything
- * but an object, a name a blur has not, or a value that cannot be shot is refused by where it stands.
+ * The blur a film is shot with, read as a film hands it, its types stripped: livereel's where the film says nothing,
+ * none where it is turned off, livereel's with the values the film gives in their place otherwise. Anything but an
+ * object, a name a blur has not, or a value that cannot be shot is refused by where it stands.
  */
 export function motionBlurOf(written: unknown): MotionBlur | null {
 	if (written === undefined) return RECOMMENDED;

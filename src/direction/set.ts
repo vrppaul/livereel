@@ -2,14 +2,6 @@
  * A film's set: the app's states shot once, ahead of the film, each a picture of the screen and where the film's
  * targets stood on it, so the film is shot from those pictures with no app to serve, act on or wait for, and a moment
  * of it is drawn without the app going through what came before.
- *
- * The set is shot by its scenario (`livereel set`): Playwright code run once against the app as the film's `serve`
- * serves it, after the film's `ready`, which marks each state the film shows by a name as the app stands in it. A film
- * shot on its set shows a state by an act, `context.set.show(name)`, as a click on the app would bring the state:
- * handed to `cursor.click`, `act` or `page.act`, so the state comes in at the moment the film acts, and the stage takes
- * its picture as it takes a page's after an act. A target is read from where the set shot it in the state shown, as a
- * live page's is read off the page; what the scenario's scroll and keys did is in the pictures, so the set takes
- * neither.
  */
 import {
 	A_FUNCTION_SAID,
@@ -32,10 +24,16 @@ export interface SetContext extends Omit<ActContext, 'set'> {
 	readonly state: (name: string) => Promise<void>;
 }
 
-/** A film's set as its author writes it. */
+/**
+ * A film's set as its author writes it. A film shot on its set shows a state by an act, `context.set.show(name)`,
+ * handed to `cursor.click`, `act` or `page.act`, as a click on the app would bring the state: it comes in at the moment
+ * the film acts. A target is read where the set shot it in the state shown; what the scenario's scroll and keys did is
+ * in the pictures, so the set takes neither.
+ */
 export interface SetScript {
 	/**
-	 * The app acted on, Playwright code, every state the film shows marked by `context.state(name)` as it stands in it.
+	 * The app acted on, Playwright code run once by `livereel set` against the app as the film's `serve` serves it, after
+	 * the film's `ready`: every state the film shows marked by `context.state(name)` as the app stands in it.
 	 */
 	readonly scenario: (context: SetContext) => Promise<void>;
 	/** The blocks the film reads on the set, by selector: where each stands is shot with every state. */

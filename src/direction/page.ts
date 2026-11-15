@@ -1,10 +1,9 @@
 /**
- * What moves and acts may ask of the page being filmed, as the browser adapter answers it, and the pages of the film's
- * own a move may show in its place.
+ * What moves and acts may ask of the page being filmed, as the browser adapter answers it, and the film's own pages a
+ * move may show in its place.
  *
- * A move reads the page as its share begins and, for the page's own scroll and keys, acts on it as it goes. An act is
- * Playwright code: it is handed the filmed page's frame itself, since anything narrower would be a part of what
- * Playwright already offers.
+ * An act is Playwright code: it is handed the filmed page's frame itself, since anything narrower would be a part of
+ * what Playwright already offers.
  */
 import type { Frame } from 'playwright-core';
 import type { Box, Corners } from '../domain/geometry.ts';
@@ -19,14 +18,15 @@ import type { TypedText } from '../domain/typing.ts';
 export type ScrollAim =
 	{ readonly kind: 'by'; readonly pixels: number } | { readonly kind: 'to'; readonly top: number };
 
-/**
- * Where a scroll starts and ends, as far as the block that scrolls goes, the key the page knows that block by, and the
- * way to set it.
- */
+/** A scroll's course, read as it begins, and the block that scrolls. */
 export interface ScrollCourse {
+	/** How far down the block that scrolls is scrolled as the scroll starts, in the page's pixels. */
 	readonly start: number;
+	/** How far down it is scrolled as the scroll ends, no further than it goes. */
 	readonly end: number;
+	/** The key the page knows the block that scrolls by. */
 	readonly block: BlockKey;
+	/** The block that scrolls set so far down. */
 	readonly scroll: (top: number) => Promise<void>;
 }
 
@@ -44,11 +44,8 @@ export type PageShown = 'framed' | 'pictured';
 export type BlockHolding = 'text alone' | 'elements' | 'its value';
 
 /**
- * A page as a move measures it: where its blocks and their letters stand, how round and on what ground they are drawn;
- * in its pixels, how far down it scrolls at most with a text written into each of some blocks, and how far down its
- * document a block's top stands, however far it is scrolled, and a block the stage writes, found as it finds it, and
- * what it shows as its text; as a page of the film's own is measured, which no key reaches and the film alone runs and
- * types into.
+ * A film's own page as a move measures it, which no key reaches and the film alone runs and types into: its blocks and
+ * their letters read as the filmed page's are, and what its run and its typing read.
  */
 export type MeasuredPage = Pick<FilmedPage, 'box' | 'groundBehind' | 'roundingOf' | 'letterAtTheStart'> & {
 	/**
@@ -143,13 +140,18 @@ export type Action = (context: ActContext) => Promise<void>;
 export const AN_ACTION: Kind<Action> = aFunction<Action>(A_FUNCTION_SAID);
 
 /**
- * A page of the film's own, which the screen may show in the filmed page's place: its HTML, whole, which the stage lays
- * out before the film is shot, the key the scene and the stage know it by, and whether a move draws it past its screen,
- * which the stage lays it again for, in a frame of its own: the one at the screen's size stays what moves measure.
+ * A film's own page, which the screen may show in the filmed page's place, and which the stage lays out before the film
+ * is shot.
  */
 export interface OwnPage {
+	/** The key the scene and the stage know the page by. */
 	readonly key: string;
+	/** The page's HTML, whole. */
 	readonly html: string;
+	/**
+	 * Whether a move draws the page past its screen, which the stage lays it again for, in a frame of its own: the one at
+	 * the screen's size stays what moves measure.
+	 */
 	readonly drawnPast: boolean;
 }
 
@@ -160,12 +162,12 @@ const KEY_BASE = 36;
 // A hash kept to 32 bits unsigned, as a shift by none keeps it
 const UNSIGNED = 0;
 
-/** A page of the film's own, from its HTML, drawn past its screen or not. */
+/** A film's own page, from its HTML, drawn past its screen or not. */
 export function ownPageOf(html: string, drawnPast: boolean): OwnPage {
 	return { key: pageKeyOf(html), html, drawnPast };
 }
 
-/** The key a page of the film's own is known by: a hash of its HTML, with its length. */
+/** The key a film's own page is known by: a hash of its HTML, with its length. */
 export function pageKeyOf(html: string): string {
 	let hash = HASH_START;
 	for (let place = 0; place < html.length; place += 1) {
