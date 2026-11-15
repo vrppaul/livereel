@@ -1,30 +1,14 @@
 /**
- * A piece of the page: a part of its screen, the piece's source, lifted onto the frame and drawn from the page's
- * picture as the stage shows it, so it shows what the page shows there as the page changes; or, where the film asks,
- * from a picture of its source alone, held as it was lifted, so it shows what the page showed there then, as the page
- * changes under it. One following the page, drawn larger than livereel's bound has the page's picture taken, is drawn
- * from a picture of its source alone, which the take has the stage hold as close as the frame draws it and takes anew
- * with the page's (`src/studio/take.ts`), so it stays sharp however large it grows. It is what an object shows
- * (`src/props/object.ts`), so it travels, grows, comes near and turns as any object does; what is its own is the part
- * of the screen it shows, drawn as large as its box holds all of it, in the box's middle. Lifted, it may leave a hole
- * where it stood, and draw lines from itself to its source (`src/props/lifted.ts`). The holes other pieces leave in its
- * part of the screen are drawn over it as they stand, as a lens draws them (`src/props/lens.ts`), whichever picture it
- * is drawn from.
+ * A piece of the page: a part of its screen, its source, lifted onto the frame and drawn from the page's picture as the
+ * stage shows it, so it shows what the page shows there as the page changes; or, lifted `picture: 'held'`, from a
+ * picture of its source alone, so it shows what the page showed there as it was lifted. Where one following the page is
+ * drawn larger than livereel's bound for the page's picture, it is drawn from a picture of its source alone, held as
+ * close as the frame draws it and taken anew with the page's (`src/studio/take.ts`), so it stays sharp however large it
+ * grows, while it does not lean.
  *
- * Standing in the world, it may have a body, fixed as it is lifted: walls of a colour the film names going back from
- * its face as thick as the film names, matte, lit from within as faintly as it names, which the room draws in its one
- * scene (`stage/piece-body.js`). The walls grow back from the face as the piece comes up, as the window's body grows
- * as the screen does, so none comes whole at once, and shrink into it as what it stands in lets less of it show, as a
- * piece on the page in the world does as the screen goes down; standing on the plane it was lifted from, they lie
- * behind it, and come up out of it as the piece stands out toward the eye. Its shadow then lies on that plane, under
- * it, where the room draws it, fading as the face does; the flat stage draws the face and its shadow alone, as it draws
- * no body for the window. Its hole may reach past its edge, a socket the walls come up out of; or be sunk into the page
- * as a pit with walls of the body's colour, which the room draws behind the window's plane, the page cleared over its
- * mouth, going down with the screen, and the flat stage draws as a hole of its colour.
- *
- * It may carry letters, those of a block of its source the film names, measured as it is lifted where the first of
- * them starts and how far one steps, so it lands them on another block's letters (`src/moves/piece.ts`). It may empty a
- * block of the page, which then stands as the page draws it hidden until the piece goes (`src/props/lifted.ts`).
+ * It is what an object shows (`src/props/object.ts`). Its own are the part of the screen it shows, the hole it leaves
+ * and the lines it draws to its source (`src/props/lifted.ts`), and, standing in the world, a body: walls going back
+ * from its face, which the room draws in its one scene (`stage/piece-body.js`) and the flat stage does not.
  */
 import { ZOOM_AT_MOST } from '../domain/camera.ts';
 import {
@@ -78,16 +62,18 @@ export interface Emptied {
 	readonly ground: string;
 }
 
-/**
- * A hole as the stage draws it: the name of the piece that left it, the box it fills in what it is drawn on — the
- * screen, in its pixels, or what a piece or a lens shows of it, in the frame's pixels from the figure's top left corner
- * — as far as it reaches, its colour, the line round its edge, if any, how round its corners are, in the pixels its box
- * is in, how far it has come and not gone, as its piece has, and its pit, if any: a figure of the page shows it flat.
- */
+/** A hole as the stage draws it. */
 export interface DrawnHole extends Omit<Hole, 'reach' | 'pit'> {
+	/** The name of the piece that left it. */
 	readonly name: ObjectName;
+	/**
+	 * The box it fills in what it is drawn on, as far as it reaches: the screen, in its pixels, or what a piece or a lens
+	 * shows of it, in the frame's pixels from the figure's top left corner; its `corners` are in those same pixels.
+	 */
 	readonly box: Box;
+	/** How far it has come and not gone, as its piece has. */
 	readonly shown: number;
+	/** Its pit; none where it has none, and in a figure of the page, which shows it flat. */
 	readonly pit: DrawnPit | null;
 }
 
@@ -131,8 +117,8 @@ export const FOLLOWING_THE_PAGE: PiecePicture = { kind: 'following' };
 export type DrawnPicture = { readonly kind: 'page' } | { readonly kind: 'own'; readonly number: number };
 
 /**
- * What the stage draws a piece from, and how close that picture holds the piece's source, as a pose's zoom has it,
- * past which a denser drawing of the piece holds no more of it.
+ * What the stage draws a piece from, and how close that picture holds the piece's source, as a pose's zoom has it, past
+ * which a denser drawing of the piece holds no more of it.
  */
 export interface DrawnFrom {
 	readonly picture: DrawnPicture;
@@ -153,60 +139,71 @@ export interface Body {
 	readonly glow: number;
 }
 
-/**
- * A piece's body as the room draws it: as thick as it shows, in the frame's pixels, its walls' colour and glow; how
- * high its face stands over the plane it was lifted from, in the same pixels, where its shadow lies; how clear its
- * walls are, as far as the piece has not faded, from 0 to 1, as the stylesheet draws its face; and how strong the
- * shadow it casts there is, from 0 to 1, as strong as the piece's shadow and as far as the piece is clear, as the
- * stylesheet fades the face and the shadow it drops for one with no body, none while its face stands on that plane.
- */
+/** A piece's body as the room draws it: as thick as it shows, in the frame's pixels, and its walls' colour and glow. */
 export interface DrawnBody extends Body {
+	/** How high its face stands over the plane it was lifted from, in the frame's pixels, where its shadow lies. */
 	readonly height: number;
+	/** How clear its walls are, as far as the piece has not faded, from 0 to 1, as the stylesheet draws its face. */
 	readonly clear: Fraction;
+	/**
+	 * How strong the shadow it casts there is, from 0 to 1: as strong as the piece's shadow and as far as the piece is
+	 * clear, as the stylesheet fades the face and the shadow it drops for one with no body; none while its face stands on
+	 * that plane.
+	 */
 	readonly shadow: Fraction;
 }
 
-/**
- * A piece of the page: the part of the screen it shows, in the screen's pixels, and the page the screen showed as it
- * was lifted off it, which its hole belongs to; how round each of its corners is, in the same pixels — as the film
- * names for a rounded block, and as the window where the corner stands on a corner of what the window shows — the hole
- * it leaves there, if any, the line the lines from it to its source are drawn in, if it draws any, the picture it is
- * drawn from, its body, if it has one, where it carries letters, which it lands on a block's letters, the box their
- * first letter takes, as wide as a letter of theirs steps, in the screen's pixels as its source; the block of the page
- * it empties, if any; and how it stands in the window's shade, if the film lifts it into the shade.
- */
+/** A piece of the page, as an object shows it. */
 export interface Piece {
 	readonly kind: 'piece';
+	/** The part of the screen it shows, in the screen's pixels. */
 	readonly source: Box;
+	/** The page the screen showed as it was lifted off it, which its hole belongs to. */
 	readonly liftedOff: PageOfTheScreen;
+	/**
+	 * How round each of its corners is, in the screen's pixels: as the film names for a rounded block, and as the window
+	 * where the corner stands on a corner of what the window shows.
+	 */
 	readonly corners: Corners;
 	readonly hole: Hole | null;
+	/** The line its lines to its source are drawn in; none where it draws none. */
 	readonly lines: Stroke | null;
 	readonly picture: PiecePicture;
 	readonly body: Body | null;
+	/**
+	 * The box the first letter it carries takes, as wide as one of its letters steps, in the screen's pixels; none where
+	 * it carries no letters to land on a block's.
+	 */
 	readonly firstLetter: Box | null;
 	readonly emptied: Emptied | null;
+	/** How it stands in the window's shade; none where the film lifts it into no shade. */
 	readonly inTheShade: InTheShade | null;
 }
 
-/**
- * A piece as the stage draws it: its source, how many of the frame's pixels a screen's pixel takes in its box, the part
- * of its box the source is drawn in, in the frame's pixels from the box's top left corner, how round each of its
- * corners is, in the same pixels, the holes it shows there, how far it has come up and not gone in its own way, fading
- * whole, from 0 to 1, the picture it is drawn from, its body, none where it has none or none of it shows, and how far
- * the window's shade reaches it, from 0 to 1, which the stage shades it by as the window's shade stands, none where it
- * stands in no shade.
- */
+/** A piece as the stage draws it. */
 export interface DrawnPiece {
 	readonly kind: 'piece';
 	readonly source: Box;
+	/** How many of the frame's pixels a screen's pixel takes in its box. */
 	readonly fit: number;
+	/** The part of its box the source is drawn in, in the frame's pixels from the box's top left corner. */
 	readonly figure: Box;
+	/** How round each of its corners is, in the frame's pixels, as `figure` is. */
 	readonly corners: Corners;
+	/**
+	 * The holes other pieces leave in its source as they stand now, whichever picture it is drawn from, in the frame's
+	 * pixels from its figure's corner.
+	 */
 	readonly holes: readonly DrawnHole[];
+	/** How far it has come up and not gone in its own way, fading whole, from 0 to 1. */
 	readonly shown: number;
 	readonly picture: DrawnPicture;
+	/** Its body; none where it has none, or none of it shows. */
 	readonly body: DrawnBody | null;
+	/**
+	 * How far the window's shade reaches it, from 0 to 1, which the stage shades it by as the window's shade stands; none
+	 * where it stands in no shade.
+	 */
 	readonly shaded: Fraction | null;
 }
 
@@ -261,10 +258,10 @@ function shadedAt(inTheShade: InTheShade | null, depth: number): Fraction | null
 
 /**
  * A piece's body as the room draws it: as thick as the piece's fit and scale show its thickness, as the walls stand
- * back along the eye's way, which a scale does not stretch, and as far as the piece shows, come up and let show by
- * what it stands in, as the window's body is as thick as the screen has come up; its face as high as it stands out;
- * its walls as clear as the piece has not faded; its shadow as strong as the piece's, as far as it is let show and has
- * not faded, where its face stands out of its plane. None, where that leaves it no thickness.
+ * back along the eye's way, which a scale does not stretch, and as far as the piece shows, come up and let show by what
+ * it stands in, as the window's body is as thick as the screen has come up; its face as high as it stands out; its
+ * walls as clear as the piece has not faded; its shadow as strong as the piece's, as far as it is let show and has not
+ * faded, where its face stands out of its plane. None, where that leaves it no thickness.
  */
 function drawnBody(body: Body, fit: number, standing: Standing, shown: number, held: number): DrawnBody | null {
 	const thickness = body.thickness * fit * standing.scale * (shown * held);
@@ -314,8 +311,8 @@ export function holesShown(holes: readonly DrawnHole[], source: Box, fit: number
 }
 
 /**
- * A hole as a figure drawn from a source at a fit shows it, cut to the source, its corners as round as the figure
- * shows them, flat, as a picture of the page shows a pit; none where it lies outside.
+ * A hole as a figure drawn from a source at a fit shows it, cut to the source, its corners as round as the figure shows
+ * them, flat, as a picture of the page shows a pit; none where it lies outside.
  */
 function holeShown(hole: DrawnHole, source: Box, fit: number): readonly DrawnHole[] {
 	const shown = overlapOf(hole.box, source);

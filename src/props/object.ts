@@ -1,48 +1,13 @@
 /**
  * An object on the frame: something that stands in a box, grows, comes near, turns, comes up and goes, and shows what
- * it holds, its content — a title's words, a pane of code, an agent's terminal, the ending card, a piece of the page,
- * an outline round a part of it, a lens over it, a picture of the film's own (`src/props/picture.ts`), or a thing of
- * the film's own three.js (`src/props/thing.ts`), which
- * the room draws and the stage's markup does not. Where it stands, how it stands about its middle
- * (`src/domain/stance.ts`), how it stands out (`src/props/effects.ts`) and how far it has come and gone are the
- * object's, alike for every content, so a move that carries, leans, sets apart or slides one is written once
- * (`src/moves/object.ts`); what it shows, how that comes up in its box and what lights in it are its content's. Each of
- * where it stands, which way it faces, how it stands out and what it shows is set by its own moves, so moves of one
- * object that set different values share a step. A caption and keys are no objects: they lie over the frame alone, over
- * every object, props of the scene of their own (`src/props/caption.ts`, `src/props/keys.ts`).
+ * it holds, its content (`Content`). Where it stands, how it stands about its middle (`src/domain/stance.ts`), how it
+ * stands out (`src/props/effects.ts`) and how far it has come and gone are the object's, alike for every content, so a
+ * move that carries, leans, sets apart or slides one is written once (`src/moves/object.ts`); what it shows, how that
+ * comes up in its box and what lights in it are its content's. A caption and keys are no objects: they lie over the
+ * frame alone, over every object (`src/props/caption.ts`, `src/props/keys.ts`).
  *
- * An object comes up and goes in its own way, as what it shows comes up of itself, or in a way of livereel's, faded,
- * masked, wiped, opened or grown (`src/props/way.ts`): then its figure — its words, its pane, the card's lines —
- * stands whole and comes as the way has it, while a ground it stands on comes in its own way.
- *
- * An object stands on the frame, in the world, inside the page's window, on the page in it, or in a group of objects
- * (`src/props/group.ts`). On the frame, as a caption does, it rides with the eye (`src/domain/eye.ts`) and is seen as
- * from where the eye rests, wherever it moves; in the world its box is the frame's plane's as the eye at rest sees it,
- * and the eye moves past it as it moves past the window, always drawn over the window, wherever it stands. Inside the
- * window, as a small window of code stands over the site's, its box is in the window's pixels, and it travels and leans
- * with the window, grows and rolls flat on it, shows no more than the screen does, and is cut at the window's edge, as
- * an element laid in another is on a page. On the page, as a piece carried
- * onto a block of it lies there, its box is in the screen's pixels, which the camera frames as it frames the page, so
- * it keeps its place on the screen wherever the camera goes, and lies inside the window as one there does. In a group
- * its box is in the group's pixels, and the group's stance carries its own, so it is drawn on the frame as the two make
- * one matrix, and shows as far as the group has not gone. The window and the page are one each, and never go; a group
- * goes with what stands in it.
- *
- * The object that came last stands over the rest, but the objects of a group stand together where the first of them
- * came, ordered as the film names: by each one's zIndex, the higher over the lower and as they came where it is alike,
- * so a stack's layers stand as the film lays them however the group leans; or, in a group ordered by depth, the farther
- * behind the nearer, so a ring of cards turning shows the near ones over the far.
- *
- * What a piece drawn from the page's picture, or a lens, shows of the page is the page as it stands; a piece that holds
- * its picture shows it as it stood as the piece was lifted. Each shows the holes other pieces leave in it
- * (`src/props/lifted.ts`) as they stand, so a piece of the whole screen under the pieces lifted off it shows where they
- * were.
- *
- * The eye's focus (`src/domain/focus.ts`) blurs an object in the world by where its middle stands; one inside the
- * window or on the page is blurred with the window it lies in, and one on the frame or in a group rides with the eye
- * and stays sharp, as words laid over a film do. Where the eye focuses to see an object sharp is where its middle
- * stands as the focus is put on it, in what it stands in, so the focus holds there as the eye, the window and the
- * camera move, and stays there as the object moves on.
+ * What it stands in (`Holder` in `src/domain/placement.ts`) sets the pixels its box is in and whether it rides with the
+ * eye; one inside the window is cut at the window's edge, as an element laid in another is on a page.
  */
 import { type Camera, ZOOM_AT_MOST } from '../domain/camera.ts';
 import type { Focus } from '../domain/eye.ts';
@@ -138,19 +103,18 @@ export const AN_INSIDE: Kind<Inside> = new OneOf(
 	`the page's window, "window", or the world, "world"`
 );
 
-/**
- * What stands round an object as it is drawn: the window's screen, the frame, which the eye sees it before, the camera
- * the page is seen by, which a lens shows it past and frames what lies on the page, the groups standing, how far each
- * has gone, the holes pieces of the page leave on the screen, which what shows the page shows, how sharp the eye sees
- * as the frame is drawn, and the pictures of parts of the screen the stage holds sharper than the page's, which a piece
- * drawn past it is drawn from.
- */
+/** What stands round an object as it is drawn, beside the holders it may stand in. */
 export interface Surroundings extends Holders {
 	readonly groups: Groups;
 	readonly screen: Screen;
 	readonly frame: Size;
+	/** The holes pieces of the page leave on the screen, which a piece or a lens shows over the page it draws. */
 	readonly holes: readonly DrawnHole[];
 	readonly sharpness: Sharpness;
+	/**
+	 * The pictures of parts of the screen the stage holds sharper than the page's, which a piece drawn past livereel's
+	 * bound is drawn from.
+	 */
 	readonly sharper: readonly SharperPicture[];
 }
 
@@ -169,16 +133,16 @@ export type DrawnContent =
 	| DrawnThing
 	| DrawnFilmPicture;
 
-/**
- * An object: what it stands inside, its box in the pixels of that from its top left corner, how it stands about the
- * box's middle, how it stands out, how far it has come up and how far it has gone, the way it comes up or goes, and
- * what it shows.
- */
+/** An object, standing about its box's middle and standing out as its stance and effects have it. */
 export interface FrameObject extends Stance, Effects {
+	/** What it stands inside. */
 	readonly inside: Holder;
+	/** Its box, in the pixels of what it stands inside, from its top left corner. */
 	readonly box: Box;
+	/** How far it has come up. */
 	readonly shown: Fraction;
 	readonly gone: Fraction;
+	/** The way it comes up or goes. */
 	readonly way: Way;
 	readonly content: Content;
 }
@@ -186,30 +150,36 @@ export interface FrameObject extends Stance, Effects {
 /** Objects by name, in the order they first came. */
 export type Objects = ReadonlyMap<ObjectName, FrameObject>;
 
-/**
- * An object as the stage draws it: where it is placed, as the stage draws a placement (`src/domain/placement.ts`); the
- * name it is known by, the side of it the eye sees in what it is laid in, how clear it is, from 0 to 1, as much as what
- * it stands in lets show of it and as far as it has not faded, how far its figure's way has come, none where it is on
- * no way, the sheen its wipe trails, none where it trails none, how it stands out, none where it stands out in no way,
- * how it melts toward a side of its figure, none where it melts none, how soft the eye's focus draws it, in film pixels
- * of its box before its matrix, none where sharp, for the flat stage; how soft it draws the softest point of its box
- * the frame shows, on the frame in film pixels, none where sharp, which bounds how far past the frame's edge the room's
- * lens gathers it, as the window's softest point does; how many times the eye magnifies it, part by part by how far it
- * sees each part from, nearest first, the most of the frame's pixels a pixel of its box takes where the frame shows
- * that part, but no more than what it shows holds (`ContentDrawn`), so the room draws each part that many times as
- * densely; and its content as drawn. Both blurs are none, and it is magnified once, all of it, but for what stands in
- * the world.
- */
+/** An object as the stage draws it, placed as the stage draws a placement (`src/domain/placement.ts`). */
 export interface DrawnObject extends DrawnPlacement {
 	readonly name: ObjectName;
+	/** The side of it the eye sees in what it is laid in. */
 	readonly face: Face;
+	/** How clear it is, from 0 to 1: as much as what it stands in lets show of it, and as far as it has not faded. */
 	readonly clear: number;
+	/** How far its figure's way has come; none where it is on no way. */
 	readonly onItsWay: OnItsWay | null;
 	readonly sheen: DrawnSheen | null;
+	/** How it stands out; none where it stands out in no way. */
 	readonly effects: DrawnEffects | null;
 	readonly melt: Melting | null;
+	/**
+	 * How soft the eye's focus draws it for the flat stage, in film pixels of its box before its matrix; none where
+	 * sharp, and for all but what stands in the world.
+	 */
 	readonly outOfFocus: number | null;
+	/**
+	 * How soft the eye's focus draws the softest point of its box the frame shows, on the frame in film pixels, which
+	 * bounds how far past the frame's edge the room's lens gathers it, as the window's softest point does; none where
+	 * sharp, and for all but what stands in the world.
+	 */
 	readonly softestOutOfFocus: number | null;
+	/**
+	 * How many times the eye magnifies it, part by part by how far it sees each part from, nearest first: the most of the
+	 * frame's pixels a pixel of its box takes where the frame shows that part, but no more than what it shows holds
+	 * (`ContentDrawn`), so the room draws each part that many times as densely. Once, all of it, for all but what stands
+	 * in the world.
+	 */
 	readonly magnified: readonly MagnifiedPart[];
 	readonly content: DrawnContent;
 }
@@ -228,9 +198,9 @@ interface DrawnSheen extends Omit<SheenOnItsWay, 'crossing'> {
  * no more of what it is drawn from: a piece, as close as the picture it is drawn from holds its source; a lens, as
  * close as the page's picture holds the page, which no picture of it passes livereel's bound; a picture of the film's,
  * as many pixels as its file holds; markup, which the browser draws anew at any density, and a thing, which the room
- * draws in three, as far as the eye asks. A piece's figure is a picture (`.piece .way` in `stage/stage.css`): drawn
- * as densely as the eye magnifies it, 33 times, from a picture that holds 2.35, a piece asked the graphics card for 98
- * million texels where the frame showed 1.18 million of its pixels, and the card dropped the canvas.
+ * draws in three, as far as the eye asks. A piece's figure is a picture itself (`.piece .way` in `stage/stage.css`):
+ * drawn denser than the picture it comes from holds, it would ask the graphics card for many times the texels the frame
+ * shows of it, and the card would drop the canvas.
  */
 interface ContentDrawn {
 	readonly content: DrawnContent;
@@ -291,9 +261,9 @@ export function frameShiftOf(start: ObjectThen, end: ObjectThen, frame: Size): n
 
 /**
  * How far what an object shows moves in its box from where it stood to where it stands, in shares of its box as it
- * stands: lines of code as they scroll, and the page under a lens as the lens or the camera moves. What any other
- * shows stands in its box, but for words and lines rising a little as they come up, which is not counted; and what
- * stands in place of something else of its name has come, not moved.
+ * stands: lines of code as they scroll, and the page under a lens as the lens or the camera moves. What any other shows
+ * stands in its box, but for words and lines rising a little as they come up, which is not counted; and what stands in
+ * place of something else of its name has come, not moved.
  */
 function shownMoved(start: StandingThen, end: StandingThen, frame: Size): Point {
 	const before = start.object.content;
@@ -497,8 +467,8 @@ export function focusOn(object: FrameObject, holders: Holders, frame: Size): Foc
 
 /**
  * Objects by name in the order the stage draws them, the later over the earlier: in the order they came, but for the
- * objects of a group, drawn together where the first of them came, in the order the group names, and as they came
- * where that is alike (the sort keeps the order of what it finds alike), among what stands round them.
+ * objects of a group, drawn together where the first of them came, in the order the group names, and as they came where
+ * that is alike (the sort keeps the order of what it finds alike), among what stands round them.
  */
 export function inDrawingOrder(objects: Objects, around: Surroundings): readonly ObjectEntry[] {
 	const standing = [...objects.values()];
@@ -556,8 +526,8 @@ export function pictureZoomOf(object: FrameObject, holders: Holders, frame: Size
 
 /**
  * The part of the screen a piece drawn from the page's picture shows past livereel's bound, as close as it shows it,
- * which it is drawn from a picture of its own of; none for any other object, nor a piece drawn within the bound,
- * leant, or from a picture it holds.
+ * which it is drawn from a picture of its own of; none for any other object, nor a piece drawn within the bound, leant,
+ * or from a picture it holds.
  */
 export function partAskedSharper(object: FrameObject, holders: Holders, frame: Size): readonly PartAsked[] {
 	const part = partPastTheBound(object, pageZoomOf(object, holders, frame), holders.scrolled);
@@ -577,8 +547,8 @@ function partPastTheBound(object: FrameObject, zoom: number | null, scrolled: Sc
 /**
  * How close what an object shows of the page's picture shows it, as a pose's zoom has it, the page seen by a camera:
  * none for what shows none of it; else the frame's pixels a screen's pixel takes in its box, grown and brought near as
- * it stands, and as its group grows and brings it near; where it leans, its nearer side shows the page larger still,
- * so at livereel's bound.
+ * it stands, and as its group grows and brings it near; where it leans, its nearer side shows the page larger still, so
+ * at livereel's bound.
  */
 function pageZoomOf(object: FrameObject, holders: Holders, frame: Size): number | null {
 	const standing = placedInItsHolder(object, holders, frame);
@@ -627,9 +597,9 @@ function pageFitOf(object: FrameObject, laid: Box, camera: Camera, frame: Size):
 /**
  * How much of an object what it stands in lets show, among what stands round it: all of it on the frame, in the world,
  * riding a page there, standing off it, and beside a point; in the page's window, on the page in it, or on the page in
- * the world, as a piece falls onto a block, as much as the screen has come up out of the ground; in a group, as much
- * as the group has not gone. It fades the object whole, a piece's body as it grows, and what it shows stands as far
- * along as its own moves have it: words typed stay typed as their key was heard.
+ * the world, as a piece falls onto a block, as much as the screen has come up out of the ground; in a group, as much as
+ * the group has not gone. It fades the object whole, a piece's body as it grows, and what it shows stands as far along
+ * as its own moves have it: words typed stay typed as their key was heard.
  */
 function heldIn(object: FrameObject, around: Surroundings): number {
 	switch (object.inside.kind) {
@@ -648,11 +618,11 @@ function heldIn(object: FrameObject, around: Surroundings): number {
 }
 
 /**
- * What an object of a name shows, standing as it does and as much of it as what it stands in lets show, drawn as far
- * as its ground and its figure have come up and gone in the way it comes, at a moment of the film, among what stands
- * round it: the camera, which a lens shows the page past, the holes on the screen, which a piece or a lens shows but
- * for the piece's own, how far the film has scrolled each block, which carries the source of a piece riding one, and
- * the pictures the stage holds sharper than the page's, which a piece is drawn from where one holds its source; and how
+ * What an object of a name shows, standing as it does and as much of it as what it stands in lets show, drawn as far as
+ * its ground and its figure have come up and gone in the way it comes, at a moment of the film, among what stands round
+ * it: the camera, which a lens shows the page past, the holes on the screen, which a piece or a lens shows but for the
+ * piece's own, how far the film has scrolled each block, which carries the source of a piece riding one, and the
+ * pictures the stage holds sharper than the page's, which a piece is drawn from where one holds its source; and how
  * many times the eye may magnify it. What has no ground of its own is its figure alone. What it shows fades whole with
  * it, but a piece's body, which the room draws apart from its face and grows as far as the piece shows.
  */

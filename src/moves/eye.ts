@@ -258,7 +258,8 @@ interface UnderFocus {
 /**
  * Where a film focuses the eye: so far before it along where it looks, in film pixels; at a spot of the world; on a
  * block of the page, the first a selector matches or a box of the screen, at its middle; on an object, `{ object }` by
- * its name, at its middle; or under a point of the frame, `{ under }`.
+ * its name, where its middle stands as the move begins, which the focus keeps as the object moves on; or under a point
+ * of the frame, `{ under }`.
  */
 export type FocusOn = number | Spot | Target | ObjectFocus | UnderFocus;
 

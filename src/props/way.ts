@@ -1,30 +1,13 @@
 /**
  * How an object, whatever it shows, a caption or keys comes up in its place or goes from it in a way of livereel's, in
- * place of the way what it shows comes up of itself — words one after another, lines of code, the terminal growing, the
- * card and keys rising: faded in; out from behind an edge of its figure, as from under a mask, out of nothing; wiped in
- * from an edge; opened from the middle of its box, as an iris; grown from the middle of its box. An object goes in a
- * way as it came in one, the way run back: a mask back behind its edge, a wipe back to its edge.
+ * place of the way what it shows comes up of itself: faded in; out from behind an edge of its figure, as from under a
+ * mask; wiped in from an edge; opened from the middle of its box, as an iris; or grown from there. It goes in a way as
+ * it came in one, the way run back.
  *
- * A way brings an object's figure — its words, its pane, the card's lines, the caps — whole, and only that: the ground
- * some objects stand on, a title card's, a caption's, the card's, comes up and goes in its own way meanwhile. A way is
- * worked out here into numbers — how far the figure stands shifted toward the edge it comes from, how large and how
- * clear it is, how strong its shadow, and how far each side of it is cut — which the stage draws on the part it holds
- * the figure in (`stage/stage.css`), a reach past the figure's box on each side, so what it draws past its box, a
- * shadow, comes with it. The cut stands where the figure stands whole, however far the figure is shifted: it is moved
- * back by the shift here, as the stage cuts the figure in its own place, which the shift carries with it. A way that
- * cuts the figure has its shadow come as strong as the way has come, so the cut, which crosses the shadow with a hard
- * line, crosses a faint one. An object standing whole is drawn on no way at all. How far a figure's points move on its
- * way is counted here too, for the motion blur, alike for an object and for what lies over the frame.
- *
- * A wipe may trail a sheen behind its edge, a light over what the figure no longer covers, as a band of light runs
- * along a line of the page and leaves the page's own row behind it. Its edge then cuts on past the far side of what it
- * crosses as far as the light trails, so the light runs off before the way ends, where it would vanish whole. It lies
- * on the side the wipe has cut, coming and going alike, as all of a way does: going, it trails the edge over what the
- * figure leaves; coming, it would run ahead of it.
- *
- * A wipe crosses its figure; or a box wider than it, its figure and a block of the page its piece emptied, which comes
- * out behind the same edge. The edge then sets off from the box's near side, before the figure's where the block
- * reaches past it, and the light lies over the whole box.
+ * A way brings the figure whole — its words, its pane, the card's lines — and only that: a ground it stands on comes up
+ * in its own way meanwhile (`presencesIn`). The way is worked out here into numbers the stage draws on the part it
+ * holds the figure in (`stage/stage.css`), which reaches past the figure's box so a shadow comes with it; how far the
+ * figure's points move on its way is counted here too, for the motion blur.
  */
 import { type Fraction, NONE, WHOLE } from '../domain/fraction.ts';
 import {
@@ -61,7 +44,8 @@ type FromAnEdge = (typeof FROM_AN_EDGE)[number];
 
 /**
  * The light a wipe trails behind its edge: its colour, in hex, the look's accent where it is none, and how far behind
- * the edge it trails, a share of the figure across the wipe's way.
+ * the edge it trails, a share of the figure across the wipe's way. The edge cuts on past the far side as far as the
+ * light trails, so the light runs off the figure before the way ends, rather than vanish whole as it ends.
  */
 export interface Sheen {
 	readonly colour: string | null;
@@ -130,8 +114,8 @@ interface Sides {
 }
 
 /**
- * A figure cut from each side, 0 cutting nothing of it and the reach past it, 1 all of it, less than 0 leaving more;
- * or round its middle, as far as a share of the radius that takes in its corners and the reach.
+ * A figure cut from each side, 0 cutting nothing of it and the reach past it, 1 all of it, less than 0 leaving more; or
+ * round its middle, as far as a share of the radius that takes in its corners and the reach.
  */
 type Cut = ({ readonly kind: 'inset' } & Sides) | { readonly kind: 'circle'; readonly radius: number };
 
@@ -205,8 +189,7 @@ export function comesFromAnEdge(name: WayName): name is FromAnEdge {
 }
 
 /**
- * The way a film names, from the edge it names for a mask or a wipe, or the way's own; its own way where it names
- * none.
+ * The way a film names, from the edge it names for a mask or a wipe, or the way's own; its own way where it names none.
  */
 export function wayNamed(name: WayName | null, edge: FrameSide | null): Way {
 	switch (name) {
@@ -239,7 +222,7 @@ export function presentShare(presence: Presence): number {
 /**
  * A figure `progress` of its way in, or as far as it stands on its way out; none on its way, standing whole, at the end
  * of a way and in its own way always, as what it shows comes up of itself. A way that cuts it has its shadow as strong
- * as the way has come.
+ * as the way has come, so the cut, which crosses the shadow with a hard line, crosses a faint one.
  */
 export function alongItsWay(way: Way, progress: number): OnItsWay | null {
 	return progress >= END_OF_WAY ? null : onItsWayAt(way, progress);
@@ -295,9 +278,9 @@ function spanOf(wipe: Wipe): Span {
 }
 
 /**
- * A wipe's sheen `progress` of its way in, or as far as it stands on its way out: trailing its edge on the side it
- * has cut, in shares of the box the wipe crosses. None in any way but a wipe with a sheen, nor at the end of a way,
- * where the figure stands whole.
+ * A wipe's sheen `progress` of its way in, or as far as it stands on its way out: trailing its edge on the side it has
+ * cut, in shares of the box the wipe crosses. None in any way but a wipe with a sheen, nor at the end of a way, where
+ * the figure stands whole.
  */
 export function sheenAlong(way: Way, progress: number): SheenOnItsWay | null {
 	if (way.kind !== 'wipe' || way.sheen === null || progress >= END_OF_WAY) return null;

@@ -1,66 +1,14 @@
 /**
- * The screen the page is shown on, how far it has come up out of the ground, and what it shows: the filmed page, or a
- * page of the film's own, written whole in HTML, as a slide is, shown in its place — framed by the camera, leant with
- * the window, seen and blurred by the eye as the filmed page is. A page of the film's own is known by a key its move
- * works out from its HTML (`src/direction/page.ts`), so the scene and every frame drawn carry the key alone.
+ * The screen the page is shown on, how far it has come up out of the ground, and what it shows: the filmed page, or the
+ * film's own page, written whole in HTML as a slide is, shown in its place and framed, leant and seen as the filmed
+ * page is. A film's own page is known by a key its move works out from its HTML (`src/direction/page.ts`), so the scene
+ * and every frame drawn carry the key alone.
  *
- * A band of light may sweep away the picture the screen showed, the page as it stands showing behind it: the picture,
- * held as the sweep began, lies over the page, under the light, the holes and the cursor, cut along the band. The band
- * crosses what the window shows of the screen, from a side of it to the other, slanted as the film has it, as the
- * camera frames the page there, wherever the camera goes meanwhile; it comes on from half its width past the near side
- * and goes as far past the far one, so its light comes onto the page and leaves it whole. Or a disc opens round a point
- * of the screen, its ring of light growing from its middle to past the farthest corner of what the window shows, the
- * picture kept outside it alone.
- *
- * Or the screen fades from the page it showed into the one it shows now: a picture of that page, held as the fade
- * began, lies over the page coming where the camera showed the page going then. In a play that is over the whole
- * screen, as one camera frames both at the fade's moment. In a cut the page going is held where the camera framed it,
- * whatever the cut's moves after the fade frame, until every move of the cut is set; then it is laid where the camera
- * the cut leaves shows it, so a cut may frame the page coming closer or farther than the page going. From there the
- * camera frames the two as one, so they draw back or travel together. It goes from whole to none over a stretch of the
- * film's time, on its curve, as clear as the screen has come up. It is the page going, not the screen: the window's
- * shade dims, fades and blurs the page coming alone, so that page may come up out of the dark under the one going; and
- * the light, the cursor and the holes, which lie on the page coming, lie under it. Its stretch is the film's time, not
- * a move's share, so a fade begun in a cut goes on over the steps after it.
- *
- * The window's back may show a page of the film's own too, as a slab's back wears a picture of its own: where the eye
- * sees the window's back, the screen shows it in place of what it shows in front, framed by the camera as the front
- * is, mounted so it stands upright once the window is turned over round its width or round its upright; with none,
- * the eye sees the screen through the window's back, mirrored, as before.
- *
- * A page of the film's own runs down its scroll as the film runs it, never of itself: its run is the page's, held by
- * its key, so it goes on as the page is shown on the other face. The run is the knots of the film's time it passes
- * through, where the page stands and how fast it runs at each, joined by a cubic Hermite curve: a pace changing over a
- * move's share lays knots at even points of it, a run brought to rest lays two, the pace it sets off at and rest where
- * it ends, so a move that takes the run over goes on from where it stands and as fast. A run brought to rest with its
- * pace judged at a point of the frame lays knots at even points of its share too, so what the point shows comes to rest
- * on that curve across the frame, wherever the frame stands meanwhile. Where the page stands is worked out from the
- * moment, as what else changes with time of itself is, so each exposure of a frame draws it where it stood then and a
- * fast run smears.
- *
- * A film may type into a block of a page of its own, which then shows what stands typed as its text in place of what
- * the page wrote there. What stands typed is the page's too, held by its key and the block's selector until the film
- * types into that block again, so it stays as the page is shown on the other face, or not at all.
- *
- * A film may blink a block of a page of its own, as a terminal blinks its caret: the block fades out and in on a
- * cosine, a blink so many seconds long, from the moment its move begins. The blink is the page's too, held by its key
- * and the block's selector until the film blinks that block again, and how clear the block stands is worked out from
- * the moment, so each exposure draws it as it stood then.
- *
- * How far a page of the film's own scrolls at most is held once, beside what stands typed in it, by its key: the two
- * are its document as it stands, and text typed may wrap and lengthen it. The take reads it as the stage lays the page,
- * nothing typed; a typing reads it for the text standing typed at each of its strokes as it begins, so it changes on
- * the frame a letter lands that wraps a line. Its run is held at its end and the sheet reaches below the screen by that
- * one length, so neither holds a copy that a typing after it leaves short.
- *
- * A page of the film's own the screen shows in front is cut at the screen's edges, or, where the film asks, drawn on
- * past the screen's top and foot as a sheet longer than the hand that holds it: as far as its document runs on there,
- * above what has run past the screen's top and below its foot, and as far as the frame sees the window's plane, which
- * bounds how much the stage lays. Its sides are the screen's, as a document laid out at the screen's width has nothing
- * past them. The page's run is where the screen's top stands in its document, as when it is cut, so a run and a rest
- * are the same either way; what is drawn above has run past already, and the stage lays it in a frame of its own,
- * scrolled that much less, what is typed into it written there as on the screen. The camera cuts its picture at the
- * sheet's edges where it cut it at the screen's.
+ * What a film's own page carries over time is kept by its key, not by the face of the window that shows it: how it
+ * runs, what stands typed in it, which of its blocks blink, and its document as it stands. So it goes on as the window
+ * turns and the page shows on the other face, or on none. None of it is the page's own doing: the film sets each, and
+ * where the page stands and how clear a blinking block stands are worked out from the moment, so each exposure of a
+ * frame draws it as it stood then, and a fast run smears.
  */
 import {
 	type Camera,
@@ -96,7 +44,7 @@ import type { BlockBlinking, OwnPageStanding } from '../domain/own-page.ts';
 import { between } from '../domain/toward.ts';
 import type { TypedText } from '../domain/typing.ts';
 
-/** What the screen shows: the filmed page, or a page of the film's own by its key, drawn as far as it reaches. */
+/** What the screen shows: the filmed page, or a film's own page by its key, drawn as far as it reaches. */
 export type Shows = { readonly kind: 'filmed' } | { readonly kind: 'own'; readonly key: string; readonly reach: Reach };
 
 /** The page the screen shows in front, however far it is drawn. */
@@ -110,50 +58,53 @@ export function pageShownBy(shows: Shows): PageOfTheScreen {
 }
 
 /**
- * How far a page of the film's own the screen shows in front is drawn: cut at the screen's edges, `'screen'`; or on
- * past its top and foot as far as its document runs and the frame sees, `'document'`.
+ * How far the film's own page the screen shows in front is drawn: cut at the screen's edges, `'screen'`; or on past its
+ * top and foot as far as its document runs and the frame sees, `'document'`. Either way its run is where the screen's
+ * top stands in its document, so a film's runs and rests mean the same at either reach.
  */
 export type Reach = 'screen' | 'document';
 
-/** How far a page of the film's own is drawn on past the screen's top and past its foot, in its pixels. */
+/** How far a film's own page is drawn on past the screen's top and past its foot, in its pixels. */
 export interface PastTheScreen {
 	readonly above: number;
 	readonly below: number;
 }
 
 /**
- * A page of the film's own drawn past its screen as the stage lays it: how far past the screen's top and foot, in its
- * pixels, and how far down its document the top of what is laid stands.
+ * A film's own page drawn past its screen as the stage lays it: how far past the screen's top and foot, in its pixels,
+ * and how far down its document the top of what is laid stands.
  */
 export interface DrawnSheet extends PastTheScreen {
 	readonly scrolled: number;
 }
 
 /**
- * What the screen shows as the stage draws it: the filmed page, or a page of the film's own as it stands, and the
- * sheet it is laid as past the screen, none where it is drawn on the screen alone.
+ * What the screen shows as the stage draws it: the filmed page, or a film's own page as it stands, and the sheet it is
+ * laid as past the screen, none where it is drawn on the screen alone.
  */
 type DrawnShows =
 	{ readonly kind: 'filmed' } | ({ readonly kind: 'own'; readonly sheet: DrawnSheet | null } & OwnPageStanding);
 
 /**
- * What stands typed in a page of the film's own: the text a film typed into each block of it, by the block's selector,
- * in the order the film first typed into each.
+ * What stands typed in a film's own page: the text a film typed into each block of it, by the block's selector, in the
+ * order the film first typed into each.
  */
 export type TypedBlocks = ReadonlyMap<string, string>;
 
-/** How a block of a page of the film's own blinks: from a moment of the film, a blink so many seconds long. */
+/** How a block of a film's own page blinks: from a moment of the film, a blink so many seconds long. */
 export interface Blink {
 	readonly since: number;
 	readonly seconds: number;
 }
 
-/** The blocks of a page of the film's own the film blinks, by each block's selector. */
+/** The blocks of a film's own page the film blinks, by each block's selector. */
 export type BlinkingBlocks = ReadonlyMap<string, Blink>;
 
 /**
- * A page of the film's own as its document stands: what stands typed in it, and how far it then scrolls at most, in
- * its pixels, none where the screen holds all of it.
+ * A film's own page as its document stands: what stands typed in it, and how far it then scrolls at most, in its
+ * pixels, none where the screen holds all of it. Text typed may wrap a line and lengthen it, on the frame its letter
+ * lands; the run, held at its end, and a sheet drawn past the screen both read this one length, so neither keeps a
+ * stale copy.
  */
 export interface OwnDocument {
 	readonly typed: TypedBlocks;
@@ -172,10 +123,10 @@ export interface Knot {
 }
 
 /**
- * How a page of the film's own runs down its scroll, which it moves by only as the film runs it: the knots its run
- * passes through, the earliest first, as a cubic Hermite curve in time between each two, standing at the first before
- * it and running on at the last's pace after it. Where it is held, at its top and at its document's end as it stands
- * then, is the page's to say (`standingOn`).
+ * How a film's own page runs down its scroll: the knots its run passes through, the earliest first, joined by a cubic
+ * Hermite curve in time, standing at the first before it and running on at the last's pace after it. Each knot carries
+ * its pace, so a move that takes the run over sets off from where the page stands and as fast. Where it is held, at its
+ * top and at its document's end as it stands then, is the page's to say (`standingOn`).
  */
 export interface Scroll {
 	readonly knots: readonly [Knot, ...Knot[]];
@@ -215,11 +166,12 @@ interface CurveWays {
 export type Upright = 'over' | 'round';
 
 /**
- * What the window's back shows: the screen seen through it, or a page of the film's own by its key, mounted as named.
+ * What the window's back shows: the screen seen through it, mirrored, or a film's own page by its key, mounted as named
+ * and framed by the camera as the front is.
  */
 export type Back = { readonly kind: 'seen through' } | BackPage;
 
-/** A page of the film's own on the window's back, by its key, mounted as named. */
+/** A film's own page on the window's back, by its key, mounted as named. */
 type BackPage = { readonly kind: 'own'; readonly key: string; readonly upright: Upright };
 
 /** How a film mounts a page on the window's back. */
@@ -239,10 +191,11 @@ interface Crest {
 }
 
 /**
- * Light sweeping away the picture the screen showed: the picture, held by its number as the sweep began; how wide the
- * light is, in film pixels; its crest; and how far it has swept the window. A band comes from a side of the window,
- * slanted from that side, degrees clockwise as the upright screen shows it; a disc opens round a point of the screen,
- * in its pixels.
+ * Light sweeping away the picture the screen showed, the page as it stands showing behind it: the picture, held by its
+ * number as the sweep began, which lies over the page, under the light, the holes and the cursor; how wide the light
+ * is, in film pixels; its crest; and how far it has swept the window. A band comes from a side of the window, slanted
+ * from that side, degrees clockwise as the upright screen shows it; a disc opens round a point of the screen, in its
+ * pixels.
  */
 export type Sweep = SweepShape & SweepOfAnyShape;
 
@@ -272,7 +225,10 @@ type DiscSweep = DiscShape & SweepOfAnyShape;
 
 /**
  * The screen fading from a page it showed: the page; where it lies; a picture of that page, held by its number as the
- * fade began; and the stretch of the film's time it goes from whole to none over, on its curve.
+ * fade began; and the stretch of the film's time it goes from whole to none over, on its curve, so a fade begun in a
+ * cut goes on over the steps after it. The picture is the page going, not the screen: the window's shade dims, fades
+ * and blurs the page coming alone, so the page coming may rise out of the dark under the one going, and the light, the
+ * cursor and the holes lie on the page coming, under the picture.
  */
 export interface Fade {
 	readonly from: PageOfTheScreen;
@@ -299,19 +255,19 @@ interface DrawnFade {
 	readonly shown: Fraction;
 }
 
-/**
- * How far the screen has come up, as a film may open on the ground alone, what it shows, the sweep over it, if any,
- * the page it fades from, if any, what the window's back shows, and, by its key, how each page of the film's own the
- * film has run runs, how each page the stage laid stands as a document, and which blocks of each the film blinks.
- */
+/** The screen as a scene holds it. */
 export interface Screen {
+	/** How far it has come up out of the ground, as a film may open on the ground alone. */
 	readonly shown: Fraction;
 	readonly shows: Shows;
 	readonly sweep: Sweep | null;
 	readonly fade: Fade | null;
 	readonly back: Back;
+	/** How each film's own page the film has run runs, by the page's key. */
 	readonly scrolls: ReadonlyMap<string, Scroll>;
+	/** How each film's own page the stage laid stands as a document, by the page's key. */
 	readonly documents: ReadonlyMap<string, OwnDocument>;
+	/** Which blocks of each film's own page the film blinks, by the page's key. */
 	readonly blinks: ReadonlyMap<string, BlinkingBlocks>;
 }
 
@@ -344,18 +300,20 @@ type DrawnSweepShape =
 	| { readonly kind: 'band'; readonly band: DrawnBand; readonly ahead: Point }
 	| { readonly kind: 'disc'; readonly middle: Point; readonly radius: number };
 
-/**
- * The screen as the stage draws it: how far it has come up, what it shows on the side of the window the eye sees, the
- * sweep over it as drawn, if any, and the page it fades from, if any; how the page it shows is mounted where it is the
- * window's back's, which then shows it alone, none where the eye sees the front or the screen through the back; and
- * where the filmed page lies, none where it shows a page of the film's own.
- */
+/** The screen as the stage draws it. */
 export interface DrawnScreen {
+	/** How far it has come up. */
 	readonly shown: Fraction;
+	/** What it shows on the side of the window the eye sees. */
 	readonly shows: DrawnShows;
 	readonly sweep: DrawnSweep | null;
 	readonly fade: DrawnFade | null;
+	/**
+	 * How the page it shows is mounted where it is the window's back's, which then shows it alone; none where the eye
+	 * sees the front, or the screen through the back.
+	 */
 	readonly backUpright: Upright | null;
+	/** Where the filmed page lies; none where the screen shows the film's own page. */
 	readonly filmed: FilmedLaid | null;
 }
 
@@ -382,8 +340,8 @@ export const THE_FILMED_PAGE: Shows = { kind: 'filmed' };
 export const CUT_AT_THE_SCREEN: Reach = 'screen';
 export const DRAWN_TO_ITS_DOCUMENT: Reach = 'document';
 export const SEEN_THROUGH: Back = { kind: 'seen through' };
-// No page of the film's own run, each standing at its top; none laid; nothing typed in a page as the stage lays it;
-// and no block of any page, or of one page, blinking
+// No film's own page run, each standing at its top; none laid; nothing typed in a page as the stage lays it; and no
+// block of any page, or of one page, blinking
 const NONE_RUN: ReadonlyMap<string, Scroll> = new Map();
 const NONE_LAID: ReadonlyMap<string, OwnDocument> = new Map();
 export const NOTHING_TYPED: TypedBlocks = new Map();
@@ -414,9 +372,9 @@ const SETTING_OFF = 0;
 const FIRST_ONWARD = 1;
 // A run judged on the frame lays its knots as a change of pace does, at even points of its move's share, and measures
 // the frame at each and half way to the next, summing the page's way over each stretch by Simpson's rule: its ends
-// weigh 1 and its middle 4 of 6, exact for a frame that holds still, as the curve's speeds are of the second power;
-// one measure past another, as the stretch's end is past its last half; the way a run has gone at its start; and the
-// ends of the curve's weights: still at none and at 1, and setting off at 1
+// weigh 1 and its middle 4 of 6, exact for a frame that holds still, as the curve's speeds are of the second power; one
+// measure past another, as the stretch's end is past its last half; the way a run has gone at its start; and the ends
+// of the curve's weights: still at none and at 1, and setting off at 1
 const SIMPSONS_MIDDLE_WEIGHT = 4;
 const SIMPSONS_WHOLE = 6;
 const ONE_MEASURE = 1;
@@ -465,8 +423,8 @@ const THROUGH = 1;
  * The screen as the stage draws it at a moment of the film, the camera that shows it framing the page in its view, in a
  * format, the eye seeing the window's front or its back, a pane's corners as round as the look has them in film pixels:
  * the page on the back, with no sweep and no fade, where the eye sees the back and the back has a page of its own; the
- * screen as it stands where not; a page of the film's own as far down as the film has run it then, the one in front
- * laid as far past the screen as it is drawn (`pastTheScreen`).
+ * screen as it stands where not; a film's own page as far down as the film has run it then, the one in front laid as
+ * far past the screen as it is drawn (`pastTheScreen`).
  */
 export function drawnScreen(
 	screen: Screen,
@@ -549,8 +507,8 @@ function shareThrough(stretch: Stretch, moment: number): number {
 }
 
 /**
- * What the screen shows in front as the stage draws it at a moment: a page of the film's own as far as it has run,
- * laid as far past the screen as it is drawn.
+ * What the screen shows in front as the stage draws it at a moment: a film's own page as far as it has run, laid as far
+ * past the screen as it is drawn.
  */
 function frontDrawn(screen: Screen, moment: number, past: PastTheScreen | null): DrawnShows {
 	switch (screen.shows.kind) {
@@ -562,9 +520,9 @@ function frontDrawn(screen: Screen, moment: number, past: PastTheScreen | null):
 }
 
 /**
- * A page of the film's own, by its key, as the stage draws it at a moment: as far down as the film has run it, with
- * what the film has typed into it, and laid as a sheet so far past the screen, its top as far above where the screen's
- * stands in its document, where it is drawn past the screen.
+ * A film's own page, by its key, as the stage draws it at a moment: as far down as the film has run it, with what the
+ * film has typed into it, and laid as a sheet so far past the screen, its top as far above where the screen's stands in
+ * its document, where it is drawn past the screen.
  */
 function ownPageDrawn(screen: Screen, key: string, moment: number, past: PastTheScreen | null): DrawnShows {
 	const standing = ownPageStanding(screen, key, moment);
@@ -572,7 +530,7 @@ function ownPageDrawn(screen: Screen, key: string, moment: number, past: PastThe
 	return { kind: 'own', sheet, ...standing };
 }
 
-/** A page of the film's own the stage laid, by its key, as it stands on a screen at a moment. */
+/** A film's own page the stage laid, by its key, as it stands on a screen at a moment. */
 export function ownPageStanding(screen: Screen, key: string, moment: number): OwnPageStanding {
 	return {
 		key,
@@ -599,18 +557,18 @@ export function typedTextsOf(typed: TypedBlocks): readonly TypedText[] {
 }
 
 /**
- * A page of the film's own the stage laid, by its key, as its document stands on the screen; one the stage never laid
- * is a fault of livereel's, as every page a move names is laid before the film.
+ * A film's own page the stage laid, by its key, as its document stands on the screen; one the stage never laid is a
+ * fault of livereel's, as every page a move names is laid before the film.
  */
 export function documentOf(screen: Screen, key: string): OwnDocument {
 	const laid = screen.documents.get(key);
-	if (laid === undefined) throw new Error(`the screen holds no page of the film's own laid by the key ${key}`);
+	if (laid === undefined) throw new Error(`the screen holds none of the film's own pages laid by the key ${key}`);
 	return laid;
 }
 
 /**
- * How far the page of the film's own the screen shows in front is drawn on past the screen's top and foot at a moment,
- * as a camera shows the window's plane in a format: as far as the frame sees the plane there, but no farther than the
+ * How far the film's own page the screen shows in front is drawn on past the screen's top and foot at a moment, as a
+ * camera shows the window's plane in a format: as far as the frame sees the plane there, but no farther than the
  * document runs on above what has run past the screen's top and below its foot, and the whole of that where a corner of
  * the frame sees the plane on to its horizon. None where the page is cut at the screen, where the screen shows the
  * filmed page, where the eye sees a page on the window's back in its place, and where nothing of it is drawn past.
@@ -652,22 +610,22 @@ export function pageShownOn(format: Format, past: PastTheScreen | null): Box {
 	return { ...screen, top: screen.top - past.above, height: screen.height + past.above + past.below };
 }
 
-/** How a page of the film's own runs on the screen, by its key: standing at its top where the film never ran it. */
+/** How a film's own page runs on the screen, by its key: standing at its top where the film never ran it. */
 function runOf(screen: Screen, key: string): Scroll {
 	return screen.scrolls.get(key) ?? STANDING_AT_ITS_TOP;
 }
 
 /**
- * Where a page of the film's own, by its key, stands on a screen at a moment and how fast it runs there: on its run,
- * held between its top and its document's end as it stands on that screen.
+ * Where a film's own page, by its key, stands on a screen at a moment and how fast it runs there: on its run, held
+ * between its top and its document's end as it stands on that screen.
  */
 export function standingOn(screen: Screen, key: string, moment: number): Knot {
 	return standingAt(runOf(screen, key), documentOf(screen, key).scrollLength, moment);
 }
 
 /**
- * Where a running page stands at a moment and how fast it runs there: on its run, held between its top and as far as
- * it scrolls, standing still where it is held at an end it runs into.
+ * Where a running page stands at a moment and how fast it runs there: on its run, held between its top and as far as it
+ * scrolls, standing still where it is held at an end it runs into.
  */
 function standingAt(run: Scroll, scrollLength: number, moment: number): Knot {
 	const unheld = unheldAt(run, moment);
@@ -677,9 +635,9 @@ function standingAt(run: Scroll, scrollLength: number, moment: number): Knot {
 }
 
 /**
- * A page set off running at a pace from where it stands as its move begins, over a stretch of the film's time: its
- * pace changing from what it is there to the one named along the stretch, on its curve, in knots at even points of
- * it, at once where the stretch takes no time.
+ * A page set off running at a pace from where it stands as its move begins, over a stretch of the film's time: its pace
+ * changing from what it is there to the one named along the stretch, on its curve, in knots at even points of it, at
+ * once where the stretch takes no time.
  */
 export function setOff(from: Knot, stretch: Stretch, pace: number): Scroll {
 	if (stretch.seconds === NO_SECONDS) return { knots: [{ ...from, pace }] };
@@ -818,8 +776,8 @@ function paceOfAChange(from: number, to: number, stretch: Stretch, point: number
 }
 
 /**
- * Where a running page stands at a moment and how fast it runs, unheld by its top or its end: at its first knot
- * before it, on the curve between the two knots around it, and on at its last knot's pace after it.
+ * Where a running page stands at a moment and how fast it runs, unheld by its top or its end: at its first knot before
+ * it, on the curve between the two knots around it, and on at its last knot's pace after it.
  */
 function unheldAt(run: Scroll, moment: number): Knot {
 	const [first, ...later] = run.knots;
@@ -843,10 +801,10 @@ function betweenKnots(start: Knot, end: Knot, moment: number): Knot {
 }
 
 /**
- * How far the pages of the film's own on the screen's faces run on the frame between two moments, as a camera shows
- * the screen, apart from how far the camera carries it, which it counts itself: the farthest of them, by the point at
- * the middle of what the camera shows of the screen, carried up the screen as far as its page ran. Both faces' pages
- * are measured, as which face the eye sees is the window's to say: a page run unseen costs exposures, never a frame.
+ * How far the film's own pages on the screen's faces run on the frame between two moments, as a camera shows the
+ * screen, apart from how far the camera carries it, which it counts itself: the farthest of them, by the point at the
+ * middle of what the camera shows of the screen, carried up the screen as far as its page ran. Both faces' pages are
+ * measured, as which face the eye sees is the window's to say: a page run unseen costs exposures, never a frame.
  */
 export function runShift(camera: Camera, format: Format, start: Screen, end: Screen, moments: MomentsBetween): number {
 	const shown = viewOnTheScreen(camera, format.frame);
@@ -863,7 +821,7 @@ function ranOnTheFrame(camera: Camera, format: Format, point: Point, pixels: num
 	return screenPointShift(still, point, { left: point.left, top: point.top - pixels });
 }
 
-/** The keys of the pages of the film's own the screen's faces show: in front, and on the window's back. */
+/** The keys of the film's own pages the screen's faces show: in front, and on the window's back. */
 function pagesOnItsFaces(screen: Screen): readonly string[] {
 	return [screen.shows, screen.back].flatMap((face) => (face.kind === 'own' ? [face.key] : []));
 }
@@ -882,8 +840,8 @@ function filmedLaid(camera: Camera, format: Format, paneCorner: number): FilmedL
 }
 
 /**
- * The page of the film's own the screen shows on the window's back, where the eye sees the back and the back has one;
- * none where the eye sees the window's front, or the screen through its back.
+ * The film's own page the screen shows on the window's back, where the eye sees the back and the back has one; none
+ * where the eye sees the window's front, or the screen through its back.
  */
 export function backPageSeen(back: Back, facingTheEye: boolean): BackPage | null {
 	return !facingTheEye && back.kind === 'own' ? back : null;

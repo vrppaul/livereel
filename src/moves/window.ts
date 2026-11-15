@@ -73,7 +73,8 @@ export interface WindowHideScript extends TimingScript {
  * of blocks, or none, `'none'`, how far that part softens toward the blur, `sharpSoftens`, from 0 none to 1 as soft as
  * the page round it, how far the shade reaches, `reaching`, the page alone, `'page'`, or the whole window, `'window'`,
  * and where the blur is as wide as written, `blurSeen`, on the page, `'on the page'`, or on the frame,
- * `'on the frame'`; any left out as it stands.
+ * `'on the frame'`; any left out as it stands. Which part stays sharp, how far the shade reaches and where its blur is
+ * as wide as written hold from the move's start, as none has values between one and the next.
  */
 export interface ShadeScript extends TimingScript, Partial<ShadeWritten> {
 	readonly sharp?: SharpNamed;

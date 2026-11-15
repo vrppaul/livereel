@@ -1,38 +1,17 @@
 /**
  * The page's window as a scene holds it: where it stands and how it stands, as the camera reads it (`Placing` in
  * `src/domain/camera.ts`), and how the page in it is shaded — dimmed, faded into the film's ground and blurred — so
- * what stands over it, a piece of the page lifted off, stands clear of it. A film moves the shade as it moves places,
- * by one move that sets the values it names (`window.shade` in `src/moves/window.ts`), the dim and the fade as strong
- * as a share from none to whole, the blur in film pixels.
- * The blur may leave a part of the screen sharp, as a lens keeps sharp what the eye is drawn to: it is the page's own,
- * not the eye's, as the eye's lens blurs by depth and a page lies at one, and so what stands over the page, a title
- * carried with it or a piece lifted off it, stays as sharp as it stands wherever it stands over the blur. The part may
- * soften toward the blur by a share of its own, as far as a button lifted off it has risen, while the page round it
- * stays as soft as it is: a share, not pixels, so the part is never softer than the page round it, and it follows the
- * blur as the blur moves.
- * The shade reaches the page alone, as livereel has it, so a film that fades one page over another keeps its slab
- * whole while the page goes; or the whole window, all of it but what it keeps sharp: its fade and its blur then reach
- * the window's body in a room, which blurs the page and its body as one (`stage/body.js`), or its edge and shadow on
- * the flat stage, as far as they reach the page, the dim staying the dark laid over the screen. A choice, not a value
- * with values between, so a move names it from its start, as it names the part kept sharp.
- * One table, `SHADE_KINDS`, says of each value what a film may write for it and how it moves (`src/domain/values.ts`),
- * so a move's shade is checked by it and the window's moved by it, as the body's is by its own (`src/props/body.ts`).
+ * what stands over it, a piece of the page lifted off, stands clear of it.
  *
- * The window stands as an object does, placed in the world by a box and a stance (`src/domain/placement.ts`), and the
- * stage draws it by the matrix that places it there, as it draws an object: flat while it faces the frame, in 3D
- * only where it leans, so its projection is written once and a face-on window costs the graphics card no 3D layer in
- * an exposure. The window stands in the world, so the eye's focus blurs it, with all that lies in it, by where it
- * stands (`src/domain/focus.ts`): the flat stage as one, as soft as its point nearest the focus, and the room each
- * pixel of it by how far what it shows stands from the focus.
+ * The shade's blur is the page's own, not the eye's: the eye's lens blurs by depth, and a page lies at one. So what
+ * stands over the page, a title carried with it or a piece lifted off it, stays as sharp as it stands wherever it
+ * stands over the blur. The blur may leave a part of the screen sharp, as a lens keeps sharp what the eye is drawn to;
+ * the part softens toward the blur by a share of it, not by pixels, so it is never softer than the page round it and
+ * follows the blur as the blur moves.
  *
- * In a room the window may have a body, which it holds as it holds its shade, set by a move of its own (`window.body`;
- * `src/props/body.ts`): a slab of metal round the page, as a tablet is made, its sides square to the page and its
- * corners as round as the page's grown by its rim, lit by the world's light (`src/props/lighting.ts`). It comes as the
- * window's edge and shadow do, as far as the window stands off the ground and the screen has come up in it, growing
- * thicker and its rim wider, where they grow darker; and it takes their place, as the slab is the window's edge, and a
- * shadow drawn on the window's plane would lie over its sides. The engine hands it as the window stands, in three's
- * axes, and the room stands it round the page in its one scene, where depth hides the page behind the slab or the slab
- * behind the page; the flat stage draws the window's edge and shadow in its place.
+ * The window stands in the world as an object does (`src/domain/placement.ts`). In a room it may have a body
+ * (`src/props/body.ts`), a slab round the page that is its edge, so it stands in place of the edge and of the shadow,
+ * which drawn on the window's plane would lie over the slab's sides; the flat stage draws no body.
  */
 import { type Cut, type Placing, type View, pictureReachOf } from '../domain/camera.ts';
 import type { Eye } from '../domain/eye.ts';
@@ -103,7 +82,10 @@ export type ShadeReach = (typeof SHADE_REACHES)[number];
 
 export const A_SHADE_REACH = new OneOf(SHADE_REACHES, 'how far the shade reaches: "page" or "window"');
 
-/** livereel's own reach of the shade: the page alone. */
+/**
+ * livereel's own reach of the shade: the page alone, so a film that fades one page into another keeps its slab whole
+ * while the page goes.
+ */
 export const LIVEREELS_REACH: ShadeReach = 'page';
 
 // Where the shade's blur is as wide as written: on the page, so the frame shows it wider as it shows the page larger;
@@ -126,8 +108,8 @@ export const LIVEREELS_BLUR_SEEN: BlurSeen = ON_THE_PAGE;
 /**
  * A stretch of the page the shade's blur leaves sharp, which no one block is: every block `blocks` matches, together,
  * as a selector list names a line and the thread under it; as wide across as every block `across` matches together,
- * where named, which may reach past the blocks, so what the page draws past a thread's card, a bar down the line's
- * edge and a scroll bar laid over its end, stands soft with the page round them.
+ * where named, which may reach past the blocks, so what the page draws past a thread's card, a bar down the line's edge
+ * and a scroll bar laid over its end, stands soft with the page round them.
  */
 export interface SharpStretch {
 	readonly blocks: string;
@@ -158,13 +140,14 @@ export const A_SHARP_PART: Kind<SharpNamed> = new EitherOf<string, Box | SharpSt
 	)
 );
 
-/**
- * The window: where it stands, how it shades the page, the part of the page its blur leaves sharp as the film named it
- * and the part of the screen that showed when the take last read it, which the take reads anew wherever the page may
- * have changed since, how far its shade reaches, where its blur is as wide as written, and its body.
- */
+/** The window: where it stands, and how it shades the page. */
 export interface PageWindow extends Placing, Shade {
+	/** The part of the page its blur leaves sharp, as the film named it. */
 	readonly sharpNamed: SharpNamed | null;
+	/**
+	 * The part of the screen that showed when the take last read the one the film named, which the take reads anew
+	 * wherever the page may have changed since.
+	 */
 	readonly sharp: Box | null;
 	readonly reaching: ShadeReach;
 	readonly blurSeen: BlurSeen;
@@ -172,10 +155,10 @@ export interface PageWindow extends Placing, Shade {
 }
 
 /**
- * The page's shade as the stage draws it: dimmed, faded, and blurred on the window's plane, and how far it reaches;
- * and how far a room blurs the page's picture apart, on the window's plane: by the blur, but none where the shade
- * blurs the window's body, as the room then blurs the page with its body as one, through the eye's lens
- * (`stage/body.js`): blurred apart, the page's outline stood sharp round a soft page.
+ * The page's shade as the stage draws it: dimmed, faded, and blurred on the window's plane, and how far it reaches; and
+ * how far a room blurs the page's picture apart, on the window's plane: by the blur, but none where the shade blurs the
+ * window's body, as the room then blurs the page with its body as one, through the eye's lens (`stage/body.js`):
+ * blurred apart, the page's outline stood sharp round a soft page.
  */
 interface DrawnShade extends PageShade {
 	readonly reaching: ShadeReach;
@@ -196,32 +179,50 @@ interface SharpPart {
 }
 
 /**
- * The window as the stage draws it: where it is placed in the world, as the stage draws a placement
- * (`src/domain/placement.ts`), its box on the frame, drawn about its middle; how far the camera's picture reaches on
- * its plane, past the box where the page the screen shows stands past it, how far it stands off the ground, and whether
- * the eye sees the page's side of it or its back, read where it stands before the eye, behind the eye too; the plane
- * the room lays the page's surface on in its one scene; how round the corners of the page the camera's cut shows are,
- * in the frame's pixels, which the stylesheet cuts the page by and the body stands round; its shade and how far it
- * reaches, none where the page is shaded none, and the part of the screen its blur leaves sharp, none where it blurs
- * none or leaves none, the blur and the part's edge on the window's plane; how soft the eye's focus draws it and all in
- * it, none where sharp: as one, on the frame in film pixels, for the flat stage, and at its softest point the frame
- * shows, as far as the room's blur of it gathers past the frame's edge; how much of the page shows, from 0 to 1, as far
- * as the screen has come up and its shade has not faded it, which the stylesheet draws the screen as clear as, and the
- * room reads whether the page is seen through by (`stage/see-through.js`); how much of it has faded into what stands
- * behind it, as far as the screen has come up and its shade fades it, which the room lays in light
- * (`stage/page-picture.js`); and its body, none where it has none.
+ * The window as the stage draws it, placed in the world as the stage draws a placement (`src/domain/placement.ts`), its
+ * box on the frame drawn about its middle.
  */
 export interface DrawnWindow extends DrawnPlacement {
+	/** How far the camera's picture reaches on its plane: past its box where the page the screen shows stands past it. */
 	readonly reach: Box;
+	/** How far it stands off the ground. */
 	readonly lift: Fraction;
+	/** Whether the eye sees the page's side of it or its back, read where it stands before or behind the eye. */
 	readonly facingTheEye: boolean;
+	/** The plane the room lays the page's surface on in its one scene. */
 	readonly pageSurface: PlaneDrawn;
+	/**
+	 * How round the corners of the page the camera's cut shows are, in the frame's pixels, which the stylesheet cuts the
+	 * page by and the body stands round.
+	 */
 	readonly corner: number;
+	/** Its shade and how far it reaches; none where the page is shaded none. */
 	readonly shade: DrawnShade | null;
+	/**
+	 * The part of the screen its blur leaves sharp; none where it blurs none or leaves none. The blur and the part's edge
+	 * are on the window's plane.
+	 */
 	readonly sharp: SharpPart | null;
+	/**
+	 * How soft the eye's focus draws it and all in it, as one, on the frame in film pixels, for the flat stage; none
+	 * where sharp.
+	 */
 	readonly outOfFocus: number | null;
+	/**
+	 * How soft the eye's focus draws its softest point the frame shows, read over its box and as far as its picture
+	 * reaches, which bounds how far past the frame's edge the room's blur gathers it; none where sharp.
+	 */
 	readonly softestOutOfFocus: number | null;
+	/**
+	 * How much of the page shows, from 0 to 1, as far as the screen has come up and its shade has not faded it: the
+	 * stylesheet draws the screen this clear, and the room reads by it whether the page is seen through
+	 * (`stage/see-through.js`).
+	 */
 	readonly pageShown: Fraction;
+	/**
+	 * How much of the page has faded into what stands behind it, as far as the screen has come up and its shade fades it,
+	 * which the room lays in light (`stage/page-picture.js`).
+	 */
 	readonly pageFaded: Fraction;
 	readonly body: DrawnBody | null;
 }
@@ -229,28 +230,32 @@ export interface DrawnWindow extends DrawnPlacement {
 /**
  * A plane as the stage draws one, about the middle of the window's box: by the flat stage's matrix, and by the matrix
  * that carries a spot of it into the eye's own space, in three's axes. The page's surface lies on the window's own
- * plane, or, where the eye sees a page of the film's own on the window's back and the window has a body, on the slab's
- * back, its thickness behind.
+ * plane, or, where the eye sees the film's own page on the window's back and the window has a body, on the slab's back,
+ * its thickness behind.
  */
 type PlaneDrawn = Pick<DrawnPlacement, 'transform' | 'inTheEyesSpace'>;
 
 /**
- * The window's body as the room draws it round the page the camera's cut shows (`reach`), in the frame's pixels: how
- * far its rim reaches past the page and how thick it is; its metal's colour and how rough it is; how much of the
- * world's light the glass over the page reflects, and how bright the glint of its own near strip of light shines on it;
- * the matrix that carries the page's middle, its face toward three's z, into the eye's own space, in three's axes, the
- * body standing behind its face, lit by the world's lights where the scene's eye hands the room (`DrawnEye` in
- * `src/domain/eye.ts`); and how the window's shade reaches it, none where it reaches the page alone or neither fades
- * nor blurs.
+ * The window's body as the room draws it round the page the camera's cut shows (`reach`), its lengths in the frame's
+ * pixels.
  */
 export interface DrawnBody {
+	/** How far its rim reaches past the page. */
 	readonly rim: number;
 	readonly thickness: number;
 	readonly metal: string;
 	readonly roughness: number;
+	/** How much of the world's light the glass over the page reflects. */
 	readonly glass: number;
+	/** How bright the glint of its own near strip of light shines on it. */
 	readonly glint: number;
+	/**
+	 * The matrix that carries the page's middle, its face toward three's z, into the eye's own space, in three's axes,
+	 * the body standing behind its face, lit by the world's lights where the scene's eye hands the room (`DrawnEye` in
+	 * `src/domain/eye.ts`).
+	 */
 	readonly placing: Matrix;
+	/** How the window's shade reaches it; none where it reaches the page alone, or neither fades nor blurs. */
 	readonly shade: BodyShade | null;
 }
 
@@ -293,8 +298,8 @@ export const UNSHADED: Shade = { dim: NONE, fade: NONE, blur: NO_PIXELS, sharpSo
 
 /**
  * The kind of each value of the shade, by its name: the dim, the fade and how far the part kept sharp softens, shares
- * held between none and whole, the blur pixels never below none, each between where it starts and ends however far
- * past its ends a curve takes it; the shares held as fractions, the blur as written.
+ * held between none and whole, the blur pixels never below none, each between where it starts and ends however far past
+ * its ends a curve takes it; the shares held as fractions, the blur as written.
  */
 export const SHADE_KINDS: KindsOf<Shade, ShadeWritten> = {
 	dim: new ValueKind(A_SHARE, fractionOf, shareToward),
@@ -305,14 +310,14 @@ export const SHADE_KINDS: KindsOf<Shade, ShadeWritten> = {
 
 /** The names of the shade's values, in the order a refusal says them. */
 export const SHADE_NAMES = namesOf(SHADE_KINDS);
-// The names of the page's own shade, which the stage draws on the page as a whole; and of those that reach the
-// window's body, where the shade reaches the window, the dim being the dark laid over the screen
+// The names of the page's own shade, which the stage draws on the page as a whole; and of those that reach the window's
+// body, where the shade reaches the window, the dim being the dark laid over the screen
 const PAGE_SHADE_NAMES = ['dim', 'fade', 'blur'] as const satisfies readonly (keyof PageShade)[];
 const BODY_SHADE_NAMES = ['fade', 'blur'] as const satisfies readonly (keyof PageShade)[];
 // How many times as large a slab the frame shows none of is drawn: none, so its blur gathers nothing past the frame
 const NOT_SEEN = 0;
-// How many times as large a page the frame shows none of is taken to be drawn, its blur seen on the frame: once, so
-// its blur on its plane stands as written till the frame shows some of it
+// How many times as large a page the frame shows none of is taken to be drawn, its blur seen on the frame: once, so its
+// blur on its plane stands as written till the frame shows some of it
 const SEEN_AS_WRITTEN = 1;
 
 // How far past the part the shade's blur leaves sharp the page softens into the blur, as a share of the blur: half, so
