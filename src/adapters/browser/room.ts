@@ -65,10 +65,10 @@ declare global {
 
 /**
  * The stage drawn as a room: the browser launched with HTML-in-Canvas, the stage opened on the room's origin, its
- * surfaces laid in the room's canvas, before the pages of the film's own are laid in them, as a frame moved in the
- * document loads its page anew; and each frame drawn by the stage's markup, then composed by the room. In software a
- * frame of 1920 × 1080, the page fading out of focus, took 30.6 s to draw, where the graphics card drew one in 197 ms,
- * so the person who asked for software is told.
+ * surfaces laid in the room's canvas, before the film's own pages are laid in them, as a frame moved in the document
+ * loads its page anew; and each frame drawn by the stage's markup, then composed by the room. In software a frame of
+ * 1920 × 1080, the page fading out of focus, took 30.6 s to draw, where the graphics card drew one in 197 ms, so the
+ * person who asked for software is told.
  */
 export const DRAWN_AS_A_ROOM: StageDrawing = {
 	name: 'room',

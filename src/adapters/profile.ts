@@ -1,20 +1,12 @@
 /**
- * Where a shoot's time goes: every call the take waits on, timed at the ports it is made through, and every blend the
- * footage makes, timed as it runs.
- *
- * Each port is wrapped as the take is handed it, so every call it makes on the browser, the stage, the filmed page and
- * the footage is counted and timed, and the footage's finish after the last frame with them; what none of them took is
- * said as the rest: the film's own code, its acts, the sounds read before the first frame, and the scene worked out.
- * Where the rest grows, a part of it is timed next, so no second is put down to a guess. The footage's blends are timed
- * apart, as they run beside the take rather than in its way; a frame of one exposure blends nothing, and is not
- * counted.
+ * Where a shoot's time goes: every call the take waits on, timed at the ports it is made through, and what none of them
+ * took said as the rest — the film's own code, its acts, the sounds read before the first frame, the scene worked out.
+ * The footage's blends are timed apart, as they run beside the take rather than in its way.
  *
  * A stage that draws on the graphics card, as a room does, has the card's work queued as its draw returns, and the card
  * does it inside the capture after: timed so, a room's frame told 15.6 ms of drawing and 446.9 of capture, where waited
- * on it told 329.9 and 140.6. So a profile taken waits, as it times a draw, for the stage's drawing to finish, and the
- * capture is the frame's way out of the browser alone. The wait stops the card's queue once a frame, so only a profile
- * taken wraps the ports: a shoot not asked for its profile waits on nothing more than its frames, and says nothing of
- * where its time went.
+ * on it told 329.9 and 140.6. So a profile taken waits, as it times a draw, for the stage's drawing to finish; as the
+ * wait stops the card's queue once a frame, only a profile taken wraps the ports.
  */
 import { MILLISECONDS_A_SECOND, secondsSaid } from '../domain/time.ts';
 import type { ActContext, FilmedPage, MeasuredPage, Rounding, ScrollAim, ScrollCourse } from '../direction/page.ts';
@@ -276,7 +268,7 @@ class TimedOpened implements Opened {
 	}
 }
 
-/** The pages of the film's own as moves read them, each stand timed; a block measured on one is not. */
+/** The film's own pages as moves read them, each stand timed; a block measured on one is not. */
 class TimedOwnPages implements OwnPages {
 	readonly ownPages: OwnPages;
 	readonly timings: Timings;

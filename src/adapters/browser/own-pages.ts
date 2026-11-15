@@ -1,15 +1,13 @@
 /**
- * The pages of the film's own as moves read them and parts of them are pictured: one copy of each in a tab of its own
+ * The film's own pages as moves read them and parts of them are pictured: one copy of each in a tab of its own
  * (`stage/pages.html`), at the screen's size and the filmed page's tab's device scale, laid and stood by the stage's
  * own script (`stage/own-page.js`), the copy last stood shown alone on the screen's ground. The stage's copies draw the
  * frames; these, which no frame shows, stand as a move's moment has them, whatever frame was drawn last.
  *
- * A part of a copy is pictured as a part of the filmed page is (`stage.ts`): by CDP's capture of its tab, clipped to
- * the part at the scale asked, as sharp as HTML-in-Canvas draws it. Not in the stage's own tab: it is the frame's size,
- * and both CDP's capture and HTML-in-Canvas leave out what lies past its edge; made wide enough to hold the copy beside
- * the frame, it made every frame's capture half as long again. The tab costs a film with such a page about a quarter of
- * a second as the browser opens, and its device scale moved no block of a terminal's page: its 318 blocks stood alike
- * at 1, 2, 2.2 and 4.4.
+ * Not in the stage's own tab: it is the frame's size, and both CDP's capture and HTML-in-Canvas leave out what lies
+ * past its edge; made wide enough to hold the copy beside the frame, it made every frame's capture half as long again.
+ * The tab costs a film with such a page about a quarter of a second as the browser opens, and its device scale moved no
+ * block of a terminal's page: its 318 blocks stood alike at 1, 2, 2.2 and 4.4.
  */
 import type { Browser as Playwright, CDPSession, Frame, Page } from 'playwright-core';
 import { FilmError } from '../../domain/errors.ts';
@@ -22,7 +20,7 @@ import { type PictureTab, STAGE_FOLDER } from './stage.ts';
 /** What the tab's script, `stage/pages.js`, answers under `window.pages`. */
 export interface PagesApi {
 	/**
-	 * One copy of each page of the film's own laid, each named by its key, loaded with its fonts, its scripts kept from
+	 * One copy of each of the film's own pages laid, each named by its key, loaded with its fonts, its scripts kept from
 	 * running: the keys of those that move of themselves, by an animation or a transition of their own.
 	 */
 	readonly lay: (pages: readonly OwnPage[]) => Promise<readonly string[]>;
@@ -31,8 +29,8 @@ export interface PagesApi {
 }
 
 /**
- * What `stage/own-page.js` answers under `window.ownPage`, to the stage's script and the tab's alike, so a page of the
- * film's own is laid and stood one way in both.
+ * What `stage/own-page.js` answers under `window.ownPage`, to the stage's script and the tab's alike, so a film's own
+ * page is laid and stood one way in both.
  */
 export interface OwnPageApi {
 	/**
@@ -60,18 +58,18 @@ declare global {
 	}
 }
 
-// The tab's page, in the stage's folder, so an address in a page of the film's own is read from where the stage reads
-// it; and how much of a page's HTML a refusal names it by
+// The tab's page, in the stage's folder, so an address in a film's own page is read from where the stage reads it; and
+// how much of a page's HTML a refusal names it by
 const PAGES_PAGE = 'pages.html';
 const HTML_SAID = 60;
 
-/** The pages of the film's own of a film that shows none: none to read, and none to stand. */
+/** The own pages of a film that shows none: none to read, and none to stand. */
 export const NO_OWN_PAGES: OwnPages = {
 	laid: new Map(),
 	stand: (standing) => Promise.reject(new Error(`the film laid no page of its own by the key ${standing.key}`))
 };
 
-/** The tab the pages of the film's own are read and pictured in, each copy by its key. */
+/** The tab the film's own pages are read and pictured in, each copy by its key. */
 export class OwnPagesTab implements OwnPages, PictureTab {
 	readonly tab: Page;
 	readonly session: CDPSession;
@@ -109,7 +107,7 @@ export async function ownPagesOpened(
 	return new OwnPagesTab(tab, await tab.context().newCDPSession(tab), new Map(laid));
 }
 
-/** The frame a page of the film's own is laid in, named by its key. */
+/** The frame a film's own page is laid in, named by its key. */
 function frameOf(tab: Page, page: OwnPage): Frame {
 	const frame = tab.frame({ name: page.key });
 	if (frame === null) throw new Error(`the tab of the film's own pages laid no frame for the page ${page.key}`);

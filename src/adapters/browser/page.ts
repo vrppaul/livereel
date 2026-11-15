@@ -1,29 +1,12 @@
 /**
- * The filmed page as moves read it and type into it: where its blocks and their letters stand, the ground behind them,
- * its scroll, its keyboard; and a page of the film's own as moves measure it, among the rest how far down it scrolls
- * with what is typed into its blocks, how far down its document a block stands, and the block the film types into or
- * blinks, found as the stage finds it, and what it shows as its text.
+ * The filmed page as moves read it and type into it, and a film's own page as moves measure it. The functions handed to
+ * the page run there, each alone: none may call another of this module.
  *
- * The functions handed to the page run there, each alone: none may call another of this module. The block a scroll
- * moves is kept as a handle for the move that scrolls it, released with the browser. A ground is read through a canvas
- * of the page's own, which turns any colour CSS writes, in whatever form, into its channels. Where a block's letters
- * start is read off what the page lays out, its first letter, or, where it lays out none, as a blank line of code, its
- * content box; how far a letter steps in their font, and how tall it stands, off a canvas too, which knows the font but
- * not the scale the page draws it at: the first letter's box carries that scale, and a blank block is drawn as much
- * larger as the transforms over it make it. No letter is set into the page to measure it: only an act changes the
- * filmed page, and a page watching itself would see one.
- *
- * A block a scroll moves, and every block whose scroll carries the source of a piece riding its block, is told by a key
- * the take gives it, the same however a film selects the block, so a scroll and a ride meet on the block itself, never
- * on a selector's text. The keys are held in the frame's document, keyed by the elements themselves, by a handle the
- * take keeps: the page is not changed to name a block, and a document the frame goes on to starts with none, its blocks
- * keyed past the last key given.
- *
- * Which blocks' scrolls carry a block the page reads off how the browser lays the block out, not off the blocks it
- * stands in: a block placed apart, absolutely or fixed, is laid out from the block the browser places it from, and the
- * scrolls of the blocks between leave it where it stands, as a column fixed to the screen stays as the page scrolls. A
- * block placed `sticky` is carried by its scrolls until it sticks, which no reading of its style tells, and is taken as
- * carried.
+ * No letter is set into the page to measure it: only an act changes the filmed page, and a page watching itself would
+ * see one. A block a scroll moves, and every block whose scroll carries the source of a piece riding its block, is told
+ * by a key the take gives it, the same however a film selects the block, so a scroll and a ride meet on the block
+ * itself, never on a selector's text. The keys are held in the frame's document by a handle alone, so the page is not
+ * changed to name a block.
  */
 import type { Frame, JSHandle, Keyboard } from 'playwright-core';
 import { type Channels, hexOf } from '../../domain/colour.ts';
@@ -462,7 +445,8 @@ function boxesOf(blocks: Element[]): Box[] {
 
 /**
  * The channels of the first background the blocks a block stands in draw whole, nearest first, read off a canvas of a
- * pixel painted with each; none where none does. A tint drawn over its ground, seen through, is passed by.
+ * pixel painted with each, which turns any colour CSS writes, in whatever form, into its channels; none where none
+ * does. A tint drawn over its ground, seen through, is passed by.
  */
 function groundOf(block: Element, asked: GroundAsked): Channels | null {
 	const canvas = document.createElement('canvas');
@@ -706,7 +690,8 @@ function newKeys(): BlockKeys {
  * block the browser places it from, its offset parent, past the blocks between, whose scrolls leave it where it stands;
  * one fixed to the screen in none, so no scroll carries it. The offset parent is the browser's own reading, so it knows
  * every block that places what is fixed in it: a transform, a filter, containment. An SVG element has none, and is
- * taken as laid out in the block it stands in.
+ * taken as laid out in the block it stands in. A block placed `sticky` is carried by its scrolls until it sticks, which
+ * no reading of its style tells, and is taken as carried.
  */
 function holdersOfAll(asked: HoldersAsked): Element[] {
 	let carryingAll: Element[] | null = null;

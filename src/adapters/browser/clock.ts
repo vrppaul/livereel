@@ -4,28 +4,13 @@
  * page's own tab, or the stage's, for a page framed live in it; the stage's own script keeps no time. A Web Worker's
  * timers are not the document's, and run on the wall's clock.
  *
- * The clock stands from before the page opens, and only this module runs it on, so how far the page's time has run is
- * counted here, in whole milliseconds since the film began, never read back from the page. A frame runs it on as far as
- * the moment the take names — the film's, at the speed the film sets — where it is behind it, both in whole
- * milliseconds, as the clock runs a part of one as a whole one: run 33⅓ ms a frame, a 2 s timer ran out on the 59th
- * frame, 1.97 s into the film; run 33, 33 and 34, the film's time and the page's keep together.
- * While the film's own code waits on the page, the clock is run on a step at a time, each as long as the wall's clock
- * took over it and no longer than a step, until the wait is done: the page's time as the wall's, the one length of the
- * wall's clock a take reads, so the page answers; a step's own run is not counted, or a page with a timer of a
- * millisecond, whose run takes four times its length as each timer yields, would run ever further ahead. The page comes
- * out of a wait ahead of the film and stands until the film catches up, so a timer it set runs out as far into the film
- * as its delay, however long the waits after it took; a script's animation stands while it does.
- *
- * The clock is never let run of itself: it stops only at a time no earlier than its own, and one let run is stopped
- * later than it can be told, so stopping it after a wait failed now and then where tests ran four at once. It stands
- * from the start the same way: installed a minute back and stopped at the time it was installed for, on a page that has
- * nothing yet to keep time for. Its every run is an evaluation in each of the page's frames; one going elsewhere is
- * passed over and takes up the clock where it stood as it opens, from Playwright's log of every run, a script each
- * document the context opens runs first. That log grows a script a frame: over a 10-minute film a run grew from 0.72 ms
- * to 3.44, and a page going elsewhere from 19 ms to 192.
- *
- * What a timer of the page throws as its time runs on is the page's: Playwright raises it from the run, where the
- * wall's clock would have left it in the page's console. It is said once, by what it says, and the film goes on.
+ * Only this module runs the clock on, so how far the page's time has run is counted here, in whole milliseconds since
+ * the film began, never read back from the page: the clock runs a part of a millisecond as a whole one, so run 33⅓ ms a
+ * frame, a 2 s timer ran out on the 59th frame, 1.97 s into the film; run 33, 33 and 34, the film's time and the page's
+ * keep together. The clock is never let run of itself: it stops only at a time no earlier than its own, and one let run
+ * is stopped later than it can be told. Its every run is an evaluation in each of the page's frames, and a document the
+ * context opens first replays Playwright's log of every run, which grows a script a frame: over a 10-minute film a run
+ * grew from 0.72 ms to 3.44, and a page going elsewhere from 19 ms to 192.
  */
 import { performance } from 'node:perf_hooks';
 import { setTimeout as after } from 'node:timers/promises';
@@ -73,6 +58,14 @@ export class PlaywrightPageTime implements PageTime {
 		await this.runOn(Math.round(moment * MILLISECONDS_A_SECOND) - this.ranTo);
 	}
 
+	/**
+	 * The clock run on a step at a time while the work waits on the page, each step as long as the wall's clock took over
+	 * it and no longer than a step: the page's time as the wall's, so the page answers. A step's own run is not counted,
+	 * or a page with a timer of a millisecond, whose run takes four times its length as each timer yields, would run ever
+	 * further ahead. The page comes out of a wait ahead of the film and stands until the film catches up, so a timer it
+	 * set runs out as far into the film as its delay, however long the waits after it took; a script's animation stands
+	 * while it does.
+	 */
 	async running(work: () => Promise<void>): Promise<void> {
 		const settled = work().then(() => DONE);
 		let done = NOT_YET;
@@ -94,7 +87,10 @@ export class PlaywrightPageTime implements PageTime {
 		}
 	}
 
-	/** What a timer of the page threw, said to the person the first time it is thrown. */
+	/**
+	 * What a timer of the page threw, said to the person the first time it is thrown: Playwright raises it from the run,
+	 * where the wall's clock would have left it in the page's console, and the film goes on.
+	 */
 	private saidOnce(thrown: string): void {
 		if (this.thrownSaid.has(thrown)) return;
 		this.thrownSaid.add(thrown);

@@ -6,35 +6,16 @@
  * A static page's tab is the page's own: it opens the film's address at the top, first-party to its cookies, so a page
  * that refuses to be framed or signs in is filmed as it comes, and its pictures are taken only as it changes: a picture
  * every frame cost a second capture a frame. A dynamic page's stage stands apart from the app, a file of the package
- * (`stage/stage.html`), or inside it, on the app's own address, where the film asks for it (`inside.ts`).
- * Apart, the page is framed as it comes and nothing of its answers is touched: a redirect lands in the frame, and a
- * page that refuses to be framed is refused, its refusal named (`watch.ts`). Chrome's Local Network Access checks stay
- * on, and every page is granted `local-network-access`: a page the stage inside the app answers anew hears nothing its
- * server on this machine pushes until granted it (`tests/smoke/inside.test.ts`). Granted to every other page too, a
- * public site's page that asks this machine is heard as with the checks off, which is untried.
- *
- * The page's own motion is stilled, by the reduced motion it is asked for, so every move in the film is the film's; its
- * own time is the film's, on a clock installed before it opens (`clock.ts`), and a static page tells of every change it
- * makes to its document (`changes.ts`), so its picture is taken anew.
+ * (`stage/stage.html`), where the page is framed as it comes and nothing of its answers is touched, or inside it, on
+ * the app's own address, where the film asks for it (`inside.ts`). Chrome's Local Network Access checks stay on, and
+ * every page is granted `local-network-access`: a page the stage inside the app answers anew hears nothing its server
+ * on this machine pushes until granted it (`tests/smoke/inside.test.ts`). Granted to every other page too, a public
+ * site's page that asks this machine is heard as with the checks off, which is untried.
  *
  * Launched headless, Playwright starts Chromium's headless shell, which draws in software unless asked to draw on the
- * graphics card, through ANGLE onto the system's own graphics interface, needing no screen. On Linux through Vulkan a
+ * graphics card, through ANGLE onto the system's own graphics interface, needing no screen: on Linux through Vulkan a
  * wide blurred film took 271 s against 495 s in software, its frames alike. Metal on macOS and Direct3D 11 on Windows
- * are untried. Where it reaches no graphics card, the shell draws in software all the same, with WebGL through
- * SwiftShader where Vulkan finds no driver, and with none where it finds Mesa's software Vulkan alone (lavapipe); the
- * person is warned, as Chrome tells it, and the film is shot. A page that cannot be reached, or refuses its frame, is
- * refused as it is opened, by why, rather than when the film first waits on it.
- *
- * On the graphics card, a stage showing a static page's picture draws a frame's exposures at once, each a copy of its
- * drawing laid over the ones before so each weighs the same, and is captured once: 16 exposures of a fast camera took
- * 273–321 ms against 1899 ms captured one at a time, the frames alike. In software the copies saved little and banded
- * the ground's gradient, so there a stage draws one exposure at a time, as a framed page's stage does: no copy of the
- * stage can show its live frame again. Chrome is told it has GPU memory enough for the copies, or it leaves parts of
- * them undrawn.
- *
- * A static page's stage draws a frame flat, as the browser draws its markup, or, where the film names it, as a room:
- * launched, opened, laid out and drawn as `room.ts` has it, which the person who asks for software is told costs a
- * frame about 150 times as long there. A framed page is drawn flat.
+ * are untried.
  */
 import { resolve } from 'node:path';
 import { type Browser as Playwright, type Frame, type Page, chromium } from 'playwright-core';
@@ -194,18 +175,17 @@ interface Forcing {
 	readonly stageAtTheTop: boolean;
 }
 
-/**
- * How a stage showing the page's pictures takes and draws them: how many of its pixels it draws to a frame's; how many
- * of a picture's pixels a page's pixel takes for a camera at a zoom of 1, as sharp as the film is shot; how many of a
- * frame's exposures it draws at once; the bounds its pictures are taken within; how it draws a frame, flat or as a
- * room, and the part of it a frame is handed on from.
- */
+/** How a stage showing the page's pictures takes and draws them. */
 interface Picturing {
+	/** How many of its pixels it draws to a frame's. */
 	readonly sharpness: number;
+	/** How many of a picture's pixels a page's pixel takes for a camera at a zoom of 1, as sharp as the film is shot. */
 	readonly pixelsAtZoomOne: number;
 	readonly exposuresAtOnce: number;
+	/** The bounds its pictures are taken within. */
 	readonly bounds: readonly PictureBound[];
 	readonly drawing: StageDrawing;
+	/** The part of it a frame is handed on from. */
 	readonly handedIn: Box;
 	/** The film's things module, where it names one: its file on the disk. */
 	readonly things: string | null;
@@ -294,7 +274,10 @@ function isSystem(platform: string): platform is System {
 	return Object.hasOwn(CARD_INTERFACES, platform);
 }
 
-/** How many exposures of a frame the stage draws at once, where the renderer draws, for a page of a kind. */
+/**
+ * How many exposures of a frame the stage draws at once, where the renderer draws, for a page of a kind: one at a time
+ * in software, where drawn at once they saved little and banded the ground's gradient.
+ */
 export function exposuresAtOnceOf(renderer: Renderer, page: PageKind, blur: MotionBlur | null): number {
 	switch (renderer) {
 		case 'software':
@@ -306,7 +289,9 @@ export function exposuresAtOnceOf(renderer: Renderer, page: PageKind, blur: Moti
 
 /**
  * How many exposures of a frame the stage draws at once on the graphics card: as many as a frame has at most, up to
- * livereel's bound, where it shows a picture of the page.
+ * livereel's bound, where it shows a picture of the page, as 16 exposures of a fast camera drawn at once took 273–321
+ * ms against 1899 ms captured one at a time, the frames alike; one at a time for a page live in its frame, which no
+ * copy of the stage can show again.
  */
 function exposuresOnTheCardOf(page: PageKind, blur: MotionBlur | null): number {
 	switch (page) {
@@ -427,7 +412,7 @@ export class Chromium implements Browser, DrawnBrowser, SetBrowser {
 
 /**
  * The browser with the filmed page shown on its stage: acted on, typed into and scrolled in the tab it stands in; and
- * the pages of the film's own, read on the copy of each in a tab of their own.
+ * the film's own pages, read on the copy of each in a tab of their own.
  */
 class OpenedChromium implements Opened {
 	readonly browser: Playwright;

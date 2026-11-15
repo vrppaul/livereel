@@ -1,6 +1,6 @@
 # Changelog
 
-- A refusal of the screen's moves names a page a film writes in HTML a film's own page, `{ html }`, as the docs of the props and the moves now do, where it said a page of the film's own.
+- A refusal of the screen's moves names a page a film writes in HTML a film's own page, `{ html }`, as the docs of the props and the moves now do, where it said a page of the film's own; so does the refusal of a piece that carries letters off a film's set, where it said one of the film's own.
 - The unit of a length on the frame or in the world is named film pixels, pixels of a frame whose shorter side is 1080, which is how livereel counts them: the README, the skill, the comments and the refusals called it frame pixels and a pixel of a frame 1080 high, which on a frame taller than wide said the wrong length. The gate of names refuses those names now.
 - A gate checks what the code and the documents name (`scripts/check-references.ts`): a file named between backticks is one git tracks, no line points into a session's scratch folder, and the engine and the stage name no film outside livereel. The comments that explained a rule by the claude-review promo or by its files now say the rule alone, and `MeasuredPage.documentTop` says what it gives.
 

@@ -9,11 +9,8 @@
  * picture of more than 2 GiB outright, "Unable to capture screenshot". And a JPEG holds no picture taller or wider than
  * 65,500 px: the stage cannot decode one Chrome took larger.
  *
- * So a picture is taken within these bounds: as close as asked where it fits them, else as close as the tightest lets
- * it, and drawn softer. Chrome is told memory for 1.25 times the bytes of the largest picture of the screen livereel
- * asks, its closest within a JPEG's side and 2 GiB, where that is more than it draws whole by itself; a picture of a
- * part of the screen, as a piece is drawn from, is taken with no more pixels than that. The memory is sized before the
- * browser starts, before the card's largest texture can be read, so on a card it may be more than the pictures take.
+ * The memory Chrome is told of is sized before the browser starts, before the card's largest texture can be read, so on
+ * a card it may be more than the pictures take.
  */
 import type { Page } from 'playwright-core';
 import { ZOOM_AT_MOST } from '../../domain/camera.ts';

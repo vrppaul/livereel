@@ -3,34 +3,17 @@
  * retaken where it is a picture, a frame captured. `StageApi` is what the stage's script, `stage/stage.js`, answers
  * under `window.stage`.
  *
- * The stage shows the filmed page one of two ways. A dynamic page, which changes of itself, stands live in the screen's
- * frame (`PlaywrightFramedStage`): every frame shows it as it is, and an act lays the screen flat first, as a browser
- * finds the point it clicks wrongly on a screen the camera has scaled. A static page stands in a tab of its own, at the
- * screen's size, and the stage shows a picture of it (`PlaywrightPicturedStage`), taken anew as the take asks, after
- * the page was acted on or moved: a frame then costs one capture of the stage, the page's picture standing as it was,
- * and an act is done in the page's own tab, at no scale. Such a stage draws a frame flat, by its markup alone
- * (`DRAWN_FLAT`), or as a room, its markup composed in WebGL (`room.ts`). The picture is taken as sharp as a camera at
- * the zoom the take names shows the page, up to as far as a camera comes in where a film names no bound
- * (`ZOOM_AT_MOST`), so text the camera comes close to stays as crisp as the live frame shows it.
+ * A dynamic page, which changes of itself, stands live in the screen's frame (`PlaywrightFramedStage`). A static page
+ * stands in a tab of its own, at the screen's size, and the stage shows a picture of it (`PlaywrightPicturedStage`),
+ * taken anew as the take asks: a frame then costs one capture of the stage, and an act is done in the page's own tab,
+ * at no scale.
  *
  * The page's picture is taken by CDP's capture on livereel's own session with its tab, clipped to the screen at a scale
  * of the picture's pixels to the page's, which Chrome draws the page anew at, so one tab serves every scale, as sharp
- * as a tab at that scale and quicker than Playwright's picture, which takes the tab's device scale alone. CDP's capture
- * does not wait for the page's fonts, as Playwright's does, so a picture waits for them: Chrome hides text in a face
- * still loading for up to 3 s, and two pictures alike without it would hold the page still with its text missing. A
- * picture of a part of the screen a piece is drawn from, the one it holds or one sharper than the page's, is taken the
- * same way, clipped to that part, and handed to the stage by its number, which keeps it until the take lets it go; one
- * of a page of the film's own, from the tab its copy stands in (`own-pages.ts`). Every picture is taken no larger than
- * Chrome takes one whole where it draws (`bounds.ts`): one asked larger, of a tall screen or a part grown far, is taken
- * as large as it may, softer, and the person is told so once.
- *
- * A frame is captured by Playwright at the page's device scale, the film's sharpness; a room's frame for a video from
- * the corner of the room's canvas it is scaled down into, at the frame's own size, a quarter of the pixels to read back
- * and encode (`handedInOf`). Not by a CDP session of livereel's own: it captures at the page's own pixels unless given
- * device metrics of its own, which make it barely quicker, too little to keep them in step with Playwright's as an act
- * lays the screen flat. The page's text caret is kept, as a person sees it typing, and stands steady (`chromium.ts`).
- * Whether the filmed page and its stage are still there, the stage answers from its watch (`watch.ts`): a framed
- * page's, or a tab's, which can take no stage away nor refuse a frame.
+ * as a tab at that scale and quicker than Playwright's picture, which takes the tab's device scale alone. A frame is
+ * captured by Playwright at the page's device scale, not by a CDP session of livereel's own: that captures at the
+ * page's own pixels unless given device metrics of its own, which make it barely quicker, too little to keep them in
+ * step with Playwright's as an act lays the screen flat.
  */
 import type { CDPSession, Frame, Page } from 'playwright-core';
 import { type Channels, meanInLinearLight, opaqueHexOf } from '../../domain/colour.ts';
@@ -50,18 +33,19 @@ export const STAGE_FOLDER = new URL('../../../stage/', import.meta.url);
 export const STAGE_PAGE = 'stage.html';
 
 /**
- * How the stage is laid out for a take: the frame it fills, the screen the camera moves in it, and how many of the
- * frame's pixels a film pixel takes, which the camera's zoom and what stands over the frame are scaled by; how many
- * exposures of a frame it draws at once, each a whole drawing of the stage laid over those before; how a frame is
- * drawn, flat by the stage's markup alone or as a room, which composes the surfaces the stage lays its markup in; and
- * the part of the stage, in its own pixels, a frame is handed on from. The eye is in the matrices the engine hands the
- * stage with each frame.
+ * How the stage is laid out for a take. The eye is in the matrices the engine hands the stage with each frame, not
+ * here.
  */
 export interface Layout {
+	/** The frame the stage fills, and the screen the camera moves in it. */
 	readonly format: Format;
+	/** How many of the frame's pixels a film pixel takes, which the zoom and what lies over the frame are scaled by. */
 	readonly frameScale: number;
+	/** How many exposures of a frame it draws at once, each a whole drawing of the stage laid over those before. */
 	readonly exposures: number;
+	/** Flat, by the stage's markup alone, or as a room, which composes the surfaces the stage lays its markup in. */
 	readonly drawing: Drawing;
+	/** The part of the stage, in its own pixels, a frame is handed on from. */
 	readonly handedIn: Box;
 }
 
@@ -95,20 +79,19 @@ export interface PixelsAsked extends PagePicture {
 /** How CDP is asked to take a picture: as a JPEG this good, or as a PNG. */
 type PictureTaken = { readonly format: 'jpeg'; readonly quality: number } | { readonly format: 'png' };
 
-/** A picture of the film's own as the stage is handed it, by the path the film names it by. */
+/** A film's own picture as the stage is handed it, by the path the film names it by. */
 export interface FilmsPictureHanded extends PagePicture {
 	readonly path: string;
 }
 
 /**
- * A picture of the film's own as the stage decoded it, by its path: its size, none across and down where it decodes to
- * none.
+ * A film's own picture as the stage decoded it, by its path: its size, none across and down where it decodes to none.
  */
 export interface FilmsPictureDecoded extends Size {
 	readonly path: string;
 }
 
-/** A font of the film's own as the stage is handed it: the family it sets, its file's path and its bytes in base64. */
+/** A film's own font as the stage is handed it: the family it sets, its file's path and its bytes in base64. */
 export interface FilmsFontHanded {
 	readonly family: string;
 	readonly path: string;
@@ -146,8 +129,8 @@ export interface StageApi {
 	/** The pixels of a picture at points of it, each its channels from 0 to 255, as the picture decodes. */
 	readonly pixelsAt: (asked: PixelsAsked) => Promise<readonly Channels[]>;
 	/**
-	 * The pages of the film's own laid out in the screen's place in every exposure, hidden until a frame shows one, each
-	 * loaded with its fonts, its scripts kept from running; moves read them in a tab of their own (`own-pages.ts`).
+	 * The film's own pages laid out in the screen's place in every exposure, hidden until a frame shows one, each loaded
+	 * with its fonts, its scripts kept from running; moves read them in a tab of their own (`own-pages.ts`).
 	 */
 	readonly layOwnPages: (pages: readonly OwnPage[]) => Promise<void>;
 	/**
@@ -170,23 +153,23 @@ declare global {
 	}
 }
 
-/**
- * How the stage draws a frame, flat or as a room (`room.ts`), by the name the film gives it, which the stage is laid
- * out for: the flags the browser is launched with for it, how the stage is opened, serving the film's things module
- * where it names one, and then laid out, loading it: the names it builds a thing by, none for a stage that draws no
- * things; how a frame's exposures are drawn on it, and waited on to the end of their drawing; how a part of the frame
- * drawn is captured; whether it scales its frame down to the frame's own size without a change of look; and what the
- * person who asks for software is told, if anything.
- */
+/** How the stage draws a frame, flat or as a room (`room.ts`). */
 export interface StageDrawing {
+	/** The name the film gives it, which the stage is laid out for. */
 	readonly name: Drawing;
+	/** The flags the browser is launched with for it. */
 	readonly flags: readonly string[];
+	/** The stage opened, serving the film's things module where it names one. */
 	readonly opened: (page: Page, things: string | null) => Promise<void>;
+	/** The stage laid out, the things module loaded: the names it builds a thing by, none for a stage that draws none. */
 	readonly laidOut: (page: Page, layout: Layout, things: string | null) => Promise<readonly string[]>;
 	readonly drawn: (page: Page, exposures: readonly DrawnScene[]) => Promise<void>;
+	/** Once the frame drawn last is drawn to its end. */
 	readonly finished: (page: Page) => Promise<void>;
 	readonly captured: (page: Page, part: Box) => Promise<Uint8Array>;
+	/** Whether it scales its frame down to the frame's own size without a change of look. */
 	readonly scalesItsFrame: boolean;
+	/** What the person who asks for software is told, if anything. */
 	readonly saidInSoftware: string | null;
 }
 
@@ -213,6 +196,7 @@ export const DRAWN_FLAT: StageDrawing = {
  * as many of the stage's pixels as the frame has of its own, which the drawing scales its frame down into, a pixel of
  * the drawing to a pixel of the frame. The room's canvas is held at the drawing's size: the browser paints the markup
  * laid in it as densely as the canvas is drawn, and a canvas of the frame's own size drew every surface half as sharp.
+ * Handed on from the corner, a room's frame for a video is a quarter of the pixels to read back and encode.
  */
 export function handedInOf(drawing: StageDrawing, frame: Size, sharpness: number, asked: FramesHanded): Box {
 	const scaled = drawing.scalesItsFrame && asked === SCALED;
@@ -470,7 +454,9 @@ function saidOf(zoom: number): number {
 
 /**
  * A part of the screen as a tab shows it once its fonts have loaded, taken as asked at a scale of its pixels to the
- * page's, which Chrome draws the page anew at, its text caret kept: its bytes in base64.
+ * page's, which Chrome draws the page anew at, its text caret kept: its bytes in base64. CDP's capture waits for no
+ * font, and Chrome hides text in a face still loading for up to 3 s, so two pictures alike without the wait would hold
+ * the page still with its text missing.
  */
 async function partPictured(source: PictureTab, part: Box, scale: number, taken: PictureTaken): Promise<string> {
 	await source.tab.evaluate(fontsLoaded);
@@ -554,7 +540,7 @@ export function fontsLaid(fonts: readonly FilmsFontHanded[]): Promise<readonly s
 	return window.stage.layFonts(fonts);
 }
 
-/** The pages of the film's own laid on the stage. */
+/** The film's own pages laid on the stage. */
 export function ownPagesLaid(pages: readonly OwnPage[]): Promise<void> {
 	return window.stage.layOwnPages(pages);
 }
