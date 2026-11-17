@@ -20,6 +20,7 @@
 - Each exposure of a frame is drawn at its own moment, so a terminal's spinner, its caret's blink and scrambled letters on a frame exposed several times show each exposure's own, where all showed the frame's.
 - The window is drawn by livereel's own matrix, flat with no 3D transform while it faces the frame, so what stands in a face-on window is drawn as Chrome draws it unmoved, a few glyph edges apart from before.
 - `page.scrollTo` scrolls the nearest block that scrolls the one it names as the browser places it, so an absolutely placed note in a column scrolls the page, where it scrolled the column, which leaves it in place ("Acting on the page").
+- A key on a keyboard is one of its four strikes as a hand strikes it: drawn by chance from one seed, never the strike before it, as loud as its file or down to 0.7 of it, and up to 6 % higher or lower, where the strikes came in turn, each as recorded, and a typed line was heard as four sounds round again. Every film with keys on one of livereel's keyboards is heard a little otherwise, the same shot after shot; a file a film puts in its keys' place is laid as it is ("What is heard").
 
 ### New
 

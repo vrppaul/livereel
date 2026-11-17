@@ -5,17 +5,19 @@
  * The track is as long as the film: a silence that long comes first and sets the length (the mix ends with its first
  * input), each sound is laid over it from its moment, all are mixed as they are (never scaled down by their count), and
  * the music is cut there too, faded out over the film's last seconds. Each file is read once and split for every moment
- * it is heard at. The picture is copied, not encoded again. A film with nothing heard and no music gets no track: its
- * picture is put in the video's place as it is. livereel's sounds are CC0 (`sounds/LICENSE.md`), quiet in their files:
- * its keys peak about 12 dB under its click, so a film under music says how loud its keys are, and every key is laid
- * so; a film's other files are laid as they are. A key is one of its keyboard's strikes, each recorded alone, laid in
- * turn, so no two keys running are the same sound.
+ * it is heard at, each copy laid as loud and as high as that hearing is. The picture is copied, not encoded again. A
+ * film with nothing heard and no music gets no track: its picture is put in the video's place as it is. livereel's
+ * sounds are CC0 (`sounds/LICENSE.md`), quiet in their files: its keys peak about 12 dB under its click, so a film
+ * under music says how loud its keys are, and no key is laid louder; a film's other files are laid as they are. A key
+ * on a keyboard is one of its strikes, each recorded alone, struck as a hand strikes it (`src/domain/striking.ts`): by
+ * chance, never the strike before it, a little quieter or not, a little higher or lower, so a typed line is no loop.
  */
 import { statSync } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FilmError } from '../../domain/errors.ts';
+import { Striking } from '../../domain/striking.ts';
 import { MILLISECONDS_A_SECOND } from '../../domain/time.ts';
 import {
 	AS_LOUD_AS_ITS_FILE,
@@ -34,17 +36,31 @@ import { ffmpeg } from './ffmpeg.ts';
 import { KINDS, STARTS_AT_ONCE } from './kinds.ts';
 import { partialOf } from './partial.ts';
 
-/** A sound file heard at moments of the film, in seconds, laid at a volume: 1 as loud as the file. */
-interface HeardFile {
-	readonly file: string;
+/** One hearing of a sound file: the moment of the film it is laid from, in seconds, and how, each 1 as the file is. */
+interface Hearing {
+	readonly moment: number;
 	readonly volume: number;
-	readonly moments: readonly number[];
+	readonly pitch: number;
 }
 
-/** A sound file heard at a volume, the moments it was heard at so gathered as the take goes. */
-interface Hearings extends HeardFile {
-	readonly moments: number[];
+/** A sound file and every hearing of it. */
+interface HeardFile {
+	readonly file: string;
+	readonly hearings: readonly Hearing[];
 }
+
+/** A sound file, its hearings gathered as the take goes. */
+interface Hearings extends HeardFile {
+	readonly hearings: Hearing[];
+}
+
+/**
+ * What a sound is laid from: a keyboard's strikes, one file, or nothing, for one of livereel's a film has turned off.
+ */
+type LaidFrom =
+	| { readonly kind: 'strikes'; readonly keyboard: KeyboardSound }
+	| { readonly kind: 'file'; readonly file: string }
+	| { readonly kind: 'nothing' };
 
 /** Where each input stands in ffmpeg's list, which the arguments and the graph both read: the picture first. */
 interface Layout {
@@ -61,6 +77,9 @@ const OWN_ENDING = `ending${LIVEREEL_SUFFIX}`;
 // How many strikes each keyboard has, its keys recorded alone, in a folder of its own and numbered from one
 const STRIKES_A_KEYBOARD = 4;
 const FIRST_STRIKE = 1;
+// A file laid as high as it was recorded
+const AS_HIGH_AS_ITS_FILE = 1;
+const NOTHING: LaidFrom = { kind: 'nothing' };
 // A file read as ffmpeg will read it to lay it: its first sound's first frame decoded, and nothing written
 const FIRST_SOUND_DECODED = ['-map', '0:a:0', '-frames:a', '1', '-f', 'null', '-'];
 // Every sound in one shape before it is mixed, and the silence the track is laid on, in that shape
@@ -70,9 +89,12 @@ const SHAPED = `aformat=channel_layouts=${CHANNELS}:sample_rates=${SAMPLE_RATE}`
 const SILENCE = `anullsrc=channel_layout=${CHANNELS}:sample_rate=${SAMPLE_RATE}`;
 // The music fades out over the film's last seconds
 const MUSIC_FADES_SECONDS = 1.5;
-// The filters the track is made with — a sound split, delayed on every channel, mixed as it is until the first input
-// ends, made louder or quieter, faded out — and how the graph sets them apart
+// The filters the track is made with — a sound split, made louder or quieter, played faster and so higher at the
+// track's own rate again, delayed on every channel, mixed as it is until the first input ends, faded out — and how the
+// graph sets them apart
 const SPLIT = 'asplit';
+const PLAYED_AT_A_RATE = 'asetrate';
+const AT_THE_TRACKS_RATE = `aresample=${SAMPLE_RATE}`;
 const DELAY = 'adelay';
 const ON_EVERY_CHANNEL = 'all=1';
 const MIX = 'amix';
@@ -116,17 +138,18 @@ export class Soundtrack implements Track, SoundLaying {
 	// The folder a film's paths are from: the film file's own
 	readonly from: string;
 	readonly sound: FilmSound;
-	// The files each of livereel's sounds is laid from, in turn, found once for the take, and how loud each is laid
-	private readonly livereelFiles: Readonly<Record<LivereelSound, readonly string[]>>;
+	// What each of livereel's sounds is laid from, found once for the take, and how loud each is laid
+	private readonly livereelsLaidFrom: Readonly<Record<LivereelSound, LaidFrom>>;
 	private readonly livereelVolumes: Readonly<Record<LivereelSound, number>>;
-	// Each file heard at each volume, and the moments it was heard at so, in the order they came: a file heard at two
-	// volumes, as the film's key and as a sound of its own, is laid once at each
+	// The hand every key on a keyboard is struck by, from the film's first key to its last
+	private readonly striking = new Striking();
+	// Each file heard and its hearings, the files in the order they first came
 	private readonly heard: Hearings[] = [];
 
 	constructor(filmFile: string, sound: FilmSound) {
 		this.from = dirname(resolve(filmFile));
 		this.sound = sound;
-		this.livereelFiles = livereelFilesOf(sound.livereels, this.from);
+		this.livereelsLaidFrom = livereelsLaidFrom(sound.livereels, this.from);
 		this.livereelVolumes = livereelVolumesOf(sound.livereels);
 	}
 
@@ -136,7 +159,8 @@ export class Soundtrack implements Track, SoundLaying {
 	 */
 	async expect(sounds: readonly Sound[]): Promise<void> {
 		const music = this.music();
-		const named = new Set([...sounds.flatMap((sound) => this.filesOf(sound)), ...(music === null ? [] : [music.file])]);
+		const laidFrom = sounds.flatMap((sound) => filesOf(this.laidFrom(sound)));
+		const named = new Set([...laidFrom, ...(music === null ? [] : [music.file])]);
 		const files = [...named];
 		const missing = files.find((file) => statSync(file, { throwIfNoEntry: false })?.isFile() !== true);
 		if (missing !== undefined) throw new FilmError(`the film names a sound that is not a file there: ${missing}`);
@@ -144,21 +168,27 @@ export class Soundtrack implements Track, SoundLaying {
 	}
 
 	/**
-	 * A sound heard at a moment, from its file; from the next of its files in turn where it has several: a key. It is
-	 * laid as loud as the film says it is.
+	 * A sound heard at a moment: from its file, as loud as the film says it is and as high as the file; or, a key on a
+	 * keyboard, from the strike the hand lands on, no louder than the film says its keys are.
 	 */
 	hear(moment: number, sound: Sound): void {
-		const files = this.filesOf(sound);
-		const file = inTurn(files, this.timesHeardFrom(files));
-		// No file: one of livereel's sounds, turned off
-		if (file === undefined) return;
+		const laidFrom = this.laidFrom(sound);
 		const volume = this.volumeOf(sound);
-		const hearings = this.heard.find((heard) => heard.file === file && heard.volume === volume);
-		if (hearings === undefined) this.heard.push({ file, volume, moments: [moment] });
-		else hearings.moments.push(moment);
+		switch (laidFrom.kind) {
+			case 'nothing':
+				return;
+			case 'file':
+				this.lay(laidFrom.file, { moment, volume, pitch: AS_HIGH_AS_ITS_FILE });
+				return;
+			case 'strikes': {
+				const strike = this.striking.next(STRIKES_A_KEYBOARD);
+				const struck = { moment, volume: volume * strike.loudness, pitch: strike.pitch };
+				this.lay(strikeOf(laidFrom.keyboard, strike.place), struck);
+			}
+		}
 	}
 
-	/** Each file heard at each volume, and the moments it was heard at so, in the order they first came. */
+	/** Each file heard and its hearings, the files in the order they first came. */
 	get heardFiles(): readonly HeardFile[] {
 		return this.heard;
 	}
@@ -191,10 +221,11 @@ export class Soundtrack implements Track, SoundLaying {
 		return music === null ? null : { file: resolve(this.from, music.file), volume: music.volume };
 	}
 
-	/** How many times a sound was heard from any of these files so far, at any volume: whose turn it is among them. */
-	private timesHeardFrom(files: readonly string[]): number {
-		const fromThem = this.heard.filter((heard) => files.includes(heard.file));
-		return fromThem.reduce((times, heard) => times + heard.moments.length, 0);
+	/** One more hearing of a file, kept with the file's others. */
+	private lay(file: string, hearing: Hearing): void {
+		const hearings = this.heard.find((heard) => heard.file === file);
+		if (hearings === undefined) this.heard.push({ file, hearings: [hearing] });
+		else hearings.hearings.push(hearing);
 	}
 
 	/**
@@ -212,15 +243,15 @@ export class Soundtrack implements Track, SoundLaying {
 		}
 	}
 
-	/** The files a sound is laid from, in turn; none for one of livereel's the film has turned off. */
-	private filesOf(sound: Sound): readonly string[] {
+	/** What a sound is laid from: a file of the film's, what the film has for one of livereel's, a keyboard's strikes. */
+	private laidFrom(sound: Sound): LaidFrom {
 		switch (sound.kind) {
 			case 'file':
-				return [resolve(this.from, sound.path)];
+				return { kind: 'file', file: resolve(this.from, sound.path) };
 			case 'livereel':
-				return this.livereelFiles[sound.name];
+				return this.livereelsLaidFrom[sound.name];
 			case 'keyboard':
-				return strikesOf(sound.keyboard);
+				return { kind: 'strikes', keyboard: sound.keyboard };
 		}
 	}
 }
@@ -234,12 +265,12 @@ async function readAsASound(file: string): Promise<void> {
 	}
 }
 
-/** The files each of livereel's sounds is laid from, a film's own found from its folder. */
-function livereelFilesOf(livereels: LivereelSounds, from: string): Readonly<Record<LivereelSound, readonly string[]>> {
+/** What each of livereel's sounds is laid from, a film's own file found from its folder. */
+function livereelsLaidFrom(livereels: LivereelSounds, from: string): Readonly<Record<LivereelSound, LaidFrom>> {
 	return {
-		click: filesOfSource(livereels.click, OWN_CLICK, from),
-		key: filesOfKey(livereels.key, from),
-		ending: filesOfSource(livereels.ending, OWN_ENDING, from)
+		click: sourceLaidFrom(livereels.click, OWN_CLICK, from),
+		key: keyLaidFrom(livereels.key, from),
+		ending: sourceLaidFrom(livereels.ending, OWN_ENDING, from)
 	};
 }
 
@@ -248,66 +279,67 @@ function livereelVolumesOf(livereels: LivereelSounds): Readonly<Record<LivereelS
 	return { click: AS_LOUD_AS_ITS_FILE, key: livereels.keyVolume, ending: AS_LOUD_AS_ITS_FILE };
 }
 
-/** A sound's file: livereel's own, or what the film put in its place. */
-function filesOfSource(source: SoundSource, own: string, from: string): readonly string[] {
+/** What the click or the ending is laid from: livereel's own file, or what the film put in its place. */
+function sourceLaidFrom(source: SoundSource, own: string, from: string): LaidFrom {
 	switch (source.kind) {
 		case 'livereel':
-			return [livereelsOwn(own)];
+			return { kind: 'file', file: livereelsOwn(own) };
 		case 'file':
 		case 'off':
-			return filesInPlaceOf(source, from);
+			return laidInPlace(source, from);
 	}
 }
 
-/**
- * The key's files: every strike of its keyboard, in its own folder of livereel's sounds, or what the film put in its
- * place.
- */
-function filesOfKey(key: KeySource, from: string): readonly string[] {
+/** What the film's keys are laid from: the strikes of its keyboard, or what the film put in their place. */
+function keyLaidFrom(key: KeySource, from: string): LaidFrom {
 	switch (key.kind) {
 		case 'keyboard':
-			return strikesOf(key.keyboard);
+			return { kind: 'strikes', keyboard: key.keyboard };
 		case 'file':
 		case 'off':
-			return filesInPlaceOf(key, from);
+			return laidInPlace(key, from);
 	}
 }
 
-/** What the film put in place of one of livereel's sounds: its file, found from the film's folder; none for one off. */
-function filesInPlaceOf(inPlace: FileOrOff, from: string): readonly string[] {
+/** What the film put in place of one of livereel's sounds: its file, found from the film's folder, or nothing. */
+function laidInPlace(inPlace: FileOrOff, from: string): LaidFrom {
 	switch (inPlace.kind) {
 		case 'file':
-			return [resolve(from, inPlace.path)];
+			return { kind: 'file', file: resolve(from, inPlace.path) };
 		case 'off':
+			return NOTHING;
+	}
+}
+
+/** Every file a sound may be laid from: a keyboard's every strike, the one file, or none. */
+function filesOf(laidFrom: LaidFrom): readonly string[] {
+	switch (laidFrom.kind) {
+		case 'strikes':
+			return Array.from({ length: STRIKES_A_KEYBOARD }, (_strike, place) => strikeOf(laidFrom.keyboard, place));
+		case 'file':
+			return [laidFrom.file];
+		case 'nothing':
 			return [];
 	}
 }
 
-/** A keyboard's files: every strike of it, in its own folder of livereel's sounds. */
-function strikesOf(keyboard: KeyboardSound): readonly string[] {
-	return Array.from({ length: STRIKES_A_KEYBOARD }, (_strike, place) =>
-		livereelsOwn(`keys/${keyboard}/${FIRST_STRIKE + place}${LIVEREEL_SUFFIX}`)
-	);
+/** A keyboard's strike by its place among them, from 0: a file in the keyboard's own folder of livereel's sounds. */
+function strikeOf(keyboard: KeyboardSound, place: number): string {
+	return livereelsOwn(`keys/${keyboard}/${FIRST_STRIKE + place}${LIVEREEL_SUFFIX}`);
 }
 
 function livereelsOwn(file: string): string {
 	return fileURLToPath(new URL(file, LIVEREEL_SOUNDS));
 }
 
-/** The file whose turn it is: a sound's files take turns, round again after the last; none where it has none. */
-function inTurn(files: readonly string[], timesHeard: number): string | undefined {
-	return files.length === 0 ? undefined : files[timesHeard % files.length];
-}
-
-/** Where each input stands: the picture, each file heard once at each volume, the silence, the music. */
+/** Where each input stands: the picture, each file heard, once, the silence, the music. */
 function layoutOf(heard: readonly HeardFile[]): Layout {
 	const silence = FIRST_SOUND + heard.length;
 	return { firstSound: FIRST_SOUND, silence, music: silence + 1 };
 }
 
 /**
- * ffmpeg's inputs in the layout's order: the picture, each file heard once at each volume, the silence as long as the
- * film, music.
+ * ffmpeg's inputs in the layout's order: the picture, each file heard, once, the silence as long as the film, music.
  */
 function inputsOf(picture: string, heard: readonly HeardFile[], seconds: number, music: Music | null): string[] {
 	const sounds = heard.flatMap((sound) => ['-i', sound.file]);
@@ -328,23 +360,30 @@ function graphOf(heard: readonly HeardFile[], music: Music | null, seconds: numb
 	return [...branches, ...musicBranch, mix].join(FILTERS_APART);
 }
 
-/**
- * One sound file at its volume split for each of its moments, each copy laid from its moment. A volume of 1 leaves
- * every sample as it is.
- */
+/** One sound file split for each of its hearings, each copy laid as its hearing is. */
 function branchesOf(sound: HeardFile, input: number): string {
-	const copies = sound.moments.map((_moment, copy) => copyOf(input, copy));
-	const atItsVolume = `${inputSound(input)}${SHAPED},${VOLUME}=${sound.volume}`;
-	const split = `${atItsVolume},${SPLIT}=${sound.moments.length}${copies.join('')}`;
-	const delays = sound.moments.map(
-		(moment, copy) => `${copyOf(input, copy)}${delayOf(moment)}${delayedCopyOf(input, copy)}`
+	const copies = sound.hearings.map((_hearing, copy) => copyOf(input, copy));
+	const split = `${inputSound(input)}${SHAPED},${SPLIT}=${sound.hearings.length}${copies.join('')}`;
+	const laid = sound.hearings.map(
+		(hearing, copy) => `${copyOf(input, copy)}${laidAs(hearing)}${delayedCopyOf(input, copy)}`
 	);
-	return [split, ...delays].join(FILTERS_APART);
+	return [split, ...laid].join(FILTERS_APART);
+}
+
+/**
+ * A copy of a file as one hearing lays it: as loud, as high, from its moment. It is made higher by being played faster,
+ * its samples then read at the track's rate again, so a key laid higher is a little shorter too, as a lighter strike
+ * is.
+ */
+function laidAs(hearing: Hearing): string {
+	const rate = Math.round(SAMPLE_RATE * hearing.pitch);
+	const asHigh = `${PLAYED_AT_A_RATE}=${rate},${AT_THE_TRACKS_RATE}`;
+	return `${VOLUME}=${hearing.volume},${asHigh},${delayOf(hearing.moment)}`;
 }
 
 /** The streams of a sound's copies, each laid from its moment. */
 function delayedOf(sound: HeardFile, input: number): string[] {
-	return sound.moments.map((_moment, copy) => delayedCopyOf(input, copy));
+	return sound.hearings.map((_hearing, copy) => delayedCopyOf(input, copy));
 }
 
 /** The music at its volume, faded out over the film's last seconds. */

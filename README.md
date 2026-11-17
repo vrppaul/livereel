@@ -1530,7 +1530,10 @@ What a room costs and needs:
 
 A film is heard: a click as the cursor presses, a key for every stroke typed, a chime as the ending comes up, each
 on its own frame. These are livereel's own, quiet and CC0 ([`sounds/`](sounds/LICENSE.md)), the keys recorded on
-real keyboards, each key one of four strikes in turn. `defineFilm` takes:
+real keyboards, four strikes of each. A key is one of them as a hand strikes it: drawn by chance, never the strike
+before it, as loud as its file or a little quieter, a little higher or lower, so a typed line is heard as typing
+and not as four sounds round again; the draws come from one seed, so a film is heard the same shot after shot.
+`defineFilm` takes:
 
 - `sounds: { keyboard }`, the keyboard the keys are heard on: `membrane`, an office keyboard (Cherry KC 1000),
   where none is named; `mechanical` (WhiteFox); `mechanical-bright`, a brighter, sharper one; `butterfly`, a
@@ -1539,8 +1542,8 @@ real keyboards, each key one of four strikes in turn. `defineFilm` takes:
   film's file, any kind ffmpeg reads, or `{ enabled: false }` to turn it off, as
   `sounds: { key: { enabled: false } }`. The click and the ending may stand beside a keyboard; a key given so
   takes the keyboard's place, and is never named beside it;
-- `sounds: { keyVolume }`, how loud every key is heard, on any keyboard or from a file in its place: 1 as loud
-  as its file. livereel's keys peak about 12 dB under its click: set about 4 for keys heard under music;
+- `sounds: { keyVolume }`, how loud a key is heard at most, on any keyboard, or how loud a file in its place: 1
+  as loud as its file. livereel's keys peak about 12 dB under its click: set about 4 for keys heard under music;
 - `sounds: { enabled: false }` for none of livereel's but a keyboard a typing names;
 - `music: { file, volume }`, a track under the whole film, `volume` 1 as loud as the file, cut to the film's
   length and faded out at its end.

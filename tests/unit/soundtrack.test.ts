@@ -1,5 +1,5 @@
 // The files a film's sounds are laid from: the film's, found from its folder and refused before anything is shot, and
-// livereel's keys, the strikes of the film's keyboard in turn; and how loud each is laid
+// livereel's keys, the strikes of the film's keyboard as a hand strikes them; and how loud and how high each is laid
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from 'vitest';
@@ -20,8 +20,25 @@ const ON_THE_MEMBRANE: LivereelSounds = {
 	keyVolume: 1
 };
 const ON_THE_LAPTOP: LivereelSounds = { ...ON_THE_MEMBRANE, key: { kind: 'keyboard', keyboard: 'laptop' } };
-// Five keys typed, a tenth of a second apart, on a keyboard of four strikes
-const KEY_MOMENTS = [0, 0.1, 0.2, 0.3, 0.4];
+// Forty keys typed, a tenth of a second apart, on a keyboard of four strikes
+const KEY_MOMENTS = Array.from({ length: 40 }, (_key, place) => place / 10);
+// The strikes of a keyboard, as its files are named in its folder
+const STRIKE_FILES = ['1.ogg', '2.ogg', '3.ogg', '4.ogg'];
+
+/** One hearing of a file, as a test reads it: the file by its path from a folder, and how it is laid at its moment. */
+interface Heard {
+	readonly file: string;
+	readonly moment: number;
+	readonly volume: number;
+	readonly pitch: number;
+}
+
+/** Every hearing a track holds, in the order of their moments, each file by its path from a folder. */
+function hearingsOf(track: Soundtrack, from: string): readonly Heard[] {
+	return track.heardFiles
+		.flatMap((heard) => heard.hearings.map((hearing) => ({ file: relative(from, heard.file), ...hearing })))
+		.sort((earlier, later) => earlier.moment - later.moment);
+}
 
 test("a file in place of livereel's click, and music, that are not there are refused by their path from the film", async () => {
 	const replaced = new Soundtrack(FILM, {
@@ -37,60 +54,57 @@ test("a file in place of livereel's click, and music, that are not there are ref
 	);
 });
 
-test("livereel's sounds a film turns off are not laid, and the rest are", () => {
+test("livereel's sounds a film turns off are not laid, and the rest are, as their files are", () => {
 	const track = new Soundtrack(FILM, { livereels: { click: OFF, key: OFF, ending: OWN }, music: null });
 	track.hear(0, livereelSound('click'));
 	track.hear(1, livereelSound('key'));
 	track.hear(2, livereelSound('ending'));
-	expect(track.heardFiles.map((heard) => [relative(LIVEREEL_SOUNDS, heard.file), heard.moments])).toEqual([
-		['ending.ogg', [2]]
-	]);
+	expect(hearingsOf(track, LIVEREEL_SOUNDS)).toEqual([{ file: 'ending.ogg', moment: 2, volume: 1, pitch: 1 }]);
 });
 
-test('a key struck on the keyboard a typing names is laid from its strikes in turn, though the film turned its keys off', () => {
+test("livereel's keys are laid from the strikes of the film's keyboard, every key at its moment and none the strike before it", () => {
+	const track = new Soundtrack(FILM, { livereels: ON_THE_LAPTOP, music: null });
+	for (const moment of KEY_MOMENTS) track.hear(moment, livereelSound('key'));
+	const hearings = hearingsOf(track, join(LIVEREEL_SOUNDS, 'keys', 'laptop'));
+	const files = hearings.map((heard) => heard.file);
+	expect(hearings.map((heard) => heard.moment)).toEqual(KEY_MOMENTS);
+	expect([...new Set(files)].sort()).toEqual(STRIKE_FILES);
+	expect(files.slice(1).map((file, before) => file === files[before])).not.toContain(true);
+});
+
+test('a key struck on the keyboard a typing names is laid from its strikes, though the film turned its keys off', () => {
 	const track = new Soundtrack(FILM, { livereels: { click: OWN, key: OFF, ending: OWN }, music: null });
 	for (const moment of KEY_MOMENTS) track.hear(moment, { kind: 'keyboard', keyboard: 'butterfly' });
-	expect(track.heardFiles.map((heard) => [relative(LIVEREEL_SOUNDS, heard.file), heard.moments])).toEqual([
-		['keys/butterfly/1.ogg', [0, 0.4]],
-		['keys/butterfly/2.ogg', [0.1]],
-		['keys/butterfly/3.ogg', [0.2]],
-		['keys/butterfly/4.ogg', [0.3]]
-	]);
+	const hearings = hearingsOf(track, join(LIVEREEL_SOUNDS, 'keys', 'butterfly'));
+	expect(hearings.map((heard) => heard.moment)).toEqual(KEY_MOMENTS);
+	expect([...new Set(hearings.map((heard) => heard.file))].sort()).toEqual(STRIKE_FILES);
 });
 
-test('every key is laid as loud as the film says its keys are, on its keyboard or on one a typing names, and its click as loud as its file', () => {
+test("a keyboard's keys are laid no louder than the film says its keys are and no two alike, and its click as its file", () => {
 	const track = new Soundtrack(FILM, { livereels: { ...ON_THE_MEMBRANE, keyVolume: 4 }, music: null });
-	track.hear(0, livereelSound('key'));
-	track.hear(0.1, { kind: 'keyboard', keyboard: 'butterfly' });
-	track.hear(0.2, livereelSound('click'));
-	expect(track.heardFiles.map((heard) => [relative(LIVEREEL_SOUNDS, heard.file), heard.volume])).toEqual([
-		['keys/membrane/1.ogg', 4],
-		['keys/butterfly/1.ogg', 4],
-		['click.ogg', 1]
-	]);
+	for (const moment of KEY_MOMENTS) track.hear(moment, livereelSound('key'));
+	track.hear(9, livereelSound('click'));
+	const hearings = hearingsOf(track, LIVEREEL_SOUNDS);
+	const keys = hearings.slice(0, KEY_MOMENTS.length);
+	const volumes = keys.map((heard) => heard.volume);
+	const pitches = keys.map((heard) => heard.pitch);
+	expect(Math.max(...volumes)).toBeLessThanOrEqual(4);
+	expect(Math.min(...volumes)).toBeGreaterThanOrEqual(2.8);
+	expect(new Set(volumes).size).toBe(KEY_MOMENTS.length);
+	expect(new Set(pitches).size).toBe(KEY_MOMENTS.length);
+	expect(hearings.at(-1)).toEqual({ file: 'click.ogg', moment: 9, volume: 1, pitch: 1 });
 });
 
-test("a file of the film heard as its key and as a sound of its own is laid at each one's volume", () => {
+test('a file of the film heard as its key and as a sound of its own is read once, each hearing laid at its own volume, as the file is', () => {
 	const key = { kind: 'file', path: './key.wav' } as const;
 	const track = new Soundtrack(FILM, { livereels: { ...ON_THE_MEMBRANE, key, keyVolume: 4 }, music: null });
 	track.hear(0, livereelSound('key'));
 	track.hear(1, fileSound(key.path));
 	track.hear(2, livereelSound('key'));
-	expect(
-		track.heardFiles.map((heard) => [relative(import.meta.dirname, heard.file), heard.volume, heard.moments])
-	).toEqual([
-		['key.wav', 4, [0, 2]],
-		['key.wav', 1, [1]]
-	]);
-});
-
-test("livereel's keys are laid from the strikes of the film's keyboard in turn, round again after the last", () => {
-	const track = new Soundtrack(FILM, { livereels: ON_THE_LAPTOP, music: null });
-	for (const moment of KEY_MOMENTS) track.hear(moment, livereelSound('key'));
-	expect(track.heardFiles.map((heard) => [relative(LIVEREEL_SOUNDS, heard.file), heard.moments])).toEqual([
-		['keys/laptop/1.ogg', [0, 0.4]],
-		['keys/laptop/2.ogg', [0.1]],
-		['keys/laptop/3.ogg', [0.2]],
-		['keys/laptop/4.ogg', [0.3]]
+	expect(track.heardFiles.length).toBe(1);
+	expect(hearingsOf(track, import.meta.dirname)).toEqual([
+		{ file: 'key.wav', moment: 0, volume: 4, pitch: 1 },
+		{ file: 'key.wav', moment: 1, volume: 1, pitch: 1 },
+		{ file: 'key.wav', moment: 2, volume: 4, pitch: 1 }
 	]);
 });
