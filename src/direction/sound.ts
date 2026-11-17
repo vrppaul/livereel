@@ -80,8 +80,8 @@ export type SoundSource = { readonly kind: 'livereel' } | FileOrOff;
 export type KeySource = OnAKeyboard | FileOrOff;
 
 /**
- * livereel's sounds as a film is shot with them: where each one comes from, and how loud every key is laid, a key a
- * typing strikes on a keyboard of its own too.
+ * livereel's sounds as a film is shot with them: where each one comes from, and how loud a key is laid at most, a key a
+ * typing strikes on a keyboard of its own too; a file in the keys' place is laid just so loud.
  */
 export interface LivereelSounds {
 	readonly click: SoundSource;
@@ -125,7 +125,8 @@ const ALL_LIVEREELS: LivereelSounds = {
 	keyVolume: AS_LOUD_AS_ITS_FILE
 };
 const OFF: FileOrOff = { kind: 'off' };
-// A key a typing strikes on a keyboard of its own is heard though the film's sounds are off, as loud as its file
+// A key a typing strikes on a keyboard of its own is heard though the film's sounds are off, as loud as its file at
+// most
 const ALL_OFF: LivereelSounds = { click: OFF, key: OFF, ending: OFF, keyVolume: AS_LOUD_AS_ITS_FILE };
 // Where a film writes livereel's sounds and its music, and the names it writes each with
 const SOUNDS = 'sounds';

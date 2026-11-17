@@ -4,13 +4,14 @@
  *
  * The track is as long as the film: a silence that long comes first and sets the length (the mix ends with its first
  * input), each sound is laid over it from its moment, all are mixed as they are (never scaled down by their count), and
- * the music is cut there too, faded out over the film's last seconds. Each file is read once and split for every moment
- * it is heard at, each copy laid as loud and as high as that hearing is. The picture is copied, not encoded again. A
- * film with nothing heard and no music gets no track: its picture is put in the video's place as it is. livereel's
- * sounds are CC0 (`sounds/LICENSE.md`), quiet in their files: its keys peak about 12 dB under its click, so a film
- * under music says how loud its keys are, and no key is laid louder; a film's other files are laid as they are. A key
- * on a keyboard is one of its strikes, each recorded alone, struck as a hand strikes it (`src/domain/striking.ts`): by
- * chance, never the strike before it, a little quieter or not, a little higher or lower, so a typed line is no loop.
+ * the music is cut there too, faded out over the film's last seconds. Each sound, a file laid as loud and as high one
+ * way, is read once and split for every moment it is heard at. The picture is copied, not encoded again. A film with
+ * nothing heard and no music gets no track: its picture is put in the video's place as it is. livereel's sounds are CC0
+ * (`sounds/LICENSE.md`), quiet in their files: its keys peak about 12 dB under its click, so a film under music says
+ * how loud its keys are, and no key is laid at a higher volume; a film's other files are laid as they are. A key on a
+ * keyboard is one of its strikes, each recorded alone, struck as a hand strikes it (`src/domain/striking.ts`): by
+ * chance, never the strike before it, on one of a few steps of loudness and of pitch, so a typed line is no loop and a
+ * film's keys are a few dozen sounds, however many it types.
  */
 import { statSync } from 'node:fs';
 import { rename, rm } from 'node:fs/promises';
@@ -36,22 +37,21 @@ import { ffmpeg } from './ffmpeg.ts';
 import { KINDS, STARTS_AT_ONCE } from './kinds.ts';
 import { partialOf } from './partial.ts';
 
-/** One hearing of a sound file: the moment of the film it is laid from, in seconds, and how, each 1 as the file is. */
-interface Hearing {
-	readonly moment: number;
+/** A sound as it is laid: its file, how loud and how high, each 1 as the file is. */
+interface LaidSound {
+	readonly file: string;
 	readonly volume: number;
 	readonly pitch: number;
 }
 
-/** A sound file and every hearing of it. */
-interface HeardFile {
-	readonly file: string;
-	readonly hearings: readonly Hearing[];
+/** A sound laid one way, heard at moments of the film, in seconds. */
+interface HeardSound extends LaidSound {
+	readonly moments: readonly number[];
 }
 
-/** A sound file, its hearings gathered as the take goes. */
-interface Hearings extends HeardFile {
-	readonly hearings: Hearing[];
+/** A sound laid one way, the moments it was heard at so gathered as the take goes. */
+interface Hearings extends HeardSound {
+	readonly moments: number[];
 }
 
 /**
@@ -143,7 +143,8 @@ export class Soundtrack implements Track, SoundLaying {
 	private readonly livereelVolumes: Readonly<Record<LivereelSound, number>>;
 	// The hand every key on a keyboard is struck by, from the film's first key to its last
 	private readonly striking = new Striking();
-	// Each file heard and its hearings, the files in the order they first came
+	// Each sound heard, a file laid one way, and the moments it was heard at so, in the order the sounds first came: a
+	// key struck alike twice is one sound, however far apart
 	private readonly heard: Hearings[] = [];
 
 	constructor(filmFile: string, sound: FilmSound) {
@@ -178,18 +179,18 @@ export class Soundtrack implements Track, SoundLaying {
 			case 'nothing':
 				return;
 			case 'file':
-				this.lay(laidFrom.file, { moment, volume, pitch: AS_HIGH_AS_ITS_FILE });
+				this.lay(moment, { file: laidFrom.file, volume, pitch: AS_HIGH_AS_ITS_FILE });
 				return;
 			case 'strikes': {
 				const strike = this.striking.next(STRIKES_A_KEYBOARD);
-				const struck = { moment, volume: volume * strike.loudness, pitch: strike.pitch };
-				this.lay(strikeOf(laidFrom.keyboard, strike.place), struck);
+				const file = strikeOf(laidFrom.keyboard, strike.place);
+				this.lay(moment, { file, volume: volume * strike.loudness, pitch: strike.pitch });
 			}
 		}
 	}
 
-	/** Each file heard and its hearings, the files in the order they first came. */
-	get heardFiles(): readonly HeardFile[] {
+	/** Each sound heard, laid one way, and the moments it was heard at so, in the order the sounds first came. */
+	get heardSounds(): readonly HeardSound[] {
 		return this.heard;
 	}
 
@@ -198,7 +199,7 @@ export class Soundtrack implements Track, SoundLaying {
 	 * a picture with nothing to lay under it is put there as it is. The picture is gone either way.
 	 */
 	async laidUnder(picture: string, video: string, seconds: number): Promise<void> {
-		const heard = this.heardFiles;
+		const heard = this.heardSounds;
 		const music = this.music();
 		if (heard.length === 0 && music === null) {
 			await rename(picture, video);
@@ -221,11 +222,13 @@ export class Soundtrack implements Track, SoundLaying {
 		return music === null ? null : { file: resolve(this.from, music.file), volume: music.volume };
 	}
 
-	/** One more hearing of a file, kept with the file's others. */
-	private lay(file: string, hearing: Hearing): void {
-		const hearings = this.heard.find((heard) => heard.file === file);
-		if (hearings === undefined) this.heard.push({ file, hearings: [hearing] });
-		else hearings.hearings.push(hearing);
+	/** One more moment a sound is heard at, kept with the others of that file laid as loud and as high. */
+	private lay(moment: number, laid: LaidSound): void {
+		const hearings = this.heard.find(
+			(heard) => heard.file === laid.file && heard.volume === laid.volume && heard.pitch === laid.pitch
+		);
+		if (hearings === undefined) this.heard.push({ ...laid, moments: [moment] });
+		else hearings.moments.push(moment);
 	}
 
 	/**
@@ -332,16 +335,16 @@ function livereelsOwn(file: string): string {
 	return fileURLToPath(new URL(file, LIVEREEL_SOUNDS));
 }
 
-/** Where each input stands: the picture, each file heard, once, the silence, the music. */
-function layoutOf(heard: readonly HeardFile[]): Layout {
+/** Where each input stands: the picture, each sound heard, once, the silence, the music. */
+function layoutOf(heard: readonly HeardSound[]): Layout {
 	const silence = FIRST_SOUND + heard.length;
 	return { firstSound: FIRST_SOUND, silence, music: silence + 1 };
 }
 
 /**
- * ffmpeg's inputs in the layout's order: the picture, each file heard, once, the silence as long as the film, music.
+ * ffmpeg's inputs in the layout's order: the picture, each sound heard, once, the silence as long as the film, music.
  */
-function inputsOf(picture: string, heard: readonly HeardFile[], seconds: number, music: Music | null): string[] {
+function inputsOf(picture: string, heard: readonly HeardSound[], seconds: number, music: Music | null): string[] {
 	const sounds = heard.flatMap((sound) => ['-i', sound.file]);
 	const silence = ['-f', 'lavfi', '-t', String(seconds), '-i', SILENCE];
 	return ['-i', picture, ...sounds, ...silence, ...(music === null ? [] : ['-i', music.file])];
@@ -351,7 +354,7 @@ function inputsOf(picture: string, heard: readonly HeardFile[], seconds: number,
  * The graph: the silence first, every sound from its moment over it, the music under them, mixed into the track.
  * Filters are apart by `;`; a stream between them is named in brackets.
  */
-function graphOf(heard: readonly HeardFile[], music: Music | null, seconds: number, layout: Layout): string {
+function graphOf(heard: readonly HeardSound[], music: Music | null, seconds: number, layout: Layout): string {
 	const branches = heard.map((sound, place) => branchesOf(sound, layout.firstSound + place));
 	const musicBranch = music === null ? [] : [musicOf(music, layout.music, seconds)];
 	const delayed = heard.flatMap((sound, place) => delayedOf(sound, layout.firstSound + place));
@@ -360,30 +363,31 @@ function graphOf(heard: readonly HeardFile[], music: Music | null, seconds: numb
 	return [...branches, ...musicBranch, mix].join(FILTERS_APART);
 }
 
-/** One sound file split for each of its hearings, each copy laid as its hearing is. */
-function branchesOf(sound: HeardFile, input: number): string {
-	const copies = sound.hearings.map((_hearing, copy) => copyOf(input, copy));
-	const split = `${inputSound(input)}${SHAPED},${SPLIT}=${sound.hearings.length}${copies.join('')}`;
-	const laid = sound.hearings.map(
-		(hearing, copy) => `${copyOf(input, copy)}${laidAs(hearing)}${delayedCopyOf(input, copy)}`
+/**
+ * One sound, as loud and as high as it is laid, split for each of its moments, each copy laid from its moment. A volume
+ * and a pitch of 1 leave every sample as it is.
+ */
+function branchesOf(sound: HeardSound, input: number): string {
+	const copies = sound.moments.map((_moment, copy) => copyOf(input, copy));
+	const laid = `${inputSound(input)}${SHAPED},${VOLUME}=${sound.volume},${asHighAs(sound.pitch)}`;
+	const split = `${laid},${SPLIT}=${sound.moments.length}${copies.join('')}`;
+	const delays = sound.moments.map(
+		(moment, copy) => `${copyOf(input, copy)}${delayOf(moment)}${delayedCopyOf(input, copy)}`
 	);
-	return [split, ...laid].join(FILTERS_APART);
+	return [split, ...delays].join(FILTERS_APART);
 }
 
 /**
- * A copy of a file as one hearing lays it: as loud, as high, from its moment. It is made higher by being played faster,
- * its samples then read at the track's rate again, so a key laid higher is a little shorter too, as a lighter strike
- * is.
+ * A sound made so many times as high: played that much faster, its samples then read at the track's rate again, so
+ * every sound in the mix is at one rate, and one laid higher is a little shorter too.
  */
-function laidAs(hearing: Hearing): string {
-	const rate = Math.round(SAMPLE_RATE * hearing.pitch);
-	const asHigh = `${PLAYED_AT_A_RATE}=${rate},${AT_THE_TRACKS_RATE}`;
-	return `${VOLUME}=${hearing.volume},${asHigh},${delayOf(hearing.moment)}`;
+function asHighAs(pitch: number): string {
+	return `${PLAYED_AT_A_RATE}=${Math.round(SAMPLE_RATE * pitch)},${AT_THE_TRACKS_RATE}`;
 }
 
 /** The streams of a sound's copies, each laid from its moment. */
-function delayedOf(sound: HeardFile, input: number): string[] {
-	return sound.hearings.map((_hearing, copy) => delayedCopyOf(input, copy));
+function delayedOf(sound: HeardSound, input: number): string[] {
+	return sound.moments.map((_moment, copy) => delayedCopyOf(input, copy));
 }
 
 /** The music at its volume, faded out over the film's last seconds. */
@@ -397,12 +401,18 @@ function inputSound(input: number): string {
 	return `[${input}:a]`;
 }
 
+/**
+ * A copy of a sound as the graph names it, by its input and its place among the copies: `s` the sound, `c` the copy.
+ * The names are short on purpose: the whole graph is one argument to ffmpeg, which the system holds to 128 KiB, and
+ * each moment a sound is heard at writes a copy's name twice and its delayed copy's twice.
+ */
 function copyOf(input: number, copy: number): string {
-	return `[sound${input}copy${copy}]`;
+	return `[s${input}c${copy}]`;
 }
 
+/** A copy of a sound laid from its moment, as the graph names it: `d` the delayed copy. */
 function delayedCopyOf(input: number, copy: number): string {
-	return `[sound${input}delayed${copy}]`;
+	return `[s${input}d${copy}]`;
 }
 
 /** A delay from the film's start to a moment, on every channel. */

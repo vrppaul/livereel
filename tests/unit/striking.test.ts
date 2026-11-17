@@ -5,6 +5,8 @@ import { type Strike, Striking } from '../../src/domain/striking.ts';
 // A keyboard of four strikes, and a line long enough to hear a loop in
 const STRIKES = 4;
 const KEYS = 200;
+// A step is read to so many digits, past which a share of a range worked out in floats may differ
+const DIGITS = 6;
 
 /** So many keys struck one after another by one hand on a keyboard of so many strikes. */
 function struck(keys: number, strikes: number): readonly Strike[] {
@@ -25,16 +27,12 @@ test('the strikes follow no round of the keyboard: the key four on is not always
 	expect(sameAsARoundBefore).toContain(false);
 });
 
-test('a key lands no louder than its file and at most a little quieter, a little higher or lower than its file', () => {
+test('a key lands on one of five steps of loudness, from 0.7 of its file to its file, and one of seven of pitch, from 0.94 to 1.06', () => {
 	const strikes = struck(KEYS, STRIKES);
-	const loudness = strikes.map((strike) => strike.loudness);
-	const pitches = strikes.map((strike) => strike.pitch);
-	expect(Math.max(...loudness)).toBeLessThanOrEqual(1);
-	expect(Math.min(...loudness)).toBeGreaterThanOrEqual(0.7);
-	expect(Math.max(...pitches)).toBeLessThanOrEqual(1.06);
-	expect(Math.min(...pitches)).toBeGreaterThanOrEqual(0.94);
-	expect(new Set(loudness).size).toBe(KEYS);
-	expect(new Set(pitches).size).toBe(KEYS);
+	const loudness = [...new Set(strikes.map((strike) => strike.loudness))].sort();
+	const pitches = [...new Set(strikes.map((strike) => strike.pitch))].sort();
+	expect(loudness.map((step) => Number(step.toFixed(DIGITS)))).toEqual([0.7, 0.775, 0.85, 0.925, 1]);
+	expect(pitches.map((step) => Number(step.toFixed(DIGITS)))).toEqual([0.94, 0.96, 0.98, 1, 1.02, 1.04, 1.06]);
 });
 
 test('a keyboard of one strike strikes it every time', () => {
