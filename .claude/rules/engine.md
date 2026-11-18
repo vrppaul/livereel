@@ -5,7 +5,7 @@ paths:
 
 # The engine and the command line
 
-How a module is built is said in its comment at the top. The stage has its own rules, `.claude/rules/stage.md`.
+The stage has its own rules, `.claude/rules/stage.md`.
 
 ## TypeScript
 

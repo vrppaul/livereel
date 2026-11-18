@@ -19,7 +19,11 @@ pnpm livereel still examples/example-com.ts --format square --out out/example --
 
 ## How we work
 
-- **Small chunks.** One logical piece at a time, presented for review. Never a run through a plan of several phases.
+- **Talk short.** A few lines to the owner; details only when asked.
+- **Small chunks.** One concept at a time, read in one sitting, working and checked by itself. Never a run through a plan of several phases.
+- **Step back first.** Planner, author and reviewer each say first what the piece is for, which whole it serves, whether it is worth doing, why each part it lives in exists and why nothing simpler does.
+- A part with no reason that holds is a finding, however old. A why you cannot answer is a question to the owner, never code.
+- **Each hands over:** a planner a step and its place in the whole; an author the change and ten lines at most: what, why, how checked, how long, where to look; a reviewer a verdict and its findings.
 - **Understand before writing.** No code without full understanding of what exists and where the change belongs.
 - **Tests hold behaviour.** A behaviour someone can name gets a test first, at the cheapest level; a look, a refactor or a declaration gets none.
 - **Review before presenting.** Read every changed file: the right layer? redundant work? the non-obvious commented? every line needed?
@@ -28,27 +32,23 @@ pnpm livereel still examples/example-com.ts --format square --out out/example --
 - **Weigh, then decide** a dependency, the architecture or what a scene is made of (`src/scene.ts`): name the ways weighed; ask only where none is clearly best.
 - Never commit secrets or credentials.
 - A commit follows Conventional Commits, `type(scope): description`.
-- Every sentence of a commit message is a claim: look before you write it, and read a count off a command's output.
 - Planned work is tracked in `TODO.md`, where an item done is removed, not ticked off; what changed, in `CHANGELOG.md`.
 
 ## Layers
 
 - `cli` → `adapters` → `studio` → `direction` → `scene` → `props` → `domain`, the parts of `src/`: each builds only on those after it. A part is a folder, or a file of its own (`src/scene.ts`).
-- The moves of every prop and of the page (`src/moves/`) build on `direction`; the package's entry (`src/index.ts`) on the moves and what a film is written with.
-- What a film is made of is worked out without a browser and without Node: `domain`, `props`, `scene`, `moves` and `studio` import neither Playwright nor Node's own modules and read no wall clock; `direction` takes their types alone.
-- A part imports another by its relative path, to its `.ts` file; the package never imports itself by its name. eslint refuses an import against these (`LAYERS` in `eslint.config.js`).
-- The stage, `stage/`, holds the pages a film is shot with: JavaScript the type checker reads, published and run as it is written.
 
 ## Rules for all code
 
 - A function does one thing; no method does everything.
-- A name says what it holds, in whole words: `focusX`, `typed`, `shot`, never `x`, `t`, `i`. What is not obvious gets a one-line comment. A module's comment says why, not only what.
+- A name says what it holds, in whole words: `focusX`, `typed`, `shot`, never `x`, `t`, `i`.
 - No literal with a meaning in an expression: a number, a colour, a time or a selector is a named constant, or data a film holds.
 - No function inside a function: a helper is a function of its module. A one-line lambda passed to a call is allowed.
 - Dependencies are explicit — a constructor's parameters, a function's — so each part is tested by itself.
 - A parameter every caller must give has no default, which would hide a missing value. One whose absence is a valid state may have one.
 - No alias or shim kept for an old name: whoever imports it is changed.
 - Shared code comes with its second user, not before; once there are two, it is written once.
+- No function only passes its call on, fixed arguments or none, unless it names a notion its call lacks or hides real work; shorter to write is no reason.
 
 ## Only better
 
@@ -57,9 +57,9 @@ Every change leaves the repository better than it found it: cleaner, easier to r
 - **Construction first.** Before code, settle who owns each state and for how long, which layer it lives in, and the contract. Build nothing nobody asked for.
 - **Simplest first.** Build the simplest thing that works. A new state, move, step, gate or module says why nothing simpler does; a reviewer's fix is a proposal.
 - **Root cause first.** Before a fix, say why the fault can happen and change that construction. A flag, guard or filter hiding a wrong value is a symptom fix: it needs a reason.
-- **Show it with facts, not adjectives.** Say what a reader can check: what was written several times and is now written once, which state has one owner now, which rule a tool now holds.
+- **Show it with facts, not adjectives.** Say what a reader can check.
 - **The verdict is somebody else's.** A chunk is done when an independent reviewer has measured its whole diff against this rule and listed every place that got worse.
-- **A regression found becomes a gate.** What a review catches turns into a rule a tool enforces at the commit, not a test.
+- **A regression found becomes a gate** a tool here enforces at the commit, not a test; a gate of our own is built only on the owner's word.
 - **What you can name as worse is not committed.** Fix it, or stop and ask.
 
 ## Rules by area
@@ -67,9 +67,11 @@ Every change leaves the repository better than it found it: cleaner, easier to r
 Before you change or review code in an area, read its file whole; a brief to another agent names the files.
 
 - `.claude/rules/engine.md` — anything under `src/` but the stage: TypeScript, the scene, moves and steps, time, the command line.
+- `.claude/rules/layers.md` — an import between the parts of `src/`, or of the stage.
 - `.claude/rules/stage.md` — the stage, `stage/`: what it draws and how.
 - `.claude/rules/films.md` — a film, under `examples/`: how one is written.
 - `.claude/rules/tests.md` — any test, under `tests/`.
 - `.claude/rules/scripts.md` — anything under `scripts/`: the gates of our own.
+- `.claude/rules/prose.md` — comments, docstrings, documents, commit messages, reports.
 - `.claude/rules/instructions.md` — this file and the rules of each area.
 - `skills/reel/SKILL.md` — how an agent directs a film: read it before writing one.
