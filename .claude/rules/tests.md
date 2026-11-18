@@ -8,6 +8,7 @@ paths:
 - A test holds a behaviour someone can name: it does one thing and checks what came of it. Its name states that behaviour.
 - It is written before its code and seen failing. A refactor gets no new test: the old ones pass unchanged.
 - No test written to a change: that a line was edited, or that what the code did before it no longer does. A test holds what the code does.
+- No test of a gate, a script or any tool of our own: a test holds what livereel does.
 - At the cheapest level that sees it: `tests/unit/` for what is worked out without a browser — curves, typing, framing, a move's change, a take run against stand-ins (`tests/unit/fakes.ts`).
 - `tests/smoke/` runs what the unit tests stand in for: a film shot in a real browser, of a page on the disk or an app with a server of its own, and the system's ffmpeg making the video.
 - A smoke test checks which frames were kept or what reached the page: never what a frame of the film looks like.
